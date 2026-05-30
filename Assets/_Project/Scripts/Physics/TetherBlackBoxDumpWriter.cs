@@ -9,6 +9,7 @@ namespace Hecton8.Physics
     {
         private const int HeaderBytes = 32;
         private const uint Version = 1u;
+        private const string DumpPayloadLabel = "tetherBlackBoxDumpPayload";
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticStateForSubsystemReload()
@@ -62,7 +63,11 @@ namespace Hecton8.Physics
             NativeArray<byte> payload = default;
             try
             {
-                payload = new NativeArray<byte>((int)payloadBytesLong, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    (int)payloadBytesLong,
+                    nameof(TetherBlackBoxDumpWriter),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
                 byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
                 byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
                 int cursor = 0;
@@ -78,7 +83,15 @@ namespace Hecton8.Physics
                 for (int i = 0; i < count; i++)
                 {
                     int sourceIndex = PositiveModulo(head + i, count);
-                    UnsafeUtility.MemCpy(destination + cursor, source + sourceIndex * recordBytes, recordBytes);
+                    if (!UnsafeMemoryCopyGuard.SafeCopy(
+                            destination + cursor,
+                            payload.Length - cursor,
+                            source + sourceIndex * recordBytes,
+                            recordBytes))
+                    {
+                        return false;
+                    }
+
                     cursor += recordBytes;
                 }
 
@@ -104,10 +117,10 @@ namespace Hecton8.Physics
             }
             finally
             {
-                if (payload.IsCreated)
-                {
-                    payload.Dispose();
-                }
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(TetherBlackBoxDumpWriter),
+                    DumpPayloadLabel);
             }
         }
 

@@ -20,6 +20,7 @@ namespace Hecton8.Habitat.Deformation
     {
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_218.bin";
         private const string SurgeonDumpRelativePath = "Docs/AgentLogs/Dump_STRUCTURAL_SURGEON.bin";
+        private const string DumpPayloadLabel = "structuralIntegrityTelemetryDumpPayload";
         private const string DefaultCsvRelativePath = "Docs/Data/hull_materials.csv";
         private static readonly ProfilerMarker _tickMarker = new ProfilerMarker("H8.Habitat.StructuralIntegrity.Tick");
         private static readonly ProfilerMarker _lateMarker = new ProfilerMarker("H8.Habitat.StructuralIntegrity.LateFrame");
@@ -1446,11 +1447,6 @@ namespace Hecton8.Habitat.Deformation
             if (!telemetry.IsCreated)
                 return;
 
-            string path = ResolveProjectPath(relativePath);
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
             int cursorValue = cursor.IsCreated && cursor.Length > 0 ? cursor[0] : 0;
             StructuralTelemetryDumpHeader header = new StructuralTelemetryDumpHeader
             {
@@ -1464,13 +1460,29 @@ namespace Hecton8.Habitat.Deformation
                 StateHash = faultEntry.StateHash
             };
 
-            using (FileStream stream = File.Create(path))
+            int headerBytes = UnsafeUtility.SizeOf<StructuralTelemetryDumpHeader>();
+            int stride = UnsafeUtility.SizeOf<StructuralTelemetryEntry>();
+            int entryBytes = telemetry.Length * stride;
+            int totalBytes = headerBytes + entryBytes;
+            NativeArray<byte> payload = default;
+            try
             {
-                stream.Write(new ReadOnlySpan<byte>((byte*)&header, UnsafeUtility.SizeOf<StructuralTelemetryDumpHeader>()));
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(StructuralIntegrityCalculatorRuntime),
+                    DumpPayloadLabel);
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                UnsafeUtility.MemCpy(target, &header, headerBytes);
                 byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                int stride = UnsafeUtility.SizeOf<StructuralTelemetryEntry>();
-                for (int i = 0; i < telemetry.Length; i++)
-                    stream.Write(new ReadOnlySpan<byte>(source + i * stride, stride));
+                UnsafeUtility.MemCpy(target + headerBytes, source, entryBytes);
+                NativeFaultDumpWriter.TryWriteAll(relativePath, payload, totalBytes);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(StructuralIntegrityCalculatorRuntime),
+                    DumpPayloadLabel);
             }
         }
 

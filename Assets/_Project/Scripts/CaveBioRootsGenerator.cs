@@ -9,7 +9,7 @@ namespace Hecton8.Caves
     /// Anchors use deterministic local-bounds sampling; root motion stays on the VISUAL_SYNC path.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CaveBioRootsGenerator : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class CaveBioRootsGenerator : MonoBehaviour, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxRootCount = 32;
         private const string LegacyRootNamePrefix = "_BioRoot_";
@@ -47,6 +47,7 @@ namespace Hecton8.Caves
         private Color _glowColor;
         private float _swayTime;
         private bool _registeredLateFrameTick;
+        private bool _registeredSlowTick;
         private bool _hotSwapRegistered;
         private IConnectionSplineBatchRendererService _splineRenderer;
         private long[] _rootLinkIds;
@@ -58,7 +59,7 @@ namespace Hecton8.Caves
         /// <summary>
         /// Configures the generator from the cave dressing owner.
         /// </summary>
-        internal void Configure(HectonVoxelVolume targetVolume, CavePreset preset, CaveBioRootConfig config, float globalIntensity)
+        internal void ConfigureCold(HectonVoxelVolume targetVolume, CavePreset preset, CaveBioRootConfig config, float globalIntensity)
         {
             volume = targetVolume;
             _volumeTransform = targetVolume != null ? targetVolume.transform : null;
@@ -109,7 +110,6 @@ namespace Hecton8.Caves
                 return;
 
             float dt = SystemDispatcher.CurrentFrameDeltaTime;
-            ResolvePlayerContext();
             _swayTime += math.max(0f, dt);
 
             Vector3 playerPosition = ResolvePlayerRuntimePosition();
@@ -148,17 +148,24 @@ namespace Hecton8.Caves
             }
         }
 
+        public void SlowTick()
+        {
+            ResolvePlayerContext();
+        }
+
         private void Awake()
         {
             if (volume != null)
                 _volumeTransform = volume.transform;
 
             CacheRegistryServicesCold();
+            ResolvePlayerContext();
         }
 
         private void OnEnable()
         {
             CacheRegistryServicesCold();
+            ResolvePlayerContext();
             TryRegisterHotSwapListener();
             if (_rootCount > 0)
                 TryRegister();
@@ -306,6 +313,7 @@ namespace Hecton8.Caves
                 if (currentService == null)
                 {
                     _registeredLateFrameTick = false;
+                    _registeredSlowTick = false;
                     return;
                 }
 
@@ -435,22 +443,32 @@ namespace Hecton8.Caves
 
         private void TryRegister()
         {
-            if (_registeredLateFrameTick || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+
+            if (!_registeredLateFrameTick)
+                _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
-            if (!_registeredLateFrameTick)
-                return;
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registeredLateFrameTick = false;
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
+            }
         }
 
         private static float Hash01(int index, int salt)

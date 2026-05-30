@@ -27,9 +27,13 @@ namespace Hecton8.Editor
         private const string BilateralDrsRuntimePath = "Assets/_Project/Scripts/Rendering/BilateralDrs/HectonBilateralDrsUpscalerRuntime.cs";
         private const string VolumetricParticulateFogFeaturePath = "Assets/_Project/Scripts/Visor/HectonVolumetricParticulateFogFeature.cs";
         private const string DynamicDecalVaultRuntimePath = "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs";
+        private const string DeferredDecalPassPath = "Assets/_Project/Scripts/Visor/DeferredDecalPass.cs";
         private const string DiegeticVisorLensRuntimePath = "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs";
+        private const string DryVolumeFeaturePath = "Assets/_Project/Scripts/Visor/HectonDryVolumeFeature.cs";
+        private const string VoxelSsaoFeaturePath = "Assets/_Project/Scripts/Visor/HectonVoxelSsaoFeature.cs";
         private const string AtmosphereSootFeaturePath = "Assets/_Project/Scripts/Visor/HectonAtmosphereSootFeature.cs";
         private const string FoveatedRenderCommanderPath = "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs";
+        private const string SinglePassOceanFeaturePath = "Assets/_Project/Scripts/Rendering/OceanSinglePass/HectonSinglePassOceanFeature.cs";
         private const string TextureGuardPath = "Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs";
         private const string UnderwaterVisualsPath = "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs";
         private const string QuestUrpGuid = "d9c4cd6a763fec04a913c6a149663003";
@@ -55,10 +59,15 @@ namespace Hecton8.Editor
             ValidateBrownoutRenderFeature();
             ValidateVisorUberPostFeature();
             ValidateDeferredCausticsRenderFeature();
+            ValidateDeferredDecalPassRenderGraphDependency();
             ValidateAdditionalRenderingDataVaultFinally();
             ValidateAtmosphereSootRenderFeature();
             ValidateFoveatedRenderCommanderDataVault();
             ValidateRuntimeTextureDescCopyTokens();
+            ValidateRuntimeRenderGraphStaticCallbacks();
+            ValidateOceanWakeRenderGraphZeroGcTokens();
+            ValidateDryVolumeRenderGraphTextureDependency();
+            ValidateVoxelSsaoContinuousQuality();
             ValidateCameraTexturePolicy();
             ValidateFoveationMock();
         }
@@ -256,6 +265,8 @@ namespace Hecton8.Editor
             AssertContains(feature, "runtimeState = default;", BrownoutRenderFeaturePath, "brownout runtime state uses allocation-proof field assignments");
             AssertNotContains(feature, "new RuntimeState(", BrownoutRenderFeaturePath, "brownout hot runtime state must not use new token");
             AssertNotContains(feature, "private readonly struct RuntimeState", BrownoutRenderFeaturePath, "brownout runtime state must remain assignable without constructor token");
+            AssertNotContains(feature, "new BrownoutGlobalsDTO(", BrownoutRenderFeaturePath, "brownout hot globals must use default field assignments");
+            AssertNotContains(feature, "new Vector4(", BrownoutRenderFeaturePath, "brownout hot vector payloads must use default field assignments");
             AssertNotContains(feature, "new TextureDesc(sourceDesc)", BrownoutRenderFeaturePath, "brownout hot rendergraph descriptor must use struct copy without new token");
             AssertTokenAfter(feature, "if (cameraData.renderType != CameraRenderType.Base)", "TextureHandle sourceTexture = resourceData.activeColorTexture;", BrownoutRenderFeaturePath, "brownout rendergraph base-camera guard must precede texture use");
             AssertTokenAfter(feature, "if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)", "Camera renderCamera = renderingData.cameraData.camera;", BrownoutRenderFeaturePath, "brownout skip guard must precede camera state build");
@@ -294,6 +305,8 @@ namespace Hecton8.Editor
             AssertContains(feature, "context.cmd.SetGlobalTexture(ShaderConstants.CrackTextureId, data.CrackTexture);", VisorUberPostFeaturePath, "visor uber post binds crack texture through command buffer");
             AssertNotContains(feature, "new RuntimeState(", VisorUberPostFeaturePath, "visor uber post hot runtime state must not use new token");
             AssertNotContains(feature, "private readonly struct RuntimeState", VisorUberPostFeaturePath, "visor uber post runtime state must remain assignable without constructor token");
+            AssertNotContains(feature, "new Vector4(", VisorUberPostFeaturePath, "visor uber post hot vector payloads must use default field assignments");
+            AssertNotContains(feature, "new Vector3(", VisorUberPostFeaturePath, "visor uber post hot waterline samples must use default field assignments");
             AssertNotContains(feature, "new TextureDesc(sourceDesc);", VisorUberPostFeaturePath, "visor uber post hot rendergraph descriptors must use struct copy without new token");
             AssertNotContains(noirFeature, "new TextureDesc(sourceDesc);", VisorUberPostNoirFeaturePath, "unified noir hot rendergraph descriptor must use struct copy without new token");
             AssertNotContains(feature, "BindStaticPostTextures();", VisorUberPostFeaturePath, "visor uber post must not hide post textures behind material state mutation");
@@ -377,6 +390,7 @@ namespace Hecton8.Editor
             AssertContains(feature, "HomeostasisBrain.GlobalQualityWeight", AtmosphereSootFeaturePath, "atmosphere soot consumes continuous global quality scalar");
             AssertContains(feature, "ResolveSootQualityCurve01()", AtmosphereSootFeaturePath, "atmosphere soot applies continuous quality curve");
             AssertContains(feature, "math.lerp(0.68f, 1f, qualityCurve01)", AtmosphereSootFeaturePath, "atmosphere soot radius scales continuously");
+            AssertNotContains(feature, "new Vector4(", AtmosphereSootFeaturePath, "atmosphere soot hot vector payloads must use default field assignments");
             AssertNotContains(feature, "new TextureDesc(sourceDesc)", AtmosphereSootFeaturePath, "atmosphere soot hot rendergraph descriptor must use struct copy without new token");
             AssertTokenAfter(feature, "if (cameraData.renderType != CameraRenderType.Base)", "TextureHandle sourceTexture = resourceData.activeColorTexture;", AtmosphereSootFeaturePath, "atmosphere soot rendergraph base-camera guard must precede texture use");
             AssertTokenAfter(feature, "if (renderingData.cameraData.cameraType != CameraType.Game)", "if (!_pass.HasPreparedResources())", AtmosphereSootFeaturePath, "atmosphere soot camera guard must precede resource guard");
@@ -453,6 +467,32 @@ namespace Hecton8.Editor
                 "vault.ReleaseWriteLock(in handle, OwnerSystem);");
         }
 
+        private static void ValidateDeferredDecalPassRenderGraphDependency()
+        {
+            string feature = ReadRequiredText(DeferredDecalPassPath);
+            AssertNotContains(feature, "_material.SetTexture(ShaderConstants.DecalAtlasId", DeferredDecalPassPath, "deferred decal atlas must not be hidden material state");
+            AssertContains(feature, "private RTHandle _decalAtlasHandle;", DeferredDecalPassPath, "deferred decal caches atlas RTHandle outside render func");
+            AssertContains(feature, "_pass.PrepareDecalAtlasHandleCold(settings);", DeferredDecalPassPath, "deferred decal prepares atlas wrapper on cold create path");
+            AssertContains(feature, "TextureHandle decalAtlasTexture = TextureHandle.nullHandle;", DeferredDecalPassPath, "deferred decal carries nullable atlas handle through RenderGraph");
+            AssertContains(feature, "decalAtlasTexture = renderGraph.ImportTexture(decalAtlasHandle);", DeferredDecalPassPath, "deferred decal imports atlas texture into RenderGraph");
+            AssertContains(feature, "builder.UseTexture(decalAtlasTexture, AccessFlags.Read);", DeferredDecalPassPath, "deferred decal declares atlas read before render func");
+            AssertContains(feature, "context.cmd.SetGlobalTexture(ShaderConstants.DecalAtlasId, data.DecalAtlas);", DeferredDecalPassPath, "deferred decal binds atlas through command buffer");
+            AssertContains(feature, "ReleaseDecalAtlasHandle();", DeferredDecalPassPath, "deferred decal releases cached atlas wrapper");
+            AssertTokenNotBetween(
+                feature,
+                "public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)",
+                "RTHandles.Alloc(",
+                "using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<PassData>(",
+                DeferredDecalPassPath,
+                "deferred decal must not allocate atlas RTHandle inside RecordRenderGraph");
+            AssertTokenAfter(
+                feature,
+                "decalAtlasTexture = renderGraph.ImportTexture(decalAtlasHandle);",
+                "builder.UseTexture(decalAtlasTexture, AccessFlags.Read);",
+                DeferredDecalPassPath,
+                "deferred decal imported atlas must be declared before render func");
+        }
+
         private static void ValidateFoveatedRenderCommanderDataVault()
         {
             string commander = ReadRequiredText(FoveatedRenderCommanderPath);
@@ -505,6 +545,65 @@ namespace Hecton8.Editor
             AssertNoRuntimeSourceRegex("Assets/_Project/Scripts/Visor", @"new TextureDesc\([A-Za-z_][A-Za-z0-9_]*Desc\)", "visor rendergraph descriptor copy constructors must use struct assignment");
             AssertNoRuntimeSourceRegex("Assets/_Project/Scripts/Rendering", @"new TextureDesc\([A-Za-z_][A-Za-z0-9_]*Desc\)", "rendering rendergraph descriptor copy constructors must use struct assignment");
             AssertNoRuntimeSourceRegex("Assets/_Project/Scripts/UI", @"new TextureDesc\([A-Za-z_][A-Za-z0-9_]*Desc\)", "UI rendergraph descriptor copy constructors must use struct assignment");
+        }
+
+        private static void ValidateRuntimeRenderGraphStaticCallbacks()
+        {
+            AssertNoRuntimeSourceToken("Assets/_Project/Scripts/Visor", "SetRenderFunc((", "visor RenderGraph callbacks must be static to forbid hidden captures");
+            AssertNoRuntimeSourceToken("Assets/_Project/Scripts/Rendering", "SetRenderFunc((", "rendering RenderGraph callbacks must be static to forbid hidden captures");
+            AssertNoRuntimeSourceToken("Assets/_Project/Scripts/UI", "SetRenderFunc((", "UI RenderGraph callbacks must be static to forbid hidden captures");
+            AssertNoRuntimeSourceToken("Assets/_Project/Scripts/Graphics/VR", "SetRenderFunc((", "VR RenderGraph callbacks must be static to forbid hidden captures");
+        }
+
+        private static void ValidateOceanWakeRenderGraphZeroGcTokens()
+        {
+            string feature = ReadRequiredText(SinglePassOceanFeaturePath);
+            AssertTokenNotBetween(
+                feature,
+                "builder.SetRenderFunc(static (WakePassData data, ComputeGraphContext context) =>",
+                "new Vector4(",
+                "});",
+                SinglePassOceanFeaturePath,
+                "ocean wake rendergraph callback must use default Vector4 fields, not constructor tokens");
+        }
+
+        private static void ValidateDryVolumeRenderGraphTextureDependency()
+        {
+            string feature = ReadRequiredText(DryVolumeFeaturePath);
+            AssertNotContains(feature, "_restoreMaterial.SetTexture(ShaderConstants.OceanCameraColorTextureId", DryVolumeFeaturePath, "dry volume restore must not hide ocean camera color as material state");
+            AssertNotContains(feature, "IOceanVisualBridge bridge = OceanVisualBridgeRegistry.Active;", DryVolumeFeaturePath, "dry volume must not depend on Crest/global camera-color polling");
+            AssertNotContains(feature, "RTHandles.Alloc(oceanCameraColorTexture);", DryVolumeFeaturePath, "dry volume must not allocate texture wrappers from LateFrameTick");
+            AssertNotContains(feature, "public void LateFrameTick()", DryVolumeFeaturePath, "dry volume pre-underwater copy must replace late-frame global texture caching");
+            AssertNotContains(feature, "GlobalRegistry.TryRegisterLateFrameTickable", DryVolumeFeaturePath, "dry volume render feature must not register a presentation tick just to cache textures");
+            AssertContains(feature, "private sealed class PreUnderwaterColorCopyPass", DryVolumeFeaturePath, "dry volume owns a first-party pre-underwater color copy pass");
+            AssertContains(feature, "(RenderPassEvent)((int)settings.injectionPoint - 1)", DryVolumeFeaturePath, "dry volume pre-copy runs before the underwater pass");
+            AssertContains(feature, "(RenderPassEvent)((int)settings.injectionPoint + 1)", DryVolumeFeaturePath, "dry volume restore runs after the underwater pass");
+            AssertContains(feature, "cameraData.cameraType == CameraType.SceneView", DryVolumeFeaturePath, "dry volume rendergraph skips editor scene-view cameras");
+            AssertContains(feature, "cameraData.renderType != CameraRenderType.Base", DryVolumeFeaturePath, "dry volume rendergraph skips overlay cameras");
+            AssertContains(feature, "cameraType == CameraType.SceneView", DryVolumeFeaturePath, "dry volume AddRenderPasses skips editor scene-view cameras");
+            AssertContains(feature, "if (renderingData.cameraData.renderType != CameraRenderType.Base)", DryVolumeFeaturePath, "dry volume AddRenderPasses skips overlay cameras");
+            AssertContains(feature, "bool hasDryVolumes = HectonDryVolumeStencilSource.ActiveSourceCount > 0;", DryVolumeFeaturePath, "dry volume only allocates pre-underwater copy target when dry volumes exist");
+            AssertContains(feature, "_preUnderwaterCopyPass.EnsureTarget(renderingData.cameraData.cameraTargetDescriptor);", DryVolumeFeaturePath, "dry volume allocates/resizes its copy target before restore setup");
+            AssertTokenAfter(feature, "if (renderingData.cameraData.renderType != CameraRenderType.Base)", "_preUnderwaterCopyPass.EnsureTarget(renderingData.cameraData.cameraTargetDescriptor);", DryVolumeFeaturePath, "dry volume overlay guard must precede copy-target allocation");
+            AssertContains(feature, "RenderingUtils.ReAllocateHandleIfNeeded(", DryVolumeFeaturePath, "dry volume pre-copy uses pooled RTHandle resize policy");
+            AssertContains(feature, "TextureHandle destinationTexture = renderGraph.ImportTexture(_preUnderwaterColorTexture);", DryVolumeFeaturePath, "dry volume imports pre-underwater copy target into RenderGraph");
+            AssertContains(feature, "TextureHandle oceanCameraColorTexture = renderGraph.ImportTexture(_preUnderwaterColorTexture);", DryVolumeFeaturePath, "dry volume imports pre-underwater color into restore RenderGraph");
+            AssertContains(feature, "builder.UseTexture(oceanCameraColorTexture, AccessFlags.Read);", DryVolumeFeaturePath, "dry volume declares ocean camera color read");
+            AssertContains(feature, "context.cmd.SetGlobalTexture(ShaderConstants.OceanCameraColorTextureId, data.oceanCameraColor);", DryVolumeFeaturePath, "dry volume binds ocean camera color through render command buffer");
+            AssertContains(feature, "_preUnderwaterCopyPass?.Release();", DryVolumeFeaturePath, "dry volume releases owned pre-underwater copy target");
+        }
+
+        private static void ValidateVoxelSsaoContinuousQuality()
+        {
+            string feature = ReadRequiredText(VoxelSsaoFeaturePath);
+            AssertNotContains(feature, "float renderScale = math.clamp(_settings.renderScale, 0.25f, 1f);", VoxelSsaoFeaturePath, "voxel SSAO render scale must not stay authored-fixed");
+            AssertContains(feature, "float globalQualityWeight01 = ResolveGlobalQualityWeight01();", VoxelSsaoFeaturePath, "voxel SSAO reads continuous global quality");
+            AssertContains(feature, "float renderScale = ResolveRenderScale(_settings, qualityCurve01);", VoxelSsaoFeaturePath, "voxel SSAO scales render size continuously");
+            AssertContains(feature, "passData.paramsA = BuildParamsA(_settings, projectionScale, qualityCurve01);", VoxelSsaoFeaturePath, "voxel SSAO scales visual payload continuously");
+            AssertContains(feature, "result.z = math.max(0f, settings.intensity * math.lerp(0.42f, 1f, quality));", VoxelSsaoFeaturePath, "voxel SSAO intensity has survival-to-overkill curve");
+            AssertContains(feature, "cameraData.cameraType == CameraType.SceneView", VoxelSsaoFeaturePath, "voxel SSAO skips editor scene-view cameras");
+            AssertContains(feature, "if (cameraData.renderType != CameraRenderType.Base)", VoxelSsaoFeaturePath, "voxel SSAO rendergraph skips overlay cameras");
+            AssertContains(feature, "if (renderingData.cameraData.renderType != CameraRenderType.Base)", VoxelSsaoFeaturePath, "voxel SSAO AddRenderPasses skips overlay cameras");
         }
 
         private static void ValidateFoveationMock()

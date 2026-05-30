@@ -138,20 +138,20 @@ namespace Hecton8.Animation.IK
         [FieldOffset(92)] public float BurstSolveMicros;
     }
 
-    public static class LeviathanTerrainIkBlackBox
+    public static unsafe class LeviathanTerrainIkBlackBox
     {
         private const int DumpHeaderBytes = 20;
         private const uint DumpMagic = 0x4C54494Bu;
         private const uint DumpVersion = 1u;
+        private const string DumpPayloadLabel = "leviathanTerrainIkTelemetryDumpPayload";
 
-        public static unsafe bool TryDumpTelemetry(
+        public static bool TryDumpTelemetry(
             string path,
             NativeArray<LeviathanTerrainIkTelemetryEntry>.ReadOnly telemetryRing,
             NativeArray<int>.ReadOnly telemetryCursor)
         {
-            _ = path;
-
-            if (!LeviathanTerrainIkLayout.Validate() ||
+            if (string.IsNullOrEmpty(path) ||
+                !LeviathanTerrainIkLayout.Validate() ||
                 !telemetryRing.IsCreated ||
                 telemetryRing.Length < LeviathanTerrainIkConstants.TelemetryCapacity ||
                 !telemetryCursor.IsCreated ||
@@ -167,15 +167,48 @@ namespace Hecton8.Animation.IK
                 ? PositiveModulo(cursor - dumpCount, ringLength)
                 : 0;
 
-            for (int i = 0; i < dumpCount; i++)
+            int entryBytes = UnsafeUtility.SizeOf<LeviathanTerrainIkTelemetryEntry>();
+            if (entryBytes <= 0 || dumpCount > (int.MaxValue - DumpHeaderBytes) / entryBytes)
+                return false;
+
+            int byteCount = DumpHeaderBytes + dumpCount * entryBytes;
+            NativeArray<byte> payload = default;
+            try
             {
-                int sourceIndex = PositiveModulo(startIndex + i, ringLength);
-                _ = telemetryRing[sourceIndex].FrameIndex;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(LeviathanTerrainIkBlackBox),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int writeCursor = 0;
+                WriteUInt32(destination, ref writeCursor, DumpMagic);
+                WriteUInt32(destination, ref writeCursor, DumpVersion);
+                WriteUInt32(destination, ref writeCursor, unchecked((uint)dumpCount));
+                WriteUInt32(destination, ref writeCursor, unchecked((uint)entryBytes));
+                WriteUInt32(destination, ref writeCursor, unchecked((uint)cursor));
+
+                for (int i = 0; i < dumpCount; i++)
+                {
+                    int sourceIndex = PositiveModulo(startIndex + i, ringLength);
+                    WriteEntry(destination, ref writeCursor, telemetryRing[sourceIndex]);
+                }
+
+                return writeCursor == byteCount &&
+                       NativeFaultDumpWriter.TryWriteAll(path, payload, writeCursor);
             }
-
-            return true;
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(LeviathanTerrainIkBlackBox),
+                    DumpPayloadLabel);
+            }
         }
-
         public static bool TryDumpTelemetryOnFault(
             string path,
             NativeArray<LeviathanTerrainIkTelemetryEntry>.ReadOnly telemetryRing,

@@ -1,0 +1,63 @@
+{
+  "artifact": "APEX_AUDIT_NATIVE_STATE_AUDIOLOG_20260528",
+  "agentId": "AUDIT_NATIVE_STATE",
+  "domain": "NativeArray/GlobalDataVault/MonoBehaviour lifecycle",
+  "createdLocal": "2026-05-28T18:47:00+04:00",
+  "scope": [
+    "Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs"
+  ],
+  "changes": {
+    "bufferIds": [
+      "AudioLogPlaybackQueue=70672",
+      "AudioLogEncryptedFragmentHashes=70673",
+      "AudioLogEncryptedFragmentRecoveredBits=70674",
+      "AudioLogTelemetryRing=70675",
+      "AudioLogTelemetryCursor=70676"
+    ],
+    "owner": "SystemID.Audio",
+    "helperProof": [
+      "AudioLogSystem.cs:1014 IsAudioLogVaultHandle checks exact BufferID, SystemID.Audio, and generation.",
+      "AudioLogSystem.cs:981 EnsureVaultHandle reuses only exact AudioLog handles.",
+      "AudioLogSystem.cs:1008 ReleaseVaultHandle releases only exact AudioLog handles.",
+      "AudioLogSystem.cs:1029 TryReadVaultBuffer reads only exact AudioLog handles.",
+      "AudioLogSystem.cs:1047 TryAcquireVaultWrite acquires only exact AudioLog handles.",
+      "AudioLogSystem.cs:1075 ReleaseVaultWrite releases only exact AudioLog write locks.",
+      "AudioLogSystem.cs:1196-1197 telemetry write path requires exact ring/cursor handles."
+    ],
+    "dataVaultRebind": "AudioLogSystem.cs:244 pattern-matches IDataVault instead of direct currentService as IDataVault cast."
+  },
+  "verification": {
+    "badPatternScan": {
+      "command": "rg -n \"currentService as IDataVault|previousService as IDataVault|handle\\.BufferID\\s*(==|!=)\\s*0u|IsVaultHandleCreated|IsValidVaultHandle|OwnerSystemID|ReleaseVaultWrite\\(in [^,\\r\\n]+\\)|TryReadVaultBuffer\\(in [^,\\r\\n]+,\\s*[A-Za-z_][A-Za-z0-9_]*Capacity\" Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs",
+      "result": "0 hits"
+    },
+    "zeroGcDiffScan": {
+      "command": "git diff -- AudioLogSystem.cs | rg \"^\\+.*\\b(new|string\\.Format|\\.ToString\\(|\\.Select\\(|\\.Where\\(|\\.OrderBy\\(|\\.GroupBy\\(|foreach\\b)\"",
+      "result": "0 hits"
+    },
+    "layoutDiffScan": {
+      "command": "git diff -- AudioLogSystem.cs | rg \"^\\+.*(StructLayout|FieldOffset|UnsafeUtility\\.SizeOf|Marshal\\.OffsetOf|sizeof\\()\"",
+      "result": "0 hits"
+    },
+    "diffCheck": {
+      "command": "git diff --check -- AudioLogSystem.cs",
+      "result": "exit 0; LF/CRLF warning only"
+    },
+    "diffNumstat": "AudioLogSystem.cs +29 -25",
+    "compile": {
+      "status": "not run",
+      "guardSampleCpuPercent": 97,
+      "activeCompilerLane": "dotnet PID 3560, csc PID 23236",
+      "reason": "Compilation Resource Throttling forbids dotnet build while CPU > 50 or dotnet/csc/VBCSCompiler is active."
+    },
+    "unityImportPlayModeProfiler": {
+      "status": "not run"
+    }
+  },
+  "runtimeClaims": {
+    "steadyFrameDeltaMicrosecondsMeasured": 0,
+    "steadyFrameDeltaMicrosecondsExpected": 0,
+    "cinematicCheat": "No playback, radio, save, or subtitle behavior changed. Patch only narrows Vault descriptor gates.",
+    "continuousScalability": "No binary low-end switch added. Existing AudioLog queue/playback behavior is unchanged."
+  }
+}

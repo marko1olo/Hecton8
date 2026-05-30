@@ -1,0 +1,137 @@
+﻿{
+    "generatedAt":  "2026-05-28T03:06:49.6149432+04:00",
+    "root":  "C:\\hades\\Hecton8",
+    "evidence":  "STATIC_SOURCE only; no Unity domain reload execution",
+    "files":  [
+                  {
+                      "file":  "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+                      "staticTokenCount":  1089,
+                      "subsystemRegistrationResetLines":  [
+                                                              2566
+                                                          ],
+                      "resetRelatedLines":  [
+                                                {
+                                                    "line":  2567,
+                                                    "text":  "private static void ResetStaticState()"
+                                                },
+                                                {
+                                                    "line":  2799,
+                                                    "text":  "SystemDispatcher.ClearAllLanes();"
+                                                },
+                                                {
+                                                    "line":  2803,
+                                                    "text":  "NativeMemorySentinel.AssertNoAllocationsAfterServiceShutdown(nameof(ResetStaticState));"
+                                                },
+                                                {
+                                                    "line":  6844,
+                                                    "text":  "SystemDispatcher.ClearAllLanes();"
+                                                },
+                                                {
+                                                    "line":  7750,
+                                                    "text":  "public static void GlobalReset()"
+                                                },
+                                                {
+                                                    "line":  7752,
+                                                    "text":  "ResetStaticState();"
+                                                }
+                                            ]
+                  },
+                  {
+                      "file":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+                      "staticTokenCount":  361,
+                      "subsystemRegistrationResetLines":  [
+                                                              696,
+                                                              6766,
+                                                              6835
+                                                          ],
+                      "resetRelatedLines":  [
+                                                {
+                                                    "line":  697,
+                                                    "text":  "private static void ResetStaticState()"
+                                                },
+                                                {
+                                                    "line":  705,
+                                                    "text":  "ClearAllLanes();"
+                                                },
+                                                {
+                                                    "line":  1591,
+                                                    "text":  "public static void ClearAllLanes()"
+                                                },
+                                                {
+                                                    "line":  6767,
+                                                    "text":  "private static void ResetStaticState()"
+                                                },
+                                                {
+                                                    "line":  6836,
+                                                    "text":  "private static void ResetStaticState()"
+                                                }
+                                            ]
+                  },
+                  {
+                      "file":  "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+                      "staticTokenCount":  301,
+                      "subsystemRegistrationResetLines":  [
+                                                              767,
+                                                              7089
+                                                          ],
+                      "resetRelatedLines":  [
+                                                {
+                                                    "line":  768,
+                                                    "text":  "private static void ResetStaticState()"
+                                                },
+                                                {
+                                                    "line":  1485,
+                                                    "text":  "Hecton8.Modding.ModLoader.ResetStaticState();"
+                                                },
+                                                {
+                                                    "line":  1486,
+                                                    "text":  "Hecton8.Modding.ModRegistryEvents.ResetStaticState();"
+                                                },
+                                                {
+                                                    "line":  1487,
+                                                    "text":  "BootstrapEvents.ResetStaticState();"
+                                                },
+                                                {
+                                                    "line":  1489,
+                                                    "text":  "SaveEvents.ResetStaticState();"
+                                                },
+                                                {
+                                                    "line":  1490,
+                                                    "text":  "Hecton.Localization.LocalizationEvents.ResetStaticState();"
+                                                },
+                                                {
+                                                    "line":  1491,
+                                                    "text":  "ObjectPoolDiagnostics.ResetStaticState();"
+                                                },
+                                                {
+                                                    "line":  1495,
+                                                    "text":  "AcousticZoneEvents.ResetStaticState();"
+                                                },
+                                                {
+                                                    "line":  1496,
+                                                    "text":  "BaseAirlockEvents.ResetStaticState();"
+                                                },
+                                                {
+                                                    "line":  1497,
+                                                    "text":  "Hecton8.Interaction.InteractionEvents.ResetStaticState();"
+                                                },
+                                                {
+                                                    "line":  1498,
+                                                    "text":  "Hecton8.Crafting.CraftingEvents.ResetStaticState();"
+                                                },
+                                                {
+                                                    "line":  1499,
+                                                    "text":  "Hecton8.Power.PowerGridTelemetryEvents.ResetStaticState();"
+                                                },
+                                                {
+                                                    "line":  1526,
+                                                    "text":  "SystemDispatcher.ClearAllLanes();"
+                                                },
+                                                {
+                                                    "line":  7090,
+                                                    "text":  "private static void ResetStaticState()"
+                                                }
+                                            ]
+                  }
+              ]
+}

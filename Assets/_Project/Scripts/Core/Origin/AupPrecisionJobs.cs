@@ -31,14 +31,12 @@ namespace Hecton8.Core
         public const BufferID MockExtremeAupsBuffer = (BufferID)73207;
         public const BufferID FaultCounterBuffer = (BufferID)73208;
         public const SystemID OwnerSystemId = SystemID.CoreDeterminism;
-        private const uint ScheduleGuardLeaseToken = 1u;
-        private static readonly ulong ScheduledLocalizationMutationGuardMask =
-            AupPrecisionMutationGuardBit(TargetAupsBuffer) |
-            AupPrecisionMutationGuardBit(RuntimeStateBuffer) |
-            AupPrecisionMutationGuardBit(LocalOffsetsBuffer) |
-            AupPrecisionMutationGuardBit(ResultFlagsBuffer) |
-            AupPrecisionMutationGuardBit(TelemetryRingBuffer) |
-            AupPrecisionMutationGuardBit(FaultCounterBuffer);
+        private const uint SchedulePinTargetAups = 1u << 0;
+        private const uint SchedulePinRuntimeState = 1u << 1;
+        private const uint SchedulePinLocalOffsets = 1u << 2;
+        private const uint SchedulePinResultFlags = 1u << 3;
+        private const uint SchedulePinTelemetryRing = 1u << 4;
+        private const uint SchedulePinFaultCounter = 1u << 5;
 
         /// <summary>
         /// Opens or acquires owner-local Vault buffers and resolves transient owner-route views.
@@ -452,11 +450,30 @@ namespace Hecton8.Core
         private static bool TryAcquireScheduledLocalizationGuard(IDataVault vault, out uint pinMask)
         {
             pinMask = 0u;
-            if (vault == null || !vault.TryAcquireMutationGuard(ScheduledLocalizationMutationGuardMask))
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            pinMask = ScheduleGuardLeaseToken;
-            return true;
+            bool locked = false;
+            try
+            {
+                if (!TryLockScheduledLocalizationBuffer(vault, TargetAupsBuffer, SchedulePinTargetAups, ref pinMask) ||
+                    !TryLockScheduledLocalizationBuffer(vault, RuntimeStateBuffer, SchedulePinRuntimeState, ref pinMask) ||
+                    !TryLockScheduledLocalizationBuffer(vault, LocalOffsetsBuffer, SchedulePinLocalOffsets, ref pinMask) ||
+                    !TryLockScheduledLocalizationBuffer(vault, ResultFlagsBuffer, SchedulePinResultFlags, ref pinMask) ||
+                    !TryLockScheduledLocalizationBuffer(vault, TelemetryRingBuffer, SchedulePinTelemetryRing, ref pinMask) ||
+                    !TryLockScheduledLocalizationBuffer(vault, FaultCounterBuffer, SchedulePinFaultCounter, ref pinMask))
+                {
+                    return false;
+                }
+
+                locked = true;
+                return true;
+            }
+            finally
+            {
+                if (!locked)
+                    ReleaseScheduledLocalizationBuffers(vault, pinMask);
+            }
         }
 
         internal static void ReleaseScheduledLocalizationBuffers(IDataVault vault, uint pinMask)
@@ -464,12 +481,30 @@ namespace Hecton8.Core
             if (vault == null || pinMask == 0u)
                 return;
 
-            vault.ReleaseMutationGuard(ScheduledLocalizationMutationGuardMask);
+            TryUnlockScheduledLocalizationBuffer(vault, pinMask, SchedulePinFaultCounter, FaultCounterBuffer);
+            TryUnlockScheduledLocalizationBuffer(vault, pinMask, SchedulePinTelemetryRing, TelemetryRingBuffer);
+            TryUnlockScheduledLocalizationBuffer(vault, pinMask, SchedulePinResultFlags, ResultFlagsBuffer);
+            TryUnlockScheduledLocalizationBuffer(vault, pinMask, SchedulePinLocalOffsets, LocalOffsetsBuffer);
+            TryUnlockScheduledLocalizationBuffer(vault, pinMask, SchedulePinRuntimeState, RuntimeStateBuffer);
+            TryUnlockScheduledLocalizationBuffer(vault, pinMask, SchedulePinTargetAups, TargetAupsBuffer);
         }
 
-        private static ulong AupPrecisionMutationGuardBit(BufferID bufferId)
+        private static bool TryLockScheduledLocalizationBuffer(IDataVault vault, BufferID bufferId, uint pinBit, ref uint pinMask)
         {
-            return 1UL << (unchecked((int)(uint)(int)bufferId) & 63);
+            if ((pinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null || !vault.TryLockBuffer(bufferId, OwnerSystemId))
+                return false;
+
+            pinMask |= pinBit;
+            return true;
+        }
+
+        private static void TryUnlockScheduledLocalizationBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, OwnerSystemId);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -628,14 +663,43 @@ namespace Hecton8.Core
                 return false;
 
             int safeCursor = cursor < 0 || cursor >= ring.Length ? 0 : cursor;
-            _ = ring[safeCursor].Frame;
-            for (int i = 0; i < ring.Length; i++)
+            int byteCount = DumpHeaderBytes + (int)telemetryBytesLong;
+            NativeArray<byte> payload = default;
+            try
             {
-                int sourceIndex = PositiveModulo(safeCursor + i, ring.Length);
-                _ = ring[sourceIndex].PositionHash;
-            }
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(AupPrecisionVault),
+                    "aupPrecisionTelemetryDumpPayload");
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int writeCursor = 0;
+                WriteUInt32(destination, ref writeCursor, DumpMagic);
+                WriteUInt32(destination, ref writeCursor, DumpVersion);
+                WriteUInt32(destination, ref writeCursor, unchecked((uint)ring.Length));
+                WriteUInt32(destination, ref writeCursor, unchecked((uint)stride));
+                WriteUInt32(destination, ref writeCursor, unchecked((uint)safeCursor));
+                WriteUInt32(destination, ref writeCursor, 0u);
 
-            return true;
+                for (int i = 0; i < ring.Length; i++)
+                {
+                    int sourceIndex = PositiveModulo(safeCursor + i, ring.Length);
+                    WriteTelemetryEntry(destination, ref writeCursor, ring[sourceIndex]);
+                }
+
+                return writeCursor == byteCount &&
+                       NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, writeCursor);
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(AupPrecisionVault),
+                    "aupPrecisionTelemetryDumpPayload");
+            }
         }
 
         private static int PositiveModulo(int value, int length)

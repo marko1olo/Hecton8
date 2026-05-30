@@ -2328,25 +2328,40 @@ namespace Hecton8.Visor
             if (!TryResolveTelemetryDumpWindow(out int telemetryCursor, out int count))
                 return;
 
-            _dumpedFault = true;
             try
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
                 string dumpPath = Path.Combine(directory, DumpFileName);
-                using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                WriteBlackBoxDumpHeader(stream, reasonFlags, telemetryCursor);
-                for (int i = 0; i < count; i++)
+                const int headerBytes = 16;
+                const int rowBytes = 64;
+                int byteCount = headerBytes + count * rowBytes;
+                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+                try
                 {
-                    int index = telemetryCursor + i;
-                    if (index >= count)
-                        index -= count;
+                    byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    WriteBlackBoxDumpHeader(new Span<byte>(destination, headerBytes), reasonFlags, telemetryCursor);
+                    byte* rowDestination = destination + headerBytes;
 
-                    if (!TryReadTelemetryDumpEntry(index, out TraumaWoundTelemetryEntry entry))
-                        entry = default;
+                    for (int i = 0; i < count; i++)
+                    {
+                        int index = telemetryCursor + i;
+                        if (index >= count)
+                            index -= count;
 
-                    WriteBlackBoxTelemetryRow(stream, in entry);
+                        if (!TryReadTelemetryDumpEntry(index, out TraumaWoundTelemetryEntry entry))
+                            entry = default;
+
+                        WriteBlackBoxTelemetryRow(new Span<byte>(rowDestination + i * rowBytes, rowBytes), in entry);
+                    }
+
+                    if (NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, byteCount))
+                        _dumpedFault = true;
+                }
+                finally
+                {
+                    if (payload.IsCreated)
+                        payload.Dispose();
                 }
             }
             catch (IOException)
@@ -2408,19 +2423,16 @@ namespace Hecton8.Visor
             return result < 0 ? result + modulus : result;
         }
 
-        private static void WriteBlackBoxDumpHeader(FileStream stream, uint reasonFlags, int telemetryCursor)
+        private static void WriteBlackBoxDumpHeader(Span<byte> header, uint reasonFlags, int telemetryCursor)
         {
-            Span<byte> header = stackalloc byte[16];
             WriteUInt32LittleEndian(header, 0, DumpMagic);
             WriteUInt32LittleEndian(header, 4, reasonFlags);
             WriteUInt32LittleEndian(header, 8, (uint)TelemetryCapacity);
             WriteUInt32LittleEndian(header, 12, (uint)math.max(0, telemetryCursor));
-            stream.Write(header);
         }
 
-        private static void WriteBlackBoxTelemetryRow(FileStream stream, in TraumaWoundTelemetryEntry entry)
+        private static void WriteBlackBoxTelemetryRow(Span<byte> row, in TraumaWoundTelemetryEntry entry)
         {
-            Span<byte> row = stackalloc byte[64];
             WriteUInt32LittleEndian(row, 0, entry.Frame);
             WriteUInt32LittleEndian(row, 4, entry.ActiveDecals);
             WriteUInt32LittleEndian(row, 8, entry.NewDecals);
@@ -2435,7 +2447,6 @@ namespace Hecton8.Visor
             WriteUInt32LittleEndian(row, 44, entry.TotalWritten);
             WriteUInt32LittleEndian(row, 48, entry.MaxActiveThisFrame);
             WriteUInt32LittleEndian(row, 52, entry.LastBallisticFrame);
-            stream.Write(row);
         }
 
         private static void WriteSingleLittleEndian(Span<byte> bytes, int offset, float value)

@@ -12,6 +12,8 @@ namespace Hecton8.Core.Memory
         [SerializeField] private float pulseSpeed = 5f;
         [SerializeField] private float maxSceneOffsetMeters = 100000f;
 
+        private static readonly double StopwatchTicksToSeconds = 1d / System.Diagnostics.Stopwatch.Frequency;
+
         private void OnDrawGizmos()
         {
 #if UNITY_EDITOR
@@ -29,7 +31,8 @@ namespace Hecton8.Core.Memory
             if (!math.all(math.isfinite(p)))
                 return;
 
-            float pulse = 0.55f + (0.45f * math.abs(MathLodApproximation.ApproxSinBhaskara(UnityEngine.Time.realtimeSinceStartup * math.max(0.01f, pulseSpeed))));
+            float pulseTime = (float)(System.Diagnostics.Stopwatch.GetTimestamp() * StopwatchTicksToSeconds);
+            float pulse = 0.55f + (0.45f * math.abs(MathLodApproximation.ApproxSinBhaskara(pulseTime * math.max(0.01f, pulseSpeed))));
             Gizmos.color = new Color(1f, 0.05f, 0.02f, pulse);
             Gizmos.DrawWireCube(
                 ToRuntimePosition(p, HectonFloatingOrigin.CurrentTotalOffsetDouble, math.max(1f, maxSceneOffsetMeters)),

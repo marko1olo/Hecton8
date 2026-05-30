@@ -409,28 +409,28 @@
             if ((_coldReferenceSearchMask & ColdReferenceSeatStrapCoordinator) == 0u)
             {
                 if (seatStrapCoordinator == null)
-                    seatStrapCoordinator = GetComponentInChildren<LifePodSeatStrapCoordinator>(true);
+                    seatStrapCoordinator = ComponentReferenceUtility.ResolveOwnedComponent<LifePodSeatStrapCoordinator>(transform);
                 _coldReferenceSearchMask |= ColdReferenceSeatStrapCoordinator;
             }
 
             if ((_coldReferenceSearchMask & ColdReferenceDamageSystem) == 0u)
             {
                 if (damageSystem == null)
-                    damageSystem = GetComponentInChildren<LifePodDamageSystem>(true);
+                    damageSystem = ComponentReferenceUtility.ResolveOwnedComponent<LifePodDamageSystem>(transform);
                 _coldReferenceSearchMask |= ColdReferenceDamageSystem;
             }
 
             if ((_coldReferenceSearchMask & ColdReferenceVentValve) == 0u)
             {
                 if (ventValve == null)
-                    ventValve = GetComponentInChildren<VRValveWheelHandle>(true);
+                    ventValve = ComponentReferenceUtility.ResolveOwnedComponent<VRValveWheelHandle>(transform);
                 _coldReferenceSearchMask |= ColdReferenceVentValve;
             }
 
             if ((_coldReferenceSearchMask & ColdReferenceScrubberSocket) == 0u)
             {
                 if (o2ScrubberSocket == null)
-                    o2ScrubberSocket = GetComponentInChildren<PhysicalBatteryCompartment>(true);
+                    o2ScrubberSocket = ComponentReferenceUtility.ResolveOwnedComponent<PhysicalBatteryCompartment>(transform);
                 if (o2ScrubberSocket != null)
                     o2ScrubberSocket.RefreshBatteryToolCacheCold();
                 _coldReferenceSearchMask |= ColdReferenceScrubberSocket;
@@ -439,7 +439,7 @@
             if ((_coldReferenceSearchMask & ColdReferenceBiosText) == 0u)
             {
                 if (biosCrtText == null)
-                    biosCrtText = GetComponentInChildren<TMP_Text>(true);
+                    biosCrtText = ComponentReferenceUtility.ResolveOwnedComponent<TMP_Text>(transform);
                 _coldReferenceSearchMask |= ColdReferenceBiosText;
             }
 

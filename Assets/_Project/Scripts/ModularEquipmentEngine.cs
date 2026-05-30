@@ -2981,35 +2981,39 @@ namespace Hecton8.Tools
                 bool useFlashlightRing = views.FlashlightTelemetryRing.IsCreated && views.FlashlightTelemetryRing.Length > 0;
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string dumpPath = Path.Combine(projectRoot, EquipmentFaultDumpPath);
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                uint header = useFlashlightRing ? 0x46545848u : 0x45515448u; // H8TF / H8TE
+                uint rowCount = useFlashlightRing
+                    ? unchecked((uint)views.FlashlightTelemetryRing.Length)
+                    : unchecked((uint)views.EquipmentTelemetryRing.Length);
+                uint rowSize = useFlashlightRing
+                    ? unchecked((uint)UnsafeUtility.SizeOf<FlashlightTelemetryEntry>())
+                    : unchecked((uint)UnsafeUtility.SizeOf<EquipmentTelemetryEntry>());
+                int byteLength = checked((int)(rowCount * rowSize));
+                const int HeaderBytes = 16;
+                NativeArray<byte> payload = new NativeArray<byte>(HeaderBytes + byteLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                try
                 {
-                    uint header = useFlashlightRing ? 0x46545848u : 0x45515448u; // H8TF / H8TE
-                    uint rowCount = useFlashlightRing
-                        ? unchecked((uint)views.FlashlightTelemetryRing.Length)
-                        : unchecked((uint)views.EquipmentTelemetryRing.Length);
-                    uint rowSize = useFlashlightRing
-                        ? unchecked((uint)UnsafeUtility.SizeOf<FlashlightTelemetryEntry>())
-                        : unchecked((uint)UnsafeUtility.SizeOf<EquipmentTelemetryEntry>());
-                    Span<byte> headerBytes = stackalloc byte[16];
+                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    Span<byte> headerBytes = new Span<byte>(target, HeaderBytes);
                     WriteUInt32LE(headerBytes, 0, header);
                     WriteUInt32LE(headerBytes, 4, rowCount);
                     WriteUInt32LE(headerBytes, 8, rowSize);
                     WriteUInt32LE(headerBytes, 12, _equipmentTickIndex);
-                    stream.Write(headerBytes);
 
                     void* source = useFlashlightRing
                         ? views.FlashlightTelemetryRing.GetUnsafeReadOnlyPtr()
                         : views.EquipmentTelemetryRing.GetUnsafeReadOnlyPtr();
-                    int byteLength = checked((int)(rowCount * rowSize));
-                    stream.Write(new ReadOnlySpan<byte>(source, byteLength));
-                }
+                    UnsafeUtility.MemCpy(target + HeaderBytes, source, byteLength);
+                    if (!NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, HeaderBytes + byteLength))
+                        return false;
 
-                _equipmentFaultDumped = true;
-                return true;
+                    _equipmentFaultDumped = true;
+                    return true;
+                }
+                finally
+                {
+                    payload.Dispose();
+                }
             }
             catch (Exception)
             {

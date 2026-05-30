@@ -6541,7 +6541,7 @@ namespace Hecton8.Audio
             float distance = 0f;
             if (!isPlayerOwnedImpact)
             {
-                AbsoluteUniversePosition impactAup = impactSignal.ResolvePointAup();
+                AbsoluteUniversePosition impactAup = AbsoluteUniversePosition.FromAbsolutePosition(impactSignal.ResolvePointAupMeters());
                 if (!TryResolveBoundPlayerDistanceWithin(in impactAup, maxDistance, out distance))
                     return;
             }
@@ -12426,20 +12426,20 @@ namespace Hecton8.Audio
             if (!TryReadGranularTelemetryRing(out _))
                 return;
 
-            if (Interlocked.Exchange(ref _granularTelemetryDumped, 1) != 0)
+            if (Volatile.Read(ref _granularTelemetryDumped) != 0)
                 return;
 
             try
             {
-                string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string directory = Path.Combine(root, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                WriteGranularTelemetryDumpCold(Path.Combine(directory, "Dump_PROCEDURAL_SYNTH.h8dump"));
-                WriteGranularTelemetryDumpCold(Path.Combine(directory, "Dump_PROCEDURAL_SYNTH.bin"));
-                WriteGranularTelemetryDumpCold(Path.Combine(directory, "Dump_STRUCTURAL_ACOUSTICS_LEAD.bin"));
-                WriteGranularTelemetryDumpCold(Path.Combine(directory, "Dump_ACOUSTIC_REFLECTION_MAPPER.bin"));
-                WriteGranularTelemetryDumpCold(Path.Combine(directory, "Dump_KINETIC_IMPACT_ACOUSTICS.bin"));
-                WriteGranularTelemetryDumpCold(Path.Combine(directory, "Dump_SHINOBU_351.bin"));
+                bool wrote =
+                    TryWriteGranularTelemetryDumpCold("Docs/AgentLogs/Dump_PROCEDURAL_SYNTH.h8dump") &
+                    TryWriteGranularTelemetryDumpCold("Docs/AgentLogs/Dump_PROCEDURAL_SYNTH.bin") &
+                    TryWriteGranularTelemetryDumpCold("Docs/AgentLogs/Dump_STRUCTURAL_ACOUSTICS_LEAD.bin") &
+                    TryWriteGranularTelemetryDumpCold("Docs/AgentLogs/Dump_ACOUSTIC_REFLECTION_MAPPER.bin") &
+                    TryWriteGranularTelemetryDumpCold("Docs/AgentLogs/Dump_KINETIC_IMPACT_ACOUSTICS.bin") &
+                    TryWriteGranularTelemetryDumpCold("Docs/AgentLogs/Dump_SHINOBU_351.bin");
+                if (wrote)
+                    Interlocked.Exchange(ref _granularTelemetryDumped, 1);
             }
             catch (IOException)
             {
@@ -12449,31 +12449,57 @@ namespace Hecton8.Audio
             }
         }
 
-        private void WriteGranularTelemetryDumpCold(string path)
+        private bool TryWriteGranularTelemetryDumpCold(string path)
         {
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            const int HeaderBytes = 8;
+            const int RowBytes = 44;
+            if (!TryReadGranularTelemetryRing(out NativeArray<GranularAudioTelemetryEntry>.ReadOnly granularTelemetryRing) ||
+                !granularTelemetryRing.IsCreated ||
+                granularTelemetryRing.Length <= 0)
             {
-                writer.Write(GranularTelemetryCapacity);
-                writer.Write(_granularTelemetryCursor);
-                if (!TryReadGranularTelemetryRing(out NativeArray<GranularAudioTelemetryEntry>.ReadOnly granularTelemetryRing))
-                    return;
+                return false;
+            }
+
+            NativeArray<byte> payload = default;
+            try
+            {
+                int byteCount = HeaderBytes + granularTelemetryRing.Length * RowBytes;
+                const string dumpPayloadLabel = "GranularAudioTelemetryDumpPayload";
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(PlayerCriticalProceduralAudioRenderer),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
+                int offset = 0;
+
+                WriteInt32LittleEndian(payload, ref offset, GranularTelemetryCapacity);
+                WriteInt32LittleEndian(payload, ref offset, _granularTelemetryCursor);
 
                 for (int i = 0; i < granularTelemetryRing.Length; i++)
                 {
                     GranularAudioTelemetryEntry entry = granularTelemetryRing[i];
-                    writer.Write(entry.SampleIndex);
-                    writer.Write(entry.Stress01);
-                    writer.Write(entry.StressDerivative01);
-                    writer.Write(entry.Depth01);
-                    writer.Write(entry.Impact01);
-                    writer.Write(entry.MixedSample);
-                    writer.Write(entry.PeakImpactEnergyJoules);
-                    writer.Write(entry.ActiveVoices);
-                    writer.Write(entry.VoiceLimit);
-                    writer.Write(entry.ActiveEchoTaps);
-                    writer.Write(entry.Flags);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.SampleIndex);
+                    WriteFloatLittleEndian(payload, ref offset, entry.Stress01);
+                    WriteFloatLittleEndian(payload, ref offset, entry.StressDerivative01);
+                    WriteFloatLittleEndian(payload, ref offset, entry.Depth01);
+                    WriteFloatLittleEndian(payload, ref offset, entry.Impact01);
+                    WriteFloatLittleEndian(payload, ref offset, entry.MixedSample);
+                    WriteFloatLittleEndian(payload, ref offset, entry.PeakImpactEnergyJoules);
+                    WriteInt32LittleEndian(payload, ref offset, entry.ActiveVoices);
+                    WriteInt32LittleEndian(payload, ref offset, entry.VoiceLimit);
+                    WriteInt32LittleEndian(payload, ref offset, entry.ActiveEchoTaps);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.Flags);
                 }
+
+                return offset == byteCount && NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+            }
+            finally
+            {
+                const string dumpPayloadLabel = "GranularAudioTelemetryDumpPayload";
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(PlayerCriticalProceduralAudioRenderer),
+                    dumpPayloadLabel);
             }
         }
 
@@ -12482,15 +12508,13 @@ namespace Hecton8.Audio
             if (!TryReadPrologueTransitionTelemetryRing(out _))
                 return;
 
-            if (Interlocked.Exchange(ref _prologueTransitionTelemetryDumped, 1) != 0)
+            if (Volatile.Read(ref _prologueTransitionTelemetryDumped) != 0)
                 return;
 
             try
             {
-                string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string directory = Path.Combine(root, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                WritePrologueTransitionTelemetryDumpCold(Path.Combine(directory, "Dump_PROLOGUE_ACOUSTIC_ORCHESTRATOR.bin"));
+                if (TryWritePrologueTransitionTelemetryDumpCold("Docs/AgentLogs/Dump_PROLOGUE_ACOUSTIC_ORCHESTRATOR.bin"))
+                    Interlocked.Exchange(ref _prologueTransitionTelemetryDumped, 1);
             }
             catch (IOException)
             {
@@ -12500,36 +12524,62 @@ namespace Hecton8.Audio
             }
         }
 
-        private void WritePrologueTransitionTelemetryDumpCold(string path)
+        private bool TryWritePrologueTransitionTelemetryDumpCold(string path)
         {
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            const int HeaderBytes = 8;
+            const int RowBytes = 52;
+            if (!TryReadPrologueTransitionTelemetryRing(out NativeArray<PrologueAudioTransitionTelemetryEntry>.ReadOnly prologueTelemetryRing) ||
+                !prologueTelemetryRing.IsCreated ||
+                prologueTelemetryRing.Length <= 0)
             {
-                writer.Write(PrologueTransitionTelemetryCapacity);
-                writer.Write(_prologueTransitionTelemetryCursor);
-                if (!TryReadPrologueTransitionTelemetryRing(out NativeArray<PrologueAudioTransitionTelemetryEntry>.ReadOnly prologueTelemetryRing))
-                    return;
+                return false;
+            }
+
+            NativeArray<byte> payload = default;
+            try
+            {
+                int byteCount = HeaderBytes + prologueTelemetryRing.Length * RowBytes;
+                const string dumpPayloadLabel = "PrologueTransitionTelemetryDumpPayload";
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(PlayerCriticalProceduralAudioRenderer),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
+                int offset = 0;
+
+                WriteInt32LittleEndian(payload, ref offset, PrologueTransitionTelemetryCapacity);
+                WriteInt32LittleEndian(payload, ref offset, _prologueTransitionTelemetryCursor);
 
                 for (int i = 0; i < prologueTelemetryRing.Length; i++)
                 {
                     PrologueAudioTransitionTelemetryEntry entry = prologueTelemetryRing[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.Sequence);
-                    writer.Write(entry.UniverseVelocityMetersPerSecond);
-                    writer.Write(entry.Heat01);
-                    writer.Write(entry.LowPassCutoffHz);
-                    writer.Write(entry.LfeGain01);
-                    writer.Write(entry.GranularStress01);
-                    writer.Write(entry.SplashdownGain01);
-                    writer.Write(entry.PortalBlend01);
-                    writer.Write(entry.AudioLowPassCutoffHz);
-                    writer.Write(entry.SplashdownSamplesRemaining);
-                    writer.Write(entry.Stage);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.QualityTier);
-                    writer.Write(entry.Reserved);
-                    writer.Write(entry.DspFlags);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.Frame);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.Sequence);
+                    WriteFloatLittleEndian(payload, ref offset, entry.UniverseVelocityMetersPerSecond);
+                    WriteFloatLittleEndian(payload, ref offset, entry.Heat01);
+                    WriteFloatLittleEndian(payload, ref offset, entry.LowPassCutoffHz);
+                    WriteFloatLittleEndian(payload, ref offset, entry.LfeGain01);
+                    WriteFloatLittleEndian(payload, ref offset, entry.GranularStress01);
+                    WriteFloatLittleEndian(payload, ref offset, entry.SplashdownGain01);
+                    WriteFloatLittleEndian(payload, ref offset, entry.PortalBlend01);
+                    WriteFloatLittleEndian(payload, ref offset, entry.AudioLowPassCutoffHz);
+                    WriteInt32LittleEndian(payload, ref offset, entry.SplashdownSamplesRemaining);
+                    WriteByte(payload, ref offset, entry.Stage);
+                    WriteByte(payload, ref offset, entry.Flags);
+                    WriteByte(payload, ref offset, entry.QualityTier);
+                    WriteByte(payload, ref offset, entry.Reserved);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.DspFlags);
                 }
+
+                return offset == byteCount && NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+            }
+            finally
+            {
+                const string dumpPayloadLabel = "PrologueTransitionTelemetryDumpPayload";
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(PlayerCriticalProceduralAudioRenderer),
+                    dumpPayloadLabel);
             }
         }
 
@@ -12538,15 +12588,13 @@ namespace Hecton8.Audio
             if (!TryReadAudioSynthesisTelemetryRing(out _))
                 return;
 
-            if (Interlocked.Exchange(ref _audioSynthesisTelemetryDumped, 1) != 0)
+            if (Volatile.Read(ref _audioSynthesisTelemetryDumped) != 0)
                 return;
 
             try
             {
-                string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string directory = Path.Combine(root, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                WriteAudioSynthesisTelemetryDumpCold(Path.Combine(directory, "Dump_1320_Synthesis.bin"));
+                if (TryWriteAudioSynthesisTelemetryDumpCold("Docs/AgentLogs/Dump_1320_Synthesis.bin"))
+                    Interlocked.Exchange(ref _audioSynthesisTelemetryDumped, 1);
             }
             catch (IOException)
             {
@@ -12556,34 +12604,100 @@ namespace Hecton8.Audio
             }
         }
 
-        private void WriteAudioSynthesisTelemetryDumpCold(string path)
+        private bool TryWriteAudioSynthesisTelemetryDumpCold(string path)
         {
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            const int HeaderBytes = 8;
+            const int RowBytes = 56;
+            if (!TryReadAudioSynthesisTelemetryRing(out NativeArray<AudioSynthesisTelemetryEntry>.ReadOnly telemetryRing) ||
+                !telemetryRing.IsCreated ||
+                telemetryRing.Length <= 0)
             {
-                writer.Write(AudioSynthesisTelemetryCapacity);
-                writer.Write(_audioSynthesisTelemetryCursor);
-                if (!TryReadAudioSynthesisTelemetryRing(out NativeArray<AudioSynthesisTelemetryEntry>.ReadOnly telemetryRing))
-                    return;
+                return false;
+            }
+
+            NativeArray<byte> payload = default;
+            try
+            {
+                int byteCount = HeaderBytes + telemetryRing.Length * RowBytes;
+                const string dumpPayloadLabel = "AudioSynthesisTelemetryDumpPayload";
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(PlayerCriticalProceduralAudioRenderer),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
+                int offset = 0;
+
+                WriteInt32LittleEndian(payload, ref offset, AudioSynthesisTelemetryCapacity);
+                WriteInt32LittleEndian(payload, ref offset, _audioSynthesisTelemetryCursor);
 
                 for (int i = 0; i < telemetryRing.Length; i++)
                 {
                     AudioSynthesisTelemetryEntry entry = telemetryRing[i];
-                    writer.Write(entry.StopwatchTicks);
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.BufferId);
-                    writer.Write(entry.SystemId);
-                    writer.Write(entry.ExpectedGeneration);
-                    writer.Write(entry.ActualGeneration);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.ActivePolyphony);
-                    writer.Write(entry.VoiceLimit);
-                    writer.Write(entry.DspMicroseconds);
-                    writer.Write(entry.GlobalQualityWeight);
-                    writer.Write(entry.FailureCode);
-                    writer.Write(entry.UnderrunCount);
+                    WriteInt64LittleEndian(payload, ref offset, entry.StopwatchTicks);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.Frame);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.BufferId);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.SystemId);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.ExpectedGeneration);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.ActualGeneration);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.Flags);
+                    WriteInt32LittleEndian(payload, ref offset, entry.ActivePolyphony);
+                    WriteInt32LittleEndian(payload, ref offset, entry.VoiceLimit);
+                    WriteFloatLittleEndian(payload, ref offset, entry.DspMicroseconds);
+                    WriteFloatLittleEndian(payload, ref offset, entry.GlobalQualityWeight);
+                    WriteInt32LittleEndian(payload, ref offset, entry.FailureCode);
+                    WriteInt32LittleEndian(payload, ref offset, entry.UnderrunCount);
                 }
+
+                return offset == byteCount && NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
             }
+            finally
+            {
+                const string dumpPayloadLabel = "AudioSynthesisTelemetryDumpPayload";
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(PlayerCriticalProceduralAudioRenderer),
+                    dumpPayloadLabel);
+            }
+        }
+
+        private static void WriteByte(NativeArray<byte> payload, ref int offset, byte value)
+        {
+            payload[offset++] = value;
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, ref int offset, int value)
+        {
+            WriteUInt32LittleEndian(payload, ref offset, unchecked((uint)value));
+        }
+
+        private static void WriteInt64LittleEndian(NativeArray<byte> payload, ref int offset, long value)
+        {
+            WriteUInt64LittleEndian(payload, ref offset, unchecked((ulong)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, ref int offset, uint value)
+        {
+            payload[offset++] = (byte)value;
+            payload[offset++] = (byte)(value >> 8);
+            payload[offset++] = (byte)(value >> 16);
+            payload[offset++] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> payload, ref int offset, ulong value)
+        {
+            payload[offset++] = (byte)value;
+            payload[offset++] = (byte)(value >> 8);
+            payload[offset++] = (byte)(value >> 16);
+            payload[offset++] = (byte)(value >> 24);
+            payload[offset++] = (byte)(value >> 32);
+            payload[offset++] = (byte)(value >> 40);
+            payload[offset++] = (byte)(value >> 48);
+            payload[offset++] = (byte)(value >> 56);
+        }
+
+        private static void WriteFloatLittleEndian(NativeArray<byte> payload, ref int offset, float value)
+        {
+            WriteUInt32LittleEndian(payload, ref offset, math.asuint(value));
         }
 
         private static bool HasGranularVoiceBuffers(ref GranularVoiceVaultViews views)

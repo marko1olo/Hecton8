@@ -545,7 +545,7 @@ namespace Hecton8.Gameplay
                     if (prefab == null)
                         continue;
 
-                    ItemData item = ResolveItemFromPrefab(prefab);
+                    ItemData item = CaptureItemFromPrefabCold(prefab);
                     if (item == null)
                         continue;
 
@@ -568,16 +568,16 @@ namespace Hecton8.Gameplay
             _resolvedLootItems = compacted;
         }
 
-        private static ItemData ResolveItemFromPrefab(GameObject prefab)
+        private static ItemData CaptureItemFromPrefabCold(GameObject prefab)
         {
             if (prefab == null)
                 return null;
 
-            HectonItem hectonItem = prefab.GetComponent<HectonItem>();
+            prefab.TryGetComponent(out HectonItem hectonItem);
             if (hectonItem != null && hectonItem.Data != null)
                 return hectonItem.Data;
 
-            PickupItem pickupItem = prefab.GetComponent<PickupItem>();
+            prefab.TryGetComponent(out PickupItem pickupItem);
             return pickupItem != null ? pickupItem.ItemData : null;
         }
 

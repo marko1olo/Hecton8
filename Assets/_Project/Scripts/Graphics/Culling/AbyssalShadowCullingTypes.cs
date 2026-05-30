@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -504,16 +505,9 @@ namespace Hecton8.Graphics.Culling
             if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return;
 
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-
             int byteCount = telemetry.Length * UnsafeUtility.SizeOf<CullingTelemetryEntry>();
             void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            {
-                stream.Write(new ReadOnlySpan<byte>(source, byteCount));
-            }
+            NativeFaultDumpWriter.TryWriteAll(path, new ReadOnlySpan<byte>(source, byteCount), byteCount);
         }
     }
 }

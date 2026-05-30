@@ -1543,55 +1543,60 @@ namespace Hecton8.VFX
             if (_cameraJuiceTelemetryDumped || !OpenCameraJuiceTelemetryReadOnly(out var telemetry))
                 return;
 
-            string dumpPath = Path.GetFullPath(Path.Combine(
-                Application.dataPath,
-                "..",
-                "Docs",
-                "AgentLogs",
-                "Dump_SHINOBU_354.bin"));
+            const string dumpPath = "Docs/AgentLogs/Dump_SHINOBU_354.bin";
 
+            NativeArray<byte> payload = default;
             try
             {
-                string dumpDirectory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(dumpDirectory))
-                    Directory.CreateDirectory(dumpDirectory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                int count = (int)math.min(_cameraJuiceTelemetryCursor, (uint)CAMERA_JUICE_TELEMETRY_CAPACITY);
+                uint start = _cameraJuiceTelemetryCursor - (uint)count;
+                int startIndex = count > 0 ? (int)(start % (uint)CAMERA_JUICE_TELEMETRY_CAPACITY) : 0;
+                int headerBytes = UnsafeUtility.SizeOf<CameraJuiceTelemetryDumpHeader>();
+                int stride = CameraJuiceTelemetryEntrySizeBytes;
+                int byteCount = headerBytes + (count * stride);
+                CameraJuiceTelemetryDumpHeader header = new CameraJuiceTelemetryDumpHeader
                 {
-                    int count = (int)math.min(_cameraJuiceTelemetryCursor, (uint)CAMERA_JUICE_TELEMETRY_CAPACITY);
-                    uint start = _cameraJuiceTelemetryCursor - (uint)count;
-                    int startIndex = count > 0 ? (int)(start % (uint)CAMERA_JUICE_TELEMETRY_CAPACITY) : 0;
-                    CameraJuiceTelemetryDumpHeader header = new CameraJuiceTelemetryDumpHeader
-                    {
-                        Magic = CameraJuiceTelemetryDumpMagic,
-                        Version = CameraJuiceTelemetryDumpVersion,
-                        EntrySizeBytes = CameraJuiceTelemetryEntrySizeBytes,
-                        Capacity = CAMERA_JUICE_TELEMETRY_CAPACITY,
-                        Cursor = _cameraJuiceTelemetryCursor,
-                        Count = count,
-                        StartIndex = startIndex
-                    };
+                    Magic = CameraJuiceTelemetryDumpMagic,
+                    Version = CameraJuiceTelemetryDumpVersion,
+                    EntrySizeBytes = CameraJuiceTelemetryEntrySizeBytes,
+                    Capacity = CAMERA_JUICE_TELEMETRY_CAPACITY,
+                    Cursor = _cameraJuiceTelemetryCursor,
+                    Count = count,
+                    StartIndex = startIndex
+                };
 
-                    stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<CameraJuiceTelemetryDumpHeader>()));
-                    if (count > 0)
-                    {
-                        byte* telemetryPtr = (byte*)telemetry.GetUnsafeReadOnlyPtr();
-                        int stride = CameraJuiceTelemetryEntrySizeBytes;
-                        int firstCount = math.min(count, CAMERA_JUICE_TELEMETRY_CAPACITY - startIndex);
-                        int secondCount = count - firstCount;
-                        stream.Write(new ReadOnlySpan<byte>(telemetryPtr + (startIndex * stride), firstCount * stride));
-                        if (secondCount > 0)
-                            stream.Write(new ReadOnlySpan<byte>(telemetryPtr, secondCount * stride));
-                    }
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(CameraJuiceSystem),
+                    "CameraJuiceTelemetryDumpPayload");
+
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                UnsafeUtility.MemCpy(payloadPtr, &header, headerBytes);
+                if (count > 0)
+                {
+                    byte* telemetryPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                    int firstCount = math.min(count, CAMERA_JUICE_TELEMETRY_CAPACITY - startIndex);
+                    int firstBytes = firstCount * stride;
+                    int secondCount = count - firstCount;
+                    UnsafeUtility.MemCpy(payloadPtr + headerBytes, telemetryPtr + (startIndex * stride), firstBytes);
+                    if (secondCount > 0)
+                        UnsafeUtility.MemCpy(payloadPtr + headerBytes + firstBytes, telemetryPtr, secondCount * stride);
                 }
 
-                _cameraJuiceTelemetryDumped = true;
+                _cameraJuiceTelemetryDumped = NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, byteCount);
             }
             catch (IOException)
             {
             }
             catch (UnauthorizedAccessException)
             {
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(CameraJuiceSystem),
+                    "CameraJuiceTelemetryDumpPayload");
             }
         }
 

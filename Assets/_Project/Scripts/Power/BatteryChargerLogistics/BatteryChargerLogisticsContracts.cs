@@ -173,7 +173,6 @@ namespace Hecton8.Power
         public VaultGenerationHandle<uint> TelemetryCursor;
         public VaultGenerationHandle<ChargerAtomicCountersDTO> AtomicCounters;
         public VaultGenerationHandle<ChargerProfileDTO> Profiles;
-        public VaultGenerationHandle<byte> CsvScratch;
         public VaultGenerationHandle<InventorySlotDTO> MockInventorySlots;
     }
 
@@ -231,11 +230,6 @@ namespace Hecton8.Power
                 BatteryChargerLogisticsConstants.DefaultProfileCapacity,
                 SystemID.Power,
                 NativeArrayOptions.ClearMemory);
-            handles.CsvScratch = vault.EnsureGenerationHandle<byte>(
-                BatteryChargerLogisticsBufferIds.CsvScratch,
-                BatteryChargerLogisticsConstants.CsvScratchBytes,
-                SystemID.Power,
-                NativeArrayOptions.UninitializedMemory);
             handles.MockInventorySlots = vault.EnsureGenerationHandle<InventorySlotDTO>(
                 BatteryChargerLogisticsBufferIds.MockInventorySlots,
                 safeLinks,
@@ -251,7 +245,6 @@ namespace Hecton8.Power
                    HasBuffer(vault, in handles.TelemetryCursor, 1) &&
                    HasBuffer(vault, in handles.AtomicCounters, BatteryChargerLogisticsConstants.CounterLaneCount) &&
                    HasBuffer(vault, in handles.Profiles, BatteryChargerLogisticsConstants.DefaultProfileCapacity) &&
-                   HasBuffer(vault, in handles.CsvScratch, BatteryChargerLogisticsConstants.CsvScratchBytes) &&
                    HasBuffer(vault, in handles.MockInventorySlots, safeLinks);
         }
 
@@ -785,6 +778,31 @@ namespace Hecton8.Power
         {
             profileCount = 0;
             if (!profiles.IsCreated || profiles.Length <= 0)
+                return false;
+
+            int lineStart = 0;
+            while (lineStart < csvBytes.Length && profileCount < profiles.Length)
+            {
+                int lineEnd = lineStart;
+                while (lineEnd < csvBytes.Length && csvBytes[lineEnd] != (byte)'\n' && csvBytes[lineEnd] != (byte)'\r')
+                    lineEnd++;
+
+                ReadOnlySpan<byte> line = Trim(csvBytes.Slice(lineStart, lineEnd - lineStart));
+                if (TryParseLine(line, out ChargerProfileDTO profile))
+                    profiles[profileCount++] = profile;
+
+                lineStart = lineEnd + 1;
+                while (lineStart < csvBytes.Length && (csvBytes[lineStart] == (byte)'\n' || csvBytes[lineStart] == (byte)'\r'))
+                    lineStart++;
+            }
+
+            return profileCount > 0;
+        }
+
+        public static bool TryParseProfiles(ReadOnlySpan<byte> csvBytes, Span<ChargerProfileDTO> profiles, out int profileCount)
+        {
+            profileCount = 0;
+            if (profiles.Length <= 0)
                 return false;
 
             int lineStart = 0;

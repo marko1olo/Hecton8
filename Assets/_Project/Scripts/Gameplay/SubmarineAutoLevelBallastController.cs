@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Audio;
@@ -415,9 +416,8 @@ namespace Hecton8.Gameplay
             BallastMutationGuardBit(BufferID.RoomWaterLevels) |
             BallastMutationGuardBit(BufferID.RoomVolumes) |
             BallastMutationGuardBit(BufferID.RoomLocalAUPs);
-        private const long MaxBallastProfileCsvBytes = SubmarineBallastConstants.CsvScratchBytes;
 #if UNITY_EDITOR
-        private static readonly byte[] s_ballastProfileCsvImportScratch = new byte[SubmarineBallastConstants.CsvScratchBytes]; // COLD ALLOC: editor ballast CSV import scratch; never held behind a DataVault write lock.
+        private const long MaxBallastProfileCsvBytes = SubmarineBallastConstants.CsvImportByteCapacity;
 #endif
         private const SystemID OwnerSystem = SystemID.VehiclesPhysics;
         private const uint FloodFeedbackSourceHash = 0x56434d53u;
@@ -597,7 +597,6 @@ namespace Hecton8.Gameplay
         private VaultGenerationHandle<SubmarineBallastTelemetryEntry> _ballastTelemetryHandle;
         private VaultGenerationHandle<SubmarineBallastTuningDTO> _ballastTuningHandle;
         private VaultGenerationHandle<SubmarineBallastProfileDTO> _ballastProfilesHandle;
-        private VaultGenerationHandle<byte> _ballastCsvScratchHandle;
         private VaultGenerationHandle<SubmarineGyroCounterDTO> _shinobu332GyroCounterHandle;
         private VaultGenerationHandle<float> _roomWaterLevelsHandle;
         private VaultGenerationHandle<float> _roomVolumesHandle;
@@ -681,7 +680,7 @@ namespace Hecton8.Gameplay
             RefreshSnapshot();
             if (WriteTelemetry(_pendingTelemetryFlags))
                 _pendingTelemetryFlags = 0u;
-            SchedulePidJob(fixedDeltaTime);
+            SchedulePidJobAfterFloodWriteLocks(fixedDeltaTime);
         }
 
         public void PostFixedTick(float fixedDeltaTime)
@@ -1066,7 +1065,6 @@ namespace Hecton8.Gameplay
 
             EnsureBallastProfilesCold(out _);
 #if UNITY_EDITOR
-            EnsureBallastCsvScratchCold(out _);
             TryApplyBallastProfilesCsv();
 #endif
         }
@@ -1090,7 +1088,6 @@ namespace Hecton8.Gameplay
             _ballastTelemetryHandle = default;
             _ballastTuningHandle = default;
             _ballastProfilesHandle = default;
-            _ballastCsvScratchHandle = default;
             _shinobu332GyroCounterHandle = default;
             _roomWaterLevelsHandle = default;
             _roomVolumesHandle = default;
@@ -1274,7 +1271,6 @@ namespace Hecton8.Gameplay
             if (_dataVault == null || string.IsNullOrEmpty(_ballastProfilesCsvPath) || !File.Exists(_ballastProfilesCsvPath))
                 return false;
 
-            bool profilesWriteLocked = false;
             try
             {
                 FileInfo info = new FileInfo(_ballastProfilesCsvPath);
@@ -1285,33 +1281,28 @@ namespace Hecton8.Gameplay
                 if (info.Length <= 0L || info.Length > MaxBallastProfileCsvBytes)
                     return false;
 
+                int expectedBytes = (int)info.Length;
+                Span<byte> csvScratch = stackalloc byte[SubmarineBallastConstants.CsvImportByteCapacity];
                 int read;
                 using (FileStream stream = new FileStream(_ballastProfilesCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 256, FileOptions.SequentialScan))
                 {
-                    read = stream.Read(s_ballastProfileCsvImportScratch, 0, (int)info.Length);
+                    read = stream.Read(csvScratch.Slice(0, expectedBytes));
                 }
 
-                if (read <= 0)
+                if (read != expectedBytes)
                     return false;
 
-                if (!TryAcquireVaultWrite(
-                        in _ballastProfilesHandle,
-                        SubmarineBallastBufferIds.Profiles,
-                        SubmarineBallastConstants.ProfileCapacity,
-                        out NativeArray<SubmarineBallastProfileDTO> profiles))
-                    return false;
-
-                profilesWriteLocked = true;
-
-                ReadOnlySpan<byte> bytes = s_ballastProfileCsvImportScratch.AsSpan(0, read);
-                int parsed = SubmarineBallastCsvParser.ParseProfiles(bytes, profiles);
+                Span<SubmarineBallastProfileDTO> profileScratch = stackalloc SubmarineBallastProfileDTO[SubmarineBallastConstants.ProfileCapacity];
+                int parsed = SubmarineBallastCsvParser.ParseProfiles(csvScratch.Slice(0, read), profileScratch);
                 if (parsed <= 0)
+                    return false;
+
+                if (!CommitBallastProfilesCsv(profileScratch.Slice(0, parsed), out SubmarineBallastProfileDTO primaryProfile))
                     return false;
 
                 _ballastProfileRows = parsed;
                 _ballastProfilesCsvLoaded = 1;
                 _ballastProfilesCsvLastWriteTicks = stamp;
-                SubmarineBallastProfileDTO primaryProfile = profiles[0];
                 ApplyPrimaryBallastProfile(in primaryProfile);
                 return true;
             }
@@ -1323,10 +1314,41 @@ namespace Hecton8.Gameplay
             {
                 return false;
             }
+        }
+
+        private bool CommitBallastProfilesCsv(
+            ReadOnlySpan<SubmarineBallastProfileDTO> sourceProfiles,
+            out SubmarineBallastProfileDTO primaryProfile)
+        {
+            primaryProfile = default;
+            if (sourceProfiles.Length <= 0)
+                return false;
+
+            if (!TryAcquireVaultWrite(
+                    in _ballastProfilesHandle,
+                    SubmarineBallastBufferIds.Profiles,
+                    SubmarineBallastConstants.ProfileCapacity,
+                    out NativeArray<SubmarineBallastProfileDTO> profiles))
+                return false;
+
+            try
+            {
+                int count = sourceProfiles.Length < profiles.Length ? sourceProfiles.Length : profiles.Length;
+                if (count <= 0)
+                    return false;
+
+                for (int i = 0; i < count; i++)
+                    profiles[i] = sourceProfiles[i];
+
+                for (int i = count; i < profiles.Length; i++)
+                    profiles[i] = default;
+
+                primaryProfile = sourceProfiles[0];
+                return true;
+            }
             finally
             {
-                if (profilesWriteLocked)
-                    ReleaseVaultWrite(in _ballastProfilesHandle);
+                ReleaseVaultWrite(in _ballastProfilesHandle);
             }
         }
 #endif
@@ -2580,6 +2602,19 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void SchedulePidJobAfterFloodWriteLocks(float fixedDeltaTime)
+        {
+            if (_floodMassJobPending ||
+                _floodMassOutputVaultLockHeld ||
+                _floodRoomInputGuardVault != null)
+            {
+                _pendingTelemetryFlags |= PidTelemetryFlagVaultWriteContention;
+                return;
+            }
+
+            SchedulePidJob(fixedDeltaTime);
+        }
+
         private bool IsShinobu332GyroRouteActive()
         {
             return _shinobu332GyroRouteActive != 0;
@@ -3003,8 +3038,7 @@ namespace Hecton8.Gameplay
             if (_dumpedTelemetry || !telemetry.IsCreated)
                 return;
 
-            _dumpedTelemetry = true;
-            WriteTelemetryDumpFile(BallastPidDumpRelativePath, telemetry, reasonFlags);
+            _dumpedTelemetry = WriteTelemetryDumpFile(BallastPidDumpRelativePath, telemetry, reasonFlags);
         }
 
         private void DumpTelemetryOnce(uint reasonFlags)
@@ -3022,85 +3056,129 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _dumpedBallastTelemetry = true;
-            WriteBallastTelemetryDumpFile(BallastBuoyancyDumpRelativePath, telemetry, reasonFlags);
+            _dumpedBallastTelemetry = WriteBallastTelemetryDumpFile(BallastBuoyancyDumpRelativePath, telemetry, reasonFlags);
         }
 
-        private void WriteTelemetryDumpFile(
+        private unsafe bool WriteTelemetryDumpFile(
             string relativePath,
             NativeArray<SubmarinePidTelemetryEntry>.ReadOnly telemetry,
             uint reasonFlags)
         {
-            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", relativePath));
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-            using BinaryWriter writer = new BinaryWriter(stream);
-            writer.Write(0x53504944u);
-            writer.Write(reasonFlags);
-            writer.Write(telemetry.Length);
-            writer.Write(_telemetryCursor);
-            for (int i = 0; i < telemetry.Length; i++)
+            const int HeaderBytes = 16;
+            const int RowBytes = 126;
+            NativeArray<byte> payload = default;
+            try
             {
-                SubmarinePidTelemetryEntry entry = telemetry[i];
-                writer.Write(entry.Frame);
-                writer.Write(entry.StateHash);
-                writer.Write(entry.Flags);
-                writer.Write(entry.IntegralWindup);
-                writer.Write(entry.SystemStress01);
-                WriteFloat3(writer, entry.RuntimePosition);
-                WriteFloat3(writer, entry.LinearVelocity);
-                WriteFloat3(writer, entry.AngularVelocity);
-                WriteFloat3(writer, entry.CenterOfMassLocal);
-                WriteFloat3(writer, entry.DynamicFloodComOffsetLocal);
-                WriteFloat3(writer, entry.DynamicFloodInertiaTensorMultiplier);
-                WriteFloat3(writer, entry.PidError);
-                writer.Write(entry.BallastWaterMassKg);
-                writer.Write(entry.DynamicFloodWaterMassKg);
-                writer.Write(entry.DynamicFloodAngularDragMultiplier);
-                writer.Write(entry.CriticalFloodActive);
-                writer.Write(entry.LastVaultFaultCode);
-                writer.Write(entry.LastVaultFaultBufferId);
-                writer.Write(entry.LastVaultFaultFrame);
+                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", relativePath));
+                int totalBytes = HeaderBytes + telemetry.Length * RowBytes;
+                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+
+                Span<byte> header = new Span<byte>(payloadPtr, HeaderBytes);
+                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), 0x53504944u);
+                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(4, 4), reasonFlags);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), telemetry.Length);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(12, 4), _telemetryCursor);
+
+                int offset = HeaderBytes;
+                for (int i = 0; i < telemetry.Length; i++)
+                {
+                    Span<byte> row = new Span<byte>(payloadPtr + offset, RowBytes);
+                    WritePidTelemetryEntry(row, telemetry[i]);
+                    offset += RowBytes;
+                }
+
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 
-        private void WriteBallastTelemetryDumpFile(
+        private unsafe bool WriteBallastTelemetryDumpFile(
             string relativePath,
             NativeArray<SubmarineBallastTelemetryEntry>.ReadOnly telemetry,
             uint reasonFlags)
         {
-            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", relativePath));
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-            using BinaryWriter writer = new BinaryWriter(stream);
-            writer.Write(0x53333333u);
-            writer.Write(reasonFlags);
-            writer.Write(telemetry.Length);
-            for (int i = 0; i < telemetry.Length; i++)
+            const int HeaderBytes = 12;
+            const int RowBytes = 64;
+            NativeArray<byte> payload = default;
+            try
             {
-                SubmarineBallastTelemetryEntry entry = telemetry[i];
-                writer.Write(entry.Frame);
-                writer.Write(entry.Flags);
-                writer.Write(entry.StateHash);
-                writer.Write(entry.NetForceY);
-                writer.Write(entry.BuoyantForceY);
-                writer.Write(entry.BallastGravityForceY);
-                writer.Write(entry.WaterLiters);
-                writer.Write(entry.CompressedAirMassKg);
-                writer.Write(entry.AmbientPressureATM);
-                writer.Write(entry.DisplacedVolumeCubicMeters);
-                writer.Write(entry.SubmergedRatio);
-                writer.Write(entry.ComputeMicros);
-                writer.Write(entry.GlobalQualityWeight);
-                writer.Write(entry.ActiveSamples);
-                writer.Write(entry.TargetEntityHash);
-                writer.Write(entry.RingCursor);
+                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", relativePath));
+                int totalBytes = HeaderBytes + telemetry.Length * RowBytes;
+                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+
+                Span<byte> header = new Span<byte>(payloadPtr, HeaderBytes);
+                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), 0x53333333u);
+                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(4, 4), reasonFlags);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), telemetry.Length);
+
+                int offset = HeaderBytes;
+                for (int i = 0; i < telemetry.Length; i++)
+                {
+                    Span<byte> row = new Span<byte>(payloadPtr + offset, RowBytes);
+                    WriteBallastTelemetryEntry(row, telemetry[i]);
+                    offset += RowBytes;
+                }
+
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 
@@ -3228,17 +3306,6 @@ namespace Hecton8.Gameplay
                 SubmarineBallastConstants.ProfileCapacity,
                 0,
                 NativeArrayOptions.ClearMemory,
-                out buffer);
-        }
-
-        private bool EnsureBallastCsvScratchCold(out NativeArray<byte> buffer)
-        {
-            return EnsureVaultBufferCold(
-                ref _ballastCsvScratchHandle,
-                SubmarineBallastBufferIds.CsvScratch,
-                SubmarineBallastConstants.CsvScratchBytes,
-                0,
-                NativeArrayOptions.UninitializedMemory,
                 out buffer);
         }
 
@@ -3975,7 +4042,6 @@ namespace Hecton8.Gameplay
             ReleaseVehiclesPhysicsVaultHandle(vault, ref _ballastTelemetryHandle, SubmarineBallastBufferIds.TelemetryRing);
             ReleaseVehiclesPhysicsVaultHandle(vault, ref _ballastTuningHandle, SubmarineBallastBufferIds.Tuning);
             ReleaseVehiclesPhysicsVaultHandle(vault, ref _ballastProfilesHandle, SubmarineBallastBufferIds.Profiles);
-            ReleaseVehiclesPhysicsVaultHandle(vault, ref _ballastCsvScratchHandle, SubmarineBallastBufferIds.CsvScratch);
         }
 
         private static void ReleaseVehiclesPhysicsVaultHandle<T>(
@@ -4140,11 +4206,61 @@ namespace Hecton8.Gameplay
             return new Vector3(value.x, value.y, value.z);
         }
 
-        private static void WriteFloat3(BinaryWriter writer, float3 value)
+        private static void WritePidTelemetryEntry(Span<byte> destination, in SubmarinePidTelemetryEntry entry)
         {
-            writer.Write(value.x);
-            writer.Write(value.y);
-            writer.Write(value.z);
+            destination.Clear();
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(4, 4), entry.StateHash);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(8, 4), entry.Flags);
+            WriteFloatLittleEndian(destination.Slice(12, 4), entry.IntegralWindup);
+            WriteFloatLittleEndian(destination.Slice(16, 4), entry.SystemStress01);
+            WriteFloat3LittleEndian(destination.Slice(20, 12), entry.RuntimePosition);
+            WriteFloat3LittleEndian(destination.Slice(32, 12), entry.LinearVelocity);
+            WriteFloat3LittleEndian(destination.Slice(44, 12), entry.AngularVelocity);
+            WriteFloat3LittleEndian(destination.Slice(56, 12), entry.CenterOfMassLocal);
+            WriteFloat3LittleEndian(destination.Slice(68, 12), entry.DynamicFloodComOffsetLocal);
+            WriteFloat3LittleEndian(destination.Slice(80, 12), entry.DynamicFloodInertiaTensorMultiplier);
+            WriteFloat3LittleEndian(destination.Slice(92, 12), entry.PidError);
+            WriteFloatLittleEndian(destination.Slice(104, 4), entry.BallastWaterMassKg);
+            WriteFloatLittleEndian(destination.Slice(108, 4), entry.DynamicFloodWaterMassKg);
+            WriteFloatLittleEndian(destination.Slice(112, 4), entry.DynamicFloodAngularDragMultiplier);
+            destination[116] = entry.CriticalFloodActive;
+            destination[117] = entry.LastVaultFaultCode;
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(118, 4), entry.LastVaultFaultBufferId);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(122, 4), entry.LastVaultFaultFrame);
+        }
+
+        private static void WriteBallastTelemetryEntry(Span<byte> destination, in SubmarineBallastTelemetryEntry entry)
+        {
+            destination.Clear();
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(4, 4), entry.Flags);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(8, 4), entry.StateHash);
+            WriteFloatLittleEndian(destination.Slice(12, 4), entry.NetForceY);
+            WriteFloatLittleEndian(destination.Slice(16, 4), entry.BuoyantForceY);
+            WriteFloatLittleEndian(destination.Slice(20, 4), entry.BallastGravityForceY);
+            WriteFloatLittleEndian(destination.Slice(24, 4), entry.WaterLiters);
+            WriteFloatLittleEndian(destination.Slice(28, 4), entry.CompressedAirMassKg);
+            WriteFloatLittleEndian(destination.Slice(32, 4), entry.AmbientPressureATM);
+            WriteFloatLittleEndian(destination.Slice(36, 4), entry.DisplacedVolumeCubicMeters);
+            WriteFloatLittleEndian(destination.Slice(40, 4), entry.SubmergedRatio);
+            WriteFloatLittleEndian(destination.Slice(44, 4), entry.ComputeMicros);
+            WriteFloatLittleEndian(destination.Slice(48, 4), entry.GlobalQualityWeight);
+            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(52, 4), entry.ActiveSamples);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(56, 4), entry.TargetEntityHash);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(60, 4), entry.RingCursor);
+        }
+
+        private static void WriteFloat3LittleEndian(Span<byte> destination, float3 value)
+        {
+            WriteFloatLittleEndian(destination.Slice(0, 4), value.x);
+            WriteFloatLittleEndian(destination.Slice(4, 4), value.y);
+            WriteFloatLittleEndian(destination.Slice(8, 4), value.z);
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(destination, BitConverter.SingleToInt32Bits(value));
         }
 
         private void OnValidate()

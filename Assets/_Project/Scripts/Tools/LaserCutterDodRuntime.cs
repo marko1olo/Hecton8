@@ -79,7 +79,13 @@ namespace Hecton8.Tools
                 _dataVault = vault;
             }
 
-            bool ready = BindSchedulerBuffers(out _, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _);
+            bool ready =
+                BindSchedulerBuffers(out _, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _, out _) &&
+                BindOrAcquireBuffer(
+                    LaserCutterDodConstants.SdfSnapshotBuffer,
+                    LaserCutterDodConstants.SdfSnapshotByteCapacity,
+                    ref _sdfSnapshotHandle,
+                    out NativeArray<byte> _);
             if (ready)
             {
                 CacheVoxelSdfReadModel(GlobalRegistry.VoxelSonarSdf);
@@ -1052,15 +1058,11 @@ namespace Hecton8.Tools
 
                 string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string path = Path.Combine(root, DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (string.IsNullOrEmpty(directory))
-                    return;
-
-                Directory.CreateDirectory(directory);
 
                 int entryCount = math.min(telemetry.Length, LaserCutterDodConstants.BlackBoxFrameCount);
                 int cursor = math.clamp(telemetryCursor, 0, entryCount);
                 int payloadBytes = entryCount * entrySize;
+                int totalBytes = BlackBoxDumpHeaderBytes + payloadBytes;
                 Span<byte> header = stackalloc byte[BlackBoxDumpHeaderBytes];
                 WriteUIntLittleEndian(header.Slice(0, 4), BlackBoxDumpMagic);
                 WriteUIntLittleEndian(header.Slice(4, 4), BlackBoxDumpVersion);
@@ -1072,12 +1074,22 @@ namespace Hecton8.Tools
                 WriteUIntLittleEndian(header.Slice(28, 4), (uint)payloadBytes);
 
                 byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
+                NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                try
                 {
-                    stream.Write(header);
-                    WriteTelemetryBlock(stream, source, cursor, entryCount - cursor, entrySize);
-                    WriteTelemetryBlock(stream, source, 0, cursor, entrySize);
-                    stream.Flush(true);
+                    for (int i = 0; i < header.Length; i++)
+                        payload[i] = header[i];
+
+                    byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload) + BlackBoxDumpHeaderBytes;
+                    int writeCursor = 0;
+                    writeCursor = CopyTelemetryBlock(destination, source, writeCursor, cursor, entryCount - cursor, entrySize);
+                    writeCursor = CopyTelemetryBlock(destination, source, writeCursor, 0, cursor, entrySize);
+                    if (writeCursor == payloadBytes)
+                        NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
+                }
+                finally
+                {
+                    payload.Dispose();
                 }
             }
             catch (IOException)
@@ -1100,12 +1112,14 @@ namespace Hecton8.Tools
             }
         }
 
-        private static unsafe void WriteTelemetryBlock(FileStream stream, byte* source, int start, int count, int entrySize)
+        private static unsafe int CopyTelemetryBlock(byte* destination, byte* source, int writeCursor, int start, int count, int entrySize)
         {
             if (count <= 0)
-                return;
+                return writeCursor;
 
-            stream.Write(new ReadOnlySpan<byte>(source + start * entrySize, count * entrySize));
+            int byteCount = count * entrySize;
+            UnsafeUtility.MemCpy(destination + writeCursor, source + start * entrySize, byteCount);
+            return writeCursor + byteCount;
         }
 
         private static void WriteUIntLittleEndian(Span<byte> destination, uint value)
@@ -1230,7 +1244,7 @@ namespace Hecton8.Tools
                     requiredLength,
                     ref _sdfSnapshotHandle,
                     out NativeArray<byte> snapshot,
-                    allowAcquire: true))
+                    allowAcquire: false))
             {
                 return false;
             }

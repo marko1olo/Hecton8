@@ -33,6 +33,9 @@ namespace Hecton8.Equipment.Auxiliary
             MutationGuardBit(AuxiliaryEquipmentVaultIds.TelemetryCursor) |
             MutationGuardBit(AuxiliaryEquipmentVaultIds.ActiveEquipmentState);
         private static readonly ulong TuningMutationGuardMask = MutationGuardBit(AuxiliaryEquipmentVaultIds.Tuning);
+        private static readonly ulong ProfileImportMutationGuardMask =
+            MutationGuardBit(AuxiliaryEquipmentVaultIds.Profiles) |
+            MutationGuardBit(AuxiliaryEquipmentVaultIds.Tuning);
 
         [SerializeField, Range(64, AuxiliaryEquipmentConstants.MaxDeployedAuxiliaries)]
         private int deploymentCapacity = AuxiliaryEquipmentConstants.MaxDeployedAuxiliaries;
@@ -53,7 +56,6 @@ namespace Hecton8.Equipment.Auxiliary
         private VaultGenerationHandle<AuxiliaryTelemetryEntry> _telemetryRingHandle;
         private VaultGenerationHandle<int> _telemetryCursorHandle;
         private VaultGenerationHandle<AuxiliaryProfileDTO> _profilesHandle;
-        private VaultGenerationHandle<byte> _csvScratchHandle;
         private VaultGenerationHandle<AuxiliaryActiveEquipmentDTO> _activeEquipmentHandle;
 
         private GraphicsBuffer _vfxGpuBufferA;
@@ -847,9 +849,6 @@ namespace Hecton8.Equipment.Auxiliary
             if (!ok)
                 return false;
 
-            if (views.Tuning.IsCreated && views.Tuning.Length > 0 && views.Tuning[0].FlareBaseLifetime <= 0f)
-                views.Tuning[0] = AuxiliaryTuningDTO.CreateDefault(ResolveQualityWeight(default));
-
             TryLoadProfilesCold(views);
             EnsureVfxGraphicsBuffer(math.clamp(deploymentCapacity, 64, AuxiliaryEquipmentConstants.MaxDeployedAuxiliaries));
             _buffersReady = true;
@@ -973,47 +972,58 @@ namespace Hecton8.Equipment.Auxiliary
 
             AuxiliaryProfileLoadResult result = default;
             bool parsed = false;
+            Span<AuxiliaryProfileDTO> profileScratch = stackalloc AuxiliaryProfileDTO[AuxiliaryEquipmentConstants.ProfileCapacity];
 #if UNITY_EDITOR
-            if (views.CsvScratch.IsCreated && views.CsvScratch.Length > 0)
+            Span<byte> csvScratch = stackalloc byte[AuxiliaryEquipmentConstants.CsvScratchBytes];
+            string path = Path.Combine(Application.dataPath, "_SourceData", "Equipment", "Auxiliary", ProfilesCsvFileName);
+            int byteCount = TryReadProfilesFileIntoScratch(path, csvScratch);
+            if (byteCount > 0)
             {
-                string path = Path.Combine(Application.dataPath, "_SourceData", "Equipment", "Auxiliary", ProfilesCsvFileName);
-                int byteCount = TryReadProfilesFileIntoScratch(path, views.CsvScratch);
-                if (byteCount > 0)
-                {
-                    AuxiliaryCsvParseResult csvResult;
-                    unsafe
-                    {
-                        byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.CsvScratch);
-                        parsed = AuxiliaryEquipmentProfilesCsvParser.TryApplyProfilesCsv(
-                            new ReadOnlySpan<byte>(ptr, byteCount),
-                            views.Profiles,
-                            out csvResult);
-                    }
-
-                    result = csvResult.ToProfileLoadResult();
-                    ClearProfileTail(views.Profiles, result.ParsedRows);
-                }
+                parsed = AuxiliaryEquipmentProfilesCsvParser.TryParseProfilesCsv(
+                    csvScratch.Slice(0, byteCount),
+                    profileScratch,
+                    out AuxiliaryCsvParseResult csvResult);
+                result = csvResult.ToProfileLoadResult();
             }
 #endif
 
             if (!parsed)
             {
-                SeedFallbackProfiles(views.Profiles, ResolveTuning(views), out result);
+                SeedFallbackProfiles(profileScratch, ResolveTuning(views), out result);
                 parsed = true;
             }
 
-            if (parsed)
-                ApplyProfilesToTuning(views.Profiles, result.ParsedRows, views.Tuning);
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(ProfileImportMutationGuardMask))
+                return false;
 
-            _lastProfileLoadResult = result;
-            _profilesLoaded = parsed;
-            return parsed;
+            try
+            {
+                if (!views.Profiles.IsCreated ||
+                    views.Profiles.Length == 0 ||
+                    !views.Tuning.IsCreated ||
+                    views.Tuning.Length == 0)
+                {
+                    return false;
+                }
+
+                CommitProfileScratch(profileScratch, result.ParsedRows, views.Profiles);
+                ClearProfileTail(views.Profiles, result.ParsedRows);
+                ApplyProfilesToTuning(views.Profiles, result.ParsedRows, views.Tuning);
+                _lastProfileLoadResult = result;
+                _profilesLoaded = parsed;
+                return parsed;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(ProfileImportMutationGuardMask);
+            }
         }
 
 #if UNITY_EDITOR
-        private static unsafe int TryReadProfilesFileIntoScratch(string path, NativeArray<byte> scratch)
+        private static int TryReadProfilesFileIntoScratch(string path, Span<byte> scratch)
         {
-            if (string.IsNullOrEmpty(path) || !File.Exists(path) || !scratch.IsCreated || scratch.Length == 0)
+            if (string.IsNullOrEmpty(path) || !File.Exists(path) || scratch.Length == 0)
                 return 0;
 
             try
@@ -1024,12 +1034,10 @@ namespace Hecton8.Equipment.Auxiliary
                     if (limit <= 0)
                         return 0;
 
-                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
                     int total = 0;
-                    Span<byte> destination = new Span<byte>(ptr, limit);
                     while (total < limit)
                     {
-                        int read = stream.Read(destination.Slice(total));
+                        int read = stream.Read(scratch.Slice(total, limit - total));
                         if (read <= 0)
                             break;
 
@@ -1050,6 +1058,19 @@ namespace Hecton8.Equipment.Auxiliary
         }
 #endif
 
+        private static void CommitProfileScratch(
+            ReadOnlySpan<AuxiliaryProfileDTO> source,
+            int parsedRows,
+            NativeArray<AuxiliaryProfileDTO> profiles)
+        {
+            if (!profiles.IsCreated)
+                return;
+
+            int count = math.clamp(parsedRows, 0, math.min(source.Length, profiles.Length));
+            for (int i = 0; i < count; i++)
+                profiles[i] = source[i];
+        }
+
         private static void ClearProfileTail(NativeArray<AuxiliaryProfileDTO> profiles, int parsedRows)
         {
             if (!profiles.IsCreated)
@@ -1061,12 +1082,12 @@ namespace Hecton8.Equipment.Auxiliary
         }
 
         private static void SeedFallbackProfiles(
-            NativeArray<AuxiliaryProfileDTO> profiles,
+            Span<AuxiliaryProfileDTO> profiles,
             in AuxiliaryTuningDTO tuning,
             out AuxiliaryProfileLoadResult result)
         {
             result = default;
-            if (!profiles.IsCreated || profiles.Length == 0)
+            if (profiles.Length == 0)
             {
                 result.FaultFlags = AuxiliaryEquipmentFlags.Faulted;
                 return;
@@ -1107,7 +1128,7 @@ namespace Hecton8.Equipment.Auxiliary
         }
 
         private static void WriteFallbackProfile(
-            NativeArray<AuxiliaryProfileDTO> profiles,
+            Span<AuxiliaryProfileDTO> profiles,
             ref int count,
             uint profileHash,
             uint prefabHash,
@@ -1215,7 +1236,6 @@ namespace Hecton8.Equipment.Auxiliary
                    AcquireOrRefresh(vault, ref _telemetryRingHandle, AuxiliaryEquipmentVaultIds.TelemetryRing, AuxiliaryEquipmentConstants.TelemetryFrameCount, NativeArrayOptions.ClearMemory, out views.TelemetryRing) &&
                    AcquireOrRefresh(vault, ref _telemetryCursorHandle, AuxiliaryEquipmentVaultIds.TelemetryCursor, 1, NativeArrayOptions.ClearMemory, out views.TelemetryCursor) &&
                    AcquireOrRefresh(vault, ref _profilesHandle, AuxiliaryEquipmentVaultIds.Profiles, AuxiliaryEquipmentConstants.ProfileCapacity, NativeArrayOptions.UninitializedMemory, out views.Profiles) &&
-                   AcquireOrRefresh(vault, ref _csvScratchHandle, AuxiliaryEquipmentVaultIds.CsvScratch, AuxiliaryEquipmentConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory, out views.CsvScratch) &&
                    AcquireOrRefresh(vault, ref _activeEquipmentHandle, AuxiliaryEquipmentVaultIds.ActiveEquipmentState, capacity, NativeArrayOptions.UninitializedMemory, out views.ActiveEquipment);
         }
 
@@ -1237,7 +1257,6 @@ namespace Hecton8.Equipment.Auxiliary
                    TryResolveExisting(vault, in _telemetryRingHandle, AuxiliaryEquipmentConstants.TelemetryFrameCount, out views.TelemetryRing) &&
                    TryResolveExisting(vault, in _telemetryCursorHandle, 1, out views.TelemetryCursor) &&
                    TryResolveExisting(vault, in _profilesHandle, AuxiliaryEquipmentConstants.ProfileCapacity, out views.Profiles) &&
-                   TryResolveExisting(vault, in _csvScratchHandle, AuxiliaryEquipmentConstants.CsvScratchBytes, out views.CsvScratch) &&
                    TryResolveExisting(vault, in _activeEquipmentHandle, capacity, out views.ActiveEquipment);
         }
 
@@ -1336,7 +1355,6 @@ namespace Hecton8.Equipment.Auxiliary
             ReleaseHandle(vault, ref _telemetryRingHandle);
             ReleaseHandle(vault, ref _telemetryCursorHandle);
             ReleaseHandle(vault, ref _profilesHandle);
-            ReleaseHandle(vault, ref _csvScratchHandle);
             ReleaseHandle(vault, ref _activeEquipmentHandle);
         }
 
@@ -1445,28 +1463,34 @@ namespace Hecton8.Equipment.Auxiliary
             if (_dumpWritten || !telemetry.IsCreated || telemetry.Length == 0)
                 return;
 
+            NativeArray<byte> payload = default;
             try
             {
-                string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string path = Path.Combine(root, DumpPath.Replace('/', Path.DirectorySeparatorChar));
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
                 int byteCount = telemetry.Length * UnsafeUtility.SizeOf<AuxiliaryTelemetryEntry>();
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    stream.Write(new ReadOnlySpan<byte>(ptr, byteCount));
-                }
+                const string dumpPayloadLabel = "AuxiliaryTelemetryDumpPayload";
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(AuxiliaryEquipmentRouterRuntime),
+                    dumpPayloadLabel);
+                byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                UnsafeUtility.MemCpy(target, source, byteCount);
 
-                _dumpWritten = true;
+                _dumpWritten = NativeFaultDumpWriter.TryWriteAll(DumpPath, payload, byteCount);
             }
             catch (IOException)
             {
             }
             catch (UnauthorizedAccessException)
             {
+            }
+            finally
+            {
+                const string dumpPayloadLabel = "AuxiliaryTelemetryDumpPayload";
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(AuxiliaryEquipmentRouterRuntime),
+                    dumpPayloadLabel);
             }
         }
 
@@ -1482,7 +1506,6 @@ namespace Hecton8.Equipment.Auxiliary
             public NativeArray<AuxiliaryTelemetryEntry> TelemetryRing;
             public NativeArray<int> TelemetryCursor;
             public NativeArray<AuxiliaryProfileDTO> Profiles;
-            public NativeArray<byte> CsvScratch;
             public NativeArray<AuxiliaryActiveEquipmentDTO> ActiveEquipment;
         }
     }

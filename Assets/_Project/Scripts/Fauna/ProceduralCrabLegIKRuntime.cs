@@ -1,4 +1,3 @@
-using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -517,7 +516,10 @@ namespace Hecton8.AI
         private const int DefaultMaxEntities = 128;
         private const int MinLegsPerJob = 32;
         private const int TelemetryCapacity = 300;
+        private const int TelemetryDumpHeaderBytes = 8;
+        private const int TelemetryDumpEntryBytes = 56;
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
+        private const string TelemetryDumpPayloadLabel = "proceduralCrabLegIkTelemetryDumpPayload";
         private static readonly int BodyPoseBufferId = Shader.PropertyToID("_H8CrabBodyPoseBuffer");
         private static readonly int LegJointBufferId = Shader.PropertyToID("_H8CrabLegJointBuffer");
 
@@ -1320,39 +1322,74 @@ namespace Hecton8.AI
             return rootHash ^ (footHash * 16777619u) ^ (normalHash * 2166136261u) ^ (uint)health;
         }
 
-        private void DumpTelemetryBlackBox()
+        private bool DumpTelemetryBlackBox()
         {
             if (!TryResolvePersistentBuffers(out CrabLegVaultBuffers buffers))
-                return;
+                return false;
 
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string dumpPath = Path.Combine(projectRoot, TelemetryDumpRelativePath);
-            string directory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-            using BinaryWriter writer = new BinaryWriter(stream);
-            writer.Write(TelemetryCapacity);
-            writer.Write(_telemetryCursor);
-            for (int i = 0; i < TelemetryCapacity; i++)
+            int byteCount = TelemetryDumpHeaderBytes + TelemetryCapacity * TelemetryDumpEntryBytes;
+            NativeArray<byte> payload = default;
+            try
             {
-                ProceduralCrabIkTelemetryEntry entry = buffers.TelemetryRing[i];
-                writer.Write(entry.FrameIndex);
-                writer.Write(entry.ActiveEntityCount);
-                writer.Write(entry.EntityIndex);
-                writer.Write(entry.Flags);
-                writer.Write(entry.RootPosition.x);
-                writer.Write(entry.RootPosition.y);
-                writer.Write(entry.RootPosition.z);
-                writer.Write(entry.FirstFootPosition.x);
-                writer.Write(entry.FirstFootPosition.y);
-                writer.Write(entry.FirstFootPosition.z);
-                writer.Write(entry.BodyNormal.x);
-                writer.Write(entry.BodyNormal.y);
-                writer.Write(entry.BodyNormal.z);
-                writer.Write(entry.StateHash);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(ProceduralCrabLegIKRuntime),
+                    TelemetryDumpPayloadLabel);
+                int cursor = 0;
+                WriteInt32LittleEndian(payload, ref cursor, TelemetryCapacity);
+                WriteInt32LittleEndian(payload, ref cursor, _telemetryCursor);
+
+                for (int i = 0; i < TelemetryCapacity; i++)
+                {
+                    ProceduralCrabIkTelemetryEntry entry = buffers.TelemetryRing[i];
+                    WriteInt32LittleEndian(payload, ref cursor, entry.FrameIndex);
+                    WriteInt32LittleEndian(payload, ref cursor, entry.ActiveEntityCount);
+                    WriteInt32LittleEndian(payload, ref cursor, entry.EntityIndex);
+                    WriteInt32LittleEndian(payload, ref cursor, entry.Flags);
+                    WriteFloat3LittleEndian(payload, ref cursor, entry.RootPosition);
+                    WriteFloat3LittleEndian(payload, ref cursor, entry.FirstFootPosition);
+                    WriteFloat3LittleEndian(payload, ref cursor, entry.BodyNormal);
+                    WriteUInt32LittleEndian(payload, ref cursor, entry.StateHash);
+                }
+
+                return cursor == byteCount && NativeFaultDumpWriter.TryWriteAll(TelemetryDumpRelativePath, payload, byteCount);
             }
+            catch (System.Exception)
+            {
+                return false;
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(ProceduralCrabLegIKRuntime),
+                    TelemetryDumpPayloadLabel);
+            }
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(payload, ref cursor, (uint)value);
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, ref int cursor, uint value)
+        {
+            payload[cursor++] = (byte)value;
+            payload[cursor++] = (byte)(value >> 8);
+            payload[cursor++] = (byte)(value >> 16);
+            payload[cursor++] = (byte)(value >> 24);
+        }
+
+        private static void WriteFloatLittleEndian(NativeArray<byte> payload, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(payload, ref cursor, math.asuint(value));
+        }
+
+        private static void WriteFloat3LittleEndian(NativeArray<byte> payload, ref int cursor, float3 value)
+        {
+            WriteFloatLittleEndian(payload, ref cursor, value.x);
+            WriteFloatLittleEndian(payload, ref cursor, value.y);
+            WriteFloatLittleEndian(payload, ref cursor, value.z);
         }
 
         private ProceduralCrabLegEntityState BuildDefaultEntityState(
@@ -1460,8 +1497,8 @@ namespace Hecton8.AI
             if (_telemetryDumped)
                 return;
 
-            DumpTelemetryBlackBox();
-            _telemetryDumped = true;
+            if (DumpTelemetryBlackBox())
+                _telemetryDumped = true;
         }
 
         private static float ClampFiniteMin(float value, float minValue, float fallback)

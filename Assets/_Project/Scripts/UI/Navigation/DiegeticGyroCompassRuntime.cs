@@ -347,6 +347,7 @@ namespace Hecton8.UI.Navigation
             TryRegisterService();
             TryRegisterTickables();
             EnsureIndirectBuffersCold();
+            _indirectBuffersDirty = ShouldRequireIndirectBuffersCold() && !HasIndirectBuffersReady();
         }
 
         private void OnDisable()
@@ -502,6 +503,7 @@ namespace Hecton8.UI.Navigation
                 ReleaseIndirectBuffers();
 
             EnsureIndirectBuffersCold();
+            _indirectBuffersDirty = ShouldRequireIndirectBuffersCold() && !HasIndirectBuffersReady();
         }
 
         /// <summary>
@@ -544,8 +546,11 @@ namespace Hecton8.UI.Navigation
         {
             RefreshQualityPolicy();
             FlushQueuedBlackBoxDump();
-            if (!HasIndirectBuffersReady())
+            if (ShouldRequireIndirectBuffersCold() && !HasIndirectBuffersReady())
                 _indirectBuffersDirty = true;
+
+            if (_indirectBuffersDirty)
+                FlushIndirectBuffersRepairSlow();
 
             if (_playerContext == null || _vault == null)
                 return;
@@ -595,7 +600,9 @@ namespace Hecton8.UI.Navigation
 
         private bool TryResolveVaultBuffers()
         {
-            return TryGetCompassBuffers(out _, out _, out _);
+            bool compassReady = TryPrepareCompassBuffersCold(out _, out _, out _);
+            bool presentationReady = TryPreparePresentationBufferCold(out _);
+            return compassReady && presentationReady;
         }
 
         private bool TryReadCompassState(out CompassStateDTO state)
@@ -644,6 +651,20 @@ namespace Hecton8.UI.Navigation
         private bool TryGetPresentationBuffer(out NativeSlice<CompassPresentationStateDTO> presentationBuffer)
         {
             presentationBuffer = default;
+            if (!TryOpenExistingLane(
+                    ref _presentationLane,
+                    BufferID.CompassPresentationState,
+                    StateLength,
+                    out NativeArray<CompassPresentationStateDTO> buffer))
+                return false;
+
+            presentationBuffer = buffer.Slice();
+            return true;
+        }
+
+        private bool TryPreparePresentationBufferCold(out NativeSlice<CompassPresentationStateDTO> presentationBuffer)
+        {
+            presentationBuffer = default;
             if (!TryOpenOrAcquireLane(
                     ref _presentationLane,
                     BufferID.CompassPresentationState,
@@ -658,7 +679,7 @@ namespace Hecton8.UI.Navigation
 
         private void ResetPresentationState(bool resetDialMatrix)
         {
-            if (!TryGetPresentationBuffer(out var presentationBuffer))
+            if (!TryPreparePresentationBufferCold(out var presentationBuffer))
                 return;
 
             CompassPresentationStateDTO presentation = presentationBuffer[0];
@@ -728,6 +749,44 @@ namespace Hecton8.UI.Navigation
         }
 
         private bool TryGetCompassBuffers(
+            out NativeSlice<CompassStateDTO> stateBuffer,
+            out NativeSlice<float> outputBuffer,
+            out NativeSlice<CompassBlackBoxEntry> blackBox)
+        {
+            stateBuffer = default;
+            outputBuffer = default;
+            blackBox = default;
+
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            if (!TryOpenExistingLane(
+                    ref _stateLane,
+                    BufferID.CompassState,
+                    StateLength,
+                    out NativeArray<CompassStateDTO> state) ||
+                !TryOpenExistingLane(
+                    ref _headingOutputLane,
+                    BufferID.CompassHeadingOutput,
+                    (int)CompassOutputSlot.Count,
+                    out NativeArray<float> output) ||
+                !TryOpenExistingLane(
+                    ref _blackBoxLane,
+                    BufferID.CompassBlackBox,
+                    BlackBoxCapacity,
+                    out NativeArray<CompassBlackBoxEntry> telemetry))
+            {
+                return false;
+            }
+
+            stateBuffer = state.Slice();
+            outputBuffer = output.Slice();
+            blackBox = telemetry.Slice();
+            return true;
+        }
+
+        private bool TryPrepareCompassBuffersCold(
             out NativeSlice<CompassStateDTO> stateBuffer,
             out NativeSlice<float> outputBuffer,
             out NativeSlice<CompassBlackBoxEntry> blackBox)
@@ -1536,12 +1595,33 @@ namespace Hecton8.UI.Navigation
                    IsValidBuffer(_dialMatrixBufferB);
         }
 
+        private bool ShouldRequireIndirectBuffersCold()
+        {
+            return enableIndirectVisualRoute &&
+                   dialMesh != null &&
+                   dialIndirectMaterial != null &&
+                   _supportsIndirectDialCold;
+        }
+
+        private void FlushIndirectBuffersRepairSlow()
+        {
+            CacheGraphicsCapabilitiesCold();
+            if (!ShouldRequireIndirectBuffersCold())
+            {
+                if (HasIndirectBuffersReady())
+                    ReleaseIndirectBuffers();
+
+                _indirectBuffersDirty = false;
+                return;
+            }
+
+            EnsureIndirectBuffersCold();
+            _indirectBuffersDirty = !HasIndirectBuffersReady();
+        }
+
         private void EnsureIndirectBuffersCold()
         {
-            if (!enableIndirectVisualRoute ||
-                dialMesh == null ||
-                dialIndirectMaterial == null ||
-                !_supportsIndirectDialCold)
+            if (!ShouldRequireIndirectBuffersCold())
             {
                 ReleaseIndirectBuffers();
                 return;
@@ -1695,7 +1775,7 @@ namespace Hecton8.UI.Navigation
             DumpBlackBoxOnce(_queuedBlackBoxCursor);
         }
 
-        private void DumpBlackBoxOnce(int blackBoxCursor)
+        private unsafe void DumpBlackBoxOnce(int blackBoxCursor)
         {
             if (_blackBoxDumped || !IsLaneBound(in _blackBoxLane))
             {
@@ -1706,22 +1786,24 @@ namespace Hecton8.UI.Navigation
             try
             {
                 string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-                string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, DumpFileName);
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                string path = Path.Combine(projectRoot, "Docs", "AgentLogs", DumpFileName);
+                const int headerBytes = 12;
+                const int rowBytes = 64;
+                int byteCount = headerBytes + BlackBoxCapacity * rowBytes;
+                NativeArray<byte> payload = default;
+                try
                 {
+                    payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
                     int cursor = blackBoxCursor;
                     if (cursor < 0 || cursor >= BlackBoxCapacity)
                         cursor = 0;
 
-                    Span<byte> header = stackalloc byte[12];
+                    Span<byte> header = new Span<byte>(destination, headerBytes);
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), DumpMagic);
                     BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), BlackBoxCapacity);
                     BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), cursor);
-                    stream.Write(header);
 
-                    Span<byte> row = stackalloc byte[64];
                     for (int i = 0; i < BlackBoxCapacity; i++)
                     {
                         int index = cursor + i;
@@ -1734,12 +1816,20 @@ namespace Hecton8.UI.Navigation
                             return;
                         }
 
+                        Span<byte> row = new Span<byte>(destination + headerBytes + i * rowBytes, rowBytes);
                         WriteCompassBlackBoxEntry(row, in entry);
-                        stream.Write(row);
                     }
-                }
 
-                _blackBoxDumped = true;
+                    if (NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount))
+                        _blackBoxDumped = true;
+                    else
+                        _blackBoxDumpQueued = true;
+                }
+                finally
+                {
+                    if (payload.IsCreated)
+                        payload.Dispose();
+                }
             }
             catch (IOException)
             {

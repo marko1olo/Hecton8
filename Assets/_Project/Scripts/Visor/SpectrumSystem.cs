@@ -35,6 +35,7 @@ using Hecton8.UI;
 using Hecton8.World;
 using Hecton.Localization;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using NASAPunk.Visor;
 using UnityEngine;
@@ -3747,25 +3748,37 @@ namespace Hecton8.Visor
             ClearActiveSonarGeoGlobals();
         }
 
-        private void DumpActiveSonarGeoTelemetry()
+        private unsafe void DumpActiveSonarGeoTelemetry()
         {
             if (!TryResolveActiveSonarGeoTelemetryCount(out int telemetryCount))
                 return;
 
+            NativeArray<byte> payload = default;
             try
             {
                 string directory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs"));
-                Directory.CreateDirectory(directory);
                 string path = Path.Combine(directory, "Dump_ACTIVE_SONAR_ILLUMINATION.bin");
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                Span<byte> row = stackalloc byte[ActiveSonarGeoTelemetryEntrySizeBytes];
+                int totalBytes = telemetryCount * ActiveSonarGeoTelemetryEntrySizeBytes;
+                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+
+                int offset = 0;
                 for (int i = 0; i < telemetryCount; i++)
                 {
                     if (!TryReadActiveSonarGeoTelemetryEntry(i, out ActiveSonarGeoTelemetryEntry entry))
                         entry = default;
 
+                    Span<byte> row = new Span<byte>(payloadPtr + offset, ActiveSonarGeoTelemetryEntrySizeBytes);
                     WriteActiveSonarGeoTelemetryEntry(row, in entry);
-                    stream.Write(row);
+                    offset += ActiveSonarGeoTelemetryEntrySizeBytes;
+                }
+
+                if (!NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes))
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(
+                        _ActiveSonarGeoDumpFailureHash,
+                        _ActiveSonarGeoSystemHash,
+                        1f);
                 }
             }
             catch (IOException)
@@ -3809,6 +3822,11 @@ namespace Hecton8.Visor
                     _ActiveSonarGeoDumpFailureHash,
                     _ActiveSonarGeoSystemHash,
                     1f);
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 

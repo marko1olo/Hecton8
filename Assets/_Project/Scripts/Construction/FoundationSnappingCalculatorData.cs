@@ -297,10 +297,6 @@ namespace Hecton8.Construction
         private static FoundationSdfConfigDTO s_SdfConfig = CreateDefaultMockSdfConfig(double3.zero);
         private static IDataVault s_BoundVault;
         private static bool s_TelemetryDumped;
-        private static readonly FoundationTelemetryEntry[] s_TelemetryDumpSnapshot = new FoundationTelemetryEntry[TelemetryCapacity];
-        private static readonly WaitCallback s_TelemetryDumpWorker = WriteTelemetryDumpWorker;
-        private static string s_TelemetryDumpPath;
-        private static int s_TelemetryDumpLength;
         private static int s_TelemetryDumpInFlight;
         private static bool s_TelemetryCursorSeeded;
         private static uint s_TelemetryCursorSeedGeneration;
@@ -975,7 +971,7 @@ namespace Hecton8.Construction
             telemetry[writeIndex] = entry;
         }
 
-        public static bool DumpTelemetry(NativeArray<FoundationTelemetryEntry> telemetry, string path = DumpPath, bool force = false)
+        public static unsafe bool DumpTelemetry(NativeArray<FoundationTelemetryEntry> telemetry, string path = DumpPath, bool force = false)
         {
             if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return false;
@@ -990,84 +986,26 @@ namespace Hecton8.Construction
             {
                 string resolvedPath = ResolveDumpPath(path);
                 if (string.IsNullOrEmpty(resolvedPath))
-                {
-                    Volatile.Write(ref s_TelemetryDumpInFlight, 0);
                     return false;
-                }
 
-                int entryCount = math.min(telemetry.Length, s_TelemetryDumpSnapshot.Length);
+                int entryCount = math.min(telemetry.Length, TelemetryCapacity);
                 if (entryCount <= 0)
-                {
-                    Volatile.Write(ref s_TelemetryDumpInFlight, 0);
                     return false;
-                }
 
-                for (int i = 0; i < entryCount; i++)
-                    s_TelemetryDumpSnapshot[i] = telemetry[i];
-
-                s_TelemetryDumpPath = resolvedPath;
-                Volatile.Write(ref s_TelemetryDumpLength, entryCount);
-                if (!ThreadPool.QueueUserWorkItem(s_TelemetryDumpWorker))
-                {
-                    s_TelemetryDumpPath = null;
-                    Volatile.Write(ref s_TelemetryDumpLength, 0);
-                    Volatile.Write(ref s_TelemetryDumpInFlight, 0);
-                    return false;
-                }
-
-                return true;
+                int byteCount = entryCount * UnsafeUtility.SizeOf<FoundationTelemetryEntry>();
+                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                bool dumped = NativeFaultDumpWriter.TryWriteAll(resolvedPath, new ReadOnlySpan<byte>(source, byteCount), byteCount);
+                if (dumped)
+                    s_TelemetryDumped = true;
+                return dumped;
             }
             catch
             {
-                s_TelemetryDumpPath = null;
-                Volatile.Write(ref s_TelemetryDumpLength, 0);
-                Volatile.Write(ref s_TelemetryDumpInFlight, 0);
                 return false;
-            }
-        }
-
-        private static void WriteTelemetryDumpWorker(object state)
-        {
-            try
-            {
-                string resolvedPath = s_TelemetryDumpPath;
-                int entryCount = Volatile.Read(ref s_TelemetryDumpLength);
-                if (!string.IsNullOrEmpty(resolvedPath) &&
-                    entryCount > 0 &&
-                    TryWriteTelemetryDumpSnapshotCold(resolvedPath, entryCount))
-                {
-                    s_TelemetryDumped = true;
-                }
             }
             finally
             {
-                s_TelemetryDumpPath = null;
-                Volatile.Write(ref s_TelemetryDumpLength, 0);
                 Volatile.Write(ref s_TelemetryDumpInFlight, 0);
-            }
-        }
-
-        private static bool TryWriteTelemetryDumpSnapshotCold(string resolvedPath, int entryCount)
-        {
-            try
-            {
-                int clampedCount = math.min(math.max(0, entryCount), s_TelemetryDumpSnapshot.Length);
-                if (string.IsNullOrEmpty(resolvedPath) || clampedCount <= 0)
-                    return false;
-
-                string directory = Path.GetDirectoryName(resolvedPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                // COLD ALLOC: FileStream[1] - fault dump persistence worker; never called by profile import guard - owner: SHINOBU_252
-                using FileStream stream = new FileStream(resolvedPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                ReadOnlySpan<FoundationTelemetryEntry> entries = s_TelemetryDumpSnapshot.AsSpan(0, clampedCount);
-                stream.Write(MemoryMarshal.AsBytes(entries));
-                return true;
-            }
-            catch
-            {
-                return false;
             }
         }
 

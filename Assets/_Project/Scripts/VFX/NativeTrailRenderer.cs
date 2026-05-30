@@ -20,7 +20,6 @@ namespace Hecton8.VFX
     {
         private const int MinimumCapacity = 2;
         private const int MaximumCapacity = 256;
-        private const int DrawInstanceCount = 1;
         private const float MinimumWidthMeters = 0.001f;
         private const float MinimumLifetimeSeconds = 0.02f;
         private const float MinimumSampleIntervalSeconds = 0.005f;
@@ -52,8 +51,6 @@ namespace Hecton8.VFX
         private Vector2[] _uvs;
         private Color[] _colors;
         private int[] _triangles;
-        // COLD ALLOC: Matrix4x4[1] - DrawMeshInstanced payload for one generated trail mesh - owner: NativeTrailRenderer
-        private readonly Matrix4x4[] _drawMatrices = new Matrix4x4[DrawInstanceCount];
 
         private Mesh _mesh;
         private ITickDispatcher _tickDispatcher;
@@ -78,7 +75,6 @@ namespace Hecton8.VFX
         private void Awake()
         {
             EnsureBuffers();
-            _drawMatrices[0] = Matrix4x4.identity;
         }
 
         private void OnEnable()
@@ -163,17 +159,17 @@ namespace Hecton8.VFX
             if (_sampleCount < 2)
                 return;
 
-            UnityEngine.Graphics.DrawMeshInstanced(
+            UnityEngine.Graphics.DrawMesh(
                 _mesh,
-                0,
+                Matrix4x4.identity,
                 trailMaterial,
-                _drawMatrices,
-                DrawInstanceCount,
+                gameObject.layer,
+                GlobalRenderContext.CurrentCamera,
+                0,
                 null,
                 shadowCastingMode,
                 receiveShadows,
-                gameObject.layer,
-                GlobalRenderContext.CurrentCamera,
+                null,
                 LightProbeUsage.Off,
                 null);
         }

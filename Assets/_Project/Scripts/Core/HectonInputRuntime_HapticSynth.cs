@@ -24,22 +24,6 @@ namespace Hecton8.Core
         private const uint HapticSynthesisPinTelemetry = 1u << 3;
         private const uint HapticSynthesisPinProfiles = 1u << 4;
         private const uint HapticSynthesisPinTuning = 1u << 5;
-        private const uint HapticSynthesisBasePinMask =
-            HapticSynthesisPinPulses |
-            HapticSynthesisPinFinalPulse |
-            HapticSynthesisPinTelemetry |
-            HapticSynthesisPinProfiles |
-            HapticSynthesisPinTuning;
-        private static readonly ulong HapticSynthesisBaseScheduleGuardMask =
-            HapticSynthesisMutationGuardBit(BufferID.ShinobuHapticSynthesisPulses) |
-            HapticSynthesisMutationGuardBit(BufferID.ShinobuHapticSynthesisFinalPulse) |
-            HapticSynthesisMutationGuardBit(BufferID.ShinobuHapticSynthesisTelemetryRing) |
-            HapticSynthesisMutationGuardBit(BufferID.ShinobuHapticSynthesisProfileTable) |
-            HapticSynthesisMutationGuardBit(BufferID.ShinobuHapticSynthesisTuning);
-        private static readonly ulong HapticSynthesisMockScheduleGuardMask =
-            HapticSynthesisBaseScheduleGuardMask |
-            HapticSynthesisMutationGuardBit(BufferID.ShinobuHapticSynthesisMockImpulses);
-
         private VaultGenerationHandle<HapticPulseSignal> _hapticSynthesisPulsesHandle;
         private VaultGenerationHandle<HapticPulseSignal> _hapticSynthesisFinalPulseHandle;
         private VaultGenerationHandle<HapticPhysicalImpulseDTO> _hapticSynthesisMockImpulsesHandle;
@@ -62,7 +46,7 @@ namespace Hecton8.Core
         private uint _hapticSynthesisScheduledFrame;
         private uint _hapticSynthesisScheduledSchemeHash;
         private uint _hapticSynthesisPinnedBufferMask;
-        private IDataVault _hapticSynthesisScheduleGuardVault;
+        private IDataVault _hapticSynthesisPinnedBufferVault;
         private long _hapticSynthesisScheduleTimestamp;
 
         private void TryRegisterHapticSynthesisPostSimulation()
@@ -421,7 +405,7 @@ namespace Hecton8.Core
                     mockJob.PlayerAup = playerAup;
                     mockJob.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
                     mockJob.Seed = seed;
-                    mockJob.Run();
+                    mockJob.Execute();
                     mockCount = math.min(51, mockImpulses.Length);
                 }
 
@@ -443,7 +427,7 @@ namespace Hecton8.Core
                 evaluateJob.GlobalQualityWeight = quality;
                 evaluateJob.MockImpulseCount = mockCount;
                 evaluateJob.TelemetryCursor = telemetryIndex;
-                evaluateJob.Run();
+                evaluateJob.Execute();
 
                 CoalesceHapticPulsesJob coalesceJob = default;
                 coalesceJob.Pulses = pulses;
@@ -452,7 +436,7 @@ namespace Hecton8.Core
                 coalesceJob.TelemetryRing = telemetryRing;
                 coalesceJob.TelemetryCursor = telemetryIndex;
                 coalesceJob.GlobalQualityWeight = quality;
-                coalesceJob.Run();
+                coalesceJob.Execute();
 
                 ulong elapsedRawMicros = (ulong)((Stopwatch.GetTimestamp() - startTicks) * 1000000L / Stopwatch.Frequency);
                 uint elapsedMicros = elapsedRawMicros > uint.MaxValue ? uint.MaxValue : (uint)elapsedRawMicros;
@@ -460,7 +444,7 @@ namespace Hecton8.Core
                 timingJob.TelemetryRing = telemetryRing;
                 timingJob.TelemetryCursor = telemetryIndex;
                 timingJob.BurstExecutionMicroseconds = elapsedMicros;
-                timingJob.Run();
+                timingJob.Execute();
 
                 pulse = finalPulse[0];
                 HapticTelemetryEntry telemetry = telemetryRing[telemetryIndex];
@@ -842,21 +826,24 @@ namespace Hecton8.Core
                 return;
 
             _lastHapticSynthesisFaultDumpFrame = safeFrame;
-            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-            if (string.IsNullOrEmpty(projectRoot))
-                return;
-
-            string dumpPath = Path.Combine(projectRoot, HapticFaultDumpRelativePath);
-            string directory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
             int byteCount = telemetryRing.Length * UnsafeUtility.SizeOf<HapticTelemetryEntry>();
-            ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>(ptr, byteCount);
-            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            NativeArray<byte> payload = default;
+            const string dumpPayloadLabel = "hapticSynthesisTelemetryDumpPayload";
+            try
             {
-                stream.Write(bytes);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(InputDispatcher),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
+                void* destination = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                if (UnsafeMemoryCopyGuard.SafeCopy(destination, byteCount, source, byteCount))
+                    NativeFaultDumpWriter.TryWriteAll(HapticFaultDumpRelativePath, payload, byteCount);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(ref payload, nameof(InputDispatcher), dumpPayloadLabel);
             }
         }
 
@@ -880,6 +867,7 @@ namespace Hecton8.Core
             _hapticSynthesisScheduledFrame = 0u;
             _hapticSynthesisScheduledSchemeHash = 0u;
             _hapticSynthesisPinnedBufferMask = 0u;
+            _hapticSynthesisPinnedBufferVault = null;
             _hapticSynthesisScheduleTimestamp = 0L;
         }
 
@@ -1027,46 +1015,54 @@ namespace Hecton8.Core
         {
             ReleaseHapticSynthesisSchedulePins();
             IDataVault vault = _dataVault;
-            if (vault == null || !TryValidateHapticSynthesisScheduleBuffers(includeMockImpulses))
+            if (vault == null)
             {
                 return false;
             }
 
-            ulong guardMask = ResolveHapticSynthesisScheduleGuardMask(includeMockImpulses);
-            bool acquired = false;
+            _hapticSynthesisPinnedBufferVault = vault;
+            bool pinned = false;
             try
             {
-                if (!vault.TryAcquireMutationGuard(guardMask))
+                if (!TryLockHapticSynthesisScheduleBuffer(vault, BufferID.ShinobuHapticSynthesisPulses, HapticSynthesisPinPulses) ||
+                    !TryLockHapticSynthesisScheduleBuffer(vault, BufferID.ShinobuHapticSynthesisFinalPulse, HapticSynthesisPinFinalPulse) ||
+                    !TryLockHapticSynthesisScheduleBuffer(vault, BufferID.ShinobuHapticSynthesisTelemetryRing, HapticSynthesisPinTelemetry) ||
+                    !TryLockHapticSynthesisScheduleBuffer(vault, BufferID.ShinobuHapticSynthesisProfileTable, HapticSynthesisPinProfiles) ||
+                    !TryLockHapticSynthesisScheduleBuffer(vault, BufferID.ShinobuHapticSynthesisTuning, HapticSynthesisPinTuning) ||
+                    (includeMockImpulses &&
+                     !TryLockHapticSynthesisScheduleBuffer(vault, BufferID.ShinobuHapticSynthesisMockImpulses, HapticSynthesisPinMockImpulses)))
+                {
                     return false;
+                }
 
-                acquired = true;
                 if (!TryValidateHapticSynthesisScheduleBuffers(includeMockImpulses))
                     return false;
 
-                _hapticSynthesisPinnedBufferMask = HapticSynthesisBasePinMask |
-                                                   (includeMockImpulses ? HapticSynthesisPinMockImpulses : 0u);
-                _hapticSynthesisScheduleGuardVault = vault;
-                acquired = false;
+                pinned = true;
                 return true;
             }
             finally
             {
-                if (acquired)
-                    vault.ReleaseMutationGuard(guardMask);
+                if (!pinned)
+                    ReleaseHapticSynthesisSchedulePins();
             }
         }
 
         private void ReleaseHapticSynthesisSchedulePins()
         {
-            IDataVault vault = _hapticSynthesisScheduleGuardVault;
+            IDataVault vault = _hapticSynthesisPinnedBufferVault;
             uint mask = _hapticSynthesisPinnedBufferMask;
+            _hapticSynthesisPinnedBufferMask = 0u;
+            _hapticSynthesisPinnedBufferVault = null;
             if (vault != null && mask != 0u)
             {
-                vault.ReleaseMutationGuard(ResolveHapticSynthesisScheduleGuardMask((mask & HapticSynthesisPinMockImpulses) != 0u));
+                TryUnlockHapticSynthesisScheduleBuffer(vault, mask, HapticSynthesisPinMockImpulses, BufferID.ShinobuHapticSynthesisMockImpulses);
+                TryUnlockHapticSynthesisScheduleBuffer(vault, mask, HapticSynthesisPinTuning, BufferID.ShinobuHapticSynthesisTuning);
+                TryUnlockHapticSynthesisScheduleBuffer(vault, mask, HapticSynthesisPinProfiles, BufferID.ShinobuHapticSynthesisProfileTable);
+                TryUnlockHapticSynthesisScheduleBuffer(vault, mask, HapticSynthesisPinTelemetry, BufferID.ShinobuHapticSynthesisTelemetryRing);
+                TryUnlockHapticSynthesisScheduleBuffer(vault, mask, HapticSynthesisPinFinalPulse, BufferID.ShinobuHapticSynthesisFinalPulse);
+                TryUnlockHapticSynthesisScheduleBuffer(vault, mask, HapticSynthesisPinPulses, BufferID.ShinobuHapticSynthesisPulses);
             }
-
-            _hapticSynthesisPinnedBufferMask = 0u;
-            _hapticSynthesisScheduleGuardVault = null;
         }
 
         private bool TryValidateHapticSynthesisScheduleBuffers(bool includeMockImpulses)
@@ -1086,9 +1082,22 @@ namespace Hecton8.Core
                     mockImpulses.IsCreated);
         }
 
-        private static ulong ResolveHapticSynthesisScheduleGuardMask(bool includeMockImpulses)
+        private bool TryLockHapticSynthesisScheduleBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
         {
-            return includeMockImpulses ? HapticSynthesisMockScheduleGuardMask : HapticSynthesisBaseScheduleGuardMask;
+            if ((_hapticSynthesisPinnedBufferMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null || !vault.TryLockBuffer(bufferId, SystemID.CoreDeterminism))
+                return false;
+
+            _hapticSynthesisPinnedBufferMask |= pinBit;
+            return true;
+        }
+
+        private static void TryUnlockHapticSynthesisScheduleBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, SystemID.CoreDeterminism);
         }
 
         private static bool IsHapticSynthesisHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
@@ -1096,11 +1105,6 @@ namespace Hecton8.Core
             return handle.BufferID == (uint)expectedBufferId &&
                    handle.SystemID == (uint)SystemID.CoreDeterminism &&
                    handle.Generation != 0u;
-        }
-
-        private static ulong HapticSynthesisMutationGuardBit(BufferID bufferId)
-        {
-            return 1UL << ((int)bufferId & 63);
         }
 
         private sealed class HapticSynthesisSimulationSystem : IDispatcherSystem

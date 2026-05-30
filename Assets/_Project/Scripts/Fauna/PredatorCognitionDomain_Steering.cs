@@ -1,5 +1,4 @@
 using System;
-using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -150,8 +149,8 @@ namespace Hecton8.AI
         private const uint SteeringDumpMagic = 0x30303353u;
         private const uint SteeringDumpFaultHash = 0x53333033u;
         private const int SteeringDumpVersion = 1;
-        private const string SteeringDumpDirectoryRelativePath = "Docs/AgentLogs";
         private const string SteeringDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
+        private const string SteeringDumpPayloadLabel = "predatorSteeringTelemetryDumpPayload";
         internal const int LeviathanSteeringScheduledJobCount = 5;
         private const int SteeringParamsOffsetMaxSpeed = 0;
         private const int SteeringParamsOffsetTurnSpeed = 4;
@@ -574,49 +573,43 @@ namespace Hecton8.AI
             if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return false;
 
+            NativeArray<byte> payload = default;
             try
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(SteeringDumpFaultHash, SteeringDumpMagic, _lastLeviathanSteeringChainMicroseconds);
-                DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
-                string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
-                string dumpDirectory = Path.Combine(projectRoot, SteeringDumpDirectoryRelativePath);
-                string dumpPath = Path.Combine(projectRoot, SteeringDumpRelativePath);
-                Directory.CreateDirectory(dumpDirectory);
+                int rowSize = UnsafeUtility.SizeOf<SteeringTelemetryEntry>();
+                int dataByteCount = telemetry.Length * rowSize;
+                int byteCount = 24 + dataByteCount;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(PredatorCognitionDomain),
+                    SteeringDumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
+                int offset = 0;
 
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    Span<byte> header = stackalloc byte[24];
-                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), SteeringDumpMagic);
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), SteeringDumpVersion);
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), telemetry.Length);
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(12, 4), SteeringTelemetryEntrySizeBytes);
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(16, 4), cursor.IsCreated && cursor.Length > 0 ? cursor[0] : 0);
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(20, 4), UnsafeUtility.SizeOf<SteeringTelemetryEntry>());
-                    stream.Write(header);
+                WriteUInt32LittleEndian(payload, ref offset, SteeringDumpMagic);
+                WriteInt32LittleEndian(payload, ref offset, SteeringDumpVersion);
+                WriteInt32LittleEndian(payload, ref offset, telemetry.Length);
+                WriteInt32LittleEndian(payload, ref offset, SteeringTelemetryEntrySizeBytes);
+                WriteInt32LittleEndian(payload, ref offset, cursor.IsCreated && cursor.Length > 0 ? cursor[0] : 0);
+                WriteInt32LittleEndian(payload, ref offset, rowSize);
 
-                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                    int byteCount = telemetry.Length * UnsafeUtility.SizeOf<SteeringTelemetryEntry>();
-                    stream.Write(new ReadOnlySpan<byte>(source, byteCount));
-                    stream.Flush(true);
-                }
+                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                void* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload) + offset;
+                UnsafeUtility.MemCpy(destination, source, dataByteCount);
 
-                return true;
+                return NativeFaultDumpWriter.TryWriteAll(SteeringDumpRelativePath, payload, byteCount);
             }
-            catch (IOException)
+            catch (Exception)
             {
                 return false;
             }
-            catch (UnauthorizedAccessException)
+            finally
             {
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                return false;
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(PredatorCognitionDomain),
+                    SteeringDumpPayloadLabel);
             }
         }
 

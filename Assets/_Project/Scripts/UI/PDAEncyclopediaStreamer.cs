@@ -2269,7 +2269,6 @@ namespace Hecton8.UI
             string directory = Path.Combine(root, "Docs", "AgentLogs");
             try
             {
-                Directory.CreateDirectory(directory);
                 WriteBlackBoxDump(Path.Combine(directory, "Dump_1309_PDAEncyclopedia.bin"));
                 WriteBlackBoxDump(Path.Combine(directory, "Dump_PDA_STREAMER.bin"));
             }
@@ -2295,26 +2294,37 @@ namespace Hecton8.UI
 
         private void WriteBlackBoxDump(string path)
         {
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
+            const int headerBytes = 32;
+            const int telemetryEntryBytes = 64;
+            int byteCount = headerBytes + TelemetryFrameCount * telemetryEntryBytes;
+            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+            try
             {
-                Span<byte> header = stackalloc byte[32];
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                Span<byte> buffer = new Span<byte>(destination, byteCount);
+                Span<byte> header = buffer.Slice(0, headerBytes);
                 WriteUIntLittleEndian(header.Slice(0, 4), StateMagic);
                 WriteUIntLittleEndian(header.Slice(4, 4), ResolvePdaFrame());
                 WriteUIntLittleEndian(header.Slice(8, 4), _lastFaultHash);
                 WriteUIntLittleEndian(header.Slice(12, 4), (uint)TelemetryFrameCount);
                 WriteUIntLittleEndian(header.Slice(16, 4), (uint)UnsafeUtility.SizeOf<PdaEncyclopediaTelemetryEntry>());
                 WriteUIntLittleEndian(header.Slice(20, 4), _activeEntryHash);
-                stream.Write(header);
 
-                Span<byte> row = stackalloc byte[64];
                 for (int i = 0; i < TelemetryFrameCount; i++)
                 {
                     if (!TryReadTelemetryDumpEntry(i, out PdaEncyclopediaTelemetryEntry entry))
                         entry = default;
 
+                    Span<byte> row = buffer.Slice(headerBytes + i * telemetryEntryBytes, telemetryEntryBytes);
                     WriteTelemetryDumpEntry(row, in entry);
-                    stream.Write(row);
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 

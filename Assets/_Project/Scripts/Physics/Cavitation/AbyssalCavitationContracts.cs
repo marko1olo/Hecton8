@@ -42,9 +42,6 @@ namespace Hecton8.Physics
         public const BufferID VisualSpheres = (BufferID)71564;
         public const BufferID TelemetryRing = (BufferID)71565;
         public const BufferID OrdnanceProfiles = (BufferID)71566;
-#if UNITY_EDITOR
-        public const BufferID CsvScratch = (BufferID)71567;
-#endif
         public const BufferID Tuning = (BufferID)71568;
         public const BufferID SdfDescriptor = (BufferID)71569;
         public const BufferID SdfVoxels = (BufferID)71570;
@@ -505,6 +502,33 @@ namespace Hecton8.Physics
             return count;
         }
 
+        public static int Parse(ReadOnlySpan<byte> csvBytes, Span<OrdnanceProfileDTO> profiles)
+        {
+            if (profiles.Length == 0)
+                return 0;
+
+            profiles.Clear();
+            if (csvBytes.Length == 0)
+                return 0;
+
+            int count = 0;
+            int cursor = 0;
+            while (count < profiles.Length && TryReadLine(csvBytes, ref cursor, out ReadOnlySpan<byte> line))
+            {
+                line = Trim(line);
+                if (line.Length == 0 || line[0] == (byte)'#' || StartsWithHeader(line))
+                    continue;
+
+                if (!TryParseLine(line, out OrdnanceProfileDTO profile))
+                    continue;
+
+                if (TryInsertProfile(profiles, AbyssalCavitationSanitizer.SanitizeProfile(profile)))
+                    count++;
+            }
+
+            return count;
+        }
+
         public static uint HashLowerAscii(ReadOnlySpan<byte> text)
         {
             uint hash = 2166136261u;
@@ -569,6 +593,29 @@ namespace Hecton8.Physics
         private static bool TryInsertProfile(NativeArray<OrdnanceProfileDTO> profiles, OrdnanceProfileDTO profile)
         {
             if (profile.ProfileHash == 0u)
+                return false;
+
+            int start = (int)(profile.ProfileHash % (uint)profiles.Length);
+            for (int probe = 0; probe < profiles.Length; probe++)
+            {
+                int slot = start + probe;
+                if (slot >= profiles.Length)
+                    slot -= profiles.Length;
+
+                OrdnanceProfileDTO existing = profiles[slot];
+                if (existing.ProfileHash == 0u || existing.ProfileHash == profile.ProfileHash)
+                {
+                    profiles[slot] = profile;
+                    return existing.ProfileHash == 0u;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryInsertProfile(Span<OrdnanceProfileDTO> profiles, OrdnanceProfileDTO profile)
+        {
+            if (profile.ProfileHash == 0u || profiles.Length == 0)
                 return false;
 
             int start = (int)(profile.ProfileHash % (uint)profiles.Length);

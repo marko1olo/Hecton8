@@ -20,7 +20,6 @@ namespace Hecton8.Construction
     {
         private static readonly int GlobalHatchLockStatesId = Shader.PropertyToID("_GlobalHatchLockStates");
         private static readonly int GlobalHatchLockParamsId = Shader.PropertyToID("_GlobalHatchLockParams");
-        private static readonly System.Threading.WaitCallback HatchBlackBoxDumpWorkerCallback = RunHatchBlackBoxDumpWorker;
         private const ulong HatchTelemetryDumpMutationGuardMask =
             (1UL << ((int)BufferID.Shinobu343HatchTelemetryRing & 31)) |
             (1UL << ((int)BufferID.Shinobu343HatchTelemetryCursor & 31));
@@ -57,6 +56,7 @@ namespace Hecton8.Construction
         private float _lastHatchAveragePressureDifferentialATM;
         private uint _lastHatchDumpedTelemetryCursor;
         private uint _lastHatchDumpAttemptTelemetryCursor;
+        private uint _lastHatchBlackBoxDumpHash;
         private uint _lastHatchShaderUploadHash;
         private int _lastHatchShaderUploadCount;
         private byte _hatchShaderWriteBufferSlot;
@@ -64,9 +64,7 @@ namespace Hecton8.Construction
         private bool _hatchShaderHasValidReadBuffer;
         private bool _hatchShaderGlobalsActive;
         private long _hatchProfilesCsvLastWriteTicks;
-        private string _hatchDumpPath;
         private string _hatchProfilesCsvPath;
-        private string _hatchTelemetryDumpPathSnapshot;
         private readonly HatchTelemetryEntry[] _hatchTelemetryDumpSnapshot = new HatchTelemetryEntry[HatchLockConstants.TelemetryFrameCount];
         private int _hatchTelemetryDumpSnapshotCount;
         private int _hatchTelemetryDumpInFlight;
@@ -186,7 +184,6 @@ namespace Hecton8.Construction
         private void InitializeHatchLockColdPaths()
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            _hatchDumpPath = Path.GetFullPath(Path.Combine(projectRoot, "Docs/AgentLogs/Dump_1306_Construction_Hatch.bin"));
             if (string.IsNullOrEmpty(_hatchProfilesCsvPath))
                 _hatchProfilesCsvPath = Path.GetFullPath(Path.Combine(projectRoot, "Data/Physics/hatch_hardware_profiles.csv"));
             SignalBus<MovementAcousticSignal>.EnsureInitialized();
@@ -753,7 +750,6 @@ namespace Hecton8.Construction
             if (vault == null ||
                 _hatchTelemetryHandle.Generation == 0u ||
                 _hatchTelemetryCursorHandle.Generation == 0u ||
-                string.IsNullOrEmpty(_hatchDumpPath) ||
                 System.Threading.Interlocked.CompareExchange(ref _hatchTelemetryDumpInFlight, 1, 0) != 0)
             {
                 return;
@@ -794,7 +790,6 @@ namespace Hecton8.Construction
                 for (int i = 0; i < telemetryCount; i++)
                     _hatchTelemetryDumpSnapshot[i] = telemetry[i];
 
-                _hatchTelemetryDumpPathSnapshot = _hatchDumpPath;
                 _hatchTelemetryDumpSnapshotCursor = cursorValue;
                 _hatchTelemetryDumpSnapshotCount = telemetryCount;
                 _lastHatchDumpAttemptTelemetryCursor = cursorValue;
@@ -807,26 +802,11 @@ namespace Hecton8.Construction
                     System.Threading.Volatile.Write(ref _hatchTelemetryDumpInFlight, 0);
             }
 
-            if (!System.Threading.ThreadPool.QueueUserWorkItem(HatchBlackBoxDumpWorkerCallback, this))
-            {
-                System.Threading.Volatile.Write(ref _hatchTelemetryDumpInFlight, 0);
-            }
-        }
-
-        private static void RunHatchBlackBoxDumpWorker(object state)
-        {
-            if (state is BulkheadContainmentRuntime runtime)
-                runtime.WriteHatchBlackBoxDumpWorker();
-        }
-
-        private void WriteHatchBlackBoxDumpWorker()
-        {
             try
             {
                 uint cursor = _hatchTelemetryDumpSnapshotCursor;
                 int telemetryCount = _hatchTelemetryDumpSnapshotCount;
-                string dumpPath = _hatchTelemetryDumpPathSnapshot;
-                if (TryDumpHatchBlackBox(_hatchTelemetryDumpSnapshot, telemetryCount, cursor, dumpPath))
+                if (TryDumpHatchBlackBox(_hatchTelemetryDumpSnapshot, telemetryCount, cursor))
                     _lastHatchDumpedTelemetryCursor = cursor;
             }
             finally
@@ -835,12 +815,11 @@ namespace Hecton8.Construction
             }
         }
 
-        private bool TryDumpHatchBlackBox(HatchTelemetryEntry[] telemetry, int telemetryCount, uint cursor, string dumpPath)
+        private bool TryDumpHatchBlackBox(HatchTelemetryEntry[] telemetry, int telemetryCount, uint cursor)
         {
             if (telemetry == null ||
                 telemetryCount <= 0 ||
-                telemetryCount > telemetry.Length ||
-                string.IsNullOrEmpty(dumpPath))
+                telemetryCount > telemetry.Length)
             {
                 return false;
             }
@@ -849,34 +828,44 @@ namespace Hecton8.Construction
             if (UnsafeUtility.SizeOf<HatchTelemetryEntry>() != telemetryDumpEntryBytes)
                 return false;
 
-            string dumpDirectory = Path.GetDirectoryName(dumpPath);
-            if (string.IsNullOrEmpty(dumpDirectory))
-                return false;
-
+            const int headerBytes = 32;
+            int byteCount = headerBytes + telemetryCount * telemetryDumpEntryBytes;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(BulkheadContainmentRuntime),
+                "HatchTelemetryBlackBoxDumpPayload",
+                NativeArrayOptions.ClearMemory);
+            uint hash = 2166136261u ^ HatchLockConstants.DumpMagic ^ cursor ^ (uint)telemetryCount;
             try
             {
-                Directory.CreateDirectory(dumpDirectory);
-                using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                Span<byte> header = stackalloc byte[16];
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                Span<byte> header = new Span<byte>(destination, headerBytes);
                 WriteUInt(header, 0, HatchLockConstants.DumpMagic);
-                WriteUInt(header, 4, cursor);
-                WriteUInt(header, 8, (uint)telemetryCount);
-                WriteUInt(header, 12, telemetryDumpEntryBytes);
-                stream.Write(header);
+                WriteUInt(header, 4, 1u);
+                WriteUInt(header, 8, cursor);
+                WriteUInt(header, 12, (uint)telemetryCount);
+                WriteUInt(header, 16, (uint)telemetryDumpEntryBytes);
 
-                Span<byte> entryBytes = stackalloc byte[telemetryDumpEntryBytes];
                 for (int i = 0; i < telemetryCount; i++)
                 {
                     HatchTelemetryEntry entry = telemetry[i];
-                    WriteHatchTelemetryEntry(entryBytes, in entry);
-                    stream.Write(entryBytes);
+                    byte* bytes = (byte*)UnsafeUtility.AddressOf(ref entry);
+                    for (int byteIndex = 0; byteIndex < telemetryDumpEntryBytes; byteIndex++)
+                        hash = (hash ^ bytes[byteIndex]) * 16777619u;
+
+                    WriteHatchTelemetryEntry(new Span<byte>(destination + headerBytes + i * telemetryDumpEntryBytes, telemetryDumpEntryBytes), in entry);
                 }
 
-                return true;
+                _lastHatchBlackBoxDumpHash = hash == 0u ? 2166136261u : hash;
+                WriteUInt(header, 20, _lastHatchBlackBoxDumpHash);
+                return NativeFaultDumpWriter.TryWriteAll("Docs/AgentLogs/Dump_1403_HATCH_LOCKS.bin", payload, byteCount);
             }
-            catch (Exception ex) when (IsColdStorageException(ex))
+            finally
             {
-                return false;
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(BulkheadContainmentRuntime),
+                    "HatchTelemetryBlackBoxDumpPayload");
             }
         }
 

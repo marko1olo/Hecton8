@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -356,6 +357,8 @@ namespace Hecton8.Inventory
         public const uint TelemetryFlagFatal = 1u << 1;
         public const string DefaultDumpPath = "Docs/AgentLogs/Dump_ECONOMY.bin";
         public const string DefaultH8DumpPath = "Docs/AgentLogs/Dump_ECONOMY.h8dump";
+        private const int EconomyDumpHeaderBytes = 16;
+        private const int EconomyOrderedDumpHeaderBytes = 32;
 
         public const int OshinoCraftHeaderBytes = 80;
         public const int OshinoCraftRecipeStride = 64;
@@ -1439,31 +1442,7 @@ namespace Hecton8.Inventory
 
         public static void DumpTelemetryRing(NativeArray<EconomyTelemetryEntry>.ReadOnly telemetry, string relativePath = DefaultDumpPath)
         {
-            if (!telemetry.IsCreated || telemetry.Length <= 0)
-                return;
-
-            string projectRoot = Directory.GetCurrentDirectory();
-            string dumpPath = Path.IsPathRooted(relativePath)
-                ? relativePath
-                : Path.Combine(projectRoot, relativePath);
-            string directory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
-            {
-                writer.Write(EconomyDumpMagic);
-                int count = math.min(telemetry.Length, BlackBoxCapacity);
-                writer.Write(EconomyDumpVersion);
-                writer.Write(count);
-                writer.Write(EconomyTelemetryEntrySizeBytes);
-                for (int index = 0; index < count; index++)
-                {
-                    EconomyTelemetryEntry entry = telemetry[index];
-                    WriteTelemetryEntry(writer, in entry);
-                }
-            }
+            TryWriteTelemetryRing(telemetry, relativePath);
         }
 
         public static void DumpTelemetryRingH8Dump(NativeArray<EconomyTelemetryEntry>.ReadOnly telemetry)
@@ -1476,37 +1455,7 @@ namespace Hecton8.Inventory
             int latestCursor,
             string relativePath = DefaultDumpPath)
         {
-            if (!telemetry.IsCreated || telemetry.Length <= 0)
-                return;
-
-            string projectRoot = Directory.GetCurrentDirectory();
-            string dumpPath = Path.IsPathRooted(relativePath)
-                ? relativePath
-                : Path.Combine(projectRoot, relativePath);
-            string directory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
-            {
-                int count = math.min(telemetry.Length, BlackBoxCapacity);
-                int cursor = NormalizeRingCursor(latestCursor, count);
-                int first = (cursor + 1) % count;
-                writer.Write(EconomyDumpMagic);
-                writer.Write(EconomyDumpVersion);
-                writer.Write(count);
-                writer.Write(EconomyTelemetryEntrySizeBytes);
-                writer.Write(cursor);
-                writer.Write(first);
-                writer.Write(0);
-                writer.Write(0);
-                for (int offset = 0; offset < count; offset++)
-                {
-                    EconomyTelemetryEntry entry = telemetry[(first + offset) % count];
-                    WriteTelemetryEntry(writer, in entry);
-                }
-            }
+            TryWriteTelemetryRingOrdered(telemetry, latestCursor, relativePath);
         }
 
         public static bool TryDumpTelemetryOnFault(
@@ -1537,8 +1486,7 @@ namespace Hecton8.Inventory
             if (!faulted)
                 return false;
 
-            DumpTelemetryRingOrdered(telemetry, latestCursor, relativePath);
-            return true;
+            return TryWriteTelemetryRingOrdered(telemetry, latestCursor, relativePath);
         }
 
         public static void PublishBrokenSignals(NativeArray<ToolBrokenSignal> brokenSignals)
@@ -1625,22 +1573,159 @@ namespace Hecton8.Inventory
             return positiveCursor % capacity;
         }
 
-        private static void WriteTelemetryEntry(BinaryWriter writer, in EconomyTelemetryEntry entry)
+        private static bool TryWriteTelemetryRing(
+            NativeArray<EconomyTelemetryEntry>.ReadOnly telemetry,
+            string relativePath)
         {
-            writer.Write(entry.TimestampTicks);
-            writer.Write(entry.InventoryMask);
-            writer.Write(entry.InventoryTransactionTimeMs);
-            writer.Write(entry.MassKg);
-            writer.Write(entry.VolumeLiters);
-            writer.Write(entry.ReservedFloat);
-            writer.Write(entry.FrameIndex);
-            writer.Write(entry.LastItemHash);
-            writer.Write(entry.LastRecipeHash);
-            writer.Write(entry.Flags);
-            writer.Write(entry.TotalItemsCrafted);
-            writer.Write(entry.TotalItemsTransferred);
-            writer.Write(entry.TransactionResult);
-            writer.Write(entry.SlotIndex);
+            if (!telemetry.IsCreated || telemetry.Length <= 0)
+                return false;
+
+            int count = math.min(telemetry.Length, BlackBoxCapacity);
+            int byteCount = EconomyDumpHeaderBytes + count * EconomyTelemetryEntrySizeBytes;
+            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            try
+            {
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int offset = 0;
+                if (!TryWriteUInt32LittleEndian(destination, byteCount, ref offset, EconomyDumpMagic) ||
+                    !TryWriteUInt32LittleEndian(destination, byteCount, ref offset, EconomyDumpVersion) ||
+                    !TryWriteInt32LittleEndian(destination, byteCount, ref offset, count) ||
+                    !TryWriteInt32LittleEndian(destination, byteCount, ref offset, EconomyTelemetryEntrySizeBytes))
+                {
+                    return false;
+                }
+
+                for (int index = 0; index < count; index++)
+                {
+                    EconomyTelemetryEntry entry = telemetry[index];
+                    if (!TryWriteTelemetryEntry(destination, byteCount, ref offset, in entry))
+                        return false;
+                }
+
+                return offset == byteCount &&
+                       NativeFaultDumpWriter.TryWriteAll(ResolveDumpPath(relativePath, DefaultDumpPath), payload, byteCount);
+            }
+            finally
+            {
+                payload.Dispose();
+            }
+        }
+
+        private static bool TryWriteTelemetryRingOrdered(
+            NativeArray<EconomyTelemetryEntry>.ReadOnly telemetry,
+            int latestCursor,
+            string relativePath)
+        {
+            if (!telemetry.IsCreated || telemetry.Length <= 0)
+                return false;
+
+            int count = math.min(telemetry.Length, BlackBoxCapacity);
+            int byteCount = EconomyOrderedDumpHeaderBytes + count * EconomyTelemetryEntrySizeBytes;
+            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            try
+            {
+                int cursor = NormalizeRingCursor(latestCursor, count);
+                int first = (cursor + 1) % count;
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int offset = 0;
+                if (!TryWriteUInt32LittleEndian(destination, byteCount, ref offset, EconomyDumpMagic) ||
+                    !TryWriteUInt32LittleEndian(destination, byteCount, ref offset, EconomyDumpVersion) ||
+                    !TryWriteInt32LittleEndian(destination, byteCount, ref offset, count) ||
+                    !TryWriteInt32LittleEndian(destination, byteCount, ref offset, EconomyTelemetryEntrySizeBytes) ||
+                    !TryWriteInt32LittleEndian(destination, byteCount, ref offset, cursor) ||
+                    !TryWriteInt32LittleEndian(destination, byteCount, ref offset, first) ||
+                    !TryWriteInt32LittleEndian(destination, byteCount, ref offset, 0) ||
+                    !TryWriteInt32LittleEndian(destination, byteCount, ref offset, 0))
+                {
+                    return false;
+                }
+
+                for (int index = 0; index < count; index++)
+                {
+                    EconomyTelemetryEntry entry = telemetry[(first + index) % count];
+                    if (!TryWriteTelemetryEntry(destination, byteCount, ref offset, in entry))
+                        return false;
+                }
+
+                return offset == byteCount &&
+                       NativeFaultDumpWriter.TryWriteAll(ResolveDumpPath(relativePath, DefaultDumpPath), payload, byteCount);
+            }
+            finally
+            {
+                payload.Dispose();
+            }
+        }
+
+        private static bool TryWriteTelemetryEntry(byte* destination, int capacity, ref int offset, in EconomyTelemetryEntry entry)
+        {
+            return TryWriteInt64LittleEndian(destination, capacity, ref offset, entry.TimestampTicks) &&
+                   TryWriteUInt64LittleEndian(destination, capacity, ref offset, entry.InventoryMask) &&
+                   TryWriteFloat32LittleEndian(destination, capacity, ref offset, entry.InventoryTransactionTimeMs) &&
+                   TryWriteFloat32LittleEndian(destination, capacity, ref offset, entry.MassKg) &&
+                   TryWriteFloat32LittleEndian(destination, capacity, ref offset, entry.VolumeLiters) &&
+                   TryWriteFloat32LittleEndian(destination, capacity, ref offset, entry.ReservedFloat) &&
+                   TryWriteUInt32LittleEndian(destination, capacity, ref offset, entry.FrameIndex) &&
+                   TryWriteUInt32LittleEndian(destination, capacity, ref offset, entry.LastItemHash) &&
+                   TryWriteUInt32LittleEndian(destination, capacity, ref offset, entry.LastRecipeHash) &&
+                   TryWriteUInt32LittleEndian(destination, capacity, ref offset, entry.Flags) &&
+                   TryWriteInt32LittleEndian(destination, capacity, ref offset, entry.TotalItemsCrafted) &&
+                   TryWriteInt32LittleEndian(destination, capacity, ref offset, entry.TotalItemsTransferred) &&
+                   TryWriteInt32LittleEndian(destination, capacity, ref offset, entry.TransactionResult) &&
+                   TryWriteInt32LittleEndian(destination, capacity, ref offset, entry.SlotIndex);
+        }
+
+        private static string ResolveDumpPath(string relativePath, string fallbackPath)
+        {
+            string path = string.IsNullOrWhiteSpace(relativePath) ? fallbackPath : relativePath;
+            if (Path.IsPathRooted(path))
+                return path;
+
+            return Path.Combine(Directory.GetCurrentDirectory(), path);
+        }
+
+        private static bool TryWriteUInt64LittleEndian(byte* destination, int capacity, ref int offset, ulong value)
+        {
+            if (offset > capacity - 8)
+                return false;
+
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
+            destination[offset + 4] = (byte)(value >> 32);
+            destination[offset + 5] = (byte)(value >> 40);
+            destination[offset + 6] = (byte)(value >> 48);
+            destination[offset + 7] = (byte)(value >> 56);
+            offset += 8;
+            return true;
+        }
+
+        private static bool TryWriteInt64LittleEndian(byte* destination, int capacity, ref int offset, long value)
+        {
+            return TryWriteUInt64LittleEndian(destination, capacity, ref offset, unchecked((ulong)value));
+        }
+
+        private static bool TryWriteUInt32LittleEndian(byte* destination, int capacity, ref int offset, uint value)
+        {
+            if (offset > capacity - 4)
+                return false;
+
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
+            offset += 4;
+            return true;
+        }
+
+        private static bool TryWriteInt32LittleEndian(byte* destination, int capacity, ref int offset, int value)
+        {
+            return TryWriteUInt32LittleEndian(destination, capacity, ref offset, unchecked((uint)value));
+        }
+
+        private static bool TryWriteFloat32LittleEndian(byte* destination, int capacity, ref int offset, float value)
+        {
+            return TryWriteUInt32LittleEndian(destination, capacity, ref offset, math.asuint(value));
         }
 
         private static bool TryApplyPositiveDelta(

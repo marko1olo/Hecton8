@@ -236,3 +236,11 @@ Solution: Recheck official GPT-5.5 pricing/model evidence, run only the fast tok
 Rejected Alternatives: Regenerating dashboard images was rejected because the operator asked to count/update/commit/push, not produce new charts. Blind `git add -A` without inspecting `CON` was rejected because Windows device names can break checkout/staging semantics.
 Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected. Reporting scalability improves because dated text-only refreshes can move across date boundaries without chart churn.
 Hardware Impact: 0 us runtime gain. Audit evidence gain: current total is 121,116,760,791 tokens, delta is 3,431,972,122 tokens, GPT-5.5 base API-equivalent cost is 93,833.434913 USD, and dashboard/chart paths remained unchanged.
+
+## Decision 38 - 2026-05-30 late-day text-only token refresh
+
+Problem: The operator requested another info update and full commit/push after the 12:10 snapshot, while local Codex JSONL kept moving and the repository still contains active parallel-agent churn.
+Solution: Recheck the official GPT-5.5 pricing boundary, rerun only `Tools/CodexTokenUsageFastRefresh_20260528.py`, validate the actual persisted JSON schema, and checkpoint with explicit `1334` and root `CON` staging exclusions.
+Rejected Alternatives: Running the dashboard/chart pipeline was rejected because the request did not ask for image/chart regeneration. Keeping the first failed validator result hidden was rejected because it used a stale `summary` schema assumption. Running `dotnet build` was rejected because this is offline telemetry/docs work and compilation throttling forbids unnecessary build pressure.
+Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected. Reporting scalability improves because late-day refreshes can validate the actual report schema while preserving text-only artifact scope.
+Hardware Impact: 0 us runtime gain. Audit evidence gain: current total is 123,468,373,111 tokens, delta is 2,351,612,320 tokens, GPT-5.5 base API-equivalent cost is 95,551.436967 USD, and dashboard/chart paths remained unchanged.

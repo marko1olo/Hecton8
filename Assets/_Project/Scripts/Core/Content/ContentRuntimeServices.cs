@@ -419,30 +419,38 @@ namespace Hecton8.Core.Content
                 return false;
             }
 
-            writeVault = vault;
-            if (!vault.TryResolveHandle(in _statesHandle, out NativeArray<ContentBundleRefState> statesBuffer) ||
-                !vault.TryResolveHandle(in _countHandle, out NativeArray<int> countBuffer) ||
-                !statesBuffer.IsCreated ||
-                !countBuffer.IsCreated ||
-                statesBuffer.Length < _capacity ||
-                countBuffer.Length < 1)
+            bool keepGuard = false;
+            try
             {
-                ReleaseBundleRefMutationGuard(vault);
+                writeVault = vault;
+                if (!vault.TryResolveHandle(in _statesHandle, out NativeArray<ContentBundleRefState> statesBuffer) ||
+                    !vault.TryResolveHandle(in _countHandle, out NativeArray<int> countBuffer) ||
+                    !statesBuffer.IsCreated ||
+                    !countBuffer.IsCreated ||
+                    statesBuffer.Length < _capacity ||
+                    countBuffer.Length < 1)
+                {
+                    writeVault = null;
+                    return false;
+                }
+
+                states = (ContentBundleRefState*)statesBuffer.GetUnsafePtr();
+                count = (int*)countBuffer.GetUnsafePtr();
+                if (states != null && count != null && statesBuffer.Length >= _capacity && countBuffer.Length >= 1)
+                {
+                    writeVault = vault;
+                    keepGuard = true;
+                    return true;
+                }
+
                 writeVault = null;
                 return false;
             }
-
-            states = (ContentBundleRefState*)statesBuffer.GetUnsafePtr();
-            count = (int*)countBuffer.GetUnsafePtr();
-            if (states != null && count != null && statesBuffer.Length >= _capacity && countBuffer.Length >= 1)
+            finally
             {
-                writeVault = vault;
-                return true;
+                if (!keepGuard)
+                    ReleaseBundleRefMutationGuard(vault);
             }
-
-            ReleaseBundleRefMutationGuard(vault);
-            writeVault = null;
-            return false;
         }
 
         private static bool OpenOrAcquireBuffer<T>(
@@ -644,10 +652,10 @@ namespace Hecton8.Core.Content
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8009)]
-    public sealed class ContentAuthorityRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed class ContentAuthorityRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, ISlowTickable, IColdTickable, IGlobalRegistryHotSwapListener
     {
         private const float GhostProxyDelaySeconds = 0.1f;
-        private const long HardVramCeilingBytes = 1800L * 1024L * 1024L;
+        private const long CompactHardVramCeilingBytes = 1800L * 1024L * 1024L;
         private const uint VramInterceptFlag = 1u << 0;
         private const uint AupCleanupFlag = 1u << 1;
         private const uint HologramFlag = 1u << 2;
@@ -701,6 +709,7 @@ namespace Hecton8.Core.Content
         private bool _registeredTick;
         private bool _registeredLateFrame;
         private bool _registeredSlowTick;
+        private bool _registeredColdTick;
         private bool _pendingContentVisualSyncTick;
         private bool _pendingAupCleanup;
         private bool _pendingVramIntercept;
@@ -797,9 +806,13 @@ namespace Hecton8.Core.Content
 
         public void SlowTick()
         {
-            TickVfxPrewarm();
             FlushAupShiftCleanup();
             FlushVramIntercept();
+        }
+
+        public void ColdTick()
+        {
+            TickVfxPrewarm();
         }
 
         public bool RegisterBundleAcquire(uint hash)
@@ -1294,7 +1307,8 @@ namespace Hecton8.Core.Content
                 return;
 
             long projectedBytes = monitor.TotalVRAMBytes + _bundleRefs.EstimateResidentBytes();
-            if (projectedBytes <= HardVramCeilingBytes)
+            long hardVramCeilingBytes = ResolveHardVramCeilingBytes();
+            if (projectedBytes <= hardVramCeilingBytes)
                 return;
 
             _pendingVramIntercept = true;
@@ -1312,7 +1326,8 @@ namespace Hecton8.Core.Content
                 return;
 
             long projectedBytes = monitor.TotalVRAMBytes + _bundleRefs.EstimateResidentBytes();
-            if (projectedBytes <= HardVramCeilingBytes)
+            long hardVramCeilingBytes = ResolveHardVramCeilingBytes();
+            if (projectedBytes <= hardVramCeilingBytes)
                 return;
 
             IAssetLifecyclePressureSink governor = _assetLifecycle;
@@ -1346,6 +1361,13 @@ namespace Hecton8.Core.Content
                     governor.SetHeapSanitizerVramPanicWindow(false, 0f);
                 }
             }
+        }
+
+        private static long ResolveHardVramCeilingBytes()
+        {
+            HardwareTierDetector.EnsureInitialized();
+            long budgetBytes = HardwareTierDetector.RecommendedVramBudgetBytes;
+            return budgetBytes > 0L ? budgetBytes : CompactHardVramCeilingBytes;
         }
 
         private void TickVfxPrewarm()
@@ -1632,14 +1654,26 @@ namespace Hecton8.Core.Content
                     allowColdInitialization))
                 return false;
 
-            telemetry = (ContentAuthorityTelemetryEntry*)telemetryBuffer.GetUnsafePtr();
-            cursor = (int*)cursorBuffer.GetUnsafePtr();
-            if (telemetry != null && cursor != null)
-                return true;
+            IDataVault guardVault = writeVault;
+            bool keepGuard = false;
+            try
+            {
+                telemetry = (ContentAuthorityTelemetryEntry*)telemetryBuffer.GetUnsafePtr();
+                cursor = (int*)cursorBuffer.GetUnsafePtr();
+                if (telemetry != null && cursor != null)
+                {
+                    keepGuard = true;
+                    return true;
+                }
 
-            ReleaseTelemetryMutationGuard(writeVault);
-            writeVault = null;
-            return false;
+                writeVault = null;
+                return false;
+            }
+            finally
+            {
+                if (!keepGuard)
+                    ReleaseTelemetryMutationGuard(guardVault);
+            }
         }
 
         private bool OpenOrAcquireTelemetryWriteBuffers(
@@ -1674,22 +1708,31 @@ namespace Hecton8.Core.Content
                 return false;
             }
 
-            writeVault = vault;
-            if (!vault.TryResolveHandle(in _telemetryHandle, out telemetry) ||
-                !vault.TryResolveHandle(in _telemetryCursorHandle, out cursor) ||
-                !telemetry.IsCreated ||
-                !cursor.IsCreated ||
-                telemetry.Length < TelemetryCapacity ||
-                cursor.Length < 1)
+            bool keepGuard = false;
+            try
             {
-                ReleaseTelemetryMutationGuard(vault);
-                telemetry = default;
-                cursor = default;
-                writeVault = null;
-                return false;
-            }
+                writeVault = vault;
+                if (!vault.TryResolveHandle(in _telemetryHandle, out telemetry) ||
+                    !vault.TryResolveHandle(in _telemetryCursorHandle, out cursor) ||
+                    !telemetry.IsCreated ||
+                    !cursor.IsCreated ||
+                    telemetry.Length < TelemetryCapacity ||
+                    cursor.Length < 1)
+                {
+                    telemetry = default;
+                    cursor = default;
+                    writeVault = null;
+                    return false;
+                }
 
-            return true;
+                keepGuard = true;
+                return true;
+            }
+            finally
+            {
+                if (!keepGuard)
+                    ReleaseTelemetryMutationGuard(vault);
+            }
         }
 
         private unsafe int GetPendingLoadCount()
@@ -1756,33 +1799,41 @@ namespace Hecton8.Core.Content
                 return false;
             }
 
-            writeVault = vault;
-            if (!vault.TryResolveHandle(in _pendingLoadsHandle, out NativeArray<ContentPendingLoadState> pendingLoadsBuffer) ||
-                !vault.TryResolveHandle(in _pendingLoadCountHandle, out NativeArray<int> countBuffer) ||
-                !pendingLoadsBuffer.IsCreated ||
-                !countBuffer.IsCreated ||
-                pendingLoadsBuffer.Length < PendingLoadCapacity ||
-                countBuffer.Length < 1)
+            bool keepGuard = false;
+            try
             {
-                ReleasePendingLoadMutationGuard(vault);
+                writeVault = vault;
+                if (!vault.TryResolveHandle(in _pendingLoadsHandle, out NativeArray<ContentPendingLoadState> pendingLoadsBuffer) ||
+                    !vault.TryResolveHandle(in _pendingLoadCountHandle, out NativeArray<int> countBuffer) ||
+                    !pendingLoadsBuffer.IsCreated ||
+                    !countBuffer.IsCreated ||
+                    pendingLoadsBuffer.Length < PendingLoadCapacity ||
+                    countBuffer.Length < 1)
+                {
+                    writeVault = null;
+                    return false;
+                }
+
+                pendingLoads = (ContentPendingLoadState*)pendingLoadsBuffer.GetUnsafePtr();
+                count = (int*)countBuffer.GetUnsafePtr();
+                if (pendingLoads != null &&
+                    count != null &&
+                    pendingLoadsBuffer.Length >= PendingLoadCapacity &&
+                    countBuffer.Length >= 1)
+                {
+                    writeVault = vault;
+                    keepGuard = true;
+                    return true;
+                }
+
                 writeVault = null;
                 return false;
             }
-
-            pendingLoads = (ContentPendingLoadState*)pendingLoadsBuffer.GetUnsafePtr();
-            count = (int*)countBuffer.GetUnsafePtr();
-            if (pendingLoads != null &&
-                count != null &&
-                pendingLoadsBuffer.Length >= PendingLoadCapacity &&
-                countBuffer.Length >= 1)
+            finally
             {
-                writeVault = vault;
-                return true;
+                if (!keepGuard)
+                    ReleasePendingLoadMutationGuard(vault);
             }
-
-            ReleasePendingLoadMutationGuard(vault);
-            writeVault = null;
-            return false;
         }
 
         private unsafe bool OpenOrAcquirePendingLoadNormalizedWritePointers(
@@ -2017,45 +2068,49 @@ namespace Hecton8.Core.Content
             if (string.IsNullOrEmpty(path) || telemetry.Length < TelemetryCapacity)
                 return false;
 
+            NativeArray<byte> payload = default;
+            const string dumpPayloadLabel = "contentAuthorityBlackBoxDumpPayload";
             try
             {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                    Directory.CreateDirectory(directory);
+                int entrySizeBytes = checked((int)BlackBoxEntrySizeBytes);
+                int byteCount = (sizeof(ulong) + (sizeof(uint) * 3)) + (TelemetryCapacity * entrySizeBytes);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(ContentAuthorityRuntime),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                int writeCursor = 0;
 
-                using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
+                WriteUInt64LittleEndian(payload, ref writeCursor, BlackBoxMagic);
+                WriteUInt32LittleEndian(payload, ref writeCursor, (uint)TelemetryCapacity);
+                WriteInt32LittleEndian(payload, ref writeCursor, entrySizeBytes);
+                WriteUInt32LittleEndian(payload, ref writeCursor, 0u);
+
+                for (int i = 0; i < TelemetryCapacity; i++)
                 {
-                    writer.Write(BlackBoxMagic);
-                    writer.Write((uint)TelemetryCapacity);
-                    writer.Write(BlackBoxEntrySizeBytes);
-                    writer.Write((uint)0u);
+                    int index = cursor + i;
+                    if (index >= TelemetryCapacity)
+                        index -= TelemetryCapacity;
 
-                    for (int i = 0; i < TelemetryCapacity; i++)
-                    {
-                        int index = cursor + i;
-                        if (index >= TelemetryCapacity)
-                            index -= TelemetryCapacity;
-
-                        ContentAuthorityTelemetryEntry entry = telemetry[index];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.FocusHash);
-                        writer.Write(entry.PendingLoads);
-                        writer.Write(entry.HologramsActive);
-                        writer.Write(entry.BundleRefCount);
-                        writer.Write(entry.EstimatedVramBytes);
-                        writer.Write(entry.VramPressure01);
-                        writer.Write(entry.RamPressure01);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.Reserved0);
-                        writer.Write(entry.Reserved1);
-                        writer.Write(entry.Reserved2);
-                        writer.Write(entry.Reserved3);
-                        writer.Write(entry.Reserved4);
-                    }
+                    ContentAuthorityTelemetryEntry entry = telemetry[index];
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.Frame);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.Flags);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.FocusHash);
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.PendingLoads);
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.HologramsActive);
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.BundleRefCount);
+                    WriteInt64LittleEndian(payload, ref writeCursor, entry.EstimatedVramBytes);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.VramPressure01);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.RamPressure01);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.StateHash);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.Reserved0);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.Reserved1);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.Reserved2);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.Reserved3);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.Reserved4);
                 }
 
-                return true;
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, writeCursor);
             }
             catch (Exception exception) when (
                 exception is IOException ||
@@ -2066,6 +2121,45 @@ namespace Hecton8.Core.Content
                 LogBlackBoxDumpFailure(path, exception);
                 return false;
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(ref payload, nameof(ContentAuthorityRuntime), dumpPayloadLabel);
+            }
+        }
+
+        private static void WriteFloatLittleEndian(NativeArray<byte> target, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(target, ref cursor, math.asuint(value));
+        }
+
+        private static void WriteInt64LittleEndian(NativeArray<byte> target, ref int cursor, long value)
+        {
+            WriteUInt64LittleEndian(target, ref cursor, unchecked((ulong)value));
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> target, ref int cursor, ulong value)
+        {
+            target[cursor++] = (byte)value;
+            target[cursor++] = (byte)(value >> 8);
+            target[cursor++] = (byte)(value >> 16);
+            target[cursor++] = (byte)(value >> 24);
+            target[cursor++] = (byte)(value >> 32);
+            target[cursor++] = (byte)(value >> 40);
+            target[cursor++] = (byte)(value >> 48);
+            target[cursor++] = (byte)(value >> 56);
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> target, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(target, ref cursor, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> target, ref int cursor, uint value)
+        {
+            target[cursor++] = (byte)value;
+            target[cursor++] = (byte)(value >> 8);
+            target[cursor++] = (byte)(value >> 16);
+            target[cursor++] = (byte)(value >> 24);
         }
 
         private static string ResolveBlackBoxDumpPath()
@@ -2265,7 +2359,7 @@ namespace Hecton8.Core.Content
 
         private void TryRegister()
         {
-            if ((_registeredTick && _registeredLateFrame && _registeredSlowTick) || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if ((_registeredTick && _registeredLateFrame && _registeredSlowTick && _registeredColdTick) || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             CacheDependencies();
@@ -2275,11 +2369,13 @@ namespace Hecton8.Core.Content
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
             if (!_registeredSlowTick)
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
+            if (!_registeredColdTick)
+                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Core);
         }
 
         private void TryUnregister()
         {
-            if (!_registeredTick && !_registeredLateFrame && !_registeredSlowTick)
+            if (!_registeredTick && !_registeredLateFrame && !_registeredSlowTick && !_registeredColdTick)
                 return;
 
             if (_registeredTick)
@@ -2288,10 +2384,13 @@ namespace Hecton8.Core.Content
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
             if (_registeredSlowTick)
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+            if (_registeredColdTick)
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Core);
 
             _registeredTick = false;
             _registeredLateFrame = false;
             _registeredSlowTick = false;
+            _registeredColdTick = false;
             _pendingContentVisualSyncTick = false;
             _pendingAupCleanup = false;
             _pendingVramIntercept = false;

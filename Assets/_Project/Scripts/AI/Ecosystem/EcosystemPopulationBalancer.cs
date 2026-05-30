@@ -35,6 +35,7 @@ namespace Hecton8.AI.Ecosystem
         private const float DefaultBiomassPerEntity = HectonEcologyContract.DefaultBiomassPerEntity;
         private const int DefaultMaxActivePreyPerSector = HectonEcologyContract.DefaultMaxActivePreyPerSector;
         private const uint EcologySourceHash = 0x45434F4Cu; // ECOL
+        private const uint PostSimulationSystemHash = EcologySourceHash ^ 0x50534D45u; // PSME
         private const byte EcologyDeathSignalFlag = 1;
         private const uint TelemetryInvalidMathFlag = 1u << 0;
         private const uint TelemetryFallbackCoefficientsFlag = 1u << 1;
@@ -48,9 +49,11 @@ namespace Hecton8.AI.Ecosystem
         private const uint BlackBoxMissingTelemetryHash = 0x444D504Du; // DMPM
         private const ulong DumpMagic = 0x504F504543544548UL;
         private const int DumpFormatVersion = 3;
+        private const int DumpHeaderBytes = 32;
         private const string CoefficientsRelativePath = "Data/Precomputed/ecosystem_coefficients.json";
         private const string LegacyCoefficientsRelativePath = "Data/Precomputed/Ecosystem_Coefficients.json";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_ECOSYSTEM_POPULATION_BALANCER.bin";
+        private const string DumpPayloadLabel = "ecosystemPopulationTelemetryDumpPayload";
 
         [SerializeField, Min(1)] private int maxEntities = DefaultMaxEntities;
         [SerializeField, Min(1)] private int maxSectors = DefaultMaxSectors;
@@ -70,13 +73,14 @@ namespace Hecton8.AI.Ecosystem
         private VaultGenerationHandle<uint> _entityFlagHandle;
         private IDataVault _dataVault;
         private IEcosystemDirectorService _ecosystemDirector;
+        private PostSimulationPhaseSystem _postSimulationPhase;
         private JobHandle _balancerHandle;
         private int _sectorCount;
         private int _telemetryCursor;
         private uint _simulationFrameCounter;
         private bool _coefficientsLoaded;
         private bool _registeredColdTick;
-        private bool _registeredLateFrame;
+        private bool _registeredPostSimulation;
         private bool _registeredHotSwap;
         private bool _jobScheduled;
         private bool _dumpedFault;
@@ -171,6 +175,10 @@ namespace Hecton8.AI.Ecosystem
         }
 
         public void LateFrameTick()
+        {
+        }
+
+        private void PostSimulationTick(in DispatcherTimingDTO timing)
         {
             if (!_jobScheduled)
                 return;
@@ -728,8 +736,16 @@ namespace Hecton8.AI.Ecosystem
             if (!_jobScheduled)
                 return;
 
-            if (!DispatcherJobFence.TryComplete(ref _balancerHandle, forceComplete: true))
-                return;
+            DispatcherJobFence.BeginPostSimulationSwapWindow();
+            try
+            {
+                if (!DispatcherJobFence.TryComplete(ref _balancerHandle, forceComplete: true))
+                    return;
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostSimulationSwapWindow();
+            }
 
             _jobScheduled = false;
             PublishCompletedCullSignals();
@@ -737,11 +753,20 @@ namespace Hecton8.AI.Ecosystem
 
         private void TryRegisterTicks()
         {
+            if (!_registeredPostSimulation)
+            {
+                if (_postSimulationPhase == null)
+                    _postSimulationPhase = new PostSimulationPhaseSystem(this);
+
+                _registeredPostSimulation = GlobalRegistry.TryRegisterDispatcherSystem(_postSimulationPhase);
+            }
+
+            if (!_registeredPostSimulation)
+                return;
+
             if (!_registeredColdTick)
                 _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
-            if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
-            if (!_registeredColdTick || !_registeredLateFrame)
+            if (!_registeredColdTick)
                 TryUnregisterTicks();
         }
 
@@ -761,10 +786,10 @@ namespace Hecton8.AI.Ecosystem
                 _registeredColdTick = false;
             }
 
-            if (_registeredLateFrame)
+            if (_registeredPostSimulation)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrame = false;
+                GlobalRegistry.UnregisterDispatcherSystem(_postSimulationPhase);
+                _registeredPostSimulation = false;
             }
         }
 
@@ -775,6 +800,47 @@ namespace Hecton8.AI.Ecosystem
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwap = false;
+        }
+
+        private sealed class PostSimulationPhaseSystem : IDispatcherSystem
+        {
+            private readonly EcosystemPopulationBalancer _owner;
+
+            public PostSimulationPhaseSystem(EcosystemPopulationBalancer owner)
+            {
+                _owner = owner;
+            }
+
+            public uint GetSystemIdHash() => PostSimulationSystemHash;
+
+            public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.PostSimulation;
+
+            public byte GetBucketId() => byte.MaxValue;
+
+            public int GetDependencyCount() => 0;
+
+            public uint GetDependencyHash(int dependencyIndex) => 0u;
+
+            public void PreSimulationTick(in DispatcherTimingDTO timing)
+            {
+            }
+
+            public JobHandle ScheduleSimulation(
+                in DispatcherTimingDTO timing,
+                in DispatcherJobContext context,
+                JobHandle dependsOn)
+            {
+                return dependsOn;
+            }
+
+            public void PostSimulationTick(in DispatcherTimingDTO timing)
+            {
+                _owner?.PostSimulationTick(in timing);
+            }
+
+            public void VisualSyncTick(in DispatcherTimingDTO timing)
+            {
+            }
         }
 
         private void ClearCachedDependencies()
@@ -1039,7 +1105,7 @@ namespace Hecton8.AI.Ecosystem
             return value == ' ' || (uint)(value - '\t') <= 4u;
         }
 
-        private static void DumpBlackBox(NativeArray<EcosystemPopulationTelemetryEntry> telemetry, int telemetryCursor)
+        private static unsafe void DumpBlackBox(NativeArray<EcosystemPopulationTelemetryEntry> telemetry, int telemetryCursor)
         {
             if (!telemetry.IsCreated || telemetry.Length <= 0)
             {
@@ -1048,8 +1114,75 @@ namespace Hecton8.AI.Ecosystem
                 return;
             }
 
-            _ = telemetryCursor;
+            int entrySize = UnsafeUtility.SizeOf<EcosystemPopulationTelemetryEntry>();
+            int count = math.min(telemetry.Length, TelemetryCapacity);
+            int byteCount = DumpHeaderBytes + count * entrySize;
+            NativeArray<byte> payload = default;
+            try
+            {
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(EcosystemPopulationBalancer),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteUInt64LittleEndian(target, 0, DumpMagic);
+                WriteInt32LittleEndian(target, 8, DumpFormatVersion);
+                WriteInt32LittleEndian(target, 12, telemetryCursor);
+                WriteInt32LittleEndian(target, 16, count);
+                WriteInt32LittleEndian(target, 20, entrySize);
+                WriteUInt32LittleEndian(target, 24, EcologySourceHash);
+                WriteUInt32LittleEndian(target, 28, 0u);
+
+                int start = telemetryCursor - count;
+                while (start < 0)
+                    start += telemetry.Length;
+                if (start >= telemetry.Length)
+                    start %= telemetry.Length;
+
+                int cursor = DumpHeaderBytes;
+                for (int i = 0; i < count; i++)
+                {
+                    int slot = start + i;
+                    if (slot >= telemetry.Length)
+                        slot -= telemetry.Length;
+
+                    EcosystemPopulationTelemetryEntry entry = telemetry[slot];
+                    UnsafeUtility.MemCpy(target + cursor, &entry, entrySize);
+                    cursor += entrySize;
+                }
+
+                if (!NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, cursor))
+                    GlobalTelemetryBus.PublishPerformanceWarning(BlackBoxDumpIoFaultHash, EcologySourceHash, 0f);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(EcosystemPopulationBalancer),
+                    DumpPayloadLabel);
+            }
+
             GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)EcologySourceHash));
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, int offset, uint value)
+        {
+            destination[offset] = unchecked((byte)value);
+            destination[offset + 1] = unchecked((byte)(value >> 8));
+            destination[offset + 2] = unchecked((byte)(value >> 16));
+            destination[offset + 3] = unchecked((byte)(value >> 24));
+        }
+
+        private static unsafe void WriteUInt64LittleEndian(byte* destination, int offset, ulong value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+            WriteUInt32LittleEndian(destination, offset + 4, unchecked((uint)(value >> 32)));
         }
 
         private static int PositiveModulo(int value, int length)

@@ -1,0 +1,435 @@
+﻿{
+    "generatedAt":  "2026-05-28T05:16:23.0137950+04:00",
+    "status":  "GREEN_STATIC_INTERCEPTION_READY",
+    "targetExists":  true,
+    "targetBeforeTargets":  "PrepareProjectReferences;ResolveProjectReferences",
+    "shimProjectCount":  4,
+    "activeSolutionProjectCount":  62,
+    "expectedDlls":  [
+                         {
+                             "projectName":  "Unity.RenderPipelines.Core.Editor",
+                             "dllPath":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                             "exists":  true
+                         },
+                         {
+                             "projectName":  "Unity.RenderPipelines.Universal.Editor",
+                             "dllPath":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Editor.dll",
+                             "exists":  true
+                         },
+                         {
+                             "projectName":  "Unity.RenderPipelines.Universal.Runtime",
+                             "dllPath":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                             "exists":  true
+                         },
+                         {
+                             "projectName":  "Unity.ShaderGraph.Editor",
+                             "dllPath":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.ShaderGraph.Editor.dll",
+                             "exists":  true
+                         }
+                     ],
+    "interceptedProjectReferenceCount":  24,
+    "activeInterceptedProjectReferenceCount":  16,
+    "passiveInterceptedProjectReferenceCount":  8,
+    "interceptedProjectReferences":  [
+                                         {
+                                             "project":  "Crest.csproj",
+                                             "activeSolutionProject":  true,
+                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "GPUInstancer.csproj",
+                                             "activeSolutionProject":  true,
+                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "GPUInstancer.Editor.csproj",
+                                             "activeSolutionProject":  true,
+                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "Hecton8.Editor.csproj",
+                                             "activeSolutionProject":  true,
+                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "JBooth.MicroSplat.Core.csproj",
+                                             "activeSolutionProject":  true,
+                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "MoreMountains.Feedbacks.csproj",
+                                             "activeSolutionProject":  true,
+                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "MoreMountains.Feedbacks.URP.csproj",
+                                             "activeSolutionProject":  true,
+                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "MoreMountains.Tools.csproj",
+                                             "activeSolutionProject":  true,
+                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "ShapesEditor.csproj",
+                                             "activeSolutionProject":  true,
+                                             "projectReference":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Editor",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Editor.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "ShapesEditor.csproj",
+                                             "activeSolutionProject":  true,
+                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "ShapesRuntime.csproj",
+                                             "activeSolutionProject":  true,
+                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                             "activeSolutionProject":  true,
+                                             "projectReference":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Core.Editor",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                             "activeSolutionProject":  true,
+                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                             "activeSolutionProject":  true,
+                                             "projectReference":  "Unity.ShaderGraph.Editor.csproj",
+                                             "referenceFileName":  "Unity.ShaderGraph.Editor",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.ShaderGraph.Editor.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "Unity.ShaderGraph.Editor.csproj",
+                                             "activeSolutionProject":  true,
+                                             "projectReference":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Core.Editor",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "VolumetricLightBeam.csproj",
+                                             "activeSolutionProject":  true,
+                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.csproj",
+                                             "activeSolutionProject":  false,
+                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Editor.csproj",
+                                             "activeSolutionProject":  false,
+                                             "projectReference":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Core.Editor",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Editor.csproj",
+                                             "activeSolutionProject":  false,
+                                             "projectReference":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Editor",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Editor.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Editor.csproj",
+                                             "activeSolutionProject":  false,
+                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Editor.csproj",
+                                             "activeSolutionProject":  false,
+                                             "projectReference":  "Unity.ShaderGraph.Editor.csproj",
+                                             "referenceFileName":  "Unity.ShaderGraph.Editor",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.ShaderGraph.Editor.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Shared.csproj",
+                                             "activeSolutionProject":  false,
+                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Shared.Editor.csproj",
+                                             "activeSolutionProject":  false,
+                                             "projectReference":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                             "referenceFileName":  "Unity.RenderPipelines.Core.Editor",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                                             "replacementDllExists":  true
+                                         },
+                                         {
+                                             "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Shared.Editor.csproj",
+                                             "activeSolutionProject":  false,
+                                             "projectReference":  "Unity.ShaderGraph.Editor.csproj",
+                                             "referenceFileName":  "Unity.ShaderGraph.Editor",
+                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.ShaderGraph.Editor.dll",
+                                             "replacementDllExists":  true
+                                         }
+                                     ],
+    "activeInterceptedProjectReferences":  [
+                                               {
+                                                   "project":  "Crest.csproj",
+                                                   "activeSolutionProject":  true,
+                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                   "replacementDllExists":  true
+                                               },
+                                               {
+                                                   "project":  "GPUInstancer.csproj",
+                                                   "activeSolutionProject":  true,
+                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                   "replacementDllExists":  true
+                                               },
+                                               {
+                                                   "project":  "GPUInstancer.Editor.csproj",
+                                                   "activeSolutionProject":  true,
+                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                   "replacementDllExists":  true
+                                               },
+                                               {
+                                                   "project":  "Hecton8.Editor.csproj",
+                                                   "activeSolutionProject":  true,
+                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                   "replacementDllExists":  true
+                                               },
+                                               {
+                                                   "project":  "JBooth.MicroSplat.Core.csproj",
+                                                   "activeSolutionProject":  true,
+                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                   "replacementDllExists":  true
+                                               },
+                                               {
+                                                   "project":  "MoreMountains.Feedbacks.csproj",
+                                                   "activeSolutionProject":  true,
+                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                   "replacementDllExists":  true
+                                               },
+                                               {
+                                                   "project":  "MoreMountains.Feedbacks.URP.csproj",
+                                                   "activeSolutionProject":  true,
+                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                   "replacementDllExists":  true
+                                               },
+                                               {
+                                                   "project":  "MoreMountains.Tools.csproj",
+                                                   "activeSolutionProject":  true,
+                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                   "replacementDllExists":  true
+                                               },
+                                               {
+                                                   "project":  "ShapesEditor.csproj",
+                                                   "activeSolutionProject":  true,
+                                                   "projectReference":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Editor",
+                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Editor.dll",
+                                                   "replacementDllExists":  true
+                                               },
+                                               {
+                                                   "project":  "ShapesEditor.csproj",
+                                                   "activeSolutionProject":  true,
+                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                   "replacementDllExists":  true
+                                               },
+                                               {
+                                                   "project":  "ShapesRuntime.csproj",
+                                                   "activeSolutionProject":  true,
+                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                   "replacementDllExists":  true
+                                               },
+                                               {
+                                                   "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                   "activeSolutionProject":  true,
+                                                   "projectReference":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                                   "referenceFileName":  "Unity.RenderPipelines.Core.Editor",
+                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                                                   "replacementDllExists":  true
+                                               },
+                                               {
+                                                   "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                   "activeSolutionProject":  true,
+                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                   "replacementDllExists":  true
+                                               },
+                                               {
+                                                   "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                   "activeSolutionProject":  true,
+                                                   "projectReference":  "Unity.ShaderGraph.Editor.csproj",
+                                                   "referenceFileName":  "Unity.ShaderGraph.Editor",
+                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.ShaderGraph.Editor.dll",
+                                                   "replacementDllExists":  true
+                                               },
+                                               {
+                                                   "project":  "Unity.ShaderGraph.Editor.csproj",
+                                                   "activeSolutionProject":  true,
+                                                   "projectReference":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                                   "referenceFileName":  "Unity.RenderPipelines.Core.Editor",
+                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                                                   "replacementDllExists":  true
+                                               },
+                                               {
+                                                   "project":  "VolumetricLightBeam.csproj",
+                                                   "activeSolutionProject":  true,
+                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                   "replacementDllExists":  true
+                                               }
+                                           ],
+    "passiveInterceptedProjectReferences":  [
+                                                {
+                                                    "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.csproj",
+                                                    "activeSolutionProject":  false,
+                                                    "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                    "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                    "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                    "replacementDllExists":  true
+                                                },
+                                                {
+                                                    "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Editor.csproj",
+                                                    "activeSolutionProject":  false,
+                                                    "projectReference":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                                    "referenceFileName":  "Unity.RenderPipelines.Core.Editor",
+                                                    "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                                                    "replacementDllExists":  true
+                                                },
+                                                {
+                                                    "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Editor.csproj",
+                                                    "activeSolutionProject":  false,
+                                                    "projectReference":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                    "referenceFileName":  "Unity.RenderPipelines.Universal.Editor",
+                                                    "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Editor.dll",
+                                                    "replacementDllExists":  true
+                                                },
+                                                {
+                                                    "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Editor.csproj",
+                                                    "activeSolutionProject":  false,
+                                                    "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                    "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                    "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                    "replacementDllExists":  true
+                                                },
+                                                {
+                                                    "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Editor.csproj",
+                                                    "activeSolutionProject":  false,
+                                                    "projectReference":  "Unity.ShaderGraph.Editor.csproj",
+                                                    "referenceFileName":  "Unity.ShaderGraph.Editor",
+                                                    "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.ShaderGraph.Editor.dll",
+                                                    "replacementDllExists":  true
+                                                },
+                                                {
+                                                    "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Shared.csproj",
+                                                    "activeSolutionProject":  false,
+                                                    "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                    "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                    "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                    "replacementDllExists":  true
+                                                },
+                                                {
+                                                    "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Shared.Editor.csproj",
+                                                    "activeSolutionProject":  false,
+                                                    "projectReference":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                                    "referenceFileName":  "Unity.RenderPipelines.Core.Editor",
+                                                    "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                                                    "replacementDllExists":  true
+                                                },
+                                                {
+                                                    "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Shared.Editor.csproj",
+                                                    "activeSolutionProject":  false,
+                                                    "projectReference":  "Unity.ShaderGraph.Editor.csproj",
+                                                    "referenceFileName":  "Unity.ShaderGraph.Editor",
+                                                    "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.ShaderGraph.Editor.dll",
+                                                    "replacementDllExists":  true
+                                                }
+                                            ],
+    "missingReplacementDllCount":  0,
+    "activeMissingReplacementDllCount":  0,
+    "parseFailureCount":  0,
+    "activeParseFailureCount":  0,
+    "parseFailures":  [
+
+                      ],
+    "excludedSyntheticProjectCount":  0,
+    "excludedSyntheticProjects":  [
+
+                                  ],
+    "evidence":  "Static XML simulation only. No dotnet build, no dotnet msbuild, no Roslyn compile."
+}

@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Hecton8.World;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
@@ -47,6 +46,17 @@ namespace Hecton8.Core.Contracts.Physics
         public const byte Ruptured = 1 << 1;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    public struct FluidAup48
+    {
+        [FieldOffset(0)] public long GridX;
+        [FieldOffset(8)] public long GridY;
+        [FieldOffset(16)] public long GridZ;
+        [FieldOffset(24)] public float3 Local;
+        [FieldOffset(36)] public uint Reserved0;
+        [FieldOffset(40)] public ulong Reserved1;
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct FluidCompartmentDTO
     {
@@ -70,7 +80,7 @@ namespace Hecton8.Core.Contracts.Physics
         public const uint FlagMockSource = 1u << 1;
         public const uint FlagSealed = 1u << 2;
 
-        [FieldOffset(0)] public AbsoluteUniversePositionBlit CenterAup;
+        [FieldOffset(0)] public FluidAup48 CenterAup;
         [FieldOffset(48)] public uint NodeHash;
         [FieldOffset(52)] public float Integrity01;
         [FieldOffset(56)] public float BreachAreaM2;

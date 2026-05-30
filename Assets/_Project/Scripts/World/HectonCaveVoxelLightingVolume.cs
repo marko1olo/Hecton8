@@ -147,7 +147,7 @@ namespace Hecton8.World
             PredatorCognitionDomain.BindCaveVoxelLightingSource(this);
             _sourceEntityId = unchecked((uint)EntityId.ToULong(GetEntityId()));
             ResolveFollowTarget();
-            EnsureResources();
+            EnsureResourcesCold();
             PublishInactiveGlobals();
         }
 
@@ -157,7 +157,7 @@ namespace Hecton8.World
             CacheGraphicsCapabilitiesCold();
             PredatorCognitionDomain.BindCaveVoxelLightingSource(this);
             ResolveFollowTarget();
-            EnsureResources();
+            EnsureResourcesCold();
             _resourceRefreshRequested = !HasRequiredResources();
             TryRegisterHotSwapListener();
             TryRegister();
@@ -281,8 +281,7 @@ namespace Hecton8.World
         {
             if (_resourceRefreshRequested || !HasRequiredResources())
             {
-                EnsureResources();
-                _resourceRefreshRequested = !HasRequiredResources();
+                _resourceRefreshRequested = true;
             }
 
             if (_resourceRefreshRequested)
@@ -382,7 +381,9 @@ namespace Hecton8.World
             {
                 ReleaseResources(previousService as IDataVault);
                 _dataVault = currentService as IDataVault;
-                _resourceRefreshRequested = isActiveAndEnabled;
+                if (isActiveAndEnabled)
+                    EnsureResourcesCold();
+                _resourceRefreshRequested = !HasRequiredResources();
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
@@ -416,7 +417,7 @@ namespace Hecton8.World
             _excludedRoot = _followTargetRuntime != null ? _followTargetRuntime.root : null;
         }
 
-        private void EnsureResources()
+        private void EnsureResourcesCold()
         {
             int clampedResolution = Mathf.Clamp(voxelResolution, 12, 24);
             int voxelCount = clampedResolution * clampedResolution * clampedResolution;

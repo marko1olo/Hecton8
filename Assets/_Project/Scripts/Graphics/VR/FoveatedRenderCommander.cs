@@ -74,8 +74,6 @@ namespace Hecton8.Graphics.VR
         private static bool s_questFamilyClassRuntime;
         private static bool s_telemetryLayoutChecked;
         private static bool s_telemetryLayoutValid;
-        private static readonly WaitCallback s_blackBoxDumpWorker = WriteBlackBoxDumpWorker;
-
         [Header("Policy")]
         [SerializeField, Range(MinSampleIntervalFrames, MaxSampleIntervalFrames)]
         [Tooltip("Frames between hardware foveation policy commits. Signal consumption remains per dispatcher tick.")]
@@ -107,13 +105,13 @@ namespace Hecton8.Graphics.VR
         private IHardwareThermalService _hardwareThermal;
         private InputDevice _centerEyeDeviceCold;
         private RenderTextureDescriptor _eyeDescriptorCold;
-        // COLD ALLOC: fixed fault-dump snapshot[300] - copied before async filesystem persistence - owner: FoveatedRenderCommander
+        // COLD ALLOC: fixed fault snapshot[300] - copied before diagnostic dump write - owner: FoveatedRenderCommander
         private readonly FoveatedRenderTelemetryEntry[] _blackBoxDumpSnapshot = new FoveatedRenderTelemetryEntry[TelemetryCapacity];
         private int _telemetryCursor;
         private int _blackBoxDumpSnapshotCursor;
         private int _blackBoxDumpSnapshotCount;
         private int _blackBoxDumpInFlight;
-        private int _blackBoxDumpWorkerFault;
+        private uint _blackBoxDumpSnapshotHash;
         private int _framesUntilSample;
         private int _lastEyeWidth;
         private int _lastEyeHeight;
@@ -358,7 +356,6 @@ namespace Hecton8.Graphics.VR
             if (TryDetachIfInactiveCommander())
                 return;
 
-            PublishBlackBoxDumpWorkerFaultIfNeeded();
             if (!HasBlackBoxDumpPathCold() || !HasTelemetryReady())
                 return;
         }
@@ -1133,19 +1130,22 @@ namespace Hecton8.Graphics.VR
 
             int telemetryCursor = _telemetryCursor;
             uint sequence = _sequence;
-            _blackBoxDumped = true;
-            if (string.IsNullOrEmpty(_blackBoxDumpPathCold) ||
-                !TryStageBlackBoxDumpSnapshot(telemetryCursor, sequence))
+            try
             {
-                Interlocked.Exchange(ref _blackBoxDumpInFlight, 0);
-                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
-                return;
-            }
+                if (!TryStageBlackBoxDumpSnapshot(telemetryCursor, sequence))
+                {
+                    GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
+                    return;
+                }
 
-            if (!ThreadPool.QueueUserWorkItem(s_blackBoxDumpWorker, this))
+                if (TryWriteBlackBoxSnapshotCold())
+                    _blackBoxDumped = true;
+                else
+                    GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
+            }
+            finally
             {
                 Interlocked.Exchange(ref _blackBoxDumpInFlight, 0);
-                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
             }
         }
 
@@ -1181,60 +1181,51 @@ namespace Hecton8.Graphics.VR
             return !vault.IsCompactionFenceActive;
         }
 
-        private static void WriteBlackBoxDumpWorker(object state)
+        private unsafe bool TryWriteBlackBoxSnapshotCold()
         {
-            FoveatedRenderCommander commander = state as FoveatedRenderCommander;
-            if (commander == null)
-                return;
-
-            try
-            {
-                if (!commander.TryWriteBlackBoxSnapshotCold())
-                    Interlocked.Exchange(ref commander._blackBoxDumpWorkerFault, 1);
-            }
-            finally
-            {
-                Interlocked.Exchange(ref commander._blackBoxDumpInFlight, 0);
-            }
-        }
-
-        private void PublishBlackBoxDumpWorkerFaultIfNeeded()
-        {
-            if (Interlocked.Exchange(ref _blackBoxDumpWorkerFault, 0) == 0)
-                return;
-
-            GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
-        }
-
-        private bool TryWriteBlackBoxSnapshotCold()
-        {
-            string path = _blackBoxDumpPathCold;
             int count = _blackBoxDumpSnapshotCount;
-            if (string.IsNullOrEmpty(path) || count <= 0)
+            if (count <= 0)
                 return false;
             if (count > TelemetryCapacity)
                 count = TelemetryCapacity;
 
+            if (!HasBlackBoxDumpPathCold() &&
+                !TryEnsureBlackBoxDumpPathCold())
+            {
+                return false;
+            }
+
+            int byteCount = 24 + (count * TelemetryRecordSizeBytes);
+            NativeArray<byte> payload = default;
             try
             {
-                if (!TryOpenDumpPath(path, out FileStream stream))
-                    return false;
+                // Fault-only native staging: one contiguous payload preserves the existing FVRC header + 64-byte row schema.
+                const string dumpPayloadLabel = "FoveatedRenderCommanderBlackBoxDumpPayload";
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(FoveatedRenderCommander),
+                    dumpPayloadLabel,
+                    allocator: Allocator.TempJob);
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                Span<byte> header = new Span<byte>(payloadPtr, 24);
+                WriteTelemetryDumpHeader(header, _blackBoxDumpSnapshotCursor, _blackBoxDumpSnapshotSequence);
 
-                using (stream)
+                uint hash = SourceHash ^ (uint)count ^ (uint)_blackBoxDumpSnapshotCursor ^ _blackBoxDumpSnapshotSequence;
+                for (int i = 0; i < header.Length; i++)
+                    hash = (hash * 16777619u) ^ header[i];
+
+                int offset = 24;
+                for (int i = 0; i < count; i++)
                 {
-                    Span<byte> header = stackalloc byte[24];
-                    WriteTelemetryDumpHeader(header, _blackBoxDumpSnapshotCursor, _blackBoxDumpSnapshotSequence);
-                    stream.Write(header);
-
-                    Span<byte> entryBytes = stackalloc byte[TelemetryRecordSizeBytes];
-                    for (int i = 0; i < count; i++)
-                    {
-                        WriteTelemetryEntry(entryBytes, in _blackBoxDumpSnapshot[i]);
-                        stream.Write(entryBytes);
-                    }
+                    Span<byte> entryBytes = new Span<byte>(payloadPtr + offset, TelemetryRecordSizeBytes);
+                    WriteTelemetryEntry(entryBytes, in _blackBoxDumpSnapshot[i]);
+                    for (int byteIndex = 0; byteIndex < entryBytes.Length; byteIndex++)
+                        hash = (hash * 16777619u) ^ entryBytes[byteIndex];
+                    offset += TelemetryRecordSizeBytes;
                 }
 
-                return true;
+                _blackBoxDumpSnapshotHash = hash;
+                return NativeFaultDumpWriter.TryWriteAll(_blackBoxDumpPathCold, payload, byteCount);
             }
             catch (IOException)
             {
@@ -1259,6 +1250,15 @@ namespace Hecton8.Graphics.VR
             catch (NotSupportedException)
             {
                 return false;
+            }
+            finally
+            {
+                const string dumpPayloadLabel = "FoveatedRenderCommanderBlackBoxDumpPayload";
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(FoveatedRenderCommander),
+                    dumpPayloadLabel,
+                    Allocator.TempJob);
             }
         }
 
@@ -1303,99 +1303,25 @@ namespace Hecton8.Graphics.VR
 
         private static bool TryGetProjectDumpPath(out string path)
         {
-            path = null;
-            try
-            {
-                string dataPath = Application.dataPath;
-                if (string.IsNullOrEmpty(dataPath))
-                    return false;
-
-                string projectRoot = Directory.GetParent(dataPath)?.FullName ?? dataPath;
-                path = Path.Combine(projectRoot, "Docs", "AgentLogs", DumpFileName);
-                return true;
-            }
-            catch (IOException)
-            {
-                path = null;
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                path = null;
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                path = null;
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                path = null;
-                return false;
-            }
+            path = "Docs/AgentLogs/" + DumpFileName;
+            return true;
         }
 
         private bool TryEnsureBlackBoxDumpPathCold()
         {
-            if (!string.IsNullOrEmpty(_blackBoxDumpPathCold))
-                return true;
-
-            if (TryGetProjectDumpPath(out string projectPath))
+            if (TryGetProjectDumpPath(out string path))
             {
-                _blackBoxDumpPathCold = projectPath;
+                _blackBoxDumpPathCold = path;
                 return true;
             }
 
-            string persistentRoot = Application.persistentDataPath;
-            if (string.IsNullOrEmpty(persistentRoot))
-                return false;
-
-            _blackBoxDumpPathCold = Path.Combine(persistentRoot, "AgentLogs", DumpFileName);
-            return true;
+            _blackBoxDumpPathCold = null;
+            return false;
         }
 
         private bool HasBlackBoxDumpPathCold()
         {
             return !string.IsNullOrEmpty(_blackBoxDumpPathCold);
-        }
-
-        private static bool TryOpenDumpPath(string path, out FileStream stream)
-        {
-            stream = null;
-            try
-            {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                return true;
-            }
-            catch (IOException)
-            {
-                stream?.Dispose();
-                stream = null;
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                stream?.Dispose();
-                stream = null;
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                stream?.Dispose();
-                stream = null;
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                stream?.Dispose();
-                stream = null;
-                return false;
-            }
         }
 
         private bool TryAcquireTelemetryWriteBuffer(out NativeArray<FoveatedRenderTelemetryEntry> telemetry)

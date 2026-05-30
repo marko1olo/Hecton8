@@ -1450,7 +1450,7 @@ namespace Hecton8.World
             AllocateNativeState();
             AllocateManagedState();
             BuildChunkTables();
-            ApplyAsyncUploadBudgetForQuality();
+            FlushAsyncUploadBudgetPolicySlow();
         }
 
         private void OnEnable()
@@ -1521,6 +1521,8 @@ namespace Hecton8.World
         /// <inheritdoc />
         public void SlowTick()
         {
+            FlushAsyncUploadBudgetPolicySlow();
+
             if (_chunkCount <= 0)
                 return;
 
@@ -1536,7 +1538,6 @@ namespace Hecton8.World
         public void LateFrameTick()
         {
             CompleteResidencyJobIfFinished();
-            ApplyAsyncUploadBudgetForQuality();
             RetireAsyncPagerReadTickets(ResolvePagerReadRetireBudget());
             DrainAupShiftSignals();
             DrainHlodSwapSignals();
@@ -4646,7 +4647,7 @@ namespace Hecton8.World
             return _chunkResidencyRuntimeSeconds;
         }
 
-        private void ApplyAsyncUploadBudgetForQuality()
+        private void FlushAsyncUploadBudgetPolicySlow()
         {
             if (!applyAsyncUploadBudget)
                 return;
@@ -5562,7 +5563,6 @@ namespace Hecton8.World
 
         private void ApplyActiveImpostorAupShift(float3 shiftMeters, uint shiftFrameId)
         {
-            _ = shiftFrameId;
             int capacity = ResolveStreamingLedgerCapacity();
             if (!TryResolveWorldStreamingVaultBuffer(in _activeImpostorsHandle, ActiveImpostorsVaultBufferId, capacity, out NativeArray<float4x4> activeImpostors) ||
                 !TryResolveWorldStreamingVaultBuffer(in _activeImpostorCentersHandle, ActiveImpostorCentersVaultBufferId, capacity, out NativeArray<float3> activeImpostorCenters) ||
@@ -5586,6 +5586,7 @@ namespace Hecton8.World
             _activeImpostorVersion++;
             _activeImpostorPointVersion++;
             _activeImpostorGpuDirty = true;
+            _debugLastAupShiftFrameId = shiftFrameId;
         }
 
         private bool TryBuildChunkImpostorPayload(
@@ -5848,8 +5849,7 @@ namespace Hecton8.World
             if (!telemetryRing.IsCreated)
                 return;
 
-            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath));
-            DumpTelemetryToPath(path, telemetryRing);
+            DumpTelemetryToPath(DumpRelativePath, telemetryRing);
         }
 
         private void DumpBackpressureTelemetry(uint reasonFlags)
@@ -5859,8 +5859,7 @@ namespace Hecton8.World
             if (!telemetryRing.IsCreated)
                 return;
 
-            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", BackpressureDumpRelativePath));
-            DumpTelemetryToPath(path, telemetryRing);
+            DumpTelemetryToPath(BackpressureDumpRelativePath, telemetryRing);
         }
 
         private void DumpHlodTelemetry(uint reasonFlags)
@@ -5870,73 +5869,87 @@ namespace Hecton8.World
             if (!telemetryRing.IsCreated)
                 return;
 
-            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", HlodDumpRelativePath));
-            DumpTelemetryToPath(path, telemetryRing);
+            DumpTelemetryToPath(HlodDumpRelativePath, telemetryRing);
         }
 
         private static void DumpTelemetryToPath(string path, NativeArray<ChunkResidencyTelemetryEntry> telemetryRing)
         {
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
+            if (string.IsNullOrEmpty(path) || !telemetryRing.IsCreated || telemetryRing.Length < TelemetryCapacity)
+                return;
 
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            NativeArray<byte> payload = default;
+            try
             {
-                Span<byte> row = stackalloc byte[ResidencyTelemetryEntrySizeBytes];
+                int byteCount = TelemetryCapacity * ResidencyTelemetryEntrySizeBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(WorldChunkResidencyManager),
+                    "worldChunkResidencyTelemetryDumpPayload");
+                int cursor = 0;
                 for (int i = 0; i < TelemetryCapacity; i++)
                 {
                     ChunkResidencyTelemetryEntry entry = telemetryRing[i];
-                    WriteChunkResidencyTelemetryEntry(row, in entry);
-                    stream.Write(row);
+                    WriteChunkResidencyTelemetryEntry(payload, ref cursor, in entry);
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(path, payload, cursor);
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(WorldChunkResidencyManager),
+                    "worldChunkResidencyTelemetryDumpPayload");
             }
         }
 
-        private static void WriteChunkResidencyTelemetryEntry(Span<byte> destination, in ChunkResidencyTelemetryEntry entry)
+        private static void WriteChunkResidencyTelemetryEntry(NativeArray<byte> destination, ref int cursor, in ChunkResidencyTelemetryEntry entry)
         {
-            destination.Clear();
-            WriteInt64LittleEndian(destination.Slice(0, 8), entry.FocusChunkId);
-            WriteInt64LittleEndian(destination.Slice(8, 8), entry.PlayerGridX);
-            WriteInt64LittleEndian(destination.Slice(16, 8), entry.PlayerGridY);
-            WriteInt64LittleEndian(destination.Slice(24, 8), entry.PlayerGridZ);
-            WriteSingleLittleEndian(destination.Slice(32, 4), entry.PlayerLocal.x);
-            WriteSingleLittleEndian(destination.Slice(36, 4), entry.PlayerLocal.y);
-            WriteSingleLittleEndian(destination.Slice(40, 4), entry.PlayerLocal.z);
-            WriteUInt32LittleEndian(destination.Slice(44, 4), entry.Frame);
-            WriteUInt32LittleEndian(destination.Slice(48, 4), entry.Flags | ((uint)entry.ActiveImpostorCount << 16));
-            WriteUInt32LittleEndian(destination.Slice(52, 4), entry.StateHash);
-            WriteUInt16LittleEndian(destination.Slice(56, 2), entry.PendingLoads);
-            WriteUInt16LittleEndian(destination.Slice(58, 2), entry.ResidentCount);
-            WriteUInt16LittleEndian(destination.Slice(60, 2), entry.LoadingCount);
-            WriteUInt16LittleEndian(destination.Slice(62, 2), entry.EvictingCount);
+            WriteInt64LittleEndian(destination, ref cursor, entry.FocusChunkId);
+            WriteInt64LittleEndian(destination, ref cursor, entry.PlayerGridX);
+            WriteInt64LittleEndian(destination, ref cursor, entry.PlayerGridY);
+            WriteInt64LittleEndian(destination, ref cursor, entry.PlayerGridZ);
+            WriteSingleLittleEndian(destination, ref cursor, entry.PlayerLocal.x);
+            WriteSingleLittleEndian(destination, ref cursor, entry.PlayerLocal.y);
+            WriteSingleLittleEndian(destination, ref cursor, entry.PlayerLocal.z);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Frame);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Flags | ((uint)entry.ActiveImpostorCount << 16));
+            WriteUInt32LittleEndian(destination, ref cursor, entry.StateHash);
+            WriteUInt16LittleEndian(destination, ref cursor, entry.PendingLoads);
+            WriteUInt16LittleEndian(destination, ref cursor, entry.ResidentCount);
+            WriteUInt16LittleEndian(destination, ref cursor, entry.LoadingCount);
+            WriteUInt16LittleEndian(destination, ref cursor, entry.EvictingCount);
         }
 
-        private static void WriteSingleLittleEndian(Span<byte> destination, float value)
+        private static void WriteSingleLittleEndian(NativeArray<byte> destination, ref int cursor, float value)
         {
-            WriteUInt32LittleEndian(destination, math.asuint(value));
+            WriteUInt32LittleEndian(destination, ref cursor, math.asuint(value));
         }
 
-        private static void WriteInt64LittleEndian(Span<byte> destination, long value)
+        private static void WriteInt64LittleEndian(NativeArray<byte> destination, ref int cursor, long value)
         {
-            WriteUInt64LittleEndian(destination, unchecked((ulong)value));
+            WriteUInt64LittleEndian(destination, ref cursor, unchecked((ulong)value));
         }
 
-        private static void WriteUInt64LittleEndian(Span<byte> destination, ulong value)
+        private static void WriteUInt64LittleEndian(NativeArray<byte> destination, ref int cursor, ulong value)
         {
             for (int i = 0; i < 8; i++)
-                destination[i] = (byte)(value >> (i * 8));
+                destination[cursor++] = (byte)(value >> (i * 8));
         }
 
-        private static void WriteUInt32LittleEndian(Span<byte> destination, uint value)
+        private static void WriteUInt32LittleEndian(NativeArray<byte> destination, ref int cursor, uint value)
         {
             for (int i = 0; i < 4; i++)
-                destination[i] = (byte)(value >> (i * 8));
+                destination[cursor++] = (byte)(value >> (i * 8));
         }
 
-        private static void WriteUInt16LittleEndian(Span<byte> destination, ushort value)
+        private static void WriteUInt16LittleEndian(NativeArray<byte> destination, ref int cursor, ushort value)
         {
-            destination[0] = (byte)value;
-            destination[1] = (byte)(value >> 8);
+            destination[cursor++] = (byte)value;
+            destination[cursor++] = (byte)(value >> 8);
         }
 
         private void DisposeNativeState()

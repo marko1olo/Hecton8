@@ -18,6 +18,7 @@
 // ============================================================================
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -32,6 +33,7 @@ using Hecton8.Items;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -1357,38 +1359,41 @@ namespace Hecton8.Gameplay
             _telemetryCursor = index;
         }
 
-        private void DumpTelemetry(uint reasonFlags)
+        private unsafe void DumpTelemetry(uint reasonFlags)
         {
             if (_telemetryDumped || !TryResolveTelemetryRing(out NativeArray<SuitUpgradeTelemetryEntry> telemetryRing))
                 return;
 
-            _telemetryDumped = true;
+            NativeArray<byte> payload = default;
             try
             {
-                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", TelemetryDumpRelativePath));
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                    Directory.CreateDirectory(directory);
+                int totalBytes = 24 + TelemetryCapacity * TelemetryEntrySizeBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(SuitUpgradeManager),
+                    "suitUpgradeTelemetryDumpPayload");
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                Span<byte> header = new Span<byte>(payloadPtr, 24);
+                BinaryPrimitives.WriteUInt64LittleEndian(header.Slice(0, 8), TelemetryDumpMagic);
+                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(8, 4), (uint)TelemetryCapacity);
+                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(12, 4), (uint)_telemetryCursor);
+                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(16, 4), (uint)TelemetryEntrySizeBytes);
+                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(20, 4), reasonFlags);
+
+                int offset = 24;
+                for (int i = 0; i < TelemetryCapacity; i++)
                 {
-                    writer.Write(TelemetryDumpMagic);
-                    writer.Write((uint)TelemetryCapacity);
-                    writer.Write((uint)_telemetryCursor);
-                    writer.Write((uint)TelemetryEntrySizeBytes);
-                    writer.Write(reasonFlags);
+                    int index = _telemetryCursor + i;
+                    if (index >= TelemetryCapacity)
+                        index -= TelemetryCapacity;
 
-                    for (int i = 0; i < TelemetryCapacity; i++)
-                    {
-                        int index = _telemetryCursor + i;
-                        if (index >= TelemetryCapacity)
-                            index -= TelemetryCapacity;
-
-                        SuitUpgradeTelemetryEntry entry = telemetryRing[index];
-                        WriteTelemetryEntry(writer, in entry);
-                    }
+                    Span<byte> row = new Span<byte>(payloadPtr + offset, TelemetryEntrySizeBytes);
+                    WriteTelemetryEntry(row, telemetryRing[index]);
+                    offset += TelemetryEntrySizeBytes;
                 }
+
+                _telemetryDumped = NativeFaultDumpWriter.TryWriteAll(TelemetryDumpRelativePath, payload, totalBytes);
             }
             catch (Exception exception)
             {
@@ -1396,23 +1401,36 @@ namespace Hecton8.Gameplay
                 Hecton8.Core.H8Debug.LogException(exception, this);
 #endif
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(SuitUpgradeManager),
+                    "suitUpgradeTelemetryDumpPayload");
+            }
         }
 
-        private static void WriteTelemetryEntry(BinaryWriter writer, in SuitUpgradeTelemetryEntry entry)
+        private static void WriteTelemetryEntry(Span<byte> destination, in SuitUpgradeTelemetryEntry entry)
         {
-            writer.Write(entry.FrameIndex);
-            writer.Write(entry.Sequence);
-            writer.Write(entry.UpgradeMask);
-            writer.Write(entry.EffectiveMask);
-            writer.Write(entry.InventoryMask);
-            writer.Write(entry.Flags);
-            writer.Write(entry.StateHash);
-            writer.Write(entry.MaxO2);
-            writer.Write(entry.CrushDepth);
-            writer.Write(entry.SwimSpeedMultiplier);
-            writer.Write(entry.ThermalResistance);
-            writer.Write(entry.MaxEnergy);
-            writer.Write(entry.RadiationThreshold);
+            destination.Clear();
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.FrameIndex);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(4, 4), entry.Sequence);
+            BinaryPrimitives.WriteUInt64LittleEndian(destination.Slice(8, 8), entry.UpgradeMask);
+            BinaryPrimitives.WriteUInt64LittleEndian(destination.Slice(16, 8), entry.EffectiveMask);
+            BinaryPrimitives.WriteUInt64LittleEndian(destination.Slice(24, 8), entry.InventoryMask);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(32, 4), entry.Flags);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(36, 4), entry.StateHash);
+            WriteFloatLittleEndian(destination.Slice(40, 4), entry.MaxO2);
+            WriteFloatLittleEndian(destination.Slice(44, 4), entry.CrushDepth);
+            WriteFloatLittleEndian(destination.Slice(48, 4), entry.SwimSpeedMultiplier);
+            WriteFloatLittleEndian(destination.Slice(52, 4), entry.ThermalResistance);
+            WriteFloatLittleEndian(destination.Slice(56, 4), entry.MaxEnergy);
+            WriteFloatLittleEndian(destination.Slice(60, 4), entry.RadiationThreshold);
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(destination, BitConverter.SingleToInt32Bits(value));
         }
 
         private static bool AreSuitStatsFinite(in SuitStats stats)

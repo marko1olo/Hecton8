@@ -71,7 +71,6 @@ namespace Hecton8.Construction
         public const BufferID TelemetryCursor = (BufferID)95836;
         public const BufferID Counters = (BufferID)95837;
         public const BufferID PipeProfiles = (BufferID)95838;
-        public const BufferID CsvScratch = (BufferID)95839;
         public const BufferID FrameSummary = (BufferID)95840;
         public const BufferID FlowGpu = (BufferID)95841;
         public const BufferID PumpMassError = (BufferID)95842;

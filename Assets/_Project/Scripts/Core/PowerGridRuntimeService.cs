@@ -48,8 +48,8 @@ namespace Hecton8.Core
         BatteryRuntimeSnapshot BatterySnapshot { get; }
 
         /// <summary>
-        /// Queues one submarine-only wireless tool-drain request against the power runtime.
-        /// The request is accounted by the power owner on its next logistics evaluation.
+        /// Reserves one submarine-only wireless tool drain against the committed power runtime.
+        /// The returned grant is deducted from the wireless budget immediately and consumed by the power owner phase.
         /// </summary>
         bool TryQueueWirelessToolDrain(float energyWattSeconds, out float grantedEnergyWattSeconds);
 

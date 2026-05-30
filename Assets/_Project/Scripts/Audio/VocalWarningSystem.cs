@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -22,6 +21,7 @@ namespace Hecton8.Audio
     public sealed class VocalWarningSystem : MonoBehaviour, IVocalWarningSystem, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private static int s_x001DirectSignalPushDropCount_VocalWarningSystem;
+        private const string TelemetryDumpPayloadLabel = "vocalWarningTelemetryDumpPayload";
 
         [StructLayout(LayoutKind.Explicit, Size = 16)]
         internal struct VocalWarningDTO
@@ -257,9 +257,6 @@ namespace Hecton8.Audio
             public NativeArray<VocalWarningDispatchDTO> Dispatch;
             public NativeArray<VocalWarningProfileDTO> Profiles;
             public NativeArray<VocalWarningTuningDTO> Tuning;
-#if UNITY_EDITOR
-            public NativeArray<byte> CsvScratch;
-#endif
             public NativeArray<VwsTelemetryEntry> TelemetryRing;
         }
 
@@ -267,9 +264,6 @@ namespace Hecton8.Audio
         private const int WarningStateLength = 6;
         private const int DispatchLength = 1;
         private const int ProfileCapacity = 8;
-#if UNITY_EDITOR
-        private const int CsvScratchCapacity = 4096;
-#endif
         private const int TelemetryCapacity = 300;
         private const float DefaultCooldownSeconds = 4f;
         private const float DefaultGain = 0.85f;
@@ -279,9 +273,6 @@ namespace Hecton8.Audio
         private const BufferID VocalWarningCurrentStateBufferId = (BufferID)72431;
         private const BufferID VocalWarningDispatchBufferId = (BufferID)72432;
         private const BufferID VocalWarningProfilesBufferId = (BufferID)72433;
-#if UNITY_EDITOR
-        private const BufferID VocalWarningCsvScratchBufferId = (BufferID)72434;
-#endif
         private const BufferID VocalWarningTuningBufferId = (BufferID)72435;
         private const uint QueueFlagCritical = 1u << 0;
         private const uint QueueFlagInterrupt = 1u << 1;
@@ -328,9 +319,6 @@ namespace Hecton8.Audio
         private VaultGenerationHandle<VocalWarningDispatchDTO> _dispatchHandle;
         private VaultGenerationHandle<VocalWarningProfileDTO> _profilesHandle;
         private VaultGenerationHandle<VocalWarningTuningDTO> _tuningHandle;
-#if UNITY_EDITOR
-        private VaultGenerationHandle<byte> _csvScratchHandle;
-#endif
         private VaultGenerationHandle<VwsTelemetryEntry> _telemetryRingHandle;
         private PostSimulationPhaseSystem _postSimulationSystem;
         private int _telemetryCursor;
@@ -504,7 +492,7 @@ namespace Hecton8.Audio
                 Seed = NextOwnerFrameId() ^ 0x9E3779B9u,
                 Count = math.clamp(count, 1, 50)
             };
-            job.Run();
+            job.Execute();
             _queueCount = ResolveActivePriorityCount(ref views);
             return true;
         }
@@ -526,16 +514,26 @@ namespace Hecton8.Audio
 
         public unsafe bool EditorTryWriteTuning(in VocalWarningTuningDTO tuning)
         {
-            if (Volatile.Read(ref _nativeAllocated) == 0 || !TryResolveVwsOwnerViews(out VwsVaultViews views))
+            IDataVault vault = _dataVault;
+            if (Volatile.Read(ref _nativeAllocated) == 0 ||
+                vault == null ||
+                !vault.TryAcquireWriteLock(in _tuningHandle, VaultOwner, out NativeArray<VocalWarningTuningDTO> tuningView))
                 return false;
 
-            if (!views.Tuning.IsCreated || views.Tuning.Length <= 0)
-                return false;
+            try
+            {
+                if (!tuningView.IsCreated || tuningView.Length <= 0)
+                    return false;
 
-            void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.Tuning);
-            ref VocalWarningTuningDTO target = ref UnsafeUtility.AsRef<VocalWarningTuningDTO>(pointer);
-            target = SanitizeTuning(tuning);
-            return true;
+                void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(tuningView);
+                ref VocalWarningTuningDTO target = ref UnsafeUtility.AsRef<VocalWarningTuningDTO>(pointer);
+                target = SanitizeTuning(tuning);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _tuningHandle, VaultOwner);
+            }
         }
 
         public bool EditorTryGetTelemetrySample(int offsetFromNewest, out VocalWarningTelemetrySnapshot snapshot)
@@ -714,13 +712,6 @@ namespace Hecton8.Audio
                 1,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-#if UNITY_EDITOR
-            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(
-                VocalWarningCsvScratchBufferId,
-                CsvScratchCapacity,
-                VaultOwner,
-                NativeArrayOptions.UninitializedMemory);
-#endif
             _telemetryRingHandle = vault.EnsureGenerationHandle<VwsTelemetryEntry>(
                 BufferID.AudioVocalWarningTelemetry,
                 TelemetryCapacity,
@@ -792,9 +783,6 @@ namespace Hecton8.Audio
             ReleaseVaultBuffer(vault, ref _dispatchHandle, VocalWarningDispatchBufferId);
             ReleaseVaultBuffer(vault, ref _profilesHandle, VocalWarningProfilesBufferId);
             ReleaseVaultBuffer(vault, ref _tuningHandle, VocalWarningTuningBufferId);
-#if UNITY_EDITOR
-            ReleaseVaultBuffer(vault, ref _csvScratchHandle, VocalWarningCsvScratchBufferId);
-#endif
             ReleaseVaultBuffer(vault, ref _telemetryRingHandle, BufferID.AudioVocalWarningTelemetry);
             ClearVaultDescriptors();
         }
@@ -834,9 +822,6 @@ namespace Hecton8.Audio
             _dispatchHandle = default;
             _profilesHandle = default;
             _tuningHandle = default;
-#if UNITY_EDITOR
-            _csvScratchHandle = default;
-#endif
             _telemetryRingHandle = default;
         }
 
@@ -858,9 +843,6 @@ namespace Hecton8.Audio
                 vault.TryResolveHandle(in _dispatchHandle, out views.Dispatch) &&
                 vault.TryResolveHandle(in _profilesHandle, out views.Profiles) &&
                 vault.TryResolveHandle(in _tuningHandle, out views.Tuning) &&
-#if UNITY_EDITOR
-                vault.TryResolveHandle(in _csvScratchHandle, out views.CsvScratch) &&
-#endif
                 vault.TryResolveHandle(in _telemetryRingHandle, out views.TelemetryRing) &&
                 views.Queue.IsCreated &&
                 views.PriorityState.IsCreated &&
@@ -872,9 +854,6 @@ namespace Hecton8.Audio
                 views.Dispatch.IsCreated &&
                 views.Profiles.IsCreated &&
                 views.Tuning.IsCreated &&
-#if UNITY_EDITOR
-                views.CsvScratch.IsCreated &&
-#endif
                 views.TelemetryRing.IsCreated;
             if (!success)
                 views = default;
@@ -954,7 +933,7 @@ namespace Hecton8.Audio
             };
 
             long startTicks = Stopwatch.GetTimestamp();
-            evaluateJob.Run();
+            evaluateJob.Execute();
 
             DispatchVoiceOverJob dispatchJob = new DispatchVoiceOverJob
             {
@@ -969,7 +948,7 @@ namespace Hecton8.Audio
                 VoiceGain = voiceGain,
                 Frame = frame
             };
-            dispatchJob.Run();
+            dispatchJob.Execute();
             long endTicks = Stopwatch.GetTimestamp();
 
             _lastBurstExecutionMicros = (float)((endTicks - startTicks) * 1000000.0 / Stopwatch.Frequency);
@@ -1229,9 +1208,6 @@ namespace Hecton8.Audio
                 int count = math.clamp(_telemetrySamplesWritten, 0, telemetryRing.Length);
                 int cursor = math.clamp(_telemetryCursor, 0, telemetryRing.Length - 1);
                 int startIndex = count < telemetryRing.Length ? 0 : cursor;
-                string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string path = Path.Combine(root, TelemetryDumpRelativePath);
-                string agentPath = Path.Combine(root, AgentTelemetryDumpRelativePath);
                 VwsTelemetryDumpHeader header = new VwsTelemetryDumpHeader
                 {
                     Magic = VocalWarningSystemHash,
@@ -1244,20 +1220,18 @@ namespace Hecton8.Audio
                     Reserved0 = 0u
                 };
 
-                WriteTelemetryDump(path, in header, telemetryRing, entryStride, count, startIndex, telemetryRing.Length);
-                WriteTelemetryDump(agentPath, in header, telemetryRing, entryStride, count, startIndex, telemetryRing.Length);
+                bool primaryWritten = WriteTelemetryDump(TelemetryDumpRelativePath, in header, telemetryRing, entryStride, count, startIndex, telemetryRing.Length);
+                bool agentWritten = WriteTelemetryDump(AgentTelemetryDumpRelativePath, in header, telemetryRing, entryStride, count, startIndex, telemetryRing.Length);
 
-                Interlocked.Exchange(ref _telemetryDumped, 1);
+                if (primaryWritten || agentWritten)
+                    Interlocked.Exchange(ref _telemetryDumped, 1);
             }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
+            catch (Exception)
             {
             }
         }
 
-        private static unsafe void WriteTelemetryDump(
+        private static unsafe bool WriteTelemetryDump(
             string path,
             in VwsTelemetryDumpHeader header,
             NativeArray<VwsTelemetryEntry>.ReadOnly telemetryRing,
@@ -1266,28 +1240,37 @@ namespace Hecton8.Audio
             int startIndex,
             int capacity)
         {
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-            VwsTelemetryDumpHeader localHeader = header;
-            stream.Write(new ReadOnlySpan<byte>(&localHeader, UnsafeUtility.SizeOf<VwsTelemetryDumpHeader>()));
-            if (count <= 0)
-                return;
-
-            int firstCount = math.min(count, capacity - startIndex);
-            for (int i = 0; i < firstCount; i++)
+            int headerBytes = UnsafeUtility.SizeOf<VwsTelemetryDumpHeader>();
+            int byteCount = headerBytes + math.max(0, count) * entryStride;
+            NativeArray<byte> payload = default;
+            try
             {
-                VwsTelemetryEntry entry = telemetryRing[startIndex + i];
-                stream.Write(new ReadOnlySpan<byte>(&entry, entryStride));
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(VocalWarningSystem),
+                    TelemetryDumpPayloadLabel);
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                VwsTelemetryDumpHeader localHeader = header;
+                UnsafeUtility.MemCpy(target, &localHeader, headerBytes);
+                if (count > 0)
+                {
+                    byte* source = (byte*)telemetryRing.GetUnsafeReadOnlyPtr();
+                    int firstCount = math.min(count, capacity - startIndex);
+                    UnsafeUtility.MemCpy(target + headerBytes, source + startIndex * entryStride, firstCount * entryStride);
+
+                    int secondCount = count - firstCount;
+                    if (secondCount > 0)
+                        UnsafeUtility.MemCpy(target + headerBytes + firstCount * entryStride, source, secondCount * entryStride);
+                }
+
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
             }
-
-            int secondCount = count - firstCount;
-            for (int i = 0; i < secondCount; i++)
+            finally
             {
-                VwsTelemetryEntry entry = telemetryRing[i];
-                stream.Write(new ReadOnlySpan<byte>(&entry, entryStride));
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(VocalWarningSystem),
+                    TelemetryDumpPayloadLabel);
             }
         }
 

@@ -1089,35 +1089,90 @@ namespace Hecton8.Prologue.Space
                 return;
             }
 
-            _telemetryDumped = true;
+            NativeArray<byte> payload = default;
             string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-            string folder = Path.Combine(projectRoot, "Docs", "AgentLogs");
-            Directory.CreateDirectory(folder);
-            string path = Path.Combine(folder, DumpFileName);
+            string path = Path.Combine(projectRoot, "Docs", "AgentLogs", DumpFileName);
 
-            using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
+            try
             {
-                writer.Write(SourceHash);
-                writer.Write(reason);
-                writer.Write(TelemetryCapacity);
-                writer.Write(_telemetryCursor);
-                for (int i = 0; i < telemetryRing.Length; i++)
+                const int headerBytes = 13;
+                const int rowBytes = 52;
+                int length = telemetryRing.Length;
+                int byteCount = headerBytes + length * rowBytes;
+                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+
+                unsafe
                 {
-                    int index = (_telemetryCursor + i) % telemetryRing.Length;
-                    OrbitalTelemetryEntry entry = telemetryRing[index];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.UniverseVelocity.x);
-                    writer.Write(entry.UniverseVelocity.y);
-                    writer.Write(entry.UniverseVelocity.z);
-                    writer.Write(entry.PlanetDistanceMeters);
-                    writer.Write(entry.ReentryHeat01);
-                    writer.Write(entry.CloudWhiteout01);
-                    writer.Write(entry.Sequence);
-                    writer.Write(entry.MathLod);
-                    writer.Write(entry.Flags);
+                    byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    WriteUInt(bytes, 0, SourceHash);
+                    bytes[4] = reason;
+                    WriteInt(bytes, 5, TelemetryCapacity);
+                    WriteInt(bytes, 9, _telemetryCursor);
+
+                    int writeCursor = headerBytes;
+                    for (int i = 0; i < length; i++)
+                    {
+                        int index = (_telemetryCursor + i) % length;
+                        OrbitalTelemetryEntry entry = telemetryRing[index];
+                        WriteUInt(bytes, writeCursor, entry.Frame);
+                        WriteUInt(bytes, writeCursor + 4, entry.StateHash);
+                        WriteDouble(bytes, writeCursor + 8, entry.UniverseVelocity.x);
+                        WriteDouble(bytes, writeCursor + 16, entry.UniverseVelocity.y);
+                        WriteDouble(bytes, writeCursor + 24, entry.UniverseVelocity.z);
+                        WriteDouble(bytes, writeCursor + 32, entry.PlanetDistanceMeters);
+                        WriteFloat(bytes, writeCursor + 40, entry.ReentryHeat01);
+                        WriteFloat(bytes, writeCursor + 44, entry.CloudWhiteout01);
+                        WriteUShort(bytes, writeCursor + 48, entry.Sequence);
+                        bytes[writeCursor + 50] = entry.MathLod;
+                        bytes[writeCursor + 51] = entry.Flags;
+                        writeCursor += rowBytes;
+                    }
                 }
+
+                _telemetryDumped = NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
             }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
+            }
+        }
+
+        private static unsafe void WriteUInt(byte* data, int offset, uint value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+            data[offset + 2] = (byte)(value >> 16);
+            data[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static unsafe void WriteInt(byte* data, int offset, int value)
+        {
+            WriteUInt(data, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUShort(byte* data, int offset, ushort value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+        }
+
+        private static unsafe void WriteFloat(byte* data, int offset, float value)
+        {
+            UnsafeUtility.MemCpy(data + offset, &value, sizeof(float));
+        }
+
+        private static unsafe void WriteDouble(byte* data, int offset, double value)
+        {
+            ulong bits = unchecked((ulong)BitConverter.DoubleToInt64Bits(value));
+            data[offset] = (byte)bits;
+            data[offset + 1] = (byte)(bits >> 8);
+            data[offset + 2] = (byte)(bits >> 16);
+            data[offset + 3] = (byte)(bits >> 24);
+            data[offset + 4] = (byte)(bits >> 32);
+            data[offset + 5] = (byte)(bits >> 40);
+            data[offset + 6] = (byte)(bits >> 48);
+            data[offset + 7] = (byte)(bits >> 56);
         }
 
         private bool TryReadTelemetryRing(out NativeArray<OrbitalTelemetryEntry>.ReadOnly telemetryRing)

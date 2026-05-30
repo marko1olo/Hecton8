@@ -688,34 +688,35 @@ namespace Hecton8.Ecosystem
             if (!TryOpenReadVaultBuffer(vault, in _carrionTelemetryHandle, out NativeArray<CarrionTelemetryEntry>.ReadOnly telemetry))
                 return;
 
+            NativeArray<byte> payload = default;
             try
             {
-                string projectRoot = Application.dataPath;
-                DirectoryInfo directory = Directory.GetParent(projectRoot);
-                if (directory != null)
-                    projectRoot = directory.FullName;
-                string path = Path.Combine(projectRoot, CarrionDumpRelativePath);
-                string folder = Path.GetDirectoryName(path);
-                if (folder != null && folder.Length != 0)
-                    Directory.CreateDirectory(folder);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
+                int stride = UnsafeUtility.SizeOf<CarrionTelemetryEntry>();
+                int byteCount = 24 + telemetry.Length * stride;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(NutrientDriftRuntime),
+                    "nutrientCarrionTelemetryDumpPayload");
+                unsafe
                 {
-                    Span<byte> header = stackalloc byte[24];
-                    WriteUInt64(header.Slice(0, 8), CarrionDumpMagic);
-                    WriteUInt32(header.Slice(8, 4), unchecked((uint)TelemetryCapacity));
-                    WriteUInt32(header.Slice(12, 4), unchecked((uint)UnsafeUtility.SizeOf<CarrionTelemetryEntry>()));
-                    WriteUInt32(header.Slice(16, 4), unchecked((uint)_carrionTelemetryCursor));
-                    WriteUInt32(header.Slice(20, 4), CarrionRouteHash);
-                    stream.Write(header);
-
-                    int stride = UnsafeUtility.SizeOf<CarrionTelemetryEntry>();
+                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    Span<byte> bytes = new Span<byte>(target, byteCount);
+                    WriteUInt64(bytes.Slice(0, 8), CarrionDumpMagic);
+                    WriteUInt32(bytes.Slice(8, 4), unchecked((uint)TelemetryCapacity));
+                    WriteUInt32(bytes.Slice(12, 4), unchecked((uint)stride));
+                    WriteUInt32(bytes.Slice(16, 4), unchecked((uint)_carrionTelemetryCursor));
+                    WriteUInt32(bytes.Slice(20, 4), CarrionRouteHash);
+                    int offset = 24;
                     for (int i = 0; i < telemetry.Length; i++)
                     {
                         CarrionTelemetryEntry entry = telemetry[i];
-                        stream.Write(new ReadOnlySpan<byte>(&entry, stride));
+                        UnsafeUtility.MemCpy(target + offset, &entry, stride);
+                        offset += stride;
                     }
                 }
+
+                if (!NativeFaultDumpWriter.TryWriteAll(CarrionDumpRelativePath, payload, byteCount))
+                    GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)CarrionRouteHash));
             }
             catch (IOException)
             {
@@ -736,6 +737,13 @@ namespace Hecton8.Ecosystem
             catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)CarrionRouteHash));
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(NutrientDriftRuntime),
+                    "nutrientCarrionTelemetryDumpPayload");
             }
         }
 
@@ -763,6 +771,7 @@ namespace Hecton8.Ecosystem
 
             int bytesRead;
             int parsed;
+            bool publishCommitFault = false;
             if (System.Threading.Interlocked.CompareExchange(ref s_carrionCsvImportScratchBusy, 1, 0) != 0)
                 return false;
 
@@ -831,23 +840,23 @@ namespace Hecton8.Ecosystem
                 }
                 catch (IOException)
                 {
-                    GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+                    publishCommitFault = true;
                 }
                 catch (UnauthorizedAccessException)
                 {
-                    GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+                    publishCommitFault = true;
                 }
                 catch (ArgumentException)
                 {
-                    GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+                    publishCommitFault = true;
                 }
                 catch (NotSupportedException)
                 {
-                    GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+                    publishCommitFault = true;
                 }
                 catch (InvalidOperationException)
                 {
-                    GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+                    publishCommitFault = true;
                 }
                 finally
                 {
@@ -858,6 +867,9 @@ namespace Hecton8.Ecosystem
             {
                 System.Threading.Volatile.Write(ref s_carrionCsvImportScratchBusy, 0);
             }
+
+            if (publishCommitFault)
+                GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
 
             return false;
 #endif

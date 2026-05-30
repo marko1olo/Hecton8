@@ -243,6 +243,8 @@ namespace Hecton8.Power
         private const uint SourceHash = 0x53313036u; // S106
         private const uint DumpMagic = 0x54484752u; // THGR
         private const uint DumpVersion = 1u;
+        private const int DumpHeaderBytes = 28;
+        private const int DumpTelemetryEntryBytes = 64;
         private const uint ResidualSlotFaultNonFinite = 1u;
         private const float Epsilon = 0.0001f;
 
@@ -1639,43 +1641,86 @@ namespace Hecton8.Power
         {
             string root = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
             string path = Path.Combine(root, relativePath.Replace('/', Path.DirectorySeparatorChar));
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-            using BinaryWriter writer = new BinaryWriter(stream);
-            writer.Write(DumpMagic);
-            writer.Write(DumpVersion);
-            writer.Write(_frame);
-            writer.Write(NodeCount);
-            writer.Write(EdgeCount);
-            writer.Write(_pendingIterations);
             NativeArray<ThermalPowerGridTelemetrySnapshot> telemetry =
                 TryResolveVaultBuffer(_telemetryHandle, TelemetryFrameCount, out NativeArray<ThermalPowerGridTelemetrySnapshot> resolvedTelemetry)
                     ? resolvedTelemetry
                     : default;
             int telemetryCount = telemetry.IsCreated ? math.min(telemetry.Length, TelemetryFrameCount) : 0;
-            writer.Write(telemetryCount);
-            for (int i = 0; i < telemetryCount; i++)
+
+            long totalBytes = DumpHeaderBytes + ((long)telemetryCount * DumpTelemetryEntryBytes);
+            if (totalBytes < DumpHeaderBytes || totalBytes > int.MaxValue)
+                return;
+
+            NativeArray<byte> payload = new NativeArray<byte>((int)totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            try
             {
-                ThermalPowerGridTelemetrySnapshot entry = telemetry[i];
-                writer.Write(entry.StateHash);
-                writer.Write(entry.Frame);
-                writer.Write(entry.Flags);
-                writer.Write(entry.TotalGeneratedPower);
-                writer.Write(entry.TotalLoad);
-                writer.Write(entry.MaximumThermalStress);
-                writer.Write(entry.JacobiResidual);
-                writer.Write(entry.IterationCount);
-                writer.Write(entry.NodeCount);
-                writer.Write(entry.EdgeCount);
-                writer.Write(entry.MicroDamageCount);
-                writer.Write(entry.BrownoutCount);
-                writer.Write(entry.ExternalHeatNodeCount);
-                writer.Write(entry.SolverOmega);
-                writer.Write(entry.TargetTolerance);
+                WriteUInt32LittleEndian(payload, 0, DumpMagic);
+                WriteUInt32LittleEndian(payload, 4, DumpVersion);
+                WriteUInt32LittleEndian(payload, 8, _frame);
+                WriteInt32LittleEndian(payload, 12, NodeCount);
+                WriteInt32LittleEndian(payload, 16, EdgeCount);
+                WriteInt32LittleEndian(payload, 20, _pendingIterations);
+                WriteInt32LittleEndian(payload, 24, telemetryCount);
+
+                int cursor = DumpHeaderBytes;
+                for (int i = 0; i < telemetryCount; i++)
+                {
+                    WriteThermalTelemetryEntry(payload, cursor, telemetry[i]);
+                    cursor += DumpTelemetryEntryBytes;
+                }
+
+                NativeFaultDumpWriter.TryWriteAll(path, payload, (int)totalBytes);
             }
+            finally
+            {
+                payload.Dispose();
+            }
+        }
+
+        private static void WriteThermalTelemetryEntry(
+            NativeArray<byte> destination,
+            int offset,
+            ThermalPowerGridTelemetrySnapshot entry)
+        {
+            WriteUInt64LittleEndian(destination, offset, entry.StateHash);
+            WriteUInt32LittleEndian(destination, offset + 8, entry.Frame);
+            WriteUInt32LittleEndian(destination, offset + 12, entry.Flags);
+            WriteFloat32LittleEndian(destination, offset + 16, entry.TotalGeneratedPower);
+            WriteFloat32LittleEndian(destination, offset + 20, entry.TotalLoad);
+            WriteFloat32LittleEndian(destination, offset + 24, entry.MaximumThermalStress);
+            WriteFloat32LittleEndian(destination, offset + 28, entry.JacobiResidual);
+            WriteInt32LittleEndian(destination, offset + 32, entry.IterationCount);
+            WriteInt32LittleEndian(destination, offset + 36, entry.NodeCount);
+            WriteInt32LittleEndian(destination, offset + 40, entry.EdgeCount);
+            WriteInt32LittleEndian(destination, offset + 44, entry.MicroDamageCount);
+            WriteInt32LittleEndian(destination, offset + 48, entry.BrownoutCount);
+            WriteInt32LittleEndian(destination, offset + 52, entry.ExternalHeatNodeCount);
+            WriteFloat32LittleEndian(destination, offset + 56, entry.SolverOmega);
+            WriteFloat32LittleEndian(destination, offset + 60, entry.TargetTolerance);
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> destination, int offset, float value)
+        {
+            WriteUInt32LittleEndian(destination, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> destination, int offset, uint value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> destination, int offset, ulong value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+            WriteUInt32LittleEndian(destination, offset + 4, unchecked((uint)(value >> 32)));
         }
 
         private static SubmarineThermalGridTuningDTO SanitizeTuning(in SubmarineThermalGridTuningDTO tuning)

@@ -38,16 +38,16 @@ namespace Hecton8.Ecosystem
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_300.bin";
         private const ulong DumpMagic = 0x4D4143524F45434FUL; // MACROECO
         private const uint RouteHash = 0x53483136u; // SH16
-        private static readonly ulong JobMutationGuardMask =
-            MutationGuardBit(BufferID.ShinobuMacroEcosystemSectorFront) |
-            MutationGuardBit(BufferID.ShinobuMacroEcosystemSectorBack) |
-            MutationGuardBit(BufferID.ShinobuMacroEcosystemRemainders) |
-            MutationGuardBit(BufferID.ShinobuMacroEcosystemSectorCoords) |
-            MutationGuardBit(BufferID.ShinobuMacroEcosystemBiomeSpecs) |
-            MutationGuardBit(BufferID.ShinobuMacroEcosystemTuning) |
-            MutationGuardBit(BufferID.ShinobuMacroEcosystemCounters) |
-            MutationGuardBit(BufferID.ShinobuMacroEcosystemFaultFlags) |
-            MutationGuardBit(BufferID.ShinobuMacroEcosystemTelemetryRing);
+        private const uint PostSimulationSystemHash = RouteHash ^ 0x50534D30u; // PSM0
+        private const uint JobPinSectorFront = 1u << 0;
+        private const uint JobPinSectorBack = 1u << 1;
+        private const uint JobPinRemainders = 1u << 2;
+        private const uint JobPinSectorCoords = 1u << 3;
+        private const uint JobPinBiomeSpecs = 1u << 4;
+        private const uint JobPinTuning = 1u << 5;
+        private const uint JobPinCounters = 1u << 6;
+        private const uint JobPinFaultFlags = 1u << 7;
+        private const uint JobPinTelemetryRing = 1u << 8;
 #if UNITY_EDITOR
         private static readonly ulong BiomeSpecImportMutationGuardMask =
             MutationGuardBit(BufferID.ShinobuMacroEcosystemBiomeSpecs);
@@ -73,6 +73,7 @@ namespace Hecton8.Ecosystem
         private VaultGenerationHandle<uint> _faultFlagHandle;
 
         private IDataVault _vault;
+        private PostSimulationPhaseSystem _postSimulationPhase;
         private JobHandle _activeJobHandle;
         private long _scheduleTicks;
         private long _csvTimestampTicks;
@@ -82,12 +83,13 @@ namespace Hecton8.Ecosystem
         private int _lastDiffusionSteps;
         private bool _initialized;
         private bool _registeredFrost;
-        private bool _registeredLateFrame;
+        private bool _registeredPostSimulation;
         private bool _registeredHotSwap;
         private bool _jobScheduled;
-        private bool _jobGuardHeld;
+        private bool _jobPinsHeld;
         private bool _dumpedFault;
-        private IDataVault _jobGuardVault;
+        private IDataVault _jobPinVault;
+        private uint _jobPinMask;
 
         private MacroEcosystemMathematicianRuntime()
         {
@@ -211,7 +213,7 @@ namespace Hecton8.Ecosystem
             if (vault == null || !TryLockJobBuffers(vault))
                 return;
 
-            bool keepJobGuard = false;
+            bool keepJobPins = false;
             try
             {
                 if (!TryOpenVaultBuffer(vault, ref _frontHandle, BufferID.ShinobuMacroEcosystemSectorFront, SectorCapacity, out NativeArray<EcosystemSectorDTO> front) ||
@@ -329,11 +331,11 @@ namespace Hecton8.Ecosystem
                 _scheduleTicks = Stopwatch.GetTimestamp();
                 _jobScheduled = true;
                 _telemetryCursor++;
-                keepJobGuard = true;
+                keepJobPins = true;
             }
             finally
             {
-                if (!keepJobGuard)
+                if (!keepJobPins)
                     UnlockJobBuffers();
             }
         }
@@ -341,7 +343,6 @@ namespace Hecton8.Ecosystem
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            TryFinalizeScheduledJobNoWait();
         }
 
         /// <inheritdoc />
@@ -643,10 +644,19 @@ namespace Hecton8.Ecosystem
 
         private void TryRegister()
         {
+            if (!_registeredPostSimulation)
+            {
+                if (_postSimulationPhase == null)
+                    _postSimulationPhase = new PostSimulationPhaseSystem(this);
+
+                _registeredPostSimulation = GlobalRegistry.TryRegisterDispatcherSystem(_postSimulationPhase);
+            }
+
+            if (!_registeredPostSimulation)
+                return;
+
             if (!_registeredFrost)
                 _registeredFrost = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment);
-            if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             if (!_registeredHotSwap)
                 _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
@@ -659,10 +669,10 @@ namespace Hecton8.Ecosystem
                 _registeredFrost = false;
             }
 
-            if (_registeredLateFrame)
+            if (_registeredPostSimulation)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrame = false;
+                GlobalRegistry.UnregisterDispatcherSystem(_postSimulationPhase);
+                _registeredPostSimulation = false;
             }
 
             if (_registeredHotSwap)
@@ -674,24 +684,75 @@ namespace Hecton8.Ecosystem
 
         private bool TryLockJobBuffers(IDataVault vault)
         {
-            if (_jobGuardHeld || vault == null || !vault.TryAcquireMutationGuard(JobMutationGuardMask))
+            if (_jobPinsHeld)
+                return true;
+            if (vault == null)
                 return false;
 
-            _jobGuardVault = vault;
-            _jobGuardHeld = true;
-            return true;
+            _jobPinVault = vault;
+            try
+            {
+                if (!TryLockJobBuffer(vault, BufferID.ShinobuMacroEcosystemSectorFront, JobPinSectorFront) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuMacroEcosystemSectorBack, JobPinSectorBack) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuMacroEcosystemRemainders, JobPinRemainders) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuMacroEcosystemSectorCoords, JobPinSectorCoords) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuMacroEcosystemBiomeSpecs, JobPinBiomeSpecs) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuMacroEcosystemTuning, JobPinTuning) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuMacroEcosystemCounters, JobPinCounters) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuMacroEcosystemFaultFlags, JobPinFaultFlags) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuMacroEcosystemTelemetryRing, JobPinTelemetryRing))
+                    return false;
+
+                _jobPinsHeld = true;
+                return true;
+            }
+            finally
+            {
+                if (!_jobPinsHeld)
+                    UnlockJobBuffers();
+            }
         }
 
         private void UnlockJobBuffers()
         {
-            if (!_jobGuardHeld)
+            if (!_jobPinsHeld && _jobPinMask == 0u)
                 return;
 
-            IDataVault vault = _jobGuardVault;
-            _jobGuardVault = null;
-            _jobGuardHeld = false;
-            if (vault != null)
-                vault.ReleaseMutationGuard(JobMutationGuardMask);
+            IDataVault vault = _jobPinVault;
+            uint pinMask = _jobPinMask;
+            _jobPinVault = null;
+            _jobPinMask = 0u;
+            _jobPinsHeld = false;
+            if (vault == null)
+                return;
+
+            TryUnlockJobBuffer(vault, pinMask, JobPinTelemetryRing, BufferID.ShinobuMacroEcosystemTelemetryRing);
+            TryUnlockJobBuffer(vault, pinMask, JobPinFaultFlags, BufferID.ShinobuMacroEcosystemFaultFlags);
+            TryUnlockJobBuffer(vault, pinMask, JobPinCounters, BufferID.ShinobuMacroEcosystemCounters);
+            TryUnlockJobBuffer(vault, pinMask, JobPinTuning, BufferID.ShinobuMacroEcosystemTuning);
+            TryUnlockJobBuffer(vault, pinMask, JobPinBiomeSpecs, BufferID.ShinobuMacroEcosystemBiomeSpecs);
+            TryUnlockJobBuffer(vault, pinMask, JobPinSectorCoords, BufferID.ShinobuMacroEcosystemSectorCoords);
+            TryUnlockJobBuffer(vault, pinMask, JobPinRemainders, BufferID.ShinobuMacroEcosystemRemainders);
+            TryUnlockJobBuffer(vault, pinMask, JobPinSectorBack, BufferID.ShinobuMacroEcosystemSectorBack);
+            TryUnlockJobBuffer(vault, pinMask, JobPinSectorFront, BufferID.ShinobuMacroEcosystemSectorFront);
+        }
+
+        private bool TryLockJobBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        {
+            if ((_jobPinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null || !vault.TryLockBuffer(bufferId, SystemID.AIEcology))
+                return false;
+
+            _jobPinMask |= pinBit;
+            return true;
+        }
+
+        private static void TryUnlockJobBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, SystemID.AIEcology);
         }
 
         private void TryFinalizeScheduledJobNoWait()
@@ -729,6 +790,11 @@ namespace Hecton8.Ecosystem
                 return;
 
             FinishCompletedScheduledJob();
+        }
+
+        private void PostSimulationTick(in DispatcherTimingDTO timing)
+        {
+            TryFinalizeScheduledJobNoWait();
         }
 
         private void FinishCompletedScheduledJob()
@@ -835,36 +901,77 @@ namespace Hecton8.Ecosystem
             }
         }
 
+        private sealed class PostSimulationPhaseSystem : IDispatcherSystem
+        {
+            private readonly MacroEcosystemMathematicianRuntime _owner;
+
+            public PostSimulationPhaseSystem(MacroEcosystemMathematicianRuntime owner)
+            {
+                _owner = owner;
+            }
+
+            public uint GetSystemIdHash() => PostSimulationSystemHash;
+
+            public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.PostSimulation;
+
+            public byte GetBucketId() => byte.MaxValue;
+
+            public int GetDependencyCount() => 0;
+
+            public uint GetDependencyHash(int dependencyIndex) => 0u;
+
+            public void PreSimulationTick(in DispatcherTimingDTO timing)
+            {
+            }
+
+            public JobHandle ScheduleSimulation(
+                in DispatcherTimingDTO timing,
+                in DispatcherJobContext context,
+                JobHandle dependsOn)
+            {
+                return dependsOn;
+            }
+
+            public void PostSimulationTick(in DispatcherTimingDTO timing)
+            {
+                _owner?.PostSimulationTick(in timing);
+            }
+
+            public void VisualSyncTick(in DispatcherTimingDTO timing)
+            {
+            }
+        }
+
         private unsafe void DumpTelemetry(IDataVault vault)
         {
             if (!TryOpenVaultBuffer(vault, ref _telemetryHandle, BufferID.ShinobuMacroEcosystemTelemetryRing, TelemetryCapacity, out NativeArray<MacroEcosystemTelemetryEntry> telemetry))
                 return;
 
+            NativeArray<byte> payload = default;
             try
             {
-                string projectRoot = Application.dataPath;
-                DirectoryInfo directory = Directory.GetParent(projectRoot);
-                if (directory != null)
-                    projectRoot = directory.FullName;
-                string path = Path.Combine(projectRoot, DumpRelativePath);
-                string folder = Path.GetDirectoryName(path);
-                if (folder != null && folder.Length != 0)
-                    Directory.CreateDirectory(folder);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
+                int stride = UnsafeUtility.SizeOf<MacroEcosystemTelemetryEntry>();
+                int telemetryBytes = telemetry.Length * stride;
+                int byteCount = 24 + telemetryBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(MacroEcosystemMathematicianRuntime),
+                    "macroEcosystemTelemetryDumpPayload");
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                Span<byte> bytes = new Span<byte>(target, byteCount);
+                WriteUInt64(bytes.Slice(0, 8), DumpMagic);
+                WriteUInt32(bytes.Slice(8, 4), unchecked((uint)TelemetryCapacity));
+                WriteUInt32(bytes.Slice(12, 4), unchecked((uint)stride));
+                WriteUInt32(bytes.Slice(16, 4), unchecked((uint)_telemetryCursor));
+                WriteUInt32(bytes.Slice(20, 4), RouteHash);
+                if (telemetryBytes > 0)
                 {
-                    Span<byte> header = stackalloc byte[24];
-                    WriteUInt64(header.Slice(0, 8), DumpMagic);
-                    WriteUInt32(header.Slice(8, 4), unchecked((uint)TelemetryCapacity));
-                    WriteUInt32(header.Slice(12, 4), unchecked((uint)UnsafeUtility.SizeOf<MacroEcosystemTelemetryEntry>()));
-                    WriteUInt32(header.Slice(16, 4), unchecked((uint)_telemetryCursor));
-                    WriteUInt32(header.Slice(20, 4), RouteHash);
-                    stream.Write(header);
-
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                    int bytes = telemetry.Length * UnsafeUtility.SizeOf<MacroEcosystemTelemetryEntry>();
-                    stream.Write(new ReadOnlySpan<byte>(ptr, bytes));
+                    UnsafeUtility.MemCpy(target + 24, ptr, telemetryBytes);
                 }
+
+                if (!NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, byteCount))
+                    GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)RouteHash));
             }
             catch (IOException)
             {
@@ -885,6 +992,13 @@ namespace Hecton8.Ecosystem
             catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)RouteHash));
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(MacroEcosystemMathematicianRuntime),
+                    "macroEcosystemTelemetryDumpPayload");
             }
         }
 

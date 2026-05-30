@@ -7,8 +7,9 @@ namespace Hecton8.Caves
 {
     internal static class CaveGlowingTissueRuntimeBuilder
     {
+        public const int RuntimeCapacity = 24;
         private const string TissueRootName = "_GlowingTissue";
-        private const int MaxTissueCount = 24;
+        private const int MaxTissueCount = RuntimeCapacity;
         private static readonly string[] _TissueNames = CreateNameCache("Tissue_", MaxTissueCount); // COLD ALLOC: bounded glowing-tissue child names.
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
@@ -16,6 +17,15 @@ namespace Hecton8.Caves
         private static MaterialPropertyBlock _TissuePropertyBlock;
 
         public static Transform Prewarm(Transform parent)
+        {
+            return Prewarm(parent, null, null, null);
+        }
+
+        public static Transform Prewarm(
+            Transform parent,
+            GameObject[] primitiveObjects,
+            MeshFilter[] primitiveFilters,
+            MeshRenderer[] primitiveRenderers)
         {
             if (parent == null)
                 return null;
@@ -25,13 +35,15 @@ namespace Hecton8.Caves
             {
                 if (i < root.childCount)
                 {
+                    GameObject primitiveObject = root.GetChild(i).gameObject;
                     WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisual(
-                        root.GetChild(i).gameObject,
+                        primitiveObject,
                         PrimitiveType.Quad,
                         GetCachedName(i),
                         Vector3.zero,
                         Quaternion.identity,
                         Vector3.one);
+                    CachePrimitiveCold(i, primitiveObject, primitiveObjects, primitiveFilters, primitiveRenderers);
                     continue;
                 }
 
@@ -43,7 +55,10 @@ namespace Hecton8.Caves
                     Quaternion.identity,
                     Vector3.one);
                 if (renderer != null)
+                {
+                    CachePrimitiveCold(i, renderer.gameObject, primitiveObjects, primitiveFilters, primitiveRenderers);
                     renderer.gameObject.SetActive(false);
+                }
             }
 
             DisableUnusedChildren(root, 0);
@@ -55,37 +70,15 @@ namespace Hecton8.Caves
             _ = GetTissuePropertyBlock();
         }
 
-        public static void Build(
-            Transform parent,
+        public static void BuildPreparedCachedHot(
+            Transform tissueRoot,
+            GameObject[] primitiveObjects,
+            MeshFilter[] primitiveFilters,
+            MeshRenderer[] primitiveRenderers,
             HectonVoxelVolume volume,
             CavePreset preset,
             GlowingTissueConfig config,
             float globalIntensity)
-        {
-            if (parent == null || volume == null || config == null || !config.enabled)
-                return;
-
-            Transform tissueRoot = GetOrCreateRoot(parent);
-            BuildPrepared(tissueRoot, volume, preset, config, globalIntensity, createMissing: true);
-        }
-
-        public static void BuildPrepared(
-            Transform tissueRoot,
-            HectonVoxelVolume volume,
-            CavePreset preset,
-            GlowingTissueConfig config,
-            float globalIntensity)
-        {
-            BuildPrepared(tissueRoot, volume, preset, config, globalIntensity, createMissing: false);
-        }
-
-        private static void BuildPrepared(
-            Transform tissueRoot,
-            HectonVoxelVolume volume,
-            CavePreset preset,
-            GlowingTissueConfig config,
-            float globalIntensity,
-            bool createMissing)
         {
             if (tissueRoot == null || volume == null || config == null || !config.enabled)
                 return;
@@ -96,35 +89,53 @@ namespace Hecton8.Caves
             Material tissueMaterial = ResolveTissueMaterial(volume);
             long runtimeSeed = volume.caveKey != 0L ? volume.caveKey : ComputeFallbackSeed(volume.transform.position, preset);
             int tissueCount = ResolveTissueCount(preset, volumeBounds, config, globalIntensity);
+            ActivateTransform(tissueRoot);
 
             for (int i = 0; i < tissueCount; i++)
             {
-                Renderer renderer = CreateOrConfigureTissue(
-                    tissueRoot,
+                Renderer renderer = CreateOrConfigureTissueCachedHot(
+                    primitiveObjects,
+                    primitiveFilters,
+                    primitiveRenderers,
                     i,
                     volumeBounds,
                     tissueMaterial,
                     runtimeSeed,
                     config,
-                    globalIntensity,
-                    createMissing);
+                    globalIntensity);
                 ApplyTissueVisuals(renderer, config, globalIntensity, runtimeSeed, i);
             }
 
-            DisableUnusedChildren(tissueRoot, tissueCount);
+            DisableUnusedCachedPrimitives(primitiveObjects, tissueCount);
         }
 
-        private static Renderer CreateOrConfigureTissue(
-            Transform root,
+        private static Renderer CreateOrConfigureTissueCachedHot(
+            GameObject[] primitiveObjects,
+            MeshFilter[] primitiveFilters,
+            MeshRenderer[] primitiveRenderers,
             int index,
             Bounds volumeBounds,
             Material tissueMaterial,
             long runtimeSeed,
             GlowingTissueConfig config,
-            float globalIntensity,
-            bool createMissing)
+            float globalIntensity)
         {
-            string name = GetCachedName(index);
+            if (primitiveObjects == null ||
+                primitiveFilters == null ||
+                primitiveRenderers == null ||
+                (uint)index >= (uint)primitiveObjects.Length ||
+                (uint)index >= (uint)primitiveFilters.Length ||
+                (uint)index >= (uint)primitiveRenderers.Length)
+            {
+                return null;
+            }
+
+            GameObject primitiveObject = primitiveObjects[index];
+            MeshFilter filter = primitiveFilters[index];
+            MeshRenderer renderer = primitiveRenderers[index];
+            if (primitiveObject == null || filter == null || renderer == null)
+                return null;
+
             bool ceilingBias = Hash01(runtimeSeed, index, 11) > 0.35f;
             float side = HashSigned(runtimeSeed, index, 17);
             float intensityT = math.saturate(globalIntensity);
@@ -147,31 +158,58 @@ namespace Hecton8.Caves
             Vector3 localScale = new Vector3(width, height, thickness);
             Quaternion localRotation = Quaternion.Euler(pitch, yaw, roll);
 
-            if (index < root.childCount)
-            {
-                Transform existing = root.GetChild(index);
-                ActivateTransform(existing);
-                return WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisualHot(
-                    existing.gameObject,
-                    PrimitiveType.Quad,
-                    name,
-                    localPosition,
-                    localRotation,
-                    localScale,
-                    tissueMaterial);
-            }
+            if (!primitiveObject.activeSelf)
+                primitiveObject.SetActive(true);
 
-            if (!createMissing)
-                return null;
-
-            return WorldGeneratedPrimitiveFactory.CreatePrimitiveVisual(
-                root,
+            return WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisualCachedHot(
+                primitiveObject,
+                filter,
+                renderer,
                 PrimitiveType.Quad,
-                name,
+                GetCachedName(index),
                 localPosition,
                 localRotation,
                 localScale,
                 tissueMaterial);
+        }
+
+        private static void CachePrimitiveCold(
+            int index,
+            GameObject primitiveObject,
+            GameObject[] primitiveObjects,
+            MeshFilter[] primitiveFilters,
+            MeshRenderer[] primitiveRenderers)
+        {
+            if (primitiveObject == null ||
+                primitiveObjects == null ||
+                primitiveFilters == null ||
+                primitiveRenderers == null ||
+                (uint)index >= (uint)primitiveObjects.Length ||
+                (uint)index >= (uint)primitiveFilters.Length ||
+                (uint)index >= (uint)primitiveRenderers.Length)
+            {
+                return;
+            }
+
+            if (!WorldGeneratedPrimitiveFactory.TryResolvePrimitiveComponentsCold(primitiveObject, out MeshFilter filter, out MeshRenderer renderer))
+                return;
+
+            primitiveObjects[index] = primitiveObject;
+            primitiveFilters[index] = filter;
+            primitiveRenderers[index] = renderer;
+        }
+
+        private static void DisableUnusedCachedPrimitives(GameObject[] primitiveObjects, int usedChildCount)
+        {
+            if (primitiveObjects == null)
+                return;
+
+            for (int i = usedChildCount; i < primitiveObjects.Length; i++)
+            {
+                GameObject primitiveObject = primitiveObjects[i];
+                if (primitiveObject != null && primitiveObject.activeSelf)
+                    primitiveObject.SetActive(false);
+            }
         }
 
         private static void ApplyTissueVisuals(Renderer renderer, GlowingTissueConfig config, float globalIntensity, long runtimeSeed, int index)

@@ -175,7 +175,7 @@ namespace Hecton8.Gameplay
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-renderer props — owner: EnvironmentalHazard
 
             if (hazardIndicator == null)
-                hazardIndicator = GetComponent<Renderer>();
+                TryGetComponent(out hazardIndicator);
 
             // Cache player layer if not set
             if (playerLayer == 0 && PlayerLayerIndex >= 0)
@@ -188,7 +188,6 @@ namespace Hecton8.Gameplay
         {
             RefreshColdRegistryReferences();
             TryRegister();
-            TryRegisterLateFrame();
             TryRegisterHotSwapListener();
             TryRegisterRadiationSource();
             QueueIndicatorUpdate();
@@ -215,10 +214,14 @@ namespace Hecton8.Gameplay
         public void LateFrameTick()
         {
             if (!_indicatorDirty)
+            {
+                TryUnregisterLateFrameWhenDormant();
                 return;
+            }
 
             _indicatorDirty = false;
             UpdateIndicator();
+            TryUnregisterLateFrameWhenDormant();
         }
 
         private void TryRegister()
@@ -758,6 +761,15 @@ namespace Hecton8.Gameplay
         private void QueueIndicatorUpdate()
         {
             _indicatorDirty = true;
+            TryRegisterLateFrame();
+        }
+
+        private void TryUnregisterLateFrameWhenDormant()
+        {
+            if (_indicatorDirty)
+                return;
+
+            TryUnregisterLateFrame();
         }
 
         private void TryRegisterRadiationSource()

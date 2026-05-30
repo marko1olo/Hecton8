@@ -133,6 +133,17 @@ function Invoke-LocalValidation {
     }
 }
 
+function Write-TextFileUtf8NoBom([string]$Path, [string]$Text) {
+    $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllText($Path, $Text, $utf8NoBom)
+}
+
+function Write-JsonFileUtf8NoBom([string]$Path, [object]$Value) {
+    $jsonText = ($Value | ConvertTo-Json -Depth 16)
+    Write-TextFileUtf8NoBom $Path ($jsonText + [System.Environment]::NewLine)
+    [void](Read-H8JsonFileCapped $Path 'Written dependency manifest' $MaxManifestJsonBytes)
+}
+
 function Write-ManifestsWithValidation([object]$Authoring, [object]$Runtime) {
     $authoringPath = Require-File 'mod.h8manifest.json'
     $runtimePath = Require-File 'mod.json'
@@ -143,14 +154,14 @@ function Write-ManifestsWithValidation([object]$Authoring, [object]$Runtime) {
     $runtimeTemp = Join-Path ([System.IO.Path]::GetTempPath()) ('hecton8-dependencies-runtime-' + $tempId + '.json')
 
     try {
-        $Authoring | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $authoringTemp -Encoding UTF8
-        $Runtime | ConvertTo-Json -Depth 16 | Set-Content -LiteralPath $runtimeTemp -Encoding UTF8
+        Write-JsonFileUtf8NoBom $authoringTemp $Authoring
+        Write-JsonFileUtf8NoBom $runtimeTemp $Runtime
         Copy-Item -LiteralPath $authoringTemp -Destination $authoringPath -Force
         Copy-Item -LiteralPath $runtimeTemp -Destination $runtimePath -Force
         Invoke-LocalValidation
     } catch {
-        $authoringOriginal | Set-Content -LiteralPath $authoringPath -Encoding UTF8
-        $runtimeOriginal | Set-Content -LiteralPath $runtimePath -Encoding UTF8
+        Write-TextFileUtf8NoBom $authoringPath $authoringOriginal
+        Write-TextFileUtf8NoBom $runtimePath $runtimeOriginal
         Fail ('Dependency write rejected and manifests restored: ' + $_.Exception.Message)
     } finally {
         Remove-Item -LiteralPath $authoringTemp -Force -ErrorAction SilentlyContinue

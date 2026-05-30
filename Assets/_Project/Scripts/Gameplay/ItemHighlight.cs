@@ -66,7 +66,7 @@ namespace Hecton8.Gameplay
         [Tooltip("Enable 'always on top' stencil rendering when highlighted.")]
         [SerializeField] private bool enableStencil = true;
 
-        [Tooltip("Renderer to apply highlight to. If null, uses GetComponent<Renderer>().")]
+        [Tooltip("Renderer to apply highlight to. If null, resolves the local Renderer.")]
         [SerializeField] private Renderer targetRenderer;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -111,10 +111,10 @@ namespace Hecton8.Gameplay
         {
             // COLD ALLOC: MaterialPropertyBlock[1] â€” per-object highlight props â€” owner: self
             _mpb = new MaterialPropertyBlock();
-            _resourceNode = GetComponent<ResourceNode>();
+            TryGetComponent(out _resourceNode);
 
             if (targetRenderer == null)
-                targetRenderer = GetComponent<Renderer>();
+                TryGetComponent(out targetRenderer);
 
             _activationSqrDist = activationDistance * activationDistance;
             _fullIntensitySqrDist = fullIntensityDistance * fullIntensityDistance;

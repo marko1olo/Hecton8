@@ -49,6 +49,7 @@ namespace Hecton8.UI
         private bool _registeredToSlowTickManager;
         private bool _hotSwapRegistered;
         private bool _pendingContentRootBootstrap = true;
+        private bool _runtimeActive;
         private int _cachedRenderWidth = 1;
         private int _cachedRenderHeight = 1;
         private int _lastScreenWidth = -1;
@@ -68,6 +69,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            _runtimeActive = Application.isPlaying;
             ResolveCanvas();
             RefreshRenderDimensionsCold(force: true);
             RectTransform contentRoot = EnsureContentRoot();
@@ -81,7 +83,7 @@ namespace Hecton8.UI
             ApplyManualLinearLayout();
             ApplyScale(force: true);
             _pendingContentRootBootstrap = ResolveContentRootInternal(createIfMissing: false) == null;
-            if (!Application.isPlaying)
+            if (!_runtimeActive)
                 return;
 
             TryRegisterHotSwapListener();
@@ -91,6 +93,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            _runtimeActive = false;
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
@@ -98,6 +101,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            _runtimeActive = false;
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
@@ -149,7 +153,7 @@ namespace Hecton8.UI
 
         public void SlowTick()
         {
-            if (!Application.isPlaying)
+            if (!_runtimeActive)
                 return;
 
             RefreshRenderDimensionsCold(force: false);

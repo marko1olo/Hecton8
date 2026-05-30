@@ -1639,8 +1639,18 @@ namespace Hecton8.AI.Ecosystem
 
             Thread.MemoryBarrier();
             Volatile.Write(ref s_lastDumpFailureFlags, 0);
+            bool ownerWritten = TryWriteQueuedDumpFile(ShinobuSpatialGridConstants.DumpRelativePath);
+            bool agentWritten = TryWriteQueuedDumpFile(ShinobuSpatialGridConstants.Agent1301DumpRelativePath);
+            bool agent1419Written = TryWriteQueuedDumpFile(ShinobuSpatialGridConstants.Agent1419DumpRelativePath);
+            int failureFlags = ownerWritten ? 0 : DumpFailureOwnerPath;
+            failureFlags |= agentWritten ? 0 : DumpFailureAgentPath;
+            failureFlags |= agent1419Written ? 0 : DumpFailureAgent1419Path;
+            AddDumpFailureFlags(failureFlags);
+            if (failureFlags != 0)
+                Interlocked.Increment(ref s_totalDumpWriteFailures);
+
             Volatile.Write(ref s_dumpState, DumpStateIdle);
-            return true;
+            return ownerWritten || agentWritten || agent1419Written;
         }
 
         private static void DumpWorkerLoop()
@@ -1671,13 +1681,31 @@ namespace Hecton8.AI.Ecosystem
             if (Interlocked.CompareExchange(ref s_dumpState, DumpStateWriting, DumpStatePending) != DumpStatePending)
                 return;
 
+            bool ownerWritten = TryWriteQueuedDumpFile(ShinobuSpatialGridConstants.DumpRelativePath);
+            bool agentWritten = TryWriteQueuedDumpFile(ShinobuSpatialGridConstants.Agent1301DumpRelativePath);
+            bool agent1419Written = TryWriteQueuedDumpFile(ShinobuSpatialGridConstants.Agent1419DumpRelativePath);
+            int failureFlags = ownerWritten ? 0 : DumpFailureOwnerPath;
+            failureFlags |= agentWritten ? 0 : DumpFailureAgentPath;
+            failureFlags |= agent1419Written ? 0 : DumpFailureAgent1419Path;
+            AddDumpFailureFlags(failureFlags);
+            if (failureFlags != 0)
+                Interlocked.Increment(ref s_totalDumpWriteFailures);
+
             Volatile.Write(ref s_dumpState, DumpStateIdle);
         }
 
         private static bool TryWriteQueuedDumpFile(string path)
         {
-            _ = path;
-            return false;
+            int byteCount = Volatile.Read(ref s_pendingByteCount);
+            if (byteCount <= DumpHeaderBytes ||
+                byteCount > DumpSnapshotBytes ||
+                !s_snapshotBuffer.IsCreated ||
+                s_snapshotBuffer.Length < byteCount)
+            {
+                return false;
+            }
+
+            return NativeFaultDumpWriter.TryWriteAll(path, s_snapshotBuffer, byteCount);
         }
 
         private static void EnsureSnapshotBuffer()

@@ -6,7 +6,6 @@
 namespace Hecton8.Interaction
 {
     using System;
-    using System.IO;
     using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
     using Hecton8.Core;
@@ -314,20 +313,10 @@ namespace Hecton8.Interaction
             }
 
             string resolvedPath = string.IsNullOrEmpty(path) ? VRInteractionKinematicBridgeConstants.DumpPath : path;
-            string directory = Path.GetDirectoryName(resolvedPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
             int stride = UnsafeUtility.SizeOf<VRInteractionTelemetryEntry>();
+            int byteCount = stride * ring.Length;
             byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
-            using (FileStream stream = new FileStream(resolvedPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            {
-                for (int i = 0; i < ring.Length; i++)
-                    stream.Write(new ReadOnlySpan<byte>(source + (i * stride), stride));
-
-                stream.Flush(true);
-            }
-            return true;
+            return NativeFaultDumpWriter.TryWriteAll(resolvedPath, new ReadOnlySpan<byte>(source, byteCount), byteCount);
         }
 
         private static bool TryOpenExistingLane<T>(

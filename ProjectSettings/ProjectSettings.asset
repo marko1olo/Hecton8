@@ -41,8 +41,8 @@ PlayerSettings:
     height: 1
   m_SplashScreenLogos: []
   m_VirtualRealitySplashScreen: {fileID: 0}
-  defaultScreenWidth: 1024
-  defaultScreenHeight: 768
+  defaultScreenWidth: 1280
+  defaultScreenHeight: 720
   defaultScreenWidthWeb: 960
   defaultScreenHeightWeb: 600
   m_StereoRenderingPath: 2
@@ -95,7 +95,7 @@ PlayerSettings:
   bakeCollisionMeshes: 0
   forceSingleInstance: 0
   useFlipModelSwapchain: 1
-  resizableWindow: 0
+  resizableWindow: 1
   useMacAppStoreValidation: 0
   macAppStoreCategory: public.app-category.games
   gpuSkinning: 1
@@ -167,7 +167,7 @@ PlayerSettings:
   androidMinAspectRatio: 1
   applicationIdentifier:
     Android: com.danatgames.hecton8
-    Standalone: com.Unity-Technologies.com.unity.template.urp-blank
+    Standalone: com.danatgames.hecton8
     iPhone: com.Unity-Technologies.com.unity.template.urp-blank
   buildNumber:
     Standalone: 0
@@ -540,7 +540,7 @@ PlayerSettings:
     m_Automatic: 0
   - m_BuildTarget: WindowsStandaloneSupport
     m_APIs: 1200000002000000
-    m_Automatic: 1
+    m_Automatic: 0
   m_BuildTargetVRSettings: []
   m_DefaultShaderChunkSizeInMB: 16
   m_DefaultShaderChunkCount: 0
@@ -835,25 +835,25 @@ PlayerSettings:
   webWasm2023: 0
   webEnableSubmoduleStrippingCompatibility: 0
   scriptingDefineSymbols:
-    Android: DOTWEEN;UNITY_VISUAL_SCRIPTING;ODIN_INSPECTOR;ODIN_INSPECTOR_3;ODIN_INSPECTOR_3_1;ODIN_INSPECTOR_3_2;ODIN_INSPECTOR_3_3;MAPMAGIC2;MM_NATIVE;BAKERY_INCLUDED;SHAPES_URP;VLB_URP
-    EmbeddedLinux: DOTWEEN;UNITY_VISUAL_SCRIPTING
-    GameCoreScarlett: DOTWEEN
-    GameCoreXboxOne: DOTWEEN
-    Kepler: DOTWEEN
-    LinuxHeadlessSimulation: DOTWEEN;UNITY_VISUAL_SCRIPTING
-    Nintendo Switch: DOTWEEN;UNITY_VISUAL_SCRIPTING
-    Nintendo Switch 2: DOTWEEN;UNITY_VISUAL_SCRIPTING
-    PS4: DOTWEEN;UNITY_VISUAL_SCRIPTING
-    PS5: DOTWEEN;UNITY_VISUAL_SCRIPTING
-    QNX: DOTWEEN;UNITY_VISUAL_SCRIPTING
-    Server: UNITY_VISUAL_SCRIPTING
-    Standalone: DOTWEEN;CREST_OCEAN;CREST_URP;__MICROSPLAT__;MAPMAGIC2;MM_NATIVE;UNITY_VISUAL_SCRIPTING;GPU_INSTANCER;ODIN_INSPECTOR;ODIN_INSPECTOR_3;ODIN_INSPECTOR_3_1;AMPLIFY_SHADER_EDITOR;SHAPES_URP;MOREMOUNTAINS_NICEVIBRATIONS_INSTALLED;BAKERY_INCLUDED;VLB_URP;ODIN_INSPECTOR_3_2;ODIN_INSPECTOR_3_3
-    VisionOS: DOTWEEN;UNITY_VISUAL_SCRIPTING
-    WebGL: DOTWEEN;UNITY_VISUAL_SCRIPTING;BAKERY_INCLUDED;GPU_INSTANCER;__MICROSPLAT__;MOREMOUNTAINS_NICEVIBRATIONS_INSTALLED;ODIN_INSPECTOR;ODIN_INSPECTOR_3;ODIN_INSPECTOR_3_1;ODIN_INSPECTOR_3_2;ODIN_INSPECTOR_3_3;MAPMAGIC2;MM_NATIVE;SHAPES_URP
-    Windows Store Apps: DOTWEEN;UNITY_VISUAL_SCRIPTING
-    XboxOne: DOTWEEN;UNITY_VISUAL_SCRIPTING
-    iPhone: DOTWEEN;UNITY_VISUAL_SCRIPTING
-    tvOS: DOTWEEN;UNITY_VISUAL_SCRIPTING
+    Android: ODIN_INSPECTOR;ODIN_INSPECTOR_3;ODIN_INSPECTOR_3_1;ODIN_INSPECTOR_3_2;ODIN_INSPECTOR_3_3;MAPMAGIC2;MM_NATIVE;BAKERY_INCLUDED;SHAPES_URP;VLB_URP
+    EmbeddedLinux:
+    GameCoreScarlett:
+    GameCoreXboxOne:
+    Kepler:
+    LinuxHeadlessSimulation:
+    Nintendo Switch:
+    Nintendo Switch 2:
+    PS4:
+    PS5:
+    QNX:
+    Server:
+    Standalone: CREST_OCEAN;CREST_URP;__MICROSPLAT__;MAPMAGIC2;MM_NATIVE;GPU_INSTANCER;ODIN_INSPECTOR;ODIN_INSPECTOR_3;ODIN_INSPECTOR_3_1;SHAPES_URP;MOREMOUNTAINS_NICEVIBRATIONS_INSTALLED;BAKERY_INCLUDED;VLB_URP;ODIN_INSPECTOR_3_2;ODIN_INSPECTOR_3_3
+    VisionOS:
+    WebGL: BAKERY_INCLUDED;GPU_INSTANCER;__MICROSPLAT__;MOREMOUNTAINS_NICEVIBRATIONS_INSTALLED;ODIN_INSPECTOR;ODIN_INSPECTOR_3;ODIN_INSPECTOR_3_1;ODIN_INSPECTOR_3_2;ODIN_INSPECTOR_3_3;MAPMAGIC2;MM_NATIVE;SHAPES_URP
+    Windows Store Apps:
+    XboxOne:
+    iPhone:
+    tvOS:
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:

@@ -92,6 +92,8 @@ namespace Hecton8.Physics
         private const uint SubmarineFluidDynamicsContextHash = 0x53464459u;
         private const byte ProceduralAudioPingKindMechanicalWhirr = 3;
         private const int HydroBlackBoxCapacity = 300;
+        private const int HydroBlackBoxDumpHeaderBytes = 16;
+        private const int HydroBlackBoxDumpEntryBytes = 120;
         private const uint HydroBlackBoxMagic = 0x4844524Fu;
         private const uint HydroBlackBoxFlagHullImplosion = 1u << 0;
         private const uint HydroBlackBoxFlagBallastBlow = 1u << 1;
@@ -6130,20 +6132,18 @@ namespace Hecton8.Physics
             if (_hydroBlackBoxDumped || !_hydroBlackBox.IsCreated)
                 return;
 
-            _hydroBlackBoxDumped = true;
             WriteHydroBlackBoxSample(ResolveExternalDepthMeters(), reasonFlags);
-            DumpHydroBlackBox(reasonFlags);
+            _hydroBlackBoxDumped = DumpHydroBlackBox(reasonFlags);
         }
 
-        private void DumpHydroBlackBox(uint reasonFlags)
+        private bool DumpHydroBlackBox(uint reasonFlags)
         {
             if (!_hydroBlackBox.IsCreated)
-                return;
+                return false;
 
             try
             {
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                WriteHydroBlackBoxDumpFile(projectRoot, HydroBlackBoxDumpRelativePath, reasonFlags);
+                return WriteHydroBlackBoxDumpFile(HydroBlackBoxDumpRelativePath, reasonFlags);
             }
             catch (Exception)
             {
@@ -6151,59 +6151,93 @@ namespace Hecton8.Physics
                     HydrodynamicsResetWarningHash,
                     SubmarineFluidDynamicsContextHash,
                     1f);
+
+                return false;
             }
         }
 
-        private void WriteHydroBlackBoxDumpFile(string projectRoot, string relativePath, uint reasonFlags)
+        private bool WriteHydroBlackBoxDumpFile(string dumpPath, uint reasonFlags)
         {
-            string dumpPath = Path.Combine(projectRoot, relativePath);
-            string directory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
+            NativeArray<HydroBlackBoxEntry> blackBox = _hydroBlackBox.OpenView();
+            if (!blackBox.IsCreated)
+                return false;
 
-            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            int entryCount = blackBox.Length;
+            int byteCount = HydroBlackBoxDumpHeaderBytes + entryCount * HydroBlackBoxDumpEntryBytes;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(SubmarineFluidDynamics),
+                "HydroBlackBoxDumpPayload");
+            try
             {
-                writer.Write(HydroBlackBoxMagic);
-                writer.Write((uint)HydroBlackBoxCapacity);
-                writer.Write((uint)_hydroBlackBoxCursor);
-                writer.Write(reasonFlags);
+                int cursor = 0;
+                WriteUInt32LittleEndian(payload, ref cursor, HydroBlackBoxMagic);
+                WriteUInt32LittleEndian(payload, ref cursor, (uint)HydroBlackBoxCapacity);
+                WriteUInt32LittleEndian(payload, ref cursor, (uint)_hydroBlackBoxCursor);
+                WriteUInt32LittleEndian(payload, ref cursor, reasonFlags);
 
-                for (int i = 0; i < _hydroBlackBox.Length; i++)
+                for (int i = 0; i < entryCount; i++)
                 {
-                    int index = (_hydroBlackBoxCursor + i) % _hydroBlackBox.Length;
-                    WriteHydroBlackBoxEntry(writer, _hydroBlackBox[index]);
+                    int index = (_hydroBlackBoxCursor + i) % entryCount;
+                    WriteHydroBlackBoxEntry(payload, ref cursor, blackBox[index]);
                 }
+
+                return cursor == byteCount && NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, byteCount);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(SubmarineFluidDynamics),
+                    "HydroBlackBoxDumpPayload");
             }
         }
 
-        private static void WriteHydroBlackBoxEntry(BinaryWriter writer, HydroBlackBoxEntry entry)
+        private static void WriteHydroBlackBoxEntry(NativeArray<byte> payload, ref int cursor, HydroBlackBoxEntry entry)
         {
-            writer.Write(entry.Frame);
-            writer.Write(entry.FixedTime);
-            WriteFloat3(writer, entry.Position);
-            WriteFloat3(writer, entry.Velocity);
-            WriteFloat3(writer, entry.AngularVelocity);
-            writer.Write(entry.MassKilograms);
-            writer.Write(entry.CargoMassKilograms);
-            writer.Write(entry.CargoMassScalar);
-            writer.Write(entry.SubmersionFactor);
-            writer.Write(entry.DepthMeters);
-            writer.Write(entry.FloodRatio);
-            writer.Write(entry.BallastBias01);
-            WriteFloat3(writer, entry.HydroAcceleration);
-            WriteFloat3(writer, entry.HydroTorque);
-            WriteFloat3(writer, entry.TowingTension);
-            writer.Write(entry.BrineSubmersionTime);
-            writer.Write(entry.Flags);
-            writer.Write(entry.StateHash);
+            WriteInt32LittleEndian(payload, ref cursor, entry.Frame);
+            WriteFloatLittleEndian(payload, ref cursor, entry.FixedTime);
+            WriteFloat3LittleEndian(payload, ref cursor, entry.Position);
+            WriteFloat3LittleEndian(payload, ref cursor, entry.Velocity);
+            WriteFloat3LittleEndian(payload, ref cursor, entry.AngularVelocity);
+            WriteFloatLittleEndian(payload, ref cursor, entry.MassKilograms);
+            WriteFloatLittleEndian(payload, ref cursor, entry.CargoMassKilograms);
+            WriteFloatLittleEndian(payload, ref cursor, entry.CargoMassScalar);
+            WriteFloatLittleEndian(payload, ref cursor, entry.SubmersionFactor);
+            WriteFloatLittleEndian(payload, ref cursor, entry.DepthMeters);
+            WriteFloatLittleEndian(payload, ref cursor, entry.FloodRatio);
+            WriteFloatLittleEndian(payload, ref cursor, entry.BallastBias01);
+            WriteFloat3LittleEndian(payload, ref cursor, entry.HydroAcceleration);
+            WriteFloat3LittleEndian(payload, ref cursor, entry.HydroTorque);
+            WriteFloat3LittleEndian(payload, ref cursor, entry.TowingTension);
+            WriteFloatLittleEndian(payload, ref cursor, entry.BrineSubmersionTime);
+            WriteUInt32LittleEndian(payload, ref cursor, entry.Flags);
+            WriteUInt32LittleEndian(payload, ref cursor, entry.StateHash);
         }
 
-        private static void WriteFloat3(BinaryWriter writer, float3 value)
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, ref int cursor, int value)
         {
-            writer.Write(value.x);
-            writer.Write(value.y);
-            writer.Write(value.z);
+            WriteUInt32LittleEndian(payload, ref cursor, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, ref int cursor, uint value)
+        {
+            payload[cursor++] = (byte)value;
+            payload[cursor++] = (byte)(value >> 8);
+            payload[cursor++] = (byte)(value >> 16);
+            payload[cursor++] = (byte)(value >> 24);
+        }
+
+        private static void WriteFloatLittleEndian(NativeArray<byte> payload, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(payload, ref cursor, math.asuint(value));
+        }
+
+        private static void WriteFloat3LittleEndian(NativeArray<byte> payload, ref int cursor, float3 value)
+        {
+            WriteFloatLittleEndian(payload, ref cursor, value.x);
+            WriteFloatLittleEndian(payload, ref cursor, value.y);
+            WriteFloatLittleEndian(payload, ref cursor, value.z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

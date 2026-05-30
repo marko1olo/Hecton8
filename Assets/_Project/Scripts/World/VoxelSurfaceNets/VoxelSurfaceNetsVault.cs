@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading;
+using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -1697,29 +1698,39 @@ namespace Hecton8.World.VoxelSurfaceNets
             if (count <= 0)
                 return false;
 
+            int entrySize = UnsafeUtility.SizeOf<VoxelMeshingTelemetryEntry>();
+            int byteLength = count * entrySize;
+            int totalBytes = 32 + byteLength;
             int cursor = math.clamp(telemetryCursor, 0, count - 1);
-            Span<byte> header = stackalloc byte[32];
-            WriteUInt32(header, 0, VoxelSurfaceNetsConstants.DumpMagic);
-            WriteUInt32(header, 4, VoxelSurfaceNetsConstants.DumpEndianMarker);
-            WriteUInt32(header, 8, DumpVersion);
-            WriteUInt32(header, 12, reason);
-            WriteUInt32(header, 16, (uint)count);
-            WriteUInt32(header, 20, (uint)UnsafeUtility.SizeOf<VoxelMeshingTelemetryEntry>());
-            WriteUInt32(header, 24, (uint)cursor);
-            WriteUInt32(header, 28, 0u);
-
-            using (FileStream stream = File.Create(path))
+            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            try
             {
-                stream.Write(header);
-                fixed (VoxelMeshingTelemetryEntry* ptr = telemetrySnapshot)
+                unsafe
                 {
-                    int byteLength = count * UnsafeUtility.SizeOf<VoxelMeshingTelemetryEntry>();
-                    ReadOnlySpan<byte> telemetry = new ReadOnlySpan<byte>(ptr, byteLength);
-                    stream.Write(telemetry);
-                }
-            }
+                    byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    Span<byte> header = new Span<byte>(payloadPtr, 32);
+                    WriteUInt32(header, 0, VoxelSurfaceNetsConstants.DumpMagic);
+                    WriteUInt32(header, 4, VoxelSurfaceNetsConstants.DumpEndianMarker);
+                    WriteUInt32(header, 8, DumpVersion);
+                    WriteUInt32(header, 12, reason);
+                    WriteUInt32(header, 16, (uint)count);
+                    WriteUInt32(header, 20, (uint)entrySize);
+                    WriteUInt32(header, 24, (uint)cursor);
+                    WriteUInt32(header, 28, 0u);
 
-            return true;
+                    fixed (VoxelMeshingTelemetryEntry* sourcePtr = telemetrySnapshot)
+                    {
+                        UnsafeUtility.MemCpy(payloadPtr + 32, sourcePtr, byteLength);
+                    }
+                }
+
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
+            }
         }
 
         private static bool TryWriteDumpFiles(
@@ -1733,7 +1744,6 @@ namespace Hecton8.World.VoxelSurfaceNets
                 return false;
 
             string dir = Path.Combine(projectRoot, "Docs", "AgentLogs");
-            Directory.CreateDirectory(dir);
             bool primary = TryWriteDumpFile(Path.Combine(dir, DumpFileName), telemetrySnapshot, telemetryCount, telemetryCursor, reason);
             bool agent = TryWriteDumpFile(Path.Combine(dir, AgentDumpFileName), telemetrySnapshot, telemetryCount, telemetryCursor, reason);
             return primary && agent;

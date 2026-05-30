@@ -3931,11 +3931,11 @@ namespace Hecton8.Gameplay
             if (_powerNode == null)
                 TryGetComponent(out _powerNode);
 
-            if (_voxelVolume == null && !TryGetComponent(out _voxelVolume))
-                _voxelVolume = GetComponentInParent<HectonVoxelVolume>();
+            if (_voxelVolume == null)
+                TryResolveComponentInSelfOrParents(transform, out _voxelVolume);
 
             if (interiorTrigger == null)
-                interiorTrigger = GetComponentInChildren<BoxCollider>(true);
+                interiorTrigger = ComponentReferenceUtility.ResolveOwnedComponent<BoxCollider>(transform);
 
             CacheOwnedBulkheadComponents();
             CaptureModuleRigidbodyDefaults();
@@ -4416,8 +4416,7 @@ namespace Hecton8.Gameplay
             if (!other.CompareTag("Player"))
                 return;
 
-            HectonSurvivalSystem resolvedSurvival = other.GetComponentInParent<HectonSurvivalSystem>();
-            if (resolvedSurvival == null)
+            if (!TryResolveComponentInSelfOrParents(other.transform, out HectonSurvivalSystem resolvedSurvival))
                 return;
 
             TrackPlayer(resolvedSurvival, other.transform, other, notifyEnter);
@@ -4428,8 +4427,7 @@ namespace Hecton8.Gameplay
             if (_trackedPlayerSurvival != null || playerTransform == null)
                 return;
 
-            HectonSurvivalSystem resolvedSurvival = playerTransform.GetComponentInParent<HectonSurvivalSystem>();
-            if (resolvedSurvival == null)
+            if (!TryResolveComponentInSelfOrParents(playerTransform, out HectonSurvivalSystem resolvedSurvival))
                 return;
 
             TrackPlayer(resolvedSurvival, playerTransform, null, notifyEnter);
@@ -4474,21 +4472,29 @@ namespace Hecton8.Gameplay
             if (registryContracts != null)
                 return registryContracts;
 
-            if (playerCollider != null)
-                return playerCollider.GetComponentInParent<IPlayerMovementEnvironmentSink>();
+            if (playerCollider != null &&
+                TryResolveComponentInSelfOrParents(playerCollider.transform, out IPlayerMovementEnvironmentSink colliderSink))
+            {
+                return colliderSink;
+            }
 
-            return playerTransform != null
-                ? playerTransform.GetComponentInParent<IPlayerMovementEnvironmentSink>()
+            return playerTransform != null &&
+                   TryResolveComponentInSelfOrParents(playerTransform, out IPlayerMovementEnvironmentSink transformSink)
+                ? transformSink
                 : null;
         }
 
         private static IPlayerHypoxiaPresentationSink ResolvePlayerHypoxiaPresentationSink(Collider playerCollider, Transform playerTransform)
         {
-            if (playerCollider != null)
-                return playerCollider.GetComponentInParent<IPlayerHypoxiaPresentationSink>();
+            if (playerCollider != null &&
+                TryResolveComponentInSelfOrParents(playerCollider.transform, out IPlayerHypoxiaPresentationSink colliderSink))
+            {
+                return colliderSink;
+            }
 
-            return playerTransform != null
-                ? playerTransform.GetComponentInParent<IPlayerHypoxiaPresentationSink>()
+            return playerTransform != null &&
+                   TryResolveComponentInSelfOrParents(playerTransform, out IPlayerHypoxiaPresentationSink transformSink)
+                ? transformSink
                 : null;
         }
 
@@ -4497,8 +4503,21 @@ namespace Hecton8.Gameplay
             if (_trackedPlayerSurvival == null || !other.CompareTag("Player"))
                 return false;
 
-            HectonSurvivalSystem resolvedSurvival = other.GetComponentInParent<HectonSurvivalSystem>();
-            return ReferenceEquals(_trackedPlayerSurvival, resolvedSurvival);
+            return TryResolveComponentInSelfOrParents(other.transform, out HectonSurvivalSystem resolvedSurvival) &&
+                   ReferenceEquals(_trackedPlayerSurvival, resolvedSurvival);
+        }
+
+        private static bool TryResolveComponentInSelfOrParents<T>(Transform start, out T component)
+        {
+            component = default;
+
+            for (Transform current = start; current != null; current = current.parent)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+            }
+
+            return false;
         }
 
         private void NotifyModuleExitIfNeeded()
@@ -5274,7 +5293,7 @@ namespace Hecton8.Gameplay
             if (TryGetComponent(out reactor))
                 return reactor != null;
 
-            reactor = GetComponentInChildren<BioReactor>();
+            reactor = ComponentReferenceUtility.ResolveOwnedComponent<BioReactor>(transform);
             return reactor != null;
         }
 

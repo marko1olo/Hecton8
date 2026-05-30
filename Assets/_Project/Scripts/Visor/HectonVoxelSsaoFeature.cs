@@ -128,7 +128,14 @@ namespace Hecton8.Visor
                     return;
 
                 UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
-                if (cameraData.cameraType == CameraType.Preview || cameraData.cameraType == CameraType.Reflection)
+                if (cameraData.cameraType == CameraType.Preview ||
+                    cameraData.cameraType == CameraType.Reflection ||
+                    cameraData.cameraType == CameraType.SceneView)
+                {
+                    return;
+                }
+
+                if (cameraData.renderType != CameraRenderType.Base)
                     return;
 
                 TextureHandle depthTexture = resourceData.cameraDepthTexture;
@@ -136,7 +143,9 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc depthDesc = renderGraph.GetTextureDesc(depthTexture);
-                float renderScale = math.clamp(_settings.renderScale, 0.25f, 1f);
+                float globalQualityWeight01 = ResolveGlobalQualityWeight01();
+                float qualityCurve01 = Smooth01(globalQualityWeight01);
+                float renderScale = ResolveRenderScale(_settings, qualityCurve01);
                 int aoWidth = QuantizeDimension(math.max(1, (int)math.round(depthDesc.width * renderScale)));
                 int aoHeight = QuantizeDimension(math.max(1, (int)math.round(depthDesc.height * renderScale)));
                 int dispatchX = ResolveDispatchGroups(aoWidth, _threadGroupSizeX);
@@ -169,12 +178,12 @@ namespace Hecton8.Visor
                     passData.result = aoTexture;
                     passData.dispatchX = dispatchX;
                     passData.dispatchY = dispatchY;
-                    passData.paramsA = BuildParamsA(_settings, projectionScale);
+                    passData.paramsA = BuildParamsA(_settings, projectionScale, qualityCurve01);
 
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(aoTexture, AccessFlags.Write);
 
-                    builder.SetRenderFunc((ComputePassData data, ComputeGraphContext context) =>
+                    builder.SetRenderFunc(static (ComputePassData data, ComputeGraphContext context) =>
                     {
                         var cmd = context.cmd;
                         cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceDepthId, data.depth);
@@ -219,13 +228,37 @@ namespace Hecton8.Visor
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static Vector4 BuildParamsA(FeatureSettings settings, float projectionScale)
+            private static Vector4 BuildParamsA(FeatureSettings settings, float projectionScale, float qualityCurve01)
             {
-                return new Vector4(
-                    math.max(0.01f, projectionScale),
-                    math.max(0.01f, settings.radiusMeters),
-                    math.max(0f, settings.intensity),
-                    math.max(0.01f, settings.depthSigma));
+                float quality = math.saturate(math.isfinite(qualityCurve01) ? qualityCurve01 : 1f);
+                Vector4 result = default;
+                result.x = math.max(0.01f, projectionScale);
+                result.y = math.max(0.01f, settings.radiusMeters * math.lerp(0.72f, 1f, quality));
+                result.z = math.max(0f, settings.intensity * math.lerp(0.42f, 1f, quality));
+                result.w = math.max(0.01f, settings.depthSigma);
+                return result;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float ResolveRenderScale(FeatureSettings settings, float qualityCurve01)
+            {
+                float authored = math.clamp(settings.renderScale, 0.25f, 1f);
+                float quality = math.saturate(math.isfinite(qualityCurve01) ? qualityCurve01 : 1f);
+                return math.clamp(math.lerp(0.25f, authored, quality), 0.25f, 1f);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float ResolveGlobalQualityWeight01()
+            {
+                float quality = HomeostasisBrain.GlobalQualityWeight;
+                return math.saturate(math.isfinite(quality) ? quality : 1f);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float Smooth01(float value)
+            {
+                float saturated = math.saturate(math.isfinite(value) ? value : 1f);
+                return saturated * saturated * (3f - 2f * saturated);
             }
 
             private static int QuantizeDimension(int dimension)
@@ -275,7 +308,14 @@ namespace Hecton8.Visor
             }
 
             CameraType cameraType = renderingData.cameraData.cameraType;
-            if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection)
+            if (cameraType == CameraType.Preview ||
+                cameraType == CameraType.Reflection ||
+                cameraType == CameraType.SceneView)
+            {
+                return;
+            }
+
+            if (renderingData.cameraData.renderType != CameraRenderType.Base)
                 return;
 
             _pass.Setup(settings, settings.computeShader);

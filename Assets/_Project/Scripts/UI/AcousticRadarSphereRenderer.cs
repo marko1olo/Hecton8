@@ -257,12 +257,8 @@ namespace Hecton8.UI
 
         private void RefreshQualityPolicy()
         {
-            float qualityWeight01 = HomeostasisBrain.GlobalQualityWeight;
-            float qualityCurve = SmoothStep01(qualityWeight01);
-            _qualityMatrixCapacity = math.clamp(
-                (int)math.round(math.lerp(MinimumQualityBlipCapacity, MaxBlips, qualityCurve)),
-                MinimumQualityBlipCapacity,
-                MaxBlips);
+            float qualityWeight01 = SanitizeQualityWeight01(HomeostasisBrain.GlobalQualityWeight);
+            _qualityMatrixCapacity = ResolveQualityCapacity(qualityWeight01, MinimumQualityBlipCapacity, MaxBlips);
         }
 
         private bool TryResolveListenerAup(Vector3 listenerPosition, out AbsoluteUniversePosition listenerAup)
@@ -330,8 +326,24 @@ namespace Hecton8.UI
 
         private static float SmoothStep01(float value)
         {
-            float t = math.saturate(math.isfinite(value) ? value : 1f);
+            float t = SanitizeQualityWeight01(value);
             return t * t * (3f - 2f * t);
+        }
+
+        private static float SanitizeQualityWeight01(float value)
+        {
+            return math.saturate(math.isfinite(value) ? value : 0f);
+        }
+
+        private static int ResolveQualityCapacity(float qualityWeight01, int minimum, int maximum)
+        {
+            int safeMinimum = math.max(0, minimum);
+            int safeMaximum = math.max(safeMinimum, maximum);
+            float qualityCurve = SmoothStep01(qualityWeight01);
+            return math.clamp(
+                (int)math.round(math.lerp(safeMinimum, safeMaximum, qualityCurve)),
+                safeMinimum,
+                safeMaximum);
         }
 
         /// <inheritdoc />

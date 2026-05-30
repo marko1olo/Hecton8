@@ -1350,32 +1350,40 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            if (!_volumes.TryResolveMutable(out volumes) ||
-                !_volumeIds.TryResolveMutable(out volumeIds) ||
-                !_volumeSpatialHandles.TryResolveMutable(out volumeSpatialHandles) ||
-                !_volumeCurveLutSamples.TryResolveMutable(out volumeCurveLutSamples))
+            bool keepGuard = false;
+            try
             {
-                vault.ReleaseMutationGuard(HazardStateMutationGuardMask);
-                volumes = default;
-                volumeIds = default;
-                volumeSpatialHandles = default;
-                volumeCurveLutSamples = default;
-                return false;
-            }
+                if (!_volumes.TryResolveMutable(out volumes) ||
+                    !_volumeIds.TryResolveMutable(out volumeIds) ||
+                    !_volumeSpatialHandles.TryResolveMutable(out volumeSpatialHandles) ||
+                    !_volumeCurveLutSamples.TryResolveMutable(out volumeCurveLutSamples))
+                {
+                    volumes = default;
+                    volumeIds = default;
+                    volumeSpatialHandles = default;
+                    volumeCurveLutSamples = default;
+                    return false;
+                }
 
-            if (ResolveActiveVolumeCapacity(volumes, volumeIds, volumeSpatialHandles, volumeCurveLutSamples) <= 0)
+                if (ResolveActiveVolumeCapacity(volumes, volumeIds, volumeSpatialHandles, volumeCurveLutSamples) <= 0)
+                {
+                    volumes = default;
+                    volumeIds = default;
+                    volumeSpatialHandles = default;
+                    volumeCurveLutSamples = default;
+                    return false;
+                }
+
+                _hazardStateGuardVault = vault;
+                _hazardStateGuardHeld = true;
+                keepGuard = true;
+                return true;
+            }
+            finally
             {
-                vault.ReleaseMutationGuard(HazardStateMutationGuardMask);
-                volumes = default;
-                volumeIds = default;
-                volumeSpatialHandles = default;
-                volumeCurveLutSamples = default;
-                return false;
+                if (!keepGuard)
+                    vault.ReleaseMutationGuard(HazardStateMutationGuardMask);
             }
-
-            _hazardStateGuardVault = vault;
-            _hazardStateGuardHeld = true;
-            return true;
         }
 
         private void ReleaseHazardStateWriteViews()

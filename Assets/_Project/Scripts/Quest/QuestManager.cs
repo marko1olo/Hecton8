@@ -508,8 +508,8 @@ namespace Hecton8.Quest
                 return;
             }
 
-            IEnumerable<string> activeQuestIds = data != null ? data.questActiveIds : null;
-            IEnumerable<string> completedQuestIds = data != null ? data.questCompletedIds : null;
+            List<string> activeQuestIds = data != null ? data.questActiveIds : null;
+            List<string> completedQuestIds = data != null ? data.questCompletedIds : null;
             _stateManager.RestoreLegacyState(activeQuestIds, completedQuestIds);
         }
 

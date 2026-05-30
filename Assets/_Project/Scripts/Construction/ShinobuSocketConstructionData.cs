@@ -1,8 +1,8 @@
 using System;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Memory.Layout;
 using Unity.Collections;
@@ -360,6 +360,7 @@ namespace Hecton8.Construction
         public const BufferID BuilderGhostIndirectArgsBufferId = (BufferID)70945;
         public const string DefaultDumpPath = "Docs/AgentLogs/Dump_1306_Construction_SocketTelemetry.bin";
         public const string HolographyDumpPath = "Docs/AgentLogs/Dump_1306_Construction_Holography.bin";
+        private const string DumpPayloadLabel = "shinobuSocketConstructionTelemetryDumpPayload";
 
         public const int SocketStateSizeBytes = 64;
         public const int GhostPreviewSizeBytes = 96;
@@ -1121,9 +1122,9 @@ namespace Hecton8.Construction
             }
         }
 
-        public static void DumpTelemetry(NativeArray<ConstructionSocketTelemetryEntry> telemetryRing, string absolutePath = DefaultDumpPath)
+        public static void DumpTelemetry(NativeArray<ConstructionSocketTelemetryEntry> telemetryRing, string dumpPath = DefaultDumpPath)
         {
-            DumpNativeRingToFile(telemetryRing, absolutePath);
+            DumpNativeRingToFile(telemetryRing, dumpPath);
         }
 
         public static void WriteHolographyTelemetry(
@@ -1165,28 +1166,50 @@ namespace Hecton8.Construction
             }
         }
 
-        public static void DumpHolographyTelemetry(NativeArray<HolographyTelemetryEntry> telemetryRing, string absolutePath = HolographyDumpPath)
+        public static void DumpHolographyTelemetry(NativeArray<HolographyTelemetryEntry> telemetryRing, string dumpPath = HolographyDumpPath)
         {
-            DumpNativeRingToFile(telemetryRing, absolutePath);
+            DumpNativeRingToFile(telemetryRing, dumpPath);
         }
 
-        private static void DumpNativeRingToFile<T>(NativeArray<T> telemetryRing, string absolutePath)
+        private static void DumpNativeRingToFile<T>(NativeArray<T> telemetryRing, string dumpPath)
             where T : unmanaged
         {
-            _ = telemetryRing;
-            _ = absolutePath;
-        }
+            if (string.IsNullOrEmpty(dumpPath) ||
+                !telemetryRing.IsCreated ||
+                telemetryRing.Length <= 0)
+            {
+                return;
+            }
 
-        private static string ResolveDumpPath(string path)
-        {
-            if (string.IsNullOrWhiteSpace(path))
-                return null;
+            int stride = UnsafeUtility.SizeOf<T>();
+            long byteCount64 = (long)stride * telemetryRing.Length;
+            if (stride <= 0 ||
+                byteCount64 <= 0L ||
+                byteCount64 > int.MaxValue)
+            {
+                return;
+            }
 
-            if (Path.IsPathRooted(path))
-                return path;
-
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            return Path.GetFullPath(Path.Combine(projectRoot, path));
+            int byteCount = (int)byteCount64;
+            NativeArray<byte> payload = default;
+            try
+            {
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(ShinobuSocketConstructionRuntime),
+                    DumpPayloadLabel);
+                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
+                void* target = NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                UnsafeUtility.MemCpy(target, source, byteCount);
+                NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, byteCount);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(ShinobuSocketConstructionRuntime),
+                    DumpPayloadLabel);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

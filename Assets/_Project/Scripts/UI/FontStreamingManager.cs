@@ -43,6 +43,9 @@ namespace Hecton8.UI
         private bool _awaitingPrimaryFontReadiness;
         private bool _biosFallbackActive;
         private TMP_FontAsset _primaryFont;
+        private Material _primaryFontMaterial;
+        private TMP_FontAsset _biosFallbackFont;
+        private Material _biosFallbackFontMaterial;
         private TMP_FontAsset _targetFont;
         private Material _targetFontMaterial;
         private Canvas _targetCanvas;
@@ -58,6 +61,7 @@ namespace Hecton8.UI
             SceneManager.sceneLoaded += HandleSceneLoaded;
             EnsureRegistryNodes(SceneManager.GetActiveScene());
             EnsureUiBuilt(allowCreate: true);
+            RefreshFontMaterialCachesCold();
             RegisterToTickManager();
         }
 
@@ -65,6 +69,7 @@ namespace Hecton8.UI
         {
             TryRegisterHotSwapListener();
             EnsureUiBuilt(allowCreate: true);
+            RefreshFontMaterialCachesCold();
             RegisterToTickManager();
         }
 
@@ -130,6 +135,7 @@ namespace Hecton8.UI
             if (targetFont == null)
             {
                 _primaryFont = null;
+                _primaryFontMaterial = null;
                 _targetFont = null;
                 _targetFontMaterial = null;
                 _streaming = false;
@@ -144,7 +150,10 @@ namespace Hecton8.UI
             }
 
             _primaryFont = targetFont;
+            _primaryFontMaterial = ResolveFontMaterialCold(targetFont);
+            RefreshBiosFallbackFontCacheCold();
             _targetFont = null;
+            _targetFontMaterial = null;
             _streaming = false;
             _biosFallbackActive = false;
             _awaitingPrimaryFontReadiness = true;
@@ -231,10 +240,10 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (LocalizedFontResolver.IsFontReady(_primaryFont))
+            if (IsCachedFontReady(_primaryFont, _primaryFontMaterial))
             {
                 _awaitingPrimaryFontReadiness = false;
-                BeginSwapQueue(_primaryFont, biosFallbackActive: false);
+                BeginSwapQueue(_primaryFont, _primaryFontMaterial, biosFallbackActive: false);
                 return;
             }
 
@@ -250,21 +259,20 @@ namespace Hecton8.UI
                 return;
             }
 
-            TMP_FontAsset biosFallback = LocalizedFontResolver.ResolveBiosFallbackFont();
-            if (biosFallback == null)
+            if (!IsCachedFontReady(_biosFallbackFont, _biosFallbackFontMaterial))
             {
                 ResetSwapState();
                 return;
             }
 
             _awaitingPrimaryFontReadiness = false;
-            BeginSwapQueue(biosFallback, biosFallbackActive: true);
+            BeginSwapQueue(_biosFallbackFont, _biosFallbackFontMaterial, biosFallbackActive: true);
         }
 
-        private void BeginSwapQueue(TMP_FontAsset targetFont, bool biosFallbackActive)
+        private void BeginSwapQueue(TMP_FontAsset targetFont, Material targetFontMaterial, bool biosFallbackActive)
         {
             _targetFont = targetFont;
-            _targetFontMaterial = targetFont != null ? targetFont.material : null;
+            _targetFontMaterial = targetFontMaterial;
             _biosFallbackActive = biosFallbackActive;
             CollectSwapQueue(targetFont);
             if (_queueCount <= 0)
@@ -369,6 +377,7 @@ namespace Hecton8.UI
         {
             EnsureRegistryNodes(scene);
             EnsureUiBuilt(allowCreate: true);
+            RefreshFontMaterialCachesCold();
         }
 
         private void UpdateStatusLabel()
@@ -412,6 +421,7 @@ namespace Hecton8.UI
             _awaitingPrimaryFontReadiness = false;
             _biosFallbackActive = false;
             _primaryFont = null;
+            _primaryFontMaterial = null;
             _targetFont = null;
             _targetFontMaterial = null;
             _queueCount = 0;
@@ -567,6 +577,32 @@ namespace Hecton8.UI
             }
 
             return null;
+        }
+
+        private void RefreshFontMaterialCachesCold()
+        {
+            if (_primaryFont != null)
+                _primaryFontMaterial = ResolveFontMaterialCold(_primaryFont);
+
+            RefreshBiosFallbackFontCacheCold();
+        }
+
+        private void RefreshBiosFallbackFontCacheCold()
+        {
+            _biosFallbackFont = LocalizedFontResolver.ResolveBiosFallbackFont();
+            _biosFallbackFontMaterial = ResolveFontMaterialCold(_biosFallbackFont);
+        }
+
+        private static Material ResolveFontMaterialCold(TMP_FontAsset font)
+        {
+            return font != null ? font.material : null;
+        }
+
+        private static bool IsCachedFontReady(TMP_FontAsset font, Material material)
+        {
+            return font != null &&
+                   material != null &&
+                   material.GetTexture(ShaderUtilities.ID_MainTex) != null;
         }
 
         private void WriteStatusLiteral(ReadOnlySpan<char> source)

@@ -1,0 +1,62 @@
+{
+  "agent_id": "1408",
+  "status": "PENDING_VERIFICATION",
+  "scan_scope": [
+    "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+    "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs"
+  ],
+  "missing_prompt_file": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegration.cs",
+  "resolved_actual_file": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+  "initial_static_scan_microseconds": 535971,
+  "run_calls": [],
+  "complete_calls": [
+    {
+      "file": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "line": 769,
+      "method": "FinalizeChunkBuildJob",
+      "token": ".Complete(",
+      "text": "pending.Handle.Complete();",
+      "dependency": "ChunkBuildPendingJob.Handle writes GrassRecords, FloatingRecords, KelpRecords, TerrainHoles, ThreatEchoFlags, and ArtificialStructures.",
+      "consumer_after_completion": "BuildChunkPayloadFromJob counts valid records, writes chunk pool slices, caches abyssal navigation and mega-wreck payloads, then marks active buffers dirty."
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 379,
+      "method": "CompleteThreatPropagationJob",
+      "token": ".Complete(",
+      "text": "pending.Handle.Complete();",
+      "dependency": "ThreatPropagationPendingJob.Handle is the voxel job fence dependent on ThreatPropagationJob.",
+      "consumer_after_completion": "Threat grid, compressed threat grid, threat echo, and threat voxel outputs copy into GlobalDataVault; threat hotspot and residency invalidation then run."
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 432,
+      "method": "CompleteFlowFieldJob",
+      "token": ".Complete(",
+      "text": "pending.Handle.Complete();",
+      "dependency": "FlowFieldPendingJob.Handle writes FlowOutput from threat, density, attractor, and nav-support snapshots.",
+      "consumer_after_completion": "FlowOutput copies into GlobalDataVault and updates ecosystem flow-field center/time metadata."
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "line": 465,
+      "method": "CompleteThermalGridJob",
+      "token": ".Complete(",
+      "text": "pending.Handle.Complete();",
+      "dependency": "ThermalGridPendingJob.Handle is the flow-volume job fence dependent on BuildAbyssalThermalGridJob.",
+      "consumer_after_completion": "Thermal and flow-volume outputs copy into GlobalDataVault; biolume surge detection compares previous/current flow snapshots."
+    }
+  ],
+  "phase_plan": {
+    "schedule_phase": "SlowTick schedules chunk, threat, flow, and thermal jobs only when no same-lane job is in flight.",
+    "completion_phase": "LateFrameTick executes dispatcher-owned VISUAL_SYNC/late-frame barrier and attempts non-forced completion only after IsCompleted; OnDisable/OnDestroy/origin shift use forced teardown.",
+    "race_guard": "If a job is not complete, completion methods return without publishing or releasing TempJob/native payloads. Schedulers check scheduled flags and fail closed."
+  },
+  "jobhandle_storage": {
+    "chunk_build": "_chunkBuildJobs[slot].Handle",
+    "threat_propagation": "_threatPropagationJob.Handle",
+    "flow_field": "_flowFieldJob.Handle",
+    "thermal_grid": "_thermalGridJob.Handle"
+  },
+  "report_path": "Docs/Reports/SYNC_BLOCKER_PURGE_REPORT_1408.json"
+}

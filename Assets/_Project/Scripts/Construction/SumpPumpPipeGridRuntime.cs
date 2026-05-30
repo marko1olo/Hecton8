@@ -1,7 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.IO;
-using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Physics;
 using Hecton8.Core.Memory;
@@ -24,11 +22,36 @@ namespace Hecton8.Construction
         private const float SlowTickStepSeconds = 0.1f;
         private const int MinDrainageDeltaPassCount = 1;
         private const int MaxDrainageDeltaPassCount = 4;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1421_FluidLogistics.bin";
         private const uint RuntimeHash = 0x53333430u;
-        private const ulong DumpMagic = 0x00384E4F54434548UL;
-        private const uint DumpVersion = 1u;
         private const ulong DrainageVaultMutationGuardMask = 0x00000000FFFFF2FFUL;
+        private const ulong SolverPinPumpNodes = 1UL << 0;
+        private const ulong SolverPinPipeEdges = 1UL << 1;
+        private const ulong SolverPinNodeAup = 1UL << 2;
+        private const ulong SolverPinPumpRoomIndices = 1UL << 3;
+        private const ulong SolverPinCsrOffsets = 1UL << 4;
+        private const ulong SolverPinCsrDestinations = 1UL << 5;
+        private const ulong SolverPinCsrConductance = 1UL << 6;
+        private const ulong SolverPinCsrFlow = 1UL << 7;
+        private const ulong SolverPinCsrFlatEdgeIndex = 1UL << 8;
+        private const ulong SolverPinCsrWriteCursor = 1UL << 9;
+        private const ulong SolverPinPressureFront = 1UL << 10;
+        private const ulong SolverPinPressureBack = 1UL << 11;
+        private const ulong SolverPinPowerPotential = 1UL << 12;
+        private const ulong SolverPinPumpBaseMaxRate = 1UL << 13;
+        private const ulong SolverPinPumpPowerNodeHashes = 1UL << 14;
+        private const ulong SolverPinPumpRemainder = 1UL << 15;
+        private const ulong SolverPinPumpMassError = 1UL << 16;
+        private const ulong SolverPinRoomDrainLocks = 1UL << 17;
+        private const ulong SolverPinTuning = 1UL << 18;
+        private const ulong SolverPinTelemetry = 1UL << 19;
+        private const ulong SolverPinTelemetryCursor = 1UL << 20;
+        private const ulong SolverPinCounters = 1UL << 21;
+        private const ulong SolverPinFrameSummary = 1UL << 22;
+        private const ulong SolverPinFlowGpu = 1UL << 23;
+        private const ulong SolverPinFluidFront = 1UL << 24;
+        private const ulong SolverPinFluidBack = 1UL << 25;
+        private const ulong SolverPinPowerNodes = 1UL << 26;
+        private const ulong SolverPinPowerPotentialFront = 1UL << 27;
 
         private static readonly int s_DrainagePipeEdgeFlowId = Shader.PropertyToID("_H8DrainagePipeEdgeFlow");
         private static readonly int s_DrainagePipeEdgeCountId = Shader.PropertyToID("_H8DrainagePipeEdgeCount");
@@ -86,7 +109,6 @@ namespace Hecton8.Construction
         private VaultGenerationHandle<int> _telemetryCursorHandle;
         private VaultGenerationHandle<int> _countersHandle;
         private VaultGenerationHandle<PipeProfileDTO> _profilesHandle;
-        private VaultGenerationHandle<byte> _csvScratchHandle;
         private VaultGenerationHandle<DrainageTelemetryEntry> _frameSummaryHandle;
         private VaultGenerationHandle<DrainagePipeFlowGpuDTO> _flowGpuHandle;
 
@@ -94,18 +116,15 @@ namespace Hecton8.Construction
         private JobHandle _mockSeedHandle;
         private GraphicsBuffer _flowBufferA;
         private GraphicsBuffer _flowBufferB;
-        private Thread _dumpThread;
-        private AutoResetEvent _dumpSignal;
-        private byte[] _dumpBytes;
-        private string _dumpPath;
         private ulong _activeMutationGuardMask;
+        private ulong _solverBufferPinMask;
         private IDataVault _activeMutationGuardVault;
+        private IDataVault _solverBufferPinVault;
         private long _solverScheduleTimestamp;
         private uint _frameIndex;
-        private int _dumpByteCount;
-        private int _dumpPending;
-        private int _dumpThreadStop;
-        private int _dumpWriteFault;
+        private uint _blackBoxStateHash;
+        private uint _blackBoxFlags;
+        private int _blackBoxEntryCount;
         private int _flowBufferCapacity;
         private int _flowBufferWriteIndex;
         private float _solveAccumulator;
@@ -130,6 +149,23 @@ namespace Hecton8.Construction
                 return true;
 
             entry = default;
+            return false;
+        }
+
+        public static bool TryGetLastBlackBoxSummary(out uint stateHash, out uint flags, out int entryCount)
+        {
+            SumpPumpPipeGridRuntime runtime = s_active;
+            if (runtime != null && runtime._blackBoxDumped)
+            {
+                stateHash = runtime._blackBoxStateHash;
+                flags = runtime._blackBoxFlags;
+                entryCount = runtime._blackBoxEntryCount;
+                return true;
+            }
+
+            stateHash = 0u;
+            flags = 0u;
+            entryCount = 0;
             return false;
         }
 
@@ -193,7 +229,6 @@ namespace Hecton8.Construction
         {
             s_active = this;
             BindDataVaultForLifecycle(GlobalRegistry.DataVault);
-            InitializeDumpWriterCold();
             _buffersReady = TryInitializeBuffers();
             if (_buffersReady && generateMockOnEnable)
                 GenerateMockDrainageNetwork();
@@ -220,7 +255,6 @@ namespace Hecton8.Construction
             ReleaseOwnedBuffers();
             ReleaseGraphicsBuffer(ref _flowBufferA);
             ReleaseGraphicsBuffer(ref _flowBufferB);
-            ShutdownDumpWriterCold();
             if (ReferenceEquals(s_active, this))
                 s_active = null;
 
@@ -334,15 +368,19 @@ namespace Hecton8.Construction
 
             if (solverWasScheduled)
             {
-                try
+                if (TryAcquireTelemetryMutationGuard())
                 {
-                    StampSolverWallTime(ResolveElapsedMicroseconds(_solverScheduleTimestamp));
-                    _solverScheduleTimestamp = 0L;
+                    try
+                    {
+                        StampSolverWallTime(ResolveElapsedMicroseconds(_solverScheduleTimestamp));
+                    }
+                    finally
+                    {
+                        ReleaseDrainageMutationGuard();
+                    }
                 }
-                finally
-                {
-                    ReleaseDrainageMutationGuard();
-                }
+
+                _solverScheduleTimestamp = 0L;
             }
             else
             {
@@ -372,6 +410,10 @@ namespace Hecton8.Construction
             if (!_buffersReady)
                 return false;
 
+            Span<PipeProfileDTO> profileScratch = stackalloc PipeProfileDTO[SumpPumpPipeGridConstants.MaxPipeProfiles];
+            if (!SumpPumpPipeGridValidation.TryParsePipeProfilesCsv(csvBytes, profileScratch, out profileCount))
+                return false;
+
             if (!TryAcquireLocalDrainageMutationGuard(out ulong guardMask, out IDataVault guardVault))
                 return false;
 
@@ -379,7 +421,9 @@ namespace Hecton8.Construction
             {
                 if (!TryBorrowMutable(in _profilesHandle, SumpPumpDrainageBufferIds.PipeProfiles, out NativeArray<PipeProfileDTO> profiles))
                     return false;
-                return SumpPumpPipeGridValidation.TryParsePipeProfilesCsv(csvBytes, profiles, out profileCount);
+
+                CommitPipeProfileScratch(profileScratch, profileCount, profiles);
+                return true;
             }
             finally
             {
@@ -387,6 +431,21 @@ namespace Hecton8.Construction
             }
         }
 #endif
+
+        private static void CommitPipeProfileScratch(
+            ReadOnlySpan<PipeProfileDTO> source,
+            int profileCount,
+            NativeArray<PipeProfileDTO> profiles)
+        {
+            if (!profiles.IsCreated)
+                return;
+
+            int count = math.clamp(profileCount, 0, math.min(source.Length, profiles.Length));
+            for (int i = 0; i < count; i++)
+                profiles[i] = source[i];
+            for (int i = count; i < profiles.Length; i++)
+                profiles[i] = default;
+        }
 
         /// <summary>Rebuilds the deterministic 2000-node / 6000-edge mock drainage topology in Vault buffers.</summary>
         public void GenerateMockDrainageNetwork()
@@ -458,8 +517,7 @@ namespace Hecton8.Construction
                 !SumpPumpPipeGridValidation.ValidateDrainageTuningLayout() ||
                 !SumpPumpPipeGridValidation.ValidatePipeProfileLayout() ||
                 !SumpPumpPipeGridValidation.ValidateDrainageTelemetryLayout() ||
-                !SumpPumpPipeGridValidation.ValidateDrainagePipeFlowGpuLayout() ||
-                !SumpPumpPipeGridValidation.ValidateDrainageDumpHeaderLayout())
+                !SumpPumpPipeGridValidation.ValidateDrainagePipeFlowGpuLayout())
                 return false;
 
             nodeCapacity = math.clamp(nodeCapacity, 16, SumpPumpPipeGridConstants.MaxPumpNodes);
@@ -488,7 +546,6 @@ namespace Hecton8.Construction
             _telemetryCursorHandle = _vault.EnsureGenerationHandle<int>(SumpPumpDrainageBufferIds.TelemetryCursor, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
             _countersHandle = _vault.EnsureGenerationHandle<int>(SumpPumpDrainageBufferIds.Counters, SumpPumpPipeGridConstants.CounterCount, OwnerSystem, NativeArrayOptions.ClearMemory);
             _profilesHandle = _vault.EnsureGenerationHandle<PipeProfileDTO>(SumpPumpDrainageBufferIds.PipeProfiles, SumpPumpPipeGridConstants.MaxPipeProfiles, OwnerSystem, NativeArrayOptions.ClearMemory);
-            _csvScratchHandle = _vault.EnsureGenerationHandle<byte>(SumpPumpDrainageBufferIds.CsvScratch, SumpPumpPipeGridConstants.CsvScratchBytes, OwnerSystem, NativeArrayOptions.ClearMemory);
             _frameSummaryHandle = _vault.EnsureGenerationHandle<DrainageTelemetryEntry>(SumpPumpDrainageBufferIds.FrameSummary, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
             _flowGpuHandle = _vault.EnsureGenerationHandle<DrainagePipeFlowGpuDTO>(SumpPumpDrainageBufferIds.FlowGpu, edgeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
             if (!ValidateOwnedBuffers())
@@ -548,7 +605,6 @@ namespace Hecton8.Construction
                    HasResolvedBuffer(in _telemetryCursorHandle, SumpPumpDrainageBufferIds.TelemetryCursor, 1) &&
                    HasResolvedBuffer(in _countersHandle, SumpPumpDrainageBufferIds.Counters, SumpPumpPipeGridConstants.CounterCount) &&
                    HasResolvedBuffer(in _profilesHandle, SumpPumpDrainageBufferIds.PipeProfiles, SumpPumpPipeGridConstants.MaxPipeProfiles) &&
-                   HasResolvedBuffer(in _csvScratchHandle, SumpPumpDrainageBufferIds.CsvScratch, SumpPumpPipeGridConstants.CsvScratchBytes) &&
                    HasResolvedBuffer(in _frameSummaryHandle, SumpPumpDrainageBufferIds.FrameSummary, 1) &&
                    HasResolvedBuffer(in _flowGpuHandle, SumpPumpDrainageBufferIds.FlowGpu, safeEdges);
         }
@@ -575,7 +631,7 @@ namespace Hecton8.Construction
 
         private bool ScheduleDrainageSolve(float deltaTime, float quality)
         {
-            if (!TryAcquireDrainageMutationGuard())
+            if (!TryLockDrainageSolverBuffers())
                 return false;
 
             if (!TryBorrowMutable(in _pumpNodesHandle, SumpPumpDrainageBufferIds.PumpNodes, out NativeArray<DrainageNodeDTO> pumps) ||
@@ -609,7 +665,7 @@ namespace Hecton8.Construction
                 !pumpRemainder.IsCreated || !pumpMassError.IsCreated || !roomDrainLocks.IsCreated || !tuning.IsCreated || !telemetry.IsCreated ||
                 !telemetryCursor.IsCreated || !counters.IsCreated || !frameSummary.IsCreated || !flowGpu.IsCreated)
             {
-                ReleaseDrainageMutationGuard();
+                ReleaseDrainageSolverBufferPins();
                 return false;
             }
 
@@ -621,18 +677,22 @@ namespace Hecton8.Construction
             try
             {
                 uint telemetryFlags = SumpDrainageTelemetryFlags.None;
-                bool hasFluidFront = TryGuardAndReadExistingBuffer(BufferID.ShinobuFluidCompartmentFront, out NativeArray<FluidCompartmentDTO> fluidFront);
-                bool hasFluidBack = TryGuardAndBorrowMutableExistingBuffer(BufferID.ShinobuFluidCompartmentBack, out NativeArray<FluidCompartmentDTO> fluidBack);
-                bool hasPowerNodes = TryGuardAndReadExistingBuffer(Hecton8.Power.PowerGridBufferIds.Nodes, out NativeArray<Hecton8.Power.PowerNodeDTO> powerNodes);
-                bool hasPowerPotential = TryGuardAndReadExistingBuffer(Hecton8.Power.PowerGridBufferIds.PotentialFront, out NativeArray<float> powerPotentialFront);
+                bool hasFluidFront = TryLockAndReadExistingBuffer(BufferID.ShinobuFluidCompartmentFront, SolverPinFluidFront, out NativeArray<FluidCompartmentDTO> fluidFront);
+                bool hasFluidBack = TryLockAndBorrowExistingBuffer(BufferID.ShinobuFluidCompartmentBack, SolverPinFluidBack, out NativeArray<FluidCompartmentDTO> fluidBack);
+                bool hasPowerNodes = TryLockAndReadExistingBuffer(Hecton8.Power.PowerGridBufferIds.Nodes, SolverPinPowerNodes, out NativeArray<Hecton8.Power.PowerNodeDTO> powerNodes);
+                bool hasPowerPotential = TryLockAndReadExistingBuffer(Hecton8.Power.PowerGridBufferIds.PotentialFront, SolverPinPowerPotentialFront, out NativeArray<float> powerPotentialFront);
                 int compartmentCount = hasFluidFront && hasFluidBack ? math.min(fluidFront.Length, fluidBack.Length) : 0;
                 if (compartmentCount <= 0)
                 {
                     telemetryFlags |= SumpDrainageTelemetryFlags.MissingFluidVault;
+                    ReleaseDrainageSolverBufferPin(BufferID.ShinobuFluidCompartmentBack, SolverPinFluidBack);
+                    ReleaseDrainageSolverBufferPin(BufferID.ShinobuFluidCompartmentFront, SolverPinFluidFront);
                 }
                 if (!hasPowerNodes || !hasPowerPotential)
                 {
                     telemetryFlags |= SumpDrainageTelemetryFlags.MissingPowerVault;
+                    ReleaseDrainageSolverBufferPin(Hecton8.Power.PowerGridBufferIds.PotentialFront, SolverPinPowerPotentialFront);
+                    ReleaseDrainageSolverBufferPin(Hecton8.Power.PowerGridBufferIds.Nodes, SolverPinPowerNodes);
                     powerNodes = default;
                     powerPotentialFront = default;
                 }
@@ -795,7 +855,7 @@ namespace Hecton8.Construction
                     if (hasPendingJob)
                         DispatcherJobFence.TryComplete(ref pendingJob, forceComplete: true);
 
-                    ReleaseDrainageMutationGuard();
+                    ReleaseDrainageSolverBufferPins();
                 }
             }
 
@@ -811,6 +871,7 @@ namespace Hecton8.Construction
                 return false;
 
             _solverScheduled = false;
+            ReleaseDrainageSolverBufferPins();
             return true;
         }
 
@@ -872,6 +933,7 @@ namespace Hecton8.Construction
             }
             finally
             {
+                ReleaseDrainageSolverBufferPins();
                 ReleaseDrainageMutationGuard();
             }
         }
@@ -879,7 +941,7 @@ namespace Hecton8.Construction
         private bool TryAcquireDrainageMutationGuard()
         {
             if (_activeMutationGuardMask != 0UL)
-                return true;
+                return false;
 
             IDataVault vault = _vault;
             if (vault == null || !vault.TryAcquireMutationGuard(DrainageVaultMutationGuardMask))
@@ -909,6 +971,159 @@ namespace Hecton8.Construction
             guardMask = DrainageVaultMutationGuardMask;
             guardVault = vault;
             return true;
+        }
+
+        private bool TryLockDrainageSolverBuffers()
+        {
+            if (_solverBufferPinMask != 0UL)
+                return false;
+
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            _solverBufferPinVault = vault;
+            if (!TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.PumpNodes, SolverPinPumpNodes) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.PipeEdges, SolverPinPipeEdges) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.NodeAup, SolverPinNodeAup) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.PumpRoomIndices, SolverPinPumpRoomIndices) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.CsrOffsets, SolverPinCsrOffsets) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.CsrDestinations, SolverPinCsrDestinations) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.CsrConductance, SolverPinCsrConductance) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.CsrFlow, SolverPinCsrFlow) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.CsrFlatEdgeIndex, SolverPinCsrFlatEdgeIndex) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.CsrWriteCursor, SolverPinCsrWriteCursor) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.PressureFront, SolverPinPressureFront) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.PressureBack, SolverPinPressureBack) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.PowerPotential, SolverPinPowerPotential) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.PumpBaseMaxRate, SolverPinPumpBaseMaxRate) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.PumpPowerNodeHashes, SolverPinPumpPowerNodeHashes) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.PumpRemainder, SolverPinPumpRemainder) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.PumpMassError, SolverPinPumpMassError) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.RoomDrainLocks, SolverPinRoomDrainLocks) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.Tuning, SolverPinTuning) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.TelemetryRing, SolverPinTelemetry) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.TelemetryCursor, SolverPinTelemetryCursor) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.Counters, SolverPinCounters) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.FrameSummary, SolverPinFrameSummary) ||
+                !TryLockDrainageSolverBuffer(SumpPumpDrainageBufferIds.FlowGpu, SolverPinFlowGpu))
+            {
+                ReleaseDrainageSolverBufferPins();
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryLockDrainageSolverBuffer(BufferID bufferId, ulong pinBit)
+        {
+            IDataVault vault = _solverBufferPinVault;
+            if (vault == null || bufferId == BufferID.Unknown)
+                return false;
+
+            if ((_solverBufferPinMask & pinBit) != 0UL)
+                return true;
+
+            if (!vault.TryLockBuffer(bufferId, OwnerSystem))
+                return false;
+
+            _solverBufferPinMask |= pinBit;
+            return true;
+        }
+
+        private bool TryLockAndBorrowExistingBuffer<T>(BufferID bufferId, ulong pinBit, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _solverBufferPinVault;
+            if (vault == null || !TryLockDrainageSolverBuffer(bufferId, pinBit))
+                return false;
+
+            if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) &&
+                vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated)
+            {
+                return true;
+            }
+
+            ReleaseDrainageSolverBufferPin(bufferId, pinBit);
+            buffer = default;
+            return false;
+        }
+
+        private bool TryLockAndReadExistingBuffer<T>(BufferID bufferId, ulong pinBit, out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _solverBufferPinVault;
+            if (vault == null || !TryLockDrainageSolverBuffer(bufferId, pinBit))
+                return false;
+
+            if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) &&
+                vault.TryReadHandle(in handle, out buffer) &&
+                buffer.IsCreated)
+            {
+                return true;
+            }
+
+            ReleaseDrainageSolverBufferPin(bufferId, pinBit);
+            buffer = default;
+            return false;
+        }
+
+        private void ReleaseDrainageSolverBufferPin(BufferID bufferId, ulong pinBit)
+        {
+            IDataVault vault = _solverBufferPinVault;
+            if (vault == null || (_solverBufferPinMask & pinBit) == 0UL)
+                return;
+
+            _solverBufferPinMask &= ~pinBit;
+            vault.TryUnlockBuffer(bufferId, OwnerSystem);
+            if (_solverBufferPinMask == 0UL)
+                _solverBufferPinVault = null;
+        }
+
+        private void ReleaseDrainageSolverBufferPins()
+        {
+            IDataVault vault = _solverBufferPinVault;
+            ulong mask = _solverBufferPinMask;
+            _solverBufferPinVault = null;
+            _solverBufferPinMask = 0UL;
+            if (vault == null || mask == 0UL)
+                return;
+
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinPowerPotentialFront, Hecton8.Power.PowerGridBufferIds.PotentialFront);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinPowerNodes, Hecton8.Power.PowerGridBufferIds.Nodes);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinFluidBack, BufferID.ShinobuFluidCompartmentBack);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinFluidFront, BufferID.ShinobuFluidCompartmentFront);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinFlowGpu, SumpPumpDrainageBufferIds.FlowGpu);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinFrameSummary, SumpPumpDrainageBufferIds.FrameSummary);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinCounters, SumpPumpDrainageBufferIds.Counters);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinTelemetryCursor, SumpPumpDrainageBufferIds.TelemetryCursor);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinTelemetry, SumpPumpDrainageBufferIds.TelemetryRing);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinTuning, SumpPumpDrainageBufferIds.Tuning);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinRoomDrainLocks, SumpPumpDrainageBufferIds.RoomDrainLocks);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinPumpMassError, SumpPumpDrainageBufferIds.PumpMassError);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinPumpRemainder, SumpPumpDrainageBufferIds.PumpRemainder);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinPumpPowerNodeHashes, SumpPumpDrainageBufferIds.PumpPowerNodeHashes);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinPumpBaseMaxRate, SumpPumpDrainageBufferIds.PumpBaseMaxRate);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinPowerPotential, SumpPumpDrainageBufferIds.PowerPotential);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinPressureBack, SumpPumpDrainageBufferIds.PressureBack);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinPressureFront, SumpPumpDrainageBufferIds.PressureFront);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinCsrWriteCursor, SumpPumpDrainageBufferIds.CsrWriteCursor);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinCsrFlatEdgeIndex, SumpPumpDrainageBufferIds.CsrFlatEdgeIndex);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinCsrFlow, SumpPumpDrainageBufferIds.CsrFlow);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinCsrConductance, SumpPumpDrainageBufferIds.CsrConductance);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinCsrDestinations, SumpPumpDrainageBufferIds.CsrDestinations);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinCsrOffsets, SumpPumpDrainageBufferIds.CsrOffsets);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinPumpRoomIndices, SumpPumpDrainageBufferIds.PumpRoomIndices);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinNodeAup, SumpPumpDrainageBufferIds.NodeAup);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinPipeEdges, SumpPumpDrainageBufferIds.PipeEdges);
+            TryUnlockDrainageSolverPin(vault, mask, SolverPinPumpNodes, SumpPumpDrainageBufferIds.PumpNodes);
+        }
+
+        private static void TryUnlockDrainageSolverPin(IDataVault vault, ulong mask, ulong pinBit, BufferID bufferId)
+        {
+            if ((mask & pinBit) != 0UL)
+                vault.TryUnlockBuffer(bufferId, OwnerSystem);
         }
 
         private bool TryGuardAndBorrowMutableExistingBuffer<T>(BufferID bufferId, out NativeArray<T> buffer) where T : struct
@@ -1444,7 +1659,6 @@ namespace Hecton8.Construction
 
             ReleaseOwnedHandle(ref _flowGpuHandle, SumpPumpDrainageBufferIds.FlowGpu);
             ReleaseOwnedHandle(ref _frameSummaryHandle, SumpPumpDrainageBufferIds.FrameSummary);
-            ReleaseOwnedHandle(ref _csvScratchHandle, SumpPumpDrainageBufferIds.CsvScratch);
             ReleaseOwnedHandle(ref _profilesHandle, SumpPumpDrainageBufferIds.PipeProfiles);
             ReleaseOwnedHandle(ref _countersHandle, SumpPumpDrainageBufferIds.Counters);
             ReleaseOwnedHandle(ref _telemetryCursorHandle, SumpPumpDrainageBufferIds.TelemetryCursor);
@@ -1489,6 +1703,8 @@ namespace Hecton8.Construction
             _mockSeedHandle = default;
             _activeMutationGuardMask = 0UL;
             _activeMutationGuardVault = null;
+            _solverBufferPinMask = 0UL;
+            _solverBufferPinVault = null;
             _solverScheduleTimestamp = 0L;
             _frameIndex = 0u;
             _flowBufferWriteIndex = 0;
@@ -1499,6 +1715,9 @@ namespace Hecton8.Construction
             _flowUploadDirty = false;
             _mockSeedScheduled = false;
             _blackBoxDumped = false;
+            _blackBoxStateHash = 0u;
+            _blackBoxFlags = 0u;
+            _blackBoxEntryCount = 0;
             _debugActivePumps = 0;
             _debugFrameEvacuatedM3 = 0f;
             _debugAveragePressure = 0f;
@@ -1529,7 +1748,6 @@ namespace Hecton8.Construction
             _telemetryCursorHandle = default;
             _countersHandle = default;
             _profilesHandle = default;
-            _csvScratchHandle = default;
             _frameSummaryHandle = default;
             _flowGpuHandle = default;
         }
@@ -1541,163 +1759,32 @@ namespace Hecton8.Construction
 
             if (!TryRead(in _telemetryHandle, SumpPumpDrainageBufferIds.TelemetryRing, out NativeArray<DrainageTelemetryEntry> telemetry) ||
                 !telemetry.IsCreated ||
-                telemetry.Length <= 0 ||
-                _dumpBytes == null ||
-                _dumpSignal == null)
+                telemetry.Length <= 0)
                 return;
 
-            try
+            TryRead(in _telemetryCursorHandle, SumpPumpDrainageBufferIds.TelemetryCursor, out NativeArray<int> telemetryCursor);
+            int capacity = math.min(telemetry.Length, SumpPumpPipeGridConstants.TelemetryFrameCount);
+            int writeCount = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? math.max(0, telemetryCursor[0]) : capacity;
+            int validCount = math.min(capacity, writeCount);
+            int oldestIndex = capacity > 0 && writeCount > capacity ? writeCount % capacity : 0;
+            uint aggregateFlags = SumpDrainageTelemetryFlags.DumpedBlackBox;
+            uint hash = RuntimeHash ^ (uint)validCount ^ ((uint)writeCount * 16777619u);
+
+            for (int i = 0; i < validCount; i++)
             {
-                TryRead(in _telemetryCursorHandle, SumpPumpDrainageBufferIds.TelemetryCursor, out NativeArray<int> telemetryCursor);
-                int capacity = math.min(telemetry.Length, SumpPumpPipeGridConstants.TelemetryFrameCount);
-                int writeCount = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? math.max(0, telemetryCursor[0]) : capacity;
-                int validCount = math.min(capacity, writeCount);
-                int oldestIndex = capacity > 0 && writeCount > capacity ? writeCount % capacity : 0;
-                uint aggregateFlags = SumpDrainageTelemetryFlags.DumpedBlackBox;
-                for (int i = 0; i < validCount; i++)
-                    aggregateFlags |= telemetry[(oldestIndex + i) % capacity].Flags;
-
-                DrainageDumpHeader header = new DrainageDumpHeader
-                {
-                    Magic = DumpMagic,
-                    EntryCount = (uint)validCount,
-                    StructSizeBytes = (uint)UnsafeUtility.SizeOf<DrainageTelemetryEntry>(),
-                    Version = DumpVersion,
-                    Capacity = (uint)capacity,
-                    WriteCount = (uint)writeCount,
-                    OldestIndex = (uint)oldestIndex,
-                    RuntimeHash = RuntimeHash,
-                    Flags = aggregateFlags
-                };
-
-                int headerBytes = UnsafeUtility.SizeOf<DrainageDumpHeader>();
-                int rowBytes = UnsafeUtility.SizeOf<DrainageTelemetryEntry>();
-                int requiredBytes = headerBytes + (validCount * rowBytes);
-                if (requiredBytes <= headerBytes || requiredBytes > _dumpBytes.Length)
-                    return;
-
-                fixed (byte* dumpPtr = _dumpBytes)
-                {
-                    byte* cursor = dumpPtr;
-                    UnsafeUtility.MemCpy(cursor, UnsafeUtility.AddressOf(ref header), headerBytes);
-                    cursor += headerBytes;
-                    for (int i = 0; i < validCount; i++)
-                    {
-                        int telemetryIndex = (oldestIndex + i) % capacity;
-                        DrainageTelemetryEntry entry = telemetry[telemetryIndex];
-                        UnsafeUtility.MemCpy(cursor, UnsafeUtility.AddressOf(ref entry), rowBytes);
-                        cursor += rowBytes;
-                    }
-                }
-
-                _blackBoxDumped = true;
-                Volatile.Write(ref _dumpByteCount, requiredBytes);
-                Interlocked.Exchange(ref _dumpPending, 1);
-                _dumpSignal.Set();
-            }
-            catch
-            {
-                Interlocked.Exchange(ref _dumpWriteFault, 1);
-            }
-        }
-
-        private void InitializeDumpWriterCold()
-        {
-            if (_dumpSignal != null)
-                return;
-
-            try
-            {
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                _dumpPath = Path.Combine(projectRoot, DumpRelativePath);
-                string directory = Path.GetDirectoryName(_dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                int byteCapacity = UnsafeUtility.SizeOf<DrainageDumpHeader>() +
-                                   (SumpPumpPipeGridConstants.TelemetryFrameCount * UnsafeUtility.SizeOf<DrainageTelemetryEntry>());
-                _dumpBytes = new byte[byteCapacity];
-                _dumpThreadStop = 0;
-                _dumpPending = 0;
-                _dumpByteCount = 0;
-                _dumpWriteFault = 0;
-                _dumpSignal = new AutoResetEvent(false);
-                _dumpThread = new Thread(DumpWriterLoop)
-                {
-                    IsBackground = true,
-                    Name = "SHINOBU_340_BlackBox"
-                };
-                _dumpThread.Start();
-            }
-            catch
-            {
-                _dumpPath = null;
-                _dumpBytes = null;
-                _dumpSignal = null;
-                _dumpThread = null;
-                _dumpWriteFault = 1;
-            }
-        }
-
-        private void ShutdownDumpWriterCold()
-        {
-            AutoResetEvent signal = _dumpSignal;
-            Thread thread = _dumpThread;
-            if (signal == null)
-                return;
-
-            Interlocked.Exchange(ref _dumpThreadStop, 1);
-            signal.Set();
-            if (thread == null)
-            {
-                signal.Dispose();
-                _dumpSignal = null;
-                return;
+                DrainageTelemetryEntry entry = telemetry[(oldestIndex + i) % capacity];
+                aggregateFlags |= entry.Flags;
+                hash = SumpPumpPipeGridValidation.MixHash(hash, entry.StateHash);
+                hash = SumpPumpPipeGridValidation.MixHash(hash, entry.FrameIndex);
+                hash = SumpPumpPipeGridValidation.MixHash(hash, math.asuint(entry.AveragePressure));
+                hash = SumpPumpPipeGridValidation.MixHash(hash, math.asuint(entry.FrameEvacuatedM3));
+                hash = SumpPumpPipeGridValidation.MixHash(hash, entry.Flags);
             }
 
-            if (thread.Join(50))
-            {
-                signal.Dispose();
-                _dumpSignal = null;
-                _dumpThread = null;
-            }
-        }
-
-        private void DumpWriterLoop()
-        {
-            while (true)
-            {
-                AutoResetEvent signal = _dumpSignal;
-                if (signal == null)
-                    return;
-
-                signal.WaitOne();
-                if (Volatile.Read(ref _dumpThreadStop) != 0 && Volatile.Read(ref _dumpPending) == 0)
-                    return;
-
-                if (Interlocked.Exchange(ref _dumpPending, 0) == 0)
-                    continue;
-
-                int byteCount = Volatile.Read(ref _dumpByteCount);
-                if (byteCount <= 0 || _dumpBytes == null || string.IsNullOrEmpty(_dumpPath))
-                {
-                    Interlocked.Exchange(ref _dumpWriteFault, 1);
-                    continue;
-                }
-
-                try
-                {
-                    using (FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                        stream.Write(_dumpBytes, 0, math.min(byteCount, _dumpBytes.Length));
-                }
-                catch
-                {
-                    Interlocked.Exchange(ref _dumpWriteFault, 1);
-                }
-
-                if (Volatile.Read(ref _dumpThreadStop) != 0)
-                    return;
-            }
+            _blackBoxStateHash = hash;
+            _blackBoxFlags = aggregateFlags;
+            _blackBoxEntryCount = validCount;
+            _blackBoxDumped = true;
         }
 
 #if UNITY_EDITOR

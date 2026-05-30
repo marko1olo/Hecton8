@@ -1300,7 +1300,7 @@ namespace Hecton8.Networking
 #if UNITY_EDITOR
             _csvProfilePath = Path.Combine(_projectRoot, CsvProfileRelativePath);
 #endif
-            _dumpPath = Path.Combine(_projectRoot, DumpRelativePath);
+            _dumpPath = DumpRelativePath;
         }
 
         private static string ResolveProjectRoot()
@@ -1528,14 +1528,16 @@ namespace Hecton8.Networking
                 return;
 
             _lastDumpFrame = currentFrame;
+            NativeArray<byte> payload = default;
             try
             {
-                string directory = Path.GetDirectoryName(_dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
                 NativeArray<NetTelemetryEntry64> telemetry = ResolveOwned(in _telemetryHandle);
-                using FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
+                NativeArray<InputPredictionTelemetryEntry> inputTelemetry = ResolveOwned(in _inputPredictionTelemetryHandle);
+                int headerBytes = UnsafeUtility.SizeOf<RollbackBlackBoxDumpHeader32>();
+                int telemetryBytes = telemetry.IsCreated ? telemetry.Length * UnsafeUtility.SizeOf<NetTelemetryEntry64>() : 0;
+                int inputBytes = inputTelemetry.IsCreated ? inputTelemetry.Length * UnsafeUtility.SizeOf<InputPredictionTelemetryEntry>() : 0;
+                int byteCount = headerBytes + telemetryBytes + inputBytes;
+
                 RollbackBlackBoxDumpHeader32 header = default;
                 header.Magic = RollbackNetcodeConstants.BlackBoxDumpMagic;
                 header.SourceHash = PauseSourceHash;
@@ -1545,27 +1547,36 @@ namespace Hecton8.Networking
                 header.EntrySizeBytes = (uint)UnsafeUtility.SizeOf<NetTelemetryEntry64>();
                 header.Version = RollbackNetcodeConstants.BlackBoxDumpVersion;
 
-                byte* headerPtr = (byte*)UnsafeUtility.AddressOf(ref header);
-                stream.Write(new ReadOnlySpan<byte>(headerPtr, UnsafeUtility.SizeOf<RollbackBlackBoxDumpHeader32>()));
-                if (!telemetry.IsCreated)
-                    return;
+                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                UnsafeUtility.MemCpy(target, UnsafeUtility.AddressOf(ref header), headerBytes);
+                int cursor = headerBytes;
 
-                void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                int telemetryBytes = telemetry.Length * UnsafeUtility.SizeOf<NetTelemetryEntry64>();
-                stream.Write(new ReadOnlySpan<byte>(telemetryPtr, telemetryBytes));
-                NativeArray<InputPredictionTelemetryEntry> inputTelemetry = ResolveOwned(in _inputPredictionTelemetryHandle);
-                if (inputTelemetry.IsCreated)
+                if (telemetryBytes > 0)
+                {
+                    void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                    UnsafeUtility.MemCpy(target + cursor, telemetryPtr, telemetryBytes);
+                    cursor += telemetryBytes;
+                }
+
+                if (inputBytes > 0)
                 {
                     void* inputPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(inputTelemetry);
-                    int inputBytes = inputTelemetry.Length * UnsafeUtility.SizeOf<InputPredictionTelemetryEntry>();
-                    stream.Write(new ReadOnlySpan<byte>(inputPtr, inputBytes));
+                    UnsafeUtility.MemCpy(target + cursor, inputPtr, inputBytes);
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(_dumpPath, payload, byteCount);
             }
             catch (IOException)
             {
             }
             catch (UnauthorizedAccessException)
             {
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 

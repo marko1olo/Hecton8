@@ -1695,7 +1695,7 @@ namespace Hecton8.Gameplay
             if (prefab == null)
                 return;
 
-            if (prefab.GetComponentInChildren<ParticleSystem>(true) != null)
+            if (ComponentReferenceUtility.ResolveOwnedComponent<ParticleSystem>(prefab.transform) != null)
             {
                 Hecton8.Core.H8Debug.LogWarning(
                     "[RandomEventSystem] Meteor splash prefab contains ParticleSystem. Replace with MeteorSplashQuadVfx two-quad DrawMeshInstanced fake.",
@@ -1940,7 +1940,11 @@ namespace Hecton8.Gameplay
 
         private static float ResolveMeteorWaterImpactShaderClockSeconds()
         {
-            return Time.timeSinceLevelLoad;
+            double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (double.IsNaN(now) || double.IsInfinity(now) || now <= 0d)
+                return 0f;
+
+            return now >= float.MaxValue ? float.MaxValue : (float)now;
         }
 
         private bool TryResolveSeismicContext(

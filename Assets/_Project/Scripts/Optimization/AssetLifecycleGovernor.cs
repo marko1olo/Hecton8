@@ -3701,27 +3701,59 @@ namespace Hecton8.Optimization
 
         private unsafe void DumpHeapTelemetryToFile(string fileName, NativeArray<AssetHeapTelemetryEntry> telemetry)
         {
+            NativeArray<byte> payload = default;
             try
             {
                 string root = Directory.GetCurrentDirectory();
-                string directory = Path.Combine(root, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, fileName);
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                Span<byte> header = stackalloc byte[16];
-                BinaryPrimitives.WriteUInt64LittleEndian(header.Slice(0, 8), 0x484543544F4E3800UL);
-                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(8, 4), HeapTelemetryCapacity);
-                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(12, 4), unchecked((uint)UnsafeUtility.SizeOf<AssetHeapTelemetryEntry>()));
-                stream.Write(header);
+                string path = Path.Combine(root, "Docs", "AgentLogs", fileName);
+                const int headerBytes = 16;
+                int entryBytes = UnsafeUtility.SizeOf<AssetHeapTelemetryEntry>();
+                int telemetryBytes = entryBytes * telemetry.Length;
+                int byteCount = headerBytes + telemetryBytes;
+                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 
-                int bytes = UnsafeUtility.SizeOf<AssetHeapTelemetryEntry>() * telemetry.Length;
-                byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                stream.Write(new ReadOnlySpan<byte>(ptr, bytes));
+                byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                WriteUInt64LittleEndian(bytes, 0, 0x484543544F4E3800UL);
+                WriteUInt32LittleEndian(bytes, 8, HeapTelemetryCapacity);
+                WriteUInt32LittleEndian(bytes, 12, unchecked((uint)entryBytes));
+
+                if (telemetryBytes > 0)
+                {
+                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                    UnsafeUtility.MemCpy(bytes + headerBytes, ptr, telemetryBytes);
+                }
+
+                NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
             }
             catch (Exception)
             {
                 // Fault-path dump failure cannot throw into gameplay teardown.
             }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
+            }
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* data, int offset, uint value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+            data[offset + 2] = (byte)(value >> 16);
+            data[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static unsafe void WriteUInt64LittleEndian(byte* data, int offset, ulong value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+            data[offset + 2] = (byte)(value >> 16);
+            data[offset + 3] = (byte)(value >> 24);
+            data[offset + 4] = (byte)(value >> 32);
+            data[offset + 5] = (byte)(value >> 40);
+            data[offset + 6] = (byte)(value >> 48);
+            data[offset + 7] = (byte)(value >> 56);
         }
 
         private void TryRegister()

@@ -33,8 +33,7 @@
         "GPUInstancer",
         "Den.Tools",
         "MapMagic",
-        "ShapesRuntime",
-        "EasySave3"
+        "ShapesRuntime"
     ],
     "includePlatforms": [
         "Editor"

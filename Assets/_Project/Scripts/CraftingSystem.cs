@@ -708,7 +708,7 @@ namespace Hecton8.Crafting
                     continue;
 
                 int itemHashId = cost.item.PersistentHashId;
-                int adjustedAmount = fabricator.GetAdjustedIngredientAmount(cost);
+                int adjustedAmount = fabricator.CalculateAdjustedIngredientAmount(cost);
                 if (itemHashId == 0 || adjustedAmount <= 0)
                     continue;
 
@@ -817,7 +817,7 @@ namespace Hecton8.Crafting
                     continue;
 
                 int itemHashId = cost.item.PersistentHashId;
-                int adjustedAmount = fabricator.GetAdjustedIngredientAmount(cost);
+                int adjustedAmount = fabricator.CalculateAdjustedIngredientAmount(cost);
                 if (itemHashId == 0 || adjustedAmount <= 0)
                     continue;
 
@@ -913,7 +913,7 @@ namespace Hecton8.Crafting
                     continue;
 
                 int childHashId = cost.item.PersistentHashId;
-                int adjustedAmount = fabricator.GetAdjustedIngredientAmount(cost);
+                int adjustedAmount = fabricator.CalculateAdjustedIngredientAmount(cost);
                 if (childHashId == 0 || adjustedAmount <= 0)
                     continue;
 
@@ -1006,7 +1006,7 @@ namespace Hecton8.Crafting
                     continue;
 
                 int childHashId = cost.item.PersistentHashId;
-                int adjustedAmount = fabricator.GetAdjustedIngredientAmount(cost);
+                int adjustedAmount = fabricator.CalculateAdjustedIngredientAmount(cost);
                 if (childHashId == 0 || adjustedAmount <= 0)
                     continue;
 
@@ -1073,7 +1073,7 @@ namespace Hecton8.Crafting
                     continue;
 
                 int itemHashId = cost.item.PersistentHashId;
-                int adjustedAmount = fabricator.GetAdjustedIngredientAmount(cost);
+                int adjustedAmount = fabricator.CalculateAdjustedIngredientAmount(cost);
                 if (itemHashId == 0 || adjustedAmount <= 0)
                     continue;
 
@@ -1121,7 +1121,7 @@ namespace Hecton8.Crafting
                     continue;
 
                 int itemHashId = cost.item.PersistentHashId;
-                int adjustedAmount = fabricator.GetAdjustedIngredientAmount(cost);
+                int adjustedAmount = fabricator.CalculateAdjustedIngredientAmount(cost);
                 if (itemHashId == 0 || adjustedAmount <= 0)
                     continue;
 

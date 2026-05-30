@@ -36,17 +36,19 @@ namespace Hecton8.Lighting
         private static readonly int _DynamicLightBufferId = Shader.PropertyToID("_H8DynamicPointLightBuffer");
         private static readonly int _DynamicLightStateId = Shader.PropertyToID("_H8DynamicPointLightState");
         private static readonly int _DynamicLightCameraAupId = Shader.PropertyToID("_H8DynamicPointLightCameraAup");
-        private static readonly ulong JobMutationGuardMask =
-            MutationGuardBit(DynamicPointLightCullingVaultIds.Sources) |
-            MutationGuardBit(DynamicPointLightCullingVaultIds.States) |
-            MutationGuardBit(DynamicPointLightCullingVaultIds.GpuPayloadFront) |
-            MutationGuardBit(DynamicPointLightCullingVaultIds.GpuPayloadBack) |
-            MutationGuardBit(DynamicPointLightCullingVaultIds.ImportanceKeys) |
-            MutationGuardBit(DynamicPointLightCullingVaultIds.ImportanceIndices) |
-            MutationGuardBit(DynamicPointLightCullingVaultIds.SortScratchKeys) |
-            MutationGuardBit(DynamicPointLightCullingVaultIds.SortScratchIndices) |
-            MutationGuardBit(DynamicPointLightCullingVaultIds.RuntimeCounters) |
-            MutationGuardBit(DynamicPointLightCullingVaultIds.DynamicProbeLights);
+        private const uint JobPinSources = 1u << 0;
+        private const uint JobPinStates = 1u << 1;
+        private const uint JobPinFrustumPlanes = 1u << 2;
+        private const uint JobPinMockSdfSamples = 1u << 3;
+        private const uint JobPinProfileRules = 1u << 4;
+        private const uint JobPinImportanceKeys = 1u << 5;
+        private const uint JobPinImportanceIndices = 1u << 6;
+        private const uint JobPinSortScratchKeys = 1u << 7;
+        private const uint JobPinSortScratchIndices = 1u << 8;
+        private const uint JobPinGpuPayloadFront = 1u << 9;
+        private const uint JobPinGpuPayloadBack = 1u << 10;
+        private const uint JobPinDynamicProbeLights = 1u << 11;
+        private const uint JobPinRuntimeCounters = 1u << 12;
         private static readonly ulong MockSeedMutationGuardMask =
             MutationGuardBit(DynamicPointLightCullingVaultIds.Sources) |
             MutationGuardBit(DynamicPointLightCullingVaultIds.States);
@@ -146,7 +148,9 @@ namespace Hecton8.Lighting
         private bool _sourceBufferSeeded;
         private bool _mockSdfSeeded;
         private bool _timeoutFaultPending;
-        private bool _jobGuardHeld;
+        private IDataVault _jobPinVault;
+        private uint _jobPinMask;
+        private bool _jobPinsHeld;
         private bool _mockSeedGuardHeld;
         private bool _mockSdfGuardHeld;
         private bool _sourceManifestGuardHeld;
@@ -328,6 +332,7 @@ namespace Hecton8.Lighting
             if (!TryLockMockSeedBuffers())
                 return false;
 
+            int seededCapacity;
             try
             {
                 NativeArray<DynamicPointLightSourceDTO> sources = ResolveArray(ref _sources);
@@ -335,6 +340,7 @@ namespace Hecton8.Lighting
                 if (!sources.IsCreated || !states.IsCreated)
                     return false;
 
+                seededCapacity = math.min(sources.Length, states.Length);
                 JobHandle handle = new GenerateMockLightCullingDataJob
                 {
                     Sources = sources,
@@ -358,7 +364,7 @@ namespace Hecton8.Lighting
             {
                 CommitSourceManifest(
                     targetCount,
-                    math.min(sources.Length, states.Length),
+                    seededCapacity,
                     DynamicPointLightSourceManifestFlags.Committed | DynamicPointLightSourceManifestFlags.MockGenerated,
                     DynamicPointLightCullingMath.SourceHash);
             }
@@ -555,47 +561,36 @@ namespace Hecton8.Lighting
             if (!ring.IsCreated || ring.Length == 0)
                 return false;
 
-            string path = ResolveAgentLogPath(BlackBoxDumpFileName);
+            string path = "Docs/AgentLogs/" + BlackBoxDumpFileName;
+            NativeArray<byte> payload = default;
             try
             {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
+                int stride = UnsafeUtility.SizeOf<DynamicPointLightCullingTelemetryEntry>();
+                int byteCount = 20 + ring.Length * stride;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(DynamicPointLightCullingDirector),
+                    "DynamicPointLightCullingBlackBoxDumpPayload");
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteUInt32LittleEndian(target, 0, DumpMagic);
+                WriteInt32LittleEndian(target, 4, DumpVersion);
+                WriteInt32LittleEndian(target, 8, ring.Length);
+                WriteInt32LittleEndian(target, 12, stride);
+                WriteInt32LittleEndian(target, 16, _telemetryWriteCursor);
+                int offset = 20;
+                for (int i = 0; i < ring.Length; i++)
                 {
-                    writer.Write(DumpMagic);
-                    writer.Write(DumpVersion);
-                    writer.Write(ring.Length);
-                    writer.Write(UnsafeUtility.SizeOf<DynamicPointLightCullingTelemetryEntry>());
-                    writer.Write(_telemetryWriteCursor);
-                    for (int i = 0; i < ring.Length; i++)
-                    {
-                        int index = _telemetryWriteCursor + i;
-                        if (index >= ring.Length)
-                            index -= ring.Length;
+                    int index = _telemetryWriteCursor + i;
+                    if (index >= ring.Length)
+                        index -= ring.Length;
 
-                        DynamicPointLightCullingTelemetryEntry entry = ring[index];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.TotalLights);
-                        writer.Write(entry.CulledLights);
-                        writer.Write(entry.SubmittedLights);
-                        writer.Write(entry.BurstCpuUs);
-                        writer.Write(entry.GlobalQualityWeight);
-                        writer.Write(entry.ThermalPressure01);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.MaxActiveLights);
-                        writer.Write(entry.MaxDistanceSq);
-                        writer.Write(entry.AverageIntensity);
-                        writer.Write(entry.LastGpuUploadBytes);
-                        writer.Write(entry.VaultGeneration);
-                        writer.Write(entry._pad0);
-                    }
+                    DynamicPointLightCullingTelemetryEntry entry = ring[index];
+                    UnsafeUtility.MemCpy(target + offset, UnsafeUtility.AddressOf(ref entry), stride);
+                    offset += stride;
                 }
 
-                _blackBoxDumped = true;
-                return true;
+                _blackBoxDumped = NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+                return _blackBoxDumped;
             }
             catch (IOException)
             {
@@ -605,6 +600,26 @@ namespace Hecton8.Lighting
             {
                 return false;
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(DynamicPointLightCullingDirector),
+                    "DynamicPointLightCullingBlackBoxDumpPayload");
+            }
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* target, int offset, int value)
+        {
+            WriteUInt32LittleEndian(target, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* target, int offset, uint value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+            target[offset + 2] = (byte)(value >> 16);
+            target[offset + 3] = (byte)(value >> 24);
         }
 
         private void CacheDependencies()
@@ -1166,39 +1181,39 @@ namespace Hecton8.Lighting
             if (!TryLockJobBuffers())
                 return;
 
-            bool keepJobGuard = false;
+            bool keepJobPins = false;
             try
             {
-            NativeArray<DynamicPointLightSourceDTO> sources = ResolveArray(ref _sources);
-            NativeArray<LightCullStateDTO> states = ResolveArray(ref _states);
-            NativeArray<float4> planes = ResolveArray(ref _frustumPlanes);
-            NativeArray<float> sdf = ResolveArray(ref _mockSdfSamples);
-            NativeArray<DynamicPointLightProfileRuleDTO> rules = ResolveArray(ref _profileRules);
-            NativeArray<uint> keys = ResolveArray(ref _importanceKeys);
-            NativeArray<int> indices = ResolveArray(ref _importanceIndices);
-            NativeArray<uint> scratchKeys = ResolveArray(ref _sortScratchKeys);
-            NativeArray<int> scratchIndices = ResolveArray(ref _sortScratchIndices);
-            NativeArray<DynamicPointLightGpuDTO> gpu = ResolveScheduledGpuPayload();
-            NativeArray<CustomDynamicProbeLightDTO> probeLights = ResolveArray(ref _dynamicProbeLights);
-            NativeArray<DynamicPointLightRuntimeCountersDTO> counters = ResolveArray(ref _runtimeCounters);
+                NativeArray<DynamicPointLightSourceDTO> sources = ResolveArray(ref _sources);
+                NativeArray<LightCullStateDTO> states = ResolveArray(ref _states);
+                NativeArray<float4> planes = ResolveArray(ref _frustumPlanes);
+                NativeArray<float> sdf = ResolveArray(ref _mockSdfSamples);
+                NativeArray<DynamicPointLightProfileRuleDTO> rules = ResolveArray(ref _profileRules);
+                NativeArray<uint> keys = ResolveArray(ref _importanceKeys);
+                NativeArray<int> indices = ResolveArray(ref _importanceIndices);
+                NativeArray<uint> scratchKeys = ResolveArray(ref _sortScratchKeys);
+                NativeArray<int> scratchIndices = ResolveArray(ref _sortScratchIndices);
+                NativeArray<DynamicPointLightGpuDTO> gpu = ResolveScheduledGpuPayload();
+                NativeArray<CustomDynamicProbeLightDTO> probeLights = ResolveArray(ref _dynamicProbeLights);
+                NativeArray<DynamicPointLightRuntimeCountersDTO> counters = ResolveArray(ref _runtimeCounters);
 
-            if (!sources.IsCreated ||
-                !states.IsCreated ||
-                !planes.IsCreated ||
-                !sdf.IsCreated ||
-                !rules.IsCreated ||
-                !keys.IsCreated ||
-                !indices.IsCreated ||
-                !scratchKeys.IsCreated ||
-                !scratchIndices.IsCreated ||
-                !gpu.IsCreated ||
-                !probeLights.IsCreated ||
-                !counters.IsCreated)
-                return;
+                if (!sources.IsCreated ||
+                    !states.IsCreated ||
+                    !planes.IsCreated ||
+                    !sdf.IsCreated ||
+                    !rules.IsCreated ||
+                    !keys.IsCreated ||
+                    !indices.IsCreated ||
+                    !scratchKeys.IsCreated ||
+                    !scratchIndices.IsCreated ||
+                    !gpu.IsCreated ||
+                    !probeLights.IsCreated ||
+                    !counters.IsCreated)
+                    return;
 
-            int count = math.min(settings.ActiveSourceCount, math.min(sources.Length, states.Length));
-            if (count <= 0)
-                return;
+                int count = math.min(settings.ActiveSourceCount, math.min(sources.Length, states.Length));
+                if (count <= 0)
+                    return;
 
                 _scheduledPayloadIndex = _payloadWriteIndex;
                 _pendingScheduleTicks = Stopwatch.GetTimestamp();
@@ -1240,11 +1255,11 @@ namespace Hecton8.Lighting
 
                 H8Memory.RegisterActiveJob(MemoryOwner, _pendingCullHandle);
                 _jobActive = true;
-                keepJobGuard = true;
+                keepJobPins = true;
             }
             finally
             {
-                if (!keepJobGuard)
+                if (!keepJobPins)
                     UnlockJobBuffers();
             }
         }
@@ -1269,24 +1284,80 @@ namespace Hecton8.Lighting
             if (vault == null)
                 return false;
 
-            if (_jobGuardHeld)
+            if (_jobPinsHeld)
                 return true;
-            if (!vault.TryAcquireMutationGuard(JobMutationGuardMask))
-                return false;
 
-            _jobGuardHeld = true;
-            return true;
+            _jobPinVault = vault;
+            try
+            {
+                if (!TryLockJobBuffer(vault, DynamicPointLightCullingVaultIds.Sources, JobPinSources) ||
+                    !TryLockJobBuffer(vault, DynamicPointLightCullingVaultIds.States, JobPinStates) ||
+                    !TryLockJobBuffer(vault, DynamicPointLightCullingVaultIds.FrustumPlanes, JobPinFrustumPlanes) ||
+                    !TryLockJobBuffer(vault, DynamicPointLightCullingVaultIds.MockSdfSamples, JobPinMockSdfSamples) ||
+                    !TryLockJobBuffer(vault, DynamicPointLightCullingVaultIds.ProfileRules, JobPinProfileRules) ||
+                    !TryLockJobBuffer(vault, DynamicPointLightCullingVaultIds.ImportanceKeys, JobPinImportanceKeys) ||
+                    !TryLockJobBuffer(vault, DynamicPointLightCullingVaultIds.ImportanceIndices, JobPinImportanceIndices) ||
+                    !TryLockJobBuffer(vault, DynamicPointLightCullingVaultIds.SortScratchKeys, JobPinSortScratchKeys) ||
+                    !TryLockJobBuffer(vault, DynamicPointLightCullingVaultIds.SortScratchIndices, JobPinSortScratchIndices) ||
+                    !TryLockJobBuffer(vault, DynamicPointLightCullingVaultIds.GpuPayloadFront, JobPinGpuPayloadFront) ||
+                    !TryLockJobBuffer(vault, DynamicPointLightCullingVaultIds.GpuPayloadBack, JobPinGpuPayloadBack) ||
+                    !TryLockJobBuffer(vault, DynamicPointLightCullingVaultIds.DynamicProbeLights, JobPinDynamicProbeLights) ||
+                    !TryLockJobBuffer(vault, DynamicPointLightCullingVaultIds.RuntimeCounters, JobPinRuntimeCounters))
+                    return false;
+
+                _jobPinsHeld = true;
+                return true;
+            }
+            finally
+            {
+                if (!_jobPinsHeld)
+                    UnlockJobBuffers();
+            }
         }
 
         private void UnlockJobBuffers()
         {
-            IDataVault vault = _vault;
-            if (vault != null && _jobGuardHeld)
+            IDataVault vault = _jobPinVault;
+            uint pinMask = _jobPinMask;
+            if (vault != null && pinMask != 0u)
             {
-                vault.ReleaseMutationGuard(JobMutationGuardMask);
+                TryUnlockJobBuffer(vault, pinMask, JobPinRuntimeCounters, DynamicPointLightCullingVaultIds.RuntimeCounters);
+                TryUnlockJobBuffer(vault, pinMask, JobPinDynamicProbeLights, DynamicPointLightCullingVaultIds.DynamicProbeLights);
+                TryUnlockJobBuffer(vault, pinMask, JobPinGpuPayloadBack, DynamicPointLightCullingVaultIds.GpuPayloadBack);
+                TryUnlockJobBuffer(vault, pinMask, JobPinGpuPayloadFront, DynamicPointLightCullingVaultIds.GpuPayloadFront);
+                TryUnlockJobBuffer(vault, pinMask, JobPinSortScratchIndices, DynamicPointLightCullingVaultIds.SortScratchIndices);
+                TryUnlockJobBuffer(vault, pinMask, JobPinSortScratchKeys, DynamicPointLightCullingVaultIds.SortScratchKeys);
+                TryUnlockJobBuffer(vault, pinMask, JobPinImportanceIndices, DynamicPointLightCullingVaultIds.ImportanceIndices);
+                TryUnlockJobBuffer(vault, pinMask, JobPinImportanceKeys, DynamicPointLightCullingVaultIds.ImportanceKeys);
+                TryUnlockJobBuffer(vault, pinMask, JobPinProfileRules, DynamicPointLightCullingVaultIds.ProfileRules);
+                TryUnlockJobBuffer(vault, pinMask, JobPinMockSdfSamples, DynamicPointLightCullingVaultIds.MockSdfSamples);
+                TryUnlockJobBuffer(vault, pinMask, JobPinFrustumPlanes, DynamicPointLightCullingVaultIds.FrustumPlanes);
+                TryUnlockJobBuffer(vault, pinMask, JobPinStates, DynamicPointLightCullingVaultIds.States);
+                TryUnlockJobBuffer(vault, pinMask, JobPinSources, DynamicPointLightCullingVaultIds.Sources);
             }
 
-            _jobGuardHeld = false;
+            _jobPinMask = 0u;
+            _jobPinVault = null;
+            _jobPinsHeld = false;
+        }
+
+        private bool TryLockJobBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        {
+            if ((_jobPinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null ||
+                !vault.TryLockBuffer(bufferId, MemoryOwner))
+                return false;
+
+            _jobPinMask |= pinBit;
+            return true;
+        }
+
+        private static void TryUnlockJobBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, MemoryOwner);
         }
 
         private bool TryLockMockSeedBuffers()
@@ -1638,12 +1709,6 @@ namespace Hecton8.Lighting
 
             string root = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
             return Path.Combine(root, relativePath);
-        }
-
-        private static string ResolveAgentLogPath(string fileName)
-        {
-            string root = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-            return Path.Combine(root, "Docs", "AgentLogs", fileName);
         }
 
 #if UNITY_EDITOR

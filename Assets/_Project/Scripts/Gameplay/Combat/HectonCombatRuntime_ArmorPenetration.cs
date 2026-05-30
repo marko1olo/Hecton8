@@ -224,6 +224,7 @@ namespace Hecton8.Gameplay
         private const int ArmorMaterialShift = 6;
         private const byte ArmorMaterialChitin = 1;
         private const byte ArmorMaterialSteel = 2;
+        private const int ArmorProfilesCsvImportByteCapacity = 32768;
         private const double ArmorTelemetryDumpThresholdMicroseconds = 500.0d;
         private const int ArmorTortureMaxImpacts = 10000;
         private const double ArmorTortureBudgetMicroseconds = 10.0d;
@@ -968,25 +969,32 @@ namespace Hecton8.Gameplay
                 return;
 
             _armorTelemetryDumpRequested = true;
+            NativeArray<byte> payload = default;
             try
             {
-                string root = Application.dataPath;
-                string projectRoot = Directory.GetParent(root)?.FullName ?? root;
-                string logDir = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(logDir);
-                string path = Path.Combine(logDir, "Dump_1417_ArmorPenetration.bin");
-                using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                const string path = "Docs/AgentLogs/Dump_1417_ArmorPenetration.bin";
+                const int HeaderBytes = 20;
+                const int EntryStride = 64;
+                int count = math.min(telemetryRing.Length, ArmorTelemetryCapacity);
+                int totalBytes = HeaderBytes + (count * EntryStride);
+                if (count <= 0 || totalBytes <= HeaderBytes)
+                    return;
+
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(CombatDamageRuntime),
+                    "ArmorPenetrationTelemetryDumpPayload");
+                unsafe
                 {
-                    Span<byte> header = stackalloc byte[20];
+                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    Span<byte> header = new Span<byte>(target, HeaderBytes);
+                    header.Clear();
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), ArmorTelemetryMagic);
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(4, 4), (uint)UnsafeUtility.SizeOf<ArmorPenetrationTelemetryEntry>());
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(8, 4), (uint)telemetryRing.Length);
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(12, 4), cause.Frame);
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(16, 4), cause.Flags | ArmorTelemetryFlagsDumped);
-                    stream.Write(header);
 
-                    Span<byte> entryBytes = stackalloc byte[64];
-                    int count = math.min(telemetryRing.Length, ArmorTelemetryCapacity);
                     uint cursor = _armorTelemetryCursor;
                     int start = cursor >= (uint)count && count > 0
                         ? (int)(cursor % (uint)count)
@@ -994,12 +1002,12 @@ namespace Hecton8.Gameplay
                     for (int i = 0; i < count; i++)
                     {
                         int index = (start + i) % count;
+                        Span<byte> entryBytes = new Span<byte>(target + HeaderBytes + (i * EntryStride), EntryStride);
                         WriteArmorTelemetryEntry(entryBytes, telemetryRing[index]);
-                        stream.Write(entryBytes);
                     }
                 }
 
-                _armorTelemetryDumped = true;
+                _armorTelemetryDumped = NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
             }
             catch (IOException)
             {
@@ -1012,6 +1020,13 @@ namespace Hecton8.Gameplay
             }
             catch (NotSupportedException)
             {
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(CombatDamageRuntime),
+                    "ArmorPenetrationTelemetryDumpPayload");
             }
         }
 
@@ -1863,8 +1878,9 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
                 return false;
 
-            byte[] bytes = File.ReadAllBytes(path);
-            return ApplyArmorProfilesCsvBytes(bytes);
+            Span<byte> csvScratch = stackalloc byte[ArmorProfilesCsvImportByteCapacity];
+            int bytesRead = TryReadArmorProfilesCsvFileExact(path, csvScratch);
+            return bytesRead > 0 && ApplyArmorProfilesCsvBytes(csvScratch.Slice(0, bytesRead));
 #else
             return false;
 #endif
@@ -1883,57 +1899,92 @@ namespace Hecton8.Gameplay
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
                 !IsArmorVaultHandleCreated(in _targetArmorProfilesHandle, ArmorPenetrationVaultBufferIds.TargetArmorProfiles) ||
-                !vault.TryResolveHandle(in _targetArmorProfilesHandle, out NativeArray<ArmorProfileDTO> profileBuffer) ||
-                !profileBuffer.IsCreated)
+                !vault.TryAcquireWriteLock(in _targetArmorProfilesHandle, ArmorMemoryOwner, out NativeArray<ArmorProfileDTO> profileBuffer))
             {
                 return false;
             }
 
-            bool parsedAny = false;
-            views.TargetArmorProfiles = profileBuffer;
-
-            int cursor = 0;
-            while (TryReadLine(bytes, ref cursor, out ReadOnlySpan<byte> line))
+            try
             {
-                line = Trim(line);
-                if (line.Length == 0 || IsCsvHeader(line))
-                    continue;
+                if (!profileBuffer.IsCreated)
+                    return false;
 
-                ArmorProfileDTO profile = default;
-                int lineCursor = 0;
-                int column = 0;
-                int lutIndex = 0;
-                while (TryReadToken(line, ref lineCursor, out ReadOnlySpan<byte> token))
+                bool parsedAny = false;
+                views.TargetArmorProfiles = profileBuffer;
+
+                int cursor = 0;
+                while (TryReadLine(bytes, ref cursor, out ReadOnlySpan<byte> line))
                 {
-                    token = Trim(token);
-                    if (token.Length == 0)
-                    {
-                        column++;
+                    line = Trim(line);
+                    if (line.Length == 0 || IsCsvHeader(line))
                         continue;
-                    }
 
-                    if (column == 0)
-                        profile.SpeciesHashID = ParseUIntOrHash(token);
-                    else if (column == 1)
-                        profile.BaseHealth = ParseFloat(token, 1f);
-                    else if (column == 2)
-                        profile.BaseArmor = ParseFloat(token, 0f);
-                    else if (lutIndex < ArmorGridLutLength)
+                    ArmorProfileDTO profile = default;
+                    int lineCursor = 0;
+                    int column = 0;
+                    int lutIndex = 0;
+                    while (TryReadToken(line, ref lineCursor, out ReadOnlySpan<byte> token))
                     {
-                        profile.ArmorGridLUT[lutIndex] = (byte)math.clamp((int)ParseUIntOrHash(token), 0, byte.MaxValue);
-                        lutIndex++;
+                        token = Trim(token);
+                        if (token.Length == 0)
+                        {
+                            column++;
+                            continue;
+                        }
+
+                        if (column == 0)
+                            profile.SpeciesHashID = ParseUIntOrHash(token);
+                        else if (column == 1)
+                            profile.BaseHealth = ParseFloat(token, 1f);
+                        else if (column == 2)
+                            profile.BaseArmor = ParseFloat(token, 0f);
+                        else if (lutIndex < ArmorGridLutLength)
+                        {
+                            profile.ArmorGridLUT[lutIndex] = (byte)math.clamp((int)ParseUIntOrHash(token), 0, byte.MaxValue);
+                            lutIndex++;
+                        }
+
+                        column++;
                     }
 
-                    column++;
+                    if (profile.SpeciesHashID == 0u || lutIndex != ArmorGridLutLength)
+                        continue;
+
+                    parsedAny |= ApplyCsvProfileToTargets(ref views, in profile);
                 }
 
-                if (profile.SpeciesHashID == 0u || lutIndex != ArmorGridLutLength)
-                    continue;
+                return parsedAny;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _targetArmorProfilesHandle, ArmorMemoryOwner);
+            }
+        }
 
-                parsedAny |= ApplyCsvProfileToTargets(ref views, in profile);
+        private static int TryReadArmorProfilesCsvFileExact(string path, Span<byte> scratch)
+        {
+            if (scratch.Length == 0)
+                return 0;
+
+            int offset = 0;
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, ArmorProfilesCsvImportByteCapacity, FileOptions.SequentialScan))
+            {
+                long length = stream.Length;
+                if (length <= 0L || length > scratch.Length)
+                    return 0;
+
+                Span<byte> destination = scratch.Slice(0, (int)length);
+                while (offset < destination.Length)
+                {
+                    int read = stream.Read(destination.Slice(offset));
+                    if (read <= 0)
+                        return 0;
+
+                    offset += read;
+                }
             }
 
-            return parsedAny;
+            return offset;
         }
 
         private static unsafe bool ApplyCsvProfileToTargets(ref ArmorPenetrationVaultViews views, in ArmorProfileDTO profile)

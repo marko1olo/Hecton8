@@ -4328,7 +4328,7 @@ namespace Hecton8.Core
     {
         Unknown = 0,
         Low = 1,
-        Mx350 = 2,
+        CompactPc = 2,
         Mid = 3,
         High = 4,
         Ultra = 5

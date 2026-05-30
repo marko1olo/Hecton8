@@ -1,0 +1,190 @@
+{
+  "agent_id": "AUDIT_NATIVE_STATE",
+  "domain": "NativeArray/GlobalDataVault/MonoBehaviour lifecycle",
+  "artifact": "APEX_AUDIT_NATIVE_STATE_AI_ECOSYSTEM_SYMBIOSIS_BALANCER_EXACT_GATES_20260528",
+  "created_local_date": "2026-05-28",
+  "status": "PENDING_COMPILE_AND_RUNTIME_VERIFICATION",
+  "scope": [
+    "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs",
+    "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs"
+  ],
+  "changed_surface": {
+    "scoped_code_files_final_git_status": "clean against current HEAD after checkpoint commit d5dab9e76",
+    "artifact_file_commit_note": "The first version of this JSON artifact was committed by checkpoint 9987c087c; this final artifact revision supersedes it.",
+    "verification_note": "During the edit window the code diff was staged and scanned with git diff --cached; after automated checkpointing, final verification also used direct source greps over the scoped files."
+  },
+  "zero_gc_self_audit": {
+    "scan_type": "text diff scan over staged additions",
+    "command": "git diff --cached -U0 -- Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs | rg -n \"^\\+.*(new\\s+[A-Za-z_]|string\\.Format|\\.ToString\\(|\\.Where\\(|\\.Select\\(|\\.Any\\(|\\.FirstOrDefault\\(|\\.ToList\\(|foreach\\s*\\()\"",
+    "exit_code": 1,
+    "matches": 0,
+    "final_source_rescan": {
+      "string_linq_foreach_command": "rg -n \"string\\.Format|\\.ToString\\(|\\.Where\\(|\\.Select\\(|\\.Any\\(|\\.FirstOrDefault\\(|\\.ToList\\(|foreach\\s*\\(\" Assets\\_Project\\Scripts\\AI\\Ecosystem\\ShinobuFloraFaunaSymbiosisSolver.cs Assets\\_Project\\Scripts\\AI\\Ecosystem\\ShinobuEcosystemBalancer.cs",
+      "string_linq_foreach_exit_code": 1,
+      "string_linq_foreach_matches": 0,
+      "reference_new_targeted_command": "rg -n \"new\\s+(List|Dictionary|HashSet|Queue|Stack|StringBuilder|Action|Func|Thread|Task|object|byte\\[|int\\[|float\\[|double\\[|string\\[)\" Assets\\_Project\\Scripts\\AI\\Ecosystem\\ShinobuFloraFaunaSymbiosisSolver.cs Assets\\_Project\\Scripts\\AI\\Ecosystem\\ShinobuEcosystemBalancer.cs",
+      "reference_new_targeted_matches": [
+        "ShinobuEcosystemBalancer.cs:3442 new Thread(DumpWorkerLoop) in forensic dump worker setup; not introduced by this patch and not in the patched hot-path descriptor/lock code."
+      ]
+    },
+    "interpretation": "No added reference-type allocation, string.Format, .ToString(), LINQ query call, ToList, FirstOrDefault, Any, Select, Where, or foreach pattern was found in the staged patch diff. Final source rescan has no string/LINQ/foreach hits; one pre-existing cold forensic Thread allocation remains outside this patch."
+  },
+  "layout_self_audit": {
+    "command": "git diff --cached -U0 -- Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs | rg -n \"^\\+.*(StructLayout|FieldOffset|UnsafeUtility\\.SizeOf|Marshal\\.OffsetOf|sizeof\\()\"",
+    "exit_code": 1,
+    "matches": 0,
+    "interpretation": "No staged struct layout, field offset, sizeof, Marshal.OffsetOf, or UnsafeUtility.SizeOf changes were made. Existing unmanaged DTO offset proofs were not modified."
+  },
+  "bad_pattern_self_audit": {
+    "command": "rg -n \"currentService as IDataVault|previousService as IDataVault|IsHandleCreated|BufferID != 0u|BufferID == 0u|OwnerSystemID|IsVaultHandleCreated|UnlockLockedJobBuffers\\(vault, locked\\); return false|UnlockLockedJobBuffers\\(vault, lockedCount\\); return false\" Assets\\_Project\\Scripts\\AI\\Ecosystem\\ShinobuFloraFaunaSymbiosisSolver.cs Assets\\_Project\\Scripts\\AI\\Ecosystem\\ShinobuEcosystemBalancer.cs",
+    "exit_code": 1,
+    "matches": 0,
+    "interpretation": "The two scoped files no longer contain direct DataVault hot-swap casts, old handle-created helpers, ownerless nonzero/zero BufferID predicates, or branch-only partial job-lock release patterns."
+  },
+  "whitespace_self_audit": {
+    "command": "git diff --cached --check -- Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+    "exit_code": 0,
+    "stdout": ""
+  },
+  "data_sovereignty": {
+    "system_id": {
+      "AIEcology": 147,
+      "EndgameAnomaly_external_seed_ship_field": 197
+    },
+    "symbiosis_solver": {
+      "hot_swap_line": "ShinobuFloraFaunaSymbiosisSolver.cs:195",
+      "owned_handle_predicate_line": "ShinobuFloraFaunaSymbiosisSolver.cs:367",
+      "borrowed_handle_predicate_line": "ShinobuFloraFaunaSymbiosisSolver.cs:376",
+      "owned_resolve_predicate_line": "ShinobuFloraFaunaSymbiosisSolver.cs:419",
+      "owned_release_anchor": "ShinobuFloraFaunaSymbiosisSolver.cs:1233-1277",
+      "secured_owned_buffer_ids": {
+        "ShinobuSymbiosisFlora": 70415,
+        "ShinobuSymbiosisFloraAups": 70416,
+        "ShinobuSymbiosisLinks": 70417,
+        "ShinobuSymbiosisExchanges": 70418,
+        "ShinobuSymbiosisTelemetryRing": 70419,
+        "ShinobuSymbiosisCounters": 70420,
+        "ShinobuSymbiosisCsvScratch": 70421,
+        "ShinobuSymbiosisScannerVfx": 70422,
+        "ShinobuSymbiosisOxygenEmitters": 70423,
+        "ShinobuSymbiosisAdherence": 70424,
+        "ShinobuSymbiosisSeeds": 70425,
+        "ShinobuSymbiosisAcousticTaps": 70426,
+        "ShinobuSymbiosisTuning": 70427,
+        "ShinobuSymbiosisFloraHashBucketHeads": 70428,
+        "ShinobuSymbiosisFloraHashNext": 70429,
+        "ShinobuSymbiosisMockBoids": 70430,
+        "ShinobuSymbiosisLegacyScratch": 70431,
+        "ShinobuSymbiosisMockFish": 70432
+      },
+      "secured_borrow_or_claim_buffer_ids": {
+        "ShinobuAmbientEntities": 70400,
+        "ShinobuAmbientAups": 70401
+      },
+      "external_optional_exact_buffer_id_without_owner_claim": {
+        "ShinobuSeedShipAnomalyField": 70700,
+        "proven_owner_in_source": "SeedShipAnomalyRuntime.cs:22 OwnerSystem = SystemID.EndgameAnomaly"
+      }
+    },
+    "ecosystem_balancer": {
+      "hot_swap_line": "ShinobuEcosystemBalancer.cs:349",
+      "owned_handle_predicate_line": "ShinobuEcosystemBalancer.cs:1251",
+      "owned_resolve_predicate_line": "ShinobuEcosystemBalancer.cs:1260",
+      "owned_release_anchor": "ShinobuEcosystemBalancer.cs:2264-2307",
+      "macro_external_exact_check": "ShinobuEcosystemBalancer.cs:1814 checks BufferID.ShinobuMacroEcosystemSectorFront",
+      "secured_owned_buffer_ids": {
+        "ShinobuAmbientEntities": 70400,
+        "ShinobuAmbientAups": 70401,
+        "ShinobuAmbientEntitySnapshot": 70402,
+        "ShinobuAmbientAupSnapshot": 70403,
+        "ShinobuEcosystemSectors": 70404,
+        "ShinobuEcosystemTuning": 70405,
+        "ShinobuEcosystemCounters": 70406,
+        "ShinobuEcosystemTelemetryRing": 70407,
+        "ShinobuSpatialHashDebugCells": 70408,
+        "ShinobuRenderMatrices": 70409,
+        "ShinobuRenderCustomData": 70410,
+        "ShinobuSpatialHashBucketHeads": 70411,
+        "ShinobuSpatialHashNext": 70412,
+        "ShinobuEcosystemCsvScratch": 70413,
+        "ShinobuEcosystemLegacyScratch": 70414,
+        "ShinobuSwarmSpeciesProfiles": 70443,
+        "ShinobuBoidIndirectArgs": 70444,
+        "ShinobuBoidStates": 70445,
+        "ShinobuBoidStateSnapshot": 70446,
+        "ShinobuSpatialGridEntries": 70448,
+        "ShinobuSpatialGridSortScratch": 70449,
+        "ShinobuSpatialGridBucketRanges": 70450,
+        "ShinobuSpatialGridTelemetryRing": 70451,
+        "ShinobuSpatialGridTelemetryCursor": 70452,
+        "ShinobuSpatialGridTuning": 70453,
+        "ShinobuSpatialGridProfiles": 70454,
+        "ShinobuSpatialGridCsvScratch": 70455,
+        "ShinobuFlockingThreats": 70457,
+        "ShinobuFlockingThreatCount": 70458,
+        "ShinobuFlockingTelemetryRing": 70459,
+        "ShinobuFlockingCounters64": 70474,
+        "ShinobuSpatialGridDumpSnapshot": 70475,
+        "ShinobuEcosystemDumpSnapshot": 70476
+      },
+      "external_exact_buffer_ids": {
+        "ShinobuMacroEcosystemSectorFront": 70433
+      }
+    }
+  },
+  "lock_protocol": {
+    "try_acquire_write_lock": {
+      "symbiosis_solver_occurrences": 0,
+      "ecosystem_balancer_occurrences": [
+        {
+          "line": "ShinobuEcosystemBalancer.cs:3505",
+          "purpose": "forensic dump snapshot",
+          "release_proof": "ReleaseWriteLock runs from finally at ShinobuEcosystemBalancer.cs:3550"
+        }
+      ]
+    },
+    "try_lock_buffer": {
+      "symbiosis_job_lock_acquire": "ShinobuFloraFaunaSymbiosisSolver.cs:1047",
+      "symbiosis_partial_release_finally": "ShinobuFloraFaunaSymbiosisSolver.cs:1097",
+      "symbiosis_teardown_state_reset_finally": "ShinobuFloraFaunaSymbiosisSolver.cs:1115",
+      "ecosystem_job_lock_acquire": "ShinobuEcosystemBalancer.cs:2007",
+      "ecosystem_partial_release_finally": "ShinobuEcosystemBalancer.cs:2077",
+      "ecosystem_teardown_state_reset_finally": "ShinobuEcosystemBalancer.cs:2095"
+    }
+  },
+  "cinematic_cheat_and_scalability": {
+    "symbiosis_quality_route": [
+      "ShinobuFloraFaunaSymbiosisSolver.cs:775 reads MathLodRuntimeConfig.GlobalQualityWeight",
+      "ShinobuFloraFaunaSymbiosisSolver.cs:777 falls back to HomeostasisBrain.GlobalQualityWeight",
+      "ShinobuFloraFaunaSymbiosisSolver.cs:2626 uses continuous quality for micro/macro exchange weighting"
+    ],
+    "ecosystem_quality_route": [
+      "ShinobuEcosystemBalancer.cs:2409 resolves continuous quality",
+      "ShinobuEcosystemBalancer.cs:2412 reads MathLodRuntimeConfig.GlobalQualityWeight",
+      "ShinobuEcosystemBalancer.cs:2414 falls back to HomeostasisBrain.GlobalQualityWeight",
+      "ShinobuEcosystemBalancer.cs:5138 and 5254 scale neighbor/cell probe work continuously"
+    ],
+    "binary_low_end_switch_scan": {
+      "command": "rg -n \"GlobalQualityWeight|isLowEnd|LowEnd\" Assets\\_Project\\Scripts\\AI\\Ecosystem\\ShinobuFloraFaunaSymbiosisSolver.cs Assets\\_Project\\Scripts\\AI\\Ecosystem\\ShinobuEcosystemBalancer.cs",
+      "observed": "Many GlobalQualityWeight hits; no isLowEnd/LowEnd hits in output."
+    },
+    "physical_simulation_change": "None. This patch changed descriptor validation and lock finalization only; no new physical simulation was introduced."
+  },
+  "compilation_resource_throttling": {
+    "dotnet_build_invocations_this_artifact": 0,
+    "compiler_process_sample_1": "Get-Process dotnet,csc,VBCSCompiler returned no rows",
+    "cpu_load_sample_1_percent": 99,
+    "compiler_process_sample_2_after_30s": "Get-Process dotnet,csc,VBCSCompiler returned no rows",
+    "cpu_load_sample_2_percent": 65,
+    "decision": "No dotnet build launched because CPU remained above the 50 percent guard. This artifact does not claim compile-green."
+  },
+  "unverified": [
+    "No Unity import proof",
+    "No Unity Console proof",
+    "No Play Mode proof",
+    "No profiler proof",
+    "No GCMonitor proof",
+    "No fresh all-scripts native ledger after this patch",
+    "No player/device proof"
+  ]
+}

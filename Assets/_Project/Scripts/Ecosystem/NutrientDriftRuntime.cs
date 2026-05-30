@@ -33,6 +33,7 @@ namespace Hecton8.Ecosystem
         public const uint RouteHash = 0x53333039u;
         public const ulong DumpMagic = 0x3330395F5452554EUL; // NURT_903 little-endian marker.
 
+        private const uint PostSimulationSystemHash = RouteHash ^ 0x50534D39u; // PSM9
         private const int JobBatchSize = 64;
         private const float DefaultCellSizeMeters = 12f;
         private const float MinimumCellSizeMeters = 1f;
@@ -118,6 +119,7 @@ namespace Hecton8.Ecosystem
         private IAbyssalFlowVolumeReadModel _abyssalFlowReadModel;
         private IPlayerRuntimeContext _playerContext;
         private Texture3D _densityTexture;
+        private PostSimulationPhaseSystem _postSimulationPhase;
         private Vector4 _publishedDensityParams;
         private Vector4 _publishedDensityOrigin;
         private JobHandle _activeJobHandle;
@@ -130,7 +132,7 @@ namespace Hecton8.Ecosystem
         private uint _simulationTick;
         private bool _initialized;
         private bool _registeredFrost;
-        private bool _registeredLateFrame;
+        private bool _registeredPostSimulation;
         private bool _registeredHotSwap;
         private bool _jobScheduled;
         private bool _jobLocksHeld;
@@ -479,8 +481,6 @@ namespace Hecton8.Ecosystem
 
         public void LateFrameTick()
         {
-            TryFinalizeScheduledJobNoWait();
-            DrainCarrionDeathSignalSnapshot();
         }
 
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
@@ -855,10 +855,19 @@ namespace Hecton8.Ecosystem
 
         private void TryRegister()
         {
+            if (!_registeredPostSimulation)
+            {
+                if (_postSimulationPhase == null)
+                    _postSimulationPhase = new PostSimulationPhaseSystem(this);
+
+                _registeredPostSimulation = GlobalRegistry.TryRegisterDispatcherSystem(_postSimulationPhase);
+            }
+
+            if (!_registeredPostSimulation)
+                return;
+
             if (!_registeredFrost)
                 _registeredFrost = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment);
-            if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             if (!_registeredHotSwap)
                 _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
@@ -871,10 +880,10 @@ namespace Hecton8.Ecosystem
                 _registeredFrost = false;
             }
 
-            if (_registeredLateFrame)
+            if (_registeredPostSimulation)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrame = false;
+                GlobalRegistry.UnregisterDispatcherSystem(_postSimulationPhase);
+                _registeredPostSimulation = false;
             }
 
             if (_registeredHotSwap)
@@ -927,6 +936,12 @@ namespace Hecton8.Ecosystem
                 return;
 
             FinishCompletedScheduledJob();
+        }
+
+        private void PostSimulationTick(in DispatcherTimingDTO timing)
+        {
+            TryFinalizeScheduledJobNoWait();
+            DrainCarrionDeathSignalSnapshot();
         }
 
         private void CompleteScheduledJobForTeardown()
@@ -1007,6 +1022,47 @@ namespace Hecton8.Ecosystem
             tuning.FrontBufferId = unchecked((uint)_frontHandle.BufferID);
             tuning.BackBufferId = unchecked((uint)_backHandle.BufferID);
             tuningArray[0] = tuning;
+        }
+
+        private sealed class PostSimulationPhaseSystem : IDispatcherSystem
+        {
+            private readonly NutrientDriftRuntime _owner;
+
+            public PostSimulationPhaseSystem(NutrientDriftRuntime owner)
+            {
+                _owner = owner;
+            }
+
+            public uint GetSystemIdHash() => PostSimulationSystemHash;
+
+            public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.PostSimulation;
+
+            public byte GetBucketId() => byte.MaxValue;
+
+            public int GetDependencyCount() => 0;
+
+            public uint GetDependencyHash(int dependencyIndex) => 0u;
+
+            public void PreSimulationTick(in DispatcherTimingDTO timing)
+            {
+            }
+
+            public JobHandle ScheduleSimulation(
+                in DispatcherTimingDTO timing,
+                in DispatcherJobContext context,
+                JobHandle dependsOn)
+            {
+                return dependsOn;
+            }
+
+            public void PostSimulationTick(in DispatcherTimingDTO timing)
+            {
+                _owner?.PostSimulationTick(in timing);
+            }
+
+            public void VisualSyncTick(in DispatcherTimingDTO timing)
+            {
+            }
         }
 
         private void PatchCompletedTelemetry(IDataVault vault, float solverMicros)
@@ -1120,34 +1176,35 @@ namespace Hecton8.Ecosystem
             if (!TryOpenReadVaultBuffer(vault, in _telemetryHandle, out NativeArray<FluidGridTelemetryEntry>.ReadOnly telemetry))
                 return;
 
+            NativeArray<byte> payload = default;
             try
             {
-                string projectRoot = Application.dataPath;
-                DirectoryInfo directory = Directory.GetParent(projectRoot);
-                if (directory != null)
-                    projectRoot = directory.FullName;
-                string path = Path.Combine(projectRoot, DumpRelativePath);
-                string folder = Path.GetDirectoryName(path);
-                if (folder != null && folder.Length != 0)
-                    Directory.CreateDirectory(folder);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
+                int stride = UnsafeUtility.SizeOf<FluidGridTelemetryEntry>();
+                int byteCount = 24 + telemetry.Length * stride;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(NutrientDriftRuntime),
+                    "nutrientDriftTelemetryDumpPayload");
+                unsafe
                 {
-                    Span<byte> header = stackalloc byte[24];
-                    WriteUInt64(header.Slice(0, 8), DumpMagic);
-                    WriteUInt32(header.Slice(8, 4), unchecked((uint)TelemetryCapacity));
-                    WriteUInt32(header.Slice(12, 4), unchecked((uint)UnsafeUtility.SizeOf<FluidGridTelemetryEntry>()));
-                    WriteUInt32(header.Slice(16, 4), unchecked((uint)_telemetryCursor));
-                    WriteUInt32(header.Slice(20, 4), RouteHash);
-                    stream.Write(header);
-
-                    int stride = UnsafeUtility.SizeOf<FluidGridTelemetryEntry>();
+                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    Span<byte> bytes = new Span<byte>(target, byteCount);
+                    WriteUInt64(bytes.Slice(0, 8), DumpMagic);
+                    WriteUInt32(bytes.Slice(8, 4), unchecked((uint)TelemetryCapacity));
+                    WriteUInt32(bytes.Slice(12, 4), unchecked((uint)stride));
+                    WriteUInt32(bytes.Slice(16, 4), unchecked((uint)_telemetryCursor));
+                    WriteUInt32(bytes.Slice(20, 4), RouteHash);
+                    int offset = 24;
                     for (int i = 0; i < telemetry.Length; i++)
                     {
                         FluidGridTelemetryEntry entry = telemetry[i];
-                        stream.Write(new ReadOnlySpan<byte>(&entry, stride));
+                        UnsafeUtility.MemCpy(target + offset, &entry, stride);
+                        offset += stride;
                     }
                 }
+
+                if (!NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, byteCount))
+                    GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)RouteHash));
             }
             catch (IOException)
             {
@@ -1168,6 +1225,13 @@ namespace Hecton8.Ecosystem
             catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)RouteHash));
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(NutrientDriftRuntime),
+                    "nutrientDriftTelemetryDumpPayload");
             }
         }
 
@@ -1195,6 +1259,7 @@ namespace Hecton8.Ecosystem
 
             int bytesRead;
             int parsed;
+            bool publishCommitFault = false;
             if (System.Threading.Interlocked.CompareExchange(ref s_profileCsvImportScratchBusy, 1, 0) != 0)
                 return false;
 
@@ -1263,23 +1328,23 @@ namespace Hecton8.Ecosystem
                 }
                 catch (IOException)
                 {
-                    GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+                    publishCommitFault = true;
                 }
                 catch (UnauthorizedAccessException)
                 {
-                    GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+                    publishCommitFault = true;
                 }
                 catch (ArgumentException)
                 {
-                    GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+                    publishCommitFault = true;
                 }
                 catch (NotSupportedException)
                 {
-                    GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+                    publishCommitFault = true;
                 }
                 catch (InvalidOperationException)
                 {
-                    GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+                    publishCommitFault = true;
                 }
                 finally
                 {
@@ -1290,6 +1355,9 @@ namespace Hecton8.Ecosystem
             {
                 System.Threading.Volatile.Write(ref s_profileCsvImportScratchBusy, 0);
             }
+
+            if (publishCommitFault)
+                GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
 
             return false;
 #endif

@@ -201,6 +201,9 @@ namespace Hecton8.Construction
             int copied = 0;
             for (int i = 0; i < slotCount && copied < maxCount; i++)
             {
+                if (_plantedItems[i] == null || _plantedQuantities[i] <= 0)
+                    continue;
+
                 items[copied] = _plantedItems[i];
                 quantities[copied] = _plantedQuantities[i];
                 copied++;

@@ -3590,15 +3590,8 @@ namespace Hecton8.Core.Memory
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void TryCompleteOwnerJobHandle(ref JobHandle ownerHandle)
         {
-            Hecton8.Core.DispatcherJobFence.BeginPostSimulationSwapWindow();
-            try
-            {
-                Hecton8.Core.DispatcherJobFence.TryComplete(ref ownerHandle, forceComplete: true);
-            }
-            finally
-            {
-                Hecton8.Core.DispatcherJobFence.EndPostSimulationSwapWindow();
-            }
+            ownerHandle.Complete();
+            ownerHandle = default;
         }
 
         private static void RemoveOwnerJobKey(ushort ownerKey)
@@ -3890,10 +3883,6 @@ namespace Hecton8.Core.Memory
 
             try
             {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
                 WriteFatalLeakBlackBoxFile(path, owner, releaseCount, releasedBytes, baselineMismatch);
 
                 string h8Path = BuildAgentDumpPath(AgentH8DumpFileName);
@@ -3915,110 +3904,130 @@ namespace Hecton8.Core.Memory
             long releasedBytes,
             bool baselineMismatch)
         {
-            using (FileStream stream = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read))
+            int heartbeatCount = ClampBlackBoxRecordedCount(_blackBox, _blackBoxRecordedCount);
+            int eventCount = ClampBlackBoxRecordedCount(_eventBlackBox, _eventBlackBoxRecordedCount);
+            int dumpCount = _recordCount < 0 ? 0 : _recordCount < 300 ? _recordCount : 300;
+            int byteCount =
+                23 +
+                70 +
+                GetBlackBoxRingByteCount(heartbeatCount) +
+                GetBlackBoxRingByteCount(eventCount) +
+                sizeof(int) +
+                sizeof(int) +
+                (dumpCount * H8AllocationRecordSizeBytes);
+            NativeArray<byte> payload = Hecton8.Core.NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(H8Memory),
+                "h8MemoryFatalLeakDumpPayload");
+            try
             {
-                WriteFatalLeakMarker(stream);
-                WriteUInt64LittleEndian(stream, FatalLeakDumpMagic);
-                WriteInt32LittleEndian(stream, FatalLeakDumpVersion);
-                WriteInt32LittleEndian(stream, H8MemoryTelemetryEntrySizeBytes);
-                WriteInt32LittleEndian(stream, H8AllocationRecordSizeBytes);
-                WriteInt32LittleEndian(stream, BlackBoxFrameCount);
-                WriteUInt16LittleEndian(stream, (ushort)owner);
-                WriteInt32LittleEndian(stream, _transitionSequence);
-                WriteInt32LittleEndian(stream, releaseCount);
-                WriteInt64LittleEndian(stream, releasedBytes);
-                WriteInt64LittleEndian(stream, _totalBytes);
-                WriteInt64LittleEndian(stream, _transitionBaselineBytes);
-                WriteInt64LittleEndian(stream, _transitionExpectedBytes);
-                WriteInt32LittleEndian(stream, baselineMismatch ? 1 : 0);
-                WriteBlackBoxEntries(stream);
-                WriteInt32LittleEndian(stream, _recordCount);
-                int dumpCount = _recordCount < 300 ? _recordCount : 300;
-                WriteInt32LittleEndian(stream, dumpCount);
+                int cursor = 0;
+                WriteFatalLeakMarker(payload, ref cursor);
+                WriteUInt64LittleEndian(payload, ref cursor, FatalLeakDumpMagic);
+                WriteInt32LittleEndian(payload, ref cursor, FatalLeakDumpVersion);
+                WriteInt32LittleEndian(payload, ref cursor, H8MemoryTelemetryEntrySizeBytes);
+                WriteInt32LittleEndian(payload, ref cursor, H8AllocationRecordSizeBytes);
+                WriteInt32LittleEndian(payload, ref cursor, BlackBoxFrameCount);
+                WriteUInt16LittleEndian(payload, ref cursor, (ushort)owner);
+                WriteInt32LittleEndian(payload, ref cursor, _transitionSequence);
+                WriteInt32LittleEndian(payload, ref cursor, releaseCount);
+                WriteInt64LittleEndian(payload, ref cursor, releasedBytes);
+                WriteInt64LittleEndian(payload, ref cursor, _totalBytes);
+                WriteInt64LittleEndian(payload, ref cursor, _transitionBaselineBytes);
+                WriteInt64LittleEndian(payload, ref cursor, _transitionExpectedBytes);
+                WriteInt32LittleEndian(payload, ref cursor, baselineMismatch ? 1 : 0);
+                WriteBlackBoxEntries(payload, ref cursor, heartbeatCount, eventCount);
+                WriteInt32LittleEndian(payload, ref cursor, _recordCount);
+                WriteInt32LittleEndian(payload, ref cursor, dumpCount);
                 for (int i = 0; i < dumpCount; i++)
                 {
                     H8AllocationRecord record = _records[i];
-                    WriteUInt64LittleEndian(stream, ComputeAllocationAddressFingerprint(in record));
-                    WriteInt64LittleEndian(stream, record.Bytes);
-                    WriteInt32LittleEndian(stream, record.Length);
-                    WriteInt32LittleEndian(stream, record.Stride);
-                    WriteInt32LittleEndian(stream, record.Alignment);
-                    WriteInt32LittleEndian(stream, record.AllocationIndex);
-                    WriteInt32LittleEndian(stream, record.Generation);
-                    WriteUInt16LittleEndian(stream, (ushort)record.Owner);
-                    WriteInt32LittleEndian(stream, (int)record.Allocator);
-                    WriteUInt16LittleEndian(stream, record.Flags);
+                    WriteUInt64LittleEndian(payload, ref cursor, ComputeAllocationAddressFingerprint(in record));
+                    WriteInt64LittleEndian(payload, ref cursor, record.Bytes);
+                    WriteInt32LittleEndian(payload, ref cursor, record.Length);
+                    WriteInt32LittleEndian(payload, ref cursor, record.Stride);
+                    WriteInt32LittleEndian(payload, ref cursor, record.Alignment);
+                    WriteInt32LittleEndian(payload, ref cursor, record.AllocationIndex);
+                    WriteInt32LittleEndian(payload, ref cursor, record.Generation);
+                    WriteInt32LittleEndian(payload, ref cursor, (int)record.Allocator);
+                    WriteUInt16LittleEndian(payload, ref cursor, (ushort)record.Owner);
+                    WriteUInt16LittleEndian(payload, ref cursor, record.Flags);
+                    WriteUInt16LittleEndian(payload, ref cursor, record.Reserved);
+                    WriteUInt16LittleEndian(payload, ref cursor, record.Reserved2);
                 }
+
+                Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(path, payload, cursor);
+            }
+            finally
+            {
+                Hecton8.Core.NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(H8Memory),
+                    "h8MemoryFatalLeakDumpPayload");
             }
         }
 
-        private static void WriteFatalLeakMarker(FileStream stream)
+        private static void WriteFatalLeakMarker(NativeArray<byte> target, ref int cursor)
         {
-            stream.WriteByte(22);
-            stream.WriteByte((byte)'[');
-            stream.WriteByte((byte)'F');
-            stream.WriteByte((byte)'A');
-            stream.WriteByte((byte)'T');
-            stream.WriteByte((byte)'A');
-            stream.WriteByte((byte)'L');
-            stream.WriteByte((byte)' ');
-            stream.WriteByte((byte)'L');
-            stream.WriteByte((byte)'E');
-            stream.WriteByte((byte)'A');
-            stream.WriteByte((byte)'K');
-            stream.WriteByte((byte)':');
-            stream.WriteByte((byte)' ');
-            stream.WriteByte((byte)'S');
-            stream.WriteByte((byte)'y');
-            stream.WriteByte((byte)'s');
-            stream.WriteByte((byte)'t');
-            stream.WriteByte((byte)'e');
-            stream.WriteByte((byte)'m');
-            stream.WriteByte((byte)'I');
-            stream.WriteByte((byte)'D');
-            stream.WriteByte((byte)']');
+            target[cursor++] = 22;
+            target[cursor++] = (byte)'[';
+            target[cursor++] = (byte)'F';
+            target[cursor++] = (byte)'A';
+            target[cursor++] = (byte)'T';
+            target[cursor++] = (byte)'A';
+            target[cursor++] = (byte)'L';
+            target[cursor++] = (byte)' ';
+            target[cursor++] = (byte)'L';
+            target[cursor++] = (byte)'E';
+            target[cursor++] = (byte)'A';
+            target[cursor++] = (byte)'K';
+            target[cursor++] = (byte)':';
+            target[cursor++] = (byte)' ';
+            target[cursor++] = (byte)'S';
+            target[cursor++] = (byte)'y';
+            target[cursor++] = (byte)'s';
+            target[cursor++] = (byte)'t';
+            target[cursor++] = (byte)'e';
+            target[cursor++] = (byte)'m';
+            target[cursor++] = (byte)'I';
+            target[cursor++] = (byte)'D';
+            target[cursor++] = (byte)']';
         }
 
-        private static void WriteUInt16LittleEndian(FileStream stream, ushort value)
+        private static void WriteUInt16LittleEndian(NativeArray<byte> target, ref int cursor, ushort value)
         {
-            Span<byte> bytes = stackalloc byte[2];
-            bytes[0] = (byte)value;
-            bytes[1] = (byte)(value >> 8);
-            stream.Write(bytes);
+            target[cursor++] = (byte)value;
+            target[cursor++] = (byte)(value >> 8);
         }
 
-        private static void WriteInt32LittleEndian(FileStream stream, int value)
+        private static void WriteInt32LittleEndian(NativeArray<byte> target, ref int cursor, int value)
         {
-            WriteUInt32LittleEndian(stream, unchecked((uint)value));
+            WriteUInt32LittleEndian(target, ref cursor, unchecked((uint)value));
         }
 
-        private static void WriteUInt32LittleEndian(FileStream stream, uint value)
+        private static void WriteUInt32LittleEndian(NativeArray<byte> target, ref int cursor, uint value)
         {
-            Span<byte> bytes = stackalloc byte[4];
-            bytes[0] = (byte)value;
-            bytes[1] = (byte)(value >> 8);
-            bytes[2] = (byte)(value >> 16);
-            bytes[3] = (byte)(value >> 24);
-            stream.Write(bytes);
+            target[cursor++] = (byte)value;
+            target[cursor++] = (byte)(value >> 8);
+            target[cursor++] = (byte)(value >> 16);
+            target[cursor++] = (byte)(value >> 24);
         }
 
-        private static void WriteInt64LittleEndian(FileStream stream, long value)
+        private static void WriteInt64LittleEndian(NativeArray<byte> target, ref int cursor, long value)
         {
-            WriteUInt64LittleEndian(stream, unchecked((ulong)value));
+            WriteUInt64LittleEndian(target, ref cursor, unchecked((ulong)value));
         }
 
-        private static void WriteUInt64LittleEndian(FileStream stream, ulong value)
+        private static void WriteUInt64LittleEndian(NativeArray<byte> target, ref int cursor, ulong value)
         {
-            Span<byte> bytes = stackalloc byte[8];
-            bytes[0] = (byte)value;
-            bytes[1] = (byte)(value >> 8);
-            bytes[2] = (byte)(value >> 16);
-            bytes[3] = (byte)(value >> 24);
-            bytes[4] = (byte)(value >> 32);
-            bytes[5] = (byte)(value >> 40);
-            bytes[6] = (byte)(value >> 48);
-            bytes[7] = (byte)(value >> 56);
-            stream.Write(bytes);
+            target[cursor++] = (byte)value;
+            target[cursor++] = (byte)(value >> 8);
+            target[cursor++] = (byte)(value >> 16);
+            target[cursor++] = (byte)(value >> 24);
+            target[cursor++] = (byte)(value >> 32);
+            target[cursor++] = (byte)(value >> 40);
+            target[cursor++] = (byte)(value >> 48);
+            target[cursor++] = (byte)(value >> 56);
         }
 
         private static void RecordBlackBox(SystemID owner, H8MemoryTelemetryFlags flags)
@@ -4089,10 +4098,10 @@ namespace Hecton8.Core.Memory
             return entry;
         }
 
-        private static void WriteBlackBoxEntries(FileStream stream)
+        private static void WriteBlackBoxEntries(NativeArray<byte> target, ref int cursor, int heartbeatCount, int eventCount)
         {
-            WriteBlackBoxRing(stream, BlackBoxRingKindHeartbeat, _blackBox, _blackBoxRecordedCount, _blackBoxCursor);
-            WriteBlackBoxRing(stream, BlackBoxRingKindLifecycleEvent, _eventBlackBox, _eventBlackBoxRecordedCount, _eventBlackBoxCursor);
+            WriteBlackBoxRing(target, ref cursor, BlackBoxRingKindHeartbeat, _blackBox, heartbeatCount, _blackBoxCursor);
+            WriteBlackBoxRing(target, ref cursor, BlackBoxRingKindLifecycleEvent, _eventBlackBox, eventCount, _eventBlackBoxCursor);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -4114,20 +4123,37 @@ namespace Hecton8.Core.Memory
             return unchecked((hash ^ value) * AddressFingerprintPrime);
         }
 
+        private static int ClampBlackBoxRecordedCount(NativeArray<H8MemoryTelemetryEntry> ring, int recordedCount)
+        {
+            if (!ring.IsCreated || ring.Length == 0)
+                return 0;
+
+            if (recordedCount < 0)
+                return 0;
+
+            return recordedCount > ring.Length ? ring.Length : recordedCount;
+        }
+
+        private static int GetBlackBoxRingByteCount(int recordedCount)
+        {
+            return 1 + sizeof(int) + sizeof(int) + sizeof(int) + (recordedCount * H8MemoryTelemetryEntrySizeBytes);
+        }
+
         private static void WriteBlackBoxRing(
-            FileStream stream,
+            NativeArray<byte> target,
+            ref int writeCursor,
             byte ringKind,
             NativeArray<H8MemoryTelemetryEntry> ring,
             int recordedCount,
-            int cursor)
+            int ringCursor)
         {
-            stream.WriteByte(ringKind);
-            WriteInt32LittleEndian(stream, ring.IsCreated ? ring.Length : 0);
-            WriteInt32LittleEndian(stream, H8MemoryTelemetryEntrySizeBytes);
+            target[writeCursor++] = ringKind;
+            WriteInt32LittleEndian(target, ref writeCursor, ring.IsCreated ? ring.Length : 0);
+            WriteInt32LittleEndian(target, ref writeCursor, H8MemoryTelemetryEntrySizeBytes);
 
             if (!ring.IsCreated || ring.Length == 0)
             {
-                WriteInt32LittleEndian(stream, 0);
+                WriteInt32LittleEndian(target, ref writeCursor, 0);
                 return;
             }
 
@@ -4135,9 +4161,9 @@ namespace Hecton8.Core.Memory
                 recordedCount = 0;
             if (recordedCount > ring.Length)
                 recordedCount = ring.Length;
-            WriteInt32LittleEndian(stream, recordedCount);
+            WriteInt32LittleEndian(target, ref writeCursor, recordedCount);
 
-            int start = recordedCount < ring.Length ? 0 : cursor;
+            int start = recordedCount < ring.Length ? 0 : ringCursor;
             for (int i = 0; i < recordedCount; i++)
             {
                 int index = start + i;
@@ -4145,20 +4171,20 @@ namespace Hecton8.Core.Memory
                     index -= ring.Length;
 
                 H8MemoryTelemetryEntry entry = ring[index];
-                WriteInt64LittleEndian(stream, entry.TotalBytes);
-                WriteInt64LittleEndian(stream, entry.TransitionBaselineBytes);
-                WriteInt64LittleEndian(stream, entry.LastTransitionReleasedBytes);
-                WriteUInt32LittleEndian(stream, entry.Sequence);
-                WriteInt32LittleEndian(stream, entry.ActiveAllocationCount);
-                WriteInt32LittleEndian(stream, entry.BlockDescriptorCount);
-                WriteInt32LittleEndian(stream, entry.AllocationGeneration);
-                WriteInt32LittleEndian(stream, entry.TransitionCutoffGeneration);
-                WriteInt32LittleEndian(stream, entry.TransitionSequence);
-                WriteInt32LittleEndian(stream, entry.LastTransitionReleasedCount);
-                WriteInt32LittleEndian(stream, entry.FatalLeakPreventedCount);
-                WriteUInt32LittleEndian(stream, entry.Frame);
-                WriteUInt16LittleEndian(stream, entry.Owner);
-                WriteUInt16LittleEndian(stream, entry.Flags);
+                WriteInt64LittleEndian(target, ref writeCursor, entry.TotalBytes);
+                WriteInt64LittleEndian(target, ref writeCursor, entry.TransitionBaselineBytes);
+                WriteInt64LittleEndian(target, ref writeCursor, entry.LastTransitionReleasedBytes);
+                WriteUInt32LittleEndian(target, ref writeCursor, entry.Sequence);
+                WriteInt32LittleEndian(target, ref writeCursor, entry.ActiveAllocationCount);
+                WriteInt32LittleEndian(target, ref writeCursor, entry.BlockDescriptorCount);
+                WriteInt32LittleEndian(target, ref writeCursor, entry.AllocationGeneration);
+                WriteInt32LittleEndian(target, ref writeCursor, entry.TransitionCutoffGeneration);
+                WriteInt32LittleEndian(target, ref writeCursor, entry.TransitionSequence);
+                WriteInt32LittleEndian(target, ref writeCursor, entry.LastTransitionReleasedCount);
+                WriteInt32LittleEndian(target, ref writeCursor, entry.FatalLeakPreventedCount);
+                WriteUInt32LittleEndian(target, ref writeCursor, entry.Frame);
+                WriteUInt16LittleEndian(target, ref writeCursor, entry.Owner);
+                WriteUInt16LittleEndian(target, ref writeCursor, entry.Flags);
             }
         }
 

@@ -1080,9 +1080,7 @@ namespace Hecton8.Cartography
         }
 #endif
 
-        public static bool TryDumpBlackBox(
-            in CartographyVaultBuffers buffers,
-            string projectRoot)
+        public static bool TryStageBlackBoxSnapshot(in CartographyVaultBuffers buffers)
         {
             if (!buffers.TelemetryRing.IsCreated)
                 return false;
@@ -1092,21 +1090,39 @@ namespace Hecton8.Cartography
 
             try
             {
-                string dir = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(dir);
-                telemetryDumpPath = Path.Combine(dir, DumpFileName);
-                telemetryDumpCursor = buffers.TelemetryCursor.IsCreated ? buffers.TelemetryCursor[0] : 0;
-                telemetryDumpLength = math.min(buffers.TelemetryRing.Length, TelemetryDumpSnapshot.Length);
-                for (int i = 0; i < telemetryDumpLength; i++)
+                int length = math.min(buffers.TelemetryRing.Length, TelemetryDumpSnapshot.Length);
+                for (int i = 0; i < length; i++)
                     TelemetryDumpSnapshot[i] = buffers.TelemetryRing[i];
 
-                if (!ThreadPool.QueueUserWorkItem(TelemetryDumpCallback))
-                {
-                    Volatile.Write(ref telemetryDumpPending, 0);
-                    return false;
-                }
-
+                Volatile.Write(ref telemetryDumpCursor, buffers.TelemetryCursor.IsCreated ? buffers.TelemetryCursor[0] : 0);
+                Volatile.Write(ref telemetryDumpLength, length);
                 return true;
+            }
+            catch (InvalidOperationException)
+            {
+                Volatile.Write(ref telemetryDumpPending, 0);
+                return false;
+            }
+        }
+
+        public static bool TryQueueStagedBlackBoxDump(string projectRoot)
+        {
+            if (Volatile.Read(ref telemetryDumpPending) == 0)
+                return false;
+
+            try
+            {
+                telemetryDumpPath = Path.Combine(projectRoot, "Docs", "AgentLogs", DumpFileName);
+                if (ThreadPool.QueueUserWorkItem(TelemetryDumpCallback))
+                    return true;
+
+                Volatile.Write(ref telemetryDumpPending, 0);
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                Volatile.Write(ref telemetryDumpPending, 0);
+                return false;
             }
             catch (IOException)
             {
@@ -1122,33 +1138,50 @@ namespace Hecton8.Cartography
 
         private static void WriteTelemetryDump(object state)
         {
+            NativeArray<byte> payload = default;
             try
             {
-                using FileStream stream = new FileStream(telemetryDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(DumpMagic);
-                writer.Write(DumpVersion);
-                writer.Write(UnsafeUtility.SizeOf<CartographyTelemetryEntry>());
-                writer.Write(telemetryDumpCursor);
-                writer.Write(telemetryDumpLength);
-                for (int i = 0; i < telemetryDumpLength; i++)
+                string path = telemetryDumpPath;
+                int cursor = Volatile.Read(ref telemetryDumpCursor);
+                int length = Volatile.Read(ref telemetryDumpLength);
+                const int headerBytes = 20;
+                int rowBytes = UnsafeUtility.SizeOf<CartographyTelemetryEntry>();
+                int safeLength = math.clamp(length, 0, TelemetryDumpSnapshot.Length);
+                int byteCount = headerBytes + safeLength * rowBytes;
+                payload = new NativeArray<byte>(byteCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+
+                unsafe
                 {
-                    CartographyTelemetryEntry entry = TelemetryDumpSnapshot[i];
-                    writer.Write(entry.PlayerGridX);
-                    writer.Write(entry.PlayerGridY);
-                    writer.Write(entry.PlayerGridZ);
-                    writer.Write(entry.PlayerLocalX);
-                    writer.Write(entry.PlayerLocalY);
-                    writer.Write(entry.PlayerLocalZ);
-                    writer.Write(entry.GlobalQualityWeight);
-                    writer.Write(entry.FrameIndex);
-                    writer.Write(entry.Revision);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.MutationMicroseconds);
-                    writer.Write(entry.RevealedSignalCount);
-                    writer.Write(entry.RevealedPoiCount);
-                    writer.Write(entry.MapFlags);
+                    byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    WriteUInt(bytes, 0, DumpMagic);
+                    WriteUInt(bytes, 4, DumpVersion);
+                    WriteInt(bytes, 8, rowBytes);
+                    WriteInt(bytes, 12, cursor);
+                    WriteInt(bytes, 16, safeLength);
+
+                    int writeCursor = headerBytes;
+                    for (int i = 0; i < safeLength; i++)
+                    {
+                        CartographyTelemetryEntry entry = TelemetryDumpSnapshot[i];
+                        WriteLong(bytes, writeCursor, entry.PlayerGridX);
+                        WriteLong(bytes, writeCursor + 8, entry.PlayerGridY);
+                        WriteLong(bytes, writeCursor + 16, entry.PlayerGridZ);
+                        WriteFloat(bytes, writeCursor + 24, entry.PlayerLocalX);
+                        WriteFloat(bytes, writeCursor + 28, entry.PlayerLocalY);
+                        WriteFloat(bytes, writeCursor + 32, entry.PlayerLocalZ);
+                        WriteFloat(bytes, writeCursor + 36, entry.GlobalQualityWeight);
+                        WriteUInt(bytes, writeCursor + 40, entry.FrameIndex);
+                        WriteUInt(bytes, writeCursor + 44, entry.Revision);
+                        WriteUInt(bytes, writeCursor + 48, entry.StateHash);
+                        WriteUInt(bytes, writeCursor + 52, entry.MutationMicroseconds);
+                        WriteUShort(bytes, writeCursor + 56, entry.RevealedSignalCount);
+                        WriteUShort(bytes, writeCursor + 58, entry.RevealedPoiCount);
+                        WriteUInt(bytes, writeCursor + 60, entry.MapFlags);
+                        writeCursor += rowBytes;
+                    }
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
             }
             catch (IOException)
             {
@@ -1156,10 +1189,56 @@ namespace Hecton8.Cartography
             catch (UnauthorizedAccessException)
             {
             }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
             finally
             {
+                if (payload.IsCreated)
+                    payload.Dispose();
+
                 Volatile.Write(ref telemetryDumpPending, 0);
             }
+        }
+
+        private static unsafe void WriteUInt(byte* data, int offset, uint value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+            data[offset + 2] = (byte)(value >> 16);
+            data[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static unsafe void WriteInt(byte* data, int offset, int value)
+        {
+            WriteUInt(data, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUShort(byte* data, int offset, ushort value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+        }
+
+        private static unsafe void WriteLong(byte* data, int offset, long value)
+        {
+            ulong bits = unchecked((ulong)value);
+            data[offset] = (byte)bits;
+            data[offset + 1] = (byte)(bits >> 8);
+            data[offset + 2] = (byte)(bits >> 16);
+            data[offset + 3] = (byte)(bits >> 24);
+            data[offset + 4] = (byte)(bits >> 32);
+            data[offset + 5] = (byte)(bits >> 40);
+            data[offset + 6] = (byte)(bits >> 48);
+            data[offset + 7] = (byte)(bits >> 56);
+        }
+
+        private static unsafe void WriteFloat(byte* data, int offset, float value)
+        {
+            UnsafeUtility.MemCpy(data + offset, &value, sizeof(float));
         }
 
         private static bool TryResolveExisting(IDataVault vault, out CartographyVaultHandles handles)

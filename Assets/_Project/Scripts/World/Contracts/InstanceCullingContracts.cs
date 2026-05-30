@@ -30,7 +30,7 @@ namespace Hecton8.World
     }
 
     /// <summary>
-    /// Camera position payload consumed by culling without polling Camera.main.
+    /// Camera position payload consumed by culling without polling the Unity main-camera singleton.
     /// </summary>
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     public struct InstanceCullingCameraPositionSignal

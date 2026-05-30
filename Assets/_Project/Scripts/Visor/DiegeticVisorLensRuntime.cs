@@ -1627,24 +1627,25 @@ namespace Hecton8.Visor
             if (_blackBoxDumped)
                 return;
 
-            _blackBoxDumped = true;
+            NativeArray<byte> payload = default;
             try
             {
                 if (!TryReadTelemetryDumpCursor(out int index))
                     return;
 
-                string path = Path.Combine(Application.dataPath, "..", DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                const int headerBytes = 20;
+                int rowBytes = DiegeticVisorLensLayout.VisorLensTelemetryEntryStrideBytes;
+                int byteCount = headerBytes + TelemetryCapacity * rowBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(DiegeticVisorLensRuntime),
+                    "diegeticVisorLensBlackBoxPayload");
+                unsafe
                 {
-                    Span<byte> header = stackalloc byte[20];
+                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    Span<byte> header = new Span<byte>(target, headerBytes);
                     WriteTelemetryDumpHeader(header, reasonFlags);
-                    stream.Write(header);
-
-                    Span<byte> entryBytes = stackalloc byte[DiegeticVisorLensLayout.VisorLensTelemetryEntryStrideBytes];
+                    int offset = headerBytes;
                     for (int i = 0; i < TelemetryCapacity; i++)
                     {
                         if (index >= TelemetryCapacity)
@@ -1653,35 +1654,45 @@ namespace Hecton8.Visor
                         if (!TryReadTelemetryDumpEntry(index, out VisorLensTelemetryEntry entry))
                             return;
 
+                        Span<byte> entryBytes = new Span<byte>(target + offset, rowBytes);
                         WriteTelemetryEntry(entryBytes, in entry);
-                        stream.Write(entryBytes);
+                        offset += rowBytes;
                         index++;
                     }
                 }
+
+                _blackBoxDumped = NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, byteCount);
             }
             catch (IOException)
             {
-                _blackBoxDumped = true;
+                _blackBoxDumped = false;
             }
             catch (UnauthorizedAccessException)
             {
-                _blackBoxDumped = true;
+                _blackBoxDumped = false;
             }
             catch (ObjectDisposedException)
             {
-                _blackBoxDumped = true;
+                _blackBoxDumped = false;
             }
             catch (InvalidOperationException)
             {
-                _blackBoxDumped = true;
+                _blackBoxDumped = false;
             }
             catch (ArgumentException)
             {
-                _blackBoxDumped = true;
+                _blackBoxDumped = false;
             }
             catch (NotSupportedException)
             {
-                _blackBoxDumped = true;
+                _blackBoxDumped = false;
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(DiegeticVisorLensRuntime),
+                    "diegeticVisorLensBlackBoxPayload");
             }
         }
 

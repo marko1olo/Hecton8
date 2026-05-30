@@ -1396,41 +1396,14 @@ namespace Hecton8.Atmosphere
             try
             {
                 CompleteScheduledWorkForTeardown();
-                string path = Path.Combine(ProjectRootPath(), DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                {
-                    Directory.CreateDirectory(directory);
-                }
-
                 NativeArray<ToxicityGridTelemetryEntry> ring = OpenBuffer(in _telemetryRing, TelemetryRingBufferId);
-                using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (var writer = new BinaryWriter(stream))
-                {
-                    writer.Write(0x544F5847u);
-                    writer.Write(TelemetryCapacity);
-                    writer.Write(_telemetryCursor);
-                    writer.Write(_activeResolution);
-                    writer.Write(_densityVersion);
-                    for (int i = 0; i < ring.Length; i++)
-                    {
-                        ToxicityGridTelemetryEntry entry = ring[i];
-                        writer.Write(entry.GridOriginAUP.x);
-                        writer.Write(entry.GridOriginAUP.y);
-                        writer.Write(entry.GridOriginAUP.z);
-                        writer.Write(entry.MaxDensity);
-                        writer.Write(entry.TotalPlumeVolume);
-                        writer.Write(entry.GlobalQualityWeight);
-                        writer.Write(entry.DiffusionCompleteMs);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.ActiveResolution);
-                        writer.Write(entry.ActiveSources);
-                        writer.Write(entry.ActiveEntities);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.NanDetected);
-                    }
-                }
+                if (!ring.IsCreated || ring.Length == 0)
+                    return;
+
+                int cursor = math.clamp(_telemetryCursor - 1, 0, ring.Length - 1);
+                ToxicityGridTelemetryEntry entry = ring[cursor];
+                if (!math.isfinite(entry.MaxDensity) || !math.isfinite(entry.TotalPlumeVolume))
+                    MarkFailure(TelemetryFlagDumpFailure);
             }
             catch (IOException)
             {

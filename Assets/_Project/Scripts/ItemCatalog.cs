@@ -305,7 +305,7 @@ namespace Hecton8.SaveSystem
                 return false;
 
             if (!TryEnsureWorldPrefabLookupReady())
-                return TryGetDirectWorldPrefabFallback(hashId, out _);
+                return TryReadDirectWorldPrefabFallback(hashId, out _);
 
             if (_worldPrefabRuntimeLookup.TryGetValue(hashId, out WorldPrefabRuntimeRecord runtimeRecord))
             {
@@ -331,7 +331,7 @@ namespace Hecton8.SaveSystem
                 prefabReference == null ||
                 !prefabReference.RuntimeKeyIsValid())
             {
-                return TryGetDirectWorldPrefabFallback(hashId, out _);
+                return TryReadDirectWorldPrefabFallback(hashId, out _);
             }
 
             AssetLoadDispatcher dispatcher = _cachedAssetLoadDispatcher;
@@ -353,7 +353,7 @@ namespace Hecton8.SaveSystem
             }
 
             if (!TryAcquireWorldPrefabHandle(dispatchAssetKey, prefabReference, out AsyncOperationHandle<GameObject> handle))
-                return TryGetDirectWorldPrefabFallback(hashId, out _);
+                return TryReadDirectWorldPrefabFallback(hashId, out _);
 
             WorldPrefabRuntimeRecord loadingRecord = new WorldPrefabRuntimeRecord
             {
@@ -383,21 +383,48 @@ namespace Hecton8.SaveSystem
         public bool TryGetLoadedWorldPrefab(int hashId, out GameObject prefab)
         {
 #if !UNITY_ADDRESSABLES_EXIST
-            ItemData item = FindByHash(hashId);
-            prefab = item != null ? item.worldPrefab : null;
-            return prefab != null;
+            return TryReadDirectWorldPrefabFallback(hashId, out prefab);
+#else
+            prefab = null;
+            if (hashId == 0)
+                return false;
+
+            if (_worldPrefabRuntimeLookup != null &&
+                _worldPrefabRuntimeLookup.TryGetValue(hashId, out WorldPrefabRuntimeRecord runtimeRecord) &&
+                runtimeRecord.LoadState == WorldPrefabLoadState.Loaded &&
+                runtimeRecord.Handle.IsValid() &&
+                runtimeRecord.Handle.Result != null)
+            {
+                prefab = runtimeRecord.Handle.Result;
+                return true;
+            }
+
+            return TryReadDirectWorldPrefabFallback(hashId, out prefab);
+#endif
+        }
+
+        public bool PollLoadedWorldPrefab(int hashId, out GameObject prefab)
+        {
+            return PollLoadedWorldPrefab(hashId, out prefab, true);
+        }
+
+        private bool PollLoadedWorldPrefab(int hashId, out GameObject prefab, bool pumpDispatchTickets)
+        {
+#if !UNITY_ADDRESSABLES_EXIST
+            return TryGetLoadedWorldPrefab(hashId, out prefab);
 #else
             prefab = null;
             if (hashId == 0)
                 return false;
 
             if (!TryEnsureWorldPrefabLookupReady())
-                return TryGetDirectWorldPrefabFallback(hashId, out prefab);
+                return TryReadDirectWorldPrefabFallback(hashId, out prefab);
 
-            PumpWorldPrefabDispatchTickets();
+            if (pumpDispatchTickets)
+                PumpWorldPrefabDispatchTickets();
 
             if (_worldPrefabRuntimeLookup == null || !_worldPrefabRuntimeLookup.TryGetValue(hashId, out WorldPrefabRuntimeRecord runtimeRecord))
-                return TryGetDirectWorldPrefabFallback(hashId, out prefab);
+                return TryReadDirectWorldPrefabFallback(hashId, out prefab);
 
             runtimeRecord.LastAccessFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             CaptureCurrentPlayerAup(ref runtimeRecord);
@@ -411,7 +438,7 @@ namespace Hecton8.SaveSystem
             if (!runtimeRecord.Handle.IsValid())
             {
                 FailWorldPrefabLoad(hashId, ref runtimeRecord);
-                return TryGetDirectWorldPrefabFallback(hashId, out prefab);
+                return TryReadDirectWorldPrefabFallback(hashId, out prefab);
             }
 
             if (runtimeRecord.LoadState == WorldPrefabLoadState.Loading)
@@ -425,7 +452,7 @@ namespace Hecton8.SaveSystem
                 if (runtimeRecord.Handle.Status != AsyncOperationStatus.Succeeded || runtimeRecord.Handle.Result == null)
                 {
                     FailWorldPrefabLoad(hashId, ref runtimeRecord);
-                    return TryGetDirectWorldPrefabFallback(hashId, out prefab);
+                    return TryReadDirectWorldPrefabFallback(hashId, out prefab);
                 }
 
                 CompleteWorldPrefabDispatch(ref runtimeRecord, success: true);
@@ -443,21 +470,24 @@ namespace Hecton8.SaveSystem
 #endif
         }
 
-        private bool TryGetDirectWorldPrefabFallback(int hashId, out GameObject prefab)
+        private bool TryReadDirectWorldPrefabFallback(int hashId, out GameObject prefab)
         {
             prefab = null;
             if (hashId == 0)
                 return false;
 
-            if (_hashLookup == null && Application.isPlaying)
-                return TryGetDirectWorldPrefabFallbackLinear(hashId, out prefab);
+            if (_hashLookup != null &&
+                _hashLookup.TryGetValue(hashId, out ItemData cachedItem) &&
+                cachedItem != null)
+            {
+                prefab = cachedItem.worldPrefab;
+                return prefab != null;
+            }
 
-            ItemData item = FindByHash(hashId);
-            prefab = item != null ? item.worldPrefab : null;
-            return prefab != null;
+            return TryReadDirectWorldPrefabFallbackLinear(hashId, out prefab);
         }
 
-        private bool TryGetDirectWorldPrefabFallbackLinear(int hashId, out GameObject prefab)
+        private bool TryReadDirectWorldPrefabFallbackLinear(int hashId, out GameObject prefab)
         {
             prefab = null;
             if (allItems != null)
@@ -494,11 +524,27 @@ namespace Hecton8.SaveSystem
             if (hashIds == null || hashIds.Count <= 0)
                 return true;
 
-            PumpWorldPrefabDispatchTickets();
-
             for (int i = 0; i < hashIds.Count; i++)
             {
                 if (!TryGetLoadedWorldPrefab(hashIds[i], out _))
+                    return false;
+            }
+
+            return true;
+        }
+
+        public bool PollWorldPrefabsReadyNonAlloc(List<int> hashIds)
+        {
+            if (hashIds == null || hashIds.Count <= 0)
+                return true;
+
+#if UNITY_ADDRESSABLES_EXIST
+            PumpWorldPrefabDispatchTickets();
+#endif
+
+            for (int i = 0; i < hashIds.Count; i++)
+            {
+                if (!PollLoadedWorldPrefab(hashIds[i], out _, false))
                     return false;
             }
 
@@ -743,12 +789,20 @@ namespace Hecton8.SaveSystem
             return !_hasLookupAmbiguity;
         }
 
-        internal int GetAllItemsNonAlloc(List<ItemData> results)
+        internal bool TryCopyAllItemsNonAlloc(List<ItemData> results, out int copiedCount)
         {
+            copiedCount = 0;
             if (results == null)
-                return 0;
+                return false;
 
             results.Clear();
+            int capacity = results.Capacity;
+            if (capacity <= 0)
+                return false;
+
+            int requiredCount = CountNonNullItems(allItems) + CountNonNullItems(_runtimeItems);
+            if (requiredCount > capacity)
+                return false;
 
             if (allItems != null)
             {
@@ -770,22 +824,40 @@ namespace Hecton8.SaveSystem
                 }
             }
 
-            return results.Count;
+            copiedCount = results.Count;
+            return true;
+        }
+
+        private static int CountNonNullItems(List<ItemData> source)
+        {
+            if (source == null)
+                return 0;
+
+            int count = 0;
+            for (int i = 0; i < source.Count; i++)
+            {
+                if (source[i] != null)
+                    count++;
+            }
+
+            return count;
         }
 
         private void RebuildLookup()
         {
-            int itemCount = allItems != null ? allItems.Count : 0;
-            _lookup = new Dictionary<string, ItemData>(itemCount * 2);
-            _hashLookup = new Dictionary<int, ItemData>(itemCount * 2);
-            _runtimeDescriptorLookup = new Dictionary<int, ItemRuntimeDescriptor>(itemCount * 2);
+            int authoredItemCount = allItems != null ? allItems.Count : 0;
+            int runtimeItemCount = _runtimeItems != null ? _runtimeItems.Count : 0;
+            int totalItemCount = authoredItemCount + runtimeItemCount;
+            int stringLookupCapacity = Math.Max(16, totalItemCount * 2);
+            int hashLookupCapacity = Math.Max(16, totalItemCount);
+
+            _lookup = new Dictionary<string, ItemData>(stringLookupCapacity);
+            _hashLookup = new Dictionary<int, ItemData>(hashLookupCapacity);
+            _runtimeDescriptorLookup = new Dictionary<int, ItemRuntimeDescriptor>(hashLookupCapacity);
             _hasLookupAmbiguity = false;
             _lookupAmbiguitySummary = string.Empty;
 
-            if (allItems == null)
-                itemCount = 0;
-
-            for (int i = 0; i < itemCount; i++)
+            for (int i = 0; i < authoredItemCount; i++)
             {
                 ItemData item = allItems[i];
                 if (item == null)

@@ -22,7 +22,7 @@ namespace Hecton8.Physics.Vehicles
         public const int MaxMockDamageSignals = 32;
         public const int TelemetryCapacity = 300;
 #if UNITY_EDITOR
-        public const int CsvScratchBytes = 64 * 1024;
+        public const int CsvImportByteCapacity = 64 * 1024;
 #endif
         public const int JobBatchSize = 32;
         public const float AuthoritativeQualityWeight = 1f;
@@ -82,9 +82,6 @@ namespace Hecton8.Physics.Vehicles
         public const BufferID TuningBuffer = (BufferID)71646;
         public const BufferID TelemetryRingBuffer = (BufferID)71647;
         public const BufferID TelemetryCursorBuffer = (BufferID)71648;
-#if UNITY_EDITOR
-        public const BufferID CsvScratchBuffer = (BufferID)71649;
-#endif
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]

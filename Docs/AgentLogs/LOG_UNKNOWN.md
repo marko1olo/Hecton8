@@ -3491,3 +3491,1527 @@ What was done: Cached electrolysis dispatcher identity cold and refreshed it by 
 Cinematic Cheats used: no physical simulation added. Diagnostics and payload reads were phase/contract corrections; visual/presentation work is deferred to late-frame instead of simulation tick.
 
 Exact Microseconds saved: `0` claimed; no profiler/player proof. Static proof: hot-method scanner over the seven touched files returned no forbidden `GlobalRegistry`, `GetComponent`, `TryGetComponent`, `.ToString()`, `StringBuilder`, interpolation, `string.Format`, or `.Complete()` in `Tick`, `FixedUpdate`, `LateFrameTick`, `Execute`, `Update`, `LateUpdate`, `SlowTick`, or `ColdTick`. Hashes: `SubmarineElectrolysisModule=F745A451B550FCBCBF9B3F5ADD331B03538CD0F19E5BB3EDB0844D7D5FCD8C7A`, `FloraInteractionManager=F09B57F178B0C1D6AE442919C4315C7129D831E9A23AE3F133961B7A624FAB70`, `RuntimePerformanceProfiler=CFCBF6458CB6515BFCDEB35B28D48FCE0ED640D5A52B70D22AF13E4B827AD6AB`, `PerformanceMonitor=0254D5076DF465A971BB1FDD7162B4977922FDBA2FBF2724C3B69DED150A8EB9`, `HectonMapMagicVegetationBridge=60F69CC7598C318B7CBEE8FD0DFE0DC860C7B6214ED7C887822E98AEA3E48A5C`, `HomeostasisBrain.ScalabilityDictator=B743955A38034D362C386F4EA82B8A6452F7A31C4365A8A566D0E847F30DC4A7`, `LeviathanTerrainIkJobs=8DB9B94A667FC3671CDBEFECBA8FA0FDA254A71BD80E089CEA9913FE3F24D0CC`. Scoped `git diff --check` passed with LF/CRLF warnings only. Build proof: first legal gated build failed with compile errors in the two compile-wall files; fixes were applied. Later `dotnet` attempts returned exit `-1` without diagnostics, and no compiler processes remain. Clean compile/runtime proof is unresolved.
+
+## 2026-05-30 - Core CopyBuffer Rejection Gate And Vehicle State Capacity
+
+What was wrong: whole-buffer graphics staging helpers could still call `Graphics.CopyBuffer()` after the guarded staging upload rejected the source copy, and `PublishVehicleDamageStateJob` had grid capacity proof but not equivalent single-state DTO capacity proof.
+
+What was done: `GraphicsBufferUploadUtility` now has bool-returning `TryUploadNativeArray()`/`TryUploadArray()` staging routes, and whole-buffer copy helpers return before `Graphics.CopyBuffer()` when staging upload fails. `PublishVehicleDamageStateJob` now carries `StateWriteCapacity` and `StateReadCapacity`, gates the state DTO raw copy on both capacities, and the runtime sets both to `1` at the only call site.
+
+Cinematic Cheats used: no new simulation. This preserves existing visual upload fakes and vehicle-damage DTO publication instead of adding expensive validation passes or physical simulation.
+
+Exact Microseconds saved: `0` claimed; no profiler/player proof. Static proof only: `SystemDispatcher=AD60974D53847376CA3F2E4415EAC1DE55C9F15A51614862B5932B448E6392B0`, evidence `7074/7077/7136/7139/7171/7182/7188/7199`, delimiter `735/735`; `VehicleComponentDamageJobs=661880D659B82F73481B7601B575B8172E834D274A10F820A2B933D20B746161`, evidence `764/765/781/782/784`, delimiter `50/50`; `VehicleComponentDamageRuntime=BB1B5DD039A4F798303964236B782713834FC684B1AEE5C236B4092F9331B749`, evidence `327/328`, delimiter `115/115`; scoped `git diff --check` passed with LF/CRLF warnings only. Build/runtime proof blocked: CPU `91`, active `csc` PID `6972`, active `dotnet` PIDs `29280/68416`.
+
+## 2026-05-30 - Current Tether Blackbox Payload Copy Revalidation
+
+What was wrong: current `TetherBlackBoxDumpWriter.cs` again had raw `UnsafeUtility.MemCpy()` at line `81`, contradicting earlier guarded-copy proof for this file.
+
+What was done: per-record retained-frame staging now routes through `UnsafeMemoryCopyGuard.SafeCopy()` with `payload.Length - cursor` remaining capacity and returns `false` before dump file IO on rejected copy.
+
+Cinematic Cheats used: none; this is crash/postmortem evidence staging.
+
+Exact Microseconds saved: `0` claimed; crash/postmortem path only. Proof: `TetherBlackBoxDumpWriter=BADD106D6906DC8D92CC92C4A45F7645F4B244A7D177AF467B952A1BAFA96CF4`, evidence `81/83`, delimiter `21/21`, current `UnsafeUtility.MemCpy` scan no matches, scoped diff-check passed with LF/CRLF warning only. Build/runtime proof blocked: CPU `91`, active `csc` PID `6972`, active `dotnet` PIDs `29280/68416`.
+
+## 2026-05-30 - Physics Culling Editor Import Scratch De-Vaulting
+
+What was wrong: editor-only physics culling CSV/header file bytes were stored in DataVault scratch lanes and populated via mutable `AsNativeArray()` views, not through a write lock. The data was parser scratch, not authoritative cross-domain state.
+
+What was done: removed the two byte scratch `VaultBufferBinding` lanes from physics culling readiness and lifecycle, and changed both import readers to fixed `stackalloc Span<byte>` buffers before parsing. Real tuning state still commits through `_physicsCullingTuning`.
+
+Cinematic Cheats used: none; this is data ownership cleanup. It avoids a global native scratch route instead of adding any simulation.
+
+Exact Microseconds saved: `0` claimed; editor/cold path only. Proof: `GlobalPhysicsStateManager.Shinobu37PhysicsCulling=9A809C2A2DB36D0E76769444D2BEAA50D51C40547F0A4F7F4C717B925E343B21`, evidence `685/689/2248/2252/2256`, delimiter `230/230`, scratch field scan no matches in runtime file, scoped diff-check passed with LF/CRLF warning only. Build/runtime proof blocked: CPU `91`, active `csc` PID `6972`, active `dotnet` PIDs `29280/68416`.
+
+## 2026-05-30 - AUP Origin Shift CSV Scratch Lock Flattening
+
+What was wrong: `AupOriginShiftCoordinator.TryPollCsvOverride()` held a DataVault write lock on `_csvScratchHandle` while reading the CSV override file from disk.
+
+What was done: removed the CSV scratch vault handle and buffer constant, read the fixed-capacity CSV bytes into `stackalloc Span<byte>`, converted CSV parser helpers to `ReadOnlySpan<byte>`, and left only the parsed runtime-state commit under the existing `_runtimeStateHandle` lock.
+
+Cinematic Cheats used: none; this is global-state ownership cleanup.
+
+Exact Microseconds saved: `0` claimed; editor/cold path only. Proof: `AupOriginShiftCoordinator=8C95AD0C9359A784CE6F5661D24C1D137B491CF35596DECED91EA577BEA958E3`, evidence `1796/1798/1800/1806/1824/1832/1851/1875/1888`, delimiter `206/206`, `_csvScratchHandle` scan no matches, scoped diff-check passed with LF/CRLF warning only. Build/runtime proof blocked: CPU `88`, active `csc` PID `45684`, active `dotnet` PID `29280`.
+
+## 2026-05-30 - AUP Dump Read-Only View And KCC Profile Write-Lock Repair
+
+What was wrong: `AupOriginShiftCoordinator` opened AUP telemetry rings through mutable vault routes for read-only dump file output. `HydrodynamicKccRuntime` editor profile ingestion and profile application mutated profile/bucket/hash/tuning lanes through mutable vault opens instead of explicit write-lock routes; editor telemetry readback also opened mutable handles before exposing read-only views.
+
+What was done: AUP dump now resolves telemetry/detail rings through read-only vault views and uses `GetUnsafeReadOnlyPtr()` for file output. KCC fluid/environment CSV ingestion parses into fixed `stackalloc` spans, reads existing lanes through read-only views, and commits profiles, buckets, hashes, active tuning, and active environment profile through one write lock per lane with `ReleaseWriteLock()` in `finally`. KCC editor telemetry readbacks now use the same read-only helper before returning read-only views.
+
+Cinematic Cheats used: none; this is DataVault authority and crash/readback route hardening. No new physical simulation, no binary quality switch, and no `GlobalQualityWeight` gameplay-truth change.
+
+Exact Microseconds saved: `0` claimed; crash/fault and editor/cold paths only. Proof: `AupOriginShiftCoordinator=3E370BF76B599B4BB1B904EDEBEDB7B42E1D97352DE062C92A44FAD9B9E4FDE3`, evidence `1929/1936/1937/1948/1949`, delimiter `206/206`; `HydrodynamicKccRuntime=0A14662D76A79E1BF559CE87AC0C8490531C3BFE1DE8D2B8B5173B9053C0DDDE`, evidence `3709/3721/3723/3745/3757/3762/3783/3786/3845/3869/3893/3915/3939/3963/3987` plus read-only telemetry `2964/2980/2983/3017/3033/3036/4263`, delimiter `410/410`; scoped diff-check passed with LF/CRLF warnings only. Build/runtime proof blocked: CPU sampled `57`, then `100`; project throttle forbids build above `50`.
+
+## 2026-05-30 - Simulation Bucketer Blackbox Dump Lock/IO Split
+
+What was wrong: `ModuloSimulationBucketer.WriteBlackBoxEntry()` held the `_blackBoxHandle` DataVault write lock while the pending blackbox dump created directories and wrote 300 retained frames through `FileStream`/`BinaryWriter`.
+
+What was done: the write lock now covers only the ring-slot update and the pending-dump flag transfer. The filesystem dump runs after `ReleaseWriteView()` and reopens the blackbox ring as `NativeArray<SimulationBucketBlackBoxEntry>.ReadOnly`.
+
+Cinematic Cheats used: none; this is lock-hold and postmortem route cleanup. Bucketing remains a cheap modulo/time-slice system scaled by continuous quality weight.
+
+Exact Microseconds saved: `0` claimed; fault/postmortem path only. Proof: `ModuloSimulationBucketer=107EE4E8B12D49491E0D2BAC69CF0A34A64CEA13552573C5DE4487FFF963639A`, evidence `986/989/992/1036/1042/1045/1046/1061/1082/1083`, delimiter `156/156`; scoped diff-check passed with LF/CRLF warning only; conflict scan and added-line forbidden scan returned no matches. Build/runtime proof blocked: CPU `82`, project throttle forbids build above `50`.
+
+## 2026-05-30 - Simulation Bucketer Readiness Read-Only Views
+
+What was wrong: `ModuloSimulationBucketer.HasRequiredVaultBuffers()` opened eight DataVault lanes through mutable owner-write current-phase helpers only to check lengths.
+
+What was done: readiness now uses `HasReadableVaultBuffer()` and `TryReadVaultBuffer(... ReadOnly ...)` for entity buckets, work buckets, EWMA costs, load buckets, rebalance result, frame state, and blackbox lanes.
+
+Cinematic Cheats used: none; this is DataVault authority narrowing for cold/init validation.
+
+Exact Microseconds saved: `0` claimed; cold/init path only. Proof: `ModuloSimulationBucketer=107EE4E8B12D49491E0D2BAC69CF0A34A64CEA13552573C5DE4487FFF963639A`, evidence `504/509/510/511/512/513/514/515/516/593/597`, delimiter `156/156`; scoped diff-check passed with LF/CRLF warning only.
+
+## 2026-05-30 - Vehicle Damage Actual Capacity And Ladder Blackbox Repair
+
+What was wrong: vehicle damage publication had in-job capacity checks but runtime still supplied convention values (`_cellCount` and `1`) instead of actual resolved DataVault lane lengths. The mock signal copy also used maximum configured capacity, not resolved destination capacity. A legal build exposed `CS8156` in ladder blackbox serialization, and the current ladder dump loop only touched `Frame` without emitting a binary dump.
+
+What was done: `VehicleComponentDamageRuntime.TryReadWritablePointers()` now resolves grid/signal/mock/state lanes as `NativeArray<T>`, derives capacities from `Length`, fails closed before scheduling undersized lanes, clamps mock generation/copy by actual capacities, and passes actual grid/state capacities into `PublishVehicleDamageStateJob`. `ProceduralLadderClimbRuntime.DumpBlackBox()` now stages a fixed little-endian native payload, copies telemetry entries to locals before `in` serialization, writes through `NativeFaultDumpWriter`, and disposes the temp native array in `finally`.
+
+Cinematic Cheats used: no physical simulation added. The vehicle path preserves the existing cheap DTO publication. The ladder dump is fault/postmortem only and does not affect normal frame visuals.
+
+Exact Microseconds saved: `0` claimed; no profiler/player proof. Static proof: `VehicleComponentDamageRuntime=6DF601715BA1A5155B4A8E155474B86CD871EC842FC25855329891CEA44C6076`, evidence `211/213/214/215/230/231/263/333/335/853/855/856/857/894/896/897/898/901/903/905/906`, delimiter `116/116`; `VehicleComponentDamageJobs=661880D659B82F73481B7601B575B8172E834D274A10F820A2B933D20B746161`, delimiter `50/50`; `ProceduralLadderClimbRuntime=FF513F96080B4E0E4EDE9E14C10BACD5DCC894CF285433856B9573597B0A4F36`, evidence `37/39/1364/1370/1381/1382/1388/1395`, delimiter `145/145`; scoped `git diff --check` passed with LF/CRLF warnings only; `.Complete()` scan over the three files returned no matches. Build/runtime proof blocked after these edits: CPU `75.2`, no compiler process rows, project throttle forbids build above `50`.
+## 2026-05-30 - Core/Physics CSV Scratch De-Vaulting And Editor View Lock Flattening
+
+What was wrong:
+- `CablePhysicsSolver132` used mutable DataVault read handles for telemetry/tuning/dump readbacks and parsed material CSV directly into the authoritative material lane.
+- `MemorySentinelRuntime` allocated a DataVault CSV scratch lane for editor validation-rule file bytes and parsed into runtime state through a mutable resolve.
+- `SeaglideHydrodynamicsRuntime` exposed editor diagnostics through mutable resolves plus `.AsReadOnly()`, mutated tuning through mutable resolves, and allocated a DataVault CSV scratch lane for cold profile file bytes.
+
+What was done:
+- Cable telemetry/tuning/dump routes now resolve `NativeArray<T>.ReadOnly`; material CSV parses into stack `Span<CableMaterialDTO>` and then performs a short material-lane commit.
+- Memory Sentinel validation CSV now reads into fixed stack bytes, removes `CsvScratchBuffer/_csvScratchHandle`, and commits parsed runtime-state changes under `_runtimeStateHandle` write-lock with `finally` release.
+- Seaglide editor view getters now use `TryReadOnlyHandle()`, editor tuning/profile changes use `_tuningHandle` write-lock with `finally` release, and the Seaglide CSV scratch route was removed from runtime and contracts.
+
+Cinematic Cheats used:
+- No new physical simulation. These changes preserve existing deterministic approximations and remove false global state routes around cold/editor file parsing and diagnostic readback.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof was produced. Expected benefit is lower lock hold time and smaller global native authority surface on editor/cold paths.
+
+Evidence:
+- Hashes: `MemorySentinelRuntime=6A7644A4BB2E465047D14CFE4346C63BE90CFCD1446F795328EE742859E9D62A`, `CablePhysicsSolver132=5E4F53B7C2417E66C05ABC522BD5E3EFC81DD4C33830E148A7F3862B0719D0A0`, `VerletCableDTOs=DBD782ABAF3E758EDF12D72C3ADB3D477A7AE7CB13813796F0DDE299715383AB`, `SeaglideHydrodynamicsRuntime=968C4DCA35B95762E6E89CFEDF647668A0CC4679AEF9304DAD32E478F2916505`, `SeaglideHydrodynamicsContracts=887D5C1E5EB69BAD310F41D5C8A9B50974CB9755FBE1D18E082C98701B9D4629`.
+- Delimiters: `169/169`, `150/150`, `165/165`, `117/117`, `24/24`.
+- Scoped `git diff --check` exited `0` with LF/CRLF warnings only; conflict-marker scan returned no matches; added-line forbidden scan returned no matches.
+- Compile/runtime status: `PENDING_VERIFICATION`. Build not launched because CPU sampled `74` and active `dotnet.exe` PID `25340` existed.
+
+## 2026-05-30 - Acoustic Hot Lookup And Presentation Phase Repair
+
+What was wrong:
+- `AcousticZoneController.Tick()` fed queue helpers every frame; those helpers could call `TryRegisterLateFrameTick()`, which reads `GlobalRegistry.Dispatcher` when late-frame registration is missing.
+- Zone transitions and pending snapshot processing still executed Unity presentation side effects from the simulation tick: mixer snapshot transitions, ambient `AudioSource` writes, and transition cue scheduling.
+
+What was done:
+- Removed lazy late-frame registration from acoustic queue helpers.
+- Added dispatcher hot-swap rebind handling in `OnGlobalRegistryServiceReplaced()` so tick and late-frame registration are repaired from the cold callback.
+- Added one cold `Start()` fallback attempt for late-frame registration so bootstrap ordering does not depend on hot queue helpers.
+- Added pending zone/snapshot presentation fields and a guarded `_isLateFramePresentationPhase`.
+- Moved zone presentation, pending snapshot processing, source-level graph presentation, ambient loop writes, mixer routing, and queued cue playback into `LateFrameTick()`.
+- `TransitionToResolvedSnapshot()` now requeues and returns when called outside the late-frame presentation phase.
+
+Cinematic Cheats used:
+- No new simulation. The change uses a field-backed phase queue instead of trying to simulate audio timing in the simulation phase. Existing cheap ambience/snapshot fakes remain unchanged.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof. Expected benefit is removing registry polling from a possible hot queue fallback and preventing simulation-phase Unity presentation stalls.
+
+Evidence:
+- Hash: `AcousticZoneController=356BE4C1B8C31C18168D15841C61C943E1F7EBA5AF2DC50F7E4EEDABC345AC2B`.
+- Delimiters: `271/271`.
+- Evidence lines: `876/967/973/1021/1024/1025/1045/1214/1217/1336/1900/1906/1914/2146/2354/2558/2565/2572/2579/2587/2594/2601/2719/2738/2789/3188/3351`.
+- Scoped hot-method parser over `AcousticZoneController.cs`, `VehicleComponentDamageRuntime.cs`, `VehicleComponentDamageJobs.cs`, and `ProceduralLadderClimbRuntime.cs`: `SCOPED_HOT_METHODS_SCANNED=11`, `SCOPED_HOT_FORBIDDEN_HITS=0`.
+- Scoped `git diff --check -- AcousticZoneController.cs` exited `0` with LF/CRLF warning only.
+- Compile/runtime status: `PENDING_VERIFICATION`. Build not launched because the initial gate sampled CPU `72.75` with active `dotnet build` PIDs `6736/29324`; the final gate sampled CPU `98.72` with `COMPILER_PROCS=0`.
+
+## 2026-05-30 - Homeostasis Dictator DataVault Route Repair
+
+What was wrong:
+- `HomeostasisBrain.ScalabilityDictator` owned a DataVault CSV scratch lane for editor file bytes.
+- Several read/write routes still depended on mutable `TryResolveHandle()` helpers.
+- Mock terrain sampler status scheduled a one-element Burst job and wrote through a raw mutable DataVault view guarded across frames.
+
+What was done:
+- Removed `_csvScratchHandle`, CSV scratch buffer ID usage, CSV requested-byte accounting, and scratch resolve/open/release routes.
+- `TryPollCsvOverrides()` now reads into `stackalloc byte[ScalabilityCsvScratchBytes]`, validates full reads, and parses `ReadOnlySpan<byte>`.
+- Initialization clears, emergency mock defaults, tuner writes, telemetry writes, mock terrain status writes, and mock heavy-load facade writes now use one DataVault write lock at a time with `finally` release.
+- Read facades now use `TryReadOnlyHandle()`.
+- Removed `Unity.Jobs`, `Unity.Burst`, the terrain sampler job handle/pending state, mutation guard state, job completion paths, and `MockTerrainSamplerStatusJob`; `RefreshMockTerrainSamplerStatus()` writes one DTO synchronously under the terrain status write lock.
+
+Cinematic Cheats used:
+- No physical simulation was added. The one-element job was replaced by a cheaper direct DTO status write; continuous `GlobalQualityWeight` quality behavior remains unchanged.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof. Expected value is lower global authority surface, no editor CSV global scratch lane, no tiny job scheduling/fence path, and no cross-frame mutation guard for one DTO.
+
+Evidence:
+- Hash: `HomeostasisBrain.ScalabilityDictator=67D764DAC9C4CBCDBAC97D5281387AC300642832786E33A02ED1E2AA6E286BB2`.
+- Delimiters: `{245/245}`, `(1061/1061)`, `[130/130]`.
+- Evidence lines: `170/381/389/393/401/407/415/420/428/432/433/441/862/1222/1238/1241/1255/1258/1272/1282/1289/1311/1388/1393/1407/1489/1522/1526/1570/1578/1581/1596/1607/1611/1619/1776/1777/1784/1818/1821/1913/1939/1947/1959/1980/2008/2258/2391`.
+- Diff stat: `174 insertions`, `308 deletions`.
+- Scoped `git diff --check -- Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs` exited `0` with LF/CRLF warning only.
+- Conflict-marker scan returned no matches.
+- Removed-route scan returned no matches for `_csvScratchHandle`, `ShinobuScalabilityCsvScratch`, `TryResolveHandle`, `OpenOrAcquireScalabilityTelemetry`, terrain sampler job/guard symbols, `Unity.Jobs`, or `Unity.Burst`.
+- Forbidden full-file scan returned no matches for `GlobalRegistry.Get<T>()`, `GetComponent`, `TryGetComponent`, `string.Format`, `.ToString()`, `foreach`, LINQ materializers, managed container `new`, or `.Complete()`.
+- Compile/runtime status: `PENDING_VERIFICATION`. Build not launched because CPU sampled `87` and `dotnet.exe` PID `49044` was already running `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1 --no-restore /p:UseSharedCompilation=false`.
+
+## 2026-05-30 - VRSomatic Hot LateFrame Registration Flattening
+
+What was wrong:
+- `VRSomaticProvider` staged shader/audio/pose/haptic payloads for `LateFrameTick`, but hot dirty setters still called `TryRegisterLateFrame()` from the `Tick()` route when registration was missing.
+- Dispatcher replacement had no explicit update/late-frame rebind branch, so a lost late-frame lane could push registry repair pressure into hot dirty setters.
+
+What was done:
+- Added cold `Start()` late-frame registration fallback.
+- Added `GlobalRegistryServiceSlot.Dispatcher` rebind handling that unregisters/re-registers update and late-frame lanes while XR somatic runtime is active.
+- Changed active-runtime registration to keep late-frame registered while XR somatic runtime is active.
+- Removed `TryRegisterLateFrame()` calls from chest socket, visor pose, breathing audio, root pose, inactive-state, shader state, comfort vignette, and velocity-anchor haptic queue paths.
+- Left actual `Shader.SetGlobal*`, `AudioSource`/filter writes, transform pose writes, and `ToolHapticsRuntime.TryEnqueueCommand()` behind `LateFrameTick -> FlushQueuedPresentationOutputs()`.
+
+Cinematic Cheats used:
+- No new simulation. The change keeps the existing field-backed presentation queue and approximate VR comfort math.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof. Expected value is removing registry repair traffic from hot dirty setters and keeping visual/audio/haptic presentation phase-locked.
+
+Evidence:
+- Hash: `VRSomaticProvider=3B818E04223D2E1E55E9D7BE1B4AD35328ABE192D92AADE4D28C9C97D8E22E1E`.
+- Delimiters: `357/357`.
+- Evidence lines: `827/830/889/895/967/1042/1714/1755/1826/1941/2470/2519/2532/2745`.
+- All-source hot lookup parser: `HOT_METHODS_SCANNED=1988`, `HOT_FORBIDDEN_HITS=0`.
+- Simulation-phase presentation parser: `HOT_SIM_METHODS_SCANNED=1610`, `HOT_PRESENTATION_API_HITS=1`, only `PerformanceMonitor.Tick -> _frameStopwatch.Stop()`.
+- Runtime non-Editor write-lock parser: `RUNTIME_METHODS_SCANNED=66326`, `POTENTIAL_NESTED_WRITE_LOCKS=0`.
+- Scoped `git diff --check` over current edited C# files exited `0` with LF/CRLF warnings only.
+- Compile/runtime status: `PENDING_VERIFICATION`. Roslyn syntax-only parse was attempted but blocked by PowerShell/.NET Framework binding failures for `System.Runtime.CompilerServices.Unsafe`/`System.Memory`; no syntax success is claimed from that route. Build not launched because active `dotnet build` PID `49044` exists.
+
+## 2026-05-30 - Vehicle Damage CSV De-Vaulting And Editor Lock Flattening
+
+What was wrong:
+- `VehicleComponentDamageRuntime` still allocated a DataVault CSV scratch buffer for cold editor import.
+- The same editor import path kept persistent managed CSV byte/grid scratch arrays.
+- CSV/editor tuning commits used mutation guards plus mutable handle resolution.
+- Blackbox fault and gizmo reads opened mutable views for pure readback.
+
+What was done:
+- Removed `CsvScratchBuffer`, `_csvScratchHandle`, `s_csvImportBytes`, `s_csvGridScratch`, and `s_csvImportScratchBusy`.
+- CSV import now uses stack bytes, exact full-read validation, and a same-call `Allocator.Temp` native grid staging buffer disposed in `finally`.
+- CSV grid, CSV tuning, and editor tuning writes use single-lane `TryAcquireWriteLock()` routes with `ReleaseWriteLock()` in `finally`.
+- Blackbox fault state and gizmo grid reads use read-only vault views.
+
+Cinematic Cheats used:
+- No new simulation. The change keeps the existing vehicle damage grid and quality-scaled signal capacity intact.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `VehicleComponentDamageRuntime.cs` SHA-256 `B1B79DAB1E713F38F797D01568B9FC9D6F15A9FBC5135A1E31D013A63ABD8B58`; `VehicleComponentDamageContracts.cs` SHA-256 `F9006AEB49F27969CF3633EADE2B3F0DC20385B90591D41B8D1D3C2CBAA32C57`.
+- Scoped diff-check exit `0`; conflict scan clean; old scratch/editor mutation symbols scan clean.
+- Delimiters: runtime `{114/114}`, `(618/618)`, `[58/58]`; contracts `{37/37}`, `(272/272)`, `[126/126]`.
+- Compile/runtime status: `PENDING_VERIFICATION`. Build not launched because CPU sampled `85` and active `dotnet.exe` PID `49044` existed.
+
+## 2026-05-30 - Analytical Gerstner Wave CSV De-Vaulting And Cold-Boot Lock Flattening
+
+What was wrong:
+- `AnalyticalGerstnerWaveRuntime` allocated a DataVault CSV scratch lane for editor wave profile bytes.
+- The CSV path also kept process-wide managed byte scratch plus an `Interlocked` busy flag.
+- Cold-boot telemetry/tuning/profile/counter commits used mutation guards and mutable handle resolution for single-lane writes.
+- Editor diagnostics and gizmos opened mutable views for pure readback.
+
+What was done:
+- Removed `_csvScratchHandle`, `AnalyticalGerstnerWaveBufferIds.CsvScratch`, `s_waveCsvImportScratch`, and `s_waveCsvImportScratchBusy`.
+- Wave profile CSV import now uses stack bytes, exact full-read validation, and `ReadOnlySpan<byte>` parsing.
+- Telemetry entry/cursor, cold tuning, spectrum, profile, cursor reset, and counter clear use one write lock per lane with release in `finally`.
+- Editor view getters, readiness checks, and gizmo reads use read-only vault handles.
+
+Cinematic Cheats used:
+- No new physical simulation. Existing analytical Gerstner waves remain the cheap controllable water lie; quality still scales through the existing continuous `GlobalQualityWeight` path.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `AnalyticalGerstnerWaveRuntime.cs` SHA-256 `AC301B95D1FE50ADE81CCCB286BDE0F308D6B7767C94EFAC3F4AE2C90C1D5B2C`; `AnalyticalGerstnerWaveContracts.cs` SHA-256 `4F691FE5426A4FF0781C71758D1417651CF8BFD412018862068289D48AC395AB`.
+- Scoped diff-check exit `0`; conflict scan clean; old scratch/editor mutation symbols scan clean except the new `CsvImportByteCapacity` stack capacity and local variable.
+- Delimiters: runtime `{127/127}`, `(533/533)`, `[39/39]`; contracts `{37/37}`, `(271/271)`, `[119/119]`.
+- Compile/runtime status: `PENDING_VERIFICATION`. One legal throttled build was launched at CPU `36` and `COMPILER_PROCS=0`, timed out after `244` seconds without diagnostics, and the spawned `dotnet`/`csc` processes were stopped. No second build was launched after CPU rose to `70`.
+
+## 2026-05-30 - Buoyancy Displacement CSV De-Vaulting And Editor Commit Flattening
+
+What was wrong:
+- `BuoyancyDisplacementRuntime` allocated a DataVault CSV scratch lane for editor material/SIMD CSV bytes.
+- The same import path kept process-wide managed byte and DTO scratch arrays with an interlocked busy flag.
+- CSV commit helpers used mutation guards and mutable handle resolution for single-lane cold writes.
+- Owner-route descriptor validation and fault readbacks opened mutable/read-guarded paths for pure checks.
+
+What was done:
+- Removed `CsvScratch`, `_csvScratchHandle`, static CSV/DTO scratch arrays, busy interlock, and `using System.Threading`.
+- Material volume, material settling, and SIMD tolerance CSV imports now use stack byte scratch, stack DTO staging, exact full-read validation, and `ReadOnlySpan<byte>` parsing.
+- Material/SIMD commits now acquire one DataVault write lock per lane and release it in `finally`.
+- Owner-route descriptor readiness/adoption, mock-seed tuning read, and counter fault read now use read-only vault handles.
+
+Cinematic Cheats used:
+- No new simulation. Existing buoyancy approximation, sleep/SDF staging, and SIMD tolerance tables remain; the patch only narrows cold import authority.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `BuoyancyDisplacementRuntime.cs` SHA-256 `9B4D8C525DA4C8C1979E3CAFBC79CEFD66CF74630306A454292AD133C072D14A`; `BuoyancyDisplacementContracts.cs` SHA-256 `783BCC74BE1F804F3E33BAA4B0E961B21A2DB241B411FE0D12C93C7B7CC92B34`.
+- Scoped diff-check exit `0`; conflict scan clean; old scratch/interlock/editor mutation symbols scan clean except the new `CsvImportByteCapacity` stack capacity and local stack variables.
+- Delimiters: runtime `{169/169}`, `(1043/1043)`, `[77/77]`; contracts `{109/109}`, `(1137/1137)`, `[220/220]`.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `91` with no compiler processes, so no build was launched for this pass.
+
+## 2026-05-30 - Signal Warden CSV Scratch De-Vaulting
+
+What was wrong:
+- `SignalWardenRuntime` allocated DataVault byte scratch lanes for editor signal tuning CSV and signal thread-contention CSV bytes.
+- Those bytes are transient parser input, not cross-domain state, and they polluted readiness checks.
+
+What was done:
+- Removed `CsvScratchBufferId`, `_csvScratchHandle`, `TryReadCsvBytesForLoad()`, and `TryOpenCsvScratchForLoad()` from the Signal Warden CSV paths.
+- Signal tuning CSV and signal contention CSV now read into same-call `stackalloc` spans and parse before the span escapes.
+- DataVault now retains only signal DTO/runtime lanes; signal telemetry write locks remain single-lane and released in `finally`.
+
+Cinematic Cheats used:
+- No new simulation. This is authority narrowing only; existing signal coalescing, quality scaling, and blackbox payloads remain unchanged.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `SignalWardenRuntime.cs` SHA-256 `F186F8EAEF6F4B88D2766EB466A963929531F4DCF39CB89B688C44C4EC3364FD`.
+- Removed-symbol scan for `_csvScratchHandle`, `CsvScratchBufferId`, `TryReadCsvBytesForLoad`, `TryOpenCsvScratchForLoad`, and `csvScratch` returned no matches.
+- Scoped hot declaration parser found `4` hot methods and `0` registry/component hits.
+- Scoped diff-check exit `0`; old scratch buffer id scan for `73042/73055` returned no matches.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `71` with no compiler/build processes, so no build was launched.
+
+## 2026-05-30 - Async Buoyancy Readback CSV De-Vaulting And Read-Only Diagnostics
+
+What was wrong:
+- `AsyncBuoyancyReadbackRuntime` allocated a DataVault byte scratch lane for editor vehicle sampling CSV bytes.
+- The CSV path held that scratch write lock during file read and later read the raw bytes back from the vault for parsing.
+- Editor diagnostics and primary vehicle profile fallback used mutable read helpers for pure readbacks.
+
+What was done:
+- Removed `_csvScratchHandle`, `AsyncBuoyancyReadbackBufferIds.CsvScratch`, and `CsvScratchBytes`.
+- Vehicle profile CSV import now reads exact bytes into `stackalloc byte[CsvImportByteCapacity]`, parses into `stackalloc VehicleSamplingProfileDTO[VehicleProfileCapacity]`, then briefly locks only the profile DTO lane for commit/clear.
+- `TryOpenEditorViews()`, `ResolvePrimaryVehicleProfile()`, and `EnsureVaultDescriptor()` now use read-only DataVault handles for pure reads/capacity checks.
+
+Cinematic Cheats used:
+- No new physical simulation. Existing async/GPU readback and analytical wave approximation stay intact; this patch removes only a false global scratch surface.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `AsyncBuoyancyReadbackRuntime.cs` SHA-256 `311937D63EA0ADD1949B97E23C985699E372EC2EF21F3AE547BEF1DB34ED03B0`; `AsyncBuoyancyReadbackContracts.cs` SHA-256 `3769E1489FF7D1C1EDC2B3C923DE31B475083B25E9FAAF3FFAC13B65057E148D`.
+- Scoped diff-check exit `0`; conflict scan clean; old scratch-symbol scan clean except the new `CsvImportByteCapacity` stack capacity and local variable.
+- Delimiters: runtime `{257/257}`, `(1060/1060)`, `[90/90]`; contracts `{16/16}`, `(132/132)`, `[86/86]`.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `100` with no compiler process rows, so no build was launched.
+
+## 2026-05-30 - BioReactor Fuel Allocation And Cold Component Resolution
+
+What was wrong:
+- `BioReactor.InsertFuel()` allocated a managed `FuelItem` object per accepted fuel deposit.
+- `Awake()` used direct `GetComponent`/`GetComponentInParent` calls for cold component discovery.
+
+What was done:
+- Converted `FuelItem` to a struct.
+- Replaced the insert allocation with `default` field assignment.
+- Stored the mutated struct back into `_fuelItems` after partial fuel consumption.
+- Replaced local component discovery with `TryGetComponent` and a parent-walk helper.
+
+Cinematic Cheats used:
+- No simulation added. This preserves the cheap slot fuel model and avoids turning reactor fuel into object-heavy physical inventory truth.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `BioReactor.cs` SHA-256 `F86A55FBF0A5EF672B9793C7945BD82EBCEC2F3DC5BA26C183F5F2668553FA04`.
+- Forbidden scan clean for `new FuelItem`, direct component lookups, hot `GlobalRegistry.Get<T>()`, string formatting, LINQ materializers, `foreach`, and `.Complete()`.
+- Delimiters: `{109/109}`, `(399/399)`, `[94/94]`; scoped diff-check exit `0` with LF/CRLF warning only.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `52` with no compiler process rows, so no build was launched.
+
+## 2026-05-30 - Ballistics Penetration CSV De-Vaulting
+
+What was wrong:
+- `BallisticsRuntime` allocated BufferID `71279` as an editor CSV byte scratch lane.
+- `TryLoadPenetrationCsv()` performed file IO while holding the broad ballistics mutation guard.
+
+What was done:
+- Removed the DataVault scratch lane, handle, acquisition, release, and readiness dependency.
+- Reads penetration CSV into stack bytes before acquiring the mutation guard.
+- Rejects empty, oversized, and partial reads.
+- Keeps the guard only around `PenetrationLut` application through `ApplyPenetrationCsvBytes()`.
+
+Cinematic Cheats used:
+- No simulation change. This is cold import authority cleanup; ballistic solve, ricochet math, impact VFX, and quality tuning are unchanged.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `BallisticsRuntime.cs` SHA-256 `ACF82F0B69BFFA5FE427DDC54055E6841C295952297D5D5F942C8F71344CEAA0`.
+- Old scratch-symbol scan clean; scoped diff-check exit `0`; conflict marker scan clean; delimiter counts `{192/192}`, `(1072/1072)`, `[171/171]`.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `35`, but active `dotnet.exe` PID `44748` was already running a build, so no new build was launched.
+
+## 2026-05-30 - Submarine Autopilot Handling CSV De-Vaulting
+
+What was wrong:
+- `SubmarineAutopilotSdfNavigator` stored editor handling-profile CSV file bytes in `GlobalDataVault` buffer `71602`.
+- The CSV import held a mutation guard over both raw source bytes and the authoritative handling-profile DTO lane.
+- File IO and parsing were coupled to global mutation state even though only parsed DTOs are real cross-domain data.
+
+What was done:
+- Removed `_csvScratchHandle`, `AutopilotCsvScratch`, `CsvScratchBytes`, `MaxCsvBytes`, and `HandlingProfilesCsvMutationGuardMask`.
+- Handling-profile CSV import now reads exact bytes into `stackalloc byte[CsvImportByteCapacity]`, parses into `stackalloc AutopilotHandlingProfileDTO[HandlingProfileCapacity]`, and rejects empty/oversized/partial reads.
+- Parsed handling profiles are committed under a single `AutopilotHandlingProfiles` write lock with `ReleaseAutopilotVaultWrite()` in `finally`; stale trailing rows are cleared.
+
+Cinematic Cheats used:
+- No new physical simulation. Existing SDF feeler/flow fake remains; this patch removes a false global parser lane.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `SubmarineAutopilotSdfNavigator.cs` SHA-256 `5EE688831BCCB386BA89F8CE987F6784481389ED0FE9E9424A57DCB9B0EB9757`.
+- Scoped diff-check exit `0`; conflict scan clean; old scratch-symbol scan clean.
+- Delimiters: `{251/251}`, `(1666/1666)`, `[235/235]`; diff stat `43 insertions`, `63 deletions`.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `62` with no compiler process rows, so no build was launched.
+
+## 2026-05-30 - Tether AUP Bootstrap Dead CSV Lane Removal
+
+What was wrong:
+- `TetherAupVerletJobs.cs` allocated `BufferID.Shinobu143CableMaterialCsvScratch` during mock tether bootstrap.
+- The same unused lane was part of `BootstrapMutationGuardMask`.
+- No CSV parser or file-read path in the file consumed that lane.
+
+What was done:
+- Removed `Shinobu143CableMaterialCsvScratch` from the bootstrap mutation guard.
+- Removed the 16 KB `OpenOrAcquireBuffer<byte>()` allocation from `EnsureMockBuffers()`.
+- Kept the real cable material lane and mock material generation intact.
+
+Cinematic Cheats used:
+- No new simulation. Existing mock tether material generation remains the cheap deterministic bootstrap path.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `TetherAupVerletJobs.cs` SHA-256 `5941210835CA77E672F7B59818409AA10B2236DE7D807B8C081C235FD56AAB36`.
+- Scoped diff-check exit `0`; conflict scan clean; old scratch-symbol scan clean.
+- Delimiters: `{122/122}`, `(571/571)`, `[84/84]`; diff stat `2 insertions`, `9 deletions`.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `77` with no compiler process rows, so no build was launched.
+
+What was wrong:
+- `VocalWarningSystem.cs` had a dead editor CSV scratch DataVault lane and editor tuning wrote through the full mutable owner view.
+- `AdaptiveStemAudioMixer.cs` had a dead `AudioStemCsvScratch` DataVault lane and accepted single-read CSV input.
+- `DynamicMusicGranularSynthesizer.cs` had `AudioDynamicSynthCsvScratch` plus a CSV mutation guard over file IO.
+
+What was done:
+- Removed the three audio CSV byte scratch routes from allocation, readiness, release, clear, and owner-view resolution.
+- Converted VWS tuning and adaptive stem rule commits to single-lane DataVault write locks released in `finally`.
+- Converted adaptive stem and dynamic music CSV parsing to exact stack-span reads and `ReadOnlySpan<byte>` parsers.
+- Moved adaptive stem CSV timestamp acknowledgement after successful rule commit to avoid stale accepted state after transient partial reads.
+
+Cinematic Cheats used:
+- No new simulation. The change removes authority noise and rejects broken cold input instead of adding runtime systems.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `VocalWarningSystem.cs` `ABBB2F0897113B6D2E2EA7506161F4AD21729C51111BA9B77EDC43E45A0B3D53`; `AdaptiveStemAudioMixer.cs` `C79E931BFF43F91CEA886D2DCEEC6C601267EBEC28F0CEF0C7257C8690B850CB`; `DynamicMusicGranularSynthesizer.cs` `CD0B191D33DA2CA54EB5C34411E27375EFB64ECA7426C3F0092898D5E0E6EBB2`.
+- Scoped diff-check exit `0`; conflict scan clean; old scratch-symbol scan clean; scoped hot parser `14/0`; refined all-source hot parser `2000/0`.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `100`, so no build was launched.
+
+## 2026-05-30 - Abyssal Thermodynamics Profile CSV De-Vaulting
+
+What was wrong:
+- `AbyssalThermodynamicsSolver.cs` allocated `BufferID.AbyssalThermalProfileBytes` for cold editor heat-source profile CSV bytes.
+- The profile CSV parser read from mutable global byte storage instead of local parser input.
+- Default profile seeding wrote profile/count lanes through mutable resolve instead of explicit write-lock publication.
+
+What was done:
+- Removed `_profileBytes` and every solver-side acquisition, clear, release, and resolve of `AbyssalThermalProfileBytes`.
+- CSV profile import now reads exact bytes into `stackalloc byte[CsvScratchBytes]` and parses into `stackalloc HeatSourceProfileDTO[MaxProfileCount]`.
+- `CommitHeatSourceProfiles()` copies profiles under one `_profiles` write lock and publishes count under one `_profileCount` write lock; both locks release in `finally`.
+
+Cinematic Cheats used:
+- No new simulation. This is an authority-surface reduction in cold import/bootstrap only; thermal solver math, Jacobi scaling, shader upload, and blackbox telemetry were left unchanged.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `AbyssalThermodynamicsSolver.cs` SHA-256 `A1B9DE5DB429793B9E8B619ED6B8E85CD1B1C8D8C4594DBB522417B15D1640B3`.
+- Scoped diff-check exit `0`; conflict scan clean; old profile-byte symbol scan over the solver returned no matches.
+- Delimiters: `{102/102}`, `(736/736)`, `[60/60]`; diff stat `87 insertions`, `40 deletions`.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `74` with no compiler process rows, so no build was launched.
+
+## 2026-05-30 - Thermodynamics Hazard Config CSV Dead Vault Lane Removal
+
+What was wrong:
+- `ThermodynamicsHazardGridRuntime.cs` still allocated `BufferID.ThermodynamicsCsvBytes` as `_csvBytes`.
+- `ThermodynamicsHazardGridRuntime.FileWorker.cs` refused to start in editor unless that stale `_csvBytes` handle existed.
+- The actual CSV override path already used `_csvWorkerBytes` and committed parsed constants, so the Vault CSV lane had no consumer.
+- The main runtime still carried a dead `NativeArray<byte>` CSV parser duplicate.
+
+What was done:
+- Removed `VaultCsvBytesBuffer`, `_csvBytes`, the editor byte-lane acquisition, and the release/default slot.
+- Removed the worker startup gate on `_csvBytes`; the worker now depends only on constants and binary config handles.
+- Removed the unused main-runtime NativeArray CSV parser and kept the single worker-local byte parser route.
+
+Cinematic Cheats used:
+- No new simulation. This is bootstrap/config authority cleanup only; hazard diffusion, visual texture upload stride, telemetry, and quality-weight behavior were unchanged.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `ThermodynamicsHazardGridRuntime.cs` SHA-256 `22AF079C4F34E6AC996BC698A9FE113A78074BDCAA13A013F0CB43A10B54F0F7`; `ThermodynamicsHazardGridRuntime.FileWorker.cs` SHA-256 `96725B2BFD60F30E51B740654150837749DA3153DC201EA3917C7ED5E09FF7C4`.
+- Scoped diff-check exit `0`; conflict scan clean; old CSV Vault-lane symbol scan over both files returned no matches.
+- Delimiters: runtime `{158/158}`, `(797/797)`, `[120/120]`; worker `{50/50}`, `(167/167)`, `[26/26]`; diff stat `1 insertion`, `78 deletions`.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `91` with no compiler process rows, so no build was launched.
+
+## 2026-05-30 - Vocal Bank Dialogue CSV Scratch De-Vaulting
+
+What was wrong:
+- `VocalBankPlaybackRuntime.cs` kept editor dialogue CSV source bytes in the `AudioVocalSynthesisCsvScratch` DataVault lane.
+- The CSV reload path acquired the metadata and scratch views together through the vocal mutation guard.
+- The file read accepted short reads up to the scratch capacity.
+
+What was done:
+- Removed `VocalVaultViews.CsvScratch`, `_csvScratchHandle`, `LockCsvScratch`, `AudioVocalSynthesisCsvScratch`, allocation, readiness, and release routes.
+- Kept only the metadata DTO lane in DataVault.
+- Added owner unmanaged editor scratch with explicit `UnsafeUtility.Malloc`/`UnsafeUtility.Free`.
+- Added exact cold CSV read: empty, oversized, and partial reads are rejected before parsing.
+
+Cinematic Cheats used:
+- No new simulation. This is cold editor parser/authority cleanup; vocal DSP, telemetry, mock-bank generation, and quality attenuation are unchanged.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `VocalBankPlaybackRuntime.cs` SHA-256 `A1E4FB0D476D6F26A90BB3643317B3E52DFAC2965BE8A6CC84323BF5E39B3076`.
+- Roslyn syntax-only parse failures `0`; scoped diff-check exit `0`; hot scanner `4` hot bodies, `0` forbidden dependency lookups or `.Complete()` hits.
+- Delimiters: `{157/157}`, `(595/595)`, `[81/81]`; diff stat `62 insertions`, `30 deletions`.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `86` with no compiler process rows, so no build was launched.
+
+## 2026-05-30 - Acoustic Portal Validator Write-Lock Flattening
+
+What was wrong:
+- `AcousticPortalMemorySovereigntyValidator.RunDefragRaceFuzzer()` acquired eight DataVault write locks at once.
+- Those locks were held across `Schedule()`, `RequestEditorForceDefragmentation()`, `FrostTickDefrag()`, and `.Complete()`.
+- The path was editor-only but still encoded a deadlock-shaped ownership pattern.
+
+What was done:
+- Removed the multi-lock flag section.
+- Added `ValidateSingleLaneWriteLock<T>()`: one acquire, one release, strict `finally`.
+- Added `CopySingleLaneToVault<T>()`: one acquire, one release, strict `finally`.
+- Moved fuzzer job buffers to owner-local TempJob arrays; copied generated node/edge DTOs into Vault one lane at a time.
+
+Cinematic Cheats used:
+- No simulation change. This is validator architecture cleanup only; runtime acoustic propagation is unchanged.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `AcousticPortalMemorySovereigntyValidator.cs` SHA-256 `4B0DCE64049D2E9399D16E64245F013DFC663CE06B9FBCE0909AA5827047F36D`.
+- Roslyn syntax-only parse failures `0`; scoped diff-check exit `0`; removed old lock flag symbols.
+- Lock scanner: `RunDefragRaceFuzzer 0/0`, `ValidateSingleLaneWriteLock 1/1/finally`, `CopySingleLaneToVault 1/1/finally`.
+- Delimiters: `{32/32}`, `(263/263)`, `[6/6]`; diff changed lines `213`.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `93.1` with no compiler process rows, so no build was launched.
+
+## 2026-05-30 - Submarine Ballast Profile CSV De-Vaulting And Lock Flattening
+
+What was wrong:
+- Ballast profile CSV import still carried a static managed byte scratch plus a `Shinobu333BallastCsvScratch` DataVault lane.
+- The old profile import applied primary profile tuning while the profiles write lock was still held.
+
+What was done:
+- Removed the Vault byte scratch handle/descriptor/readiness/release route and the static managed scratch.
+- CSV bytes now live only in a same-call stack span.
+- DTO profiles stage in a same-call stack span.
+- `CommitBallastProfilesCsv()` releases the profiles write lock before `ApplyPrimaryBallastProfile()` can call `WriteBallastTuning()`.
+
+Cinematic Cheats used:
+- No new simulation. This is cold import authority hardening; ballast sample budget and solver fidelity are unchanged.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `SubmarineAutoLevelBallastController.cs` SHA-256 `543F5E520CCD8EB47D1D0D1D583DE86C7127C96C11B7392CBEE0BB5DDE0EECD6`; `SubmarineBallastBuoyancyContracts.cs` SHA-256 `CA085A1FB89D783A2661087A578E9A7231384026ACFF3BDA93232D230F14AF6F`; `OOP_Buoyancy_Scanner.cs` SHA-256 `677C3B4A868721190B692207E606A9ECB2192125CAC3B667DF89FBFECF50F356`.
+- Old scratch-symbol scan clean over the three touched files; scoped diff-check exit `0`; conflict marker scan clean.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `100` with no compiler process rows, so no build was launched.
+
+## 2026-05-30 - Radiation Profile TextAsset CSV De-Vaulting
+
+What was wrong:
+- `RadiationHazardGrid.cs` allocated `BufferID.Shinobu274RadiationCsvScratch` as an 8192-byte DataVault lane, but the profile source already came from `TextAsset.GetData<byte>()`.
+- Parsed profile DTOs were committed through legacy `VaultBufferView` mutable resolve instead of an explicit DataVault owner write lock.
+- A duplicate `ReadOnlySpan<byte>` parser route existed without a caller.
+
+What was done:
+- Removed `RadiationCsvScratchBytes`, `_csvScratch`, `_csvScratchHandle`, scratch allocation, scratch readiness resolve, release, and reset.
+- Kept `TextAsset.GetData<byte>()`; no managed `TextAsset.bytes` route was introduced.
+- Removed the unused span parser overloads.
+- `TryLoadRadiationProfilesCsv()` now acquires only `_profilesHandle`, parses/commits DTOs, clears stale tail slots, sets `_profilesCsvLoaded` after commit, and releases in `finally`.
+
+Cinematic Cheats used:
+- No new simulation. This is cold import/authority cleanup; radiation diffusion, SDF shielding, status signals, telemetry, and static visual behavior are unchanged.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `RadiationHazardGrid.cs` SHA-256 `09FD8CBBD2AEFC48494C37FA3D60CDAACBBA8494D1CF604DB5299F55C1E55CB5`.
+- Old scratch/dead-parser scan clean; full-file forbidden scan for `GlobalRegistry.Get<T>()`, component lookups, `string.Format`, `.ToString()`, `foreach`, LINQ materializers, and `.Complete()` clean.
+- Write-lock scan: exactly one acquire at `879`, one release at `890`, release in `finally`.
+- Delimiters: `{289/289}`, `(1426/1426)`, `[182/182]`; diff stat `25 insertions`, `178 deletions`.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `90` with no compiler process rows, so no build was launched.
+
+## 2026-05-30 - Armor Penetration Profile CSV Allocation And Commit Hardening
+
+What was wrong:
+- `HectonCombatRuntime_ArmorPenetration.cs` used `File.ReadAllBytes()` for editor armor profile CSV import.
+- Parsed armor profiles were merged through mutable `TryResolveHandle()` rather than a locked owner write lane.
+
+What was done:
+- Added bounded `ArmorProfilesCsvImportByteCapacity`.
+- Replaced managed `ReadAllBytes()` with stack scratch plus exact `FileStream` read.
+- `ApplyArmorProfilesCsvBytes()` now acquires only `_targetArmorProfilesHandle`, merges parsed profiles, and releases in `finally`.
+
+Cinematic Cheats used:
+- No simulation change. This is editor import and DataVault ownership hardening; armor LUT semantics, weak-point deflection, telemetry, mock impacts, and torture proof behavior are unchanged.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `HectonCombatRuntime_ArmorPenetration.cs` SHA-256 `54455D5C58729F7094B80069A75948A3EB658DCBC0339F93718B28E1B3205EE0`.
+- `File.ReadAllBytes`/`new FileInfo` scan clean; added-line forbidden scan clean except unavoidable cold `new FileStream`.
+- Write-lock scan: acquire at `1888`, release at `1946`, release in `finally`.
+- Delimiters: `{201/201}`, `(1158/1158)`, `[222/222]`; diff stat `73 insertions`, `36 deletions`.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `56` with no compiler process rows, so no build was launched.
+
+## 2026-05-30 - Topographical Sonar Material LUT CSV De-Vaulting
+
+What was wrong:
+- `TopographicalSonarSynthesizer.cs` stored editor material-color CSV source bytes in a DataVault scratch lane.
+- The importer wrote source bytes to Vault, released the write lock, then re-read the same scratch lane just to parse LUT rows.
+- The file path did not prove exact full-file consumption before parsing.
+
+What was done:
+- Removed `TopographicalSonarBufferIds.CsvScratch`, `_csvScratchHandle`, allocation, release, and Vault scratch readback.
+- Added exact bounded file read into `stackalloc byte[TopographicalSonarConstants.CsvImportByteCapacity]`.
+- Added the `ReadOnlySpan<byte>` parser route and kept NativeArray editor-test overloads by copying bounded bytes into stack spans.
+- The only DataVault publication left in this path is parsed `MaterialColorLut`, acquired as one write lock and released in `finally`.
+
+Cinematic Cheats used:
+- No new physical simulation. This is cold authoring-route cleanup only; sonar scan jobs, GPU point cloud, shader globals, telemetry, blackbox, and quality-weight ray scaling are unchanged.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `TopographicalSonarSynthesizer.cs` SHA-256 `4459038E8605E84C241691535EB6A0143FD1EBF6E5BC0FAFB34AF3531A2316FC`.
+- Old scratch-symbol scan clean; Roslyn parse failures `0`; hot scanner `5` hot bodies, `0` forbidden dependency lookups or `.Complete()` hits.
+- Delimiters: `{237/237}`, `(1111/1111)`, `[140/140]`; scoped diff-check exit `0` with LF/CRLF warning only.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `55.53` with no compiler process rows, so no build was launched.
+
+## 2026-05-30 - VR Somatic Comfort Dead CSV Lane Removal
+
+What was wrong:
+- `VRSomaticProvider.Comfort.cs` allocated `BufferID.ShinobuVRSomaticCsvScratch` and required it for comfort buffer readiness.
+- The comfort profile parser already accepts `ReadOnlySpan<byte>` and is driven by `SomaticTunerWindow`; the Vault byte lane had no consumer.
+
+What was done:
+- Removed `SomaticCsvScratchBytes`, `_somaticCsvScratch`, allocation, readiness dependency, release, and reset.
+- Left comfort profile DTOs, lookup, mock sickness samples, comfort telemetry, horizon lock, late-frame presentation, and quality-pressure inputs unchanged.
+
+Cinematic Cheats used:
+- No new simulation. This is dead bootstrap authority cleanup only; VR comfort visual/haptic behavior and continuous quality scaling are unchanged.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `VRSomaticProvider.Comfort.cs` SHA-256 `4F2FBEECA0EFC71BCAA98B2E731525B191DF6B28A331A1E5F6576F670A5A907A`.
+- Old scratch-symbol scan clean; Roslyn parse failures `0`; hot scanner `8` hot bodies, `0` forbidden dependency lookups or `.Complete()` hits.
+- Delimiters: `{187/187}`, `(1259/1259)`, `[156/156]`; scoped diff-check exit `0` with LF/CRLF warning only.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `100` with no compiler process rows, so no build was launched.
+## 2026-05-30 - PDA Projection Profile CSV De-Vaulting
+
+What was wrong:
+- `WristHologramHudRuntime_PdaScreenProjector.cs` still declared and validated BufferID `348736` as a DataVault CSV scratch lane.
+- The profile importer already read `pda_interface_profiles.csv` into stack bytes and parsed DTOs, so the Vault byte lane had no consumer.
+- The read helper clamped oversized files to destination length and could parse truncated profile tables.
+
+What was done:
+- Removed `PdaProjectionVaultIds.CsvScratch`, `PdaProjectionCsvScratchBufferId`, `_pdaProjectionCsvScratchHandle`, readiness validation, allocation, and release.
+- Renamed the local import byte cap to `PdaProjectionCsvImportByteCapacity`.
+- `TryReadPdaProfileCsvBytes()` now rejects empty/oversized files and early EOF, returning success only for exact full-stream reads.
+- Updated `OOP_Canvas_Scanner_SHINOBU_348.cs` route text to match bounded stack scratch and parsed DTO commit.
+
+Cinematic Cheats used:
+- No new simulation or presentation change. This is cold authoring-route cleanup; PDA screen-space projector, RenderGraph route, shader globals, telemetry, and quality-weight projection behavior are unchanged.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `WristHologramHudRuntime_PdaScreenProjector.cs` SHA-256 `65BAD78A7162E92B86BE065A350AC19159E28FCB08E5A69C1FD80DD610D19908`; `OOP_Canvas_Scanner_SHINOBU_348.cs` SHA-256 `E0A4A4673692450950D30BB5BCBAA38DABF644D29869C0A0BA5F58CD6F3E1ED6`.
+- Old scratch-symbol scan clean; Roslyn parse failures `0`; hot scanner `0` hot bodies, `0` forbidden hits; `git diff --check` clean except LF/CRLF warnings.
+- Compile/runtime status: `PENDING_VERIFICATION`. Build not run because initial gate sampled CPU `55.62` with active `dotnet.exe` PID `14320`; final gate sampled CPU `59`, still above the project threshold.
+
+## 2026-05-30 - Floater LateFrame Dormancy And Cold Component Resolution
+
+What was wrong:
+- `Floater.OnEnable()` registered every enabled floater into `LateFrameTick` even when idle/held with no pending presentation work.
+- `Awake()` used direct `GetComponent` calls for cached local dependencies.
+
+What was done:
+- Removed unconditional late-frame registration from `OnEnable()`.
+- Kept late-frame residency only for attached floaters or queued presentation work.
+- Added dormant self-unregistration after pending late-frame state is flushed.
+- Replaced local collider/rigidbody discovery with `TryGetComponent`.
+
+Cinematic Cheats used:
+- No new simulation. The cheap visual follow/presentation split is retained; no physical bobbing or per-frame visual system was added.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `Floater.cs` SHA-256 `DF08EB1E867470176A070CC8B0C98CCF3FB025A16264B3BF26BC9B461C0058DB`.
+- Forbidden scan clean for direct component lookups, hot `GlobalRegistry.Get<T>()`, string formatting, LINQ materializers, `foreach`, and `.Complete()`.
+- Delimiters: `{78/78}`, `(236/236)`, `[47/47]`; scoped diff-check exit `0` with LF/CRLF warning only.
+- Compile/runtime status: `PENDING_VERIFICATION`. Build not run in this incremental pass; final gate sampled CPU `36` with no compiler process rows.
+
+## 2026-05-30 - EnvironmentalHazard Indicator LateFrame Dormancy
+
+What was wrong:
+- Every enabled environmental hazard stayed registered in `LateFrameTick` after the indicator update was already flushed.
+- Renderer fallback used direct `GetComponent`.
+
+What was done:
+- Moved late-frame registration into `QueueIndicatorUpdate()`.
+- Added dormant unregistration after the pending indicator write is drained.
+- Replaced renderer discovery with `TryGetComponent`.
+
+Cinematic Cheats used:
+- No new simulation. Presentation remains a cheap `MaterialPropertyBlock` color write, not a physical hazard visualization.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof.
+- Evidence: `EnvironmentalHazard.cs` SHA-256 `5EB563713A715091F3E248F6F95FA70EB108FA031E433BEEF51C9ACBD4B94303`.
+- Forbidden scan clean for direct component lookups, hot `GlobalRegistry.Get<T>()`, string formatting, LINQ materializers, `foreach`, and `.Complete()`.
+- Delimiters: `{71/71}`, `(321/321)`, `[39/39]`; scoped diff-check exit `0` with LF/CRLF warning only.
+- Compile/runtime status: `PENDING_VERIFICATION`. CPU was `90` with no compiler process rows, so no build was launched.
+
+## 2026-05-30 - Transport Charging Station Scheduler Residency
+
+What was wrong:
+- `TransportChargingStation` registered every enabled station into fast tick and late-frame even when no transport was tracked and no indicator write was pending.
+- Trigger owner resolution used direct parent component helpers before confirming authority through `PlayerTransportLifecycleRegistry`.
+
+What was done:
+- `IUpdatable` registration now occurs only with a tracked transport and unregisters after cached overlap becomes empty.
+- `ILateFrameTickable` registration now occurs only while `_indicatorDirty` is pending and unregisters after MPB flush.
+- Parent lifecycle owner/resolver lookup now uses explicit `TryGetComponent` parent walk.
+
+Cinematic Cheats used:
+- Kept visual indicator as a cheap `MaterialPropertyBlock` flush in late-frame; no simulation, no new global route.
+
+Exact Microseconds saved:
+- `0` claimed. Static scheduler cleanup only; no profiler/player proof.
+- Evidence: `TransportChargingStation.cs` SHA-256 `BE6957BC9671868E7D98DD5CEAE352F561DE7A8D6E3D54C0D8106BE52DD143D9`.
+- Evidence lines: `95/97/134/136/144/180/183/204/219/233/259/268/294/354/358/413/457/458/463/466/479`.
+- Static scan: forbidden direct component lookup, hot `GlobalRegistry.Get<T>()`, LINQ, `.ToString()`, `foreach`, `.Complete()`, managed collection/byte-array allocation returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Compile/runtime: not run. Gate was CPU `93` with external `dotnet.exe` PID `19064` running `dotnet build Hecton8.slnx`.
+
+## 2026-05-30 - Battery Charger Audio LateFrame Residency
+
+What was wrong:
+- `BatteryCharger` permanently registered late-frame although the facade's only remaining late-frame work is rare queued insert audio; charge truth is already in `BatteryChargerLogisticsBridge`.
+
+What was done:
+- `TryRegister()` now only publishes logistics links.
+- `QueueChargerAudio()` registers late-frame only when an audio request is dirty.
+- `LateFrameTick()` unregisters after the request is flushed.
+- Dispatcher hot-swap re-registers only if pending audio still exists.
+
+Cinematic Cheats used:
+- Kept charger feedback as one-shot audio/presentation event; no per-frame charger simulation in the facade.
+
+Exact Microseconds saved:
+- `0` claimed. Static scheduler cleanup only; no profiler/player proof.
+- Evidence: `BatteryCharger.cs` SHA-256 `07955C3298088B3B63B66D8BD529DE2BD1B1FA4C9D922171D01392B2A1C46B31`.
+- Evidence lines: `560/561/562/563/568/577/613/616/653/659/684`.
+- Static scan: forbidden direct component lookup, hot `GlobalRegistry.Get<T>()`, LINQ, `.ToString()`, `foreach`, `.Complete()`, managed collection/byte-array allocation returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Compile/runtime: not run. Gate was CPU `93` with external `dotnet.exe` PID `19064`.
+
+## 2026-05-30 - Deployable Beacon Presentation Scheduler Residency
+
+What was wrong:
+- `DeployableBeacon` registered updatable, fixed, and late-frame lanes as a bundle. Late-frame was needed only for dirty light/audio flags; updatable was needed only if blink is enabled.
+
+What was done:
+- Updatable registration is now gated by `blinkInterval > 0f`.
+- Fixed tick remains registered for buoyancy gameplay truth.
+- Late-frame registration is now driven by pending light/audio flags and unregisters after the flags drain.
+- Dispatcher hot-swap restores only active lanes.
+
+Cinematic Cheats used:
+- Presentation remains a dirty `MaterialPropertyBlock` and one-shot audio path. Buoyancy stays physical because beacon depth is gameplay-visible truth.
+
+Exact Microseconds saved:
+- `0` claimed. Static scheduler cleanup only; no profiler/player proof.
+- Evidence: `DeployableBeacon.cs` SHA-256 `53816FF431EC245DF56112F67A4148A00D2B7547FA0DA3FE0DC190598592071B`.
+- Evidence lines: `254/257/285/289/303/326/410/411/556/559/566/573/583/594/599/608`.
+- Static scan: forbidden direct component lookup, hot `GlobalRegistry.Get<T>()`, LINQ, `.ToString()`, `foreach`, `.Complete()`, managed collection/byte-array allocation returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Compile/runtime: not run. Gate was CPU `93` with external `dotnet.exe` PID `19064`.
+
+## 2026-05-30 - Vehicle Docking Module Runtime Lane Split
+
+What was wrong:
+- `VehicleDockingModule` registered update, fixed, and late-frame lanes as a bundle for every enabled dock.
+- Idle docks had no candidate, no docking spline, and no queued transform pose, but still occupied dispatcher lanes.
+- Trigger transport resolution used direct parent component helpers before registry authority confirmation.
+
+What was done:
+- Split scheduler state into `_registeredUpdate`, `_registeredFixed`, and `_registeredLateFrame`.
+- Update registration now depends on candidates, active docking, docked state, or charge activity.
+- Fixed registration now depends on `_dockingInProgress`.
+- Late-frame registration now depends on queued non-rigidbody transform pose work.
+- Dispatcher replacement clears stale lane flags and restores only active lanes.
+- Trigger owner/resolver lookup now uses explicit parent `TryGetComponent` walk and then confirms through `PlayerTransportLifecycleRegistry`.
+
+Cinematic Cheats used:
+- No new physical simulation. Non-rigidbody presentation remains a deferred pose flush in late-frame; rigidbody docking remains physical because it is gameplay-visible control truth.
+
+Exact Microseconds saved:
+- `0` claimed. Static scheduler cleanup only; no profiler/player proof.
+- Evidence: `VehicleDockingModule.cs` SHA-256 `17560A08E597EC3EF2FA6DFA1223BDDA0F748EBD7E1B00BE7BB4157C7463F11E`.
+- Evidence lines: `288/332/360/389/395/401/416/422/456/462/478/491/502/513/545/554/563/572/799/803/902/903/904/1207/1208/1287/1300`.
+- Static scan: forbidden direct component lookup, hot `GlobalRegistry.Get<T>()`, LINQ, `.ToString()`, `foreach`, `.Complete()`, managed collection/byte-array allocation returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Compile/runtime: not run. Gate was CPU `81` with active `dotnet.exe` PID `20536`.
+
+## 2026-05-30 - Autonomous Extractor Empty LateFrame Lane Removal
+
+What was wrong:
+- `AutonomousExtractorSystem` registered as `ILateFrameTickable`, but `LateFrameTick()` was empty.
+- Extractor state transfer is owned by slow tick through `DispatcherJobSwap.TryComplete()`, so late-frame had no work.
+
+What was done:
+- Removed `ILateFrameTickable` from the runtime owner.
+- Removed `_lateFrameRegistered`, late-frame register/unregister calls, and the empty `LateFrameTick()` method.
+- Left slow-tick Burst scheduling, native SOA buffers, module registry, and job completion unchanged.
+
+Cinematic Cheats used:
+- No simulation added. This is a pure empty-lane removal; production cadence and power truth remain in slow tick.
+
+Exact Microseconds saved:
+- `0` claimed. Static scheduler cleanup only; no profiler/player proof.
+- Evidence: `AutonomousExtractorSystem.cs` SHA-256 `FE2C480BC8796334B1C45EF29EAFC7FE3E9E6B1FC56CA8ECFC83CA6EC1932BF4`.
+- Evidence lines: `24/186/287/292/333/402`.
+- Static scan: forbidden late-frame symbols, direct component lookup, hot `GlobalRegistry.Get<T>()`, LINQ, `.ToString()`, `foreach`, `.Complete()`, managed collection/byte-array allocation returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Compile/runtime: not run. Gate was CPU `71` with no compiler process rows.
+
+## 2026-05-30 - Scavenging Loot Oracle Empty LateFrame Lane Removal
+
+What was wrong:
+- `ScavengingLootOracleRuntime` registered as `ILateFrameTickable`, but `LateFrameTick()` was empty.
+- Real oracle work already runs through simulation/post-simulation dispatcher systems.
+
+What was done:
+- Removed `ILateFrameTickable`, `_registeredLateFrame`, lifecycle/hot-swap late-frame calls, late-frame helper methods, and the empty `LateFrameTick()`.
+- Updated the hidden host allocation comment to `dispatcher-phase job owner`.
+- Left loot table hydration, vault publication, SignalBus output, and dispatcher phase systems unchanged.
+
+Cinematic Cheats used:
+- No simulation added. This is a pure empty-lane removal; scavenging truth remains in dispatcher phases.
+
+Exact Microseconds saved:
+- `0` claimed. Static scheduler cleanup only; no profiler/player proof.
+- Evidence: `ScavengingLootOracle.cs` SHA-256 `CFC26D2A014BA869ABFAB8772361399DDC9E2B76E27CFE34B01BC16ED10E2934`.
+- Evidence lines: `1021/1122/1123/1495/1511/1544/1545/1712/1933/1956/2194/2238`.
+- Static scan: forbidden late-frame symbols, direct component lookup, hot `GlobalRegistry.Get<T>()`, LINQ, `.ToString()`, `foreach`, `.Complete()`, managed collection/byte-array allocation returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Compile/runtime: one throttled build attempt started after CPU `48` and no compiler processes. It timed out after `604016 ms`; own `dotnet.exe` PID `14304` was stopped; final process audit returned no `dotnet`, `csc`, or `VBCSCompiler` rows. No successful compile proof.
+
+## 2026-05-30 - Flora Regrowth Empty LateFrame Lane Removal
+
+What was wrong:
+- `FloraRegrowthDirector` registered as `ILateFrameTickable`, but its late-frame method was empty.
+- Regrowth and maturation are already evaluated by tick/slow-tick lanes.
+
+What was done:
+- Removed `ILateFrameTickable`, `_lateFrameRegistered`, late-frame register/unregister branches, dispatcher hot-swap late-frame reset, and the empty method.
+- Left `Tick`, `SlowTick`, origin-shift rebasing, and registry hot-swap behavior unchanged.
+
+Cinematic Cheats used:
+- No simulation added. This is an empty-lane removal; flora truth remains in existing tick/slow-tick cadence.
+
+Exact Microseconds saved:
+- `0` claimed. Static scheduler cleanup only; no profiler/player proof.
+- Evidence: `FloraRegrowthDirector.cs` SHA-256 `16BC07FE856F6D7DC3F4922249941B1D794ED00430AAA3690851FBFDF26C278C`.
+- Evidence lines: `16/226/281/315/332/812/845/857`.
+- Static scan: forbidden late-frame symbols, direct component lookup, hot `GlobalRegistry.Get<T>()`, LINQ, `.ToString()`, `foreach`, `.Complete()`, managed collection/byte-array allocation returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Compile/runtime: not rerun. Gate was CPU `60` with no compiler process rows.
+
+## 2026-05-30 - Storage Crate Cold Component Resolution
+
+What was wrong:
+- `StorageCrate.Awake()` used direct `GetComponent` and `GetComponentInParent` helpers for cached local dependencies.
+- The crate participates in logistics/cargo flows, so hidden dependency lookup was removed in the same style as docking/storage-adjacent work.
+
+What was done:
+- Replaced own `Collider` and `PowerNode` lookup with `TryGetComponent`.
+- Replaced parent `PowerNode` fallback with an explicit `Transform` parent walk using `TryGetComponent`.
+- Left storage registration and logistics ownership unchanged.
+
+Cinematic Cheats used:
+- No simulation added. This is cold dependency hardening only.
+
+Exact Microseconds saved:
+- `0` claimed. Cold init cleanup only; no profiler/player proof.
+- Evidence: `StorageCrate.cs` SHA-256 `8BAC77191889DF64A30000D8BF8E71C9EA1DD65280CA4D42F05BBC9F029E5E1C`.
+- Evidence lines: `221/230/231/232/251/258/275`.
+- Static scan: direct component lookup, hot `GlobalRegistry.Get<T>()`, LINQ, `.ToString()`, `foreach`, `.Complete()`, managed collection/byte-array allocation returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Delimiter counts: `{109/109}`, `(309/309)`, `[113/113]`.
+- Compile/runtime: not run. Gate was CPU `65` with no compiler process rows; project rule forbids build above CPU `50`.
+
+## 2026-05-30 - Acoustic Occlusion Empty Visual-Sync Hook Removal
+
+What was wrong:
+- `AcousticOcclusionUtility.LateFrameTick()` was empty.
+- It was still called from global `SystemDispatcher` VISUAL_SYNC and from `SpatialAudioManager.LateFrameTick()`.
+
+What was done:
+- Removed the empty compatibility method.
+- Removed both call sites.
+- Left acoustic occlusion cache, SDF/distance occlusion, forward echo, impulse consumption, and virtual voice finalization unchanged.
+
+Cinematic Cheats used:
+- No simulation added. Existing acoustic occlusion remains a cached SDF/distance fake, not a new physical propagation solver.
+
+Exact Microseconds saved:
+- `0` claimed. Static no-op removal only; no profiler/player proof.
+- Evidence: `AcousticOcclusionUtility.cs` SHA-256 `118A0814D064DFFF3F491DC857748F1063BEF78E9045C60795CADAB5C4075D10`.
+- Evidence: `SystemDispatcher.cs` SHA-256 `0EDE5E462456CDAEEF301BA3E65697E1378DCE08CC972A9274828B796F920452`.
+- Evidence: `SpatialAudioManager.cs` SHA-256 `B548AC86FEA08F8A251F51ED7239F7884E6CF1AAC0C6FAE92B38B6201B7B7886`.
+- Static scan: `AcousticOcclusionUtility.LateFrameTick` and `public static void LateFrameTick()` in touched files returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Delimiter counts: `AcousticOcclusionUtility {71/71} (322/322) [31/31]`; `SystemDispatcher {735/735} (2957/2957) [417/417]`; `SpatialAudioManager {989/989} (4180/4180) [977/977]`.
+- Compile/runtime: not run. Gate was CPU `82` with no compiler process rows; project rule forbids build above CPU `50`.
+
+## 2026-05-30 - Culling Manager Cold Collider Bounds Lookup
+
+What was wrong:
+- `CullingManager.CalculateBounds()` used direct `GetComponent<Collider>()` as a rendererless object bounds fallback.
+
+What was done:
+- Replaced it with `obj.TryGetComponent(out Collider collider)`.
+- Left renderer bounds, scratch collection, cull distance resolution, and transform-position fallback unchanged.
+
+Cinematic Cheats used:
+- No simulation added. This is dependency lookup hardening only.
+
+Exact Microseconds saved:
+- `0` claimed. Cold/fallback cleanup only; no profiler/player proof.
+- Evidence: `CullingManager.cs` SHA-256 `60A25F5DF801E8ACC94D753595E936B2AF45CBF8E74F75B3E7FB203B8EC55806`.
+- Evidence lines: `576/697/706/726/740/746`.
+- Static scan: direct component lookup, hot `GlobalRegistry.Get<T>()`, LINQ, `.ToString()`, `foreach`, `.Complete()`, managed collection/byte-array allocation returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Delimiter counts: `{85/85}`, `(260/260)`, `[82/82]`.
+- Compile/runtime: not run. Gate was CPU `63` with no compiler process rows; project rule forbids build above CPU `50`.
+
+## 2026-05-30 - Gameplay Cold Component Lookup Cleanup
+
+What was wrong:
+- Eight clean gameplay files used direct `GetComponent` or `GetComponentInParent` in local cold/init/bind paths.
+- `HarvestableOutcrop` also has direct lookups, but it is already dirty from another agent and was not touched.
+
+What was done:
+- Replaced local direct component lookups with `TryGetComponent`.
+- Replaced two parent lookups with explicit parent `Transform` walks using `TryGetComponent`.
+- Left gameplay ownership and authority routes unchanged.
+
+Cinematic Cheats used:
+- No simulation added. This is dependency acquisition cleanup only.
+
+Exact Microseconds saved:
+- `0` claimed. Cold/init/bind cleanup only; no profiler/player proof.
+- Evidence lines: `DebrisManager 1721/1745`, `OxygenBubble 151`, `MessageTerminal 228`, `ItemHighlight 114/117`, `LifePodFireExtinguisherNozzle 234/431`, `MountablePlayerTransport 346/1656/1660`, `PlayerKinematicsRuntime 1066`, `HectonPlayerMotor 213`.
+- Static scan: PCRE `(?<!Try)GetComponent<|GetComponentInParent<|TryGetComponentInParent` returned no matches over the eight touched files.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- SHA-256: `DebrisManager=F82C683FF363F57770E6525B9C81C38D9F58A75E483CEB7555E9318EB9B6A95E`; `OxygenBubble=792699BF4AFA6CEF4EAE2928ED8A9F8C1D3584DAE69BFAB63D15C1774176D76F`; `MessageTerminal=D0F4B1CB45E6AF2DAA73401E49BCFF74817EC35844E2F27404E8AE3D2F2B9A3C`; `ItemHighlight=9FDFBAE5DEBA98DE97EB628F1A2A52DDA0BFAA82CFCC455BCAEC47D4196BF8A7`; `LifePodFireExtinguisherNozzle=7614ADC9CDFA01CA03A13A99CA808183A6DBC039085A7B2D309FDFFD95E3EEB6`; `MountablePlayerTransport=CFF41753234A232AFA67421D90F6D6EED9318D88ED10BF2CD9DBAB7BCD1CFFC0`; `PlayerKinematicsRuntime=E50F2D94421421E29ED361871D4183D5A2D39EC510FB0C35C2A131FE2D38DE02`; `HectonPlayerMotor=E2FB7757A8FC51B02271168D1445FA73CEA3687267E5D363320FEBF1E927715B`.
+- Post-proof correction: `DebrisManager` no longer uses a typed discard at lines `1721/1745`; post-correction delimiters `{167/167}`, `(577/577)`, `[207/207]`; direct lookup scan still returns no matches.
+- Compile/runtime: not run. Gate was CPU `96` with no compiler process rows; project rule forbids build above CPU `50`.
+
+## 2026-05-30 - BaseModule Parent Lookup Flattening
+
+What was wrong:
+- `BaseModule` used `GetComponentInParent` for voxel-volume fallback and player/base transition dependency resolution.
+- The path is trigger/cold-bind, not per-frame, but the component owns life-support transition state and should not hide parent traversal behind Unity helpers.
+
+What was done:
+- Added `TryResolveComponentInSelfOrParents<T>()`, a zero-GC explicit `Transform` climb using `TryGetComponent`.
+- Replaced direct parent lookup for `_voxelVolume`, `HectonSurvivalSystem`, `IPlayerMovementEnvironmentSink`, and `IPlayerHypoxiaPresentationSink`.
+- Left player tracking cache, registry movement-contract fast path, module status events, and base transition signal route unchanged.
+
+Cinematic Cheats used:
+- No simulation added. This is dependency acquisition cleanup only.
+
+Exact Microseconds saved:
+- `0` claimed. Trigger/cold bind cleanup only; no profiler/player proof.
+- Evidence lines: `BaseModule 3934/3935/4419/4430/4476/4482/4490/4496/4506/4510`.
+- Static scan: PCRE `(?<!Try)GetComponent<|GetComponentInParent<|TryGetComponentInParent` over `BaseModule.cs` returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Delimiters: `{504/504}`, `(2521/2521)`, `[285/285]`.
+- SHA-256: `18A15267FF2DFF63E073F5189694013DC82C941E195D22D39023D4966AF91FDF`.
+- Diff stat: `35 insertions`, `16 deletions`.
+- Compile/runtime: not run. Gate was CPU `90` with no compiler process rows; project rule forbids build above CPU `50`.
+
+## 2026-05-30 - GlobalPhysicsStateManager Parent Provider Lookup Flattening
+
+What was wrong:
+- `GlobalPhysicsStateManager` used `GetComponentInParent` for rigidbody impact audio material provider and culling flag provider discovery.
+- This is not a new dependency, but the global physics manager should make parent traversal explicit instead of hiding it behind Unity helpers.
+
+What was done:
+- Added `TryResolveComponentInParents<T>()`, a parent-only `Transform` climb using `TryGetComponent`.
+- Replaced parent provider lookup for `IPhysicsImpactMaterialProvider` and `IPhysicsCullingFlagProvider`.
+- Left direct rigidbody provider checks, impact signal publication, culling flags, collider LOD sink routing, and dirty partial physics files unchanged.
+
+Cinematic Cheats used:
+- No simulation added. This is dependency acquisition cleanup only.
+
+Exact Microseconds saved:
+- `0` claimed. Registration/impact/culling provider lookup cleanup only; no profiler/player proof.
+- Evidence lines: `GlobalPhysicsStateManager 2574/2582/4452/4461/4486/4494`.
+- Static scan: PCRE `(?<!Try)GetComponent<|GetComponentInParent<|TryGetComponentInParent` over `GlobalPhysicsStateManager.cs` returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Delimiters: `{497/497}`, `(1901/1901)`, `[331/331]`.
+- SHA-256: `9A2602EEC26FD901E2DB86E27B29F59A10E4E9F3BF60349073169D3DEEA26F4D`.
+- Diff stat: `20 insertions`, `4 deletions`.
+- Compile/runtime: not run. Gate was CPU `99` with no compiler process rows; project rule forbids build above CPU `50`.
+
+## 2026-05-30 - WorldSliceAnchor Fidelity Cache ToArray Removal
+
+What was wrong:
+- `WorldSliceAnchor.RefreshFidelityRoots()` used `_FidelityRootScratch.ToArray()` to rebuild the serialized `WorldFidelityRoot[]` cache.
+- The route is cold/cache-rebuild, but it is still a hidden allocation and showed up in the clean runtime allocation scan.
+
+What was done:
+- Preserved `WorldFidelityRoot[] fidelityRoots`.
+- Replaced `ToArray()` with explicit resize when needed and indexed copy from the retained scratch list.
+- Left near/mid/far slice state, active-anchor copy budget, and fidelity root application unchanged.
+
+Cinematic Cheats used:
+- No simulation added. This is cache-copy cleanup only.
+
+Exact Microseconds saved:
+- `0` claimed. Cold/cache-rebuild cleanup only; no profiler/player proof.
+- Evidence lines: `WorldSliceAnchor 260/264/265/266/268/269`.
+- Static scan: `.ToArray(`, direct component lookup, and parent component helper patterns returned no matches in `WorldSliceAnchor.cs`.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Delimiters: `{38/38}`, `(113/113)`, `[53/53]`.
+- SHA-256: `4459B7863F3D5574C60B9D46A12B1BEAFC6A5D71C47EA7B624C0E217F24CF8D5`.
+- Diff stat: `7 insertions`, `1 deletion`.
+- Compile/runtime: not run. Gate was CPU `96` with no compiler process rows; project rule forbids build above CPU `50`.
+
+## 2026-05-30 - Field Target Parent Lookup Flattening
+
+What was wrong:
+- `FieldTargetDescriptor.TryResolve()` and `FieldLoadoutAdvisor.ResolveLocalOrParent<T>()` used `GetComponentInParent` for local field target/loadout discovery.
+
+What was done:
+- Kept direct `TryGetComponent` first.
+- Replaced parent fallbacks with explicit `Transform` climbs using `TryGetComponent`.
+- Left field target roles, advisor presets, forward target collection, and public API shape unchanged.
+
+Cinematic Cheats used:
+- No simulation added. This is dependency acquisition cleanup only.
+
+Exact Microseconds saved:
+- `0` claimed. Query fallback cleanup only; no profiler/player proof.
+- Evidence lines: `FieldTargetDescriptor 88/95/104`, `FieldLoadoutAdvisor 521/529/534`.
+- Static scan: PCRE `(?<!Try)GetComponent<|GetComponentInParent<|TryGetComponentInParent` over both files returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warnings only.
+- Delimiters: `FieldTargetDescriptor {18/18} (42/42) [5/5]`; `FieldLoadoutAdvisor {70/70} (190/190) [5/5]`.
+- SHA-256: `FieldTargetDescriptor=2F164975E48805CEE137FA27F6B7DC90F13BBFD437537FB69CE23DA02FB9BE15`; `FieldLoadoutAdvisor=2B6DBBF96A9B7FE45E347D4607B0B0B2BE834FDE1DA6247E675D342D7A24C165`.
+- Diff stat: `34 insertions`, `6 deletions`.
+- Compile/runtime: one legal build attempt launched at CPU `22` with no compiler rows; it timed out after `604028 ms`. Post-timeout process check: no `dotnet`, `csc`, or `VBCSCompiler` rows; CPU `39`.
+
+## 2026-05-30 - Local Parent Lookup Flattening: Harpoon / Electrolysis / World Socket
+
+What was wrong:
+- `HarpoonLauncherTool.ResolveHeavyTowWinch()`, `SubmarineElectrolysisModule.CacheReferences()`, and `WorldContentSocket.RefreshZoneAnchorCold()` used direct `GetComponentInParent` fallbacks.
+
+What was done:
+- Added local parent-only `Transform` climbs using `TryGetComponent`.
+- Replaced each direct parent helper call.
+- Left service routes, direct local `TryGetComponent` checks, tow winch behavior, electrolysis routing, and zone anchor contract unchanged.
+
+Cinematic Cheats used:
+- No simulation added. This is dependency acquisition cleanup only.
+
+Exact Microseconds saved:
+- `0` claimed. Cold/init/bind cleanup only; no profiler/player proof.
+- Evidence lines: `HarpoonLauncherTool 801/804/807`, `SubmarineElectrolysisModule 612/623/647`, `WorldContentSocket 138/141/144`.
+- Static scan: PCRE `(?<!Try)GetComponent<|GetComponentInParent<|TryGetComponentInParent` over the three files returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warnings only.
+- Delimiters: `HarpoonLauncherTool {191/191} (712/712) [48/48]`; `SubmarineElectrolysisModule {109/109} (411/411) [77/77]`; `WorldContentSocket {24/24} (104/104) [55/55]`.
+- SHA-256: `HarpoonLauncherTool=0692F1CB3342EAB0BD42E1B140E02A6147CBF2A03B103AEFDE6C3A228E37100D`; `SubmarineElectrolysisModule=437EFEA256398BE52E7292C22061D5998FE81A83E665756E685B6F619C7C43F3`; `WorldContentSocket=02E2F29D19C7010E9756A6C1FA42460FA527F1A3A941C3AC462D42DE3E04F1C9`.
+- Diff stat: `42 insertions`, `3 deletions`.
+- Compile/runtime: not rerun. Gate was CPU `82` with no compiler process rows; project rule forbids build above CPU `50`.
+
+## 2026-05-30 - Local Own-Component Lookup Cleanup: RTG / Scanner / Surface Weather
+
+What was wrong:
+- `RadioisotopeThermalGenerator.Awake()`, `ScannerTool.Awake()`, and `HectonSurfaceWeatherDirector.TryAssignEditorSceneReferences()` used direct own-object `GetComponent` calls.
+
+What was done:
+- Replaced local `GetComponent` calls with `TryGetComponent`.
+- Preserved explicit cold owner `AddComponent` creation for scanner marker and data archaeology.
+- Left RTG identity, scanner marker initialization, and weather scene reference assignment behavior unchanged.
+
+Cinematic Cheats used:
+- No simulation added. This is dependency acquisition cleanup only.
+
+Exact Microseconds saved:
+- `0` claimed. Cold/editor/init cleanup only; no profiler/player proof.
+- Evidence lines: `RadioisotopeThermalGenerator 316`, `ScannerTool 764/770`, `HectonSurfaceWeatherDirector 2744`.
+- Static scan: PCRE `(?<!Try)GetComponent<|GetComponentInParent<|TryGetComponentInParent` over the three files returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warnings only.
+- SHA-256: `RadioisotopeThermalGenerator=6A8B55C4951069BC623AB941550803407727F1EBAE30599881A31E332E1336B8`; `ScannerTool=E5C1E856E7A23E533A988AB1A09022A42B800AB03A25858C98AA9AAFEDDEF544`; `HectonSurfaceWeatherDirector=67CFA0FD720DE0E844443EDF98AC1502AE2EFDC75E0E5E1845834789961ACE63`.
+- Raw delimiter counts: `RadioisotopeThermalGenerator {108/108} (552/552) [137/137]`; `ScannerTool {383/384} (1433/1433) [95/95]`, unchanged from `HEAD`; `HectonSurfaceWeatherDirector {203/203} (927/927) [102/102]`.
+- Diff stat: `4 insertions`, `6 deletions`.
+- Compile/runtime: not repeated. Gate was CPU `35` with no compiler rows, but previous legal build already timed out after `604028 ms`; no build spam.
+
+## 2026-05-30 - Clean Runtime Component Lookup Cleanup: Bootstrap / Player / Crest / Prologue / Scatter
+
+What was wrong:
+- Six clean runtime files still used direct own-object `GetComponent` calls in cold/bootstrap/player-facing setup paths.
+- The calls were not proven hot-loop faults, but they violated the ongoing explicit dependency acquisition cleanup and were low-risk to replace.
+
+What was done:
+- Replaced direct `GetComponent` with `TryGetComponent` in:
+  - `WorldProceduralScatterDirector.ResolveGenerativeGeologyService()`
+  - `GameBootstrapper.ResolveSceneActivationReferences()`
+  - `GameBootstrapper.DisablePlayer()`
+  - `HectonPlayerMovement.Awake()`
+  - `PlayerFlashlight.ResolveMainCameraReference()`
+  - `CrestBridge.EnsureUnderwaterPass()`
+  - `PrologueOrbitSceneBootstrap` cold orbit scene composition.
+- Preserved all existing cold `AddComponent` owner creation and public behavior.
+
+Cinematic Cheats used:
+- No simulation added. Existing prologue plasma overlay remains the cheap visual fake; this pass only cleaned dependency acquisition.
+
+Exact Microseconds saved:
+- `0` claimed. Cold/init/bind cleanup only; no profiler/player proof.
+- Evidence lines: `WorldProceduralScatterDirector 4208`, `GameBootstrapper 5772/5775/6159`, `HectonPlayerMovement 4168/4215`, `PlayerFlashlight 1052`, `CrestBridge 51`, `PrologueOrbitSceneBootstrap 94/187/191`.
+- Static scan: PCRE `(?<!Try)GetComponent<|GetComponentInParent<|TryGetComponentInParent|\.ToArray\(` over the six files returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warnings only.
+- Delimiters: `WorldProceduralScatterDirector {994/994} (3324/3324) [625/625]`; `GameBootstrapper {744/744} (2633/2633) [420/420]`; `HectonPlayerMovement {1070/1070} (5963/5963) [941/941]`; `PlayerFlashlight {139/139} (456/456) [104/104]`; `CrestBridge {18/18} (48/48) [0/0]`; `PrologueOrbitSceneBootstrap {24/24} (105/105) [14/14]`.
+- SHA-256: `WorldProceduralScatterDirector=A5168283943B5BFF9275333C33D821E8654C93338C2151E2A9203CEB306F566A`; `GameBootstrapper=7A89D6E4BFB3358F9A313F5A5490C391A807067D5ADA31A88FA6AF8C6C0C5656`; `HectonPlayerMovement=BAA6E6AA36FD428CFEC26D17B3A8C16B2D6B23DC20D87664B040B9B21EDFB682`; `PlayerFlashlight=FC4A21597C06CEE337DE95C1377AA82F34215A3B3ECFEF60871D4D1B0393583F`; `CrestBridge=72DE7246329F708FA00A63D1B7CA3E5D0D94389A0E5488F1B503C1E61FAA1D08`; `PrologueOrbitSceneBootstrap=FACB8695B150F70F820A691817DEDF7391B8BD48DE393E70ED5BC5D0EA9934F7`.
+- Diff stat: `15 insertions`, `17 deletions`.
+- Compile/runtime: not run. Gate was CPU `65` and active `dotnet.exe` PID `39820` was already running `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1 --no-restore /p:UseSharedCompilation=false /nr:false`; project throttle forbids another build under those conditions.
+
+## 2026-05-30 - World Geology / HUD Local Component Lookup Cleanup
+
+What was wrong:
+- `WorldGenerativeGeologyService` used direct component reads while building generated presentation objects.
+- `HUDNotification` used direct component reads during setup and editor preview state reset.
+
+What was done:
+- Replaced those reads with `TryGetComponent`.
+- Preserved generated geology binding creation, LODGroup creation, primitive stripping, HUD queue/DataVault ownership, tick phase, and late-frame presentation phase.
+
+Cinematic Cheats used:
+- No new simulation. Existing geology presentation and HUD visuals were left as current visual systems.
+
+Exact Microseconds saved:
+- `0` claimed. Cold/setup cleanup only; no profiler/player proof.
+- Evidence lines: `WorldGenerativeGeologyService 650/651/657/1119/1120/1121`, `HUDNotification 928/936/942/963/970`.
+- Static scan: PCRE `(?<!Try)GetComponent<|GetComponentInParent<|TryGetComponentInParent|\.ToArray\(` over both files returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warnings only.
+- Delimiters: `WorldGenerativeGeologyService {106/106} (455/455) [54/54]`; `HUDNotification {106/106} (335/335) [39/39]`.
+- SHA-256: `WorldGenerativeGeologyService=17C182011136E4C49B76BA9151A5F18C1A926944D651C293B13BB006BD9F7F61`; `HUDNotification=9168E7C8EEA37CD71389F844EEAF8D767D0641369974A7399B103A31F4C93957`.
+- Diff stat: `11 insertions`, `16 deletions`.
+- Compile/runtime: not run. Gate was CPU `54` and active `dotnet.exe` PID `39820` was still running the solution build command; project throttle forbids another build.
+
+## 2026-05-30 - Legacy Narrative Save Restore Enumerator Cleanup
+
+What was wrong:
+- `QuestManager` converted concrete save DTO lists to `IEnumerable<string>` before legacy restore.
+- `QuestStateManager.RestoreLegacyRange` used `foreach` over `IEnumerable<string>`.
+- `CorporateOrderSystem` used `foreach` over `HashSet<string>`, `Dictionary<string,float>`, and save DTO lists in save/load routes.
+
+What was done:
+- `QuestManager` now passes `List<string>` save fields directly.
+- `QuestStateManager` now accepts `List<string>` and restores by indexed loop.
+- `CorporateOrderSystem` now uses explicit struct enumerators for hash/dictionary state and indexed loops for DTO lists.
+- Save DTO shape, quest state bits, corporate order timers, and conflict rebuild behavior are unchanged.
+
+Cinematic Cheats used:
+- No simulation added. This is save/load route cleanup only; no physical or visual system was introduced.
+
+Exact Microseconds saved:
+- `0` claimed. Cold save/load cleanup only; no profiler/player proof.
+- Evidence lines: `QuestManager 511/512/513`, `QuestStateManager 980/991/992/1005`, `CorporateOrderSystem 464/465/470/473/478/479/484/488/502/503`.
+- Static scan: PCRE for `IEnumerable<string>`, `foreach`, direct component lookup, `.ToArray(`, `string.Format`, and `.ToString(` over the three files returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warnings only.
+- Delimiters: `QuestManager {80/80} (282/282) [55/55]`; `QuestStateManager {187/187} (633/633) [223/223]`; `CorporateOrderSystem {49/49} (206/206) [21/21]`.
+- SHA-256: `QuestManager=916CD0E6BAA7654B9C1192A280BCB57046ADFAB74FDE85719A00496CCAA0BDB5`; `QuestStateManager=D9C141D804BDAE4827ADC3C068B3E0B5BE561271F273158FA9FDBC559DCF4A51`; `CorporateOrderSystem=B406D6E572BA06D053497E933F72F513A125F7D88F14CF7209724ADC0E382910`.
+- Diff stat: `20 insertions`, `8 deletions`.
+- Compile/runtime: not run. Gate was CPU `73` with no compiler process rows; project throttle forbids build above CPU `50`.
+
+## 2026-05-30 - World BRG Shader Find Release Guard
+
+What was wrong:
+- `HectonDistantLandmarkRenderer` and `HectonHLODRenderer` still used release-player `Shader.Find` as hidden shader fallback after editor asset lookup.
+- This is cold setup, but release string lookup is not a reliable shader retention contract.
+
+What was done:
+- Wrapped both fallback `Shader.Find` calls in `UNITY_EDITOR || DEVELOPMENT_BUILD`.
+- Release players now require serialized material/shader assignment or skip runtime fallback material creation by returning `null`.
+
+Cinematic Cheats used:
+- Existing BRG silhouette/HLOD impostor path preserved.
+- No physical simulation or extra rendering ownership was added.
+
+Exact Microseconds saved:
+- `0` claimed. Cold material setup only; no profiler/player proof.
+- Evidence lines: `HectonDistantLandmarkRenderer 559/560/562`, `HectonHLODRenderer 447/448/450`.
+- Static scan: forbidden scan for hot registry/component/enumerator/materializer/string-format patterns over both files returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warnings only.
+- Delimiters: `HectonDistantLandmarkRenderer {63/63} (257/257) [37/37]`; `HectonHLODRenderer {57/57} (245/245) [32/32]`.
+- SHA-256: `HectonDistantLandmarkRenderer=A1E46368A6B5858539F12AD176DA59467ED177D27B9A74FDB87BB10A6A9535FB`; `HectonHLODRenderer=94B1DE0F538507243D7C4D0594AFD8144D892826C75F4F5609F374E29A8467A4`.
+- Diff stat: `8 insertions`, `0 deletions`.
+- Compile/runtime: not run. Gate was CPU `82` with no compiler process rows; project throttle forbids build above CPU `50`.
+
+## 2026-05-30 - World Content SlowTick Diagnostic ToString Cleanup
+
+What was wrong:
+- `WorldContentDirector.UpdateDiagnostics()` used enum `.ToString()` in a runtime `SlowTick()` diagnostic path.
+- The labels are finite constants and do not need enum formatting.
+
+What was done:
+- Replaced default procedural enum `.ToString()` calls with string literals.
+- Added `ResolveContentKindLabel()` switch for `WorldContentSocket.ContentKind`.
+- Kept socket selection, zone resolution, and procedural score diagnostics unchanged.
+
+Cinematic Cheats used:
+- No simulation added. This preserves content socket diagnostics and avoids spending runtime work on label formatting.
+
+Exact Microseconds saved:
+- `0` claimed. Slow-tick diagnostic cleanup only; no profiler/player proof.
+- Evidence lines: `WorldContentDirector 233/259/260/275`.
+- Static scan: forbidden scan for `.ToString(`, `foreach`, `.ToArray(`, `string.Format`, hot registry lookup, and direct component lookup returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Delimiters: `{27/27}`, `(78/78)`, `[45/45]`.
+- SHA-256: `WorldContentDirector=37840CAAE9CD33EE8FF09CE881502CD51D0A607FFA49A7F37094C57C7BE8C8F8`.
+- Diff stat: `32 insertions`, `3 deletions`.
+- Compile/runtime: not run. Gate was CPU `96` with no compiler process rows; project throttle forbids build above CPU `50`.
+
+## 2026-05-30 - World Procedural Fill SlowTick Diagnostic ToString Cleanup
+
+What was wrong:
+- `WorldProceduralFillDirector.UpdateDiagnostics()` used enum `.ToString()` for procedural domain and placement mode during `SlowTick()`.
+
+What was done:
+- Replaced enum formatting with local switch helpers returning string literals.
+- Kept procedural family selection, socket matching, score computation, and stable hash behavior unchanged.
+
+Cinematic Cheats used:
+- No simulation added. This preserves procedural fill diagnostics and avoids spending runtime work on enum label formatting.
+
+Exact Microseconds saved:
+- `0` claimed. Slow-tick diagnostic cleanup only; no profiler/player proof.
+- Evidence lines: `WorldProceduralFillDirector 570/571/597/642`.
+- Static scan: forbidden scan for `.ToString(`, `foreach`, `.ToArray(`, `string.Format`, hot registry lookup, and direct component lookup returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Delimiters: `{83/83}`, `(180/180)`, `[46/46]`.
+- SHA-256: `WorldProceduralFillDirector=79F6FB44B675CCC679E3FC7F9DFF89A2DA7DCBF4FD8AE448441B45592757A14F`.
+- Diff stat: `68 insertions`, `2 deletions`.
+- Compile/runtime: not run. Gate was CPU `90` with no compiler process rows; project throttle forbids build above CPU `50`.
+
+## 2026-05-30 - Atmosphere Aegir Cookie Continuous Quality Scaling
+
+What was wrong:
+- `HectonAtmosphereManager` authored Aegir ring banding as a good 1D directional-light cookie fake, but runtime resolution was fixed.
+- Fixed resolution ignores `GlobalQualityWeight` and spends the same cookie memory/work on weak and high-end devices.
+
+What was done:
+- Added `AegirRingCookieMinResolution`, `AegirRingCookieMaxResolution`, and `AegirRingCookieResolutionStep`.
+- Added `ResolveAegirRingShadowCookieResolution()` using finite-clamped `HomeostasisBrain.GlobalQualityWeight`, smoothstep shaping, and 16px quantization.
+- Routed `EnsureAegirRingShadowCookie()` through `FlushLateFramePresentation()`, preserving presentation-phase ownership.
+
+Cinematic Cheats used:
+- Kept the existing 1D striped cookie visual fake.
+- Rejected physical ring-shadow ray-math and binary quality branches.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof exists; this is adaptive visual scaling.
+- Evidence lines: `HectonAtmosphereManager 661/662/663/1032/1062/1072/1077/1079/1080/1457/1462/1467/1469`.
+- Dispatch proof: `SystemDispatcher 5282/5296` performs `HomeostasisBrain.FlushVisualSyncShaderState()` before late-frame tickable dispatch.
+- Static scan: forbidden scan for hot registry/component/enumerator/materializer/string-format patterns over `HectonAtmosphereManager.cs` returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Delimiters: `{214/214}`, `(869/869)`, `[118/118]`.
+- SHA-256: `HectonAtmosphereManager=17F8A71B4431CC5D4F0784D794AEC60E865E744F707D387D04A8536DE6236E4F`.
+- Compile/runtime: not run. Current gate was CPU `47` with no compiler rows, but the previous legal solution build already timed out after `604028 ms`; no repeated build was launched.
+
+## 2026-05-30 - Diegetic PDA Visibility Cache NonAlloc Discovery
+
+What was wrong:
+- `DiegeticPDAController.RebuildTabletVisibilityCache()` used array-returning `GetComponentsInChildren<T>(true)` for tablet renderers, colliders, and canvas groups.
+- The path is cold/presentation setup, but array-returning discovery creates managed cache arrays when the tablet root changes.
+
+What was done:
+- Added explicit tablet discovery capacities.
+- Replaced nullable cache arrays with owner-owned `List<Renderer>`, `List<Collider>`, and `List<CanvasGroup>` caches.
+- Refilled caches through Unity's list overload: `tabletRoot.GetComponentsInChildren(true, list)`.
+- Kept `SetTabletVisible()` as indexed loops over cached counts; no `foreach`, no `.ToArray()`, no global dependency route.
+
+Cinematic Cheats used:
+- No physical simulation added. This preserves the existing cheap presentation toggle for diegetic tablet visibility.
+
+Exact Microseconds saved:
+- `0` claimed. Cold cache-rebuild cleanup only; no profiler/player proof.
+- Evidence lines: `DiegeticPDAController 21/22/23/87/89/91/611/612/613/621/622/624/633/634/636/645/646/648`.
+- Static scan: old array-overload scan returned no matches.
+- Static scan: forbidden scan for hot registry/component/enumerator/materializer/string-format patterns returned no matches.
+- Unity list overload precedent: `AcousticZoneController 2080`, `BaseModule 3948/3950`, `FaunaBrain 4422/7425`.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Delimiters: `{98/98}`, `(432/432)`, `[71/71]`.
+- SHA-256: `DiegeticPDAController=1A96E9244F404D1B8720A4E938EBF8D80E1CF8F7AE9FF9DAB8DED4FD0C5806B0`.
+- Compile/runtime: not run. Gate was CPU `36` with no compiler rows, but the previous legal solution build already timed out after `604028 ms`; no repeated build was launched.
+
+## 2026-05-30 - World Content Socket Procedural Diagnostic ToString Cleanup
+
+What was wrong:
+- `WorldContentSocket` still used enum `.ToString()` for procedural domain and placement mode diagnostics.
+- This duplicated a slow-tick cleanup already made in world content/fill directors and kept managed formatting in runtime socket recommendation code.
+
+What was done:
+- Added local literal-label switches for `WorldPrefabFamilyProfile.ProceduralDomain` and `PlacementMode`.
+- Replaced default enum `.ToString()` with literal `"Generic"` and `"Scatter"`.
+- Preserved socket selection, public diagnostic accessors, zone-anchor parent walk, and procedural recommendation contracts.
+
+Cinematic Cheats used:
+- No simulation added. This is diagnostic formatting removal only.
+
+Exact Microseconds saved:
+- `0` claimed. Diagnostic cleanup only; no profiler/player proof.
+- Evidence lines: `WorldContentSocket 303/304/321/322/346/391`.
+- Existing parent-walk proof: `WorldContentSocket 138/141/146`.
+- Static scan: forbidden scan for `.ToString(`, `foreach`, `.ToArray(`, `string.Format`, hot registry lookup, direct component lookup, and parent lookup helpers returned no matches.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Delimiters: `{28/28}`, `(104/104)`, `[55/55]`.
+- SHA-256: `WorldContentSocket=D3B1A2C52434A2916B79F55CE4A158A59D8AE0B7D756ADB0DB85101BE9C7B8F4`.
+- Compile/runtime: not run. Gate was CPU `76` with no compiler rows; project throttle forbids build above CPU `50`, and a previous legal solution build already timed out after `604028 ms`.
+
+## 2026-05-30 - World Shipping Suppression Read Accessor Purity
+
+What was wrong:
+- `WorldShippingContentFilter.IsSuppressedByHierarchy()` looked like a read accessor but lazily called `EnsureSuppressionCacheForScene()`.
+- That helper could prime scene caches, prune stale scene handles, scan scene roots, and grow suppression containers behind a boolean query.
+
+What was done:
+- Removed `EnsureSuppressionCacheForScene()` and its call.
+- `IsSuppressedByHierarchy()` now reads already-primed suppression ids and performs bounded parent-chain zone-anchor checks only.
+- Cold scene-root suppression scanning stays in `PrimeSuppressionCacheForScene()` through `DeactivateSuppressedSceneObjects()`.
+
+Cinematic Cheats used:
+- None. This is authority/phase hygiene for scene cleanup and LOD/zone filtering, not a visual simulation.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof exists.
+
+Verification:
+- Evidence lines: `WorldShippingContentFilter 79/85/90/115/201/237`.
+- PCRE forbidden scan over `WorldShippingContentFilter.cs` returned no matches for hot registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`.
+- `git diff --check` exited `0` with LF/CRLF warning only.
+- Delimiter counts: `{34/34}`, `(140/140)`, `[15/15]`.
+- SHA-256: `5A501C3B1621F9D85FDA8A4CBE71497A6006BA2C264DB61DA5587B91DC2F5B61`.
+- Build/runtime proof remains `PENDING VERIFICATION`: CPU gate sampled `99`; project rule forbids `dotnet build` above CPU `50`.
+
+## 2026-05-30 - Core Content Sort-State Read Purity
+
+What was wrong:
+- `ContentAssetHashMap` and `ContentLoreBinaryProvider` read routes called `EnsureSortState()`.
+- That wrote `_sortState` from `GetEntryAt()`, `TryGetEntry()`, `CopyRequiredHashes()`, `CountRequiredBuildHashes()`, `GetBlockAt()`, and `TryGetBlock()`.
+
+What was done:
+- Removed read-time `EnsureSortState()` calls.
+- `ContentAssetHashMap.OnEnable()` and `ContentLoreBinaryProvider.Open()` now refresh sort-state in cold lifecycle routes.
+- Unknown or unsorted state uses the existing linear lookup fallback without writing.
+
+Cinematic Cheats used:
+- None. This is content lookup determinism and read accessor purity cleanup.
+
+Exact Microseconds saved:
+- `0` claimed. No profiler/player proof exists.
+
+Verification:
+- Evidence lines: `ContentAssetHashMap 183/188/220/246/284/289/291`, `ContentLoreBinaryProvider 45/125/128/188/215/217`.
+- `EnsureSortState` scan returned no matches.
+- Read-route/sort-state scan shows `_sortState =` only in cold refresh/editor sort helpers.
+- Forbidden scan found no hot registry lookup, direct component lookup, parent helper, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(` in touched files.
+- `git diff --check` exited `0` with LF/CRLF warnings only.
+- Delimiter counts: `ContentAssetHashMap {40/40} (107/107) [54/54]`, `ContentLoreBinaryProvider {53/53} (145/145) [47/47]`.
+- SHA-256: `ContentAssetHashMap=9CA5960053BC07D973B3C9D364AE87A55A9E24E62F13D7EE376AFED97E7D69BD`, `ContentLoreBinaryProvider=2FC58FB6EE46EC02F6341E467E1EBA9AAF9CA205F1BAA3B201AB1257EC54EBCA`.
+- Build/runtime proof remains `PENDING VERIFICATION`: prior legal solution build timed out after `604028 ms`; post-patch gate sampled CPU `18` and no compiler rows, but repeating the solution build without new dependency evidence would violate throttling.
+## 2026-05-30 - MapMagic Rock Output Dictionary Enumerator Flattening
+
+What was wrong: `Assets/_Project/Scripts/Plugins/MapMagic/HectonRockOutput.cs` used `foreach` over local dictionaries in per-tile rock output finalize/apply code. This was not a `Tick`/`FixedTick` hot-loop defect, but it was runtime terrain output code and the project zero-GC mandate prefers explicit struct enumerators for dictionaries when the container is local and known.
+
+What was done: Replaced `foreach` over `Dictionary<int, LayerBuildState>` and `Dictionary<int, Matrix4x4[]>` with explicit typed enumerators. Left the two `data.Outputs(...)` enumerations intact because that is the MapMagic `TileData` iterator contract and changing it would require third-party API surgery or worse array allocations through `GatherOutputs`.
+
+Cinematic cheats used: none. The system already uses GPU-instanced rock matrices instead of spawning rock GameObjects; this pass preserved that cheap visual route.
+
+Exact microseconds saved: `0` claimed. No profiler, Unity import, Play Mode, player, or device proof exists. Static proof only: evidence lines `HectonRockOutput 145/146/148/160/161/163/232/233/235`; forbidden scan found no direct component lookup, parent lookup helper, `.ToArray(`, `string.Format`, `.ToString(`, `GlobalRegistry.Get<`, or `GlobalRegistry.TryGet<`; `foreach` scan has only the two retained `data.Outputs(...)` API enumerations at lines `96` and `168`; `git diff --check` exit `0` with LF/CRLF warning only; delimiter counts `{31/31}`, `(97/97)`, `[19/19]`; SHA-256 `76A3A221BCE8ACAAAB4D4935931F474ACD29E71AC2F6AA1247FA31FF3B86F238`; diff stat `9 insertions`, `3 deletions`. Build not launched: CPU `54`, no compiler process rows.
+
+## 2026-05-30 - Flora Brain Tick Time Source Cleanup
+
+What was wrong: `Assets/_Project/Scripts/World/FloraBrain.cs` used `Time.time` inside the `ITickable.Tick(float deltaTime)` call stack through `TryResolvePlayerRuntime()`. That made player-runtime retry cadence depend on Unity wall-clock time instead of dispatcher time.
+
+What was done: Replaced `_nextPlayerResolveTime` with `_playerResolveRetryRemainingSeconds`, changed `TryResolvePlayerRuntime` to accept `deltaTime`, decremented retry delay from a finite-clamped local `elapsedSeconds`, and reset the countdown after a successful player runtime bind. Existing ownership remains `PlayerRuntimeContextService.TryGetActiveRuntimeContext`; no new registry, DataVault, signal, save, or presentation route was added.
+
+Cinematic cheats used: none. Parasite exposure remains the existing cheap scalar oxygen-drain route.
+
+Exact microseconds saved: `0` claimed. No profiler, Unity import, Play Mode, player, or device proof exists. Static proof only: evidence lines `FloraBrain 31/58/132/137/140/145/156`; forbidden scan returned no matches for `Time.time`, `Time.deltaTime`, `Time.fixedDeltaTime`, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exit `0` with LF/CRLF warning only; delimiter counts `{18/18}`, `(55/55)`, `[10/10]`; SHA-256 `724E38173AD6AD31D396832E28A7A63379166D2C7052B8E115944D041F72F25A`; diff stat `12 insertions`, `6 deletions`. Build not launched: CPU `88`, no compiler process rows.
+
+## 2026-05-30 - Director Mission Bridge Dispatcher Time Cleanup
+
+What was wrong: `Assets/_Project/Scripts/Gameplay/DirectorMissionBridge.cs` used `Time.time` for profile mission cooldown expiry while the director event is flushed from `SystemDispatcher` late-frame AI event pass.
+
+What was done: Replaced the direct Unity wall-clock read with `ResolveDirectorCooldownTimeSeconds()`. The helper reads `SystemDispatcher.CurrentUnscaledTimeSeconds`, rejects non-finite or negative values, and clamps the dispatcher snapshot into the existing float cooldown route. The director listener interface, fixed cooldown arrays, quest activation, and first-hour gate were left unchanged.
+
+Cinematic cheats used: none. This is timing authority cleanup, not visual simulation. The rejected broad edit was widening the director event payload API across multiple listeners.
+
+Exact microseconds saved: `0` claimed. No profiler, Unity import, Play Mode, player, or device proof exists. Static proof only: evidence lines `DirectorMissionBridge 198/358/360`, `SystemDispatcher 5570`, `HectonDirectorAI 259/273/367/368`; forbidden PCRE scan over `DirectorMissionBridge.cs` returned no matches for Unity time reads, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exit `0` with LF/CRLF warning only; delimiter counts `{46/46}`, `(141/141)`, `[32/32]`; SHA-256 `E4EEFEBB0F5A50E96CC3EE070E9E2061281CC4CF1272EAED6245A07926F8053D`; diff stat `10 insertions`, `1 deletion`. Build not launched: CPU `13`, no compiler process rows, but this session already had a legal solution build timeout after `604028 ms`, and the user assigned whole-project compile errors to another agent.
+
+## 2026-05-30 - Migration Director Dispatcher Time Cleanup
+
+What was wrong: `Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs` used `Time.unscaledTime` inside `ISlowTickable`-owned `AdvanceMigrationFieldColdTick()` to derive cold-tick delta for migration field rebuild scheduling.
+
+What was done: Replaced the direct Unity wall-clock read with `ResolveDispatcherRuntimeSeconds()`. The helper reads `SystemDispatcher.CurrentUnscaledTimeSeconds`, rejects non-finite or negative values, and feeds the existing `AdvanceColdTickDeltaSeconds()` clamp. The Burst job DTOs, front/back grid handles, blood-cloud POI route, quality-weight cadence, and DataVault mutation guard route were left unchanged.
+
+Cinematic cheats used: none. The existing system already uses a coarse migration vector field and statistical swarm state rather than materializing every migration actor.
+
+Exact microseconds saved: `0` claimed. No profiler, Unity import, Play Mode, player, or device proof exists. Static proof only: evidence lines `MigrationDirector 802/822/851/864/883/911/1890/1914/2128/2130/2137`; forbidden PCRE scan over `MigrationDirector.cs` returned no matches for Unity time reads, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; lock scan shows no `TryAcquireWriteLock`, existing mutation guard route stays `TryAcquireMutationGuard`/`ReleaseMutationGuard` at lines `1890/1914`; `git diff --check` exit `0` with LF/CRLF warning only; delimiter counts `{235/235}`, `(1145/1145)`, `[130/130]`; SHA-256 `17D098918C93479596946E3782D402B1AE95C069119C3EA542BDAD62E72EF7D6`; diff stat `10 insertions`, `1 deletion`. Build not launched: CPU `56`, no compiler process rows.
+
+## 2026-05-30 - Celestial Cataclysm Visual Time Cleanup
+
+What was wrong: `Assets/_Project/Scripts/Gameplay/CelestialCataclysmSystem.cs` used `Time.unscaledTime` inside the EMP shader payload write even though the dirty visual state is flushed by `LateFrameTick()`.
+
+What was done: Replaced the direct Unity wall-clock read with `ResolveSolarEmpGlitchTimeSeconds()`. The helper reads `SystemDispatcher.CurrentUnscaledTimeSeconds`, rejects non-finite or negative values, and feeds the existing third component of `_SolarEmpGlitchParams`. The shader vector layout, event contracts, slow-tick EMP decay, and late-frame dirty flush route were left unchanged.
+
+Cinematic cheats used: Kept the cheap scalar shader EMP glitch. No physical solar/particle simulation was introduced.
+
+Exact microseconds saved: `0` claimed. No profiler, Unity import, Play Mode, player, or device proof exists. Static proof only: evidence lines `CelestialCataclysmSystem 128/130/194/199/365/368/375/379/381/388/399`; forbidden PCRE scan over `CelestialCataclysmSystem.cs` returned no matches for Unity time reads, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exit `0` with LF/CRLF warning only; delimiter counts `{41/41}`, `(180/180)`, `[20/20]`; SHA-256 `4784DE42F3957D9F043384F34DC0B072AC9996F201D48EF41873C42ECE245115`; diff stat `10 insertions`, `1 deletion`. Build not launched: CPU `84`, no compiler process rows.
+
+## 2026-05-30 - Player Health Dispatcher Time Cleanup
+
+What was wrong: `Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs` used `Time.unscaledTime` inside `ResolveUnscaledNowSeconds()`, which feeds player invulnerability expiry and survival-grace lockout timing.
+
+What was done: Replaced the direct Unity wall-clock read with `SystemDispatcher.CurrentUnscaledTimeSeconds`. The existing finite/non-negative clamp remains intact, and all health/damage call sites continue to use the same helper. No combat contract, save identity, DataVault route, signal payload, or component lookup route was changed.
+
+Cinematic cheats used: none. This is player health timing authority cleanup, not a visual simulation. The existing scalar expiry math remains the cheap route for every device tier.
+
+Exact microseconds saved: `0` claimed. No profiler, Unity import, Play Mode, player, or device proof exists. Static proof only: evidence lines `HectonPlayerHealth 151/598/601/614/621/623/626/648/650/966`; forbidden PCRE scan over `HectonPlayerHealth.cs` returned no matches for Unity time reads, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exit `0` with LF/CRLF warning only; delimiter counts `{112/112}`, `(420/420)`, `[20/20]`; SHA-256 `DDF8B919F7FCAB74A9014E97566B5CA21FB0B506D0F33161ECBD7A6D28AE8F45`; diff stat `1 insertion`, `1 deletion`. Build not launched: CPU `40`, no compiler process rows, but this session already had a legal solution build timeout after `604028 ms`, and the user assigned whole-project compile errors to another agent.
+
+## 2026-05-30 - Crash Telemetry Dispatcher Timestamp Cleanup
+
+What was wrong: `Assets/_Project/Scripts/CrashTelemetryBuffer.cs` mixed dispatcher frame/delta telemetry with direct Unity wall-clock reads in origin-shift throttling and several diagnostic timestamp payload slots.
+
+What was done: Added `ResolveDispatcherUnscaledTimeSeconds()` and replaced direct Unity time reads in origin-shift telemetry, event-bus congestion telemetry, late-frame load shedding telemetry, audio overflow telemetry, and runtime watchdog stall telemetry. The explicit 64-byte `CrashTelemetryEntry` layout and export path were not changed.
+
+Cinematic cheats used: none. This is black-box timing authority cleanup. The existing ring-buffer diagnostic path remains the cheap fixed-size route; no simulation, string dump, or managed report path was added.
+
+Exact microseconds saved: `0` claimed. No profiler, Unity import, Play Mode, player, or device proof exists. Static proof only: evidence lines `CrashTelemetryBuffer 1333/1335/1376/1417/1710/1993/2072`; DataVault write locks remain one-at-a-time and release in `finally` at lines `324/330`, `3148/3170`, and `3184/3221`; forbidden PCRE scan over `CrashTelemetryBuffer.cs` returned no matches for `UnityEngine.Time`, Unity time reads, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exit `0` with LF/CRLF warning only; delimiter counts `{239/239}`, `(1556/1556)`, `[97/97]`; SHA-256 `0A97FCE35C9EF6AD130D27A6CFB6A55141EACDFF90D3D9E935CD880B3F404484`; diff stat `14 insertions`, `5 deletions`. Build not launched: CPU `94`, no compiler process rows.
+
+## 2026-05-30 - Runtime Profiler Dispatcher Cooldown Cleanup
+
+What was wrong: `Assets/_Project/Scripts/RuntimePerformanceProfiler.cs` used `Time.unscaledTime` for budget-warning cooldown and renderer ownership audit throttling while its tick sampling already uses dispatcher delta.
+
+What was done: Added `ResolveProfilerUnscaledTimeSeconds()` and replaced the three direct Unity wall-clock reads with dispatcher time. The helper preserves old editor/non-play behavior by returning `0` when `Application.isPlaying` is false. No profiler recorder setup, diagnostic trace formatting, scene snapshot route, audit dictionary, or event contract was changed.
+
+Cinematic cheats used: none. This is diagnostic cooldown authority cleanup. The profiler remains a dev/diagnostic surface and does not add simulation cost to production gameplay.
+
+Exact microseconds saved: `0` claimed. No profiler, Unity import, Play Mode, player, or device proof exists. Static proof only: evidence lines `RuntimePerformanceProfiler 1308/1313/1334/1339/1915/1920/1931/1934`; Unity time scan returned no matches for `Time.unscaledTime`, `Time.unscaledDeltaTime`, or `UnityEngine.Time`; `git diff -U0` shows only the dispatcher helper and three call-site replacements; `git diff --check` exit `0` with LF/CRLF warning only; delimiter counts `{327/327}`, `(820/820)`, `[141/141]`; SHA-256 `689BF7408937F5CAB1069A61215F8F4C3520E7756FCF62AE341A7B10AEBFD2FA`; diff stat `15 insertions`, `3 deletions`. Build not launched: CPU `100`, no compiler process rows.
+
+## 2026-05-30 - Tool Runtime Smoke Tester Dispatcher Delay Cleanup
+
+What was wrong: `Assets/_Project/Scripts/ToolRuntimeSmokeTester.cs` used `Time.unscaledDeltaTime` in equip/holster/restore timeout loops and `Time.realtimeSinceStartup` in `DelayRealtimeAsync()`. That made dev smoke wait logic run on Unity wall-clock instead of dispatcher-owned frame progression.
+
+What was done: Added `using Hecton8.Core;`, `DefaultSmokeFrameDeltaSeconds`, and `ResolveSmokeFrameDeltaSeconds()`. Replaced timeout increments and delay-loop progression with dispatcher unscaled frame delta, finite/positive guarded with a `1/60` fallback. Existing held-tool assignment, inventory addition, quick-slot restore, and awaitable next-frame yielding were left intact.
+
+Cinematic cheats used: none. This is dev verification timing cleanup. It does not add simulation, visual processing, or runtime gameplay cost.
+
+Exact microseconds saved: `0` claimed. No profiler, Unity import, Play Mode, player, or device proof exists. Static proof only: evidence lines `ToolRuntimeSmokeTester 50/199/247/302/336/343/348/350/351`; forbidden PCRE scan returned no matches for `Time.`, `UnityEngine.Time`, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exit `0` with LF/CRLF warning only; delimiter counts `{76/76}`, `(141/141)`, `[46/46]`; SHA-256 `D49E024E538A7176DE3B6C7271ABBAA79D8D2FC2036F3FCA7AD679EB5551F752`; diff stat `15 insertions`, `5 deletions`. Build not launched: CPU `40`, no compiler process rows, previous legal solution build timed out after `604028 ms`, and whole-project compile errors were assigned to another agent.
+
+## 2026-05-30 - Random Event Meteor Shader Clock Cleanup
+
+What was wrong: `Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs` used `Time.timeSinceLevelLoad` for the meteor water-impact shader clock.
+
+What was done: Replaced the Unity level-load clock with `SystemDispatcher.CurrentUnscaledTimeSeconds`, finite/positive guarded and clamped into the existing float shader parameter. Meteor event payloads, random-event conditions, late-frame dispatch throttles, and shader layout were not changed.
+
+Cinematic cheats used: Kept the meteor water impact as a cheap shader fake. No water physics, splash particle simulation, or gameplay truth route was added.
+
+Exact microseconds saved: `0` claimed. No profiler, Unity import, Play Mode, player, or device proof exists. Static proof only: evidence lines `RandomEventSystem 1892/1937/1941/1943`; forbidden PCRE scan returned no matches for Unity time reads, `UnityEngine.Time`, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exit `0` with LF/CRLF warning only; delimiter counts `{211/211}`, `(978/978)`, `[138/138]`; SHA-256 `CE43500254AF747DC06C32698FFE73643D11FD52DE551A7AA944994AF0717469`; diff stat `5 insertions`, `1 deletion`. Build not launched: CPU `79`, no compiler process rows.
+
+## 2026-05-30 - Runtime Watchdog Monotonic Clock Cleanup
+
+What was wrong: `Assets/_Project/Scripts/Core/RuntimeWatchdog.cs` used Unity realtime in core liveness logic: HUD heartbeat, emergency reset lanes, MMF health scheduling, registry heartbeat guard, tick sampling, and slow-tick lane sampling.
+
+What was done: Added a Stopwatch-backed monotonic seconds helper and routed all watchdog realtime reads through it. This intentionally does not use dispatcher time: watchdog must remain independent enough to detect dispatcher stalls.
+
+Cinematic cheats used: none. This is core liveness/diagnostic timing cleanup, not a visual simulation.
+
+Exact microseconds saved: `0` claimed. No profiler, Unity import, Play Mode, player, or device proof exists. Static proof only: evidence lines `RuntimeWatchdog 92/265/276/343/356/357/358/479/499/814/816`; forbidden PCRE scan returned no matches for Unity time reads, `UnityEngine.Time`, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exit `0` with LF/CRLF warning only; delimiter counts `{131/131}`, `(479/479)`, `[72/72]`; SHA-256 `837D9C494818C82DA62A889342EE691184147CA875726DEB168CD2E8B10C7E03`; diff stat `14 insertions`, `7 deletions`. Build not launched: CPU `79`, no compiler process rows.
+
+## 2026-05-30 - Scene Runtime Transition Solve Stopwatch Cleanup
+
+What was wrong: `Assets/_Project/Scripts/Core/SceneRuntimeService.cs` used Unity realtime to measure menu transition solve duration before publishing a transition performance warning.
+
+What was done: Replaced Unity realtime measurement with `Stopwatch.GetTimestamp()` ticks and a static tick-to-millisecond scalar. Existing dissolve progression, camera pose, dither, drone crossfade, and performance-warning payload remain unchanged.
+
+Cinematic cheats used: Kept the existing dither/camera/drone transition as a cheap authored visual route. No physical simulation or scene-load truth route was added.
+
+Exact microseconds saved: `0` claimed. No profiler, Unity import, Play Mode, player, or device proof exists. Static proof only: evidence lines `SceneRuntimeService 59/629/651/695/708/756/761/765`; forbidden PCRE scan returned no matches for Unity time reads, `UnityEngine.Time`, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exit `0` with LF/CRLF warning only; delimiter counts `{134/134}`, `(590/590)`, `[42/42]`; SHA-256 `547258854319BA660C37D7463929F0BB27AE1A7E485F7B7653BAF00271020642`; diff stat `12 insertions`, `6 deletions`. Build not launched: CPU `80`, foreign `dotnet` process `64920` running with CPU `65.609375`.
+
+## 2026-05-30 - Fauna Corpse Bloat Shader Clock Cleanup
+
+What was wrong: `Assets/_Project/Scripts/Fauna/FaunaBrain.cs` used `Time.timeSinceLevelLoad` for corpse-bloat shader timing.
+
+What was done: Replaced the Unity level-load clock with dispatcher unscaled time, finite/positive guarded and clamped into the existing float shader timer. AI state, corpse sink jobs, AUP positions, rigidbody motion, and shader property layout were not changed.
+
+Cinematic cheats used: Kept corpse bloat as a cheap scalar shader timer. No decomposition physics or extra corpse simulation was introduced.
+
+Exact microseconds saved: `0` claimed. No profiler, Unity import, Play Mode, player, or device proof exists. Static proof only: evidence lines `FaunaBrain 4783/4788/4791/4793/4800/4812/4815`; Unity time scan returned no matches for `Time.time`, `Time.unscaledTime`, `Time.deltaTime`, `Time.fixedDeltaTime`, `Time.unscaledDeltaTime`, `Time.timeSinceLevelLoad`, or `UnityEngine.Time`; `git diff --check` exit `0` with LF/CRLF warning only; delimiter counts `{655/655}`, `(3368/3368)`, `[131/131]`; SHA-256 `8F17AA8D289507FE430D1AC121FA2AF202E1A168BCB19A033CB6253738060514`; diff stat `5 insertions`, `1 deletion`. Build not launched: CPU `71`, foreign `dotnet` process `64920` running with CPU `185.09375`.
+
+## 2026-05-30 - Runtime Profiler Realtime Gate Cleanup
+
+What was wrong: `Assets/_Project/Scripts/RuntimePerformanceProfiler.cs` still had direct `Time.realtimeSinceStartup` reads after the first profiler cleanup because the first scan was too narrow.
+
+What was done: Added a Stopwatch-backed monotonic helper and routed drive sampling realtime deltas, frozen fallback trace cadence, pending scene snapshot deadlines, menu auto-start deadlines, and editor fallback silence detection through it. Existing dispatcher-time cooldown cleanup remains intact.
+
+Cinematic cheats used: None. This is dev profiler timing authority cleanup; no simulation or visual route was added.
+
+Exact microseconds saved: `0` claimed. No profiler, Unity import, Play Mode, player, or device proof exists. Static proof only: evidence lines `RuntimePerformanceProfiler 54/594/968/1173/1309/1321/1326/1402/1413/1435/1444/1501/1859/1933/1947`; Unity time scan returned no matches for `UnityEngine.Time`, `Time.time`, `Time.unscaledTime`, `Time.deltaTime`, `Time.fixedDeltaTime`, `Time.unscaledDeltaTime`, `Time.timeSinceLevelLoad`, `Time.realtimeSinceStartup`, or `Time.realtimeSinceStartupAsDouble`; added-line forbidden scan returned `ADDED_FORBIDDEN_MATCHES=0`; `git diff --check` exit `0` with LF/CRLF warning only; delimiter counts `{328/328}`, `(833/833)`, `[141/141]`; SHA-256 `244A03C974990BA53459EF6CBBDA012B31AE938C672F1252642943C22972BBF4`; diff stat `37 insertions`, `12 deletions`. Build not launched: CPU `62`, compiler scan empty, previous legal solution build timed out after `604028 ms`.
+
+## 2026-05-30 - ARM64 Alignment Gizmo Stopwatch Pulse Cleanup
+
+What was wrong: `Assets/_Project/Scripts/Core/Arm64AlignmentFaultGizmo.cs` used `UnityEngine.Time.realtimeSinceStartup` for an editor-only red fault cube pulse.
+
+What was done: Replaced the Unity time read with a Stopwatch-backed pulse seed. Existing `UNITY_EDITOR` fence, `GlobalRegistry.DataVault` diagnostic read, alignment flag filter, AUP conversion, and wire cube draw remain unchanged.
+
+Cinematic cheats used: Kept the gizmo as a cheap alpha pulse/wire cube. No runtime visual system or physical debug simulation was added.
+
+Exact microseconds saved: `0` claimed. No profiler, Unity import, Play Mode, player, or device proof exists. Static proof only: evidence lines `Arm64AlignmentFaultGizmo 15/17/20/34`; Unity time scan returned no matches; added-line forbidden scan returned `ADDED_FORBIDDEN_MATCHES=0`; `git diff --check` exit `0` with LF/CRLF warning only; delimiter counts `{4/4}`, `(31/31)`, `[5/5]`; SHA-256 `71E7356A8E67E4D4DA8D49EABE8994F411CD2BDBB32112BFC5C4EACC880779E0`; diff stat `3 insertions`, `1 deletion`. Build not launched: CPU `76`.
+
+## 2026-05-30 - Bootstrap Status Stopwatch Safe-Halt Timing
+
+What was wrong: `Assets/_Project/Scripts/Core/BootstrapContracts/BootstrapStatus.cs` used `UnityEngine.Time.realtimeSinceStartupAsDouble` for boot step durations and safe-halt timeout detection.
+
+What was done: Replaced bootstrap elapsed-time reads with a Stopwatch-backed monotonic helper. Existing safe-halt `Time.timeScale` writes, physics simulation-mode writes, recent-step ring, and telemetry delegate payload remain unchanged.
+
+Cinematic cheats used: None. This is bootstrap watchdog timing authority cleanup.
+
+Exact microseconds saved: `0` claimed. No profiler, Unity import, Play Mode, player, or device proof exists. Static proof only: evidence lines `BootstrapStatus 55/154/170/184/240/295/297`; scan returned no `realtimeSinceStartup`, no `realtimeSinceStartupAsDouble`, and no gameplay clock reads; remaining `UnityEngine.Time.timeScale` hits are documented safe-halt writes at `115/155/212/249`; added-line forbidden scan returned `ADDED_FORBIDDEN_MATCHES=0`; `git diff --check` exit `0` with LF/CRLF warning only; delimiter counts `{27/27}`, `(60/60)`, `[7/7]`; SHA-256 `E5FB6A2644747D7D8A59DB02E40306CF189CA7938E21084D0DE7E3778D31B74D`; diff stat `11 insertions`, `4 deletions`. Build not launched: CPU `9`, compiler scan empty, prior user context assigned full-project compile errors to another agent.
+
+## 2026-05-30 - Integrator Hot-Path Re-Audit
+
+What was wrong: broad scans found additional Unity-time reads in world systems, but serious runtime candidates were dirty under concurrent agent work. A first clean-file filter was also too permissive because it normalized only double backslashes.
+
+What was done: fixed the dirty-file filter logic, re-ran clean-candidate time scans, re-ran phase-method hot lookup scans, and re-ran touched-file static proof. Clean remaining time hits were comments or editor string literals. Touched C# files produced `TOUCHED_HOT_LOOKUP_SCAN=0`, `TOUCHED_ADDED_FORBIDDEN_MATCHES=0`, and `git diff --check` exit `0` with LF/CRLF warnings only.
+
+Cinematic cheats used: no new simulation. The work preserved already-cheap shader/presentation fakes and avoided adding physical simulation or new signal lanes.
+
+Exact microseconds saved: `0` claimed. Compile/runtime proof not produced: final CPU sample was `83`, no compiler rows were active, and project rules forbid `dotnet build` above CPU `50`.
+
+## 2026-05-30 - Harvestable Plant Segment Guard Cleanup
+
+What was wrong: `Assets/_Project/Scripts/Gameplay/HarvestablePlant.cs` trusted serialized `segments` and each array slot. Null array or null slot could throw in accessors, `Tick`, harvest targeting, public harvest/regrow calls, editor validation, or gizmos.
+
+What was done: added cached empty-array normalization in `Awake`, converted segment loops to local references, guarded null slots, clamped regrow ticking to timer capacity, and preserved LateFrame presentation plus cached registry service usage.
+
+Cinematic cheats used: no physical simulation was added. Existing harvest/regrow remains renderer enable/particle/audio presentation plus pooled loot and queued physics force.
+
+Exact microseconds saved: `0`. Evidence: no direct `segments[i].` accesses remain; added-line forbidden scan returned `0` for `new`, `string.Format`, `.ToString(`, `foreach`, `.ToArray(`, `Enumerable.`, and `System.Linq`; only full-file lookup hit is pre-existing event-driven `loot.TryGetComponent(out Rigidbody rb)` in `SpawnLoot`; `git diff --check -- HarvestablePlant.cs` exited `0` with LF/CRLF warning only; SHA-256 `0D9E1F2713FC3A587BE0357D799BF38FE6375F75A2AA7C04FDB9D57E9851BB8F`. Build/runtime verification was blocked by CPU `71` with active `dotnet` PID `55944`, then CPU `59` with no compiler rows; no build launched.

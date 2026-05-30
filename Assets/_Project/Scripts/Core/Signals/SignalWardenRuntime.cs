@@ -250,12 +250,10 @@ namespace Hecton8.Core.Contracts.Signals
         private const float DefaultCoalescingRadiusMeters = 1f;
         private const BufferID ProfileBufferId = (BufferID)73040;
         private const BufferID ProfileCountBufferId = (BufferID)73041;
-        private const BufferID CsvScratchBufferId = (BufferID)73042;
 
         private static IDataVault _vault;
         private static VaultGenerationHandle<SignalTuningProfile> _profilesHandle;
         private static VaultGenerationHandle<int> _countHandle;
-        private static VaultGenerationHandle<byte> _csvScratchHandle;
         private static int _initialized;
 
         /// <summary>Initializes the unmanaged tuning DTO table from the global vault.</summary>
@@ -266,7 +264,7 @@ namespace Hecton8.Core.Contracts.Signals
 
             if (_initialized != 0 && ReferenceEquals(_vault, vault))
             {
-                if (TryOpenBuffersForOwner(vault, out _, out _, out _))
+                if (TryOpenBuffersForOwner(vault, out _, out _))
                     return;
 
                 _initialized = 0;
@@ -286,13 +284,8 @@ namespace Hecton8.Core.Contracts.Signals
                 1,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.ClearMemory);
-            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(
-                CsvScratchBufferId,
-                CsvScratchBytes,
-                SystemID.CoreDiagnostics,
-                NativeArrayOptions.UninitializedMemory);
 
-            if (!TryOpenBuffersForOwner(vault, out _, out NativeArray<int> count, out _))
+            if (!TryOpenBuffersForOwner(vault, out _, out NativeArray<int> count))
             {
                 _initialized = 0;
                 return;
@@ -305,34 +298,33 @@ namespace Hecton8.Core.Contracts.Signals
         }
 
 #if UNITY_EDITOR
-        /// <summary>Reads editor CSV bytes into owner scratch and exposes only a span to the parser.</summary>
-        public static unsafe bool TryReadCsvBytesForLoad(string path, out ReadOnlySpan<byte> bytes)
+        /// <summary>Loads editor CSV bytes into local stack scratch and parses before the span escapes.</summary>
+        public static bool TryLoadCsv(string path)
         {
-            bytes = default;
 #if UNITY_EDITOR
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
             IDataVault vault = GlobalRegistry.DataVault;
             Initialize(vault);
-            if (!TryOpenCsvScratchForLoad(out NativeArray<byte> scratch) || !scratch.IsCreated)
+            if (_initialized == 0)
                 return false;
 
+            Span<byte> scratch = stackalloc byte[CsvScratchBytes];
             int bytesRead;
             try
             {
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
                     long streamLength = stream.Length;
-                    if (streamLength <= 0L || streamLength > scratch.Length)
+                    if (streamLength <= 0L || streamLength > CsvScratchBytes)
                         return false;
 
                     int expectedBytes = (int)streamLength;
-                    Span<byte> scratchBytes = new Span<byte>(scratch.GetUnsafePtr(), expectedBytes);
                     bytesRead = 0;
                     while (bytesRead < expectedBytes)
                     {
-                        int read = stream.Read(scratchBytes.Slice(bytesRead));
+                        int read = stream.Read(scratch.Slice(bytesRead, expectedBytes - bytesRead));
                         if (read <= 0)
                             return false;
 
@@ -349,27 +341,10 @@ namespace Hecton8.Core.Contracts.Signals
                 return false;
             }
 
-            bytes = new ReadOnlySpan<byte>(scratch.GetUnsafeReadOnlyPtr(), bytesRead);
-            return true;
+            return SignalTuningCsvHotSwap.Parse(scratch.Slice(0, bytesRead));
 #else
-            _ = path;
             return false;
 #endif
-        }
-
-        /// <summary>Opens the mutable scratch buffer used by the zero-string CSV parser.</summary>
-        private static bool TryOpenCsvScratchForLoad(out NativeArray<byte> scratch)
-        {
-            scratch = default;
-            if (_initialized == 0 || _vault == null ||
-                !_vault.TryResolveHandle(in _csvScratchHandle, out NativeArray<byte> csvScratch) ||
-                csvScratch.Length < CsvScratchBytes)
-            {
-                return false;
-            }
-
-            scratch = csvScratch;
-            return true;
         }
 #endif
 
@@ -402,7 +377,7 @@ namespace Hecton8.Core.Contracts.Signals
         {
             if (laneHash == 0u ||
                 _initialized == 0 ||
-                !TryOpenBuffersForOwner(_vault, out NativeArray<SignalTuningProfile> profiles, out NativeArray<int> countArray, out _))
+                !TryOpenBuffersForOwner(_vault, out NativeArray<SignalTuningProfile> profiles, out NativeArray<int> countArray))
             {
                 return false;
             }
@@ -466,19 +441,15 @@ namespace Hecton8.Core.Contracts.Signals
         private static bool TryOpenBuffersForOwner(
             IDataVault vault,
             out NativeArray<SignalTuningProfile> profiles,
-            out NativeArray<int> count,
-            out NativeArray<byte> csvScratch)
+            out NativeArray<int> count)
         {
             profiles = default;
             count = default;
-            csvScratch = default;
             return vault != null &&
                    vault.TryResolveHandle(in _profilesHandle, out profiles) &&
                    vault.TryResolveHandle(in _countHandle, out count) &&
-                   vault.TryResolveHandle(in _csvScratchHandle, out csvScratch) &&
                    profiles.Length >= MaxProfiles &&
-                   count.Length >= 1 &&
-                   csvScratch.Length >= CsvScratchBytes;
+                   count.Length >= 1;
         }
 
         /// <summary>Releases vault-backed tuning buffers during signal shutdown.</summary>
@@ -489,13 +460,11 @@ namespace Hecton8.Core.Contracts.Signals
             {
                 ReleaseVaultHandle(vault, ref _profilesHandle);
                 ReleaseVaultHandle(vault, ref _countHandle);
-                ReleaseVaultHandle(vault, ref _csvScratchHandle);
             }
 
             _vault = null;
             _profilesHandle = default;
             _countHandle = default;
-            _csvScratchHandle = default;
             _initialized = 0;
         }
 
@@ -577,17 +546,13 @@ namespace Hecton8.Core.Contracts.Signals
         public static unsafe bool TryLoad(string path)
         {
 #if UNITY_EDITOR
-            if (!SignalTuningTable.TryReadCsvBytesForLoad(path, out ReadOnlySpan<byte> bytes))
-                return false;
-
-            return Parse(bytes);
+            return SignalTuningTable.TryLoadCsv(path);
 #else
-            _ = path;
             return false;
 #endif
         }
 
-        private static bool Parse(ReadOnlySpan<byte> bytes)
+        internal static bool Parse(ReadOnlySpan<byte> bytes)
         {
             bool changed = false;
             int rowStart = 0;
@@ -780,6 +745,38 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(60)] public uint SystemStressMilli;
     }
 
+    internal static unsafe class SignalWardenFaultDumpEncoding
+    {
+        public const int HeaderBytes = 32;
+        public const uint DumpVersion = 1u;
+        public const uint SignalTelemetryMagic = 0x31474953u; // SIG1
+        public const uint ThreadContentionMagic = 0x31435453u; // STC1
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteUInt32(byte* destination, ref int cursor, uint value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
+            cursor += sizeof(uint);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteUInt64(byte* destination, ref int cursor, ulong value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
+            destination[cursor + 4] = (byte)(value >> 32);
+            destination[cursor + 5] = (byte)(value >> 40);
+            destination[cursor + 6] = (byte)(value >> 48);
+            destination[cursor + 7] = (byte)(value >> 56);
+            cursor += sizeof(ulong);
+        }
+    }
+
     /// <summary>
     /// Dedicated 300-frame signal-bus black box.
     /// </summary>
@@ -787,9 +784,11 @@ namespace Hecton8.Core.Contracts.Signals
     public static class SignalTelemetryRingBuffer
     {
         private const int Capacity = 300;
+        private const int EntryBytes = 64;
         private const BufferID SignalTelemetryRingBufferId = (BufferID)73038;
         private const BufferID SignalTelemetryCursorBufferId = (BufferID)73039;
         private const SystemID OwnerSystemId = SystemID.CoreDiagnostics;
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1403_SIGNAL_TELEMETRY.bin";
 
         private static IDataVault _vault;
         private static VaultGenerationHandle<SignalTelemetryFrame> _ringHandle;
@@ -901,14 +900,61 @@ namespace Hecton8.Core.Contracts.Signals
             TryWriteCursorForOwner(vault, index + 1 >= Capacity ? 0 : index + 1);
         }
 
-        /// <summary>Verifies that the full signal black-box ring is readable without runtime disk I/O.</summary>
-        public static bool DumpToDisk()
+        /// <summary>Writes the 300-frame signal black-box through the shared native fault writer.</summary>
+        public static unsafe bool DumpToDisk()
         {
-            return TryReadRingForCrashDump(out NativeArray<SignalTelemetryFrame>.ReadOnly ring, out _) &&
-                   ring.Length >= Capacity;
+            if (!TryReadRingForCrashDump(
+                    out NativeArray<SignalTelemetryFrame>.ReadOnly ring,
+                    out NativeArray<int>.ReadOnly cursor) ||
+                ring.Length < Capacity ||
+                cursor.Length <= 0 ||
+                UnsafeUtility.SizeOf<SignalTelemetryFrame>() != EntryBytes)
+            {
+                return false;
+            }
+
+            int safeCursor = math.clamp(cursor[0], 0, Capacity - 1);
+            int byteCount = SignalWardenFaultDumpEncoding.HeaderBytes + Capacity * EntryBytes;
+            NativeArray<byte> payload = default;
+            try
+            {
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(SignalTelemetryRingBuffer),
+                    "signalTelemetryFaultDumpPayload",
+                    NativeArrayOptions.ClearMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int writeCursor = 0;
+                SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref writeCursor, SignalWardenFaultDumpEncoding.SignalTelemetryMagic);
+                SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref writeCursor, SignalWardenFaultDumpEncoding.DumpVersion);
+                SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref writeCursor, unchecked((uint)Capacity));
+                SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref writeCursor, unchecked((uint)EntryBytes));
+                SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref writeCursor, unchecked((uint)safeCursor));
+                SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref writeCursor, 0u);
+                SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref writeCursor, 0u);
+                SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref writeCursor, 0u);
+
+                for (int i = 0; i < Capacity; i++)
+                {
+                    int index = safeCursor + i;
+                    if (index >= Capacity)
+                        index -= Capacity;
+
+                    WriteEntry(destination, ref writeCursor, ring[index]);
+                }
+
+                return NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, writeCursor);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(SignalTelemetryRingBuffer),
+                    "signalTelemetryFaultDumpPayload");
+            }
         }
 
-        /// <summary>Fault-path compatibility shim. No background worker or file write is created.</summary>
+        /// <summary>Fault-path compatibility shim. Write submission is native and bounded.</summary>
         public static bool RequestDumpToDiskAsync()
         {
             return DumpToDisk();
@@ -995,6 +1041,23 @@ namespace Hecton8.Core.Contracts.Signals
             {
                 vault.ReleaseWriteLock(in _cursorHandle, OwnerSystemId);
             }
+        }
+
+        private static unsafe void WriteEntry(byte* destination, ref int cursor, SignalTelemetryFrame entry)
+        {
+            SignalWardenFaultDumpEncoding.WriteUInt64(destination, ref cursor, entry.Reserved0);
+            SignalWardenFaultDumpEncoding.WriteUInt64(destination, ref cursor, entry.Reserved1);
+            SignalWardenFaultDumpEncoding.WriteUInt64(destination, ref cursor, entry.Reserved2);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.Frame);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.TotalPushedSignals);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.PeakSignalsPerFrame);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.CoalescedSignals);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.DroppedSignals);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.CorruptedSignals);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.ActiveLaneCount);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.Flags);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.GlobalQualityMilli);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.SystemStressMilli);
         }
     }
 
@@ -2313,13 +2376,13 @@ namespace Hecton8.Core.Contracts.Signals
     {
         public const int MaxThreadCount = 64;
         private const int TelemetryCapacity = 300;
+        private const int TelemetryEntryBytes = 64;
         private const int MinThreadStrideBytes = 2048;
         private const int DefaultThreadStrideBytes = 8192;
         private const int MaxThreadStrideBytes = 16384;
         private const int MaxCommittedSignals = 4096;
         internal const int MaxCommittedSignalsForEditor = MaxCommittedSignals;
         private const int MaxOverflowSignals = 1024;
-        private const int CsvScratchBytes = 8192;
         private const uint TuningMagic = 0x5343544Eu; // SCTN
         private const BufferID FrontBytesBufferId = (BufferID)73043;
         private const BufferID BackBytesBufferId = (BufferID)73044;
@@ -2333,7 +2396,7 @@ namespace Hecton8.Core.Contracts.Signals
         private const BufferID CoalescenceBucketsBufferId = (BufferID)73052;
         private const BufferID OverflowSignalsBufferId = (BufferID)73053;
         private const BufferID OverflowHeaderBufferId = (BufferID)73054;
-        private const BufferID CsvScratchBufferId = (BufferID)73055;
+        private const string ThreadContentionDumpRelativePath = "Docs/AgentLogs/Dump_1403_SIGNAL_THREAD_CONTENTION.bin";
         private const SystemID OwnerSystemId = SystemID.CoreDiagnostics;
 
         private static IDataVault _vault;
@@ -2349,7 +2412,6 @@ namespace Hecton8.Core.Contracts.Signals
         private static VaultGenerationHandle<int> _coalescenceBucketsHandle;
         private static VaultGenerationHandle<SignalWardenMockDamageSignal> _overflowSignalsHandle;
         private static VaultGenerationHandle<SignalThreadOverflowHeader64> _overflowHeaderHandle;
-        private static VaultGenerationHandle<byte> _csvScratchHandle;
         private static int _initialized;
         private static int _writeBufferIndex;
         private static int _activeStrideBytes = DefaultThreadStrideBytes;
@@ -2395,7 +2457,6 @@ namespace Hecton8.Core.Contracts.Signals
             _coalescenceBucketsHandle = vault.EnsureGenerationHandle<int>(CoalescenceBucketsBufferId, MaxCommittedSignals * 2, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             _overflowSignalsHandle = vault.EnsureGenerationHandle<SignalWardenMockDamageSignal>(OverflowSignalsBufferId, MaxOverflowSignals, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             _overflowHeaderHandle = vault.EnsureGenerationHandle<SignalThreadOverflowHeader64>(OverflowHeaderBufferId, 1, OwnerSystemId, NativeArrayOptions.ClearMemory);
-            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(CsvScratchBufferId, CsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             _activeStrideBytes = activeStride;
             _writeBufferIndex = 0;
             _initialized = AreVaultBuffersReady(vault) ? 1 : 0;
@@ -2437,7 +2498,6 @@ namespace Hecton8.Core.Contracts.Signals
                 ReleaseVaultHandle(vault, ref _coalescenceBucketsHandle);
                 ReleaseVaultHandle(vault, ref _overflowSignalsHandle);
                 ReleaseVaultHandle(vault, ref _overflowHeaderHandle);
-                ReleaseVaultHandle(vault, ref _csvScratchHandle);
             }
 
             _vault = null;
@@ -2453,7 +2513,6 @@ namespace Hecton8.Core.Contracts.Signals
             _coalescenceBucketsHandle = default;
             _overflowSignalsHandle = default;
             _overflowHeaderHandle = default;
-            _csvScratchHandle = default;
             _initialized = 0;
         }
 
@@ -2887,76 +2946,55 @@ namespace Hecton8.Core.Contracts.Signals
             return tuning.Magic == TuningMagic;
         }
 
-#if UNITY_EDITOR
-        public static unsafe bool TryReadCsvBytesForLoad(string path, out ReadOnlySpan<byte> bytes)
+        public static unsafe bool DumpToDisk()
         {
-            bytes = default;
-#if UNITY_EDITOR
-            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+            if (!EnsureInitializedForCrashDumpRoute() ||
+                !TryGetTelemetryReadOnly(out NativeArray<SignalThreadContentionTelemetryEntry>.ReadOnly telemetry, out int cursor) ||
+                telemetry.Length < TelemetryCapacity ||
+                UnsafeUtility.SizeOf<SignalThreadContentionTelemetryEntry>() != TelemetryEntryBytes)
+            {
                 return false;
+            }
 
-            if (!TryOpenCsvScratchForLoad(out NativeArray<byte> scratch) || !scratch.IsCreated)
-                return false;
-
-            int bytesRead;
+            int safeCursor = math.clamp(cursor, 0, TelemetryCapacity - 1);
+            int byteCount = SignalWardenFaultDumpEncoding.HeaderBytes + TelemetryCapacity * TelemetryEntryBytes;
+            NativeArray<byte> payload = default;
             try
             {
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(SignalThreadLocalScratchpad),
+                    "signalThreadContentionFaultDumpPayload",
+                    NativeArrayOptions.ClearMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int writeCursor = 0;
+                SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref writeCursor, SignalWardenFaultDumpEncoding.ThreadContentionMagic);
+                SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref writeCursor, SignalWardenFaultDumpEncoding.DumpVersion);
+                SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref writeCursor, unchecked((uint)TelemetryCapacity));
+                SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref writeCursor, unchecked((uint)TelemetryEntryBytes));
+                SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref writeCursor, unchecked((uint)safeCursor));
+                SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref writeCursor, unchecked((uint)_activeStrideBytes));
+                SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref writeCursor, unchecked((uint)_batchId));
+                SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref writeCursor, 0u);
+
+                for (int i = 0; i < TelemetryCapacity; i++)
                 {
-                    long streamLength = stream.Length;
-                    if (streamLength <= 0L || streamLength > scratch.Length)
-                        return false;
+                    int index = safeCursor + i;
+                    if (index >= TelemetryCapacity)
+                        index -= TelemetryCapacity;
 
-                    int expectedBytes = (int)streamLength;
-                    Span<byte> scratchBytes = new Span<byte>(scratch.GetUnsafePtr(), expectedBytes);
-                    bytesRead = 0;
-                    while (bytesRead < expectedBytes)
-                    {
-                        int read = stream.Read(scratchBytes.Slice(bytesRead));
-                        if (read <= 0)
-                            return false;
-
-                        bytesRead += read;
-                    }
+                    WriteTelemetryEntry(destination, ref writeCursor, telemetry[index]);
                 }
+
+                return NativeFaultDumpWriter.TryWriteAll(ThreadContentionDumpRelativePath, payload, writeCursor);
             }
-            catch (IOException)
+            finally
             {
-                return false;
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(SignalThreadLocalScratchpad),
+                    "signalThreadContentionFaultDumpPayload");
             }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-
-            bytes = new ReadOnlySpan<byte>(scratch.GetUnsafeReadOnlyPtr(), bytesRead);
-            return true;
-#else
-            _ = path;
-            return false;
-#endif
-        }
-
-        private static bool TryOpenCsvScratchForLoad(out NativeArray<byte> scratch)
-        {
-            scratch = default;
-            if (!IsInitializedForRead() ||
-                !TryResolve(_vault, in _csvScratchHandle, out NativeArray<byte> csvScratch) ||
-                csvScratch.Length < CsvScratchBytes)
-            {
-                return false;
-            }
-
-            scratch = csvScratch;
-            return true;
-        }
-#endif
-
-        public static bool DumpToDisk()
-        {
-            return EnsureInitializedForCrashDumpRoute() &&
-                   TryGetTelemetryReadOnly(out NativeArray<SignalThreadContentionTelemetryEntry>.ReadOnly telemetry, out _) &&
-                   telemetry.Length >= TelemetryCapacity;
         }
 
         public static bool TryDumpOnFault()
@@ -2974,6 +3012,26 @@ namespace Hecton8.Core.Contracts.Signals
             return math.all(math.isfinite(signal.Aup)) &&
                    math.all(math.isfinite(signal.Normal)) &&
                    math.isfinite(signal.Damage);
+        }
+
+        private static unsafe void WriteTelemetryEntry(byte* destination, ref int cursor, SignalThreadContentionTelemetryEntry entry)
+        {
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.Frame);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.Flags);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.WrittenSignals);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.CoalescedSignals);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.DroppedSignals);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.OverflowSignals);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.NonFiniteSignals);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.ThreadCount);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.ActiveStrideBytes);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.PeakThreadWriteBytes);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.GlobalQualityMilli);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.VramPressureMilli);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.BufferIndex);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.BatchId);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.CommitMicroseconds);
+            SignalWardenFaultDumpEncoding.WriteUInt32(destination, ref cursor, entry.LastAupHashLow);
         }
 
         private static bool IsInitializedForRead()
@@ -3061,8 +3119,6 @@ namespace Hecton8.Core.Contracts.Signals
             if (!TryResolve(vault, in _overflowSignalsHandle, out NativeArray<SignalWardenMockDamageSignal> overflowSignals) || overflowSignals.Length < MaxOverflowSignals)
                 return false;
             if (!TryResolve(vault, in _overflowHeaderHandle, out NativeArray<SignalThreadOverflowHeader64> overflowHeader) || overflowHeader.Length < 1)
-                return false;
-            if (!TryResolve(vault, in _csvScratchHandle, out NativeArray<byte> csvScratch) || csvScratch.Length < CsvScratchBytes)
                 return false;
 
             return true;
@@ -3204,6 +3260,7 @@ namespace Hecton8.Core.Contracts.Signals
     public static class SignalThreadContentionCsvHotSwap
     {
         private const string SourceDataRelativePath = "_SourceData/Signals/signal_corridor_capacities.csv";
+        private const int ScratchBytes = 8192;
         private const byte Comma = (byte)',';
         private const byte LineFeed = (byte)'\n';
         private const byte CarriageReturn = (byte)'\r';
@@ -3233,12 +3290,42 @@ namespace Hecton8.Core.Contracts.Signals
         public static unsafe bool TryLoad(string path)
         {
 #if UNITY_EDITOR
-            if (!SignalThreadLocalScratchpad.TryReadCsvBytesForLoad(path, out ReadOnlySpan<byte> bytes))
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            return Parse(bytes);
+            Span<byte> scratch = stackalloc byte[ScratchBytes];
+            int bytesRead;
+            try
+            {
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    long streamLength = stream.Length;
+                    if (streamLength <= 0L || streamLength > ScratchBytes)
+                        return false;
+
+                    int expectedBytes = (int)streamLength;
+                    bytesRead = 0;
+                    while (bytesRead < expectedBytes)
+                    {
+                        int read = stream.Read(scratch.Slice(bytesRead, expectedBytes - bytesRead));
+                        if (read <= 0)
+                            return false;
+
+                        bytesRead += read;
+                    }
+                }
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+
+            return Parse(scratch.Slice(0, bytesRead));
 #else
-            _ = path;
             return false;
 #endif
         }
@@ -3400,26 +3487,25 @@ namespace Hecton8.Core.Contracts.Signals
 
         private static uint ResolveTargetPlatformHash()
         {
-            string gpuName = SystemInfo.graphicsDeviceName;
+            HardwareTierDetector.EnsureInitialized();
             string deviceModel = SystemInfo.deviceModel;
             string deviceName = SystemInfo.deviceName;
-            if (ContainsOrdinalIgnoreCase(gpuName, "rtx 4090") ||
-                ContainsOrdinalIgnoreCase(gpuName, "rtx4090"))
+            int graphicsMemory = SystemInfo.graphicsMemorySize;
+            int systemMemory = SystemInfo.systemMemorySize;
+            if (graphicsMemory >= 12000 && systemMemory >= 32000)
             {
-                return ComputeHash("rtx4090");
+                return ComputeHash("ultradesktop");
             }
 
-            if (ContainsOrdinalIgnoreCase(deviceModel, "steam deck") ||
-                ContainsOrdinalIgnoreCase(deviceName, "steam deck") ||
-                ContainsOrdinalIgnoreCase(gpuName, "vangogh"))
+            if (HardwareTierDetector.IsSteamDeckLike ||
+                ContainsOrdinalIgnoreCase(deviceModel, "steam deck") ||
+                ContainsOrdinalIgnoreCase(deviceName, "steam deck"))
             {
                 return ComputeHash("steamdeck");
             }
 
-            if (ContainsOrdinalIgnoreCase(gpuName, "mx350"))
-                return ComputeHash("mx350");
-
             if (Application.platform == RuntimePlatform.Android ||
+                HardwareTierDetector.IsQuest3Like ||
                 ContainsOrdinalIgnoreCase(deviceModel, "quest 3") ||
                 ContainsOrdinalIgnoreCase(deviceModel, "quest3") ||
                 ContainsOrdinalIgnoreCase(deviceName, "quest 3") ||
@@ -3427,6 +3513,9 @@ namespace Hecton8.Core.Contracts.Signals
             {
                 return ComputeHash("quest3");
             }
+
+            if (HardwareTierDetector.SharedMemoryModeActive)
+                return ComputeHash("sharedmemory");
 
             return ComputeHash("pc");
         }

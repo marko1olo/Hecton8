@@ -255,6 +255,7 @@ namespace Hecton8.Graphics.Materials
         private GraphicsBuffer _materialGlobalsBufferB;
         private string _csvPath;
         private string _dumpPath;
+        private uint _lastTelemetryDumpHash;
         private JobHandle _simulationHandle;
         private long _csvLastWriteTicks;
         private IDataVault _jobBufferGuardVault;
@@ -399,7 +400,7 @@ namespace Hecton8.Graphics.Materials
             _materialCapacity = DefaultMaterialCapacity;
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             _csvPath = Path.GetFullPath(Path.Combine(projectRoot, CsvRelativePath));
-            _dumpPath = Path.GetFullPath(Path.Combine(projectRoot, DumpRelativePath));
+            _dumpPath = DumpRelativePath;
 
             // COLD ALLOC: IDispatcherSystem[4] - phase adapters registered into GlobalRegistry dispatcher - owner: SHINOBU_43
             _preSimulationPhase = new PreSimulationPhaseSystem(this);
@@ -1590,27 +1591,49 @@ namespace Hecton8.Graphics.Materials
             if (!telemetry.IsCreated || telemetry.Length == 0 || string.IsNullOrEmpty(_dumpPath))
                 return;
 
-            string directory = Path.GetDirectoryName(_dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            int entryBytes = UnsafeUtility.SizeOf<MaterialResponseTelemetryEntry>();
+            int totalBytes = 24 + telemetry.Length * entryBytes;
+            NativeArray<byte> payload = default;
+            try
             {
-                Span<byte> header = stackalloc byte[24];
-                BinaryPrimitives.WriteUInt64LittleEndian(header.Slice(0, 8), DumpMagic);
-                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(8, 4), DumpVersion);
-                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(12, 4), (uint)telemetry.Length);
-                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(16, 4), (uint)UnsafeUtility.SizeOf<MaterialResponseTelemetryEntry>());
-                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(20, 4), _lastStateHash);
-                stream.Write(header);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(ShinobuMaterialResponseRuntime),
+                    "shinobuMaterialResponseTelemetryDumpPayload");
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                Span<byte> bytes = new Span<byte>(target, totalBytes);
+                BinaryPrimitives.WriteUInt64LittleEndian(bytes.Slice(0, 8), DumpMagic);
+                BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(8, 4), DumpVersion);
+                BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(12, 4), (uint)telemetry.Length);
+                BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(16, 4), (uint)entryBytes);
+                BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(20, 4), _lastStateHash);
 
+                uint hash = (uint)DumpMagic ^ (uint)(DumpMagic >> 32) ^ DumpVersion ^ (uint)telemetry.Length ^ _lastStateHash;
+                for (int byteIndex = 0; byteIndex < 24; byteIndex++)
+                    hash = (hash * 16777619u) ^ bytes[byteIndex];
+
+                int writeOffset = 24;
                 for (int offset = 0; offset < telemetry.Length; offset++)
                 {
                     int index = (_telemetryCursor + offset) % telemetry.Length;
                     MaterialResponseTelemetryEntry entry = telemetry[index];
-                    ReadOnlySpan<byte> entryBytes = new ReadOnlySpan<byte>(&entry, UnsafeUtility.SizeOf<MaterialResponseTelemetryEntry>());
-                    stream.Write(entryBytes);
+                    ReadOnlySpan<byte> entrySpan = new ReadOnlySpan<byte>(&entry, entryBytes);
+                    entrySpan.CopyTo(bytes.Slice(writeOffset, entryBytes));
+                    for (int byteIndex = 0; byteIndex < entryBytes; byteIndex++)
+                        hash = (hash * 16777619u) ^ bytes[writeOffset + byteIndex];
+
+                    writeOffset += entryBytes;
                 }
+
+                if (NativeFaultDumpWriter.TryWriteAll(_dumpPath, payload, totalBytes))
+                    _lastTelemetryDumpHash = hash;
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(ShinobuMaterialResponseRuntime),
+                    "shinobuMaterialResponseTelemetryDumpPayload");
             }
         }
 

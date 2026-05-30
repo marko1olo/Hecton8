@@ -40,7 +40,7 @@ namespace Hecton8.Input
         private const int MaxOptionKeyBytes = 256;
         private const int MaxOptionStringBytes = 4096;
         private const long FixedOptionsFileBytes = FileHeaderBytes + MaxOptionsPayloadBytes;
-        private const byte DefaultScalabilityTier = ScalabilityTierProfiles.LowMx350;
+        private const byte DefaultScalabilityTier = ScalabilityTierProfiles.LowCompact;
         private static readonly Encoding OptionsEncoding = new UTF8Encoding(false, true);
 
         private readonly Dictionary<string, OptionRecord> _records =
@@ -851,7 +851,7 @@ namespace Hecton8.Input
 
                 if (record.Type == TypeBool)
                 {
-                    tier = record.BoolValue ? ScalabilityTierProfiles.HighRtx : ScalabilityTierProfiles.LowMx350;
+                    tier = record.BoolValue ? ScalabilityTierProfiles.HighDiscrete : ScalabilityTierProfiles.LowCompact;
                     return true;
                 }
             }

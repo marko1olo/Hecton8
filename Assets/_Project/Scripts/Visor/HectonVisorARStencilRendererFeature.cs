@@ -1368,61 +1368,58 @@ namespace Hecton8.Visor
             if (_telemetryDumped || telemetryLength <= 0)
                 return;
 
-            _telemetryDumped = true;
+            NativeArray<byte> payload = default;
             try
             {
                 string path = Path.Combine(Application.dataPath, "..", DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                int count = math.min(telemetryLength, VisorARStencilContracts.TelemetryFrameCount);
+                int stride = VisorARStencilContracts.TelemetryEntryStrideBytes;
+                int totalBytes = 32 + count * stride;
+                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                Span<byte> header = new Span<byte>(payloadPtr, 32);
+                WriteUInt32LittleEndian(header, 0, DumpMagic);
+                WriteUInt32LittleEndian(header, 4, DumpVersion);
+                WriteUInt32LittleEndian(header, 8, reasonFlags);
+                WriteUInt32LittleEndian(header, 12, VisorARStencilContracts.TelemetryEntryStrideBytes);
+                WriteUInt32LittleEndian(header, 16, (uint)count);
+                WriteUInt32LittleEndian(header, 20, (uint)cursor);
+                WriteUInt32LittleEndian(header, 24, frameIndex);
+                WriteUInt32LittleEndian(header, 28, descriptorGeneration);
+
+                int offset = 32;
+                int start = count == VisorARStencilContracts.TelemetryFrameCount ? (cursor + 1) % count : 0;
+                for (int i = 0; i < count; i++)
                 {
-                    int count = math.min(telemetryLength, VisorARStencilContracts.TelemetryFrameCount);
+                    int row = (start + i) % count;
+                    if (!TryCopyTelemetryDumpRow(row, payloadPtr + offset, stride))
+                        return;
 
-                    Span<byte> header = stackalloc byte[32];
-                    WriteUInt32LittleEndian(header, 0, DumpMagic);
-                    WriteUInt32LittleEndian(header, 4, DumpVersion);
-                    WriteUInt32LittleEndian(header, 8, reasonFlags);
-                    WriteUInt32LittleEndian(header, 12, VisorARStencilContracts.TelemetryEntryStrideBytes);
-                    WriteUInt32LittleEndian(header, 16, (uint)count);
-                    WriteUInt32LittleEndian(header, 20, (uint)cursor);
-                    WriteUInt32LittleEndian(header, 24, frameIndex);
-                    WriteUInt32LittleEndian(header, 28, descriptorGeneration);
-                    stream.Write(header);
-
-                    int stride = VisorARStencilContracts.TelemetryEntryStrideBytes;
-                    int start = count == VisorARStencilContracts.TelemetryFrameCount ? (cursor + 1) % count : 0;
-                    byte* rowBytes = stackalloc byte[VisorARStencilContracts.TelemetryEntryStrideBytes];
-                    for (int i = 0; i < count; i++)
-                    {
-                        int row = (start + i) % count;
-                        if (!TryCopyTelemetryDumpRow(row, rowBytes, stride))
-                            return;
-
-                        stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(rowBytes), stride));
-                    }
+                    offset += stride;
                 }
+
+                _telemetryDumped = NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
             }
             catch (IOException)
             {
-                _telemetryDumped = true;
             }
             catch (UnauthorizedAccessException)
             {
-                _telemetryDumped = true;
             }
             catch (ArgumentException)
             {
-                _telemetryDumped = true;
             }
             catch (NotSupportedException)
             {
-                _telemetryDumped = true;
             }
             catch (ObjectDisposedException)
             {
-                _telemetryDumped = true;
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 

@@ -1718,7 +1718,7 @@ namespace Hecton8.Gameplay
                 if (meshFilter == null || meshFilter.sharedMesh == null)
                     continue;
 
-                if (meshFilter.GetComponent<Renderer>() == null)
+                if (!meshFilter.TryGetComponent(out Renderer renderer))
                     continue;
 
                 validCount++;
@@ -1742,8 +1742,7 @@ namespace Hecton8.Gameplay
                 if (meshFilter == null || meshFilter.sharedMesh == null)
                     continue;
 
-                Renderer renderer = meshFilter.GetComponent<Renderer>();
-                if (renderer == null)
+                if (!meshFilter.TryGetComponent(out Renderer renderer))
                     continue;
 
                 cachedChunkMeshes[writeIndex] = meshFilter.sharedMesh;

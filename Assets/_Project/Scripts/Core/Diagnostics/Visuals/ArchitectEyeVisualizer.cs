@@ -1,5 +1,4 @@
 using System;
-using System.Buffers.Binary;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -1354,25 +1353,28 @@ namespace Hecton8.Core.Diagnostics.Visuals
             _frontCount = uploadCount;
         }
 
-        private void DumpBlackBox(NativeArray<ArchitectEyeBlackBoxEntry> blackBox)
+        private unsafe void DumpBlackBox(NativeArray<ArchitectEyeBlackBoxEntry> blackBox)
         {
-            if (!blackBox.IsCreated)
+            if (!blackBox.IsCreated || blackBox.Length <= 0)
                 return;
 
+            NativeArray<byte> payload = default;
             try
             {
-                string path = Path.Combine(Directory.GetCurrentDirectory(), BlackBoxDumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                Span<byte> entryBytes = stackalloc byte[BlackBoxEntrySizeBytes];
+                int byteCount = blackBox.Length * BlackBoxEntrySizeBytes;
+                payload = Hecton8.Core.NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(ArchitectEyeVisualizer),
+                    "architectEyeBlackBoxDumpPayload");
                 for (int i = 0; i < blackBox.Length; i++)
                 {
                     ArchitectEyeBlackBoxEntry entry = blackBox[i];
-                    WriteBlackBoxEntryLittleEndian(entryBytes, in entry);
-                    stream.Write(entryBytes);
+                    WriteBlackBoxEntryLittleEndian(
+                        (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload) + (i * BlackBoxEntrySizeBytes),
+                        in entry);
                 }
+
+                Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(BlackBoxDumpRelativePath, payload, byteCount);
             }
             catch (IOException)
             {
@@ -1390,33 +1392,59 @@ namespace Hecton8.Core.Diagnostics.Visuals
             {
                 _dumpWrittenThisFault = true;
             }
+            finally
+            {
+                Hecton8.Core.NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(ArchitectEyeVisualizer),
+                    "architectEyeBlackBoxDumpPayload");
+            }
         }
 
-        private static void WriteBlackBoxEntryLittleEndian(Span<byte> destination, in ArchitectEyeBlackBoxEntry entry)
+        private static unsafe void WriteBlackBoxEntryLittleEndian(byte* destination, in ArchitectEyeBlackBoxEntry entry)
         {
-            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
-            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(4, 2), entry.QuadCount);
-            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(6, 2), entry.SignalLaneCount);
-            WriteFloatLittleEndian(destination.Slice(8, 4), entry.SignalPressure01);
-            WriteFloatLittleEndian(destination.Slice(12, 4), entry.VaultPressure01);
-            WriteFloatLittleEndian(destination.Slice(16, 4), entry.MemoryFragmentation01);
-            WriteFloatLittleEndian(destination.Slice(20, 4), entry.SystemHealth01);
-            WriteFloatLittleEndian(destination.Slice(24, 4), entry.FrameTimeMs);
-            BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(28, 4), entry.NonFiniteCount);
-            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(32, 4), entry.KillSwitchMask);
-            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(36, 4), entry.Flags);
-            WriteFloatLittleEndian(destination.Slice(40, 4), entry.LastFaultPosition.x);
-            WriteFloatLittleEndian(destination.Slice(44, 4), entry.LastFaultPosition.y);
-            WriteFloatLittleEndian(destination.Slice(48, 4), entry.LastFaultPosition.z);
-            WriteFloatLittleEndian(destination.Slice(52, 4), entry.GasCo201);
-            WriteFloatLittleEndian(destination.Slice(56, 4), entry.GasO201);
-            WriteFloatLittleEndian(destination.Slice(60, 4), entry.StpScale01);
+            WriteUInt32LittleEndian(destination, 0, entry.Frame);
+            WriteUInt16LittleEndian(destination, 4, entry.QuadCount);
+            WriteUInt16LittleEndian(destination, 6, entry.SignalLaneCount);
+            WriteFloatLittleEndian(destination, 8, entry.SignalPressure01);
+            WriteFloatLittleEndian(destination, 12, entry.VaultPressure01);
+            WriteFloatLittleEndian(destination, 16, entry.MemoryFragmentation01);
+            WriteFloatLittleEndian(destination, 20, entry.SystemHealth01);
+            WriteFloatLittleEndian(destination, 24, entry.FrameTimeMs);
+            WriteInt32LittleEndian(destination, 28, entry.NonFiniteCount);
+            WriteUInt32LittleEndian(destination, 32, entry.KillSwitchMask);
+            WriteUInt32LittleEndian(destination, 36, entry.Flags);
+            WriteFloatLittleEndian(destination, 40, entry.LastFaultPosition.x);
+            WriteFloatLittleEndian(destination, 44, entry.LastFaultPosition.y);
+            WriteFloatLittleEndian(destination, 48, entry.LastFaultPosition.z);
+            WriteFloatLittleEndian(destination, 52, entry.GasCo201);
+            WriteFloatLittleEndian(destination, 56, entry.GasO201);
+            WriteFloatLittleEndian(destination, 60, entry.StpScale01);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        private static unsafe void WriteFloatLittleEndian(byte* destination, int offset, float value)
         {
-            BinaryPrimitives.WriteUInt32LittleEndian(destination, math.asuint(math.isfinite(value) ? value : 0f));
+            WriteUInt32LittleEndian(destination, offset, math.asuint(math.isfinite(value) ? value : 0f));
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt16LittleEndian(byte* destination, int offset, ushort value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, int offset, uint value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
         }
 
         private float3 ResolveFallbackProbePosition(IDataVault vault)

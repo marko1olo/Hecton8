@@ -40,11 +40,13 @@ namespace Hecton8.Gameplay
         {
             private bool _registered;
             private bool _hotSwapListenerRegistered;
+            private bool _runtimeActive;
             private float _playerResolveCooldown;
             private Transform _playerTransform;
 
             private void OnEnable()
             {
+                _runtimeActive = Application.isPlaying;
                 CacheRegistryServicesCold();
                 TryRegister();
                 TryRegisterHotSwapListener();
@@ -54,6 +56,7 @@ namespace Hecton8.Gameplay
             {
                 TryUnregisterHotSwapListener();
                 TryUnregister();
+                _runtimeActive = false;
             }
 
             private void OnDestroy()
@@ -67,7 +70,7 @@ namespace Hecton8.Gameplay
 
             public void LateFrameTick()
             {
-                if (!Application.isPlaying || s_activeDehydratedResidencySlotCount <= 0)
+                if (!_runtimeActive || s_activeDehydratedResidencySlotCount <= 0)
                     return;
 
                 float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);

@@ -557,6 +557,11 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.Audio:
                     _cachedAudioService = currentService as IAudioService;
                     break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _registeredLateFrame = false;
+                    if (currentService != null && isActiveAndEnabled && _pendingChargerAudio.Dirty != 0)
+                        TryRegisterLateFrame();
+                    break;
             }
         }
 
@@ -567,9 +572,14 @@ namespace Hecton8.Gameplay
 
             if (!_registered)
                 _registered = RegisterLogisticsLinks();
+        }
 
-            if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        private void TryRegisterLateFrame()
+        {
+            if (_registeredLateFrame || !Application.isPlaying)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -603,6 +613,7 @@ namespace Hecton8.Gameplay
         public void LateFrameTick()
         {
             FlushQueuedChargerAudio();
+            TryUnregisterLateFrameWhenDormant();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -645,6 +656,7 @@ namespace Hecton8.Gameplay
             _pendingChargerAudio.ClipKind = clipKind;
             _pendingChargerAudio.Dirty = 1;
             _pendingChargerAudio.Reserved0 = 0;
+            TryRegisterLateFrame();
         }
 
         private void FlushQueuedChargerAudio()
@@ -667,6 +679,15 @@ namespace Hecton8.Gameplay
         private void ClearQueuedChargerAudio()
         {
             _pendingChargerAudio = default;
+        }
+
+        private void TryUnregisterLateFrameWhenDormant()
+        {
+            if (!_registeredLateFrame || _pendingChargerAudio.Dirty != 0)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
         }
 
         private AudioClip ResolveChargerAudioClip(byte clipKind)

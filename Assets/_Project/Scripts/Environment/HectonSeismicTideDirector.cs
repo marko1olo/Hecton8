@@ -964,6 +964,8 @@ namespace Hecton8.Environment
     {
         private int _signalPushDropCount;
         private const int TelemetryCapacity = 300;
+        private const int TideTelemetryDumpHeaderBytes = 8;
+        private const int TideTelemetryDumpEntryBytes = 36;
         private const int SeismicTuningSlots = 1;
         private const int SeismicOutputSlots = 1;
         private const int SeismicMockSignalSlots = 1;
@@ -3573,7 +3575,6 @@ namespace Hecton8.Environment
 
             try
             {
-                Directory.CreateDirectory("Docs/AgentLogs");
                 WriteSeismicTelemetryDump(SeismicDirectorConstants.DumpPath, telemetry);
                 WriteSeismicTelemetryDump(SeismicDirectorConstants.SeismicAgentDumpPath, telemetry);
             }
@@ -3610,13 +3611,33 @@ namespace Hecton8.Environment
             header.FirstCount = (uint)firstCount;
             header.SecondCount = (uint)secondCount;
 
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            int headerBytes = UnsafeUtility.SizeOf<SeismicTelemetryDumpHeader>();
+            int byteCount = headerBytes + capacity * stride;
+            NativeArray<byte> payload = default;
+            try
             {
-                stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<SeismicTelemetryDumpHeader>()));
+                const string dumpPayloadLabel = "SeismicTelemetryDumpPayload";
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(HectonSeismicTideDirector),
+                    dumpPayloadLabel);
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                UnsafeUtility.MemCpy(target, &header, headerBytes);
+
                 byte* telemetryPtr = (byte*)telemetry.GetUnsafeReadOnlyPtr();
-                stream.Write(new ReadOnlySpan<byte>(telemetryPtr + startIndex * stride, firstCount * stride));
+                UnsafeUtility.MemCpy(target + headerBytes, telemetryPtr + startIndex * stride, firstCount * stride);
                 if (secondCount > 0)
-                    stream.Write(new ReadOnlySpan<byte>(telemetryPtr, secondCount * stride));
+                    UnsafeUtility.MemCpy(target + headerBytes + firstCount * stride, telemetryPtr, secondCount * stride);
+
+                NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+            }
+            finally
+            {
+                const string dumpPayloadLabel = "SeismicTelemetryDumpPayload";
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HectonSeismicTideDirector),
+                    dumpPayloadLabel);
             }
         }
 
@@ -3640,7 +3661,6 @@ namespace Hecton8.Environment
 
             try
             {
-                Directory.CreateDirectory("Docs/AgentLogs");
                 WriteCelestialTelemetryDump(SeismicDirectorConstants.CelestialDumpPath, telemetry);
                 WriteCelestialTelemetryDump(SeismicDirectorConstants.CelestialAgentDumpPath, telemetry);
             }
@@ -3654,15 +3674,32 @@ namespace Hecton8.Environment
 
         private unsafe void WriteCelestialTelemetryDump(string path, NativeArray<CelestialTelemetryEntry>.ReadOnly telemetry)
         {
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            int count = math.min(telemetry.Length, SeismicDirectorConstants.TelemetryFrames);
+            int telemetryBytes = count * UnsafeUtility.SizeOf<CelestialTelemetryEntry>();
+            int byteCount = TideTelemetryDumpHeaderBytes + telemetryBytes;
+            NativeArray<byte> payload = default;
+            try
             {
-                int* header = stackalloc int[2];
-                header[0] = SeismicDirectorConstants.TelemetryFrames;
-                header[1] = _celestialTelemetryWriteIndex;
-                stream.Write(new ReadOnlySpan<byte>(header, sizeof(int) * 2));
+                const string dumpPayloadLabel = "CelestialTelemetryDumpPayload";
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(HectonSeismicTideDirector),
+                    dumpPayloadLabel);
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteInt32LittleEndian(target, 0, SeismicDirectorConstants.TelemetryFrames);
+                WriteInt32LittleEndian(target, 4, _celestialTelemetryWriteIndex);
+
                 void* source = telemetry.GetUnsafeReadOnlyPtr();
-                int bytes = math.min(telemetry.Length, SeismicDirectorConstants.TelemetryFrames) * UnsafeUtility.SizeOf<CelestialTelemetryEntry>();
-                stream.Write(new ReadOnlySpan<byte>(source, bytes));
+                UnsafeUtility.MemCpy(target + TideTelemetryDumpHeaderBytes, source, telemetryBytes);
+                NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+            }
+            finally
+            {
+                const string dumpPayloadLabel = "CelestialTelemetryDumpPayload";
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HectonSeismicTideDirector),
+                    dumpPayloadLabel);
             }
         }
 
@@ -3777,34 +3814,42 @@ namespace Hecton8.Environment
             DumpTelemetryRing();
         }
 
-        private void DumpTelemetryRing()
+        private unsafe void DumpTelemetryRing()
         {
             TryReadOnlyVaultBuffer(_dataVault, in _tideTelemetryHandle, SeismicDirectorConstants.TideTelemetryBuffer, TelemetryCapacity, out NativeArray<SeismicTideTelemetryEntry>.ReadOnly telemetry);
             if (!telemetry.IsCreated)
                 return;
 
+            NativeArray<byte> payload = default;
             try
             {
-                Directory.CreateDirectory("Docs/AgentLogs");
-                using (FileStream stream = new FileStream(TelemetryDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                int byteCount = TideTelemetryDumpHeaderBytes + TelemetryCapacity * TideTelemetryDumpEntryBytes;
+                const string dumpPayloadLabel = "TideTelemetryDumpPayload";
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(HectonSeismicTideDirector),
+                    dumpPayloadLabel);
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteInt32LittleEndian(target, 0, TelemetryCapacity);
+                WriteInt32LittleEndian(target, 4, _telemetryWriteIndex);
+
+                int offset = TideTelemetryDumpHeaderBytes;
+                for (int i = 0; i < TelemetryCapacity; i++)
                 {
-                    writer.Write(TelemetryCapacity);
-                    writer.Write(_telemetryWriteIndex);
-                    for (int i = 0; i < TelemetryCapacity; i++)
-                    {
-                        int index = (_telemetryWriteIndex + i) % TelemetryCapacity;
-                        SeismicTideTelemetryEntry entry = telemetry[index];
-                        writer.Write(entry.TimeSeconds);
-                        writer.Write(entry.TideLevel);
-                        writer.Write(entry.LastTremorIntensity);
-                        writer.Write(entry.Direction.x);
-                        writer.Write(entry.Direction.y);
-                        writer.Write(entry.Direction.z);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.Sequence);
-                    }
+                    int index = (_telemetryWriteIndex + i) % TelemetryCapacity;
+                    SeismicTideTelemetryEntry entry = telemetry[index];
+                    WriteDoubleLittleEndian(target, offset, entry.TimeSeconds);
+                    WriteFloatLittleEndian(target, offset + 8, entry.TideLevel);
+                    WriteFloatLittleEndian(target, offset + 12, entry.LastTremorIntensity);
+                    WriteFloatLittleEndian(target, offset + 16, entry.Direction.x);
+                    WriteFloatLittleEndian(target, offset + 20, entry.Direction.y);
+                    WriteFloatLittleEndian(target, offset + 24, entry.Direction.z);
+                    WriteUInt32LittleEndian(target, offset + 28, entry.Flags);
+                    WriteUInt32LittleEndian(target, offset + 32, entry.Sequence);
+                    offset += TideTelemetryDumpEntryBytes;
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(TelemetryDumpPath, payload, byteCount);
             }
             catch (Exception)
             {
@@ -3812,6 +3857,49 @@ namespace Hecton8.Environment
                 Hecton8.Core.H8Debug.LogError("[HectonSeismicTideDirector] telemetry dump failed.");
 #endif
             }
+            finally
+            {
+                const string dumpPayloadLabel = "TideTelemetryDumpPayload";
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HectonSeismicTideDirector),
+                    dumpPayloadLabel);
+            }
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* target, int offset, int value)
+        {
+            WriteUInt32LittleEndian(target, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* target, int offset, uint value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+            target[offset + 2] = (byte)(value >> 16);
+            target[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static unsafe void WriteFloatLittleEndian(byte* target, int offset, float value)
+        {
+            WriteUInt32LittleEndian(target, offset, math.asuint(value));
+        }
+
+        private static unsafe void WriteDoubleLittleEndian(byte* target, int offset, double value)
+        {
+            WriteUInt64LittleEndian(target, offset, unchecked((ulong)BitConverter.DoubleToInt64Bits(value)));
+        }
+
+        private static unsafe void WriteUInt64LittleEndian(byte* target, int offset, ulong value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+            target[offset + 2] = (byte)(value >> 16);
+            target[offset + 3] = (byte)(value >> 24);
+            target[offset + 4] = (byte)(value >> 32);
+            target[offset + 5] = (byte)(value >> 40);
+            target[offset + 6] = (byte)(value >> 48);
+            target[offset + 7] = (byte)(value >> 56);
         }
 
         private void RefreshCachedRuntimeState()
@@ -5700,7 +5788,7 @@ namespace Hecton8.Environment
             job.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             job.Sequence = job.Frame ^ SeismicDirectorConstants.EmergencyFaultHash;
             job.EventTypeHash = SeismicDirectorConstants.EmergencyFaultHash;
-            job.Run();
+            job.Execute();
             SceneView.RepaintAll();
         }
     }

@@ -108,6 +108,7 @@ namespace Hecton8.World
         private float _chunkFadeDeltaAccumulator;
         private CancellationTokenSource _lifetimeCancellation;
         private IObjectPoolService _objectPool;
+        private IPlayerRuntimeContext _playerRuntimeContext;
 
         private void Awake()
         {
@@ -703,15 +704,16 @@ namespace Hecton8.World
         {
             WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
             WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
-            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            _playerRuntimeContext = GlobalRegistry.Player;
+            if (_playerRuntimeContext != null && _playerRuntimeContext.PlayerTransform != null)
+                playerTransform = _playerRuntimeContext.PlayerTransform;
             _objectPool ??= GlobalRegistry.ObjectPoolService;
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext playerContext) &&
-                playerContext != null &&
-                playerContext.PlayerMovement != null)
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null && playerContext.PlayerMovement != null)
             {
                 playerAup = playerContext.PlayerMovement.CurrentAup;
                 if (AbsoluteUniversePosition.IsFinite(in playerAup))
@@ -812,8 +814,8 @@ namespace Hecton8.World
                     return;
 
                 case GlobalRegistryServiceSlot.Player:
-                    IPlayerRuntimeContext playerContext = currentService as IPlayerRuntimeContext;
-                    playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    playerTransform = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerTransform : null;
                     return;
             }
         }

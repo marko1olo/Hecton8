@@ -10,7 +10,6 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Hecton8.Core
 {
@@ -101,6 +100,11 @@ namespace Hecton8.Core
             (1UL << ((int)BufferID.SubmarineFluidExteriorThermalTemperatures & 31)) |
             (1UL << ((int)BufferID.SubmarineFluidExteriorThermalLifetimes & 31));
         private const uint TelemetryFlagVaultUnavailable = 1u << 2;
+        private const uint TelemetryDumpMagic = 0x47534844u; // GSHD
+        private const uint TelemetryDumpVersion = 1u;
+        private const int TelemetryDumpHeaderBytes = 32;
+        private const int TelemetryDumpEntryBytes = 16;
+        private const string TelemetryDumpPath = "Docs/AgentLogs/Dump_GLOBAL_SHADER_DISPATCHER.bin";
         private const uint PhysiologyVisualHoldFrames = 24u;
 #if UNITY_EDITOR
         private const int CsvScratchBytes = 4096;
@@ -152,7 +156,6 @@ namespace Hecton8.Core
         private static readonly int _HypoxiaSignalId = Shader.PropertyToID("_HypoxiaSignal");
 
         private static GlobalShaderDispatcher s_instance;
-        private static CommandBuffer s_commandBuffer;
         private static IDataVault s_cachedVault;
         private static VaultGenerationHandle<float4> s_shaderSlotsHandle;
         private static uint s_lastDecompressionVisualSignalFrame;
@@ -195,12 +198,6 @@ namespace Hecton8.Core
         private static void ResetStaticState()
         {
             s_instance = null;
-            if (s_commandBuffer != null)
-            {
-                s_commandBuffer.Release();
-                s_commandBuffer = null;
-            }
-
             s_cachedVault = null;
             s_shaderSlotsHandle = default;
             s_lastDecompressionVisualSignalFrame = 0u;
@@ -244,7 +241,6 @@ namespace Hecton8.Core
             s_instance = this;
             CacheRegistryServicesCold(forceRefresh: true);
             TryRegisterHotSwapListener();
-            TryEnsureCommandBuffer(allowAllocation: true);
             if (EnsureShaderGlobalSlotsRuntime(out IDataVault vault, allowAllocation: true))
                 RunBinaryGraveyardProbeCold(vault);
             EnsureGpuBuffers();
@@ -264,7 +260,6 @@ namespace Hecton8.Core
             s_instance = this;
             CacheRegistryServicesCold(forceRefresh: false);
             TryRegisterHotSwapListener();
-            TryEnsureCommandBuffer(allowAllocation: true);
             if (EnsureShaderGlobalSlotsRuntime(out IDataVault vault, allowAllocation: true))
                 RunBinaryGraveyardProbeCold(vault);
             EnsureGpuBuffers();
@@ -326,9 +321,6 @@ namespace Hecton8.Core
         {
             long startTicks = Stopwatch.GetTimestamp();
             HectonShaderGlobalDataVaultBridge.SetVisualSyncDispatcherActive(false);
-
-            if (!HasCommandBufferReady())
-                return;
 
             if (!ValidateLayouts())
             {
@@ -709,26 +701,6 @@ namespace Hecton8.Core
                    handle.SystemID == (uint)SystemID.GraphicsScalability;
         }
 
-        private static bool TryEnsureCommandBuffer(bool allowAllocation)
-        {
-            if (s_commandBuffer != null)
-                return true;
-
-            if (!allowAllocation)
-                return false;
-
-            s_commandBuffer = new CommandBuffer // COLD ALLOC: CommandBuffer[1] - frame global shader upload - owner: GlobalShaderDispatcher
-            {
-                name = "H8 Global Shader Variables"
-            };
-            return s_commandBuffer != null;
-        }
-
-        private static bool HasCommandBufferReady()
-        {
-            return s_commandBuffer != null;
-        }
-
         private bool EnsureGpuBuffers()
         {
             if (_emptyFloat4Buffer == null || !_emptyFloat4Buffer.IsValid())
@@ -1007,71 +979,68 @@ namespace Hecton8.Core
             float globalQualityWeight01,
             float survivalPressureWeight01)
         {
-            CommandBuffer cmd = s_commandBuffer;
-            cmd.Clear();
             Vector4 fogColor = ToVector4(dto.FogColor);
             Vector4 flow = new Vector4(dto.FlowVector.x, dto.FlowVector.y, dto.FlowVector.z, dto.FlowMagnitude);
 
-            cmd.SetGlobalVector(_FogColorId, fogColor);
-            cmd.SetGlobalFloat(_FogDensityId, fogColor.w);
-            cmd.SetGlobalVector(_AmbientLightId, ambient);
-            cmd.SetGlobalVector(_GlobalFlowVectorId, flow);
-            cmd.SetGlobalVector(_H8GlobalFlowId, flow);
-            cmd.SetGlobalFloat(_H8ShaderTimeId, dto.GlobalTime);
-            cmd.SetGlobalVector(_WorldOriginOffsetId, aupOffset);
-            cmd.SetGlobalVector(_TotalUniverseOffsetId, aupOffset);
-            cmd.SetGlobalVector(_HectonFloatingOriginOffsetId, aupOffset);
-            cmd.SetGlobalVector(_AupShiftOffsetId, aupShiftOffset);
-            cmd.SetGlobalFloat(_AupJitterMaskId, aupJitterMask);
-            cmd.SetGlobalFloat(_ResolutionScaleId, resolution.x);
-            cmd.SetGlobalVector(_ResolutionScaleParamsId, resolution);
-            cmd.SetGlobalFloat(_HazardPulseIntensityId, hazard.x);
-            cmd.SetGlobalVector(_HazardPulseParamsId, hazard);
-            cmd.SetGlobalVector(_ExtinctionCoefficientsId, extinction);
-            cmd.SetGlobalVector(_ExtinctionLutParamsId, extinctionLutParams);
-            cmd.SetGlobalVector(_ExtinctionLutRuntimeId, extinctionLutRuntime);
-            cmd.SetGlobalVector(_ExtinctionLutWeatherParamsId, extinctionLutWeather);
-            cmd.SetGlobalVector(_BiomePaletteId, biomePalette);
-            cmd.SetGlobalVector(_HardwareTierParamsId, new Vector4(
+            Shader.SetGlobalVector(_FogColorId, fogColor);
+            Shader.SetGlobalFloat(_FogDensityId, fogColor.w);
+            Shader.SetGlobalVector(_AmbientLightId, ambient);
+            Shader.SetGlobalVector(_GlobalFlowVectorId, flow);
+            Shader.SetGlobalVector(_H8GlobalFlowId, flow);
+            Shader.SetGlobalFloat(_H8ShaderTimeId, dto.GlobalTime);
+            Shader.SetGlobalVector(_WorldOriginOffsetId, aupOffset);
+            Shader.SetGlobalVector(_TotalUniverseOffsetId, aupOffset);
+            Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, aupOffset);
+            Shader.SetGlobalVector(_AupShiftOffsetId, aupShiftOffset);
+            Shader.SetGlobalFloat(_AupJitterMaskId, aupJitterMask);
+            Shader.SetGlobalFloat(_ResolutionScaleId, resolution.x);
+            Shader.SetGlobalVector(_ResolutionScaleParamsId, resolution);
+            Shader.SetGlobalFloat(_HazardPulseIntensityId, hazard.x);
+            Shader.SetGlobalVector(_HazardPulseParamsId, hazard);
+            Shader.SetGlobalVector(_ExtinctionCoefficientsId, extinction);
+            Shader.SetGlobalVector(_ExtinctionLutParamsId, extinctionLutParams);
+            Shader.SetGlobalVector(_ExtinctionLutRuntimeId, extinctionLutRuntime);
+            Shader.SetGlobalVector(_ExtinctionLutWeatherParamsId, extinctionLutWeather);
+            Shader.SetGlobalVector(_BiomePaletteId, biomePalette);
+            Shader.SetGlobalVector(_HardwareTierParamsId, new Vector4(
                 math.saturate(globalQualityWeight01),
                 math.saturate(survivalPressureWeight01),
                 _generatedEmergencyGlobals ? 1f : 0f,
                 _activeKeywordCount));
-            cmd.SetGlobalVector(_BiolumMasterPhaseId, biolumMasterPhase);
-            cmd.SetGlobalVector(_HectonUberNoirRuntimeParamsId, uberNoirRuntime);
-            cmd.SetGlobalFloat(_HectonActiveShaderFeatureMaskId, uberNoirFeatureMask);
-            cmd.SetGlobalVector(_HectonPowerBrownoutParamsId, powerBrownout);
-            cmd.SetGlobalVector(_HectonRespawnDearLieParamsId, respawnDearLie);
-            cmd.SetGlobalFloat(_HectonDeathFadeIntensityId, math.saturate(respawnDearLie.x));
-            cmd.SetGlobalVector(_HectonSuitCrushDearLieParamsId, suitCrushDearLie);
-            cmd.SetGlobalFloat(_HectonSuitCrushBucklingId, math.saturate(suitCrushDearLie.x));
-            cmd.SetGlobalVector(_HectonRadiationMutationParamsId, radiationMutation);
-            cmd.SetGlobalFloat(_HectonHandRadiationMutation01Id, math.saturate(radiationMutation.x));
-            cmd.SetGlobalVector(_HectonDcsPhysiologyParamsId, physiologyDecompression);
-            cmd.SetGlobalFloat(_HectonSupersaturationScalarId, math.saturate(physiologyDecompression.x));
-            cmd.SetGlobalFloat(_HectonNarcosisScalarId, math.saturate(physiologyDecompression.y));
-            cmd.SetGlobalVector(_HectonGasToxicityParamsId, physiologyGasToxicity);
-            cmd.SetGlobalFloat(_HypoxiaSignalId, math.saturate(physiologyGasToxicity.x));
-            cmd.SetGlobalVector(_DynamicWakeParamsId, wakeParams);
-            cmd.SetGlobalVector(_ThermalAnomalyParamsId, thermalParams);
+            Shader.SetGlobalVector(_BiolumMasterPhaseId, biolumMasterPhase);
+            Shader.SetGlobalVector(_HectonUberNoirRuntimeParamsId, uberNoirRuntime);
+            Shader.SetGlobalFloat(_HectonActiveShaderFeatureMaskId, uberNoirFeatureMask);
+            Shader.SetGlobalVector(_HectonPowerBrownoutParamsId, powerBrownout);
+            Shader.SetGlobalVector(_HectonRespawnDearLieParamsId, respawnDearLie);
+            Shader.SetGlobalFloat(_HectonDeathFadeIntensityId, math.saturate(respawnDearLie.x));
+            Shader.SetGlobalVector(_HectonSuitCrushDearLieParamsId, suitCrushDearLie);
+            Shader.SetGlobalFloat(_HectonSuitCrushBucklingId, math.saturate(suitCrushDearLie.x));
+            Shader.SetGlobalVector(_HectonRadiationMutationParamsId, radiationMutation);
+            Shader.SetGlobalFloat(_HectonHandRadiationMutation01Id, math.saturate(radiationMutation.x));
+            Shader.SetGlobalVector(_HectonDcsPhysiologyParamsId, physiologyDecompression);
+            Shader.SetGlobalFloat(_HectonSupersaturationScalarId, math.saturate(physiologyDecompression.x));
+            Shader.SetGlobalFloat(_HectonNarcosisScalarId, math.saturate(physiologyDecompression.y));
+            Shader.SetGlobalVector(_HectonGasToxicityParamsId, physiologyGasToxicity);
+            Shader.SetGlobalFloat(_HypoxiaSignalId, math.saturate(physiologyGasToxicity.x));
+            Shader.SetGlobalVector(_DynamicWakeParamsId, wakeParams);
+            Shader.SetGlobalVector(_ThermalAnomalyParamsId, thermalParams);
 
             GraphicsBuffer wakeBuffer = _emptyFloat4Buffer;
             GraphicsBuffer wakeVectorBuffer = _emptyFloat4Buffer;
             if (wakeBuffer != null && wakeBuffer.IsValid())
-                cmd.SetGlobalBuffer(_DynamicWakesId, wakeBuffer);
+                Shader.SetGlobalBuffer(_DynamicWakesId, wakeBuffer);
             if (wakeVectorBuffer != null && wakeVectorBuffer.IsValid())
-                cmd.SetGlobalBuffer(_DynamicWakeVectorsId, wakeVectorBuffer);
+                Shader.SetGlobalBuffer(_DynamicWakeVectorsId, wakeVectorBuffer);
             if (_thermalAnomalyBuffer != null && _thermalAnomalyBuffer.IsValid())
-                cmd.SetGlobalBuffer(_ThermalAnomaliesId, _thermalAnomalyBuffer);
+                Shader.SetGlobalBuffer(_ThermalAnomaliesId, _thermalAnomalyBuffer);
 
             Texture extinctionTexture = LutArrayResolver.ExtinctionTexture;
             if (extinctionTexture != null)
             {
-                cmd.SetGlobalTexture(_OpticalExtinctionLutId, extinctionTexture);
-                cmd.SetGlobalTexture(_ExtinctionLutId, extinctionTexture);
+                Shader.SetGlobalTexture(_OpticalExtinctionLutId, extinctionTexture);
+                Shader.SetGlobalTexture(_ExtinctionLutId, extinctionTexture);
             }
 
-            UnityEngine.Graphics.ExecuteCommandBuffer(cmd);
             HectonShaderGlobalDataVaultBridge.SetVisualSyncDispatcherActive(true);
         }
 
@@ -1255,9 +1224,76 @@ namespace Hecton8.Core
 
             if (!copiedTelemetry)
                 reasonFlags |= TelemetryFlagVaultUnavailable;
-            _ = telemetrySnapshot.Length;
-            _ = telemetryCursor;
-            _ = reasonFlags;
+
+            WriteTelemetryDump(telemetrySnapshot, telemetryCursor, reasonFlags);
+        }
+
+        private static unsafe void WriteTelemetryDump(
+            ReadOnlySpan<float4> telemetrySnapshot,
+            int telemetryCursor,
+            uint reasonFlags)
+        {
+            int count = math.min(telemetrySnapshot.Length, TelemetryCapacity);
+            if (count <= 0)
+                return;
+
+            int byteCount = TelemetryDumpHeaderBytes + count * TelemetryDumpEntryBytes;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(GlobalShaderDispatcher),
+                "GlobalShaderDispatcherTelemetryDumpPayload");
+            try
+            {
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteUInt32LittleEndian(target, 0, TelemetryDumpMagic);
+                WriteUInt32LittleEndian(target, 4, TelemetryDumpVersion);
+                WriteUInt32LittleEndian(target, 8, reasonFlags);
+                WriteInt32LittleEndian(target, 12, telemetryCursor);
+                WriteInt32LittleEndian(target, 16, count);
+                WriteInt32LittleEndian(target, 20, TelemetryDumpEntryBytes);
+                WriteUInt32LittleEndian(target, 24, (uint)RequiredShaderGlobalSlots);
+                WriteUInt32LittleEndian(target, 28, 0u);
+
+                int cursor = TelemetryDumpHeaderBytes;
+                for (int i = 0; i < count; i++)
+                    WriteFloat4LittleEndian(target, ref cursor, telemetrySnapshot[i]);
+
+                NativeFaultDumpWriter.TryWriteAll(TelemetryDumpPath, payload, cursor);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(GlobalShaderDispatcher),
+                    "GlobalShaderDispatcherTelemetryDumpPayload");
+            }
+        }
+
+        private static unsafe void WriteFloat4LittleEndian(byte* destination, ref int cursor, float4 value)
+        {
+            WriteFloatLittleEndian(destination, ref cursor, value.x);
+            WriteFloatLittleEndian(destination, ref cursor, value.y);
+            WriteFloatLittleEndian(destination, ref cursor, value.z);
+            WriteFloatLittleEndian(destination, ref cursor, value.w);
+        }
+
+        private static unsafe void WriteFloatLittleEndian(byte* destination, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(destination, cursor, math.asuint(value));
+            cursor += 4;
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, int offset, uint value)
+        {
+            destination[offset] = unchecked((byte)value);
+            destination[offset + 1] = unchecked((byte)(value >> 8));
+            destination[offset + 2] = unchecked((byte)(value >> 16));
+            destination[offset + 3] = unchecked((byte)(value >> 24));
         }
 
 #if UNITY_EDITOR

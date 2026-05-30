@@ -14,7 +14,7 @@ namespace Hecton8.Physics
         public const int MaxFreshAgeFrames = 5;
         public const int VehicleProfileCapacity = 64;
 #if UNITY_EDITOR
-        public const int CsvScratchBytes = 65536;
+        public const int CsvImportByteCapacity = 65536;
 #endif
         public const float AuthoritativeQualityWeight = 1f;
         public const int WaveCapacity = 2;
@@ -52,9 +52,6 @@ namespace Hecton8.Physics
         public const BufferID MockRing = (BufferID)71827;
         public const BufferID FallbackWaves = (BufferID)71828;
         public const BufferID VehicleSamplingProfiles = (BufferID)71829;
-#if UNITY_EDITOR
-        public const BufferID CsvScratch = (BufferID)71830;
-#endif
         public const BufferID Counter = (BufferID)71831;
     }
 

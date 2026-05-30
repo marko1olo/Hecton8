@@ -4,6 +4,7 @@ namespace Hecton8.Tools
     using System.IO;
     using System.Runtime.CompilerServices;
     using System.Runtime.InteropServices;
+    using Hecton8.Core;
     using Hecton8.Core.Contracts;
     using Hecton8.Core.Memory;
     using Unity.Burst;
@@ -853,18 +854,11 @@ namespace Hecton8.Tools
                 return false;
 
             string path = Path.Combine(projectRoot, UpgradeMatrixConstants.DumpRelativePath);
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
             fixed (UpgradeTelemetryEntry* ptr = telemetry)
             {
-                ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>(ptr, telemetry.Length * UnsafeUtility.SizeOf<UpgradeTelemetryEntry>());
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                stream.Write(bytes);
+                int byteCount = telemetry.Length * UnsafeUtility.SizeOf<UpgradeTelemetryEntry>();
+                return NativeFaultDumpWriter.TryWriteAll(path, new ReadOnlySpan<byte>(ptr, byteCount), byteCount);
             }
-
-            return true;
         }
     }
 

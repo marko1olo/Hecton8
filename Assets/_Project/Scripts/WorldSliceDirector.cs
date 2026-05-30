@@ -23,9 +23,6 @@ namespace Hecton8.World
         [SerializeField] private Transform playerTransform;
         [SerializeField] private WorldChunkStreamingProfile chunkStreamingProfile;
 
-        [Header("Runtime Auto Resolve")]
-        [SerializeField, Min(0f)] private float autoResolveRetryInterval = 1f;
-
         [Header("Runtime Scales")]
         [SerializeField] private float nearDistanceScale = 1f;
         [SerializeField] private float midDistanceScale = 1f;
@@ -49,13 +46,12 @@ namespace Hecton8.World
         private IPlayerRuntimeContext _cachedPlayerContext;
         private float _profileNearDistanceScale = 1f;
         private float _profileMidDistanceScale = 1f;
-        private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
         private void Awake()
         {
             PublishActiveRuntimeInstance();
             CachePlayerContextCold();
-            ResolvePlayer();
+            RefreshColdPlayerReference();
             RefreshChunkProfileScales();
             RefreshAnchors();
             UpdateDiagnostics(false);
@@ -64,6 +60,7 @@ namespace Hecton8.World
         private void OnEnable()
         {
             CachePlayerContextCold();
+            RefreshColdPlayerReference();
             TryRegisterHotSwapListener();
             TryRegister();
         }
@@ -161,7 +158,7 @@ namespace Hecton8.World
 
         private void ApplySlices(bool forceRefresh)
         {
-            ResolvePlayer();
+            RefreshPlayerFromCachedContext();
             int activeAnchorVersion = WorldSliceAnchor.ActiveAnchorVersion;
             if (forceRefresh || _anchorCount == 0 || activeAnchorVersion != _lastAnchorVersion)
                 RefreshAnchors();
@@ -198,24 +195,25 @@ namespace Hecton8.World
             UpdateDiagnostics(true);
         }
 
-        private void ResolvePlayer()
+        private void RefreshColdPlayerReference()
+        {
+            if (playerTransform != null)
+                return;
+
+            if (_cachedPlayerContext == null)
+                _cachedPlayerContext = GlobalRegistry.Player;
+
+            RefreshPlayerFromCachedContext();
+        }
+
+        private void RefreshPlayerFromCachedContext()
         {
             if (playerTransform != null)
                 return;
 
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null && playerContext.PlayerTransform != null)
-            {
                 playerTransform = playerContext.PlayerTransform;
-                return;
-            }
-
-            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
-            if (now < _nextAutoResolveAttemptTime)
-                return;
-
-            _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
-            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
         }
 
         private void RefreshChunkProfileScales()

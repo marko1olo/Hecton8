@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -23,6 +22,9 @@ namespace Hecton8.Physics
         public const int MockSplineVertexCapacity = MockTetherCount * MaxSplineVerticesPerTether;
         public const int PhysicsEventCapacity = MockConstraintCapacity;
         public const int TelemetryCapacity = 300;
+        public const int TelemetryDumpHeaderBytes = 12;
+        public const int TelemetryDumpRowBytes = 56;
+        public const string TelemetryDumpPayloadLabel = "cablePhysics132TelemetryDumpPayload";
         public const int MaterialCapacity = 16;
         public const int BootstrapMagic = 0x53483132;
         public const uint EventLaneHash = 0x54455448u;
@@ -73,20 +75,20 @@ namespace Hecton8.Physics
 
     public static unsafe class CablePhysicsSolver132
     {
-        private static readonly ulong ScheduledMockMutationGuardMask =
-            VaultMutationGuardBit(CablePhysics132BufferIds.CableNodes) |
-            VaultMutationGuardBit(CablePhysics132BufferIds.CableConstraints) |
-            VaultMutationGuardBit(CablePhysics132BufferIds.Endpoints) |
-            VaultMutationGuardBit(CablePhysics132BufferIds.SplineVertices) |
-            VaultMutationGuardBit(CablePhysics132BufferIds.SegmentTensions) |
-            VaultMutationGuardBit(CablePhysics132BufferIds.PhysicsEvents) |
-            VaultMutationGuardBit(CablePhysics132BufferIds.TelemetryRing) |
-            VaultMutationGuardBit(CablePhysics132BufferIds.TelemetryHead) |
-            VaultMutationGuardBit(CablePhysics132BufferIds.PinnedAups) |
-            VaultMutationGuardBit(CablePhysics132BufferIds.PinnedMask) |
-            VaultMutationGuardBit(CablePhysics132BufferIds.Tuning);
+        private const uint ScheduledMockPinCableNodes = 1u << 0;
+        private const uint ScheduledMockPinCableConstraints = 1u << 1;
+        private const uint ScheduledMockPinEndpoints = 1u << 2;
+        private const uint ScheduledMockPinSplineVertices = 1u << 3;
+        private const uint ScheduledMockPinSegmentTensions = 1u << 4;
+        private const uint ScheduledMockPinPhysicsEvents = 1u << 5;
+        private const uint ScheduledMockPinTelemetryRing = 1u << 6;
+        private const uint ScheduledMockPinTelemetryHead = 1u << 7;
+        private const uint ScheduledMockPinPinnedAups = 1u << 8;
+        private const uint ScheduledMockPinPinnedMask = 1u << 9;
+        private const uint ScheduledMockPinTuning = 1u << 10;
 
-        private static bool _scheduledMockGuardHeld;
+        private static IDataVault _scheduledMockPinVault;
+        private static uint _scheduledMockPinMask;
 
         private static readonly ulong BootstrapMutationGuardMask =
             VaultMutationGuardBit(CablePhysics132BufferIds.BootstrapState) |
@@ -316,7 +318,7 @@ namespace Hecton8.Physics
             out JobHandle handle)
         {
             handle = dependency;
-            if (!TryAcquireMockScheduleBufferGuard(vault))
+            if (!TryLockMockScheduleBuffers(vault))
                 return false;
 
             bool scheduled = false;
@@ -373,12 +375,24 @@ namespace Hecton8.Physics
 
         public static void ReleaseMockScheduleBufferPins(IDataVault vault)
         {
-            if (!_scheduledMockGuardHeld)
+            IDataVault pinVault = _scheduledMockPinVault ?? vault;
+            uint pinMask = _scheduledMockPinMask;
+            _scheduledMockPinVault = null;
+            _scheduledMockPinMask = 0u;
+            if (pinVault == null || pinMask == 0u)
                 return;
 
-            _scheduledMockGuardHeld = false;
-            if (vault != null)
-                vault.ReleaseMutationGuard(ScheduledMockMutationGuardMask);
+            TryUnlockMockSchedulePin(pinVault, pinMask, ScheduledMockPinTuning, CablePhysics132BufferIds.Tuning);
+            TryUnlockMockSchedulePin(pinVault, pinMask, ScheduledMockPinPinnedMask, CablePhysics132BufferIds.PinnedMask);
+            TryUnlockMockSchedulePin(pinVault, pinMask, ScheduledMockPinPinnedAups, CablePhysics132BufferIds.PinnedAups);
+            TryUnlockMockSchedulePin(pinVault, pinMask, ScheduledMockPinTelemetryHead, CablePhysics132BufferIds.TelemetryHead);
+            TryUnlockMockSchedulePin(pinVault, pinMask, ScheduledMockPinTelemetryRing, CablePhysics132BufferIds.TelemetryRing);
+            TryUnlockMockSchedulePin(pinVault, pinMask, ScheduledMockPinPhysicsEvents, CablePhysics132BufferIds.PhysicsEvents);
+            TryUnlockMockSchedulePin(pinVault, pinMask, ScheduledMockPinSegmentTensions, CablePhysics132BufferIds.SegmentTensions);
+            TryUnlockMockSchedulePin(pinVault, pinMask, ScheduledMockPinSplineVertices, CablePhysics132BufferIds.SplineVertices);
+            TryUnlockMockSchedulePin(pinVault, pinMask, ScheduledMockPinEndpoints, CablePhysics132BufferIds.Endpoints);
+            TryUnlockMockSchedulePin(pinVault, pinMask, ScheduledMockPinCableConstraints, CablePhysics132BufferIds.CableConstraints);
+            TryUnlockMockSchedulePin(pinVault, pinMask, ScheduledMockPinCableNodes, CablePhysics132BufferIds.CableNodes);
         }
 
         public static JobHandle ScheduleMock(
@@ -535,8 +549,8 @@ namespace Hecton8.Physics
         public static bool TrySampleLatestTelemetry(IDataVault vault, out TetherTelemetryEntry telemetry)
         {
             telemetry = default;
-            if (!TryReadExistingVaultView(vault, CablePhysics132BufferIds.TelemetryRing, out NativeArray<TetherTelemetryEntry> ring) ||
-                !TryReadExistingVaultView(vault, CablePhysics132BufferIds.TelemetryHead, out NativeArray<int> headArray))
+            if (!TryReadExistingVaultView(vault, CablePhysics132BufferIds.TelemetryRing, out NativeArray<TetherTelemetryEntry>.ReadOnly ring) ||
+                !TryReadExistingVaultView(vault, CablePhysics132BufferIds.TelemetryHead, out NativeArray<int>.ReadOnly headArray))
                 return false;
 
             if (!ring.IsCreated || !headArray.IsCreated || ring.Length <= 0 || headArray.Length <= 0)
@@ -551,30 +565,26 @@ namespace Hecton8.Physics
 
         public static bool TryDumpCableSurgeon(IDataVault vault, uint reasonFlags)
         {
-            DirectoryInfo projectRoot = Directory.GetParent(Application.dataPath);
-            return projectRoot != null && TryDumpLatestVault(vault, projectRoot.FullName, reasonFlags);
+            return TryDumpLatestVault(vault, string.Empty, reasonFlags);
         }
 
         public static bool TryDumpLatestVault(IDataVault vault, string projectRoot, uint reasonFlags)
         {
-            if (string.IsNullOrEmpty(projectRoot) ||
-                !TryReadExistingVaultView(vault, CablePhysics132BufferIds.TelemetryRing, out NativeArray<TetherTelemetryEntry> ring))
+            if (!TryReadExistingVaultView(vault, CablePhysics132BufferIds.TelemetryRing, out NativeArray<TetherTelemetryEntry>.ReadOnly ring))
                 return false;
 
             if (!ring.IsCreated || ring.Length <= 0)
                 return false;
 
-            string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-            Directory.CreateDirectory(logDirectory);
-            WriteTelemetryDump(Path.Combine(logDirectory, "Dump_SHINOBU_132.bin"), ring, reasonFlags);
-            WriteTelemetryDump(Path.Combine(logDirectory, "Dump_CABLE_SURGEON.bin"), ring, reasonFlags);
-            return true;
+            bool primary = WriteTelemetryDump("Docs/AgentLogs/Dump_SHINOBU_132.bin", ring, reasonFlags);
+            bool surgeon = WriteTelemetryDump("Docs/AgentLogs/Dump_CABLE_SURGEON.bin", ring, reasonFlags);
+            return primary && surgeon;
         }
 
         public static bool TrySampleTuning(IDataVault vault, out VerletCableTuningDTO tuning)
         {
             tuning = default;
-            if (!TryReadExistingVaultView(vault, CablePhysics132BufferIds.Tuning, out NativeArray<VerletCableTuningDTO> tuningView) ||
+            if (!TryReadExistingVaultView(vault, CablePhysics132BufferIds.Tuning, out NativeArray<VerletCableTuningDTO>.ReadOnly tuningView) ||
                 !tuningView.IsCreated ||
                 tuningView.Length <= 0)
             {
@@ -615,8 +625,13 @@ namespace Hecton8.Physics
         public static bool TryApplyMaterialCsv(IDataVault vault, ReadOnlySpan<byte> csvBytes, out int parsed)
         {
             parsed = 0;
-            if (csvBytes.Length <= 0 ||
-                !TryOpenOrAcquireWritableVaultView(
+            if (csvBytes.Length <= 0)
+                return false;
+
+            Span<CableMaterialDTO> materialScratch = stackalloc CableMaterialDTO[CablePhysics132Constants.MaterialCapacity];
+            parsed = CableMaterialCsvParser.ParseHashTable(csvBytes, materialScratch);
+
+            if (!TryOpenOrAcquireWritableVaultView(
                     vault,
                     CablePhysics132BufferIds.CableMaterials,
                     CablePhysics132Constants.MaterialCapacity,
@@ -631,7 +646,13 @@ namespace Hecton8.Physics
 
             try
             {
-                parsed = CableMaterialCsvParser.ParseHashTable(csvBytes, materials);
+                int copyCount = math.min(materials.Length, materialScratch.Length);
+                for (int i = 0; i < copyCount; i++)
+                    materials[i] = materialScratch[i];
+
+                for (int i = copyCount; i < materials.Length; i++)
+                    materials[i] = default;
+
                 return true;
             }
             finally
@@ -777,16 +798,61 @@ namespace Hecton8.Physics
                    vault.TryAcquireMutationGuard(mask);
         }
 
-        private static bool TryAcquireMockScheduleBufferGuard(IDataVault vault)
+        private static bool TryLockMockScheduleBuffers(IDataVault vault)
         {
-            if (vault == null || _scheduledMockGuardHeld)
+            if (vault == null ||
+                _scheduledMockPinVault != null ||
+                _scheduledMockPinMask != 0u ||
+                vault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            _scheduledMockPinVault = vault;
+            bool locked = false;
+            try
+            {
+                if (!TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.CableNodes, ScheduledMockPinCableNodes) ||
+                    !TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.CableConstraints, ScheduledMockPinCableConstraints) ||
+                    !TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.Endpoints, ScheduledMockPinEndpoints) ||
+                    !TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.SplineVertices, ScheduledMockPinSplineVertices) ||
+                    !TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.SegmentTensions, ScheduledMockPinSegmentTensions) ||
+                    !TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.PhysicsEvents, ScheduledMockPinPhysicsEvents) ||
+                    !TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.TelemetryRing, ScheduledMockPinTelemetryRing) ||
+                    !TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.TelemetryHead, ScheduledMockPinTelemetryHead) ||
+                    !TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.PinnedAups, ScheduledMockPinPinnedAups) ||
+                    !TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.PinnedMask, ScheduledMockPinPinnedMask) ||
+                    !TryLockMockScheduleBuffer(vault, CablePhysics132BufferIds.Tuning, ScheduledMockPinTuning))
+                {
+                    return false;
+                }
+
+                locked = true;
+                return true;
+            }
+            finally
+            {
+                if (!locked)
+                    ReleaseMockScheduleBufferPins(vault);
+            }
+        }
+
+        private static bool TryLockMockScheduleBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        {
+            if ((_scheduledMockPinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null || !vault.TryLockBuffer(bufferId, SystemID.Physics))
                 return false;
 
-            if (!TryAcquireCableMutationGuard(vault, ScheduledMockMutationGuardMask))
-                return false;
-
-            _scheduledMockGuardHeld = true;
+            _scheduledMockPinMask |= pinBit;
             return true;
+        }
+
+        private static void TryUnlockMockSchedulePin(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, SystemID.Physics);
         }
 
         private static ulong VaultMutationGuardBit(BufferID bufferId)
@@ -930,40 +996,95 @@ namespace Hecton8.Physics
         private static bool TryReadExistingVaultView<T>(
             IDataVault vault,
             BufferID bufferId,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             return vault != null &&
                    vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) &&
-                   vault.TryReadHandle(in handle, out buffer) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
                    buffer.IsCreated;
         }
 
-        private static void WriteTelemetryDump(string path, NativeArray<TetherTelemetryEntry> ring, uint reasonFlags)
+        private static bool WriteTelemetryDump(string path, NativeArray<TetherTelemetryEntry>.ReadOnly ring, uint reasonFlags)
         {
-            using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            int capacity = math.min(ring.Length, CablePhysics132Constants.TelemetryCapacity);
+            long totalBytes = CablePhysics132Constants.TelemetryDumpHeaderBytes +
+                              ((long)capacity * CablePhysics132Constants.TelemetryDumpRowBytes);
+            if (totalBytes < CablePhysics132Constants.TelemetryDumpHeaderBytes || totalBytes > int.MaxValue)
+                return false;
+
+            NativeArray<byte> payload = default;
+            try
             {
-                writer.Write(0x53483132u);
-                writer.Write(reasonFlags);
-                writer.Write(math.min(ring.Length, CablePhysics132Constants.TelemetryCapacity));
-                int capacity = math.min(ring.Length, CablePhysics132Constants.TelemetryCapacity);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    (int)totalBytes,
+                    nameof(CablePhysicsSolver132),
+                    CablePhysics132Constants.TelemetryDumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                WriteUInt32LittleEndian(payload, 0, 0x53483132u);
+                WriteUInt32LittleEndian(payload, 4, reasonFlags);
+                WriteInt32LittleEndian(payload, 8, capacity);
+
+                int cursor = CablePhysics132Constants.TelemetryDumpHeaderBytes;
                 for (int i = 0; i < capacity; i++)
                 {
-                    TetherTelemetryEntry entry = ring[i];
-                    writer.Write(entry.FrameIndex);
-                    writer.Write(entry.NodeCount);
-                    writer.Write(entry.IterationCount);
-                    writer.Write(entry.MaxTension);
-                    writer.Write(entry.AnchorAUP.x);
-                    writer.Write(entry.AnchorAUP.y);
-                    writer.Write(entry.AnchorAUP.z);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.CpuMicroseconds);
-                    writer.Write(entry.GlobalQualityWeight);
+                    WriteTelemetryEntry(payload, cursor, ring[i]);
+                    cursor += CablePhysics132Constants.TelemetryDumpRowBytes;
                 }
+
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, (int)totalBytes);
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(CablePhysicsSolver132),
+                    CablePhysics132Constants.TelemetryDumpPayloadLabel);
+            }
+        }
+
+        private static void WriteTelemetryEntry(NativeArray<byte> destination, int offset, TetherTelemetryEntry entry)
+        {
+            WriteUInt32LittleEndian(destination, offset, entry.FrameIndex);
+            WriteInt32LittleEndian(destination, offset + 4, entry.NodeCount);
+            WriteInt32LittleEndian(destination, offset + 8, entry.IterationCount);
+            WriteFloat32LittleEndian(destination, offset + 12, entry.MaxTension);
+            WriteFloat64LittleEndian(destination, offset + 16, entry.AnchorAUP.x);
+            WriteFloat64LittleEndian(destination, offset + 24, entry.AnchorAUP.y);
+            WriteFloat64LittleEndian(destination, offset + 32, entry.AnchorAUP.z);
+            WriteUInt32LittleEndian(destination, offset + 40, entry.StateHash);
+            WriteUInt32LittleEndian(destination, offset + 44, entry.Flags);
+            WriteFloat32LittleEndian(destination, offset + 48, entry.CpuMicroseconds);
+            WriteFloat32LittleEndian(destination, offset + 52, entry.GlobalQualityWeight);
+        }
+
+        private static void WriteFloat64LittleEndian(NativeArray<byte> destination, int offset, double value)
+        {
+            WriteUInt64LittleEndian(destination, offset, math.asulong(value));
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> destination, int offset, float value)
+        {
+            WriteUInt32LittleEndian(destination, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> destination, int offset, uint value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> destination, int offset, ulong value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+            WriteUInt32LittleEndian(destination, offset + 4, unchecked((uint)(value >> 32)));
         }
 
         public static bool TryBeginSplineVertexUpload(

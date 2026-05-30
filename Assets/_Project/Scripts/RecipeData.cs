@@ -84,6 +84,7 @@ namespace Hecton8.Crafting
         private string _cachedCraftText;
         private string _cachedCostSummary;
         private string _requiredScanEntryIdNormalized = string.Empty;
+        private uint _runtimeRecipeHash;
         private uint _requiredScanEntryHash;
         private int _requiredAnchoredBiomeFamilyHashId;
         private ulong _recipeMask;
@@ -187,6 +188,7 @@ namespace Hecton8.Crafting
                                                   !string.IsNullOrWhiteSpace(requiredAnchoredBiomeFamilyId));
 
         public string RequiredScanEntryId => _requiredScanEntryIdNormalized ?? string.Empty;
+        public uint RuntimeRecipeHash => _runtimeRecipeHash;
         public uint RequiredScanEntryHash => _requiredScanEntryHash;
         public int RequiredAnchoredBiomeFamilyHashId => _requiredAnchoredBiomeFamilyHashId;
         public ulong RecipeMask => _recipeMask;
@@ -253,10 +255,18 @@ namespace Hecton8.Crafting
 
         private void RefreshRuntimeHashes()
         {
+            _runtimeRecipeHash = ComputeRuntimeRecipeHashCold();
             _requiredScanEntryIdNormalized = NormalizeIdentifierCold(requiredScanEntryId);
             _requiredScanEntryHash = ScanEvents.ComputeEntryHash(_requiredScanEntryIdNormalized);
             _requiredAnchoredBiomeFamilyHashId = LocHash.ComputeAsciiLowerInvariant(requiredAnchoredBiomeFamilyId);
             _recipeMask = BuildRecipeMask();
+        }
+
+        private uint ComputeRuntimeRecipeHashCold()
+        {
+            return !string.IsNullOrWhiteSpace(name)
+                ? unchecked((uint)LocHash.Compute(name))
+                : 0u;
         }
 
         private static string NormalizeIdentifierCold(string value)

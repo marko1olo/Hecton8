@@ -1,7 +1,9 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Unity.Collections;
@@ -1699,35 +1701,81 @@ namespace Hecton8.Graphics.Culling
                 Dump();
         }
 
-        public void Dump()
+        public unsafe void Dump()
         {
             if (!Ring.IsCreated || DumpedFlag != 0)
                 return;
 
-            DumpedFlag = TBDRByteFlags.True;
-            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath));
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            const int HeaderBytes = 8;
+            const int RowBytes = 32;
+            NativeArray<byte> payload = default;
+            try
             {
-                writer.Write(RingCapacity);
-                writer.Write(WriteIndex);
+                int totalBytes = HeaderBytes + Ring.Length * RowBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(TBDRPipelineTelemetryRecorder),
+                    "tbdrPipelineTelemetryDumpPayload");
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+
+                Span<byte> header = new Span<byte>(payloadPtr, HeaderBytes);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(0, 4), RingCapacity);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), WriteIndex);
+
+                int offset = HeaderBytes;
                 for (int i = 0; i < Ring.Length; i++)
                 {
-                    TBDRPipelineTelemetryEntry entry = Ring[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.TotalSubmittedVertices);
-                    writer.Write(entry.MaxVisibleVertices);
-                    writer.Write(entry.TileSpillWarnings);
-                    writer.Write(entry.SortComputeTimeMs);
-                    writer.Write(entry.TilePressure);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.StateHash);
+                    Span<byte> row = new Span<byte>(payloadPtr + offset, RowBytes);
+                    WriteTelemetryRow(row, Ring[i]);
+                    offset += RowBytes;
                 }
+
+                if (NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, totalBytes))
+                    DumpedFlag = TBDRByteFlags.True;
             }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(TBDRPipelineTelemetryRecorder),
+                    "tbdrPipelineTelemetryDumpPayload");
+            }
+        }
+
+        private static void WriteTelemetryRow(Span<byte> destination, in TBDRPipelineTelemetryEntry entry)
+        {
+            destination.Clear();
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(4, 4), entry.TotalSubmittedVertices);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(8, 4), entry.MaxVisibleVertices);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(12, 4), entry.TileSpillWarnings);
+            WriteFloatLittleEndian(destination.Slice(16, 4), entry.SortComputeTimeMs);
+            WriteFloatLittleEndian(destination.Slice(20, 4), entry.TilePressure);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(24, 4), entry.Flags);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(28, 4), entry.StateHash);
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteInt32LittleEndian(destination, BitConverter.SingleToInt32Bits(value));
         }
 
         public void Dispose()

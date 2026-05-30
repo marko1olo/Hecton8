@@ -112,7 +112,7 @@ namespace Hecton8.Visor
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                if (!Application.isPlaying || _settings == null || _material == null || _settings.intensity <= 0.0001f)
+                if (!HectonDrsRenderFeatureGate.HasRuntimeRenderOwner() || _settings == null || _material == null || _settings.intensity <= 0.0001f)
                     return;
 
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
@@ -475,7 +475,7 @@ namespace Hecton8.Visor
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            if (!Application.isPlaying)
+            if (!HectonDrsRenderFeatureGate.HasRuntimeRenderOwner())
                 return;
 
             if (settings == null || _pass == null || _material == null || settings.intensity <= 0.0001f)

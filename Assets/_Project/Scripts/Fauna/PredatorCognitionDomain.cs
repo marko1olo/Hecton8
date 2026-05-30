@@ -4307,14 +4307,17 @@ namespace Hecton8.AI
             if (_retinalFaultDumped || !_retinalTelemetryRing.IsCreated)
                 return;
 
-            _retinalFaultDumped = true;
             try
             {
-                DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
-                string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
-                string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(logDirectory);
-                WriteRetinalBlackBoxFile(Path.Combine(logDirectory, AgentBlackBoxDumpFileName), frameId);
+                string dumpPath = "Docs/AgentLogs/" + AgentBlackBoxDumpFileName;
+                _retinalFaultDumped = TryWriteRetinalBlackBoxFile(dumpPath, frameId);
+                if (!_retinalFaultDumped)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(
+                        RetinalDumpFailureTelemetryHash,
+                        RetinalTelemetryContextHash,
+                        frameId);
+                }
             }
             catch (System.Exception)
             {
@@ -4325,28 +4328,53 @@ namespace Hecton8.AI
             }
         }
 
-        private static void WriteRetinalBlackBoxFile(string dumpPath, int frameId)
+        private static bool TryWriteRetinalBlackBoxFile(string dumpPath, int frameId)
         {
-            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            const int HeaderBytes = 16;
+            const int RowBytes = 28;
+            if (!_retinalTelemetryRing.IsCreated || _retinalTelemetryRing.Length < RetinalTelemetryCapacity)
+                return false;
+
+            NativeArray<byte> payload = default;
+            try
             {
-                writer.Write(frameId);
-                writer.Write(_retinalTelemetryCursor);
-                writer.Write(_totalBlindPredators);
-                writer.Write(_retinalLightCount);
+                int byteCount = HeaderBytes + RetinalTelemetryCapacity * RowBytes;
+                const string dumpPayloadLabel = "RetinalBlackBoxDumpPayload";
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(PredatorCognitionDomain),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
+                int offset = 0;
+
+                WriteInt32LittleEndian(payload, ref offset, frameId);
+                WriteInt32LittleEndian(payload, ref offset, _retinalTelemetryCursor);
+                WriteInt32LittleEndian(payload, ref offset, _totalBlindPredators);
+                WriteInt32LittleEndian(payload, ref offset, _retinalLightCount);
+
                 for (int i = 0; i < RetinalTelemetryCapacity; i++)
                 {
                     RetinalTelemetryEntry entry = _retinalTelemetryRing[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.TotalBlindPredators);
-                    writer.Write(entry.ActiveLightCount);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.MaxExposure);
-                    writer.Write(entry.HottestLightPosition.x);
-                    writer.Write(entry.HottestLightPosition.y);
-                    writer.Write(entry.HottestLightPosition.z);
-                    writer.Write(entry.SourceId);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.Frame);
+                    WriteUInt16LittleEndian(payload, ref offset, entry.TotalBlindPredators);
+                    WriteByte(payload, ref offset, entry.ActiveLightCount);
+                    WriteByte(payload, ref offset, entry.Flags);
+                    WriteFloatLittleEndian(payload, ref offset, entry.MaxExposure);
+                    WriteFloatLittleEndian(payload, ref offset, entry.HottestLightPosition.x);
+                    WriteFloatLittleEndian(payload, ref offset, entry.HottestLightPosition.y);
+                    WriteFloatLittleEndian(payload, ref offset, entry.HottestLightPosition.z);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.SourceId);
                 }
+
+                return offset == byteCount && NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, byteCount);
+            }
+            finally
+            {
+                const string dumpPayloadLabel = "RetinalBlackBoxDumpPayload";
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(PredatorCognitionDomain),
+                    dumpPayloadLabel);
             }
         }
 
@@ -4542,14 +4570,17 @@ namespace Hecton8.AI
             if (_alphaLeviathanFaultDumped || !_alphaLeviathanTelemetryRing.IsCreated)
                 return;
 
-            _alphaLeviathanFaultDumped = true;
             try
             {
-                DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
-                string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
-                string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(logDirectory);
-                WriteAlphaLeviathanBlackBoxFile(Path.Combine(logDirectory, AgentBlackBoxDumpFileName), frameId);
+                string dumpPath = "Docs/AgentLogs/" + AgentBlackBoxDumpFileName;
+                _alphaLeviathanFaultDumped = TryWriteAlphaLeviathanBlackBoxFile(dumpPath, frameId);
+                if (!_alphaLeviathanFaultDumped)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(
+                        AlphaLeviathanDumpFailureTelemetryHash,
+                        AlphaLeviathanTelemetryContextHash,
+                        frameId);
+                }
             }
             catch (System.Exception)
             {
@@ -4560,38 +4591,63 @@ namespace Hecton8.AI
             }
         }
 
-        private static void WriteAlphaLeviathanBlackBoxFile(string dumpPath, int frameId)
+        private static bool TryWriteAlphaLeviathanBlackBoxFile(string dumpPath, int frameId)
         {
-            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            const int HeaderBytes = 24;
+            const int RowBytes = 56;
+            if (!_alphaLeviathanTelemetryRing.IsCreated)
+                return false;
+
+            NativeArray<byte> payload = default;
+            try
             {
-                writer.Write(frameId);
-                writer.Write(_alphaLeviathanTelemetryCursor);
-                writer.Write(_activeAlphaLeviathanTelemetryCount);
-                writer.Write(RetinalTelemetryCapacity);
-                writer.Write(AlphaLeviathanTelemetrySlotCapacity);
                 int dumpCount = math.min(_alphaLeviathanTelemetryRing.Length, AlphaLeviathanTelemetryVaultCapacity);
-                writer.Write(dumpCount);
+                int byteCount = HeaderBytes + dumpCount * RowBytes;
+                const string dumpPayloadLabel = "AlphaLeviathanBlackBoxDumpPayload";
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(PredatorCognitionDomain),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
+                int offset = 0;
+
+                WriteInt32LittleEndian(payload, ref offset, frameId);
+                WriteInt32LittleEndian(payload, ref offset, _alphaLeviathanTelemetryCursor);
+                WriteInt32LittleEndian(payload, ref offset, _activeAlphaLeviathanTelemetryCount);
+                WriteInt32LittleEndian(payload, ref offset, RetinalTelemetryCapacity);
+                WriteInt32LittleEndian(payload, ref offset, AlphaLeviathanTelemetrySlotCapacity);
+                WriteInt32LittleEndian(payload, ref offset, dumpCount);
+
                 for (int i = 0; i < dumpCount; i++)
                 {
                     AlphaLeviathanTelemetryEntry entry = _alphaLeviathanTelemetryRing[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.Slot);
-                    writer.Write(entry.Phase);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.DistanceToPlayerMeters);
-                    writer.Write(entry.FogRingDistanceMeters);
-                    writer.Write(entry.Position.x);
-                    writer.Write(entry.Position.y);
-                    writer.Write(entry.Position.z);
-                    writer.Write(entry.PlayerPosition.x);
-                    writer.Write(entry.PlayerPosition.y);
-                    writer.Write(entry.PlayerPosition.z);
-                    writer.Write(entry.DesiredDirection.x);
-                    writer.Write(entry.DesiredDirection.y);
-                    writer.Write(entry.DesiredDirection.z);
-                    writer.Write(entry.StateHash);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.Frame);
+                    WriteUInt16LittleEndian(payload, ref offset, entry.Slot);
+                    WriteByte(payload, ref offset, entry.Phase);
+                    WriteByte(payload, ref offset, entry.Flags);
+                    WriteFloatLittleEndian(payload, ref offset, entry.DistanceToPlayerMeters);
+                    WriteFloatLittleEndian(payload, ref offset, entry.FogRingDistanceMeters);
+                    WriteFloatLittleEndian(payload, ref offset, entry.Position.x);
+                    WriteFloatLittleEndian(payload, ref offset, entry.Position.y);
+                    WriteFloatLittleEndian(payload, ref offset, entry.Position.z);
+                    WriteFloatLittleEndian(payload, ref offset, entry.PlayerPosition.x);
+                    WriteFloatLittleEndian(payload, ref offset, entry.PlayerPosition.y);
+                    WriteFloatLittleEndian(payload, ref offset, entry.PlayerPosition.z);
+                    WriteFloatLittleEndian(payload, ref offset, entry.DesiredDirection.x);
+                    WriteFloatLittleEndian(payload, ref offset, entry.DesiredDirection.y);
+                    WriteFloatLittleEndian(payload, ref offset, entry.DesiredDirection.z);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.StateHash);
                 }
+
+                return offset == byteCount && NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, byteCount);
+            }
+            finally
+            {
+                const string dumpPayloadLabel = "AlphaLeviathanBlackBoxDumpPayload";
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(PredatorCognitionDomain),
+                    dumpPayloadLabel);
             }
         }
 
@@ -4717,14 +4773,17 @@ namespace Hecton8.AI
             if (_mesofaunaFaultDumped || !_mesofaunaTelemetryRing.IsCreated)
                 return;
 
-            _mesofaunaFaultDumped = true;
             try
             {
-                DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
-                string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
-                string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(logDirectory);
-                WriteMesofaunaBlackBoxFile(Path.Combine(logDirectory, AgentBlackBoxDumpFileName), frameId);
+                string dumpPath = "Docs/AgentLogs/" + AgentBlackBoxDumpFileName;
+                _mesofaunaFaultDumped = TryWriteMesofaunaBlackBoxFile(dumpPath, frameId);
+                if (!_mesofaunaFaultDumped)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(
+                        MesofaunaBehaviorConstants.DumpFailureTelemetryHash,
+                        MesofaunaBehaviorConstants.TelemetryContextHash,
+                        frameId);
+                }
             }
             catch (System.Exception)
             {
@@ -4735,40 +4794,111 @@ namespace Hecton8.AI
             }
         }
 
-        private static void WriteMesofaunaBlackBoxFile(string dumpPath, int frameId)
+        private static bool TryWriteMesofaunaBlackBoxFile(string dumpPath, int frameId)
         {
-            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            const int HeaderBytes = 28;
+            const int RowBytes = MesofaunaBehaviorConstants.TelemetryEntrySizeBytes;
+            if (!_mesofaunaTelemetryRing.IsCreated || _mesofaunaTelemetryRing.Length < MesofaunaBehaviorConstants.TelemetryCapacity)
+                return false;
+
+            NativeArray<byte> payload = default;
+            try
             {
-                writer.Write(frameId);
-                writer.Write(_mesofaunaTelemetryCursor);
-                writer.Write(_mesofaunaLastActiveCount);
-                writer.Write(_mesofaunaLastHuntCount);
-                writer.Write(_mesofaunaLastNonFiniteFallbackCount);
-                writer.Write(MesofaunaBehaviorConstants.TelemetryCapacity);
-                writer.Write(MesofaunaBehaviorConstants.TelemetryEntrySizeBytes);
+                int byteCount = HeaderBytes + MesofaunaBehaviorConstants.TelemetryCapacity * RowBytes;
+                const string dumpPayloadLabel = "MesofaunaBlackBoxDumpPayload";
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(PredatorCognitionDomain),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
+                int offset = 0;
+
+                WriteInt32LittleEndian(payload, ref offset, frameId);
+                WriteInt32LittleEndian(payload, ref offset, _mesofaunaTelemetryCursor);
+                WriteInt32LittleEndian(payload, ref offset, _mesofaunaLastActiveCount);
+                WriteInt32LittleEndian(payload, ref offset, _mesofaunaLastHuntCount);
+                WriteInt32LittleEndian(payload, ref offset, _mesofaunaLastNonFiniteFallbackCount);
+                WriteInt32LittleEndian(payload, ref offset, MesofaunaBehaviorConstants.TelemetryCapacity);
+                WriteInt32LittleEndian(payload, ref offset, MesofaunaBehaviorConstants.TelemetryEntrySizeBytes);
+
                 for (int i = 0; i < MesofaunaBehaviorConstants.TelemetryCapacity; i++)
                 {
                     MesofaunaTelemetryEntry entry = _mesofaunaTelemetryRing[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.ActivePredators);
-                    writer.Write(entry.HuntingPredators);
-                    writer.Write(entry.AvgSpatialHashQueryMicroseconds);
-                    writer.Write(entry.FsmMicroseconds);
-                    writer.Write(entry.GlobalQualityWeight);
-                    writer.Write(entry.SliceModulo);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.NonFiniteFallbackCount);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.TargetHash);
-                    writer.Write(entry.ProbeAup.x);
-                    writer.Write(entry.ProbeAup.y);
-                    writer.Write(entry.ProbeAup.z);
-                    writer.Write(entry.DumpReasonHash);
-                    writer.Write(entry.FleeingPredators);
-                    writer.Write(entry.Reserved0);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.Frame);
+                    WriteUInt16LittleEndian(payload, ref offset, entry.ActivePredators);
+                    WriteUInt16LittleEndian(payload, ref offset, entry.HuntingPredators);
+                    WriteFloatLittleEndian(payload, ref offset, entry.AvgSpatialHashQueryMicroseconds);
+                    WriteFloatLittleEndian(payload, ref offset, entry.FsmMicroseconds);
+                    WriteFloatLittleEndian(payload, ref offset, entry.GlobalQualityWeight);
+                    WriteByte(payload, ref offset, entry.SliceModulo);
+                    WriteByte(payload, ref offset, entry.Flags);
+                    WriteUInt16LittleEndian(payload, ref offset, entry.NonFiniteFallbackCount);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.StateHash);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.TargetHash);
+                    WriteDoubleLittleEndian(payload, ref offset, entry.ProbeAup.x);
+                    WriteDoubleLittleEndian(payload, ref offset, entry.ProbeAup.y);
+                    WriteDoubleLittleEndian(payload, ref offset, entry.ProbeAup.z);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.DumpReasonHash);
+                    WriteUInt16LittleEndian(payload, ref offset, entry.FleeingPredators);
+                    WriteUInt16LittleEndian(payload, ref offset, entry.Reserved0);
                 }
+
+                return offset == byteCount && NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, byteCount);
             }
+            finally
+            {
+                const string dumpPayloadLabel = "MesofaunaBlackBoxDumpPayload";
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(PredatorCognitionDomain),
+                    dumpPayloadLabel);
+            }
+        }
+
+        private static void WriteByte(NativeArray<byte> payload, ref int offset, byte value)
+        {
+            payload[offset++] = value;
+        }
+
+        private static void WriteUInt16LittleEndian(NativeArray<byte> payload, ref int offset, ushort value)
+        {
+            payload[offset++] = (byte)value;
+            payload[offset++] = (byte)(value >> 8);
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, ref int offset, int value)
+        {
+            WriteUInt32LittleEndian(payload, ref offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, ref int offset, uint value)
+        {
+            payload[offset++] = (byte)value;
+            payload[offset++] = (byte)(value >> 8);
+            payload[offset++] = (byte)(value >> 16);
+            payload[offset++] = (byte)(value >> 24);
+        }
+
+        private static void WriteFloatLittleEndian(NativeArray<byte> payload, ref int offset, float value)
+        {
+            WriteUInt32LittleEndian(payload, ref offset, math.asuint(value));
+        }
+
+        private static void WriteDoubleLittleEndian(NativeArray<byte> payload, ref int offset, double value)
+        {
+            WriteUInt64LittleEndian(payload, ref offset, unchecked((ulong)System.BitConverter.DoubleToInt64Bits(value)));
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> payload, ref int offset, ulong value)
+        {
+            payload[offset++] = (byte)value;
+            payload[offset++] = (byte)(value >> 8);
+            payload[offset++] = (byte)(value >> 16);
+            payload[offset++] = (byte)(value >> 24);
+            payload[offset++] = (byte)(value >> 32);
+            payload[offset++] = (byte)(value >> 40);
+            payload[offset++] = (byte)(value >> 48);
+            payload[offset++] = (byte)(value >> 56);
         }
 
         private static void RefreshThreatVoxelSnapshot(int frameId)

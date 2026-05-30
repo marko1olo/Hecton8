@@ -48,8 +48,10 @@ namespace Hecton8.QA.Headless.Editor
         private const int BlackboxEntryOffsetFlags = 60;
         private const uint BlackboxMagic = 0x48534642u;
         private const double TimeoutSeconds = 7200.0;
+        private const double PollIntervalSeconds = 0.25;
         // COLD ALLOC: byte[1] - batch flag file payload, editor-only setup path - owner: HeadlessStressFractureBatchRunner
         private static readonly byte[] FlagBytes = { (byte)'1' };
+        private static double _nextPollTime;
 
         static HeadlessStressFractureBatchRunner()
         {
@@ -62,6 +64,7 @@ namespace Hecton8.QA.Headless.Editor
             SessionState.SetBool(ActiveKey, true);
             SessionState.SetBool(ExitRequestedKey, false);
             SessionState.SetString(StartTimeKey, EditorApplication.timeSinceStartup.ToString("R", CultureInfo.InvariantCulture));
+            _nextPollTime = 0.0;
             TryDeleteFile(ResolveProjectPath(ResultRelativePath));
             TryDeleteFile(ResolveProjectPath(ResultRelativePath + ".tmp"));
             TryDeleteFile(ResolveProjectPath(BlackboxRelativePath));
@@ -111,6 +114,14 @@ namespace Hecton8.QA.Headless.Editor
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
                 return;
 
+            if (!ShouldPollNow())
+                return;
+
+            PollRunState();
+        }
+
+        private static void PollRunState()
+        {
             string resultPath = ResolveProjectPath(ResultRelativePath);
             if (File.Exists(resultPath))
             {
@@ -143,6 +154,16 @@ namespace Hecton8.QA.Headless.Editor
 
                 EditorApplication.isPlaying = true;
             }
+        }
+
+        private static bool ShouldPollNow()
+        {
+            double now = EditorApplication.timeSinceStartup;
+            if (now < _nextPollTime)
+                return false;
+
+            _nextPollTime = now + PollIntervalSeconds;
+            return true;
         }
 
         private static bool HasTimedOut()

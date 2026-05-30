@@ -1,0 +1,661 @@
+﻿# Rationale 1401
+
+Date: 2026-05-28
+Status: PENDING VERIFICATION
+
+## Initial Decision - Evidence Before Patching
+
+Problem: User requested APEX final verification, but agent 1401 has not modified vendor code in this session. Claiming completion would be false.
+
+Solution: Create explicit status and rationale ledgers before code edits. Use static source/report scans as the first proof layer. Only run build tooling after CPU and compiler contention checks pass.
+
+Rejected Alternatives: Running dotnet build immediately was rejected because project instructions ban blind compilation under contention and user explicitly warned that build blocks other systems. Installing obsolete Mono.Data.Sqlite DLLs was rejected because task requires namespace quarantine/redirection without outdated manual DLL dependency.
+
+Scalability potential: Low tier remains unaffected by vendor editor and compile shims. Middle/High/Ultra benefit only through build hygiene and isolated vendor assemblies; no gameplay truth route changes.
+
+Hardware Impact: 0 runtime us/frame expected. Compile-time isolation may reduce editor compile graph fanout, but no measured proof yet. MX350/i3 runtime impact is unchanged until profiler proof exists.
+
+## Domain Boundary
+
+Allowed edit zone: third-party/vendor folders, package compatibility shims, vendor asmdefs, and proof tooling/logs.
+
+Forbidden without critical justification: first-party `Assets/_Project`, `Hecton8.Core`, simulation assemblies, project settings, Quality/URP assets, Tags/Layers.
+
+## Verification Language
+
+All runtime, GC, Unity import, and compile-health claims remain PENDING VERIFICATION until artifact paths are generated.
+
+## Decision - Candice SQLite Default Quarantine
+
+Problem: `CandiceSQLiteProvider.cs` directly imported `Mono.Data.Sqlite`, and stale 2026-05-27 logs prove it caused CS0234/CS0246 when the CLI compiler could not resolve the namespace. The same provider is runtime-reachable through Candice demo save code, so editor-only wrapping would be a false fix.
+
+Solution: Keep the legacy provider behind explicit `CANDICE_LEGACY_MONO_SQLITE`; default build compiles a disabled provider that returns fail-safe values and reuses static empty lists. Disabled provider logs once only in Editor/Development builds. Candice legacy DLL plugin import is disabled by default in `.meta`.
+
+Rejected Alternatives: Installing or force-referencing obsolete `Mono.Data.Sqlite.dll` was rejected because it keeps Assembly-CSharp coupled to a vendor DLL and does not scale to Android/macOS/Linux. Full SQLite emulation was rejected because no supported `Microsoft.Data.Sqlite` package exists in the project and native SQLite platform proof is absent.
+
+Scalability potential: Low/Middle/High/Ultra runtime cost is flat: disabled provider does no SQL work and has no per-call list allocation. Legacy SQL is opt-in only and remains outside HECTON-approved save authority.
+
+Hardware Impact: Estimated runtime impact on i3/MX350 is 0 us/frame for default disabled provider unless a caller invokes Candice save methods; invoked calls perform constant fail-safe returns after one development log. No profiler artifact exists.
+
+## Decision - Vendor Assembly Isolation
+
+Problem: Candice had no asmdef and therefore bled into `Assembly-CSharp`. Amplify and Technie had asmdefs but auto-reference defaults allowed vendor assemblies to become ambient dependencies.
+
+Solution: Added Candice runtime/editor asmdefs with `autoReferenced: false`; set Amplify runtime/editor and Technie runtime `autoReferenced: false`; removed the root CLI reference injection for `Mono.Data.Sqlite`.
+
+Rejected Alternatives: Keeping `Directory.Build.targets` as the primary SQLite fix was rejected because it hides the vendor dependency instead of repairing the source boundary. Moving vendor folders was rejected because it would churn asset GUIDs.
+
+Scalability potential: Compile graph isolation scales better as packages grow. Runtime visual scalability is unchanged because no gameplay presentation route was edited.
+
+Hardware Impact: Runtime 0 us/frame. Compile-time fanout should drop after Unity regenerates projects, but this is PENDING VERIFICATION.
+
+## Decision - Build Resource Throttle
+
+Problem: User explicitly forbade blind dotnet/MSBuild use and the project has active parallel agents.
+
+Solution: `Tools/Run_Guarded_Vendor_Compile_1401.ps1 -DryRun` sampled CPU above the 50 percent gate and exited before build. Latest artifact is `Docs/AgentLogs/Build_1401_Attempt_20260528_034039_BLOCKED_BY_CONTENTION.json`, with CPU 100 percent and active `dotnet` process 34196. The script now serializes compiler process lists as JSON arrays.
+
+Rejected Alternatives: Running a target build under contention was rejected. Treating stale build logs as current proof was rejected.
+
+Scalability potential: Tooling does not affect game runtime. It protects shared workstation throughput.
+
+Hardware Impact: Prevented additional compile load on already saturated CPU.
+
+## Decision - Build Resource Throttle Recheck 2026-05-28 03:49+04
+
+Problem: A final vendor compile attempt was requested, but the host was still saturated. Running `dotnet build` under that load would violate the explicit throttling rule.
+
+Solution: Executed the guarded script in dry-run mode only. It wrote `Docs/AgentLogs/Build_1401_Attempt_20260528_034938_BLOCKED_BY_CONTENTION.json`: CPU 100 percent, active `dotnet` PID 1304, no build attempts.
+
+Rejected Alternatives: Running vendor `.csproj` builds anyway was rejected. Treating the clean external compile-medic logs as my own build was rejected; they are external CLI evidence only.
+
+Scalability potential: Tooling-only protection. Low/Middle/High/Ultra runtime routes unchanged.
+
+Hardware Impact: Prevented additional compiler load on a CPU already at 100 percent.
+
+## Decision - Technie Removed MeshCollider Inflation API
+
+Problem: 2026-05-27 logs repeatedly showed Technie `RigidColliderCreator.cs` using removed `MeshCollider.inflateMesh` and `MeshCollider.skinWidth`. The old guard was `#if !UNITY_2018_4_OR_NEWER`, which is unsafe for CLI because Unity version defines may be absent outside the Editor compiler.
+
+Solution: Replaced default property writes with `ApplyMeshColliderInflationCompatibility()`. Default path uses supported `Collider.contactOffset`, raising it to `Mathf.Max(Physics.defaultContactOffset, inflationAmount)` when inflation is enabled and resetting to `Physics.defaultContactOffset` when disabled. Removed properties remain only behind explicit `TECHNIE_LEGACY_MESHCOLLIDER_INFLATION`.
+
+Rejected Alternatives: Leaving the negative Unity guard was rejected because it already failed in CLI logs. Deleting inflation state was rejected because hull authors may expect a tolerance effect.
+
+Scalability potential: Low/Middle/High/Ultra all keep the same collider topology. The fallback is a cheap contact tolerance, not a mesh recook or physical simulation.
+
+Hardware Impact: Estimated runtime cost is 0 us/frame; the code runs during collider materialization, not per-frame simulation. Official Unity API check: Unity 6 documents `Physics.defaultContactOffset`; older `MeshCollider.skinWidth` documentation marks the property obsolete and tied to `inflateMesh`.
+
+## Decision - Amplify Shader Property API Drift
+
+Problem: Documentation corpus contained Amplify CS0618 evidence for `ShaderUtil.GetPropertyCount(Shader)` and related property calls. These are editor-only, but strict warning gates still treat them as debt.
+
+Solution: Replaced `ShaderUtil.GetProperty*` calls with `Shader.GetPropertyCount()`, `Shader.GetPropertyType()`, and `Shader.GetPropertyName()`, using `UnityEngine.Rendering.ShaderPropertyType.Texture` for the old `TexEnv` case.
+
+Rejected Alternatives: Local `#pragma warning disable CS0618` was rejected because Unity 6 has a supported non-obsolete API with semantic parity.
+
+Scalability potential: Editor material-copy behavior is unchanged. Runtime player builds are unaffected.
+
+Hardware Impact: 0 runtime us/frame. Editor-only property scan cost remains proportional to shader property count.
+
+## Decision - GPUInstancer Dispatch Type Drift
+
+Problem: Fresh 2026-05-28 compile log `BUILD_COMPILE_MEDIC_EDITOR_WARNINGS_20260528_6.log` showed GPUInstancer CS1503 at `GPUInstancerDetailManager.cs(585,68)` and `(587,68)` because `Vector4.x/y` floats were passed to an int thread-group helper.
+
+Solution: Added local `dispatchGroupsX/Y` integers using `Mathf.CeilToInt`, clamped to at least 1, then dispatched with those ints while preserving the vector data sent to the shader.
+
+Rejected Alternatives: Casting inline was rejected because it would hide the minimum-one dispatch guard and duplicate conversion. Changing the helper to accept float was rejected because other callers correctly pass ints.
+
+Scalability potential: Low-tier and high-tier dispatch math remains deterministic. No binary quality switch was added; existing compute load remains controlled by existing GPUInstancer settings.
+
+Hardware Impact: Two scalar conversions per dispatch; estimated <1 us per dispatch on i3/MX350, 0 us/frame when not generating detail buffers.
+
+## Decision - Vendor Proof Harness
+
+Problem: Tasks 16 and 17 required runtime bridge and zero-GC evidence, but launching Unity tests or dotnet build was blocked by CPU/compiler contention.
+
+Solution: Added isolated editor-only test assembly `VendorCompatibility.EditorTests` with no `Hecton8.Core` reference. Tests cover Candice disabled SQLite fail-closed behavior, Amplify mock mesh generation, and a Candice warm-loop allocation assertion using `ProfilerRecorder` plus `GC.GetAllocatedBytesForCurrentThread()`.
+
+Rejected Alternatives: Claiming the tests passed without executing Unity was rejected. Placing tests under `Assets/_Project` was rejected because vendor proof should not create first-party dependency edges.
+
+Scalability potential: Test assembly is editor-only and autoReferenced false. Runtime player cost is 0.
+
+Hardware Impact: 0 runtime us/frame. Test execution cost is pending measurement.
+
+## Decision - Candice Trigger Countdown Allocation
+
+Problem: `TriggerNextScene.Update()` called `Mathf.RoundToInt(timer).ToString()` every frame while active, creating avoidable managed string allocation pressure in a vendor demo hot path.
+
+Solution: Added a cold countdown string cache built in `Start()` and updated the UI text only when the displayed second changes.
+
+Rejected Alternatives: Leaving the allocation was rejected because the fix is local and behavior-preserving. Replacing the UI system was rejected as vendor-demo scope creep.
+
+Scalability potential: Low-tier avoids per-frame countdown string churn. Higher tiers see identical visuals.
+
+Hardware Impact: Runtime saving is unmeasured; static proof shows 0 `.ToString()` calls in `Update()`. Profiler measurement remains pending.
+
+## Decision - Directory.Build.targets Native Prune Warning
+
+Problem: Fresh UTF-16LE build logs contained `MSB4130` warnings in `Directory.Build.targets` around native vendor reference pruning for Candice `sqlite3.dll` and Technie `VHACD`. The XML was valid but the OR chain was ambiguous to MSBuild.
+
+Solution: Parenthesized the simple boolean operands in `HectonPruneNativeCliReferences` and verified `Directory.Build.targets` parses as XML.
+
+Rejected Alternatives: Ignoring it was rejected because the user requires warning debt cleanup. Rewriting the whole target was rejected because other agents have active edits in the same file.
+
+Scalability potential: Build-only change. No runtime route or quality tier route changed.
+
+Hardware Impact: 0 runtime us/frame. Compile-time warning reduction is pending fresh build because CPU gate blocked compilation.
+
+## Decision - First-Party Vendor Reference Classification
+
+Problem: Source scan found first-party text matches for `AmplifyImpostor`, but they were comments, method names, or string-based `GetComponent` checks, not compile-time references. Reporting them as hard leakage would be false.
+
+Solution: Updated `VendorStaticAudit_1401.json` and final report to separate hard Candice/Amplify/Technie compile references from soft string/comment mentions. Hard compile references remain 0. GPUInstancer references are intentional and already listed in first-party asmdefs.
+
+Rejected Alternatives: Removing string/comment mentions was rejected because `ImpostorSystem` uses them as asset validation, not a compile edge. Treating GPUInstancer as quarantined like Candice was rejected because first-party world scatter systems deliberately depend on it.
+
+Scalability potential: Keeps the intended GPUI route intact for dense flora/rock rendering across quality tiers.
+
+Hardware Impact: 0 runtime us/frame; documentation/reporting correction only.
+
+## Decision - Amplify Runtime Editor Symbol Leakage
+
+Problem: Follow-up static audit found `Assets/AmplifyImpostors/Plugins/Scripts/Preferences.cs` importing `UnityEditor` from a runtime asmdef source file. The Preferences body was already editor-gated, but the unguarded import can still break player/runtime compilation when `UNITY_EDITOR` is absent. The same audit found `SpriteUtilityEx` keeping UnityEditor reflection text outside a guard; not a compile edge, but a brittle player fallback if automatic mesh outline is accidentally called outside the Editor.
+
+Solution: Wrapped the `using UnityEditor;` import in `Preferences.cs` with `#if UNITY_EDITOR`. Isolated `SpriteUtilityEx` reflection and `Type` cache to `UNITY_EDITOR`; the non-editor branch now reuses a static empty `Vector2[][]` fallback. Added `Docs/AgentLogs/VendorRuntimeEditorLeakage_1401.json`, which reports 0 unguarded editor-symbol findings across Candice, Amplify, Technie, and GPUInstancer runtime vendor folders.
+
+Rejected Alternatives: Moving Preferences to the Editor folder was rejected because it could churn asset/package layout and was unnecessary for one import. Throwing `NotSupportedException` in non-editor `GenerateOutline` was rejected because vendor player code should fail closed, not crash. Allocating a fresh empty outline array per call was rejected because a static empty fallback is cheaper.
+
+Scalability potential: Low/Middle/High/Ultra player runtime avoids UnityEditor binding. Automatic impostor baking remains editor-only; no runtime simulation, visual quality switch, or gameplay truth route changed.
+
+Hardware Impact: Runtime cost is 0 us/frame for normal gameplay. If the non-editor fallback is invoked, it assigns an existing static empty array; no per-call managed allocation is introduced by the fallback.
+
+## Decision - Candice Disabled SelectObject Ref Preservation
+
+Problem: The disabled Candice SQLite branch assigned `obj = null` before returning `ProviderUnavailable`. The legacy branch leaves the caller-provided `ref` dictionary unchanged when no row is found, so the disabled branch was a needless null-poisoning risk.
+
+Solution: Removed the null assignment. `SelectObject` now logs once in Editor/Development builds and returns `-1` without mutating caller state.
+
+Rejected Alternatives: Clearing the caller dictionary was rejected because it would still mutate caller-owned state. Allocating a replacement dictionary was rejected because the provider is disabled and hot-path proof requires no per-call managed allocation.
+
+Scalability potential: All tiers get deterministic fail-closed behavior. No quality route or gameplay truth owner was added.
+
+Hardware Impact: 0 us/frame measured proof absent; static method range has 0 hot-path `new`, `string.Format`, `.ToString()`, LINQ, or `foreach`.
+
+## Decision - TextureFormat Source Hits Classification
+
+Problem: Raw source scan still finds `TextureFormat` text in vendor code. The task requested a hunt for legacy texture format debt, but blind conversion to `GraphicsFormat` would be wrong where Unity APIs still expose `TextureFormat` directly, such as `Texture2D.format` and texture encoder branches.
+
+Solution: Left those paths unchanged because the latest external compile-medic logs show no CS0618 warnings, and the remaining hits are cold texture/render-target creation or encoding decisions, not current obsolete diagnostics.
+
+Rejected Alternatives: Bulk replacing `TextureFormat` with `GraphicsFormat` was rejected because it can break API signatures and texture encoder logic without a compiler warning proving the need.
+
+Scalability potential: No runtime visual route changed. Texture quality scaling remains owned by existing rendering/streaming systems, not this vendor bridge.
+
+Hardware Impact: 0 runtime change.
+
+## Decision - Vendor Test Harness Compile Blocker Recheck 2026-05-28 04:20+04
+
+Problem: Fresh external full-log `Docs/Reports/BUILD_COMPILE_MEDIC_FULL_WARNINGS_20260528_4.log` reported CS0104 in `Assets/VendorCompatibilityTests/Editor/VendorBridgeEditModeTests.cs` at lines 67 and 70. The test also still asserted Candice disabled `SelectObject` null-poisoning after the source contract was changed to preserve caller `ref` state.
+
+Solution: Qualified destruction calls as `UnityEngine.Object.DestroyImmediate(...)` and changed the assertion to `Assert.AreSame(originalRow, row)`.
+
+Rejected Alternatives: Removing `using System` was rejected because the same test uses `GC.GetAllocatedBytesForCurrentThread()`. Reverting Candice ref preservation was rejected because mutating caller state in the disabled provider was the actual defect.
+
+Scalability potential: Editor test assembly only. Low/Middle/High/Ultra player runtime unchanged.
+
+Hardware Impact: 0 runtime us/frame.
+
+## Decision - MasterAudio Feature-Gated Warning Hygiene
+
+Problem: The same external full-log reported CS0169 in forbidden legacy vendor folder `Assets/Plugins/DarkTonic/MasterAudio`: `_triggerEnterTime`, `_triggerEnter2dTime`, and `_loadAddressableCoroutine`. These fields are only used when `PHY3D_ENABLED`, `PHY2D_ENABLED`, or `ADDRESSABLES_ENABLED` branches compile.
+
+Solution: Moved those field declarations behind the same preprocessor symbols as their usage sites. This removes inactive-symbol warnings without approving MasterAudio as a runtime audio route.
+
+Rejected Alternatives: Global `NoWarn` expansion was rejected because it hides unrelated warnings. Deleting MasterAudio was rejected because third-party purge/deletion was not assigned here and would require asset/meta deletion planning. Editing first-party audio routes was rejected as outside 1401.
+
+Scalability potential: No gameplay route or visual/audio quality route changed. This is compile hygiene for a legacy package on disk.
+
+Hardware Impact: 0 runtime us/frame. Active feature builds retain the same fields and behavior.
+
+## Decision - Candice Disabled Log Warning Hygiene
+
+Problem: Fresh external full-log reported CS0169 for `CandiceSQLiteProvider.s_loggedDisabled` because CLI compilation without `UNITY_EDITOR` or `DEVELOPMENT_BUILD` strips the only use inside `LogDisabledOnce()`.
+
+Solution: Moved `DisabledMessage` and `s_loggedDisabled` behind `#if UNITY_EDITOR || DEVELOPMENT_BUILD`, matching the only code path that uses them.
+
+Rejected Alternatives: Leaving the warning was rejected because Task 10 requires scoped vendor warning cleanup. Global warning suppression was rejected.
+
+Scalability potential: Runtime release path remains fail-closed and silent. Development builds keep one-shot diagnostic logging.
+
+Hardware Impact: 0 runtime us/frame.
+
+## Decision - System.Net.Http MSB3277 Residual
+
+Problem: Fresh external full-log also reports `MSB3277 System.Net.Http` conflict in generated `Assembly-CSharp-Editor` and `Assembly-CSharp-Editor-firstpass` projects.
+
+Solution: Classified it as unresolved build graph/reference unification debt and left it untouched in 1401. It is not a Candice/Amplify/Technie/GPUInstancer source API drift defect, and suppressing it from 1401 would be a warning-mask, not a fix.
+
+Rejected Alternatives: Extending `NoWarn`/`MSBuildWarningsAsMessages` to generated Assembly-CSharp editor projects was rejected because it would hide a real reference conflict. Forcing a System.Net.Http reference was rejected without a fresh build matrix because it could disturb Unity package editor assemblies.
+
+Scalability potential: Build-only residual. No game runtime tier route changed.
+
+Hardware Impact: 0 runtime us/frame.
+
+## Decision - Build Resource Throttle Recheck 2026-05-28 04:13+04
+
+Problem: A fresh compile attempt after source patches was needed, but host contention remained above the allowed threshold.
+
+Solution: Ran only the guarded dry-run. `Docs/AgentLogs/Build_1401_Attempt_20260528_041330_BLOCKED_BY_CONTENTION.json` records CPU 100 percent and active `dotnet` PID 40436. No `dotnet build` or MSBuild execution was launched by 1401.
+
+Rejected Alternatives: Running build anyway was rejected by the project compilation throttling rule.
+
+Scalability potential: Tooling-only protection. Runtime routes unchanged.
+
+Hardware Impact: Prevented additional compiler load on saturated CPU.
+
+## Decision - TriggerNextScene Cold Allocation Proof Hygiene 2026-05-28 04:31+04
+
+Problem: Additional mandate re-read found that my `TriggerNextScene` countdown cache used a cold `string[]` allocation without the canonical `// COLD ALLOC:` proof comment. The same touched file still used `gameObject.tag == "..."` comparisons in trigger/collision callbacks.
+
+Solution: Added the canonical cold-allocation comment before the countdown label array and replaced the touched tag comparisons with `CompareTag`. The per-frame `Update()` range remains unchanged and has 0 hot-path `new`, `string.Format`, `.ToString()`, LINQ, and `foreach`.
+
+Rejected Alternatives: Leaving the missing proof comment was rejected because the code was mine and the local cold allocation mandate is explicit. Rewriting the whole coroutine-based scene transition was rejected as vendor demo scope creep and not required for current compile/API bridge work.
+
+Scalability potential: Low/Middle/High/Ultra player runtime behavior is unchanged. The cache still pays a cold allocation once and removes per-frame countdown string formatting; `CompareTag` avoids Unity tag string property access.
+
+Hardware Impact: 0 measured proof. Static expected effect is removal of tag property access from two vendor callbacks and preservation of 0 hot-path allocation in `Update()`.
+
+## Decision - Build Resource Throttle Recheck 2026-05-28 04:31+04
+
+Problem: User repeated APEX verification after the 04:20 source-level patches. A real guarded vendor compile attempt was justified if and only if the host gate was free.
+
+Solution: Ran `Tools/Run_Guarded_Vendor_Compile_1401.ps1` without `-DryRun`. The wrapper sampled CPU 100 percent and active `dotnet` PID 40436, wrote `Docs/AgentLogs/Build_1401_Attempt_20260528_043130_BLOCKED_BY_CONTENTION.json`, and exited before launching any `dotnet build`. The `attempts` array is empty.
+
+Rejected Alternatives: Forcing a build under CPU 100 percent was rejected. Treating the stale external full-log as current proof was rejected because its 1401 line numbers no longer match current source.
+
+Scalability potential: Tooling-only protection. Runtime tier routes unchanged.
+
+Hardware Impact: Prevented additional compiler load on saturated CPU.
+
+## Decision - MasterAudio Runtime Editor Guard and Quarantine 2026-05-28 04:57+04
+
+Problem: MasterAudio remained an unisolated legacy vendor package under `Assets/Plugins`, so stale generated CLI projects can still include it through `Assets\Plugins\**\*.cs`. Follow-up source scan also found `SingletonScriptable.cs` importing `UnityEditor` from a runtime folder; the editor API use was guarded, but the import itself needed the same guard for player/runtime compile hygiene.
+
+Solution: Wrapped `using UnityEditor;` in `SingletonScriptable.cs` with `#if UNITY_EDITOR`, added a canonical `// COLD ALLOC:` note for its static folder list, and added three source asmdefs with `autoReferenced: false`: `DarkTonic.MasterAudio.Runtime`, `DarkTonic.MasterAudio.Editor`, and `RelationsInspector.Editor`. RelationsInspector keeps an explicit editor-only reference to `DarkTonic.MasterAudio.Runtime` because `MasterAudioEventBackend.cs` is the only scanned external editor backend with direct MasterAudio type usage. Extended `Tools/Assert_Asmdef_Leakage_1401.py` to include MasterAudio; the regenerated `Docs/AgentLogs/AsmdefLeakage_1401.json` reports PASS with 0 findings.
+
+Rejected Alternatives: Deleting MasterAudio was rejected because package removal and asset/meta deletion were not assigned and could break editor-only tooling. Leaving it in firstpass was rejected because it contradicts vendor quarantine. Adding first-party references was rejected because `Assets/_Project` has 0 hard MasterAudio references. Forcing generated `.csproj` edits was rejected because Unity owns those files and will regenerate them.
+
+Scalability potential: No gameplay/audio route or quality scalar route changed. Low/Middle/High/Ultra runtime behavior is unchanged; the benefit is dependency isolation and avoiding player-side UnityEditor binding.
+
+Hardware Impact: Runtime 0 us/frame. Compile graph fanout should improve after Unity import/regeneration, but that remains PENDING because no Unity import or compile completed.
+
+## Decision - Candice Shared Empty List Residual 2026-05-28 04:57+04
+
+Problem: The disabled Candice SQLite provider returns static empty `List<T>` caches to stay allocation-free. Because the legacy API returns mutable `List<T>`, an external consumer could mutate the returned cache.
+
+Solution: Kept the cached lists because the only shipped runtime caller found in `CandiceSaveManager.GetWeapons()` enumerates `SelectAll()` and does not mutate the provider list; allocating a fresh list per call would violate the Zero-GC goal for the disabled bridge. Documented the mutable-cache behavior as an API-level residual in the final report.
+
+Rejected Alternatives: Returning a fresh `List<T>` was rejected as a managed allocation in the bridge. Changing the public return type to `IReadOnlyList<T>` or array was rejected because it breaks the vendor API contract. Adding a custom immutable `List<T>` subtype was rejected as extra managed complexity for a quarantined disabled provider.
+
+Scalability potential: All device tiers keep constant fail-closed behavior; no SQL work or gameplay truth route is introduced.
+
+Hardware Impact: 0 runtime allocation in the disabled provider hot methods by static scan; profiler proof remains pending.
+
+## Decision - Build Resource Throttle Recheck 2026-05-28 04:57+04
+
+Problem: After MasterAudio quarantine source patches, a final compile/resource gate check was justified, but only if CPU and compiler contention were below the project threshold.
+
+Solution: Ran `Tools/Run_Guarded_Vendor_Compile_1401.ps1` without `-DryRun`. The wrapper sampled CPU 100 percent and active `dotnet` PID 59296, wrote `Docs/AgentLogs/Build_1401_Attempt_20260528_045742_BLOCKED_BY_CONTENTION.json`, and exited before launching any `dotnet build`. The `attempts` array is empty.
+
+Rejected Alternatives: Forcing compilation under CPU 100 percent was rejected. Treating source asmdefs as compile proof was rejected because generated `.csproj` files are stale until Unity imports/regenerates them.
+
+Scalability potential: Tooling-only protection. Runtime tier routes unchanged.
+
+Hardware Impact: Prevented additional compiler load on saturated CPU.
+
+## Decision - MasterAudio Example Assembly Coverage 2026-05-28 05:09+04
+
+Problem: Follow-up audit found 11 MasterAudio example C# files under `Assets/Plugins/DarkTonic/MasterAudio/ExampleScenes/Scripts` outside the new runtime `Scripts` asmdef. Because `DarkTonic.MasterAudio.Runtime` is `autoReferenced: false`, those demo scripts could remain in firstpass/default assembly and lose access to MasterAudio runtime types after Unity imports the runtime asmdef.
+
+Solution: Added `DarkTonic.MasterAudio.Examples.asmdef` in the example scripts folder with an explicit reference to `DarkTonic.MasterAudio.Runtime` and `autoReferenced: false`. Ran a source coverage scan: `MASTER_AUDIO_CSHARP_UNCOVERED_BY_SOURCE_ASMDEF=0`. Updated `Tools/Assert_Asmdef_Leakage_1401.py` so the examples asmdef is part of the PASS criteria.
+
+Rejected Alternatives: Moving example scripts under runtime `Scripts` was rejected because it would churn vendor folder layout and scene references. Leaving examples in firstpass was rejected because it breaks quarantine. Deleting examples was rejected because asset removal was not assigned.
+
+Scalability potential: No gameplay/audio route changed. This preserves demo isolation and prevents ambient dependency bleed on all hardware tiers.
+
+Hardware Impact: Runtime 0 us/frame. Build graph impact is pending Unity regeneration proof.
+
+## Decision - Guarded Compile Wrapper Coverage Expansion 2026-05-28 05:09+04
+
+Problem: After adding MasterAudio asmdefs, the guarded compiler wrapper still targeted only Candice, Amplify, and Technie projects. A future green result from that wrapper would not prove the newly added MasterAudio/RelationsInspector assemblies.
+
+Solution: Added `DarkTonic.MasterAudio.Runtime`, `DarkTonic.MasterAudio.Examples`, `DarkTonic.MasterAudio.Editor`, and `RelationsInspector.Editor` to `Tools/Run_Guarded_Vendor_Compile_1401.ps1`, and expanded the diagnostic filter to include `MasterAudio` and `RelationsInspector`. Static checks passed: PowerShell parser returned OK and Python `py_compile` returned OK.
+
+Rejected Alternatives: Relying on stale generated `Assembly-CSharp-firstpass.csproj` was rejected because Unity has not regenerated source projects. Running an unguarded full build was rejected by CPU throttling policy.
+
+Scalability potential: Tooling-only. Runtime routes unchanged.
+
+Hardware Impact: 0 runtime us/frame. Future compile verification is broader and more honest.
+
+## Decision - Build Resource Throttle Recheck 2026-05-28 05:09+04
+
+Problem: After example assembly coverage and wrapper coverage updates, one final guarded compile attempt was justified only if the host was free.
+
+Solution: Ran `Tools/Run_Guarded_Vendor_Compile_1401.ps1` without `-DryRun`. The wrapper sampled CPU 100 percent, active `csc` PID 27628, and active `dotnet` PID 55080, wrote `Docs/AgentLogs/Build_1401_Attempt_20260528_050920_BLOCKED_BY_CONTENTION.json`, and exited before launching any `dotnet build`. The `attempts` array is empty.
+
+Rejected Alternatives: Forcing a build under active `csc` and CPU 100 percent was rejected.
+
+Scalability potential: Tooling-only protection. Runtime tier routes unchanged.
+
+Hardware Impact: Prevented additional compiler load on saturated CPU.
+
+## Decision - Build Resource Throttle Recheck 2026-05-28 05:23+04
+
+Problem: After the MasterAudio settings patch, a compile check was justified only if the host was free.
+
+Solution: Ran `Tools/Run_Guarded_Vendor_Compile_1401.ps1` without `-DryRun`. The wrapper sampled CPU 100 percent and active `dotnet` PID 55080, wrote `Docs/AgentLogs/Build_1401_Attempt_20260528_052348_BLOCKED_BY_CONTENTION.json`, and exited before launching any `dotnet build`. The `attempts` array is empty.
+
+Rejected Alternatives: Forcing compilation under CPU 100 percent was rejected.
+
+Scalability potential: Tooling-only protection. Runtime tier routes unchanged.
+
+Hardware Impact: Prevented additional compiler load on saturated CPU.
+
+## Decision - Candice PluginImporter Static Quarantine Proof 2026-05-28 05:26+04
+
+Problem: The C# bridge proved `Mono.Data.Sqlite` was behind `CANDICE_LEGACY_MONO_SQLITE`, but that alone did not prove Unity's PluginImporter would ignore the legacy managed/native SQLite binaries.
+
+Solution: Added `Docs/AgentLogs/CandicePluginImporterAudit_1401.json`. It checks `Mono.Data.Sqlite.dll.meta` and `sqlite3.dll.meta`: both have `enabledOneCount=0`, `isPreloaded=0`, and `isExplicitlyReferenced=0`. It also records that generated `.csproj`/targets text has 0 `Mono.Data.Sqlite` references and that default-branch Candice provider compile references remain 0.
+
+Rejected Alternatives: Treating raw `.meta` eyeballing as sufficient proof was rejected. Deleting DLL/meta files was rejected because asset deletion/removal was not assigned and would require package cleanup planning.
+
+Scalability potential: All tiers keep the same fail-closed Candice path. No runtime SQL, native plugin load, DataVault route, or quality branch was introduced.
+
+Hardware Impact: 0 runtime us/frame expected; Unity import proof remains PENDING.
+
+## Decision - MasterAudio Settings Static Constructor Guard 2026-05-28 05:26+04
+
+Problem: `MasterAudioSettings` still executed editor singleton setup as a runtime-source static constructor: cold `string.Format` plus `new List<string>` for asset folder creation. It was cold, but it was not needed outside the Editor.
+
+Solution: Moved the static constructor behind `#if UNITY_EDITOR`, replaced `string.Format("{0}/{1}", AssetFolder, AssetName)` with `AssetFolder + "/" + AssetName`, and made the folder list capacity explicit: `new List<string>(2)` with a canonical `COLD ALLOC` comment. Also moved `SingletonScriptable`'s `List<string>`/`System.IO` imports and folder staging field fully inside `UNITY_EDITOR`, with `new List<string>(0)`.
+
+Rejected Alternatives: Leaving it as a cold runtime allocation was rejected because the touched vendor file can be cleaner without behavior change. Deleting MasterAudio settings was rejected because package removal is outside 1401 and could break editor tooling.
+
+Scalability potential: Low/Middle/High/Ultra runtime no longer pays this static editor setup if the type is touched in player code. No gameplay/audio route or `GlobalQualityWeight` branch changed.
+
+Hardware Impact: Measured proof absent. Static effect is removal of one cold runtime-source `string.Format` and confinement of one editor-only `List<string>(2)` allocation to Editor compilation.
+
+## Decision - Technie Auto-Collider Marker Allocation Cleanup 2026-05-28 05:59+04
+
+Problem: Final hot-path evidence contained a noisy cold `List<RigidColliderCreatorChild>` allocation plus two `ToArray()` calls inside Technie collider materialization. This is not a per-frame path, but it weakened the static proof artifact and kept avoidable editor/runtime collider-bake churn.
+
+Solution: Replaced the temporary list and `ToArray()` calls with two explicitly sized persisted arrays: `MeshCollider[autoColliders.Count]` and `RigidColliderCreatorChild[autoColliders.Count]`, both marked with canonical `COLD ALLOC` comments. The arrays are required because `HullMapping` stores array fields. No gameplay authority route changed.
+
+Rejected Alternatives: Leaving the temporary list was rejected because the fix is local and eliminates an avoidable allocation. Reusing a static scratch array was rejected because the mapping needs stable per-hull ownership, not shared mutable scratch. Rewriting Technie collider generation was rejected as package-scope overreach.
+
+Scalability potential: Low/Middle/High/Ultra runtime frame behavior is unchanged. Collider bake/materialization has one less temporary managed list and no `ToArray()` copy churn.
+
+Hardware Impact: Measured proof absent. Static delta removes one cold temporary `List<T>` allocation and two cold array-copy calls from the patched Technie range.
+
+## Decision - GPUInstancer Job Struct Audit 2026-05-28 05:59+04
+
+Problem: A text-only `new` scanner flagged `new AutoUpdateTransformsJob()` in `GPUInstancerPrefabManager.Update()` as a possible hot reference allocation.
+
+Solution: Verified source definition `Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerRuntimeData.cs:505`: `public struct AutoUpdateTransformsJob : IJobParallelForTransform`. Regenerated the hot-path scan to classify it as `valueTypeNewCount=1`, not `hotNewReferenceTypeCount`.
+
+Rejected Alternatives: Removing the job schedule was rejected because it is existing GPUI behavior and the real residual is same-frame `dependentJob.Complete()`/`SetData`, which needs profiler and route review. Calling it a reference allocation was rejected because it is mathematically false at the C# type level.
+
+Scalability potential: No quality scalar or gameplay route changed. The remaining GPUI synchronization/upload residual is documented for a separate GPU bandwidth/job phase owner.
+
+Hardware Impact: 0 measured runtime proof. Static proof now separates value-type job construction from managed reference allocation.
+
+## Decision - Build Resource Throttle Recheck 2026-05-28 05:49+04
+
+Problem: A final guarded compile attempt remained necessary for evidence, but the machine was still saturated.
+
+Solution: Ran `Tools/Run_Guarded_Vendor_Compile_1401.ps1` without `-DryRun`. The wrapper sampled CPU 100 percent and active `dotnet` PID 66408, wrote `Docs/AgentLogs/Build_1401_Attempt_20260528_054921_BLOCKED_BY_CONTENTION.json`, and exited before launching `dotnet build`. The `attempts` array is empty.
+
+Rejected Alternatives: Forcing compilation under CPU 100 percent was rejected by the compilation resource throttling rule. Treating static JSON as compile proof was rejected.
+
+Scalability potential: Tooling-only protection. Runtime tier routes unchanged.
+
+Hardware Impact: Prevented additional compiler load on a saturated host.
+
+## Decision - GPUI GLES3 Append Texture Reuse Guard 2026-05-28 06:18+04
+
+Problem: Follow-up audit found `GPUInstancerUtility.SetAppendBuffersGLES3()` comparing `RenderTexture.width` to `runtimeData.bufferSize`. For buffers wider than `GPUInstancerConstants.TEXTURE_MAX_SIZE`, the allocated texture width is capped and height carries the extra rows, so the old width check could force repeated release/recreate churn. The shadow append branch also released and recreated its buffer/texture every call.
+
+Solution: Added local `textureWidth`, `lodTextureHeight`, and `matrixTextureHeight` values derived from `rowCount`. Reuse checks now compare width and height against the actual allocation dimensions. Shadow append buffer recreation is guarded by null/count mismatch, and shadow append texture recreation is guarded by null/width/height mismatch.
+
+Rejected Alternatives: Increasing `TEXTURE_MAX_SIZE` was rejected because it changes GPU texture capacity assumptions and does not solve the incorrect dimension predicate. Moving GPUI append data into first-party `GlobalDataVault` was rejected as domain overreach and wrong ownership; GPUI owns this GPU upload bridge. Adding a binary low-end branch was rejected because the defect is correctness/resource reuse, not quality policy.
+
+Scalability potential: Low tier avoids unnecessary allocation/upload object churn when large instance buffers exceed one texture row. Middle/High/Ultra keep the same visual path and can spend saved CPU/GPU-driver time on existing GPUI density/crossfade work. No `GlobalQualityWeight` route was introduced because this patch does not decide fidelity; it repairs resource lifetime.
+
+Hardware Impact: Measured profiler proof is absent. Static expected impact is fewer `RenderTexture`/`ComputeBuffer` release-create cycles in GPUI GLES3 setup for large instance buffers. Frame impact remains unproven until Unity/Profiler run.
+
+## Decision - Guarded Compile Pass and Technie Warning Cleanup 2026-05-28 06:18+04
+
+Problem: The first allowed guarded compile pass sampled CPU 42 percent and launched project builds. Amplify Runtime/Editor and Technie Runtime/Updater returned exitCode 0, but Technie Runtime emitted CS0169/CS0649 warnings: `TriangleBucket.averagedCenter`, `RigidColliderCreator.debugMesh`, and `SkinnedColliderEditorData.lastModifiedFrame`.
+
+Solution: Removed the unused `averagedCenter` field, removed the unused compiled `debugMesh` field, and initialized `lastModifiedFrame` to 0 because the field is assigned on update and read through `GetLastModifiedFrame()`. The remaining `debugMesh` text is inside a commented-out debug block and is not a compiled field declaration. Static grep confirms only `private int lastModifiedFrame = 0;` remains among the warning field declarations.
+
+Rejected Alternatives: Global warning suppression was rejected because the warnings were local and cheap to remove. Re-enabling the commented debug mesh field was rejected because it would preserve dead debug allocation/state in production source. Forcing a second compile after the patch was rejected because the post-patch gate sampled CPU 67 percent and active `dotnet` PID 53376.
+
+Scalability potential: Warning cleanup is compile hygiene only. Low/Middle/High/Ultra runtime routes unchanged; no visual quality or gameplay truth route changed.
+
+Hardware Impact: Runtime 0 us/frame expected. Post-patch compile proof remains pending; static brace and grep checks passed, but no Unity import or profiler proof exists.
+
+## Decision - Compilation Resource Throttle Recheck 2026-05-28 06:13+04
+
+Problem: A second compile after the Technie warning cleanup was needed for proof, but running it under active compiler contention would violate the explicit project rule.
+
+Solution: Ran the guarded wrapper without direct `dotnet build`. It wrote `Docs/AgentLogs/Build_1401_Attempt_20260528_061325_BLOCKED_BY_CONTENTION.json`: CPU 67 percent, active `dotnet` PID 53376, `blockedByContention=true`, and an empty `attempts` array. No post-patch build launched.
+
+Rejected Alternatives: Forcing compilation above the 50 percent CPU gate was rejected. Reporting the pre-patch Technie compile as post-patch proof was rejected because the warning cleanup occurred after that compile.
+
+Scalability potential: Tooling-only protection. Runtime tier routes unchanged.
+
+Hardware Impact: Prevented additional compiler load while the host was above the allowed CPU threshold.
+
+## Decision - Guarded Compile Wrapper Single-Process Gate Fix 2026-05-28 12:36+04
+
+Problem: The `Docs/AgentLogs/Build_1401_Attempt_20260528_061044_SUMMARY.json` artifact recorded one active `dotnet` process but still had `blockedByContention=false`. Root cause: PowerShell can unwrap a single returned object from `Get-HectonCompilerProcesses`; `$compilers.Count` is then not a reliable array count for the one-process case.
+
+Solution: Forced `$compilers = @(Get-HectonCompilerProcesses)`, changed the gate to `$compilers.Length -gt 0`, blocked unavailable CPU samples (`$cpu -lt 0`), and added `compilerProcessCount` plus `blockReasons` to the JSON summary. Re-ran only the guarded wrapper. The fixed wrapper wrote `Docs/AgentLogs/Build_1401_Attempt_20260528_123346_BLOCKED_BY_CONTENTION.json`: CPU sample `-1`, active `csc` PID 33212, active `dotnet` PID 26840, `compilerProcessCount=2`, `blockReasons=[CPU_SAMPLE_UNAVAILABLE, ACTIVE_COMPILER_PROCESS]`, attempts array empty.
+
+Rejected Alternatives: Treating the 06:10 compile as compliant proof was rejected because the artifact contradicts the throttling rule. Removing process detection was rejected. Running direct `dotnet build` after the tool fix was rejected because the fixed gate blocked.
+
+Scalability potential: Tooling-only protection. Runtime low/middle/high/ultra routes unchanged. This preserves workstation throughput for parallel agents and prevents accidental build load on weak CPUs.
+
+Hardware Impact: Prevented a build under active compiler contention. No runtime frame impact.
+
+## Decision - MapMagic iOS Texture Format API/Quality Drift 2026-05-28 20:28+04
+
+Problem: Follow-up vendor audit found `Assets/MapMagic/Tools/Extensions/Texture2DExtensions.cs:350` returning `TextureFormat.PVRTC_RGBA4` for iOS inside a helper explicitly documented as selecting high-quality compressed formats. Unity 6's platform texture table lists iOS RGBA high-quality as ASTC 4x4, and this project targets `iOSTargetOSVersionString: 15.0`; Unity's documented ASTC exception is Apple A7-era hardware, which cannot run iOS 15.
+
+Solution: Replaced the iOS return with `TextureFormat.ASTC_4x4`, matching the adjacent tvOS branch and the Unity 6 high-quality path. Added `Docs/AgentLogs/VendorTextureFormatAudit_1401.json`, which records line 350, MapMagic PVRTC token count 0, ProjectSettings iOS target 15.0, and a static forbidden-token scan of the modified `AutoFormat` range. Extended `Tools/Run_Guarded_Vendor_Compile_1401.ps1` to include `Den.Tools`, `Den.Tools.Editor`, `MapMagic`, `MapMagic.Editor`, and `MapMagic.Settings` so the changed source can be covered by a future guarded compile.
+
+Rejected Alternatives: Leaving PVRTC was rejected because it contradicts the helper's high-quality contract and carries square-texture limitations in Unity's texture-format reference. Bulk replacing all `TextureFormat` usage was rejected because Unity APIs still require `TextureFormat` for `Texture2D` construction and texture conversion paths. Patching MeshBaker PVRTC mapping was rejected because current target compile logs for MeshBaker are clean and those branches translate existing texture/importer formats rather than selecting this project's active high-quality iOS default.
+
+Scalability potential: Low/Middle iOS target stays on a single compressed texture format supported by the project's iOS 15 floor; High/Ultra gets the intended ASTC 4x4 visual quality. No binary `isLowEnd` switch or physical simulation was added. The change is a format-selection correction, not gameplay truth or runtime fidelity policy.
+
+Hardware Impact: Runtime frame cost is 0 us/frame. Texture memory/build output may shift from PVRTC RGBA4 0.5 MB per 1024 texture to ASTC 4x4 1.0 MB per 1024 texture per Unity's reference table; this is an intentional high-quality iOS editor/build choice, not a hot-frame cost. Post-patch compile proof is blocked: `Docs/AgentLogs/Build_1401_Attempt_20260528_202641_BLOCKED_BY_CONTENTION.json` sampled CPU 100 percent with active `dotnet` PID 31912 and launched no builds.
+
+## Decision - Candice Legacy SQLite Dead Allocation Cleanup 2026-05-28 20:35+04
+
+Problem: The default Candice SQLite provider is disabled and allocation-free by static scan, but the opt-in legacy branch still had one `List<string> columns = new List<string>();` allocation inside `ConvDataToWeapon()` that was never used. It would become noise if a platform owner explicitly enables `CANDICE_LEGACY_MONO_SQLITE`.
+
+Solution: Removed the unused list allocation only. Regenerated `Docs/AgentLogs/CandicePluginImporterAudit_1401.json`; it now records `disabledProviderClassLine=522`, active default-branch SQLite compile references 0, and `legacyUnusedColumnListAllocCount=0`.
+
+Rejected Alternatives: Rewriting the whole legacy data reader loop was rejected because the legacy branch is quarantined behind an explicit symbol and still depends on platform SQLite proof. Returning fresh lists from the disabled branch was rejected because it would break the zero-GC default bridge. Deleting legacy SQLite files was rejected because plugin removal was not assigned.
+
+Scalability potential: Low/Middle/High/Ultra default runtime remains fail-closed and flat-cost. If a future platform deliberately enables legacy SQLite, it avoids one useless managed list allocation per conversion but still requires separate SQLite platform proof.
+
+Hardware Impact: Default runtime impact is 0 us/frame. Legacy opt-in path removes one unused managed allocation per `ConvDataToWeapon()` call. Post-patch compile proof is blocked: `Docs/AgentLogs/Build_1401_Attempt_20260528_203453_BLOCKED_BY_CONTENTION.json` sampled CPU 68 percent with active `dotnet` PID 38224 and launched no builds.
+
+## Decision - MapMagic Runtime Editor Leakage Guard 2026-05-28 20:51+04
+
+Problem: Follow-up runtime-source scan of MapMagic found `Assets/MapMagic/Tools/ThreadManager/ThreadManager.cs` importing `UnityEditor` in a non-Editor assembly source file. The same scan found `ScriptableAssetsExtensions` object-selector reflection helpers that resolve `UnityEditor.ObjectSelector` outside an explicit editor guard and can null-crash if called in a player. `MapMagicObject.Update()` also forced `Debug.developerConsoleVisible = true` from a hot runtime method.
+
+Solution: Guarded `ThreadManager.cs:3` with `UNITY_EDITOR`. Wrapped `GetObjectSelector`, `GetObjectSelectorId`, and `GetObjectSelectorObject` editor logic with player fallbacks (`null`, `-1`, `null`) at `ScriptableAssetsExtensions.cs:98`, `:112`, and `:126`. Kept the developer console write at `MapMagicObject.cs:141` behind `UNITY_EDITOR || DEVELOPMENT_BUILD`. Regenerated `Docs/AgentLogs/VendorRuntimeEditorLeakage_1401.json`; unguarded editor symbol count is 0 across the scanned runtime vendor roots including MapMagic.
+
+Rejected Alternatives: Moving Den.Tools or MapMagic files into new asmdefs was rejected because it would churn package layout and could break generated project reference shape while Unity has not regenerated asmdefs. Throwing in player object-selector helpers was rejected because editor UI helpers should fail closed if accidentally called in a player.
+
+Scalability potential: Low/Middle/High/Ultra player builds avoid editor binding and avoid release-player console side effects. No terrain generation fidelity route, gameplay truth route, or binary quality switch was added.
+
+Hardware Impact: Runtime hot-path token scan remains 0 `new` reference allocations, 0 `string.Format`, 0 `.ToString()`, 0 LINQ, and 0 `foreach` for the patched `MapMagicObject.Update()` range. Estimated release-player frame impact on i3/MX350 is removal of a debug console property write per MapMagic `Update`; profiler proof remains absent.
+
+## Decision - Guarded Compile Timeout Artifact 2026-05-28 20:51+04
+
+Problem: Guarded wrapper invocation `20260528_204206` passed its contention gate and produced Amplify runtime/editor logs, but the caller timed out before the wrapper wrote a final SUMMARY artifact. Without a forensic artifact this would look like missing evidence instead of partial evidence.
+
+Solution: Added `Docs/AgentLogs/Build_1401_Attempt_20260528_204206_TIMEOUT.json` and patched `Tools/Run_Guarded_Vendor_Compile_1401.ps1` to write a STARTED JSON artifact immediately after the preflight gate passes. The latest guarded wrapper invocation after all patches wrote `Docs/AgentLogs/Build_1401_Attempt_20260528_205116_BLOCKED_BY_CONTENTION.json`: CPU 70 percent, compiler process count 0, blocked by CPU gate, attempts array empty.
+
+Rejected Alternatives: Treating the two Amplify logs as a complete compile pass was rejected because Den.Tools/MapMagic/Technie/Candice/MasterAudio projects were not proven by that timed-out invocation. Running direct `dotnet build` was rejected by the resource-throttling rule.
+
+Scalability potential: Tooling-only. It protects shared agent throughput and weak CPUs from accidental compile spam.
+
+Hardware Impact: Prevented a build while CPU was above the allowed threshold. Runtime frame impact is 0 us/frame.
+
+## Decision - Candice Runtime Hot/Event Debt Pass 2026-05-28 21:29+04
+
+Problem: Follow-up audit found that the SQLite/API bridge domain still had Candice runtime debt in adjacent vendor paths: detection allocated Overlap arrays/dictionaries/lists, combat allocated SphereCast/CircleCast result arrays and coroutine wait objects through controller attack paths, projectile/spawner paths used hot Destroy/Instantiate patterns, Possessor.Update() did scene search/Array.Resize/Instantiate, and CandiceAIController.GameResources incorrectly returned the enemy list.
+
+Solution: Replaced detection/combat queries with bounded reusable buffers and non-alloc Unity physics overloads. Moved non-animation attack delays into scalar timers owned by CandiceAIController.Update(). Added cold bounded pools for Candice projectiles/enemies/spawn FX and switched projectile/death lifetime to scheduled SetActive(false). Replaced damage SendMessage with direct TryGetComponent calls. Fixed GameResources to use its own list and copied detection results with indexed loops and capacity guards. Added Docs/AgentLogs/CandiceRuntimeHotPathAudit_1401.json.
+
+Rejected Alternatives: Leaving Destroy in Candice death was rejected because it invalidated the enemy pool. A full first-party GlobalDataVault rewrite was rejected as domain overreach; this is third-party vendor quarantine, not authoritative gameplay state ownership. Binary isLowEnd switches were rejected; bounded buffers/pools provide continuous capacity control without changing truth routes.
+
+Scalability potential: Low tier gets fixed maximum buffers and no per-attack/per-scan managed churn; middle tier keeps the same behavior with fewer frame spikes; high/ultra tiers retain existing visuals and can spend saved CPU/GC budget elsewhere. No physical simulation was added; this is a cheap object/data lifetime fake, not realism work.
+
+Hardware Impact: Static proof only. Expected i3/MX350 effect is removal of per-scan arrays/dictionaries, per-attack coroutine allocations, projectile/spawn instantiate/destroy churn, and SendMessage reflection dispatch. Microseconds are unmeasured because Unity/Profiler proof is absent. Latest compile gate blocked at CPU 96 percent before build: Docs/AgentLogs/Build_1401_Attempt_20260528_212933_BLOCKED_BY_CONTENTION.json.
+
+## Decision - Candice Animation/VFX Hot Event Continuation 2026-05-28 21:47+04
+
+Problem: The previous Candice hot-path pass did not cover `CandiceAnimationManager` and `CandicePlayerOverrides`. A fresh full-package token scan found runtime `StartCoroutine`, `Instantiate`, `Destroy`, `FindWithTag`, `foreach`, and per-ranged-attack `new GameObject()` in animation/VFX/player override paths. Removing the healthbar scene search also exposed `CandiceUI.UpdateHealthUI()` as a null-crash risk.
+
+Solution: Converted Candice VFX playback to a cold `Transform[]` slot table plus `float[]` disable schedule in `CandiceAnimationManager`; runtime paths now activate/deactivate existing child VFX with indexed loops. Replaced `StartCoroutine(GenericCombo)` with scalar combo scheduling processed from `Animate()`. Removed `FindWithTag` healthbar fallback and made `CandiceUI.UpdateHealthUI()` fail closed with `TryGetComponent`. Reworked `CandicePlayerOverrides` so the attack target is created only in cold `PrepareAttackTarget()` and hot ranged override methods fail closed if startup did not prepare it.
+
+Rejected Alternatives: Keeping clone/destroy VFX was rejected because it keeps managed and engine object churn in animation events. A full first-party VFX pool or `GlobalDataVault` rewrite was rejected as domain overreach; this is a third-party vendor quarantine fix. Lazy hot fallback allocation in `GetAttackTarget()` was rejected because it would preserve per-event allocation under missing setup. Binary low/high quality branches were rejected; bounded slots and scalar timers give a stable baseline across tiers.
+
+Scalability potential: Low tier gets no clone/destroy spikes and bounded VFX slot iteration. Middle tier keeps visual parity with cheaper event handling. High/Ultra can spend saved CPU/GC budget on existing first-party visuals; no new physical simulation or gameplay truth route was added.
+
+Hardware Impact: Static proof only. `Docs/AgentLogs/CandiceRuntimeHotPathAudit_1401.json` now scans 61 hot/event ranges and reports newRef=0, string.Format=0, ToString=0, LINQ=0, foreach=0, Instantiate=0, Destroy=0, StartCoroutine=0, SendMessage=0. Microseconds are unmeasured because Unity/Profiler proof is absent. Latest compile gate blocked before build at CPU 54 percent with active dotnet PID 43164: `Docs/AgentLogs/Build_1401_Attempt_20260528_214633_BLOCKED_BY_CONTENTION.json`.
+
+## Decision - Candice Manager Registration and Wander Allocation Continuation 2026-05-28 22:31+04
+
+Problem: After the animation/VFX pass, a narrower controller/manager audit still found hot-path debt. `CandiceAIController.Wander()` created a named `GameObject` with string concatenation on first wander tick. `onRegistrationComplete()` created combat/movement/detection module classes and concatenated agent-specific names while `CandiceAIManager.Update()` drains queued registrations. `FindTarget()` used an unbounded do/while and could spin forever if the grid never returns a valid point. `CandiceAIManager.getInstance()` used `new CandiceAIManager()`, which is invalid for a `MonoBehaviour`. `RequestASTARPath()` created a `ThreadStart` delegate only to invoke it immediately.
+
+Solution: Moved Candice module construction, projectile prewarm, and wander target creation to controller startup with canonical cold-allocation comments. Registration callback now only records the assigned id and initializes collider-derived state. Wander now fails closed when startup could not create a target. `FindTarget()` is bounded to 16 attempts and has null manager/grid guards. Manager queues and the agent dictionary are pre-sized to 128 and guarded against capacity overflow. `getInstance()` now returns only the registered instance. `RequestASTARPath()` calls the pathfinder directly and fails closed if pathfinding is missing. `FinishedProcessingPath()` drops overflow instead of growing the queue.
+
+Rejected Alternatives: Lazy hot fallback allocation was rejected because it preserves the first-wander spike. Keeping agent-specific module names was rejected because the diagnostic string is not worth hot registration allocation. Replacing Candice with first-party `GlobalRegistry`, `SignalBus`, or `GlobalDataVault` was rejected as domain overreach; this is third-party quarantine, not first-party authority migration. Binary low-end/high-end paths were rejected; bounded capacities and scalar timers keep behavior predictable across tiers.
+
+Scalability potential: Low tier avoids first-wander GameObject/string allocation, manager Update module allocation, queue/dictionary growth, and unbounded wander search. Middle tier keeps the same vendor behavior with fewer spikes. High and Ultra keep visual parity and can spend saved CPU/GC budget through existing first-party presentation systems. No physical simulation, no gameplay truth owner, and no new fidelity route were added.
+
+Hardware Impact: Static proof only. `Docs/AgentLogs/CandiceRuntimeHotPathAudit_1401.json` now scans 87 hot/event ranges and reports `hotNewReferenceTypeCount=0`, `stringFormatCount=0`, `toStringCount=0`, `linqQueryTokenCount=0`, `foreachCount=0`, `instantiateCount=0`, `destroyCount=0`, `startCoroutineCount=0`, `sendMessageCount=0`, `gameObjectFindCount=0`, and `findAnyObjectByTypeCount=0`. Microseconds are unmeasured because Unity/Profiler proof is absent. Latest compile gate blocked before build at CPU 65 percent: `Docs/AgentLogs/Build_1401_Attempt_20260528_223142_BLOCKED_BY_CONTENTION.json`.
+
+## Decision - Candice Inventory Death-Drop Pool Continuation 2026-05-28 22:38+04
+
+Problem: `CandiceAnimationManager.Animate()` calls `CandiceInventoryManager.Drop()` from the death animation branch. That drop method still performed `GameObject.Find("Renderer P2")` and `Instantiate(drop, ...)` on the event path. The same initialization block added a new `CandiceInventoryManager` even when one already existed, creating duplicate component risk.
+
+Solution: Replaced the drop event path with `CandiceInventoryManager.PrepareDropPool()` and a fixed `GameObject[8]` pool built during animation startup. `Drop()` now only reads an inactive pooled object by indexed loop, moves it, and activates it. Removed the scene search and the duplicate AddComponent branch. Pool exhaustion fails closed instead of instantiating during death.
+
+Rejected Alternatives: Keeping event-time Instantiate was rejected because death events can occur during gameplay and keep engine object churn in the frame. Lazy pool creation inside `Drop()` was rejected because it would move the allocation to the first death event. Reusing first-party ObjectPoolManager was rejected as domain overreach and a dependency edge from a quarantined vendor package into first-party runtime.
+
+Scalability potential: Low tier gets a fixed death-drop capacity and no event-time scene search/object creation. Middle tier keeps visual behavior for normal small counts. High and Ultra can increase visual richness elsewhere; this vendor patch does not create a new fidelity route or binary quality switch.
+
+Hardware Impact: Static proof only. `Docs/AgentLogs/CandiceRuntimeHotPathAudit_1401.json` now scans 89 hot/event ranges and reports all forbidden hot token totals as 0. Expected i3/MX350 benefit is removal of one `GameObject.Find` and one `Instantiate` path per Candice death drop event after startup prewarm. Microseconds are unmeasured because Unity/Profiler proof is absent. Latest compile gate blocked before build at CPU 99 percent: `Docs/AgentLogs/Build_1401_Attempt_20260528_223853_BLOCKED_BY_CONTENTION.json`.
+## Decision - Candice A* Result Ownership and Scratch Capacity Continuation 2026-05-28 23:10+04
+
+Problem: My previous non-alloc A* patch returned a shared `waypointBuffer` through `PathResult` while `CandiceAIManager` queued results. If two A* requests completed before the manager drained the result queue in `Update()`, the second solve could overwrite the first result's waypoint data. The same code had `HashSet<Node>()` and `List<T>(128)` scratch that could grow during a large path solve.
+
+Solution: Changed the default manager path to call `FindASTARPath(request, null)` and made `CandicePathFinding` invoke the request callback immediately when no queue callback is supplied. The controller copies waypoints into its persistent `Path` cache in `OnPathFound`, so the shared buffer is consumed before the next solve. Moved A* scratch containers to constructor cold allocations sized by `grid.MaxSize`: `CandiceHeap<Node>`, `HashSet<Node>`, `List<Node>`, `List<Vector3>`, and the `Vector3[]` output buffer. Also patched `CandiceGrid.GetNeighbours()` to reuse an 8-slot scratch list and replaced `Physics.CheckSphere` with `Physics.OverlapSphereNonAlloc`.
+
+Rejected Alternatives: Allocating one fresh `Vector3[]` per result was rejected because it would reintroduce per-request GC. Keeping queued results was rejected because it requires either copying or a result-ring ownership model; this vendor manager currently solves synchronously, so immediate dispatch is the smaller safe route. Introducing GlobalDataVault was rejected as domain overreach for quarantined third-party demo AI.
+
+Scalability potential: Low tier avoids first-large-path collection growth and sync walkability allocations. Middle tier keeps behavior with fewer spikes. High and Ultra do not get a new fidelity route; saved budget remains available to first-party visuals. No binary quality switch and no physical simulation were added.
+
+Hardware Impact: Static proof only. `Docs/AgentLogs/CandiceRuntimeHotPathAudit_1401.json` reports 100 Candice-only hot/event ranges with `hotNewReferenceTypeCount=0`, `stringFormatCount=0`, `toStringCount=0`, `linqQueryTokenCount=0`, `foreachCount=0`, `instantiateCount=0`, `destroyCount=0`, `startCoroutineCount=0`, `sendMessageCount=0`, `checkSphereCount=0`, and `syncAllocPhysicsTokenCount=0`. Runtime microseconds are unmeasured; Unity/Profiler proof is absent. Latest compile gate blocked before build at CPU 100: `Docs/AgentLogs/Build_1401_Attempt_20260528_230741_BLOCKED_BY_CONTENTION.json`.
+
+## Decision - Candice Scene Search, Editor Serialization, and GOAP Continuation 2026-05-28 23:30+04
+
+Problem: Follow-up source audit found remaining vendor-domain debt after the A* buffer fix. `CandicePathFinding` still invoked legacy BFS tile adjacency from the A* constructor, forcing `GameObject.FindGameObjectsWithTag` during default manager startup. `CandiceAutorun` still used `BinaryFormatter` in an editor autorun file. Optional Candice camera/player helpers still had scene-search fallbacks (`Camera.main`, `FindWithTag`, `GameObject.Find`, event-time `GetComponent<FollowPlayer>`). GOAP used static shared plan state, LINQ frontier sorting, LINQ dictionary comparers, and applied simulated child effects to a discarded dictionary copy.
+
+Solution: Removed the constructor call to `ComputeAdjacencyList()` and kept the tag search only as explicit legacy BFS setup. Replaced editor autorun binary persistence with plain text flag IO. Converted optional camera paths to fail closed or use cold cached references. Replaced spawner parent name lookup with serialized parent reference. Converted GOAP queue/current action to per-agent state, replaced LINQ sorting with indexed min-selection, removed LINQ comparer calls, added indexed `CandiceDictionary` access, and fixed child-state simulation to apply effects before building the child state.
+
+Rejected Alternatives: Reintroducing a global registry or first-party DataVault route for quarantined Candice demo AI was rejected as domain overreach. Keeping automatic scene search was rejected because read/startup helpers become hidden global scans. Allocating fresh path/plan result objects to avoid ownership bugs was rejected because it reintroduces managed churn. A binary low-end/high-end route was rejected; the patch removes waste without changing fidelity policy.
+
+Scalability potential: Low devices lose startup/event scene searches and shared-state GOAP corruption. Middle tier keeps the same wired-reference behavior with fewer spikes. High and Ultra do not get a new simulation path; saved CPU/GC budget remains available to first-party visual overkill routes.
+
+Hardware Impact: Static proof only. `Docs/AgentLogs/CandiceRuntimeHotPathAudit_1401.json` reports 31 modified production hot/event ranges with hot newRef=0, string.Format=0, ToString=0, LINQ=0, foreach=0, Instantiate/Destroy/StartCoroutine/SendMessage=0, Camera.main=0, GameObject.Find=0, FindWithTag=0, FindGameObjectsWithTag=0. Microseconds are unmeasured because Unity/Profiler proof is absent. Guarded compile blocked before build at CPU 93 percent: `Docs/AgentLogs/Build_1401_Attempt_20260528_232505_BLOCKED_BY_CONTENTION.json`.
+
+## Decision - Integrator Hot Lookup Cache Pass 2026-05-28 23:47+04
+
+Problem: The previous direct hot-method scan was clean, but a deeper call-stack audit found two residual vendor dependency defects. `Possessor.Update()` still reached `possessed.TryGetComponent(out CandiceProjectile)` and `possessed.transform.Find(...)` on the possession event path. `MapMagicObject.Update()` called `TileManager.Update()`, which called `RefreshCamCoords()`, which still used runtime `Camera.main`, `FindAnyObjectByType<Camera>`, `FindGameObjectsWithTag`, and `ArrayTools.RemoveNulls`.
+
+Solution: Moved Candice possession component and child-transform discovery into cold caches. `CandiceProjectile` now registers component handles in a fixed static `CandiceProjectile[64]` table and caches `CameraParent`/`VSFX` transforms during `Awake`. `Possessor` owns fixed 3-slot arrays for projectile components, camera parents, and VFX roots; `Update()` reads those arrays only. For MapMagic, `MapMagicObject` now resolves generation camera/tagged objects only from `OnEnable`, `Start`, or `Refresh`; `TileManager.Update()` receives a cached camera reference and `RefreshCamCoords()` uses cached transforms and indexed loops only.
+
+Rejected Alternatives: Periodic runtime camera/tag polling was rejected because it would still be a hidden high-frequency scene lookup. Adding first-party `GlobalRegistry` hooks to vendor code was rejected as cross-domain coupling. Replacing MapMagic terrain-generation semantics was rejected as domain overreach. Writing new JSON proof artifacts was rejected for this pass because the current integrator instruction explicitly requested source-code proof only; the mandatory long-term state was kept in markdown status/rationale/log.
+
+Scalability potential: Low tier loses hidden scene-search spikes and component lookup stalls in vendor update/event paths. Middle tier keeps vendor behavior with fewer dependency stalls. High and Ultra do not receive a new simulation route; saved CPU/GC budget remains available to first-party visual presentation. No binary `isLowEnd` switch, no new physical simulation, and no `GlobalQualityWeight` truth mutation were added.
+
+Hardware Impact: Static proof only. In-memory scan over runtime vendor `Update/FixedUpdate/LateUpdate/Tick/FixedTick/LateFrameTick/Execute` bodies reported `HOT_LOOKUP_HITS=0`. Modified hot-method scan reported `MODIFIED_HOT_FORBIDDEN_ALLOC_TOKENS=0`. Brace balance is 0 for all four modified source files. `git diff --check` reports no whitespace errors, only existing LF-to-CRLF warnings. CPU sample before any compile decision was 100 percent, so no guarded or direct build was launched.
+
+## Decision - MapMagic Late Camera and MasterAudio Transitive Hot Setup 2026-05-29 00:18+04
+
+Problem: The cached MapMagic source patch removed per-frame scene lookup but created a correctness regression for a camera instantiated after `MapMagicObject.Start()`. A second call-stack audit found MasterAudio hot paths still capable of reaching lazy listener/variation setup: `SoundGroupVariationUpdater.ManualUpdate()` refreshed `MasterAudio.ListenerTrans`, and MasterAudio occlusion/recalc helpers could call `AmbientUtil.InitListenerFollower()`.
+
+Solution: `MapMagicObject` now subscribes to `RenderPipelineManager.beginCameraRendering` and accepts the first active game camera as a late zero-search handoff when no generation camera was found during cold setup. `TileManager` now prepares runtime `camCoords` storage from cold `SetMainCamera`/`SetTaggedObjects` source setters; `RefreshCamCoords()` reads cached transforms only and does not resize arrays in the runtime branch. `TileManager.RemoveNulls()` now uses a cold scratch `List<Coord>` and explicit dictionary enumerator instead of allocating a removal list on the first dead tile. `SoundGroupVariationUpdater` caches its `SoundGroupVariation`, `AudioSource`, parent group, and listener through cold/non-search paths; `MasterAudio.CachedListenerTrans` exposes the cached listener without `FindObjectsByType`; hot listener-follower setup paths now fail closed.
+
+Rejected Alternatives: Restoring `Camera.main`/`FindAnyObjectByType` inside `RefreshCamCoords()` was rejected because it preserves the hidden per-frame dependency search. Adding a first-party registry dependency to MapMagic was rejected as vendor-domain overreach. Recreating MasterAudio listener followers from hot update was rejected because the fallback can allocate GameObjects/components and search listeners; cold `Awake`/`AudioListenerChanged` remains the supported route.
+
+Scalability potential: Low tier avoids per-frame scene lookup and MapMagic coord array churn. Middle tier keeps MapMagic streaming behavior after late camera creation. High and Ultra preserve terrain visual continuity without adding a new physical simulation or binary quality switch.
+
+Hardware Impact: Static proof only. Runtime vendor hot scan covered 72 methods and reported lookup hits 0 and allocation-token hits 0. Brace balance for touched MapMagic/MasterAudio files is 0. `git diff --check` has no whitespace errors. CPU sample was 100 with compiler process count 0, so no compile was launched. Unity import/profiler/player proof remains absent.
+
+## Decision - MapMagic Coordinate Buffer and Custom Tile Hardening 2026-05-29 00:50+04
+
+Problem: The late-camera cache patch still had two MapMagic correctness risks. SRP-only camera recovery could miss projects or camera paths using the legacy camera loop. `TileManager` treated `camCoords.Length` as both capacity and active count, so destroyed cached tagged transforms could leave stale coordinates in the active deploy set. `TerrainTileManager.RemoveNulls()` could call `ArrayTools.RemoveAt` from `tiles.Update()` when a custom tile disappeared, causing managed array churn in a frame path.
+
+Solution: Added `Camera.onPreCull` as the legacy zero-search camera handoff beside `RenderPipelineManager.beginCameraRendering`. Removed the hot `mainCamera` parameter from `TileManager.Update`; camera writes now happen through cold setup or camera render callbacks. Render callbacks pass `prepareStorage:false`, so presentation-phase state transfer writes only cached references. Cold setup/ReDeploy owns `Coord[]` capacity. Added `camCoordsCount` and active-prefix reads for `Closest`, `ChangeDists`, `Deploy`, `GetDeployRects`, and `GetRemoteness`. `RefreshCamCoords()` now counts live cached transforms and ignores stale tail slots. `TerrainTileManager.RemoveNulls()` compacts `customTiles` in place and stores `customTilesCount`.
+
+Rejected Alternatives: Restoring per-frame `Camera.main`, `FindAnyObjectByType`, or tag search was rejected because it reintroduces scene lookup into the update chain. Shrinking `camCoords` every time a tagged object disappears was rejected because it moves managed allocation back into runtime movement/destruction. Rewriting MapMagic tile deployment into first-party streaming code was rejected as domain overreach.
+
+Scalability potential: Low tier avoids hidden scene search, stale tagged-object terrain drift, and custom tile array reallocations. Middle tier keeps normal MapMagic streaming semantics. High and Ultra tiers keep terrain continuity and can spend saved CPU/GC budget in existing first-party visual systems.
+
+Hardware Impact: Static proof only. Hot-method scan covered 15 modified MapMagic/MasterAudio methods and reported lookup hits 0 and allocation-token hits 0. Brace balance for touched files is 0. `git diff --check` has no whitespace errors. CPU samples were 53 then 63 after a throttled wait with compiler process count 0, so no compile was launched.
+
+## Decision - MasterAudio Hot Singleton and MapMagic Polling Continuation 2026-05-29 01:20+04
+
+Problem: A deeper hot-chain scan found two real residual defects. MasterAudio `Update()` and updater-driven occlusion paths called static helpers that could reach lazy `Instance` or `SafeInstance`; those getters can run `GameObject.FindAnyObjectByType<MasterAudio>()`. The same per-frame helper set used delegate-backed `RemoveAll`/`FindAll`, and MapMagic `IsGenerating()` was explicitly documented as callable every frame while enumerating iterator-backed `tiles.All()`.
+
+Solution: MasterAudio hot helpers now use `_instance` directly and fail closed when the singleton has not been cold-initialized. Per-frame fade, occlusion, delayed ambient, addressable, video, and queued-ray paths now use indexed loops and reverse removals instead of `RemoveAll`, `FindAll`, `foreach`, or lazy singleton lookup. MapMagic `IsGenerating()` and `GetProgress()` now scan `tiles.grid` with an explicit dictionary enumerator and `customTiles` by index. `TileManager.Deploy()` reuses source snapshot, tile pool, move ordering, and deploy-rect scratch; it keeps a fresh destination dictionary because old `grid` references may still be observed by MapMagic background tasks.
+
+Rejected Alternatives: Reusing the old MapMagic `grid` dictionary as a scratch buffer was rejected after self-audit because the source comment explicitly protects old grids from mutation during multithreaded work. Forcing MasterAudio to create listener followers from hot paths was rejected because it preserves hidden scene mutation and object/component allocation. Replacing MasterAudio/MapMagic with first-party systems was rejected as domain overreach for 1401.
+
+Scalability potential: Low tier loses hidden scene-search stalls and delegate/list churn from legacy audio and terrain polling. Middle tier keeps MapMagic terrain continuity and MasterAudio legacy behavior. High and Ultra receive no new simulation path; saved frame budget remains available to first-party presentation systems. No binary `isLowEnd` branch and no new physical simulation were added.
+
+Hardware Impact: Static proof only. In-memory text scan over 45 selected hot/transitive methods reported lookup hits 0 and allocation-token hits 0. Structural `TileManager.Deploy()` still has one deliberate reference allocation for the destination dictionary; this is retained for correctness and thread isolation, not claimed as zero-GC. CPU samples were 63 percent then 93 percent with compiler process count 0, so build/Roslyn-heavy validation was not launched. Runtime microseconds are unmeasured because Unity/Profiler proof is absent.
+
+## Decision - MasterAudio Occlusion Hot Component Mutation 2026-05-29 01:52+04
+
+Problem: After the singleton/delegate cleanup, `SoundGroupVariationUpdater.RayCastForOcclusion()` still contained a hidden scene mutation: if occlusion was enabled at runtime and the variation had no `AudioLowPassFilter`, the raycast path called `gameObject.AddComponent<AudioLowPassFilter>()`. That keeps component creation inside a ray-frame path and violates the cached-cold dependency rule.
+
+Solution: Moved filter preparation into `CacheRuntimeReferences()`, which runs from `OnEnable` and uses cold `GetComponent<AudioLowPassFilter>()` followed by `AddComponent<AudioLowPassFilter>()` only when occlusion is already enabled and no filter exists. `RayCastForOcclusion()` now fails closed when the filter is missing: it removes the source from the blocked-occlusion set and returns false without mutating the scene.
+
+Rejected Alternatives: Keeping hot `AddComponent` was rejected because it creates engine objects during audio occlusion work. Lazy-creating the filter from `RayCastForOcclusion()` behind a first-run flag was rejected because the first occlusion ray would still pay the mutation cost. Rewriting MasterAudio occlusion into a first-party audio DataVault was rejected as domain overreach for a vendor quarantine pass.
+
+Scalability potential: Low tier avoids a runtime component-add spike from audio raycasts. Middle tier keeps occlusion behavior when filters are prepared by cold enable/setup. High and Ultra tiers do not receive a new simulation route; saved budget remains available to first-party visual systems. No `GlobalQualityWeight` route was introduced because this patch repairs dependency placement, not fidelity policy.
+
+Hardware Impact: Static proof only. Hot-method scan excluding structural MapMagic deploy covered 36 methods and reported lookup hits 0 and allocation-token hits 0, including no `GetComponent<` or `AddComponent<` inside `RayCastForOcclusion()`. DataVault/lock scan on the five touched files had no matches. CPU samples were 57 percent then 57 percent after a 20-second wait, so no compile was launched.
+
+## Decision - MasterAudio Occlusion Cold-Prepare Null Ordering 2026-05-29 02:11+04
+
+Problem: The occlusion cold-prepare patch moved low-pass filter creation out of `RayCastForOcclusion()`, but the first version called `_variation.UsesOcclusion` from `CacheRuntimeReferences()`. `UsesOcclusion` reads `VariationUpdater.MAThisFrame`, and `OnEnable()` can execute before that static per-frame cache is populated. That creates a possible null-reference during cold startup.
+
+Solution: `CacheRuntimeReferences()` now calls `UpdateCachedObjects()` before occlusion preparation and requires `_maThisFrame != null` before reading `_variation.UsesOcclusion`. `DoneWithOcclusion()` now returns early when `_variation` is absent, preventing disable/enable cleanup from calling MasterAudio occlusion cleanup with a null variation.
+
+Rejected Alternatives: Reintroducing hot filter creation was rejected because it would restore the ray-frame scene mutation. Touching `SoundGroupVariation.UsesOcclusion` globally was rejected because it is a broader vendor API behavior change; local call ordering is enough for this defect.
+
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged when MasterAudio is initialized. Missing or late MasterAudio now fails closed instead of crashing during vendor updater enable. No `GlobalQualityWeight` or binary quality route was added.
+
+Hardware Impact: Static proof only. Runtime vendor hot body scan across MapMagic and MasterAudio non-Editor files covered 39 methods and reported 0 forbidden-token hits. CPU sample was 94 percent with compiler process count 0, so no build was launched.

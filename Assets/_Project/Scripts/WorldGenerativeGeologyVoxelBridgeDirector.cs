@@ -132,9 +132,6 @@ namespace Hecton8.World
             if (_registeredInActiveSet)
                 return;
 
-            if (_volume == null)
-                TryGetComponent(out _volume);
-
             _registeredInActiveSet = _activeVoxelRuntimes.TryRegister(this);
             if (!_registeredInActiveSet)
                 return;
@@ -165,7 +162,8 @@ namespace Hecton8.World
             int configuredDetailBand,
             string configuredFamilyId,
             string configuredProfileId,
-            bool configuredColliderEnabled)
+            bool configuredColliderEnabled,
+            HectonVoxelVolume configuredVolume)
         {
             if (_registeredInActiveSet && colliderEnabled != configuredColliderEnabled)
             {
@@ -181,6 +179,7 @@ namespace Hecton8.World
             familyId = string.IsNullOrWhiteSpace(configuredFamilyId) ? "world.family.generic" : configuredFamilyId;
             geologyProfileId = string.IsNullOrWhiteSpace(configuredProfileId) ? "geology.generic" : configuredProfileId;
             colliderEnabled = configuredColliderEnabled;
+            _volume = configuredVolume;
         }
     }
 
@@ -197,6 +196,8 @@ namespace Hecton8.World
         private const uint VoxelBridgeFlagVolumeNull = 1u << 1;
         private const uint VoxelBridgeFlagException = 1u << 2;
         private const uint VoxelBridgeFlagQueueSaturated = 1u << 3;
+        private const uint VoxelBridgeFlagRuntimeComponentMissing = 1u << 4;
+        private const uint VoxelBridgeFlagVolumeComponentMissing = 1u << 5;
 
         private static WorldGenerativeGeologyVoxelBridgeDirector s_activeRuntimeInstance;
 
@@ -1232,7 +1233,45 @@ namespace Hecton8.World
                     }
 
                     if (!WorldGenerativeGeologyVoxelRuntime.TryGetActiveRuntime(volume, out WorldGenerativeGeologyVoxelRuntime runtime))
-                        runtime = volume.AddComponent<WorldGenerativeGeologyVoxelRuntime>();
+                    {
+                        voxelEngine.DespawnVolume(volume);
+                        RecordVoxelBridgeBlackBox(
+                            0,
+                            0,
+                            _desiredRuntimeKeys.Count,
+                            _activeVolumes.Count,
+                            _pendingRuntimeKeys.Count,
+                            _queuedLaunchKeys.Count,
+                            0,
+                            _debugRuntimeVolumeBudget,
+                            _debugGridDimensionCap,
+                            visualQualityWeight,
+                            VoxelBridgeFlagRuntimeComponentMissing,
+                            request.runtimeKey);
+                        DumpVoxelBridgeBlackBoxOnce();
+                        return;
+                    }
+
+                    if (!voxelEngine.TryGetRegisteredVolumeComponent(volume, out HectonVoxelVolume registeredVolume))
+                    {
+                        voxelEngine.DespawnVolume(volume);
+                        RecordVoxelBridgeBlackBox(
+                            0,
+                            0,
+                            _desiredRuntimeKeys.Count,
+                            _activeVolumes.Count,
+                            _pendingRuntimeKeys.Count,
+                            _queuedLaunchKeys.Count,
+                            0,
+                            _debugRuntimeVolumeBudget,
+                            _debugGridDimensionCap,
+                            visualQualityWeight,
+                            VoxelBridgeFlagVolumeComponentMissing,
+                            request.runtimeKey);
+                        DumpVoxelBridgeBlackBoxOnce();
+                        return;
+                    }
+
                     runtime.Configure(
                         request.runtimeKey,
                         signature,
@@ -1240,7 +1279,8 @@ namespace Hecton8.World
                         detailBand,
                         request.familyId,
                         request.geologyProfileId,
-                        buildCollider);
+                        buildCollider,
+                        registeredVolume);
                     RegisterHydrothermalVent(request);
 
                     if (_activeVolumes.TryGetValue(request.runtimeKey, out GameObject previousVolume) &&
@@ -2413,59 +2453,90 @@ namespace Hecton8.World
             if (_blackBoxDumped)
                 return;
 
-            _blackBoxDumped = true;
-            DumpVoxelBridgeBlackBox();
+            _blackBoxDumped = DumpVoxelBridgeBlackBox();
         }
 
-        private void DumpVoxelBridgeBlackBox()
+        private bool DumpVoxelBridgeBlackBox()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             IDataVault vault = _dataVault;
             if (!TryOpenVoxelBridgeBlackBox(vault, in _voxelBridgeBlackBoxHandle, out NativeArray<VoxelBridgeTelemetryEntry> blackBox))
-                return;
+                return false;
 
+            const int HeaderBytes = 8;
+            const int RowBytes = 64;
+            int totalBytes = HeaderBytes + VoxelBridgeBlackBoxCapacity * RowBytes;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                totalBytes,
+                nameof(WorldGenerativeGeologyVoxelBridgeDirector),
+                "VoxelBridgeBlackBoxDumpPayload");
             try
             {
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string dumpPath = Path.Combine(projectRoot, VoxelBridgeDumpPath);
-                string dumpDirectory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(dumpDirectory))
-                    Directory.CreateDirectory(dumpDirectory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                WriteInt32LittleEndian(payload, 0, VoxelBridgeBlackBoxCapacity);
+                WriteInt32LittleEndian(payload, 4, _blackBoxWriteIndex);
+                for (int i = 0; i < VoxelBridgeBlackBoxCapacity; i++)
                 {
-                    writer.Write(VoxelBridgeBlackBoxCapacity);
-                    writer.Write(_blackBoxWriteIndex);
-                    for (int i = 0; i < VoxelBridgeBlackBoxCapacity; i++)
-                    {
-                        VoxelBridgeTelemetryEntry entry = blackBox[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.RequestCount);
-                        writer.Write(entry.KeptCount);
-                        writer.Write(entry.DesiredCount);
-                        writer.Write(entry.ActiveCount);
-                        writer.Write(entry.PendingCount);
-                        writer.Write(entry.QueuedCount);
-                        writer.Write(entry.RuntimeBudget);
-                        writer.Write(entry.SpawnBudgetUsed);
-                        writer.Write(entry.GridDimensionCap);
-                        writer.Write(entry.QualityWeight);
-                        writer.Write(entry.RuntimeKeyLow);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.Reserved0);
-                        writer.Write(entry.Reserved1);
-                    }
+                    VoxelBridgeTelemetryEntry entry = blackBox[i];
+                    int offset = HeaderBytes + i * RowBytes;
+                    WriteUInt32LittleEndian(payload, offset, entry.Frame);
+                    WriteUInt32LittleEndian(payload, offset + 4, entry.Flags);
+                    WriteInt32LittleEndian(payload, offset + 8, entry.RequestCount);
+                    WriteInt32LittleEndian(payload, offset + 12, entry.KeptCount);
+                    WriteInt32LittleEndian(payload, offset + 16, entry.DesiredCount);
+                    WriteInt32LittleEndian(payload, offset + 20, entry.ActiveCount);
+                    WriteInt32LittleEndian(payload, offset + 24, entry.PendingCount);
+                    WriteInt32LittleEndian(payload, offset + 28, entry.QueuedCount);
+                    WriteInt32LittleEndian(payload, offset + 32, entry.RuntimeBudget);
+                    WriteInt32LittleEndian(payload, offset + 36, entry.SpawnBudgetUsed);
+                    WriteInt32LittleEndian(payload, offset + 40, entry.GridDimensionCap);
+                    WriteFloat32LittleEndian(payload, offset + 44, entry.QualityWeight);
+                    WriteUInt32LittleEndian(payload, offset + 48, entry.RuntimeKeyLow);
+                    WriteUInt32LittleEndian(payload, offset + 52, entry.StateHash);
+                    WriteUInt32LittleEndian(payload, offset + 56, entry.Reserved0);
+                    WriteUInt32LittleEndian(payload, offset + 60, entry.Reserved1);
                 }
+
+                return NativeFaultDumpWriter.TryWriteAll(
+                    VoxelBridgeDumpPath,
+                    payload,
+                    totalBytes);
             }
             catch (IOException)
             {
+                return false;
             }
             catch (UnauthorizedAccessException)
             {
+                return false;
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(WorldGenerativeGeologyVoxelBridgeDirector),
+                    "VoxelBridgeBlackBoxDumpPayload");
+            }
+#else
+            return false;
 #endif
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> payload, int offset, float value)
+        {
+            WriteUInt32LittleEndian(payload, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, int offset, int value)
+        {
+            WriteUInt32LittleEndian(payload, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, int offset, uint value)
+        {
+            payload[offset] = (byte)value;
+            payload[offset + 1] = (byte)(value >> 8);
+            payload[offset + 2] = (byte)(value >> 16);
+            payload[offset + 3] = (byte)(value >> 24);
         }
 
         private static float GetElapsedMilliseconds(long startTimestamp, long endTimestamp)

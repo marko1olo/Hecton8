@@ -9,7 +9,7 @@ using UnityEditor;
 namespace Hecton8.Optimization
 {
     /// <summary>
-    /// Applies MX350-class runtime rendering and simulation clamps during bootstrap.
+    /// Applies compact and shared-memory runtime rendering and simulation clamps during bootstrap.
     /// </summary>
     internal static class VRAMEnforcer
     {
@@ -36,7 +36,7 @@ namespace Hecton8.Optimization
         internal static int DetectedGraphicsMemoryMb { get; private set; }
 
         /// <summary>
-        /// Returns whether the current hardware falls under the MX350 guard profile.
+        /// Returns whether the current hardware falls under the compact graphics guard profile.
         /// </summary>
         internal static bool IsLowVramBudgetActive => _lowVramBudgetActive;
 

@@ -34,7 +34,7 @@ namespace Hecton8.Vehicles.Automation
         public const int HandlingProfileCapacity = 32;
         public const float AuthoritativeQualityWeight = 1f;
 #if UNITY_EDITOR
-        public const int CsvScratchBytes = 4096;
+        public const int CsvImportByteCapacity = 4096;
 #endif
 
         public const uint HandlingProfileDefaultHash = 0x933B5BDEu;
@@ -73,9 +73,6 @@ namespace Hecton8.Vehicles.Automation
         public const BufferID AutopilotTelemetryCursor = (BufferID)71599;
         public const BufferID AutopilotMockSdf = (BufferID)71600;
         public const BufferID AutopilotFlowSamples = (BufferID)71601;
-#if UNITY_EDITOR
-        public const BufferID AutopilotCsvScratch = (BufferID)71602;
-#endif
         public const BufferID AutopilotHandlingProfiles = (BufferID)71603;
     }
 
@@ -1403,9 +1400,6 @@ namespace Hecton8.Vehicles.Automation
     [AddComponentMenu("Hecton8/Physics/Vehicles/Submarine Autopilot SDF Navigator")]
     public unsafe sealed class SubmarineAutopilotSdfNavigator : MonoBehaviour, IFixedTickable, IPostFixedTickable, IColdTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
-#if UNITY_EDITOR
-        private const long MaxCsvBytes = SubmarineAutopilotConstants.CsvScratchBytes;
-#endif
         private const uint AutopilotFaultEventHash = 0x41504654u; // APFT
         private const uint AutopilotFaultDumpHash = 0x41504450u; // APDP
         private static readonly ulong InitializationMutationGuardMask =
@@ -1426,12 +1420,6 @@ namespace Hecton8.Vehicles.Automation
             VaultMutationGuardBit(SubmarineAutopilotVaultRoute.AutopilotWaypoints) |
             VaultMutationGuardBit(SubmarineAutopilotVaultRoute.AutopilotRouteRanges) |
             VaultMutationGuardBit(SubmarineAutopilotVaultRoute.AutopilotStates);
-#if UNITY_EDITOR
-        private static readonly ulong HandlingProfilesCsvMutationGuardMask =
-            VaultMutationGuardBit(SubmarineAutopilotVaultRoute.AutopilotCsvScratch) |
-            VaultMutationGuardBit(SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles);
-#endif
-
         [SerializeField, Range(1, SubmarineAutopilotConstants.MaxVehicles)] private int vehicleCapacity = 1;
         [SerializeField, Min(1f)] private float defaultTargetSpeed = 8f;
         [SerializeField, Min(1f)] private float feelerLength = 72f;
@@ -1454,9 +1442,6 @@ namespace Hecton8.Vehicles.Automation
         private VaultGenerationHandle<uint> _telemetryCursorHandle;
         private VaultGenerationHandle<byte> _mockSdfHandle;
         private VaultGenerationHandle<float3> _flowHandle;
-#if UNITY_EDITOR
-        private VaultGenerationHandle<byte> _csvScratchHandle;
-#endif
         private VaultGenerationHandle<AutopilotHandlingProfileDTO> _handlingProfileHandle;
 
         private JobHandle _solverHandle;
@@ -1917,13 +1902,6 @@ namespace Hecton8.Vehicles.Automation
                 SubmarineAutopilotConstants.FlowSampleCount,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
-#if UNITY_EDITOR
-            _csvScratchHandle = _dataVault.EnsureGenerationHandle<byte>(
-                SubmarineAutopilotVaultRoute.AutopilotCsvScratch,
-                SubmarineAutopilotConstants.CsvScratchBytes,
-                SystemID.VehiclesPhysics,
-                NativeArrayOptions.UninitializedMemory);
-#endif
             _handlingProfileHandle = _dataVault.EnsureGenerationHandle<AutopilotHandlingProfileDTO>(
                 SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles,
                 SubmarineAutopilotConstants.HandlingProfileCapacity,
@@ -1966,9 +1944,6 @@ namespace Hecton8.Vehicles.Automation
                 HasAutopilotVaultBuffer(_dataVault, in _telemetryCursorHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor, 1) &&
                 HasAutopilotVaultBuffer(_dataVault, in _mockSdfHandle, SubmarineAutopilotVaultRoute.AutopilotMockSdf, SubmarineAutopilotConstants.MockSdfVoxelCount) &&
                 HasAutopilotVaultBuffer(_dataVault, in _flowHandle, SubmarineAutopilotVaultRoute.AutopilotFlowSamples, SubmarineAutopilotConstants.FlowSampleCount) &&
-#if UNITY_EDITOR
-                HasAutopilotVaultBuffer(_dataVault, in _csvScratchHandle, SubmarineAutopilotVaultRoute.AutopilotCsvScratch, SubmarineAutopilotConstants.CsvScratchBytes) &&
-#endif
                 HasAutopilotVaultBuffer(_dataVault, in _handlingProfileHandle, SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles, SubmarineAutopilotConstants.HandlingProfileCapacity);
         }
 
@@ -2119,9 +2094,6 @@ namespace Hecton8.Vehicles.Automation
             ReleaseOwnedAutopilotVaultHandle(vault, ref _telemetryCursorHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor);
             ReleaseOwnedAutopilotVaultHandle(vault, ref _mockSdfHandle, SubmarineAutopilotVaultRoute.AutopilotMockSdf);
             ReleaseOwnedAutopilotVaultHandle(vault, ref _flowHandle, SubmarineAutopilotVaultRoute.AutopilotFlowSamples);
-#if UNITY_EDITOR
-            ReleaseOwnedAutopilotVaultHandle(vault, ref _csvScratchHandle, SubmarineAutopilotVaultRoute.AutopilotCsvScratch);
-#endif
             ReleaseOwnedAutopilotVaultHandle(vault, ref _handlingProfileHandle, SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles);
 
             _kinematicHandle = default;
@@ -2596,59 +2568,67 @@ namespace Hecton8.Vehicles.Automation
             if (ticks == _csvLastWriteTicks)
                 return false;
 
-            NativeArray<byte> scratchBuffer = default;
-            NativeArray<AutopilotHandlingProfileDTO> profileBuffer = default;
-            IDataVault vault = _dataVault;
-            if (!TryAcquireAutopilotMutationGuard(vault, HandlingProfilesCsvMutationGuardMask))
+            Span<byte> csvScratch = stackalloc byte[SubmarineAutopilotConstants.CsvImportByteCapacity];
+            int length = ReadCsvBytes(_csvPath, csvScratch);
+            if (length <= 0)
                 return false;
 
-            try
+            AutopilotHandlingProfileDTO* profileScratch = stackalloc AutopilotHandlingProfileDTO[SubmarineAutopilotConstants.HandlingProfileCapacity];
+            ParseHandlingProfiles(csvScratch.Slice(0, length), profileScratch, SubmarineAutopilotConstants.HandlingProfileCapacity);
+
+            if (CommitHandlingProfiles(profileScratch, SubmarineAutopilotConstants.HandlingProfileCapacity))
             {
-                if (!TryResolveAutopilotVaultBuffer(
-                        vault,
-                        in _csvScratchHandle,
-                        SubmarineAutopilotVaultRoute.AutopilotCsvScratch,
-                        SubmarineAutopilotConstants.CsvScratchBytes,
-                        out scratchBuffer))
-                    return false;
-
-                if (!TryResolveAutopilotVaultBuffer(
-                        vault,
-                        in _handlingProfileHandle,
-                        SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles,
-                        SubmarineAutopilotConstants.HandlingProfileCapacity,
-                        out profileBuffer))
-                    return false;
-
-                byte* scratch = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratchBuffer);
-                AutopilotHandlingProfileDTO* profiles = (AutopilotHandlingProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profileBuffer);
-                int length = ReadCsvBytes(_csvPath, scratch, scratchBuffer.Length);
-                if (length <= 0)
-                    return false;
-
-                ParseHandlingProfiles(new ReadOnlySpan<byte>(scratch, length), profiles, profileBuffer.Length);
                 _csvLastWriteTicks = ticks;
                 return true;
             }
-            finally
-            {
-                vault.ReleaseMutationGuard(HandlingProfilesCsvMutationGuardMask);
-            }
+
+            return false;
         }
 #endif
 
 #if UNITY_EDITOR
-        private static int ReadCsvBytes(string path, byte* destination, int maxBytes)
+        private bool CommitHandlingProfiles(AutopilotHandlingProfileDTO* sourceProfiles, int profileCapacity)
+        {
+            if (sourceProfiles == null ||
+                profileCapacity <= 0 ||
+                !TryAcquireAutopilotVaultWrite(
+                    _dataVault,
+                    in _handlingProfileHandle,
+                    SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles,
+                    SubmarineAutopilotConstants.HandlingProfileCapacity,
+                    out NativeArray<AutopilotHandlingProfileDTO> profileBuffer,
+                    out IDataVault profileWriteVault))
+            {
+                return false;
+            }
+
+            try
+            {
+                int count = math.min(profileCapacity, profileBuffer.Length);
+                AutopilotHandlingProfileDTO* destinationProfiles = (AutopilotHandlingProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profileBuffer);
+                for (int i = 0; i < count; i++)
+                    destinationProfiles[i] = sourceProfiles[i];
+                for (int i = count; i < profileBuffer.Length; i++)
+                    destinationProfiles[i] = default;
+                return true;
+            }
+            finally
+            {
+                ReleaseAutopilotVaultWrite(profileWriteVault, in _handlingProfileHandle);
+            }
+        }
+
+        private static int ReadCsvBytes(string path, Span<byte> scratch)
         {
             try
             {
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 256, FileOptions.SequentialScan))
                 {
-                    long capped = math.min((long)maxBytes, math.min(MaxCsvBytes, stream.Length));
-                    if (capped <= 0L)
+                    long length = stream.Length;
+                    if (length <= 0L || length > scratch.Length)
                         return 0;
 
-                    Span<byte> target = new Span<byte>(destination, (int)capped);
+                    Span<byte> target = scratch.Slice(0, (int)length);
                     int read = 0;
                     while (read < target.Length)
                     {
@@ -2657,7 +2637,7 @@ namespace Hecton8.Vehicles.Automation
                             break;
                         read += chunk;
                     }
-                    return read;
+                    return read == target.Length ? read : 0;
                 }
             }
             catch (IOException)

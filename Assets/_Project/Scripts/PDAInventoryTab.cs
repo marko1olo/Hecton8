@@ -531,7 +531,7 @@ namespace Hecton8.UI
             }
 
             if (playerPDA == null)
-                playerPDA = ResolvePlayerPdaInParents(transform);
+                playerPDA = FindPlayerPdaInParentsCold(transform);
             if (hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
             if (labelFont == null)
@@ -1820,7 +1820,7 @@ namespace Hecton8.UI
                 _toolSlotBgs[i].color = isActive ? ToolSlotActive : ToolSlotBg;
 
                 GameObject prefab = toolManager.GetAssignedToolPrefab(i);
-                IPlayerToolDataReadModel tool = ResolvePrefabTool(prefab);
+                IPlayerToolDataReadModel tool = CapturePrefabToolReadModelCached(prefab);
                 if (tool != null && tool.ToolData != null && tool.ToolData.icon != null)
                 {
                     _toolSlotIcons[i].sprite = tool.ToolData.icon;
@@ -2466,7 +2466,7 @@ namespace Hecton8.UI
             return t;
         }
 
-        private static PlayerPDA ResolvePlayerPdaInParents(Transform start)
+        private static PlayerPDA FindPlayerPdaInParentsCold(Transform start)
         {
             Transform current = start;
             while (current != null)
@@ -2849,7 +2849,7 @@ namespace Hecton8.UI
             return true;
         }
 
-        private IPlayerToolDataReadModel ResolvePrefabTool(GameObject prefab)
+        private IPlayerToolDataReadModel CapturePrefabToolReadModelCached(GameObject prefab)
         {
             if (prefab == null)
                 return null;
@@ -3219,7 +3219,7 @@ namespace Hecton8.UI
             ReadOnlySpan<char> descSpan = _selectedItem.GetDescriptionSpan(localization);
             if (descSpan.IsEmpty)
                 descSpan = ResolveLocalizedSpan(ItemDescriptionFallbackKeyHash, "No description available.");
-            descSpan = ResolveStressReactiveItemDescriptionSpan(_selectedItem, descSpan, localization);
+            descSpan = BuildStressReactiveItemDescriptionSpan(_selectedItem, descSpan, localization);
             if (descSpan.Length > MaxDynamicTextBufferChars - 64)
                 descSpan = descSpan.Slice(0, MaxDynamicTextBufferChars - 64);
 
@@ -3337,7 +3337,7 @@ namespace Hecton8.UI
             if (IsSelectedItemAssignableTool())
             {
                 GameObject prefab = toolManager != null ? toolManager.GetKnownToolPrefabForItem(_selectedItem) : null;
-                IPlayerToolDataReadModel tool = ResolvePrefabTool(prefab);
+                IPlayerToolDataReadModel tool = CapturePrefabToolReadModelCached(prefab);
                 if (tool != null && tool.Metadata != null)
                 {
                     return TryWriteLiteral(destination, ref length, "TOOL PROFILE: DURABILITY ".AsSpan()) &&
@@ -3685,7 +3685,7 @@ namespace Hecton8.UI
                 : fallback.AsSpan();
         }
 
-        private ReadOnlySpan<char> ResolveStressReactiveItemDescriptionSpan(
+        private ReadOnlySpan<char> BuildStressReactiveItemDescriptionSpan(
             Hecton8.Items.ItemData item,
             ReadOnlySpan<char> text,
             ILocalizationMadnessPresentationReadModel manager)

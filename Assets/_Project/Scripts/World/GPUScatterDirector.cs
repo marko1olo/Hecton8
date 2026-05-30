@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -34,8 +33,11 @@ namespace Hecton8.World
         private const int BiomeHeatmapResolution = 256;
         private const int BiomeHeatmapPixelCount = BiomeHeatmapResolution * BiomeHeatmapResolution;
         private const int ScatterTelemetryCapacity = 300;
+        private const uint ScatterTelemetryDumpMagic = 0x47505344u; // GPSD
+        private const uint ScatterTelemetryDumpVersion = 1u;
+        private const int ScatterTelemetryDumpHeaderBytes = 32;
+        private const string ScatterTelemetryDumpPath = "Docs/AgentLogs/Dump_GPU_SCATTER_DIRECTOR.bin";
         private const float SargassumDensityEncodeScale = 64f;
-        private const string ScatterBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_WORLD_BIOME_BLENDING.bin";
         private const uint ScatterTelemetryHashSeed = 2166136261u;
         private const uint ScatterTelemetryMissingDependencyFlag = 1u << 0;
         private const uint ScatterTelemetryInvalidStateFlag = 1u << 1;
@@ -47,7 +49,7 @@ namespace Hecton8.World
         private const float MicroScatterMidCullMeters = 22f;
         private const float MicroScatterHighCullMeters = 30f;
         private const int MicroScatterLowBudget = 8192;
-        private const int MicroScatterMx350Budget = 12000;
+        private const int MicroScatterCompactBudget = 12000;
         private const int MicroScatterMidBudget = 24000;
         private const int MicroScatterHighBudget = 50000;
 #if UNITY_EDITOR
@@ -280,6 +282,10 @@ namespace Hecton8.World
         private bool receiveShadows = true;
 
         [Header("Diagnostics")]
+        [SerializeField]
+        [Tooltip("Issue delayed AsyncGPUReadback of indirect args for inspector-only visible count telemetry.")]
+        private bool _enableVisibleCountReadback;
+
         [SerializeField] private int _debugGridResolution;
         [SerializeField] private int _debugVisibleCount;
         [SerializeField] private Bounds _debugDrawBounds;
@@ -404,12 +410,13 @@ namespace Hecton8.World
 #endif
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
-            ResolveDependencies();
+            RefreshColdSceneDependencies();
             EnsureScatterTelemetryResources();
             EnsureResources();
             EnsureModInstanceResources();
+            EnsureVisibleCountReadbackDataCold();
             RefreshCameraDepthTextureSnapshotCold();
-            TryEnsureBiomeHeatmapTexture();
+            TryEnsureBiomeHeatmapTextureCold();
             RefreshAupGridOffsetFromOrigin();
             TryRegisterOriginShiftListener();
             TryRegister();
@@ -424,12 +431,13 @@ namespace Hecton8.World
 #endif
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
-            ResolveDependencies();
+            RefreshColdSceneDependencies();
             EnsureScatterTelemetryResources();
             EnsureResources();
             EnsureModInstanceResources();
+            EnsureVisibleCountReadbackDataCold();
             RefreshCameraDepthTextureSnapshotCold();
-            TryEnsureBiomeHeatmapTexture();
+            TryEnsureBiomeHeatmapTextureCold();
             RefreshAupGridOffsetFromOrigin();
             TryRegisterOriginShiftListener();
             TryRegister();
@@ -470,7 +478,10 @@ namespace Hecton8.World
             {
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
-                    ResolveDependencies();
+                    RefreshCachedRuntimeDependencies();
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
+                    vegetationBridge = currentService as HectonMapMagicVegetationBridge;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _dispatcher = currentService as ITickDispatcher;
@@ -678,13 +689,13 @@ namespace Hecton8.World
             if (_runtimeDependencyResolveRequested || HasMissingRuntimeDependencies())
             {
                 _runtimeDependencyResolveRequested = false;
-                ResolveDependencies();
+                RefreshCachedRuntimeDependencies();
             }
 
             _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight01();
             RefreshCameraDepthTextureSnapshotCold();
             if (_biomeHeatmapUpload != null && _biomeHeatmapTexture != null)
-                TryEnsureBiomeHeatmapTexture();
+                TryRefreshBiomeHeatmapTextureHot();
 
             FlushVisibleCountReadbackRepairSlow();
 
@@ -728,7 +739,7 @@ namespace Hecton8.World
                    _modInstanceMatrixBufferB != null;
         }
 
-        private void ResolveDependencies()
+        private void RefreshColdSceneDependencies()
         {
             WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
@@ -740,6 +751,19 @@ namespace Hecton8.World
                     ? playerContext.PlayerCamera
                     : ComponentReferenceUtility.ResolveOwnedComponent<Camera>(playerTransform);
             }
+        }
+
+        private void RefreshCachedRuntimeDependencies()
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null)
+                return;
+
+            if (playerTransform == null && playerContext.PlayerTransform != null)
+                playerTransform = playerContext.PlayerTransform;
+
+            if (viewCamera == null && playerContext.PlayerCamera != null)
+                viewCamera = playerContext.PlayerCamera;
         }
 
         private void EnsureResources()
@@ -1001,16 +1025,16 @@ namespace Hecton8.World
         private int ResolveScatterInstanceBudget()
         {
             float q = ResolveScatterQualityCurve01();
-            float lowToMx350 = math.lerp(
+            float lowToCompact = math.lerp(
                 MicroScatterLowBudget,
-                MicroScatterMx350Budget,
+                MicroScatterCompactBudget,
                 math.smoothstep(0f, 0.35f, q));
-            float mx350ToMid = math.lerp(
-                lowToMx350,
+            float compactToMid = math.lerp(
+                lowToCompact,
                 MicroScatterMidBudget,
                 math.smoothstep(0.28f, 0.68f, q));
             float resolvedBudget = math.lerp(
-                mx350ToMid,
+                compactToMid,
                 MicroScatterHighBudget,
                 math.smoothstep(0.62f, 1f, q));
             int continuousBudget = (int)math.round(resolvedBudget);
@@ -1085,12 +1109,18 @@ namespace Hecton8.World
             RecordScatterTelemetry(telemetryCenter, 0f, 0f, _gridResolution, 0, _lastCurrentBiomeHash, (uint)math.max(0, _debugVisibleCount), ScatterTelemetryOriginShiftFlag);
         }
 
-        private void TryEnsureBiomeHeatmapTexture()
+        private void TryEnsureBiomeHeatmapTextureCold()
         {
             EnsureBiomeHeatmapResources();
+            TryRefreshBiomeHeatmapTextureHot();
+        }
+
+        private void TryRefreshBiomeHeatmapTextureHot()
+        {
             int residentBytes = H8StaticDataArena.IsLoaded ? H8StaticDataArena.ByteLength : 0;
             ulong residentChecksum = H8StaticDataArena.IsLoaded ? H8StaticDataArena.Header.Checksum64 : 0UL;
             if (_biomeHeatmapTexture == null ||
+                _biomeHeatmapUpload == null ||
                 (_biomeHeatmapBlobBytes == residentBytes && _biomeHeatmapBlobChecksum == residentChecksum))
             {
                 return;
@@ -1497,37 +1527,82 @@ namespace Hecton8.World
                 return;
 
             _scatterTelemetryDumped = true;
-            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", ScatterBlackBoxDumpRelativePath));
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
+            WriteScatterBlackBox(telemetryRing, _scatterTelemetryCursor);
+        }
 
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+        private static unsafe void WriteScatterBlackBox(
+            NativeArray<ScatterTelemetryEntry>.ReadOnly telemetryRing,
+            int telemetryCursor)
+        {
+            int entrySize = UnsafeUtility.SizeOf<ScatterTelemetryEntry>();
+            if (!telemetryRing.IsCreated ||
+                telemetryRing.Length <= 0 ||
+                entrySize != 64)
             {
-                writer.Write(ScatterTelemetryCapacity);
-                writer.Write(_scatterTelemetryCursor);
-                for (int i = 0; i < ScatterTelemetryCapacity; i++)
-                {
-                    ScatterTelemetryEntry entry = telemetryRing[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.Center.x);
-                    writer.Write(entry.Center.y);
-                    writer.Write(entry.Center.z);
-                    writer.Write(entry.AupOffsetXZ.x);
-                    writer.Write(entry.AupOffsetXZ.y);
-                    writer.Write(entry.RadiusMeters);
-                    writer.Write(entry.CellSizeMeters);
-                    writer.Write(entry.GridResolution);
-                    writer.Write(entry.CandidateCount);
-                    writer.Write(entry.BiomeHash);
-                    writer.Write(entry.VisibleCount);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.OriginShiftSequence);
-                    writer.Write(entry.BlobChecksumLo);
-                }
+                return;
             }
+
+            int count = math.min(telemetryRing.Length, ScatterTelemetryCapacity);
+            if (count <= 0)
+                return;
+
+            int byteCount = ScatterTelemetryDumpHeaderBytes + count * entrySize;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(GPUScatterDirector),
+                "GpuScatterTelemetryDumpPayload");
+            try
+            {
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteUInt32LittleEndian(target, 0, ScatterTelemetryDumpMagic);
+                WriteUInt32LittleEndian(target, 4, ScatterTelemetryDumpVersion);
+                WriteInt32LittleEndian(target, 8, telemetryCursor);
+                WriteInt32LittleEndian(target, 12, count);
+                WriteInt32LittleEndian(target, 16, entrySize);
+                WriteUInt32LittleEndian(target, 20, ScatterTelemetryHashSeed);
+                WriteUInt32LittleEndian(target, 24, ScatterTelemetryInvalidStateFlag);
+                WriteUInt32LittleEndian(target, 28, 0u);
+
+                int start = telemetryCursor - count;
+                while (start < 0)
+                    start += telemetryRing.Length;
+                if (start >= telemetryRing.Length)
+                    start %= telemetryRing.Length;
+
+                int cursor = ScatterTelemetryDumpHeaderBytes;
+                for (int i = 0; i < count; i++)
+                {
+                    int slot = start + i;
+                    if (slot >= telemetryRing.Length)
+                        slot -= telemetryRing.Length;
+
+                    ScatterTelemetryEntry entry = telemetryRing[slot];
+                    UnsafeUtility.MemCpy(target + cursor, &entry, entrySize);
+                    cursor += entrySize;
+                }
+
+                NativeFaultDumpWriter.TryWriteAll(ScatterTelemetryDumpPath, payload, cursor);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(GPUScatterDirector),
+                    "GpuScatterTelemetryDumpPayload");
+            }
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, int offset, uint value)
+        {
+            destination[offset] = unchecked((byte)value);
+            destination[offset + 1] = unchecked((byte)(value >> 8));
+            destination[offset + 2] = unchecked((byte)(value >> 16));
+            destination[offset + 3] = unchecked((byte)(value >> 24));
         }
 
         private void ReleaseScatterTelemetryResources()
@@ -1799,6 +1874,9 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
+            if (vegetationBridge == null)
+                vegetationBridge = GlobalRegistry.MapMagicVegetation;
+
             if (_playerRuntimeContext == null)
                 _playerRuntimeContext = GlobalRegistry.Player;
 
@@ -1808,6 +1886,7 @@ namespace Hecton8.World
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
 
+            RefreshCachedRuntimeDependencies();
             _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight01();
         }
 
@@ -2032,6 +2111,16 @@ namespace Hecton8.World
 
         private void UpdateVisibleCountReadback(int frameIndex)
         {
+            if (!_enableVisibleCountReadback)
+            {
+                if (_visibleCountReadbackPending && !_visibleCountReadbackRequest.done)
+                    return;
+
+                _visibleCountReadbackPending = false;
+                _visibleCountReadbackRequest = default;
+                return;
+            }
+
             if (_visibleCountReadbackPending)
             {
                 if (!_visibleCountReadbackRequest.done)
@@ -2068,8 +2157,11 @@ namespace Hecton8.World
                 _visibleCountReadbackRequest = default;
         }
 
-        private bool EnsureVisibleCountReadbackData()
+        private bool EnsureVisibleCountReadbackDataCold()
         {
+            if (!_enableVisibleCountReadback)
+                return false;
+
             if (HasVisibleCountReadbackData())
                 return true;
 
@@ -2098,13 +2190,23 @@ namespace Hecton8.World
 
         private void FlushVisibleCountReadbackRepairSlow()
         {
+            if (!_enableVisibleCountReadback)
+            {
+                _visibleCountReadbackRepairRequested = false;
+                return;
+            }
+
             if (!_visibleCountReadbackRepairRequested && HasVisibleCountReadbackData())
                 return;
 
             if (_argsBuffer == null || _visibleCountReadbackPending)
                 return;
 
-            EnsureVisibleCountReadbackData();
+            if (!HasVisibleCountReadbackData())
+            {
+                _visibleCountReadbackRepairRequested = false;
+                return;
+            }
         }
 
         private void CompletePendingVisibleCountReadbackForRelease()

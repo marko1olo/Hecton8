@@ -343,7 +343,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _cachedTransform = transform;
-            _interactionCollider = GetComponent<Collider>();
+            TryGetComponent(out _interactionCollider);
             TryGetComponent(out _transportBody);
             RefreshVehicleCommandTargetId();
             TryGetComponent(out _vehicleMotor);
@@ -1653,8 +1653,24 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _submarineStructuralGrid = GetComponentInParent<SubmarineStructuralGrid>();
+            TryResolveParentComponent(_cachedTransform, out _submarineStructuralGrid);
             _submarineStructuralGridResolved = true;
+        }
+
+        private static bool TryResolveParentComponent<T>(Transform start, out T component)
+            where T : Component
+        {
+            component = null;
+            Transform current = start != null ? start.parent : null;
+            while (current != null)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+
+                current = current.parent;
+            }
+
+            return false;
         }
 
         private void BindPresetToFeelContract()

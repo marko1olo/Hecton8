@@ -1649,22 +1649,33 @@ namespace Hecton8.Construction
 
             try
             {
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string dumpPath = Path.Combine(projectRoot, DroneFleetTransactionBlackBoxDumpPath);
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                Span<byte> header = stackalloc byte[8];
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(0, 4), DroneTransactionTelemetryCapacity);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), s_DroneTransactionTelemetryCursor);
-                stream.Write(header);
+                const int headerBytes = 8;
                 unsafe
                 {
-                    void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                    int byteCount = telemetry.Length * UnsafeUtility.SizeOf<DroneTransactionTelemetryEntry>();
-                    stream.Write(new ReadOnlySpan<byte>(telemetryPtr, byteCount));
+                    int telemetryByteCount = telemetry.Length * UnsafeUtility.SizeOf<DroneTransactionTelemetryEntry>();
+                    int byteCount = headerBytes + telemetryByteCount;
+                    NativeArray<byte> payload = default;
+                    try
+                    {
+                        payload = NativeFaultDumpWriter.CreateTransientPayload(
+                            byteCount,
+                            nameof(DroneFleetManager),
+                            "DroneTransactionTelemetryDumpPayload");
+                        byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                        Span<byte> header = new Span<byte>(destination, headerBytes);
+                        BinaryPrimitives.WriteInt32LittleEndian(header.Slice(0, 4), DroneTransactionTelemetryCapacity);
+                        BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), s_DroneTransactionTelemetryCursor);
+                        void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                        UnsafeUtility.MemCpy(destination + headerBytes, telemetryPtr, telemetryByteCount);
+                        NativeFaultDumpWriter.TryWriteAll(DroneFleetTransactionBlackBoxDumpPath, payload, byteCount);
+                    }
+                    finally
+                    {
+                        NativeFaultDumpWriter.DisposeTransientPayload(
+                            ref payload,
+                            nameof(DroneFleetManager),
+                            "DroneTransactionTelemetryDumpPayload");
+                    }
                 }
             }
             catch (IOException)

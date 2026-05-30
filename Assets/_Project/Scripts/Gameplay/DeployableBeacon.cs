@@ -254,6 +254,7 @@ namespace Hecton8.Gameplay
             QueueBeaconLightUpdate();
 
             _pendingDeployAudio = deploySound != null;
+            TryRegisterLateFrameIfNeeded();
         }
 
         private void OnDisable()
@@ -283,16 +284,19 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Tick(float deltaTime)
         {
-            // Handle blinking
-            if (blinkInterval > 0f)
+            if (blinkInterval <= 0f)
             {
-                _blinkTimer += deltaTime;
-                if (_blinkTimer >= blinkInterval)
-                {
-                    _blinkTimer = 0f;
-                    _blinkOn = !_blinkOn;
-                    QueueBeaconLightUpdate();
-                }
+                TryUnregisterUpdatableWhenNoBlink();
+                return;
+            }
+
+            // Handle blinking
+            _blinkTimer += deltaTime;
+            if (_blinkTimer >= blinkInterval)
+            {
+                _blinkTimer = 0f;
+                _blinkOn = !_blinkOn;
+                QueueBeaconLightUpdate();
             }
         }
 
@@ -318,6 +322,8 @@ namespace Hecton8.Gameplay
                 if (interactSound != null && audioService != null)
                     audioService.PlayStatic2D(interactSound, 0.7f);
             }
+
+            TryUnregisterLateFrameWhenDormant();
         }
 
         // ==========================================================
@@ -402,6 +408,7 @@ namespace Hecton8.Gameplay
         public void Interact(Transform interactor)
         {
             _pendingInteractAudio = interactSound != null;
+            TryRegisterLateFrameIfNeeded();
 
             // Fire rename requested event
             OnRenameRequested?.Invoke(this);
@@ -549,6 +556,7 @@ namespace Hecton8.Gameplay
         private void QueueBeaconLightUpdate()
         {
             _beaconLightDirty = true;
+            TryRegisterLateFrameIfNeeded();
         }
 
         // ==========================================================
@@ -560,7 +568,7 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registered)
+            if (!_registered && blinkInterval > 0f)
             {
                 _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             }
@@ -570,10 +578,40 @@ namespace Hecton8.Gameplay
                 _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             }
 
-            if (!_registeredLateFrame)
-            {
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
-            }
+        }
+
+        private void TryRegisterLateFrameIfNeeded()
+        {
+            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (!HasPendingLateFrameWork())
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private bool HasPendingLateFrameWork()
+        {
+            return _beaconLightDirty || _pendingDeployAudio || _pendingInteractAudio;
+        }
+
+        private void TryUnregisterUpdatableWhenNoBlink()
+        {
+            if (!_registered || blinkInterval > 0f)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _registered = false;
+        }
+
+        private void TryUnregisterLateFrameWhenDormant()
+        {
+            if (!_registeredLateFrame || HasPendingLateFrameWork())
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
         }
 
         private void TryUnregisterTickSystems()
@@ -613,6 +651,16 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.Physics:
                     _physicsService = currentService as IPhysicsService;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    _registered = false;
+                    _registeredFixed = false;
+                    _registeredLateFrame = false;
+                    if (currentService != null && isActiveAndEnabled)
+                    {
+                        TryRegisterTickSystems();
+                        TryRegisterLateFrameIfNeeded();
+                    }
                     break;
             }
         }

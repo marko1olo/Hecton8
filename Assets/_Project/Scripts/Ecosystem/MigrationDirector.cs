@@ -819,7 +819,7 @@ namespace Hecton8.Ecosystem
 
             float qualityWeight = ResolveMigrationQualityWeight();
             float qualityScaledIntervalSeconds = ResolveMigrationFieldColdTickIntervalSeconds(qualityWeight);
-            float coldDeltaSeconds = AdvanceColdTickDeltaSeconds(Time.unscaledTime, qualityScaledIntervalSeconds);
+            float coldDeltaSeconds = AdvanceColdTickDeltaSeconds(ResolveDispatcherRuntimeSeconds(), qualityScaledIntervalSeconds);
             AdvanceFallbackTimeline(coldDeltaSeconds);
             _coldTickAccumulator += coldDeltaSeconds;
             if (_coldTickAccumulator < qualityScaledIntervalSeconds)
@@ -2123,6 +2123,15 @@ namespace Hecton8.Ecosystem
         {
             float x = math.saturate(value);
             return x * x * (3f - 2f * x);
+        }
+
+        private static float ResolveDispatcherRuntimeSeconds()
+        {
+            double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (double.IsNaN(now) || double.IsInfinity(now) || now <= 0d)
+                return 0f;
+
+            return now >= float.MaxValue ? float.MaxValue : (float)now;
         }
 
         private float AdvanceColdTickDeltaSeconds(float runtimeSeconds, float maxDeltaSeconds)

@@ -34,7 +34,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading;
 using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Building;
@@ -380,18 +379,6 @@ namespace Hecton8.Crafting
             public byte Priority;
             public byte MotorMask;
         }
-
-        private sealed class FabricatorMemoryDumpSnapshot
-        {
-            public uint Frame;
-            public string DumpPath;
-            public readonly FabricatorMemoryTelemetryEntry[] Entries = new FabricatorMemoryTelemetryEntry[FabricatorMemoryTelemetryRingCapacity];
-        }
-
-        private static readonly object s_fabricatorMemoryDumpLock = new object();
-        private static readonly WaitCallback s_fabricatorMemoryDumpCallback = WriteFabricatorMemoryDump;
-        private static readonly FabricatorMemoryDumpSnapshot s_fabricatorMemoryDumpSnapshot = new FabricatorMemoryDumpSnapshot();
-        private static int s_fabricatorMemoryDumpQueued;
 
         private readonly PlayerInventory.CraftReservation[] _localCraftReservations = new PlayerInventory.CraftReservation[MaxLocalCraftReservations];
         private readonly int[] _networkCostItemHashes = new int[MaxNetworkCraftCosts];
@@ -799,7 +786,7 @@ namespace Hecton8.Crafting
             return count;
         }
 
-        internal int GetAdjustedIngredientAmount(InventoryCost cost)
+        internal int CalculateAdjustedIngredientAmount(InventoryCost cost)
         {
             if (cost == null || cost.item == null || cost.amount <= 0)
                 return 0;
@@ -812,7 +799,7 @@ namespace Hecton8.Crafting
                 : cost.amount;
         }
 
-        internal float GetRecipeInflationMultiplier(RecipeData recipe)
+        internal float CalculateRecipeInflationMultiplier(RecipeData recipe)
         {
             if (recipe == null || recipe.ingredients == null || recipe.ingredients.Count <= 0)
                 return 1f;
@@ -824,7 +811,7 @@ namespace Hecton8.Crafting
                 if (cost == null || cost.item == null || cost.amount <= 0)
                     continue;
 
-                int adjustedAmount = GetAdjustedIngredientAmount(cost);
+                int adjustedAmount = CalculateAdjustedIngredientAmount(cost);
                 if (adjustedAmount <= cost.amount)
                     continue;
 
@@ -1408,7 +1395,7 @@ namespace Hecton8.Crafting
             if (thermalHostModule != null)
                 return;
 
-            thermalHostModule = GetComponentInParent<BaseModule>();
+            thermalHostModule = ComponentReferenceUtility.ResolveParentService<BaseModule>(this);
             _thermalHostAupCached = false;
             _thermalHostAupSource = null;
         }
@@ -1856,15 +1843,16 @@ namespace Hecton8.Crafting
                     return true;
                 }
 
-                RecordFabricatorVaultFailure(bufferId, handle.Generation, FabricatorVaultFailureAcquire, requiredLength);
                 buffer = default;
-                return false;
             }
             finally
             {
                 if (!ownershipTransferred)
                     vault.ReleaseWriteLock(in handle, SystemID.Crafting);
             }
+
+            RecordFabricatorVaultFailure(bufferId, handle.Generation, FabricatorVaultFailureAcquire, requiredLength);
+            return false;
         }
 
         private static void ReleaseFabricatorWrite<T>(IDataVault lockedVault, in VaultGenerationHandle<T> handle) where T : struct
@@ -1954,148 +1942,91 @@ namespace Hecton8.Crafting
                 return;
             }
 
-            if (Interlocked.CompareExchange(ref s_fabricatorMemoryDumpQueued, 1, 0) != 0)
-            {
-                return;
-            }
-
-            bool snapshotReady = false;
             if (vault.TryReadOnlyHandle(in _fabricatorMemoryTelemetryRingHandle, out NativeArray<FabricatorMemoryTelemetryEntry>.ReadOnly telemetry) &&
                 telemetry.IsCreated)
             {
-                lock (s_fabricatorMemoryDumpLock)
+                if (TryWriteFabricatorMemoryDump(FabricatorMemoryDumpPath, unchecked((uint)Time.frameCount), telemetry))
                 {
-                    FabricatorMemoryTelemetryEntry[] snapshotEntries = s_fabricatorMemoryDumpSnapshot.Entries;
-                    int safeLength = math.min(telemetry.Length, snapshotEntries.Length);
-                    for (int i = 0; i < safeLength; i++)
-                        snapshotEntries[i] = telemetry[i];
-                    for (int i = safeLength; i < snapshotEntries.Length; i++)
-                        snapshotEntries[i] = default;
-
-                    s_fabricatorMemoryDumpSnapshot.Frame = unchecked((uint)Time.frameCount);
-                    s_fabricatorMemoryDumpSnapshot.DumpPath = ResolveFabricatorMemoryDumpPath();
-                    snapshotReady = true;
+                    _fabricatorBlackBoxDumped = true;
+                    _fabricatorVaultFailureStreak = 0;
                 }
             }
-
-            if (!snapshotReady)
-            {
-                ResetFabricatorMemoryDumpQueue();
-                return;
-            }
-
-            if (ThreadPool.QueueUserWorkItem(s_fabricatorMemoryDumpCallback, s_fabricatorMemoryDumpSnapshot))
-            {
-                _fabricatorBlackBoxDumped = true;
-                _fabricatorVaultFailureStreak = 0;
-                return;
-            }
-
-            ResetFabricatorMemoryDumpQueue();
         }
 
-        private static string ResolveFabricatorMemoryDumpPath()
+        private static bool TryWriteFabricatorMemoryDump(
+            string dumpPath,
+            uint frame,
+            NativeArray<FabricatorMemoryTelemetryEntry>.ReadOnly telemetry)
         {
-            try
-            {
-                string dataPath = Application.dataPath;
-                if (string.IsNullOrEmpty(dataPath))
-                    return FabricatorMemoryDumpPath;
-
-                return Path.Combine(
-                    Path.Combine(dataPath, ".."),
-                    FabricatorMemoryDumpPath);
-            }
-            catch (ArgumentException)
-            {
-                return FabricatorMemoryDumpPath;
-            }
-            catch (NotSupportedException)
-            {
-                return FabricatorMemoryDumpPath;
-            }
-            catch (System.Security.SecurityException)
-            {
-                return FabricatorMemoryDumpPath;
-            }
-        }
-
-        private static void ResetFabricatorMemoryDumpQueue()
-        {
-            Interlocked.Exchange(ref s_fabricatorMemoryDumpQueued, 0);
-        }
-
-        private static string ResolveSnapshotDumpPath(FabricatorMemoryDumpSnapshot snapshot)
-        {
-            if (snapshot != null && !string.IsNullOrEmpty(snapshot.DumpPath))
-                return snapshot.DumpPath;
-
-            return FabricatorMemoryDumpPath;
-        }
-
-        private static void WriteFabricatorMemoryDump(object state)
-        {
-            FabricatorMemoryDumpSnapshot snapshot = state as FabricatorMemoryDumpSnapshot;
-            if (snapshot == null || snapshot.Entries == null)
-            {
-                ResetFabricatorMemoryDumpQueue();
-                return;
-            }
+            const int headerBytes = 16;
+            int entryCount = math.min(telemetry.Length, FabricatorMemoryTelemetryRingCapacity);
+            int byteCount = headerBytes + (entryCount * FabricatorMemoryTelemetryEntrySizeBytes);
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(Fabricator),
+                "FabricatorMemoryDumpPayload");
 
             try
             {
-                lock (s_fabricatorMemoryDumpLock)
-                {
-                    string dumpPath = ResolveSnapshotDumpPath(snapshot);
-                    string directory = Path.GetDirectoryName(dumpPath);
-                    if (!string.IsNullOrEmpty(directory))
-                        Directory.CreateDirectory(directory);
+                WriteUInt32LittleEndian(payload, 0, FabricatorMemoryTelemetryMagic);
+                WriteUInt32LittleEndian(payload, 4, frame);
+                WriteUInt32LittleEndian(payload, 8, (uint)SystemID.Crafting);
+                WriteInt32LittleEndian(payload, 12, entryCount);
 
-                    using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                    using BinaryWriter writer = new BinaryWriter(stream);
-                    writer.Write(FabricatorMemoryTelemetryMagic);
-                    writer.Write(snapshot.Frame);
-                    writer.Write((uint)SystemID.Crafting);
-                    writer.Write(snapshot.Entries.Length);
-                    for (int i = 0; i < snapshot.Entries.Length; i++)
-                    {
-                        FabricatorMemoryTelemetryEntry entry = snapshot.Entries[i];
-                        writer.Write(entry.Sequence);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.BufferId);
-                        writer.Write(entry.HandleGeneration);
-                        writer.Write(entry.VaultGeneration);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.Capacity);
-                        writer.Write(entry.FailureStreak);
-                        writer.Write(entry.GlobalQualityWeight);
-                        writer.Write(entry.CpuMicroseconds);
-                        writer.Write(entry.GpuMicroseconds);
-                        writer.Write(entry.SystemId);
-                        writer.Write(0u);
-                    }
+                int offset = headerBytes;
+                for (int i = 0; i < entryCount; i++)
+                {
+                    FabricatorMemoryTelemetryEntry entry = telemetry[i];
+                    WriteUInt64LittleEndian(payload, offset, entry.Sequence);
+                    WriteUInt64LittleEndian(payload, offset + 8, entry.StateHash);
+                    WriteUInt32LittleEndian(payload, offset + 16, entry.Frame);
+                    WriteUInt32LittleEndian(payload, offset + 20, entry.BufferId);
+                    WriteUInt32LittleEndian(payload, offset + 24, entry.HandleGeneration);
+                    WriteUInt32LittleEndian(payload, offset + 28, entry.VaultGeneration);
+                    WriteUInt32LittleEndian(payload, offset + 32, entry.Flags);
+                    WriteInt32LittleEndian(payload, offset + 36, entry.Capacity);
+                    WriteInt32LittleEndian(payload, offset + 40, entry.FailureStreak);
+                    WriteFloat32LittleEndian(payload, offset + 44, entry.GlobalQualityWeight);
+                    WriteFloat32LittleEndian(payload, offset + 48, entry.CpuMicroseconds);
+                    WriteFloat32LittleEndian(payload, offset + 52, entry.GpuMicroseconds);
+                    WriteUInt32LittleEndian(payload, offset + 56, entry.SystemId);
+                    WriteUInt32LittleEndian(payload, offset + 60, 0u);
+                    offset += FabricatorMemoryTelemetryEntrySizeBytes;
                 }
-            }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-            catch (System.Security.SecurityException)
-            {
-            }
-            catch (ArgumentException)
-            {
-            }
-            catch (NotSupportedException)
-            {
+
+                return NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, byteCount);
             }
             finally
             {
-                ResetFabricatorMemoryDumpQueue();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(Fabricator),
+                    "FabricatorMemoryDumpPayload");
             }
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> destination, int offset, float value)
+        {
+            WriteUInt32LittleEndian(destination, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> destination, int offset, uint value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> destination, int offset, ulong value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+            WriteUInt32LittleEndian(destination, offset + 4, unchecked((uint)(value >> 32)));
         }
 
         private static ulong MixFabricatorVaultStateHash(uint bufferId, uint handleGeneration, uint vaultGeneration, uint flags)
@@ -2535,7 +2466,7 @@ namespace Hecton8.Crafting
                 if (cost == null || cost.item == null) continue;
 
                 int localAvailable = CountAvailableItemInInventory(_playerInventory, cost.item);
-                int requiredAmount = GetAdjustedIngredientAmount(cost) * safeMultiplier;
+                int requiredAmount = CalculateAdjustedIngredientAmount(cost) * safeMultiplier;
                 int removableCount = localAvailable < requiredAmount ? localAvailable : requiredAmount;
                 total += cost.item.CellArea * removableCount;
             }
@@ -3004,7 +2935,7 @@ namespace Hecton8.Crafting
             _assemblyActualMaterial = actualMaterial;
 
             float padding = Mathf.Max(0f, assemblyHeightPadding);
-            ResolveAssemblyFabricatorLocalHeightBounds(sourceMesh, assemblyPreviewMeshFilter.transform, padding, out _assemblyBaseY, out _assemblyTopY);
+            CalculateAssemblyFabricatorLocalHeightBounds(sourceMesh, assemblyPreviewMeshFilter.transform, padding, out _assemblyBaseY, out _assemblyTopY);
             _assemblyCurrentHeightY = _assemblyBaseY;
             _assemblyQuality = ResolveAssemblyQuality();
 
@@ -3135,7 +3066,7 @@ namespace Hecton8.Crafting
                     return;
             }
 
-            if (!TryResolveAssemblySourceFromPrefabCold(
+            if (!TryCaptureAssemblySourceFromPrefabCold(
                     item.worldPrefab,
                     out Mesh sourceMesh,
                     out Material actualMaterial))
@@ -3153,7 +3084,7 @@ namespace Hecton8.Crafting
             _assemblySourceMaterials[targetIndex] = actualMaterial;
         }
 
-        private static bool TryResolveAssemblySourceFromPrefabCold(
+        private static bool TryCaptureAssemblySourceFromPrefabCold(
             GameObject prefab,
             out Mesh sourceMesh,
             out Material actualMaterial)
@@ -3163,12 +3094,12 @@ namespace Hecton8.Crafting
             if (prefab == null)
                 return false;
 
-            MeshFilter sourceFilter = prefab.GetComponent<MeshFilter>();
-            MeshRenderer sourceRenderer = prefab.GetComponent<MeshRenderer>();
+            prefab.TryGetComponent(out MeshFilter sourceFilter);
+            prefab.TryGetComponent(out MeshRenderer sourceRenderer);
             if (sourceFilter == null)
-                sourceFilter = prefab.GetComponentInChildren<MeshFilter>(true);
+                sourceFilter = ComponentReferenceUtility.ResolveOwnedComponent<MeshFilter>(prefab.transform);
             if (sourceRenderer == null)
-                sourceRenderer = prefab.GetComponentInChildren<MeshRenderer>(true);
+                sourceRenderer = ComponentReferenceUtility.ResolveOwnedComponent<MeshRenderer>(prefab.transform);
 
             if (sourceFilter != null)
             {
@@ -3179,7 +3110,7 @@ namespace Hecton8.Crafting
             if (sourceMesh != null)
                 return true;
 
-            SkinnedMeshRenderer skinnedRenderer = prefab.GetComponentInChildren<SkinnedMeshRenderer>(true);
+            SkinnedMeshRenderer skinnedRenderer = ComponentReferenceUtility.ResolveOwnedComponent<SkinnedMeshRenderer>(prefab.transform);
             if (skinnedRenderer == null)
             {
                 sourceMesh = EnsureSharedAssemblyFallbackMesh();
@@ -3258,7 +3189,7 @@ namespace Hecton8.Crafting
             return s_sharedAssemblyFallbackMesh;
         }
 
-        private void ResolveAssemblyFabricatorLocalHeightBounds(
+        private void CalculateAssemblyFabricatorLocalHeightBounds(
             Mesh sourceMesh,
             Transform previewTransform,
             float padding,
@@ -3475,9 +3406,7 @@ namespace Hecton8.Crafting
 
         private static uint ComputeRecipeSignalHash(RecipeData recipe)
         {
-            return recipe != null && !string.IsNullOrWhiteSpace(recipe.name)
-                ? unchecked((uint)LocHash.Compute(recipe.name))
-                : 0u;
+            return recipe != null ? recipe.RuntimeRecipeHash : 0u;
         }
 
         private static void PublishFabricatorActiveCountBlackBox()
@@ -4150,7 +4079,7 @@ namespace Hecton8.Crafting
         private static float ResolveCraftPowerMultiplier(Fabricator owner, RecipeData recipe)
         {
             return owner != null
-                ? Mathf.Max(1f, owner.GetRecipeInflationMultiplier(recipe))
+                ? Mathf.Max(1f, owner.CalculateRecipeInflationMultiplier(recipe))
                 : 1f;
         }
 

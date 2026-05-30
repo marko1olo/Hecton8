@@ -1047,7 +1047,9 @@ namespace Hecton8.Gameplay
                 IPlayerRuntimeContext playerContext = _playerRuntimeContext;
                 Camera playerCamera = playerContext != null && playerContext.PlayerCamera != null
                     ? playerContext.PlayerCamera
-                    : playerTransform.GetComponent<Camera>();
+                    : null;
+                if (playerCamera == null)
+                    playerTransform.TryGetComponent(out playerCamera);
                 if (playerCamera != null)
                 {
                     _cachedMainCamera = playerCamera;

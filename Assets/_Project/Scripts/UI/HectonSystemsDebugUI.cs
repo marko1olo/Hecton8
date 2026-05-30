@@ -151,6 +151,7 @@ namespace Hecton8.UI
         private bool _slowVisualRefreshRequested;
         private bool _diagnosticsRefreshPending;
         private bool _stressApplied;
+        private bool _runtimeActive;
         private int _cachedTickableCount;
         private int _cachedFixedTickableCount;
         private int _cachedSlowTickableCount;
@@ -244,6 +245,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            _runtimeActive = Application.isPlaying;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (Application.isPlaying && logLifecycleDiagnostics)
                 Hecton8.Core.H8Debug.Log("[HectonSystemsDebugUI] OnEnable.", this);
@@ -266,6 +268,7 @@ namespace Hecton8.UI
 
             if (!Application.isPlaying && s_activeRuntimeInstance == this)
                 s_activeRuntimeInstance = null;
+            _runtimeActive = false;
         }
 
         private void OnDestroy()
@@ -294,7 +297,7 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if (!Application.isPlaying)
+            if (!_runtimeActive)
                 return;
 
             if (_slowTickRegistered)
@@ -326,7 +329,7 @@ namespace Hecton8.UI
 
         private void AdvanceDiagnosticsRefreshTimer(float dt)
         {
-            if (!Application.isPlaying)
+            if (!_runtimeActive)
                 return;
 
             _refreshTimer += dt;
@@ -339,7 +342,7 @@ namespace Hecton8.UI
 
         public void SlowTick()
         {
-            if (!Application.isPlaying)
+            if (!_runtimeActive)
                 return;
 
             _slowVisualRefreshRequested = true;

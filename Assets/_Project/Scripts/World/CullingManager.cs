@@ -743,8 +743,7 @@ namespace Hecton8.World
                 return rendererBounds;
 
             // Fallback: try to get bounds from Collider (cold registration only)
-            Collider collider = obj.GetComponent<Collider>();
-            if (collider != null)
+            if (obj.TryGetComponent(out Collider collider))
                 return collider.bounds;
 
             // Last resort: use transform position with small bounds

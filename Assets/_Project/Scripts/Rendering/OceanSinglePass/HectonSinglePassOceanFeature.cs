@@ -100,7 +100,7 @@ namespace Hecton8.Rendering.OceanSinglePass
                 if (_settings == null)
                     return;
 
-                if (!Application.isPlaying && !OceanSinglePassRuntime.ConsumeMockRenderFrameBudget())
+                if (!OceanSinglePassRuntime.TryEnterRenderGraphRuntimeGate())
                     return;
 
                 if (!OceanSinglePassRuntime.TryGetActiveConstantBuffer(out GraphicsBuffer constantBuffer, out _))
@@ -290,11 +290,18 @@ namespace Hecton8.Rendering.OceanSinglePass
                     {
                         long startTicks = Stopwatch.GetTimestamp();
                         var cmd = context.cmd;
+                        Vector4 wakeParams = default;
+                        wakeParams.x = data.ResolutionScale;
+                        Vector4 wakeScrollOffset = default;
+                        wakeScrollOffset.x = data.ScrollOffset.x;
+                        wakeScrollOffset.y = data.ScrollOffset.y;
+                        wakeScrollOffset.z = data.ScrollOffset.z;
+                        wakeScrollOffset.w = data.ScrollOffset.w;
                         cmd.BeginSample("H8 Ocean Wake Dear Lie");
                         cmd.SetComputeTextureParam(data.Compute, data.ClearKernel, H8OceanSinglePassShaderIds.WakeTextureWriteId, data.WakeTexture);
                         cmd.SetComputeIntParam(data.Compute, H8OceanSinglePassShaderIds.WakeResolutionId, data.Resolution);
-                        cmd.SetComputeVectorParam(data.Compute, H8OceanSinglePassShaderIds.WakeParamsId, new Vector4(data.ResolutionScale, 0f, 0f, 0f));
-                        cmd.SetComputeVectorParam(data.Compute, H8OceanSinglePassShaderIds.WakeScrollOffsetId, new Vector4(data.ScrollOffset.x, data.ScrollOffset.y, data.ScrollOffset.z, data.ScrollOffset.w));
+                        cmd.SetComputeVectorParam(data.Compute, H8OceanSinglePassShaderIds.WakeParamsId, wakeParams);
+                        cmd.SetComputeVectorParam(data.Compute, H8OceanSinglePassShaderIds.WakeScrollOffsetId, wakeScrollOffset);
                         cmd.SetComputeConstantBufferParam(data.Compute, H8OceanSinglePassShaderIds.ConstantBufferId, data.ConstantBuffer, 0, OceanSinglePassConstants.CBufferBytes);
                         cmd.DispatchCompute(data.Compute, data.ClearKernel, data.ClearDispatchX, data.ClearDispatchY, data.DispatchZ);
 
@@ -304,8 +311,10 @@ namespace Hecton8.Rendering.OceanSinglePass
                             cmd.SetComputeBufferParam(data.Compute, data.AccumulateKernel, H8OceanSinglePassShaderIds.WakeEventsId, data.EventBuffer);
                             cmd.SetComputeIntParam(data.Compute, H8OceanSinglePassShaderIds.WakeEventCountId, data.EventCount);
                             cmd.SetComputeIntParam(data.Compute, H8OceanSinglePassShaderIds.WakeResolutionId, data.Resolution);
-                            cmd.SetComputeVectorParam(data.Compute, H8OceanSinglePassShaderIds.WakeParamsId, new Vector4(data.ResolutionScale, data.EventCount, OceanSinglePassConstants.WakeTextureWorldSizeMeters, 0f));
-                            cmd.SetComputeVectorParam(data.Compute, H8OceanSinglePassShaderIds.WakeScrollOffsetId, new Vector4(data.ScrollOffset.x, data.ScrollOffset.y, data.ScrollOffset.z, data.ScrollOffset.w));
+                            wakeParams.y = data.EventCount;
+                            wakeParams.z = OceanSinglePassConstants.WakeTextureWorldSizeMeters;
+                            cmd.SetComputeVectorParam(data.Compute, H8OceanSinglePassShaderIds.WakeParamsId, wakeParams);
+                            cmd.SetComputeVectorParam(data.Compute, H8OceanSinglePassShaderIds.WakeScrollOffsetId, wakeScrollOffset);
                             cmd.SetComputeConstantBufferParam(data.Compute, H8OceanSinglePassShaderIds.ConstantBufferId, data.ConstantBuffer, 0, OceanSinglePassConstants.CBufferBytes);
                             cmd.DispatchCompute(data.Compute, data.AccumulateKernel, data.AccumulateDispatchX, data.AccumulateDispatchY, data.DispatchZ);
                         }
@@ -510,8 +519,7 @@ namespace Hecton8.Rendering.OceanSinglePass
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            bool renderAllowed = Application.isPlaying || OceanSinglePassRuntime.IsMockRenderStateActive();
-            if (!renderAllowed ||
+            if (!OceanSinglePassRuntime.HasRendererFeatureRuntimeGate() ||
                 settings == null ||
                 _pass == null ||
                 IsUnsupportedCameraType(renderingData.cameraData.cameraType))

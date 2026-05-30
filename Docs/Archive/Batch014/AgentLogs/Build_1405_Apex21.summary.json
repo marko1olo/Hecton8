@@ -1,0 +1,24 @@
+﻿{
+    "timestampUtc":  "2026-05-28T10:14:07.5924279Z",
+    "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+    "cpuLoadSamplesPercent":  [
+                                  63
+                              ],
+    "compilerProcessCount":  1,
+    "compilerProcesses":  [
+                              {
+                                  "Id":  10444,
+                                  "ProcessName":  "dotnet",
+                                  "CPU":  68.9375,
+                                  "StartTime":  "2026-05-28T14:10:06+04:00"
+                              }
+                          ],
+    "launched":  false,
+    "reason":  "BLOCKED_BY_CONTENTION",
+    "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active.",
+    "staticChecks":  [
+                         "git diff --check exit 0 warnings only LF-\u003eCRLF",
+                         "oversized literal scan no matches",
+                         "APEX21 hot Zero-GC scan 1055 lines all forbidden counts 0"
+                     ]
+}

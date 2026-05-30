@@ -55,7 +55,7 @@ namespace Hecton8.Physics.Vehicles.Editor
             builder.AppendLine("  \"selfAudit\": \"Docs/Reports/SHINOBU_333_SELF_AUDIT.xml\",");
             builder.AppendLine("  \"reviewDisposition\": \"YELLOW_STATIC_SOURCE_ONLY\",");
             builder.AppendLine("  \"csvSourcePath\": \"Data/Physics/vehicle_ballast_profiles.csv\",");
-            builder.AppendLine("  \"csvColdIngestion\": \"Data/Physics/vehicle_ballast_profiles.csv -> BufferID 71778 scratch -> SubmarineBallastCsvParser.ParseProfiles -> BufferID 71776 profiles\",");
+            builder.AppendLine("  \"csvColdIngestion\": \"Data/Physics/vehicle_ballast_profiles.csv -> stackalloc 32768 byte parser scratch -> SubmarineBallastCsvParser.ParseProfiles -> BufferID 71776 profiles\",");
             builder.AppendLine("  \"dataMonolithStatus\": \"STATIC_PAYLOAD_ABSENT_BLOCKED_BY_DATA_MONOLITH_PIPELINE\",");
             builder.AppendLine("  \"sampleBudgetHysteresis\": \"GlobalQualityWeight -> smoothstep/lerp 1..4 sample budget with 2.5s owner-phase hysteresis; stored in SubmarineBallastFluidSampleDTO.ActiveSampleBudget at offset 148 without size drift\",");
             builder.AppendLine("  \"metadataImportProof\": \"Stable .meta files present for SubmarineBallastBuoyancyContracts.cs, OOP_Buoyancy_Scanner.cs, and Data/Physics/vehicle_ballast_profiles.csv; GUID scan found no duplicates; CSV remains a non-Unity external cold source, not a Unity import claim\",");
@@ -66,7 +66,7 @@ namespace Hecton8.Physics.Vehicles.Editor
             builder.AppendLine("  \"externalReadSnapshots\": \"Read-only cached input: BufferID 71786 Shinobu332GyroCounters owned by SHINOBU_332. SHINOBU_333 does not allocate, mutate, or release this buffer.\",");
             builder.AppendLine("  \"independentHotAudit\": \"Read-only subagent audit reported no fixed/post-fixed direct SubmarineDynamicsRuntime/global quality/AUP/GlobalRegistry/scene-search call, no SHINOBU_332 ownership violation, and no obvious compile/allocation hazard in the hot snapshot patch.\",");
             builder.AppendLine("  \"overlapScannerScope\": \"Counts Physics.OverlapSphere and Physics.OverlapSphereNonAlloc because both are CPU broadphase water-volume query routes in Vehicles/Physics authority.\",");
-            builder.AppendLine("  \"vaultBufferIds\": \"71771..71778 owned by SystemID.VehiclesPhysics; 71820..71827 rejected because SHINOBU_264 owns 71820..71831\",");
+            builder.AppendLine("  \"vaultBufferIds\": \"71771..71777 active runtime ownership; 71778 retired CSV scratch not allocated; 71820..71827 rejected because SHINOBU_264 owns 71820..71831\",");
             builder.Append("  \"sourceFilesScanned\": ").Append(fileCount).AppendLine(",");
             builder.Append("  \"dynamicRigidbodyMassHackSites\": ").Append(massHackSites).AppendLine(",");
             builder.Append("  \"physicsOverlapSphereWaterQuerySites\": ").Append(overlapSphereSites).AppendLine(",");
@@ -74,7 +74,7 @@ namespace Hecton8.Physics.Vehicles.Editor
             builder.Append("  \"oopBuoyancyHacksPurged\": ").Append(purged ? "true" : "false").AppendLine(",");
             builder.AppendLine("  \"runtimeRoute\": \"GlobalDataVault -> EvaluateBallastTanksJob -> CalculateBuoyancyForceJob -> PhysicsForceRouter\",");
             builder.AppendLine("  \"compileProof\": \"BLOCKED_EXTERNAL: Hecton8.Core.csproj reached unrelated pre-existing VRSomatic/Gyro/Metabolism/Fauna compile wall after SHINOBU_333 type visibility was fixed; later csc.exe exited -1 without SHINOBU_333 source diagnostics. No green build claim.\",");
-            builder.AppendLine("  \"vaultBuffers\": [71771, 71772, 71773, 71774, 71775, 71776, 71777, 71778]");
+            builder.AppendLine("  \"vaultBuffers\": [71771, 71772, 71773, 71774, 71775, 71776, 71777]");
             builder.AppendLine("}");
             return builder.ToString();
         }

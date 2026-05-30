@@ -1,0 +1,321 @@
+﻿{
+    "agentId":  "1402",
+    "generatedUtc":  "2026-05-28T01:24:25.0000000Z",
+    "evidenceClass":  "STATIC_SOURCE",
+    "status":  "PENDING_UNITY_EDITOR_VERIFICATION",
+    "summary":  {
+                    "yamlAssetsModified":  false,
+                    "csharpBridgeFilesModified":  8,
+                    "scannerFilesModified":  1,
+                    "exactPromptObsoleteHitsTarget":  0,
+                    "exactPromptObsoleteHitsFull":  0,
+                    "schemaMismatchCandidatesInitial":  208,
+                    "schemaMismatchCandidatesAfterPartialClassMerge":  143,
+                    "schemaMismatchCandidatesAfterBaseClassMerge":  63,
+                    "schemaMismatchCandidatesAfterThirdPassBridgeRepairs":  50,
+                    "schemaMismatchCandidatesAfterFlashlightDiagnosticsBridge":  48,
+                    "schemaMismatchCandidatesAfterLightShaftMigrationBridge":  47,
+                    "targetSetCandidatesAfterLightShaftMigrationBridge":  21,
+                    "schemaMismatchCandidatesAfterSixthPassResidualAudit":  47,
+                    "targetSetCandidatesAfterSixthPassResidualAudit":  21,
+                    "schemaMismatchCandidatesAfterSeventhPassStructAndQualityAudit":  47,
+                    "targetSetCandidatesAfterSeventhPassStructAndQualityAudit":  21,
+                    "validationFailuresFull":  0,
+                    "parserFuzzerFailures":  0,
+                    "dryRunWouldModifyFiles":  0,
+                    "finalReportStatus":  "PENDING_UNITY_EDITOR_VERIFICATION"
+                },
+    "modifiedLineEvidence":  [
+                                 {
+                                     "oldProperty":  "raycastInterval",
+                                     "route":  "FormerlySerializedAs -\u003e PlayerInteraction.targetProbeInterval",
+                                     "file":  "Assets/_Project/Scripts/Interaction/PlayerInteraction.cs",
+                                     "lines":  [
+                                                   76,
+                                                   79
+                                               ]
+                                 },
+                                 {
+                                     "oldProperty":  "syncCargoMassFromInventoryEvents",
+                                     "route":  "FormerlySerializedAs -\u003e SubmarineFluidDynamics.syncCargoMassFromInventorySignals",
+                                     "file":  "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+                                     "lines":  [
+                                                   397,
+                                                   398
+                                               ]
+                                 },
+                                 {
+                                     "oldProperty":  "runtimeShaderReferenceCatalog",
+                                     "route":  "BootstrapController serialized bridge -\u003e GameBootstrapper owner",
+                                     "file":  "Assets/_Project/Scripts/Bootstrap/BootstrapController.cs",
+                                     "lines":  [
+                                                   21,
+                                                   98
+                                               ]
+                                 },
+                                 {
+                                     "oldProperty":  "runtimeShaderReferenceCatalog",
+                                     "route":  "GameBootstrapper pre-bootstrap cold setter",
+                                     "file":  "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+                                     "lines":  [
+                                                   1307,
+                                                   1312
+                                               ]
+                                 },
+                                 {
+                                     "oldProperty":  "wavesInputTransform/wavesInputRenderer/foamInputTransform/foamInputRenderer/oilFilmInputTransform/oilFilmInputRenderer",
+                                     "route":  "Restored serialized legacy references consumed by cold ResolveLegacyInputs",
+                                     "file":  "Assets/_Project/Scripts/World/SargassumCrestDampingController.cs",
+                                     "lines":  [
+                                                   66,
+                                                   67,
+                                                   68,
+                                                   69,
+                                                   70,
+                                                   71,
+                                                   639,
+                                                   641,
+                                                   642,
+                                                   644,
+                                                   646,
+                                                   647,
+                                                   649,
+                                                   651,
+                                                   652,
+                                                   656,
+                                                   658,
+                                                   659,
+                                                   662,
+                                                   663
+                                               ]
+                                 },
+                                 {
+                                     "oldProperty":  "_debugDensityWorldRect",
+                                     "route":  "FormerlySerializedAs -\u003e SargassumCrestDampingController._debugFacadeWorldRect",
+                                     "file":  "Assets/_Project/Scripts/World/SargassumCrestDampingController.cs",
+                                     "lines":  [
+                                                   96
+                                               ]
+                                 },
+                                 {
+                                     "oldProperty":  "slowTickTopEntries",
+                                     "route":  "FormerlySerializedAs -\u003e GameTickManager.slowTickProfilerTopEntries bounded diagnostic budget",
+                                     "file":  "Assets/_Project/Scripts/GameTickManager.cs",
+                                     "lines":  [
+                                                   128,
+                                                   129,
+                                                   597,
+                                                   609,
+                                                   620
+                                               ]
+                                 },
+                                 {
+                                     "oldProperty":  "constructionGhostWarmupCount",
+                                     "route":  "FormerlySerializedAs -\u003e PlayerToolManager.toolPoolWarmupCount",
+                                     "file":  "Assets/_Project/Scripts/PlayerToolManager.cs",
+                                     "lines":  [
+                                                   74,
+                                                   75
+                                               ]
+                                 },
+                                 {
+                                     "oldProperty":  "crestOceanRenderer",
+                                     "route":  "Scanner global:: field parser correction, not YAML mutation",
+                                     "file":  "Tools/YamlMigration1402/yaml_migration_1402.py",
+                                     "lines":  [
+                                                   67,
+                                                   222,
+                                                   223,
+                                                   227,
+                                                   246,
+                                                   874,
+                                                   880
+                                               ]
+                                 },
+                                 {
+                                     "oldProperty":  "_debugVolumetricMultiplier",
+                                     "route":  "FormerlySerializedAs -\u003e PlayerFlashlight._debugLightShaftMultiplier",
+                                     "file":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                     "lines":  [
+                                                   421,
+                                                   422
+                                               ]
+                                 },
+                                 {
+                                     "oldProperty":  "_debugVolumetricDepth",
+                                     "route":  "FormerlySerializedAs -\u003e PlayerFlashlight._debugLightShaftDepth",
+                                     "file":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                     "lines":  [
+                                                   423,
+                                                   424
+                                               ]
+                                 },
+                                 {
+                                     "oldProperty":  "volumetricBeam",
+                                     "route":  "FormerlySerializedAs -\u003e PlayerFlashlight.legacyVolumetricBeamSource; cold runtime bridge installs ScreenSpaceLightShaftSource on the referenced Light object",
+                                     "file":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                     "lines":  [
+                                                   395,
+                                                   397,
+                                                   487,
+                                                   528,
+                                                   571,
+                                                   914,
+                                                   915,
+                                                   976,
+                                                   979,
+                                                   980,
+                                                   993
+                                               ]
+                                 }
+                             ],
+    "zeroGcAudit":  {
+                        "scanSurface":  "git diff added lines in agent-owned C# bridge files only; offline Python scanner is not a Unity runtime hot path",
+                        "counts":  {
+                                       "scannedAddedCSharpLines":  126,
+                                       "newReferenceToken":  0,
+                                       "stringFormat":  0,
+                                       "toString":  0,
+                                       "foreachLoop":  0,
+                                       "linqQuery":  0,
+                                       "binaryLowEndSwitch":  0
+                                   },
+                        "result":  "PASS_FOR_ADDED_CSHARP_LINES",
+                        "coldAllocationNote":  "PlayerFlashlight adds ScreenSpaceLightShaftSource via AddComponent only in Awake/Start cold lifecycle when the source is absent; no per-frame allocation route was added."
+                    },
+    "unmanagedStructOffsetAudit":  {
+                                       "unmanagedStructsModifiedByAgent1402":  0,
+                                       "fieldOffsetAttributesChanged":  0,
+                                       "reason":  "This pass changed serialized compatibility and cold component wiring only; no StructLayout or FieldOffset region changed.",
+                                       "staticLayoutProof":  [
+                                                                 {
+                                                                     "file":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                                                     "struct":  "FlashlightEventPayload",
+                                                                     "layoutKind":  "Explicit",
+                                                                     "sizeBytes":  16,
+                                                                     "lines":  [
+                                                                                   59,
+                                                                                   66
+                                                                               ],
+                                                                     "offsets":  {
+                                                                                     "BatteryPercent":  0,
+                                                                                     "Heat01":  4,
+                                                                                     "EventType":  8,
+                                                                                     "StateBits":  10,
+                                                                                     "_pad0":  12
+                                                                                 }
+                                                                 },
+                                                                 {
+                                                                     "file":  "Assets/_Project/Scripts/Lighting/Shafts/ScreenSpaceLightShaftSource.cs",
+                                                                     "struct":  "LightShaftContribution",
+                                                                     "layoutKind":  "Explicit",
+                                                                     "sizeBytes":  64,
+                                                                     "lines":  [
+                                                                                   9,
+                                                                                   37
+                                                                               ],
+                                                                     "offsets":  {
+                                                                                     "SourceId":  0,
+                                                                                     "_pad0":  4,
+                                                                                     "ScreenUv":  8,
+                                                                                     "ColorRgb":  16,
+                                                                                     "Intensity":  28,
+                                                                                     "RadialFalloff":  32,
+                                                                                     "MaxDistanceMeters":  36,
+                                                                                     "Score":  40,
+                                                                                     "Flags":  44,
+                                                                                     "_pad1":  45,
+                                                                                     "_pad2":  46,
+                                                                                     "_pad3":  48,
+                                                                                     "_pad4":  56
+                                                                                 }
+                                                                 }
+                                                             ]
+                                   },
+    "dataSovereignty":  {
+                            "migratedToGlobalDataVault":  false,
+                            "bufferIdConstantsSecured":  [
+
+                                                         ],
+                            "tryAcquireWriteLockSites":  [
+
+                                                         ],
+                            "finallyReleaseSites":  [
+
+                                                    ],
+                            "reason":  "No prompt obsolete payload existed and this pass only restored serialized authoring bridges. No GlobalDataVault ownership route was introduced."
+                        },
+    "cinematicCheatAndScalability":  {
+                                         "physicalSimulationAdded":  false,
+                                         "processingLoadSystemAdded":  false,
+                                         "globalQualityWeightUseAdded":  false,
+                                         "usesExistingContinuousQualityRoute":  true,
+                                         "existingQualityRoute":  "ScreenSpaceLightShaftRuntime/HectonScooterVolumetricShaftsFeature already scale sample budget/render scale from HomeostasisBrain.GlobalQualityWeight; the new bridge connects the flashlight to that fake screen-space shaft path.",
+                                         "globalQualityWeightLineEvidence":  [
+                                                                                {
+                                                                                    "file":  "Assets/_Project/Scripts/Lighting/Shafts/ScreenSpaceLightShaftRuntime.cs",
+                                                                                    "lines":  [
+                                                                                                  659,
+                                                                                                  665,
+                                                                                                  828,
+                                                                                                  843
+                                                                                              ],
+                                                                                    "proof":  "sampleBudget lerps between min/max tap counts from _qualityWeight01; _qualityWeight01 reads HomeostasisBrain.GlobalQualityWeight and clamps it continuously."
+                                                                                }
+                                                                            ],
+                                         "binaryLowEndSwitchesInAddedCSharpLines":  0,
+                                         "decision":  "Accepted a cheap screen-space visual fake instead of restoring VLB per-light mutation. No binary isLowEnd switch or physical volumetric simulation was added."
+                                     },
+    "compilationThrottle":  {
+                                "dotnetBuildInvokedByAgent1402":  false,
+                                "cpuLoadSamplePercentBeforeFinalCompileDecision":  100,
+                                "compilerProcessCount":  1,
+                                "compilerProcesses":  [
+                                                          {
+                                                              "id":  55080,
+                                                              "processName":  "dotnet"
+                                                          }
+                                                      ],
+                                "decision":  "Skipped build after a fresh 30-second resample: CPU sample remained 100% and dotnet PID 55080 was active, which violates the \u003e50% compile throttle. Unity Editor import/compile remains unverified."
+                            },
+    "proofArtifacts":  {
+                           "fullLedger":  "Docs/AgentLogs/YamlDesyncLedger_1402_full.json",
+                           "targetLedger":  "Docs/AgentLogs/YamlDesyncLedger_1402.json",
+                           "validation":  "Docs/AgentLogs/YamlValidation_1402_full.json",
+                           "parserFuzzer":  "Docs/AgentLogs/YamlParserFuzzer_1402.json",
+                           "dryRun":  "Docs/AgentLogs/YamlDryRun_1402.json",
+                           "finalReport":  "Docs/Reports/YAML_MIGRATION_REPORT_1402.json",
+                           "triage":  "Docs/AgentLogs/YamlSchemaMismatchTriage_1402.json"
+                       },
+    "sixthPassResidualAudit":  {
+                                   "polishTxtPresent":  false,
+                                   "promptTaskCountPattern":  "(?m)^Task\\s+\\d{2}:",
+                                   "promptTaskCount":  20,
+                                   "harpoonTracerDecision":  "Rejected alias: Tool_HarpoonLauncher_Held.prefab already has tracerShader guid 1d324d2bc5d23144bbf8d997d03ddc1a matching Hecton_TetherLineStrip.shader.meta; legacy tracer is {fileID: 0}.",
+                                   "playerThrusterAudioDecision":  "Rejected bridge: PlayerThrusterAudio owns a procedural AudioClip route; resurrecting the old non-null thrusterLoopClip would undo the current procedural audio owner contract.",
+                                   "hectonPlayerMovementDecision":  "Rejected aliases for old wipeout/exosuit/KCC fields because old and current fields coexist in Player.prefab; FormerlySerializedAs could overwrite authored current values.",
+                                   "sourceEditsMadeInSixthPass":  0,
+                                   "yamlAssetsModifiedInSixthPass":  false
+                               },
+    "seventhPassStructAndQualityAudit":  {
+                                             "sourceEditsMadeInSeventhPass":  0,
+                                             "yamlAssetsModifiedInSeventhPass":  false,
+                                             "screenSpaceLightShaftSourceContract":  "Public sealed MonoBehaviour in Hecton8.Lighting.Shafts; Awake/OnEnable call CacheLocalReferences; CacheLocalReferences assigns sourceLight through TryGetComponent when null.",
+                                             "freshCompileGateResampleSeconds":  30,
+                                             "freshCpuLoadPercent":  100,
+                                             "freshCompilerProcessCount":  1,
+                                             "freshCompilerProcesses":  [
+                                                                           {
+                                                                               "id":  55080,
+                                                                               "processName":  "dotnet"
+                                                                           }
+                                                                       ]
+                                         },
+    "remainingRisk":  {
+                          "schemaMismatchCandidatesFullScope":  47,
+                          "targetSetCandidates":  21,
+                          "unverifiedByUnityEditor":  true,
+                          "compileNotRun":  true,
+                          "reason":  "Remaining candidates lack safe one-to-one semantic mapping; raw YAML deletion would risk authored data loss."
+                      }
+}

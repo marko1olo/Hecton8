@@ -39,7 +39,6 @@ namespace Hecton8.Physiology
         public const BufferID RespawnTuningBuffer = (BufferID)71609;
         public const BufferID RespawnPenaltyRulesBuffer = (BufferID)71610;
         public const BufferID RespawnPenaltyRuleCountBuffer = (BufferID)71611;
-        public const BufferID RespawnCsvScratchBuffer = (BufferID)71612;
         public const BufferID RespawnRequestBuffer = (BufferID)71613;
     }
 

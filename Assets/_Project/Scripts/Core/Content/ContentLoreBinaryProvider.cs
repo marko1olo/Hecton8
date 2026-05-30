@@ -44,7 +44,6 @@ namespace Hecton8.Core.Content
 
         public ContentLoreBlockIndex GetBlockAt(int index)
         {
-            EnsureSortState();
             return blocks[index];
         }
 
@@ -126,7 +125,7 @@ namespace Hecton8.Core.Content
         public bool Open()
         {
             Dispose();
-            EnsureSortState();
+            RefreshSortStateCold();
 
             if (!TryResolveDictionaryPath(dictionaryRelativePath, out string path))
             {
@@ -188,9 +187,7 @@ namespace Hecton8.Core.Content
 
         private bool TryGetBlock(uint hash, out ContentLoreBlockIndex block)
         {
-            EnsureSortState();
-
-            if (_sortState == SortStateUnsorted)
+            if (_sortState != SortStateSorted)
                 return TryGetBlockLinear(hash, out block);
 
             int lo = 0;
@@ -215,11 +212,8 @@ namespace Hecton8.Core.Content
             return false;
         }
 
-        private void EnsureSortState()
+        private void RefreshSortStateCold()
         {
-            if (_sortState != SortStateUnknown)
-                return;
-
             _sortState = IsSortedAscending() ? SortStateSorted : SortStateUnsorted;
         }
 
@@ -444,7 +438,6 @@ namespace Hecton8.Core.Content
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            _sortState = SortStateUnknown;
             SortBlocks();
         }
 #endif

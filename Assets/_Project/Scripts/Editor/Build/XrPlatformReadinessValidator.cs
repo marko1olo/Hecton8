@@ -13,6 +13,7 @@ using UnityEngine.XR.Management;
 using UnityEngine.XR.OpenXR;
 using UnityEngine.XR.OpenXR.Features;
 using UnityEngine.XR.OpenXR.Features.Interactions;
+using UnityEngine.XR.OpenXR.Features.Meta;
 using UnityEngine.XR.OpenXR.Features.MetaQuestSupport;
 
 namespace Hecton8.Editor.Build
@@ -26,6 +27,7 @@ namespace Hecton8.Editor.Build
         private const string MetaOpenXrPackage = "com.unity.xr.meta-openxr";
         private const string OpenXrLoaderTypeName = "UnityEngine.XR.OpenXR.OpenXRLoader";
         private const string WireAndroidOpenXrMenuPath = "HECTON-8/Platform/Wire Android OpenXR Provider Route";
+        private const string WireStandaloneOpenXrMenuPath = "HECTON-8/Platform/Wire Standalone OpenXR Provider Route";
 
         public int callbackOrder => -4610;
 
@@ -125,6 +127,71 @@ namespace Hecton8.Editor.Build
             Validate(BuildTarget.Android, hardFail: false);
         }
 
+        [MenuItem(WireStandaloneOpenXrMenuPath, priority = 423)]
+        private static void WireStandaloneOpenXrProviderRouteFromMenu()
+        {
+            WireStandaloneOpenXrProviderRouteForCi();
+        }
+
+        public static void WireStandaloneOpenXrProviderRouteForCi()
+        {
+            string root = Directory.GetCurrentDirectory();
+            if (!PackageManifestContains(root, XrManagementPackage))
+            {
+                throw new BuildFailedException("Packages/manifest.json is missing " + XrManagementPackage + ".");
+            }
+
+            if (!PackageManifestContains(root, OpenXrPackage))
+            {
+                throw new BuildFailedException("Packages/manifest.json is missing " + OpenXrPackage + ".");
+            }
+
+            XRGeneralSettingsPerBuildTarget perTargetSettings = GetOrCreateXrGeneralSettingsPerBuildTarget();
+            if (perTargetSettings == null)
+            {
+                throw new BuildFailedException("XRGeneralSettingsPerBuildTarget.GetOrCreate returned null.");
+            }
+
+            if (!perTargetSettings.HasManagerSettingsForBuildTarget(BuildTargetGroup.Standalone))
+            {
+                perTargetSettings.CreateDefaultManagerSettingsForBuildTarget(BuildTargetGroup.Standalone);
+            }
+
+            XRManagerSettings managerSettings = perTargetSettings.ManagerSettingsForBuildTarget(BuildTargetGroup.Standalone);
+            if (managerSettings == null)
+            {
+                throw new BuildFailedException("XR Management Standalone manager settings are missing after creation.");
+            }
+
+            if (!XRPackageMetadataStore.AssignLoader(managerSettings, OpenXrLoaderTypeName, BuildTargetGroup.Standalone))
+            {
+                throw new BuildFailedException("Failed to assign " + OpenXrLoaderTypeName + " to Standalone XR Management settings.");
+            }
+
+            OpenXRSettings openXrSettings = OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Standalone);
+            if (openXrSettings == null)
+            {
+                throw new BuildFailedException("OpenXR Standalone settings could not be created.");
+            }
+
+            ConfigureStandalonePcVrOpenXrRenderSettings(openXrSettings);
+            EnableStandalonePcVrOpenXrFeatureSet(openXrSettings);
+
+            XRGeneralSettings generalSettings = perTargetSettings.SettingsForBuildTarget(BuildTargetGroup.Standalone);
+            if (generalSettings != null)
+            {
+                EditorUtility.SetDirty(generalSettings);
+            }
+
+            EditorUtility.SetDirty(perTargetSettings);
+            EditorUtility.SetDirty(managerSettings);
+            EditorUtility.SetDirty(openXrSettings);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Validate(BuildTarget.StandaloneWindows64, hardFail: false);
+        }
+
         private static void Validate(BuildTarget target, bool hardFail)
         {
             string root = Directory.GetCurrentDirectory();
@@ -176,6 +243,10 @@ namespace Hecton8.Editor.Build
             if (target == BuildTarget.Android)
             {
                 ValidateAndroid(root, failures, warnings);
+            }
+            else if (targetGroup == BuildTargetGroup.Standalone && strictXr)
+            {
+                ValidateStandalonePcVrOpenXrFeatureSet(failures, warnings);
             }
             else if (target == BuildTarget.StandaloneOSX && strictXr)
             {
@@ -263,6 +334,7 @@ namespace Hecton8.Editor.Build
 
             bool changed = false;
             changed |= EnableOpenXrFeature(openXrSettings.GetFeature<MetaQuestFeature>());
+            changed |= EnableOpenXrFeature(openXrSettings.GetFeature<DisplayUtilitiesFeature>());
             FoveatedRenderingFeature foveatedRenderingFeature = openXrSettings.GetFeature<FoveatedRenderingFeature>();
             changed |= EnableOpenXrFeature(foveatedRenderingFeature);
             changed |= SetFoveatedSubsampledLayoutEnabled(foveatedRenderingFeature, true);
@@ -305,6 +377,43 @@ namespace Hecton8.Editor.Build
             return true;
         }
 
+        private static void EnableStandalonePcVrOpenXrFeatureSet(OpenXRSettings openXrSettings)
+        {
+            if (openXrSettings == null)
+                return;
+
+            bool changed = false;
+            changed |= EnableOpenXrFeature(openXrSettings.GetFeature<OculusTouchControllerProfile>());
+            changed |= EnableOpenXrFeature(openXrSettings.GetFeature<ValveIndexControllerProfile>());
+            changed |= EnableOpenXrFeature(openXrSettings.GetFeature<HTCViveControllerProfile>());
+            changed |= EnableOpenXrFeature(openXrSettings.GetFeature<MicrosoftMotionControllerProfile>());
+            changed |= EnableOpenXrFeature(openXrSettings.GetFeature<HPReverbG2ControllerProfile>());
+            changed |= EnableOpenXrFeature(openXrSettings.GetFeature<KHRSimpleControllerProfile>());
+
+            FoveatedRenderingFeature foveatedRenderingFeature = openXrSettings.GetFeature<FoveatedRenderingFeature>();
+            changed |= EnableOpenXrFeature(foveatedRenderingFeature);
+            changed |= SetFoveatedSubsampledLayoutEnabled(foveatedRenderingFeature, false);
+
+            if (changed)
+                EditorUtility.SetDirty(openXrSettings);
+        }
+
+        private static void ConfigureStandalonePcVrOpenXrRenderSettings(OpenXRSettings openXrSettings)
+        {
+            if (openXrSettings == null)
+                return;
+
+            openXrSettings.renderMode = OpenXRSettings.RenderMode.SinglePassInstanced;
+            openXrSettings.symmetricProjection = false;
+#if UNITY_6000_1_OR_NEWER
+            openXrSettings.multiviewRenderRegionsOptimizationMode =
+                OpenXRSettings.MultiviewRenderRegionsOptimizationMode.None;
+#endif
+#if UNITY_2023_2_OR_NEWER
+            openXrSettings.foveatedRenderingApi = OpenXRSettings.BackendFovationApi.SRPFoveation;
+#endif
+        }
+
         private static bool EnableOpenXrFeature(OpenXRFeature feature)
         {
             if (feature == null || feature.enabled)
@@ -327,6 +436,11 @@ namespace Hecton8.Editor.Build
             if (!IsOpenXrFeatureEnabled<MetaQuestFeature>(openXrSettings))
             {
                 Append(failures, "OpenXR Android Meta Quest Support feature is disabled.");
+            }
+
+            if (!IsOpenXrFeatureEnabled<DisplayUtilitiesFeature>(openXrSettings))
+            {
+                Append(failures, "OpenXR Android Meta Display Utilities feature is disabled; refresh-rate policy cannot use XR_FB_display_refresh_rate.");
             }
 
             FoveatedRenderingFeature foveatedRenderingFeature = openXrSettings.GetFeature<FoveatedRenderingFeature>();
@@ -370,6 +484,43 @@ namespace Hecton8.Editor.Build
             {
                 Append(failures, "OpenXR Android has no Quest controller interaction profile enabled.");
             }
+        }
+
+        private static void ValidateStandalonePcVrOpenXrFeatureSet(StringBuilder failures, StringBuilder warnings)
+        {
+            OpenXRSettings openXrSettings = OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Standalone);
+            if (openXrSettings == null)
+            {
+                Append(failures, "OpenXR Standalone settings are missing; PCVR feature set cannot be validated.");
+                return;
+            }
+
+            if (openXrSettings.renderMode != OpenXRSettings.RenderMode.SinglePassInstanced)
+            {
+                Append(failures, "OpenXR Standalone render mode is not Single Pass Instanced.");
+            }
+
+            if (!IsOpenXrFeatureEnabled<OculusTouchControllerProfile>(openXrSettings) &&
+                !IsOpenXrFeatureEnabled<ValveIndexControllerProfile>(openXrSettings) &&
+                !IsOpenXrFeatureEnabled<HTCViveControllerProfile>(openXrSettings) &&
+                !IsOpenXrFeatureEnabled<MicrosoftMotionControllerProfile>(openXrSettings) &&
+                !IsOpenXrFeatureEnabled<HPReverbG2ControllerProfile>(openXrSettings) &&
+                !IsOpenXrFeatureEnabled<KHRSimpleControllerProfile>(openXrSettings))
+            {
+                Append(failures, "OpenXR Standalone has no PCVR controller interaction profile enabled.");
+            }
+
+            if (!IsOpenXrFeatureEnabled<FoveatedRenderingFeature>(openXrSettings))
+            {
+                Append(warnings, "OpenXR Standalone Foveated Rendering feature is disabled; PCVR can still run, but High/Ultra cannot buy foveated overdraw relief.");
+            }
+
+#if UNITY_2023_2_OR_NEWER
+            if (openXrSettings.foveatedRenderingApi != OpenXRSettings.BackendFovationApi.SRPFoveation)
+            {
+                Append(warnings, "OpenXR Standalone foveated rendering API is not SRP Foveation.");
+            }
+#endif
         }
 
         private static bool IsOpenXrFeatureEnabled<TFeature>(OpenXRSettings openXrSettings)

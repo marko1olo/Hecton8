@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
@@ -31,6 +30,8 @@ namespace Hecton8.AI.Ambient
         private const uint BaseSeedSalt = 0x42494F54u; // BIOT
         private const uint MacroHydrationSeedSalt = 0x4D485944u; // MHYD
         private const uint DirectorSourceHash = 0x414D4249u; // AMBI
+        private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1403_AMBIENT_BIOTA.bin";
+        private const string BlackBoxDumpPayloadLabel = "ambientBiotaTelemetryDumpPayload";
         private const int BucketMask = 15;
         private const int BlackBoxFrameCount = 300;
         private const int MacroHydrationCounterCount = 4;
@@ -54,13 +55,12 @@ namespace Hecton8.AI.Ambient
         private const ushort TelemetryFlagSurvivalPressure = 1 << 1;
         private const ushort TelemetryFlagPendingDebris = 1 << 3;
         private const uint AmbientStateHeadlightReactiveFlag = AmbientBiotaState.FlagHeadlightReactive;
-        private const string AgentDumpFileName = "Dump_13AI.bin";
         private static readonly AmbientBiotaTelemetryEntry[] s_blackBoxDumpSnapshot =
             new AmbientBiotaTelemetryEntry[BlackBoxFrameCount]; // COLD ALLOC: fixed ambient blackbox dump snapshot, owner: AMBIENT_BIOTA_DIRECTOR
-        private static readonly WaitCallback s_blackBoxDumpWorker = WriteBlackBoxDumpWorker;
         private static int s_blackBoxDumpCursor;
         private static int s_blackBoxDumpCount;
         private static int s_blackBoxDumpInFlight;
+        private static uint s_blackBoxDumpHash;
         private static readonly int BiotaInstancesShaderId = Shader.PropertyToID("_HectonBiotaInstances");
         private static readonly int BiotaCapacityShaderId = Shader.PropertyToID("_HectonBiotaCapacity");
         private static readonly int BiotaActiveCountShaderId = Shader.PropertyToID("_HectonBiotaActiveCount");
@@ -76,13 +76,12 @@ namespace Hecton8.AI.Ambient
             AmbientBiotaMutationGuardBit(BufferID.BiotaVelocities) |
             AmbientBiotaMutationGuardBit(BufferID.BiotaStates) |
             AmbientBiotaMutationGuardBit(BufferID.BiotaMacroHydrationCounters);
-        private static readonly ulong BiotaJobMutationGuardMask =
-            AmbientBiotaMutationGuardBit(BufferID.BiotaAUPs) |
-            AmbientBiotaMutationGuardBit(BufferID.BiotaVelocities) |
-            AmbientBiotaMutationGuardBit(BufferID.BiotaStates);
         private static readonly ulong TelemetryMutationGuardMask =
             AmbientBiotaMutationGuardBit(BufferID.BiotaTelemetryRing) |
             AmbientBiotaMutationGuardBit(BufferID.BiotaTelemetryCursor);
+        private const uint BiotaJobPinAups = 1u << 0;
+        private const uint BiotaJobPinVelocities = 1u << 1;
+        private const uint BiotaJobPinStates = 1u << 2;
         private static readonly Vector3[] FallbackQuadVertices =
         {
             new Vector3(-0.5f, -0.5f, 0f),
@@ -179,7 +178,8 @@ namespace Hecton8.AI.Ambient
         private float _publishedBiotaVisualTime = -1f;
         private bool _jobPending;
         private bool _jobBuffersPinned;
-        private IDataVault _jobBufferGuardVault;
+        private IDataVault _jobBufferPinVault;
+        private uint _jobBufferPinMask;
         private int[] _macroSlotScratch;
         private int[] _macroSlotMarkScratch;
         private AbsoluteUniversePosition[] _macroAupScratch;
@@ -1345,49 +1345,71 @@ namespace Hecton8.AI.Ambient
                 return false;
 
             IDataVault vault = _vault;
-            ulong mask = BiotaJobMutationGuardMask;
-            bool success = false;
             if (vault == null ||
-                vault.IsCompactionFenceActive ||
-                mask == 0UL ||
-                !TryResolveBiotaBuffers(_capacity, out _, out _, out _) ||
-                !vault.TryAcquireMutationGuard(mask))
+                vault.IsCompactionFenceActive)
             {
                 return false;
             }
 
+            bool success = false;
             try
             {
-                if (vault.IsCompactionFenceActive ||
+                _jobBufferPinVault = vault;
+                if (!TryLockBiotaJobBuffer(vault, BufferID.BiotaAUPs, BiotaJobPinAups) ||
+                    !TryLockBiotaJobBuffer(vault, BufferID.BiotaVelocities, BiotaJobPinVelocities) ||
+                    !TryLockBiotaJobBuffer(vault, BufferID.BiotaStates, BiotaJobPinStates) ||
                     !TryResolveBiotaBuffers(_capacity, out _, out _, out _))
                 {
                     return false;
                 }
 
                 _jobBuffersPinned = true;
-                _jobBufferGuardVault = vault;
                 success = true;
                 return true;
             }
             finally
             {
                 if (!success)
-                    vault.ReleaseMutationGuard(mask);
+                    ReleaseBiotaJobBufferPins();
             }
         }
 
         private void ReleaseBiotaJobBufferPins()
         {
-            if (!_jobBuffersPinned)
-                return;
-
+            uint pinMask = _jobBufferPinMask;
+            IDataVault vault = _jobBufferPinVault;
             _jobBuffersPinned = false;
-            IDataVault vault = _jobBufferGuardVault;
-            _jobBufferGuardVault = null;
-            if (vault == null)
+            _jobBufferPinVault = null;
+            _jobBufferPinMask = 0u;
+            if (vault == null || pinMask == 0u)
                 return;
 
-            vault.ReleaseMutationGuard(BiotaJobMutationGuardMask);
+            TryUnlockBiotaJobBuffer(vault, pinMask, BiotaJobPinStates, BufferID.BiotaStates);
+            TryUnlockBiotaJobBuffer(vault, pinMask, BiotaJobPinVelocities, BufferID.BiotaVelocities);
+            TryUnlockBiotaJobBuffer(vault, pinMask, BiotaJobPinAups, BufferID.BiotaAUPs);
+        }
+
+        private bool TryLockBiotaJobBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        {
+            if ((_jobBufferPinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null ||
+                (_jobBufferPinVault != null && !ReferenceEquals(_jobBufferPinVault, vault)) ||
+                !vault.TryLockBuffer(bufferId, SystemID.AmbientBiota))
+            {
+                return false;
+            }
+
+            _jobBufferPinVault = vault;
+            _jobBufferPinMask |= pinBit;
+            return true;
+        }
+
+        private static void TryUnlockBiotaJobBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, SystemID.AmbientBiota);
         }
 
         private bool TryAcquireAmbientMutationGuard(ulong mask, out IDataVault guardVault)
@@ -2315,20 +2337,9 @@ namespace Hecton8.AI.Ambient
 
         private static bool QueueStagedBlackBoxDump()
         {
-            if (!ThreadPool.QueueUserWorkItem(s_blackBoxDumpWorker))
-            {
-                Interlocked.Exchange(ref s_blackBoxDumpInFlight, 0);
-                return false;
-            }
-
-            return true;
-        }
-
-        private static void WriteBlackBoxDumpWorker(object state)
-        {
             try
             {
-                TryWriteBlackBoxSnapshotCold();
+                return TryWriteBlackBoxSnapshotCold();
             }
             finally
             {
@@ -2336,60 +2347,63 @@ namespace Hecton8.AI.Ambient
             }
         }
 
-        private static void TryWriteBlackBoxSnapshotCold()
+        private static unsafe bool TryWriteBlackBoxSnapshotCold()
         {
-            string dumpPath = BuildAgentDumpPath();
-            if (dumpPath == null || dumpPath.Length == 0)
-                return;
+            if (s_blackBoxDumpCount <= 0 || s_blackBoxDumpCount > BlackBoxFrameCount)
+                return false;
 
+            const int headerBytes = 24;
+            uint hash = 2166136261u ^ DirectorSourceHash ^ (uint)s_blackBoxDumpCount ^ (uint)s_blackBoxDumpCursor;
+            int entryBytes = UnsafeUtility.SizeOf<AmbientBiotaTelemetryEntry>();
+            int byteCount = headerBytes + (entryBytes * s_blackBoxDumpCount);
+            NativeArray<byte> payload = default;
             try
             {
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (directory != null && directory.Length != 0)
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(AmbientBiotaDirector),
+                    BlackBoxDumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                for (int i = 0; i < s_blackBoxDumpCount; i++)
                 {
-                    writer.Write(DirectorSourceHash);
-                    writer.Write(s_blackBoxDumpCount);
-                    writer.Write(s_blackBoxDumpCursor);
-                    for (int i = 0; i < s_blackBoxDumpCount; i++)
-                    {
-                        AmbientBiotaTelemetryEntry entry = s_blackBoxDumpSnapshot[i];
-                        writer.Write(entry.CenterAup.GridX);
-                        writer.Write(entry.CenterAup.GridY);
-                        writer.Write(entry.CenterAup.GridZ);
-                        writer.Write(entry.CenterAup.LocalX);
-                        writer.Write(entry.CenterAup.LocalY);
-                        writer.Write(entry.CenterAup.LocalZ);
-                        writer.Write(entry.FrameIndex);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.ActiveCount);
-                        writer.Write(entry.CulledCount);
-                        writer.Write(entry.Capacity);
-                        writer.Write(entry.Flags);
-                    }
+                    AmbientBiotaTelemetryEntry entry = s_blackBoxDumpSnapshot[i];
+                    byte* source = (byte*)UnsafeUtility.AddressOf(ref entry);
+                    byte* row = destination + headerBytes + (i * entryBytes);
+                    UnsafeUtility.MemCpy(row, source, entryBytes);
+                    for (int byteIndex = 0; byteIndex < entryBytes; byteIndex++)
+                        hash = (hash ^ row[byteIndex]) * 16777619u;
                 }
+
+                uint nonZeroHash = hash == 0u ? 2166136261u : hash;
+                WriteUInt32Le(destination, 0, DirectorSourceHash);
+                WriteUInt32Le(destination, 4, 1u);
+                WriteUInt32Le(destination, 8, (uint)s_blackBoxDumpCount);
+                WriteUInt32Le(destination, 12, (uint)math.max(0, s_blackBoxDumpCursor));
+                WriteUInt32Le(destination, 16, (uint)entryBytes);
+                WriteUInt32Le(destination, 20, nonZeroHash);
+
+                if (!NativeFaultDumpWriter.TryWriteAll(BlackBoxDumpRelativePath, payload, byteCount))
+                    return false;
+
+                s_blackBoxDumpHash = nonZeroHash;
+                return true;
             }
-            catch (IOException)
+            finally
             {
-            }
-            catch (UnauthorizedAccessException)
-            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(AmbientBiotaDirector),
+                    BlackBoxDumpPayloadLabel);
             }
         }
 
-        private static string BuildAgentDumpPath()
+        private static unsafe void WriteUInt32Le(byte* target, int offset, uint value)
         {
-            string currentDirectory = Directory.GetCurrentDirectory();
-            if (currentDirectory == null || currentDirectory.Length == 0)
-                return null;
-
-            string projectRoot = Path.GetFileName(currentDirectory) == "Hecton8"
-                ? currentDirectory
-                : Path.Combine(currentDirectory, "Hecton8");
-            return Path.Combine(projectRoot, "Docs", "AgentLogs", AgentDumpFileName);
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+            target[offset + 2] = (byte)(value >> 16);
+            target[offset + 3] = (byte)(value >> 24);
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]

@@ -95,6 +95,16 @@ namespace Hecton8.Rendering.OceanSinglePass
             return false;
         }
 
+        public static bool HasRendererFeatureRuntimeGate()
+        {
+            return s_runtime != null || s_mockRenderFrameBudget > 0;
+        }
+
+        public static bool TryEnterRenderGraphRuntimeGate()
+        {
+            return s_runtime != null || ConsumeMockRenderFrameBudget();
+        }
+
         public static bool TryGetWakeEventBuffer(out GraphicsBuffer buffer, out int eventCount)
         {
             GraphicsBuffer published = s_publishedWakeEventBuffer;

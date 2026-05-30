@@ -107,9 +107,6 @@ namespace Hecton8.Physics
         private VaultGenerationHandle<ReadbackRequestDTO> _mockRingHandle;
         private VaultGenerationHandle<AsyncBuoyancyWaveParametersDTO> _fallbackWavesHandle;
         private VaultGenerationHandle<VehicleSamplingProfileDTO> _vehicleProfilesHandle;
-#if UNITY_EDITOR
-        private VaultGenerationHandle<byte> _csvScratchHandle;
-#endif
         private VaultGenerationHandle<AsyncReadbackCounterDTO> _counterHandle;
 
         private GraphicsBuffer _requestBuffer0;
@@ -296,17 +293,18 @@ namespace Hecton8.Physics
             if (!IsRuntimeReady())
                 return false;
 
-            NativeArray<ReadbackTuningDTO> mutableTuning = ReadVaultBuffer(_dataVault, in _tuningHandle);
-            NativeArray<ReadbackTelemetryEntry> mutableTelemetry = ReadVaultBuffer(_dataVault, in _telemetryRingHandle);
-            NativeArray<int> mutableCursor = ReadVaultBuffer(_dataVault, in _telemetryCursorHandle);
-            NativeArray<AsyncReadbackCounterDTO> mutableCounters = ReadVaultBuffer(_dataVault, in _counterHandle);
-            if (!mutableTuning.IsCreated || !mutableTelemetry.IsCreated || !mutableCursor.IsCreated || !mutableCounters.IsCreated)
+            if (_dataVault == null ||
+                !_dataVault.TryReadOnlyHandle(in _tuningHandle, out tuning) ||
+                !_dataVault.TryReadOnlyHandle(in _telemetryRingHandle, out telemetry) ||
+                !_dataVault.TryReadOnlyHandle(in _telemetryCursorHandle, out cursor) ||
+                !_dataVault.TryReadOnlyHandle(in _counterHandle, out counters))
+            {
+                return false;
+            }
+
+            if (!tuning.IsCreated || !telemetry.IsCreated || !cursor.IsCreated || !counters.IsCreated)
                 return false;
 
-            tuning = mutableTuning.AsReadOnly();
-            telemetry = mutableTelemetry.AsReadOnly();
-            cursor = mutableCursor.AsReadOnly();
-            counters = mutableCounters.AsReadOnly();
             return true;
         }
 #endif
@@ -1081,10 +1079,20 @@ namespace Hecton8.Physics
 
         private VehicleSamplingProfileDTO ResolvePrimaryVehicleProfile()
         {
-            NativeArray<VehicleSamplingProfileDTO> profiles = ReadVaultBuffer(_dataVault, in _vehicleProfilesHandle);
+            if (_dataVault == null ||
+                !_dataVault.TryReadOnlyHandle(in _vehicleProfilesHandle, out NativeArray<VehicleSamplingProfileDTO>.ReadOnly profiles))
+            {
+                return BuildFallbackVehicleProfile();
+            }
+
             if (profiles.IsCreated && profiles.Length > 0 && profiles[0].VehicleHash != 0u)
                 return profiles[0];
 
+            return BuildFallbackVehicleProfile();
+        }
+
+        private VehicleSamplingProfileDTO BuildFallbackVehicleProfile()
+        {
             VehicleSamplingProfileDTO profile = default;
             profile.VehicleHash = 0x53483236u;
             profile.LengthMeters = fallbackLargeVesselLengthMeters;
@@ -1116,9 +1124,6 @@ namespace Hecton8.Physics
                 !EnsureVaultDescriptor(vault, ref _mockRingHandle, AsyncBuoyancyReadbackBufferIds.MockRing, AsyncBuoyancyReadbackConstants.RequestCapacity * AsyncBuoyancyReadbackConstants.ReadbackRingSize, NativeArrayOptions.UninitializedMemory) ||
                 !EnsureVaultDescriptor(vault, ref _fallbackWavesHandle, AsyncBuoyancyReadbackBufferIds.FallbackWaves, AsyncBuoyancyReadbackConstants.WaveCapacity, NativeArrayOptions.UninitializedMemory) ||
                 !EnsureVaultDescriptor(vault, ref _vehicleProfilesHandle, AsyncBuoyancyReadbackBufferIds.VehicleSamplingProfiles, AsyncBuoyancyReadbackConstants.VehicleProfileCapacity, NativeArrayOptions.ClearMemory) ||
-#if UNITY_EDITOR
-                !EnsureVaultDescriptor(vault, ref _csvScratchHandle, AsyncBuoyancyReadbackBufferIds.CsvScratch, AsyncBuoyancyReadbackConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory) ||
-#endif
                 !EnsureVaultDescriptor(vault, ref _counterHandle, AsyncBuoyancyReadbackBufferIds.Counter, 1, NativeArrayOptions.ClearMemory))
             {
                 return false;
@@ -1144,9 +1149,6 @@ namespace Hecton8.Physics
                    HasHandle(in _mockRingHandle) &&
                    HasHandle(in _fallbackWavesHandle) &&
                    HasHandle(in _vehicleProfilesHandle) &&
-#if UNITY_EDITOR
-                   HasHandle(in _csvScratchHandle) &&
-#endif
                    HasHandle(in _counterHandle);
         }
 
@@ -1207,7 +1209,7 @@ namespace Hecton8.Physics
                 if (!profilesLocked || profiles.Length <= 0 || profiles[0].VehicleHash != 0u)
                     return;
 
-                profiles[0] = ResolvePrimaryVehicleProfile();
+                profiles[0] = BuildFallbackVehicleProfile();
             }
             finally
             {
@@ -1758,45 +1760,43 @@ namespace Hecton8.Physics
             if (!File.Exists(path))
                 return;
 
-            NativeArray<byte> scratch = default;
-            bool scratchLocked = false;
-            IDataVault scratchWriteVault = null;
-            int bytesRead = 0;
-            try
-            {
-                scratch = AcquireVaultWriteBuffer(_dataVault, in _csvScratchHandle, out scratchWriteVault);
-                scratchLocked = scratch.IsCreated;
-                if (!scratchLocked || scratch.Length <= 0)
-                    return;
-
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
-                {
-                    byte* scratchPtr = (byte*)scratch.GetUnsafePtr();
-                    Span<byte> destination = new Span<byte>(scratchPtr, scratch.Length);
-                    while (bytesRead < scratch.Length)
-                    {
-                        int read = stream.Read(destination.Slice(bytesRead));
-                        if (read <= 0)
-                            break;
-
-                        bytesRead += read;
-                    }
-                }
-            }
-            finally
-            {
-                if (scratchLocked)
-                    ReleaseVaultWriteBuffer(scratchWriteVault, in _csvScratchHandle);
-            }
+            Span<byte> csvScratch = stackalloc byte[AsyncBuoyancyReadbackConstants.CsvImportByteCapacity];
+            int bytesRead = ReadCsvFileIntoColdScratch(path, csvScratch);
 
             if (bytesRead <= 0)
                 return;
 
-            NativeArray<byte> scratchRead = ReadVaultBuffer(_dataVault, in _csvScratchHandle);
-            if (!scratchRead.IsCreated || scratchRead.Length <= 0)
+            Span<VehicleSamplingProfileDTO> profileScratch = stackalloc VehicleSamplingProfileDTO[AsyncBuoyancyReadbackConstants.VehicleProfileCapacity];
+            int profileCount = ParseVehicleSamplingProfilesCsv(csvScratch.Slice(0, bytesRead), profileScratch);
+            if (profileCount <= 0)
                 return;
 
-            bytesRead = math.min(bytesRead, scratchRead.Length);
+            CommitVehicleSamplingProfiles(profileScratch.Slice(0, profileCount));
+        }
+
+        private int ParseVehicleSamplingProfilesCsv(ReadOnlySpan<byte> bytes, Span<VehicleSamplingProfileDTO> profiles)
+        {
+            int write = 0;
+            int lineStart = 0;
+            for (int i = 0; i <= bytes.Length && write < profiles.Length; i++)
+            {
+                if (i < bytes.Length && bytes[i] != (byte)'\n')
+                    continue;
+
+                ReadOnlySpan<byte> line = bytes.Slice(lineStart, i - lineStart);
+                if (TryParseVehicleProfileLine(line, out VehicleSamplingProfileDTO profile))
+                    profiles[write++] = profile;
+                lineStart = i + 1;
+            }
+
+            return write;
+        }
+
+        private void CommitVehicleSamplingProfiles(ReadOnlySpan<VehicleSamplingProfileDTO> stagedProfiles)
+        {
+            if (stagedProfiles.Length <= 0)
+                return;
+
             NativeArray<VehicleSamplingProfileDTO> profiles = default;
             bool profilesLocked = false;
             IDataVault profilesWriteVault = null;
@@ -1807,25 +1807,43 @@ namespace Hecton8.Physics
                 if (!profilesLocked || profiles.Length <= 0)
                     return;
 
-                ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>((byte*)scratchRead.GetUnsafeReadOnlyPtr(), bytesRead);
-                int write = 0;
-                int lineStart = 0;
-                for (int i = 0; i <= bytes.Length && write < profiles.Length; i++)
-                {
-                    if (i < bytes.Length && bytes[i] != (byte)'\n')
-                        continue;
+                int write = math.min(stagedProfiles.Length, profiles.Length);
+                for (int i = 0; i < write; i++)
+                    profiles[i] = stagedProfiles[i];
 
-                    ReadOnlySpan<byte> line = bytes.Slice(lineStart, i - lineStart);
-                    if (TryParseVehicleProfileLine(line, out VehicleSamplingProfileDTO profile))
-                        profiles[write++] = profile;
-                    lineStart = i + 1;
-                }
+                for (int i = write; i < profiles.Length; i++)
+                    profiles[i] = default;
             }
             finally
             {
                 if (profilesLocked)
                     ReleaseVaultWriteBuffer(profilesWriteVault, in _vehicleProfilesHandle);
             }
+        }
+
+        private static int ReadCsvFileIntoColdScratch(string path, Span<byte> scratch)
+        {
+            if (string.IsNullOrEmpty(path) || scratch.Length <= 0)
+                return 0;
+
+            FileInfo fileInfo = new FileInfo(path);
+            if (!fileInfo.Exists || fileInfo.Length <= 0L || fileInfo.Length > scratch.Length)
+                return 0;
+
+            int bytesRead = 0;
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, scratch.Length, FileOptions.SequentialScan))
+            {
+                while (bytesRead < fileInfo.Length)
+                {
+                    int read = stream.Read(scratch.Slice(bytesRead, (int)fileInfo.Length - bytesRead));
+                    if (read <= 0)
+                        return 0;
+
+                    bytesRead += read;
+                }
+            }
+
+            return bytesRead == fileInfo.Length ? bytesRead : 0;
         }
 
         private bool TryParseVehicleProfileLine(ReadOnlySpan<byte> line, out VehicleSamplingProfileDTO profile)
@@ -2151,7 +2169,7 @@ namespace Hecton8.Physics
                 return false;
 
             if (HasHandle(in handle) &&
-                vault.TryReadHandle(in handle, out NativeArray<T> existing) &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
                 existing.IsCreated &&
                 existing.Length >= requiredLength)
             {
@@ -2160,7 +2178,7 @@ namespace Hecton8.Physics
 
             if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existingHandle) &&
                 HasHandle(in existingHandle) &&
-                vault.TryReadHandle(in existingHandle, out NativeArray<T> existingBuffer) &&
+                vault.TryReadOnlyHandle(in existingHandle, out NativeArray<T>.ReadOnly existingBuffer) &&
                 existingBuffer.IsCreated &&
                 existingBuffer.Length >= requiredLength)
             {
@@ -2173,7 +2191,7 @@ namespace Hecton8.Physics
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.Physics, options);
             return HasHandle(in handle) &&
-                   vault.TryReadHandle(in handle, out NativeArray<T> resolved) &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly resolved) &&
                    resolved.IsCreated &&
                    resolved.Length >= requiredLength;
         }

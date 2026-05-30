@@ -119,6 +119,7 @@ namespace Hecton8.Rendering.WaterOptics
         private const uint TelemetryFlagUploadUnchanged = 1u << 7;
         private const uint TelemetrySourceHash = 0x574F5054u;
         private const uint TelemetryDumpVersion = 1u;
+        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_13KRA.bin";
 
         [SerializeField, Range(0f, 4f)] private float _absorptionR = 0.42f;
         [SerializeField, Range(0f, 4f)] private float _absorptionG = 0.105f;
@@ -164,6 +165,7 @@ namespace Hecton8.Rendering.WaterOptics
         private bool _tuningDirty = true;
         private bool _dumped;
         private bool _telemetryDumpPending;
+        private uint _lastTelemetryDumpHash;
         private bool _hasUploadedDto;
         private bool _supportsConstantBuffers;
         private WaterOpticsDTO _lastUploadedDto;
@@ -176,13 +178,11 @@ namespace Hecton8.Rendering.WaterOptics
         public int GetDependencyCount() => 0;
         public uint GetDependencyHash(int dependencyIndex) => 0u;
 
-#if UNITY_EDITOR
         public static bool TryGetRuntimeInstance(out WaterOpticsRuntime runtime)
         {
             runtime = s_instance;
             return runtime != null;
         }
-#endif
 
         private void Awake()
         {
@@ -1093,47 +1093,79 @@ namespace Hecton8.Rendering.WaterOptics
                 return;
             }
 
-            _dumped = true;
+            int cursor = cursorArray.IsCreated && cursorArray.Length > 0 ? ReadFirstInt(cursorArray) : 0;
+            if ((uint)cursor >= (uint)ring.Length)
+                cursor = 0;
+
+            var header = new WaterOpticsDumpHeader
+            {
+                Magic = TelemetrySourceHash,
+                Version = TelemetryDumpVersion,
+                Capacity = ring.Length,
+                RowSizeBytes = WaterOpticsNativeLayout.TelemetrySizeBytes,
+                Cursor = cursor,
+                Flags = 0u,
+                Reserved = 0UL
+            };
+
+            uint hash = TelemetrySourceHash ^ (uint)TelemetryDumpVersion ^ (uint)ring.Length ^ (uint)cursor;
+            byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
+            int byteCount = ring.Length * WaterOpticsNativeLayout.TelemetrySizeBytes;
+            for (int i = 0; i < byteCount; i++)
+                hash = (hash * 16777619u) ^ basePtr[i];
+
+            int headerBytes = UnsafeUtility.SizeOf<WaterOpticsDumpHeader>();
+            if (headerBytes != WaterOpticsNativeLayout.DumpHeaderSizeBytes ||
+                byteCount > int.MaxValue - headerBytes)
+            {
+                GlobalTelemetryBus.PublishUnityLogFault(TelemetrySourceHash, 0u, 1u);
+                return;
+            }
+
+            NativeArray<byte> payload = default;
             try
             {
-                string root = ResolveProjectRoot();
-                string directory = Path.Combine(root, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, "Dump_13KRA.bin");
-                using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                int payloadBytes = headerBytes + byteCount;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    payloadBytes,
+                    nameof(WaterOpticsRuntime),
+                    "waterOpticsTelemetryDumpPayload");
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                UnsafeUtility.MemCpy(destination, &header, headerBytes);
+                UnsafeUtility.MemCpy(destination + headerBytes, basePtr, byteCount);
+
+                if (NativeFaultDumpWriter.TryWriteAll(TelemetryDumpRelativePath, payload, payloadBytes))
                 {
-                    int cursor = cursorArray.IsCreated && cursorArray.Length > 0 ? ReadFirstInt(cursorArray) : 0;
-                    if ((uint)cursor >= (uint)ring.Length)
-                        cursor = 0;
-
-                    var header = new WaterOpticsDumpHeader
-                    {
-                        Magic = TelemetrySourceHash,
-                        Version = TelemetryDumpVersion,
-                        Capacity = ring.Length,
-                        RowSizeBytes = WaterOpticsNativeLayout.TelemetrySizeBytes,
-                        Cursor = cursor,
-                        Flags = 0u,
-                        Reserved = 0UL
-                    };
-
-                    stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<WaterOpticsDumpHeader>()));
-                    byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
-                    int rowBytes = WaterOpticsNativeLayout.TelemetrySizeBytes;
-                    int firstCount = ring.Length - cursor;
-                    if (firstCount > 0)
-                        stream.Write(new ReadOnlySpan<byte>(basePtr + cursor * rowBytes, firstCount * rowBytes));
-                    if (cursor > 0)
-                        stream.Write(new ReadOnlySpan<byte>(basePtr, cursor * rowBytes));
+                    _lastTelemetryDumpHash = hash ^ (uint)headerBytes ^ (uint)header.RowSizeBytes;
+                    _dumped = true;
+                }
+                else
+                {
+                    GlobalTelemetryBus.PublishUnityLogFault(TelemetrySourceHash, 0u, 1u);
                 }
             }
             catch (IOException)
             {
-                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+                GlobalTelemetryBus.PublishUnityLogFault(TelemetrySourceHash, 0u, 1u);
             }
             catch (UnauthorizedAccessException)
             {
-                CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+                GlobalTelemetryBus.PublishUnityLogFault(TelemetrySourceHash, 0u, 1u);
+            }
+            catch (ArgumentException)
+            {
+                GlobalTelemetryBus.PublishUnityLogFault(TelemetrySourceHash, 0u, 1u);
+            }
+            catch (InvalidOperationException)
+            {
+                GlobalTelemetryBus.PublishUnityLogFault(TelemetrySourceHash, 0u, 1u);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(WaterOpticsRuntime),
+                    "waterOpticsTelemetryDumpPayload");
             }
         }
 

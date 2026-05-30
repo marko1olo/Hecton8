@@ -661,12 +661,10 @@ namespace Hecton8.World.ProceduralCoral
             if (!buffers.TelemetryRing.IsCreated || string.IsNullOrEmpty(projectRoot))
                 return false;
 
-            string dir = Path.Combine(projectRoot, "Docs", "AgentLogs");
             try
             {
-                Directory.CreateDirectory(dir);
-                bool primary = TryWriteDumpFile(Path.Combine(dir, DumpFileName), in buffers, reason);
-                bool agent = TryWriteDumpFile(Path.Combine(dir, AgentDumpFileName), in buffers, reason);
+                bool primary = TryWriteDumpFile("Docs/AgentLogs/" + DumpFileName, in buffers, reason);
+                bool agent = TryWriteDumpFile("Docs/AgentLogs/" + AgentDumpFileName, in buffers, reason);
                 return primary && agent;
             }
             catch (IOException)
@@ -1420,26 +1418,28 @@ namespace Hecton8.World.ProceduralCoral
             if (string.IsNullOrEmpty(path) || !buffers.TelemetryRing.IsCreated)
                 return false;
 
-            Span<byte> header = stackalloc byte[32];
-            WriteUInt32(header, 0, ProceduralCoralConstants.DumpMagic);
-            WriteUInt32(header, 4, ProceduralCoralConstants.DumpEndianMarker);
-            WriteUInt32(header, 8, DumpVersion);
-            WriteUInt32(header, 12, reason);
-            WriteUInt32(header, 16, (uint)buffers.TelemetryRing.Length);
-            WriteUInt32(header, 20, (uint)UnsafeUtility.SizeOf<CoralGenerationTelemetryEntry>());
-            WriteUInt32(header, 24, buffers.TelemetryCursor.IsCreated && buffers.TelemetryCursor.Length > 0 ? (uint)buffers.TelemetryCursor[0] : 0u);
-            WriteUInt32(header, 28, 0u);
-
+            int entryBytes = UnsafeUtility.SizeOf<CoralGenerationTelemetryEntry>();
+            int telemetryBytes = buffers.TelemetryRing.Length * entryBytes;
+            int byteCount = 32 + telemetryBytes;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(ProceduralCoralVault),
+                "ProceduralCoralTelemetryDumpPayload");
             try
             {
-                using (FileStream stream = File.Create(path))
-                {
-                    stream.Write(header);
-                    void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffers.TelemetryRing);
-                    int byteLength = buffers.TelemetryRing.Length * UnsafeUtility.SizeOf<CoralGenerationTelemetryEntry>();
-                    ReadOnlySpan<byte> telemetry = new ReadOnlySpan<byte>(ptr, byteLength);
-                    stream.Write(telemetry);
-                }
+                WriteUInt32(payload, 0, ProceduralCoralConstants.DumpMagic);
+                WriteUInt32(payload, 4, ProceduralCoralConstants.DumpEndianMarker);
+                WriteUInt32(payload, 8, DumpVersion);
+                WriteUInt32(payload, 12, reason);
+                WriteUInt32(payload, 16, (uint)buffers.TelemetryRing.Length);
+                WriteUInt32(payload, 20, (uint)entryBytes);
+                WriteUInt32(payload, 24, buffers.TelemetryCursor.IsCreated && buffers.TelemetryCursor.Length > 0 ? (uint)buffers.TelemetryCursor[0] : 0u);
+                WriteUInt32(payload, 28, 0u);
+
+                void* payloadPtr = NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffers.TelemetryRing);
+                UnsafeUtility.MemCpy((byte*)payloadPtr + 32, source, telemetryBytes);
+                return Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
             }
             catch (IOException)
             {
@@ -1449,8 +1449,21 @@ namespace Hecton8.World.ProceduralCoral
             {
                 return false;
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(ProceduralCoralVault),
+                    "ProceduralCoralTelemetryDumpPayload");
+            }
+        }
 
-            return true;
+        private static void WriteUInt32(NativeArray<byte> target, int offset, uint value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+            target[offset + 2] = (byte)(value >> 16);
+            target[offset + 3] = (byte)(value >> 24);
         }
 
         private static uint ReadUInt32Little(NativeArray<byte> bytes, int offset)

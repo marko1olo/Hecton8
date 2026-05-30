@@ -57,7 +57,7 @@ namespace Hecton8.UI
         private void EnsureTerminalProjectionColdPaths(string projectRoot)
         {
             if (string.IsNullOrEmpty(_terminalProjectionDumpFullPath))
-                _terminalProjectionDumpFullPath = Path.GetFullPath(Path.Combine(projectRoot, TerminalProjectionDumpRelativePath));
+                _terminalProjectionDumpFullPath = TerminalProjectionDumpRelativePath;
         }
 
         private void OpenTerminalProjectionNativeBuffers(IDataVault vault)
@@ -507,8 +507,7 @@ namespace Hecton8.UI
 
             try
             {
-                WriteTerminalInputBlackBoxDump(_terminalProjectionDumpFullPath, faultFlags, telemetryLength, telemetryRingLength, telemetryCursor);
-                _terminalProjectionDumped = true;
+                _terminalProjectionDumped = WriteTerminalInputBlackBoxDump(_terminalProjectionDumpFullPath, faultFlags, telemetryLength, telemetryRingLength, telemetryCursor);
             }
             catch (IOException exception)
             {
@@ -571,42 +570,55 @@ namespace Hecton8.UI
             return _vault != null && !_vault.IsCompactionFenceActive;
         }
 
-        private void WriteTerminalInputBlackBoxDump(string path, uint faultFlags, int telemetryLength, int telemetryRingLength, int telemetryCursor)
+        private bool WriteTerminalInputBlackBoxDump(string path, uint faultFlags, int telemetryLength, int telemetryRingLength, int telemetryCursor)
         {
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
             int rowBytes = UnsafeUtility.SizeOf<TerminalInputTelemetryEntry>();
-            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-            TerminalInputBlackBoxHeader header = new TerminalInputBlackBoxHeader
+            int headerBytes = UnsafeUtility.SizeOf<TerminalInputBlackBoxHeader>();
+            int byteCount = headerBytes + telemetryLength * rowBytes;
+            NativeArray<byte> payload = default;
+            try
             {
-                Magic = 0x33334853u,
-                Version = 1u,
-                FaultFlags = faultFlags,
-                Cursor = (uint)telemetryCursor,
-                EntryCount = (uint)telemetryLength,
-                EntryStrideBytes = (uint)rowBytes,
-                InputStateStrideBytes = (uint)UnsafeUtility.SizeOf<TerminalInputStateDTO>(),
-                RollbackExcluded = TerminalProjectionRollbackExcluded
-            };
-            stream.Write(MemoryMarshal.CreateReadOnlySpan(
-                ref UnsafeUtility.AsRef<byte>(UnsafeUtility.AddressOf(ref header)),
-                UnsafeUtility.SizeOf<TerminalInputBlackBoxHeader>()));
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(TerminalOsRuntime),
+                    "terminalProjectionBlackBoxPayload");
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                TerminalInputBlackBoxHeader header = new TerminalInputBlackBoxHeader
+                {
+                    Magic = 0x33334853u,
+                    Version = 1u,
+                    FaultFlags = faultFlags,
+                    Cursor = (uint)telemetryCursor,
+                    EntryCount = (uint)telemetryLength,
+                    EntryStrideBytes = (uint)rowBytes,
+                    InputStateStrideBytes = (uint)UnsafeUtility.SizeOf<TerminalInputStateDTO>(),
+                    RollbackExcluded = TerminalProjectionRollbackExcluded
+                };
+                UnsafeUtility.MemCpy(target, UnsafeUtility.AddressOf(ref header), headerBytes);
 
-            int count = (int)header.EntryCount;
-            int start = telemetryCursor;
+                int count = (int)header.EntryCount;
+                int start = telemetryCursor;
+                int offset = headerBytes;
 
-            for (int i = 0; i < count; i++)
+                for (int i = 0; i < count; i++)
+                {
+                    int index = start + i;
+                    if (index >= telemetryRingLength)
+                        index -= telemetryRingLength;
+
+                    TryReadTerminalInputTelemetryDumpEntry(index, out TerminalInputTelemetryEntry entry);
+                    UnsafeUtility.MemCpy(target + offset, UnsafeUtility.AddressOf(ref entry), rowBytes);
+                    offset += rowBytes;
+                }
+
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+            }
+            finally
             {
-                int index = start + i;
-                if (index >= telemetryRingLength)
-                    index -= telemetryRingLength;
-
-                TryReadTerminalInputTelemetryDumpEntry(index, out TerminalInputTelemetryEntry entry);
-                stream.Write(MemoryMarshal.CreateReadOnlySpan(
-                    ref UnsafeUtility.AsRef<byte>(UnsafeUtility.AddressOf(ref entry)),
-                    rowBytes));
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(TerminalOsRuntime),
+                    "terminalProjectionBlackBoxPayload");
             }
         }
 

@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
@@ -17,21 +16,22 @@ namespace Hecton8.Animation.FaunaProcedural
     public sealed class ProceduralBoneBlenderRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
     {
         private const int ProceduralBoneShaderGlobalsBytes = 32;
+        private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1403_PROCEDURAL_BONE.bin";
+        private const string BlackBoxDumpPayloadLabel = "proceduralBoneTelemetryDumpPayload";
 
         private static readonly int ProceduralBoneMatricesId = Shader.PropertyToID("_H8ProceduralBoneMatrices");
         private static readonly int ProceduralBoneGlobalsId = Shader.PropertyToID("_H8ProceduralBoneGlobals");
-        private static readonly ulong JobMutationGuardMask =
-            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.Rigs) |
-            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.FrameInputs) |
-            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.ParentIndices) |
-            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.BindPoses) |
-            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.BoneStates) |
-            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.BoneMatrices) |
-            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.FrameStats) |
-            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.TelemetryRing) |
-            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.TelemetryCursor) |
-            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.Tuning) |
-            ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.MockAiSignals);
+        private const uint JobPinRigs = 1u << 0;
+        private const uint JobPinFrameInputs = 1u << 1;
+        private const uint JobPinParentIndices = 1u << 2;
+        private const uint JobPinBindPoses = 1u << 3;
+        private const uint JobPinBoneStates = 1u << 4;
+        private const uint JobPinBoneMatrices = 1u << 5;
+        private const uint JobPinFrameStats = 1u << 6;
+        private const uint JobPinTelemetryRing = 1u << 7;
+        private const uint JobPinTelemetryCursor = 1u << 8;
+        private const uint JobPinTuning = 1u << 9;
+        private const uint JobPinMockAiSignals = 1u << 10;
         private const int ProceduralBoneGlobalsScalars0Offset = 0;
         private const int ProceduralBoneGlobalsScalars1Offset = 16;
 
@@ -76,8 +76,8 @@ namespace Hecton8.Animation.FaunaProcedural
         private int _uploadedMatrixCount;
         private int _publishedSkinningMatrixCount = -1;
         private int _uploadedSkeletonCount;
-        private bool _jobMutationGuardActive;
-        private IDataVault _jobBufferGuardVault;
+        private uint _jobBufferPinMask;
+        private IDataVault _jobBufferPinVault;
         private float _uploadedQuality = -1f;
         private bool _solverScheduled;
         private bool _registeredUpdate;
@@ -94,9 +94,7 @@ namespace Hecton8.Animation.FaunaProcedural
         private int _blackBoxDumpSnapshotCursor;
         private int _blackBoxDumpSnapshotCount;
         private int _blackBoxDumpInFlight;
-        private string _blackBoxDumpRootCold;
-
-        private static readonly WaitCallback s_blackBoxDumpWorker = WriteBlackBoxDumpWorker;
+        private uint _blackBoxDumpHash;
 
         private static ProceduralBoneBlenderRuntime _activeRuntimeInstance;
 
@@ -242,7 +240,6 @@ namespace Hecton8.Animation.FaunaProcedural
                 _activeRuntimeInstance = this;
 
             RefreshColdDependencies();
-            TryEnsureBlackBoxDumpRootCold();
             if (OpenOrAcquireVaultBuffersForOwnerRoute())
                 EnsureGraphicsBuffers();
             if (_seedEmergencyMockRig)
@@ -256,7 +253,6 @@ namespace Hecton8.Animation.FaunaProcedural
 
             CompletePendingSolverForTeardown();
             RefreshColdDependencies();
-            TryEnsureBlackBoxDumpRootCold();
             if (OpenOrAcquireVaultBuffersForOwnerRoute())
                 EnsureGraphicsBuffers();
             if (_seedEmergencyMockRig)
@@ -314,33 +310,22 @@ namespace Hecton8.Animation.FaunaProcedural
 
             ProceduralBoneRigTuningDTO tuning = ProceduralBoneRigTuningDTO.Default();
             float globalQuality = _lastQuality;
-            ulong tuningGuardMask = ProceduralBoneMutationGuardBit(ProceduralBoneBlenderBufferIds.Tuning);
-            if (!vault.TryAcquireMutationGuard(tuningGuardMask))
+
+            if (!TryResolveOwnedVaultBuffer(
+                    vault,
+                    ProceduralBoneBlenderBufferIds.Tuning,
+                    in _tuningHandle,
+                    ProceduralBoneBlenderConstants.TuningCapacity,
+                    out NativeArray<ProceduralBoneRigTuningDTO> tuningRead))
+            {
                 return;
-
-            try
-            {
-                if (!TryResolveOwnedVaultBuffer(
-                        vault,
-                        ProceduralBoneBlenderBufferIds.Tuning,
-                        in _tuningHandle,
-                        ProceduralBoneBlenderConstants.TuningCapacity,
-                        out NativeArray<ProceduralBoneRigTuningDTO> tuningWrite))
-                {
-                    return;
-                }
-
-                tuning = ProceduralBoneSanitizer.SanitizeTuning(tuningWrite[0]);
-                globalQuality = ResolveGlobalQualityWeight(vault);
-                tuning.GlobalQualityWeight = globalQuality;
-                tuning.ActiveSkeletonCount = math.clamp(tuning.ActiveSkeletonCount, 0, _skeletonCapacity);
-                tuningWrite[0] = tuning;
-                _lastQuality = globalQuality;
             }
-            finally
-            {
-                vault.ReleaseMutationGuard(tuningGuardMask);
-            }
+
+            tuning = ProceduralBoneSanitizer.SanitizeTuning(tuningRead[0]);
+            globalQuality = math.saturate(math.select(_lastQuality, tuning.GlobalQualityWeight, math.isfinite(tuning.GlobalQualityWeight)));
+            tuning.GlobalQualityWeight = globalQuality;
+            tuning.ActiveSkeletonCount = math.clamp(tuning.ActiveSkeletonCount, 0, _skeletonCapacity);
+            _lastQuality = globalQuality;
 
             float safeDelta = math.clamp(deltaTime, ProceduralBoneBlenderConstants.MinDeltaTime, ProceduralBoneBlenderConstants.MaxDeltaTime);
             _accumulatedDelta = math.min(_accumulatedDelta + safeDelta, ProceduralBoneBlenderConstants.MaxDeltaTime);
@@ -365,7 +350,7 @@ namespace Hecton8.Animation.FaunaProcedural
             NativeArray<ProceduralBoneRigTuningDTO> tuningArray;
             NativeArray<MockAiVelocitySignal> mockSignals;
 
-            if (!TryAcquireJobMutationGuardAndResolveBuffers(
+            if (!TryLockJobBuffersAndResolveBuffers(
                     vault,
                     out rigs,
                     out inputs,
@@ -383,7 +368,7 @@ namespace Hecton8.Animation.FaunaProcedural
             activeSkeletons = math.min(tuning.ActiveSkeletonCount, math.min(rigs.Length, inputs.Length));
             if (activeSkeletons <= 0)
             {
-                ReleaseJobMutationGuard();
+                ReleaseJobBufferPins();
                 return;
             }
 
@@ -433,7 +418,7 @@ namespace Hecton8.Animation.FaunaProcedural
             finally
             {
                 if (!scheduled)
-                    ReleaseJobMutationGuard();
+                    ReleaseJobBufferPins();
             }
         }
 
@@ -462,7 +447,6 @@ namespace Hecton8.Animation.FaunaProcedural
             IDataVault currentVault = currentService is IDataVault nextVault ? nextVault : null;
             IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : null;
             BindDataVaultForLifecycle(currentVault, previousVault);
-            TryEnsureBlackBoxDumpRootCold();
             if (OpenOrAcquireVaultBuffersForOwnerRoute())
                 EnsureGraphicsBuffers();
             if (_seedEmergencyMockRig)
@@ -870,7 +854,7 @@ namespace Hecton8.Animation.FaunaProcedural
             }
             finally
             {
-                ReleaseJobMutationGuard();
+                ReleaseJobBufferPins();
             }
 
             if (shouldDumpFault)
@@ -879,7 +863,7 @@ namespace Hecton8.Animation.FaunaProcedural
             return true;
         }
 
-        private bool TryAcquireJobMutationGuardAndResolveBuffers(
+        private bool TryLockJobBuffersAndResolveBuffers(
             IDataVault vault,
             out NativeArray<ProceduralBoneRigDTO> rigs,
             out NativeArray<ProceduralBoneFrameInputDTO> inputs,
@@ -904,21 +888,32 @@ namespace Hecton8.Animation.FaunaProcedural
             cursor = default;
             tuning = default;
             mockSignals = default;
-            _jobMutationGuardActive = false;
-            _jobBufferGuardVault = null;
+            _jobBufferPinMask = 0u;
+            _jobBufferPinVault = null;
             if (vault == null || vault.IsCompactionFenceActive)
             {
                 return false;
             }
 
-            ulong guardMask = JobMutationGuardMask;
-            bool acquired = false;
+            _jobBufferPinVault = vault;
+            bool resolved = false;
             try
             {
-                if (!vault.TryAcquireMutationGuard(guardMask))
+                if (!TryLockJobBuffer(ProceduralBoneBlenderBufferIds.Rigs, JobPinRigs) ||
+                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.FrameInputs, JobPinFrameInputs) ||
+                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.ParentIndices, JobPinParentIndices) ||
+                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.BindPoses, JobPinBindPoses) ||
+                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.BoneStates, JobPinBoneStates) ||
+                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.BoneMatrices, JobPinBoneMatrices) ||
+                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.FrameStats, JobPinFrameStats) ||
+                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.TelemetryRing, JobPinTelemetryRing) ||
+                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.TelemetryCursor, JobPinTelemetryCursor) ||
+                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.Tuning, JobPinTuning) ||
+                    !TryLockJobBuffer(ProceduralBoneBlenderBufferIds.MockAiSignals, JobPinMockAiSignals))
+                {
                     return false;
+                }
 
-                acquired = true;
                 if (!TryResolveRuntimeBuffers(
                         vault,
                         out rigs,
@@ -936,36 +931,58 @@ namespace Hecton8.Animation.FaunaProcedural
                     return false;
                 }
 
-                _jobMutationGuardActive = true;
-                _jobBufferGuardVault = vault;
-                acquired = false;
+                resolved = true;
                 return true;
             }
             finally
             {
-                if (acquired)
-                    vault.ReleaseMutationGuard(guardMask);
+                if (!resolved)
+                    ReleaseJobBufferPins();
             }
         }
 
-        private void ReleaseJobMutationGuard()
+        private bool TryLockJobBuffer(BufferID bufferId, uint pinBit)
         {
-            IDataVault vault = _jobBufferGuardVault;
-            if (vault == null || !_jobMutationGuardActive)
-            {
-                _jobMutationGuardActive = false;
-                _jobBufferGuardVault = null;
+            IDataVault vault = _jobBufferPinVault;
+            if (vault == null || bufferId == BufferID.Unknown)
+                return false;
+
+            if ((_jobBufferPinMask & pinBit) != 0u)
+                return true;
+
+            if (!vault.TryLockBuffer(bufferId, SystemID.AnimationFauna))
+                return false;
+
+            _jobBufferPinMask |= pinBit;
+            return true;
+        }
+
+        private void ReleaseJobBufferPins()
+        {
+            IDataVault vault = _jobBufferPinVault;
+            uint mask = _jobBufferPinMask;
+            _jobBufferPinVault = null;
+            _jobBufferPinMask = 0u;
+            if (vault == null || mask == 0u)
                 return;
-            }
 
-            vault.ReleaseMutationGuard(JobMutationGuardMask);
-            _jobMutationGuardActive = false;
-            _jobBufferGuardVault = null;
+            TryUnlockJobBuffer(vault, mask, JobPinMockAiSignals, ProceduralBoneBlenderBufferIds.MockAiSignals);
+            TryUnlockJobBuffer(vault, mask, JobPinTuning, ProceduralBoneBlenderBufferIds.Tuning);
+            TryUnlockJobBuffer(vault, mask, JobPinTelemetryCursor, ProceduralBoneBlenderBufferIds.TelemetryCursor);
+            TryUnlockJobBuffer(vault, mask, JobPinTelemetryRing, ProceduralBoneBlenderBufferIds.TelemetryRing);
+            TryUnlockJobBuffer(vault, mask, JobPinFrameStats, ProceduralBoneBlenderBufferIds.FrameStats);
+            TryUnlockJobBuffer(vault, mask, JobPinBoneMatrices, ProceduralBoneBlenderBufferIds.BoneMatrices);
+            TryUnlockJobBuffer(vault, mask, JobPinBoneStates, ProceduralBoneBlenderBufferIds.BoneStates);
+            TryUnlockJobBuffer(vault, mask, JobPinBindPoses, ProceduralBoneBlenderBufferIds.BindPoses);
+            TryUnlockJobBuffer(vault, mask, JobPinParentIndices, ProceduralBoneBlenderBufferIds.ParentIndices);
+            TryUnlockJobBuffer(vault, mask, JobPinFrameInputs, ProceduralBoneBlenderBufferIds.FrameInputs);
+            TryUnlockJobBuffer(vault, mask, JobPinRigs, ProceduralBoneBlenderBufferIds.Rigs);
         }
 
-        private static ulong ProceduralBoneMutationGuardBit(BufferID bufferId)
+        private static void TryUnlockJobBuffer(IDataVault vault, uint mask, uint pinBit, BufferID bufferId)
         {
-            return 1UL << ((int)bufferId & 31);
+            if ((mask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, SystemID.AnimationFauna);
         }
 
         private float ResolveGlobalQualityWeight(IDataVault vault)
@@ -1046,36 +1063,28 @@ namespace Hecton8.Animation.FaunaProcedural
             if (vault == null)
                 return;
 
-            if (_blackBoxDumpRootCold == null || _blackBoxDumpRootCold.Length == 0)
-                return;
-
             Volatile.Write(ref _blackBoxDumpInFlight, 1);
-            if (!TryResolveOwnedVaultBuffer(vault, ProceduralBoneBlenderBufferIds.TelemetryRing, in _telemetryRingHandle, 1, out NativeArray<ProceduralBoneTelemetryEntry> telemetry) ||
-                !TryResolveOwnedVaultBuffer(vault, ProceduralBoneBlenderBufferIds.TelemetryCursor, in _telemetryCursorHandle, 1, out NativeArray<int> cursor))
-            {
-                Volatile.Write(ref _blackBoxDumpInFlight, 0);
-                return;
-            }
-
-            if (!TryStageBlackBoxDumpSnapshot(telemetry, cursor))
-            {
-                Volatile.Write(ref _blackBoxDumpInFlight, 0);
-                return;
-            }
-
             try
             {
-                if (ThreadPool.QueueUserWorkItem(s_blackBoxDumpWorker, this))
+                if (!TryResolveOwnedVaultBuffer(vault, ProceduralBoneBlenderBufferIds.TelemetryRing, in _telemetryRingHandle, 1, out NativeArray<ProceduralBoneTelemetryEntry> telemetry) ||
+                    !TryResolveOwnedVaultBuffer(vault, ProceduralBoneBlenderBufferIds.TelemetryCursor, in _telemetryCursorHandle, 1, out NativeArray<int> cursor))
+                {
+                    return;
+                }
+
+                if (!TryStageBlackBoxDumpSnapshot(telemetry, cursor))
+                    return;
+
+                if (TryWriteBlackBoxSnapshotCold())
                 {
                     _dumpedFault = true;
                     return;
                 }
             }
-            catch (NotSupportedException)
+            finally
             {
+                Volatile.Write(ref _blackBoxDumpInFlight, 0);
             }
-
-            Volatile.Write(ref _blackBoxDumpInFlight, 0);
         }
 
         private bool TryStageBlackBoxDumpSnapshot(
@@ -1105,23 +1114,7 @@ namespace Hecton8.Animation.FaunaProcedural
             return true;
         }
 
-        private static void WriteBlackBoxDumpWorker(object state)
-        {
-            ProceduralBoneBlenderRuntime runtime = state as ProceduralBoneBlenderRuntime;
-            if (runtime == null)
-                return;
-
-            try
-            {
-                runtime.TryWriteBlackBoxSnapshotCold();
-            }
-            finally
-            {
-                Volatile.Write(ref runtime._blackBoxDumpInFlight, 0);
-            }
-        }
-
-        private bool TryWriteBlackBoxSnapshotCold()
+        private unsafe bool TryWriteBlackBoxSnapshotCold()
         {
             if (!ProceduralBoneBlenderLayout.Validate() ||
                 _blackBoxDumpSnapshot == null ||
@@ -1130,100 +1123,69 @@ namespace Hecton8.Animation.FaunaProcedural
                 return false;
             }
 
+            uint hash = 2166136261u ^
+                (uint)_blackBoxDumpSnapshotCount ^
+                (uint)_blackBoxDumpSnapshotCursor ^
+                0x414E494Du;
+            int entryBytes = UnsafeUtility.SizeOf<ProceduralBoneTelemetryEntry>();
+            int count = ProceduralBoneBlenderConstants.TelemetryCapacity;
+            const int telemetryDumpEntryBytes = 64;
+            if (entryBytes != telemetryDumpEntryBytes)
+                return false;
+
+            for (int i = 0; i < count; i++)
+            {
+                ProceduralBoneTelemetryEntry entry = _blackBoxDumpSnapshot[i];
+                byte* bytes = (byte*)UnsafeUtility.AddressOf(ref entry);
+                for (int byteIndex = 0; byteIndex < entryBytes; byteIndex++)
+                    hash = (hash ^ bytes[byteIndex]) * 16777619u;
+            }
+
+            _blackBoxDumpHash = hash == 0u ? 2166136261u : hash;
+            const int headerBytes = 24;
+
+            int byteCount = headerBytes + count * telemetryDumpEntryBytes;
+            NativeArray<byte> payload = default;
             try
             {
-                string root = _blackBoxDumpRootCold;
-                if (root == null || root.Length == 0)
-                    root = ".";
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(ProceduralBoneBlenderRuntime),
+                    BlackBoxDumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                Span<byte> header = new Span<byte>(destination, headerBytes);
+                WriteUIntLittleEndian(header.Slice(0, 4), 0x50424F4Eu);
+                WriteUIntLittleEndian(header.Slice(4, 4), 1u);
+                WriteUIntLittleEndian(header.Slice(8, 4), (uint)_blackBoxDumpSnapshotCount);
+                WriteUIntLittleEndian(header.Slice(12, 4), (uint)_blackBoxDumpSnapshotCursor);
+                WriteUIntLittleEndian(header.Slice(16, 4), (uint)entryBytes);
+                WriteUIntLittleEndian(header.Slice(20, 4), _blackBoxDumpHash);
 
-                string path = Path.Combine(root, ProceduralBoneBlenderConstants.DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (directory != null && directory.Length != 0)
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                byte* rowDestination = destination + headerBytes;
+                for (int i = 0; i < count; i++)
                 {
-                    writer.Write(0x414E494D53484E42UL);
-                    writer.Write(1u);
-                    writer.Write(ProceduralBoneBlenderConstants.TelemetryEntryBytes);
-                    writer.Write(ProceduralBoneBlenderConstants.TelemetryCapacity);
-                    writer.Write(_blackBoxDumpSnapshotCursor);
-                    for (int i = 0; i < ProceduralBoneBlenderConstants.TelemetryCapacity; i++)
-                        WriteBlackBoxEntry(writer, _blackBoxDumpSnapshot[i]);
+                    ProceduralBoneTelemetryEntry entry = _blackBoxDumpSnapshot[i];
+                    UnsafeUtility.MemCpy(rowDestination + i * telemetryDumpEntryBytes, UnsafeUtility.AddressOf(ref entry), telemetryDumpEntryBytes);
                 }
 
-                return true;
+                return NativeFaultDumpWriter.TryWriteAll(BlackBoxDumpRelativePath, payload, byteCount);
             }
-            catch (IOException)
+            finally
             {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                return false;
-            }
-            catch (ObjectDisposedException)
-            {
-                return false;
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(ProceduralBoneBlenderRuntime),
+                    BlackBoxDumpPayloadLabel);
             }
         }
 
-        private static void WriteBlackBoxEntry(BinaryWriter writer, ProceduralBoneTelemetryEntry entry)
+        private static void WriteUIntLittleEndian(Span<byte> destination, uint value)
         {
-            writer.Write(entry.Frame);
-            writer.Write(entry.ActiveSkeletons);
-            writer.Write(entry.MatricesComputed);
-            writer.Write(entry.MatrixUploadCount);
-            writer.Write(entry.KinematicComputeTimeMs);
-            writer.Write(entry.StateHash);
-            writer.Write(entry.Flags);
-            writer.Write(entry.GlobalQualityWeight);
-            writer.Write(entry.MaxWaveSpeed);
-            writer.Write(entry.AverageActiveBones);
-            writer.Write(entry.InvalidMathCount);
-            writer.Write(entry.CulledSkeletons);
-            writer.Write(entry.LastRootLocal.x);
-            writer.Write(entry.LastRootLocal.y);
-            writer.Write(entry.LastRootLocal.z);
-            writer.Write(entry._pad0);
-        }
-
-        private bool TryEnsureBlackBoxDumpRootCold()
-        {
-            if (_blackBoxDumpRootCold != null && _blackBoxDumpRootCold.Length != 0)
-                return true;
-
-            string dataPath = Application.dataPath;
-            if (dataPath == null || dataPath.Length == 0)
-            {
-                _blackBoxDumpRootCold = ".";
-                return true;
-            }
-
-            try
-            {
-                _blackBoxDumpRootCold = Path.GetFullPath(Path.Combine(dataPath, ".."));
-                return _blackBoxDumpRootCold.Length != 0;
-            }
-            catch (ArgumentException)
-            {
-                _blackBoxDumpRootCold = ".";
-                return true;
-            }
-            catch (NotSupportedException)
-            {
-                _blackBoxDumpRootCold = ".";
-                return true;
-            }
+            destination[0] = (byte)value;
+            destination[1] = (byte)(value >> 8);
+            destination[2] = (byte)(value >> 16);
+            destination[3] = (byte)(value >> 24);
         }
 
         private bool UploadMatricesToGpu()

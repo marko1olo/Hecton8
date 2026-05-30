@@ -57,7 +57,7 @@ namespace Hecton8.Rendering
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                if (!Application.isPlaying || _settings == null || _material == null)
+                if (_settings == null || _material == null)
                     return;
 
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
@@ -156,9 +156,6 @@ namespace Hecton8.Rendering
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            if (!Application.isPlaying)
-                return;
-
             if (settings == null || _pass == null || _material == null)
                 return;
 

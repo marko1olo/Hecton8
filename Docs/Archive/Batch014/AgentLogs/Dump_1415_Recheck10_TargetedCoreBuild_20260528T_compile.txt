@@ -1,0 +1,20 @@
+CPU_BEFORE=11
+ACTIVE_BEFORE=0
+COMPLETED=True
+ELAPSED_MS=14
+EXIT_CODE=-2147450751
+--- STDOUT ---
+
+Usage: dotnet [path-to-application]
+Usage: dotnet [commands]
+
+path-to-application:
+  The path to an application .dll file to execute.
+
+commands:
+  -h|--help                         Display help.
+  --info                            Display .NET information.
+  --list-runtimes [--arch <arch>]   Display the installed runtimes matching the host or specified architecture. Example architectures: arm64, x64, x86.
+  --list-sdks [--arch <arch>]       Display the installed SDKs matching the host or specified architecture. Example architectures: arm64, x64, x86.
+
+--- STDERR ---

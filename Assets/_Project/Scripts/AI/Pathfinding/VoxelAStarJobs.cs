@@ -1485,6 +1485,58 @@ namespace Hecton8.AI.Pathfinding
             return written > 0 && (flags & VoxelPathFlags.CsvProfileOverflow) == 0;
         }
 
+        /// <summary>
+        /// Parses profile rows into caller-owned stack or managed-free staging memory.
+        /// </summary>
+        public static bool TryParse(
+            ReadOnlySpan<byte> bytes,
+            Span<VoxelPathingProfileDTO> profiles,
+            out int written,
+            out uint flags)
+        {
+            flags = 0u;
+            written = 0;
+            if (profiles.Length <= 0)
+                return false;
+
+            int cursor = 0;
+            bool sawData = false;
+            while (cursor < bytes.Length)
+            {
+                int lineStart = cursor;
+                while (cursor < bytes.Length && bytes[cursor] != (byte)'\n' && bytes[cursor] != (byte)'\r')
+                    cursor++;
+
+                ReadOnlySpan<byte> line = TrimAscii(bytes.Slice(lineStart, cursor - lineStart));
+                while (cursor < bytes.Length && (bytes[cursor] == (byte)'\n' || bytes[cursor] == (byte)'\r'))
+                    cursor++;
+
+                if (line.Length == 0 || line[0] == (byte)'#')
+                    continue;
+
+                if (!sawData && LooksLikeHeader(line))
+                {
+                    sawData = true;
+                    continue;
+                }
+
+                sawData = true;
+                if (written >= profiles.Length)
+                {
+                    flags |= VoxelPathFlags.CsvProfileOverflow;
+                    break;
+                }
+
+                if (TryParseLine(line, out VoxelPathingProfileDTO profile))
+                {
+                    profiles[written] = profile;
+                    written++;
+                }
+            }
+
+            return written > 0 && (flags & VoxelPathFlags.CsvProfileOverflow) == 0;
+        }
+
         private static bool TryParseLine(ReadOnlySpan<byte> line, out VoxelPathingProfileDTO profile)
         {
             profile = default;

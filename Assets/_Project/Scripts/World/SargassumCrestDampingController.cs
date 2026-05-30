@@ -139,6 +139,8 @@ namespace Hecton8.World
         private bool _legacyInputDisableDirty;
         private bool _facadeRefreshRequested;
         private bool _facadeRefreshForce;
+        private bool _facadeBakeKernelRepairRequested;
+        private bool _facadeBakeKernelResolvedCold;
         private bool _supportsR8RandomWriteFacadeCold;
         private LegacyInputState _wavesInputState;
         private LegacyInputState _foamInputState;
@@ -167,6 +169,7 @@ namespace Hecton8.World
 #endif
             CacheGraphicsCapabilitiesCold();
             CacheRegistryServicesCold();
+            FlushFacadeBakeKernelRepairSlow();
             DisableLegacyInputs();
             EnsureFacadeResources();
             RefreshFacadeTextures(force: true, allowAllocate: true);
@@ -181,6 +184,7 @@ namespace Hecton8.World
             CacheGraphicsCapabilitiesCold();
             TryRegisterHotSwapListener();
             CacheRegistryServicesCold();
+            FlushFacadeBakeKernelRepairSlow();
             DisableLegacyInputs();
             EnsureFacadeResources();
             RefreshFacadeTextures(force: true, allowAllocate: true);
@@ -256,6 +260,7 @@ namespace Hecton8.World
             ResolveDependencies();
             QueueLegacyInputDisable();
             EnsureFacadeResources();
+            FlushFacadeBakeKernelRepairSlow();
             QueueFacadeRefresh(force: true);
         }
 
@@ -308,6 +313,7 @@ namespace Hecton8.World
                 cutManager = SargassumCutManager.Instance;
 
             ResolveLegacyInputs();
+            FlushFacadeBakeKernelRepairSlow();
         }
 
         private void CacheGraphicsCapabilitiesCold()
@@ -326,6 +332,7 @@ namespace Hecton8.World
             {
                 if (dragManager == null || ReferenceEquals(dragManager, previousService))
                     dragManager = currentService as SargassumGlobalDragManager;
+                FlushFacadeBakeKernelRepairSlow();
                 RefreshFacadeTextures(force: true, allowAllocate: true);
                 return;
             }
@@ -334,6 +341,7 @@ namespace Hecton8.World
                 (cutManager == null || ReferenceEquals(cutManager, previousService)))
             {
                 cutManager = currentService as SargassumCutManager;
+                FlushFacadeBakeKernelRepairSlow();
                 RefreshFacadeTextures(force: true, allowAllocate: true);
             }
         }
@@ -422,29 +430,11 @@ namespace Hecton8.World
             if (_waveDampingMask == null || _oilFilmMask == null || densityTexture == null)
                 return;
 
-            if (!ReferenceEquals(_facadeBakeCompute, facadeBakeComputeOverride))
+            if (!HasFacadeBakeKernelReady())
             {
-                _facadeBakeCompute = facadeBakeComputeOverride;
-                _facadeBakeKernel = -1;
-                _facadeThreadGroupSizeX = 0;
-                _facadeThreadGroupSizeY = 0;
-            }
-
-            if (_facadeBakeCompute == null)
+                QueueFacadeBakeKernelRepair();
                 return;
-
-            if (_facadeBakeKernel < 0)
-            {
-                _facadeBakeKernel = ResolveSupportedKernel(_facadeBakeCompute, "CSMain");
-                ResolveKernelThreadGroupSizes(
-                    _facadeBakeCompute,
-                    _facadeBakeKernel,
-                    out _facadeThreadGroupSizeX,
-                    out _facadeThreadGroupSizeY);
             }
-
-            if (_facadeBakeKernel < 0 || _facadeThreadGroupSizeX <= 0 || _facadeThreadGroupSizeY <= 0)
-                return;
 
             _facadeBakeCompute.SetTexture(_facadeBakeKernel, _DensityTexId, densityTexture);
             _facadeBakeCompute.SetTexture(_facadeBakeKernel, _CutMaskTexId, cutMaskActive && cutMaskTexture != null ? cutMaskTexture : Texture2D.blackTexture);
@@ -473,6 +463,58 @@ namespace Hecton8.World
         {
             float quality = HomeostasisBrain.GlobalQualityWeight;
             return float.IsFinite(quality) ? Mathf.Clamp01(quality) : 0f;
+        }
+
+        private bool HasFacadeBakeKernelReady()
+        {
+            return _facadeBakeKernelResolvedCold &&
+                ReferenceEquals(_facadeBakeCompute, facadeBakeComputeOverride) &&
+                _facadeBakeCompute != null &&
+                _facadeBakeKernel >= 0 &&
+                _facadeThreadGroupSizeX > 0 &&
+                _facadeThreadGroupSizeY > 0;
+        }
+
+        private bool HasCurrentFacadeBakeKernelResolution()
+        {
+            return _facadeBakeKernelResolvedCold &&
+                ReferenceEquals(_facadeBakeCompute, facadeBakeComputeOverride);
+        }
+
+        private void QueueFacadeBakeKernelRepair()
+        {
+            if (!HasCurrentFacadeBakeKernelResolution())
+                _facadeBakeKernelRepairRequested = true;
+        }
+
+        private void FlushFacadeBakeKernelRepairSlow()
+        {
+            if (!_facadeBakeKernelRepairRequested && HasCurrentFacadeBakeKernelResolution())
+                return;
+
+            _facadeBakeKernelRepairRequested = false;
+            _facadeBakeKernelResolvedCold = true;
+            _facadeBakeCompute = facadeBakeComputeOverride;
+            _facadeBakeKernel = -1;
+            _facadeThreadGroupSizeX = 0;
+            _facadeThreadGroupSizeY = 0;
+
+            if (_facadeBakeCompute == null)
+                return;
+
+            int kernel = ResolveSupportedKernel(_facadeBakeCompute, "CSMain");
+            ResolveKernelThreadGroupSizes(
+                _facadeBakeCompute,
+                kernel,
+                out int threadGroupSizeX,
+                out int threadGroupSizeY);
+
+            if (kernel < 0 || threadGroupSizeX <= 0 || threadGroupSizeY <= 0)
+                return;
+
+            _facadeBakeKernel = kernel;
+            _facadeThreadGroupSizeX = threadGroupSizeX;
+            _facadeThreadGroupSizeY = threadGroupSizeY;
         }
 
         private static void ResolveKernelThreadGroupSizes(

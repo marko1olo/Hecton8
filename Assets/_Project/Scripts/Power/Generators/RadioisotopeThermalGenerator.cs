@@ -46,6 +46,9 @@ namespace Hecton8.Power.Generators
         private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_VAULT_SOVEREIGNTY_ENFORCER_RTG_DECAY.bin";
         private const uint BlackBoxMagic = 0x52475444u; // RGTD
         private const uint BlackBoxVersion = 2u;
+        private const int BlackBoxHeaderBytes = 24;
+        private const int BlackBoxTelemetryRowBytes = 23;
+        private const int RtgTelemetryEntrySizeBytes = 64;
         private const uint RtgTelemetryHash = 0x52544721u; // RTG!
         private const uint ActiveRtgsHash = 0x41525447u; // ARTG
         private const uint AverageRtgHealthHash = 0x41564821u; // AVH!
@@ -313,7 +316,7 @@ namespace Hecton8.Power.Generators
 
         private void Awake()
         {
-            _powerNode = GetComponent<PowerNode>();
+            TryGetComponent(out _powerNode);
             ResolveIdentity();
             SanitizeInspectorValues();
             _currentOutputWatts = math.max(0f, baseOutputWatts);
@@ -1149,43 +1152,87 @@ namespace Hecton8.Power.Generators
             if (s_blackBoxDumped)
                 return;
 
-            s_blackBoxDumped = true;
             if (!TryResolveTelemetryRing(out NativeArray<RtgTelemetryEntry> telemetryRing))
                 return;
 
             try
             {
-                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", BlackBoxDumpRelativePath));
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                long totalBytes = BlackBoxHeaderBytes + ((long)TelemetryCapacity * BlackBoxTelemetryRowBytes);
+                if (totalBytes < BlackBoxHeaderBytes || totalBytes > int.MaxValue)
+                    return;
 
-                using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    (int)totalBytes,
+                    nameof(RadioisotopeThermalGenerator),
+                    "rtgBlackBoxPayload");
+                try
                 {
-                    writer.Write(BlackBoxMagic);
-                    writer.Write(BlackBoxVersion);
-                    writer.Write(reasonFlags);
-                    writer.Write(TelemetryCapacity);
-                    writer.Write(Marshal.SizeOf<RtgTelemetryEntry>());
-                    writer.Write(s_telemetryCursor);
+                    WriteUInt32LittleEndian(payload, 0, BlackBoxMagic);
+                    WriteUInt32LittleEndian(payload, 4, BlackBoxVersion);
+                    WriteUInt32LittleEndian(payload, 8, reasonFlags);
+                    WriteInt32LittleEndian(payload, 12, TelemetryCapacity);
+                    WriteInt32LittleEndian(payload, 16, RtgTelemetryEntrySizeBytes);
+                    WriteInt32LittleEndian(payload, 20, s_telemetryCursor);
+
+                    int cursor = BlackBoxHeaderBytes;
                     for (int i = 0; i < TelemetryCapacity; i++)
                     {
                         int index = (s_telemetryCursor + i) % TelemetryCapacity;
-                        RtgTelemetryEntry entry = telemetryRing[index];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.SourceId);
-                        writer.Write(entry.OutputWatts);
-                        writer.Write(entry.NormalizedOutput01);
-                        writer.Write(entry.AverageHealth01);
-                        writer.Write(entry.ActiveRtgs);
-                        writer.Write(entry.Flags);
+                        WriteRtgTelemetryEntry(payload, cursor, telemetryRing[index]);
+                        cursor += BlackBoxTelemetryRowBytes;
                     }
+
+                    s_blackBoxDumped = NativeFaultDumpWriter.TryWriteAll(BlackBoxDumpRelativePath, payload, (int)totalBytes);
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(RadioisotopeThermalGenerator),
+                        "rtgBlackBoxPayload");
                 }
             }
             catch (Exception)
             {
-                s_blackBoxDumped = true;
             }
+        }
+
+        private static void WriteRtgTelemetryEntry(
+            NativeArray<byte> destination,
+            int offset,
+            RtgTelemetryEntry entry)
+        {
+            WriteUInt32LittleEndian(destination, offset, entry.Frame);
+            WriteUInt32LittleEndian(destination, offset + 4, entry.SourceId);
+            WriteFloat32LittleEndian(destination, offset + 8, entry.OutputWatts);
+            WriteFloat32LittleEndian(destination, offset + 12, entry.NormalizedOutput01);
+            WriteFloat32LittleEndian(destination, offset + 16, entry.AverageHealth01);
+            WriteUInt16LittleEndian(destination, offset + 20, entry.ActiveRtgs);
+            destination[offset + 22] = entry.Flags;
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> destination, int offset, float value)
+        {
+            WriteUInt32LittleEndian(destination, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt16LittleEndian(NativeArray<byte> destination, int offset, ushort value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> destination, int offset, uint value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
         }
 
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]

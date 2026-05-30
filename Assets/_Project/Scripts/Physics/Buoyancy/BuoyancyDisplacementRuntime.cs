@@ -1,7 +1,6 @@
 using System;
 #if UNITY_EDITOR
 using System.IO;
-using System.Threading;
 #endif
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -22,36 +21,33 @@ namespace Hecton8.Physics
         private const uint BuoyancyFaultDumpHash = 0x42554450u; // BUDP
         private const uint BuoyancySimdFaultEventHash = 0x42534654u; // BSFT
         private const uint BuoyancySimdFaultDumpHash = 0x42534450u; // BSDP
-        private static readonly ulong CounterFaultReadMutationGuardMask =
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.Counters);
-        private static readonly ulong CompletionTelemetryMutationGuardMask =
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.Counters) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.TelemetryRing) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.TelemetryCursor) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.SleepTelemetryRing) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.SleepTelemetryCursor);
-        private static readonly ulong ForceDrainMutationGuardMask =
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.ForcePackets) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.Counters) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.BodyBindings);
         private static readonly ulong MockSeedMutationGuardMask =
             VaultMutationGuardBit(BuoyancyDisplacementBufferIds.States) |
             VaultMutationGuardBit(BuoyancyDisplacementBufferIds.DebugForces) |
             VaultMutationGuardBit(BuoyancyDisplacementBufferIds.Tuning);
-        private static readonly ulong JobMutationGuardMask =
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.States) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.ForcePackets) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.FlowSamples) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.Tuning) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.TelemetryRing) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.TelemetryCursor) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.SleepTelemetryRing) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.SleepTelemetryCursor) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.SleepSdfDensity) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.SleepSdfConfig) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.MaterialSettlingProfiles) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.DebugForces) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.Counters);
+        private const uint JobPinStates = 1u << 0;
+        private const uint JobPinForcePackets = 1u << 1;
+        private const uint JobPinFlowSamples = 1u << 2;
+        private const uint JobPinTuning = 1u << 3;
+        private const uint JobPinTelemetryRing = 1u << 4;
+        private const uint JobPinTelemetryCursor = 1u << 5;
+        private const uint JobPinSleepTelemetryRing = 1u << 6;
+        private const uint JobPinSleepTelemetryCursor = 1u << 7;
+        private const uint JobPinSleepSdfDensity = 1u << 8;
+        private const uint JobPinSleepSdfConfig = 1u << 9;
+        private const uint JobPinMaterialSettlingProfiles = 1u << 10;
+        private const uint JobPinDebugForces = 1u << 11;
+        private const uint JobPinCounters = 1u << 12;
+        private const uint FramePinForcePackets = 1u << 0;
+        private const uint FramePinCounters = 1u << 1;
+        private const uint FramePinBodyBindings = 1u << 2;
+        private const uint FramePinTelemetryRing = 1u << 3;
+        private const uint FramePinTelemetryCursor = 1u << 4;
+        private const uint FramePinSleepTelemetryRing = 1u << 5;
+        private const uint FramePinSleepTelemetryCursor = 1u << 6;
+        private const uint FramePinSimdTelemetryRing = 1u << 7;
+        private const uint FramePinSimdTelemetryCursor = 1u << 8;
+        private const uint FramePinSimdHydrodynamicTuning = 1u << 9;
         private static readonly ulong SimdBenchmarkMutationGuardMask =
             VaultMutationGuardBit(BuoyancyDisplacementBufferIds.SimdLocalPositions) |
             VaultMutationGuardBit(BuoyancyDisplacementBufferIds.SimdVelocities) |
@@ -60,28 +56,6 @@ namespace Hecton8.Physics
             VaultMutationGuardBit(BuoyancyDisplacementBufferIds.SimdTelemetryRing) |
             VaultMutationGuardBit(BuoyancyDisplacementBufferIds.SimdTelemetryCursor) |
             VaultMutationGuardBit(BuoyancyDisplacementBufferIds.SimdHydrodynamicTuning);
-        private static readonly ulong SimdTelemetryMutationGuardMask =
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.SimdTelemetryRing) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.SimdTelemetryCursor) |
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.SimdHydrodynamicTuning);
-#if UNITY_EDITOR
-        private static readonly ulong MaterialVolumeCsvMutationGuardMask =
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.MaterialVolumes);
-        private static readonly ulong MaterialSettlingCsvMutationGuardMask =
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.MaterialSettlingProfiles);
-        private static readonly ulong SimdToleranceCsvMutationGuardMask =
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.SimdMathTolerances);
-        private static readonly ulong SimdToleranceTuningMutationGuardMask =
-            VaultMutationGuardBit(BuoyancyDisplacementBufferIds.SimdHydrodynamicTuning);
-        private static readonly byte[] s_csvImportScratch = new byte[BuoyancyDisplacementConstants.CsvScratchBytes];
-        private static readonly BuoyancyMaterialVolumeDTO[] s_materialVolumeImportScratch =
-            new BuoyancyMaterialVolumeDTO[BuoyancyDisplacementConstants.MaterialVolumeCapacity];
-        private static readonly BuoyancyMaterialSettlingProfileDTO[] s_materialSettlingImportScratch =
-            new BuoyancyMaterialSettlingProfileDTO[BuoyancyDisplacementConstants.MaterialSettlingProfileCapacity];
-        private static readonly SimdMathToleranceDTO[] s_simdToleranceImportScratch =
-            new SimdMathToleranceDTO[BuoyancyDisplacementConstants.SimdToleranceCapacity];
-        private static int s_csvImportScratchBusy;
-#endif
 
         [Header("Vault Capacity")]
         [SerializeField, Range(1, BuoyancyDisplacementConstants.StateCapacity)]
@@ -128,9 +102,6 @@ namespace Hecton8.Physics
         private VaultGenerationHandle<int> _telemetryCursorHandle;
         private VaultGenerationHandle<BuoyancyMaterialVolumeDTO> _materialVolumesHandle;
         private VaultGenerationHandle<BuoyancyMaterialSettlingProfileDTO> _materialSettlingProfilesHandle;
-#if UNITY_EDITOR
-        private VaultGenerationHandle<byte> _csvScratchHandle;
-#endif
         private VaultGenerationHandle<BuoyancyDebugForceDTO> _debugForcesHandle;
         private VaultGenerationHandle<BuoyancyCounterDTO> _countersHandle;
         private VaultGenerationHandle<BuoyancyBodyBindingDTO> _bodyBindingsHandle;
@@ -153,7 +124,8 @@ namespace Hecton8.Physics
         private long _scheduleTimestamp;
         private uint _simulationFrame;
         private int _activeStateCount;
-        private IDataVault _jobGuardVault;
+        private IDataVault _jobPinVault;
+        private uint _jobPinMask;
         private bool _jobBuffersPinned;
         private double3 _cachedSectorAup;
         private bool _jobScheduled;
@@ -167,6 +139,7 @@ namespace Hecton8.Physics
         private bool _dumpedFault;
         private bool _coreBlackboxWarmed;
         private bool _forcePacketsReadyToDrain;
+        private bool _runtimeActive;
 
 #if UNITY_EDITOR
         private static BuoyancyDisplacementRuntime _activeRuntimeInstance;
@@ -418,7 +391,8 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            if (!Application.isPlaying)
+            _runtimeActive = Application.isPlaying;
+            if (!_runtimeActive)
                 return;
 
 #if UNITY_EDITOR
@@ -436,7 +410,7 @@ namespace Hecton8.Physics
 
         private void OnDisable()
         {
-            if (!Application.isPlaying)
+            if (!_runtimeActive)
                 return;
 
             TryUnregister();
@@ -444,6 +418,7 @@ namespace Hecton8.Physics
             CompletePendingSolverForTeardown();
             _forcePacketsReadyToDrain = false;
             _coreBlackboxWarmed = false;
+            _runtimeActive = false;
         }
 
         private void OnDestroy()
@@ -461,7 +436,7 @@ namespace Hecton8.Physics
 
         public void FixedTick(float fixedDeltaTime)
         {
-            if (!Application.isPlaying || !math.isfinite(fixedDeltaTime) || fixedDeltaTime <= 0f || _jobScheduled || _forcePacketsReadyToDrain)
+            if (!_runtimeActive || !math.isfinite(fixedDeltaTime) || fixedDeltaTime <= 0f || _jobScheduled || _forcePacketsReadyToDrain)
                 return;
 
             float safeFixedDeltaTime = math.clamp(fixedDeltaTime, 0.0001f, 0.2f);
@@ -636,7 +611,7 @@ namespace Hecton8.Physics
 
         public void PostFixedTick(float fixedDeltaTime)
         {
-            if (!Application.isPlaying)
+            if (!_runtimeActive)
                 return;
 
             TryFinalizePendingSolverNoWait();
@@ -653,11 +628,16 @@ namespace Hecton8.Physics
                 return;
             }
 
-            if (!TryAcquireBuoyancyMutationGuard(vault, ForceDrainMutationGuardMask))
-                return;
-
+            uint framePinMask = 0u;
             try
             {
+                if (!TryLockFrameBuffer(vault, ref framePinMask, BuoyancyDisplacementBufferIds.ForcePackets, FramePinForcePackets) ||
+                    !TryLockFrameBuffer(vault, ref framePinMask, BuoyancyDisplacementBufferIds.Counters, FramePinCounters) ||
+                    !TryLockFrameBuffer(vault, ref framePinMask, BuoyancyDisplacementBufferIds.BodyBindings, FramePinBodyBindings))
+                {
+                    return;
+                }
+
                 NativeArray<BuoyancyForcePacketDTO> forcePackets = ResolveVaultBuffer(vault, in _forcePacketsHandle);
                 NativeArray<BuoyancyCounterDTO> counters = ResolveVaultBuffer(vault, in _countersHandle);
                 NativeArray<BuoyancyBodyBindingDTO> bodyBindings = ResolveVaultBuffer(vault, in _bodyBindingsHandle);
@@ -672,7 +652,7 @@ namespace Hecton8.Physics
             }
             finally
             {
-                vault.ReleaseMutationGuard(ForceDrainMutationGuardMask);
+                ReleaseForceDrainFramePins(vault, framePinMask);
             }
         }
 
@@ -925,30 +905,20 @@ namespace Hecton8.Physics
             if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked || !OpenOrAcquireVaultBuffersForOwnerRoute())
                 return false;
 
-            if (Interlocked.CompareExchange(ref s_csvImportScratchBusy, 1, 0) != 0)
+            string path = ResolveProjectPath(_csvRelativePath);
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            try
-            {
-                string path = ResolveProjectPath(_csvRelativePath);
-                if (string.IsNullOrEmpty(path) || !File.Exists(path))
-                    return false;
+            Span<byte> csvScratch = stackalloc byte[BuoyancyDisplacementConstants.CsvImportByteCapacity];
+            int bytesRead = ReadFileIntoColdScratch(path, csvScratch);
+            if (bytesRead <= 0)
+                return false;
 
-                int bytesRead = ReadFileIntoColdScratch(path, s_csvImportScratch);
-                if (bytesRead <= 0)
-                    return false;
+            Span<BuoyancyMaterialVolumeDTO> materialVolumeScratch = stackalloc BuoyancyMaterialVolumeDTO[BuoyancyDisplacementConstants.MaterialVolumeCapacity];
+            if (!BuoyancyMaterialVolumeCsvParser.TryApply(csvScratch.Slice(0, bytesRead), materialVolumeScratch, out _))
+                return false;
 
-                ReadOnlySpan<byte> span = s_csvImportScratch.AsSpan(0, math.min(bytesRead, s_csvImportScratch.Length));
-                Span<BuoyancyMaterialVolumeDTO> materialVolumeScratch = s_materialVolumeImportScratch.AsSpan();
-                if (!BuoyancyMaterialVolumeCsvParser.TryApply(span, materialVolumeScratch, out _))
-                    return false;
-
-                return TryCommitMaterialVolumeCsv(vault, materialVolumeScratch);
-            }
-            finally
-            {
-                Volatile.Write(ref s_csvImportScratchBusy, 0);
-            }
+            return TryCommitMaterialVolumeCsv(vault, materialVolumeScratch);
         }
 
         public bool TryLoadMaterialSettlingProfilesCsv()
@@ -958,30 +928,20 @@ namespace Hecton8.Physics
             if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked || !OpenOrAcquireVaultBuffersForOwnerRoute())
                 return false;
 
-            if (Interlocked.CompareExchange(ref s_csvImportScratchBusy, 1, 0) != 0)
+            string path = ResolveProjectPath(_materialSettlingProfilesCsvRelativePath);
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            try
-            {
-                string path = ResolveProjectPath(_materialSettlingProfilesCsvRelativePath);
-                if (string.IsNullOrEmpty(path) || !File.Exists(path))
-                    return false;
+            Span<byte> csvScratch = stackalloc byte[BuoyancyDisplacementConstants.CsvImportByteCapacity];
+            int bytesRead = ReadFileIntoColdScratch(path, csvScratch);
+            if (bytesRead <= 0)
+                return false;
 
-                int bytesRead = ReadFileIntoColdScratch(path, s_csvImportScratch);
-                if (bytesRead <= 0)
-                    return false;
+            Span<BuoyancyMaterialSettlingProfileDTO> materialSettlingScratch = stackalloc BuoyancyMaterialSettlingProfileDTO[BuoyancyDisplacementConstants.MaterialSettlingProfileCapacity];
+            if (!BuoyancyMaterialSettlingProfileCsvParser.TryApply(csvScratch.Slice(0, bytesRead), materialSettlingScratch, out _))
+                return false;
 
-                ReadOnlySpan<byte> span = s_csvImportScratch.AsSpan(0, math.min(bytesRead, s_csvImportScratch.Length));
-                Span<BuoyancyMaterialSettlingProfileDTO> materialSettlingScratch = s_materialSettlingImportScratch.AsSpan();
-                if (!BuoyancyMaterialSettlingProfileCsvParser.TryApply(span, materialSettlingScratch, out _))
-                    return false;
-
-                return TryCommitMaterialSettlingCsv(vault, materialSettlingScratch);
-            }
-            finally
-            {
-                Volatile.Write(ref s_csvImportScratchBusy, 0);
-            }
+            return TryCommitMaterialSettlingCsv(vault, materialSettlingScratch);
         }
 
         public bool TryLoadSimdMathTolerancesCsv()
@@ -991,43 +951,36 @@ namespace Hecton8.Physics
             if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked || !OpenOrAcquireVaultBuffersForOwnerRoute())
                 return false;
 
-            if (Interlocked.CompareExchange(ref s_csvImportScratchBusy, 1, 0) != 0)
+            string path = ResolveProjectPath(BuoyancyDisplacementConstants.SimdToleranceCsvRelativePath);
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            try
-            {
-                string path = ResolveProjectPath(BuoyancyDisplacementConstants.SimdToleranceCsvRelativePath);
-                if (string.IsNullOrEmpty(path) || !File.Exists(path))
-                    return false;
+            Span<byte> csvScratch = stackalloc byte[BuoyancyDisplacementConstants.CsvImportByteCapacity];
+            int bytesRead = ReadFileIntoColdScratch(path, csvScratch);
+            if (bytesRead <= 0)
+                return false;
 
-                int bytesRead = ReadFileIntoColdScratch(path, s_csvImportScratch);
-                if (bytesRead <= 0)
-                    return false;
+            Span<SimdMathToleranceDTO> simdToleranceScratch = stackalloc SimdMathToleranceDTO[BuoyancyDisplacementConstants.SimdToleranceCapacity];
+            if (!SimdToleranceCsvParser.TryApply(csvScratch.Slice(0, bytesRead), simdToleranceScratch, out int toleranceRows))
+                return false;
 
-                ReadOnlySpan<byte> span = s_csvImportScratch.AsSpan(0, math.min(bytesRead, s_csvImportScratch.Length));
-                Span<SimdMathToleranceDTO> simdToleranceScratch = s_simdToleranceImportScratch.AsSpan();
-                if (!SimdToleranceCsvParser.TryApply(span, simdToleranceScratch, out int toleranceRows))
-                    return false;
+            if (!TryCommitSimdMathTolerances(vault, simdToleranceScratch))
+                return false;
 
-                if (!TryCommitSimdMathTolerances(vault, simdToleranceScratch))
-                    return false;
-
-                return TryCommitSimdToleranceTuning(vault, simdToleranceScratch, toleranceRows);
-            }
-            finally
-            {
-                Volatile.Write(ref s_csvImportScratchBusy, 0);
-            }
+            return TryCommitSimdToleranceTuning(vault, simdToleranceScratch, toleranceRows);
         }
 
         private bool TryCommitMaterialVolumeCsv(IDataVault vault, ReadOnlySpan<BuoyancyMaterialVolumeDTO> staged)
         {
-            if (vault == null || staged.Length <= 0 || !TryAcquireBuoyancyMutationGuard(vault, MaterialVolumeCsvMutationGuardMask))
+            if (vault == null || staged.Length <= 0)
                 return false;
 
+            bool lockAcquired = false;
             try
             {
-                NativeArray<BuoyancyMaterialVolumeDTO> table = ResolveVaultBuffer(vault, in _materialVolumesHandle);
+                if (!vault.TryAcquireWriteLock(in _materialVolumesHandle, SystemID.Physics, out NativeArray<BuoyancyMaterialVolumeDTO> table))
+                    return false;
+                lockAcquired = true;
                 if (!table.IsCreated || table.Length != staged.Length)
                     return false;
 
@@ -1043,18 +996,22 @@ namespace Hecton8.Physics
             }
             finally
             {
-                vault.ReleaseMutationGuard(MaterialVolumeCsvMutationGuardMask);
+                if (lockAcquired)
+                    vault.ReleaseWriteLock(in _materialVolumesHandle, SystemID.Physics);
             }
         }
 
         private bool TryCommitMaterialSettlingCsv(IDataVault vault, ReadOnlySpan<BuoyancyMaterialSettlingProfileDTO> staged)
         {
-            if (vault == null || staged.Length <= 0 || !TryAcquireBuoyancyMutationGuard(vault, MaterialSettlingCsvMutationGuardMask))
+            if (vault == null || staged.Length <= 0)
                 return false;
 
+            bool lockAcquired = false;
             try
             {
-                NativeArray<BuoyancyMaterialSettlingProfileDTO> table = ResolveVaultBuffer(vault, in _materialSettlingProfilesHandle);
+                if (!vault.TryAcquireWriteLock(in _materialSettlingProfilesHandle, SystemID.Physics, out NativeArray<BuoyancyMaterialSettlingProfileDTO> table))
+                    return false;
+                lockAcquired = true;
                 if (!table.IsCreated || table.Length != staged.Length)
                     return false;
 
@@ -1070,18 +1027,22 @@ namespace Hecton8.Physics
             }
             finally
             {
-                vault.ReleaseMutationGuard(MaterialSettlingCsvMutationGuardMask);
+                if (lockAcquired)
+                    vault.ReleaseWriteLock(in _materialSettlingProfilesHandle, SystemID.Physics);
             }
         }
 
         private bool TryCommitSimdMathTolerances(IDataVault vault, ReadOnlySpan<SimdMathToleranceDTO> staged)
         {
-            if (vault == null || staged.Length <= 0 || !TryAcquireBuoyancyMutationGuard(vault, SimdToleranceCsvMutationGuardMask))
+            if (vault == null || staged.Length <= 0)
                 return false;
 
+            bool lockAcquired = false;
             try
             {
-                NativeArray<SimdMathToleranceDTO> tolerances = ResolveVaultBuffer(vault, in _simdMathTolerancesHandle);
+                if (!vault.TryAcquireWriteLock(in _simdMathTolerancesHandle, SystemID.Physics, out NativeArray<SimdMathToleranceDTO> tolerances))
+                    return false;
+                lockAcquired = true;
                 if (!tolerances.IsCreated || tolerances.Length != staged.Length)
                     return false;
 
@@ -1097,18 +1058,22 @@ namespace Hecton8.Physics
             }
             finally
             {
-                vault.ReleaseMutationGuard(SimdToleranceCsvMutationGuardMask);
+                if (lockAcquired)
+                    vault.ReleaseWriteLock(in _simdMathTolerancesHandle, SystemID.Physics);
             }
         }
 
         private bool TryCommitSimdToleranceTuning(IDataVault vault, ReadOnlySpan<SimdMathToleranceDTO> staged, int toleranceRows)
         {
-            if (vault == null || staged.Length <= 0 || toleranceRows <= 0 || !TryAcquireBuoyancyMutationGuard(vault, SimdToleranceTuningMutationGuardMask))
+            if (vault == null || staged.Length <= 0 || toleranceRows <= 0)
                 return false;
 
+            bool lockAcquired = false;
             try
             {
-                NativeArray<SimdHydrodynamicTuningDTO> tuning = ResolveVaultBuffer(vault, in _simdHydrodynamicTuningHandle);
+                if (!vault.TryAcquireWriteLock(in _simdHydrodynamicTuningHandle, SystemID.Physics, out NativeArray<SimdHydrodynamicTuningDTO> tuning))
+                    return false;
+                lockAcquired = true;
                 if (!tuning.IsCreated || tuning.Length <= 0)
                     return false;
 
@@ -1117,7 +1082,8 @@ namespace Hecton8.Physics
             }
             finally
             {
-                vault.ReleaseMutationGuard(SimdToleranceTuningMutationGuardMask);
+                if (lockAcquired)
+                    vault.ReleaseWriteLock(in _simdHydrodynamicTuningHandle, SystemID.Physics);
             }
         }
 #endif
@@ -1164,7 +1130,8 @@ namespace Hecton8.Physics
             if (vault == null || !HasHandle(in _tuningHandle))
                 return false;
 
-            NativeArray<BuoyancyTuningDTO> tuning = ResolveVaultBuffer(vault, in _tuningHandle);
+            if (!vault.TryReadOnlyHandle(in _tuningHandle, out NativeArray<BuoyancyTuningDTO>.ReadOnly tuning))
+                return false;
             if (!tuning.IsCreated || tuning.Length <= 0)
                 return false;
 
@@ -1194,9 +1161,6 @@ namespace Hecton8.Physics
                    OpenOrAcquireVaultDescriptorForOwnerRoute(vault, ref _sleepSdfConfigHandle, BuoyancyDisplacementBufferIds.SleepSdfConfig, 1, NativeArrayOptions.UninitializedMemory) &&
                    OpenOrAcquireVaultDescriptorForOwnerRoute(vault, ref _materialVolumesHandle, BuoyancyDisplacementBufferIds.MaterialVolumes, BuoyancyDisplacementConstants.MaterialVolumeCapacity, NativeArrayOptions.UninitializedMemory) &&
                    OpenOrAcquireVaultDescriptorForOwnerRoute(vault, ref _materialSettlingProfilesHandle, BuoyancyDisplacementBufferIds.MaterialSettlingProfiles, BuoyancyDisplacementConstants.MaterialSettlingProfileCapacity, NativeArrayOptions.UninitializedMemory) &&
-#if UNITY_EDITOR
-                   OpenOrAcquireVaultDescriptorForOwnerRoute(vault, ref _csvScratchHandle, BuoyancyDisplacementBufferIds.CsvScratch, BuoyancyDisplacementConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory) &&
-#endif
                    OpenOrAcquireVaultDescriptorForOwnerRoute(vault, ref _debugForcesHandle, BuoyancyDisplacementBufferIds.DebugForces, stateCapacity, NativeArrayOptions.UninitializedMemory) &&
                    OpenOrAcquireVaultDescriptorForOwnerRoute(vault, ref _countersHandle, BuoyancyDisplacementBufferIds.Counters, BuoyancyDisplacementConstants.CounterCapacity, NativeArrayOptions.ClearMemory) &&
                    OpenOrAcquireVaultDescriptorForOwnerRoute(vault, ref _bodyBindingsHandle, BuoyancyDisplacementBufferIds.BodyBindings, stateCapacity, NativeArrayOptions.UninitializedMemory) &&
@@ -1235,9 +1199,6 @@ namespace Hecton8.Physics
                    HasHandle(in _sleepSdfConfigHandle) &&
                    HasHandle(in _materialVolumesHandle) &&
                    HasHandle(in _materialSettlingProfilesHandle) &&
-#if UNITY_EDITOR
-                   HasHandle(in _csvScratchHandle) &&
-#endif
                    HasHandle(in _debugForcesHandle) &&
                    HasHandle(in _countersHandle) &&
                    HasHandle(in _bodyBindingsHandle) &&
@@ -1276,7 +1237,7 @@ namespace Hecton8.Physics
                 return false;
 
             if (HasHandle(in handle) &&
-                vault.TryResolveHandle(in handle, out NativeArray<T> existing) &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
                 existing.IsCreated &&
                 existing.Length >= requiredLength)
             {
@@ -1291,7 +1252,7 @@ namespace Hecton8.Physics
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.Physics, options);
             return HasHandle(in handle) &&
-                   vault.TryResolveHandle(in handle, out NativeArray<T> resolved) &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly resolved) &&
                    resolved.IsCreated &&
                    resolved.Length >= requiredLength;
         }
@@ -1307,7 +1268,7 @@ namespace Hecton8.Physics
 
             if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existingHandle) &&
                 HasHandle(in existingHandle) &&
-                vault.TryResolveHandle(in existingHandle, out NativeArray<T> existingBuffer) &&
+                vault.TryReadOnlyHandle(in existingHandle, out NativeArray<T>.ReadOnly existingBuffer) &&
                 existingBuffer.IsCreated &&
                 existingBuffer.Length >= requiredLength)
             {
@@ -1573,11 +1534,18 @@ namespace Hecton8.Physics
             if (vault == null || !HasHandle(in _countersHandle))
                 return;
 
-            if (!TryAcquireBuoyancyMutationGuard(vault, CompletionTelemetryMutationGuardMask))
-                return;
-
+            uint framePinMask = 0u;
             try
             {
+                if (!TryLockFrameBuffer(vault, ref framePinMask, BuoyancyDisplacementBufferIds.Counters, FramePinCounters) ||
+                    !TryLockFrameBuffer(vault, ref framePinMask, BuoyancyDisplacementBufferIds.TelemetryRing, FramePinTelemetryRing) ||
+                    !TryLockFrameBuffer(vault, ref framePinMask, BuoyancyDisplacementBufferIds.TelemetryCursor, FramePinTelemetryCursor) ||
+                    !TryLockFrameBuffer(vault, ref framePinMask, BuoyancyDisplacementBufferIds.SleepTelemetryRing, FramePinSleepTelemetryRing) ||
+                    !TryLockFrameBuffer(vault, ref framePinMask, BuoyancyDisplacementBufferIds.SleepTelemetryCursor, FramePinSleepTelemetryCursor))
+                {
+                    return;
+                }
+
                 float safeMicros = math.max(0f, math.select(0f, micros, math.isfinite(micros)));
                 NativeArray<BuoyancyCounterDTO> counters = ResolveVaultBuffer(vault, in _countersHandle);
                 if (!counters.IsCreated || counters.Length <= 0)
@@ -1611,7 +1579,7 @@ namespace Hecton8.Physics
             }
             finally
             {
-                vault.ReleaseMutationGuard(CompletionTelemetryMutationGuardMask);
+                ReleaseCompletionTelemetryFramePins(vault, framePinMask);
             }
         }
 
@@ -1625,20 +1593,26 @@ namespace Hecton8.Physics
                 return;
             }
 
-            if (!TryAcquireBuoyancyMutationGuard(vault, SimdTelemetryMutationGuardMask))
-                return;
-
             bool shouldDumpFault = false;
             float faultScalar = 0f;
             uint faultHash = 0u;
+            uint framePinMask = 0u;
             try
             {
+                bool hasTuning = HasPhysicsHandle(in _simdHydrodynamicTuningHandle, BuoyancyDisplacementBufferIds.SimdHydrodynamicTuning);
+                if (!TryLockFrameBuffer(vault, ref framePinMask, BuoyancyDisplacementBufferIds.SimdTelemetryRing, FramePinSimdTelemetryRing) ||
+                    !TryLockFrameBuffer(vault, ref framePinMask, BuoyancyDisplacementBufferIds.SimdTelemetryCursor, FramePinSimdTelemetryCursor) ||
+                    (hasTuning && !TryLockFrameBuffer(vault, ref framePinMask, BuoyancyDisplacementBufferIds.SimdHydrodynamicTuning, FramePinSimdHydrodynamicTuning)))
+                {
+                    return;
+                }
+
                 NativeArray<SimdTelemetryEntry> telemetry = ResolveVaultBuffer(vault, in _simdTelemetryRingHandle);
                 NativeArray<int> cursor = ResolveVaultBuffer(vault, in _simdTelemetryCursorHandle);
                 if (!telemetry.IsCreated || telemetry.Length <= 0 || !cursor.IsCreated || cursor.Length <= 0)
                     return;
 
-                NativeArray<SimdHydrodynamicTuningDTO> tuning = HasPhysicsHandle(in _simdHydrodynamicTuningHandle, BuoyancyDisplacementBufferIds.SimdHydrodynamicTuning)
+                NativeArray<SimdHydrodynamicTuningDTO> tuning = hasTuning
                     ? ResolveVaultBuffer(vault, in _simdHydrodynamicTuningHandle)
                     : default;
                 SimdHydrodynamicTuningDTO tuningValue = default;
@@ -1695,7 +1669,7 @@ namespace Hecton8.Physics
             }
             finally
             {
-                vault.ReleaseMutationGuard(SimdTelemetryMutationGuardMask);
+                ReleaseSimdTelemetryFramePins(vault, framePinMask);
             }
 
             if (shouldDumpFault)
@@ -1711,39 +1685,76 @@ namespace Hecton8.Physics
             if (vault == null || !HasHandle(in _countersHandle))
                 return false;
 
-            if (!TryAcquireBuoyancyMutationGuard(vault, CounterFaultReadMutationGuardMask))
+            if (!vault.TryReadOnlyHandle(in _countersHandle, out NativeArray<BuoyancyCounterDTO>.ReadOnly counters) ||
+                !counters.IsCreated ||
+                counters.Length <= 0)
                 return false;
 
-            try
-            {
-                NativeArray<BuoyancyCounterDTO> counters = ResolveVaultBuffer(vault, in _countersHandle);
-                if (!counters.IsCreated || counters.Length <= 0)
-                    return false;
+            BuoyancyCounterDTO counter = counters[0];
+            bool hasFault = (counter.Flags & BuoyancyDisplacementConstants.FlagNonFinite) != 0u ||
+                            counter.NonFiniteCount > 0;
+            if (!hasFault)
+                return false;
 
-                BuoyancyCounterDTO counter = counters[0];
-                bool hasFault = (counter.Flags & BuoyancyDisplacementConstants.FlagNonFinite) != 0u ||
-                                counter.NonFiniteCount > 0;
-                if (!hasFault)
-                    return false;
-
-                faultScalar = ComposeBuoyancyFaultScalar(counter);
-                entityHash = counter.LastEntityHashID;
-                return true;
-            }
-            finally
-            {
-                vault.ReleaseMutationGuard(CounterFaultReadMutationGuardMask);
-            }
+            faultScalar = ComposeBuoyancyFaultScalar(counter);
+            entityHash = counter.LastEntityHashID;
+            return true;
         }
 
         private bool TryLockJobBuffers(IDataVault vault)
         {
-            if (_jobBuffersPinned || !TryAcquireBuoyancyMutationGuard(vault, JobMutationGuardMask))
+            if (_jobBuffersPinned || vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            _jobGuardVault = vault;
-            _jobBuffersPinned = true;
-            return true;
+            bool pinned = false;
+            try
+            {
+                _jobPinVault = vault;
+                if (!TryLockJobBuffer(vault, BuoyancyDisplacementBufferIds.States, JobPinStates) ||
+                    !TryLockJobBuffer(vault, BuoyancyDisplacementBufferIds.ForcePackets, JobPinForcePackets) ||
+                    !TryLockJobBuffer(vault, BuoyancyDisplacementBufferIds.FlowSamples, JobPinFlowSamples) ||
+                    !TryLockJobBuffer(vault, BuoyancyDisplacementBufferIds.Tuning, JobPinTuning) ||
+                    !TryLockJobBuffer(vault, BuoyancyDisplacementBufferIds.TelemetryRing, JobPinTelemetryRing) ||
+                    !TryLockJobBuffer(vault, BuoyancyDisplacementBufferIds.TelemetryCursor, JobPinTelemetryCursor) ||
+                    !TryLockJobBuffer(vault, BuoyancyDisplacementBufferIds.SleepTelemetryRing, JobPinSleepTelemetryRing) ||
+                    !TryLockJobBuffer(vault, BuoyancyDisplacementBufferIds.SleepTelemetryCursor, JobPinSleepTelemetryCursor) ||
+                    !TryLockJobBuffer(vault, BuoyancyDisplacementBufferIds.SleepSdfDensity, JobPinSleepSdfDensity) ||
+                    !TryLockJobBuffer(vault, BuoyancyDisplacementBufferIds.SleepSdfConfig, JobPinSleepSdfConfig) ||
+                    !TryLockJobBuffer(vault, BuoyancyDisplacementBufferIds.MaterialSettlingProfiles, JobPinMaterialSettlingProfiles) ||
+                    !TryLockJobBuffer(vault, BuoyancyDisplacementBufferIds.DebugForces, JobPinDebugForces) ||
+                    !TryLockJobBuffer(vault, BuoyancyDisplacementBufferIds.Counters, JobPinCounters))
+                {
+                    return false;
+                }
+
+                if (!TryResolveRuntimeBuffers(
+                        vault,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _,
+                        out _))
+                {
+                    return false;
+                }
+
+                _jobBuffersPinned = true;
+                pinned = true;
+                return true;
+            }
+            finally
+            {
+                if (!pinned)
+                    UnlockJobBuffers();
+            }
         }
 
         private static bool TryAcquireBuoyancyMutationGuard(IDataVault vault, ulong mask)
@@ -1760,19 +1771,88 @@ namespace Hecton8.Physics
             return 1UL << bitIndex;
         }
 
+        private static bool TryLockFrameBuffer(IDataVault vault, ref uint pinMask, BufferID bufferId, uint pinBit)
+        {
+            if ((pinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null || vault.IsCompactionFenceActive || !vault.TryLockBuffer(bufferId, SystemID.Physics))
+                return false;
+
+            pinMask |= pinBit;
+            return true;
+        }
+
+        private static void ReleaseForceDrainFramePins(IDataVault vault, uint pinMask)
+        {
+            TryUnlockFrameBuffer(vault, pinMask, FramePinBodyBindings, BuoyancyDisplacementBufferIds.BodyBindings);
+            TryUnlockFrameBuffer(vault, pinMask, FramePinCounters, BuoyancyDisplacementBufferIds.Counters);
+            TryUnlockFrameBuffer(vault, pinMask, FramePinForcePackets, BuoyancyDisplacementBufferIds.ForcePackets);
+        }
+
+        private static void ReleaseCompletionTelemetryFramePins(IDataVault vault, uint pinMask)
+        {
+            TryUnlockFrameBuffer(vault, pinMask, FramePinSleepTelemetryCursor, BuoyancyDisplacementBufferIds.SleepTelemetryCursor);
+            TryUnlockFrameBuffer(vault, pinMask, FramePinSleepTelemetryRing, BuoyancyDisplacementBufferIds.SleepTelemetryRing);
+            TryUnlockFrameBuffer(vault, pinMask, FramePinTelemetryCursor, BuoyancyDisplacementBufferIds.TelemetryCursor);
+            TryUnlockFrameBuffer(vault, pinMask, FramePinTelemetryRing, BuoyancyDisplacementBufferIds.TelemetryRing);
+            TryUnlockFrameBuffer(vault, pinMask, FramePinCounters, BuoyancyDisplacementBufferIds.Counters);
+        }
+
+        private static void ReleaseSimdTelemetryFramePins(IDataVault vault, uint pinMask)
+        {
+            TryUnlockFrameBuffer(vault, pinMask, FramePinSimdHydrodynamicTuning, BuoyancyDisplacementBufferIds.SimdHydrodynamicTuning);
+            TryUnlockFrameBuffer(vault, pinMask, FramePinSimdTelemetryCursor, BuoyancyDisplacementBufferIds.SimdTelemetryCursor);
+            TryUnlockFrameBuffer(vault, pinMask, FramePinSimdTelemetryRing, BuoyancyDisplacementBufferIds.SimdTelemetryRing);
+        }
+
+        private static void TryUnlockFrameBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if (vault != null && (pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, SystemID.Physics);
+        }
+
         private void UnlockJobBuffers()
         {
-            if (!_jobBuffersPinned)
-            {
-                _jobGuardVault = null;
-                return;
-            }
-
-            IDataVault vault = _jobGuardVault;
-            _jobGuardVault = null;
+            IDataVault vault = _jobPinVault;
+            uint pinMask = _jobPinMask;
+            _jobPinVault = null;
+            _jobPinMask = 0u;
             _jobBuffersPinned = false;
-            if (vault != null)
-                vault.ReleaseMutationGuard(JobMutationGuardMask);
+            if (vault == null || pinMask == 0u)
+                return;
+
+            TryUnlockJobBuffer(vault, pinMask, JobPinCounters, BuoyancyDisplacementBufferIds.Counters);
+            TryUnlockJobBuffer(vault, pinMask, JobPinDebugForces, BuoyancyDisplacementBufferIds.DebugForces);
+            TryUnlockJobBuffer(vault, pinMask, JobPinMaterialSettlingProfiles, BuoyancyDisplacementBufferIds.MaterialSettlingProfiles);
+            TryUnlockJobBuffer(vault, pinMask, JobPinSleepSdfConfig, BuoyancyDisplacementBufferIds.SleepSdfConfig);
+            TryUnlockJobBuffer(vault, pinMask, JobPinSleepSdfDensity, BuoyancyDisplacementBufferIds.SleepSdfDensity);
+            TryUnlockJobBuffer(vault, pinMask, JobPinSleepTelemetryCursor, BuoyancyDisplacementBufferIds.SleepTelemetryCursor);
+            TryUnlockJobBuffer(vault, pinMask, JobPinSleepTelemetryRing, BuoyancyDisplacementBufferIds.SleepTelemetryRing);
+            TryUnlockJobBuffer(vault, pinMask, JobPinTelemetryCursor, BuoyancyDisplacementBufferIds.TelemetryCursor);
+            TryUnlockJobBuffer(vault, pinMask, JobPinTelemetryRing, BuoyancyDisplacementBufferIds.TelemetryRing);
+            TryUnlockJobBuffer(vault, pinMask, JobPinTuning, BuoyancyDisplacementBufferIds.Tuning);
+            TryUnlockJobBuffer(vault, pinMask, JobPinFlowSamples, BuoyancyDisplacementBufferIds.FlowSamples);
+            TryUnlockJobBuffer(vault, pinMask, JobPinForcePackets, BuoyancyDisplacementBufferIds.ForcePackets);
+            TryUnlockJobBuffer(vault, pinMask, JobPinStates, BuoyancyDisplacementBufferIds.States);
+        }
+
+        private bool TryLockJobBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        {
+            if ((_jobPinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null || !vault.TryLockBuffer(bufferId, SystemID.Physics))
+                return false;
+
+            _jobPinMask |= pinBit;
+            return true;
+        }
+
+        private static void TryUnlockJobBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, SystemID.Physics);
         }
 
         private void TryRegister()
@@ -1872,9 +1952,6 @@ namespace Hecton8.Physics
                 ReleaseVaultHandle(vault, ref _sleepSdfConfigHandle);
                 ReleaseVaultHandle(vault, ref _materialVolumesHandle);
                 ReleaseVaultHandle(vault, ref _materialSettlingProfilesHandle);
-#if UNITY_EDITOR
-                ReleaseVaultHandle(vault, ref _csvScratchHandle);
-#endif
                 ReleaseVaultHandle(vault, ref _debugForcesHandle);
                 ReleaseVaultHandle(vault, ref _countersHandle);
                 ReleaseVaultHandle(vault, ref _bodyBindingsHandle);
@@ -1919,9 +1996,6 @@ namespace Hecton8.Physics
             _sleepSdfConfigHandle = default;
             _materialVolumesHandle = default;
             _materialSettlingProfilesHandle = default;
-#if UNITY_EDITOR
-            _csvScratchHandle = default;
-#endif
             _debugForcesHandle = default;
             _countersHandle = default;
             _bodyBindingsHandle = default;
@@ -1936,7 +2010,8 @@ namespace Hecton8.Physics
             _simdVisibleIndicesHandle = default;
             _simdVisibleCountHandle = default;
             _simdHydrodynamicTuningHandle = default;
-            _jobGuardVault = null;
+            _jobPinVault = null;
+            _jobPinMask = 0u;
             _jobBuffersPinned = false;
             _coldBuffersInitialized = false;
             _coldBootCompleted = false;
@@ -2084,22 +2159,30 @@ namespace Hecton8.Physics
             return Path.GetFullPath(Path.Combine(projectRoot, relativePath));
         }
 
-        private static int ReadFileIntoColdScratch(string path, byte[] scratch)
+        private static int ReadFileIntoColdScratch(string path, Span<byte> scratch)
         {
-            // COLD IO ONLY: managed editor scratch receives bytes before any DataVault writer guard is acquired.
-            if (scratch == null || scratch.Length <= 0)
+            // COLD IO ONLY: stack scratch receives bytes before any DataVault writer lock is acquired.
+            if (string.IsNullOrEmpty(path) || scratch.Length <= 0)
                 return 0;
 
             try
             {
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    int limit = (int)math.min(stream.Length, scratch.Length);
-                    if (limit <= 0)
+                    if (stream.Length <= 0L || stream.Length > scratch.Length)
                         return 0;
 
-                    Span<byte> destination = scratch.AsSpan(0, limit);
-                    return stream.Read(destination);
+                    int expectedBytes = (int)stream.Length;
+                    int read = 0;
+                    while (read < expectedBytes)
+                    {
+                        int chunk = stream.Read(scratch.Slice(read, expectedBytes - read));
+                        if (chunk <= 0)
+                            return 0;
+                        read += chunk;
+                    }
+
+                    return read == expectedBytes ? read : 0;
                 }
             }
             catch (IOException)

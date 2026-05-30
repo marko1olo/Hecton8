@@ -2832,29 +2832,40 @@ namespace Hecton8.Modding
         {
             int frame = SystemDispatcher.CurrentFrameIndex;
             bool hasTelemetryRing = TryOpenVaultLaneRead(ref _kernelTelemetryRingHandle, out NativeArray<KernelExecutionTelemetryEntry>.ReadOnly telemetryRing);
+            NativeArray<byte> payload = default;
             try
             {
-                Directory.CreateDirectory("Docs/AgentLogs");
-                using (FileStream stream = new FileStream(KernelDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                const int headerBytes = 24;
+                int entryBytes = UnsafeUtility.SizeOf<KernelExecutionTelemetryEntry>();
+                int entryCount = hasTelemetryRing ? telemetryRing.Length : 0;
+                int byteCount = headerBytes + entryCount * entryBytes;
+                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+
+                unsafe
                 {
-                    writer.Write(0x4B464F52u);
-                    writer.Write((uint)frame);
-                    writer.Write(faultHash);
-                    writer.Write(hasTelemetryRing ? (uint)telemetryRing.Length : 0u);
-                    writer.Write(0UL);
+                    byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    WriteUInt(bytes, 0, 0x4B464F52u);
+                    WriteUInt(bytes, 4, unchecked((uint)frame));
+                    WriteUInt(bytes, 8, faultHash);
+                    WriteUInt(bytes, 12, unchecked((uint)entryCount));
+                    WriteULong(bytes, 16, 0UL);
 
-                    if (!hasTelemetryRing)
-                        return;
-
-                    int byteLength = telemetryRing.Length * UnsafeUtility.SizeOf<KernelExecutionTelemetryEntry>();
-                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
-                    for (int i = 0; i < byteLength; i++)
-                        writer.Write(ptr[i]);
+                    if (entryCount > 0)
+                    {
+                        byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
+                        UnsafeUtility.MemCpy(bytes + headerBytes, ptr, entryCount * entryBytes);
+                    }
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(KernelDumpPath, payload, byteCount);
             }
             catch (Exception)
             {
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 
@@ -2873,32 +2884,63 @@ namespace Hecton8.Modding
             TryWriteRingStateSnapshot(in state);
 
             bool hasTelemetryRing = TryOpenVaultLaneRead(ref _telemetryRingHandle, out NativeArray<ModSandboxTelemetryEntry>.ReadOnly telemetryRing);
+            NativeArray<byte> payload = default;
             try
             {
-                Directory.CreateDirectory("Docs/AgentLogs");
-                using (FileStream stream = new FileStream(DumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                const int headerBytes = 32;
+                int entryBytes = UnsafeUtility.SizeOf<ModSandboxTelemetryEntry>();
+                int entryCount = hasTelemetryRing ? telemetryRing.Length : 0;
+                int byteCount = headerBytes + entryCount * entryBytes;
+                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+
+                unsafe
                 {
-                    writer.Write(0x514D4F44u);
-                    writer.Write((uint)frame);
-                    writer.Write(faultHash);
-                    writer.Write(hasTelemetryRing ? (uint)telemetryRing.Length : 0u);
-                    writer.Write((uint)state.PendingCount);
-                    writer.Write((uint)state.DevNullCount);
-                    writer.Write(0UL);
+                    byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    WriteUInt(bytes, 0, 0x514D4F44u);
+                    WriteUInt(bytes, 4, unchecked((uint)frame));
+                    WriteUInt(bytes, 8, faultHash);
+                    WriteUInt(bytes, 12, unchecked((uint)entryCount));
+                    WriteUInt(bytes, 16, unchecked((uint)state.PendingCount));
+                    WriteUInt(bytes, 20, unchecked((uint)state.DevNullCount));
+                    WriteULong(bytes, 24, 0UL);
 
-                    if (!hasTelemetryRing)
-                        return;
-
-                    int byteLength = telemetryRing.Length * UnsafeUtility.SizeOf<ModSandboxTelemetryEntry>();
-                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
-                    for (int i = 0; i < byteLength; i++)
-                        writer.Write(ptr[i]);
+                    if (entryCount > 0)
+                    {
+                        byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
+                        UnsafeUtility.MemCpy(bytes + headerBytes, ptr, entryCount * entryBytes);
+                    }
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(DumpPath, payload, byteCount);
             }
             catch (Exception)
             {
             }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
+            }
+        }
+
+        private static unsafe void WriteUInt(byte* data, int offset, uint value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+            data[offset + 2] = (byte)(value >> 16);
+            data[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static unsafe void WriteULong(byte* data, int offset, ulong value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+            data[offset + 2] = (byte)(value >> 16);
+            data[offset + 3] = (byte)(value >> 24);
+            data[offset + 4] = (byte)(value >> 32);
+            data[offset + 5] = (byte)(value >> 40);
+            data[offset + 6] = (byte)(value >> 48);
+            data[offset + 7] = (byte)(value >> 56);
         }
 
         private static void ValidateLayoutOrDump()

@@ -178,6 +178,7 @@ namespace Hecton8.Core.Memory
         public const uint PhysicsSourceHash = 0x53483130u; // SH10
         private const ulong DumpMagic = 0x3030315F55424F53UL; // SOBU_100 low-endian marker
         private const int DumpVersion = 1;
+        private const int DumpHeaderBytes = 20;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_100.bin";
 
         private static VaultGenerationHandle<VaultSovereigntyTelemetryEntry> _ringHandle;
@@ -319,52 +320,97 @@ namespace Hecton8.Core.Memory
             }
 
             string path = Path.Combine(projectRoot, DumpRelativePath);
+            NativeArray<byte> payload = default;
             try
             {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                int entryBytes = UnsafeUtility.SizeOf<VaultSovereigntyTelemetryEntry>();
+                int byteCount = DumpHeaderBytes + (ring.Length * entryBytes);
+                payload = Hecton8.Core.NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(VaultSovereigntyTelemetry),
+                    "vaultSovereigntyTelemetryDumpPayload");
+                int cursor = 0;
 
-                using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
+                WriteUInt64LittleEndian(payload, ref cursor, DumpMagic);
+                WriteInt32LittleEndian(payload, ref cursor, DumpVersion);
+                WriteInt32LittleEndian(payload, ref cursor, ring.Length);
+                WriteInt32LittleEndian(payload, ref cursor, entryBytes);
+
+                int start = _cursor;
+                for (int i = 0; i < ring.Length; i++)
                 {
-                    writer.Write(DumpMagic);
-                    writer.Write(DumpVersion);
-                    writer.Write(ring.Length);
-                    writer.Write(UnsafeUtility.SizeOf<VaultSovereigntyTelemetryEntry>());
-                    int start = _cursor;
-                    for (int i = 0; i < ring.Length; i++)
-                    {
-                        int index = start + i;
-                        if (index >= ring.Length)
-                            index -= ring.Length;
+                    int index = start + i;
+                    if (index >= ring.Length)
+                        index -= ring.Length;
 
-                        VaultSovereigntyTelemetryEntry entry = ring[index];
-                        writer.Write(entry.TotalVaultBytes);
-                        writer.Write(entry.ArenaBytes);
-                        writer.Write(entry.ActiveBufferCount);
-                        writer.Write(entry.GenerationMisses);
-                        writer.Write(entry.StrideMultiplier);
-                        writer.Write(entry.MaxMemoryJobUs);
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.VaultGenerationId);
-                        writer.Write(entry.BufferId);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.GlobalQualityWeight);
-                        writer.Write(entry.Flags);
-                        writer.Write(0UL);
-                    }
+                    WriteVaultSovereigntyTelemetryEntry(payload, ref cursor, ring[index]);
                 }
 
-                return true;
+                return Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(path, payload, cursor);
             }
-            catch (IOException)
+            catch (Exception)
             {
                 return false;
             }
-            catch (UnauthorizedAccessException)
+            finally
             {
-                return false;
+                Hecton8.Core.NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(VaultSovereigntyTelemetry),
+                    "vaultSovereigntyTelemetryDumpPayload");
             }
+        }
+
+        private static void WriteVaultSovereigntyTelemetryEntry(NativeArray<byte> target, ref int cursor, in VaultSovereigntyTelemetryEntry entry)
+        {
+            WriteInt64LittleEndian(target, ref cursor, entry.TotalVaultBytes);
+            WriteInt64LittleEndian(target, ref cursor, entry.ArenaBytes);
+            WriteInt32LittleEndian(target, ref cursor, entry.ActiveBufferCount);
+            WriteInt32LittleEndian(target, ref cursor, entry.GenerationMisses);
+            WriteInt32LittleEndian(target, ref cursor, entry.StrideMultiplier);
+            WriteFloatLittleEndian(target, ref cursor, entry.MaxMemoryJobUs);
+            WriteUInt32LittleEndian(target, ref cursor, entry.Frame);
+            WriteUInt32LittleEndian(target, ref cursor, entry.VaultGenerationId);
+            WriteUInt32LittleEndian(target, ref cursor, entry.BufferId);
+            WriteUInt32LittleEndian(target, ref cursor, entry.StateHash);
+            WriteFloatLittleEndian(target, ref cursor, entry.GlobalQualityWeight);
+            WriteUInt32LittleEndian(target, ref cursor, entry.Flags);
+            WriteUInt64LittleEndian(target, ref cursor, 0UL);
+        }
+
+        private static void WriteFloatLittleEndian(NativeArray<byte> target, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(target, ref cursor, math.asuint(value));
+        }
+
+        private static void WriteInt64LittleEndian(NativeArray<byte> target, ref int cursor, long value)
+        {
+            WriteUInt64LittleEndian(target, ref cursor, unchecked((ulong)value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> target, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(target, ref cursor, unchecked((uint)value));
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> target, ref int cursor, ulong value)
+        {
+            target[cursor++] = (byte)value;
+            target[cursor++] = (byte)(value >> 8);
+            target[cursor++] = (byte)(value >> 16);
+            target[cursor++] = (byte)(value >> 24);
+            target[cursor++] = (byte)(value >> 32);
+            target[cursor++] = (byte)(value >> 40);
+            target[cursor++] = (byte)(value >> 48);
+            target[cursor++] = (byte)(value >> 56);
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> target, ref int cursor, uint value)
+        {
+            target[cursor++] = (byte)value;
+            target[cursor++] = (byte)(value >> 8);
+            target[cursor++] = (byte)(value >> 16);
+            target[cursor++] = (byte)(value >> 24);
         }
 
         private static uint HashTelemetry(long totalBytes, long arenaBytes, uint sourceHash, uint frame)

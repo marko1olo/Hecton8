@@ -11,7 +11,7 @@
                      "ModPriority":  0
                  },
     "FileCount":  44,
-    "TotalBytes":  344000,
+    "TotalBytes":  346325,
     "Limits":  {
                    "MaxFiles":  256,
                    "MaxFileBytes":  4194304,
@@ -75,8 +75,8 @@
                   },
                   {
                       "Path":  "README.md",
-                      "Bytes":  15701,
-                      "Sha256":  "5f374bba85d3f7c8d2e99b66e91735a371ef5895dc2e77b0058feaba7eaa3403"
+                      "Bytes":  15837,
+                      "Sha256":  "eb49567c57761e25d6bc60e60c069f84d04f955cf78a52c389ac3c3e1d52b303"
                   },
                   {
                       "Path":  "Reference/allowed_opcodes.csv",
@@ -160,8 +160,8 @@
                   },
                   {
                       "Path":  "Tools/configure_dependencies.ps1",
-                      "Bytes":  8736,
-                      "Sha256":  "bfb4c497b18075262168878db649d7f70e1969c09064197f2d38f2ef976fea02"
+                      "Bytes":  9090,
+                      "Sha256":  "af24b849e3bfb1137ae1990225a8ecdc478cad38fd2110ddd2fa88356d6efa2c"
                   },
                   {
                       "Path":  "Tools/configure_manifest_contract.ps1",
@@ -225,8 +225,8 @@
                   },
                   {
                       "Path":  "Tools/set_mod_identity.ps1",
-                      "Bytes":  4976,
-                      "Sha256":  "54de64a64fadf947054a1968ca21388f03c7768df2e1c7c5408a554c37a17a81"
+                      "Bytes":  6811,
+                      "Sha256":  "3f1f35330d7264554db5550362d5b75718bcfacdfeb430dd66d432f3f8582762"
                   },
                   {
                       "Path":  "Tools/strict_json_io.ps1",

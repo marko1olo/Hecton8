@@ -341,7 +341,8 @@ namespace Hecton8.Gameplay
                     LegacyStatusDurations4567 = views.LegacyStatusDurations4567,
                     BrittleDurations = views.BrittleDurations
                 };
-                job.Run(writeCount);
+                for (int index = 0; index < writeCount; index++)
+                    job.Execute(index);
                 return true;
             }
             finally
@@ -1818,30 +1819,28 @@ namespace Hecton8.Gameplay
             uint cursor = cursorReadable
                 ? unchecked((uint)statusViews.TelemetryCursor[StatusEffectTelemetryWriteCursor])
                 : 0u;
+            NativeArray<byte> payload = default;
             try
             {
-                string dumpPath = Path.Combine(
-                    Application.dataPath,
-                    "..",
-                    "Docs",
-                    "AgentLogs",
-                    "Dump_1417_CombatStatusEffects.bin");
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = File.Open(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                const string dumpPath = "Docs/AgentLogs/Dump_1417_CombatStatusEffects.bin";
+                const int HeaderBytes = 24;
+                int totalBytes = HeaderBytes + (ringLength * StatusEffectTelemetrySizeBytes);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(CombatDamageRuntime),
+                    "CombatStatusEffectsTelemetryDumpPayload");
+                unsafe
                 {
-                    Span<byte> header = stackalloc byte[24];
+                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    Span<byte> header = new Span<byte>(target, HeaderBytes);
+                    header.Clear();
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), StatusEffectTelemetryMagicLow);
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(4, 4), StatusEffectTelemetryMagicHigh);
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(8, 4), (uint)ringLength);
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(12, 4), (uint)StatusEffectTelemetrySizeBytes);
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(16, 4), cursor);
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(20, 4), anomalyHash);
-                    stream.Write(header);
 
-                    Span<byte> entryBytes = stackalloc byte[StatusEffectTelemetrySizeBytes];
                     int start = cursor >= (uint)ringLength
                         ? (int)(cursor % (uint)ringLength)
                         : 0;
@@ -1849,18 +1848,25 @@ namespace Hecton8.Gameplay
                     for (int i = 0; i < ringLength; i++)
                     {
                         int index = (start + i) % ringLength;
+                        Span<byte> entryBytes = new Span<byte>(target + HeaderBytes + (i * StatusEffectTelemetrySizeBytes), StatusEffectTelemetrySizeBytes);
                         WriteStatusEffectTelemetryEntry(entryBytes, statusViews.TelemetryRing[index]);
-                        stream.Write(entryBytes);
                     }
                 }
 
-                _statusEffectTelemetryDumpedThisSession = true;
+                _statusEffectTelemetryDumpedThisSession = NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, totalBytes);
             }
             catch (IOException)
             {
             }
             catch (UnauthorizedAccessException)
             {
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(CombatDamageRuntime),
+                    "CombatStatusEffectsTelemetryDumpPayload");
             }
         }
 

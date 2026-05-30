@@ -4421,3 +4421,1035 @@ Rejected Alternatives: Reverting concurrent dump rewrites was rejected. Replacin
 Scalability potential: Low, middle, high, and ultra devices keep identical dump layouts. Weak devices avoid compile failure from telemetry dump code. High and ultra devices retain full blackbox payload fidelity. No gameplay truth owner, DTO layout, save identity, authority route, binary quality switch, or `GlobalQualityWeight` semantics changed.
 
 Hardware Impact: Runtime microseconds saved claimed: `0`; compile repair only. Proof: `HomeostasisBrain.ScalabilityDictator.cs` SHA-256 `B743955A38034D362C386F4EA82B8A6452F7A31C4365A8A566D0E847F30DC4A7`; evidence `2325`; `LeviathanTerrainIkJobs.cs` SHA-256 `8DB9B94A667FC3671CDBEFECBA8FA0FDA254A71BD80E089CEA9913FE3F24D0CC`; evidence `147`; scoped `git diff --check` exited `0` with LF/CRLF warnings only. Clean compile proof remains unresolved because later `dotnet` invocations returned `-1` without diagnostics.
+
+## Decision 354 - Stop Whole-Buffer CopyBuffer After Rejected Staging Upload
+
+Problem: `GraphicsBufferUploadUtility.UploadNativeArrayAndCopyWholeBuffer()` and `UploadArrayAndCopyWholeBuffer()` previously invoked the guarded staging upload through void wrappers and then always called `Graphics.CopyBuffer()`. If the guarded upload rejected the copy, the destination could receive stale staging bytes.
+
+Solution: Split the staging upload helpers into `TryUploadNativeArray()` and `TryUploadArray()` bool-returning routes. The public upload wrappers keep their previous void API, while the whole-buffer copy helpers return before `Graphics.CopyBuffer()` when staging upload is rejected.
+
+Rejected Alternatives: Clearing the whole staging buffer on every rejected upload was rejected because it adds presentation-path bandwidth without profiler proof and still leaves the ownership contract ambiguous. Changing public upload APIs was rejected because multiple existing callers use the void upload route.
+
+Scalability potential: Low, middle, high, and ultra devices keep the same graphics-buffer upload topology and continuous `HomeostasisBrain.GlobalQualityWeight` upload budget. Weak devices avoid stale visual-buffer publication on rejected copy. High and ultra devices retain bulk upload and whole-buffer copy cost. No gameplay truth owner, DTO layout, save identity, authority route, DataVault route, or binary quality switch changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. Proof: `SystemDispatcher.cs` SHA-256 `AD60974D53847376CA3F2E4415EAC1DE55C9F15A51614862B5932B448E6392B0`; evidence lines `7074/7077/7136/7139/7171/7182/7188/7199`; delimiter count `735/735`; focused scan found the new `TryUpload*` gates and no new owned hot registry/component lookup. Build was not launched because CPU sampled `91` and active `csc`/`dotnet` processes existed.
+
+## Decision 355 - Add Explicit Vehicle Damage State Publish Capacity Gate
+
+Problem: `PublishVehicleDamageStateJob` had already gained grid capacity proof, but the single `VehicleDamageStateDTO` copy still relied on non-null source/destination pointers. That is weaker than the grid copy contract and leaves the state lane dependent on caller convention.
+
+Solution: Add `StateWriteCapacity` and `StateReadCapacity` to the Burst publish job, require both to be at least one before copying the DTO, and set both capacities to `1` at the only runtime call site.
+
+Rejected Alternatives: Replacing this Burst copy with the managed `UnsafeMemoryCopyGuard` was rejected because the job runs in Burst and copies a fixed blittable DTO between DataVault lanes. Per-field assignment was rejected because the DTO is a publication snapshot and the existing route intentionally preserves exact layout bytes.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical vehicle damage grid/state DTOs and `GlobalQualityWeight` visual damage scaling. Weak devices gain fail-closed publication if a future lane allocation drifts. High and ultra devices retain single fixed-size DTO copy. No gameplay truth owner, save identity, authority route, DataVault route, binary quality switch, or DTO layout changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. Proof: `VehicleComponentDamageJobs.cs` SHA-256 `661880D659B82F73481B7601B575B8172E834D274A10F820A2B933D20B746161`, evidence `764/765/781/782/784`, delimiter `50/50`; `VehicleComponentDamageRuntime.cs` SHA-256 `BB1B5DD039A4F798303964236B782713834FC684B1AEE5C236B4092F9331B749`, evidence `327/328`, delimiter `115/115`; scoped diff-check exited `0` with LF/CRLF warnings only. Build was not launched because CPU sampled `91` and active `csc`/`dotnet` processes existed.
+
+## Decision 356 - Revalidate Current Tether Blackbox Payload Staging
+
+Problem: Current disk state of `TetherBlackBoxDumpWriter.cs` again contained a raw `UnsafeUtility.MemCpy()` in retained-frame payload staging, while earlier status/log entries claimed the guarded route. That means the proof artifact was stale and the source was wrong.
+
+Solution: Replace the current raw per-record copy with `UnsafeMemoryCopyGuard.SafeCopy()` using the remaining payload capacity from the current cursor, and return `false` before file IO if the copy is rejected.
+
+Rejected Alternatives: Editing old log history to hide the drift was rejected. Leaving the raw copy was rejected because blackbox dumps are postmortem evidence and should fail closed through the same copy policy as other unmanaged payload staging.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical blackbox dump file layout and record ordering. Weak devices avoid evidence-payload corruption if cursor/capacity contracts drift. High and ultra devices retain full retained-frame fidelity. No gameplay truth owner, DTO layout, save identity, authority route, DataVault route, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; crash/postmortem route only, no profiler/player proof. Proof: `TetherBlackBoxDumpWriter.cs` SHA-256 `BADD106D6906DC8D92CC92C4A45F7645F4B244A7D177AF467B952A1BAFA96CF4`; evidence `81/83`; delimiter count `21/21`; current `UnsafeUtility.MemCpy` scan returned no matches; scoped diff-check exited `0` with LF/CRLF warning only. Build was not launched because CPU sampled `91` and active `csc`/`dotnet` processes existed.
+
+## Decision 357 - Remove Physics Culling Editor Import Bytes From DataVault
+
+Problem: `GlobalPhysicsStateManager.Shinobu37PhysicsCulling` used `VaultBufferBinding<byte>` lanes for editor CSV/header scratch bytes, then wrote file contents into `AsNativeArray()` without holding a DataVault write lock. The bytes are cold import scratch, not cross-domain native authority data, so DataVault ownership was the wrong route.
+
+Solution: Remove `_physicsCullingCsvScratch` and `_physicsCullingLegacyRadiiScratch` from bind/ensure/undersize/required/release paths. Read legacy radii headers and editor CSV override files into fixed `stackalloc Span<byte>` buffers, then parse from sliced spans. Runtime authority data remains in `_physicsCullingTuning` and is committed through its existing write-lock route.
+
+Rejected Alternatives: Acquiring a DataVault write lock around file IO was rejected because it would serialize disk stalls under global memory ownership. Keeping scratch lanes and adding a short post-read copy was rejected because these bytes have no cross-domain owner and do not need to survive past the parser call.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical physics culling DTOs, spatial culling, and continuous quality/radius behavior. Weak editor machines avoid global native scratch allocation and DataVault mutation for file bytes. High and ultra devices keep the same parser inputs and culling quality. No gameplay truth owner, DTO layout, save identity, authority route, runtime DataVault lane, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold import route only, no profiler/player proof. Proof: `GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs` SHA-256 `9A809C2A2DB36D0E76769444D2BEAA50D51C40547F0A4F7F4C717B925E343B21`; evidence `685/689/2248/2252/2256`; delimiter count `230/230`; `_physicsCullingCsvScratch` and `_physicsCullingLegacyRadiiScratch` scans returned no matches in the runtime file; scoped diff-check exited `0` with LF/CRLF warning only. Build was not launched because CPU sampled `91` and active `csc`/`dotnet` processes existed.
+
+## Decision 358 - Flatten AUP Origin Shift CSV Scratch Ownership
+
+Problem: `AupOriginShiftCoordinator.TryPollCsvOverride()` acquired `_csvScratchHandle` through `TryAcquireWriteView()` and kept that DataVault write lock while checking file timestamps, opening the CSV, and reading disk bytes. The scratch bytes are editor parser input, not cross-domain authority state.
+
+Solution: Remove `CsvScratchBuffer` and `_csvScratchHandle` from the owner-route vault lifecycle. Read the CSV into `stackalloc Span<byte>` and parse from `ReadOnlySpan<byte>`. Commit only the parsed `AupOriginShiftRuntimeState` through the existing `_runtimeStateHandle` write-lock route.
+
+Rejected Alternatives: Keeping the scratch DataVault lane with a shorter lock was rejected because no global owner needs the raw CSV bytes. Reading into a managed `byte[]` was rejected because the capacity is fixed and `stackalloc` avoids GC in the editor poll.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical AUP rebase thresholds, sector sizing, batch sizing, and telemetry layout. Weak editor machines avoid a global native scratch lane and a disk stall under DataVault ownership. High and ultra devices keep full CSV override fidelity. No gameplay truth owner, DTO layout, save identity, authority route, runtime DataVault lane, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold import route only, no profiler/player proof. Proof: `AupOriginShiftCoordinator.cs` SHA-256 `8C95AD0C9359A784CE6F5661D24C1D137B491CF35596DECED91EA577BEA958E3`; evidence `1796/1798/1800/1806/1824/1832/1851/1875/1888`; delimiter count `206/206`; `_csvScratchHandle` scan returned no matches; scoped diff-check exited `0` with LF/CRLF warning only. Build was not launched because CPU sampled `88` and active `csc`/`dotnet` processes existed.
+
+## Decision 359 - Open AUP Origin Shift Dumps Through Read-Only Vault Views
+
+Problem: `AupOriginShiftCoordinator.DumpOriginShiftBlackBox(IDataVault)` still opened telemetry/detail rings through mutable vault buffer routes before writing the dump file. The caller did not mutate the rings, so the mutable route widened authority while `FileStream` output was in progress.
+
+Solution: Change the dump body to accept `NativeArray<T>.ReadOnly` rings, obtain dump pointers through `NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr()`, and resolve telemetry/detail lanes through the read-only vault helper before file output. No DataVault write lock is acquired for crash/fault readback.
+
+Rejected Alternatives: Keeping `TryOpenVaultBuffer()` plus `.AsReadOnly()` was rejected because the mutable view had already escaped. Copying the full 300-frame dump into a managed byte array was rejected because it would add crash-path allocation and duplicate the native dump layout. Moving file IO under a write lock was rejected because the dump is read-only evidence and must not serialize DataVault mutation ownership.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical AUP telemetry layout and dump file semantics. Weak devices avoid accidental mutable authority during crash/fault readback. High and ultra devices keep full retained-frame dump fidelity. No gameplay truth owner, DTO layout, save identity, authority route, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; crash/fault path only, no profiler/player proof. Proof: `AupOriginShiftCoordinator.cs` SHA-256 `3E370BF76B599B4BB1B904EDEBEDB7B42E1D97352DE062C92A44FAD9B9E4FDE3`; evidence `1929/1936/1937/1948/1949`; delimiter count `206/206`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not launched because CPU sampled `57`, then `100`, above the project `50` threshold.
+
+## Decision 360 - Commit KCC Editor Profile Imports Through Single-Lane Write Locks
+
+Problem: `HydrodynamicKccRuntime` editor fluid/environment profile ingestion parsed fixed CSV data into DataVault-backed profile, bucket, hash, and active-profile lanes through mutable opens. The same area also applied profile selections by mutating tuning/active profile lanes without explicit write-lock ownership. That violated the one owner route for authoritative native buffers.
+
+Solution: Parse fluid/environment CSV bytes into fixed `stackalloc` spans first. Read existing profile/bucket/hash lanes through read-only vault views. Commit each authoritative destination lane through a dedicated helper that acquires exactly one `TryAcquireWriteLock()` and releases it in a matching `finally`: fluid profiles, fluid buckets, active fluid tuning, environment profiles, environment hashes, environment buckets, and active environment profile. Editor telemetry readback now also uses the `TryReadOnlyVaultBuffer()` helper instead of opening mutable handles and converting after the fact.
+
+Rejected Alternatives: A combined mutation guard plus write-lock route was tested against the code contract and rejected because `GlobalDataVault.TryAcquireWriteLock()` explicitly refuses a lane whose mutation guard bit is active. Holding multiple write locks simultaneously was rejected because it creates a deadlock vector and unnecessary lock coupling. Managed parser arrays were rejected because fixed capacities fit stack spans and the path is cold/editor.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical KCC profile DTOs, active tuning semantics, and continuous quality behavior. Weak editor machines avoid DataVault-owned parser scratch and fail closed per lane if a lock cannot be acquired. High and ultra devices keep full profile fidelity without broad locks. No gameplay truth owner, DTO layout, save identity, runtime authority route, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold ingestion and readback path only, no profiler/player proof. Proof: `HydrodynamicKccRuntime.cs` SHA-256 `0A14662D76A79E1BF559CE87AC0C8490531C3BFE1DE8D2B8B5173B9053C0DDDE`; evidence `3709/3721/3723/3745/3757/3762/3783/3786/3845/3869/3893/3915/3939/3963/3987` for profile/write-lock lanes and `2964/2980/2983/3017/3033/3036/4263` for editor telemetry read-only views; delimiter count `410/410`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not launched because CPU sampled `57`, then `100`, above the project `50` threshold.
+
+## Decision 361 - Split Simulation Bucketer Blackbox Dump IO From Write Ownership
+
+Problem: `ModuloSimulationBucketer.WriteBlackBoxEntry()` acquired the `_blackBoxHandle` write view, wrote the ring entry, and then called the dump writer while the write lock was still held. The dump writer creates directories and opens `FileStream`/`BinaryWriter` for the full 300-frame payload. Holding a DataVault write lock across filesystem IO is a stall and lock-hold inflation vector.
+
+Solution: Keep only the ring slot write and `_pendingBlackBoxDump` flag transfer under the `_blackBoxHandle` write lock. Store `dumpAfterRelease`, release the write lock in `finally`, then call `DumpBlackBoxSnapshot()` outside the lock. The dump routine reacquires the ring through `TryReadVaultBuffer(... out NativeArray<SimulationBucketBlackBoxEntry>.ReadOnly ...)` and writes the snapshot from that read-only view.
+
+Rejected Alternatives: Keeping the dump under the write lock was rejected because 300 retained frames plus directory/file creation can stall the DataVault writer lane. Staging the whole dump into a managed array was rejected because the current binary writer already emits fields directly and the route is postmortem-only. Acquiring a second write lock for dump readback was rejected because the dump does not mutate the ring.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical bucketing, frame pacing flags, and blackbox dump format. Weak devices no longer hold a global write lane while the filesystem stalls. High and ultra devices retain full retained-frame fidelity. No gameplay truth owner, DTO layout, save identity, authority route, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; fault/postmortem route only, no profiler/player proof. Proof: `ModuloSimulationBucketer.cs` current SHA-256 after Decisions 361-362 `107EE4E8B12D49491E0D2BAC69CF0A34A64CEA13552573C5DE4487FFF963639A`; evidence `986/989/992/1036/1042/1045/1046/1061/1082/1083`; delimiter count `156/156`; conflict scan returned no matches; added-line forbidden scan returned no matches; scoped diff-check exited `0` with LF/CRLF warning only. Build was not launched because CPU sampled `82`, above the project `50` threshold.
+
+## Decision 362 - Use Read-Only Vault Views For Simulation Bucketer Readiness
+
+Problem: `ModuloSimulationBucketer.HasRequiredVaultBuffers()` opened all required lanes through owner-write mutable current-phase helpers only to check `IsCreated` and `Length`. That readiness check does not write, so it should not widen DataVault authority.
+
+Solution: Replace the eight mutable `Open*ForOwner()` calls with `HasReadableVaultBuffer()`, which resolves each handle through `TryReadVaultBuffer(... out NativeArray<T>.ReadOnly ...)` and checks only the required length.
+
+Rejected Alternatives: Keeping the mutable views was rejected because the method is a pure validation gate. Acquiring write locks was rejected because no write occurs and it would serialize initialization checks. Duplicating eight read-only helper methods was rejected because a generic helper preserves one route and keeps the code smaller.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical bucketing capacity and buffer layout. Weak devices avoid unnecessary mutable DataVault views during initialization/rebind checks. High and ultra devices keep full bucket distribution and visual-overkill pacing behavior. No gameplay truth owner, DTO layout, save identity, authority route, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; cold/init validation path only, no profiler/player proof. Proof: `ModuloSimulationBucketer.cs` SHA-256 `107EE4E8B12D49491E0D2BAC69CF0A34A64CEA13552573C5DE4487FFF963639A`; evidence `504/509/510/511/512/513/514/515/516/593/597`; delimiter count `156/156`; scoped diff-check exited `0` with LF/CRLF warning only.
+
+## Decision 362 - Replace Vehicle Damage Publish Constants With Actual Vault Capacities
+
+Problem: `PublishVehicleDamageStateJob` had capacity gates, but the runtime fed `_cellCount` and hardcoded `1` as proof values. That matched current allocation, but it did not prove the current DataVault lane lengths and would not fail closed if a lane was undersized by future ownership drift. The mock signal copy also used the configured maximum as destination capacity rather than the resolved signal lane length.
+
+Solution: Open grid, signal, mock-signal, and state lanes as `NativeArray<T>` inside `TryReadWritablePointers()`, derive all capacities from `Length`, reject undersized grid/state/telemetry/tuning lanes before scheduling, clamp mock signal generation/copy by actual mock and destination capacities, and pass actual grid/state capacities into the Burst publish job.
+
+Rejected Alternatives: Keeping `_cellCount` and `1` was rejected because it is a convention, not a runtime proof. Adding managed guard copies was rejected because these copies are inside Burst jobs and the data is already in owner-resolved native lanes. Letting the job silently skip only the publish copy was rejected because earlier map/reduction jobs also depend on the grid write capacity.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical vehicle damage truth, DTO layout, and quality-scaled visual damage behavior. Weak devices fail closed before scheduling corrupt native work if a lane is undersized. High and ultra devices retain the same contiguous Burst path without extra managed allocations. No gameplay truth owner, save identity, authority route, DataVault route, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. Proof: `VehicleComponentDamageRuntime.cs` SHA-256 `6DF601715BA1A5155B4A8E155474B86CD871EC842FC25855329891CEA44C6076`; evidence `211/213/214/215/230/231/263/333/335/853/855/856/857/894/896/897/898/901/903/905/906`; delimiter count `116/116`; `VehicleComponentDamageJobs.cs` SHA-256 `661880D659B82F73481B7601B575B8172E834D274A10F820A2B933D20B746161`; delimiter count `50/50`; scoped diff-check exited `0` with LF/CRLF warnings only. Build was not launched after this edit because CPU sampled `75.2`, above the project `50` threshold.
+
+## Decision 363 - Restore Ladder Blackbox Dump And Fix NativeArray By-Ref Compile Failure
+
+Problem: A legal gated build exposed `CS8156` in `ProceduralLadderClimbRuntime` because `telemetryRing[index]` was passed by `in` to the serializer. Current source also had a degenerate dump loop that only read `Frame`, so the blackbox route did not emit the required retained telemetry payload.
+
+Solution: Stage a fixed 24-byte little-endian dump header plus fixed 128-byte telemetry rows into a temporary `NativeArray<byte>` on the fault/postmortem path. Copy each ring entry into a local `LadderClimbTelemetryEntry entry` before passing it by `in` to `WriteTelemetryEntry()`. Write the payload through `NativeFaultDumpWriter.TryWriteAll(ResolveBlackBoxDumpPath(), ...)` and dispose the temp native payload in `finally`.
+
+Rejected Alternatives: Passing `telemetryRing[index]` by `in` was rejected because `NativeArray<T>` indexer output is not a valid by-ref source. Leaving the no-op `_ = telemetryRing[index].Frame` loop was rejected because it destroys postmortem evidence. Writing through managed `BinaryWriter` was rejected because the existing low-level dump route already accepts a native byte payload.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical ladder IK behavior. Weak devices only pay this cost on NaN/fault, not in normal `LateFrameTick`. High and ultra devices retain full retained-frame evidence for debugging rare IK failures. No gameplay truth owner, DTO layout, save identity, authority route, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; fault/postmortem route only, no profiler/player proof. Proof: `ProceduralLadderClimbRuntime.cs` SHA-256 `FF513F96080B4E0E4EDE9E14C10BACD5DCC894CF285433856B9573597B0A4F36`; evidence `37/39/1364/1370/1381/1382/1388/1395`; delimiter count `145/145`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not launched after this edit because CPU sampled `75.2`, above the project `50` threshold.
+
+## Decision 364 - Keep Cable 132 Readbacks Read-Only And Stage Material CSV Locally
+
+Problem: `CablePhysicsSolver132` sampled telemetry, tuning, and dump rings through mutable DataVault views even though the routes only read. The material CSV path also parsed directly into the authoritative material table while the write lane was held.
+
+Solution: Resolve telemetry ring, telemetry head, tuning, and dump ring through `TryReadOnlyHandle()` and propagate `NativeArray<T>.ReadOnly` to the dump writer. Add a `CableMaterialCsvParser.ParseHashTable(ReadOnlySpan<byte>, Span<CableMaterialDTO>)` overload so fixed CSV staging happens in stack DTO scratch before a short material-lane commit.
+
+Rejected Alternatives: Keeping mutable views plus `.AsReadOnly()` was rejected because the mutable route had already escaped. Parsing directly into the material DataVault lane was rejected because parser work does not need global write ownership. Managed arrays were rejected because the table capacity is fixed and stack staging is enough.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical cable material truth, telemetry layout, and quality behavior. Weak devices avoid global authority widening in diagnostics/editor import. High and ultra devices retain full retained-frame dump and material-table fidelity. No gameplay truth owner, DTO layout, save identity, authority route, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/import and dump/readback paths only, no profiler/player proof. Proof: `CablePhysicsSolver132.cs` SHA-256 `5E4F53B7C2417E66C05ABC522BD5E3EFC81DD4C33830E148A7F3862B0719D0A0`; `VerletCableDTOs.cs` SHA-256 `DBD782ABAF3E758EDF12D72C3ADB3D477A7AE7CB13813796F0DDE299715383AB`; evidence `Cable 538/539/561/569/570/577/615/621/941/949/953`, `DTO 1282/1476`; delimiter counts `150/150`, `165/165`; scoped diff-check exited `0` with LF/CRLF warnings only.
+
+## Decision 365 - Remove Memory Sentinel CSV File Bytes From DataVault
+
+Problem: `MemorySentinelRuntime` allocated a `CsvScratchBuffer` in GlobalDataVault and read editor validation-rule file bytes into that global lane. Those bytes are cold import staging, not cross-domain state. The parser then mutated runtime state through a mutable resolve instead of an explicit write-lock route.
+
+Solution: Remove the CSV scratch handle from the vault lifecycle. Read the validation CSV into fixed `stackalloc` bytes. Parse from `ReadOnlySpan<byte>`. Commit the resulting runtime-state changes through `_runtimeStateHandle` `TryAcquireWriteLock()` and release the lock in `finally`. File IO occurs before the write lock.
+
+Rejected Alternatives: Keeping a shorter-lived DataVault scratch lane was rejected because raw CSV file bytes have no global owner. Holding the runtime-state write lock during `FileStream.Read()` was rejected because disk IO must not inflate DataVault lock hold time. Managed `byte[]` staging was rejected because the capacity is fixed and the route is editor/cold.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical validation frequency, AUP tolerance, strictness, modded mask, and quality override semantics. Weak editor machines avoid an unnecessary global native lane and avoid disk stalls under DataVault ownership. High and ultra devices retain full CSV override fidelity. No gameplay truth owner, DTO layout, save identity, authority route, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold route only, no profiler/player proof. Proof: `MemorySentinelRuntime.cs` SHA-256 `6A7644A4BB2E465047D14CFE4346C63BE90CFCD1446F795328EE742859E9D62A`; evidence `1722/1733/1740/1757/1761/1799`; delimiter count `169/169`; `_csvScratchHandle` and `CsvScratchBuffer` scans returned no matches. Build was blocked by CPU `74` and active `dotnet.exe` PID `25340`.
+
+## Decision 366 - Flatten Seaglide Editor Readbacks And Tuning Commits
+
+Problem: `SeaglideHydrodynamicsRuntime` exposed editor diagnostic views by resolving mutable DataVault arrays and then returning `.AsReadOnly()`. Its editor tuning and cold CSV profile routes also wrote the tuning lane through mutable resolves. A separate editor CSV scratch DataVault route stored raw profile file bytes even though no other system owns them.
+
+Solution: Add `TryReadOnlyVaultBuffer()` and route editor view getters through `TryReadOnlyHandle()`. Commit editor tuning and CSV profile changes through `_tuningHandle` `TryAcquireWriteLock()` with `ReleaseWriteLock()` in `finally`. Read profile CSV bytes into fixed stack scratch before acquiring the tuning write lock. Remove `_csvScratchHandle` and `SeaglideHydrodynamicsBufferIds.CsvScratch` from the runtime/contract route.
+
+Rejected Alternatives: Leaving `.AsReadOnly()` after mutable resolve was rejected because it is not read authority. Holding the tuning write lock while reading the CSV file was rejected because file IO is outside DataVault ownership. Keeping `ShinobuSeaglideCsvScratch` as a public route was rejected because current code no longer allocates or consumes that global lane.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical seaglide tuning DTO layout, force packets, audio/cavitation presentation lanes, and continuous quality behavior. Weak devices avoid an unused global buffer and fail closed if the tuning lock cannot be acquired. High and ultra devices retain full profile import and editor diagnostics fidelity. No gameplay truth owner, DTO layout, save identity, authority route, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold route only, no profiler/player proof. Proof: `SeaglideHydrodynamicsRuntime.cs` SHA-256 `968C4DCA35B95762E6E89CFEDF647668A0CC4679AEF9304DAD32E478F2916505`; `SeaglideHydrodynamicsContracts.cs` SHA-256 `887D5C1E5EB69BAD310F41D5C8A9B50974CB9755FBE1D18E082C98701B9D4629`; evidence `Runtime 83/98/99/100/101/102/103/117/121/124/128/146/1178/1192/1212/1231/1409`, `Contracts 21/22/23`; delimiter counts `117/117`, `24/24`; scoped diff-check exited `0` with LF/CRLF warnings only. Build was blocked by CPU `74` and active `dotnet.exe` PID `25340`.
+
+## Decision 367 - Defer Acoustic Presentation And Remove Hot LateFrame Registration
+
+Problem: `AcousticZoneController.Tick()` queued audio state every frame, but several queue helpers called `TryRegisterLateFrameTick()`. If late-frame registration was missing or had been lost after dispatcher replacement, those helpers could poll `GlobalRegistry.Dispatcher` from the hot path. The same `Tick()` path also executed presentation side effects directly through zone transitions and snapshot processing: `AudioMixerSnapshot.TransitionTo()`, ambient `AudioSource` writes, and transition cue scheduling were phase-coupled to simulation.
+
+Solution: Remove late-frame registration from all queue helpers and handle dispatcher replacement in the cold hot-swap callback by unregistering/re-registering tick and late-frame lanes. Preserve bootstrap robustness with a single cold `Start()` fallback late-frame registration attempt. Convert zone and snapshot presentation into pending field transfer. `Tick()` now writes only bool/enum/float/reference pending state. `LateFrameTick()` enters a guarded presentation phase with `_isLateFramePresentationPhase` in `try/finally`, flushes pending zone presentation, pending snapshots, source-level graph, ambient loop state, mixer routing, and queued cues. `TransitionToResolvedSnapshot()` refuses non-late-frame execution and requeues the snapshot request.
+
+Rejected Alternatives: Keeping lazy `TryRegisterLateFrameTick()` in queue helpers was rejected because it makes hot behavior depend on registry state. Moving presentation to `SlowTick` was rejected because airlock and underwater acoustic transitions are audible timing surfaces. Allocating a managed transition command object was rejected because the payload is fixed and fits existing fields. Running `AudioMixerSnapshot.TransitionTo()` in `Tick()` with comments was rejected because it does not satisfy the phase contract.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical acoustic zone truth, mixer snapshot choices, surface weather blending, and cue content. Weak devices avoid registry polling in per-frame queue helpers and keep all Unity presentation calls after simulation has settled. High and ultra devices keep full acoustic graph/cue fidelity; no binary quality switch, gameplay truth owner, DTO layout, save identity, authority route, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. Proof: `AcousticZoneController.cs` SHA-256 `356BE4C1B8C31C18168D15841C61C943E1F7EBA5AF2DC50F7E4EEDABC345AC2B`; evidence `876/967/973/1021/1024/1025/1045/1214/1217/1336/1900/1906/1914/2146/2354/2558/2565/2572/2579/2587/2594/2601/2719/2738/2789/3188/3351`; delimiter count `271/271`; scoped hot-method parser over four edited files scanned `11` hot bodies and found `0` forbidden hot lookup hits; scoped diff-check exited `0` with LF/CRLF warning only. Build was blocked because the initial gate saw CPU `72.75` with active `dotnet build` PIDs `6736/29324`; final gate saw CPU `98.72` with `COMPILER_PROCS=0`.
+
+## Decision 368A - Keep VR Somatic LateFrame Registered While Active
+
+Problem: `VRSomaticProvider` already staged shader, audio, transform-pose, and velocity-anchor haptic payloads for `LateFrameTick`, but the dirty setters called `TryRegisterLateFrame()` from the per-frame `Tick()` route. When the late-frame lane was not already registered, a dirty flag could cause a hot `GlobalRegistry.TryRegisterLateFrameTickable()` call. That is not a `GlobalRegistry.Get<T>()` violation, but it is still registry traffic in the frame loop and creates a stale-presentation risk if dispatcher replacement drops the registration.
+
+Solution: Treat late-frame registration as an active-runtime lifecycle state, not a per-payload demand edge. Register cold from `OnEnable`/`Start`/active-runtime refresh, unregister only when XR runtime is inactive or the component is released, and rebind update plus late-frame lanes when `GlobalRegistryServiceSlot.Dispatcher` is replaced. Remove `TryRegisterLateFrame()` calls from chest socket, visor pose, breathing audio, root pose, inactive-state, shader state, comfort vignette, and velocity-anchor haptic queue paths. `Tick()` now only mutates fixed fields and dirty bits; all Unity `Shader.SetGlobal*`, `AudioSource`/filter writes, transform pose writes, and `ToolHapticsRuntime.TryEnqueueCommand()` remain in `LateFrameTick` through `FlushQueuedPresentationOutputs()`.
+
+Rejected Alternatives: Keeping `ShouldKeepLateFrameRegistered()` as a demand-based registry gate was rejected because it creates registry churn after idle frames. Adding a managed command queue was rejected because the payload already fits fixed fields and bit flags. Moving haptic enqueue back into `Tick()` was rejected because controller-output presentation must remain after simulation. Registering every frame was rejected because it is needless registry traffic.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical VR comfort math, shader payload layout, breathing audio behavior, and haptic content. Weak devices avoid registry work from hot dirty setters and keep the late-frame method as a cheap no-op when idle. High and ultra devices retain full visor, condensation, comfort vignette, and velocity-anchor feedback. No gameplay truth owner, DTO layout, save identity, authority route, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. Proof: `VRSomaticProvider.cs` SHA-256 `3B818E04223D2E1E55E9D7BE1B4AD35328ABE192D92AADE4D28C9C97D8E22E1E`; evidence `827/830/889/895/967/1042/1714/1755/1826/1941/2470/2519/2532/2745`; delimiter count `357/357`. All-source hot-method parser scanned `1988` hot bodies and found `0` forbidden registry/component lookups. Simulation-phase presentation parser scanned `1610` bodies and found only `PerformanceMonitor.Tick -> _frameStopwatch.Stop()`. Runtime non-Editor write-lock parser scanned `66326` methods and found `0` potential nested DataVault write-lock chains before release. Build was not launched because `dotnet build Hecton8.slnx ... --no-restore` PID `49044` was already active.
+
+## Decision 368 - Remove Homeostasis Dictator Global Scratch And One-Element Job
+
+Problem: `HomeostasisBrain.ScalabilityDictator` kept editor CSV file bytes in a `GlobalDataVault` scratch lane and still had mutable `TryResolveHandle()` helpers for state/tuning/mock/telemetry routes. It also scheduled `MockTerrainSamplerStatusJob` for a single `MockTerrainSamplerStatus` element, using a mutation guard plus raw mutable DataVault view in player code. That violated the "no global heap", "read accessors are pure", "write locks are explicit", and "reject tiny jobs" rules.
+
+Solution: Remove the CSV scratch handle, buffer ID usage, requested-byte accounting, resolve/open helpers, and release path. `TryPollCsvOverrides()` now reads the editor CSV into a fixed stack byte span, validates full reads, and parses from `ReadOnlySpan<byte>`. Initialization clears, emergency mock defaults, tuner state writes, telemetry writes, terrain sampler status, and heavy-load facade writes now use `TryAcquireWriteView()` with `ReleaseWriteLock()` in `finally`. Read facades use read-only handles. Replace the one-element terrain sampler job with direct synchronous DTO write under the terrain status write lock.
+
+Rejected Alternatives: Keeping a shorter-lived DataVault CSV byte lane was rejected because raw editor file bytes are not cross-domain state. Holding a write lock during `FileStream.Read()` was rejected because disk IO must stay outside DataVault ownership. Keeping the Burst `IJob` was rejected because one DTO write is smaller than the scheduling/fence/mutation-guard machinery and creates a cross-frame authority surface.
+
+Scalability potential: Low devices avoid unnecessary global native scratch allocation and job scheduling overhead for a one-element status update. Middle devices keep the same continuous quality-weight behavior and CSV override fidelity. High and ultra devices retain visual-overkill quality scaling through `GlobalQualityWeight`, culling multiplier, math LOD, and telemetry; no binary low/high quality switch, gameplay truth owner, DTO layout, save identity, or authority route changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. Static value is authority narrowing and stall-risk reduction. Proof: `HomeostasisBrain.ScalabilityDictator.cs` SHA-256 `67D764DAC9C4CBCDBAC97D5281387AC300642832786E33A02ED1E2AA6E286BB2`; evidence `170/381/389/393/401/407/415/420/428/432/433/441/862/1222/1238/1241/1255/1258/1272/1282/1289/1311/1388/1393/1407/1489/1522/1526/1570/1578/1581/1596/1607/1611/1619/1776/1777/1784/1818/1821/1913/1939/1947/1959/1980/2008/2258/2391`; delimiter counts `{245/245}`, `(1061/1061)`, `[130/130]`; diff stat `174 insertions`, `308 deletions`; scoped `git diff --check` exited `0` with LF/CRLF warning only. Scans for `_csvScratchHandle`, `ShinobuScalabilityCsvScratch`, `TryResolveHandle`, terrain sampler job/guard identifiers, `GlobalRegistry.Get<T>()`, `GetComponent`, `TryGetComponent`, `string.Format`, `.ToString()`, `foreach`, LINQ materializers, managed container `new`, and `.Complete()` returned no matches. Build was not run: CPU `87`, active `dotnet.exe` PID `49044` was already running `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1 --no-restore /p:UseSharedCompilation=false`.
+
+## Decision 369B - Remove Signal Warden CSV Byte Scratch From DataVault
+
+Problem: `SignalWardenRuntime` kept two DataVault byte scratch lanes for editor CSV input: signal tuning profile bytes and signal thread-contention capacity bytes. Raw source-file bytes are parser input, not cross-domain state. Keeping them in `GlobalDataVault` widened authority and made readiness checks depend on a lane that no runtime system should own.
+
+Solution: Remove `CsvScratchBufferId`, `_csvScratchHandle`, `TryReadCsvBytesForLoad()`, and `TryOpenCsvScratchForLoad()` from both signal tuning and thread-local scratchpad routes. Read editor CSV bytes into fixed same-call `stackalloc` spans, parse before the span escapes, and leave DataVault with only DTO/runtime lanes. Keep `SignalTuningTable` profile/count writes on the existing owner route and keep signal telemetry write locks in their existing `try/finally` sections.
+
+Rejected Alternatives: Keeping a shorter-lived DataVault CSV byte lane was rejected because file bytes have no stable owner. Returning a `ReadOnlySpan<byte>` backed by stack memory was rejected because the span would escape the read method. Allocating a managed `byte[]` was rejected because the CSV size is fixed and the path is editor/cold. Adding a mutation guard around parser bytes was rejected because the parser input is local, not global state.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical signal priorities, contention capacity tuning, DTO layout, dump format, and continuous `GlobalQualityWeight` behavior. Weak editor machines avoid two unnecessary global native lanes and readiness checks. High and ultra devices retain full CSV tuning fidelity and blackbox output. No gameplay truth owner, save identity, authority route for signal DTOs, or binary quality switch changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold route only, no profiler/player proof. Proof: `SignalWardenRuntime.cs` SHA-256 `F186F8EAEF6F4B88D2766EB466A963929531F4DCF39CB89B688C44C4EC3364FD`; evidence `302/313/549/555/267/288/380/441/999/1014/1021/1036/3119/3126/3251/3284/3321`; removed-symbol scan for `_csvScratchHandle`, `CsvScratchBufferId`, `TryReadCsvBytesForLoad`, `TryOpenCsvScratchForLoad`, and `csvScratch` returned no matches; scoped hot declaration parser found `4` hot methods and `0` registry/component hits; `git diff --check` exited `0` with LF/CRLF warning only. Build was not launched because CPU sampled `71`, above the project `50` threshold.
+
+## Decision 369 - Remove Vehicle Damage CSV Scratch Lane And Flatten Editor Writes
+
+Problem: `VehicleComponentDamageRuntime` still allocated `CsvScratchBuffer` in `GlobalDataVault` for editor CSV import, carried process-wide managed CSV byte/grid scratch arrays, and committed CSV/editor tuning changes through mutation guards plus mutable `TryResolveHandle()` routes. Blackbox and gizmo readbacks also opened mutable views for pure reads. This was outside the Burst damage job's legitimate multi-lane mutation guard and created unnecessary authority widening in cold/editor paths.
+
+Solution: Remove `CsvScratchBuffer`, `_csvScratchHandle`, static byte scratch, static grid scratch, and the busy interlock. Read CSV bytes into fixed stack bytes, require exact full-file reads, stage grid DTOs in a same-call `Allocator.Temp` `NativeArray`, and dispose it in `finally`. Commit grid write/read lanes with one `TryAcquireWriteLock()` per lane and `ReleaseWriteLock()` in `finally`. Commit CSV/editor tuning through the tuning write lock only. Read blackbox fault state and gizmo cells through `TryReadOnlyHandle()`.
+
+Rejected Alternatives: Keeping a DataVault byte scratch lane was rejected because raw editor file bytes are not cross-domain state. Keeping process-wide managed scratch arrays was rejected because the route can use stack bytes plus temporary native staging without persistent managed state. Holding one broad mutation guard over CSV grid and tuning commits was rejected because each destination lane can be committed sequentially under a single explicit write lock. Replacing the main damage job guard was rejected in this pass because it protects a coupled multi-lane Burst job and needs a separate redesign.
+
+Scalability potential: Low devices avoid an unused global buffer and process-wide editor scratch while keeping exact same damage grid semantics. Middle devices keep CSV layout import and editor tuning controls. High and ultra devices keep full grid fidelity and existing quality-scaled hazard signal behavior. No gameplay truth owner, DTO layout, save identity, runtime Burst job route, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold and diagnostic readback path only, no profiler/player proof. Proof: `VehicleComponentDamageRuntime.cs` SHA-256 `B1B79DAB1E713F38F797D01568B9FC9D6F15A9FBC5135A1E31D013A63ABD8B58`; `VehicleComponentDamageContracts.cs` SHA-256 `F9006AEB49F27969CF3633EADE2B3F0DC20385B90591D41B8D1D3C2CBAA32C57`; evidence `Contracts 25`, `Runtime 927/941/947/952/958/963/999/1036/1059/1072/1093/1166/1334/1376/1438`; delimiter counts runtime `{114/114}`, `(618/618)`, `[58/58]`, contracts `{37/37}`, `(272/272)`, `[126/126]`; scoped diff-check exited `0` with LF/CRLF warnings only. Old CSV scratch and editor mutation-guard symbols scan returned no matches. Build was not run because CPU was `85` and active `dotnet.exe` PID `49044` was already running.
+
+## Decision 370 - Remove Analytical Gerstner CSV Scratch Lane And Flatten Cold-Boot Writes
+
+Problem: `AnalyticalGerstnerWaveRuntime` still exposed ocean wave profile CSV bytes as a `GlobalDataVault` scratch lane and kept process-wide managed byte scratch guarded by `Interlocked`. Cold-boot telemetry/tuning/profile/counter commits used narrow mutation guard masks plus mutable handle resolution. Editor diagnostics opened mutable buffers and returned `.AsReadOnly()`. These paths are cold/editor or single-lane commits, not legitimate multi-lane job ownership.
+
+Solution: Remove the CSV scratch handle, buffer ID, static managed byte scratch, and busy interlock. Read profile CSV bytes into fixed stack storage, require exact full-file reads, and parse from `ReadOnlySpan<byte>`. Keep the main Gerstner job mutation guard untouched because it covers a coupled Burst write set. Convert telemetry entry/cursor, cold tuning, spectrum, counter, and profile commits to single-lane `TryAcquireWriteLock()` helpers with `ReleaseWriteLock()` in `finally`. Convert editor diagnostics, readiness, and gizmo reads to `TryReadOnlyHandle()`.
+
+Rejected Alternatives: Keeping the DataVault byte scratch lane was rejected because raw editor CSV bytes are not cross-domain native state. Keeping process-wide managed scratch was rejected because the import has fixed capacity and can use stack bytes. Holding a write lock while reading the file was rejected because disk IO must stay outside DataVault ownership. Removing the main job mutation guard was rejected because that job still mutates spectrum/request/result/macro/counter lanes as one scheduled Burst phase and needs a separate redesign if the job ownership model changes.
+
+Scalability potential: Low devices avoid an unnecessary global buffer and process-wide managed CSV scratch while keeping cheap analytical wave sampling. Middle devices retain exact profile import and cold boot behavior. High and ultra devices keep full Gerstner spectrum/profile fidelity and the existing `GlobalQualityWeight` math LOD path. No gameplay truth owner, DTO layout, save identity, runtime authority route, binary quality switch, or continuous quality semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold and diagnostic paths only, no profiler/player proof. Proof: `AnalyticalGerstnerWaveRuntime.cs` SHA-256 `AC301B95D1FE50ADE81CCCB286BDE0F308D6B7767C94EFAC3F4AE2C90C1D5B2C`; `AnalyticalGerstnerWaveContracts.cs` SHA-256 `4F691FE5426A4FF0781C71758D1417651CF8BFD412018862068289D48AC395AB`; evidence `Contracts 22/64`, `Runtime 80/103/106/108/110/112/113/476/500/766/767/768/769/770/846/861/871/885/896/916/926/940/953/974/984/998/1008/1023/1134/1147/1151/1161/1166/1193/1205/1210/1215/1268/1269`; delimiter counts runtime `{127/127}`, `(533/533)`, `[39/39]`, contracts `{37/37}`, `(271/271)`, `[119/119]`; scoped diff-check exited `0` with LF/CRLF warnings only. Build was attempted once when CPU was `36` and no compiler processes existed; it timed out after `244` seconds without diagnostics, and spawned `dotnet`/`csc` processes were stopped. No clean compile result is claimed.
+
+## Decision 371 - Remove Buoyancy Displacement CSV Scratch Lane And Flatten Editor Commits
+
+Problem: `BuoyancyDisplacementRuntime` kept material volume, material settling, and SIMD tolerance CSV file bytes in a `GlobalDataVault` scratch lane and also carried process-wide managed byte/DTO scratch arrays guarded by `Interlocked`. The CSV commit helpers used narrow mutation guard masks and mutable handle resolution for single-lane cold writes. Owner-route readiness checks also opened mutable views just to prove capacity.
+
+Solution: Remove the CSV scratch buffer ID, `_csvScratchHandle`, static byte scratch, static DTO scratch arrays, busy interlock, and `System.Threading` dependency. Read each CSV file into fixed stack bytes, require exact full reads, parse into fixed stack DTO spans, and commit one destination lane at a time with `TryAcquireWriteLock()` plus `ReleaseWriteLock()` in `finally`. Change owner-route readiness/adoption validation, mock-seed tuning read, and counter fault read to `TryReadOnlyHandle()` so pure capacity/fault checks do not widen DataVault authority.
+
+Rejected Alternatives: Keeping a DataVault byte scratch lane was rejected because raw editor CSV bytes are not cross-domain state. Keeping process-wide managed arrays was rejected because the import capacities are fixed and fit bounded local staging. Holding a write lock during file IO was rejected because disk reads must stay outside DataVault ownership. Keeping `CounterFaultReadMutationGuardMask` was rejected because fault readback does not mutate. Replacing the main buoyancy job mutation guards was rejected in this pass because they cover coupled solver, force-drain, completion telemetry, and SIMD benchmark write sets and need separate profiler-backed decomposition.
+
+Scalability potential: Low devices avoid global parser scratch and static managed staging while keeping the same buoyancy material table, sleep settling table, and SIMD tolerance semantics. Middle devices keep editor profile import fidelity. High and ultra devices keep full material/SIMD tuning fidelity and the existing continuous `GlobalQualityWeight` paths. No gameplay truth owner, DTO layout, save identity, runtime authority route, binary quality switch, or quality-weight semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold path only, no profiler/player proof. Proof: `BuoyancyDisplacementRuntime.cs` SHA-256 `9B4D8C525DA4C8C1979E3CAFBC79CEFD66CF74630306A454292AD133C072D14A`; `BuoyancyDisplacementContracts.cs` SHA-256 `783BCC74BE1F804F3E33BAA4B0E961B21A2DB241B411FE0D12C93C7B7CC92B34`; evidence `Contracts 20/83`, `Runtime 908/913/917/931/936/940/954/959/963/977/996/1008/1027/1039/1058/1070/1082/1129/1236/1251/1267/1671/2041/2053/2058/2063`; delimiter counts runtime `{169/169}`, `(1043/1043)`, `[77/77]`, contracts `{109/109}`, `(1137/1137)`, `[220/220]`; scoped diff-check exited `0` with LF/CRLF warnings only. Build was not run for this pass because CPU sampled `91`, above the project `50` threshold.
+
+## Decision 372 - Remove Async Buoyancy Readback CSV Scratch Lane
+
+Problem: `AsyncBuoyancyReadbackRuntime` kept vehicle sampling profile CSV bytes in a `GlobalDataVault` byte lane and wrote those bytes under a DataVault write lock before parsing. Editor diagnostics also opened mutable buffers and converted them to read-only views. The scratch lane was not gameplay truth, save state, telemetry, or cross-domain native ownership; it was transient editor parser input.
+
+Solution: Remove `AsyncBuoyancyReadbackBufferIds.CsvScratch`, `_csvScratchHandle`, and the old `CsvScratchBytes` contract. `LoadVehicleSamplingProfiles()` now reads the CSV into bounded stack bytes, parses into bounded stack `VehicleSamplingProfileDTO` staging, then takes a short write lock only to copy parsed DTOs into the profile lane and clear stale rows. `TryOpenEditorViews()`, profile fallback resolution, and descriptor readiness checks use `TryReadOnlyHandle()` for pure reads.
+
+Rejected Alternatives: Keeping a DataVault byte scratch lane was rejected because editor source bytes have no stable runtime owner. Holding the profile write lock while parsing CSV was rejected because parse cost is not DataVault ownership work. Allocating a managed `byte[]` or `List<VehicleSamplingProfileDTO>` was rejected because the import bounds are fixed. Replacing the GPU async readback/ring path was rejected because that path is legitimate presentation/readback infrastructure and needs separate profiler-backed work if changed.
+
+Scalability potential: Low devices avoid one unnecessary global native lane and keep the same fallback sampling grid. Middle devices keep editable CSV profile import. High and ultra devices retain full GPU readback path, wave parameter uploads, and continuous `GlobalQualityWeight` sample budget scaling. No gameplay truth owner, DTO layout, save identity, authority route for resolved heights, binary quality switch, or readback ring cadence changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold and diagnostic path only, no profiler/player proof. Proof: `AsyncBuoyancyReadbackRuntime.cs` SHA-256 `311937D63EA0ADD1949B97E23C985699E372EC2EF21F3AE547BEF1DB34ED03B0`; `AsyncBuoyancyReadbackContracts.cs` SHA-256 `3769E1489FF7D1C1EDC2B3C923DE31B475083B25E9FAAF3FFAC13B65057E148D`; evidence `Contracts 17/54`, `Runtime 297/298/299/300/1083/1763/1764/1769/1770/1774/1777/1795/1824/2172/2181/2194/2218/2238/2246`; delimiter counts runtime `{257/257}`, `(1060/1060)`, `[90/90]`, contracts `{16/16}`, `(132/132)`, `[86/86]`; scoped diff-check exited `0` with LF/CRLF warnings only. Build was not run because CPU sampled `100`, above the project `50` threshold.
+
+## Decision 373 - Remove Submarine Autopilot CSV Scratch Lane
+
+Problem: `SubmarineAutopilotSdfNavigator` allocated `AutopilotCsvScratch` as a `GlobalDataVault` byte lane for editor handling-profile CSV input, then imported by holding a mutation guard over both the raw byte scratch lane and the authoritative handling-profile DTO lane. Raw source-file bytes are transient parser input, not gameplay truth, save identity, telemetry, or cross-domain native ownership.
+
+Solution: Remove `AutopilotCsvScratch`, `_csvScratchHandle`, `CsvScratchBytes`, `MaxCsvBytes`, and `HandlingProfilesCsvMutationGuardMask`. `TryApplyHandlingProfilesCsv()` now reads the CSV into a fixed stack byte span, rejects empty/oversized/partial reads, parses into fixed stack `AutopilotHandlingProfileDTO` staging, then calls `CommitHandlingProfiles()` to acquire one write lock for `AutopilotHandlingProfiles`, copy parsed DTOs, clear stale trailing rows, and release in `finally`.
+
+Rejected Alternatives: Keeping a DataVault byte scratch lane was rejected because file bytes have no stable runtime owner. Holding the handling-profile write lock during file IO or parsing was rejected because disk/parsing work is not DataVault ownership work. Allocating a managed `byte[]` or `List<AutopilotHandlingProfileDTO>` was rejected because the import capacities are fixed. Replacing the main autopilot solver mutation guards was rejected in this pass because they protect coupled fixed-step job lanes and need separate profiler-backed decomposition.
+
+Scalability potential: Low devices avoid one unnecessary global native lane and a broader mutation guard while keeping identical default/scout/freighter handling profile semantics. Middle devices keep editable CSV handling profiles. High and ultra devices retain full SDF navigation, flow compensation, feeler count scaling through `GlobalQualityWeight`, and blackbox telemetry. No gameplay truth owner, DTO layout, save identity, runtime solver authority route, binary quality switch, or continuous quality-weight behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold path only, no profiler/player proof. Proof: `SubmarineAutopilotSdfNavigator.cs` SHA-256 `5EE688831BCCB386BA89F8CE987F6784481389ED0FE9E9424A57DCB9B0EB9757`; evidence `37/76/2549/2571/2572/2577/2590/2594/2597/2608/2617/2621`; delimiter counts `{251/251}`, `(1666/1666)`, `[235/235]`; diff stat `43 insertions`, `63 deletions`; scoped diff-check exited `0` with LF/CRLF warning only. Old scratch symbol scan returned no matches. Build was not run because CPU sampled `62`, above the project `50` threshold.
+
+## Decision 374 - Remove Dead Tether AUP Cable Material CSV Scratch Lane
+
+Problem: `TetherAupVaultBootstrap.EnsureMockBuffers()` allocated a 16 KB `BufferID.Shinobu143CableMaterialCsvScratch` lane and included it in `BootstrapMutationGuardMask`, but the file has no CSV read path and no parser consuming that lane. The mock bootstrap only needs `Shinobu143CableMaterials` for `CableMaterialDTO.GenerateEmergencyMockCables()`.
+
+Solution: Remove `Shinobu143CableMaterialCsvScratch` from the bootstrap mutation guard and remove the unused `OpenOrAcquireBuffer<byte>()` allocation. Leave the actual cable material lane, node/constraint lanes, telemetry lanes, solver route, and quality-weight tether scheduling untouched.
+
+Rejected Alternatives: Keeping the scratch lane was rejected because an unused DataVault lane is still authority surface and readiness noise. Editing `H8Memory.BufferID` was rejected because that file is already dirty in another agent's work and enum cleanup is not required for runtime behavior. Replacing the tether solver guard was rejected because it protects coupled bootstrap/job state and this patch only proves a dead lane removal.
+
+Scalability potential: Low devices avoid an unused native allocation and guard bit during bootstrap. Middle devices keep the same mock tether material defaults. High and ultra devices retain full AUP tether solver fidelity, segment tension output, spline/force-packet lanes, and continuous `GlobalQualityWeight` iteration scaling. No gameplay truth owner, DTO layout, save identity, solver authority route, binary quality switch, or quality-weight behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; bootstrap/cold path only, no profiler/player proof. Proof: `TetherAupVerletJobs.cs` SHA-256 `5941210835CA77E672F7B59818409AA10B2236DE7D807B8C081C235FD56AAB36`; evidence `282/1219/1232/1310/1343/1409/1411/1437/1447/1456`; delimiter counts `{122/122}`, `(571/571)`, `[84/84]`; diff stat `2 insertions`, `9 deletions`; scoped diff-check exited `0` with LF/CRLF warning only. Old scratch-symbol scan returned no matches. Build was not run because CPU sampled `77`, above the project `50` threshold.
+
+## Decision 375 - Remove Audio CSV Byte Scratch Lanes And Reject Partial Cold Reads
+
+Problem: `VocalWarningSystem`, `AdaptiveStemAudioMixer`, and `DynamicMusicGranularSynthesizer` carried editor/cold CSV byte lanes or mutable owner-view dependencies that were not gameplay truth. Adaptive stem accepted a single `FileStream.Read()` result, which could parse a partial file. Dynamic music held a mutation guard while reading preset CSV bytes. These are stale/lock risks in cold tooling paths, not useful runtime authority.
+
+Solution: Remove the VWS, adaptive stem, and dynamic music CSV byte scratch handles/views/readiness/release paths. Route VWS editor tuning through a single `_tuningHandle` write lock with `finally`. Route adaptive stem rule writes through one `_rulesHandle` write lock with `finally`; read current rule through `TryReadOnlyHandle()`. Read adaptive stem and dynamic music CSV files into fixed stack byte spans, reject empty/oversized/partial reads, parse from `ReadOnlySpan<byte>`, commit only parsed DTO state, and acknowledge adaptive stem `_lastCsvWriteUtc` only after successful commit.
+
+Rejected Alternatives: Keeping DataVault byte scratch lanes was rejected because raw editor file bytes are not cross-domain state. Holding a mutation guard/write lock during file IO was rejected because disk work is not DataVault ownership. Keeping single-read CSV import was rejected because partial reads create stale tuning from incomplete files. Updating CSV timestamp before commit was rejected because transient file-sharing failures could make stale rules look current. Allocating managed parser buffers was rejected because capacities are bounded and fit stack spans.
+
+Scalability potential: Low devices avoid unnecessary global native lanes and cold lock scope. Middle devices keep the same warning, stem, and granular synth DTOs and CSV authoring paths. High and ultra devices retain full adaptive stem telemetry, granular synth grain-bank/DSP behavior, and continuous `GlobalQualityWeight` scaling. No gameplay truth owner, DTO layout, save identity, runtime DSP authority route, binary quality switch, or quality-weight behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold route only, no profiler/player proof. Proof: `VocalWarningSystem.cs` SHA-256 `ABBB2F0897113B6D2E2EA7506161F4AD21729C51111BA9B77EDC43E45A0B3D53`; `AdaptiveStemAudioMixer.cs` SHA-256 `C79E931BFF43F91CEA886D2DCEEC6C601267EBEC28F0CEF0C7257C8690B850CB`; `DynamicMusicGranularSynthesizer.cs` SHA-256 `CD0B191D33DA2CA54EB5C34411E27375EFB64ECA7426C3F0092898D5E0E6EBB2`; evidence `VWS 520/535`, `Adaptive 473/488/1356/1376/1377/1389`, `Dynamic 568/589/1734/1973/2029`; scoped diff-check exited `0` with LF/CRLF warnings only; refined all-source hot parser scanned `2000` hot bodies and found `0` forbidden hot dependency lookups. Build was not run because CPU sampled `100`, above the project `50` threshold.
+
+## Decision 376 - Remove Abyssal Thermodynamics Profile CSV Byte Lane
+
+Problem: `AbyssalThermodynamicsSolver` allocated `BufferID.AbyssalThermalProfileBytes` as an 8192-byte `GlobalDataVault` lane for editor heat-source profile CSV input, then parsed from that mutable global byte buffer into `AbyssalThermalProfiles` and `AbyssalThermalProfileCount`. The bytes are source-file parser input, not gameplay truth, save identity, telemetry, or cross-domain native ownership. `SeedDefaultProfiles()` also wrote profile DTO and count lanes via mutable array resolve without explicit write-lock ownership.
+
+Solution: Remove `_profileBytes`, the profile byte-lane acquisition, clear, release, and mutable byte-buffer resolve. `TryLoadProfilesCold()` reads exact CSV bytes into a same-call stack span, parses into stack `HeatSourceProfileDTO` staging, and publishes only parsed DTO state. `SeedDefaultProfiles()` now stages its emergency black-smoker profile on the stack and uses the same publication helper. `CommitHeatSourceProfiles()` acquires the profile DTO lane, copies/clears, releases in `finally`, then acquires the count lane, publishes the count, and releases in `finally`.
+
+Rejected Alternatives: Keeping the byte lane was rejected because raw editor file bytes have no stable owner. Holding a write lock during file IO or parsing was rejected because disk and parser work are not DataVault ownership. Acquiring `_profiles` and `_profileCount` together was rejected because the project rule requires flat lock ownership and this route runs during cold/profile import, not an active solver job. Editing `H8Memory.BufferID.AbyssalThermalProfileBytes` was rejected because `H8Memory.cs` is already dirty in another agent's work and enum cleanup is not required for this solver to stop allocating the lane.
+
+Scalability potential: Low devices avoid one unnecessary native byte allocation and mutable resolve path during thermodynamics bootstrap/editor import. Middle devices keep editable heat-source profile CSV fidelity. High and ultra devices retain the full thermal grid, Jacobi quality scaling, residual sampling, blackbox telemetry, and continuous `GlobalQualityWeight` behavior. No gameplay truth owner, DTO layout, save identity, thermal solver schedule, binary quality switch, or quality-weight math changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold path only, no profiler/player proof. Proof: `AbyssalThermodynamicsSolver.cs` SHA-256 `A1B9DE5DB429793B9E8B619ED6B8E85CD1B1C8D8C4594DBB522417B15D1640B3`; evidence `83/816/938/990/1182/1191/1207/1208/1212/1214/1221/1231/1247/1250/1263/1268`; delimiter counts `{102/102}`, `(736/736)`, `[60/60]`; diff stat `87 insertions`, `40 deletions`; scoped diff-check exited `0` with LF/CRLF warning only. Old profile-byte symbol scan over the solver returned no matches. Build was not run because CPU sampled `74`, above the project `50` threshold.
+
+## Decision 377 - Remove Thermodynamics Hazard Config CSV Dead Vault Lane
+
+Problem: `ThermodynamicsHazardGridRuntime` still allocated `BufferID.ThermodynamicsCsvBytes` and `ThermodynamicsHazardGridRuntime.FileWorker.StartConfigWorkerIfNeeded()` refused to start in editor unless that stale `_csvBytes` handle existed. The actual current CSV path already uses `_csvWorkerBytes` in the worker partial and commits parsed `ThermodynamicsHazardConstants` through the constants write lock, so the Vault CSV byte lane was no longer a real data owner. The main runtime also retained an unused `NativeArray<byte>` CSV parser beside the worker-local byte parser.
+
+Solution: Remove `VaultCsvBytesBuffer`, `_csvBytes`, the editor `AcquireBuffer<byte>()` allocation, the default/release slot, and the FileWorker `_csvBytes` startup gate. Remove the dead main-runtime `ParseCsvConstants(NativeArray<byte>, ...)` and `ParseFloat(NativeArray<byte>, ...)` route. Keep `_csvWorkerBytes` because it is the only config-worker staging buffer and is allocated once cold before parsing/commit; parsed constants still publish through `TryWriteConstantsWithOwner()` with `ReleaseWriteLock()` in `finally`.
+
+Rejected Alternatives: Keeping a DataVault byte lane was rejected because source CSV bytes are not cross-domain state and the worker already has a private staging buffer. Replacing the worker with per-request stack bytes was rejected because file IO happens on a persistent worker thread and needs an SPSC handoff; stack memory cannot cross that boundary. Editing `H8Memory.BufferID.ThermodynamicsCsvBytes` was rejected because `H8Memory.cs` is already dirty in other work and enum cleanup is not required to stop allocation/use in this runtime.
+
+Scalability potential: Low devices avoid one dead native lane and one stale readiness gate during thermodynamics bootstrap. Middle devices retain CSV override authoring. High and ultra devices retain the same hazard grid diffusion, binary constants load, visual texture upload, telemetry, and continuous `GlobalQualityWeight` resolution/stride behavior. No gameplay truth owner, DTO layout, save identity, solver schedule, binary quality switch, or quality-weight math changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold and bootstrap path only, no profiler/player proof. Proof: `ThermodynamicsHazardGridRuntime.cs` SHA-256 `22AF079C4F34E6AC996BC698A9FE113A78074BDCAA13A013F0CB43A10B54F0F7`; `ThermodynamicsHazardGridRuntime.FileWorker.cs` SHA-256 `96725B2BFD60F30E51B740654150837749DA3153DC201EA3917C7ED5E09FF7C4`; evidence `Runtime 56/114/594/686/701/770/1241/1242`, `FileWorker 18/35/48/50/117/123/231`; delimiter counts runtime `{158/158}`, `(797/797)`, `[120/120]`, worker `{50/50}`, `(167/167)`, `[26/26]`; diff stat `1 insertion`, `78 deletions`; scoped diff-check exited `0` with LF/CRLF warnings only. Build was not run because CPU sampled `91`, above the project `50` threshold.
+
+## Decision 378 - Remove Vocal Bank Dialogue CSV Byte Scratch Lane
+
+Problem: `VocalBankPlaybackRuntime` kept editor dialogue CSV source bytes in `AudioVocalSynthesisCsvScratch`, added that lane to the vocal mutation guard mask, and acquired the scratch view together with the metadata view. The file read also accepted short reads up to scratch capacity. Raw editor CSV bytes are parser input, not gameplay truth, save identity, telemetry, or cross-domain native ownership.
+
+Solution: Remove the DataVault CSV byte handle, view, guard bit, allocation, readiness check, and release route. Keep only `AudioVocalSynthesisCsvMetadata` as the published DTO lane. Add an owner unmanaged editor scratch buffer allocated with `UnsafeUtility.Malloc(..., 16, Allocator.Persistent)` and freed by `ReleaseEditorCsvScratch()`. `ReloadDialogueCsvMetadataCold()` now reads exact file length into that owner buffer, rejects empty/oversized/partial reads, parses via `ReadOnlySpan<byte>`, and releases the metadata route in `finally`.
+
+Rejected Alternatives: Keeping the DataVault byte lane was rejected because source-file bytes have no stable runtime owner. A managed `byte[]` was rejected because it creates a new GC route. `stackalloc` for the full 1 MB capacity was rejected because it risks stack pressure in editor reload. Holding a wider mutation guard while performing file IO was rejected because disk reads and parsing are not DataVault ownership work.
+
+Scalability potential: Low devices avoid one unnecessary native DataVault lane and one wider cold guard route while keeping the same dialogue metadata table. Middle devices keep editor CSV authoring. High and ultra devices retain the full vocal bank DSP path, telemetry ring, mock bank fallback, and continuous `GlobalQualityWeight` attenuation behavior. No gameplay truth owner, DTO layout, save identity, DSP authority route, binary quality switch, or quality-weight behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold path only, no profiler/player proof. Proof: `VocalBankPlaybackRuntime.cs` SHA-256 `A1E4FB0D476D6F26A90BB3643317B3E52DFAC2965BE8A6CC84323BF5E39B3076`; evidence `44/113/114/611/920/964/998/1001/1224/1225/1228/1240/1245/1254/1263`; delimiter counts `{157/157}`, `(595/595)`, `[81/81]`; diff stat `62 insertions`, `30 deletions`; Roslyn parse failures `0`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run because CPU sampled `86`, above the project `50` threshold.
+
+## Decision 379 - Flatten Acoustic Portal Validator DataVault Write Locks
+
+Problem: `AcousticPortalMemorySovereigntyValidator.RunDefragRaceFuzzer()` acquired eight DataVault write locks and held them across job scheduling, editor defrag requests, and job completion. It was editor-only, but it normalized the exact deadlock shape the architecture forbids: one thread holding multiple write lanes while requesting relocation/defrag behavior.
+
+Solution: Remove the multi-lock flag section. Add `ValidateSingleLaneWriteLock<T>()` and `CopySingleLaneToVault<T>()`; each helper acquires exactly one DataVault write lock and releases it in `finally`. Run the acoustic fuzzer jobs on owner-local TempJob buffers. After generating nodes and edges, copy those DTO lanes into DataVault one lane at a time. Keep handle creation, relocation validation, layout assertions, finite query checks, and path result checks.
+
+Rejected Alternatives: Keeping the old validator was rejected because editor-only code still teaches and exercises a deadlock-shaped ownership route. Holding node/edge Vault locks while writing load data and then separately flattening only path scratch locks was rejected because two simultaneous locks would remain. Removing the fuzzer entirely was rejected because the validator still catches layout, path, and relocation regressions. Claiming runtime acoustic readiness was rejected because no Unity menu run or Play Mode proof was produced.
+
+Scalability potential: Low devices get no runtime change; this is editor validation hardening. Middle devices keep the acoustic portal validation route. High and ultra devices keep the same portal path job coverage and relocation checks. No gameplay truth owner, DTO layout, runtime acoustic propagation route, SignalBus lane, quality-weight behavior, or save identity changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor validator only, no profiler/player proof. Proof: `AcousticPortalMemorySovereigntyValidator.cs` SHA-256 `4B0DCE64049D2E9399D16E64245F013DFC663CE06B9FBCE0909AA5827047F36D`; evidence `113/177/276/283/301/305/319/338`; delimiter counts `{32/32}`, `(263/263)`, `[6/6]`; Roslyn parse failures `0`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run because CPU sampled `93.1`, above the project `50` threshold.
+
+## Decision 379 - Remove Submarine Ballast CSV Scratch Lane And Flatten Profile/Tuning Writes
+
+Problem: `SubmarineAutoLevelBallastController.TryApplyBallastProfilesCsv()` used a static managed byte scratch for editor CSV input and still allocated/released a `Shinobu333BallastCsvScratch` DataVault byte lane. It also applied the primary profile while the profiles write lock was still held; `ApplyPrimaryBallastProfile()` calls `WriteBallastTuning()`, so the old route could hold the profiles lane and then acquire the tuning lane.
+
+Solution: Remove the Vault CSV scratch lane, static managed byte scratch, scratch readiness call, handle release, and scanner claim that BufferID 71778 participates in ingestion. Read profile CSV bytes into bounded same-call stack bytes, reject partial reads, parse into bounded stack DTO staging through a new `Span<SubmarineBallastProfileDTO>` parser overload, then commit DTOs under only the profiles write lock. Release that lock in `finally` before applying the primary profile and acquiring the tuning write lock.
+
+Rejected Alternatives: Keeping BufferID 71778 as an editor parser lane was rejected because raw source-file bytes are not cross-domain state. Keeping the static managed byte array was rejected because import capacity is fixed and a same-call stack span is enough. Parsing directly into the DataVault `NativeArray` was rejected because it holds the write lock during parser work and preserved the nested profiles-to-tuning lock vector. Editing `H8Memory.BufferID.Shinobu333BallastCsvScratch` was rejected because `H8Memory.cs` is dirty in other agents' work and enum cleanup is not required to stop allocation/use in this subsystem.
+
+Scalability potential: Low devices avoid an unnecessary native lane, static managed scratch, and a nested lock risk during ballast bootstrap/import. Middle devices keep editable profile CSV authoring. High and ultra devices retain full ballast tank simulation, quality-weight sample budgeting, telemetry, and the same profile DTO layout. No gameplay truth owner, save identity, runtime solver authority route, binary quality switch, or continuous `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold and lock-shape hardening only, no profiler/player proof. Proof: `SubmarineAutoLevelBallastController.cs` SHA-256 `543F5E520CCD8EB47D1D0D1D583DE86C7127C96C11B7392CBEE0BB5DDE0EECD6`; `SubmarineBallastBuoyancyContracts.cs` SHA-256 `CA085A1FB89D783A2661087A578E9A7231384026ACFF3BDA93232D230F14AF6F`; `OOP_Buoyancy_Scanner.cs` SHA-256 `677C3B4A868721190B692207E606A9ECB2192125CAC3B667DF89FBFECF50F356`; evidence `Controller 419/1067/1268/1280/1284/1294/1299/1305/1318/1326/1327/1350/1366`, `Contracts 23/292`, `Scanner 58/69/77`; controller delimiters `{377/377}`, `(1741/1741)`, `[142/142]`, contracts `{57/57}`, `(426/426)`, `[154/154]`; scoped diff-check exited `0` with LF/CRLF warnings only. Build was not run because CPU sampled `100`, above the project `50` threshold.
+
+## Decision 380 - Remove Ballistics Penetration CSV Scratch Lane
+
+Problem: `BallisticsRuntime.TryLoadPenetrationCsv()` allocated BufferID `71279` as a DataVault byte scratch lane and read the penetration CSV while holding the ballistics mutation guard. That guard is the same broad ownership gate used by trajectory, primitive, hit, tuning, telemetry, counter, and impact VFX lanes, so file IO under it is unnecessary stall surface. Raw CSV bytes are editor parser input, not runtime authority.
+
+Solution: Remove `BallisticsVaultBufferIds.CsvScratch`, `_csvScratchHandle`, the editor acquisition/release path, and the readiness dependency. Read the CSV into a bounded stack span before acquiring the mutation guard, reject empty/oversized/partial reads, then acquire the existing ballistics guard only long enough to open the penetration LUT lane and apply parsed values.
+
+Rejected Alternatives: Keeping the DataVault byte lane was rejected because source-file bytes have no stable owner. Reading directly into the LUT under the guard was rejected because parser work should not widen the mutation window. Adding a managed `byte[]` was rejected because the capacity is fixed and a stack span is sufficient. Replacing the broad ballistics mutation guard with per-lane write locks was rejected for this pass because active solver scheduling still depends on the existing coupled guard and needs a separate redesign.
+
+Scalability potential: Low devices avoid one editor native lane and a file-IO stall under a broad guard while keeping the same LUT math. Middle devices keep penetration CSV authoring. High and ultra devices retain full 8x8 penetration matrix, ricochet logic, impact VFX lane, telemetry, and continuous `GlobalQualityWeight` tuning semantics. No gameplay truth owner, DTO layout, save identity, solver authority route, binary quality switch, or quality-weight behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold path only, no profiler/player proof. Proof: `BallisticsRuntime.cs` SHA-256 `ACF82F0B69BFFA5FE427DDC54055E6841C295952297D5D5F942C8F71344CEAA0`; evidence `196/884/894/898/904/914/917/921/926/944`; delimiter counts `{192/192}`, `(1072/1072)`, `[171/171]`; diff stat `26 insertions`, `52 deletions`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run because `dotnet.exe` PID `44748` was already running `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1 --no-restore /p:UseSharedCompilation=false`.
+
+## Decision 381 - Remove Topographical Sonar Material LUT CSV Scratch Lane
+
+Problem: `TopographicalSonarSynthesizer.TryApplyMaterialColorCsvFileForEditor()` wrote material color CSV source bytes into `GlobalDataVault` BufferID `70848`, released that write lock, then re-read the same Vault scratch just to parse and publish `MaterialColorLut`. The source bytes are editor authoring input, not gameplay truth, save identity, telemetry, or cross-domain native ownership. The old file route also accepted whatever bytes were read before EOF/capacity without proving that the whole file was consumed.
+
+Solution: Remove the topographical sonar CSV scratch BufferID, handle, allocation, release, and Vault readback. Keep `MaterialColorLut` as the only published DataVault state. Add `TryReadMaterialColorCsvFileExact()` to validate file size and read exactly into a bounded stack span. Parse via `ParseMaterialColorCsv(ReadOnlySpan<byte>, NativeArray<uint>)`; keep legacy NativeArray editor-test overloads by copying bounded bytes into stack spans before the same parser.
+
+Rejected Alternatives: Keeping the Vault byte lane was rejected because raw CSV bytes have no stable runtime owner. Holding the LUT write lock during file IO was rejected because disk IO and parsing are not DataVault ownership work. Removing the NativeArray overloads was rejected because existing editor tests call them. Adding a managed `byte[]` was rejected because capacity is fixed and a stack span is sufficient for this editor/cold path.
+
+Scalability potential: Low devices avoid one unnecessary global native lane and one stale parser round-trip while keeping the same color LUT semantics. Middle devices keep editable material-color CSV authoring. High and ultra devices retain the same GPU point cloud, shader globals, telemetry, blackbox route, and continuous `GlobalQualityWeight` ray-count behavior. No gameplay truth owner, DTO layout, save identity, runtime sonar scan route, binary quality switch, or quality-weight behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold path only, no profiler/player proof. Proof: `TopographicalSonarSynthesizer.cs` SHA-256 `4459038E8605E84C241691535EB6A0143FD1EBF6E5BC0FAFB34AF3531A2316FC`; evidence `95/920/978/2294/2300/2304/2311/2324`; delimiter counts `{237/237}`, `(1111/1111)`, `[140/140]`; Roslyn parse failures `0`; hot-method scanner `5` hot bodies and `0` forbidden dependency/complete hits; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run because CPU sampled `55.53`, above the project `50` threshold.
+
+## Decision 382 - Remove Dead VR Somatic Comfort CSV Scratch Lane
+
+Problem: `VRSomaticProvider.Comfort` allocated `BufferID.ShinobuVRSomaticCsvScratch` as a DataVault byte lane and treated it as a readiness dependency, but the comfort profile CSV parser already consumes `ReadOnlySpan<byte>` and is called from the editor tuner route. No code in the comfort partial read or wrote the Vault scratch. The lane was dead bootstrap authority surface.
+
+Solution: Remove `SomaticCsvScratchBytes`, `_somaticCsvScratch`, the VaultBufferView allocation, readiness check, release, and reset. Leave profile DTO lane, lookup lane, mock sickness samples, comfort telemetry, and horizon lock lanes unchanged. Do not edit `H8Memory.BufferID` because that file is dirty in other agents' work and enum cleanup is not required to stop allocation/use in this subsystem.
+
+Rejected Alternatives: Keeping the dead lane was rejected because unused DataVault buffers still increase readiness, release, and relocation surface. Adding a new CSV file importer was rejected because the existing editor tuner already supplies bytes as `ReadOnlySpan<byte>`. Reworking the comfort/horizon telemetry dump and job execute path was rejected for this pass because those areas were already dirty and need separate ownership review.
+
+Scalability potential: Low devices avoid one unnecessary native allocation/readiness lane during VR somatic bootstrap. Middle devices keep comfort profile authoring through the editor tuner. High and ultra devices retain horizon lock, FOV tunneling, foveated pressure blending, mock sickness samples, telemetry, and continuous `GlobalQualityWeight` pressure scaling. No gameplay truth owner, DTO layout, save identity, runtime comfort phase, binary quality switch, or quality-weight behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; bootstrap/cold path only, no profiler/player proof. Proof: `VRSomaticProvider.Comfort.cs` SHA-256 `4F2FBEECA0EFC71BCAA98B2E731525B191DF6B28A331A1E5F6576F670A5A907A`; evidence parser `248/253/261/269`, live lanes `384/387/389/390`, readiness `444`; delimiter counts `{187/187}`, `(1259/1259)`, `[156/156]`; Roslyn parse failures `0`; hot-method scanner `8` hot bodies and `0` forbidden dependency/complete hits; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run because CPU sampled `100`, above the project `50` threshold.
+
+## Decision 381 - Remove Radiation Profile CSV Scratch Lane And Lock Profile Commit
+
+Problem: `RadiationHazardGrid` allocated `BufferID.Shinobu274RadiationCsvScratch` as an 8192-byte DataVault lane even though the actual profile source comes from `TextAsset.GetData<byte>()`. That made raw serialized asset bytes look like cross-domain runtime state. The same import path wrote parsed profiles through `VaultBufferView` mutable resolve, so the cold CSV commit was not using an explicit DataVault owner write lock.
+
+Solution: Remove the DataVault byte scratch constant, view, handle, allocation, readiness resolve, release, and default reset. Keep the `TextAsset.GetData<byte>()` route because it avoids `TextAsset.bytes` managed array materialization. Remove the unused duplicate `ReadOnlySpan<byte>` parser route. Publish parsed `RadiationProfileDTO` rows through one `_profilesHandle` `TryAcquireWriteLock`, clear stale trailing profile slots, and release the lock in `finally`.
+
+Rejected Alternatives: Converting the TextAsset to `byte[]` was rejected because it introduces a managed byte route. Adding stack scratch was rejected because the source already arrives as a bounded Unity `NativeArray<byte>` view and copying it would only add parser work. Keeping the legacy mutable `VaultBufferView` commit was rejected because profile publication has a clear DataVault owner lane. Editing `H8Memory.BufferID.Shinobu274RadiationCsvScratch` was rejected because enum cleanup is not required to stop allocation/use and `H8Memory.cs` is actively dirty in other agents' work.
+
+Scalability potential: Low devices avoid one unnecessary native DataVault lane and a legacy mutable profile commit during radiation bootstrap/import. Middle devices keep editable TextAsset CSV authoring. High and ultra devices retain the full 32^3 radiation grid, SDF shielding, telemetry ring, bulkhead reads, status signals, and continuous quality-scaled simulation behavior. No gameplay truth owner, DTO layout, save identity, runtime slow-tick authority, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold and lock-shape hardening only, no profiler/player proof. Proof: `RadiationHazardGrid.cs` SHA-256 `09FD8CBBD2AEFC48494C37FA3D60CDAACBBA8494D1CF604DB5299F55C1E55CB5`; evidence `776/784/808/834/863/875/879/884/885/887/890/932`; delimiter counts `{289/289}`, `(1426/1426)`, `[182/182]`; diff stat `25 insertions`, `178 deletions`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run because CPU sampled `90`, above the project `50` threshold.
+
+## Decision 382 - Remove Armor Profile Managed CSV Read And Lock Profile Commit
+
+Problem: `HectonCombatRuntime_ArmorPenetration.TryLoadArmorProfilesCsv()` used `File.ReadAllBytes()`, allocating a managed byte array for editor armor profile CSV source. `ApplyArmorProfilesCsvBytes()` then resolved `_targetArmorProfilesHandle` as a mutable view and wrote parsed profile merges without an explicit DataVault owner write lock.
+
+Solution: Replace `File.ReadAllBytes()` with a bounded stack byte span and exact `FileStream` read helper. Reject empty, oversized, and partial CSV reads before parsing. Change `ApplyArmorProfilesCsvBytes()` to acquire only `_targetArmorProfilesHandle` through `TryAcquireWriteLock`, parse/merge through that locked profile buffer, and release in `finally`.
+
+Rejected Alternatives: Keeping `File.ReadAllBytes()` was rejected because the import capacity is fixed and a stack span is enough for this editor/cold route. Adding a DataVault byte scratch lane was rejected because raw source bytes are not cross-domain state. Keeping mutable `TryResolveHandle()` for profile publication was rejected because the target profile lane has a single owner and can be locked flat. Replacing the whole armor mutation guard topology was rejected for this pass because active damage/evaluator jobs use broader coupled lanes and need separate profiler-backed redesign.
+
+Scalability potential: Low devices avoid a managed CSV allocation and a legacy mutable commit during editor/QA import while keeping armor truth in the same target profile lane. Middle devices keep editable armor profile CSV authoring. High and ultra devices retain the full armor LUT, weak-point/deflection semantics, mock signal generator, torture proof route, telemetry, and continuous `GlobalQualityWeight` behavior. No gameplay truth owner, DTO layout, save identity, damage authority route, binary quality switch, or quality-weight math changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold and lock-shape hardening only, no profiler/player proof. Proof: `HectonCombatRuntime_ArmorPenetration.cs` SHA-256 `54455D5C58729F7094B80069A75948A3EB658DCBC0339F93718B28E1B3205EE0`; evidence `227/1867/1868/1869/1888/1894/1939/1946/1950/1956/1959/1963`; delimiter counts `{201/201}`, `(1158/1158)`, `[222/222]`; diff stat `73 insertions`, `36 deletions`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run because CPU sampled `56`, above the project `50` threshold.
+
+## Decision 383 - Remove PDA Projection CSV Scratch Lane And Reject Truncated Profile Reads
+
+Problem: `WristHologramHudRuntime_PdaScreenProjector` still declared BufferID `348736` as `PdaProjectionVaultIds.CsvScratch`, validated it as part of native state readiness, allocated it in DataVault, and released it on teardown. The actual profile loader already read `pda_interface_profiles.csv` into stack bytes and parsed DTOs before publishing `InterfaceProfiles`, so the Vault byte lane was dead authority surface. The read helper also clamped oversized files to destination length, allowing truncated CSV to parse as if valid.
+
+Solution: Remove the local CSV scratch BufferID, buffer id field, generation handle, readiness condition, allocation, and release. Rename the import byte limit to `PdaProjectionCsvImportByteCapacity`. Change `TryReadPdaProfileCsvBytes()` to reject empty/oversized files and require exact full-stream consumption. Update the OOP canvas scanner's route text so its proof string matches the code: bounded stack scratch, `ReadOnlySpan<byte>` parse, parsed DTO commit.
+
+Rejected Alternatives: Keeping BufferID `348736` was rejected because source CSV bytes are not a runtime owner and the lane had no consumer. Parsing oversized files after truncation was rejected because it can silently create stale/incomplete UI profile tables. Editing unrelated PDA projection telemetry/file-write paths was rejected because those are outside this CSV authority defect and already dirty from other passes.
+
+Scalability potential: Low devices avoid one unnecessary DataVault handle and readiness/release branch during PDA projection bootstrap. Middle devices keep editable `pda_interface_profiles.csv` authoring. High and ultra devices retain the screen-space PDA projector, RenderGraph/URP feature route, shader warmup route, telemetry, and continuous `GlobalQualityWeight` projection behavior. No gameplay truth owner, DTO layout, save identity, render authority route, binary quality switch, or quality-weight behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor/cold path only, no profiler/player proof. Proof: `WristHologramHudRuntime_PdaScreenProjector.cs` SHA-256 `65BAD78A7162E92B86BE065A350AC19159E28FCB08E5A69C1FD80DD610D19908`; `OOP_Canvas_Scanner_SHINOBU_348.cs` SHA-256 `E0A4A4673692450950D30BB5BCBAA38DABF644D29869C0A0BA5F58CD6F3E1ED6`; evidence `165/1048/1049/1081/1097/1107/1121` plus scanner `118`; old-symbol scan returned no matches; Roslyn parse failures `0`; hot-method scanner `0` hot bodies and `0` forbidden hits; scoped diff-check exited `0` with LF/CRLF warnings only. Build was not run because initial gate sampled CPU `55.62` with active `dotnet.exe` PID `14320`; final gate sampled CPU `59`, still above the project threshold.
+
+## Decision 383 - Remove BioReactor Per-Fuel Managed Allocation
+
+Problem: `BioReactor.InsertFuel()` created a heap `FuelItem` object for every accepted organic item. This is not a per-frame path, but it is a player interaction path and can cluster allocations during inventory cleanup, route prep, or emergency fueling. `Awake()` also used direct `GetComponent`/`GetComponentInParent` calls where equivalent cached cold `TryGetComponent` routes are enough.
+
+Solution: Convert `FuelItem` to a struct, create new entries with `default` field assignment, and write the partially consumed value back into `_fuelItems` during `ConsumeFuel()`. Replace direct local component discovery with `TryGetComponent` and a local parent walk helper using `TryGetComponent`.
+
+Rejected Alternatives: Keeping `FuelItem` as a class was rejected because no polymorphism, null identity, or external references exist; the type is only used by `BioReactor.cs`. Using `GetComponentInParent` was rejected because a simple parent walk is explicit, cached, and avoids widening hidden lookup behavior. Replacing the whole `List<FuelItem>` with a fixed array was rejected for this pass because it changes save/editor/debug semantics more than required and needs a wider inventory/power review.
+
+Scalability potential: Low devices avoid avoidable managed allocations during early base fueling. Middle devices keep the same fuel slot behavior and UI events. High and ultra devices retain meltdown radiation/gas signals, module damage fanout, indicator presentation, and continuous downstream quality behavior. No gameplay truth owner, DTO layout, save identity, power authority route, binary quality switch, or `GlobalQualityWeight` math changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; allocation removal is interaction-path only, no profiler/player proof. Proof: `BioReactor.cs` SHA-256 `F86A55FBF0A5EF672B9793C7945BD82EBCEC2F3DC5BA26C183F5F2668553FA04`; evidence `41/438/441/447/672/750/1098`; forbidden scan returned no matches; delimiter counts `{109/109}`, `(399/399)`, `[94/94]`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run because CPU sampled `52`, above the project `50` threshold.
+
+## Decision 384 - Remove Dormant Floater LateFrame Residency
+
+Problem: `Floater.OnEnable()` registered every enabled floater into the global late-frame lane even when the floater was idle or held and had no visual/audio/particle work. That creates a permanent empty callback load proportional to placed floater count. `Awake()` also used direct `GetComponent` calls for local cached references.
+
+Solution: Remove unconditional late-frame registration from `OnEnable()`. Register late-frame only when the floater is attached or has queued presentation work. After `LateFrameTick()` flushes pending position, visual, audio, and particle state, unregister when the floater is not attached and no pending work remains. Replace local collider/rigidbody lookup with `TryGetComponent`.
+
+Rejected Alternatives: Keeping permanent late-frame residency was rejected because idle pickup props do not need presentation callbacks. Registering from `FixedTick()` every frame was rejected because that would move dispatcher mutation into the high-frequency path. Rewriting buoyancy authority was rejected because the existing physics service queue is the correct route and this pass only removes scheduler waste.
+
+Scalability potential: Low devices avoid empty dispatcher callbacks from dormant floaters in early salvage spaces. Middle devices keep pickup/attach audio and particles. High and ultra devices retain attached follow, stacked buoyancy, spatial target attach probing, and presentation separation in late frame. No gameplay truth owner, DTO layout, save identity, physics authority route, binary quality switch, or `GlobalQualityWeight` math changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; dispatcher callback count reduction has no profiler/player proof yet. Proof: `Floater.cs` SHA-256 `DF08EB1E867470176A070CC8B0C98CCF3FB025A16264B3BF26BC9B461C0058DB`; evidence `201/202/220/414/675/748/750/787/800/808`; forbidden scan returned no matches; delimiter counts `{78/78}`, `(236/236)`, `[47/47]`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run in this incremental pass; final gate sampled CPU `36` and no compiler process rows.
+
+## Decision 385 - Event-Gate EnvironmentalHazard LateFrame Work
+
+Problem: `EnvironmentalHazard` registered into the global late-frame lane on enable, but `LateFrameTick()` only writes a `MaterialPropertyBlock` when `_indicatorDirty` is true. Static hazards therefore paid a permanent empty callback after the first indicator flush. `Awake()` also used direct renderer `GetComponent`.
+
+Solution: Move late-frame registration into `QueueIndicatorUpdate()`, unregister after `LateFrameTick()` drains the pending indicator write, and replace the renderer fallback with `TryGetComponent`.
+
+Rejected Alternatives: Keeping permanent late-frame residency was rejected because hazard damage truth runs in slow tick/radiation grid routes, not late-frame presentation. Registering every slow tick was rejected; registration now occurs only when the indicator actually becomes dirty. Reworking hazard damage ownership was rejected because heat/radiation/toxicity routes are already separated and this pass targets scheduler waste only.
+
+Scalability potential: Low devices avoid empty presentation callbacks from dormant hazards. Middle devices keep readable material feedback on enter/exit/intensity changes. High and ultra devices retain thermodynamics heat injection, radiation source registration, toxicity signal publishing, and central combat damage routing. No gameplay truth owner, DTO layout, save identity, hazard authority route, binary quality switch, or `GlobalQualityWeight` math changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; dispatcher callback count reduction has no profiler/player proof. Proof: `EnvironmentalHazard.cs` SHA-256 `5EB563713A715091F3E248F6F95FA70EB108FA031E433BEEF51C9ACBD4B94303`; evidence `178/193/214/218/224/761/764/767`; forbidden scan returned no matches; delimiter counts `{71/71}`, `(321/321)`, `[39/39]`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run because CPU sampled `90`, above the project `50` threshold.
+
+## Decision 386 - Event-Gate Transport Charging Station Runtime Lanes
+
+Problem: `TransportChargingStation` registered every enabled station into fast tick and late frame. Empty stations scanned their fixed transport arrays every frame, and dormant stations ran empty presentation callbacks even though indicator updates happen only on charge/power deltas.
+
+Solution: Register fast tick only after a transport is tracked from registry cold refresh or trigger enter. Unregister fast tick when cached overlap contains no valid transport. Register late-frame only for dirty indicator writes, then unregister after `MaterialPropertyBlock` flush. Replace trigger parent lookup helpers with an explicit `TryGetComponent` parent walk and keep registry confirmation as the authority check.
+
+Rejected Alternatives: Keeping permanent tick residency was rejected because trigger callbacks and the fixed lifecycle registry are the acquisition routes. Polling the whole lifecycle registry every frame was rejected as worse. Moving station charge truth into DataVault was rejected because transport owner APIs already own charge mutation and the station is only a local charger command source.
+
+Scalability potential: Low devices avoid empty station scans and presentation callbacks in bases with multiple charging pads. Middle devices keep trigger docking and power-grid response. High and ultra devices retain visual indicator richness, multiple tracked transports per station, and transport owner charge mutation. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; scheduler callback reduction has no profiler/player proof. Proof: `TransportChargingStation.cs` SHA-256 `BE6957BC9671868E7D98DD5CEAE352F561DE7A8D6E3D54C0D8106BE52DD143D9`; evidence `95/97/134/136/144/180/183/204/219/233/259/268/294/354/358/413/457/458/463/466/479`; forbidden scan returned no matches; delimiter counts `{54/54}`, `(180/180)`, `[53/53]`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run because CPU sampled `93` and external `dotnet.exe` PID `19064` was already running.
+
+## Decision 387 - Remove Dormant BatteryCharger LateFrame Residency
+
+Problem: `BatteryCharger` is now a passive logistics facade; charge truth is in `BatteryChargerLogisticsBridge`, while the MonoBehaviour's `LateFrameTick()` only flushes rare insert audio. The old code still registered every enabled charger into late-frame permanently.
+
+Solution: Keep `TryRegister()` limited to logistics link publication. Register late-frame only when `QueueChargerAudio()` marks a `ChargerAudioRequest` dirty. After `LateFrameTick()` drains the request, unregister the lane. On dispatcher hot-swap, clear the stale registration flag and re-register only if audio is still pending.
+
+Rejected Alternatives: Keeping permanent late-frame registration was rejected because there is no active LED or charge presentation path left in this facade. Polling charger slots in MonoBehaviour was rejected because the bridge is the owner for charge logistics. Adding DataVault or SignalBus surface was rejected because this pass changes no cross-domain truth.
+
+Scalability potential: Low devices avoid empty callbacks from wall chargers in bases. Middle devices keep logistics bridge charging and one-shot insert audio. High and ultra devices retain quality-scaled charger audio volume and GPU-driven charger visual state from the bridge path. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; dispatcher callback reduction has no profiler/player proof. Proof: `BatteryCharger.cs` SHA-256 `07955C3298088B3B63B66D8BD529DE2BD1B1FA4C9D922171D01392B2A1C46B31`; evidence `560/561/562/563/568/577/613/616/653/659/684`; forbidden scan returned no matches; delimiter counts `{89/89}`, `(332/332)`, `[95/95]`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run because CPU sampled `93` and external `dotnet.exe` PID `19064` was already running.
+
+## Decision 388 - Separate Beacon Presentation Lanes From Buoyancy Truth
+
+Problem: `DeployableBeacon` registered updatable, fixed, and late-frame lanes together. Late-frame was needed only for dirty light/audio work, and fast tick was needed only when blinking was enabled. Fixed tick is still real buoyancy truth and must not be removed by a presentation cleanup.
+
+Solution: Register updatable only when `blinkInterval > 0f`, and unregister if blinking becomes disabled. Keep fixed tick registered for buoyancy. Register late-frame only when beacon light or audio presentation flags are pending, then unregister after `LateFrameTick()` drains them. Preserve dispatcher hot-swap by resetting registration flags and re-registering only active lanes.
+
+Rejected Alternatives: Removing fixed tick after stabilization was rejected for this pass because target-depth changes and rigidbody lock transitions need a wider buoyancy-state audit. Keeping all three lanes permanently was rejected because light/audio presentation is event-driven. Replacing buoyancy with a visual fake was rejected because deployed beacon depth is gameplay-visible physical truth.
+
+Scalability potential: Low devices avoid empty beacon presentation callbacks and disabled-blink ticks. Middle devices keep buoyancy, blink, HUD registry, and interaction audio. High and ultra devices retain configurable light intensity, per-beacon color, localized labels, and richer presentation without changing buoyancy authority. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; scheduler callback reduction has no profiler/player proof. Proof: `DeployableBeacon.cs` SHA-256 `53816FF431EC245DF56112F67A4148A00D2B7547FA0DA3FE0DC190598592071B`; evidence `254/257/285/289/303/326/410/411/556/559/566/573/583/594/599/608`; forbidden scan returned no matches; delimiter counts `{69/69}`, `(260/260)`, `[49/49]`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run because CPU sampled `93` and external `dotnet.exe` PID `19064` was already running.
+
+## Decision 389 - Split VehicleDockingModule Scheduler Residency By Actual Work
+
+Problem: `VehicleDockingModule` registered update, fixed, and late-frame lanes together on enable/spawn. Idle moonpool docks therefore paid update candidate scans, fixed callbacks, and late-frame pose flush checks with no candidate, no docking spline, and no queued transform pose. Trigger transport resolution also used direct `GetComponentInParent` helpers before authority confirmation.
+
+Solution: Replace the single `_registered` flag with `_registeredUpdate`, `_registeredFixed`, and `_registeredLateFrame`. Gate update by active candidates/docking/docked/charging state. Gate fixed by `_dockingInProgress`. Gate late-frame by `_pendingDockedTransformPoseDirty`. Add dormant self-unregistration after each lane drains. Replace trigger owner/resolver lookup with explicit parent `TryGetComponent` walk, then keep `PlayerTransportLifecycleRegistry.TryGetRegistered()` as the authority check. Add dispatcher hot-swap recovery that clears stale lane flags and re-registers only active lanes.
+
+Rejected Alternatives: Keeping the bundled registration was rejected because docking is trigger/event-driven, not a system that needs permanent fixed/late-frame residency. Removing fixed tick entirely was rejected because docking spline pose and rigidbody velocity commands are gameplay-visible physics truth. Moving transport ownership into a new DataVault lane was rejected because `PlayerTransportLifecycleRegistry` already owns identity and rigidbody/motor bridges.
+
+Scalability potential: Low devices avoid empty callbacks from idle moonpool docks in base rooms. Middle devices keep trigger acquisition, candidate refresh, charging, docking spline, cargo logistics bridge, and black-box telemetry while active. High and ultra devices retain rigidbody docking, fluid wake signals, docking impact, spline autopilot, non-rigidbody pose flush, and cargo network integration. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; scheduler callback reduction has no profiler/player proof. Proof: `VehicleDockingModule.cs` SHA-256 `17560A08E597EC3EF2FA6DFA1223BDDA0F748EBD7E1B00BE7BB4157C7463F11E`; evidence `288/332/360/389/395/401/416/422/456/462/478/491/502/513/545/554/563/572/799/803/902/903/904/1207/1208/1287/1300`; forbidden scan returned no matches; delimiter counts `{215/215}`, `(945/945)`, `[136/136]`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run because CPU sampled `81` and active `dotnet.exe` PID `20536` was present.
+
+## Decision 390 - Remove AutonomousExtractorSystem Empty LateFrame Residency
+
+Problem: `AutonomousExtractorSystem` implemented `ILateFrameTickable` and registered into late-frame, but `LateFrameTick()` was empty. Extractor simulation is scheduled and completed from slow tick through `DispatcherJobSwap.TryComplete()`, so the late-frame lane did not own presentation or state transfer.
+
+Solution: Remove `ILateFrameTickable`, `_lateFrameRegistered`, late-frame registration/unregistration, and the empty `LateFrameTick()` method. Leave native state allocation, module registry, slow-tick job schedule, and job completion untouched.
+
+Rejected Alternatives: Moving job completion into late-frame was rejected because that changes the existing slow-tick ownership and may alter production cadence. Gating late-frame on a dirty flag was rejected because there is no late-frame work to gate. Rewriting extractor module registration was rejected because this pass targets a proven empty scheduler lane only.
+
+Scalability potential: Low devices avoid one empty global late-frame callback from the extractor runtime. Middle devices keep autonomous extractor production cadence and power draw. High and ultra devices retain Burst extraction, persistent dropped item routing, bounded SOA buffers, and telemetry. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; empty callback removal has no profiler/player proof. Proof: `AutonomousExtractorSystem.cs` SHA-256 `FE2C480BC8796334B1C45EF29EAFC7FE3E9E6B1FC56CA8ECFC83CA6EC1932BF4`; evidence `24/186/287/292/333/402`; forbidden scan returned no matches; delimiter counts `{111/111}`, `(390/390)`, `[109/109]`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run because CPU sampled `71`, above the project threshold.
+
+## Decision 391 - Remove ScavengingLootOracle Empty LateFrame Residency
+
+Problem: `ScavengingLootOracleRuntime` implemented `ILateFrameTickable`, registered/unregistered late-frame on lifecycle and dispatcher replacement, and had an empty `LateFrameTick()`. Real oracle work is already owned by `SimulationPhaseSystem` and `PostSimulationPhaseSystem`; the late-frame lane was dead scheduler load.
+
+Solution: Remove `ILateFrameTickable`, `_registeredLateFrame`, late-frame lifecycle/hot-swap calls, the empty `LateFrameTick()` method, and the now-unused late-frame helper methods. Update the host allocation comment from late-frame job owner to dispatcher-phase job owner.
+
+Rejected Alternatives: Moving oracle publish/commit work into late-frame was rejected because the existing dispatcher phases already provide explicit simulation/post-simulation ownership. Dirty-gating the late-frame lane was rejected because there is no work to gate. Rewriting vault or SignalBus routes was rejected because this defect is a proven empty callback only.
+
+Scalability potential: Low devices avoid a no-op late-frame callback from the hidden oracle host. Middle devices keep scavenging queue simulation, loot table hydration, vault publication, and depletion signals. High and ultra devices retain Burst oracle scheduling, visual scavenge SignalBus publishing, dispatcher fence domains, and bounded native buffers. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; empty callback removal has no profiler/player proof. Proof: `ScavengingLootOracle.cs` SHA-256 `CFC26D2A014BA869ABFAB8772361399DDC9E2B76E27CFE34B01BC16ED10E2934`; evidence `1021/1122/1123/1495/1511/1544/1545/1712/1933/1956/2194/2238`; forbidden scan returned no matches; delimiter counts `{237/237}`, `(922/922)`, `[155/155]`; scoped diff-check exited `0` with LF/CRLF warning only. Build was attempted once after CPU sampled `48` and no compiler processes were present; it timed out after `604016 ms`, own `dotnet.exe` PID `14304` was stopped, and final process audit showed no compiler/build processes.
+
+## Decision 392 - Remove FloraRegrowthDirector Empty LateFrame Compatibility Lane
+
+Problem: `FloraRegrowthDirector` implemented `ILateFrameTickable` and registered into late-frame, but the method was an empty compatibility stub. The surrounding comments and code show maturation is evaluated in `SlowTick`; the late-frame lane had no presentation or state-transfer ownership.
+
+Solution: Remove `ILateFrameTickable`, `_lateFrameRegistered`, late-frame register/unregister branches, dispatcher hot-swap late-frame flag reset, and the empty `LateFrameTick()`. Preserve updatable tick, slow tick, hot-swap, and origin-shift behavior.
+
+Rejected Alternatives: Moving regrowth/maturation into late-frame was rejected because it would change phase ownership and cadence. Dirty-gating late-frame was rejected because there is no late-frame work. Editing dirty ecosystem files with the same smell was rejected to avoid interfering with other active agents.
+
+Scalability potential: Low devices avoid a no-op late-frame callback from flora regrowth. Middle devices keep seed flight, delayed regrowth, and maturation cadence. High and ultra devices retain symbiotic fungal buffs, lunar resonance, vegetation bridge queries, and origin-shift rebasing. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; empty callback removal has no profiler/player proof. Proof: `FloraRegrowthDirector.cs` SHA-256 `16BC07FE856F6D7DC3F4922249941B1D794ED00430AAA3690851FBFDF26C278C`; evidence `16/226/281/315/332/812/845/857`; forbidden scan returned no matches; delimiter counts `{136/136}`, `(446/446)`, `[150/150]`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not rerun because CPU sampled `60`, above the project threshold.
+
+## Decision 393 - Remove StorageCrate Direct Component Lookup Helpers
+
+Problem: `StorageCrate.Awake()` used direct `GetComponent<Collider>()`, `GetComponent<PowerNode>()`, and `GetComponentInParent<PowerNode>()`. The lookup is cold, but it violates the project direction to make dependency acquisition explicit and cached, and the crate is part of logistics/cargo flows touched by docking systems.
+
+Solution: Replace own-component lookup with `TryGetComponent`. Replace parent power-node fallback with a local explicit `Transform` parent walk using `TryGetComponent`, so the dependency route is visible and allocation-free. Leave `BaseLogisticsNetwork.RegisterStorage(this, _logisticsPowerNode)` ownership unchanged.
+
+Rejected Alternatives: Keeping direct Unity lookup helpers was rejected because the rest of the pass removes hidden lookup helpers from trigger/cold paths. Moving storage power ownership into a DataVault lane was rejected because `PowerNode` and `BaseLogisticsNetwork` already own this route. Adding a global registry dependency was rejected because storage crate dependency discovery is local scene wiring, not global identity injection.
+
+Scalability potential: Low devices get explicit cached local dependency resolution without hidden parent helper behavior. Middle devices keep logistics registration and storage interaction unchanged. High and ultra devices retain cargo network integration and docking bridge compatibility. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; this is cold init hardening, not a measured frame-time optimization. Proof: `StorageCrate.cs` SHA-256 `8BAC77191889DF64A30000D8BF8E71C9EA1DD65280CA4D42F05BBC9F029E5E1C`; evidence `221/230/231/232/251/258/275`; forbidden scan returned no matches; delimiter counts `{109/109}`, `(309/309)`, `[113/113]`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run because CPU sampled `65`, above the project threshold.
+
+## Decision 394 - Remove AcousticOcclusionUtility Empty Visual-Sync Hook
+
+Problem: `AcousticOcclusionUtility.LateFrameTick()` was an empty compatibility hook. It was still called every frame from `SystemDispatcher` and again from `SpatialAudioManager.LateFrameTick()`. Acoustic occlusion computation already happens through cached SDF/distance helpers such as `PrimeOcclusionPath()` and `TryGetCachedOcclusionPath()`, not this hook.
+
+Solution: Delete the empty hook and remove both call sites. Preserve acoustic cache state, runtime owner acquire/release, sensory mask generation, SDF/distance occlusion, forward echo, and spatial audio signal consumption.
+
+Rejected Alternatives: Keeping the hook for possible future work was rejected because future work should register a real VISUAL_SYNC owner with work to do. Moving occlusion recompute into the hook was rejected because it would introduce unbounded visual-sync work and change phase ownership. Editing broader spatial audio internals was rejected because this defect is a proven no-op call only.
+
+Scalability potential: Low devices avoid two empty visual-sync static calls per active audio frame. Middle devices keep cached acoustic occlusion and impulse signal consumption. High and ultra devices retain SDF occlusion, forward echo, sonar/hearing shared evaluation, and spatial voice finalization. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: `AcousticOcclusionUtility.cs` SHA-256 `118A0814D064DFFF3F491DC857748F1063BEF78E9045C60795CADAB5C4075D10`; `SystemDispatcher.cs` SHA-256 `0EDE5E462456CDAEEF301BA3E65697E1378DCE08CC972A9274828B796F920452`; `SpatialAudioManager.cs` SHA-256 `B548AC86FEA08F8A251F51ED7239F7884E6CF1AAC0C6FAE92B38B6201B7B7886`; exact old-symbol scan returned no matches; delimiter counts balanced; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run because CPU sampled `82`, above the project threshold.
+
+## Decision 395 - Remove CullingManager Direct Collider Lookup
+
+Problem: `CullingManager.CalculateBounds()` used `obj.GetComponent<Collider>()` as the final fallback for rendererless objects. This path is cold/fallback, but it is still hidden component lookup in a manager whose output controls culling residency.
+
+Solution: Replace the direct lookup with `obj.TryGetComponent(out Collider collider)`. Keep renderer bounds precedence and transform-position fallback unchanged.
+
+Rejected Alternatives: Rebuilding culling bounds ownership around authoring-time metadata was rejected as too wide for this pass. Caching every fallback collider in a new dictionary was rejected because it would add state and memory for a cold edge case. Keeping direct `GetComponent` was rejected because the safer API has the same local dependency shape without hidden failure semantics.
+
+Scalability potential: Low devices retain cheap bounds fallback without hidden component helper use. Middle devices keep renderer-based combined bounds. High and ultra devices keep the same culling distance behavior and renderer scratch path. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists and the path is cold/fallback. Proof: `CullingManager.cs` SHA-256 `60A25F5DF801E8ACC94D753595E936B2AF45CBF8E74F75B3E7FB203B8EC55806`; evidence `576/697/706/726/740/746`; forbidden scan returned no matches; delimiter counts `{85/85}`, `(260/260)`, `[82/82]`; scoped diff-check exited `0` with LF/CRLF warning only. Build was not run because CPU sampled `63`, above the project threshold.
+
+## Decision 396 - Remove Direct Component Lookup From Clean Gameplay Cold Paths
+
+Problem: Multiple clean gameplay files still used direct `GetComponent` or `GetComponentInParent` in local cold/init/bind paths. These were not hot-loop allocations, but they violate the explicit dependency acquisition style used across the scheduler cleanup and make parent lookup behavior opaque.
+
+Solution: Replace direct local lookups with `TryGetComponent`, and replace parent lookups in `LifePodFireExtinguisherNozzle` and `MountablePlayerTransport` with explicit parent `Transform` walks using `TryGetComponent`. Leave gameplay ownership, registry routes, logistics routes, mount state, kinematics state, and UI/visual behavior unchanged.
+
+Rejected Alternatives: Dirty `HarvestableOutcrop` was skipped because another agent owns its current changes. Adding shared helper APIs was rejected because each fix is local and small. Moving these dependencies into `GlobalRegistry` was rejected because they are scene-local component relationships, not global identity services.
+
+Scalability potential: Low devices avoid hidden Unity lookup helpers in cold setup/bind paths. Middle devices keep the same gameplay behavior with clearer dependency acquisition. High and ultra devices retain debris cache authoring, oxygen bubble pickup, diegetic terminal status, item highlight, prologue nozzle, mountable transport, player kinematics, and hydrodynamic motor integration. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists and touched paths are cold/init/bind. Proof: direct lookup PCRE scan returned no matches; `git diff --check` exited `0` with LF/CRLF warning only; evidence lines `DebrisManager 1721/1745`, `OxygenBubble 151`, `MessageTerminal 228`, `ItemHighlight 114/117`, `LifePodFireExtinguisherNozzle 234/431`, `MountablePlayerTransport 346/1656/1660`, `PlayerKinematicsRuntime 1066`, `HectonPlayerMotor 213`; CPU gate was `96`, so build was not run.
+
+## Decision 397 - Correct DebrisManager Proof After Typed Discard Cleanup
+
+Problem: After the gameplay proof was written, `DebrisManager` still had a tiny style-risk at lines `1721/1745`: `TryGetComponent(out Renderer _)` used a typed discard in a method that only needed to prove a renderer exists. The code was valid C#, but the recorded SHA-256 no longer matched after converting it to a named local.
+
+Solution: Replace the typed discard with `TryGetComponent(out Renderer renderer)` at both sites and refresh the proof surface. The scoped PCRE scan over the eight gameplay files still returns no direct `GetComponent`/`GetComponentInParent`/`TryGetComponentInParent` matches. `DebrisManager` SHA-256 is now `F82C683FF363F57770E6525B9C81C38D9F58A75E483CEB7555E9318EB9B6A95E`; delimiter counts are `{167/167}`, `(577/577)`, `[207/207]`.
+
+Rejected Alternatives: Keeping the stale hash was rejected because it makes the evidence false. Rewriting the debris mesh-cache ownership was rejected because the remaining change was only local component existence discovery, not runtime data ownership.
+
+Scalability potential: Low devices keep the same cold mesh-cache validation path without hidden lookup helpers. Middle, high, and ultra devices retain the same debris authoring cache behavior. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Build still was not run because the latest gate sampled CPU `58`, above the project threshold, with no compiler process rows.
+
+## Decision 398 - Flatten BaseModule Parent Lookups Without Globalizing Scene Relationships
+
+Problem: `BaseModule` still used `GetComponentInParent` in module cache and player interior tracking paths. These are not per-frame loops, but they hide scene traversal behind Unity helpers in a component that already states `GetComponents` must not run in hot paths and owns player/base transition state.
+
+Solution: Add `TryResolveComponentInSelfOrParents<T>()`, a local explicit `Transform` climb using `TryGetComponent`, and route voxel volume, `HectonSurvivalSystem`, movement environment sink, and hypoxia presentation sink discovery through it. The change keeps player trigger ownership local and avoids adding global registry dependencies.
+
+Rejected Alternatives: Moving these scene-local relationships into `GlobalRegistry` was rejected because registry is cold identity/DI, not a parent search replacement. Caching every possible player sink in new fields before trigger contact was rejected because the existing tracked-player cache already owns the runtime state once resolved. Leaving `GetComponentInParent` was rejected because the same dependency can be acquired explicitly without hidden helper traversal.
+
+Scalability potential: Low devices avoid hidden Unity parent lookup helpers during module/player transition and voxel fallback setup. Middle devices keep identical life-support transition behavior. High and ultra devices retain flood, pressure visual, movement-environment, hypoxia presentation, and construction integration paths. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists and the touched paths are trigger/cold bind paths. Proof: direct lookup PCRE scan returned no matches in `BaseModule.cs`; `git diff --check` exited `0` with LF/CRLF warning only; SHA-256 `18A15267FF2DFF63E073F5189694013DC82C941E195D22D39023D4966AF91FDF`; delimiter counts `{504/504}`, `(2521/2521)`, `[285/285]`; diff stat `35 insertions`, `16 deletions`. Build was not run because CPU sampled `90`, above the project threshold, with no compiler process rows.
+
+## Decision 399 - Flatten GlobalPhysicsStateManager Parent Provider Lookup
+
+Problem: `GlobalPhysicsStateManager` used `GetComponentInParent` while resolving impact audio material providers and physics culling flag providers for rigidbodies. These lookups can happen around body registration/impact routing and culling-provider classification, so hidden Unity parent traversal in the global physics manager is not acceptable when an explicit zero-GC walk is trivial.
+
+Solution: Add `TryResolveComponentInParents<T>()`, a parent-only `Transform` climb using `TryGetComponent`, and use it for `IPhysicsImpactMaterialProvider` and `IPhysicsCullingFlagProvider`. Direct provider checks on the rigidbody itself remain unchanged. Culling flags, impact audio material IDs, collider LOD sink routing, and SignalBus/EventBus outputs remain unchanged.
+
+Rejected Alternatives: Adding a `GlobalRegistry` service for per-rigidbody provider lookup was rejected because these are scene-local component relationships, not global identity dependencies. Touching `GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs` was rejected because it is dirty from another agent. Replacing culling provider ownership with DataVault fields was rejected as a wider contract migration without proof.
+
+Scalability potential: Low devices avoid hidden parent lookup helpers in physics registration/impact classification. Middle devices keep current culling and impact material behavior. High and ultra devices retain physics culling, audio material routing, collider LOD, and black-box state paths. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: direct lookup PCRE scan returned no matches in `GlobalPhysicsStateManager.cs`; `git diff --check` exited `0` with LF/CRLF warning only; SHA-256 `9A2602EEC26FD901E2DB86E27B29F59A10E4E9F3BF60349073169D3DEEA26F4D`; delimiter counts `{497/497}`, `(1901/1901)`, `[331/331]`; diff stat `20 insertions`, `4 deletions`. Build was not run because CPU sampled `99`, above the project threshold, with no compiler process rows.
+
+## Decision 400 - Remove WorldSliceAnchor Fidelity Cache ToArray
+
+Problem: `WorldSliceAnchor.RefreshFidelityRoots()` used `_FidelityRootScratch.ToArray()` to rebuild the serialized `WorldFidelityRoot[]` cache. The method is cold/runtime cache rebuild, but `ToArray()` hides an allocation route and was already visible in the clean runtime allocation scan.
+
+Solution: Keep the serialized array contract and replace `ToArray()` with explicit resize only when the cached array length differs, then copy by index from the retained scratch list. This preserves authoring data shape while eliminating the hidden `List<T>.ToArray()` call.
+
+Rejected Alternatives: Converting `fidelityRoots` to `List<WorldFidelityRoot>` was rejected because it changes serialized authoring/runtime contract. Keeping `ToArray()` under a cold waiver was rejected because the low-risk indexed copy is local and clearer. Removing runtime refresh was rejected because missing/null fidelity-root caches still need a recovery route.
+
+Scalability potential: Low devices avoid a hidden cache-rebuild array copy path when slice anchors are missing serialized fidelity roots. Middle devices keep the same near/mid/far fidelity root application. High and ultra devices retain overkill slice fidelity without changing state truth, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists and this is a cold/cache-rebuild path. Proof: scan for `.ToArray(` and direct component lookup in `WorldSliceAnchor.cs` returned no matches; `git diff --check` exited `0` with LF/CRLF warning only; SHA-256 `4459B7863F3D5574C60B9D46A12B1BEAFC6A5D71C47EA7B624C0E217F24CF8D5`; delimiter counts `{38/38}`, `(113/113)`, `[53/53]`; diff stat `7 insertions`, `1 deletion`. Build was not run because CPU sampled `96`, above the project threshold, with no compiler process rows.
+
+## Decision 401 - Flatten Field Target Parent Lookup
+
+Problem: `FieldTargetDescriptor.TryResolve()` and `FieldLoadoutAdvisor.ResolveLocalOrParent<T>()` still used `GetComponentInParent` for local target/loadout discovery. These are query paths rather than per-frame simulation loops, but they are reused by targeting, loadout advice, and spatial target logic, so hidden parent traversal should be explicit.
+
+Solution: Keep direct `TryGetComponent` first, then climb parents with local helper methods that call `TryGetComponent`. Public contracts and serialized data shape remain unchanged.
+
+Rejected Alternatives: Introducing a global registry for field targets was rejected because these are local scene hierarchy relationships. Rewriting the field target advisor around cached archetype data was rejected as broader behavior work. Keeping `GetComponentInParent` was rejected because the explicit walk is local and lower-risk.
+
+Scalability potential: Low devices avoid hidden Unity parent lookup helpers during target/loadout query fallback. Middle devices keep current loadout advice behavior. High and ultra devices retain field target roles, route/hazard/service classification, and forward target collection. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: direct lookup PCRE scan returned no matches in both files; `git diff --check` exited `0` with LF/CRLF warnings only; SHA-256 `FieldTargetDescriptor=2F164975E48805CEE137FA27F6B7DC90F13BBFD437537FB69CE23DA02FB9BE15`, `FieldLoadoutAdvisor=2B6DBBF96A9B7FE45E347D4607B0B0B2BE834FDE1DA6247E675D342D7A24C165`; delimiter counts `FieldTargetDescriptor {18/18} (42/42) [5/5]`, `FieldLoadoutAdvisor {70/70} (190/190) [5/5]`; diff stat `34 insertions`, `6 deletions`. Build was launched legally at CPU `22` and compiler count `0`, but timed out after `604028 ms`; post-timeout process check showed no compiler rows.
+
+## Decision 402 - Flatten Remaining Small Local Parent Lookups
+
+Problem: `HarpoonLauncherTool`, `SubmarineElectrolysisModule`, and `WorldContentSocket` each had one direct `GetComponentInParent` fallback for local hierarchy relationships: tow winch, host base module, and world zone anchor. These are cold/init/bind paths, but they remain hidden parent traversal in runtime code.
+
+Solution: Add local parent-only `Transform` walk helpers using `TryGetComponent` and route each fallback through them. Keep direct local `TryGetComponent` checks and existing service/registry routes unchanged.
+
+Rejected Alternatives: Adding global routes was rejected because these are hierarchy relationships, not global facts. Moving helper code into a new shared utility was rejected because three small local helpers avoid creating another cross-domain dependency. Editing broader tool/electrolysis/socket behavior was rejected because the issue is limited to dependency acquisition.
+
+Scalability potential: Low devices avoid hidden parent lookup helpers in cold/bind paths. Middle devices keep current tool, electrolysis, and world socket behavior. High and ultra devices retain harpoon tow winch visuals, oxygen production routing, and content socket zone binding. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: direct lookup PCRE scan returned no matches in the three files; `git diff --check` exited `0` with LF/CRLF warnings only; SHA-256 `HarpoonLauncherTool=0692F1CB3342EAB0BD42E1B140E02A6147CBF2A03B103AEFDE6C3A228E37100D`, `SubmarineElectrolysisModule=437EFEA256398BE52E7292C22061D5998FE81A83E665756E685B6F619C7C43F3`, `WorldContentSocket=02E2F29D19C7010E9756A6C1FA42460FA527F1A3A941C3AC462D42DE3E04F1C9`; delimiter counts `HarpoonLauncherTool {191/191} (712/712) [48/48]`, `SubmarineElectrolysisModule {109/109} (411/411) [77/77]`, `WorldContentSocket {24/24} (104/104) [55/55]`; diff stat `42 insertions`, `3 deletions`. Build was not rerun because CPU sampled `82`, above the project threshold.
+
+## Decision 403 - Replace Small Own-Object GetComponent Calls With TryGetComponent
+
+Problem: `RadioisotopeThermalGenerator`, `ScannerTool`, and `HectonSurfaceWeatherDirector` still used direct own-object `GetComponent` at local cold/editor/init sites. These are not hot loops, but the replacement is mechanically safer and consistent with the ongoing dependency-acquisition cleanup.
+
+Solution: Use `TryGetComponent` for the local `PowerNode`, `HectonScanMarkerSystem`, `DataArchaeologyRuntime`, and `AcousticZoneController` lookups. Keep cold `AddComponent` owner creation where the component is intentionally created by the owner.
+
+Rejected Alternatives: Adding registry routes was rejected because these are own-GameObject optional components. Removing owner-created marker/archaeology components was rejected because those are explicit cold owner allocations. Repeating another full build was rejected because the prior legal build attempt timed out and immediate rerun would be build spam.
+
+Scalability potential: Low devices avoid direct Unity helper use during owner setup/editor reference assignment. Middle devices keep current scanner, RTG, and weather behavior. High and ultra devices retain scanner marker visuals, archaeology integration, RTG power output, and surface-weather scene reference authoring. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: direct lookup PCRE scan returned no matches in the three files; `git diff --check` exited `0` with LF/CRLF warnings only; SHA-256 `RadioisotopeThermalGenerator=6A8B55C4951069BC623AB941550803407727F1EBAE30599881A31E332E1336B8`, `ScannerTool=E5C1E856E7A23E533A988AB1A09022A42B800AB03A25858C98AA9AAFEDDEF544`, `HectonSurfaceWeatherDirector=67CFA0FD720DE0E844443EDF98AC1502AE2EFDC75E0E5E1845834789961ACE63`; raw delimiter counts `RadioisotopeThermalGenerator {108/108} (552/552) [137/137]`, `ScannerTool {383/384} (1433/1433) [95/95]` with the same brace count already present in `HEAD`, `HectonSurfaceWeatherDirector {203/203} (927/927) [102/102]`; diff stat `4 insertions`, `6 deletions`. Build was not repeated because CPU sampled `35`, no compiler rows existed, and the previous legal build already timed out after `604028 ms`.
+
+## Decision 404 - Replace Clean Runtime Local GetComponent Calls With TryGetComponent
+
+Problem: Six clean runtime files still used direct own-object `GetComponent` calls in cold/bootstrap/bind paths: scene activation player resolution, player movement awake, flashlight camera fallback, Crest underwater pass acquisition, prologue orbit scene composition, and procedural scatter geology service creation. None were proven hot-loop allocations, but they kept hidden Unity lookup helpers in global/bootstrap/player-facing code.
+
+Solution: Replace those calls with `TryGetComponent` while preserving existing ownership: local GameObject components stay local, cold `AddComponent` creation remains only where the current owner already creates the component, and no new `GlobalRegistry`, DataVault, or event-route dependency was introduced.
+
+Rejected Alternatives: Moving local components into `GlobalRegistry` was rejected because these are local identity/component relationships, not global facts. Rewriting bootstrap/player camera ownership was rejected as a wider contract migration without runtime proof. Editing dirty files from other agents was rejected to avoid interference.
+
+Scalability potential: Low devices avoid hidden component helper calls during cold scene/player/bootstrap setup. Middle devices keep current player, flashlight, procedural scatter, Crest, and prologue behavior. High and ultra devices retain the same visual overkill paths: Crest underwater renderer, prologue plasma fake overlay, procedural geology service creation, and player camera/movement initialization. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists and the touched paths are cold/init/bind. Proof: PCRE scan `(?<!Try)GetComponent<|GetComponentInParent<|TryGetComponentInParent|\.ToArray\(` over the six files returned no matches; `git diff --check` exited `0` with LF/CRLF warnings only; delimiter counts `WorldProceduralScatterDirector {994/994} (3324/3324) [625/625]`, `GameBootstrapper {744/744} (2633/2633) [420/420]`, `HectonPlayerMovement {1070/1070} (5963/5963) [941/941]`, `PlayerFlashlight {139/139} (456/456) [104/104]`, `CrestBridge {18/18} (48/48) [0/0]`, `PrologueOrbitSceneBootstrap {24/24} (105/105) [14/14]`; SHA-256 `WorldProceduralScatterDirector=A5168283943B5BFF9275333C33D821E8654C93338C2151E2A9203CEB306F566A`, `GameBootstrapper=7A89D6E4BFB3358F9A313F5A5490C391A807067D5ADA31A88FA6AF8C6C0C5656`, `HectonPlayerMovement=BAA6E6AA36FD428CFEC26D17B3A8C16B2D6B23DC20D87664B040B9B21EDFB682`, `PlayerFlashlight=FC4A21597C06CEE337DE95C1377AA82F34215A3B3ECFEF60871D4D1B0393583F`, `CrestBridge=72DE7246329F708FA00A63D1B7CA3E5D0D94389A0E5488F1B503C1E61FAA1D08`, `PrologueOrbitSceneBootstrap=FACB8695B150F70F820A691817DEDF7391B8BD48DE393E70ED5BC5D0EA9934F7`; diff stat `15 insertions`, `17 deletions`. Build was not launched because CPU sampled `65` and active `dotnet.exe` PID `39820` was already running the same solution build command.
+
+## Decision 405 - Clean Geology/HUD Local Component Lookup
+
+Problem: `WorldGenerativeGeologyService` used direct component reads while building generated geology presentation, and `HUDNotification` used direct component reads during setup and editor preview sanitization. These were cold/setup paths, not proven hot-loop faults, but the same local dependency can be read without direct helper calls.
+
+Solution: Replace generated-root, host, HUD root, notification text root, and preview component reads with `TryGetComponent`. Preserve generated geology binding creation, LODGroup creation, primitive strip behavior, HUD queue/DataVault ownership, tick/late-frame phases, and editor preview behavior.
+
+Rejected Alternatives: Rewriting geology runtime binding ownership was rejected because this pass only concerns local component acquisition. Replacing HUD notification queue/DataVault flow was rejected because it is unrelated and riskier. Editing dirty world/AI files was rejected to avoid interfering with other agents.
+
+Scalability potential: Low devices avoid hidden component helper calls in geology presentation setup and HUD setup. Middle devices keep current generated geology LOD and HUD notification behavior. High and ultra devices retain visual geology composition, cross-faded LODs, and HUD presentation cadence. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists and the touched paths are cold/setup. Proof: PCRE scan `(?<!Try)GetComponent<|GetComponentInParent<|TryGetComponentInParent|\.ToArray\(` over both files returned no matches; `git diff --check` exited `0` with LF/CRLF warnings only; delimiter counts `WorldGenerativeGeologyService {106/106} (455/455) [54/54]`, `HUDNotification {106/106} (335/335) [39/39]`; SHA-256 `WorldGenerativeGeologyService=17C182011136E4C49B76BA9151A5F18C1A926944D651C293B13BB006BD9F7F61`, `HUDNotification=9168E7C8EEA37CD71389F844EEAF8D767D0641369974A7399B103A31F4C93957`; diff stat `11 insertions`, `16 deletions`. Build was not launched because CPU sampled `54` and active `dotnet.exe` PID `39820` was still running the solution build command.
+
+## Decision 406 - Remove Legacy Narrative Save/Load Generic Enumerator Routes
+
+Problem: Clean narrative save/restore code still used `IEnumerable<string>` and `foreach` in legacy quest restore and corporate order save/load. The paths are cold, not frame loops, but they are save/load authority routes and the concrete DTO fields are already `List<string>`, so generic enumerator surfaces and `foreach` syntax are unnecessary.
+
+Solution: Change `QuestManager` to pass `List<string>` save fields directly, change `QuestStateManager.RestoreLegacyState` and `RestoreLegacyRange` to accept `List<string>`, and iterate by index. Change `CorporateOrderSystem.PopulateSaveData` to explicit `HashSet<string>.Enumerator` and `Dictionary<string,float>.Enumerator` loops, and change corporate received-order restore to indexed `List<string>` iteration while preserving the original `OrderCapacity` break behavior.
+
+Rejected Alternatives: Replacing save DTO lists with arrays or Native containers was rejected because it would change save contract shape. Adding DataVault ownership was rejected because this is legacy managed save serialization, not cross-domain hot native state. Leaving `IEnumerable` was rejected because the caller already has concrete lists and the generic route buys nothing.
+
+Scalability potential: Low devices avoid generic enumerator surfaces during cold legacy load/save. Middle devices keep identical quest and corporate-order progression behavior. High and ultra devices keep the same narrative save continuity and can spend runtime budget on presentation, not save-route abstraction. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists and this is cold save/load cleanup. Proof: PCRE scan for `IEnumerable<string>`, `foreach`, direct component lookup, `.ToArray(`, `string.Format`, and `.ToString(` over the three files returned no matches; `git diff --check` exited `0` with LF/CRLF warnings only; delimiter counts `QuestManager {80/80} (282/282) [55/55]`, `QuestStateManager {187/187} (633/633) [223/223]`, `CorporateOrderSystem {49/49} (206/206) [21/21]`; SHA-256 `QuestManager=916CD0E6BAA7654B9C1192A280BCB57046ADFAB74FDE85719A00496CCAA0BDB5`, `QuestStateManager=D9C141D804BDAE4827ADC3C068B3E0B5BE561271F273158FA9FDBC559DCF4A51`, `CorporateOrderSystem=B406D6E572BA06D053497E933F72F513A125F7D88F14CF7209724ADC0E382910`; diff stat `20 insertions`, `8 deletions`. Build was not launched because CPU sampled `73`, above the project threshold, with no compiler process rows.
+
+## Decision 407 - Guard World BRG Runtime Shader.Find From Release Players
+
+Problem: `HectonDistantLandmarkRenderer.ResolveFallbackShader()` and `HectonHLODRenderer.ResolveFallbackShader()` still used `Shader.Find` after the editor asset lookup. These are cold material-creation paths, not hot loops, but in release players string shader lookup is a fragile retention route and can silently fail when the hidden shader is stripped.
+
+Solution: Keep `Shader.Find` only for editor/development builds. In release players, require the serialized material/shader assignment and return `null` otherwise, which makes the renderer skip runtime fallback material creation instead of depending on a stripped string lookup.
+
+Rejected Alternatives: Adding new `RuntimeShaderReferenceCatalog` fields was rejected because the project asset would still need a Unity-side assignment, and adding source fields alone would create a false proof. Hard-coding always-on fallback materials was rejected because it would allocate/own more rendering state. Editing dirty world renderer files from other agents was rejected to avoid interference.
+
+Scalability potential: Low devices avoid release-player hidden shader lookup and fail closed if authoring did not retain the shader. Middle devices keep serialized material/shader routing. High and ultra devices retain BRG distant landmark/HLOD visual paths when authoring provides the intended shaders. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists and this is cold material setup. Proof: forbidden scan for hot `GlobalRegistry.Get/TryGet`, direct component lookup, `foreach`, `.ToArray(`, `string.Format`, and `.ToString(` over both files returned no matches; `git diff --check` exited `0` with LF/CRLF warnings only; delimiter counts `HectonDistantLandmarkRenderer {63/63} (257/257) [37/37]`, `HectonHLODRenderer {57/57} (245/245) [32/32]`; SHA-256 `HectonDistantLandmarkRenderer=A1E46368A6B5858539F12AD176DA59467ED177D27B9A74FDB87BB10A6A9535FB`, `HectonHLODRenderer=94B1DE0F538507243D7C4D0594AFD8144D892826C75F4F5609F374E29A8467A4`; diff stat `8 insertions`, `0 deletions`. Build was not launched because CPU sampled `82`, above the project threshold, with no compiler process rows.
+
+## Decision 408 - Remove WorldContentDirector SlowTick Enum ToString
+
+Problem: `WorldContentDirector.UpdateDiagnostics()` runs from `SlowTick()` and still used enum `.ToString()` for content kind and default procedural labels. The fields are diagnostic, but this is runtime slow-tick work and the labels are finite constants.
+
+Solution: Replace the default procedural enum `.ToString()` calls with literal labels and add `ResolveContentKindLabel()`, a switch over known `WorldContentSocket.ContentKind` values returning string literals. No socket selection, zone resolution, spawn scoring, or registry route changed.
+
+Rejected Alternatives: Static string arrays were rejected because they add cold managed array state for a tiny label map. Leaving `.ToString()` was rejected because the slow-tick diagnostic route can produce avoidable enum formatting work. Removing diagnostics was rejected because inspectors use these fields for authoring verification.
+
+Scalability potential: Low devices avoid enum formatting in world-content slow ticks. Middle devices keep the same socket diagnostics. High and ultra devices retain current content selection and presentation affordances. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists and this is a slow-tick diagnostic cleanup. Proof: forbidden scan for `.ToString(`, `foreach`, `.ToArray(`, `string.Format`, hot `GlobalRegistry.Get/TryGet`, and direct component lookup over `WorldContentDirector.cs` returned no matches; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{27/27}`, `(78/78)`, `[45/45]`; SHA-256 `37840CAAE9CD33EE8FF09CE881502CD51D0A607FFA49A7F37094C57C7BE8C8F8`; diff stat `32 insertions`, `3 deletions`. Build was not launched because CPU sampled `96`, above the project threshold, with no compiler process rows.
+
+## Decision 409 - Remove WorldProceduralFillDirector SlowTick Enum ToString
+
+Problem: `WorldProceduralFillDirector.UpdateDiagnostics()` runs from `SlowTick()` and formatted `WorldPrefabFamilyProfile.ProceduralDomain` and `PlacementMode` through enum `.ToString()`. The route is diagnostic, but it executes during runtime fill evaluation and the enum label domain is finite.
+
+Solution: Route procedural domain and placement mode through local switch helpers that return string literals. Procedural family selection, socket matching, score computation, and stable hash behavior remain unchanged.
+
+Rejected Alternatives: Static label arrays were rejected because switch literals avoid extra cold managed array state. Moving label logic into shared world utility was rejected because that would create a new cross-file dependency for two debug fields. Leaving `.ToString()` was rejected because it keeps avoidable enum formatting in a slow-tick path.
+
+Scalability potential: Low devices avoid enum formatting during procedural fill diagnostics. Middle devices keep the same procedural choice visibility. High and ultra devices retain the same world fill scoring and can spend frame budget on visual density, not diagnostic string formatting. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists and this is a slow-tick diagnostic cleanup. Proof: forbidden scan for `.ToString(`, `foreach`, `.ToArray(`, `string.Format`, hot `GlobalRegistry.Get/TryGet`, and direct component lookup over `WorldProceduralFillDirector.cs` returned no matches; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{83/83}`, `(180/180)`, `[46/46]`; SHA-256 `79F6FB44B675CCC679E3FC7F9DFF89A2DA7DCBF4FD8AE448441B45592757A14F`; diff stat `68 insertions`, `2 deletions`. Build was not launched because CPU sampled `90`, above the project threshold, with no compiler process rows.
+
+## Decision 410 - Scale Aegir Ring Cookie Resolution By GlobalQualityWeight
+
+Problem: `HectonAtmosphereManager` used a fixed `_aegirRingShadowCookieResolution` for the Aegir directional-light ring cookie. The cookie is the correct cinematic fake for ring banding, but a fixed texture resolution spends the same visual memory/work on weak and high-end devices, which violates continuous scalability.
+
+Solution: Add `ResolveAegirRingShadowCookieResolution()` that reads `HomeostasisBrain.GlobalQualityWeight`, finite-clamps it, smooths it, maps it from 16px to the configured maximum, and quantizes to 16px steps so the `Texture2D` is recreated only when the quality bucket changes. Route the refresh through `FlushLateFramePresentation()` so it remains presentation-phase work after simulation state has settled.
+
+Rejected Alternatives: A binary `if(isLowEnd)` branch was rejected because project law requires continuous scalar quality. A physical ring-shadow/ray-math simulation was rejected because the existing 1D striped cookie is cheaper and preserves player belief. Recreating the cookie in `SlowTick()` was rejected because sun/cookie/shader updates are presentation concerns and already have a late-frame route.
+
+Scalability potential: Low devices resolve to 16px Aegir cookie survival visuals. Middle devices climb through 32/48/64/80/96px buckets depending on the continuous weight. High devices use the configured maximum for stronger banding clarity. Ultra devices can set a higher authored maximum within the existing 256px cap without changing gameplay truth, DTO layout, save identity, authority route, DataVault ownership, or binary quality switches.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists and this is visual presentation scaling, not measured optimization. Proof: evidence lines `HectonAtmosphereManager 661/662/663/1032/1062/1072/1077/1079/1080/1457/1462/1467/1469`; `SystemDispatcher 5282/5296` confirms visual-sync then late-frame tickable dispatch; forbidden scan over `HectonAtmosphereManager.cs` returned no matches for hot registry/component/enumerator/materializer/string-format patterns; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{214/214}`, `(869/869)`, `[118/118]`; SHA-256 `17F8A71B4431CC5D4F0784D794AEC60E865E744F707D387D04A8536DE6236E4F`. Build was not launched because this session already had a legal solution build timeout after `604028 ms`; current gate was CPU `47` with no compiler rows, so repeating the build would be spam without new dependency evidence.
+
+## Decision 411 - Use NonAlloc PDA Tablet Visibility Discovery
+
+Problem: `DiegeticPDAController.RebuildTabletVisibilityCache()` used `GetComponentsInChildren<T>(true)` array-returning overloads for tablet renderers, colliders, and canvas groups. The rebuild is cold/presentation setup, but the returned arrays allocate managed storage and then become mutable cache state.
+
+Solution: Replace the arrays with owner-owned `List<T>` caches sized for expected tablet contents, clear and refill them through Unity's non-alloc list overload, and keep `SetTabletVisible()` as explicit indexed loops over cached counts. The change stays inside PDA presentation state and does not touch registry, DataVault, save identity, authority routes, or simulation timing.
+
+Rejected Alternatives: Keeping array-returning overloads was rejected because the list overload already exists and matches project style. Rebuilding global PDA visibility state was rejected because these are local child components. `foreach` over `List<T>` was rejected because the existing file already uses index loops in presentation paths.
+
+Scalability potential: Low devices avoid managed array churn during tablet visibility cache rebuilds. Middle devices keep the same PDA open/close behavior. High and ultra devices retain diegetic tablet presentation, renderer/collider toggles, canvas group gating, and can spend saved memory stability on richer PDA visuals. No binary quality switch or `GlobalQualityWeight` gameplay authority change was introduced.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists and this is cold cache-rebuild cleanup. Proof: evidence lines `DiegeticPDAController 21/22/23/87/89/91/611/612/613/621/622/624/633/634/636/645/646/648`; old array-overload scan returned no matches; forbidden scan for hot registry/component/enumerator/materializer/string-format patterns returned no matches; existing Unity list overload syntax is used elsewhere in runtime files including `AcousticZoneController 2080`, `BaseModule 3948/3950`, and `FaunaBrain 4422/7425`; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{98/98}`, `(432/432)`, `[71/71]`; SHA-256 `1A96E9244F404D1B8720A4E938EBF8D80E1CF8F7AE9FF9DAB8DED4FD0C5806B0`. Build was not launched because this session already had a legal solution build timeout after `604028 ms`; current gate was CPU `36` with no compiler rows, so repeating the build would be spam.
+
+## Decision 412 - Remove WorldContentSocket Procedural Enum Formatting
+
+Problem: `WorldContentSocket.ApplyProceduralRecommendation()` and `ClearProceduralRecommendation()` still formatted `WorldPrefabFamilyProfile.ProceduralDomain` and `PlacementMode` through enum `.ToString()`. These fields are diagnostics, but they are part of the runtime content socket route and duplicate the cleanup already applied to world content directors.
+
+Solution: Add local literal-label switch helpers for procedural domain and placement mode, and use literal defaults for `Generic` and `Scatter`. Keep socket selection, zone anchor ownership, placement recommendation data, and public resolved diagnostic properties unchanged.
+
+Rejected Alternatives: Static label arrays were rejected because switch literals avoid extra managed array state. Sharing helper code with `WorldProceduralFillDirector` was rejected because a new cross-file utility would be broader than a two-field diagnostic cleanup. Removing diagnostics was rejected because designers need the resolved socket recommendation fields in inspectors.
+
+Scalability potential: Low devices avoid enum formatting in socket recommendation diagnostics. Middle devices keep current content socket inspection. High and ultra devices retain world-content procedural richness and visual density without spending managed formatting work on diagnostic labels. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists and this is diagnostic cleanup. Proof: evidence lines `WorldContentSocket 303/304/321/322/346/391` plus existing parent-walk evidence `138/141/146`; forbidden scan for `.ToString(`, `foreach`, `.ToArray(`, `string.Format`, hot registry lookup, direct component lookup, and parent lookup helpers returned no matches; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{28/28}`, `(104/104)`, `[55/55]`; SHA-256 `D3B1A2C52434A2916B79F55CE4A158A59D8AE0B7D756ADB0DB85101BE9C7B8F4`. Build was not launched because CPU sampled `76`, above the project threshold, with no compiler process rows; prior legal solution build in this session already timed out after `604028 ms`.
+
+## Decision 413 - Keep World Shipping Suppression Reads Pure
+
+Problem: `WorldShippingContentFilter.IsSuppressedByHierarchy()` was named and used as a read accessor by zone/socket/LOD consumers, but it called `EnsureSuppressionCacheForScene()`. That helper could prune scene caches, scan scene roots, grow HashSet/Dictionary state, and mark scene handles as primed. This violated the global doctrine that read accessors must not allocate/grow buffers, mutate global state, or search scenes.
+
+Solution: Remove `EnsureSuppressionCacheForScene()` and make `IsSuppressedByHierarchy()` read only. It now checks an already-primed suppression-id cache when present, then walks the parent chain only for existing `WorldZoneAnchor` contracts. Cold cache priming remains in `PrimeSuppressionCacheForScene()` through `DeactivateSuppressedSceneObjects()`, which is already called by `WorldShippingSceneRuntimeGuard` and `GameBootstrapper` scene cleanup routes.
+
+Rejected Alternatives: Keeping lazy cache priming was rejected because it hides scene traversal behind a boolean read. Falling back to hierarchy-name checks inside the read accessor was rejected because object name access belongs in the cold priming route, not repeated runtime filtering. Adding a new global registry route was rejected because suppression is already owned by the shipping content filter and scene cleanup path.
+
+Scalability potential: Low devices avoid surprise scene-root scans and suppression HashSet growth during zone/socket/LOD reads. Middle devices keep deterministic scene cleanup through the existing cold guard. High and ultra devices keep the same authoring suppression contract without spending runtime read budget on cache mutation. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: evidence lines `WorldShippingContentFilter 79/85/90/115/201/237`; forbidden scan over `WorldShippingContentFilter.cs` returned no matches for hot registry/direct component/parent helper/enumerator/materializer/string-format patterns; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{34/34}`, `(140/140)`, `[15/15]`; SHA-256 `5A501C3B1621F9D85FDA8A4CBE71497A6006BA2C264DB61DA5587B91DC2F5B61`; diff stat `3 insertions`, `19 deletions`. Build was not launched because CPU sampled `99`, above the project threshold, with no compiler process rows.
+
+## Decision 414 - Keep Core Content Sort-State Out Of Read Accessors
+
+Problem: `ContentAssetHashMap` and `ContentLoreBinaryProvider` used `EnsureSortState()` inside `GetEntryAt()`, `TryGetEntry()`, `CopyRequiredHashes()`, `CountRequiredBuildHashes()`, `GetBlockAt()`, and `TryGetBlock()`. The helper only wrote a nonserialized `_sortState` byte, but it still hid mutable cache initialization behind read-named routes. That violates the project rule that read accessors do not mutate state.
+
+Solution: Move sort-state refresh into cold lifecycle routes: `ContentAssetHashMap.OnEnable()` and `ContentLoreBinaryProvider.Open()`. Read routes now consume `_sortState` only. If a caller reaches them before lifecycle refresh or if authoring data is unsorted, lookups use the existing linear scan path without writing. Required-hash copy/count no longer asks for sort-state because sort order is irrelevant to those operations.
+
+Rejected Alternatives: Sorting in runtime reads was rejected because it would mutate serialized arrays or cold cache state through a read route. Keeping `EnsureSortState()` and calling it "small" was rejected because hidden mutation is still hidden mutation. Forcing binary search when `_sortState` is unknown was rejected because the safe fallback is linear lookup, not wrong ordered lookup. Introducing a new DataVault/registry owner was rejected because content hash-map and lore block indices are local content assets, not cross-domain hot mutable state.
+
+Scalability potential: Low devices avoid surprise O(n) sort-state scans and writes during content/lore reads. Middle devices keep the same binary-search fast path after cold lifecycle refresh. High and ultra devices retain overkill content tiers and lore dictionary memory mapping without tying lookup correctness to hidden read-time mutation. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: evidence lines `ContentAssetHashMap 183/188/220/246/284/289/291`, `ContentLoreBinaryProvider 45/125/128/188/215/217`; `EnsureSortState` scan returned no matches; read-route/sort-state scan shows writes only in cold refresh/editor sort helpers; forbidden scan found no hot registry lookup, direct component lookup, parent helper, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(` in touched files; `git diff --check` exited `0` with LF/CRLF warnings only; delimiter counts `ContentAssetHashMap {40/40} (107/107) [54/54]`, `ContentLoreBinaryProvider {53/53} (145/145) [47/47]`; SHA-256 `ContentAssetHashMap=9CA5960053BC07D973B3C9D364AE87A55A9E24E62F13D7EE376AFED97E7D69BD`, `ContentLoreBinaryProvider=2FC58FB6EE46EC02F6341E467E1EBA9AAF9CA205F1BAA3B201AB1257EC54EBCA`. Build was not launched because this session already had a legal solution build timeout after `604028 ms`; post-patch gate sampled CPU `18` and no compiler rows, but repeating solution build without new dependency evidence would be build spam.
+
+## Decision 415 - Flatten Local Dictionary Enumeration In MapMagic Rock Output
+
+Problem: `HectonRockOutput.Finalize()` and `HectonRockApplyData.Apply()` used `foreach` over local dictionaries during MapMagic per-tile rock aggregation and chunk registration. This is not a frame-loop `Tick`, but it is a runtime terrain/output route and dictionary `foreach` is explicitly discouraged by the zero-GC mandate when a typed struct enumerator is available.
+
+Solution: Replace the local dictionary `foreach` loops with explicit `Dictionary<int, LayerBuildState>.Enumerator` and `Dictionary<int, Matrix4x4[]>.Enumerator` while preserving the existing two-pass count/fill algorithm and the existing chunk unregister/register authority in `HectonRockManager`.
+
+Rejected Alternatives: Rewriting `TileData.Outputs(...)` was rejected because it is a third-party MapMagic iterator contract under `Assets/MapMagic`. Replacing MapMagic output discovery with arrays via `GatherOutputs` was rejected because that API allocates arrays/lists. Pooling the per-tile dictionaries was rejected in this pass because lifetime crosses MapMagic worker/apply phases and would need profiler-backed ownership proof.
+
+Scalability potential: Low devices avoid avoidable dictionary enumerator syntax in rock tile aggregation and keep the existing GPU-instanced rock route. Middle devices retain the same generated rock layer matrices. High and ultra devices retain visual rock density through existing MapMagic output data and HectonRockManager batching. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: evidence lines `HectonRockOutput 145/146/148/160/161/163/232/233/235`; forbidden scan over `HectonRockOutput.cs` found no direct component lookup, parent lookup helper, `.ToArray(`, `string.Format`, `.ToString(`, `GlobalRegistry.Get<`, or `GlobalRegistry.TryGet<`; remaining `foreach` entries are only the two `data.Outputs(...)` MapMagic API enumerations at lines `96` and `168`; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{31/31}`, `(97/97)`, `[19/19]`; SHA-256 `76A3A221BCE8ACAAAB4D4935931F474ACD29E71AC2F6AA1247FA31FF3B86F238`; diff stat `9 insertions`, `3 deletions`. Build was not launched because CPU sampled `54`, above the project threshold, with no compiler process rows.
+
+## Decision 416 - Remove Unity Time Poll From FloraBrain Tick Retry
+
+Problem: `FloraBrain.Tick(float deltaTime)` called `TryResolvePlayerRuntime()`, and that helper used `Time.time` to throttle player-runtime retry attempts. This put Unity wall-clock time inside an `ITickable` call stack, bypassing dispatcher `deltaTime`, time dilation, pause simulation, and deterministic tick tests.
+
+Solution: Replace `_nextPlayerResolveTime` with `_playerResolveRetryRemainingSeconds`, pass `deltaTime` into `TryResolvePlayerRuntime(float deltaTime)`, clamp negative deltas to zero, decrement the retry countdown from the dispatcher-provided tick parameter, and reset the countdown to zero after a successful player runtime bind. The existing cold/player-context owner route remains `PlayerRuntimeContextService.TryGetActiveRuntimeContext`; no new global authority, DataVault, signal, save, or presentation route was introduced.
+
+Rejected Alternatives: Keeping `Time.time` was rejected because `AGENTS.md` explicitly forbids `Time.deltaTime/fixedDeltaTime` inside `ITickable` and the same phase-safety principle applies to wall-clock retry logic inside the tick call stack. Retrying every tick was rejected because it would increase cold context lookup pressure while the player runtime is temporarily unavailable. Adding a new registry dependency was rejected because the existing player runtime context service already owns this reference handoff.
+
+Scalability potential: Low devices avoid uncontrolled retry cadence during paused or throttled dispatcher time. Middle devices keep the same parasite exposure and survival oxygen drain behavior. High and ultra devices retain full flora parasite gameplay while the dispatcher remains the sole timing authority. This does not change gameplay truth ownership, DTO layout, save identity, authority route, DataVault ownership, binary quality switches, or `GlobalQualityWeight` behavior.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: evidence lines `FloraBrain 31/58/132/137/140/145/156`; forbidden scan over `FloraBrain.cs` returned no matches for `Time.time`, `Time.deltaTime`, `Time.fixedDeltaTime`, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{18/18}`, `(55/55)`, `[10/10]`; SHA-256 `724E38173AD6AD31D396832E28A7A63379166D2C7052B8E115944D041F72F25A`; diff stat `12 insertions`, `6 deletions`. Build was not launched because CPU sampled `88`, above the project threshold, with no compiler process rows.
+
+## Decision 417 - Route Director Mission Cooldowns Through Dispatcher Time
+
+Problem: `DirectorMissionBridge.HandleProfileMissionTrigger()` used `Time.time` while serving `DirectorAIEvents` from the late-frame event lane. That leaves a mission cooldown authority on Unity wall-clock instead of the dispatcher-published time snapshot used by the rest of the frame pipeline.
+
+Solution: Replace the direct `Time.time` read with `ResolveDirectorCooldownTimeSeconds()`, which reads `SystemDispatcher.CurrentUnscaledTimeSeconds`, rejects non-finite/negative values, and clamps the double snapshot into the existing float cooldown array. The existing fixed arrays, event listener contract, quest activation route, and first-hour gate remain unchanged.
+
+Rejected Alternatives: Extending `IDirectorAIEventListener.OnDirectorMissionTriggerRequested` with a timestamp was rejected in this pass because the listener interface has many active consumers and changing the event payload would be a cross-domain API edit. Using `SystemDispatcher.CurrentFrameDeltaTime` was rejected because mission cooldowns need absolute expiry comparisons, not per-frame deltas. Keeping `Time.time` was rejected because the dispatcher already owns late-frame event timing.
+
+Scalability potential: Low devices avoid timing drift between dispatcher-paused frames and mission cooldowns. Middle devices keep the same profile mission selection. High and ultra devices retain director mission richness while the late-frame event lane remains phase-owned by `SystemDispatcher`. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: evidence lines `DirectorMissionBridge 198/358/360`, `SystemDispatcher 5570`, `HectonDirectorAI 259/273/367/368`; forbidden PCRE scan over `DirectorMissionBridge.cs` returned no matches for Unity time reads, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{46/46}`, `(141/141)`, `[32/32]`; SHA-256 `E4EEFEBB0F5A50E96CC3EE070E9E2061281CC4CF1272EAED6245A07926F8053D`; diff stat `10 insertions`, `1 deletion`. Build was not launched because the gate sampled CPU `13` and no compiler rows, but this session already had a legal solution build timeout after `604028 ms` and the user assigned whole-project compile errors to another agent.
+
+## Decision 418 - Route Migration Cold-Tick Runtime Seconds Through Dispatcher Time
+
+Problem: `MigrationDirector.AdvanceMigrationFieldColdTick()` is owned by `ISlowTickable`, but it used `Time.unscaledTime` to derive cold-tick delta for migration field rebuild scheduling. That tied a global ecology scheduler to Unity wall-clock instead of the dispatcher-published frame time snapshot.
+
+Solution: Replace the direct `Time.unscaledTime` read with `ResolveDispatcherRuntimeSeconds()`, which reads `SystemDispatcher.CurrentUnscaledTimeSeconds`, rejects non-finite/negative values, and clamps the double snapshot into the existing float delta route. Migration grid DTOs, Burst job layout, back/front buffer handles, DataVault mutation guard route, blood-cloud POIs, and quality-weight cadence math remain unchanged.
+
+Rejected Alternatives: Changing `ISlowTickable.SlowTick()` to carry a delta was rejected because it would be a broad scheduler API edit across many live systems. Using `SystemDispatcher.CurrentFrameDeltaTime` directly was rejected because the existing migration code expects an absolute timestamp and already has `AdvanceColdTickDeltaSeconds()` for clamped deltas. Reworking the existing mutation guard route was rejected because this patch does not touch DataVault lock ownership.
+
+Scalability potential: Low devices keep the existing quality-scaled cold rebuild cadence without wall-clock drift outside dispatcher ownership. Middle devices preserve migration field rebuild behavior and blood-cloud POI influence. High and ultra devices retain high-frequency visual/ecology migration richness through `ResolveMigrationFieldColdTickIntervalSeconds(GlobalQualityWeight)`. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` authority changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: evidence lines `MigrationDirector 802/822/851/864/883/911/1890/1914/2128/2130/2137`; forbidden PCRE scan over `MigrationDirector.cs` returned no matches for Unity time reads, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; lock scan shows no `TryAcquireWriteLock`, and the existing mutation guard release remains at `ReleaseMutationGuard` line `1914`; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{235/235}`, `(1145/1145)`, `[130/130]`; SHA-256 `17D098918C93479596946E3782D402B1AE95C069119C3EA542BDAD62E72EF7D6`; diff stat `10 insertions`, `1 deletion`. Build was not launched because CPU sampled `56`, above the project threshold, with no compiler rows.
+
+## Decision 419 - Route Celestial EMP Visual Seed Through Dispatcher Time
+
+Problem: `CelestialCataclysmSystem.PublishSolarEmpGlitchGlobalsImmediate()` wrote `Time.unscaledTime` into the solar EMP shader parameter vector. The visual write is already late-frame owned, but the timestamp source bypassed the dispatcher snapshot.
+
+Solution: Replace the direct Unity time read with `ResolveSolarEmpGlitchTimeSeconds()`, which reads `SystemDispatcher.CurrentUnscaledTimeSeconds`, rejects non-finite/negative values, and clamps to float for the existing shader vector. `_solarEmpGlitchDirty`, `TryRegisterLateFrame()`, `LateFrameTick()`, and `FlushQueuedCataclysmVisuals()` remain the presentation route.
+
+Rejected Alternatives: Changing the shader parameter layout was rejected because the existing shader contract expects the third vector component as time seed. Moving EMP state into simulation jobs was rejected because this is a visual glitch fake, not gameplay truth. Widening random/celestial event payloads was rejected because the immediate issue is only the time source used at flush.
+
+Scalability potential: Low devices keep the cheap scalar shader glitch instead of any physical solar EMP simulation. Middle devices retain the same late-frame global shader payload. High and ultra devices can increase authored visual intensity/duration without changing timing authority. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: evidence lines `CelestialCataclysmSystem 128/130/194/199/365/368/375/379/381/388/399`; forbidden PCRE scan over `CelestialCataclysmSystem.cs` returned no matches for Unity time reads, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{41/41}`, `(180/180)`, `[20/20]`; SHA-256 `4784DE42F3957D9F043384F34DC0B072AC9996F201D48EF41873C42ECE245115`; diff stat `10 insertions`, `1 deletion`. Build was not launched because CPU sampled `84`, above the project threshold, with no compiler rows.
+
+## Decision 420 - Route Player Health Grace Expiry Through Dispatcher Time
+
+Problem: `HectonPlayerHealth.ResolveUnscaledNowSeconds()` used `Time.unscaledTime` for invulnerability expiry and survival-grace lockout math. This is not a generic high-frequency lookup problem, but it leaves player damage immunity timing on Unity wall-clock instead of the dispatcher-owned runtime time snapshot.
+
+Solution: Replace the direct Unity time read with `SystemDispatcher.CurrentUnscaledTimeSeconds` while preserving the existing finite/non-negative guard and all existing call sites: `IsInvulnerable`, `TryActivateSurvivalGrace`, and `ExtendInvulnerability`. No damage API, save DTO, event payload, DataVault route, or health authority owner was changed.
+
+Rejected Alternatives: Passing timestamps through `IDamageReceiver.ReceiveDamage` was rejected because it would widen combat contracts across active systems. Adding a new time service dependency was rejected because `SystemDispatcher` already owns the frame time snapshot and `HectonPlayerHealth` already imports `Hecton8.Core`. Keeping `Time.unscaledTime` was rejected because it keeps expiry behavior outside dispatcher control during pause/time-scale and deterministic smoke tests.
+
+Scalability potential: Low devices keep the same cheap scalar expiry math and avoid wall-clock drift under throttled dispatcher cadence. Middle devices keep unchanged damage/survival behavior. High and ultra devices keep full combat feedback while time authority remains centralized. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: evidence lines `HectonPlayerHealth 151/598/601/614/621/623/626/648/650/966`; forbidden PCRE scan over `HectonPlayerHealth.cs` returned no matches for Unity time reads, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{112/112}`, `(420/420)`, `[20/20]`; SHA-256 `DDF8B919F7FCAB74A9014E97566B5CA21FB0B506D0F33161ECBD7A6D28AE8F45`; diff stat `1 insertion`, `1 deletion`. Build was not launched because this session already had a legal solution build timeout after `604028 ms` and the user assigned whole-project compile errors to another agent; final gate sampled CPU `40` and no compiler process rows.
+
+## Decision 421 - Route Crash Telemetry Diagnostic Timestamps Through Dispatcher Time
+
+Problem: `CrashTelemetryBuffer` already records dispatcher frame id and dispatcher unscaled delta, but origin-shift throttling and several diagnostic payload timestamps still read `UnityEngine.Time.unscaledTime` or `UnityEngine.Time.unscaledTimeAsDouble` directly. That creates two time authorities inside the core black-box path.
+
+Solution: Add `ResolveDispatcherUnscaledTimeSeconds()` and route the origin-shift telemetry cooldown plus event-bus congestion, late-frame shedding, audio overflow, and runtime watchdog timestamp payloads through `SystemDispatcher.CurrentUnscaledTimeSeconds`. The helper finite-checks and clamps the dispatcher double snapshot into the existing float telemetry slot.
+
+Rejected Alternatives: Changing `CrashTelemetryEntry` was rejected because the struct is explicit-layout 64-byte telemetry and the binary export contract depends on that size. Renaming `GpuFrameTime` was rejected because it is an established payload slot used by several forensic rows for numeric context. Keeping direct Unity time reads was rejected because the black-box should use one dispatcher-owned timeline where possible.
+
+Scalability potential: Low devices keep a cheap fixed ring-buffer write with no new allocations and no new locks. Middle devices keep the same black-box export shape. High and ultra devices can emit richer diagnostic rows through existing payload fields without multiplying clocks. No gameplay truth owner, DTO layout, save identity, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: evidence lines `CrashTelemetryBuffer 1333/1335/1376/1417/1710/1993/2072`; lock proof lines `324/330`, `3148/3170`, `3184/3221`; forbidden PCRE scan over `CrashTelemetryBuffer.cs` returned no matches for `UnityEngine.Time`, Unity time reads, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{239/239}`, `(1556/1556)`, `[97/97]`; SHA-256 `0A97FCE35C9EF6AD130D27A6CFB6A55141EACDFF90D3D9E935CD880B3F404484`; diff stat `14 insertions`, `5 deletions`. Build was not launched because CPU sampled `94`, above the project threshold, with no compiler rows.
+
+## Decision 422 - Route Runtime Profiler Cooldowns Through Dispatcher Time
+
+Problem: `RuntimePerformanceProfiler` already samples dispatcher delta in tick/late-frame routes, but budget-warning cooldown and renderer ownership audit throttling still used `Time.unscaledTime`. That leaves dev/profiling gates on Unity wall-clock while the rest of the profiler follows dispatcher timing.
+
+Solution: Add `ResolveProfilerUnscaledTimeSeconds()` with the previous non-play fallback, then route `TryConsumeBudgetWarningCooldown`, `ShouldCaptureRendererOwnershipAudit`, and `CaptureRendererOwnershipAudit` through the dispatcher time snapshot. Existing profiler recorder setup, StringBuilder report formatting, runtime trace activation, scene snapshotting, and audit dictionaries remain unchanged.
+
+Rejected Alternatives: A new profiler clock service was rejected because `SystemDispatcher.CurrentUnscaledTimeSeconds` is already the central timeline. Rewriting the profiler report formatting was rejected because the current issue is timing authority, not managed logging in a dev diagnostic surface. Removing renderer ownership audit was rejected because it provides useful forensic ownership proof when RuntimeDiagnosticsTrace is active.
+
+Scalability potential: Low devices avoid profiler cooldown drift when runtime diagnostics are enabled under throttled dispatcher cadence. Middle devices keep the same sampling windows and audit suppression behavior. High and ultra devices retain the ability to run heavier renderer ownership audit captures without creating a second clock authority. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: evidence lines `RuntimePerformanceProfiler 1308/1313/1334/1339/1915/1920/1931/1934`; Unity time scan over `RuntimePerformanceProfiler.cs` returned no matches for `Time.unscaledTime`, `Time.unscaledDeltaTime`, or `UnityEngine.Time`; `git diff -U0` shows only the dispatcher helper and three call-site replacements; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{327/327}`, `(820/820)`, `[141/141]`; SHA-256 `689BF7408937F5CAB1069A61215F8F4C3520E7756FCF62AE341A7B10AEBFD2FA`; diff stat `15 insertions`, `3 deletions`. Build was not launched because CPU sampled `100`, above the project threshold, with no compiler rows.
+
+## Decision 423 - Route Tool Runtime Smoke Delays Through Dispatcher Delta
+
+Problem: `ToolRuntimeSmokeTester` is dev-only, but its equip timeout and realtime delay loops used Unity `Time.unscaledDeltaTime` and `Time.realtimeSinceStartup`. That makes smoke verification advance on a separate Unity wall-clock path instead of the dispatcher frame delta used by runtime systems.
+
+Solution: Add `ResolveSmokeFrameDeltaSeconds()` and route holster/equip/restore timeout accumulation plus `DelayRealtimeAsync()` through `SystemDispatcher.CurrentFrameUnscaledDeltaTime`. The helper rejects non-finite and non-positive deltas and uses a fixed `1/60` fallback so dev smoke loops can still progress before a dispatcher frame has published a positive delta. The existing tool manager, inventory, quick-slot, and `AwaitableDebtMonitor.NextFrameAsync` contracts remain unchanged.
+
+Rejected Alternatives: Keeping Unity realtime was rejected because it preserves a second timing authority in smoke code. `Task.Delay` or thread timers were rejected because they detach the test from frame progression and create worse cancellation/orphan-process behavior. Changing player tool contracts was rejected because the defect is only timeout/delay timing, not tool invocation semantics.
+
+Scalability potential: Low devices get deterministic smoke waits tied to frame progression rather than wall-clock stalls. Middle devices keep the same full held-tool verification sequence. High and ultra devices can run verbose smoke passes without introducing a second time source. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: evidence lines `ToolRuntimeSmokeTester 50/199/247/302/336/343/348/350/351`; forbidden PCRE scan over `ToolRuntimeSmokeTester.cs` returned no matches for `Time.`, `UnityEngine.Time`, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{76/76}`, `(141/141)`, `[46/46]`; SHA-256 `D49E024E538A7176DE3B6C7271ABBAA79D8D2FC2036F3FCA7AD679EB5551F752`; diff stat `15 insertions`, `5 deletions`. Build was not launched because this session already had a legal solution build timeout after `604028 ms` and the user assigned whole-project compile errors to another agent; final gate sampled CPU `40` and no compiler process rows.
+
+## Decision 424 - Route Meteor Water-Impact Shader Clock Through Dispatcher Time
+
+Problem: `RandomEventSystem.ResolveMeteorWaterImpactShaderClockSeconds()` used `Time.timeSinceLevelLoad` for the meteor water-impact shader clock. The meteor effect is already a visual payload; direct Unity level-load time adds a second visual clock outside dispatcher authority.
+
+Solution: Replace the Unity time read with `SystemDispatcher.CurrentUnscaledTimeSeconds`, guarded for non-finite and negative values and clamped into the existing float shader vector component. The meteor event payload, random event conditions, late-frame dispatch throttles, and shader parameter layout remain unchanged.
+
+Rejected Alternatives: Passing a timestamp through meteor event DTOs was rejected because the current issue is a local shader seed, not event truth. Changing shader layout was rejected because existing materials consume `_ShaderMeteorWaterImpactParams.z` as time. A physical splash simulation was rejected because the current cheap shader fake is the correct cinematic cheat.
+
+Scalability potential: Low devices keep a single scalar shader clock and avoid any water simulation. Middle devices keep the same meteor water-impact presentation. High and ultra devices can spend saved budget on authored intensity/streak richness while the visual clock remains dispatcher-owned. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: evidence lines `RandomEventSystem 1892/1937/1941/1943`; forbidden PCRE scan over `RandomEventSystem.cs` returned no matches for Unity time reads, `UnityEngine.Time`, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{211/211}`, `(978/978)`, `[138/138]`; SHA-256 `CE43500254AF747DC06C32698FFE73643D11FD52DE551A7AA944994AF0717469`; diff stat `5 insertions`, `1 deletion`. Build was not launched because CPU sampled `79`, above the project threshold, with no compiler rows.
+
+## Decision 425 - Replace RuntimeWatchdog Unity Realtime With Stopwatch Monotonic Seconds
+
+Problem: `RuntimeWatchdog` used `UnityEngine.Time.realtimeSinceStartupAsDouble` for HUD heartbeat deadlines, emergency reset lane timestamps, MMF health scheduling, registry heartbeat sampling, and liveness lane stall detection. That creates a dependency on Unity time in a core watchdog whose job is to survive and diagnose scheduler stalls.
+
+Solution: Add `_stopwatchTicksToSeconds` and `ResolveWatchdogRealtimeSeconds()` using `Stopwatch.GetTimestamp()`. Route all watchdog realtime uses through that helper. This preserves monotonic wall-clock behavior while removing Unity `Time` dependency. Dispatcher time was deliberately not used because a watchdog must remain able to detect dispatcher stalls rather than follow the stalled dispatcher timeline.
+
+Rejected Alternatives: Switching to `SystemDispatcher.CurrentUnscaledTimeSeconds` was rejected because it would make HUD deadlock, MMF health, registry heartbeat, and lane stall checks blind to dispatcher clock failures. Keeping Unity realtime was rejected because it leaves a Unity engine time dependency inside core liveness logic. Adding a new clock service was rejected because `Stopwatch` is already used in this file for budget sampling and is allocation-free.
+
+Scalability potential: Low devices keep cheap monotonic scalar checks for stalls and MMF health. Middle devices keep the same watchdog reset/heartbeat behavior. High and ultra devices can run richer diagnostics without coupling liveness proof to Unity `Time`. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: evidence lines `RuntimeWatchdog 92/265/276/343/356/357/358/479/499/814/816`; forbidden PCRE scan over `RuntimeWatchdog.cs` returned no matches for Unity time reads, `UnityEngine.Time`, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{131/131}`, `(479/479)`, `[72/72]`; SHA-256 `837D9C494818C82DA62A889342EE691184147CA875726DEB168CD2E8B10C7E03`; diff stat `14 insertions`, `7 deletions`. Build was not launched because CPU sampled `79`, above the project threshold, with no compiler rows.
+
+## Decision 426 - Measure Scene Transition Solve Cost With Stopwatch Ticks
+
+Problem: `SceneRuntimeService` used `UnityEngine.Time.realtimeSinceStartupAsDouble` to measure transition solve cost for menu camera/dither/drone transition telemetry. This is a CPU-cost measurement, not gameplay time, and it should not depend on Unity `Time`.
+
+Solution: Add `using System.Diagnostics` and `_stopwatchTicksToMilliseconds`, capture `Stopwatch.GetTimestamp()` at the start of transition solve work, and compute elapsed milliseconds from ticks in `PublishTransitionSolveBudgetWarningIfNeeded(long solveStartTicks)`. Existing transition dissolve progression still uses dispatcher-derived unscaled delta, and the existing performance warning payload is unchanged.
+
+Rejected Alternatives: `SystemDispatcher.CurrentUnscaledTimeSeconds` was rejected because it measures frame time authority, not intra-frame CPU solve duration. Keeping Unity realtime was rejected because it leaves engine time dependency in a core scene service. Adding a profiler marker dependency was rejected because the existing warning path only needs a cheap monotonic elapsed measurement.
+
+Scalability potential: Low devices keep a cheap transition solve watchdog with no allocations. Middle devices keep the same cinematic menu transition. High and ultra devices can run richer transition visuals while solve-cost telemetry remains independent of Unity `Time`. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: evidence lines `SceneRuntimeService 59/629/651/695/708/756/761/765`; forbidden PCRE scan over `SceneRuntimeService.cs` returned no matches for Unity time reads, `UnityEngine.Time`, hot generic registry lookup, direct component lookup, parent lookup helpers, `foreach`, `.ToArray(`, `string.Format`, or `.ToString(`; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{134/134}`, `(590/590)`, `[42/42]`; SHA-256 `547258854319BA660C37D7463929F0BB27AE1A7E485F7B7653BAF00271020642`; diff stat `12 insertions`, `6 deletions`. Build was not launched because CPU sampled `80`, above the project threshold, and foreign `dotnet` process `64920` was running.
+
+## Decision 427 - Route Fauna Corpse Bloat Shader Clock Through Dispatcher Time
+
+Problem: `FaunaBrain.ResolveCorpseBloatShaderClockSeconds()` used `Time.timeSinceLevelLoad` for corpse-bloat shader timing. This is presentation state, but it still introduced a second Unity level-load clock inside the fauna runtime.
+
+Solution: Replace the Unity time read with `SystemDispatcher.CurrentUnscaledTimeSeconds`, guarded for non-finite and negative values and clamped into the existing float shader timer. AI state, corpse sink jobs, AUP conversion, rigidbody state, corpse freeze, and shader timer application semantics stay unchanged.
+
+Rejected Alternatives: Passing an explicit timestamp through fauna corpse state was rejected because the issue is local visual timing, not gameplay truth. Changing the corpse sink job DTO was rejected because the bloat shader timer is presentation-only and the kinematic job already receives deterministic delta input. A physical bloat/decomposition simulation was rejected because the scalar shader timer is the correct cheap visual fake.
+
+Scalability potential: Low devices keep a single shader scalar for corpse bloat. Middle devices keep existing corpse presentation. High and ultra devices can amplify authored corpse material effects without changing AI or physics truth. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: evidence lines `FaunaBrain 4783/4788/4791/4793/4800/4812/4815`; Unity time scan over `FaunaBrain.cs` returned no matches for `Time.time`, `Time.unscaledTime`, `Time.deltaTime`, `Time.fixedDeltaTime`, `Time.unscaledDeltaTime`, `Time.timeSinceLevelLoad`, or `UnityEngine.Time`; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{655/655}`, `(3368/3368)`, `[131/131]`; SHA-256 `8F17AA8D289507FE430D1AC121FA2AF202E1A168BCB19A033CB6253738060514`; diff stat `5 insertions`, `1 deletion`. Build was not launched because CPU sampled `71`, above the project threshold, and foreign `dotnet` process `64920` was running.
+
+## Decision 428 - Replace Runtime Profiler Unity Realtime Gates With Stopwatch Monotonic Seconds
+
+Problem: The earlier profiler cleanup scanned only `Time.unscaledTime`, `Time.unscaledDeltaTime`, and `UnityEngine.Time`; a later full scan found remaining `Time.realtimeSinceStartup` reads in `RuntimePerformanceProfiler` drive sampling, frozen fallback throttling, scene snapshot deadlines, menu auto-start deadlines, and editor fallback pumping. These gates are liveness/fallback diagnostics, not gameplay time, so leaving them on Unity `Time` keeps a second engine-owned wall clock in a dev subsystem.
+
+Solution: Add `StopwatchTicksToSeconds` and `ResolveProfilerMonotonicTimeSeconds()` using `System.Diagnostics.Stopwatch.GetTimestamp()`. Route profiler drive realtime deltas, frozen fallback trace cadence, pending scene snapshot deadlines, menu auto-start deadlines, and editor fallback silence detection through the monotonic helper. Keep `ResolveProfilerUnscaledTimeSeconds()` for budget and renderer-audit cooldowns because those are normal profiler cadence gates tied to dispatcher frame time.
+
+Rejected Alternatives: `SystemDispatcher.CurrentUnscaledTimeSeconds` was rejected for fallback liveness because a dispatcher-owned clock would fail to detect dispatcher silence. Keeping Unity `Time.realtimeSinceStartup` was rejected because the mandate is to remove direct Unity time authority from touched runtime code. Refactoring the file's older `.ToString()` debug report formatting was rejected in this patch because it is pre-existing dev/report code outside the touched timing gates and would expand blast radius under concurrent agents.
+
+Scalability potential: Low devices keep a cheap scalar liveness clock and deterministic profiler cooldowns. Middle devices keep existing scene snapshot and menu auto-start behavior. High and ultra devices can run heavier diagnostics without coupling fallback detection to Unity `Time` or dispatcher silence. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: evidence lines `RuntimePerformanceProfiler 54/594/968/1173/1309/1321/1326/1402/1413/1435/1444/1501/1859/1933/1947`; Unity time scan over `RuntimePerformanceProfiler.cs` returned no matches for `UnityEngine.Time`, `Time.time`, `Time.unscaledTime`, `Time.deltaTime`, `Time.fixedDeltaTime`, `Time.unscaledDeltaTime`, `Time.timeSinceLevelLoad`, `Time.realtimeSinceStartup`, or `Time.realtimeSinceStartupAsDouble`; added-line forbidden scan returned `ADDED_FORBIDDEN_MATCHES=0`; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{328/328}`, `(833/833)`, `[141/141]`; SHA-256 `244A03C974990BA53459EF6CBBDA012B31AE938C672F1252642943C22972BBF4`; diff stat `37 insertions`, `12 deletions`. Build was not launched because CPU sampled `62`, above the project threshold, with no compiler rows.
+
+## Decision 429 - Replace ARM64 Alignment Gizmo Unity Realtime Pulse With Stopwatch
+
+Problem: `Arm64AlignmentFaultGizmo.OnDrawGizmos()` used `UnityEngine.Time.realtimeSinceStartup` to pulse the red fault cube alpha. The route is editor-only, but it was a clean direct Unity time read in core memory diagnostics and did not need engine time authority.
+
+Solution: Add a static Stopwatch tick-to-second scalar and compute the pulse seed from `System.Diagnostics.Stopwatch.GetTimestamp()`. The DataVault read route, alignment entry checks, AUP-to-runtime conversion, clamp distance, and gizmo draw shape stay unchanged.
+
+Rejected Alternatives: Dispatcher time was rejected because editor scene-view diagnostic pulsing is not simulation time and should still pulse if dispatcher frame time is not publishing. Changing the diagnostic read route was rejected because the existing `GlobalRegistry.DataVault` property access is already `UNITY_EDITOR` fenced and documented for this gizmo.
+
+Scalability potential: Low devices and editor sessions keep the same cheap scalar pulse. Middle, high, and ultra devices get no new runtime route or player cost. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; editor diagnostic only, no profiler/player proof exists. Proof: evidence lines `Arm64AlignmentFaultGizmo 15/17/20/34`; Unity time scan over `Arm64AlignmentFaultGizmo.cs` returned no matches; added-line forbidden scan returned `ADDED_FORBIDDEN_MATCHES=0`; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{4/4}`, `(31/31)`, `[5/5]`; SHA-256 `71E7356A8E67E4D4DA8D49EABE8994F411CD2BDBB32112BFC5C4EACC880779E0`; diff stat `3 insertions`, `1 deletion`. Build was not launched because CPU sampled `76`, above the project threshold.
+
+## Decision 430 - Replace Bootstrap Safe-Halt Unity Realtime With Stopwatch
+
+Problem: `BootstrapStatus` used `UnityEngine.Time.realtimeSinceStartupAsDouble` for boot start, step start, step duration, and safe-halt timeout detection. Bootstrap safe-halt must work during partial initialization and should not depend on Unity `Time` for its stall measurement.
+
+Solution: Add `StopwatchTicksToSeconds` and `ResolveBootstrapMonotonicTimeSeconds()` using `System.Diagnostics.Stopwatch.GetTimestamp()`. Route boot timing, step timing, and safe-halt elapsed math through that helper. Preserve `UnityEngine.Time.timeScale` writes because prior architecture audit quarantined them as the bootstrap safe-halt boundary, not a general timing read path.
+
+Rejected Alternatives: Dispatcher time was rejected because bootstrap safe-halt must detect dispatcher/bootstrap stalls, not follow a possibly stalled dispatcher clock. Removing `Time.timeScale` writes was rejected because those writes are the existing safe-halt/reset boundary and are documented as an exception. Changing the safe-halt telemetry delegate was rejected because binary/telemetry consumers already depend on the current payload shape.
+
+Scalability potential: Low devices keep cheap monotonic watchdog timing through boot stalls. Middle devices keep unchanged boot telemetry. High and ultra devices get no extra work and retain deterministic safe-halt proof. No gameplay truth owner, DTO layout, save identity, DataVault route, binary quality switch, or `GlobalQualityWeight` behavior changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: evidence lines `BootstrapStatus 55/154/170/184/240/295/297`; scan over `BootstrapStatus.cs` returned no `realtimeSinceStartup`, no `realtimeSinceStartupAsDouble`, and no gameplay clock reads; remaining `UnityEngine.Time.timeScale` hits are documented safe-halt writes at `115/155/212/249`; added-line forbidden scan returned `ADDED_FORBIDDEN_MATCHES=0`; `git diff --check` exited `0` with LF/CRLF warning only; delimiter counts `{27/27}`, `(60/60)`, `[7/7]`; SHA-256 `E5FB6A2644747D7D8A59DB02E40306CF189CA7938E21084D0DE7E3778D31B74D`; diff stat `11 insertions`, `4 deletions`. Build was not launched because this request required static validation and prior context assigned whole-project compile errors to another agent; final gate sampled CPU `9` and no compiler rows.
+
+## Decision 431 - Stop At Static Integrator Proof Instead Of Editing Dirty Foreign Runtime Files
+
+Problem: The broad audit found additional real Unity-time reads in world systems such as `DestructibleOrganicManager`, `FloraInteractionManager`, `HectonMapMagicVegetationBridge`, `PersistentWorldRegistry`, and `ProceduralWreckGenerator`, but every serious candidate was already modified by other active agents. Editing those files now would merge into unknown foreign work and violate the concurrent-agent boundary.
+
+Solution: Correct the dirty-file normalization bug, re-run the search against clean files only, and continue only with static proof over my touched code. Clean runtime hits were comments or editor literals, not direct gameplay time authority. The touched-file proof now covers time authority, hot `GlobalRegistry.Get<T>()` / `GetComponent()` lookup, added-line Zero-GC patterns, and diff hygiene.
+
+Rejected Alternatives: Patching dirty world files was rejected because there is no safe ownership boundary under active concurrent edits. Launching `dotnet build` was rejected because the final CPU sample was `83`, above the project threshold, and the user already assigned whole-project compile errors to another agent. Writing JSON or binary reports was rejected because the current protocol forbids that I/O.
+
+Scalability potential: Low devices benefit from the completed clock-authority cleanup in touched systems and from avoiding risky mixed-agent partial patches. Middle devices keep current behavior. High and ultra devices retain existing visual-overkill routes; this audit made no gameplay truth, DTO layout, save identity, DataVault ownership, signal lane, or `GlobalQualityWeight` change.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; proof is static only. `CLEAN_HOT_LOOKUP_SCAN=0`; `TOUCHED_HOT_LOOKUP_SCAN=0`; `TOUCHED_ADDED_FORBIDDEN_MATCHES=0`; touched-file time scan found only `BootstrapStatus.cs` safe-halt `UnityEngine.Time.timeScale` writes at `115/155/212/249`; `git diff --check` exited `0` with LF/CRLF warnings only. No build/runtime proof exists because CPU sampled `83` and no compiler rows were active.
+
+## Decision 432 - Harden HarvestablePlant Against Null Serialized Segment Slots
+
+Problem: `HarvestablePlant` assumed the serialized `PlantSegment[] segments` array and every slot inside it were valid. A missing array or a deleted/null segment slot could crash public accessors, `Tick`, cut targeting, harvest/regrow calls, editor validation, or gizmo drawing. This is a scene-authoring/data-integrity failure that can break runtime stability without any physics or AI complexity.
+
+Solution: Normalize a null serialized array to a cached empty array in `Awake`, then use local array references and explicit null-slot guards in all runtime segment loops. The regrow loop now clamps iteration to the smaller of segment count and timer count, so an inconsistent timer array cannot index past bounds. Regrow clears the local timer when available. Presentation stays in `LateFrameTick`, and loot physics still uses the cached `_physicsService` route.
+
+Rejected Alternatives: Auto-creating `PlantSegment` objects was rejected because it would hide bad content and allocate managed objects. Rebuilding the segment authoring system was rejected as over-engineering for a local crash guard. Moving segment state into `GlobalDataVault` was rejected because the plant owns local prop state and there is no cross-domain native ownership need.
+
+Scalability potential: Low devices avoid a hard crash from invalid plant content with only branch guards. Middle devices keep existing harvest/regrow visuals and loot behavior. High and ultra devices retain the same presentation route and can layer richer renderer/material effects later without changing gameplay truth. No gameplay authority, save identity, DTO layout, DataVault ownership, signal lane, binary quality switch, or `GlobalQualityWeight` route changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof exists. Proof: `HarvestablePlant.cs` direct `segments[i].` scan returned no matches; full file forbidden scan found only the pre-existing event-driven `loot.TryGetComponent(out Rigidbody rb)` in `SpawnLoot`; added-line forbidden scan returned `0` for `new`, `string.Format`, `.ToString(`, `foreach`, `.ToArray(`, `Enumerable.`, and `System.Linq`; `git diff --check -- HarvestablePlant.cs` exited `0` with LF/CRLF warning only; SHA-256 `0D9E1F2713FC3A587BE0357D799BF38FE6375F75A2AA7C04FDB9D57E9851BB8F`. Build was not launched because first gate sampled CPU `71` with active `dotnet` PID `55944`, and final gate sampled CPU `59` with no compiler rows.

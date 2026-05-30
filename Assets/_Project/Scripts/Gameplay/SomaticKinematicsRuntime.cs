@@ -1960,11 +1960,9 @@ namespace Hecton8.Gameplay
 
             if (_kinematicsJobScheduled)
             {
-                if (!forceComplete && !_pendingKinematicsHandle.IsCompleted)
+                if (!DispatcherJobFence.TryComplete(ref _pendingKinematicsHandle, forceComplete))
                     return false;
 
-                _pendingKinematicsHandle.Complete();
-                _pendingKinematicsHandle = default;
                 _kinematicsJobScheduled = false;
                 if (!FlushLocalSimulationScratchToVault())
                 {
@@ -2480,15 +2478,18 @@ namespace Hecton8.Gameplay
             if (_dumpWritten || !TryResolveBlackBoxDumpHeader(out SomaticBlackBoxDumpHeader header, out int entryCount))
                 return;
 
+            NativeArray<byte> payload = default;
             try
             {
                 string path = ResolveProjectPath(DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                int headerBytes = UnsafeUtility.SizeOf<SomaticBlackBoxDumpHeader>();
+                int entryBytes = UnsafeUtility.SizeOf<SomaticKinematicBlackBoxEntry>();
+                int byteCount = headerBytes + entryCount * entryBytes;
+                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                UnsafeUtility.MemCpy(target, &header, headerBytes);
 
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<SomaticBlackBoxDumpHeader>()));
+                int cursor = headerBytes;
                 for (int i = 0; i < entryCount; i++)
                 {
                     if (!TryReadBlackBoxDumpEntry(i, out SomaticKinematicBlackBoxEntry entry))
@@ -2497,10 +2498,11 @@ namespace Hecton8.Gameplay
                         return;
                     }
 
-                    stream.Write(new ReadOnlySpan<byte>(&entry, UnsafeUtility.SizeOf<SomaticKinematicBlackBoxEntry>()));
+                    UnsafeUtility.MemCpy(target + cursor, &entry, entryBytes);
+                    cursor += entryBytes;
                 }
-                stream.Flush(true);
-                _dumpWritten = true;
+
+                _dumpWritten = NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
             }
             catch (IOException)
             {
@@ -2525,6 +2527,11 @@ namespace Hecton8.Gameplay
             catch (NotSupportedException)
             {
                 _dumpWritten = false;
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 

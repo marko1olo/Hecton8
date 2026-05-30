@@ -26,7 +26,7 @@ namespace Hecton8.Visor
         private const float DefaultSootCenter01 = 0.5f;
         private const int SootGlobalsStrideBytes = 32;
 
-        private static readonly Vector4 DefaultSootCenter = new Vector4(DefaultSootCenter01, DefaultSootCenter01, 0f, 0f);
+        private static readonly Vector4 DefaultSootCenter = CreateDefaultSootCenter();
         private static Vector4 s_runtimeSootParams;
         private static Vector4 s_runtimeSootCenter = DefaultSootCenter;
         private static bool s_runtimeSootActive;
@@ -235,16 +235,19 @@ namespace Hecton8.Visor
 
             private bool UpdateSootGlobals(FeatureSettings settings, RuntimeState runtimeState)
             {
-                Vector4 sootParams = new Vector4(
-                    math.saturate(runtimeState.Intensity),
-                    math.clamp(runtimeState.Radius, MinimumSootRadius, ResolveMaximumRadius(settings)),
-                    math.saturate(runtimeState.DitherStrength),
-                    math.saturate(runtimeState.DarkenStrength));
-                Vector4 sootCenter = new Vector4(
-                    math.saturate(runtimeState.Center.x),
-                    math.saturate(runtimeState.Center.y),
-                    math.max(1f, runtimeState.Aspect),
-                    math.saturate(runtimeState.Center.x) * math.max(1f, runtimeState.Aspect));
+                Vector4 sootParams = default;
+                sootParams.x = math.saturate(runtimeState.Intensity);
+                sootParams.y = math.clamp(runtimeState.Radius, MinimumSootRadius, ResolveMaximumRadius(settings));
+                sootParams.z = math.saturate(runtimeState.DitherStrength);
+                sootParams.w = math.saturate(runtimeState.DarkenStrength);
+
+                float centerX = math.saturate(runtimeState.Center.x);
+                float aspect = math.max(1f, runtimeState.Aspect);
+                Vector4 sootCenter = default;
+                sootCenter.x = centerX;
+                sootCenter.y = math.saturate(runtimeState.Center.y);
+                sootCenter.z = aspect;
+                sootCenter.w = centerX * aspect;
 
                 if (!HasSootGlobalsBuffer())
                     return false;
@@ -380,17 +383,26 @@ namespace Hecton8.Visor
                 return;
             }
 
-            s_runtimeSootParams = new Vector4(
-                intensity,
-                math.isfinite(sootParams.y) ? math.max(MinimumSootRadius, sootParams.y) : MinimumSootRadius,
-                ditherStrength,
-                darkenStrength);
-            s_runtimeSootCenter = new Vector4(
-                math.isfinite(sootCenter.x) ? math.saturate(sootCenter.x) : DefaultSootCenter01,
-                math.isfinite(sootCenter.y) ? math.saturate(sootCenter.y) : DefaultSootCenter01,
-                0f,
-                0f);
+            Vector4 sanitizedParams = default;
+            sanitizedParams.x = intensity;
+            sanitizedParams.y = math.isfinite(sootParams.y) ? math.max(MinimumSootRadius, sootParams.y) : MinimumSootRadius;
+            sanitizedParams.z = ditherStrength;
+            sanitizedParams.w = darkenStrength;
+            s_runtimeSootParams = sanitizedParams;
+
+            Vector4 sanitizedCenter = default;
+            sanitizedCenter.x = math.isfinite(sootCenter.x) ? math.saturate(sootCenter.x) : DefaultSootCenter01;
+            sanitizedCenter.y = math.isfinite(sootCenter.y) ? math.saturate(sootCenter.y) : DefaultSootCenter01;
+            s_runtimeSootCenter = sanitizedCenter;
             s_runtimeSootActive = true;
+        }
+
+        private static Vector4 CreateDefaultSootCenter()
+        {
+            Vector4 result = default;
+            result.x = DefaultSootCenter01;
+            result.y = DefaultSootCenter01;
+            return result;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

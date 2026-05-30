@@ -1,7 +1,6 @@
 using System;
 #if UNITY_EDITOR
 using System.IO;
-using System.Threading;
 #endif
 using System.Runtime.CompilerServices;
 using Hecton8.Core;
@@ -36,16 +35,6 @@ namespace Hecton8.Physics.Vehicles
             MutationGuardBit(VehicleDamageConstants.TuningBuffer) |
             MutationGuardBit(VehicleDamageConstants.TelemetryRingBuffer) |
             MutationGuardBit(VehicleDamageConstants.TelemetryCursorBuffer);
-#if UNITY_EDITOR
-        private static readonly ulong CsvGridWriteMutationGuardMask = MutationGuardBit(VehicleDamageConstants.GridWriteBuffer);
-        private static readonly ulong CsvGridReadMutationGuardMask = MutationGuardBit(VehicleDamageConstants.GridReadBuffer);
-        private static readonly ulong CsvTuningMutationGuardMask = MutationGuardBit(VehicleDamageConstants.TuningBuffer);
-        private static readonly byte[] s_csvImportBytes = new byte[VehicleDamageConstants.CsvScratchBytes];
-        private static readonly VehicleGridCellDTO[] s_csvGridScratch = new VehicleGridCellDTO[MaxGridWidth * MaxGridHeight * MaxGridDepth];
-        private static int s_csvImportScratchBusy;
-#endif
-        private static readonly ulong EditorTuningMutationGuardMask = MutationGuardBit(VehicleDamageConstants.TuningBuffer);
-        private static readonly ulong BlackboxReadMutationGuardMask = MutationGuardBit(VehicleDamageConstants.StateReadBuffer);
 
         [Header("Damage Grid")]
         [SerializeField, Range(2, MaxGridWidth)] private int gridWidth = VehicleDamageConstants.DefaultGridWidth;
@@ -88,9 +77,6 @@ namespace Hecton8.Physics.Vehicles
         private VaultGenerationHandle<VehicleDamageTuningDTO> _tuningHandle;
         private VaultGenerationHandle<VehicleDamageTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<uint> _telemetryCursorHandle;
-#if UNITY_EDITOR
-        private VaultGenerationHandle<byte> _csvScratchHandle;
-#endif
         private VaultGenerationHandle<SubmarineKinematicConfig> _kinematicConfigHandle;
         private JobHandle _damageHandle;
         private bool _damagePending;
@@ -208,6 +194,12 @@ namespace Hecton8.Physics.Vehicles
                         out VehicleDamageSignalDTO* mockSignals,
                         out VehicleDamageStateDTO* stateWrite,
                         out VehicleDamageStateDTO* stateRead,
+                        out int gridWriteCapacity,
+                        out int gridReadCapacity,
+                        out int signalCapacity,
+                        out int mockSignalCapacity,
+                        out int stateWriteCapacity,
+                        out int stateReadCapacity,
                         out NativeArray<VehicleDamageTelemetryEntry> telemetry,
                         out NativeArray<uint> telemetryCursor,
                         out NativeArray<VehicleDamageTuningDTO> tuningArray,
@@ -219,8 +211,10 @@ namespace Hecton8.Physics.Vehicles
 
                 VehicleDamageTuningDTO tuning = UpdateTuningSnapshot(tuningArray);
                 int realSignalCount = GatherCombatDamageSignals(signalArray, in tuning);
-                int mockCount = ResolveMockSignalCount();
-                int totalSignalCount = math.min(realSignalCount + mockCount, VehicleDamageConstants.MaxDamageSignals);
+                int mockCount = math.min(
+                    ResolveMockSignalCount(),
+                    math.min(mockSignalCapacity, math.max(0, signalCapacity - realSignalCount)));
+                int totalSignalCount = math.min(realSignalCount + mockCount, signalCapacity);
 
                 Transform root = transform;
                 if (!TryReadAuthoritativeRootPose(root, out double3 rootAup, out quaternion rootRotation))
@@ -252,7 +246,7 @@ namespace Hecton8.Physics.Vehicles
                         Destination = signals,
                         SourceCount = mockCount,
                         DestinationOffset = realSignalCount,
-                        DestinationCapacity = VehicleDamageConstants.MaxDamageSignals
+                        DestinationCapacity = signalCapacity
                     };
                     dependency = copyJob.Schedule(mockCount, VehicleDamageConstants.JobBatchSize, mockHandle);
                 }
@@ -322,8 +316,10 @@ namespace Hecton8.Physics.Vehicles
                     StateWrite = stateWrite,
                     StateRead = stateRead,
                     CellCount = _cellCount,
-                    GridWriteCapacity = _cellCount,
-                    GridReadCapacity = _cellCount
+                    GridWriteCapacity = gridWriteCapacity,
+                    GridReadCapacity = gridReadCapacity,
+                    StateWriteCapacity = stateWriteCapacity,
+                    StateReadCapacity = stateReadCapacity
                 };
 
                 _damageHandle = publishJob.Schedule(dependency);
@@ -454,9 +450,6 @@ namespace Hecton8.Physics.Vehicles
             _tuningHandle = default;
             _telemetryHandle = default;
             _telemetryCursorHandle = default;
-#if UNITY_EDITOR
-            _csvScratchHandle = default;
-#endif
             _kinematicConfigHandle = default;
             _cellCount = 0;
             _csvLoaded = false;
@@ -507,9 +500,6 @@ namespace Hecton8.Physics.Vehicles
             ReleaseOwnedVaultHandle(vault, ref _tuningHandle);
             ReleaseOwnedVaultHandle(vault, ref _telemetryHandle);
             ReleaseOwnedVaultHandle(vault, ref _telemetryCursorHandle);
-#if UNITY_EDITOR
-            ReleaseOwnedVaultHandle(vault, ref _csvScratchHandle);
-#endif
         }
 
         private static void ReleaseOwnedVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
@@ -590,17 +580,9 @@ namespace Hecton8.Physics.Vehicles
             _tuningHandle = _dataVault.EnsureGenerationHandle<VehicleDamageTuningDTO>(VehicleDamageConstants.TuningBuffer, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
             _telemetryHandle = _dataVault.EnsureGenerationHandle<VehicleDamageTelemetryEntry>(VehicleDamageConstants.TelemetryRingBuffer, VehicleDamageConstants.TelemetryCapacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
             _telemetryCursorHandle = _dataVault.EnsureGenerationHandle<uint>(VehicleDamageConstants.TelemetryCursorBuffer, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
-#if UNITY_EDITOR
-            _csvScratchHandle = _dataVault.EnsureGenerationHandle<byte>(VehicleDamageConstants.CsvScratchBuffer, VehicleDamageConstants.CsvScratchBytes, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
-#endif
-
             if (!IsHandleValid(in _gridWriteHandle) || !IsHandleValid(in _gridReadHandle) || !IsHandleValid(in _signalHandle) ||
                 !IsHandleValid(in _mockSignalHandle) || !IsHandleValid(in _stateWriteHandle) || !IsHandleValid(in _stateReadHandle) ||
-                !IsHandleValid(in _tuningHandle) || !IsHandleValid(in _telemetryHandle) || !IsHandleValid(in _telemetryCursorHandle)
-#if UNITY_EDITOR
-                || !IsHandleValid(in _csvScratchHandle)
-#endif
-                )
+                !IsHandleValid(in _tuningHandle) || !IsHandleValid(in _telemetryHandle) || !IsHandleValid(in _telemetryCursorHandle))
             {
                 _buffersReady = false;
                 return false;
@@ -840,6 +822,12 @@ namespace Hecton8.Physics.Vehicles
             out VehicleDamageSignalDTO* mockSignals,
             out VehicleDamageStateDTO* stateWrite,
             out VehicleDamageStateDTO* stateRead,
+            out int gridWriteCapacity,
+            out int gridReadCapacity,
+            out int signalCapacity,
+            out int mockSignalCapacity,
+            out int stateWriteCapacity,
+            out int stateReadCapacity,
             out NativeArray<VehicleDamageTelemetryEntry> telemetry,
             out NativeArray<uint> telemetryCursor,
             out NativeArray<VehicleDamageTuningDTO> tuning,
@@ -851,17 +839,23 @@ namespace Hecton8.Physics.Vehicles
             mockSignals = null;
             stateWrite = null;
             stateRead = null;
+            gridWriteCapacity = 0;
+            gridReadCapacity = 0;
+            signalCapacity = 0;
+            mockSignalCapacity = 0;
+            stateWriteCapacity = 0;
+            stateReadCapacity = 0;
             telemetry = default;
             telemetryCursor = default;
             tuning = default;
             signalArray = default;
 
-            if (!TryOpenLocalPointerForOwner(in _gridWriteHandle, out void* gridWritePtr) ||
-                !TryOpenLocalPointerForOwner(in _gridReadHandle, out void* gridReadPtr) ||
+            if (!TryOpenArrayForOwner(in _gridWriteHandle, out NativeArray<VehicleGridCellDTO> gridWriteArray) ||
+                !TryOpenArrayForOwner(in _gridReadHandle, out NativeArray<VehicleGridCellDTO> gridReadArray) ||
                 !TryOpenArrayForOwner(in _signalHandle, out signalArray) ||
-                !TryOpenLocalPointerForOwner(in _mockSignalHandle, out void* mockSignalsPtr) ||
-                !TryOpenLocalPointerForOwner(in _stateWriteHandle, out void* stateWritePtr) ||
-                !TryOpenLocalPointerForOwner(in _stateReadHandle, out void* stateReadPtr) ||
+                !TryOpenArrayForOwner(in _mockSignalHandle, out NativeArray<VehicleDamageSignalDTO> mockSignalArray) ||
+                !TryOpenArrayForOwner(in _stateWriteHandle, out NativeArray<VehicleDamageStateDTO> stateWriteArray) ||
+                !TryOpenArrayForOwner(in _stateReadHandle, out NativeArray<VehicleDamageStateDTO> stateReadArray) ||
                 !TryOpenArrayForOwner(in _telemetryHandle, out telemetry) ||
                 !TryOpenArrayForOwner(in _telemetryCursorHandle, out telemetryCursor) ||
                 !TryOpenArrayForOwner(in _tuningHandle, out tuning))
@@ -869,12 +863,32 @@ namespace Hecton8.Physics.Vehicles
                 return false;
             }
 
-            gridWrite = (VehicleGridCellDTO*)gridWritePtr;
-            gridRead = (VehicleGridCellDTO*)gridReadPtr;
+            gridWriteCapacity = gridWriteArray.Length;
+            gridReadCapacity = gridReadArray.Length;
+            signalCapacity = math.min(signalArray.Length, VehicleDamageConstants.MaxDamageSignals);
+            mockSignalCapacity = math.min(mockSignalArray.Length, VehicleDamageConstants.MaxMockDamageSignals);
+            stateWriteCapacity = stateWriteArray.Length;
+            stateReadCapacity = stateReadArray.Length;
+
+            if (gridWriteCapacity < _cellCount ||
+                gridReadCapacity < _cellCount ||
+                signalCapacity <= 0 ||
+                mockSignalCapacity < 0 ||
+                stateWriteCapacity <= 0 ||
+                stateReadCapacity <= 0 ||
+                telemetry.Length <= 0 ||
+                telemetryCursor.Length <= 0 ||
+                tuning.Length <= 0)
+            {
+                return false;
+            }
+
+            gridWrite = (VehicleGridCellDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(gridWriteArray);
+            gridRead = (VehicleGridCellDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(gridReadArray);
             signals = (VehicleDamageSignalDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(signalArray);
-            mockSignals = (VehicleDamageSignalDTO*)mockSignalsPtr;
-            stateWrite = (VehicleDamageStateDTO*)stateWritePtr;
-            stateRead = (VehicleDamageStateDTO*)stateReadPtr;
+            mockSignals = (VehicleDamageSignalDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(mockSignalArray);
+            stateWrite = (VehicleDamageStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(stateWriteArray);
+            stateRead = (VehicleDamageStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(stateReadArray);
             return gridWrite != null && gridRead != null && signals != null && mockSignals != null &&
                     stateWrite != null && stateRead != null && telemetry.IsCreated && telemetryCursor.IsCreated && tuning.IsCreated;
         }
@@ -914,7 +928,7 @@ namespace Hecton8.Physics.Vehicles
             if (!_buffersReady || vault == null || !File.Exists(_csvPath))
                 return false;
 
-            bool scratchAcquired = false;
+            NativeArray<VehicleGridCellDTO> stagedGrid = default;
             try
             {
                 FileInfo info = new FileInfo(_csvPath);
@@ -922,39 +936,46 @@ namespace Hecton8.Physics.Vehicles
                 if (_csvLoaded && stamp == _csvStampUtcTicks)
                     return false;
 
-                if (info.Length <= 0L || info.Length > VehicleDamageConstants.CsvScratchBytes)
+                if (info.Length <= 0L || info.Length > VehicleDamageConstants.CsvImportByteCapacity)
                     return false;
 
-                if (Interlocked.CompareExchange(ref s_csvImportScratchBusy, 1, 0) != 0)
-                    return false;
-                scratchAcquired = true;
-
-                int cellCount = math.min(_cellCount, s_csvGridScratch.Length);
-                if (cellCount <= 0 || !TryStageCsvGridScratch(s_csvGridScratch, cellCount))
+                int cellCount = math.min(_cellCount, MaxGridWidth * MaxGridHeight * MaxGridDepth);
+                if (cellCount <= 0)
                     return false;
 
-                Span<byte> bytes = s_csvImportBytes.AsSpan(0, (int)info.Length);
-                int read;
-                using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                stagedGrid = new NativeArray<VehicleGridCellDTO>(cellCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                if (!TryStageCsvGrid(stagedGrid, cellCount))
+                    return false;
+
+                Span<byte> bytes = stackalloc byte[VehicleDamageConstants.CsvImportByteCapacity];
+                int expectedBytes = (int)info.Length;
+                int read = 0;
+                using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    read = stream.Read(bytes);
+                    while (read < expectedBytes)
+                    {
+                        int chunk = stream.Read(bytes.Slice(read, expectedBytes - read));
+                        if (chunk <= 0)
+                            return false;
+                        read += chunk;
+                    }
                 }
 
-                if (read <= 0)
+                if (read != expectedBytes)
                     return false;
 
                 int applied = VehicleComponentLayoutCsvParser.Apply(
                     bytes.Slice(0, read),
-                    s_csvGridScratch.AsSpan(0, cellCount),
+                    stagedGrid,
                     gridWidth,
                     gridHeight,
                     gridDepth);
                 if (applied <= 0)
                     return false;
 
-                if (!TryCommitCsvGrid(in _gridWriteHandle, CsvGridWriteMutationGuardMask, s_csvGridScratch, cellCount))
+                if (!TryCommitCsvGrid(in _gridWriteHandle, stagedGrid, cellCount))
                     return false;
-                if (!TryCommitCsvGrid(in _gridReadHandle, CsvGridReadMutationGuardMask, s_csvGridScratch, cellCount))
+                if (!TryCommitCsvGrid(in _gridReadHandle, stagedGrid, cellCount))
                     return false;
                 if (!TryCommitCsvTuning())
                     return false;
@@ -973,14 +994,14 @@ namespace Hecton8.Physics.Vehicles
             }
             finally
             {
-                if (scratchAcquired)
-                    Volatile.Write(ref s_csvImportScratchBusy, 0);
+                if (stagedGrid.IsCreated)
+                    stagedGrid.Dispose();
             }
         }
 
-        private bool TryStageCsvGridScratch(VehicleGridCellDTO[] scratch, int cellCount)
+        private bool TryStageCsvGrid(NativeArray<VehicleGridCellDTO> scratch, int cellCount)
         {
-            if (scratch == null || cellCount <= 0 || cellCount > scratch.Length)
+            if (!scratch.IsCreated || cellCount <= 0 || cellCount > scratch.Length)
                 return false;
 
             IDataVault vault = _dataVault;
@@ -1002,46 +1023,40 @@ namespace Hecton8.Physics.Vehicles
 
         private bool TryCommitCsvGrid(
             in VaultGenerationHandle<VehicleGridCellDTO> handle,
-            ulong guardMask,
-            VehicleGridCellDTO[] source,
+            NativeArray<VehicleGridCellDTO> source,
             int cellCount)
         {
             IDataVault vault = _dataVault;
-            if (vault == null || source == null || cellCount <= 0 || cellCount > source.Length)
+            if (vault == null || !source.IsCreated || cellCount <= 0 || cellCount > source.Length)
                 return false;
 
-            bool guardAcquired = false;
+            bool lockAcquired = false;
             try
             {
-                if (!vault.TryAcquireMutationGuard(guardMask))
-                    return false;
-                guardAcquired = true;
-
-                if (!TryOpenArrayForOwner(in handle, out NativeArray<VehicleGridCellDTO> target) ||
-                    target.Length < cellCount)
+                if (!vault.TryAcquireWriteLock(in handle, SystemID.VehiclesPhysics, out NativeArray<VehicleGridCellDTO> target))
                 {
                     return false;
                 }
+                lockAcquired = true;
+                if (target.Length < cellCount)
+                    return false;
 
-                fixed (VehicleGridCellDTO* sourcePtr = source)
+                long byteCount = (long)cellCount * UnsafeUtility.SizeOf<VehicleGridCellDTO>();
+                if (!UnsafeMemoryCopyGuard.SafeCopy(
+                        NativeArrayUnsafeUtility.GetUnsafePtr(target),
+                        (long)target.Length * UnsafeUtility.SizeOf<VehicleGridCellDTO>(),
+                        NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source),
+                        byteCount))
                 {
-                    long byteCount = (long)cellCount * UnsafeUtility.SizeOf<VehicleGridCellDTO>();
-                    if (!UnsafeMemoryCopyGuard.SafeCopy(
-                            NativeArrayUnsafeUtility.GetUnsafePtr(target),
-                            (long)target.Length * UnsafeUtility.SizeOf<VehicleGridCellDTO>(),
-                            sourcePtr,
-                            byteCount))
-                    {
-                        return false;
-                    }
+                    return false;
                 }
 
                 return true;
             }
             finally
             {
-                if (guardAcquired)
-                    vault.ReleaseMutationGuard(guardMask);
+                if (lockAcquired)
+                    vault.ReleaseWriteLock(in handle, SystemID.VehiclesPhysics);
             }
         }
 
@@ -1051,18 +1066,16 @@ namespace Hecton8.Physics.Vehicles
             if (vault == null)
                 return false;
 
-            bool guardAcquired = false;
+            bool lockAcquired = false;
             try
             {
-                if (!vault.TryAcquireMutationGuard(CsvTuningMutationGuardMask))
-                    return false;
-                guardAcquired = true;
-
-                if (!TryOpenArrayForOwner(in _tuningHandle, out NativeArray<VehicleDamageTuningDTO> tuning) ||
-                    tuning.Length <= 0)
+                if (!vault.TryAcquireWriteLock(in _tuningHandle, SystemID.VehiclesPhysics, out NativeArray<VehicleDamageTuningDTO> tuning))
                 {
                     return false;
                 }
+                lockAcquired = true;
+                if (tuning.Length <= 0)
+                    return false;
 
                 VehicleDamageTuningDTO current = tuning[0];
                 if (current.SourceHash == 0u)
@@ -1076,8 +1089,8 @@ namespace Hecton8.Physics.Vehicles
             }
             finally
             {
-                if (guardAcquired)
-                    vault.ReleaseMutationGuard(CsvTuningMutationGuardMask);
+                if (lockAcquired)
+                    vault.ReleaseWriteLock(in _tuningHandle, SystemID.VehiclesPhysics);
             }
         }
 
@@ -1147,38 +1160,21 @@ namespace Hecton8.Physics.Vehicles
             if (!_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
                 return false;
 
-            bool guardAcquired = false;
-            bool faulted = false;
             float structuralIntegrity01 = 0f;
             uint stateHash = 0u;
-            try
+
+            if (!vault.TryReadOnlyHandle(in _stateReadHandle, out NativeArray<VehicleDamageStateDTO>.ReadOnly stateRead) ||
+                stateRead.Length <= 0)
             {
-                if (!vault.TryAcquireMutationGuard(BlackboxReadMutationGuardMask))
-                    return false;
-                guardAcquired = true;
-
-                if (!TryOpenArrayForOwner(in _stateReadHandle, out NativeArray<VehicleDamageStateDTO> stateRead) ||
-                    stateRead.Length <= 0)
-                {
-                    return false;
-                }
-
-                VehicleDamageStateDTO state = ElementReadOnlyRef(stateRead, 0);
-                if ((state.Flags & VehicleDamageConstants.StateFlagFatalNan) == 0u)
-                    return false;
-
-                faulted = true;
-                structuralIntegrity01 = state.StructuralIntegrity01;
-                stateHash = state.StateHash;
-            }
-            finally
-            {
-                if (guardAcquired)
-                    vault.ReleaseMutationGuard(BlackboxReadMutationGuardMask);
-            }
-
-            if (!faulted)
                 return false;
+            }
+
+            VehicleDamageStateDTO state = stateRead[0];
+            if ((state.Flags & VehicleDamageConstants.StateFlagFatalNan) == 0u)
+                return false;
+
+            structuralIntegrity01 = state.StructuralIntegrity01;
+            stateHash = state.StateHash;
 
             GlobalTelemetryBus.PushEvent(VehicleFaultEventHash, structuralIntegrity01, stateHash);
             bool written = GlobalTelemetryBus.TryDumpBlackboxNow(VehicleFaultDumpHash);
@@ -1332,15 +1328,13 @@ namespace Hecton8.Physics.Vehicles
             if (_damagePending || _buffersLocked || vault == null || !IsHandleValid(in _tuningHandle))
                 return false;
 
-            bool guardAcquired = false;
+            bool lockAcquired = false;
             try
             {
-                if (!vault.TryAcquireMutationGuard(EditorTuningMutationGuardMask))
+                if (!vault.TryAcquireWriteLock(in _tuningHandle, SystemID.VehiclesPhysics, out NativeArray<VehicleDamageTuningDTO> tuningArray))
                     return false;
-                guardAcquired = true;
-
-                if (!TryOpenArrayForOwner(in _tuningHandle, out NativeArray<VehicleDamageTuningDTO> tuningArray) ||
-                    tuningArray.Length <= 0)
+                lockAcquired = true;
+                if (tuningArray.Length <= 0)
                     return false;
 
                 ref VehicleDamageTuningDTO tuning = ref ElementRef(tuningArray, 0);
@@ -1378,8 +1372,8 @@ namespace Hecton8.Physics.Vehicles
             }
             finally
             {
-                if (guardAcquired)
-                    vault.ReleaseMutationGuard(EditorTuningMutationGuardMask);
+                if (lockAcquired)
+                    vault.ReleaseWriteLock(in _tuningHandle, SystemID.VehiclesPhysics);
             }
         }
 
@@ -1441,7 +1435,7 @@ namespace Hecton8.Physics.Vehicles
             if (!drawDamageGizmos || _damagePending || _dataVault == null || !IsHandleValid(in _gridReadHandle))
                 return;
 
-            TryOpenArrayForOwner(in _gridReadHandle, out NativeArray<VehicleGridCellDTO> cells);
+            _dataVault.TryReadOnlyHandle(in _gridReadHandle, out NativeArray<VehicleGridCellDTO>.ReadOnly cells);
             if (!cells.IsCreated || cells.Length <= 0)
                 return;
 

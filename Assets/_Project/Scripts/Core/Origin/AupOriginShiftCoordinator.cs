@@ -238,6 +238,8 @@ namespace Hecton8.Core
         private const uint DumpEndianBigTag = 0x00454248u; // HBE\0
         private const uint DumpFlagBigEndian = 1u;
         private const uint DumpFlagHasDetailRows = 1u << 1;
+        private const string BinaryDumpRelativePath = "Docs/AgentLogs/Dump_ORIGIN_SHIFT.bin";
+        private const string H8DumpRelativePath = "Docs/AgentLogs/Dump_ORIGIN_SHIFT.h8dump";
         private const float EmergencyRebaseLimitMeters = 4000f;
         private const float DefaultSectorSizeMeters = 5000f;
         private const int DefaultBatchSize = 10000;
@@ -267,7 +269,6 @@ namespace Hecton8.Core
         private const BufferID TelemetryDetailRingBuffer = (BufferID)73056;
         private const BufferID RuntimeStateBuffer = (BufferID)73034;
         private const BufferID MockCameraBuffer = (BufferID)73035;
-        private const BufferID CsvScratchBuffer = (BufferID)73036;
         private const BufferID CounterBuffer = (BufferID)73037;
         private const byte ScheduleLockStatesFlag = 1 << 0;
         private const byte ScheduleLockCounterFlag = 1 << 1;
@@ -277,14 +278,6 @@ namespace Hecton8.Core
         private const byte ScheduleLockTetherCablePreviousFlag = 1 << 5;
         private const byte ScheduleLockTetherVisualSegmentFlag = 1 << 6;
         private const byte ScheduleLockTetherVisualAnchorFlag = 1 << 7;
-        private const ulong RebaseScheduleMutationGuardMask =
-            (1UL << 3) |
-            (1UL << 4) |
-            (1UL << 6) |
-            (1UL << 7) |
-            (1UL << 8) |
-            (1UL << 10) |
-            (1UL << 13);
 
         private static IDataVault _cachedVault;
         private static VaultGenerationHandle<AUP_StateDTO> _statesHandle;
@@ -294,7 +287,6 @@ namespace Hecton8.Core
         private static VaultGenerationHandle<AupOriginShiftTelemetryDetailEntry> _telemetryDetailHandle;
         private static VaultGenerationHandle<AupOriginShiftRuntimeState> _runtimeStateHandle;
         private static VaultGenerationHandle<MockCameraAUP> _mockCameraHandle;
-        private static VaultGenerationHandle<byte> _csvScratchHandle;
         private static VaultGenerationHandle<AupPaddedAtomicCounter> _counterHandle;
         private static long _lastCsvWriteTicks;
         private static string _csvPath;
@@ -395,14 +387,6 @@ namespace Hecton8.Core
                     MockCameraBuffer,
                     MockCameraCount,
                     NativeArrayOptions.ClearMemory,
-                    out _,
-                    out _) ||
-                !OpenOrAcquireVaultBufferForOwnerRoute(
-                    vault,
-                    ref _csvScratchHandle,
-                    CsvScratchBuffer,
-                    CsvScratchCapacity,
-                    NativeArrayOptions.UninitializedMemory,
                     out _,
                     out _) ||
                 !OpenOrAcquireVaultBufferForOwnerRoute(
@@ -769,10 +753,13 @@ namespace Hecton8.Core
             return local;
         }
 
-        private static bool TryMarkScheduledBuffer(byte flag, ref AupOriginShiftScheduleInfo info)
+        private static bool TryPinScheduledBuffer(IDataVault vault, byte flag, BufferID bufferId, ref AupOriginShiftScheduleInfo info)
         {
             if ((info.Flags & flag) != 0)
                 return true;
+
+            if (vault == null || !vault.TryLockBuffer(bufferId, OwnerSystemId))
+                return false;
 
             info.Flags |= flag;
             return true;
@@ -783,7 +770,20 @@ namespace Hecton8.Core
             if (vault == null || info.Flags == 0)
                 return;
 
-            vault.ReleaseMutationGuard(RebaseScheduleMutationGuardMask);
+            TryUnlockScheduledBuffer(vault, info.Flags, ScheduleLockTetherVisualAnchorFlag, BufferID.TetherVisualAnchorPositions);
+            TryUnlockScheduledBuffer(vault, info.Flags, ScheduleLockTetherVisualSegmentFlag, BufferID.TetherVisualSegmentPositions);
+            TryUnlockScheduledBuffer(vault, info.Flags, ScheduleLockTetherCablePreviousFlag, BufferID.TetherCablePreviousPositions);
+            TryUnlockScheduledBuffer(vault, info.Flags, ScheduleLockTetherCableFlag, BufferID.TetherCablePositions);
+            TryUnlockScheduledBuffer(vault, info.Flags, ScheduleLockHotEntityFlag, BufferID.VaultHotEntityData);
+            TryUnlockScheduledBuffer(vault, info.Flags, ScheduleLockHistoricalFlag, MockHistoricalPointsBuffer);
+            TryUnlockScheduledBuffer(vault, info.Flags, ScheduleLockCounterFlag, CounterBuffer);
+            TryUnlockScheduledBuffer(vault, info.Flags, ScheduleLockStatesFlag, MockStatesBuffer);
+        }
+
+        private static void TryUnlockScheduledBuffer(IDataVault vault, byte flags, byte flag, BufferID bufferId)
+        {
+            if ((flags & flag) != 0)
+                vault.TryUnlockBuffer(bufferId, OwnerSystemId);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -822,8 +822,6 @@ namespace Hecton8.Core
                 vault.ReleaseBuffer(in _runtimeStateHandle);
             if (_mockCameraHandle.BufferID != 0u)
                 vault.ReleaseBuffer(in _mockCameraHandle);
-            if (_csvScratchHandle.BufferID != 0u)
-                vault.ReleaseBuffer(in _csvScratchHandle);
             if (_counterHandle.BufferID != 0u)
                 vault.ReleaseBuffer(in _counterHandle);
         }
@@ -837,7 +835,6 @@ namespace Hecton8.Core
             _telemetryDetailHandle = default;
             _runtimeStateHandle = default;
             _mockCameraHandle = default;
-            _csvScratchHandle = default;
             _counterHandle = default;
             _lastCsvWriteTicks = 0L;
         }
@@ -970,15 +967,12 @@ namespace Hecton8.Core
             if (!math.all(math.isfinite(shiftFloat)) || math.lengthsq(shiftFloat) <= 0.0001f)
                 return dependency;
 
-            if (!vault.TryAcquireMutationGuard(RebaseScheduleMutationGuardMask))
+            if (!TryAcquireWriteView(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
                 return dependency;
 
-            bool scheduleGuardHeld = true;
+            bool releasePinsOnExit = true;
             try
             {
-                if (!TryOpenVaultBuffer(vault, in _runtimeStateHandle, RuntimeStateBuffer, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
-                    return dependency;
-
                 AupOriginShiftRuntimeState runtime = runtimeState[0];
                 float sectorSize = SanitizeSectorSize(runtime.SectorSizeMeters);
                 uint sectorHash = ResolveSectorHash(newTotalUniverseOffset, sectorSize);
@@ -1011,11 +1005,10 @@ namespace Hecton8.Core
                 JobHandle handle = dependency;
                 if (batchCount > 0)
                 {
-                    if (!TryMarkScheduledBuffer(ScheduleLockStatesFlag, ref info) ||
-                        !TryMarkScheduledBuffer(ScheduleLockCounterFlag, ref info))
+                    if (!TryPinScheduledBuffer(vault, ScheduleLockStatesFlag, MockStatesBuffer, ref info) ||
+                        !TryPinScheduledBuffer(vault, ScheduleLockCounterFlag, CounterBuffer, ref info))
                     {
                         ReleaseScheduledRebaseLocks(vault, in info);
-                        scheduleGuardHeld = false;
                         info = default;
                         return dependency;
                     }
@@ -1024,7 +1017,6 @@ namespace Hecton8.Core
                         !TryOpenVaultBuffer(vault, in _counterHandle, CounterBuffer, CounterCount, out NativeArray<AupPaddedAtomicCounter> counters))
                     {
                         ReleaseScheduledRebaseLocks(vault, in info);
-                        scheduleGuardHeld = false;
                         info = default;
                         return dependency;
                     }
@@ -1067,14 +1059,14 @@ namespace Hecton8.Core
                 }
 
                 runtimeState[0] = runtime;
-                if (info.Flags != 0)
-                    scheduleGuardHeld = false;
+                releasePinsOnExit = false;
                 return handle;
             }
             finally
             {
-                if (scheduleGuardHeld)
-                    vault.ReleaseMutationGuard(RebaseScheduleMutationGuardMask);
+                vault.ReleaseWriteLock(in _runtimeStateHandle, OwnerSystemId);
+                if (releasePinsOnExit)
+                    ReleaseScheduledRebaseLocks(vault, in info);
             }
         }
 
@@ -1248,7 +1240,7 @@ namespace Hecton8.Core
             {
                 int ownBatchCount = ResolveHistoricalBatchCount(arrays.HistoricalPoints, historicalCount, startIndex, requestedCount, out _);
                 if (ownBatchCount > 0 &&
-                    TryMarkScheduledBuffer(ScheduleLockHistoricalFlag, ref info))
+                    TryPinScheduledBuffer(vault, ScheduleLockHistoricalFlag, MockHistoricalPointsBuffer, ref info))
                 {
                     if (!TryOpenVaultBuffer(vault, in _historicalPointsHandle, MockHistoricalPointsBuffer, MockHistoricalPointCapacity, out NativeArray<float3> historicalJobPoints))
                         return dependency;
@@ -1312,7 +1304,7 @@ namespace Hecton8.Core
             if (count <= 0)
                 return dependency;
 
-            if (!TryMarkScheduledBuffer(scheduleLockFlag, ref info))
+            if (!TryPinScheduledBuffer(vault, scheduleLockFlag, bufferId, ref info))
                 return dependency;
 
             if (!TryOpenExistingVaultBuffer(vault, bufferId, 1, out points))
@@ -1595,7 +1587,7 @@ namespace Hecton8.Core
             if (batchCount <= 0)
                 return dependency;
 
-            if (!TryMarkScheduledBuffer(ScheduleLockHotEntityFlag, ref info))
+            if (!TryPinScheduledBuffer(vault, ScheduleLockHotEntityFlag, BufferID.VaultHotEntityData, ref info))
                 return dependency;
 
             if (!TryOpenExistingVaultBuffer(vault, BufferID.VaultHotEntityData, 1, out hotEntities))
@@ -1799,28 +1791,24 @@ namespace Hecton8.Core
             if (!TryReadRuntimeState(vault, out AupOriginShiftRuntimeState runtime))
                 return false;
 
-            bool parsed = false;
             long ticks = 0L;
-            if (!TryAcquireWriteView(vault, in _csvScratchHandle, CsvScratchCapacity, out NativeArray<byte> scratch))
-                return false;
-
             try
             {
                 ticks = File.GetLastWriteTimeUtc(path).Ticks;
                 if (ticks == _lastCsvWriteTicks)
                     return false;
 
+                Span<byte> scratch = stackalloc byte[CsvScratchCapacity];
                 int bytesRead;
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, scratch.Length, FileOptions.SequentialScan))
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, CsvScratchCapacity, FileOptions.SequentialScan))
                 {
-                    bytesRead = stream.Read(new Span<byte>((byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch), scratch.Length));
+                    bytesRead = stream.Read(scratch);
                 }
 
                 if (bytesRead <= 0)
                     return false;
 
-                ParseCsvOverrides(scratch, bytesRead, ref runtime);
-                parsed = true;
+                ParseCsvOverrides(scratch.Slice(0, math.min(bytesRead, scratch.Length)), ref runtime);
             }
             catch (IOException)
             {
@@ -1830,12 +1818,8 @@ namespace Hecton8.Core
             {
                 return false;
             }
-            finally
-            {
-                vault.ReleaseWriteLock(in _csvScratchHandle, OwnerSystemId);
-            }
 
-            if (!parsed || !WriteRuntimeState(vault, in runtime))
+            if (!WriteRuntimeState(vault, in runtime))
                 return false;
 
             _lastCsvWriteTicks = ticks;
@@ -1843,24 +1827,14 @@ namespace Hecton8.Core
         }
 
         private static void ParseCsvOverrides(
-            NativeArray<byte> bytes,
-            int length,
-            NativeArray<AupOriginShiftRuntimeState> runtimeState)
-        {
-            AupOriginShiftRuntimeState runtime = runtimeState[0];
-            ParseCsvOverrides(bytes, length, ref runtime);
-            runtimeState[0] = runtime;
-        }
-
-        private static void ParseCsvOverrides(
-            NativeArray<byte> bytes,
-            int length,
+            ReadOnlySpan<byte> bytes,
             ref AupOriginShiftRuntimeState runtime)
         {
             int index = 0;
+            int length = bytes.Length;
             while (index < length)
             {
-                SkipCsvWhitespace(bytes, length, ref index);
+                SkipCsvWhitespace(bytes, ref index);
                 uint keyHash = 2166136261u;
                 bool hasKey = false;
                 while (index < length)
@@ -1879,7 +1853,7 @@ namespace Hecton8.Core
                 while (index < length && (bytes[index] == (byte)'=' || bytes[index] == (byte)',' || bytes[index] == (byte)' ' || bytes[index] == (byte)'\t'))
                     index++;
 
-                float value = ParseCsvFloat(bytes, length, ref index);
+                float value = ParseCsvFloat(bytes, ref index);
                 if (hasKey && math.isfinite(value))
                 {
                     if (keyHash == CsvKeyRebaseLimitHash || keyHash == CsvKeyRebaseLimitMetersHash)
@@ -1903,8 +1877,9 @@ namespace Hecton8.Core
             runtime.CsvSourceHash = unchecked(runtime.CsvSourceHash + 0x43535631u);
         }
 
-        private static void SkipCsvWhitespace(NativeArray<byte> bytes, int length, ref int index)
+        private static void SkipCsvWhitespace(ReadOnlySpan<byte> bytes, ref int index)
         {
+            int length = bytes.Length;
             while (index < length)
             {
                 byte b = bytes[index];
@@ -1915,8 +1890,9 @@ namespace Hecton8.Core
             }
         }
 
-        private static float ParseCsvFloat(NativeArray<byte> bytes, int length, ref int index)
+        private static float ParseCsvFloat(ReadOnlySpan<byte> bytes, ref int index)
         {
+            int length = bytes.Length;
             int sign = 1;
             if (index < length && bytes[index] == (byte)'-')
             {
@@ -1956,14 +1932,14 @@ namespace Hecton8.Core
 #endif
 
         private static void DumpOriginShiftBlackBox(
-            NativeArray<AupOriginShiftTelemetryEntry> telemetryRing,
-            NativeArray<AupOriginShiftTelemetryDetailEntry> telemetryDetailRing)
+            NativeArray<AupOriginShiftTelemetryEntry>.ReadOnly telemetryRing,
+            NativeArray<AupOriginShiftTelemetryDetailEntry>.ReadOnly telemetryDetailRing)
         {
             if (!telemetryRing.IsCreated || !telemetryDetailRing.IsCreated)
                 return;
 
-            byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(telemetryRing);
-            byte* detailBasePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(telemetryDetailRing);
+            byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
+            byte* detailBasePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryDetailRing);
             int entryStride = UnsafeUtility.SizeOf<AupOriginShiftTelemetryEntry>();
             int detailStride = UnsafeUtility.SizeOf<AupOriginShiftTelemetryDetailEntry>();
             int entryCount = math.min(math.min(telemetryRing.Length, telemetryDetailRing.Length), TelemetryCapacity);
@@ -1974,8 +1950,8 @@ namespace Hecton8.Core
 
         private static void DumpOriginShiftBlackBox(IDataVault vault)
         {
-            if (!TryOpenVaultBuffer(vault, in _telemetryHandle, TelemetryRingBuffer, TelemetryCapacity, out NativeArray<AupOriginShiftTelemetryEntry> telemetryRing) ||
-                !TryOpenVaultBuffer(vault, in _telemetryDetailHandle, TelemetryDetailRingBuffer, TelemetryCapacity, out NativeArray<AupOriginShiftTelemetryDetailEntry> telemetryDetailRing))
+            if (!TryReadVaultBuffer(vault, in _telemetryHandle, TelemetryRingBuffer, TelemetryCapacity, out NativeArray<AupOriginShiftTelemetryEntry>.ReadOnly telemetryRing) ||
+                !TryReadVaultBuffer(vault, in _telemetryDetailHandle, TelemetryDetailRingBuffer, TelemetryCapacity, out NativeArray<AupOriginShiftTelemetryDetailEntry>.ReadOnly telemetryDetailRing))
             {
                 return;
             }
@@ -2002,31 +1978,56 @@ namespace Hecton8.Core
                 return;
             }
 
+            NativeArray<byte> payload = default;
             try
             {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                int headerSize = UnsafeUtility.SizeOf<AupOriginShiftDumpHeader>();
+                int combinedStride = entryStride + detailStride;
+                int byteCount = headerSize + (entryCount * combinedStride);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(AupOriginShiftCoordinator),
+                    "originShiftTelemetryDumpPayload");
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, DumpWriteBufferBytes, FileOptions.WriteThrough))
+                int oldestRingIndex = (writeCursor + 1) % entryCount;
+                AupOriginShiftDumpHeader header = CreateDumpHeader(entryCount, entryStride, detailStride, oldestRingIndex);
+                if (!UnsafeMemoryCopyGuard.SafeCopy(destination, byteCount, &header, headerSize))
+                    return;
+
+                int payloadCursor = headerSize;
+                for (int rowIndex = 0; rowIndex < entryCount; rowIndex++)
                 {
-                    int oldestRingIndex = (writeCursor + 1) % entryCount;
-                    AupOriginShiftDumpHeader header = CreateDumpHeader(entryCount, entryStride, detailStride, oldestRingIndex);
-                    stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<AupOriginShiftDumpHeader>()));
-
-                    for (int rowIndex = 0; rowIndex < entryCount; rowIndex++)
+                    int ringIndex = (oldestRingIndex + rowIndex) % entryCount;
+                    byte* entrySource = basePtr + (ringIndex * entryStride);
+                    byte* detailSource = detailBasePtr + (ringIndex * detailStride);
+                    if (!UnsafeMemoryCopyGuard.SafeCopy(destination + payloadCursor, byteCount - payloadCursor, entrySource, entryStride))
                     {
-                        int ringIndex = (oldestRingIndex + rowIndex) % entryCount;
-                        stream.Write(new ReadOnlySpan<byte>(basePtr + (ringIndex * entryStride), entryStride));
-                        stream.Write(new ReadOnlySpan<byte>(detailBasePtr + (ringIndex * detailStride), detailStride));
+                        return;
                     }
+
+                    payloadCursor += entryStride;
+                    if (!UnsafeMemoryCopyGuard.SafeCopy(destination + payloadCursor, byteCount - payloadCursor, detailSource, detailStride))
+                        return;
+
+                    payloadCursor += detailStride;
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(path, payload, payloadCursor);
             }
-            catch (IOException)
+            catch (Exception exception) when (
+                exception is IOException ||
+                exception is UnauthorizedAccessException ||
+                exception is NotSupportedException ||
+                exception is ArgumentException)
             {
             }
-            catch (UnauthorizedAccessException)
+            finally
             {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(AupOriginShiftCoordinator),
+                    "originShiftTelemetryDumpPayload");
             }
         }
 
@@ -2110,17 +2111,7 @@ namespace Hecton8.Core
             if (!string.IsNullOrEmpty(_dumpPath))
                 return _dumpPath;
 
-            string projectRoot = Directory.GetCurrentDirectory();
-            string agentLogs = Path.Combine(projectRoot, "Docs", "AgentLogs");
-            if (!Directory.Exists(agentLogs))
-            {
-                string dataPath = Application.dataPath;
-                string dataRoot = !string.IsNullOrEmpty(dataPath) ? Path.GetDirectoryName(dataPath) : null;
-                if (!string.IsNullOrEmpty(dataRoot))
-                    agentLogs = Path.Combine(dataRoot, "Docs", "AgentLogs");
-            }
-
-            _dumpPath = Path.Combine(agentLogs, "Dump_ORIGIN_SHIFT.bin");
+            _dumpPath = BinaryDumpRelativePath;
             return _dumpPath;
         }
 
@@ -2129,12 +2120,7 @@ namespace Hecton8.Core
             if (!string.IsNullOrEmpty(_h8DumpPath))
                 return _h8DumpPath;
 
-            string binaryDumpPath = ResolveDumpPath();
-            string directory = !string.IsNullOrEmpty(binaryDumpPath) ? Path.GetDirectoryName(binaryDumpPath) : null;
-            if (string.IsNullOrEmpty(directory))
-                return string.Empty;
-
-            _h8DumpPath = Path.Combine(directory, "Dump_ORIGIN_SHIFT.h8dump");
+            _h8DumpPath = H8DumpRelativePath;
             return _h8DumpPath;
         }
 

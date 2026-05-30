@@ -345,19 +345,18 @@ namespace Hecton8.AI
         private const BufferID MesofaunaStateDTOsBufferId = BufferID.ShinobuMesofaunaStates;
         private const BufferID MesofaunaMockPreyTargetsBufferId = BufferID.ShinobuMesofaunaMockPreyTargets;
         private const BufferID MesofaunaVisualSyncBufferId = BufferID.ShinobuMesofaunaVisualSync;
-        private static readonly ulong JobMutationGuardMask =
-            StressDirectorMutationGuardBit(RulesBufferId) |
-            StressDirectorMutationGuardBit(RuleLinksBufferId) |
-            StressDirectorMutationGuardBit(CandidatesBufferId) |
-            StressDirectorMutationGuardBit(SelectionBufferId) |
-            StressDirectorMutationGuardBit(InputBufferId) |
-            StressDirectorMutationGuardBit(TuningBufferId) |
-            StressDirectorMutationGuardBit(TelemetryBufferId) |
-            StressDirectorMutationGuardBit(CountersBufferId) |
-            StressDirectorMutationGuardBit(FrustumPlanesBufferId) |
-            StressDirectorMutationGuardBit(OwnedSlotsBufferId) |
-            StressDirectorMutationGuardBit(InventoryTicketsBufferId) |
-            StressDirectorMutationGuardBit(SpawnDebugBufferId);
+        private const uint JobPinRules = 1u << 0;
+        private const uint JobPinRuleLinks = 1u << 1;
+        private const uint JobPinCandidates = 1u << 2;
+        private const uint JobPinSelection = 1u << 3;
+        private const uint JobPinInput = 1u << 4;
+        private const uint JobPinTuning = 1u << 5;
+        private const uint JobPinTelemetry = 1u << 6;
+        private const uint JobPinCounters = 1u << 7;
+        private const uint JobPinFrustumPlanes = 1u << 8;
+        private const uint JobPinOwnedSlots = 1u << 9;
+        private const uint JobPinInventoryTickets = 1u << 10;
+        private const uint JobPinSpawnDebug = 1u << 11;
 #if UNITY_EDITOR
         private static readonly ulong ReloadMutationGuardMask =
             StressDirectorMutationGuardBit(RulesBufferId) |
@@ -409,7 +408,8 @@ namespace Hecton8.AI
         private VaultGenerationHandle<MacroEcosystemTuningVaultRecord> _macroTuningHandle;
         private IEcosystemDirectorService _ecosystemDirector;
         private JobHandle _activeHandle;
-        private IDataVault _jobGuardVault;
+        private IDataVault _jobPinVault;
+        private uint _jobPinMask;
         private bool _registeredCold;
         private bool _registeredLate;
         private bool _registeredHotSwap;
@@ -682,7 +682,7 @@ namespace Hecton8.AI
                 return;
             }
 
-            bool keepGuardForScheduledJob = false;
+            bool keepPinsForScheduledJob = false;
             try
             {
                 DirectorTuningDTO activeTuning = StressDrivenSpawnDirectorSanitizer.Sanitize(tuning[0], ResolveGlobalQualityWeight(vault));
@@ -775,11 +775,11 @@ namespace Hecton8.AI
 
                 _activeHandle = handle;
                 _jobScheduled = true;
-                keepGuardForScheduledJob = true;
+                keepPinsForScheduledJob = true;
             }
             finally
             {
-                if (!keepGuardForScheduledJob)
+                if (!keepPinsForScheduledJob)
                     ReleaseJobBufferPins();
             }
         }
@@ -792,30 +792,54 @@ namespace Hecton8.AI
             if (!DispatcherJobFence.TryComplete(ref _activeHandle, forceComplete: false))
                 return;
 
-            IDataVault lockedVault = _jobGuardVault;
+            IDataVault lockedVault = _jobPinVault;
             bool canCommit = lockedVault != null && ReferenceEquals(lockedVault, _vault);
+            string pendingDumpPath = null;
+            NativeArray<byte> pendingDumpPayload = default;
+            int pendingDumpByteCount = 0;
             try
             {
-                if (!canCommit)
+                try
                 {
-                    _dumpFaultPending = 0;
-                    return;
+                    if (!canCommit)
+                    {
+                        _dumpFaultPending = 0;
+                        return;
+                    }
+
+                    float micros = ResolveElapsedMicroseconds();
+                    PatchLatestTelemetryMicros(lockedVault, micros);
+                    ApplyCullRequests(lockedVault);
+                    ApplyCompletedSelection(lockedVault);
+                    if (_dumpFaultPending != 0)
+                    {
+                        TryStageBlackBoxDumpCold(
+                            lockedVault,
+                            _dumpFaultPending == 2 ? DumpReasonLootMissingHash : DumpReasonNanHash,
+                            out pendingDumpPath,
+                            out pendingDumpPayload,
+                            out pendingDumpByteCount);
+                        _dumpFaultPending = 0;
+                    }
+                }
+                finally
+                {
+                    ReleaseJobBufferPins();
+                    _jobScheduled = false;
                 }
 
-                float micros = ResolveElapsedMicroseconds();
-                PatchLatestTelemetryMicros(lockedVault, micros);
-                ApplyCullRequests(lockedVault);
-                ApplyCompletedSelection(lockedVault);
-                if (_dumpFaultPending != 0)
-                {
-                    DumpBlackBoxCold(lockedVault, _dumpFaultPending == 2 ? DumpReasonLootMissingHash : DumpReasonNanHash);
-                    _dumpFaultPending = 0;
-                }
+                if (pendingDumpPayload.IsCreated)
+                    TrySubmitBlackBoxDump(pendingDumpPath, pendingDumpPayload, pendingDumpByteCount);
             }
             finally
             {
-                ReleaseJobBufferPins();
-                _jobScheduled = false;
+                if (pendingDumpPayload.IsCreated)
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref pendingDumpPayload,
+                        nameof(StressDrivenSpawnDirector),
+                        "DirectorTelemetryDumpPayload");
+                }
             }
         }
 
@@ -1465,25 +1489,37 @@ namespace Hecton8.AI
             if (vault == null || vault.IsCompactionFenceActive || !TryValidateJobBuffers(vault))
                 return false;
 
-            bool acquired = false;
+            bool pinned = false;
             try
             {
-                if (!vault.TryAcquireMutationGuard(JobMutationGuardMask))
+                _jobPinVault = vault;
+                if (!TryLockJobBuffer(vault, RulesBufferId, JobPinRules) ||
+                    !TryLockJobBuffer(vault, RuleLinksBufferId, JobPinRuleLinks) ||
+                    !TryLockJobBuffer(vault, CandidatesBufferId, JobPinCandidates) ||
+                    !TryLockJobBuffer(vault, SelectionBufferId, JobPinSelection) ||
+                    !TryLockJobBuffer(vault, InputBufferId, JobPinInput) ||
+                    !TryLockJobBuffer(vault, TuningBufferId, JobPinTuning) ||
+                    !TryLockJobBuffer(vault, TelemetryBufferId, JobPinTelemetry) ||
+                    !TryLockJobBuffer(vault, CountersBufferId, JobPinCounters) ||
+                    !TryLockJobBuffer(vault, FrustumPlanesBufferId, JobPinFrustumPlanes) ||
+                    !TryLockJobBuffer(vault, OwnedSlotsBufferId, JobPinOwnedSlots) ||
+                    !TryLockJobBuffer(vault, InventoryTicketsBufferId, JobPinInventoryTickets) ||
+                    !TryLockJobBuffer(vault, SpawnDebugBufferId, JobPinSpawnDebug))
+                {
                     return false;
+                }
 
-                acquired = true;
                 if (!TryValidateJobBuffers(vault))
                     return false;
 
-                _jobGuardVault = vault;
                 _jobBuffersPinned = true;
-                acquired = false;
+                pinned = true;
                 return true;
             }
             finally
             {
-                if (acquired)
-                    vault.ReleaseMutationGuard(JobMutationGuardMask);
+                if (!pinned)
+                    ReleaseJobBufferPins();
             }
         }
 
@@ -1491,16 +1527,60 @@ namespace Hecton8.AI
         {
             if (!_jobBuffersPinned)
             {
-                _jobGuardVault = null;
+                if (_jobPinVault != null && _jobPinMask != 0u)
+                    ReleaseJobBufferPins(_jobPinVault, _jobPinMask);
+                _jobPinVault = null;
+                _jobPinMask = 0u;
                 return;
             }
 
-            IDataVault vault = _jobGuardVault;
-            if (vault != null)
-                vault.ReleaseMutationGuard(JobMutationGuardMask);
+            IDataVault vault = _jobPinVault;
+            uint pinMask = _jobPinMask;
+            if (vault != null && pinMask != 0u)
+                ReleaseJobBufferPins(vault, pinMask);
 
-            _jobGuardVault = null;
+            _jobPinVault = null;
+            _jobPinMask = 0u;
             _jobBuffersPinned = false;
+        }
+
+        private bool TryLockJobBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        {
+            if ((_jobPinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null ||
+                (_jobPinVault != null && !ReferenceEquals(_jobPinVault, vault)) ||
+                !vault.TryLockBuffer(bufferId, SystemID.AIEcology))
+            {
+                return false;
+            }
+
+            _jobPinVault = vault;
+            _jobPinMask |= pinBit;
+            return true;
+        }
+
+        private static void ReleaseJobBufferPins(IDataVault vault, uint pinMask)
+        {
+            TryUnlockJobBuffer(vault, pinMask, JobPinSpawnDebug, SpawnDebugBufferId);
+            TryUnlockJobBuffer(vault, pinMask, JobPinInventoryTickets, InventoryTicketsBufferId);
+            TryUnlockJobBuffer(vault, pinMask, JobPinOwnedSlots, OwnedSlotsBufferId);
+            TryUnlockJobBuffer(vault, pinMask, JobPinFrustumPlanes, FrustumPlanesBufferId);
+            TryUnlockJobBuffer(vault, pinMask, JobPinCounters, CountersBufferId);
+            TryUnlockJobBuffer(vault, pinMask, JobPinTelemetry, TelemetryBufferId);
+            TryUnlockJobBuffer(vault, pinMask, JobPinTuning, TuningBufferId);
+            TryUnlockJobBuffer(vault, pinMask, JobPinInput, InputBufferId);
+            TryUnlockJobBuffer(vault, pinMask, JobPinSelection, SelectionBufferId);
+            TryUnlockJobBuffer(vault, pinMask, JobPinCandidates, CandidatesBufferId);
+            TryUnlockJobBuffer(vault, pinMask, JobPinRuleLinks, RuleLinksBufferId);
+            TryUnlockJobBuffer(vault, pinMask, JobPinRules, RulesBufferId);
+        }
+
+        private static void TryUnlockJobBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if (vault != null && (pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, SystemID.AIEcology);
         }
 
 #if UNITY_EDITOR
@@ -2470,59 +2550,45 @@ namespace Hecton8.AI
             return false;
         }
 
-        private void DumpBlackBoxCold(IDataVault vault, uint reasonHash)
+        private unsafe bool TryStageBlackBoxDumpCold(
+            IDataVault vault,
+            uint reasonHash,
+            out string path,
+            out NativeArray<byte> payload,
+            out int byteCount)
         {
+            path = null;
+            payload = default;
+            byteCount = 0;
             if (!TryResolve(vault, in _telemetryHandle, TelemetryBufferId, out NativeArray<DirectorTelemetryEntry> telemetry) ||
                 !telemetry.IsCreated ||
                 telemetry.Length <= 0)
             {
-                return;
+                return false;
             }
 
             try
             {
-                DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
-                string projectRoot = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
-                string path = Path.Combine(projectRoot, DumpPath);
-                Directory.CreateDirectory(Path.GetDirectoryName(path));
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(SourceHash);
-                    writer.Write(reasonHash);
-                    writer.Write(TelemetryCapacity);
-                    writer.Write(UnsafeUtility.SizeOf<DirectorTelemetryEntry>());
-                    for (int i = 0; i < telemetry.Length; i++)
-                    {
-                        DirectorTelemetryEntry entry = telemetry[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.TensionIndex);
-                        writer.Write(entry.TurbidityScalar);
-                        writer.Write(entry.GlobalQualityWeight);
-                        writer.Write(entry.Budget);
-                        writer.Write(entry.CandidateCount);
-                        writer.Write(entry.OwnedSlotCount);
-                        writer.Write(entry.Spawned);
-                        writer.Write(entry.Culled);
-                        writer.Write(entry.ChainMicroseconds);
-                        writer.Write(entry.Flags);
-                        WriteAup(writer, in entry.PlayerAup);
-                        WriteAup(writer, in entry.LastSpawnAup);
-                        writer.Write(entry.DumpReasonHash);
-                        writer.Write(entry.LootTableHash);
-                        writer.Write(entry.PreyBiomass01);
-                        writer.Write(entry.PredatorBiomass01);
-                        writer.Write(entry.CarryingCapacity01);
-                        writer.Write(entry.SectorHash);
-                        writer.Write(entry.MacroEcosystemStateHash);
-                        writer.Write(entry.SpawnRadiusMeters);
-                        writer.Write(entry.SpawnSlot);
-                        writer.Write(entry.OriginShiftSequence);
-                        writer.Write(entry._pad0);
-                        writer.Write(entry._pad1);
-                    }
-                }
+                path = DumpPath;
+                int rowSize = UnsafeUtility.SizeOf<DirectorTelemetryEntry>();
+                int rowCount = telemetry.Length;
+                byteCount = 16 + rowCount * rowSize;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(StressDrivenSpawnDirector),
+                    "DirectorTelemetryDumpPayload",
+                    NativeArrayOptions.ClearMemory);
+                int offset = 0;
+
+                WriteUInt32LittleEndian(payload, ref offset, SourceHash);
+                WriteUInt32LittleEndian(payload, ref offset, reasonHash);
+                WriteInt32LittleEndian(payload, ref offset, TelemetryCapacity);
+                WriteInt32LittleEndian(payload, ref offset, rowSize);
+
+                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                void* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload) + offset;
+                UnsafeUtility.MemCpy(destination, source, rowCount * rowSize);
+                return true;
             }
             catch (IOException)
             {
@@ -2532,6 +2598,43 @@ namespace Hecton8.AI
             }
             catch (ArgumentException)
             {
+            }
+
+            if (payload.IsCreated)
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(StressDrivenSpawnDirector),
+                    "DirectorTelemetryDumpPayload");
+                payload = default;
+            }
+
+            path = null;
+            byteCount = 0;
+            return false;
+        }
+
+        private static bool TrySubmitBlackBoxDump(string path, NativeArray<byte> payload, int byteCount)
+        {
+            try
+            {
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
             }
         }
 
@@ -2579,16 +2682,17 @@ namespace Hecton8.AI
             return ResolveSectorHash64(ToAbsoluteDouble3(in aup));
         }
 
-        private static void WriteAup(BinaryWriter writer, in AbsoluteUniversePositionBlit128 aup)
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, ref int offset, int value)
         {
-            writer.Write(aup.GridX);
-            writer.Write(aup.GridY);
-            writer.Write(aup.GridZ);
-            writer.Write(aup.Local.x);
-            writer.Write(aup.Local.y);
-            writer.Write(aup.Local.z);
-            writer.Write(aup.Local.w);
-            writer.Write(aup.Reserved);
+            WriteUInt32LittleEndian(payload, ref offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, ref int offset, uint value)
+        {
+            payload[offset++] = (byte)value;
+            payload[offset++] = (byte)(value >> 8);
+            payload[offset++] = (byte)(value >> 16);
+            payload[offset++] = (byte)(value >> 24);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

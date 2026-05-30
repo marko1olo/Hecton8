@@ -1,0 +1,21 @@
+{
+    "CpuLoadPercent":  99,
+    "ActiveCompilerProcesses":  [
+                                    {
+                                        "Id":  28228,
+                                        "ProcessName":  "csc",
+                                        "CpuSeconds":  14.046875,
+                                        "Path":  "C:\\Program Files\\dotnet\\sdk\\10.0.202\\Roslyn\\bincore\\csc.exe"
+                                    },
+                                    {
+                                        "Id":  46892,
+                                        "ProcessName":  "dotnet",
+                                        "CpuSeconds":  38.6875,
+                                        "Path":  "C:\\Program Files\\dotnet\\dotnet.exe"
+                                    }
+                                ],
+    "Launched":  false,
+    "CommandNotLaunched":  "dotnet build .\\Hecton8.Core.csproj --no-restore -m:1 -p:UseSharedCompilation=false -clp:ErrorsOnly",
+    "Reason":  "Compilation throttle blocked launch after Recheck11 source changes: CPU \u003e 50 and active csc/dotnet existed.",
+    "EvidenceClass":  "STATIC_SOURCE_RESOURCE_GATE"
+}

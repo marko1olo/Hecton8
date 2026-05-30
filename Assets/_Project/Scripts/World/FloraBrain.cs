@@ -28,7 +28,7 @@ namespace Hecton8.World
 
         private Transform _playerTransform;
         private HectonSurvivalSystem _survivalSystem;
-        private float _nextPlayerResolveTime;
+        private float _playerResolveRetryRemainingSeconds;
         private bool _tickRegistered;
         private bool _hotSwapListenerRegistered;
 
@@ -55,7 +55,7 @@ namespace Hecton8.World
         /// </summary>
         public void Tick(float deltaTime)
         {
-            if (destructibleOrganicManager == null || !TryResolvePlayerRuntime())
+            if (destructibleOrganicManager == null || !TryResolvePlayerRuntime(deltaTime))
                 return;
 
             if (!destructibleOrganicManager.TryEvaluateParasiteExposure(ResolvePlayerRuntimePosition(), out float exposure01) ||
@@ -129,15 +129,20 @@ namespace Hecton8.World
             _hotSwapListenerRegistered = false;
         }
 
-        private bool TryResolvePlayerRuntime()
+        private bool TryResolvePlayerRuntime(float deltaTime)
         {
             if (_playerTransform != null && _survivalSystem != null)
                 return true;
 
-            if (Time.time < _nextPlayerResolveTime)
-                return false;
+            float elapsedSeconds = Mathf.Max(0f, deltaTime);
+            if (_playerResolveRetryRemainingSeconds > 0f)
+            {
+                _playerResolveRetryRemainingSeconds = Mathf.Max(0f, _playerResolveRetryRemainingSeconds - elapsedSeconds);
+                if (_playerResolveRetryRemainingSeconds > 0f)
+                    return false;
+            }
 
-            _nextPlayerResolveTime = Time.time + Mathf.Max(0.1f, playerResolveRetryIntervalSeconds);
+            _playerResolveRetryRemainingSeconds = Mathf.Max(0.1f, playerResolveRetryIntervalSeconds);
             if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
                 runtimeContext == null ||
                 runtimeContext.PlayerTransform == null ||
@@ -148,6 +153,7 @@ namespace Hecton8.World
 
             _playerTransform = runtimeContext.PlayerTransform;
             _survivalSystem = runtimeContext.SurvivalSystem;
+            _playerResolveRetryRemainingSeconds = 0f;
             return true;
         }
     }

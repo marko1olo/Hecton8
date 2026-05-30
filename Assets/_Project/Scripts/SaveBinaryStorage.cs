@@ -791,6 +791,19 @@ namespace Hecton8.SaveSystem
             return WriteAll(absolutePath, buffer, byteCount, null, 0, out error);
         }
 
+        internal static bool WriteDiagnosticDumpAll(string absolutePath, void* buffer, int byteCount, out string error)
+        {
+            NativeWriteResult result = WriteAllSynchronous(
+                absolutePath,
+                buffer,
+                byteCount,
+                null,
+                0,
+                suppressDiagnosticDumpPath: false);
+            error = result.Error;
+            return result.Success;
+        }
+
         internal static bool WriteAll(
             string absolutePath,
             void* firstBuffer,
@@ -804,7 +817,8 @@ namespace Hecton8.SaveSystem
                 firstBuffer,
                 firstByteCount,
                 secondBuffer,
-                secondByteCount);
+                secondByteCount,
+                suppressDiagnosticDumpPath: true);
             error = result.Error;
             return result.Success;
         }
@@ -814,7 +828,8 @@ namespace Hecton8.SaveSystem
             void* firstBuffer,
             int firstByteCount,
             void* secondBuffer,
-            int secondByteCount)
+            int secondByteCount,
+            bool suppressDiagnosticDumpPath)
         {
             if (string.IsNullOrEmpty(absolutePath))
             {
@@ -833,7 +848,7 @@ namespace Hecton8.SaveSystem
             }
 
             int totalBytes = (int)totalBytesLong;
-            if (IsSuppressedDiagnosticDumpPath(absolutePath))
+            if (suppressDiagnosticDumpPath && IsSuppressedDiagnosticDumpPath(absolutePath))
                 return new NativeWriteResult(true, string.Empty);
 
             try

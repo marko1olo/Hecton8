@@ -7,6 +7,7 @@
 
 using System;
 using System.Threading;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -46,6 +47,7 @@ namespace Hecton8.Dev
         [SerializeField] private bool _debugLastPass;
 
         private bool _isRunning;
+        private const float DefaultSmokeFrameDeltaSeconds = 1f / 60f;
 
         public bool IsRunning => _isRunning;
         public int DebugPassCount => _debugPassCount;
@@ -194,7 +196,7 @@ namespace Hecton8.Dev
                             toolManager.CurrentSlotIndex < 0)
                             break;
 
-                        holsterElapsed += Time.unscaledDeltaTime;
+                        holsterElapsed += ResolveSmokeFrameDeltaSeconds();
                         await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
                     }
 
@@ -242,7 +244,7 @@ namespace Hecton8.Dev
                             !toolManager.IsSwapping)
                             break;
 
-                        elapsed += Time.unscaledDeltaTime;
+                        elapsed += ResolveSmokeFrameDeltaSeconds();
                         await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
                     }
 
@@ -297,7 +299,7 @@ namespace Hecton8.Dev
                             toolManager.CurrentSlotIndex < 0)
                             break;
 
-                        holsterElapsed += Time.unscaledDeltaTime;
+                        holsterElapsed += ResolveSmokeFrameDeltaSeconds();
                         await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
                     }
 
@@ -333,12 +335,20 @@ namespace Hecton8.Dev
 
         private static async Awaitable DelayRealtimeAsync(float seconds, CancellationToken cancellationToken)
         {
-            float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, seconds);
-            while (Time.realtimeSinceStartup < deadline)
+            float elapsed = 0f;
+            float duration = Mathf.Max(0f, seconds);
+            while (elapsed < duration)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                elapsed += ResolveSmokeFrameDeltaSeconds();
                 await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
             }
+        }
+
+        private static float ResolveSmokeFrameDeltaSeconds()
+        {
+            float deltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            return float.IsFinite(deltaTime) && deltaTime > 0f ? deltaTime : DefaultSmokeFrameDeltaSeconds;
         }
 
         private bool RunToolInvocation(string toolName, PlayerTool liveTool)

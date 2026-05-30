@@ -1,0 +1,167 @@
+﻿{
+    "generatedAt":  "2026-05-28T05:16:13.1611206+04:00",
+    "status":  "STATIC_BUILD_GRAPH_HEALTH_GREEN",
+    "evidence":  "Static XML graph health audit only. No dotnet build and no dotnet msbuild executed.",
+    "activeSolutionProjectCount":  62,
+    "activeProjectReferenceEdgeCount":  83,
+    "missingSolutionProjectCount":  0,
+    "missingSolutionProjects":  [
+
+                                ],
+    "duplicateSolutionProjectCount":  0,
+    "duplicateSolutionProjects":  [
+
+                                  ],
+    "activeProjectXmlParseFailureCount":  0,
+    "activeProjectXmlParseFailures":  [
+
+                                      ],
+    "missingProjectReferenceCount":  0,
+    "missingProjectReferences":  [
+
+                                 ],
+    "externalProjectReferenceCount":  0,
+    "externalProjectReferences":  [
+
+                                  ],
+    "selfProjectReferenceCount":  0,
+    "selfProjectReferences":  [
+
+                              ],
+    "activeProjectReferenceCycleCount":  0,
+    "activeProjectReferenceCycles":  [
+
+                                     ],
+    "shimProjectReferenceCount":  16,
+    "shimProjectReferences":  [
+                                  {
+                                      "project":  "Unity.ShaderGraph.Editor.csproj",
+                                      "include":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                      "target":  "Unity.RenderPipelines.Core.Editor.csproj"
+                                  },
+                                  {
+                                      "project":  "ShapesEditor.csproj",
+                                      "include":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                      "target":  "Unity.RenderPipelines.Universal.Editor.csproj"
+                                  },
+                                  {
+                                      "project":  "ShapesEditor.csproj",
+                                      "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                      "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                  },
+                                  {
+                                      "project":  "GPUInstancer.Editor.csproj",
+                                      "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                      "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                  },
+                                  {
+                                      "project":  "MoreMountains.Tools.csproj",
+                                      "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                      "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                  },
+                                  {
+                                      "project":  "Crest.csproj",
+                                      "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                      "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                  },
+                                  {
+                                      "project":  "ShapesRuntime.csproj",
+                                      "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                      "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                  },
+                                  {
+                                      "project":  "MoreMountains.Feedbacks.URP.csproj",
+                                      "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                      "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                  },
+                                  {
+                                      "project":  "VolumetricLightBeam.csproj",
+                                      "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                      "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                  },
+                                  {
+                                      "project":  "JBooth.MicroSplat.Core.csproj",
+                                      "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                      "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                  },
+                                  {
+                                      "project":  "Hecton8.Editor.csproj",
+                                      "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                      "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                  },
+                                  {
+                                      "project":  "MoreMountains.Feedbacks.csproj",
+                                      "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                      "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                  },
+                                  {
+                                      "project":  "GPUInstancer.csproj",
+                                      "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                      "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                  },
+                                  {
+                                      "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                      "include":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                      "target":  "Unity.RenderPipelines.Core.Editor.csproj"
+                                  },
+                                  {
+                                      "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                      "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                      "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                  },
+                                  {
+                                      "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                      "include":  "Unity.ShaderGraph.Editor.csproj",
+                                      "target":  "Unity.ShaderGraph.Editor.csproj"
+                                  }
+                              ],
+    "duplicateDirectoryBuildTargetCount":  0,
+    "duplicateDirectoryBuildTargets":  [
+
+                                       ],
+    "directCompileIncludeCount":  159,
+    "missingDirectCompileIncludeCount":  0,
+    "missingDirectCompileIncludes":  [
+
+                                     ],
+    "broadProjectReferenceRemoveLines":  [
+                                             {
+                                                 "line":  379,
+                                                 "text":  "\u003cProjectReference Remove=\"@(ProjectReference)\" /\u003e"
+                                             },
+                                             {
+                                                 "line":  661,
+                                                 "text":  "\u003cProjectReference Remove=\"@(ProjectReference)\" /\u003e"
+                                             }
+                                         ],
+    "fixUnityCircularReferenceLines":  [
+                                           {
+                                               "line":  129,
+                                               "text":  "\u003cTarget Name=\"FixUnityCircularReferences\""
+                                           },
+                                           {
+                                               "line":  133,
+                                               "text":  "\u003c_HectonUnityPackageProjectReference Include=\"@(ProjectReference)\""
+                                           },
+                                           {
+                                               "line":  135,
+                                               "text":  "\u003cReference Include=\"%(_HectonUnityPackageProjectReference.Filename)\""
+                                           },
+                                           {
+                                               "line":  136,
+                                               "text":  "Condition=\"\u0027@(_HectonUnityPackageProjectReference)\u0027 != \u0027\u0027 And !$([System.String]::Copy(\u0027@(Reference)\u0027).Contains(\u0027%(_HectonUnityPackageProjectReference.Filename)\u0027))\"\u003e"
+                                           },
+                                           {
+                                               "line":  137,
+                                               "text":  "\u003cHintPath\u003e$(MSBuildThisFileDirectory)Library/ScriptAssemblies/%(_HectonUnityPackageProjectReference.Filename).dll\u003c/HintPath\u003e"
+                                           },
+                                           {
+                                               "line":  140,
+                                               "text":  "\u003cProjectReference Remove=\"@(_HectonUnityPackageProjectReference)\" /\u003e"
+                                           },
+                                           {
+                                               "line":  141,
+                                               "text":  "\u003c_HectonUnityPackageProjectReference Remove=\"@(_HectonUnityPackageProjectReference)\" /\u003e"
+                                           }
+                                       ]
+}

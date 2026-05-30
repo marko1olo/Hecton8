@@ -1123,7 +1123,9 @@ namespace Hecton8.UI
 #if UNITY_EDITOR
             _csvFullPath = Path.GetFullPath(Path.Combine(_projectRoot, csvRelativePath));
 #endif
-            _dumpFullPath = Path.GetFullPath(Path.Combine(_projectRoot, dumpRelativePath));
+            _dumpFullPath = string.IsNullOrWhiteSpace(dumpRelativePath)
+                ? DefaultDumpRelativePath
+                : dumpRelativePath;
         }
 
         private void CacheDataVaultCold()
@@ -2411,10 +2413,6 @@ namespace Hecton8.UI
 
             try
             {
-                string directory = Path.GetDirectoryName(_dumpFullPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
                 ulong timestampTicks = (ulong)DateTime.UtcNow.Ticks;
                 GlitchBlackBoxDumpHeader header = default;
                 header.Magic = DumpMagic;
@@ -2426,11 +2424,15 @@ namespace Hecton8.UI
                 header.TimestampTicksLow = (uint)timestampTicks;
                 header.TimestampTicksHigh = (uint)(timestampTicks >> 32);
 
-                using (FileStream stream = new FileStream(_dumpFullPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096))
+                int headerBytes = UnsafeUtility.SizeOf<GlitchBlackBoxDumpHeader>();
+                int stride = UnsafeUtility.SizeOf<DiegeticGlitchTelemetryEntry>();
+                int byteCount = headerBytes + TelemetryFrameCount * stride;
+                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+                try
                 {
-                    stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(&header), UnsafeUtility.SizeOf<GlitchBlackBoxDumpHeader>()));
-                    int stride = UnsafeUtility.SizeOf<DiegeticGlitchTelemetryEntry>();
-                    byte* rowBytes = stackalloc byte[stride];
+                    byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    UnsafeUtility.MemCpy(destination, UnsafeUtility.AddressOf(ref header), headerBytes);
+                    byte* rowDestination = destination + headerBytes;
                     for (int i = 0; i < TelemetryFrameCount; i++)
                     {
                         if (!TryReadTelemetryDumpEntry(i, out DiegeticGlitchTelemetryEntry entry))
@@ -2440,9 +2442,16 @@ namespace Hecton8.UI
                             return;
                         }
 
-                        UnsafeUtility.MemCpy(rowBytes, &entry, stride);
-                        stream.Write(new ReadOnlySpan<byte>(rowBytes, stride));
+                        UnsafeUtility.MemCpy(rowDestination + i * stride, UnsafeUtility.AddressOf(ref entry), stride);
                     }
+
+                    if (!NativeFaultDumpWriter.TryWriteAll(_dumpFullPath, payload, byteCount))
+                        _lastFaultFlags |= FaultVaultUnavailable;
+                }
+                finally
+                {
+                    if (payload.IsCreated)
+                        payload.Dispose();
                 }
             }
             catch (IOException)

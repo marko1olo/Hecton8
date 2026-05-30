@@ -48,8 +48,7 @@ namespace Hecton8.Physics
             if (IsCachedUnderwaterRendererForCamera(camera))
                 return _cachedUnderwaterRenderer;
 
-            global::Crest.UnderwaterRenderer underwaterRenderer = camera.GetComponent<global::Crest.UnderwaterRenderer>();
-            if (underwaterRenderer != null)
+            if (camera.TryGetComponent(out global::Crest.UnderwaterRenderer underwaterRenderer))
             {
                 _cachedUnderwaterRenderer = underwaterRenderer;
                 return underwaterRenderer;

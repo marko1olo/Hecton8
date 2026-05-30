@@ -148,7 +148,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _transform = transform;
-            _collider = GetComponent<Collider>();
+            TryGetComponent(out _collider);
             _driftSeedBase = unchecked((uint)EntityId.ToULong(GetEntityId()));
 
             // Ensure collider is a trigger

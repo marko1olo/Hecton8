@@ -6,6 +6,7 @@ using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -59,6 +60,8 @@ namespace Hecton8.Lighting.Shafts
         private const float FpsDisableThreshold = 40f;
         private const float LoadShedSeconds = 2.5f;
         private const float CameraRetrySeconds = 0.75f;
+        private const int BlackBoxHeaderBytes = 8;
+        private const int BlackBoxRowBytes = 34;
         private const uint NaNFallbackWarningHash = 0x4C534E41u;
         private const uint RuntimeContextHash = 0x4C534654u;
         private const byte TelemetryFlagLoadShed = 1 << 1;
@@ -130,7 +133,7 @@ namespace Hecton8.Lighting.Shafts
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            if (!isActiveAndEnabled || !Application.isPlaying)
+            if (!isActiveAndEnabled || !_registeredLateFrame)
                 return;
 
             if (!EnsureBuffers(false) ||
@@ -794,33 +797,88 @@ namespace Hecton8.Lighting.Shafts
                 _telemetryWriteIndex = 0;
         }
 
-        private void DumpBlackbox(NativeArray<LightShaftTelemetryEntry> telemetry)
+        private unsafe void DumpBlackbox(NativeArray<LightShaftTelemetryEntry> telemetry)
         {
-            if (!telemetry.IsCreated)
+            if (!telemetry.IsCreated || telemetry.Length < TelemetryCapacity)
                 return;
 
-            string path = Path.Combine(Application.dataPath, "../Docs/AgentLogs/Dump_13KRA.bin");
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            const string path = "Docs/AgentLogs/Dump_13KRA.bin";
+            int byteCount = BlackBoxHeaderBytes + TelemetryCapacity * BlackBoxRowBytes;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(ScreenSpaceLightShaftRuntime),
+                "LightShaftBlackBoxDumpPayload");
+            try
             {
-                writer.Write(TelemetryCapacity);
-                writer.Write(_telemetryWriteIndex);
-                for (int i = 0; i < TelemetryCapacity; i++)
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int offset = 0;
+                if (!TryWriteInt32LittleEndian(destination, byteCount, ref offset, TelemetryCapacity) ||
+                    !TryWriteInt32LittleEndian(destination, byteCount, ref offset, _telemetryWriteIndex))
                 {
-                    LightShaftTelemetryEntry entry = telemetry[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.PrimarySourceId);
-                    writer.Write(entry.PrimaryUv.x);
-                    writer.Write(entry.PrimaryUv.y);
-                    writer.Write(entry.ActiveLightShafts);
-                    writer.Write(entry.PrimaryIntensity);
-                    writer.Write(entry.Soot01);
-                    writer.Write(entry.Brownout01);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.QualityPressureQ8);
+                    return;
                 }
+
+                for (int index = 0; index < TelemetryCapacity; index++)
+                {
+                    LightShaftTelemetryEntry entry = telemetry[index];
+                    if (!TryWriteUInt32LittleEndian(destination, byteCount, ref offset, entry.Frame) ||
+                        !TryWriteUInt32LittleEndian(destination, byteCount, ref offset, entry.PrimarySourceId) ||
+                        !TryWriteFloat32LittleEndian(destination, byteCount, ref offset, entry.PrimaryUv.x) ||
+                        !TryWriteFloat32LittleEndian(destination, byteCount, ref offset, entry.PrimaryUv.y) ||
+                        !TryWriteFloat32LittleEndian(destination, byteCount, ref offset, entry.ActiveLightShafts) ||
+                        !TryWriteFloat32LittleEndian(destination, byteCount, ref offset, entry.PrimaryIntensity) ||
+                        !TryWriteFloat32LittleEndian(destination, byteCount, ref offset, entry.Soot01) ||
+                        !TryWriteFloat32LittleEndian(destination, byteCount, ref offset, entry.Brownout01) ||
+                        !TryWriteByte(destination, byteCount, ref offset, entry.Flags) ||
+                        !TryWriteByte(destination, byteCount, ref offset, entry.QualityPressureQ8))
+                    {
+                        return;
+                    }
+                }
+
+                if (offset == byteCount)
+                    NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(ScreenSpaceLightShaftRuntime),
+                    "LightShaftBlackBoxDumpPayload");
+            }
+        }
+
+        private static unsafe bool TryWriteByte(byte* destination, int capacity, ref int offset, byte value)
+        {
+            if (offset >= capacity)
+                return false;
+
+            destination[offset] = value;
+            offset++;
+            return true;
+        }
+
+        private static unsafe bool TryWriteUInt32LittleEndian(byte* destination, int capacity, ref int offset, uint value)
+        {
+            if (offset > capacity - 4)
+                return false;
+
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
+            offset += 4;
+            return true;
+        }
+
+        private static unsafe bool TryWriteInt32LittleEndian(byte* destination, int capacity, ref int offset, int value)
+        {
+            return TryWriteUInt32LittleEndian(destination, capacity, ref offset, unchecked((uint)value));
+        }
+
+        private static unsafe bool TryWriteFloat32LittleEndian(byte* destination, int capacity, ref int offset, float value)
+        {
+            return TryWriteUInt32LittleEndian(destination, capacity, ref offset, math.asuint(value));
         }
 
         private static byte EncodeQualityPressureQ8(float qualityPressure01)

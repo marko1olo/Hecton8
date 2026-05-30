@@ -435,12 +435,23 @@ namespace Hecton8.Quest
                 return false;
             }
 
-            if (QuestDagVault.TryResolveBuffers(vault, ref handles, out buffers))
-                return true;
+            bool keepGuard = false;
+            try
+            {
+                if (QuestDagVault.TryResolveBuffers(vault, ref handles, out buffers))
+                {
+                    keepGuard = true;
+                    return true;
+                }
 
-            vault.ReleaseMutationGuard(QuestDagLoadMutationGuardMask);
-            buffers = default;
-            return false;
+                buffers = default;
+                return false;
+            }
+            finally
+            {
+                if (!keepGuard)
+                    vault.ReleaseMutationGuard(QuestDagLoadMutationGuardMask);
+            }
         }
 
         private static void ReleaseQuestDagLoadGuard(IDataVault vault)
@@ -941,48 +952,57 @@ namespace Hecton8.Quest
                 return false;
             }
 
-            bool resolved =
-                TryResolveCsvOverrideBuffer(
-                        vault,
-                        in handles.Counters,
-                        BufferID.QuestDagCounters,
-                        QuestDagRuntimeConstants.CounterCount,
-                        out buffers.Counters) &&
-                (!requiresCsvMonitor ||
-                    TryResolveCsvOverrideBuffer(
-                        vault,
-                        in handles.CsvMonitor,
-                        BufferID.QuestDagCsvMonitor,
-                        2,
-                        out buffers.CsvMonitor)) &&
-                (!requiresPatchBuffers ||
-                    (TryResolveCsvOverrideBuffer(
-                            vault,
-                            in handles.NodeRuntime,
-                            BufferID.QuestDagNodeRuntime,
-                            1,
-                            out buffers.NodeRuntime) &&
-                        TryResolveCsvOverrideBuffer(
-                            vault,
-                            in handles.RequiredItemHashes,
-                            BufferID.QuestDagRequiredItemHashes,
-                            1,
-                            out buffers.RequiredItemHashes) &&
-                        TryResolveCsvOverrideBuffer(
-                            vault,
-                            in handles.RequiredItemQuantities,
-                            BufferID.QuestDagRequiredItemQuantities,
-                            1,
-                            out buffers.RequiredItemQuantities)));
-
-            if (resolved)
+            bool keepGuard = false;
+            try
             {
-                return true;
-            }
+                bool resolved =
+                    TryResolveCsvOverrideBuffer(
+                            vault,
+                            in handles.Counters,
+                            BufferID.QuestDagCounters,
+                            QuestDagRuntimeConstants.CounterCount,
+                            out buffers.Counters) &&
+                    (!requiresCsvMonitor ||
+                        TryResolveCsvOverrideBuffer(
+                            vault,
+                            in handles.CsvMonitor,
+                            BufferID.QuestDagCsvMonitor,
+                            2,
+                            out buffers.CsvMonitor)) &&
+                    (!requiresPatchBuffers ||
+                        (TryResolveCsvOverrideBuffer(
+                                vault,
+                                in handles.NodeRuntime,
+                                BufferID.QuestDagNodeRuntime,
+                                1,
+                                out buffers.NodeRuntime) &&
+                            TryResolveCsvOverrideBuffer(
+                                vault,
+                                in handles.RequiredItemHashes,
+                                BufferID.QuestDagRequiredItemHashes,
+                                1,
+                                out buffers.RequiredItemHashes) &&
+                            TryResolveCsvOverrideBuffer(
+                                vault,
+                                in handles.RequiredItemQuantities,
+                                BufferID.QuestDagRequiredItemQuantities,
+                                1,
+                                out buffers.RequiredItemQuantities)));
 
-            vault.ReleaseMutationGuard(CsvOverrideApplyMutationGuardMask);
-            buffers = default;
-            return false;
+                if (resolved)
+                {
+                    keepGuard = true;
+                    return true;
+                }
+
+                buffers = default;
+                return false;
+            }
+            finally
+            {
+                if (!keepGuard)
+                    vault.ReleaseMutationGuard(CsvOverrideApplyMutationGuardMask);
+            }
         }
 
         private static bool TryResolveCsvOverrideBuffer<T>(

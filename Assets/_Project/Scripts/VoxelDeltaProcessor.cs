@@ -179,18 +179,15 @@ namespace Hecton8.Caves
         private static readonly int _recentCutHeatPositionRadiusId = Shader.PropertyToID("_HectonRecentCutHeatPositionRadius");
         private static readonly int _recentCutHeatStrengthTimeId = Shader.PropertyToID("_HectonRecentCutHeatStrengthTime");
         private static readonly int _recentCutHeatCountId = Shader.PropertyToID("_HectonRecentCutHeatCount");
-        private static readonly ulong CompactionScratchMutationGuardMask =
-            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionSourceSdfScratch) |
-            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionDirtyMaskScratch) |
-            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionDeltaSdfScratch) |
-            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionMaterialScratch) |
-            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionFlagsScratch) |
-            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionOutputSdfScratch) |
-            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionOutputMaterialsScratch) |
-            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionOutputFlagsScratch) |
-            VoxelDeltaMutationGuardBit(BufferID.SaveVoxelDeltaCompactionUniformFlagScratch);
-        private static readonly ulong ScheduledCarveWritesMutationGuardMask =
-            VoxelDeltaMutationGuardBit(BufferID.ShinobuDeltaCrusherCarveWrites);
+        private const uint CompactionScratchPinSourceSdf = 1u << 0;
+        private const uint CompactionScratchPinDirtyMask = 1u << 1;
+        private const uint CompactionScratchPinDeltaSdf = 1u << 2;
+        private const uint CompactionScratchPinMaterial = 1u << 3;
+        private const uint CompactionScratchPinFlags = 1u << 4;
+        private const uint CompactionScratchPinOutputSdf = 1u << 5;
+        private const uint CompactionScratchPinOutputMaterials = 1u << 6;
+        private const uint CompactionScratchPinOutputFlags = 1u << 7;
+        private const uint CompactionScratchPinUniformFlag = 1u << 8;
         // COLD ALLOC: Vector4[16] - shader heat ring position-radius upload - owner: VoxelDeltaProcessor
         private static readonly Vector4[] s_recentCutHeatPositionRadius = new Vector4[RecentCutHeatMax];
         // COLD ALLOC: Vector4[16] - shader heat ring strength-time upload - owner: VoxelDeltaProcessor
@@ -263,7 +260,7 @@ namespace Hecton8.Caves
         private VaultGenerationHandle<CarveCellWrite> _scheduledCarveWritesHandle;
         private int _scheduledCarveWritesCapacity;
         private bool _scheduledCarveWritesLocked;
-        private IDataVault _scheduledCarveWritesGuardVault;
+        private IDataVault _scheduledCarveWritesPinVault;
         private ulong _deferredScheduledCarveBlackBoxVolumeId;
         private uint _deferredScheduledCarveBlackBoxFlags;
         // COLD ALLOC: PendingCompactionRequest[16] - bounded background dirty-chunk compaction queue - owner: VoxelDeltaProcessor
@@ -285,8 +282,8 @@ namespace Hecton8.Caves
         private VaultGenerationHandle<byte> _compactionUniformFlagScratchHandle;
         private bool _compactionScratchCreated;
         private bool _compactionScratchLeased;
-        private bool _compactionScratchGuardHeld;
-        private IDataVault _compactionScratchGuardVault;
+        private uint _compactionScratchPinMask;
+        private IDataVault _compactionScratchPinVault;
         private VaultGenerationHandle<byte> _nativeSnapshotScratchHandle;
         private int _nativeSnapshotScratchCapacityBytes;
         private int _nativeSnapshotScratchLeaseCount;
@@ -474,7 +471,7 @@ namespace Hecton8.Caves
                 _scheduledCarveWritesLocked ||
                 _scheduledCompactionRunning ||
                 _compactionScratchLeased ||
-                _compactionScratchGuardHeld ||
+                _compactionScratchPinMask != 0u ||
                 _nativeSnapshotScratchLeaseCount > 0)
             {
                 DeferDataVaultRebind(previousVault, nextVault, _chunkStates.Count + _pendingCompactionCount);
@@ -555,7 +552,7 @@ namespace Hecton8.Caves
                 _scheduledCarveWritesLocked ||
                 _scheduledCompactionRunning ||
                 _compactionScratchLeased ||
-                _compactionScratchGuardHeld ||
+                _compactionScratchPinMask != 0u ||
                 _nativeSnapshotScratchLeaseCount > 0)
             {
                 return false;
@@ -5480,9 +5477,9 @@ namespace Hecton8.Caves
                 return;
 
             _scheduledCarveWritesLocked = false;
-            IDataVault vault = _scheduledCarveWritesGuardVault;
-            _scheduledCarveWritesGuardVault = null;
-            vault?.ReleaseMutationGuard(ScheduledCarveWritesMutationGuardMask);
+            IDataVault vault = _scheduledCarveWritesPinVault;
+            _scheduledCarveWritesPinVault = null;
+            vault?.TryUnlockBuffer(BufferID.ShinobuDeltaCrusherCarveWrites, SystemID.TerrainSeams);
         }
 
         private bool TryAcquireScheduledCarveWritesForCommit(out NativeArray<CarveCellWrite> writes)
@@ -5534,21 +5531,21 @@ namespace Hecton8.Caves
             if (_scheduledCarveWritesLocked || vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!vault.TryAcquireMutationGuard(ScheduledCarveWritesMutationGuardMask))
+            if (!vault.TryLockBuffer(BufferID.ShinobuDeltaCrusherCarveWrites, SystemID.TerrainSeams))
                 return false;
 
-            bool keepGuard = false;
+            bool keepPin = false;
             try
             {
-                _scheduledCarveWritesGuardVault = vault;
+                _scheduledCarveWritesPinVault = vault;
                 _scheduledCarveWritesLocked = true;
-                keepGuard = true;
+                keepPin = true;
                 return true;
             }
             finally
             {
-                if (!keepGuard)
-                    vault.ReleaseMutationGuard(ScheduledCarveWritesMutationGuardMask);
+                if (!keepPin)
+                    vault.TryUnlockBuffer(BufferID.ShinobuDeltaCrusherCarveWrites, SystemID.TerrainSeams);
             }
         }
 
@@ -5727,19 +5724,23 @@ namespace Hecton8.Caves
         private bool TryPinCompactionScratchBuffers()
         {
             IDataVault vault = ResolveDataVault();
-            if (vault == null || vault.IsCompactionFenceActive || _compactionScratchGuardHeld)
+            if (vault == null || vault.IsCompactionFenceActive || _compactionScratchPinMask != 0u)
                 return false;
 
-            if (!vault.TryAcquireMutationGuard(CompactionScratchMutationGuardMask))
-                return false;
-
-            bool keepGuard = false;
+            _compactionScratchPinVault = vault;
+            bool keepPins = false;
             try
             {
-                _compactionScratchGuardVault = vault;
-                _compactionScratchGuardHeld = true;
-
-                if (vault.IsCompactionFenceActive ||
+                if (!TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionSourceSdfScratch, CompactionScratchPinSourceSdf) ||
+                    !TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionDirtyMaskScratch, CompactionScratchPinDirtyMask) ||
+                    !TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionDeltaSdfScratch, CompactionScratchPinDeltaSdf) ||
+                    !TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionMaterialScratch, CompactionScratchPinMaterial) ||
+                    !TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionFlagsScratch, CompactionScratchPinFlags) ||
+                    !TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionOutputSdfScratch, CompactionScratchPinOutputSdf) ||
+                    !TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionOutputMaterialsScratch, CompactionScratchPinOutputMaterials) ||
+                    !TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionOutputFlagsScratch, CompactionScratchPinOutputFlags) ||
+                    !TryLockCompactionScratchBuffer(vault, BufferID.SaveVoxelDeltaCompactionUniformFlagScratch, CompactionScratchPinUniformFlag) ||
+                    vault.IsCompactionFenceActive ||
                     !TryResolveCompactionScratchBuffers(
                         vault,
                         out _,
@@ -5755,25 +5756,52 @@ namespace Hecton8.Caves
                     return false;
                 }
 
-                keepGuard = true;
+                keepPins = true;
                 return true;
             }
             finally
             {
-                if (!keepGuard)
+                if (!keepPins)
                     UnlockCompactionScratchBuffers();
             }
         }
 
         private void UnlockCompactionScratchBuffers()
         {
-            if (!_compactionScratchGuardHeld)
+            IDataVault vault = _compactionScratchPinVault;
+            uint pinMask = _compactionScratchPinMask;
+            _compactionScratchPinMask = 0u;
+            _compactionScratchPinVault = null;
+            if (vault == null || pinMask == 0u)
                 return;
 
-            IDataVault vault = _compactionScratchGuardVault;
-            _compactionScratchGuardHeld = false;
-            _compactionScratchGuardVault = null;
-            vault?.ReleaseMutationGuard(CompactionScratchMutationGuardMask);
+            TryUnlockCompactionScratchBuffer(vault, pinMask, CompactionScratchPinUniformFlag, BufferID.SaveVoxelDeltaCompactionUniformFlagScratch);
+            TryUnlockCompactionScratchBuffer(vault, pinMask, CompactionScratchPinOutputFlags, BufferID.SaveVoxelDeltaCompactionOutputFlagsScratch);
+            TryUnlockCompactionScratchBuffer(vault, pinMask, CompactionScratchPinOutputMaterials, BufferID.SaveVoxelDeltaCompactionOutputMaterialsScratch);
+            TryUnlockCompactionScratchBuffer(vault, pinMask, CompactionScratchPinOutputSdf, BufferID.SaveVoxelDeltaCompactionOutputSdfScratch);
+            TryUnlockCompactionScratchBuffer(vault, pinMask, CompactionScratchPinFlags, BufferID.SaveVoxelDeltaCompactionFlagsScratch);
+            TryUnlockCompactionScratchBuffer(vault, pinMask, CompactionScratchPinMaterial, BufferID.SaveVoxelDeltaCompactionMaterialScratch);
+            TryUnlockCompactionScratchBuffer(vault, pinMask, CompactionScratchPinDeltaSdf, BufferID.SaveVoxelDeltaCompactionDeltaSdfScratch);
+            TryUnlockCompactionScratchBuffer(vault, pinMask, CompactionScratchPinDirtyMask, BufferID.SaveVoxelDeltaCompactionDirtyMaskScratch);
+            TryUnlockCompactionScratchBuffer(vault, pinMask, CompactionScratchPinSourceSdf, BufferID.SaveVoxelDeltaCompactionSourceSdfScratch);
+        }
+
+        private bool TryLockCompactionScratchBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        {
+            if ((_compactionScratchPinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null || !vault.TryLockBuffer(bufferId, SystemID.TerrainSeams))
+                return false;
+
+            _compactionScratchPinMask |= pinBit;
+            return true;
+        }
+
+        private static void TryUnlockCompactionScratchBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, SystemID.TerrainSeams);
         }
 
         private bool TryResolveCompactionScratchBuffers(
@@ -5859,7 +5887,7 @@ namespace Hecton8.Caves
 
         private void DisposeCompactionScratchBuffers(IDataVault vault)
         {
-            if (_compactionScratchGuardHeld)
+            if (_compactionScratchPinMask != 0u)
                 UnlockCompactionScratchBuffers();
 
             ReleaseVaultHandle(vault, ref _compactionSourceSdfScratchHandle, BufferID.SaveVoxelDeltaCompactionSourceSdfScratch);
@@ -5873,11 +5901,6 @@ namespace Hecton8.Caves
             ReleaseVaultHandle(vault, ref _compactionUniformFlagScratchHandle, BufferID.SaveVoxelDeltaCompactionUniformFlagScratch);
             _compactionScratchCreated = false;
             _compactionScratchLeased = false;
-        }
-
-        private static ulong VoxelDeltaMutationGuardBit(BufferID bufferId)
-        {
-            return 1UL << ((int)bufferId & 31);
         }
 
         private void EnsureNativeSnapshotScratchBuffer()
@@ -6649,20 +6672,20 @@ namespace Hecton8.Caves
             if (_blackBoxDumpedThisActivation)
                 return;
 
-            _blackBoxDumpedThisActivation = true;
-            DumpBlackBox(reasonFlags);
+            _blackBoxDumpedThisActivation = DumpBlackBox(reasonFlags);
         }
 
-        private void DumpBlackBox(uint reasonFlags)
+        private bool DumpBlackBox(uint reasonFlags)
         {
             WriteBlackBoxSample(0ul, reasonFlags);
             if (!TryAcquireBlackBoxBuffer(out IDataVault vault, out NativeArray<VoxelCarveTelemetryEntry> blackBox))
-                return;
+                return false;
 
             try
             {
-                WriteBlackBoxDumpFile(VoxelPagingBlackBoxDumpRelativePath1312, reasonFlags, blackBox);
-                WriteBlackBoxDumpFile(VoxelBlackBoxDumpRelativePath, reasonFlags, blackBox);
+                bool paging = WriteBlackBoxDumpFile(VoxelPagingBlackBoxDumpRelativePath1312, reasonFlags, blackBox);
+                bool primary = WriteBlackBoxDumpFile(VoxelBlackBoxDumpRelativePath, reasonFlags, blackBox);
+                return paging && primary;
             }
             finally
             {
@@ -6670,32 +6693,39 @@ namespace Hecton8.Caves
             }
         }
 
-        private void WriteBlackBoxDumpFile(string relativePath, uint reasonFlags, NativeArray<VoxelCarveTelemetryEntry> blackBox)
+        private bool WriteBlackBoxDumpFile(string relativePath, uint reasonFlags, NativeArray<VoxelCarveTelemetryEntry> blackBox)
         {
             try
             {
                 string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", relativePath));
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                unsafe
                 {
-                    unsafe
-                    {
-                        VoxelBlackBoxDumpHeader header = default;
-                        header.Magic = VoxelBlackBoxDumpMagic;
-                        header.Capacity = (uint)VoxelBlackBoxCapacity;
-                        header.Stride = (uint)UnsafeUtility.SizeOf<VoxelCarveTelemetryEntry>();
-                        header.Cursor = (uint)_blackBoxCursor;
-                        header.ReasonFlags = reasonFlags;
-                        header._pad0 = 0u;
-                        header._pad1 = 0u;
-                        header._pad2 = 0u;
+                    VoxelBlackBoxDumpHeader header = default;
+                    header.Magic = VoxelBlackBoxDumpMagic;
+                    header.Capacity = (uint)VoxelBlackBoxCapacity;
+                    header.Stride = (uint)UnsafeUtility.SizeOf<VoxelCarveTelemetryEntry>();
+                    header.Cursor = (uint)_blackBoxCursor;
+                    header.ReasonFlags = reasonFlags;
+                    header._pad0 = 0u;
+                    header._pad1 = 0u;
+                    header._pad2 = 0u;
 
-                        WriteUnmanagedBytes(stream, &header, UnsafeUtility.SizeOf<VoxelBlackBoxDumpHeader>());
+                    int headerBytes = UnsafeUtility.SizeOf<VoxelBlackBoxDumpHeader>();
+                    int entriesBytes = VoxelBlackBoxCapacity * UnsafeUtility.SizeOf<VoxelCarveTelemetryEntry>();
+                    int payloadBytes = headerBytes + entriesBytes;
+                    NativeArray<byte> payload = new NativeArray<byte>(payloadBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    try
+                    {
+                        byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                        UnsafeUtility.MemCpy(payloadPtr, &header, headerBytes);
                         void* entries = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox);
-                        WriteUnmanagedBytes(stream, entries, VoxelBlackBoxCapacity * UnsafeUtility.SizeOf<VoxelCarveTelemetryEntry>());
+                        UnsafeUtility.MemCpy(payloadPtr + headerBytes, entries, entriesBytes);
+                        return NativeFaultDumpWriter.TryWriteAll(path, payload, payloadBytes);
+                    }
+                    finally
+                    {
+                        if (payload.IsCreated)
+                            payload.Dispose();
                     }
                 }
             }
@@ -6723,14 +6753,8 @@ namespace Hecton8.Caves
             {
                 // Fault-path export must never trigger a second gameplay failure.
             }
-        }
 
-        private static unsafe void WriteUnmanagedBytes(FileStream stream, void* source, int byteCount)
-        {
-            if (stream == null || source == null || byteCount <= 0)
-                return;
-
-            stream.Write(new ReadOnlySpan<byte>(source, byteCount));
+            return false;
         }
 
 #if UNITY_EDITOR

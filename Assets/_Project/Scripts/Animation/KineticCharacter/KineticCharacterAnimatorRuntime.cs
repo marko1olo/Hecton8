@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -18,6 +17,7 @@ namespace Hecton8.Animation.KineticCharacter
     [AddComponentMenu("Hecton8/Animation/Kinetic Character Matrix Runtime")]
     public sealed class KineticCharacterAnimatorRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IKineticCharacterPresentationSink, IDisposable
     {
+        private const string BlackBoxDumpPayloadLabel = "kineticCharacterTelemetryDumpPayload";
         private static readonly int KineticBoneMatricesId = Shader.PropertyToID("_H8KineticCharacterBoneMatrices");
         private static readonly int KineticBoneMatrixCountId = Shader.PropertyToID("_H8KineticCharacterBoneMatrixCount");
         private static readonly int KineticActiveCharactersId = Shader.PropertyToID("_H8KineticCharacterActiveCharacters");
@@ -41,6 +41,13 @@ namespace Hecton8.Animation.KineticCharacter
             KineticMutationGuardBit(BufferID.PlayerHandIkPublishedStates);
         private static readonly ulong SolverPlayerStateReadGuardMask =
             KineticMutationGuardBit(BufferID.PlayerKinematicState);
+#if UNITY_EDITOR
+        private static readonly ulong EditorTuningMutationGuardMask =
+            KineticMutationGuardBit(KineticCharacterAnimatorBufferIds.Tuning);
+        private static readonly ulong EditorProfileMutationGuardMask =
+            KineticMutationGuardBit(KineticCharacterAnimatorBufferIds.Rigs) |
+            KineticMutationGuardBit(KineticCharacterAnimatorBufferIds.Tuning);
+#endif
 
         [SerializeField, Range(KineticCharacterAnimatorConstants.EmergencyMockBoneCount, KineticCharacterAnimatorConstants.DefaultBoneCapacity)]
         private int _boneCapacity = KineticCharacterAnimatorConstants.DefaultBoneCapacity;
@@ -106,15 +113,16 @@ namespace Hecton8.Animation.KineticCharacter
         private bool _gpuConstantsDirty;
         private bool _gpuBufferDataValid;
         private bool _globalGpuSkinningPublished;
+        private bool _runtimeActive;
         private bool _disposed;
         private bool _dumpedFault;
         private readonly KineticAnimationTelemetryEntry[] _blackBoxDumpSnapshot = new KineticAnimationTelemetryEntry[KineticCharacterAnimatorConstants.TelemetryCapacity];
+        private int _blackBoxDumpSnapshotCursor;
         private int _blackBoxDumpSnapshotCount;
         private int _blackBoxDumpInFlight;
-        private string _blackBoxDumpRootCold;
+        private uint _blackBoxDumpHash;
 
         private static KineticCharacterAnimatorRuntime _activeRuntimeInstance;
-        private static readonly WaitCallback s_blackBoxDumpWorker = WriteBlackBoxDumpWorker;
 
         public static bool TryGetActiveRuntimeInstance(out KineticCharacterAnimatorRuntime runtime)
         {
@@ -161,29 +169,32 @@ namespace Hecton8.Animation.KineticCharacter
 
         public bool TryApplyEditorTuning(in KineticCharacterTuningDTO tuning)
         {
-            if (!OpenOrAcquireTuningMutableForOwnerRoute(out NativeArray<KineticCharacterTuningDTO> mutableTuning))
-                return false;
-
-            mutableTuning[0] = KineticCharacterSanitizer.SanitizeTuning(tuning);
-            return true;
-        }
-
-        private bool OpenOrAcquireTuningMutableForOwnerRoute(out NativeArray<KineticCharacterTuningDTO> tuning)
-        {
-            tuning = default;
             IDataVault vault = CacheDataVaultCold();
-            if (vault == null)
+            if (vault == null || !OpenOrAcquireVaultBuffersForOwnerRoute())
                 return false;
 
-            if (!IsOwnedVaultHandle(in _tuningHandle, KineticCharacterAnimatorBufferIds.Tuning))
-                OpenOrAcquireVaultBuffersForOwnerRoute();
+            if (vault.IsCompactionFenceActive || !vault.TryAcquireMutationGuard(EditorTuningMutationGuardMask))
+                return false;
 
-            return TryResolveOwnedVaultBuffer(
-                vault,
-                KineticCharacterAnimatorBufferIds.Tuning,
-                in _tuningHandle,
-                KineticCharacterAnimatorConstants.TuningCapacity,
-                out tuning);
+            try
+            {
+                if (!TryResolveOwnedVaultBuffer(
+                        vault,
+                        KineticCharacterAnimatorBufferIds.Tuning,
+                        in _tuningHandle,
+                        KineticCharacterAnimatorConstants.TuningCapacity,
+                        out NativeArray<KineticCharacterTuningDTO> mutableTuning))
+                {
+                    return false;
+                }
+
+                mutableTuning[0] = KineticCharacterSanitizer.SanitizeTuning(tuning);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(EditorTuningMutationGuardMask);
+            }
         }
 
         public bool TryResolveMatricesForEditor(out NativeArray<float4x4>.ReadOnly matrices, out NativeArray<int>.ReadOnly parents, out int matrixCount)
@@ -213,54 +224,54 @@ namespace Hecton8.Animation.KineticCharacter
 #if UNITY_EDITOR
         public bool TryApplyCsvProfile(string csvText)
         {
-            if (string.IsNullOrEmpty(csvText) || !OpenOrAcquireTuningMutableForOwnerRoute(out NativeArray<KineticCharacterTuningDTO> tuning))
+            if (string.IsNullOrEmpty(csvText))
                 return false;
 
             IDataVault vault = CacheDataVaultCold();
-            if (vault == null)
+            if (vault == null || !OpenOrAcquireVaultBuffersForOwnerRoute())
                 return false;
 
-            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Rigs, in _rigsHandle, 1, out NativeArray<KineticCharacterRigDTO> rigs))
+            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Tuning, in _tuningHandle, KineticCharacterAnimatorConstants.TuningCapacity, out NativeArray<KineticCharacterTuningDTO> tuning) ||
+                !TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Rigs, in _rigsHandle, 1, out NativeArray<KineticCharacterRigDTO> rigs))
                 return false;
 
             if (rigs[0].BoneCount <= 0)
                 GenerateEmergencyMockRig();
 
-            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Rigs, in _rigsHandle, 1, out rigs))
+            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Tuning, in _tuningHandle, KineticCharacterAnimatorConstants.TuningCapacity, out tuning) ||
+                !TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Rigs, in _rigsHandle, 1, out rigs))
                 return false;
 
             KineticCharacterTuningDTO tuningDto = tuning[0];
             KineticCharacterRigDTO rig = rigs[0];
             bool result = KineticCharacterRigCsvParser.TryApply(csvText.AsSpan(), ref tuningDto, ref rig);
-            tuning[0] = tuningDto;
-            rigs[0] = rig;
-            return result;
+            return TryCommitEditorProfile(vault, in tuningDto, in rig) && result;
         }
 
         public bool TryApplyCsvProfileBytes(ReadOnlySpan<byte> csvBytes)
         {
-            if (csvBytes.Length <= 0 || !OpenOrAcquireTuningMutableForOwnerRoute(out NativeArray<KineticCharacterTuningDTO> tuning))
+            if (csvBytes.Length <= 0)
                 return false;
 
             IDataVault vault = CacheDataVaultCold();
-            if (vault == null)
+            if (vault == null || !OpenOrAcquireVaultBuffersForOwnerRoute())
                 return false;
 
-            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Rigs, in _rigsHandle, 1, out NativeArray<KineticCharacterRigDTO> rigs))
+            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Tuning, in _tuningHandle, KineticCharacterAnimatorConstants.TuningCapacity, out NativeArray<KineticCharacterTuningDTO> tuning) ||
+                !TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Rigs, in _rigsHandle, 1, out NativeArray<KineticCharacterRigDTO> rigs))
                 return false;
 
             if (rigs[0].BoneCount <= 0)
                 GenerateEmergencyMockRig();
 
-            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Rigs, in _rigsHandle, 1, out rigs))
+            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Tuning, in _tuningHandle, KineticCharacterAnimatorConstants.TuningCapacity, out tuning) ||
+                !TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Rigs, in _rigsHandle, 1, out rigs))
                 return false;
 
             KineticCharacterTuningDTO tuningDto = tuning[0];
             KineticCharacterRigDTO rig = rigs[0];
             bool result = KineticCharacterRigCsvParser.TryApply(csvBytes, ref tuningDto, ref rig);
-            tuning[0] = tuningDto;
-            rigs[0] = rig;
-            return result;
+            return TryCommitEditorProfile(vault, in tuningDto, in rig) && result;
         }
 
         public bool TryApplyCsvProfileFromVaultScratch(int byteCount)
@@ -277,6 +288,29 @@ namespace Hecton8.Animation.KineticCharacter
             {
                 byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
                 return TryApplyCsvProfileBytes(new ReadOnlySpan<byte>(ptr, safeCount));
+            }
+        }
+
+        private bool TryCommitEditorProfile(IDataVault vault, in KineticCharacterTuningDTO tuningDto, in KineticCharacterRigDTO rigDto)
+        {
+            if (vault == null || vault.IsCompactionFenceActive || !vault.TryAcquireMutationGuard(EditorProfileMutationGuardMask))
+                return false;
+
+            try
+            {
+                if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Tuning, in _tuningHandle, KineticCharacterAnimatorConstants.TuningCapacity, out NativeArray<KineticCharacterTuningDTO> tuning) ||
+                    !TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Rigs, in _rigsHandle, 1, out NativeArray<KineticCharacterRigDTO> rigs))
+                {
+                    return false;
+                }
+
+                tuning[0] = tuningDto;
+                rigs[0] = rigDto;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(EditorProfileMutationGuardMask);
             }
         }
 #endif
@@ -342,7 +376,8 @@ namespace Hecton8.Animation.KineticCharacter
 
         private void OnEnable()
         {
-            if (_disposed || !Application.isPlaying)
+            _runtimeActive = Application.isPlaying;
+            if (_disposed || !_runtimeActive)
                 return;
 
             CompletePendingSolverForTeardown();
@@ -356,7 +391,7 @@ namespace Hecton8.Animation.KineticCharacter
 
         private void OnDisable()
         {
-            if (_disposed || !Application.isPlaying)
+            if (_disposed || !_runtimeActive)
                 return;
 
             TryUnregister();
@@ -364,6 +399,7 @@ namespace Hecton8.Animation.KineticCharacter
             ClearGpuSkinningBinding();
             ReleaseVaultHandles();
             ClearHandles();
+            _runtimeActive = false;
         }
 
         private void OnDestroy()
@@ -385,12 +421,13 @@ namespace Hecton8.Animation.KineticCharacter
             ClearHandles();
             if (_activeRuntimeInstance == this)
                 _activeRuntimeInstance = null;
+            _runtimeActive = false;
             _disposed = true;
         }
 
         public void Tick(float deltaTime)
         {
-            if (_disposed || !Application.isPlaying)
+            if (_disposed || !_runtimeActive)
                 return;
 
             if (_solverScheduled && !TryFinalizePendingSolverNoWait())
@@ -544,7 +581,7 @@ namespace Hecton8.Animation.KineticCharacter
 
         public void LateFrameTick()
         {
-            if (_disposed || !Application.isPlaying)
+            if (_disposed || !_runtimeActive)
                 return;
 
             TryFinalizePendingSolverNoWait();
@@ -562,7 +599,6 @@ namespace Hecton8.Animation.KineticCharacter
             IDataVault currentVault = currentService is IDataVault nextVault ? nextVault : null;
             IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : null;
             BindDataVaultForLifecycle(currentVault, previousVault);
-            TryEnsureBlackBoxDumpRootCold();
             ClearGpuSkinningBinding();
             if (_dataVault != null)
             {
@@ -676,10 +712,9 @@ namespace Hecton8.Animation.KineticCharacter
         private void RefreshColdDependencies()
         {
             CacheDataVaultCold();
-            TryEnsureBlackBoxDumpRootCold();
             if (_cameraTransform == null)
             {
-                Camera camera = GetComponentInChildren<Camera>();
+                Camera camera = ComponentReferenceUtility.ResolveOwnedComponent<Camera>(transform);
                 if (camera != null)
                     _cameraTransform = camera.transform;
             }
@@ -1234,36 +1269,28 @@ namespace Hecton8.Animation.KineticCharacter
             if (vault == null)
                 return;
 
-            if (_blackBoxDumpRootCold == null || _blackBoxDumpRootCold.Length == 0)
-                return;
-
             Volatile.Write(ref _blackBoxDumpInFlight, 1);
-            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.TelemetryRing, in _telemetryHandle, 1, out NativeArray<KineticAnimationTelemetryEntry> telemetry) ||
-                !TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.TelemetryCursor, in _telemetryCursorHandle, 1, out NativeArray<int> cursor))
-            {
-                Volatile.Write(ref _blackBoxDumpInFlight, 0);
-                return;
-            }
-
-            if (!TryStageBlackBoxDumpSnapshot(telemetry, cursor))
-            {
-                Volatile.Write(ref _blackBoxDumpInFlight, 0);
-                return;
-            }
-
             try
             {
-                if (ThreadPool.QueueUserWorkItem(s_blackBoxDumpWorker, this))
+                if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.TelemetryRing, in _telemetryHandle, 1, out NativeArray<KineticAnimationTelemetryEntry> telemetry) ||
+                    !TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.TelemetryCursor, in _telemetryCursorHandle, 1, out NativeArray<int> cursor))
+                {
+                    return;
+                }
+
+                if (!TryStageBlackBoxDumpSnapshot(telemetry, cursor))
+                    return;
+
+                if (TryWriteBlackBoxSnapshotCold())
                 {
                     _dumpedFault = true;
                     return;
                 }
             }
-            catch (NotSupportedException)
+            finally
             {
+                Volatile.Write(ref _blackBoxDumpInFlight, 0);
             }
-
-            Volatile.Write(ref _blackBoxDumpInFlight, 0);
         }
 
         private bool TryStageBlackBoxDumpSnapshot(
@@ -1289,26 +1316,11 @@ namespace Hecton8.Animation.KineticCharacter
             }
 
             _blackBoxDumpSnapshotCount = KineticCharacterAnimatorConstants.TelemetryCapacity;
+            _blackBoxDumpSnapshotCursor = cursor;
             return true;
         }
 
-        private static void WriteBlackBoxDumpWorker(object state)
-        {
-            KineticCharacterAnimatorRuntime runtime = state as KineticCharacterAnimatorRuntime;
-            if (runtime == null)
-                return;
-
-            try
-            {
-                runtime.TryWriteBlackBoxSnapshotCold();
-            }
-            finally
-            {
-                Volatile.Write(ref runtime._blackBoxDumpInFlight, 0);
-            }
-        }
-
-        private bool TryWriteBlackBoxSnapshotCold()
+        private unsafe bool TryWriteBlackBoxSnapshotCold()
         {
             if (!KineticCharacterAnimatorLayout.Validate() ||
                 _blackBoxDumpSnapshot == null ||
@@ -1317,63 +1329,66 @@ namespace Hecton8.Animation.KineticCharacter
                 return false;
             }
 
+            uint hash = 2166136261u ^ (uint)_blackBoxDumpSnapshotCount;
+            int entryBytes = UnsafeUtility.SizeOf<KineticAnimationTelemetryEntry>();
+            int count = KineticCharacterAnimatorConstants.TelemetryCapacity;
+            const int telemetryDumpEntryBytes = 64;
+            if (entryBytes != telemetryDumpEntryBytes)
+                return false;
+
+            for (int i = 0; i < count; i++)
+            {
+                KineticAnimationTelemetryEntry entry = _blackBoxDumpSnapshot[i];
+                byte* bytes = (byte*)UnsafeUtility.AddressOf(ref entry);
+                for (int byteIndex = 0; byteIndex < entryBytes; byteIndex++)
+                    hash = (hash ^ bytes[byteIndex]) * 16777619u;
+            }
+
+            _blackBoxDumpHash = hash == 0u ? 2166136261u : hash;
+            const int headerBytes = 24;
+
+            int byteCount = headerBytes + count * telemetryDumpEntryBytes;
+            NativeArray<byte> payload = default;
             try
             {
-                string root = _blackBoxDumpRootCold;
-                if (root == null || root.Length == 0)
-                    root = ".";
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(KineticCharacterAnimatorRuntime),
+                    BlackBoxDumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                Span<byte> header = new Span<byte>(destination, headerBytes);
+                WriteUIntLittleEndian(header.Slice(0, 4), 0x4B424F4Eu);
+                WriteUIntLittleEndian(header.Slice(4, 4), 1u);
+                WriteUIntLittleEndian(header.Slice(8, 4), (uint)_blackBoxDumpSnapshotCount);
+                WriteUIntLittleEndian(header.Slice(12, 4), (uint)_blackBoxDumpSnapshotCursor);
+                WriteUIntLittleEndian(header.Slice(16, 4), (uint)entryBytes);
+                WriteUIntLittleEndian(header.Slice(20, 4), _blackBoxDumpHash);
 
-                string path = Path.Combine(root, KineticCharacterAnimatorConstants.DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (directory != null && directory.Length != 0)
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                byte* rowDestination = destination + headerBytes;
+                for (int i = 0; i < count; i++)
                 {
-                    for (int i = 0; i < KineticCharacterAnimatorConstants.TelemetryCapacity; i++)
-                        WriteBlackBoxEntry(writer, _blackBoxDumpSnapshot[i]);
+                    KineticAnimationTelemetryEntry entry = _blackBoxDumpSnapshot[i];
+                    UnsafeUtility.MemCpy(rowDestination + i * telemetryDumpEntryBytes, UnsafeUtility.AddressOf(ref entry), telemetryDumpEntryBytes);
                 }
 
-                return true;
+                return NativeFaultDumpWriter.TryWriteAll("Docs/AgentLogs/Dump_1403_KINETIC_CHARACTER.bin", payload, byteCount);
             }
-            catch (IOException)
+            finally
             {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                return false;
-            }
-            catch (ObjectDisposedException)
-            {
-                return false;
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(KineticCharacterAnimatorRuntime),
+                    BlackBoxDumpPayloadLabel);
             }
         }
 
-        private static void WriteBlackBoxEntry(BinaryWriter writer, KineticAnimationTelemetryEntry entry)
+        private static void WriteUIntLittleEndian(Span<byte> destination, uint value)
         {
-            writer.Write(entry.RootSectorX);
-            writer.Write(entry.RootSectorY);
-            writer.Write(entry.RootSectorZ);
-            writer.Write(entry.RootLocal.x);
-            writer.Write(entry.RootLocal.y);
-            writer.Write(entry.RootLocal.z);
-            writer.Write(entry.Frame);
-            writer.Write(entry.BonesEvaluated);
-            writer.Write(entry.AverageIkIterations);
-            writer.Write(entry.CpuTimeMicroseconds);
-            writer.Write(entry.StateHash);
-            writer.Write(entry.Flags);
-            writer.Write(entry.GlobalQualityWeight);
+            destination[0] = (byte)value;
+            destination[1] = (byte)(value >> 8);
+            destination[2] = (byte)(value >> 16);
+            destination[3] = (byte)(value >> 24);
         }
 
         private bool UploadMatricesToGpu()
@@ -1609,35 +1624,6 @@ namespace Hecton8.Animation.KineticCharacter
             if (buffer.IsValid())
                 buffer.Release();
             buffer = null;
-        }
-
-        private bool TryEnsureBlackBoxDumpRootCold()
-        {
-            if (_blackBoxDumpRootCold != null && _blackBoxDumpRootCold.Length != 0)
-                return true;
-
-            string dataPath = Application.dataPath;
-            if (dataPath == null || dataPath.Length == 0)
-            {
-                _blackBoxDumpRootCold = ".";
-                return true;
-            }
-
-            try
-            {
-                _blackBoxDumpRootCold = Path.GetFullPath(Path.Combine(dataPath, ".."));
-                return _blackBoxDumpRootCold.Length != 0;
-            }
-            catch (ArgumentException)
-            {
-                _blackBoxDumpRootCold = ".";
-                return true;
-            }
-            catch (NotSupportedException)
-            {
-                _blackBoxDumpRootCold = ".";
-                return true;
-            }
         }
 
         private void OnDrawGizmosSelected()

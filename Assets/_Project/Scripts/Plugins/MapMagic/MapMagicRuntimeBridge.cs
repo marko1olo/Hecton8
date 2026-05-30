@@ -474,7 +474,7 @@ namespace Hecton8.Core
         public override void SlowTick()
         {
             RefreshRuntimeSceneBindingDiagnostics();
-            RefreshTerrainTileCache(force: false);
+            ValidateTerrainTileCacheOwnerPhase();
             UpdateLastResolvedTerrainTileOwnerPhase();
             PrewarmBiomeAlphaTextureCacheOwnerPhase();
             DetectAndPublishBiome();

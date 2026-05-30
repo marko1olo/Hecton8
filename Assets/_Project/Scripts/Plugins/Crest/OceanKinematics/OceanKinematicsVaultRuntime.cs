@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -203,19 +204,10 @@ namespace Hecton8.Physics
                 return false;
 
             string path = Path.Combine(Directory.GetCurrentDirectory(), OceanKinematicsConstants.DumpRelativePath);
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
             int count = math.min(telemetryRing.Length, OceanKinematicsConstants.TelemetryCapacity);
             int bytes = count * UnsafeUtility.SizeOf<OceanKinematicsTelemetryEntry>();
             void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            {
-                stream.Write(new ReadOnlySpan<byte>(ptr, bytes));
-            }
-
-            return true;
+            return NativeFaultDumpWriter.TryWriteAll(path, new ReadOnlySpan<byte>(ptr, bytes), bytes);
         }
 
         private static OceanMacroStateDTO BuildMacroState(

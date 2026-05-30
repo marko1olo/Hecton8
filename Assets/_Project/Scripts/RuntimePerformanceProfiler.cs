@@ -51,6 +51,7 @@ namespace Hecton8.Dev
         private const string RuntimeFrozenRecoveredTraceMessage = "reason=fallback-recovered";
         private const string RuntimeVramBudgetTraceMessage = "VRAM OVER BUDGET";
         private const string SceneSnapshotTraceMessage = "scene snapshot";
+        private static readonly double StopwatchTicksToSeconds = 1d / System.Diagnostics.Stopwatch.Frequency;
 #if UNITY_EDITOR
         private const int MaxDirtyPlayRetryAttempts = 3;
         private const int FrozenFallbackStallWarningWindowThreshold = 5;
@@ -590,7 +591,7 @@ namespace Hecton8.Dev
                 _scatterBackendShadowPumpRecorder.Valid;
 
             ResetSampleWindow();
-            _lastDriveRealtimeSinceStartup = Application.isPlaying ? Time.realtimeSinceStartup : 0f;
+            _lastDriveRealtimeSinceStartup = ResolveProfilerMonotonicTimeSeconds();
             _lastEditorUpdateTime = 0d;
             _editorFallbackPumpThresholdSeconds = Mathf.Max(0.25f, sceneSnapshotDelaySeconds);
             _nextEditorFallbackTraceTime = 0f;
@@ -964,7 +965,7 @@ namespace Hecton8.Dev
 
         private void DriveSampling(float deltaTime, bool usingFallbackUpdate)
         {
-            float realtimeNow = Application.isPlaying ? Time.realtimeSinceStartup : 0f;
+            float realtimeNow = ResolveProfilerMonotonicTimeSeconds();
             float realtimeDeltaTime = 0f;
             if (_lastDriveRealtimeSinceStartup > 0f)
                 realtimeDeltaTime = Mathf.Max(0f, realtimeNow - _lastDriveRealtimeSinceStartup);
@@ -1169,7 +1170,7 @@ namespace Hecton8.Dev
                 _loggedPausedFrozenFallback = true;
             }
 
-            float realtimeNow = Application.isPlaying ? Time.realtimeSinceStartup : 0f;
+            float realtimeNow = ResolveProfilerMonotonicTimeSeconds();
             bool shouldEmit =
                 _invalidFrozenWindowCount == 1 ||
                 isPaused ||
@@ -1305,6 +1306,30 @@ namespace Hecton8.Dev
             autoStartNewGameDelaySeconds = Mathf.Clamp(autoStartNewGameDelaySeconds, 0f, 30f);
         }
 
+        private static float ResolveProfilerUnscaledTimeSeconds()
+        {
+            if (!Application.isPlaying)
+                return 0f;
+
+            double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (double.IsNaN(now) || double.IsInfinity(now) || now <= 0d)
+                return 0f;
+
+            return now >= float.MaxValue ? float.MaxValue : (float)now;
+        }
+
+        private static float ResolveProfilerMonotonicTimeSeconds()
+        {
+            if (!Application.isPlaying)
+                return 0f;
+
+            double now = System.Diagnostics.Stopwatch.GetTimestamp() * StopwatchTicksToSeconds;
+            if (double.IsNaN(now) || double.IsInfinity(now) || now <= 0d)
+                return 0f;
+
+            return now >= float.MaxValue ? float.MaxValue : (float)now;
+        }
+
         private void ApplyAutoBootstrapDefaults()
         {
             startProfilingOnEnable = true;
@@ -1324,7 +1349,7 @@ namespace Hecton8.Dev
             if (budgetViolationLogCooldownSeconds <= 0f)
                 return true;
 
-            float now = Application.isPlaying ? Time.unscaledTime : 0f;
+            float now = ResolveProfilerUnscaledTimeSeconds();
             if (now < nextAllowedTime)
                 return false;
 
@@ -1374,7 +1399,7 @@ namespace Hecton8.Dev
 
             _pendingSceneSnapshot = true;
             _pendingSceneSnapshotDelay = sceneSnapshotDelaySeconds;
-            _pendingSceneSnapshotDueRealtime = (Application.isPlaying ? Time.realtimeSinceStartup : 0f) + _pendingSceneSnapshotDelay;
+            _pendingSceneSnapshotDueRealtime = ResolveProfilerMonotonicTimeSeconds() + _pendingSceneSnapshotDelay;
             _pendingSceneSnapshotSceneName = string.IsNullOrWhiteSpace(sceneName) ? "Unknown" : sceneName;
             _pendingSceneSnapshotReason = string.IsNullOrWhiteSpace(reason) ? "runtime" : reason;
             _debugPendingSceneSnapshot = $"{_pendingSceneSnapshotSceneName}@{_pendingSceneSnapshotDelay:0.0}s";
@@ -1385,7 +1410,7 @@ namespace Hecton8.Dev
             if (!_pendingSceneSnapshot)
                 return;
 
-            if (TryCapturePendingSceneSnapshotByRealtime(Application.isPlaying ? Time.realtimeSinceStartup : 0f))
+            if (TryCapturePendingSceneSnapshotByRealtime(ResolveProfilerMonotonicTimeSeconds()))
                 return;
 
             _pendingSceneSnapshotDelay -= Mathf.Max(0f, deltaTime);
@@ -1407,7 +1432,7 @@ namespace Hecton8.Dev
 
             _pendingAutoStartNewGame = true;
             _pendingAutoStartDelay = Mathf.Max(sceneSnapshotDelaySeconds, autoStartNewGameDelaySeconds);
-            _pendingAutoStartDueRealtime = (Application.isPlaying ? Time.realtimeSinceStartup : 0f) + _pendingAutoStartDelay;
+            _pendingAutoStartDueRealtime = ResolveProfilerMonotonicTimeSeconds() + _pendingAutoStartDelay;
             _debugPendingAutoStart = $"{sceneName}@{_pendingAutoStartDelay:0.0}s";
         }
 
@@ -1416,7 +1441,7 @@ namespace Hecton8.Dev
             if (!_pendingAutoStartNewGame || _autoStartNewGameTriggered)
                 return;
 
-            if (TryProcessPendingAutoStartByRealtime(Application.isPlaying ? Time.realtimeSinceStartup : 0f))
+            if (TryProcessPendingAutoStartByRealtime(ResolveProfilerMonotonicTimeSeconds()))
                 return;
 
             _pendingAutoStartDelay -= Mathf.Max(0f, deltaTime);
@@ -1473,7 +1498,7 @@ namespace Hecton8.Dev
             {
                 _pendingAutoStartDelay = 0.5f;
                 _pendingAutoStartNewGame = true;
-                _pendingAutoStartDueRealtime = (Application.isPlaying ? Time.realtimeSinceStartup : 0f) + _pendingAutoStartDelay;
+                _pendingAutoStartDueRealtime = ResolveProfilerMonotonicTimeSeconds() + _pendingAutoStartDelay;
                 _debugPendingAutoStart = "retry";
                 RuntimeDiagnosticsTrace.WriteEvent("menu.auto_start", "retry reason=MainMenuControllerMissing");
                 return;
@@ -1831,7 +1856,7 @@ namespace Hecton8.Dev
             if (editorDeltaTime <= 0.0001f)
                 return;
 
-            float realtimeNow = Application.isPlaying ? Time.realtimeSinceStartup : 0f;
+            float realtimeNow = ResolveProfilerMonotonicTimeSeconds();
             TryCapturePendingSceneSnapshotByRealtime(realtimeNow);
             TryProcessPendingAutoStartByRealtime(realtimeNow);
             float silenceDuration = realtimeNow - _lastDriveRealtimeSinceStartup;
@@ -1905,7 +1930,7 @@ namespace Hecton8.Dev
             if (!RuntimeDiagnosticsTrace.IsActive)
                 return false;
 
-            float now = Application.isPlaying ? Time.unscaledTime : 0f;
+            float now = ResolveProfilerUnscaledTimeSeconds();
             if (now < _nextOwnershipAuditAllowedTime)
                 return false;
 
@@ -1919,7 +1944,7 @@ namespace Hecton8.Dev
         private void CaptureRendererOwnershipAudit()
         {
             if (Application.isPlaying)
-                _nextOwnershipAuditAllowedTime = Time.unscaledTime + rendererOwnershipAuditCooldownSeconds;
+                _nextOwnershipAuditAllowedTime = ResolveProfilerUnscaledTimeSeconds() + rendererOwnershipAuditCooldownSeconds;
 
             _auditScatterFamilies.Clear();
             _auditGeologyFamilies.Clear();

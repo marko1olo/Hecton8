@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Hecton8.Optimization
 {
     /// <summary>
-    /// VRAM budget thresholds for target hardware (NVIDIA MX350 2GB).
+    /// VRAM budget thresholds for compact discrete and shared-memory graphics profiles.
     /// </summary>
     [Serializable]
     [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
@@ -33,9 +33,9 @@ namespace Hecton8.Optimization
         public long RenderTextureMemoryBudgetBytes;
         
         /// <summary>
-        /// Total VRAM budget in bytes (default 1.8 GB hard ceiling for MX350).
+        /// Total VRAM budget in bytes (default 1.8 GB compact discrete ceiling).
         /// </summary>
-        [Tooltip("Total VRAM budget in bytes (default 1.8 GB hard ceiling for MX350).")]
+        [Tooltip("Total VRAM budget in bytes (default 1.8 GB compact discrete ceiling).")]
         public long TotalVRAMBudgetBytes;
         
         /// <summary>
@@ -63,7 +63,7 @@ namespace Hecton8.Optimization
         public long UIRTBudgetBytes;
         
         /// <summary>
-        /// Returns the MX350 baseline budget thresholds.
+        /// Returns the compact discrete baseline budget thresholds.
         /// </summary>
         public static VRAMBudgetThresholds Default => new VRAMBudgetThresholds
         {
@@ -77,7 +77,7 @@ namespace Hecton8.Optimization
         };
 
         /// <summary>
-        /// Returns profile-aware runtime thresholds for known hardware, otherwise the MX350 baseline.
+        /// Returns profile-aware runtime thresholds for known shared-memory, generic shared-memory, and discrete hardware classes.
         /// </summary>
         /// <remarks>Cold-path only; callers should cache the returned value.</remarks>
         public static VRAMBudgetThresholds RuntimeDefault
@@ -101,12 +101,25 @@ namespace Hecton8.Optimization
                         HardwareProfileCatalog.Quest3RenderTargetBudgetMegabytes);
                 }
 
-                return Default;
+                if (HardwareTierDetector.SharedMemoryModeActive)
+                {
+                    int totalBudgetMegabytes = HardwareTierDetector.RecommendedVramBudgetMegabytes;
+                    return CreateProfileThresholds(
+                        totalBudgetMegabytes,
+                        Mathf.Clamp(totalBudgetMegabytes / 2, 512, 1536),
+                        Mathf.Clamp(totalBudgetMegabytes / 4, 192, 384));
+                }
+
+                int discreteTotalBudgetMegabytes = HardwareTierDetector.RecommendedVramBudgetMegabytes;
+                return CreateProfileThresholds(
+                    discreteTotalBudgetMegabytes,
+                    Mathf.Clamp(discreteTotalBudgetMegabytes / 2, DefaultTextureBudgetMegabytes, 3072),
+                    Mathf.Clamp(discreteTotalBudgetMegabytes / 8, DefaultRenderTextureBudgetMegabytes, 768));
             }
         }
 
         /// <summary>
-        /// Replaces only untouched MX350 default thresholds with profile-aware runtime thresholds.
+        /// Replaces only untouched compact default thresholds with profile-aware runtime thresholds.
         /// </summary>
         /// <param name="current">Current serialized threshold values.</param>
         /// <returns>Profile-aware thresholds when the input is the untouched default; otherwise the input value.</returns>

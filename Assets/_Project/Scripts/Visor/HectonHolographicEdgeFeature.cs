@@ -98,7 +98,7 @@ namespace Hecton8.Visor
                     builder.SetRenderAttachment(colorTexture, 0, AccessFlags.ReadWrite);
                     builder.SetRenderAttachmentDepth(depthTexture, AccessFlags.Read);
 
-                    builder.SetRenderFunc((PassData data, RasterGraphContext context) =>
+                    builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
                     {
                         HectonScanRenderRegistry.DrawRenderers(context.cmd, data.material, data.requiredFlags, data.maxDrawnTargets);
                     });

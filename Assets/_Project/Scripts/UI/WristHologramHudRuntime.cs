@@ -2115,7 +2115,6 @@ namespace Hecton8.UI
             int entrySize = UnsafeUtility.SizeOf<WristHudTelemetryEntry>();
             int telemetryCapacity = telemetry.Length;
             int payloadBytes = telemetryCapacity * entrySize;
-            telemetry = default;
             WristHudBlackBoxDumpHeader header = new WristHudBlackBoxDumpHeader
             {
                 Magic = BlackBoxDumpMagic,
@@ -2128,19 +2127,29 @@ namespace Hecton8.UI
                 PayloadBytes = payloadBytes
             };
 
-            _blackBoxDumped = true;
+            int headerBytes = UnsafeUtility.SizeOf<WristHudBlackBoxDumpHeader>();
+            int byteCount = headerBytes + payloadBytes;
+            NativeArray<byte> payload = default;
             try
             {
-                string directory = Path.Combine(ResolveProjectRoot(), "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, "Dump_1335_WristHologramHud.bin");
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(WristHologramHudRuntime),
+                    "wristHudBlackBoxDumpPayload",
+                    NativeArrayOptions.ClearMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                UnsafeUtility.MemCpy(destination, UnsafeUtility.AddressOf(ref header), headerBytes);
+                byte* rowDestination = destination + headerBytes;
+                for (int i = 0; i < telemetryCapacity; i++)
                 {
-                    stream.Write(MemoryMarshal.CreateReadOnlySpan(
-                        ref UnsafeUtility.AsRef<byte>(&header),
-                        UnsafeUtility.SizeOf<WristHudBlackBoxDumpHeader>()));
-                    WriteWristHudTelemetryDump(stream, telemetryCapacity, entrySize);
+                    WristHudTelemetryEntry row = telemetry[i];
+                    UnsafeUtility.MemCpy(rowDestination + i * entrySize, UnsafeUtility.AddressOf(ref row), entrySize);
                 }
+
+                telemetry = default;
+
+                if (NativeFaultDumpWriter.TryWriteAll("Docs/AgentLogs/Dump_1335_WristHologramHud.bin", payload, byteCount))
+                    _blackBoxDumped = true;
             }
             catch (IOException)
             {
@@ -2166,19 +2175,12 @@ namespace Hecton8.UI
             {
                 Hecton8.Core.H8Debug.LogError("Agent1335 wrist HUD blackbox dump failed.");
             }
-        }
-
-        private void WriteWristHudTelemetryDump(FileStream stream, int telemetryCapacity, int entrySize)
-        {
-            if (stream == null || telemetryCapacity <= 0 || entrySize <= 0)
-                return;
-
-            for (int i = 0; i < telemetryCapacity; i++)
+            finally
             {
-                if (!TryReadWristHudTelemetryRow(i, out WristHudTelemetryEntry row))
-                    return;
-
-                stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(&row), entrySize));
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(WristHologramHudRuntime),
+                    "wristHudBlackBoxDumpPayload");
             }
         }
 

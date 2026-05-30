@@ -19,7 +19,7 @@ namespace Hecton8.Physics
         public const int TelemetryCapacity = 300;
         public const int ProfileCapacity = 32;
 #if UNITY_EDITOR
-        public const int CsvScratchBytes = 65536;
+        public const int CsvImportByteCapacity = 65536;
 #endif
         public const int CounterCapacity = 4;
 
@@ -64,9 +64,6 @@ namespace Hecton8.Physics
         public const BufferID MacroGrid = BufferID.Shinobu263WaveMacroGrid;
         public const BufferID TelemetryRing = BufferID.Shinobu263WaveTelemetryRing;
         public const BufferID TelemetryCursor = BufferID.Shinobu263WaveTelemetryCursor;
-#if UNITY_EDITOR
-        public const BufferID CsvScratch = BufferID.Shinobu263WaveCsvScratch;
-#endif
         public const BufferID Profiles = BufferID.Shinobu263WaveProfiles;
         public const BufferID Counters = BufferID.Shinobu263WaveCounters;
     }

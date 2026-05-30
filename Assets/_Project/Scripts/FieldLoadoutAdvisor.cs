@@ -523,9 +523,25 @@ namespace Hecton8.Gameplay
             if (source == null)
                 return null;
 
-            return source.TryGetComponent(out T local)
-                ? local
-                : source.GetComponentInParent<T>();
+            if (source.TryGetComponent(out T local))
+                return local;
+
+            return TryResolveComponentInParents(source.transform.parent, out T parent)
+                ? parent
+                : null;
+        }
+
+        private static bool TryResolveComponentInParents<T>(Transform current, out T component) where T : Component
+        {
+            component = null;
+
+            for (; current != null; current = current.parent)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool TryGetForwardTargetInfo(Transform origin, float range, LayerMask mask, out ForwardTargetInfo target)

@@ -467,3 +467,147 @@ Solution: move dependency repair to cold lifecycle and explicit owner-rebind rou
 Rejected Alternatives: sampling-frame polling, adding cave/zone slots to `GlobalRegistry` without an architecture route card, or accepting active-singleton repair from the field sampler because it is not a MonoBehaviour `Tick`.
 Scalability potential: low tier avoids dependency repair spikes in procedural scatter/heightmap sampling; middle/high/ultra can keep cave entrance hint influence and richer biome field sampling without adding hot scene lookup.
 Hardware Impact: exact profiler microseconds not measured; removes hidden resolver branch from sampling data-prep and prevents absent-owner repair from running on i3/MX350 sampling frames.
+
+Problem: `WorldZoneDirector` no longer polled slice/scatter owners directly, but its dependent systems still repaired player/MapMagic/scavenge/proximity/biome references from `SlowTick`, keeping a transitive resolver route alive.
+Solution: add static active-owner events to `ScatterBudgetController`, `WorldSliceDirector`, `BiomeSamplerCache`, and `ProximityColliderSystem`; move player/MapMagic/scavenge rebinding to cold `GlobalRegistry` lifecycle/hot-swap routes; make hot methods read cached `IPlayerRuntimeContext`, cached owner references, or fail closed.
+Rejected Alternatives: leaving dependency repair in `ApplyCurrentBudget`, `ApplySlices`, `RebuildCache`, or `ProximityColliderSystem.Tick` because missing-reference retries are rare; rare retries still create nondeterministic stalls on weak hardware.
+Scalability potential: low tier avoids scene/registry probing while moving through dense cave entrances and overhang transition zones; middle/high/ultra keep continuous budgets, larger scatter radii, and proximity collider work without changing authority routes.
+Hardware Impact: exact profiler microseconds not measured; removes transitive resolver work from zone/scatter/slice/biome/proximity frame phases.
+
+Problem: `WorldGenerativeGeologyTerrainSeamApplier.SlowTick` reached a method that could allocate terrain bucket lists when the cold pool was not initialized.
+Solution: split hybrid terrain seam initialization into `EnsureHybridTerrainSeamStateCold` and `HasHybridTerrainSeamState`; hot signal drain now exits if cold state is absent, and terrain state binding rejects absent pools instead of allocating from owner phase.
+Rejected Alternatives: relying on `Awake` to have already initialized pools while leaving a cold allocator visible and callable from the hot route.
+Scalability potential: low tier keeps terrain seam signal drain bounded and allocation-free; middle/high/ultra can spend saved stability budget on richer voxel blend masks without moving pool creation into `SlowTick`.
+Hardware Impact: exact profiler microseconds not measured; removes fixed-list construction possibility from terrain seam signal drain.
+
+Problem: `HectonMapMagicVegetationBridge.LateFrameTick` deferred startup called `RefreshColdRuntimeDependencies`, which still used `WorldRuntimeReferenceUtility.TryResolve`.
+Solution: replace resolver calls with cold `GlobalRegistry.MapMagic` and cached `GlobalRegistry.Player` context reads; existing hot-swap updates remain the live rebinding path.
+Rejected Alternatives: treating deferred startup as acceptable because it runs inside `LateFrameTick`; visual-sync/deferred phases still must not search scene state.
+Scalability potential: low tier avoids late-frame startup hitches around vegetation/cave hole sync; middle/high/ultra preserve deferred tile bootstrap and richer HLOD vegetation without resolver drift.
+Hardware Impact: exact profiler microseconds not measured; removes late-frame resolver calls from vegetation startup.
+
+Problem: `MapMagicRuntimeBridge.SlowTick` called a wrapper containing both owner-phase tile-cache validation and cold hierarchy traversal with `GetComponentsInChildren`.
+Solution: call `ValidateTerrainTileCacheOwnerPhase` directly from `SlowTick`; cold terrain tile cache rebuild remains only on explicit force paths.
+Rejected Alternatives: relying on branch reasoning (`force == false`) as proof while static verification still sees the cold traversal in the hot method body.
+Scalability potential: low tier keeps terrain tile validation as cached list compaction; middle/high/ultra can still rebuild large terrain tile caches deliberately from cold routes.
+Hardware Impact: exact profiler microseconds not measured; removes the structural hot path to terrain hierarchy traversal.
+
+Problem: `BiomeSamplerCache.SlowTick` still reached sample-array allocation when `radiusCells` changed or storage was missing.
+Solution: split sample storage into `EnsureStorageCold` and `HasStorageForCurrentShape`; hot rebuild now fails closed and keeps diagnostics accurate instead of allocating.
+Rejected Alternatives: trusting inspector values to stay unchanged after startup or resizing `CachedSample[]` from a slow-tick sampler.
+Scalability potential: low tier avoids a managed allocation spike near biome/heightmap transitions; middle/high/ultra can raise radius through cold-authored settings without changing hot authority.
+Hardware Impact: removes rare `CachedSample[]` runtime allocation; exact microseconds not profiler-measured.
+
+Problem: vegetation deferred startup in `LateFrameTick` could resize startup tile snapshots and call a cold dependency refresh.
+Solution: replace the growable snapshot array with a fixed cold array sized to the tile cache budget, clamp copied snapshot count, and rely on lifecycle/hot-swap references already cached before the visual-sync phase.
+Rejected Alternatives: growing snapshot arrays or touching `GlobalRegistry` from deferred startup because bootstrap is rare.
+Scalability potential: low tier avoids late-frame startup stalls; middle/high/ultra preserve larger startup coverage through the fixed 4x tile-cache snapshot budget.
+Hardware Impact: removes rare `MapMagicTerrainTileSnapshot[]` resize and dependency polling from visual sync.
+
+Problem: terrain-hole runtime state could grow managed record arrays, streaming arrays, per-tile `bool[,]` masks, and height-readback NativeArrays from `SlowTick`/deferred startup.
+Solution: make terrain-hole record/streaming capacity fixed from cold `MinimumTerrainHoleRuntimeCapacity`, split terrain-hole mask prep into hot no-allocation and cold allocation paths, split tile upsert into cold event and deferred startup paths, and make slow readback repair validate resident storage instead of allocating it.
+Rejected Alternatives: per-tile managed mask allocation from `TryScheduleTerrainHoleJobs`, NativeArray repair from `SlowTick`, or expanding terrain-hole registries when cave/mega-wreck masks exceed authored capacity.
+Scalability potential: low tier keeps cave entrance vegetation suppression predictable and fail-closed; middle/high/ultra can increase serialized terrain-hole capacity before runtime without changing the hot route.
+Hardware Impact: removes rare managed `bool[,]`, `Texture2D[]`, `NativeArray<ushort>`, and terrain-hole array growth from hot/deferred phases; exact profiler microseconds not measured.
+
+Problem: `WorldCaveDirector.LateFrameTick` still reached `EnsureCaveVisualRuntimeState`, which could create `CaveVisualRuntimeState`, marker/geyser arrays, child GameObjects, and missing Light/ParticleSystem/Collider components if a visual-sync arrived before cold visual state was present.
+Solution: prepare cave visual runtime state immediately after the generated voxel volume has its cave key, generation position, preset, and entrances assigned; change late visual sync to `HasCaveVisualRuntimeState` so the phase consumes only cached state and skips if cold preparation failed.
+Rejected Alternatives: repairing missing visual state from `LateFrameTick`, or allowing presentation to create objects/components because cave generation is rare.
+Scalability potential: low tier avoids visual-sync hitches during cave entrance reveal; middle/high/ultra keep overkill dressing, entrance glow, geysers, roots, fungi, shelves, and tissue because cold preparation still builds the full cached presentation graph before the visual phase.
+Hardware Impact: removes one late-frame managed visual-state/object/component creation branch per missed cave visual-sync; exact profiler microseconds not measured.
+
+Problem: `WorldGenerativeGeologyTerrainSeamApplier.LateFrameTick` could allocate or resize the global voxel blend-mask `Texture2D` when the seam patch footprint changed.
+Solution: cold-prepare a fixed R8 blend-mask texture plus reusable byte upload buffer during lifecycle; copy active patch bytes into the fixed surface; pass active UV scale in `_HectonVoxelBlendMaskParams.zw` so the terrain shader samples only the valid subregion.
+Rejected Alternatives: moving texture allocation from `LateFrameTick` into `SlowTick`, accepting per-size texture churn, or disabling the terrain/voxel seam visual mask.
+Scalability potential: low tier gets deterministic bounded upload memory; middle/high/ultra keep the cinematic terrain/voxel blend mask and can raise `voxelBlendMaskTextureSide` deliberately without changing the phase route.
+Hardware Impact: removes late-frame texture allocation/resizing; per upload now copies only active patch bytes plus a one-pixel border into a resident buffer. Exact profiler microseconds not measured.
+
+Problem: `WorldGenerativeGeologyVoxelBridgeDirector.SpawnOrRefreshVolumeAsync` added `WorldGenerativeGeologyVoxelRuntime` to generated volumes with `AddComponent` after async voxel generation completed.
+Solution: require the pooled/generated voxel volume prefab to contain the runtime component from cold authoring; if the active runtime is absent, despawn the generated volume, write black-box fault state, and fail closed without structural mutation.
+Rejected Alternatives: adding the component after generation, searching for the component from the completion path, or letting a partially-owned volume enter active runtime dictionaries.
+Scalability potential: low tier avoids runtime component insertion stalls; middle/high/ultra can prewarm larger voxel pools with the same cold-authored component contract.
+Hardware Impact: removes one `AddComponent` branch per geology voxel volume creation; exact profiler microseconds not measured.
+
+Problem: voxel predictive proxy, voxel AUP, and camera-facing overhang noise still pulled player runtime state through `PlayerRuntimeContextService.TryGetActiveRuntimeContext`.
+Solution: cache `IPlayerRuntimeContext` from cold `GlobalRegistry.Player` and the `Player` hot-swap slot inside `HectonVoxelEngine`; hot helpers now read the cached context or fail closed to conservative noise/proxy behavior.
+Rejected Alternatives: using the global runtime-context singleton from static helpers because it is convenient; that preserves hot service-location in voxel pipeline/proxy decisions.
+Scalability potential: low tier avoids hidden player context lookup from proxy/noise decisions; middle/high/ultra keep the same predictive proxy and overhang noise decisions through a deterministic cached owner route.
+Hardware Impact: removes several context lookup branches from voxel runtime/proxy helpers; exact profiler microseconds not measured.
+
+Problem: `HectonMapMagicVegetationBridge.RefreshActiveViewCameraCache` resolved a camera through `playerTransform.TryGetComponent` and `PlayerRuntimeContextService` from a camera refresh path.
+Solution: cache the local camera only in cold lifecycle, cache `IPlayerRuntimeContext` through player service/hot-swap, and make camera refresh read only serialized camera, cached player camera, or cached local camera.
+Rejected Alternatives: retrying `TryGetComponent` on a timer or using runtime context singleton fallback when the camera is missing.
+Scalability potential: low tier avoids camera-binding scene probes around vegetation/cave-hole streaming; middle/high/ultra keep frustum culling and HLOD visuals through stable cached camera ownership.
+Hardware Impact: removes player/local component lookup from camera refresh; exact profiler microseconds not measured.
+
+Problem: `HectonVoxelStreamingBridge` and `ScavengePopulator` retained fallback player resolution from runtime methods.
+Solution: cache `IPlayerRuntimeContext` from `GlobalRegistry.Player` during cold refresh and update it via the `Player` hot-swap lane; runtime player AUP/scavenge binding uses the cached context only.
+Rejected Alternatives: calling `WorldRuntimeReferenceUtility.TryResolvePlayerTransform` or runtime context singleton from streaming/scavenge runtime paths.
+Scalability potential: low tier avoids hidden player lookup during cave entrance streaming and loot node population; middle/high/ultra keep the same content density with deterministic owner routes.
+Hardware Impact: removes fallback lookup branches from runtime player-dependent streaming and scavenge decisions; exact profiler microseconds not measured.
+
+Problem: the geology voxel bridge could configure its runtime without proving the generated volume's registered `HectonVoxelVolume` component came from the voxel engine active-volume registry.
+Solution: after async generation, require both the cold-authored `WorldGenerativeGeologyVoxelRuntime` and the registered `HectonVoxelVolume`; on either failure despawn the volume and write black-box fault flags.
+Rejected Alternatives: searching for the component from the completion path or allowing a partially registered volume to enter bridge runtime dictionaries.
+Scalability potential: low tier avoids orphan volume/component repair; middle/high/ultra can run larger geology voxel pools as long as prefabs satisfy the same cold-authoring contract.
+Hardware Impact: removes one completion-path component lookup/repair vector; exact profiler microseconds not measured.
+
+Problem: `GPUScatterDirector.SlowTick` called `ResolveDependencies`, which reached `WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge` and `TryResolvePlayerTransform`.
+Solution: split dependency ownership into `RefreshColdSceneDependencies` for `Awake`/`OnEnable`, direct `GlobalRegistryServiceSlot.MapMagicVegetationRuntime` hot-swap assignment, and `RefreshCachedRuntimeDependencies` that only consumes cached `IPlayerRuntimeContext`.
+Rejected Alternatives: resolving scene owners from `SlowTick`, or reading `GlobalRegistry.MapMagicVegetation` from the hot repair branch.
+Scalability potential: low tier avoids scatter slow-lane scene resolver spikes near dense vegetation/heightmap transitions; middle/high/ultra keep GPU scatter density and HLOD vegetation through cached owners.
+Hardware Impact: removes one transitive scene resolver path from GPU scatter slow tick; exact profiler microseconds not measured.
+
+Problem: optional GPU scatter visible-count diagnostics could allocate `NativeArray<uint>` from `SlowTick` through readback repair.
+Solution: prewarm diagnostic readback storage only in cold lifecycle when `_enableVisibleCountReadback` is enabled; slow repair now fails closed if storage is absent.
+Rejected Alternatives: creating persistent native readback storage from a runtime repair method because the feature is diagnostic-only.
+Scalability potential: low tier avoids surprise native allocation from inspector diagnostics; middle/high/ultra can enable the diagnostic with cold prewarm before runtime.
+Hardware Impact: removes one optional persistent native allocation from `SlowTick`; exact profiler microseconds not measured.
+
+Problem: biome heatmap refresh was guarded against allocation in `SlowTick`, but static callgraph still saw `SlowTick -> TryEnsureBiomeHeatmapTexture -> EnsureBiomeHeatmapResources`.
+Solution: split `TryEnsureBiomeHeatmapTextureCold` from `TryRefreshBiomeHeatmapTextureHot`; hot refresh updates resident bytes only if cold upload buffer and texture already exist.
+Rejected Alternatives: relying on branch guards as proof while keeping allocator-visible helper names in the hot callgraph.
+Scalability potential: low tier keeps biome/scatter shader LUT refresh allocation-free at runtime; middle/high/ultra preserve Data Monolith biome heatmap visuals through the same cold-authored texture.
+Hardware Impact: no new measured CPU gain beyond proof hardening; removes allocator path from hot callgraph.
+
+Problem: `HectonCaveVoxelLightingVolume.SlowTick` could call the resource ensure path, which creates spatial query arrays and a 3D texture when resources are missing or invalid.
+Solution: rename the allocator path to `EnsureResourcesCold`, call it from cold lifecycle and DataVault hot-swap only, and make `SlowTick` publish inactive/fail-closed globals until required resources are resident.
+Rejected Alternatives: repairing missing voxel-lighting resources from `SlowTick`, or letting cave lighting silently allocate when a DataVault swap invalidates backing state.
+Scalability potential: low tier avoids cave-lighting allocation spikes near cave entrances; middle/high/ultra keep the same voxel light volume quality when resources are cold-prepared.
+Hardware Impact: removes rare `SpatialQueryHit[]` and `Texture3D` allocation from slow runtime; exact profiler microseconds not measured.
+
+Problem: `GpuScatterLodManager.SlowTick` had a one-hop path to `GlobalRegistry.DataVault` and could repair GPU buffers and visible-count readback storage from the slow lane.
+Solution: make DataVault lookup a cold `RefreshCachedRegistryServicesCold` call, move GPU state creation to `OnEnable` and DataVault hot-swap, and make `SlowTick` fail closed if registry or GPU state is absent. Visible-count readback allocation is cold-only and slow repair only clears the repair request when storage is absent.
+Rejected Alternatives: throttled `GlobalRegistry` retry from `SlowTick`, recreating `GraphicsBuffer` from runtime repair, or allocating diagnostic `NativeArray<uint>` from slow repair.
+Scalability potential: low tier keeps scatter LOD predictable under streaming and registry churn; middle/high/ultra can run larger scatter buffers and optional readback diagnostics only when cold-prepared.
+Hardware Impact: removes one registry retry branch and multiple GPU/native allocation repair vectors from scatter LOD slow tick; exact profiler microseconds not measured.
+
+Problem: APEX verification required compile/syntax proof without build spam or disk JSON reports.
+Solution: used focused source callgraph parsing for hot direct/one-hop dependencies, focused DataVault writer scanning, target `git diff --check`, and the already-built Roslyn audit executable with `--output NUL`; no `dotnet build` was launched and `Test-Path NUL` returned false.
+Rejected Alternatives: full-solution `dotnet build`, writing audit JSON to disk, or treating PowerShell-hosted Roslyn as authoritative after it failed on a `System.Memory` binding mismatch.
+Scalability potential: no runtime effect; protects shared workstation CPU for other agents while preserving source-level proof.
+Hardware Impact: no game-frame impact; avoids full build CPU cost for this pass.
+
+Problem: generated geology for scatter arches, shelves, cave bridges, and rock packs was applied from `LateFrameTick` through `WorldProceduralScatterDirector`, but the service path could still create Unity components, child GameObjects, primitive renderers, and exact renderer arrays during VISUAL_SYNC.
+Solution: split generated geology into cold shell preparation and hot configuration. `WorldProceduralProxyInstance` prepares `__GENERATED_GEOLOGY` shells, `LODGroup`, `WorldGenerativeGeologyBinding`, `GeneratedRuntimeState`, LOD arrays, renderer arrays, and primitive shells from cold lifecycle/editor configuration. `WorldGenerativeGeologyService.TryApplyGeneratedGeologyHot` only reuses cached roots, cached binding/state, pre-sized arrays, and `WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisualHot`.
+Rejected Alternatives: allowing rare first-use `AddComponent`, `new GameObject`, `TryGetComponent`, or exact `Renderer[]` allocation from visual sync; moving the work to `SlowTick`; or disabling generated geology outright.
+Scalability potential: low tier fails closed if a prefab is not cold-prepared instead of stalling the frame; middle/high/ultra keep context-pack arches, canopies, cave bridges, and debris by raising authored pool/shell capacity before runtime.
+Hardware Impact: removes structural Unity mutation and managed array allocation from generated geology visual sync on i3/MX350; exact profiler microseconds not measured.
+
+Problem: the pass 40 hot route still paid a static primitive-runtime dictionary lookup, `GetInstanceID`, LOD child/name traversal, and primitive rename work while applying generated geology in VISUAL_SYNC.
+Solution: store prepared LOD roots, primitive GameObjects, MeshFilters, and MeshRenderers in `GeneratedRuntimeState` cold arrays; route scatter through `TryApplyPreparedGeneratedGeologyHot(WorldProceduralProxyInstance, request)`; use `WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisualCachedHot` and a no-rename hot assignment path.
+Rejected Alternatives: keeping `_RuntimeStates.TryGetValue` as "cheap enough", resolving host metadata through `WorldProceduralProxyInstance.TryGetCached` from the scatter frame, or reading child names to find LOD roots.
+Scalability potential: low tier avoids avoidable hash/name/child traversal while preserving the same primitive-shell impostor look; middle/high/ultra keep richer generated geology by increasing authored shell capacity before runtime.
+Hardware Impact: removes multiple per-primitive hash/name/child lookup operations from generated geology visual sync on i3/MX350; exact profiler microseconds not measured.
+
+Problem: cave dressing visual sync still configured primitive-shell details through child traversal and the shared primitive runtime dictionary, and adjacent entrance/geyser cleanup used root `GetChild`/hot name writes.
+Solution: extend each cave dressing builder with cold `GameObject/MeshFilter/MeshRenderer` caches and a `BuildPreparedCachedHot` route; `WorldCaveDirector` stores those caches in `CaveVisualRuntimeState`; entrance marker and thermal geyser cleanup now iterates cached state arrays.
+Rejected Alternatives: treating `_RuntimeStates.TryGetValue`, `GetInstanceID`, `GetChild`, and `.name` writes as cheap enough because cave dressing is sparse. Sparse spikes are still visible on weak CPUs during cave reveal.
+Scalability potential: low tier keeps cave dressing as prewarmed primitive impostors with zero structural repair; middle/high/ultra can raise authored dressing capacities before runtime without changing the visual-sync ownership route.
+Hardware Impact: removes per-primitive hash-table reads, child traversal, and hot name assignment from cave dressing presentation on i3/MX350; exact profiler microseconds not measured.
+
+Problem: `ThermalGeyser.Configure` and `CaveBioRootsGenerator.Configure` were reachable from cave visual sync; the former could call `TryGetComponent`, and the latter could allocate root spline buffers and traverse child transforms.
+Solution: keep `ThermalGeyser.Configure` as a pure parameter/current-volume update by moving runtime wiring to `CacheRuntimeWiringCold`; rename bio-root setup to `ConfigureCold` and call it during cave visual-state preparation, not from `ApplyBioRoots`.
+Rejected Alternatives: relying on Unity component fields being already populated while leaving the resolver/allocation call reachable from `LateFrameTick`.
+Scalability potential: low tier fails closed to already-prepared geysers/roots without visual-sync repair stalls; middle/high/ultra retain richer cave life dressing through cold prewarm and later visual animation.
+Hardware Impact: removes one `TryGetComponent` route and several managed array allocation routes from cave reveal visual sync; exact profiler microseconds not measured.

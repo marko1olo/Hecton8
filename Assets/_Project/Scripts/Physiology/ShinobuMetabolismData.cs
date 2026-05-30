@@ -46,7 +46,6 @@ namespace Hecton8.Physiology
         public const BufferID MetabolismTelemetryRingBuffer = (BufferID)70270;
         public const BufferID MetabolismTuningBuffer = (BufferID)70271;
         public const BufferID MetabolismToxinSamplesBuffer = (BufferID)70272;
-        public const BufferID MetabolismCsvScratchBuffer = (BufferID)70273;
         public const BufferID MetabolismPhysiologySignalsBuffer = (BufferID)70274;
         public const BufferID MetabolismExposureSignalsBuffer = (BufferID)70275;
         public const BufferID MetabolismDetailTelemetryRingBuffer = (BufferID)73340;

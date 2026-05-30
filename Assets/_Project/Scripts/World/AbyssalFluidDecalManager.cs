@@ -22,6 +22,8 @@ namespace Hecton8.World
         private const byte FluidDecalDriftModeCurrent = 0;
         private const byte FluidDecalDriftModeCinematic = 1;
         private const float FluidDecalClockMaxSeconds = 16777215f;
+        private const int ScreenSpaceConsumerGraceFrames = 2;
+        private const float MinimumPressureSprayDrawFraction = 0.1875f;
 
         private struct FluidDecalState
         {
@@ -170,6 +172,8 @@ namespace Hecton8.World
         private bool _loggedMissingDecalMaterial;
         private bool _drawDecalsDirty;
         private bool _pressureSprayDrawDirty;
+        private bool _screenSpaceDecalConsumerSeen;
+        private int _lastScreenSpaceDecalCopyFrame;
         private int _pressureSprayMatrixCount;
 
         private void Awake()
@@ -462,7 +466,7 @@ namespace Hecton8.World
                 decal.PositionWS += driftDelta + decal.DriftVelocityWS * (ambientCurrentInfluence * deltaTime);
                 decal.Radius = MoveTowardsFast(decal.Radius, decal.TargetRadius, spreadSpeed * deltaTime);
                 _decalStates[i] = decal;
-                if (!screenSpaceFluidDecals)
+                if (ShouldDrawMeshFluidDecals())
                     _drawDecalsDirty = true;
             }
 
@@ -680,6 +684,10 @@ namespace Hecton8.World
                 return;
 
             Transform cameraTransform = ResolvePlayerCameraTransform();
+            int drawLimit = ResolvePressureSprayDrawLimit(
+                _pressureSprayMatrices != null ? _pressureSprayMatrices.Length : maxPressureSprayCount,
+                HomeostasisBrain.GlobalQualityWeight,
+                HomeostasisBrain.PressureLevel);
             int matrixCount = 0;
             for (int i = 0; i < _pressureSprayStates.Length; i++)
             {
@@ -697,7 +705,7 @@ namespace Hecton8.World
 
                 spray.PositionWS += driftDelta + spray.DirectionWS * (deltaTime * spray.Speed);
                 _pressureSprayStates[i] = spray;
-                AppendPressureSprayMatrix(in spray, cameraTransform, ref matrixCount);
+                AppendPressureSprayMatrix(in spray, cameraTransform, drawLimit, ref matrixCount);
             }
 
             _pressureSprayMatrixCount = matrixCount;
@@ -706,7 +714,7 @@ namespace Hecton8.World
 
         private void DrawActiveDecals()
         {
-            if (_decalStates == null || screenSpaceFluidDecals)
+            if (_decalStates == null || !ShouldDrawMeshFluidDecals())
                 return;
 
             for (int i = 0; i < _decalStates.Length; i++)
@@ -717,9 +725,9 @@ namespace Hecton8.World
             }
         }
 
-        private void AppendPressureSprayMatrix(in PressureSprayState spray, Transform cameraTransform, ref int matrixCount)
+        private void AppendPressureSprayMatrix(in PressureSprayState spray, Transform cameraTransform, int drawLimit, ref int matrixCount)
         {
-            if (_pressureSprayMatrices == null || matrixCount >= _pressureSprayMatrices.Length)
+            if (_pressureSprayMatrices == null || matrixCount >= _pressureSprayMatrices.Length || matrixCount >= drawLimit)
                 return;
 
             float alphaT = spray.TotalLifetime > 0.0001f ? Mathf.Clamp01(spray.RemainingLifetime / spray.TotalLifetime) : 0f;
@@ -819,6 +827,8 @@ namespace Hecton8.World
                 return 0;
             }
 
+            _screenSpaceDecalConsumerSeen = true;
+            _lastScreenSpaceDecalCopyFrame = Time.frameCount;
             int safeCapacity = Mathf.Min(capacity, matrices.Length, colors.Length);
             int count = 0;
             for (int i = 0; i < _decalStates.Length && count < safeCapacity; i++)
@@ -835,6 +845,20 @@ namespace Hecton8.World
             }
 
             return count;
+        }
+
+        internal static int ResolvePressureSprayDrawLimit(int capacity, float globalQualityWeight, byte pressureLevel)
+        {
+            int safeCapacity = math.max(0, capacity);
+            if (safeCapacity <= 0)
+                return 0;
+
+            float quality = Sanitize01(globalQualityWeight, 1f);
+            float pressure01 = math.saturate(pressureLevel / 3f);
+            float qualityScale = math.lerp(MinimumPressureSprayDrawFraction, 1f, Smooth01(quality));
+            float pressureScale = math.lerp(1f, MinimumPressureSprayDrawFraction, pressure01);
+            float drawFraction = math.max(MinimumPressureSprayDrawFraction, qualityScale * pressureScale);
+            return math.clamp((int)math.ceil(safeCapacity * drawFraction), 1, safeCapacity);
         }
 
         private static bool TryBuildFluidDecalDrawData(in FluidDecalState decal, out Matrix4x4 matrix, out Color drawColor)
@@ -854,6 +878,28 @@ namespace Hecton8.World
                 rotation,
                 new Vector3(decal.Radius * 2f, decal.Radius * 2f, 1f));
             return true;
+        }
+
+        private bool ShouldDrawMeshFluidDecals()
+        {
+            return !screenSpaceFluidDecals || !HasActiveScreenSpaceFluidDecalConsumer();
+        }
+
+        private bool HasActiveScreenSpaceFluidDecalConsumer()
+        {
+            return _screenSpaceDecalConsumerSeen &&
+                   Time.frameCount - _lastScreenSpaceDecalCopyFrame <= ScreenSpaceConsumerGraceFrames;
+        }
+
+        private static float Sanitize01(float value, float fallback)
+        {
+            return math.saturate(math.isfinite(value) ? value : fallback);
+        }
+
+        private static float Smooth01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
         }
 
         private void EnsureStorage()

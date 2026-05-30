@@ -38,7 +38,7 @@ namespace Hecton8.Gameplay
     /// Represents a fuel item in the reactor.
     /// </summary>
     [System.Serializable]
-    public class FuelItem
+    public struct FuelItem
     {
         public ItemData itemData;
         public float fuelValue; // Energy content
@@ -435,16 +435,16 @@ namespace Hecton8.Gameplay
         {
             RefreshColdRegistryReferences();
             _cachedTransform = transform;
-            _powerNode = GetComponent<PowerNode>();
-            _hostModule = GetComponent<BaseModule>();
+            TryGetComponent(out _powerNode);
+            TryGetComponent(out _hostModule);
             if (_hostModule == null)
-                _hostModule = GetComponentInParent<BaseModule>();
+                TryResolveParentComponent(_cachedTransform, out _hostModule);
             _emissionPropertyId = Shader.PropertyToID(string.IsNullOrEmpty(emissionProperty) ? "_EmissionColor" : emissionProperty);
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-renderer props — owner: BioReactor
             _fuelItems = new List<FuelItem>(maxFuelSlots); // COLD ALLOC: List<FuelItem>[maxFuelSlots] — fuel storage — owner: BioReactor
 
             if (fuelIndicator == null)
-                fuelIndicator = GetComponent<Renderer>();
+                TryGetComponent(out fuelIndicator);
         }
 
         private void OnEnable()
@@ -669,12 +669,10 @@ namespace Hecton8.Gameplay
 
             // Create fuel item
             float fuelValue = GetFuelValue(item);
-            var fuelItem = new FuelItem
-            {
-                itemData = item,
-                fuelValue = fuelValue,
-                remainingFuel = fuelValue
-            };
+            FuelItem fuelItem = default;
+            fuelItem.itemData = item;
+            fuelItem.fuelValue = fuelValue;
+            fuelItem.remainingFuel = fuelValue;
 
             _fuelItems.Add(fuelItem);
             _totalFuelCapacity += fuelValue;
@@ -749,6 +747,7 @@ namespace Hecton8.Gameplay
                 {
                     // Partial consumption
                     firstItem.remainingFuel -= amount;
+                    _fuelItems[_fuelHeadIndex + depletedCount] = firstItem;
                     _currentFuelLevel -= amount;
                     amount = 0;
                 }
@@ -1094,6 +1093,22 @@ namespace Hecton8.Gameplay
             return owner == null
                 ? 0
                 : unchecked((int)EntityId.ToULong(owner.GetEntityId()));
+        }
+
+        private static bool TryResolveParentComponent<T>(Transform start, out T component)
+            where T : Component
+        {
+            component = null;
+            Transform current = start != null ? start.parent : null;
+            while (current != null)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+
+                current = current.parent;
+            }
+
+            return false;
         }
 
         private void NotifyGridBalanceChanged()

@@ -231,6 +231,7 @@ namespace Hecton8.World
         private IPlayerRuntimeContext _playerContext;
         private IInputService _inputService;
         private PlayerToolManager _playerToolManager;
+        private bool _playerDependencyRefreshRequested = true;
         private RenderTexture _maskRead;
         private RenderTexture _maskWrite;
         private ComputeShader _stampCompute;
@@ -441,7 +442,7 @@ namespace Hecton8.World
             if (clampedStrength <= 0f)
                 return false;
 
-            ResolveDependencies(allowComponentLookup: false);
+            ResolveDependencies();
             RefreshMaskWorldRect();
 
             bool wroteMask = false;
@@ -591,7 +592,10 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
-            ResolveDependencies(allowComponentLookup: false);
+            if (_playerDependencyRefreshRequested || _playerTransform == null || _playerToolManager == null)
+                ResolveDependenciesCold(allowComponentLookup: false);
+            else
+                ResolveDependencies();
             _qualityResourceRefreshRequested = false;
             RefreshQualityDependentResourcesIfNeeded();
             RefreshMaskWorldRect();
@@ -630,14 +634,44 @@ namespace Hecton8.World
             }
         }
 
-        private void ResolveDependencies(bool allowComponentLookup = false)
+        private void ResolveDependencies()
         {
             if (mapMagicVegetationBridge == null)
                 mapMagicVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
 
-            Transform runtimePlayerTransform = BootstrapState.CurrentPlayerTransform;
-            if (runtimePlayerTransform == null && _playerContext != null)
-                runtimePlayerTransform = _playerContext.PlayerTransform;
+            Transform runtimePlayerTransform = _playerContext != null
+                ? _playerContext.PlayerTransform
+                : null;
+
+            if (runtimePlayerTransform != null)
+                _playerTransform = runtimePlayerTransform;
+            else if (_playerTransform == null)
+            {
+                _playerTransform = playerTransformOverride;
+                if (_playerTransform == null)
+                    _playerDependencyRefreshRequested = true;
+            }
+
+            if (_playerToolManager == null)
+            {
+                _playerToolManager = playerToolManagerOverride;
+                if (_playerToolManager == null && _playerContext != null)
+                    _playerToolManager = _playerContext.ToolManager;
+
+            }
+        }
+
+        private void ResolveDependenciesCold(bool allowComponentLookup)
+        {
+            if (mapMagicVegetationBridge == null)
+                mapMagicVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+
+            _playerDependencyRefreshRequested = false;
+            Transform runtimePlayerTransform = _playerContext != null
+                ? _playerContext.PlayerTransform
+                : null;
+            if (runtimePlayerTransform == null)
+                runtimePlayerTransform = BootstrapState.CurrentPlayerTransform;
 
             _playerTransform = runtimePlayerTransform != null ? runtimePlayerTransform : playerTransformOverride;
             if (_playerToolManager == null)
@@ -654,7 +688,6 @@ namespace Hecton8.World
                     _playerToolManager = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<PlayerToolManager>(_playerTransform);
                 }
             }
-
         }
 
         private void ResolveVisualDependencies()
@@ -668,7 +701,7 @@ namespace Hecton8.World
             _playerContext = GlobalRegistry.Player;
             _inputService = GlobalRegistry.Input;
             CacheDataVaultCold();
-            ResolveDependencies(allowComponentLookup: true);
+            ResolveDependenciesCold(allowComponentLookup: true);
             ResolveVisualDependencies();
         }
 
@@ -691,7 +724,7 @@ namespace Hecton8.World
                     _playerToolManager = null;
 
                 _playerContext = currentService as IPlayerRuntimeContext;
-                ResolveDependencies(allowComponentLookup: true);
+                ResolveDependenciesCold(allowComponentLookup: true);
                 return;
             }
 

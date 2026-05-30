@@ -1702,30 +1702,28 @@ namespace Hecton8.Gameplay
                 (uint)TelemetryWriteCursorIndex < (uint)views.TelemetryState.Length;
             uint cursor = stateReadable ? views.TelemetryState[TelemetryWriteCursorIndex] : 0u;
 
+            NativeArray<byte> payload = default;
             try
             {
-                string dumpPath = Path.Combine(
-                    Application.dataPath,
-                    "..",
-                    "Docs",
-                    "AgentLogs",
-                    "Dump_1417_CombatDamage.bin");
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = File.Open(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                const string dumpPath = "Docs/AgentLogs/Dump_1417_CombatDamage.bin";
+                const int HeaderBytes = 24;
+                int totalBytes = HeaderBytes + (count * CombatTelemetryEntrySizeBytes);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(CombatDamageRuntime),
+                    "CombatDamageTelemetryDumpPayload");
+                unsafe
                 {
-                    Span<byte> header = stackalloc byte[24];
+                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    Span<byte> header = new Span<byte>(target, HeaderBytes);
+                    header.Clear();
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), CombatTelemetryMagicLow);
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(4, 4), CombatTelemetryMagicHigh);
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(8, 4), (uint)count);
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(12, 4), (uint)CombatTelemetryEntrySizeBytes);
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(16, 4), cursor);
                     BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(20, 4), anomalyHash);
-                    stream.Write(header);
 
-                    Span<byte> entryBytes = stackalloc byte[CombatTelemetryEntrySizeBytes];
                     int start = cursor >= (uint)count && count > 0
                         ? (int)(cursor % (uint)count)
                         : 0;
@@ -1733,18 +1731,25 @@ namespace Hecton8.Gameplay
                     for (int i = 0; i < count; i++)
                     {
                         int index = (start + i) % count;
+                        Span<byte> entryBytes = new Span<byte>(target + HeaderBytes + (i * CombatTelemetryEntrySizeBytes), CombatTelemetryEntrySizeBytes);
                         WriteTelemetryEntry(entryBytes, views.TelemetryRing[index]);
-                        stream.Write(entryBytes);
                     }
                 }
 
-                _telemetryDumpedThisSession = true;
+                _telemetryDumpedThisSession = NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, totalBytes);
             }
             catch (IOException)
             {
             }
             catch (UnauthorizedAccessException)
             {
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(CombatDamageRuntime),
+                    "CombatDamageTelemetryDumpPayload");
             }
         }
 

@@ -1011,37 +1011,45 @@ namespace Hecton8.World
         private const ulong DumpMagic = 0x3031335F4E485348UL;
         private const int DumpVersion = 1;
 
-        public static void WriteTelemetryDump(string projectRoot, NativeArray<SpawnValidationTelemetryEntry> telemetry, int cursor)
+        public static unsafe void WriteTelemetryDump(string projectRoot, NativeArray<SpawnValidationTelemetryEntry> telemetry, int cursor)
         {
             if (!telemetry.IsCreated || telemetry.Length <= 0 || string.IsNullOrEmpty(projectRoot))
                 return;
 
             string path = Path.Combine(projectRoot, SpawnZoneSdfValidationConstants.DumpRelativePath);
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
+            int entrySize = UnsafeUtility.SizeOf<SpawnValidationTelemetryEntry>();
+            int totalBytes = 24 + telemetry.Length * entrySize;
+            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.ClearMemory);
 
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            try
             {
-                Span<byte> header = stackalloc byte[24];
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                Span<byte> header = new Span<byte>(destination, 24);
                 BinaryPrimitives.WriteUInt64LittleEndian(header.Slice(0, 8), DumpMagic);
                 BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), DumpVersion);
                 BinaryPrimitives.WriteInt32LittleEndian(header.Slice(12, 4), telemetry.Length);
                 BinaryPrimitives.WriteInt32LittleEndian(header.Slice(16, 4), cursor);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(20, 4), UnsafeUtility.SizeOf<SpawnValidationTelemetryEntry>());
-                stream.Write(header);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(20, 4), entrySize);
 
                 int start = cursor - telemetry.Length;
                 if (start < 0)
                     start = 0;
 
+                int offset = 24;
                 for (int i = 0; i < telemetry.Length; i++)
                 {
                     int slot = (start + i) % telemetry.Length;
                     SpawnValidationTelemetryEntry entry = telemetry[slot];
-                    ReadOnlySpan<SpawnValidationTelemetryEntry> entrySpan = MemoryMarshal.CreateReadOnlySpan(ref entry, 1);
-                    stream.Write(MemoryMarshal.AsBytes(entrySpan));
+                    UnsafeUtility.MemCpy(destination + offset, &entry, entrySize);
+                    offset += entrySize;
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
     }

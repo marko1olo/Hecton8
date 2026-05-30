@@ -2014,14 +2014,38 @@ namespace Hecton8.World.Outposts
             int startIndex = _telemetryWriteIndex;
             if ((uint)startIndex >= (uint)length)
                 startIndex = 0;
-
-            for (int offset = 0; offset < length; offset++)
+            int payloadBytes = TelemetryDumpHeaderBytes + length * TelemetryDumpEntryPayloadBytes;
+            NativeArray<byte> payload = default;
+            try
             {
-                int sourceIndex = startIndex + offset;
-                if (sourceIndex >= length)
-                    sourceIndex -= length;
+                payload = new NativeArray<byte>(payloadBytes, Allocator.Temp, NativeArrayOptions.ClearMemory);
+                int writeCursor = 0;
+                WriteUInt64LittleEndian(payload, ref writeCursor, TelemetryDumpMagic);
+                WriteUInt32LittleEndian(payload, ref writeCursor, TelemetryDumpVersion);
+                WriteUInt32LittleEndian(payload, ref writeCursor, unchecked((uint)length));
+                WriteUInt32LittleEndian(payload, ref writeCursor, unchecked((uint)TelemetryDumpEntryPayloadBytes));
+                WriteUInt32LittleEndian(payload, ref writeCursor, unchecked((uint)startIndex));
 
-                _ = telemetryRing[sourceIndex].Frame;
+                for (int offset = 0; offset < length; offset++)
+                {
+                    int sourceIndex = startIndex + offset;
+                    if (sourceIndex >= length)
+                        sourceIndex -= length;
+
+                    int rowEnd = writeCursor + TelemetryDumpEntryPayloadBytes;
+                    WriteTelemetryDumpEntry(payload, ref writeCursor, telemetryRing[sourceIndex]);
+                    if (writeCursor > rowEnd)
+                        return;
+
+                    writeCursor = rowEnd;
+                }
+
+                NativeFaultDumpWriter.TryWriteAll(TelemetryDumpPath, payload, writeCursor);
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 

@@ -948,9 +948,26 @@ namespace Hecton8.Thermodynamics
 
         private static void WriteReactorDumpFile(string path, void* ring, long bytes)
         {
-            _ = path;
-            _ = ring;
-            _ = bytes;
+            if (string.IsNullOrEmpty(path) ||
+                ring == null ||
+                bytes <= 0L ||
+                bytes > int.MaxValue)
+            {
+                return;
+            }
+
+            int byteCount = (int)bytes;
+            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            try
+            {
+                void* target = NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                UnsafeUtility.MemCpy(target, ring, byteCount);
+                NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+            }
+            finally
+            {
+                payload.Dispose();
+            }
         }
 
         private void UploadReactorVisualScalar()

@@ -2211,41 +2211,41 @@ namespace Hecton8.World
             if ((entry.Flags & VolcanicUpdraftVault.TelemetryFlagNaN) == 0u)
                 return;
 
+            const int HeaderBytes = 12;
+            const int RowBytes = 61;
+            int totalBytes = HeaderBytes + telemetry.Length * RowBytes;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                totalBytes,
+                nameof(VolcanicUpdraftDirector),
+                "volcanicUpdraftTelemetryDumpPayload");
             try
             {
-                string root = Application.dataPath;
-                root = Directory.GetParent(root)?.FullName ?? root;
-                string path = Path.Combine(root, DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using FileStream stream = File.Create(path);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(VolcanicUpdraftVault.SourceHash);
-                writer.Write((int)UnsafeUtility.SizeOf<VolcanicUpdraftTelemetryEntry>());
-                writer.Write(telemetry.Length);
+                WriteUInt32LittleEndian(payload, 0, VolcanicUpdraftVault.SourceHash);
+                WriteInt32LittleEndian(payload, 4, UnsafeUtility.SizeOf<VolcanicUpdraftTelemetryEntry>());
+                WriteInt32LittleEndian(payload, 8, telemetry.Length);
                 for (int i = 0; i < telemetry.Length; i++)
                 {
                     VolcanicUpdraftTelemetryEntry value = telemetry[i];
-                    writer.Write(value.PrimaryVentAup.x);
-                    writer.Write(value.PrimaryVentAup.y);
-                    writer.Write(value.PrimaryVentAup.z);
-                    writer.Write(value.LastVector.x);
-                    writer.Write(value.LastVector.y);
-                    writer.Write(value.LastVector.z);
-                    writer.Write(value.CylinderComputeTimeMs);
-                    writer.Write(value.Frame);
-                    writer.Write(value.StateHash);
-                    writer.Write(value.ActiveEruptions);
-                    writer.Write(value.EntitiesLifted);
-                    writer.Write(value.DebrisLifted);
-                    writer.Write(value.LeviathansLifted);
-                    writer.Write(value.Flags);
-                    writer.Write(value.DebrisLiftWeightQ8);
+                    int offset = HeaderBytes + i * RowBytes;
+                    WriteDouble64LittleEndian(payload, offset, value.PrimaryVentAup.x);
+                    WriteDouble64LittleEndian(payload, offset + 8, value.PrimaryVentAup.y);
+                    WriteDouble64LittleEndian(payload, offset + 16, value.PrimaryVentAup.z);
+                    WriteFloat3LittleEndian(payload, offset + 24, value.LastVector);
+                    WriteFloat32LittleEndian(payload, offset + 36, value.CylinderComputeTimeMs);
+                    WriteUInt32LittleEndian(payload, offset + 40, value.Frame);
+                    WriteUInt32LittleEndian(payload, offset + 44, value.StateHash);
+                    WriteUInt16LittleEndian(payload, offset + 48, value.ActiveEruptions);
+                    WriteUInt16LittleEndian(payload, offset + 50, value.EntitiesLifted);
+                    WriteUInt16LittleEndian(payload, offset + 52, value.DebrisLifted);
+                    WriteUInt16LittleEndian(payload, offset + 54, value.LeviathansLifted);
+                    WriteUInt32LittleEndian(payload, offset + 56, value.Flags);
+                    payload[offset + 60] = value.DebrisLiftWeightQ8;
                 }
 
-                _faultDumped = true;
+                _faultDumped = NativeFaultDumpWriter.TryWriteAll(
+                    DumpRelativePath,
+                    payload,
+                    totalBytes);
             }
             catch (IOException)
             {
@@ -2253,6 +2253,61 @@ namespace Hecton8.World
             catch (UnauthorizedAccessException)
             {
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(VolcanicUpdraftDirector),
+                    "volcanicUpdraftTelemetryDumpPayload");
+            }
+        }
+
+        private static void WriteDouble64LittleEndian(NativeArray<byte> payload, int offset, double value)
+        {
+            WriteUInt64LittleEndian(payload, offset, unchecked((ulong)BitConverter.DoubleToInt64Bits(value)));
+        }
+
+        private static void WriteFloat3LittleEndian(NativeArray<byte> payload, int offset, float3 value)
+        {
+            WriteFloat32LittleEndian(payload, offset, value.x);
+            WriteFloat32LittleEndian(payload, offset + 4, value.y);
+            WriteFloat32LittleEndian(payload, offset + 8, value.z);
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> payload, int offset, float value)
+        {
+            WriteUInt32LittleEndian(payload, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, int offset, int value)
+        {
+            WriteUInt32LittleEndian(payload, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt16LittleEndian(NativeArray<byte> payload, int offset, ushort value)
+        {
+            payload[offset] = (byte)value;
+            payload[offset + 1] = (byte)(value >> 8);
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, int offset, uint value)
+        {
+            payload[offset] = (byte)value;
+            payload[offset + 1] = (byte)(value >> 8);
+            payload[offset + 2] = (byte)(value >> 16);
+            payload[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> payload, int offset, ulong value)
+        {
+            payload[offset] = (byte)value;
+            payload[offset + 1] = (byte)(value >> 8);
+            payload[offset + 2] = (byte)(value >> 16);
+            payload[offset + 3] = (byte)(value >> 24);
+            payload[offset + 4] = (byte)(value >> 32);
+            payload[offset + 5] = (byte)(value >> 40);
+            payload[offset + 6] = (byte)(value >> 48);
+            payload[offset + 7] = (byte)(value >> 56);
         }
 
         private void OnDrawGizmosSelected()

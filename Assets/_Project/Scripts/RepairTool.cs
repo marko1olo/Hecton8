@@ -2088,37 +2088,81 @@ namespace Hecton8.Gameplay
         {
             int entrySize = UnsafeUtility.SizeOf<RepairToolBlackBoxEntry>();
             string path = Path.Combine(Application.dataPath, "..", RepairBlackBoxDumpPath);
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            const int HeaderBytes = 12;
+            const int RowBytes = 64;
+            NativeArray<byte> payload = new NativeArray<byte>(
+                HeaderBytes + RepairBlackBoxFrameCount * RowBytes,
+                Allocator.Temp,
+                NativeArrayOptions.UninitializedMemory);
+            try
             {
-                writer.Write(RepairBlackBoxFrameCount);
-                writer.Write(entrySize);
-                writer.Write(frame);
+                WriteInt32LittleEndian(payload, 0, RepairBlackBoxFrameCount);
+                WriteInt32LittleEndian(payload, 4, entrySize);
+                WriteUInt32LittleEndian(payload, 8, frame);
+                int offset = HeaderBytes;
                 for (int i = 0; i < RepairBlackBoxFrameCount; i++)
                 {
                     RepairToolBlackBoxEntry entry = snapshot[i];
-                    writer.Write(entry.HitAup.GridX);
-                    writer.Write(entry.HitAup.GridY);
-                    writer.Write(entry.HitAup.GridZ);
-                    writer.Write(entry.HitAup.LocalX);
-                    writer.Write(entry.HitAup.LocalY);
-                    writer.Write(entry.HitAup.LocalZ);
-                    writer.Write(0f);
-                    writer.Write(0UL);
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.ActiveDentCount);
-                    writer.Write(entry.TouchedDentCount);
-                    writer.Write(entry.RepairedDentCount);
-                    writer.Write(entry.Battery255);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.Reserved0);
+                    WriteInt64LittleEndian(payload, offset, entry.HitAup.GridX);
+                    WriteInt64LittleEndian(payload, offset + 8, entry.HitAup.GridY);
+                    WriteInt64LittleEndian(payload, offset + 16, entry.HitAup.GridZ);
+                    WriteFloat32LittleEndian(payload, offset + 24, entry.HitAup.LocalX);
+                    WriteFloat32LittleEndian(payload, offset + 28, entry.HitAup.LocalY);
+                    WriteFloat32LittleEndian(payload, offset + 32, entry.HitAup.LocalZ);
+                    WriteFloat32LittleEndian(payload, offset + 36, 0f);
+                    WriteUInt64LittleEndian(payload, offset + 40, 0UL);
+                    WriteUInt32LittleEndian(payload, offset + 48, entry.Frame);
+                    WriteUInt32LittleEndian(payload, offset + 52, entry.StateHash);
+                    WriteUInt16LittleEndian(payload, offset + 56, entry.ActiveDentCount);
+                    WriteUInt16LittleEndian(payload, offset + 58, entry.TouchedDentCount);
+                    payload[offset + 60] = entry.RepairedDentCount;
+                    payload[offset + 61] = entry.Battery255;
+                    payload[offset + 62] = entry.Flags;
+                    payload[offset + 63] = entry.Reserved0;
+                    offset += RowBytes;
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(path, payload, payload.Length);
             }
+            finally
+            {
+                payload.Dispose();
+            }
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> destination, int offset, float value)
+        {
+            WriteUInt32LittleEndian(destination, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static void WriteInt64LittleEndian(NativeArray<byte> destination, int offset, long value)
+        {
+            WriteUInt64LittleEndian(destination, offset, unchecked((ulong)value));
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> destination, int offset, ulong value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+            WriteUInt32LittleEndian(destination, offset + 4, unchecked((uint)(value >> 32)));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> destination, int offset, uint value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt16LittleEndian(NativeArray<byte> destination, int offset, ushort value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
         }
 
         private static uint BuildRepairBlackBoxStateHash(int activeDentCount, int touchedDentCount, int repairedDentCount, byte flags)

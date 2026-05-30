@@ -1,0 +1,69 @@
+﻿{
+    "timestampUtc":  "2026-05-28T13:09:57.9815870Z",
+    "lastRecheckLocal":  "2026-05-28T17:29:38+04:00",
+    "status":  "BLOCKED_BY_CONTENTION",
+    "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+    "cpuLoadSamplesPercent":  [
+                                  93,
+                                  71,
+                                  53,
+                                  79,
+                                  99
+                              ],
+    "cpuLoadMaxPercent":  99,
+    "compilerProcessCount":  3,
+    "compilerProcesses":  [
+                              {
+                                  "sample":  "initial",
+                                  "CPU":  42.9375,
+                                  "StartTimeLocal":  "2026-05-28T17:07:25+04:00",
+                                  "ProcessName":  "dotnet",
+                                  "Id":  11928
+                              },
+                              {
+                                  "sample":  "recheck",
+                                  "CPU":  15.546875,
+                                  "StartTimeLocal":  "2026-05-28T17:12:43+04:00",
+                                  "ProcessName":  "dotnet",
+                                  "Id":  15860
+                              },
+                              {
+                                  "sample":  "finalPreflight1",
+                                  "CPU":  39.859375,
+                                  "StartTimeLocal":  "2026-05-28T17:17:22+04:00",
+                                  "ProcessName":  "dotnet",
+                                  "Id":  21428
+                              },
+                              {
+                                  "sample":  "finalPreflight2",
+                                  "CPU":  327.171875,
+                                  "StartTimeLocal":  "2026-05-28T17:17:22+04:00",
+                                  "ProcessName":  "dotnet",
+                                  "Id":  21428
+                              },
+                              {
+                                  "sample":  "finalPreflight3",
+                                  "CPU":  95.828125,
+                                  "StartTimeLocal":  "2026-05-28T17:29:38+04:00",
+                                  "ProcessName":  "csc",
+                                  "Id":  36376
+                              },
+                              {
+                                  "sample":  "finalPreflight3",
+                                  "CPU":  63.4375,
+                                  "StartTimeLocal":  "2026-05-28T17:29:20+04:00",
+                                  "ProcessName":  "dotnet",
+                                  "Id":  37700
+                              },
+                              {
+                                  "sample":  "finalPreflight3",
+                                  "CPU":  34.09375,
+                                  "StartTimeLocal":  "2026-05-28T17:29:10+04:00",
+                                  "ProcessName":  "dotnet",
+                                  "Id":  67192
+                              }
+                          ],
+    "launched":  false,
+    "reason":  "BLOCKED_BY_CONTENTION",
+    "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
+}

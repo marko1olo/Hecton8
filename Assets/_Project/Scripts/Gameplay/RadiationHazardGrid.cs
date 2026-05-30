@@ -49,7 +49,6 @@ namespace Hecton8.Gameplay
         private const int EmergencyMockSourceId = unchecked((int)0x53483237u);
         private const int RadiationEntitySlotCount = 1;
         private const int RadiationProfileCapacity = 16;
-        private const int RadiationCsvScratchBytes = 8192;
         private const float RadiationCriticalDegradation01 = 0.5f;
         private const float RadiationStatusMagnitudeScale = 0.08f;
         private const float RadiationCriticalStatusDurationSeconds = 2.0f;
@@ -156,7 +155,6 @@ namespace Hecton8.Gameplay
         private VaultBufferView<int> _sourceCountLane;
         private VaultBufferView<uint> _telemetryCursorLane;
         private VaultBufferView<RadiationProfileDTO> _profiles;
-        private VaultBufferView<byte> _csvScratch;
         private VaultBufferView<RadiationTuningDTO> _tuningLane;
         private VaultBufferView<RadiationStatusSignal> _statusSignalLane;
         private JobHandle _diffusionJobHandle;
@@ -170,7 +168,6 @@ namespace Hecton8.Gameplay
         private VaultGenerationHandle<RadiationTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<uint> _telemetryCursorHandle;
         private VaultGenerationHandle<RadiationProfileDTO> _profilesHandle;
-        private VaultGenerationHandle<byte> _csvScratchHandle;
         private VaultGenerationHandle<RadiationTuningDTO> _tuningHandle;
         private VaultGenerationHandle<RadiationStatusSignal> _statusSignalHandle;
         private VaultGenerationHandle<byte> _radiationSdfSnapshotHandle;
@@ -785,7 +782,6 @@ namespace Hecton8.Gameplay
                 _telemetryHandle = vault.EnsureGenerationHandle<RadiationTelemetryEntry>(BufferID.Shinobu274RadiationTelemetryRing, TelemetryCapacity, OwnerSystemId);
                 _telemetryCursorHandle = vault.EnsureGenerationHandle<uint>(BufferID.Shinobu274RadiationTelemetryCursor, 1, OwnerSystemId);
                 _profilesHandle = vault.EnsureGenerationHandle<RadiationProfileDTO>(BufferID.Shinobu274RadiationProfiles, RadiationProfileCapacity, OwnerSystemId);
-                _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.Shinobu274RadiationCsvScratch, RadiationCsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
                 _tuningHandle = vault.EnsureGenerationHandle<RadiationTuningDTO>(BufferID.Shinobu274RadiationTuning, 1, OwnerSystemId);
                 _statusSignalHandle = vault.EnsureGenerationHandle<RadiationStatusSignal>(RadiationStatusSignalBuffer, 1, OwnerSystemId);
                 _radiationSdfSnapshotHandle = vault.EnsureGenerationHandle<byte>(RadiationSdfSnapshotBuffer, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
@@ -810,7 +806,6 @@ namespace Hecton8.Gameplay
                 !vault.TryResolveHandle(in _telemetryHandle, out NativeArray<RadiationTelemetryEntry> telemetry) ||
                 !vault.TryResolveHandle(in _telemetryCursorHandle, out NativeArray<uint> telemetryCursor) ||
                 !vault.TryResolveHandle(in _profilesHandle, out NativeArray<RadiationProfileDTO> profiles) ||
-                !vault.TryResolveHandle(in _csvScratchHandle, out NativeArray<byte> csvScratch) ||
                 !vault.TryResolveHandle(in _tuningHandle, out NativeArray<RadiationTuningDTO> tuning) ||
                 !vault.TryResolveHandle(in _statusSignalHandle, out NativeArray<RadiationStatusSignal> statusSignal))
             {
@@ -826,7 +821,6 @@ namespace Hecton8.Gameplay
             _telemetryRing = VaultBufferView<RadiationTelemetryEntry>.Create(vault, _telemetryHandle);
             _telemetryCursorLane = VaultBufferView<uint>.Create(vault, _telemetryCursorHandle);
             _profiles = VaultBufferView<RadiationProfileDTO>.Create(vault, _profilesHandle);
-            _csvScratch = VaultBufferView<byte>.Create(vault, _csvScratchHandle);
             _tuningLane = VaultBufferView<RadiationTuningDTO>.Create(vault, _tuningHandle);
             _statusSignalLane = VaultBufferView<RadiationStatusSignal>.Create(vault, _statusSignalHandle);
 
@@ -868,7 +862,7 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void TryLoadRadiationProfilesCsv()
         {
-            if (_profilesCsvLoaded || radiationProfilesCsv == null || !_profiles.IsCreated)
+            if (_profilesCsvLoaded || radiationProfilesCsv == null)
                 return;
 
             NativeArray<byte> bytes = radiationProfilesCsv.GetData<byte>();
@@ -878,8 +872,23 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            IngestRadiationProfilesCsv(bytes, _profiles);
-            _profilesCsvLoaded = true;
+            IDataVault vault = _dataVault;
+            if (vault == null || _profilesHandle.BufferID == 0u)
+                return;
+
+            if (!vault.TryAcquireWriteLock(in _profilesHandle, OwnerSystemId, out NativeArray<RadiationProfileDTO> profiles))
+                return;
+
+            try
+            {
+                int loadedProfiles = IngestRadiationProfilesCsv(bytes, profiles);
+                ClearRadiationProfilesTail(profiles, loadedProfiles);
+                _profilesCsvLoaded = true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _profilesHandle, OwnerSystemId);
+            }
         }
 
         private static int IngestRadiationProfilesCsv(NativeArray<byte> csv, NativeArray<RadiationProfileDTO> profiles)
@@ -920,42 +929,17 @@ namespace Hecton8.Gameplay
             return row;
         }
 
-        private static int IngestRadiationProfilesCsv(ReadOnlySpan<byte> csv, NativeArray<RadiationProfileDTO> profiles)
+        private static void ClearRadiationProfilesTail(NativeArray<RadiationProfileDTO> profiles, int startIndex)
         {
-            if (csv.Length == 0 || !profiles.IsCreated)
-                return 0;
+            if (!profiles.IsCreated)
+                return;
 
-            int lineStart = 0;
-            int row = 0;
-            bool headerSkipped = false;
-            while (lineStart < csv.Length && row < profiles.Length)
+            int index = math.max(0, startIndex);
+            while (index < profiles.Length)
             {
-                int lineEnd = lineStart;
-                while (lineEnd < csv.Length && csv[lineEnd] != (byte)'\n')
-                    lineEnd++;
-
-                int cleanEnd = lineEnd;
-                if (cleanEnd > lineStart && csv[cleanEnd - 1] == (byte)'\r')
-                    cleanEnd--;
-
-                if (cleanEnd > lineStart)
-                {
-                    if (!headerSkipped && LooksLikeCsvHeader(csv.Slice(lineStart, cleanEnd - lineStart)))
-                    {
-                        headerSkipped = true;
-                    }
-                    else
-                    {
-                        RadiationProfileDTO profile = ParseRadiationProfileLine(csv, lineStart, cleanEnd);
-                        if (profile.ProfileHash != 0u)
-                            profiles[row++] = profile;
-                    }
-                }
-
-                lineStart = lineEnd + 1;
+                profiles[index] = default;
+                index++;
             }
-
-            return row;
         }
 
         private static RadiationProfileDTO ParseRadiationProfileLine(NativeArray<byte> csv, int start, int end)
@@ -1089,85 +1073,6 @@ namespace Hecton8.Gameplay
             return any ? result * sign : fallback;
         }
 
-        private static RadiationProfileDTO ParseRadiationProfileLine(ReadOnlySpan<byte> csv, int start, int end)
-        {
-            RadiationProfileDTO profile = default;
-            int cursor = start;
-            for (int field = 0; field < 5 && cursor <= end; field++)
-            {
-                int fieldStart = cursor;
-                while (cursor < end && csv[cursor] != (byte)',')
-                    cursor++;
-
-                ReadOnlySpan<byte> token = TrimAscii(csv.Slice(fieldStart, cursor - fieldStart));
-                switch (field)
-                {
-                    case 0:
-                        profile.ProfileHash = HashAscii(token);
-                        break;
-                    case 1:
-                        profile.IntensityScale = ParseAsciiFloat(token, 1f);
-                        break;
-                    case 2:
-                        profile.RadiusMeters = ParseAsciiFloat(token, DefaultSourceRadiusMeters);
-                        break;
-                    case 3:
-                        profile.ShieldAttenuation01 = math.saturate(ParseAsciiFloat(token, 1f));
-                        break;
-                    case 4:
-                        profile.MutationScale = math.max(0f, ParseAsciiFloat(token, 1f));
-                        break;
-                }
-
-                cursor++;
-            }
-
-            profile.IntensityScale = math.max(0f, math.isfinite(profile.IntensityScale) ? profile.IntensityScale : 1f);
-            profile.RadiusMeters = math.max(0.5f, math.isfinite(profile.RadiusMeters) ? profile.RadiusMeters : DefaultSourceRadiusMeters);
-            profile.ShieldAttenuation01 = math.saturate(math.isfinite(profile.ShieldAttenuation01) ? profile.ShieldAttenuation01 : 1f);
-            profile.MutationScale = math.max(0f, math.isfinite(profile.MutationScale) ? profile.MutationScale : 1f);
-            profile.Flags = 1u;
-            return profile;
-        }
-
-        private static ReadOnlySpan<byte> TrimAscii(ReadOnlySpan<byte> value)
-        {
-            int start = 0;
-            int end = value.Length;
-            while (start < end && value[start] <= (byte)' ')
-                start++;
-            while (end > start && value[end - 1] <= (byte)' ')
-                end--;
-            return value.Slice(start, end - start);
-        }
-
-        private static bool LooksLikeCsvHeader(ReadOnlySpan<byte> value)
-        {
-            ReadOnlySpan<byte> trimmed = TrimAscii(value);
-            if (trimmed.Length < 4)
-                return false;
-
-            byte c0 = ToLowerAscii(trimmed[0]);
-            byte c1 = ToLowerAscii(trimmed[1]);
-            byte c2 = ToLowerAscii(trimmed[2]);
-            byte c3 = ToLowerAscii(trimmed[3]);
-            if (c0 == (byte)'n' && c1 == (byte)'a' && c2 == (byte)'m' && c3 == (byte)'e')
-                return true;
-            if (trimmed.Length >= 7 &&
-                c0 == (byte)'p' &&
-                c1 == (byte)'r' &&
-                c2 == (byte)'o' &&
-                c3 == (byte)'f' &&
-                ToLowerAscii(trimmed[4]) == (byte)'i' &&
-                ToLowerAscii(trimmed[5]) == (byte)'l' &&
-                ToLowerAscii(trimmed[6]) == (byte)'e')
-            {
-                return true;
-            }
-
-            return false;
-        }
-
         private static byte ToLowerAscii(byte value)
         {
             return value >= (byte)'A' && value <= (byte)'Z'
@@ -1175,61 +1080,6 @@ namespace Hecton8.Gameplay
                 : value;
         }
 
-        private static uint HashAscii(ReadOnlySpan<byte> value)
-        {
-            uint hash = 2166136261u;
-            for (int i = 0; i < value.Length; i++)
-            {
-                hash ^= value[i];
-                hash *= 16777619u;
-            }
-
-            return hash == 0u ? 1u : hash;
-        }
-
-        private static float ParseAsciiFloat(ReadOnlySpan<byte> value, float fallback)
-        {
-            if (value.Length == 0)
-                return fallback;
-
-            int index = 0;
-            float sign = 1f;
-            if (value[index] == (byte)'-')
-            {
-                sign = -1f;
-                index++;
-            }
-
-            float result = 0f;
-            bool any = false;
-            while (index < value.Length)
-            {
-                byte c = value[index];
-                if (c < (byte)'0' || c > (byte)'9')
-                    break;
-                result = result * 10f + (c - (byte)'0');
-                any = true;
-                index++;
-            }
-
-            if (index < value.Length && value[index] == (byte)'.')
-            {
-                index++;
-                float scale = 0.1f;
-                while (index < value.Length)
-                {
-                    byte c = value[index];
-                    if (c < (byte)'0' || c > (byte)'9')
-                        break;
-                    result += (c - (byte)'0') * scale;
-                    scale *= 0.1f;
-                    any = true;
-                    index++;
-                }
-            }
-
-            return any ? result * sign : fallback;
-        }
 #endif
 
         private void TryBindBulkheadReadHandles(IDataVault vault)
@@ -1257,7 +1107,6 @@ namespace Hecton8.Gameplay
                 ReleaseVaultHandle(vault, ref _telemetryHandle);
                 ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
                 ReleaseVaultHandle(vault, ref _profilesHandle);
-                ReleaseVaultHandle(vault, ref _csvScratchHandle);
                 ReleaseVaultHandle(vault, ref _tuningHandle);
                 ReleaseVaultHandle(vault, ref _statusSignalHandle);
                 ReleaseRadiationSdfSnapshotLock();
@@ -1273,7 +1122,6 @@ namespace Hecton8.Gameplay
             _telemetryHandle = default;
             _telemetryCursorHandle = default;
             _profilesHandle = default;
-            _csvScratchHandle = default;
             _tuningHandle = default;
             _statusSignalHandle = default;
             _radiationSdfSnapshotHandle = default;
@@ -1288,7 +1136,6 @@ namespace Hecton8.Gameplay
             _telemetryRing = default;
             _telemetryCursorLane = default;
             _profiles = default;
-            _csvScratch = default;
             _tuningLane = default;
             _statusSignalLane = default;
             _gridBuffersSwapped = false;
@@ -2512,38 +2359,37 @@ namespace Hecton8.Gameplay
             try
             {
                 string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", RadiationDumpFileName));
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                NativeArray<RadiationTelemetryEntry> telemetry = _telemetryRing;
+                int headerBytes = 8;
+                int stride = UnsafeUtility.SizeOf<RadiationTelemetryEntry>();
+                int entryBytes = TelemetryCapacity * stride;
+                int totalBytes = headerBytes + entryBytes;
+                NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                try
                 {
-                    writer.Write(_telemetryWriteIndex);
-                    writer.Write(TelemetryCapacity);
-                    for (int i = 0; i < TelemetryCapacity; i++)
-                    {
-                        RadiationTelemetryEntry entry = _telemetryRing[i];
-                        writer.Write(entry.PlayerAup.x);
-                        writer.Write(entry.PlayerAup.y);
-                        writer.Write(entry.PlayerAup.z);
-                        writer.Write(entry.PlayerDepthMeters);
-                        writer.Write(entry.CurrentExposureRate);
-                        writer.Write(entry.CumulativeDoseRad);
-                        writer.Write(entry.ShieldingFactor01);
-                        writer.Write(entry.CellularDegradation01);
-                        writer.Write(entry.BurstExecutionMicroseconds);
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.ShiftSequence);
-                        writer.Write(entry.SourceCount);
-                        writer.Write(entry.SourceVersion);
-                        writer.Write(entry.Flags);
-                    }
+                    WriteUInt32LittleEndian(payload, 0, unchecked((uint)_telemetryWriteIndex));
+                    WriteUInt32LittleEndian(payload, 4, (uint)TelemetryCapacity);
+                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                    UnsafeUtility.MemCpy(target + headerBytes, source, entryBytes);
+                    NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
+                }
+                finally
+                {
+                    payload.Dispose();
                 }
             }
             catch (Exception)
             {
             }
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> destination, int offset, uint value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
         }
 
         private void OnDrawGizmos()

@@ -15,10 +15,12 @@ namespace Hecton8.QA.Editor
         private const string ExitRequestedKey = "H8.QA.Endurance.ExitRequested";
         private const string BootstrapScenePath = "Assets/_Project/Scenes/00_BOOTSTRAP.unity";
         private const string FlagRelativePath = "Temp/H8_QA_ENDURANCE_10KM.flag";
-        private const string ResultRelativePath = "Docs/AgentLogs/QAEnduranceResult_QA_WATCHDOG_BOT.json";
+        private const string ResultRelativePath = "Docs/AgentLogs/QAEnduranceResult_QA_WATCHDOG_BOT.txt";
         private const string RunnerStatusRelativePath = "Docs/AgentLogs/QAEnduranceBatchRunner_QA_WATCHDOG_BOT.txt";
         private const double TimeoutSeconds = 7200.0;
+        private const double PollIntervalSeconds = 0.25;
         private static readonly byte[] FlagBytes = { (byte)'1' };
+        private static double _nextPollTime;
 
         static QAEnduranceBatchRunner()
         {
@@ -31,6 +33,7 @@ namespace Hecton8.QA.Editor
             SessionState.SetBool(ActiveKey, true);
             SessionState.SetBool(ExitRequestedKey, false);
             SessionState.SetString(StartTimeKey, EditorApplication.timeSinceStartup.ToString("R", System.Globalization.CultureInfo.InvariantCulture));
+            _nextPollTime = 0.0;
             TryDeleteFile(ResolveProjectPath(ResultRelativePath));
             Directory.CreateDirectory(Path.GetDirectoryName(ResolveProjectPath(FlagRelativePath)));
             File.WriteAllBytes(ResolveProjectPath(FlagRelativePath), FlagBytes);
@@ -66,6 +69,14 @@ namespace Hecton8.QA.Editor
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
                 return;
 
+            if (!ShouldPollNow())
+                return;
+
+            PollRunState();
+        }
+
+        private static void PollRunState()
+        {
             string resultPath = ResolveProjectPath(ResultRelativePath);
             if (File.Exists(resultPath))
             {
@@ -88,6 +99,16 @@ namespace Hecton8.QA.Editor
 
             if (!EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode)
                 EditorApplication.isPlaying = true;
+        }
+
+        private static bool ShouldPollNow()
+        {
+            double now = EditorApplication.timeSinceStartup;
+            if (now < _nextPollTime)
+                return false;
+
+            _nextPollTime = now + PollIntervalSeconds;
+            return true;
         }
 
         private static bool HasTimedOut()
@@ -132,7 +153,7 @@ namespace Hecton8.QA.Editor
         {
             foreach (string line in File.ReadLines(resultPath))
             {
-                if (line.IndexOf("\"exitCode\":0", StringComparison.Ordinal) >= 0)
+                if (string.Equals(line, "exitCode=0", StringComparison.Ordinal))
                     return 0;
             }
 

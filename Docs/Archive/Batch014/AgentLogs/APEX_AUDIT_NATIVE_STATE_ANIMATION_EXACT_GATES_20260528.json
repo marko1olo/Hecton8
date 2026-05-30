@@ -1,0 +1,186 @@
+{
+  "agentId": "AUDIT_NATIVE_STATE",
+  "domain": "NativeArray/GlobalDataVault/MonoBehaviour lifecycle",
+  "timestampLocal": "2026-05-28T21:08:00+04:00",
+  "scope": [
+    "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorRuntime.cs",
+    "Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderRuntime.cs"
+  ],
+  "mandatesUsed": [
+    "OPT_Zero_GC_Policy_AllocFree_Mandate",
+    "OPT_Native_Memory_Collections_JobSystem_Protocol",
+    "ARCH_Global_Registry_ServiceLocator_DI_Init",
+    "DATA_Runtime_Struct_Layout_ARM64",
+    "OPT_Cinematic_Cheat_Protocol_Visual_Fake_First",
+    "QA_Evidence_Text_Filter_Audit"
+  ],
+  "changes": [
+    {
+      "file": "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorRuntime.cs",
+      "summary": [
+        "DataVault hot-swap now uses IDataVault pattern matching instead of direct as-casts.",
+        "Owned runtime resolves now require exact KineticCharacterAnimatorBufferIds plus SystemID.AnimationLocomotion and generation.",
+        "External VoxelSdfTexture3D and PlayerHandIkPublishedStates reads require exact BufferID and generation before resolve.",
+        "ReleaseVaultHandle now receives expected BufferID and releases only exact owned handles.",
+        "Newly acquired invalid owned handles are released only after exact BufferID/SystemID proof."
+      ],
+      "lineAnchors": {
+        "hotSwapPatternMatch": [
+          514,
+          515,
+          516
+        ],
+        "exactPredicate": 743,
+        "ownedResolveHelper": 748,
+        "externalResolveHelper": 763,
+        "ensureAcquireHelper": 778,
+        "failedAcquireRelease": [
+          801,
+          803,
+          804
+        ],
+        "runtimeOwnedResolveBlock": [
+          843,
+          853
+        ],
+        "qualityWeight": 1085,
+        "releaseByBufferIdBlock": [
+          1310,
+          1322
+        ],
+        "ownedReleasePredicate": 1334
+      },
+      "ownedBufferIds": [
+        13671360,
+        13671361,
+        13671362,
+        13671363,
+        13671364,
+        13671365,
+        13671366,
+        13671367,
+        13671368,
+        13671369,
+        13671370,
+        13671371
+      ],
+      "externalReadOnlyBufferIds": [
+        "BufferID.VoxelSdfTexture3D",
+        "BufferID.PlayerHandIkPublishedStates"
+      ]
+    },
+    {
+      "file": "Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderRuntime.cs",
+      "summary": [
+        "DataVault hot-swap now uses IDataVault pattern matching instead of direct as-casts.",
+        "Owned runtime resolves now require exact ProceduralBoneBlenderBufferIds plus SystemID.AnimationFauna and generation.",
+        "ReleaseVaultHandle now receives expected BufferID and releases only exact owned handles.",
+        "Newly acquired invalid owned handles are released only after exact BufferID/SystemID proof."
+      ],
+      "lineAnchors": {
+        "hotSwapPatternMatch": [
+          401,
+          402,
+          403
+        ],
+        "exactPredicate": 668,
+        "ownedResolveHelper": 673,
+        "ensureAcquireHelper": 688,
+        "failedAcquireRelease": [
+          710,
+          712,
+          713
+        ],
+        "runtimeOwnedResolveBlock": [
+          753,
+          763
+        ],
+        "qualityWeight": 868,
+        "releaseByBufferIdBlock": [
+          1154,
+          1164
+        ],
+        "ownedReleasePredicate": 1175
+      },
+      "ownedBufferIds": [
+        71680,
+        71681,
+        71682,
+        71683,
+        71684,
+        71685,
+        71686,
+        71687,
+        71688,
+        71689,
+        71690
+      ]
+    }
+  ],
+  "verification": {
+    "badPatternScan": {
+      "command": "rg -n \"TryResolveVaultBuffer|IsVaultHandleCreated|currentService as IDataVault|previousService as IDataVault|ReleaseVaultHandle\\\\(vault, ref|IsOwnedVaultHandle\\\\(in handle\\\\)|handle\\\\.BufferID != 0u|handle\\\\.BufferID == 0u|OwnerSystemID\" <two animation files>",
+      "matches": 0
+    },
+    "diffZeroGcScan": {
+      "patterns": [
+        "new reference-type construction",
+        "string.Format",
+        ".ToString(",
+        ".Select(",
+        ".Where(",
+        ".OrderBy(",
+        ".GroupBy(",
+        "foreach("
+      ],
+      "matches": 0
+    },
+    "diffLayoutScan": {
+      "patterns": [
+        "StructLayout",
+        "FieldOffset",
+        "UnsafeUtility.SizeOf",
+        "Marshal.OffsetOf",
+        "sizeof("
+      ],
+      "matches": 0
+    },
+    "gitDiffCheck": {
+      "exitCode": 0,
+      "warnings": "LF will be replaced by CRLF warnings only."
+    },
+    "diffNumstat": {
+      "ProceduralBoneBlenderRuntime.cs": {
+        "added": 60,
+        "removed": 54
+      },
+      "KineticCharacterAnimatorRuntime.cs": {
+        "added": 73,
+        "removed": 65
+      }
+    }
+  },
+  "dataSovereignty": {
+    "tryAcquireWriteLock": "No TryAcquireWriteLock call exists in the patched files. These runtimes use TryLockBuffer/TryUnlockBuffer job locks by exact BufferID.",
+    "lockRelease": "Existing job lock release routes were not structurally changed in this patch. UnlockJobBuffers remains the release route after completion, teardown, and failed lock acquisition.",
+    "migratedFieldsToGlobalDataVault": false
+  },
+  "scalability": {
+    "kineticCharacter": "ResolveGlobalQualityWeight reads HomeostasisBrain.GlobalQualityWeight and clamps it against exact-gated tuning.GlobalQualityWeight; no isLowEnd branch added.",
+    "proceduralBone": "ResolveGlobalQualityWeight reads exact-gated tuning.GlobalQualityWeight and uses existing smooth update cadence; no isLowEnd branch added.",
+    "cinematicCheat": "No physical simulation expansion was added. Existing procedural animation/IK visual fakes and GPU upload cadence were preserved."
+  },
+  "buildGuard": {
+    "cpuLoadPercent": 91,
+    "compilerProcesses": "NO_DOTNET_CSC_VBCSCOMPILER_PROCESSES",
+    "buildRun": false,
+    "reason": "CPU guard > 50%; no dotnet build launched."
+  },
+  "runtimeProof": {
+    "unityImport": "not run",
+    "playMode": "not run",
+    "profiler": "not run",
+    "gcMonitor": "not run",
+    "nativeLedger": "not run"
+  }
+}

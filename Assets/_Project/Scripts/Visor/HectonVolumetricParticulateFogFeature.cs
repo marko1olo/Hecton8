@@ -1886,26 +1886,26 @@ namespace Hecton8.Visor
                 if (telemetryLength <= 0)
                     return;
 
+                NativeArray<byte> payload = default;
                 try
                 {
                     string path = Path.Combine(ResolveProjectRoot(), DumpRelativePath);
-                    string directory = Path.GetDirectoryName(path);
-                    if (!string.IsNullOrEmpty(directory))
-                        Directory.CreateDirectory(directory);
-
                     int stride = UnsafeUtility.SizeOf<VolumetricFogTelemetryEntry>();
-                    byte* rowBytes = stackalloc byte[stride];
-                    using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                    {
-                        for (int i = 0; i < telemetryLength; i++)
-                        {
-                            if (!TryReadTelemetryDumpEntry(i, out VolumetricFogTelemetryEntry entry))
-                                return;
+                    int totalBytes = telemetryLength * stride;
+                    payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
 
-                            UnsafeUtility.MemCpy(rowBytes, &entry, stride);
-                            stream.Write(new ReadOnlySpan<byte>(rowBytes, stride));
-                        }
+                    int offset = 0;
+                    for (int i = 0; i < telemetryLength; i++)
+                    {
+                        if (!TryReadTelemetryDumpEntry(i, out VolumetricFogTelemetryEntry entry))
+                            return;
+
+                        UnsafeUtility.MemCpy(payloadPtr + offset, &entry, stride);
+                        offset += stride;
                     }
+
+                    _ = NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
                 }
                 catch (IOException)
                 {
@@ -1924,6 +1924,11 @@ namespace Hecton8.Visor
                 }
                 catch (NotSupportedException)
                 {
+                }
+                finally
+                {
+                    if (payload.IsCreated)
+                        payload.Dispose();
                 }
             }
 

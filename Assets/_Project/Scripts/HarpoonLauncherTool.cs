@@ -801,7 +801,20 @@ namespace Hecton8.Gameplay
         private void ResolveHeavyTowWinch()
         {
             if (_heavyTowWinch == null)
-                _heavyTowWinch = GetComponentInParent<HeavyTowWinch>();
+                TryResolveComponentInParents(transform.parent, out _heavyTowWinch);
+        }
+
+        private static bool TryResolveComponentInParents<T>(Transform current, out T component) where T : Component
+        {
+            component = null;
+
+            for (; current != null; current = current.parent)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+            }
+
+            return false;
         }
 
         private void ResolvePlayerMovement()

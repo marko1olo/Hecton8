@@ -751,7 +751,7 @@ namespace Hecton8.Gameplay
             {
                 string path = AssetDatabase.GUIDToAssetPath(guids[i]);
                 GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                if (prefab == null || prefab.GetComponentInChildren<FaunaBrain>(true) == null)
+                if (prefab == null || ComponentReferenceUtility.ResolveOwnedComponent<FaunaBrain>(prefab.transform) == null)
                     continue;
 
                 Collider[] colliders = prefab.GetComponentsInChildren<Collider>(true);

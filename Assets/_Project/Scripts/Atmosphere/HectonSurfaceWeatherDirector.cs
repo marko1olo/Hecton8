@@ -2741,7 +2741,7 @@ namespace Hecton8.Atmosphere
                 TryGetComponent(out underwaterVisuals);
 
             if (acousticZoneController == null)
-                acousticZoneController = GetComponent<AcousticZoneController>();
+                TryGetComponent(out acousticZoneController);
 
             if (weatherVfxRig == null)
                 RefreshOwnedWeatherVfxRig();

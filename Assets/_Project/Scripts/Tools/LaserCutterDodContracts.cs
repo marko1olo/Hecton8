@@ -13,6 +13,7 @@ namespace Hecton8.Tools
         public const int BlackBoxFrameCount = 300;
         public const int CsvSpecCapacity = 32;
         public const int CsvScratchByteCapacity = 4096;
+        public const int SdfSnapshotByteCapacity = 2 * 1024 * 1024;
         public const int MinCommandsPerJob = 8;
         public const int LowSparkCount = 0;
         public const int MiddleSparkCount = 24;

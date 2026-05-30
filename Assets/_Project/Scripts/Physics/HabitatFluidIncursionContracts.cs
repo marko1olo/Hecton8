@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Hecton8.World;
+using Hecton8.Core.Contracts.Physics;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
@@ -70,7 +70,7 @@ namespace Hecton8.Physics
         public const uint FlagMockSource = 1u << 1;
         public const uint FlagSealed = 1u << 2;
 
-        [FieldOffset(0)] public AbsoluteUniversePositionBlit CenterAup;
+        [FieldOffset(0)] public FluidAup48 CenterAup;
         [FieldOffset(48)] public uint NodeHash;
         [FieldOffset(52)] public float Integrity01;
         [FieldOffset(56)] public float BreachAreaM2;

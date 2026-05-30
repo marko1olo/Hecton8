@@ -262,6 +262,7 @@ namespace Hecton8.Core
         private const int BlackboxMockOriginOffsetBytes = BlackboxMockPhysicsOffsetBytes + BlackboxSourceStrideBytes;
         private const int BlackboxFrameStrideBytes = BlackboxMockOriginOffsetBytes + BlackboxSourceStrideBytes;
         private const string BlackboxWatchdogThreadName = "H8.BlackboxWatchdog";
+        private const string BlackboxDumpRelativePath = "Docs/AgentLogs/Dump_GLOBAL_TELEMETRY_BUS.bin";
         private const uint BlackboxDumpMagic = 0x4838444Du; // H8DM
         private const uint BlackboxDumpVersion = 1u;
         private const uint BlackboxNanFatalHash = 0x4E414E21u; // NAN!
@@ -1255,7 +1256,7 @@ namespace Hecton8.Core
                     }
                 }
 
-                return true;
+                return NativeFaultDumpWriter.TryWriteAll(BlackboxDumpRelativePath, dumpScratch, payloadBytes);
             }
             catch (Exception)
             {

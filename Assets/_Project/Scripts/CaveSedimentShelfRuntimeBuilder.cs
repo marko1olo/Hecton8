@@ -7,14 +7,24 @@ namespace Hecton8.Caves
 {
     internal static class CaveSedimentShelfRuntimeBuilder
     {
+        public const int RuntimeCapacity = 20;
         private const string ShelfRootName = "_SedimentShelves";
-        private const int MaxShelfCount = 20;
+        private const int MaxShelfCount = RuntimeCapacity;
         private static readonly string[] _ShelfNames = CreateNameCache("Shelf_", MaxShelfCount); // COLD ALLOC: bounded shelf child names.
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
         private static MaterialPropertyBlock _ShelfPropertyBlock;
 
         public static Transform Prewarm(Transform parent)
+        {
+            return Prewarm(parent, null, null, null);
+        }
+
+        public static Transform Prewarm(
+            Transform parent,
+            GameObject[] primitiveObjects,
+            MeshFilter[] primitiveFilters,
+            MeshRenderer[] primitiveRenderers)
         {
             if (parent == null)
                 return null;
@@ -24,13 +34,15 @@ namespace Hecton8.Caves
             {
                 if (i < root.childCount)
                 {
+                    GameObject primitiveObject = root.GetChild(i).gameObject;
                     WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisual(
-                        root.GetChild(i).gameObject,
+                        primitiveObject,
                         PrimitiveType.Cube,
                         GetCachedName(i),
                         Vector3.zero,
                         Quaternion.identity,
                         Vector3.one);
+                    CachePrimitiveCold(i, primitiveObject, primitiveObjects, primitiveFilters, primitiveRenderers);
                     continue;
                 }
 
@@ -42,7 +54,10 @@ namespace Hecton8.Caves
                     Quaternion.identity,
                     Vector3.one);
                 if (renderer != null)
+                {
+                    CachePrimitiveCold(i, renderer.gameObject, primitiveObjects, primitiveFilters, primitiveRenderers);
                     renderer.gameObject.SetActive(false);
+                }
             }
 
             DisableUnusedChildren(root, 0);
@@ -54,51 +69,29 @@ namespace Hecton8.Caves
             _ = GetShelfPropertyBlock();
         }
 
-        public static void Build(
-            Transform parent,
+        public static void BuildPreparedCachedHot(
+            Transform shelfRoot,
+            GameObject[] primitiveObjects,
+            MeshFilter[] primitiveFilters,
+            MeshRenderer[] primitiveRenderers,
             HectonVoxelVolume volume,
             CavePreset preset,
             SedimentShelfConfig config,
             float globalIntensity)
-        {
-            if (parent == null || volume == null || config == null || !config.enabled)
-                return;
-
-            Transform shelfRoot = GetOrCreateShelfRoot(parent);
-            BuildPrepared(shelfRoot, volume, preset, config, globalIntensity, createMissing: true);
-        }
-
-        public static void BuildPrepared(
-            Transform shelfRoot,
-            HectonVoxelVolume volume,
-            CavePreset preset,
-            SedimentShelfConfig config,
-            float globalIntensity)
-        {
-            BuildPrepared(shelfRoot, volume, preset, config, globalIntensity, createMissing: false);
-        }
-
-        private static void BuildPrepared(
-            Transform shelfRoot,
-            HectonVoxelVolume volume,
-            CavePreset preset,
-            SedimentShelfConfig config,
-            float globalIntensity,
-            bool createMissing)
         {
             if (shelfRoot == null || volume == null || config == null || !config.enabled)
                 return;
 
             if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, preset, out Bounds volumeBounds))
             {
-                DisableUnusedChildren(shelfRoot, 0);
+                DisableUnusedCachedPrimitives(primitiveObjects, 0);
                 return;
             }
 
             int shelfCount = ResolveShelfCount(config, preset, volumeBounds, globalIntensity);
             if (shelfCount <= 0)
             {
-                DisableUnusedChildren(shelfRoot, 0);
+                DisableUnusedCachedPrimitives(primitiveObjects, 0);
                 return;
             }
 
@@ -111,6 +104,7 @@ namespace Hecton8.Caves
             long runtimeSeed = volume.caveKey != 0L
                 ? volume.caveKey
                 : ComputeFallbackSeed(volume.transform.position, preset);
+            ActivateTransform(shelfRoot);
 
             for (int i = 0; i < shelfCount; i++)
             {
@@ -131,55 +125,99 @@ namespace Hecton8.Caves
                     volumeBounds.center.z + sine * radiusZ * radial);
                 Vector3 localScale = new Vector3(width, thickness, depth);
                 Quaternion localRotation = Quaternion.Euler(pitch, yaw, roll);
-                Renderer shelfRenderer = CreateOrConfigureShelf(
-                    shelfRoot,
+                Renderer shelfRenderer = CreateOrConfigureShelfCachedHot(
+                    primitiveObjects,
+                    primitiveFilters,
+                    primitiveRenderers,
                     i,
                     localPosition,
                     localRotation,
                     localScale,
-                    shelfMaterial,
-                    createMissing);
+                    shelfMaterial);
                 ApplyShelfVisuals(shelfRenderer, config);
             }
 
-            DisableUnusedChildren(shelfRoot, shelfCount);
+            DisableUnusedCachedPrimitives(primitiveObjects, shelfCount);
         }
 
-        private static Renderer CreateOrConfigureShelf(
-            Transform root,
+        private static Renderer CreateOrConfigureShelfCachedHot(
+            GameObject[] primitiveObjects,
+            MeshFilter[] primitiveFilters,
+            MeshRenderer[] primitiveRenderers,
             int shelfIndex,
             Vector3 localPosition,
             Quaternion localRotation,
             Vector3 localScale,
-            Material material,
-            bool createMissing)
+            Material material)
         {
-            string name = GetCachedName(shelfIndex);
-            if (shelfIndex < root.childCount)
+            if (primitiveObjects == null ||
+                primitiveFilters == null ||
+                primitiveRenderers == null ||
+                (uint)shelfIndex >= (uint)primitiveObjects.Length ||
+                (uint)shelfIndex >= (uint)primitiveFilters.Length ||
+                (uint)shelfIndex >= (uint)primitiveRenderers.Length)
             {
-                Transform existing = root.GetChild(shelfIndex);
-                ActivateTransform(existing);
-                return WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisualHot(
-                    existing.gameObject,
-                    PrimitiveType.Cube,
-                    name,
-                    localPosition,
-                    localRotation,
-                    localScale,
-                    material);
+                return null;
             }
 
-            if (!createMissing)
+            GameObject primitiveObject = primitiveObjects[shelfIndex];
+            MeshFilter filter = primitiveFilters[shelfIndex];
+            MeshRenderer renderer = primitiveRenderers[shelfIndex];
+            if (primitiveObject == null || filter == null || renderer == null)
                 return null;
 
-            return WorldGeneratedPrimitiveFactory.CreatePrimitiveVisual(
-                root,
+            if (!primitiveObject.activeSelf)
+                primitiveObject.SetActive(true);
+
+            return WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisualCachedHot(
+                primitiveObject,
+                filter,
+                renderer,
                 PrimitiveType.Cube,
-                name,
+                GetCachedName(shelfIndex),
                 localPosition,
                 localRotation,
                 localScale,
                 material);
+        }
+
+        private static void CachePrimitiveCold(
+            int index,
+            GameObject primitiveObject,
+            GameObject[] primitiveObjects,
+            MeshFilter[] primitiveFilters,
+            MeshRenderer[] primitiveRenderers)
+        {
+            if (primitiveObject == null ||
+                primitiveObjects == null ||
+                primitiveFilters == null ||
+                primitiveRenderers == null ||
+                (uint)index >= (uint)primitiveObjects.Length ||
+                (uint)index >= (uint)primitiveFilters.Length ||
+                (uint)index >= (uint)primitiveRenderers.Length)
+            {
+                return;
+            }
+
+            if (!WorldGeneratedPrimitiveFactory.TryResolvePrimitiveComponentsCold(primitiveObject, out MeshFilter filter, out MeshRenderer renderer))
+                return;
+
+            primitiveObjects[index] = primitiveObject;
+            primitiveFilters[index] = filter;
+            primitiveRenderers[index] = renderer;
+        }
+
+        private static void DisableUnusedCachedPrimitives(GameObject[] primitiveObjects, int usedChildCount)
+        {
+            if (primitiveObjects == null)
+                return;
+
+            for (int i = usedChildCount; i < primitiveObjects.Length; i++)
+            {
+                GameObject primitiveObject = primitiveObjects[i];
+                if (primitiveObject != null && primitiveObject.activeSelf)
+                    primitiveObject.SetActive(false);
+            }
         }
 
         private static void ApplyShelfVisuals(Renderer renderer, SedimentShelfConfig config)

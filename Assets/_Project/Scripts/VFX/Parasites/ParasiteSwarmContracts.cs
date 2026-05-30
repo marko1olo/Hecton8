@@ -326,27 +326,48 @@ namespace Hecton8.VFX.Parasites
             if (safeCount <= 0)
                 return false;
 
-            string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
-            string directory = Path.Combine(root, "Docs", "AgentLogs");
-            Directory.CreateDirectory(directory);
-            string path = Path.Combine(directory, "Dump_SHINOBU_313.bin");
+            const string path = "Docs/AgentLogs/Dump_SHINOBU_313.bin";
             int bytes = safeCount * UnsafeUtility.SizeOf<SwarmTelemetryEntry>();
-            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-            Span<byte> header = stackalloc byte[TelemetryDumpHeaderBytes];
-            WriteUInt32LE(header, 0, TelemetryDumpMagic);
-            WriteUInt32LE(header, 4, TelemetryDumpVersion);
-            WriteUInt32LE(header, 8, (uint)TelemetryDumpHeaderBytes);
-            WriteUInt32LE(header, 12, (uint)UnsafeUtility.SizeOf<SwarmTelemetryEntry>());
-            WriteUInt32LE(header, 16, (uint)safeCount);
-            WriteUInt32LE(header, 20, (uint)math.clamp(cursor, 0, safeCount - 1));
-            WriteUInt32LE(header, 24, (uint)bytes);
-            stream.Write(header);
-            fixed (SwarmTelemetryEntry* ptr = ring)
+            int totalBytes = TelemetryDumpHeaderBytes + bytes;
+            NativeArray<byte> payload = default;
+            try
             {
-                stream.Write(new ReadOnlySpan<byte>((byte*)ptr, bytes));
-            }
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(ParasiteSwarmContracts),
+                    "ParasiteSwarmTelemetryDumpPayload");
+                byte* destination = (byte*)payload.GetUnsafePtr();
+                Span<byte> header = new Span<byte>(destination, TelemetryDumpHeaderBytes);
+                header.Clear();
+                WriteUInt32LE(header, 0, TelemetryDumpMagic);
+                WriteUInt32LE(header, 4, TelemetryDumpVersion);
+                WriteUInt32LE(header, 8, (uint)TelemetryDumpHeaderBytes);
+                WriteUInt32LE(header, 12, (uint)UnsafeUtility.SizeOf<SwarmTelemetryEntry>());
+                WriteUInt32LE(header, 16, (uint)safeCount);
+                WriteUInt32LE(header, 20, (uint)math.clamp(cursor, 0, safeCount - 1));
+                WriteUInt32LE(header, 24, (uint)bytes);
+                fixed (SwarmTelemetryEntry* ptr = ring)
+                {
+                    UnsafeUtility.MemCpy(destination + TelemetryDumpHeaderBytes, ptr, bytes);
+                }
 
-            return true;
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(ParasiteSwarmContracts),
+                    "ParasiteSwarmTelemetryDumpPayload");
+            }
         }
 
         private static bool TryParseProfileLine(ReadOnlySpan<byte> line, out ParasiteBehaviorProfileDTO dto)

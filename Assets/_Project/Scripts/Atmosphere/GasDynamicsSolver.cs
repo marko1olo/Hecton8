@@ -69,6 +69,8 @@ namespace Hecton8.Atmosphere
         private const ushort RoomFlagOccupied = (ushort)GasDynamicsRoomFlags.Occupied;
         private const float AuthoritativeQualityWeight = 1f;
         private const string DumpFileName = "Dump_1324_SubmarineAtmosphere.bin";
+        private const string DumpRelativePath = "Docs/AgentLogs/" + DumpFileName;
+        private const string DumpPayloadLabel = "gasDynamicsTelemetryDumpPayload";
         private const SystemID OwnerSystemId = SystemID.HabitatAtmosphere;
         private const BufferID RoomO2BufferId = (BufferID)74420;
         private const BufferID RoomCO2BufferId = (BufferID)74421;
@@ -208,7 +210,10 @@ namespace Hecton8.Atmosphere
         // COLD ALLOC: PendingBaseTransitionSignal[128] - fixed managed staging for same-phase gas mutation - owner: GasDynamicsSolver
         private readonly PendingBaseTransitionSignal[] _deferredBaseTransitions = new PendingBaseTransitionSignal[PendingBaseTransitionCapacity];
         private int _deferredBaseTransitionCount;
+        private JobHandle _stepHandle;
         private bool _stepRunning;
+        private bool _stepScheduled;
+        private float _scheduledStepDeltaTime;
         private bool _registeredTicks;
         private bool _registeredRegistry;
         private bool _registeredHotSwap;
@@ -348,7 +353,6 @@ namespace Hecton8.Atmosphere
             if (!IsInitialized)
                 return;
 
-            SeedStandardAtmosphereIfNeeded();
             if (!TryCompleteStep())
             {
                 DrainBaseTransitionSignals(allowWake: false);
@@ -357,6 +361,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
+            SeedStandardAtmosphereIfNeeded();
             double now = ResolveUnscaledTimeSeconds();
             if (!TryAcquireStateWriteLocks())
             {
@@ -388,7 +393,7 @@ namespace Hecton8.Atmosphere
 
         public void PostFixedTick(float fixedDeltaTime)
         {
-            TryCompleteStep();
+            CompleteScheduledStepInPostFixed();
         }
 
         public void LateFrameTick()
@@ -2052,7 +2057,7 @@ namespace Hecton8.Atmosphere
 
         private void ScheduleStep(float deltaTime)
         {
-            if (_stepRunning || !IsInitialized)
+            if (_stepRunning || _stepScheduled || !IsInitialized)
                 return;
 
             if (!TryEnsureTelemetryScratchCold())
@@ -2068,86 +2073,128 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            bool completed = false;
+            bool scheduled = false;
             try
             {
                 NativeArray<GasDynamicsTelemetryEntry> telemetryScratch = _stepTelemetryScratch;
                 telemetryScratch[0] = default;
-                try
-                {
-                    NativeArray<float> RoomO2 = ResolveRoomO2();
-                    NativeArray<float> RoomCO2 = ResolveRoomCO2();
-                    NativeArray<float> _roomNitrogen = ResolveRoomNitrogen();
-                    NativeArray<float> _roomO2Back = ResolveRoomO2Back();
-                    NativeArray<float> _roomCO2Back = ResolveRoomCO2Back();
-                    NativeArray<float> _roomNitrogenBack = ResolveRoomNitrogenBack();
-                    NativeArray<float> _roomPressureBack = ResolveRoomPressureBack();
-                    NativeArray<float> _roomAmbientPressure = ResolveRoomAmbientPressure();
-                    NativeArray<float> _roomSubmerged01 = ResolveRoomSubmerged01();
-                    NativeArray<float> _roomPlayerStress01 = ResolveRoomPlayerStress01();
-                    NativeArray<float> _roomPlayerHeartRateBpm = ResolveRoomPlayerHeartRateBpm();
-                    NativeArray<float> _roomTemperatureCelsius = ResolveRoomTemperatureCelsius();
-                    NativeArray<byte> _roomPlayerPresent = ResolveRoomPlayerPresent();
-                    NativeArray<byte> _roomScrubberPowered = ResolveRoomScrubberPowered();
-                    NativeArray<ushort> _roomFlags = ResolveRoomFlags();
-                    NativeArray<int> _roomBaseIndex = ResolveRoomBaseIndex();
-                    NativeArray<byte> BaseAwakeState = ResolveBaseAwakeState();
-                    NativeArray<int> _bulkheadRoomA = ResolveBulkheadRoomA();
-                    NativeArray<int> _bulkheadRoomB = ResolveBulkheadRoomB();
-                    NativeArray<byte> _bulkheadSealed = ResolveBulkheadSealed();
-                    GasDynamicsStepJob job;
-                    job.DeltaTime = math.max(0f, deltaTime);
-                    job.RoomCount = _roomCount;
-                    job.BulkheadCount = _bulkheadCount;
-                    job.FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
-                    job.PlayerO2KPaPerSecond = FiniteNonNegativeOrZero(playerOxygenKPaPerSecond);
-                    job.PlayerCO2KPaPerSecond = FiniteNonNegativeOrZero(playerCarbonDioxideKPaPerSecond);
-                    job.FireO2KPaPerSecond = FiniteNonNegativeOrZero(fireOxygenDrainKPaPerSecond);
-                    job.ScrubberKPaPerSecond = FiniteNonNegativeOrZero(scrubberKPaPerSecond);
-                    job.DiffusionConductancePerSecond = FiniteNonNegativeOrZero(diffusionConductancePerSecond);
-                    job.Co2ToxicityThresholdKPa = co2Threshold;
-                    job.Co2FatalKPa = co2Fatal;
-                    job.NarcosisThresholdAtm = narcosisThreshold;
-                    job.NarcosisFullAtm = narcosisFull;
-                    job.RoomO2Front = RoomO2;
-                    job.RoomCO2Front = RoomCO2;
-                    job.RoomNitrogenFront = _roomNitrogen;
-                    job.RoomO2Back = _roomO2Back;
-                    job.RoomCO2Back = _roomCO2Back;
-                    job.RoomNitrogenBack = _roomNitrogenBack;
-                    job.RoomPressureBack = _roomPressureBack;
-                    job.RoomAmbientPressure = _roomAmbientPressure;
-                    job.RoomSubmerged01 = _roomSubmerged01;
-                    job.RoomPlayerStress01 = _roomPlayerStress01;
-                    job.RoomPlayerHeartRateBpm = _roomPlayerHeartRateBpm;
-                    job.RoomTemperatureCelsius = _roomTemperatureCelsius;
-                    job.RoomPlayerPresent = _roomPlayerPresent;
-                    job.RoomScrubberPowered = _roomScrubberPowered;
-                    job.RoomFlags = _roomFlags;
-                    job.RoomBaseIndex = _roomBaseIndex;
-                    job.BaseAwakeState = BaseAwakeState;
-                    job.BulkheadRoomA = _bulkheadRoomA;
-                    job.BulkheadRoomB = _bulkheadRoomB;
-                    job.BulkheadSealed = _bulkheadSealed;
-                    job.TelemetryScratch = telemetryScratch;
+                NativeArray<float> RoomO2 = ResolveRoomO2();
+                NativeArray<float> RoomCO2 = ResolveRoomCO2();
+                NativeArray<float> _roomNitrogen = ResolveRoomNitrogen();
+                NativeArray<float> _roomO2Back = ResolveRoomO2Back();
+                NativeArray<float> _roomCO2Back = ResolveRoomCO2Back();
+                NativeArray<float> _roomNitrogenBack = ResolveRoomNitrogenBack();
+                NativeArray<float> _roomPressureBack = ResolveRoomPressureBack();
+                NativeArray<float> _roomAmbientPressure = ResolveRoomAmbientPressure();
+                NativeArray<float> _roomSubmerged01 = ResolveRoomSubmerged01();
+                NativeArray<float> _roomPlayerStress01 = ResolveRoomPlayerStress01();
+                NativeArray<float> _roomPlayerHeartRateBpm = ResolveRoomPlayerHeartRateBpm();
+                NativeArray<float> _roomTemperatureCelsius = ResolveRoomTemperatureCelsius();
+                NativeArray<byte> _roomPlayerPresent = ResolveRoomPlayerPresent();
+                NativeArray<byte> _roomScrubberPowered = ResolveRoomScrubberPowered();
+                NativeArray<ushort> _roomFlags = ResolveRoomFlags();
+                NativeArray<int> _roomBaseIndex = ResolveRoomBaseIndex();
+                NativeArray<byte> BaseAwakeState = ResolveBaseAwakeState();
+                NativeArray<int> _bulkheadRoomA = ResolveBulkheadRoomA();
+                NativeArray<int> _bulkheadRoomB = ResolveBulkheadRoomB();
+                NativeArray<byte> _bulkheadSealed = ResolveBulkheadSealed();
+                GasDynamicsStepJob job;
+                job.DeltaTime = math.max(0f, deltaTime);
+                job.RoomCount = _roomCount;
+                job.BulkheadCount = _bulkheadCount;
+                job.FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+                job.PlayerO2KPaPerSecond = FiniteNonNegativeOrZero(playerOxygenKPaPerSecond);
+                job.PlayerCO2KPaPerSecond = FiniteNonNegativeOrZero(playerCarbonDioxideKPaPerSecond);
+                job.FireO2KPaPerSecond = FiniteNonNegativeOrZero(fireOxygenDrainKPaPerSecond);
+                job.ScrubberKPaPerSecond = FiniteNonNegativeOrZero(scrubberKPaPerSecond);
+                job.DiffusionConductancePerSecond = FiniteNonNegativeOrZero(diffusionConductancePerSecond);
+                job.Co2ToxicityThresholdKPa = co2Threshold;
+                job.Co2FatalKPa = co2Fatal;
+                job.NarcosisThresholdAtm = narcosisThreshold;
+                job.NarcosisFullAtm = narcosisFull;
+                job.RoomO2Front = RoomO2;
+                job.RoomCO2Front = RoomCO2;
+                job.RoomNitrogenFront = _roomNitrogen;
+                job.RoomO2Back = _roomO2Back;
+                job.RoomCO2Back = _roomCO2Back;
+                job.RoomNitrogenBack = _roomNitrogenBack;
+                job.RoomPressureBack = _roomPressureBack;
+                job.RoomAmbientPressure = _roomAmbientPressure;
+                job.RoomSubmerged01 = _roomSubmerged01;
+                job.RoomPlayerStress01 = _roomPlayerStress01;
+                job.RoomPlayerHeartRateBpm = _roomPlayerHeartRateBpm;
+                job.RoomTemperatureCelsius = _roomTemperatureCelsius;
+                job.RoomPlayerPresent = _roomPlayerPresent;
+                job.RoomScrubberPowered = _roomScrubberPowered;
+                job.RoomFlags = _roomFlags;
+                job.RoomBaseIndex = _roomBaseIndex;
+                job.BaseAwakeState = BaseAwakeState;
+                job.BulkheadRoomA = _bulkheadRoomA;
+                job.BulkheadRoomB = _bulkheadRoomB;
+                job.BulkheadSealed = _bulkheadSealed;
+                job.TelemetryScratch = telemetryScratch;
 
-                    _stepRunning = true;
-                    job.Run();
-                    completed = true;
-                }
-                finally
-                {
-                    _stepRunning = false;
-                }
+                _stepRunning = true;
+                _stepScheduled = true;
+                _scheduledStepDeltaTime = deltaTime;
+                _stepHandle = job.Schedule();
+                scheduled = true;
+                H8Memory.RegisterActiveJob(OwnerSystemId, _stepHandle);
+                JobHandle.ScheduleBatchedJobs();
             }
             finally
             {
-                ReleaseStateWriteLocks();
+                if (!scheduled)
+                {
+                    _stepHandle = default;
+                    _stepRunning = false;
+                    _stepScheduled = false;
+                    _scheduledStepDeltaTime = 0f;
+                    ReleaseStateWriteLocks();
+                }
             }
+        }
 
-            if (!completed)
+        private void CompleteScheduledStepInPostFixed()
+        {
+            if (!_stepScheduled)
                 return;
 
+            bool completed = false;
+            try
+            {
+                completed = DispatcherJobFence.TryComplete(ref _stepHandle, forceComplete: true);
+            }
+            finally
+            {
+                if (completed)
+                    CompleteScheduledStepAfterFence();
+            }
+        }
+
+        private void CompleteScheduledStepForTeardown()
+        {
+            if (!_stepScheduled)
+                return;
+
+            DispatcherJobFence.BeginPostFixedSwapWindow();
+            bool completed = false;
+            try
+            {
+                completed = DispatcherJobFence.TryComplete(ref _stepHandle, forceComplete: true);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostFixedSwapWindow();
+                if (completed)
+                    ResetScheduledStepState();
+            }
+        }
+
+        private void CompleteScheduledStepAfterFence()
+        {
+            float deltaTime = _scheduledStepDeltaTime;
+            ResetScheduledStepState();
             Swap(ref _roomO2Handle, ref _roomO2BackHandle);
             Swap(ref _roomCO2Handle, ref _roomCO2BackHandle);
             Swap(ref _roomNitrogenHandle, ref _roomNitrogenBackHandle);
@@ -2159,9 +2206,18 @@ namespace Hecton8.Atmosphere
             _pendingTelemetryFaultCheck |= telemetryPublished;
         }
 
+        private void ResetScheduledStepState()
+        {
+            _stepHandle = default;
+            _stepRunning = false;
+            _stepScheduled = false;
+            _scheduledStepDeltaTime = 0f;
+            ReleaseStateWriteLocks();
+        }
+
         private bool TryCompleteStep()
         {
-            return !_stepRunning;
+            return !_stepRunning && !_stepScheduled;
         }
 
         private void FlushPostFixedPresentation()
@@ -2928,40 +2984,51 @@ namespace Hecton8.Atmosphere
                 !TryReadTelemetryRing(out NativeArray<GasDynamicsTelemetryEntry>.ReadOnly telemetryRing))
                 return;
 
-            _blackBoxDumped = true;
+            NativeArray<byte> payload = default;
             try
             {
-                string path = System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", DumpFileName));
-                using (System.IO.FileStream stream = new System.IO.FileStream(path, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
-                using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(stream))
+                int entryCount = telemetryRing.Length;
+                int payloadBytes = 24 + entryCount * TelemetryEntrySizeBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    payloadBytes,
+                    nameof(GasDynamicsSolver),
+                    DumpPayloadLabel);
+                unsafe
                 {
-                    writer.Write(DumpMagic);
-                    writer.Write(DumpFormatVersion);
-                    writer.Write(TelemetryEntrySizeBytes);
-                    writer.Write(telemetryRing.Length);
-                    writer.Write(_telemetryWriteIndex);
-                    writer.Write(_tickCount);
-                    for (int i = 0; i < telemetryRing.Length; i++)
+                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    WriteUInt32LittleEndian(target, 0, DumpMagic);
+                    WriteInt32LittleEndian(target, 4, DumpFormatVersion);
+                    WriteInt32LittleEndian(target, 8, TelemetryEntrySizeBytes);
+                    WriteInt32LittleEndian(target, 12, entryCount);
+                    WriteInt32LittleEndian(target, 16, _telemetryWriteIndex);
+                    WriteInt32LittleEndian(target, 20, _tickCount);
+                    int offset = 24;
+                    for (int i = 0; i < entryCount; i++)
                     {
                         GasDynamicsTelemetryEntry entry = telemetryRing[i];
-                        writer.Write(entry.PackedOwner);
-                        writer.Write(entry.FrameIndex);
-                        writer.Write(entry.RoomCount);
-                        writer.Write(entry.TotalO2KPa);
-                        writer.Write(entry.TotalCO2KPa);
-                        writer.Write(entry.TotalNitrogenKPa);
-                        writer.Write(entry.MaxPressureKPa);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.BufferId);
-                        writer.Write(entry.SystemId);
-                        writer.Write(entry.Generation);
-                        writer.Write(entry.DroppedUpdates);
-                        writer.Write(entry.CpuMicroseconds);
-                        writer.Write(0u);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.Reserved);
+                        WriteUInt64LittleEndian(target, offset, entry.PackedOwner);
+                        WriteUInt32LittleEndian(target, offset + 8, entry.FrameIndex);
+                        WriteInt32LittleEndian(target, offset + 12, entry.RoomCount);
+                        WriteFloatLittleEndian(target, offset + 16, entry.TotalO2KPa);
+                        WriteFloatLittleEndian(target, offset + 20, entry.TotalCO2KPa);
+                        WriteFloatLittleEndian(target, offset + 24, entry.TotalNitrogenKPa);
+                        WriteFloatLittleEndian(target, offset + 28, entry.MaxPressureKPa);
+                        WriteUInt32LittleEndian(target, offset + 32, entry.StateHash);
+                        WriteUInt32LittleEndian(target, offset + 36, entry.BufferId);
+                        WriteUInt32LittleEndian(target, offset + 40, entry.SystemId);
+                        WriteUInt32LittleEndian(target, offset + 44, entry.Generation);
+                        WriteInt32LittleEndian(target, offset + 48, entry.DroppedUpdates);
+                        WriteFloatLittleEndian(target, offset + 52, entry.CpuMicroseconds);
+                        WriteUInt32LittleEndian(target, offset + 56, 0u);
+                        WriteUInt16LittleEndian(target, offset + 60, entry.Flags);
+                        WriteUInt16LittleEndian(target, offset + 62, entry.Reserved);
+                        offset += TelemetryEntrySizeBytes;
                     }
                 }
+
+                _blackBoxDumped = NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, payloadBytes);
+                if (!_blackBoxDumped)
+                    GlobalTelemetryBus.PublishUnityLogFault(DumpMagic, 0u, 1u);
             }
             catch (System.IO.IOException)
             {
@@ -2975,6 +3042,43 @@ namespace Hecton8.Atmosphere
             {
                 GlobalTelemetryBus.PublishUnityLogFault(DumpMagic, 0u, 1u);
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(GasDynamicsSolver),
+                    DumpPayloadLabel);
+            }
+        }
+
+        private static unsafe void WriteUInt16LittleEndian(byte* target, int offset, ushort value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* target, int offset, int value)
+        {
+            WriteUInt32LittleEndian(target, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteFloatLittleEndian(byte* target, int offset, float value)
+        {
+            WriteUInt32LittleEndian(target, offset, math.asuint(value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* target, int offset, uint value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+            target[offset + 2] = (byte)(value >> 16);
+            target[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static unsafe void WriteUInt64LittleEndian(byte* target, int offset, ulong value)
+        {
+            WriteUInt32LittleEndian(target, offset, unchecked((uint)value));
+            WriteUInt32LittleEndian(target, offset + 4, unchecked((uint)(value >> 32)));
         }
 
         private bool TryFinalizeDeferredNativeDisposal()
@@ -2989,7 +3093,11 @@ namespace Hecton8.Atmosphere
                 !_stepTelemetryScratch.IsCreated)
                 return;
 
+            CompleteScheduledStepForTeardown();
             _stepRunning = false;
+            _stepScheduled = false;
+            _scheduledStepDeltaTime = 0f;
+            _stepHandle = default;
             ReleaseTelemetryRingStepLock();
             ReleaseStateWriteLocks();
             ReleaseGasStateBuffers();
@@ -2998,6 +3106,9 @@ namespace Hecton8.Atmosphere
             _deferredBaseTransitionCount = 0;
 
             _stepRunning = false;
+            _stepScheduled = false;
+            _scheduledStepDeltaTime = 0f;
+            _stepHandle = default;
             _seededStandardAtmosphere = false;
             _deferredBaseTransitionOverflow = false;
             _transitionOverflowAwakeUntil = 0d;

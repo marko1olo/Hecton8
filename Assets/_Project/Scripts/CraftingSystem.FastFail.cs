@@ -1,8 +1,8 @@
 using System;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Inventory;
 using Unity.Burst;
@@ -359,18 +359,9 @@ namespace Hecton8.Crafting
             if (!telemetry.IsCreated || telemetry.Length <= 0 || string.IsNullOrWhiteSpace(path))
                 return false;
 
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
             void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
             int byteLength = telemetry.Length * UnsafeUtility.SizeOf<CraftingFastFailTelemetryEntry>();
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            {
-                stream.Write(new ReadOnlySpan<byte>(ptr, byteLength));
-            }
-
-            return true;
+            return NativeFaultDumpWriter.TryWriteAll(path, new ReadOnlySpan<byte>(ptr, byteLength), byteLength);
         }
 
         public static bool TryDumpSlowFrameTelemetry(

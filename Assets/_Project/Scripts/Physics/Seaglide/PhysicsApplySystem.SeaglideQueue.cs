@@ -36,9 +36,9 @@ namespace Hecton8.Physics
         internal static void DrainSeaglideForcePackets(
             IPhysicsService system,
             GlobalPhysicsStateManager bodyResolver,
-            NativeArray<SeaglideForcePacketDTO> packets,
-            NativeArray<SeaglideCounterDTO> counters,
-            NativeArray<SeaglideBodyBindingDTO> bodyBindings,
+            NativeArray<SeaglideForcePacketDTO>.ReadOnly packets,
+            NativeArray<SeaglideCounterDTO>.ReadOnly counters,
+            NativeArray<SeaglideBodyBindingDTO>.ReadOnly bodyBindings,
             int maxPackets,
             out int accepted,
             out int unresolved)
@@ -92,7 +92,7 @@ namespace Hecton8.Physics
 
         private static bool TryResolveBoundSeaglideBodyForPacket(
             SeaglideForcePacketDTO packet,
-            NativeArray<SeaglideBodyBindingDTO> bodyBindings,
+            NativeArray<SeaglideBodyBindingDTO>.ReadOnly bodyBindings,
             GlobalPhysicsStateManager bodyResolver,
             out Rigidbody body)
         {

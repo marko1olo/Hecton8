@@ -70,6 +70,7 @@ using Hecton8.Gameplay;
 using Hecton8.Optimization;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -1861,6 +1862,8 @@ namespace Hecton8.AI.GPU
             if (!vault.TryAcquireWriteLock(in _boidBlackBoxHandle, SystemID.AIEcology, out NativeArray<BoidBlackBoxEntry> blackBox))
                 return;
 
+            NativeArray<byte> dumpPayload = default;
+            int dumpByteCount = 0;
             try
             {
                 if (!blackBox.IsCreated || blackBox.Length < BoidBlackBoxFrameCount)
@@ -1874,13 +1877,30 @@ namespace Hecton8.AI.GPU
 
                 if ((flags & BoidBlackBoxFaultMask) != 0u && !_boidBlackBoxDumped)
                 {
-                    _boidBlackBoxDumped = true;
-                    DumpBoidBlackBox(blackBox, _boidBlackBoxCursor, _boidBlackBoxWritten);
+                    TryStageBoidBlackBoxDump(blackBox, _boidBlackBoxCursor, _boidBlackBoxWritten, out dumpPayload, out dumpByteCount);
                 }
             }
             finally
             {
                 vault.ReleaseWriteLock(in _boidBlackBoxHandle, SystemID.AIEcology);
+            }
+
+            if (!dumpPayload.IsCreated)
+                return;
+
+            try
+            {
+                _boidBlackBoxDumped = NativeFaultDumpWriter.TryWriteAll(
+                    ResolveBoidBlackBoxDumpPath(),
+                    dumpPayload,
+                    dumpByteCount);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref dumpPayload,
+                    nameof(HectonBoidController),
+                    "boidBlackBoxDumpPayload");
             }
         }
 
@@ -2008,100 +2028,91 @@ namespace Hecton8.AI.GPU
             return unchecked((uint)Mathf.RoundToInt(scaled));
         }
 
-        private static void DumpBoidBlackBox(
+        private static unsafe bool TryStageBoidBlackBoxDump(
             NativeArray<BoidBlackBoxEntry> blackBox,
             int cursor,
-            int written)
+            int written,
+            out NativeArray<byte> payload,
+            out int byteCount)
         {
+            payload = default;
+            byteCount = 0;
+
+            if (!blackBox.IsCreated)
+                return false;
+
+            int capacity = blackBox.Length;
+            if (capacity <= 0)
+                return false;
+
+            int dumpCount = Math.Min(capacity, Math.Max(0, written));
+            int start = written < capacity ? 0 : PositiveMod(cursor, capacity);
+            byteCount = 28 + dumpCount * BoidBlackBoxStride;
+
             try
             {
-                string dumpPath = ResolveBoidBlackBoxDumpPath();
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(HectonBoidController),
+                    "boidBlackBoxDumpPayload");
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox);
 
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                WriteUInt32LittleEndian(target, 0, BoidBlackBoxDumpMagic);
+                WriteUInt32LittleEndian(target, 4, BoidBlackBoxDumpVersion);
+                WriteInt32LittleEndian(target, 8, BoidBlackBoxStride);
+                WriteInt32LittleEndian(target, 12, capacity);
+                WriteInt32LittleEndian(target, 16, dumpCount);
+                WriteInt32LittleEndian(target, 20, cursor);
+                WriteInt32LittleEndian(target, 24, start);
+
+                int payloadOffset = 28;
+                for (int i = 0; i < dumpCount; i++)
                 {
-                    int capacity = blackBox.Length;
-                    int dumpCount = Math.Min(capacity, Math.Max(0, written));
-                    int start = written < capacity ? 0 : cursor % capacity;
-                    writer.Write(BoidBlackBoxDumpMagic);
-                    writer.Write(BoidBlackBoxDumpVersion);
-                    writer.Write(BoidBlackBoxStride);
-                    writer.Write(capacity);
-                    writer.Write(dumpCount);
-                    writer.Write(cursor);
-                    writer.Write(start);
-
-                    for (int i = 0; i < dumpCount; i++)
-                    {
-                        int index = (start + i) % capacity;
-                        BoidBlackBoxEntry entry = blackBox[index];
-                        WriteBoidBlackBoxEntry(writer, entry);
-                    }
+                    int index = (start + i) % capacity;
+                    UnsafeUtility.MemCpy(
+                        target + payloadOffset + i * BoidBlackBoxStride,
+                        source + index * BoidBlackBoxStride,
+                        BoidBlackBoxStride);
                 }
+
+                return true;
             }
-            catch (IOException)
+            catch (Exception)
             {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-            catch (ArgumentException)
-            {
-            }
-            catch (NotSupportedException)
-            {
-            }
-            catch (InvalidOperationException)
-            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HectonBoidController),
+                    "boidBlackBoxDumpPayload");
+
+                payload = default;
+                byteCount = 0;
+                return false;
             }
         }
 
-        private static void WriteBoidBlackBoxEntry(BinaryWriter writer, BoidBlackBoxEntry entry)
+        private static int PositiveMod(int value, int divisor)
         {
-            writer.Write(entry.Frame);
-            writer.Write(entry.StateHash);
-            writer.Write(entry.Flags);
-            writer.Write(entry.BoidCount);
-            writer.Write(entry.TargetPosition.x);
-            writer.Write(entry.TargetPosition.y);
-            writer.Write(entry.TargetPosition.z);
-            writer.Write(entry.DeltaTime);
-            writer.Write(entry.BoundsCenter.x);
-            writer.Write(entry.BoundsCenter.y);
-            writer.Write(entry.BoundsCenter.z);
-            writer.Write(entry.BoidClockSeconds);
-            writer.Write(entry.SpatialGridOrigin.x);
-            writer.Write(entry.SpatialGridOrigin.y);
-            writer.Write(entry.SpatialGridOrigin.z);
-            writer.Write(entry.SpatialGridCellSize);
-            writer.Write(entry.SpatialGridResolutionX);
-            writer.Write(entry.SpatialGridResolutionY);
-            writer.Write(entry.SpatialGridResolutionZ);
-            writer.Write(entry.DispatchGroupCount);
-            writer.Write(entry.PredatorCount);
-            writer.Write(entry.FoveatedTier);
-            writer.Write(entry.GlobalQualityWeight);
-            writer.Write(entry.SocialLodWeight);
-            writer.Write(entry.AcousticPingParams.x);
-            writer.Write(entry.AcousticPingParams.y);
-            writer.Write(entry.AcousticPingParams.z);
-            writer.Write(entry.AcousticPingParams.w);
-            writer.Write(entry.AcousticPingRuntimeRadius.x);
-            writer.Write(entry.AcousticPingRuntimeRadius.y);
-            writer.Write(entry.AcousticPingRuntimeRadius.z);
-            writer.Write(entry.AcousticPingRuntimeRadius.w);
+            int result = value % divisor;
+            return result < 0 ? result + divisor : result;
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* target, int offset, int value)
+        {
+            WriteUInt32LittleEndian(target, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* target, int offset, uint value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+            target[offset + 2] = (byte)(value >> 16);
+            target[offset + 3] = (byte)(value >> 24);
         }
 
         private static string ResolveBoidBlackBoxDumpPath()
         {
-            string dataPath = Application.dataPath;
-            if (!string.IsNullOrEmpty(dataPath))
-                return Path.GetFullPath(Path.Combine(dataPath, "..", BoidBlackBoxDumpRelativePath));
-
-            return Path.GetFullPath(BoidBlackBoxDumpRelativePath);
+            return BoidBlackBoxDumpRelativePath;
         }
 
         private void TryRegisterHotSwapListener()

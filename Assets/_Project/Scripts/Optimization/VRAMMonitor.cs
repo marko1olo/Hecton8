@@ -113,7 +113,7 @@ namespace Hecton8.Optimization
         public bool IsRenderTextureMemoryOverBudget => RenderTextureMemoryBytes > _budgetThresholds.RenderTextureMemoryBudgetBytes;
         
         /// <summary>
-        /// Returns whether total VRAM exceeds the 1.8 GB MX350 ceiling.
+        /// Returns whether total VRAM exceeds the active runtime graphics budget.
         /// </summary>
         public bool IsTotalVRAMOverBudget => TotalVRAMBytes > _budgetThresholds.TotalVRAMBudgetBytes;
         

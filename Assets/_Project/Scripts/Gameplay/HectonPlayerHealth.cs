@@ -647,7 +647,7 @@ namespace Hecton8.Gameplay
 
         private static double ResolveUnscaledNowSeconds()
         {
-            double now = Time.unscaledTime;
+            double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
             return IsFiniteDouble(now) && now > 0d ? now : 0d;
         }
 

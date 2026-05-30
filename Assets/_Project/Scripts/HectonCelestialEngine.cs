@@ -1170,12 +1170,10 @@ namespace Hecton8.Celestial
         private uint _lastPublishedCelestialFlags = uint.MaxValue;
         private float _lastPublishedCelestialEclipseOcclusion = -1f;
         private float _lastPublishedCelestialRadiationStorm = -1f;
-        private static readonly ulong OrbitOutputMutationGuardMask =
-            CelestialMutationGuardBit(BufferID.Shinobu345CelestialLegacyOrbitOutput);
         private JobHandle _orbitJobHandle;
         private bool _orbitJobScheduled;
-        private IDataVault _orbitOutputGuardVault;
-        private bool _orbitOutputGuardHeld;
+        private IDataVault _orbitOutputBufferPinVault;
+        private bool _orbitOutputBufferPinned;
         private bool _orbitJobPrimed;
         private bool _registeredLateFrameTick;
         private bool _registeredHotSwapListener;
@@ -3390,7 +3388,7 @@ namespace Hecton8.Celestial
                 _orbitJobScheduled = false;
             }
 
-            ReleaseOrbitOutputVaultLock();
+            ReleaseOrbitOutputBufferPin();
             ReleaseCelestialPresentationBuffer(ref _orbitJobOutputHandle);
             ReleaseCelestialPresentationBuffer(ref _celestialBlackBoxHandle);
             ReleaseCelestialPresentationBuffer(ref _dayAtmosphereGradientSamplesHandle);
@@ -4387,7 +4385,8 @@ namespace Hecton8.Celestial
             if (existing != null)
             {
                 _planetShineLightGO = existing.gameObject;
-                _planetShineLight = _planetShineLightGO.GetComponent<Light>();
+                if (!_planetShineLightGO.TryGetComponent(out _planetShineLight))
+                    _planetShineLight = _planetShineLightGO.AddComponent<Light>();
             }
             else
             {
@@ -4821,38 +4820,33 @@ namespace Hecton8.Celestial
             }
         }
 
-        private bool TryAcquireOrbitOutputGuard()
+        private bool TryLockOrbitOutputBuffer()
         {
-            if (_orbitOutputGuardHeld)
+            if (_orbitOutputBufferPinned)
                 return false;
 
             IDataVault vault = _celestialTruthVault;
-            if (vault == null)
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!vault.TryAcquireMutationGuard(OrbitOutputMutationGuardMask))
+            if (!vault.TryLockBuffer(BufferID.Shinobu345CelestialLegacyOrbitOutput, SystemID.HabitatAtmosphere))
                 return false;
 
-            _orbitOutputGuardVault = vault;
-            _orbitOutputGuardHeld = true;
+            _orbitOutputBufferPinVault = vault;
+            _orbitOutputBufferPinned = true;
             return true;
         }
 
-        private void ReleaseOrbitOutputVaultLock()
+        private void ReleaseOrbitOutputBufferPin()
         {
-            if (!_orbitOutputGuardHeld)
+            if (!_orbitOutputBufferPinned)
                 return;
 
-            IDataVault vault = _orbitOutputGuardVault ?? _celestialTruthVault;
-            _orbitOutputGuardVault = null;
-            _orbitOutputGuardHeld = false;
+            IDataVault vault = _orbitOutputBufferPinVault ?? _celestialTruthVault;
+            _orbitOutputBufferPinVault = null;
+            _orbitOutputBufferPinned = false;
             if (vault != null)
-                vault.ReleaseMutationGuard(OrbitOutputMutationGuardMask);
-        }
-
-        private static ulong CelestialMutationGuardBit(BufferID bufferId)
-        {
-            return 1UL << (unchecked((int)(uint)(int)bufferId) & 63);
+                vault.TryUnlockBuffer(BufferID.Shinobu345CelestialLegacyOrbitOutput, SystemID.HabitatAtmosphere);
         }
 
         private void ReleaseCelestialPresentationBuffer<T>(ref VaultGenerationHandle<T> handle)
@@ -5018,12 +5012,12 @@ namespace Hecton8.Celestial
 
             if (scheduleAsync)
             {
-                if (!TryAcquireOrbitOutputGuard())
+                if (!TryLockOrbitOutputBuffer())
                     return;
 
                 if (!TryResolveOrbitJobOutput(out orbitOutput))
                 {
-                    ReleaseOrbitOutputVaultLock();
+                    ReleaseOrbitOutputBufferPin();
                     BuildFallbackCelestialRuntimeSnapshot();
                     return;
                 }
@@ -5085,7 +5079,7 @@ namespace Hecton8.Celestial
                 CommitOrbitMathOutput(orbitOutput[0]);
             else
                 DumpCelestialBlackBox();
-            ReleaseOrbitOutputVaultLock();
+            ReleaseOrbitOutputBufferPin();
         }
 
         private void TryCompleteOrbitMathJob(bool forceComplete)
@@ -5101,7 +5095,7 @@ namespace Hecton8.Celestial
                 CommitOrbitMathOutput(orbitOutput[0]);
             else
                 DumpCelestialBlackBox();
-            ReleaseOrbitOutputVaultLock();
+            ReleaseOrbitOutputBufferPin();
         }
 
         private void CommitOrbitMathOutput(in CelestialOrbitJobOutput output)
@@ -7112,50 +7106,91 @@ namespace Hecton8.Celestial
                 return;
             }
 
-            _celestialBlackBoxDumped = true;
             try
             {
-                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-                if (string.IsNullOrEmpty(projectRoot))
-                    return;
-
-                string dumpPath = Path.Combine(projectRoot, CelestialBlackBoxDumpRelativePath);
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(0x43454C42u);
-                    writer.Write(CelestialBlackBoxFrameCount);
-                    writer.Write(_celestialBlackBoxCount);
-                    writer.Write(_celestialBlackBoxCursor);
-
-                    int start = _celestialBlackBoxCount == CelestialBlackBoxFrameCount
-                        ? _celestialBlackBoxCursor
-                        : 0;
-
-                    for (int i = 0; i < _celestialBlackBoxCount; i++)
-                    {
-                        CelestialBlackBoxEntry entry = blackBox[(start + i) % CelestialBlackBoxFrameCount];
-                        writer.Write(entry.FrameIndex);
-                        writer.Write(entry.Sequence);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.TimeOfDay01);
-                        writer.Write(entry.EclipseState01);
-                        writer.Write(entry.SunDirectionY);
-                        writer.Write(entry.AegirDirectionY);
-                        writer.Write(entry.StormCloudDensity01);
-                        writer.Write(entry.LightningFlash01);
-                        writer.Write(entry.DepthMeters);
-                    }
-                }
+                _celestialBlackBoxDumped = TryWriteCelestialBlackBoxDump(CelestialBlackBoxDumpRelativePath, blackBox);
             }
             catch (Exception exception)
             {
                 Hecton8.Core.H8Debug.LogException(exception);
             }
+        }
+
+        private bool TryWriteCelestialBlackBoxDump(string dumpPath, NativeArray<CelestialBlackBoxEntry> blackBox)
+        {
+            const int HeaderBytes = 16;
+            const int RowBytes = 40;
+            if (!blackBox.IsCreated || blackBox.Length <= 0)
+                return false;
+
+            int rowCount = math.clamp(_celestialBlackBoxCount, 0, math.min(CelestialBlackBoxFrameCount, blackBox.Length));
+            if (rowCount <= 0)
+                return false;
+
+            NativeArray<byte> payload = default;
+            try
+            {
+                int byteCount = HeaderBytes + rowCount * RowBytes;
+                const string dumpPayloadLabel = "CelestialBlackBoxDumpPayload";
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(HectonCelestialEngine),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
+                int offset = 0;
+
+                WriteUInt32LittleEndian(payload, ref offset, 0x43454C42u);
+                WriteInt32LittleEndian(payload, ref offset, CelestialBlackBoxFrameCount);
+                WriteInt32LittleEndian(payload, ref offset, rowCount);
+                WriteInt32LittleEndian(payload, ref offset, _celestialBlackBoxCursor);
+
+                int start = rowCount == CelestialBlackBoxFrameCount
+                    ? _celestialBlackBoxCursor
+                    : 0;
+
+                for (int i = 0; i < rowCount; i++)
+                {
+                    CelestialBlackBoxEntry entry = blackBox[(start + i) % CelestialBlackBoxFrameCount];
+                    WriteUInt32LittleEndian(payload, ref offset, entry.FrameIndex);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.Sequence);
+                    WriteUInt32LittleEndian(payload, ref offset, entry.Flags);
+                    WriteFloatLittleEndian(payload, ref offset, entry.TimeOfDay01);
+                    WriteFloatLittleEndian(payload, ref offset, entry.EclipseState01);
+                    WriteFloatLittleEndian(payload, ref offset, entry.SunDirectionY);
+                    WriteFloatLittleEndian(payload, ref offset, entry.AegirDirectionY);
+                    WriteFloatLittleEndian(payload, ref offset, entry.StormCloudDensity01);
+                    WriteFloatLittleEndian(payload, ref offset, entry.LightningFlash01);
+                    WriteFloatLittleEndian(payload, ref offset, entry.DepthMeters);
+                }
+
+                return offset == byteCount && NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, byteCount);
+            }
+            finally
+            {
+                const string dumpPayloadLabel = "CelestialBlackBoxDumpPayload";
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HectonCelestialEngine),
+                    dumpPayloadLabel);
+            }
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, ref int offset, int value)
+        {
+            WriteUInt32LittleEndian(payload, ref offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, ref int offset, uint value)
+        {
+            payload[offset++] = (byte)value;
+            payload[offset++] = (byte)(value >> 8);
+            payload[offset++] = (byte)(value >> 16);
+            payload[offset++] = (byte)(value >> 24);
+        }
+
+        private static void WriteFloatLittleEndian(NativeArray<byte> payload, ref int offset, float value)
+        {
+            WriteUInt32LittleEndian(payload, ref offset, math.asuint(value));
         }
 
         // ─────────────────────────────────────────────

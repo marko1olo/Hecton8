@@ -435,12 +435,6 @@ namespace Hecton8.Physics
         // COLD ALLOC: fixed-size managed scratch keeps targeted wake queue locks away from Rigidbody/Collider side effects.
         private readonly PhysicsCullingTargetWakeRequestSignal[] _physicsTargetWakeApplyScratch =
             new PhysicsCullingTargetWakeRequestSignal[PhysicsCullingTargetWakeQueueCapacity];
-#if UNITY_EDITOR
-        private VaultBufferBinding<byte> _physicsCullingCsvScratch =
-            new VaultBufferBinding<byte>(BufferID.ShinobuPhysicsCullingCsvScratch, PhysicsCullingCsvScratchCapacity, OwnerSystemId);
-        private VaultBufferBinding<byte> _physicsCullingLegacyRadiiScratch =
-            new VaultBufferBinding<byte>(BufferID.ShinobuPhysicsCullingLegacyRadiiScratch, PhysicsCullingLegacyRadiiHeaderBytes, OwnerSystemId);
-#endif
         private readonly Plane[] _physicsFrustumPlaneScratch = new Plane[6]; // COLD ALLOC: Plane[6] - Unity frustum API scratch for GeometryUtility.CalculateFrustumPlanes(Camera, Plane[]) - owner: GlobalPhysicsStateManager
         private int _physicsCullingFrameTelemetryWriteIndex;
         private int _physicsCullingMockBodyCount;
@@ -475,10 +469,6 @@ namespace Hecton8.Physics
             _physicsStateChangedIndices.BindDataVault(dataVault);
             _physicsStateChangedCount.BindDataVault(dataVault);
             _physicsTargetWakeRequestCount.BindDataVault(dataVault);
-#if UNITY_EDITOR
-            _physicsCullingCsvScratch.BindDataVault(dataVault);
-            _physicsCullingLegacyRadiiScratch.BindDataVault(dataVault);
-#endif
         }
 
         private void EnsureShinobu37PhysicsCullingState()
@@ -513,13 +503,6 @@ namespace Hecton8.Physics
                 _physicsStateChangedCount.Ensure(NativeArrayOptions.ClearMemory);
             if (!_physicsTargetWakeRequestCount.IsCreated)
                 _physicsTargetWakeRequestCount.Ensure(NativeArrayOptions.ClearMemory);
-#if UNITY_EDITOR
-            if (!_physicsCullingCsvScratch.IsCreated)
-                _physicsCullingCsvScratch.Ensure(NativeArrayOptions.UninitializedMemory);
-            if (!_physicsCullingLegacyRadiiScratch.IsCreated)
-                _physicsCullingLegacyRadiiScratch.Ensure(NativeArrayOptions.UninitializedMemory);
-#endif
-
             InitializePhysicsCullingTuningIfNeeded();
         }
 
@@ -541,13 +524,7 @@ namespace Hecton8.Physics
                 (_physicsStateChangedIndices.IsCreated && _physicsStateChangedIndices.Length < MaxTrackedBodies) ||
                 (_physicsStateChangedCount.IsCreated && _physicsStateChangedCount.Length < 1) ||
                 (_physicsTargetWakeRequestCount.IsCreated && _physicsTargetWakeRequestCount.Length < 1);
-#if UNITY_EDITOR
-            return undersized ||
-                (_physicsCullingCsvScratch.IsCreated && _physicsCullingCsvScratch.Length < PhysicsCullingCsvScratchCapacity) ||
-                (_physicsCullingLegacyRadiiScratch.IsCreated && _physicsCullingLegacyRadiiScratch.Length < PhysicsCullingLegacyRadiiHeaderBytes);
-#else
             return undersized;
-#endif
         }
 
         private void ReleaseUndersizedShinobu37PhysicsCullingState()
@@ -567,10 +544,6 @@ namespace Hecton8.Physics
             ReleaseUndersizedVaultBuffer(ref _physicsStateChangedIndices, MaxTrackedBodies);
             ReleaseUndersizedVaultBuffer(ref _physicsStateChangedCount, 1);
             ReleaseUndersizedVaultBuffer(ref _physicsTargetWakeRequestCount, 1);
-#if UNITY_EDITOR
-            ReleaseUndersizedVaultBuffer(ref _physicsCullingCsvScratch, PhysicsCullingCsvScratchCapacity);
-            ReleaseUndersizedVaultBuffer(ref _physicsCullingLegacyRadiiScratch, PhysicsCullingLegacyRadiiHeaderBytes);
-#endif
             _physicsCullingTuningInitialized = false;
         }
 
@@ -607,15 +580,7 @@ namespace Hecton8.Physics
                 _physicsStateChangedCount.Length >= 1 &&
                 _physicsTargetWakeRequestCount.IsCreated &&
                 _physicsTargetWakeRequestCount.Length >= 1;
-#if UNITY_EDITOR
-            return ready &&
-                _physicsCullingCsvScratch.IsCreated &&
-                _physicsCullingCsvScratch.Length >= PhysicsCullingCsvScratchCapacity &&
-                _physicsCullingLegacyRadiiScratch.IsCreated &&
-                _physicsCullingLegacyRadiiScratch.Length >= PhysicsCullingLegacyRadiiHeaderBytes;
-#else
             return ready;
-#endif
         }
 
         private void ReleaseShinobu37PhysicsCullingState()
@@ -635,10 +600,6 @@ namespace Hecton8.Physics
             _physicsStateChangedIndices.ReleaseView();
             _physicsStateChangedCount.ReleaseView();
             _physicsTargetWakeRequestCount.ReleaseView();
-#if UNITY_EDITOR
-            _physicsCullingCsvScratch.ReleaseView();
-            _physicsCullingLegacyRadiiScratch.ReleaseView();
-#endif
             _physicsCullingTuningInitialized = false;
         }
 
@@ -719,35 +680,20 @@ namespace Hecton8.Physics
             tuning = default;
             if (string.IsNullOrEmpty(path))
                 return false;
-            if (!_physicsCullingLegacyRadiiScratch.IsCreated &&
-                !_physicsCullingLegacyRadiiScratch.Ensure(NativeArrayOptions.UninitializedMemory))
-            {
-                return false;
-            }
-
-            NativeArray<byte> scratch = _physicsCullingLegacyRadiiScratch.AsNativeArray();
-            if (!scratch.IsCreated || scratch.Length < 16)
-                return false;
-
             try
             {
-                unsafe
+                Span<byte> scratch = stackalloc byte[PhysicsCullingLegacyRadiiHeaderBytes];
+                int bytesRead;
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, PhysicsCullingLegacyRadiiHeaderBytes, FileOptions.SequentialScan))
                 {
-                    int bytesRead;
-                    using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, PhysicsCullingLegacyRadiiHeaderBytes, FileOptions.SequentialScan))
-                    {
-                        int maxBytes = math.min(scratch.Length, PhysicsCullingLegacyRadiiHeaderBytes);
-                        bytesRead = stream.Read(new Span<byte>(NativeArrayUnsafeUtility.GetUnsafePtr(scratch), maxBytes));
-                    }
-
-                    if (bytesRead <= 0)
-                        return false;
-
-                    int safeBytes = math.min(bytesRead, scratch.Length);
-                    return TryParseLegacyPhysicsCullingRadiiHeader(
-                        new ReadOnlySpan<byte>(NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch), safeBytes),
-                        out tuning);
+                    bytesRead = stream.Read(scratch);
                 }
+
+                if (bytesRead <= 0)
+                    return false;
+
+                int safeBytes = math.min(bytesRead, scratch.Length);
+                return TryParseLegacyPhysicsCullingRadiiHeader(scratch.Slice(0, safeBytes), out tuning);
             }
             catch (IOException)
             {
@@ -2244,21 +2190,45 @@ namespace Hecton8.Physics
                 FrameRingWriteIndex = unchecked((uint)_physicsCullingFrameTelemetryWriteIndex)
             };
 
-            string absolutePath = ResolvePhysicsCullingBlackBoxAbsolutePath();
-            string directory = Path.GetDirectoryName(absolutePath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
+            int headerBytes = UnsafeUtility.SizeOf<PhysicsCullingBlackBoxDumpHeader1337>();
+            int bodyBytes = bodyEntryCount * UnsafeUtility.SizeOf<PhysicsCullingTelemetryEntry>();
+            int frameBytes = frameEntryCount * UnsafeUtility.SizeOf<PhysicsCullingFrameTelemetry>();
+            long totalBytes = (long)headerBytes + bodyBytes + frameBytes;
+            if (totalBytes < headerBytes || totalBytes > int.MaxValue)
+                return;
 
-            unsafe
+            NativeArray<byte> payload = new NativeArray<byte>((int)totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            try
             {
-                using (FileStream stream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                unsafe
                 {
-                    byte* headerBytes = stackalloc byte[64];
-                    UnsafeUtility.CopyStructureToPtr(ref header, headerBytes);
-                    stream.Write(new ReadOnlySpan<byte>(headerBytes, UnsafeUtility.SizeOf<PhysicsCullingBlackBoxDumpHeader1337>()));
-                    WritePhysicsCullingNativeRingToStream(stream, bodyRing, bodyEntryCount);
-                    WritePhysicsCullingNativeRingToStream(stream, frameRing, frameEntryCount);
+                    byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    UnsafeUtility.CopyStructureToPtr(ref header, destination);
+
+                    int cursor = headerBytes;
+                    if (bodyBytes > 0)
+                    {
+                        UnsafeUtility.MemCpy(
+                            destination + cursor,
+                            NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(bodyRing),
+                            bodyBytes);
+                        cursor += bodyBytes;
+                    }
+
+                    if (frameBytes > 0)
+                    {
+                        UnsafeUtility.MemCpy(
+                            destination + cursor,
+                            NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(frameRing),
+                            frameBytes);
+                    }
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(ResolvePhysicsCullingBlackBoxAbsolutePath(), payload, (int)totalBytes);
+            }
+            finally
+            {
+                payload.Dispose();
             }
         }
 
@@ -2266,21 +2236,6 @@ namespace Hecton8.Physics
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             return Path.Combine(projectRoot, PhysicsCullingBlackBoxRelativePath1337);
-        }
-
-        private static unsafe void WritePhysicsCullingNativeRingToStream<T>(
-            FileStream stream,
-            NativeArray<T> ring,
-            int count)
-            where T : unmanaged
-        {
-            if (stream == null || !ring.IsCreated || count <= 0)
-                return;
-
-            int safeCount = math.min(count, ring.Length);
-            int byteLength = safeCount * UnsafeUtility.SizeOf<T>();
-            void* ptr = ring.GetUnsafeReadOnlyPtr();
-            stream.Write(new ReadOnlySpan<byte>(ptr, byteLength));
         }
 
         private void TickPhysicsCullingCsvOverrideMonitor()
@@ -2299,30 +2254,17 @@ namespace Hecton8.Physics
             if (ticks == _physicsCullingCsvLastWriteTicks)
                 return;
 
-            if (!_physicsCullingCsvScratch.IsCreated &&
-                !_physicsCullingCsvScratch.Ensure(NativeArrayOptions.UninitializedMemory))
+            Span<byte> scratch = stackalloc byte[PhysicsCullingCsvScratchCapacity];
+            int bytesRead;
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-                return;
+                bytesRead = stream.Read(scratch);
             }
 
-            NativeArray<byte> scratch = _physicsCullingCsvScratch.AsNativeArray();
-            if (!scratch.IsCreated || scratch.Length <= 0)
-                return;
-
-            unsafe
+            if (bytesRead > 0 &&
+                TryIngestPhysicsCullingCsv(scratch.Slice(0, math.min(bytesRead, scratch.Length))))
             {
-                int bytesRead;
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    int maxBytes = math.min(scratch.Length, PhysicsCullingCsvScratchCapacity);
-                    bytesRead = stream.Read(new Span<byte>(NativeArrayUnsafeUtility.GetUnsafePtr(scratch), maxBytes));
-                }
-
-                if (bytesRead > 0 &&
-                    TryIngestPhysicsCullingCsv(new ReadOnlySpan<byte>(NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch), math.min(bytesRead, scratch.Length))))
-                {
-                    _physicsCullingCsvLastWriteTicks = ticks;
-                }
+                _physicsCullingCsvLastWriteTicks = ticks;
             }
 #endif
         }

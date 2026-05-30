@@ -1514,42 +1514,53 @@ namespace Hecton8.Gameplay.Mining
         {
             if (_faultDumped || !TryResolveBlackBox(out NativeSlice<DeployableSdfDrillTelemetryEntry> blackBox))
                 return;
+            if (blackBox.Length <= 0)
+                return;
 
-            _faultDumped = true;
-            SetFlag(DeployableSdfDrillFlags.FaultDumped, true);
             try
             {
-                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-                if (string.IsNullOrEmpty(projectRoot))
-                    return;
-
-                string path = Path.Combine(projectRoot, DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                const int RowBytes = 56;
+                int totalBytes = blackBox.Length * RowBytes;
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(DeployableSdfDrillRuntime),
+                    "DeployableSdfDrillTelemetryDumpPayload");
+                try
                 {
+                    int offset = 0;
                     int start = _blackBoxCursor % blackBox.Length;
                     for (int i = 0; i < blackBox.Length; i++)
                     {
                         int index = (start + i) % blackBox.Length;
                         DeployableSdfDrillTelemetryEntry entry = blackBox[index];
-                        writer.Write(entry.GridX);
-                        writer.Write(entry.GridY);
-                        writer.Write(entry.GridZ);
-                        writer.Write(entry.LocalX);
-                        writer.Write(entry.LocalY);
-                        writer.Write(entry.LocalZ);
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.ActiveDrills);
-                        writer.Write(entry.OresExtracted);
-                        writer.Write(entry.FillPermille);
-                        writer.Write(entry.HealthPermille);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.JobCycles);
+                        WriteInt64LittleEndian(payload, offset, entry.GridX);
+                        WriteInt64LittleEndian(payload, offset + 8, entry.GridY);
+                        WriteInt64LittleEndian(payload, offset + 16, entry.GridZ);
+                        WriteFloat32LittleEndian(payload, offset + 24, entry.LocalX);
+                        WriteFloat32LittleEndian(payload, offset + 28, entry.LocalY);
+                        WriteFloat32LittleEndian(payload, offset + 32, entry.LocalZ);
+                        WriteUInt32LittleEndian(payload, offset + 36, entry.Frame);
+                        WriteUInt32LittleEndian(payload, offset + 40, entry.ActiveDrills);
+                        WriteUInt32LittleEndian(payload, offset + 44, entry.OresExtracted);
+                        WriteUInt16LittleEndian(payload, offset + 48, entry.FillPermille);
+                        WriteUInt16LittleEndian(payload, offset + 50, entry.HealthPermille);
+                        WriteUInt16LittleEndian(payload, offset + 52, entry.Flags);
+                        WriteUInt16LittleEndian(payload, offset + 54, entry.JobCycles);
+                        offset += RowBytes;
                     }
+
+                    if (NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, totalBytes))
+                    {
+                        _faultDumped = true;
+                        SetFlag(DeployableSdfDrillFlags.FaultDumped, true);
+                    }
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(DeployableSdfDrillRuntime),
+                        "DeployableSdfDrillTelemetryDumpPayload");
                 }
             }
             catch (Exception)
@@ -1557,6 +1568,36 @@ namespace Hecton8.Gameplay.Mining
                 _faultDumped = false;
                 SetFlag(DeployableSdfDrillFlags.FaultDumped, false);
             }
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> destination, int offset, float value)
+        {
+            WriteUInt32LittleEndian(destination, offset, math.asuint(value));
+        }
+
+        private static void WriteInt64LittleEndian(NativeArray<byte> destination, int offset, long value)
+        {
+            WriteUInt64LittleEndian(destination, offset, unchecked((ulong)value));
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> destination, int offset, ulong value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+            WriteUInt32LittleEndian(destination, offset + 4, unchecked((uint)(value >> 32)));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> destination, int offset, uint value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt16LittleEndian(NativeArray<byte> destination, int offset, ushort value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
         }
 
         private void ClearInventoryQuantities()

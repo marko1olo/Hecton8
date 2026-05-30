@@ -43,6 +43,9 @@ namespace Hecton8.Thermodynamics
         private static readonly BufferID SolverConvergenceStateId = (BufferID)70052;
         private static readonly BufferID SolverResidualSamplesId = (BufferID)70053;
         private static readonly BufferID SolverDumpLatchId = (BufferID)70054;
+        private static readonly ulong HeatSourceProfileMutationGuardMask =
+            ThermodynamicsMutationGuardBit(BufferID.AbyssalThermalProfiles) |
+            ThermodynamicsMutationGuardBit(BufferID.AbyssalThermalProfileCount);
 
         private static readonly int ThermalCellsBufferId = Shader.PropertyToID("_H8AbyssalThermalCells");
         private static readonly int ThermalGridMetaId = Shader.PropertyToID("_H8AbyssalThermalGridMeta");
@@ -83,7 +86,6 @@ namespace Hecton8.Thermodynamics
         private VaultGenerationHandle<double3> _sampleAups;
         private VaultGenerationHandle<ThermalSampleResultDTO> _sampleResults;
         private VaultGenerationHandle<ThermalTelemetryEntry> _telemetryRing;
-        private VaultGenerationHandle<byte> _profileBytes;
         private VaultGenerationHandle<HeatSourceProfileDTO> _profiles;
         private VaultGenerationHandle<int> _profileCount;
         private VaultGenerationHandle<ThermalSolverConvergenceStateDTO> _solverConvergence;
@@ -738,14 +740,11 @@ namespace Hecton8.Thermodynamics
             if (!vault.TryAcquireWriteLock(in _tuning, SystemID.CoreDiagnostics, out NativeArray<ThermalGridTuningDTO> tuningArray))
                 return false;
 
-            if (!tuningArray.IsCreated || tuningArray.Length < 1)
-            {
-                vault.ReleaseWriteLock(in _tuning, SystemID.CoreDiagnostics);
-                return false;
-            }
-
             try
             {
+                if (!tuningArray.IsCreated || tuningArray.Length < 1)
+                    return false;
+
                 float safeQuality = ResolveVisualQualityWeight();
                 tuning.CellSizeMeters = math.max(0.001f, math.isfinite(tuning.CellSizeMeters) ? tuning.CellSizeMeters : DefaultCellSizeMeters);
                 tuning.AmbientTemperatureCelsius = math.isfinite(tuning.AmbientTemperatureCelsius) ? tuning.AmbientTemperatureCelsius : DefaultAmbientTemperatureCelsius;
@@ -817,7 +816,6 @@ namespace Hecton8.Thermodynamics
             _sampleAups = Acquire<double3>(BufferID.AbyssalThermalSampleAups, SampleCapacity);
             _sampleResults = Acquire<ThermalSampleResultDTO>(BufferID.AbyssalThermalSampleResults, SampleCapacity);
             _telemetryRing = Acquire<ThermalTelemetryEntry>(BufferID.AbyssalThermalTelemetryRing, AbyssalThermalMath.TelemetryCapacity);
-            _profileBytes = Acquire<byte>(BufferID.AbyssalThermalProfileBytes, CsvScratchBytes);
             _profiles = Acquire<HeatSourceProfileDTO>(BufferID.AbyssalThermalProfiles, MaxProfileCount);
             _profileCount = Acquire<int>(BufferID.AbyssalThermalProfileCount, 1);
             _solverConvergence = Acquire<ThermalSolverConvergenceStateDTO>(SolverConvergenceStateId, 1);
@@ -940,7 +938,6 @@ namespace Hecton8.Thermodynamics
             _sampleAups = default;
             _sampleResults = default;
             _telemetryRing = default;
-            _profileBytes = default;
             _profiles = default;
             _profileCount = default;
             _solverConvergence = default;
@@ -993,7 +990,6 @@ namespace Hecton8.Thermodynamics
             ReleaseOwnedVaultHandle(vault, ref _sampleAups);
             ReleaseOwnedVaultHandle(vault, ref _sampleResults);
             ReleaseOwnedVaultHandle(vault, ref _telemetryRing);
-            ReleaseOwnedVaultHandle(vault, ref _profileBytes);
             ReleaseOwnedVaultHandle(vault, ref _profiles);
             ReleaseOwnedVaultHandle(vault, ref _profileCount);
             ReleaseOwnedVaultHandle(vault, ref _solverConvergence);
@@ -1053,6 +1049,11 @@ namespace Hecton8.Thermodynamics
                    vault.TryReadHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
+        }
+
+        private static ulong ThermodynamicsMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
         }
 
         private IDataVault EnsureVault()
@@ -1183,25 +1184,16 @@ namespace Hecton8.Thermodynamics
 
         private void SeedDefaultProfiles()
         {
-            IDataVault vault = _vault;
-            if (vault == null)
-                return;
-
-            if (!TryResolveArray(vault, in _profiles, MaxProfileCount, out NativeArray<HeatSourceProfileDTO> profileArray) ||
-                !TryResolveArray(vault, in _profileCount, 1, out NativeArray<int> profileCountArray))
-                return;
-
-            HeatSourceProfileDTO* profiles = (HeatSourceProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profileArray);
-            int* count = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(profileCountArray);
-            profiles[0].NameHash = BlackSmokerHash;
-            profiles[0].IntensityCelsiusPerSecond = DefaultMockVolcanoIntensity;
-            profiles[0].RadiusMeters = DefaultMockVolcanoRadiusMeters;
-            profiles[0].FalloffExponent = 1.55f;
-            profiles[0].ConvectionGain = 1f;
-            profiles[0].Flags = 0u;
-            profiles[0]._pad0 = 0u;
-            profiles[0]._pad1 = 0u;
-            *count = 1;
+            HeatSourceProfileDTO* profile = stackalloc HeatSourceProfileDTO[1];
+            profile[0].NameHash = BlackSmokerHash;
+            profile[0].IntensityCelsiusPerSecond = DefaultMockVolcanoIntensity;
+            profile[0].RadiusMeters = DefaultMockVolcanoRadiusMeters;
+            profile[0].FalloffExponent = 1.55f;
+            profile[0].ConvectionGain = 1f;
+            profile[0].Flags = 0u;
+            profile[0]._pad0 = 0u;
+            profile[0]._pad1 = 0u;
+            CommitHeatSourceProfiles(profile, 1);
         }
 
         private void TryLoadProfilesCold()
@@ -1217,32 +1209,80 @@ namespace Hecton8.Thermodynamics
             if (writeTicks == _lastProfileWriteTicks)
                 return;
 
-            IDataVault vault = _vault;
-            if (vault == null)
+            Span<byte> csvScratch = stackalloc byte[CsvScratchBytes];
+            int length = ReadProfileCsvBytes(path, csvScratch);
+            if (length <= 0)
                 return;
 
-            if (!TryResolveArray(vault, in _profileBytes, CsvScratchBytes, out NativeArray<byte> scratchArray) ||
-                !TryResolveArray(vault, in _profiles, MaxProfileCount, out NativeArray<HeatSourceProfileDTO> profileArray) ||
-                !TryResolveArray(vault, in _profileCount, 1, out NativeArray<int> profileCountArray))
-                return;
-
-            byte* scratch = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratchArray);
-            HeatSourceProfileDTO* profiles = (HeatSourceProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profileArray);
-            int* count = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(profileCountArray);
-            int length;
-            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            HeatSourceProfileDTO* profileScratch = stackalloc HeatSourceProfileDTO[MaxProfileCount];
+            int parsed = HeatSourceProfileCsvParser.Parse(csvScratch.Slice(0, length), profileScratch, MaxProfileCount);
+            if (parsed > 0 && CommitHeatSourceProfiles(profileScratch, parsed))
             {
-                length = stream.Read(new Span<byte>(scratch, CsvScratchBytes));
-            }
-
-            int parsed = HeatSourceProfileCsvParser.Parse(new ReadOnlySpan<byte>(scratch, length), profiles, MaxProfileCount);
-            if (parsed > 0)
-            {
-                *count = parsed;
                 _lastProfileWriteTicks = writeTicks;
             }
 #endif
         }
+
+        private bool CommitHeatSourceProfiles(HeatSourceProfileDTO* sourceProfiles, int sourceCount)
+        {
+            IDataVault vault = _vault;
+            if (vault == null || sourceProfiles == null || sourceCount <= 0)
+                return false;
+
+            int safeCount = math.clamp(sourceCount, 0, MaxProfileCount);
+            if (safeCount <= 0)
+                return false;
+
+            if (!vault.TryAcquireMutationGuard(HeatSourceProfileMutationGuardMask))
+                return false;
+
+            try
+            {
+                if (!TryResolveArray(vault, in _profiles, MaxProfileCount, out NativeArray<HeatSourceProfileDTO> profileArray) ||
+                    !TryResolveArray(vault, in _profileCount, 1, out NativeArray<int> profileCountArray))
+                    return false;
+
+                HeatSourceProfileDTO* profiles = (HeatSourceProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profileArray);
+                for (int i = 0; i < safeCount; i++)
+                    profiles[i] = sourceProfiles[i];
+                for (int i = safeCount; i < MaxProfileCount; i++)
+                    profiles[i] = default;
+
+                profileCountArray[0] = safeCount;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(HeatSourceProfileMutationGuardMask);
+            }
+        }
+
+#if UNITY_EDITOR
+        private static int ReadProfileCsvBytes(string path, Span<byte> scratch)
+        {
+            if (scratch.Length <= 0)
+                return 0;
+
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                if (stream.Length <= 0 || stream.Length > scratch.Length)
+                    return 0;
+
+                int expected = (int)stream.Length;
+                int total = 0;
+                while (total < expected)
+                {
+                    int read = stream.Read(scratch.Slice(total, expected - total));
+                    if (read <= 0)
+                        return 0;
+
+                    total += read;
+                }
+
+                return total == expected ? total : 0;
+            }
+        }
+#endif
 
         private void InspectLatestTelemetryAndDumpIfFaulted()
         {
@@ -1301,19 +1341,17 @@ namespace Hecton8.Thermodynamics
                 return;
 
             string directory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs"));
-            Directory.CreateDirectory(directory);
-            long bytes = UnsafeUtility.SizeOf<ThermalTelemetryEntry>() * AbyssalThermalMath.TelemetryCapacity;
+            int bytes = UnsafeUtility.SizeOf<ThermalTelemetryEntry>() * AbyssalThermalMath.TelemetryCapacity;
             ThermalTelemetryEntry* ring = (ThermalTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ringArray);
+            ReadOnlySpan<byte> snapshot = new ReadOnlySpan<byte>(ring, bytes);
 
-            WriteDumpFile(Path.Combine(directory, "Dump_THERMO_SURGEON.bin"), ring, bytes);
-            WriteDumpFile(Path.Combine(directory, "Dump_SHINOBU_203.bin"), ring, bytes);
+            WriteDumpFile(Path.Combine(directory, "Dump_THERMO_SURGEON.bin"), snapshot, bytes);
+            WriteDumpFile(Path.Combine(directory, "Dump_SHINOBU_203.bin"), snapshot, bytes);
         }
 
-        private static void WriteDumpFile(string path, ThermalTelemetryEntry* ring, long bytes)
+        private static void WriteDumpFile(string path, ReadOnlySpan<byte> bytes, int byteCount)
         {
-            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-            using UnmanagedMemoryStream unmanaged = new UnmanagedMemoryStream((byte*)ring, bytes);
-            unmanaged.CopyTo(stream);
+            NativeFaultDumpWriter.TryWriteAll(path, bytes, byteCount);
         }
 
         private void EnsureVisualBuffers()

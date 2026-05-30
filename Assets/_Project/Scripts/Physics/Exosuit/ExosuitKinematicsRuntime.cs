@@ -208,6 +208,7 @@ namespace Hecton8.Physics.Exosuit
         private bool _buffersInitialized;
         private bool _signalLanesReady;
         private bool _coreBlackboxWarmed;
+        private bool _runtimeActive;
 #if UNITY_EDITOR
         private bool _coldCsvApplied;
         private string _projectRoot;
@@ -235,6 +236,10 @@ namespace Hecton8.Physics.Exosuit
 
         private void OnEnable()
         {
+            _runtimeActive = Application.isPlaying;
+            if (!_runtimeActive)
+                return;
+
             _pendingDisableTeardown = false;
             _droppedSignalCount = 0;
             if (_dataVault == null)
@@ -256,6 +261,9 @@ namespace Hecton8.Physics.Exosuit
 
         private void OnDisable()
         {
+            if (!_runtimeActive)
+                return;
+
             _pendingDisableTeardown = true;
             TryUnregisterPostFixed();
             TryUnregisterFixed();
@@ -276,12 +284,13 @@ namespace Hecton8.Physics.Exosuit
             ReleaseVaultBuffers();
             _coreBlackboxWarmed = false;
             _pendingDisableTeardown = false;
+            _runtimeActive = false;
         }
 
         /// <inheritdoc />
         public void FixedTick(float fixedDeltaTime)
         {
-            if (_jobScheduled || !Application.isPlaying)
+            if (_jobScheduled || !_runtimeActive)
                 return;
 
             if (!EnsureBuffers(false))

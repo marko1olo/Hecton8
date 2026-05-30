@@ -1,0 +1,6 @@
+﻿Loop 17 build check blocked.
+CPU sample 1: 60%
+CPU sample 2 after 30s: 60%
+Active compiler process: dotnet PID 68208 CPU 248.78125
+CommandLine: dotnet build Hecton8.slnx -nologo -maxcpucount:1 -v:minimal
+Action: did not launch a second Hecton8.slnx build.

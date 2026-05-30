@@ -230,7 +230,7 @@ namespace Hecton8.World
             _debugSocketCount = _sockets.Count;
             _debugZoneSocketCount = zoneSocketCount;
             _debugNearestSocket = nearestSocket != null ? nearestSocket.SocketLabel : "None";
-            _debugNearestKind = nearestSocket != null ? nearestSocket.Kind.ToString() : WorldContentSocket.ContentKind.Generic.ToString();
+            _debugNearestKind = nearestSocket != null ? ResolveContentKindLabel(nearestSocket.Kind) : "Generic";
             _debugNearestProfile = nearestSocket != null && nearestSocket.Profile != null ? nearestSocket.Profile.profileLabel : "None";
             _debugNearestPopulationFamily = nearestSocket != null ? nearestSocket.ResolvedPopulationFamily : "None";
             _debugNearestPopulationRule = nearestSocket != null ? nearestSocket.ResolvedPopulationRule : "None";
@@ -256,8 +256,8 @@ namespace Hecton8.World
             _debugNearestProceduralFamily = nearestSocket != null ? nearestSocket.ResolvedProceduralFamily : "None";
             _debugNearestProceduralVariant = nearestSocket != null ? nearestSocket.ResolvedProceduralVariant : "None";
             _debugNearestProceduralSource = nearestSocket != null ? nearestSocket.ResolvedProceduralSource : "None";
-            _debugNearestProceduralDomain = nearestSocket != null ? nearestSocket.ResolvedProceduralDomain : WorldPrefabFamilyProfile.ProceduralDomain.Generic.ToString();
-            _debugNearestProceduralPlacementMode = nearestSocket != null ? nearestSocket.ResolvedProceduralPlacementMode : WorldPrefabFamilyProfile.PlacementMode.Scatter.ToString();
+            _debugNearestProceduralDomain = nearestSocket != null ? nearestSocket.ResolvedProceduralDomain : "Generic";
+            _debugNearestProceduralPlacementMode = nearestSocket != null ? nearestSocket.ResolvedProceduralPlacementMode : "Scatter";
             _debugNearestProceduralHeatmap = nearestSocket != null ? nearestSocket.ResolvedProceduralHeatmap : "None";
             _debugNearestProceduralIntent = nearestSocket != null ? nearestSocket.ResolvedProceduralIntent : "None";
             _debugNearestProceduralReason = nearestSocket != null ? nearestSocket.ResolvedProceduralReason : "None";
@@ -270,6 +270,35 @@ namespace Hecton8.World
             return zone != null && !string.IsNullOrWhiteSpace(zone.ZoneId)
                 ? zone.ZoneId
                 : UnresolvedZoneId;
+        }
+
+        private static string ResolveContentKindLabel(WorldContentSocket.ContentKind contentKind)
+        {
+            switch (contentKind)
+            {
+                case WorldContentSocket.ContentKind.ResourcePickup:
+                    return "ResourcePickup";
+                case WorldContentSocket.ContentKind.ResourceNode:
+                    return "ResourceNode";
+                case WorldContentSocket.ContentKind.FabricationStation:
+                    return "FabricationStation";
+                case WorldContentSocket.ContentKind.ConstructionPoint:
+                    return "ConstructionPoint";
+                case WorldContentSocket.ContentKind.PowerPoint:
+                    return "PowerPoint";
+                case WorldContentSocket.ContentKind.ServiceTarget:
+                    return "ServiceTarget";
+                case WorldContentSocket.ContentKind.NavigationMarker:
+                    return "NavigationMarker";
+                case WorldContentSocket.ContentKind.HazardPoint:
+                    return "HazardPoint";
+                case WorldContentSocket.ContentKind.CombatPoint:
+                    return "CombatPoint";
+                case WorldContentSocket.ContentKind.Landmark:
+                    return "Landmark";
+                default:
+                    return "Generic";
+            }
         }
 
         private static string ResolveZoneLabel(WorldZoneAnchor zone)

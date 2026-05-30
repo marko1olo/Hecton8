@@ -1,0 +1,52 @@
+{
+  "agentId": "AUDIT_NATIVE_STATE",
+  "timestampLocal": "2026-05-28T17:07:23+04:00",
+  "type": "compile_failure_forensics",
+  "buildAttempt": {
+    "command": "dotnet build Hecton8.Core.csproj --no-restore -nologo -clp:ErrorsOnly -maxcpucount:1 /p:UseSharedCompilation=false /nr:false",
+    "guardCpuPercent": 42,
+    "compilerProcessesBeforeLaunch": 0,
+    "exitCode": 1,
+    "wallTimeSeconds": 113.8,
+    "errors": 57
+  },
+  "primaryErrors": [
+    {
+      "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "line": 7363,
+      "code": "CS0019",
+      "message": "Operator '==' cannot be applied to operands of type 'uint' and 'BufferID'",
+      "status": "fixed_by_casting_expected_BufferID_to_raw_uint"
+    },
+    {
+      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+      "lines": "1290-1317",
+      "codes": [
+        "CS8168",
+        "CS8350"
+      ],
+      "message": "ref acquiredCount plus out fields on a ref struct violates C# ref-safety",
+      "status": "fixed_by_removing_ref_count_parameter_and_counting_successful_locks_in_caller"
+    }
+  ],
+  "postFixStaticChecks": {
+    "grepNoRawBufferIdEnumCompare": true,
+    "grepNoRefAcquiredCount": true,
+    "diffCheck": "only LF/CRLF warnings"
+  },
+  "repeatBuild": {
+    "launched": false,
+    "blockedByCpuSamplesPercent": [
+      100,
+      79,
+      70
+    ]
+  },
+  "runtimeProof": {
+    "unityImport": false,
+    "playMode": false,
+    "profiler": false,
+    "gcMonitor": false,
+    "nativeLedger": false
+  }
+}

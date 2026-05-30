@@ -89,6 +89,7 @@ namespace Hecton8.Core
         private static readonly uint _nativeLeakLabelHash = unchecked((uint)LocHash.Compute("NATIVE_LEAK_LABEL"));
         private static readonly uint _nanSentinelRecoveryHash = unchecked((uint)LocHash.Compute("NAN_SENTINEL_RECOVERY"));
         private static readonly double _millisecondsToStopwatchTicks = Stopwatch.Frequency * 0.001d;
+        private static readonly double _stopwatchTicksToSeconds = 1.0d / Stopwatch.Frequency;
         private static readonly long _baseFaunaArteryBudgetTicks = MillisecondsToStopwatchTicks(BaseFaunaArteryBudgetMs);
         private static readonly long _xrFaunaArteryBudgetTicks = Math.Max(1L, _baseFaunaArteryBudgetTicks >> 1);
 
@@ -261,7 +262,7 @@ namespace Hecton8.Core
 
             if (canvas != null)
                 _hudCanvas = canvas;
-            _lastHudCanvasUpdateTime = UnityEngine.Time.realtimeSinceStartupAsDouble;
+            _lastHudCanvasUpdateTime = ResolveWatchdogRealtimeSeconds();
         }
 
         internal static void RegisterEmergencyResetTarget(RuntimeWatchdogLane lane, IEmergencyResetTarget target)
@@ -272,7 +273,7 @@ namespace Hecton8.Core
 
             _emergencyResetTargets[laneIndex] = target;
             _lastObservedCounters[laneIndex] = Volatile.Read(ref _heartbeatCounters[laneIndex]);
-            _lastChangeTimes[laneIndex] = UnityEngine.Time.realtimeSinceStartupAsDouble;
+            _lastChangeTimes[laneIndex] = ResolveWatchdogRealtimeSeconds();
             _activeLanes[laneIndex] = true;
         }
 
@@ -339,7 +340,7 @@ namespace Hecton8.Core
             RefreshRegistryDependenciesCold();
             ResetGcCollectionSentinel();
             ResetMemorySpikeTracker();
-            ResetRegistryHeartbeatGuard(UnityEngine.Time.realtimeSinceStartupAsDouble);
+            ResetRegistryHeartbeatGuard(ResolveWatchdogRealtimeSeconds());
             TryRegisterHotSwapListener();
             TryRegisterUpdatable();
             TryRegisterSlowTickable();
@@ -352,8 +353,9 @@ namespace Hecton8.Core
                 return;
 
             _nextSampleFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + SampleIntervalFrames;
-            _nextMmfHealthCheckTime = UnityEngine.Time.realtimeSinceStartupAsDouble + MmfHealthCheckIntervalSeconds;
-            ResetRegistryHeartbeatGuard(UnityEngine.Time.realtimeSinceStartupAsDouble);
+            double now = ResolveWatchdogRealtimeSeconds();
+            _nextMmfHealthCheckTime = now + MmfHealthCheckIntervalSeconds;
+            ResetRegistryHeartbeatGuard(now);
             GlobalTelemetryBus.Initialize();
             MathGuard.Initialize();
             FrameTimeWatchdog.InitializeCold();
@@ -474,7 +476,7 @@ namespace Hecton8.Core
             EnforceFrameBudget(deltaTime);
             TickGcCollectionSentinel(deltaTime);
 
-            double now = UnityEngine.Time.realtimeSinceStartupAsDouble;
+            double now = ResolveWatchdogRealtimeSeconds();
             EnforceHudHeartbeat(now, frame);
             QueueMmfHealthCheckIfDue(now);
             if (now >= _nextRegistryHeartbeatGuardTime)
@@ -494,7 +496,7 @@ namespace Hecton8.Core
 
             _nextSampleFrame = frame + SampleIntervalFrames;
             NativeMemorySentinel.AuditLongLivedTransientAllocations(frame);
-            SampleRuntimeLanes(UnityEngine.Time.realtimeSinceStartupAsDouble);
+            SampleRuntimeLanes(ResolveWatchdogRealtimeSeconds());
         }
 
         private void ResetGcCollectionSentinel()
@@ -807,6 +809,11 @@ namespace Hecton8.Core
         private static long MillisecondsToStopwatchTicks(float milliseconds)
         {
             return Math.Max(1L, (long)(milliseconds * _millisecondsToStopwatchTicks));
+        }
+
+        private static double ResolveWatchdogRealtimeSeconds()
+        {
+            return Stopwatch.GetTimestamp() * _stopwatchTicksToSeconds;
         }
 
         private void EnforceHudHeartbeat(double now, int frame)

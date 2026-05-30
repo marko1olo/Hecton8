@@ -104,6 +104,8 @@ namespace Hecton8.World
         private const int MaxConcurrentChunkBuildJobs = 4;
         private const int InitialTileCapacity = 32;
         private const int TileCacheLruCapacity = 64;
+        private const int StartupBootstrapTileSnapshotCapacity = TileCacheLruCapacity * 4;
+        private const int MinimumTerrainHoleRuntimeCapacity = TileCacheLruCapacity * 2;
         private const int TileNativeCacheSlotCapacity = TileCacheLruCapacity * 4;
         private const int TerrainHoleTileScheduleBudgetPerSlowTick = 1;
         private const int TileNativeCacheBufferStride = 8;
@@ -230,6 +232,7 @@ namespace Hecton8.World
         [SerializeField]
         [Tooltip("Player transform used to drive chunk residency.")]
         private Transform playerTransform;
+        private IPlayerRuntimeContext _playerRuntimeContext;
 
         [SerializeField]
         [Tooltip("Indirect renderer used for surface grass and floating sargassum.")]
@@ -2020,7 +2023,8 @@ namespace Hecton8.World
         // COLD ALLOC: long[64] - deferred tile-removal staging while GPU height readbacks finish without blocking the main thread - owner: HectonMapMagicVegetationBridge
         private readonly long[] _tileStateRemovalScratchKeys = new long[TileCacheLruCapacity];
         private int _tileStateRemovalScratchKeyCount;
-        private MapMagicTerrainTileSnapshot[] _startupBootstrapTiles = Array.Empty<MapMagicTerrainTileSnapshot>();
+        // COLD ALLOC: MapMagicTerrainTileSnapshot[256] - fixed deferred plugin tile snapshot bootstrap cache - owner: HectonMapMagicVegetationBridge
+        private readonly MapMagicTerrainTileSnapshot[] _startupBootstrapTiles = new MapMagicTerrainTileSnapshot[StartupBootstrapTileSnapshotCapacity];
         private readonly long[] _tileNativeCacheSlotKeys = new long[TileNativeCacheSlotCapacity];
         private readonly bool[] _tileNativeCacheSlotUsed = new bool[TileNativeCacheSlotCapacity];
 
@@ -2113,6 +2117,7 @@ namespace Hecton8.World
         private Vector3 _lastPlayerPosition;
         private bool _hasLastPlayerPosition;
         private Camera _cachedViewCamera;
+        private Camera _cachedLocalCamera;
         private float _nextCameraResolveTime = float.NegativeInfinity;
         private float _nextCacheValidationTime = float.NegativeInfinity;
         private int _cacheValidationChunkCursor;
@@ -2431,7 +2436,7 @@ namespace Hecton8.World
             floatingFlowAnisotropy = math.clamp(floatingFlowAnisotropy, 0.2f, 1f);
             floatingFlowDirection = NormalizeFlowDirection(floatingFlowDirection);
             edgeDitherDistance = math.max(0f, edgeDitherDistance);
-            initialTerrainHoleCapacity = math.max(4, initialTerrainHoleCapacity);
+            initialTerrainHoleCapacity = math.max(MinimumTerrainHoleRuntimeCapacity, initialTerrainHoleCapacity);
             nativePoolDefragIdleSeconds = math.max(1f, nativePoolDefragIdleSeconds);
             nativePoolDefragThresholdPercent = math.clamp(nativePoolDefragThresholdPercent, 1f, 100f);
             nativePoolDefragIdleSpeedThreshold = math.max(0.01f, nativePoolDefragIdleSpeedThreshold);
@@ -2971,13 +2976,13 @@ namespace Hecton8.World
             return universePosition + GlobalTotalUniverseOffsetDouble;
         }
 
-        private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null)
+            IPlayerRuntimeContext runtimeContext = _playerRuntimeContext;
+            if (runtimeContext != null)
             {
-                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                if (runtimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                    (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
                 {
                     playerAup = movementState.PredictedAup;
                     return true;
@@ -2995,7 +3000,7 @@ namespace Hecton8.World
             return false;
         }
 
-        private static bool TryResolvePlayerRuntimePositionFromAup(out Vector3 runtimePosition)
+        private bool TryResolvePlayerRuntimePositionFromAup(out Vector3 runtimePosition)
         {
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
             {
@@ -6488,30 +6493,34 @@ namespace Hecton8.World
                 return _cachedViewCamera;
             }
 
+            IPlayerRuntimeContext playerRuntimeContext = _playerRuntimeContext;
+            Camera playerCamera = playerRuntimeContext != null ? playerRuntimeContext.PlayerCamera : null;
+            if (playerCamera != null &&
+                playerCamera.isActiveAndEnabled &&
+                playerCamera.gameObject.activeInHierarchy)
+            {
+                _cachedViewCamera = playerCamera;
+                viewCamera = playerCamera;
+                _nextCameraResolveTime = float.NegativeInfinity;
+                return _cachedViewCamera;
+            }
+
+            Camera localCamera = _cachedLocalCamera;
+            if (localCamera != null &&
+                localCamera.isActiveAndEnabled &&
+                localCamera.gameObject.activeInHierarchy)
+            {
+                _cachedViewCamera = localCamera;
+                viewCamera = localCamera;
+                _nextCameraResolveTime = float.NegativeInfinity;
+                return _cachedViewCamera;
+            }
+
             if (Time.unscaledTime < _nextCameraResolveTime)
                 return null;
 
             _nextCameraResolveTime = Time.unscaledTime + CameraResolveRetryInterval;
-            if (playerTransform != null)
-            {
-                if (!playerTransform.TryGetComponent(out _cachedViewCamera))
-                {
-                    _cachedViewCamera = PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext)
-                        ? runtimeContext.PlayerCamera
-                        : null;
-                }
-            }
-
-            if (_cachedViewCamera == null && TryGetComponent(out Camera localCamera))
-                _cachedViewCamera = localCamera;
-
-            if (_cachedViewCamera != null)
-            {
-                viewCamera = _cachedViewCamera;
-                _nextCameraResolveTime = float.NegativeInfinity;
-            }
-
-            return _cachedViewCamera;
+            return null;
         }
 
         private bool IsChunkVisible(Bounds worldBounds)
@@ -7725,13 +7734,8 @@ namespace Hecton8.World
             if (mapMagicBridge == null)
                 return false;
 
-            EnsureStartupBootstrapTileSnapshotCapacity(64);
             _startupBootstrapTileCount = mapMagicBridge.CopyTerrainTileSnapshotsTo(_startupBootstrapTiles);
-            while (_startupBootstrapTileCount >= _startupBootstrapTiles.Length && _startupBootstrapTiles.Length < TileCacheLruCapacity * 4)
-            {
-                EnsureStartupBootstrapTileSnapshotCapacity(_startupBootstrapTiles.Length * 2);
-                _startupBootstrapTileCount = mapMagicBridge.CopyTerrainTileSnapshotsTo(_startupBootstrapTiles);
-            }
+            _startupBootstrapTileCount = math.clamp(_startupBootstrapTileCount, 0, _startupBootstrapTiles.Length);
 
             _startupBootstrapTileCursor = 0;
             return true;
@@ -7814,8 +7818,6 @@ namespace Hecton8.World
                 return true;
             }
 
-            RefreshColdRuntimeDependencies();
-
             if (_startupTerrainHoleSyncPending)
             {
                 SyncTerrainHoleNativeCache();
@@ -7860,7 +7862,7 @@ namespace Hecton8.World
 
         private int ProcessDeferredStartupTileBatch(int batchSize)
         {
-            if (_startupBootstrapTileCount <= 0 || _startupBootstrapTiles == null)
+            if (_startupBootstrapTileCount <= 0)
                 return 0;
 
             int safeBatchSize = math.max(1, batchSize);
@@ -7872,7 +7874,7 @@ namespace Hecton8.World
                 if (!snapshot.IsValid || IsForeignTile(in snapshot))
                     continue;
 
-                UpsertTileState(in snapshot);
+                UpsertTileStateDeferredStartup(in snapshot);
                 processedCount++;
             }
 
@@ -7885,55 +7887,110 @@ namespace Hecton8.World
             _startupBootstrapTileCursor = 0;
         }
 
-        private void EnsureStartupBootstrapTileSnapshotCapacity(int requiredCapacity)
-        {
-            int safeCapacity = math.max(1, requiredCapacity);
-            if (_startupBootstrapTiles != null && _startupBootstrapTiles.Length >= safeCapacity)
-                return;
-
-            _startupBootstrapTiles = new MapMagicTerrainTileSnapshot[safeCapacity]; // COLD ALLOC: MapMagicTerrainTileSnapshot[startup] - deferred plugin tile snapshot bootstrap cache - owner: HectonMapMagicVegetationBridge
-        }
-
         private void UpsertTileState(in MapMagicTerrainTileSnapshot snapshot)
         {
-            if (!snapshot.IsValid)
+            if (!TryPrepareTileState(
+                    in snapshot,
+                    out TileRuntimeState state,
+                    out UnityEngine.TerrainData terrainData,
+                    out long tileKey,
+                    out int oldChunkCountX,
+                    out int oldChunkCountZ,
+                    out bool hadExistingTileState))
+            {
                 return;
+            }
+
+            RefreshTerrainTextureCachesCold(state, terrainData);
+            EnsureTileTerrainHoleMaskCapacityCold(state);
+            EnsureTileHeightReadbackData(state, terrainData.heightmapResolution * terrainData.heightmapResolution);
+            FinalizeTileStateUpsert(in snapshot, state, terrainData, oldChunkCountX, oldChunkCountZ);
+        }
+
+        private void UpsertTileStateDeferredStartup(in MapMagicTerrainTileSnapshot snapshot)
+        {
+            if (!TryPrepareTileState(
+                    in snapshot,
+                    out TileRuntimeState state,
+                    out UnityEngine.TerrainData terrainData,
+                    out long tileKey,
+                    out int oldChunkCountX,
+                    out int oldChunkCountZ,
+                    out bool hadExistingTileState))
+            {
+                return;
+            }
+
+            if (!TryRefreshTerrainTextureCachesHot(state, terrainData))
+            {
+                if (!hadExistingTileState)
+                    _tileStates.Remove(tileKey);
+                return;
+            }
+
+            if (!HasTileHeightReadbackData(state, terrainData.heightmapResolution * terrainData.heightmapResolution))
+            {
+                QueueTileHeightReadbackRepair(state, terrainData.heightmapResolution * terrainData.heightmapResolution);
+                if (!hadExistingTileState)
+                    _tileStates.Remove(tileKey);
+                return;
+            }
+
+            TryPrepareTileTerrainHoleMaskHot(state);
+            FinalizeTileStateUpsert(in snapshot, state, terrainData, oldChunkCountX, oldChunkCountZ);
+        }
+
+        private bool TryPrepareTileState(
+            in MapMagicTerrainTileSnapshot snapshot,
+            out TileRuntimeState state,
+            out UnityEngine.TerrainData terrainData,
+            out long tileKey,
+            out int oldChunkCountX,
+            out int oldChunkCountZ,
+            out bool hadExistingTileState)
+        {
+            state = null;
+            terrainData = null;
+            tileKey = 0L;
+            oldChunkCountX = 0;
+            oldChunkCountZ = 0;
+            hadExistingTileState = false;
+
+            if (!snapshot.IsValid)
+                return false;
 
             UnityEngine.Terrain terrain = snapshot.Terrain;
             if (terrain == null || terrain.terrainData == null)
             {
                 RemoveTileState(snapshot.TileX, snapshot.TileZ);
-                return;
+                return false;
             }
 
-            UnityEngine.TerrainData terrainData = terrain.terrainData;
+            terrainData = terrain.terrainData;
             if (!TryResolveLayerIndices(terrainData, out LayerIndices indices))
             {
                 RemoveTileState(snapshot.TileX, snapshot.TileZ);
-                return;
+                return false;
             }
 
-            long tileKey = PackTileCoord(snapshot.TileX, snapshot.TileZ);
-            int oldChunkCountX = 0;
-            int oldChunkCountZ = 0;
-            bool hadExistingTileState = _tileStates.TryGetValue(tileKey, out TileRuntimeState existingState) && existingState != null;
+            tileKey = PackTileCoord(snapshot.TileX, snapshot.TileZ);
+            hadExistingTileState = _tileStates.TryGetValue(tileKey, out TileRuntimeState existingState) && existingState != null;
             if (hadExistingTileState)
             {
                 oldChunkCountX = existingState.ChunkCountX;
                 oldChunkCountZ = existingState.ChunkCountZ;
             }
 
-            if (!_tileStates.TryAcquireOrCreate(tileKey, out TileRuntimeState state) || state == null)
+            if (!_tileStates.TryAcquireOrCreate(tileKey, out state) || state == null)
             {
                 RecordChunkQueueCapacityExceeded(_tileStates.Capacity, _tileStates.Count);
-                return;
+                return false;
             }
 
             state.TileX = snapshot.TileX;
             state.TileZ = snapshot.TileZ;
             state.Terrain = terrain;
             state.TerrainData = terrainData;
-            RefreshTerrainTextureCachesCold(state, terrainData);
             state.TerrainPosition = terrain.GetPosition();
             state.TerrainSize = terrainData.size;
             state.AlphamapResolution = terrainData.alphamapResolution;
@@ -7946,10 +8003,19 @@ namespace Hecton8.World
             {
                 if (!hadExistingTileState)
                     _tileStates.Remove(tileKey);
-                return;
+                return false;
             }
 
-            EnsureTileTerrainHoleMaskCapacity(state);
+            return true;
+        }
+
+        private void FinalizeTileStateUpsert(
+            in MapMagicTerrainTileSnapshot snapshot,
+            TileRuntimeState state,
+            UnityEngine.TerrainData terrainData,
+            int oldChunkCountX,
+            int oldChunkCountZ)
+        {
             MarkTileTerrainHolesDirty(state);
 
             InvalidateTileChunks(snapshot.TileX, snapshot.TileZ, math.max(oldChunkCountX, state.ChunkCountX), math.max(oldChunkCountZ, state.ChunkCountZ));
@@ -7959,11 +8025,13 @@ namespace Hecton8.World
         private void RefreshColdRuntimeDependencies()
         {
             if (mapMagicBridge == null)
-                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
+                mapMagicBridge = GlobalRegistry.MapMagic;
+
+            if (_cachedLocalCamera == null)
+                TryGetComponent(out _cachedLocalCamera);
 
             if (playerTransform == null)
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
-
+                CachePlayerRuntimeContext(GlobalRegistry.Player);
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
@@ -7971,6 +8039,7 @@ namespace Hecton8.World
             if (playerContext == null || playerContext.PlayerTransform == null)
                 return;
 
+            _playerRuntimeContext = playerContext;
             playerTransform = playerContext.PlayerTransform;
         }
 
@@ -7981,6 +8050,8 @@ namespace Hecton8.World
 
             if (ReferenceEquals(playerTransform, playerContext.PlayerTransform))
                 playerTransform = null;
+            if (ReferenceEquals(_playerRuntimeContext, playerContext))
+                _playerRuntimeContext = null;
         }
 
         private void UpdatePlayerMotionState(float dt)
@@ -8533,8 +8604,16 @@ namespace Hecton8.World
                     continue;
 
                 int repairSampleCount = state.HeightReadbackRepairSampleCount;
-                EnsureTileHeightReadbackData(state, repairSampleCount);
-                repairedAny |= HasTileHeightReadbackData(state, repairSampleCount);
+                if (!HasTileHeightReadbackData(state, repairSampleCount))
+                {
+                    state.HeightReadbackRepairRequested = false;
+                    state.HeightReadbackRepairSampleCount = 0;
+                    continue;
+                }
+
+                state.HeightReadbackRepairRequested = false;
+                state.HeightReadbackRepairSampleCount = 0;
+                repairedAny = true;
             }
 
             if (repairedAny)

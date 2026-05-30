@@ -85,7 +85,7 @@ Rules:
 
 ## Performance Gate
 
-MX350/i3-class target is the minimum supported proof lane.
+Compact 2GB-VRAM / 8GB-RAM class hardware is the minimum supported proof lane.
 
 | Metric | Limit | Blocks merge | Evidence |
 |---|---:|---|---|

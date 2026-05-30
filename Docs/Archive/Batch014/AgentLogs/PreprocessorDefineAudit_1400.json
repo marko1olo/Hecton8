@@ -1,0 +1,26 @@
+﻿{
+    "generatedAt":  "2026-05-28T03:06:59.2272547+04:00",
+    "root":  "C:\\hades\\Hecton8",
+    "cliUnity6000Defines":  [
+                                "UNITY_6000",
+                                "UNITY_6000_0_OR_NEWER",
+                                "UNITY_6000_1_OR_NEWER",
+                                "UNITY_6000_2_OR_NEWER",
+                                "UNITY_6000_3_OR_NEWER",
+                                "UNITY_6000_4_OR_NEWER",
+                                "UNITY_6000_4_1"
+                            ],
+    "generatedUnity6000Defines":  [
+                                      "UNITY_6000",
+                                      "UNITY_6000_4_1",
+                                      "UNITY_6000_4_OR_NEWER"
+                                  ],
+    "missingAfterEdit":  [
+
+                         ],
+    "rejectedGlobalPlatformDefines":  [
+                                          "UNITY_STANDALONE",
+                                          "UNITY_STANDALONE_WIN",
+                                          "ENABLE_IL2CPP"
+                                      ]
+}

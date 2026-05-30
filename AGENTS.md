@@ -5,10 +5,10 @@ Senior Technical Lead, HECTON-8 (NASA-Punk / Deep Sea Noir). 15 years AA/AAA exp
 
 Senior Technical Director / Lead Unity 6 C# Developer.
 HECTON-8 — AA commercial 3D game (NASA-Punk + Deep Sea Noir).
-Engine: Unity 6000.4 URP. Target: NVIDIA MX350 2GB VRAM, 8GB RAM, i5-1135G7.
+Engine: Unity 6000.4 URP. Minimum proof lane: compact 2GB VRAM / 8GB RAM / 4C-8T class. Product target: continuous scalability across low, compact, handheld UMA, mid, high, ultra, PCVR, and standalone XR lanes.
 Perf target: 60 FPS / 16.67 ms. Throttle threshold = 25 ms.
 Guardrails: main thread = 12 ms · GC = 0 B/frame · SetPass = 600 · Batches = 1800 · mem = 4096 MB.
-VRAM HARD CEILING: 1800MB (MX350). Texture budget: 900MB. RT+Depth: 320MB. [REQ] Graduation response: used/total > 0.90 triggers Mip-downgrade.
+Compact VRAM HARD CEILING: 1800MB. Texture budget: 900MB. RT+Depth: 320MB. Higher device classes may raise budgets only through the hardware detector and continuous `GlobalQualityWeight` route. [REQ] Graduation response: used/total > 0.90 triggers Mip-downgrade.
 [REQ] For gameplay or design decisions must read 'TASTE.md'
 Read main documents (AGENTS.md, TASTE.md, etc. fully)
 Every system: Complete · Robust · Optimized · Integrated · Documented.
@@ -619,8 +619,8 @@ Document changes + GC delta + reason ? Revert ? Different approach ? Bundle logs
 [FORBID] All layers at same far clip without layerCullDistances.
 [REQ] Post Processing: URP Volume system. Global Volume + local overrides.
 [REQ] AA mandatory: Tonemapping (ACES) · Color Grading · Vignette · DoF (Bokeh cutscenes / Gaussian gameplay).
-[FORBID] Bloom on MX350 (MINIMAL tier).
-[FORBID] URP SSAO feature entirely. [REQ] Use custom half-res SSDO pass on MED+ tiers. Use Baked AO on MX350.
+[FORBID] Bloom on compact/minimum tier.
+[FORBID] URP SSAO feature entirely. [REQ] Use custom half-res SSDO pass on MED+ tiers. Use Baked AO on compact/minimum tier.
 [FORBID] Chromatic Aberration + Lens Distortion simultaneously without measured frame time.
 [REQ] All PP: verify 60 FPS on Low tier (renderScale 0.85).
 ---
@@ -674,7 +674,7 @@ Response format: What was wrong ? What I did ? In-game result ? What was verifie
 [RULE] BANDWIDTH DISCIPLINE
 [REQ] Use GraphicsBuffer.LockBufferForWrite with UnsafeUtility.MemCpy for all GPU updates.
 [REQ] Double-buffering for all GPU data is MANDATORY. While the GPU reads Buffer A, the CPU writes to Buffer B.
-[FORBID] Uploading data that hasn't changed. Use dirty-flags at the page level. If you waste PCIe bandwidth, you are killing the MX350.
+[FORBID] Uploading data that hasn't changed. Use dirty-flags at the page level. If you waste PCIe or shared-memory bandwidth, you are killing compact and handheld lanes.
 [REQ] Hot CPU->GPU uploads must claim a per-frame byte budget and use dirty pages/ranges; full-buffer uploads require all-dirty proof or cold-path fallback justification.
 [FORBID] Synchronous GPU readback (`GetData`) in runtime hot paths; use delayed `AsyncGPUReadback` only for documented telemetry/query lanes.
 [RULE] INTERFACE IMMUTABILITY: During a batch run, changing existing public method signatures in Hecton8.Core.Contracts is FORBIDDEN. If a signature change is vital, you must mark it in Rationale.md and implement a Legacy Wrapper. Interfaces can only be expanded, not mutated, until the next batch.

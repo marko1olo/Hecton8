@@ -10,7 +10,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ParticleSystem))]
-    public sealed class SargassumDebrisParticleSystem : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class SargassumDebrisParticleSystem : MonoBehaviour, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxQueuedParticleEmits = 64;
         private static readonly int _DryColorId = Shader.PropertyToID("_DryColor");
@@ -155,7 +155,9 @@ namespace Hecton8.World
         private float _ambientSpawnAccumulator;
         private uint _emitSeed = 1u;
         private bool _lateFrameRegistered;
+        private bool _slowTickRegistered;
         private bool _hotSwapRegistered;
+        private bool _runtimeTargetRefreshRequested = true;
         private int _queuedEmitCount;
         private SargassumGlobalDragManager _sargassumDrag;
         private readonly PendingParticleEmit[] _queuedEmits = new PendingParticleEmit[MaxQueuedParticleEmits];
@@ -189,6 +191,7 @@ namespace Hecton8.World
         {
             TryUnregister();
             TryUnregisterHotSwapListener();
+            _runtimeTargetRefreshRequested = true;
             _ambientSpawnAccumulator = 0f;
             _debugAmbientDensity01 = 0f;
             _debugAmbientSpawnBudget = 0f;
@@ -301,9 +304,9 @@ namespace Hecton8.World
             if (!enableAmbientBloom || _particleSystem == null)
                 return;
 
-            ResolveRuntimeTargets();
             if (_playerTransform == null)
             {
+                QueueRuntimeTargetRefresh();
                 _debugAmbientDensity01 = 0f;
                 _debugAmbientSpawnBudget = _ambientSpawnAccumulator;
                 return;
@@ -366,6 +369,15 @@ namespace Hecton8.World
             FlushQueuedParticleEmits();
         }
 
+        public void SlowTick()
+        {
+            if (!_runtimeTargetRefreshRequested && _playerTransform != null)
+                return;
+
+            _runtimeTargetRefreshRequested = false;
+            ResolveRuntimeTargets();
+        }
+
         private Vector3 ResolvePlayerRuntimePosition()
         {
             return _playerTransform != null ? _playerTransform.position : Vector3.zero;
@@ -392,6 +404,11 @@ namespace Hecton8.World
             _playerTransform = runtimePlayerTransform != null ? runtimePlayerTransform : playerTransformOverride;
         }
 
+        private void QueueRuntimeTargetRefresh()
+        {
+            _runtimeTargetRefreshRequested = true;
+        }
+
         private void ConfigureParticleSystem()
         {
             if (_particleSystem == null)
@@ -411,20 +428,29 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            if (!_slowTickRegistered)
+                _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+
+            if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
+            if (_slowTickRegistered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _slowTickRegistered = false;
+            }
+
             if (_lateFrameRegistered)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _lateFrameRegistered = false;
             }
-
         }
 
         private void CacheRegistryServicesCold()
@@ -461,6 +487,7 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _lateFrameRegistered = false;
+                    _slowTickRegistered = false;
                     if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;

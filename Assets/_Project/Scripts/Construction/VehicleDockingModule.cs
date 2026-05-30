@@ -1,4 +1,3 @@
-using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -37,10 +36,8 @@ namespace Hecton8.Construction
         private const uint DockingWakeSourceHash = 0x44534C4Eu;
         private const uint DockingWakeSourceVehicleFlag = 2u;
         private const int DockTelemetryCapacity = 300;
-        private const uint DockTelemetryDumpMagic = 0x4453504Cu;
-        private const ushort DockTelemetryDumpVersion = 2;
-        private const ushort DockTelemetryEntrySizeBytes = 128;
-        private const int DockTelemetryDumpCooldownFrames = 30;
+        private const uint DockTelemetryHashSeed = 0x4453504Cu;
+        private const int DockTelemetryCaptureCooldownFrames = 30;
         private const int DockedCargoCrateCapacity = 16;
         private const int DockCandidateCapacity = 4;
         private const ulong DockTelemetryMutationGuardMask =
@@ -154,7 +151,8 @@ namespace Hecton8.Construction
         private CachedTriggerVolume _triggerVolume;
         private PowerNode _powerNode;
         private BaseModule _owningModule;
-        private bool _registered;
+        private bool _registeredUpdate;
+        private bool _registeredFixed;
         private bool _hasPower = true;
         private bool _activelyCharging;
         private bool _dockingInProgress;
@@ -205,7 +203,10 @@ namespace Hecton8.Construction
         private IDataVault _dataVault;
         private VaultGenerationHandle<DockTelemetryEntry> _dockTelemetryHandle;
         private VaultGenerationHandle<int> _dockTelemetryCursorHandle;
-        private int _lastDockTelemetryDumpFrame = -DockTelemetryDumpCooldownFrames;
+        private uint _lastDockTelemetryStateHash;
+        private uint _lastDockTelemetryRuntimeFlags;
+        private int _lastDockTelemetryEntryCount;
+        private int _lastDockTelemetryCaptureFrame = -DockTelemetryCaptureCooldownFrames;
         private bool _hotSwapRegistered;
         private bool _registeredLateFrame;
         private Transform _pendingDockedTransform;
@@ -229,6 +230,22 @@ namespace Hecton8.Construction
         public bool HasDockedRelativeAup => _hasDockedRelativeAup;
         public AbsoluteUniversePosition DockedRelativeAup => _dockedRelativeAup;
         public float TotalDockedMassKg => ResolveDockedBodyMassKg() + _attachedDroneMassKg;
+
+        public bool TryGetLastDockTelemetrySummary(out uint stateHash, out uint runtimeFlags, out int entryCount)
+        {
+            if (_lastDockTelemetryEntryCount > 0)
+            {
+                stateHash = _lastDockTelemetryStateHash;
+                runtimeFlags = _lastDockTelemetryRuntimeFlags;
+                entryCount = _lastDockTelemetryEntryCount;
+                return true;
+            }
+
+            stateHash = 0u;
+            runtimeFlags = 0u;
+            entryCount = 0;
+            return false;
+        }
 
         public void SetAttachedDroneMassKg(float massKg)
         {
@@ -284,7 +301,7 @@ namespace Hecton8.Construction
             CachePhysicsRoutes();
             HectonFloatingOrigin.RegisterListener(this);
             RefreshDockingCandidatesFromRegistryCold();
-            TryRegister();
+            TryRegisterActiveLanes();
         }
 
         private void OnDisable()
@@ -292,7 +309,7 @@ namespace Hecton8.Construction
             HectonFloatingOrigin.UnregisterListener(this);
             ReleaseDockedTransport();
             ClearDockingCandidates();
-            TryUnregister();
+            TryUnregisterAllRuntimeLanes();
             TryUnregisterHotSwapListener();
             DisposeDockTelemetry();
         }
@@ -301,7 +318,7 @@ namespace Hecton8.Construction
         {
             HectonFloatingOrigin.UnregisterListener(this);
             ReleaseDockedTransport();
-            TryUnregister();
+            TryUnregisterAllRuntimeLanes();
             TryUnregisterHotSwapListener();
             DisposeDockTelemetry();
         }
@@ -328,7 +345,7 @@ namespace Hecton8.Construction
             RefreshDockingCandidatesFromRegistryCold();
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
-            TryRegister();
+            TryRegisterActiveLanes();
         }
 
         public void OnDespawn()
@@ -347,7 +364,7 @@ namespace Hecton8.Construction
             _lastRejectedDockColliderId = 0UL;
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
-            TryUnregister();
+            TryUnregisterAllRuntimeLanes();
             TryUnregisterHotSwapListener();
             DisposeDockTelemetry();
         }
@@ -356,12 +373,14 @@ namespace Hecton8.Construction
         {
             RecordDockTelemetry();
             RefreshDockingCandidatesFromCachedOverlap();
+            TryRegisterFixedIfNeeded();
 
             if (_dockedTransport == null || _dockedBehaviour == null || !_isDocked)
             {
                 if (_activelyCharging)
                     _activelyCharging = false;
 
+                TryUnregisterUpdateWhenDormant();
                 return;
             }
 
@@ -375,20 +394,27 @@ namespace Hecton8.Construction
 
             if (_activelyCharging != nextChargingState)
                 _activelyCharging = nextChargingState;
+
+            TryUnregisterUpdateWhenDormant();
         }
 
         public void FixedTick(float fixedDeltaTime)
         {
             if (!_dockingInProgress || _dockedBehaviour == null)
+            {
+                TryUnregisterFixedWhenDormant();
                 return;
+            }
 
             AdvanceDockingPose(fixedDeltaTime);
             RecordDockTelemetry();
+            TryUnregisterFixedWhenDormant();
         }
 
         public void LateFrameTick()
         {
             FlushQueuedDockedTransformPose();
+            TryUnregisterLateFrameWhenDormant();
         }
 
         public void OnPowerStatusChanged(bool hasPower)
@@ -403,11 +429,13 @@ namespace Hecton8.Construction
         private void OnTriggerEnter(Collider other)
         {
             TryCacheDockingCandidate(other);
+            TryRegisterUpdateIfNeeded();
         }
 
         private void OnTriggerExit(Collider other)
         {
             RemoveDockingCandidate(other);
+            TryUnregisterUpdateWhenDormant();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -441,6 +469,17 @@ namespace Hecton8.Construction
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _registeredUpdate = false;
+                _registeredFixed = false;
+                _registeredLateFrame = false;
+                if (currentService != null && isActiveAndEnabled)
+                    TryRegisterActiveLanes();
+
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -452,44 +491,109 @@ namespace Hecton8.Construction
             EnsureDockTelemetry();
         }
 
-        private void TryRegister()
+        private void TryRegisterActiveLanes()
         {
-            if (_registered || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            bool updateRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-            bool fixedRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
-            if (!updateRegistered || !fixedRegistered)
-            {
-                if (updateRegistered)
-                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                if (fixedRegistered)
-                    GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+            TryRegisterUpdateIfNeeded();
+            TryRegisterFixedIfNeeded();
+            TryRegisterLateFrameIfNeeded();
+        }
 
-                _registered = false;
+        private void TryRegisterUpdateIfNeeded()
+        {
+            if (_registeredUpdate || !Application.isPlaying || !HasActiveUpdateWork())
                 return;
-            }
 
-            _registered = true;
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+        }
+
+        private void TryRegisterFixedIfNeeded()
+        {
+            if (_registeredFixed || !Application.isPlaying || !_dockingInProgress)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryRegisterLateFrameIfNeeded()
+        {
+            if (_registeredLateFrame || !Application.isPlaying || !_pendingDockedTransformPoseDirty)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
-        private void TryUnregister()
+        private void TryUnregisterAllRuntimeLanes()
         {
-            if (!_registered)
-                return;
+            if (_registeredUpdate)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredUpdate = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+            if (_registeredFixed)
+            {
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+                _registeredFixed = false;
+            }
+
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrame = false;
             }
-            _registered = false;
+        }
+
+        private void TryUnregisterUpdateWhenDormant()
+        {
+            if (!_registeredUpdate || HasActiveUpdateWork())
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _registeredUpdate = false;
+        }
+
+        private void TryUnregisterFixedWhenDormant()
+        {
+            if (!_registeredFixed || _dockingInProgress)
+                return;
+
+            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+            _registeredFixed = false;
+        }
+
+        private void TryUnregisterLateFrameWhenDormant()
+        {
+            if (!_registeredLateFrame || _pendingDockedTransformPoseDirty)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
+        }
+
+        private bool HasActiveUpdateWork()
+        {
+            return _candidateCount > 0 ||
+                   _dockingInProgress ||
+                   _isDocked ||
+                   _activelyCharging ||
+                   _dockedTransport != null ||
+                   _dockedBehaviour != null ||
+                   _dockedBody != null;
         }
 
         private void TryRegisterHotSwapListener()
@@ -708,11 +812,11 @@ namespace Hecton8.Construction
             if (other == null)
                 return false;
 
-            owner = other.GetComponentInParent<IPlayerTransportLifecycleOwner>();
+            TryResolveParentInterface(other.transform, out owner);
             behaviour = owner as MonoBehaviour;
             if (owner == null || behaviour == null)
             {
-                IPlayerTransportLifecycleResolver resolver = other.GetComponentInParent<IPlayerTransportLifecycleResolver>();
+                TryResolveParentInterface(other.transform, out IPlayerTransportLifecycleResolver resolver);
                 if (resolver != null && resolver.TryResolveTransportLifecycleOwner(out owner))
                     behaviour = owner as MonoBehaviour;
             }
@@ -810,6 +914,10 @@ namespace Hecton8.Construction
 
             if (ShouldUseInstantDockSnap())
                 FinalizeDockedTransport();
+
+            TryRegisterUpdateIfNeeded();
+            TryRegisterFixedIfNeeded();
+            TryUnregisterFixedWhenDormant();
         }
 
         private void ReleaseDockedTransport(bool applyEjectVelocity = false)
@@ -854,6 +962,8 @@ namespace Hecton8.Construction
             _lastRejectedDockColliderId = 0UL;
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
+            TryUnregisterFixedWhenDormant();
+            TryUnregisterUpdateWhenDormant();
         }
 
         private void CaptureDockedBody(Rigidbody transportBody, MonoBehaviour transportBehaviour)
@@ -1110,6 +1220,8 @@ namespace Hecton8.Construction
             ConnectDockedCargoCrates();
             _dockingInProgress = false;
             _isDocked = true;
+            TryUnregisterFixedWhenDormant();
+            TryRegisterUpdateIfNeeded();
 
             if (!wasDocked)
                 QueueDockingImpactSignal();
@@ -1188,6 +1300,7 @@ namespace Hecton8.Construction
             _pendingDockedTransformPosition = position;
             _pendingDockedTransformRotation = rotation;
             _pendingDockedTransformPoseDirty = true;
+            TryRegisterLateFrameIfNeeded();
         }
 
         private void FlushQueuedDockedTransformPose()
@@ -1198,6 +1311,22 @@ namespace Hecton8.Construction
             _pendingDockedTransformPoseDirty = false;
             if (_pendingDockedTransform != null)
                 _pendingDockedTransform.SetPositionAndRotation(_pendingDockedTransformPosition, _pendingDockedTransformRotation);
+        }
+
+        private static bool TryResolveParentInterface<T>(Transform start, out T component)
+            where T : class
+        {
+            component = null;
+            Transform current = start;
+            while (current != null)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+
+                current = current.parent;
+            }
+
+            return false;
         }
 
         private AbsoluteUniversePosition ResolveHabitatReferenceAup(
@@ -1250,14 +1379,14 @@ namespace Hecton8.Construction
 
         private void AbortDockingForInvalidPose()
         {
-            DumpDockTelemetry();
+            CaptureDockTelemetrySummary();
             PublishDockingFailedSignal(DockingFailureReason.InvalidRequest, ResolveTelemetryPosition(), _lastDockingSplineTargetPosition);
             ReleaseDockedTransport(false);
         }
 
         private void AbortDockingForDeviation(Vector3 actualPosition, Vector3 splineTargetPosition)
         {
-            DumpDockTelemetry();
+            CaptureDockTelemetrySummary();
             PublishDockingFailedSignal(DockingFailureReason.ObstacleBlocked, actualPosition, splineTargetPosition);
             ReleaseDockedTransport(false);
         }
@@ -1368,13 +1497,13 @@ namespace Hecton8.Construction
                 Quaternion rotation = ResolveTelemetryRotation();
                 if (!IsFiniteVector(position) || !IsFiniteQuaternion(rotation))
                 {
-                    DumpDockTelemetryLocked(telemetry, telemetryLength, cursorBuffer);
+                    CaptureDockTelemetrySummaryLocked(telemetry, telemetryLength, cursorBuffer);
                     return;
                 }
 
                 if (!TryResolveAupFromRuntimeOrigin(position, out AbsoluteUniversePosition aup))
                 {
-                    DumpDockTelemetryLocked(telemetry, telemetryLength, cursorBuffer);
+                    CaptureDockTelemetrySummaryLocked(telemetry, telemetryLength, cursorBuffer);
                     return;
                 }
 
@@ -1445,7 +1574,7 @@ namespace Hecton8.Construction
             return _cachedTransform != null ? _cachedTransform.rotation : Quaternion.identity;
         }
 
-        private void DumpDockTelemetry()
+        private void CaptureDockTelemetrySummary()
         {
             if (!TryAcquireDockTelemetryWrite(
                     out NativeArray<DockTelemetryEntry> telemetry,
@@ -1458,7 +1587,7 @@ namespace Hecton8.Construction
 
             try
             {
-                DumpDockTelemetryLocked(telemetry, telemetryLength, cursorBuffer);
+                CaptureDockTelemetrySummaryLocked(telemetry, telemetryLength, cursorBuffer);
             }
             finally
             {
@@ -1466,76 +1595,51 @@ namespace Hecton8.Construction
             }
         }
 
-        private void DumpDockTelemetryLocked(
+        private void CaptureDockTelemetrySummaryLocked(
             NativeArray<DockTelemetryEntry> telemetry,
             int telemetryLength,
             NativeArray<int> cursorBuffer)
         {
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            if (frame - _lastDockTelemetryDumpFrame < DockTelemetryDumpCooldownFrames)
+            if (frame - _lastDockTelemetryCaptureFrame < DockTelemetryCaptureCooldownFrames)
                 return;
-            _lastDockTelemetryDumpFrame = frame;
+            _lastDockTelemetryCaptureFrame = frame;
 
-            string projectRoot = Application.dataPath;
-            if (!string.IsNullOrEmpty(projectRoot))
-                projectRoot = Directory.GetParent(projectRoot)?.FullName;
-            if (string.IsNullOrEmpty(projectRoot))
-                projectRoot = Directory.GetCurrentDirectory();
-
-            string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-            Directory.CreateDirectory(directory);
-            string path = Path.Combine(directory, "Dump_1306_Construction_DockingAutopilotSpline.bin");
             int cursor = SanitizeDockTelemetryCursor(cursorBuffer[0], telemetryLength);
             cursorBuffer[0] = cursor;
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            uint hash = DockTelemetryHashSeed ^ (uint)telemetryLength ^ ((uint)cursor * 16777619u);
+            uint runtimeFlags = 0u;
+            int index = cursor;
+            for (int i = 0; i < telemetryLength; i++)
             {
-                writer.Write(DockTelemetryDumpMagic);
-                writer.Write(DockTelemetryDumpVersion);
-                writer.Write(DockTelemetryEntrySizeBytes);
-                writer.Write(telemetryLength);
-                writer.Write(cursor);
-                int index = cursor;
-                for (int i = 0; i < telemetryLength; i++)
-                {
-                    DockTelemetryEntry entry = telemetry[index];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.State);
-                    writer.Write(entry.HasPower);
-                    writer.Write(entry.HasRelativeAup);
-                    writer.Write(entry.Reserved);
-                    writer.Write(entry.DistanceSq);
-                    writer.Write(entry.AlignmentDot);
-                    writer.Write(entry.SplineDeviationError);
-                    writer.Write(entry.FlowSpeed);
-                    writer.Write(entry.Position.x);
-                    writer.Write(entry.Position.y);
-                    writer.Write(entry.Position.z);
-                    writer.Write(entry.SplineTargetPosition.x);
-                    writer.Write(entry.SplineTargetPosition.y);
-                    writer.Write(entry.SplineTargetPosition.z);
-                    writer.Write(entry.CommandVelocity.x);
-                    writer.Write(entry.CommandVelocity.y);
-                    writer.Write(entry.CommandVelocity.z);
-                    writer.Write(entry.FlowVelocity.x);
-                    writer.Write(entry.FlowVelocity.y);
-                    writer.Write(entry.FlowVelocity.z);
-                    writer.Write(entry.Rotation.x);
-                    writer.Write(entry.Rotation.y);
-                    writer.Write(entry.Rotation.z);
-                    writer.Write(entry.Rotation.w);
-                    writer.Write(entry.GridX);
-                    writer.Write(entry.GridY);
-                    writer.Write(entry.GridZ);
-                    writer.Write(entry.OwnerHash);
-                    writer.Write(entry.RequestId);
-                    writer.Write(entry.RuntimeFlags);
-                    writer.Write(entry.ReservedTail);
-                    index++;
-                    if (index >= telemetryLength)
-                        index = 0;
-                }
+                DockTelemetryEntry entry = telemetry[index];
+                runtimeFlags |= entry.RuntimeFlags;
+                hash = MixDockTelemetryHash(hash, (uint)entry.Frame);
+                hash = MixDockTelemetryHash(hash, entry.State);
+                hash = MixDockTelemetryHash(hash, math.asuint(entry.DistanceSq));
+                hash = MixDockTelemetryHash(hash, math.asuint(entry.AlignmentDot));
+                hash = MixDockTelemetryHash(hash, math.asuint(entry.SplineDeviationError));
+                hash = MixDockTelemetryHash(hash, math.asuint(entry.FlowSpeed));
+                hash = MixDockTelemetryHash(hash, math.asuint(entry.Position.x));
+                hash = MixDockTelemetryHash(hash, math.asuint(entry.Position.y));
+                hash = MixDockTelemetryHash(hash, math.asuint(entry.Position.z));
+                hash = MixDockTelemetryHash(hash, entry.OwnerHash);
+                hash = MixDockTelemetryHash(hash, entry.RequestId);
+                hash = MixDockTelemetryHash(hash, entry.RuntimeFlags);
+                index++;
+                if (index >= telemetryLength)
+                    index = 0;
             }
+
+            _lastDockTelemetryStateHash = hash;
+            _lastDockTelemetryRuntimeFlags = runtimeFlags;
+            _lastDockTelemetryEntryCount = telemetryLength;
+        }
+
+        private static uint MixDockTelemetryHash(uint hash, uint value)
+        {
+            hash ^= value;
+            return hash * 16777619u;
         }
 
         private bool TryAcquireDockTelemetryWrite(

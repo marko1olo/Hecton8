@@ -136,6 +136,7 @@ namespace Hecton8.World
 #pragma warning restore CS0414
         [SerializeField] private float trenchRadiusPaddingMeters = 3f;
         [SerializeField] private float trenchRimBlendStrength = 0.55f;
+        [SerializeField, Range(64, 1024)] private int voxelBlendMaskTextureSide = 512;
 
         [Header("Diagnostics")]
         [SerializeField] private bool _debugReady;
@@ -156,6 +157,7 @@ namespace Hecton8.World
         private readonly List<SeismicTrenchState>[] _trenchBucketPool = new List<SeismicTrenchState>[TerrainStateCapacity]; // COLD ALLOC: List<SeismicTrenchState>[8] - fixed per-terrain trench bucket refs - owner: WorldGenerativeGeologyTerrainSeamApplier
         private MapMagicTerrainTileSnapshot[] _tileSnapshotScratch;
         private Texture2D _voxelBlendMaskTexture;
+        private byte[] _voxelBlendMaskUploadBuffer;
         private IDataVault _dataVault;
         private VaultGenerationHandle<TerrainSeamTelemetryEntry> _terrainSeamBlackBoxHandle;
         private bool _registeredToTickManager;
@@ -191,7 +193,8 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            EnsureHybridTerrainSeamState();
+            EnsureHybridTerrainSeamStateCold();
+            EnsureVoxelBlendMaskTextureCold();
             PublishActiveRuntimeInstance();
             RefreshDataVaultRoute();
             RefreshColdReferences();
@@ -200,7 +203,8 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            EnsureHybridTerrainSeamState();
+            EnsureHybridTerrainSeamStateCold();
+            EnsureVoxelBlendMaskTextureCold();
             PublishActiveRuntimeInstance();
             RefreshDataVaultRoute();
             RefreshColdReferences();
@@ -211,6 +215,7 @@ namespace Hecton8.World
 
         private void Start()
         {
+            EnsureVoxelBlendMaskTextureCold();
             RefreshDataVaultRoute();
             RefreshColdReferences();
             TryRegisterToTickManager();
@@ -270,7 +275,9 @@ namespace Hecton8.World
 
         public async Awaitable ProcessTerrainChunkGeneratedSignalsAsync(CancellationToken cancellationToken = default)
         {
-            EnsureHybridTerrainSeamState();
+            if (!HasHybridTerrainSeamState())
+                return;
+
             int drained = 0;
             int copiedSamplesSinceYield = 0;
             while (drained < TerrainChunkSignalDrainBudget &&
@@ -592,7 +599,9 @@ namespace Hecton8.World
         {
             using (TerrainSignalDrainMarker.Auto())
             {
-                EnsureHybridTerrainSeamState();
+                if (!HasHybridTerrainSeamState())
+                    return;
+
                 int drained = 0;
                 int copiedSamples = 0;
                 while (drained < TerrainChunkSignalDrainBudget &&
@@ -1492,6 +1501,53 @@ namespace Hecton8.World
             return t * t * (3f - 2f * t);
         }
 
+        private void EnsureVoxelBlendMaskTextureCold()
+        {
+            int side = Mathf.Clamp(voxelBlendMaskTextureSide, 64, 1024);
+            int pixelCount = side * side;
+            if (_voxelBlendMaskTexture != null &&
+                _voxelBlendMaskTexture.width == side &&
+                _voxelBlendMaskTexture.height == side &&
+                _voxelBlendMaskUploadBuffer != null &&
+                _voxelBlendMaskUploadBuffer.Length == pixelCount)
+            {
+                return;
+            }
+
+            DestroyVoxelBlendMaskTexture();
+            _voxelBlendMaskUploadBuffer = new byte[pixelCount]; // COLD ALLOC: byte[side*side] - reusable terrain seam blend-mask upload buffer - owner: WorldGenerativeGeologyTerrainSeamApplier
+            _voxelBlendMaskTexture = new Texture2D(side, side, TextureFormat.R8, false, true) // COLD ALLOC: Texture2D R8 fixed-size seam blend mask - owner: WorldGenerativeGeologyTerrainSeamApplier
+            {
+                name = "HectonVoxelBlendMask_Runtime",
+                hideFlags = HideFlags.DontSave,
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear
+            };
+        }
+
+        private void CopyVoxelBlendMaskToUploadBuffer(NativeArray<byte> blendMask, int width, int height)
+        {
+            int textureWidth = _voxelBlendMaskTexture.width;
+            int textureHeight = _voxelBlendMaskTexture.height;
+            int sourceIndex = 0;
+            for (int y = 0; y < height; y++)
+            {
+                int destinationIndex = y * textureWidth;
+                for (int x = 0; x < width; x++)
+                    _voxelBlendMaskUploadBuffer[destinationIndex + x] = blendMask[sourceIndex++];
+
+                if (width < textureWidth)
+                    _voxelBlendMaskUploadBuffer[destinationIndex + width] = 0;
+            }
+
+            if (height < textureHeight)
+            {
+                int clearStart = height * textureWidth;
+                int clearCount = Mathf.Min(width + 1, textureWidth);
+                Array.Clear(_voxelBlendMaskUploadBuffer, clearStart, clearCount);
+            }
+        }
+
         private void UploadVoxelBlendMaskTexture(
             UnityEngine.Terrain terrain,
             RectInt applyRect,
@@ -1503,24 +1559,20 @@ namespace Hecton8.World
 
             int width = applyRect.width;
             int height = applyRect.height;
-            if (_voxelBlendMaskTexture == null ||
-                _voxelBlendMaskTexture.width != width ||
-                _voxelBlendMaskTexture.height != height)
-            {
-                DestroyVoxelBlendMaskTexture();
-                // COLD ALLOC: Texture2D R8 seam blend mask resized only when the active terrain seam patch footprint changes.
-                _voxelBlendMaskTexture = new Texture2D(width, height, TextureFormat.R8, false, true)
-                {
-                    name = "HectonVoxelBlendMask_Runtime",
-                    hideFlags = HideFlags.DontSave,
-                    wrapMode = TextureWrapMode.Clamp,
-                    filterMode = FilterMode.Bilinear
-                };
-            }
+            if (width <= 0 ||
+                height <= 0 ||
+                _voxelBlendMaskTexture == null ||
+                _voxelBlendMaskUploadBuffer == null ||
+                width > _voxelBlendMaskTexture.width ||
+                height > _voxelBlendMaskTexture.height ||
+                blendMask.Length < width * height)
+                return;
+
+            CopyVoxelBlendMaskToUploadBuffer(blendMask, width, height);
 
             using (TerrainBlendMaskUploadMarker.Auto())
             {
-                _voxelBlendMaskTexture.SetPixelData(blendMask, 0);
+                _voxelBlendMaskTexture.SetPixelData(_voxelBlendMaskUploadBuffer, 0);
                 _voxelBlendMaskTexture.Apply(false, false);
             }
 
@@ -1536,7 +1588,13 @@ namespace Hecton8.World
             Shader.SetGlobalTexture(HectonVoxelBlendMaskId, _voxelBlendMaskTexture);
             Shader.SetGlobalVector(HectonVoxelBlendMaskRectId, new Vector4(worldMinX, worldMinZ, 1f / worldSizeX, 1f / worldSizeZ));
             float expensiveWeight = Mathf.Clamp01(seamExpensiveWeight);
-            Shader.SetGlobalVector(HectonVoxelBlendMaskParamsId, new Vector4(1f, Mathf.Lerp(0.82f, 1f, expensiveWeight), 1f - expensiveWeight, expensiveWeight));
+            Shader.SetGlobalVector(
+                HectonVoxelBlendMaskParamsId,
+                new Vector4(
+                    1f,
+                    Mathf.Lerp(0.82f, 1f, expensiveWeight),
+                    width / (float)_voxelBlendMaskTexture.width,
+                    height / (float)_voxelBlendMaskTexture.height));
             _voxelBlendMaskGlobalActive = true;
             _voxelBlendMaskUploadedThisPass = true;
         }
@@ -2046,7 +2104,9 @@ namespace Hecton8.World
         private bool TryBindTerrainStateBucket(int terrainId, out TerrainApplyState state)
         {
             state = null;
-            EnsureTerrainBucketPoolsCold();
+            if (!_terrainBucketPoolsInitialized)
+                return false;
+
             int bucketIndex = _knownTerrainIds.Count;
             if (bucketIndex >= TerrainStateCapacity)
                 return false;
@@ -2174,7 +2234,7 @@ namespace Hecton8.World
             }
         }
 
-        private void EnsureHybridTerrainSeamState()
+        private void EnsureHybridTerrainSeamStateCold()
         {
             EnsureTerrainBucketPoolsCold();
 
@@ -2185,6 +2245,11 @@ namespace Hecton8.World
             }
 
             TryEnsureTerrainSeamBlackBox(out _);
+        }
+
+        private bool HasHybridTerrainSeamState()
+        {
+            return _terrainBucketPoolsInitialized && _tileSnapshotScratch != null;
         }
 
         private void EnsureTerrainBucketPoolsCold()
@@ -2296,6 +2361,7 @@ namespace Hecton8.World
                 DestroyImmediate(_voxelBlendMaskTexture);
 
             _voxelBlendMaskTexture = null;
+            _voxelBlendMaskUploadBuffer = null;
         }
 
         private void DisableVoxelBlendMaskGlobal()
@@ -2329,40 +2395,43 @@ namespace Hecton8.World
             if (!TryEnsureTerrainSeamBlackBox(out NativeArray<TerrainSeamTelemetryEntry> blackBox))
                 return;
 
+            const int HeaderBytes = 8;
+            const int RowBytes = 64;
+            int totalBytes = HeaderBytes + TerrainSeamBlackBoxCapacity * RowBytes;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                totalBytes,
+                nameof(WorldGenerativeGeologyTerrainSeamApplier),
+                "TerrainSeamBlackBoxDumpPayload");
             try
             {
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string dumpPath = Path.Combine(projectRoot, HybridDumpPath);
-                string dumpDirectory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(dumpDirectory))
-                    Directory.CreateDirectory(dumpDirectory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                WriteInt32LittleEndian(payload, 0, TerrainSeamBlackBoxCapacity);
+                WriteInt32LittleEndian(payload, 4, _blackBoxWriteIndex);
+                for (int i = 0; i < TerrainSeamBlackBoxCapacity; i++)
                 {
-                    writer.Write(TerrainSeamBlackBoxCapacity);
-                    writer.Write(_blackBoxWriteIndex);
-                    for (int i = 0; i < TerrainSeamBlackBoxCapacity; i++)
-                    {
-                        TerrainSeamTelemetryEntry entry = blackBox[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.TerrainHash);
-                        writer.Write(entry.PatchSampleCount);
-                        writer.Write(entry.PlanCount);
-                        writer.Write(entry.PatchCenterX);
-                        writer.Write(entry.PatchCenterZ);
-                        writer.Write(entry.MinHeight01);
-                        writer.Write(entry.MaxHeight01);
-                        writer.Write(entry.MaxBlend01);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.Reserved0);
-                        writer.Write(entry.Reserved1);
-                        writer.Write(entry.Reserved2);
-                        writer.Write(entry.Reserved3);
-                        writer.Write(entry.Reserved4);
-                    }
+                    TerrainSeamTelemetryEntry entry = blackBox[i];
+                    int offset = HeaderBytes + i * RowBytes;
+                    WriteUInt32LittleEndian(payload, offset, entry.Frame);
+                    WriteUInt32LittleEndian(payload, offset + 4, entry.TerrainHash);
+                    WriteInt32LittleEndian(payload, offset + 8, entry.PatchSampleCount);
+                    WriteInt32LittleEndian(payload, offset + 12, entry.PlanCount);
+                    WriteFloat32LittleEndian(payload, offset + 16, entry.PatchCenterX);
+                    WriteFloat32LittleEndian(payload, offset + 20, entry.PatchCenterZ);
+                    WriteFloat32LittleEndian(payload, offset + 24, entry.MinHeight01);
+                    WriteFloat32LittleEndian(payload, offset + 28, entry.MaxHeight01);
+                    WriteFloat32LittleEndian(payload, offset + 32, entry.MaxBlend01);
+                    WriteUInt32LittleEndian(payload, offset + 36, entry.Flags);
+                    WriteUInt32LittleEndian(payload, offset + 40, entry.StateHash);
+                    WriteUInt32LittleEndian(payload, offset + 44, entry.Reserved0);
+                    WriteUInt32LittleEndian(payload, offset + 48, entry.Reserved1);
+                    WriteUInt32LittleEndian(payload, offset + 52, entry.Reserved2);
+                    WriteUInt32LittleEndian(payload, offset + 56, entry.Reserved3);
+                    WriteUInt32LittleEndian(payload, offset + 60, entry.Reserved4);
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(
+                    HybridDumpPath,
+                    payload,
+                    totalBytes);
             }
             catch (IOException)
             {
@@ -2370,7 +2439,32 @@ namespace Hecton8.World
             catch (UnauthorizedAccessException)
             {
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(WorldGenerativeGeologyTerrainSeamApplier),
+                    "TerrainSeamBlackBoxDumpPayload");
+            }
 #endif
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> payload, int offset, float value)
+        {
+            WriteUInt32LittleEndian(payload, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, int offset, int value)
+        {
+            WriteUInt32LittleEndian(payload, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, int offset, uint value)
+        {
+            payload[offset] = (byte)value;
+            payload[offset + 1] = (byte)(value >> 8);
+            payload[offset + 2] = (byte)(value >> 16);
+            payload[offset + 3] = (byte)(value >> 24);
         }
 
         private void DisposeTerrainStateNativeBuffers()

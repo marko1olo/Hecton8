@@ -658,6 +658,10 @@ namespace Hecton8.Atmosphere
         private static readonly int _shaderID_AegirDirection =
             Shader.PropertyToID("_AegirDirection");
 
+        private const int AegirRingCookieMinResolution = 16;
+        private const int AegirRingCookieMaxResolution = 256;
+        private const int AegirRingCookieResolutionStep = 16;
+
         #endregion
 
         #region ══════════ Inspector ══════════
@@ -685,7 +689,7 @@ namespace Hecton8.Atmosphere
                  "At dot ∈ [0, -sin(fadeAngle)] intensity smoothly → 0.")]
         [SerializeField, Range(1f, 30f)]
         private float _sunHorizonFadeAngle = 10f;
-        [Tooltip("Assigns a tiny striped directional-light cookie for Aegir ring banding. Replaces custom ring raymath.")]
+        [Tooltip("Assigns a tiny striped directional-light cookie for Aegir ring banding. Runtime resolution scales continuously from GlobalQualityWeight.")]
         [SerializeField] private bool _useAegirRingShadowCookie = true;
         [SerializeField, Range(16, 256)] private int _aegirRingShadowCookieResolution = 128;
 
@@ -1025,7 +1029,7 @@ namespace Hecton8.Atmosphere
             if (_sunLight == null)
                 return;
 
-            int resolution = Mathf.Clamp(_aegirRingShadowCookieResolution, 16, 256);
+            int resolution = ResolveAegirRingShadowCookieResolution();
             if (_aegirRingShadowCookie == null || _aegirRingShadowCookieResolutionApplied != resolution)
             {
                 ReleaseAegirRingShadowCookie();
@@ -1053,6 +1057,34 @@ namespace Hecton8.Atmosphere
 
             if (_sunLight.cookie != _aegirRingShadowCookie)
                 _sunLight.cookie = _aegirRingShadowCookie;
+        }
+
+        private int ResolveAegirRingShadowCookieResolution()
+        {
+            int maxResolution = Mathf.Clamp(
+                _aegirRingShadowCookieResolution,
+                AegirRingCookieMinResolution,
+                AegirRingCookieMaxResolution);
+
+            if (!Application.isPlaying)
+                return maxResolution;
+
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            if (!math.isfinite(quality))
+                quality = 1f;
+
+            float shapedQuality = Smooth01(math.saturate(quality));
+            int resolved = Mathf.RoundToInt(math.lerp(AegirRingCookieMinResolution, maxResolution, shapedQuality));
+            resolved = Mathf.Clamp(resolved, AegirRingCookieMinResolution, maxResolution);
+            int quantized = ((resolved + (AegirRingCookieResolutionStep >> 1)) / AegirRingCookieResolutionStep) * AegirRingCookieResolutionStep;
+            return Mathf.Clamp(quantized, AegirRingCookieMinResolution, maxResolution);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float Smooth01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - (2f * t));
         }
 
         private void ReleaseAegirRingShadowCookie()
@@ -1434,6 +1466,7 @@ namespace Hecton8.Atmosphere
 
         private void FlushLateFramePresentation()
         {
+            EnsureAegirRingShadowCookie();
             FlushSunPresentation();
             FlushCycleShaderGlobals();
             FlushGiantAbyssLight();

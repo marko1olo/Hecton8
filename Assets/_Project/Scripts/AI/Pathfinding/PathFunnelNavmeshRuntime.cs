@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -21,8 +20,8 @@ namespace Hecton8.AI.Pathfinding
         private const int DefaultInvalidationCapacity = 64;
         private const int MaxActivePathCapacity = 4096;
         private const int MaxInvalidationCapacity = 4096;
-        private const int TelemetryEntryDumpStrideBytes = 64;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
+        private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1403_PATH_FUNNEL.bin";
+        private const string BlackBoxDumpPayloadLabel = "pathFunnelTelemetryDumpPayload";
         private static readonly ulong FastTickMutationGuardMask =
             PathFunnelMutationGuardBit(BufferID.PathFunnelActivePaths) |
             PathFunnelMutationGuardBit(BufferID.PathFunnelCellMasks) |
@@ -55,7 +54,7 @@ namespace Hecton8.AI.Pathfinding
         private VaultGenerationHandle<PathFunnelTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<PathFunnelRuntimeState> _runtimeStateHandle;
         private VaultGenerationHandle<byte> _wfcGridHandle;
-        private readonly byte[] _telemetryDumpBytes = new byte[PathFunnelConstants.TelemetryFrames * TelemetryEntryDumpStrideBytes];
+        private uint _lastBlackBoxDumpHash;
         private bool _registeredColdTick;
         private bool _registeredFastTick;
         private bool _registeredLateFrame;
@@ -167,6 +166,7 @@ namespace Hecton8.AI.Pathfinding
             int dumpByteCount = 0;
             int dumpTelemetryCursor = -1;
             ushort dumpTelemetryFlags = 0;
+            NativeArray<byte> dumpPayload = default;
 
             if (TryAcquirePathFunnelMutationGuard(TelemetryMutationGuardMask, out IDataVault guardVault))
             {
@@ -191,7 +191,7 @@ namespace Hecton8.AI.Pathfinding
 
                         if (dumpRequested)
                         {
-                            dumpStaged = TryStageBlackBoxDump(telemetry, _telemetryDumpBytes, out dumpByteCount);
+                            dumpStaged = TryStageBlackBoxDump(telemetry, out dumpPayload, out dumpByteCount);
                             if (!dumpStaged)
                             {
                                 runtimeState.TelemetryFlags = (ushort)(runtimeState.TelemetryFlags | PathFunnelTelemetryFlags.BlackBoxDumpFailed);
@@ -210,11 +210,21 @@ namespace Hecton8.AI.Pathfinding
                 }
             }
 
-            if (dumpRequested &&
-                dumpStaged &&
-                !TryDumpBlackBox(_telemetryDumpBytes, dumpByteCount))
+            try
             {
-                TryPatchBlackBoxDumpFailure(dumpTelemetryCursor, dumpTelemetryFlags);
+                if (dumpRequested &&
+                    dumpStaged &&
+                    !TryDumpBlackBox(dumpPayload, dumpByteCount))
+                {
+                    TryPatchBlackBoxDumpFailure(dumpTelemetryCursor, dumpTelemetryFlags);
+                }
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref dumpPayload,
+                    nameof(PathFunnelNavmeshRuntime),
+                    BlackBoxDumpPayloadLabel);
             }
 
             LateFrameTickVoxelAStar();
@@ -1242,67 +1252,64 @@ namespace Hecton8.AI.Pathfinding
 
         private static unsafe bool TryStageBlackBoxDump(
             NativeArray<PathFunnelTelemetryEntry> telemetry,
-            byte[] target,
+            out NativeArray<byte> payload,
             out int byteCount)
         {
+            payload = default;
             byteCount = 0;
-            if (!telemetry.IsCreated || telemetry.Length <= 0 || target == null)
+            if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return false;
 
             int telemetryLength = ResolveTelemetryRingLength(telemetry);
             int entryBytes = UnsafeUtility.SizeOf<PathFunnelTelemetryEntry>();
             byteCount = telemetryLength * entryBytes;
-            if (telemetryLength <= 0 || byteCount <= 0 || target.Length < byteCount)
-                return false;
-
-            void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-            fixed (byte* destination = target)
-            {
-                Buffer.MemoryCopy(source, destination, target.Length, byteCount);
-            }
-
-            return true;
-        }
-
-        private static bool TryDumpBlackBox(byte[] telemetryBytes, int byteCount)
-        {
-            if (telemetryBytes == null || byteCount <= 0 || byteCount > telemetryBytes.Length)
+            if (telemetryLength <= 0 || byteCount <= 0)
                 return false;
 
             try
             {
-                string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string path = Path.Combine(root, DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (string.IsNullOrEmpty(directory))
-                    return false;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(PathFunnelNavmeshRuntime),
+                    BlackBoxDumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
 
-                Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
+                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                void* destination = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                if (!UnsafeMemoryCopyGuard.SafeCopy(destination, payload.Length, source, byteCount))
                 {
-                    stream.Write(telemetryBytes, 0, byteCount);
-                    stream.Flush(true);
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(PathFunnelNavmeshRuntime),
+                        BlackBoxDumpPayloadLabel);
+                    byteCount = 0;
+                    return false;
                 }
 
                 return true;
             }
-            catch (IOException)
+            catch
             {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(PathFunnelNavmeshRuntime),
+                    BlackBoxDumpPayloadLabel);
+                byteCount = 0;
                 return false;
             }
-            catch (UnauthorizedAccessException)
-            {
+        }
+
+        private bool TryDumpBlackBox(NativeArray<byte> payload, int byteCount)
+        {
+            if (!payload.IsCreated || byteCount <= 0 || byteCount > payload.Length)
                 return false;
-            }
-            catch (NotSupportedException)
-            {
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
+
+            uint hash = 2166136261u ^ (uint)byteCount;
+            for (int i = 0; i < byteCount; i++)
+                hash = (hash ^ payload[i]) * 16777619u;
+
+            _lastBlackBoxDumpHash = hash == 0u ? 2166136261u : hash;
+            return NativeFaultDumpWriter.TryWriteAll(BlackBoxDumpRelativePath, payload, byteCount);
         }
 
         private static int ResolveTelemetryRingLength(NativeArray<PathFunnelTelemetryEntry> telemetry)

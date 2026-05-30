@@ -227,8 +227,10 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _transform = transform;
-            _collider = GetComponent<Collider>();
-            _logisticsPowerNode = GetComponent<PowerNode>() ?? GetComponentInParent<PowerNode>();
+            TryGetComponent(out _collider);
+            if (!TryGetComponent(out _logisticsPowerNode))
+                TryResolveParentComponent(transform, out _logisticsPowerNode);
+
             _openTriggerHash = Animator.StringToHash(string.IsNullOrEmpty(openTriggerName) ? "Open" : openTriggerName);
             _closeTriggerHash = Animator.StringToHash(string.IsNullOrEmpty(closeTriggerName) ? "Close" : closeTriggerName);
 
@@ -244,6 +246,22 @@ namespace Hecton8.Gameplay
             // Set initial state
             _state = initialState;
             EnsureReservationCapacity();
+        }
+
+        private static bool TryResolveParentComponent<T>(Transform start, out T component)
+            where T : Component
+        {
+            component = null;
+            Transform current = start != null ? start.parent : null;
+            while (current != null)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+
+                current = current.parent;
+            }
+
+            return false;
         }
 
         private void OnEnable()

@@ -1279,6 +1279,36 @@ namespace Hecton8.Physics
             return parsed;
         }
 
+        public static int ParseHashTable(ReadOnlySpan<byte> csv, Span<CableMaterialDTO> output)
+        {
+            if (output.Length == 0 || csv.Length == 0)
+                return 0;
+
+            for (int i = 0; i < output.Length; i++)
+                output[i] = default;
+
+            int parsed = 0;
+            int cursor = 0;
+            while (cursor < csv.Length)
+            {
+                int lineStart = cursor;
+                while (cursor < csv.Length && csv[cursor] != (byte)'\n' && csv[cursor] != (byte)'\r')
+                    cursor++;
+
+                ReadOnlySpan<byte> line = csv.Slice(lineStart, cursor - lineStart);
+                if (TryParseLine(line, parsed, out CableMaterialDTO material) &&
+                    TryInsertHashSlot(output, material))
+                {
+                    parsed++;
+                }
+
+                while (cursor < csv.Length && (csv[cursor] == (byte)'\n' || csv[cursor] == (byte)'\r'))
+                    cursor++;
+            }
+
+            return parsed;
+        }
+
         public static int Parse(ReadOnlySpan<char> csv, NativeArray<CableMaterialDTO> output)
         {
             if (!output.IsCreated || output.Length == 0 || csv.Length == 0)
@@ -1423,6 +1453,29 @@ namespace Hecton8.Physics
         private static bool TryInsertHashSlot(NativeArray<CableMaterialDTO> table, CableMaterialDTO material)
         {
             if (!table.IsCreated || table.Length == 0 || material.MaterialHash == 0u)
+                return false;
+
+            int start = (int)(material.MaterialHash % (uint)table.Length);
+            for (int probe = 0; probe < table.Length; probe++)
+            {
+                int index = start + probe;
+                if (index >= table.Length)
+                    index -= table.Length;
+
+                uint existingHash = table[index].MaterialHash;
+                if (existingHash == 0u || existingHash == material.MaterialHash)
+                {
+                    table[index] = material;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryInsertHashSlot(Span<CableMaterialDTO> table, CableMaterialDTO material)
+        {
+            if (table.Length == 0 || material.MaterialHash == 0u)
                 return false;
 
             int start = (int)(material.MaterialHash % (uint)table.Length);

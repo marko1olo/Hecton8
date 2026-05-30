@@ -356,7 +356,7 @@ namespace Hecton8.Scavenging
             if (!isActiveAndEnabled)
                 return;
 
-            ResolvePersistentIdentity();
+            RefreshPersistentIdentity();
             if (ShouldSuppressSpawn())
             {
                 DespawnSelf();
@@ -429,7 +429,7 @@ namespace Hecton8.Scavenging
 
         private void ActivateRuntimeState()
         {
-            ResolvePersistentIdentity();
+            RefreshPersistentIdentity();
             if (ShouldSuppressSpawn())
             {
                 _isDepleted = true;
@@ -449,7 +449,7 @@ namespace Hecton8.Scavenging
             return maxAxis + midAxis * 0.375f + minAxis * 0.125f;
         }
 
-        private void ResolvePersistentIdentity()
+        private void RefreshPersistentIdentity()
         {
             Vector3 runtimePosition = _cachedTransform != null ? _cachedTransform.position : transform.position;
             _hasPersistentAup = TryResolveAupFromRuntimeOrigin(runtimePosition, out _persistentAup);
@@ -552,7 +552,7 @@ namespace Hecton8.Scavenging
             if (lootPrefab == null || lootCount <= 0)
                 return true;
 
-            if (!TryResolveLootOraclePayload(out uint itemHash, out uint quantity, allowHierarchyScan: false))
+            if (!TryReadCachedLootOraclePayload(out uint itemHash, out uint quantity))
             {
                 if (!_lootSpawnBlockedLogged)
                 {
@@ -600,7 +600,7 @@ namespace Hecton8.Scavenging
             if (_cachedLootOraclePrefab == lootPrefab && _cachedLootOracleItemHash != 0u && _cachedLootOracleUnitQuantity != 0u)
                 return;
 
-            TryResolveLootOraclePayload(out _, out _, allowHierarchyScan: true);
+            TryCaptureLootOraclePayloadFromPrefabCold(out _, out _, allowHierarchyScan: true);
         }
 
         private bool TryCacheLootOraclePayloadFromTemplate(ResourceNodeTemplate template)
@@ -620,7 +620,7 @@ namespace Hecton8.Scavenging
                 out _);
         }
 
-        private bool TryResolveLootOraclePayload(out uint itemHash, out uint quantity, bool allowHierarchyScan)
+        private bool TryReadCachedLootOraclePayload(out uint itemHash, out uint quantity)
         {
             itemHash = 0u;
             quantity = 0u;
@@ -634,6 +634,19 @@ namespace Hecton8.Scavenging
                 return true;
             }
 
+            return false;
+        }
+
+        private bool TryCaptureLootOraclePayloadFromPrefabCold(out uint itemHash, out uint quantity, bool allowHierarchyScan)
+        {
+            itemHash = 0u;
+            quantity = 0u;
+            if (lootPrefab == null || lootCount <= 0)
+                return false;
+
+            if (TryReadCachedLootOraclePayload(out itemHash, out quantity))
+                return true;
+
             if (lootPrefab.TryGetComponent(out PickupItem pickupItem) && pickupItem.ItemData != null)
             {
                 return CacheLootOraclePayload(lootPrefab, unchecked((uint)pickupItem.ItemData.PersistentHashId), pickupItem.Quantity, out itemHash, out quantity);
@@ -642,7 +655,7 @@ namespace Hecton8.Scavenging
             if (allowHierarchyScan)
             {
                 if (!lootPrefab.TryGetComponent(out PickupItem childPickup))
-                    childPickup = lootPrefab.GetComponentInChildren<PickupItem>(true);
+                    childPickup = ComponentReferenceUtility.ResolveOwnedComponent<PickupItem>(lootPrefab.transform);
                 if (childPickup != null && childPickup.ItemData != null)
                 {
                     return CacheLootOraclePayload(lootPrefab, unchecked((uint)childPickup.ItemData.PersistentHashId), childPickup.Quantity, out itemHash, out quantity);
@@ -657,7 +670,7 @@ namespace Hecton8.Scavenging
             if (allowHierarchyScan)
             {
                 if (!lootPrefab.TryGetComponent(out HectonItem childHectonItem))
-                    childHectonItem = lootPrefab.GetComponentInChildren<HectonItem>(true);
+                    childHectonItem = ComponentReferenceUtility.ResolveOwnedComponent<HectonItem>(lootPrefab.transform);
                 if (childHectonItem != null && childHectonItem.Data != null)
                 {
                     return CacheLootOraclePayload(lootPrefab, unchecked((uint)childHectonItem.Data.PersistentHashId), childHectonItem.Quantity, out itemHash, out quantity);
@@ -915,34 +928,34 @@ namespace Hecton8.Scavenging
                     return;
             }
 
-            if (allowIncrementalYield)
-                TryEmitIncrementalYield(descriptor, Mathf.Max(toolPower, amount), elapsedSeconds, hitPoint, hitNormal);
+            try
+            {
+                if (allowIncrementalYield)
+                    TryEmitIncrementalYield(descriptor, Mathf.Max(toolPower, amount), elapsedSeconds, hitPoint, hitNormal);
 
-            if (allowImpactDebris)
-                SpawnImpactDebris(hitPoint, hitNormal, Mathf.Max(toolPower, amount));
+                if (allowImpactDebris)
+                    SpawnImpactDebris(hitPoint, hitNormal, Mathf.Max(toolPower, amount));
 
-            _currentHealth = nextHealth;
-            if (_currentHealth > 0f)
+                _currentHealth = nextHealth;
+                if (_currentHealth > 0f)
+                    return;
+
+                if (!TrySpawnLoot())
+                {
+                    _currentHealth = previousHealth;
+                    return;
+                }
+
+                _currentHealth = 0f;
+                _isDepleted = true;
+                RegisterPersistentDepletion();
+                DespawnSelf();
+            }
+            finally
             {
                 if (depletionLockAcquired)
                     ReleaseDepletionLock();
-
-                return;
             }
-
-            if (!TrySpawnLoot())
-            {
-                _currentHealth = previousHealth;
-                if (depletionLockAcquired)
-                    ReleaseDepletionLock();
-
-                return;
-            }
-
-            _currentHealth = 0f;
-            _isDepleted = true;
-            RegisterPersistentDepletion();
-            DespawnSelf();
         }
 
         private void TryEmitIncrementalYield(

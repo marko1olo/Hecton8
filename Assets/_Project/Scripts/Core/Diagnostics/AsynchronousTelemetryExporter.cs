@@ -776,7 +776,6 @@ namespace Hecton8.Core.Diagnostics
         private string _endpointUrl;
         private string _apiKey;
         private string _fallbackDirectory;
-        private string _dumpPath;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticExporterState()
@@ -934,7 +933,6 @@ namespace Hecton8.Core.Diagnostics
             _dataVault = GlobalRegistry.DataVault;
             TryRegisterHotSwapListener();
             _fallbackDirectory = ResolveFallbackDirectory();
-            _dumpPath = Path.Combine(_fallbackDirectory, "Dump_SHINOBU_160.bin");
 
             ResetHotPathCounters();
             AllocateColdManagedObjects();
@@ -2588,11 +2586,9 @@ namespace Hecton8.Core.Diagnostics
                 if (!TryReadWorkerBuffer(in _dumpSnapshotHandle, DumpSnapshotBytes, out NativeArray<byte>.ReadOnly snapshot))
                     return;
 
-                Directory.CreateDirectory(_fallbackDirectory);
-                using (FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096))
-                    stream.Write(AsReadOnlySpan(snapshot, byteCount));
-
-                File.Copy(_dumpPath, Path.Combine(_fallbackDirectory, "Dump_ANALYTICS_CRASH.bin"), true);
+                ReadOnlySpan<byte> payload = AsReadOnlySpan(snapshot, byteCount);
+                Hecton8.Core.NativeFaultDumpWriter.TryWriteAll("Docs/AgentLogs/Dump_SHINOBU_160.bin", payload, byteCount);
+                Hecton8.Core.NativeFaultDumpWriter.TryWriteAll("Docs/AgentLogs/Dump_ANALYTICS_CRASH.bin", payload, byteCount);
             }
             catch
             {

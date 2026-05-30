@@ -373,8 +373,7 @@ namespace Hecton8.Rendering
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                if (!Application.isPlaying ||
-                    _settings == null)
+                if (_settings == null)
                 {
                     return;
                 }
@@ -966,7 +965,7 @@ namespace Hecton8.Rendering
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            if (!Application.isPlaying ||
+            if (!HectonBilateralDrsUpscalerRuntime.TryGetRuntimeInstance(out _) ||
                 renderer == null ||
                 settings == null ||
                 _pass == null)
@@ -979,13 +978,6 @@ namespace Hecton8.Rendering
 
             if (settings.computeShader == null ||
                 !_graphicsCapabilities.SupportsComputeShaders)
-            {
-                _pass.Setup(settings, settings.computeShader, true, in _graphicsCapabilities);
-                renderer.EnqueuePass(_pass);
-                return;
-            }
-
-            if (!HectonBilateralDrsUpscalerRuntime.TryGetRuntimeInstance(out _))
             {
                 _pass.Setup(settings, settings.computeShader, true, in _graphicsCapabilities);
                 renderer.EnqueuePass(_pass);

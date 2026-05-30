@@ -37,16 +37,15 @@ namespace Hecton8.World.SeedShipAnomaly
         private const ulong DumpMagic = 0x5345454453484950UL; // SEEDSHIP
         private const uint DumpVersion = 1u;
 
-        private static readonly ulong JobMutationGuardMask =
-            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyField) |
-            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyTuning) |
-            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyGlobals) |
-            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyGlitchCommand) |
-            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyMockHudSignals) |
-            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyMockLeviathans) |
-            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyMockAupRebase) |
-            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyThermoSource) |
-            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyTelemetryRing);
+        private const uint JobPinField = 1u << 0;
+        private const uint JobPinTuning = 1u << 1;
+        private const uint JobPinGlobals = 1u << 2;
+        private const uint JobPinGlitchCommand = 1u << 3;
+        private const uint JobPinMockHudSignals = 1u << 4;
+        private const uint JobPinMockLeviathans = 1u << 5;
+        private const uint JobPinMockAupRebase = 1u << 6;
+        private const uint JobPinThermoSource = 1u << 7;
+        private const uint JobPinTelemetryRing = 1u << 8;
         private static readonly ulong CsvApplyMutationGuardMask =
             MutationGuardBit(BufferID.ShinobuSeedShipAnomalyTuning) |
             MutationGuardBit(BufferID.ShinobuSeedShipAnomalyField) |
@@ -112,6 +111,8 @@ namespace Hecton8.World.SeedShipAnomaly
         private bool _radiationSourceActive;
         private bool _jobScheduled;
         private bool _jobLocksHeld;
+        private IDataVault _jobPinVault;
+        private uint _jobPinMask;
         private bool _defaultsInitialized;
         private bool _dumpedBudgetBreach;
         private int _telemetryDumpInFlight;
@@ -131,7 +132,7 @@ namespace Hecton8.World.SeedShipAnomaly
 #if UNITY_EDITOR
             _csvPath = Path.GetFullPath(Path.Combine(_projectRoot, CsvRelativePath));
 #endif
-            _dumpPath = Path.GetFullPath(Path.Combine(_projectRoot, DumpRelativePath));
+            _dumpPath = DumpRelativePath;
         }
 
         private void OnEnable()
@@ -215,7 +216,7 @@ namespace Hecton8.World.SeedShipAnomaly
             if (!TryLockJobBuffers(vault))
                 return;
 
-            bool keepJobGuard = false;
+            bool keepJobPins = false;
             try
             {
                 if (!TryResolveBuffers(
@@ -295,11 +296,11 @@ namespace Hecton8.World.SeedShipAnomaly
                 _activeJobHandle = handle;
                 _jobScheduled = true;
                 H8Memory.RegisterActiveJob(OwnerSystem, _activeJobHandle);
-                keepJobGuard = true;
+                keepJobPins = true;
             }
             finally
             {
-                if (!keepJobGuard)
+                if (!keepJobPins)
                     UnlockJobBuffers();
             }
         }
@@ -776,21 +777,71 @@ namespace Hecton8.World.SeedShipAnomaly
             if (_jobLocksHeld)
                 return true;
 
-            if (!vault.TryAcquireMutationGuard(JobMutationGuardMask))
+            if (vault == null)
                 return false;
 
-            _jobLocksHeld = true;
-            return _jobLocksHeld;
+            _jobPinVault = vault;
+            try
+            {
+                if (!TryLockJobBuffer(vault, BufferID.ShinobuSeedShipAnomalyField, JobPinField) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuSeedShipAnomalyTuning, JobPinTuning) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuSeedShipAnomalyGlobals, JobPinGlobals) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuSeedShipAnomalyGlitchCommand, JobPinGlitchCommand) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuSeedShipAnomalyMockHudSignals, JobPinMockHudSignals) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuSeedShipAnomalyMockLeviathans, JobPinMockLeviathans) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuSeedShipAnomalyMockAupRebase, JobPinMockAupRebase) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuSeedShipAnomalyThermoSource, JobPinThermoSource) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuSeedShipAnomalyTelemetryRing, JobPinTelemetryRing))
+                    return false;
+
+                _jobLocksHeld = true;
+                return true;
+            }
+            finally
+            {
+                if (!_jobLocksHeld)
+                    UnlockJobBuffers();
+            }
         }
 
         private void UnlockJobBuffers()
         {
-            IDataVault vault = _dataVault;
-            if (vault == null || !_jobLocksHeld)
+            IDataVault vault = _jobPinVault;
+            uint pinMask = _jobPinMask;
+            _jobPinVault = null;
+            _jobPinMask = 0u;
+            _jobLocksHeld = false;
+
+            if (vault == null || pinMask == 0u)
                 return;
 
-            vault.ReleaseMutationGuard(JobMutationGuardMask);
-            _jobLocksHeld = false;
+            TryUnlockJobBuffer(vault, pinMask, JobPinTelemetryRing, BufferID.ShinobuSeedShipAnomalyTelemetryRing);
+            TryUnlockJobBuffer(vault, pinMask, JobPinThermoSource, BufferID.ShinobuSeedShipAnomalyThermoSource);
+            TryUnlockJobBuffer(vault, pinMask, JobPinMockAupRebase, BufferID.ShinobuSeedShipAnomalyMockAupRebase);
+            TryUnlockJobBuffer(vault, pinMask, JobPinMockLeviathans, BufferID.ShinobuSeedShipAnomalyMockLeviathans);
+            TryUnlockJobBuffer(vault, pinMask, JobPinMockHudSignals, BufferID.ShinobuSeedShipAnomalyMockHudSignals);
+            TryUnlockJobBuffer(vault, pinMask, JobPinGlitchCommand, BufferID.ShinobuSeedShipAnomalyGlitchCommand);
+            TryUnlockJobBuffer(vault, pinMask, JobPinGlobals, BufferID.ShinobuSeedShipAnomalyGlobals);
+            TryUnlockJobBuffer(vault, pinMask, JobPinTuning, BufferID.ShinobuSeedShipAnomalyTuning);
+            TryUnlockJobBuffer(vault, pinMask, JobPinField, BufferID.ShinobuSeedShipAnomalyField);
+        }
+
+        private bool TryLockJobBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        {
+            if ((_jobPinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null || !vault.TryLockBuffer(bufferId, OwnerSystem))
+                return false;
+
+            _jobPinMask |= pinBit;
+            return true;
+        }
+
+        private static void TryUnlockJobBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, OwnerSystem);
         }
 
         private void TryFinalizeFrameJobNoWait()
@@ -1081,7 +1132,8 @@ namespace Hecton8.World.SeedShipAnomaly
         {
             try
             {
-                WriteColdDumpBytes(_dumpPath, _telemetryDumpScratch, _telemetryDumpByteCount);
+                if (!WriteColdDumpBytes(_dumpPath, _telemetryDumpScratch, _telemetryDumpByteCount))
+                    _dumpedBudgetBreach = true;
             }
             catch (Exception)
             {
@@ -1093,11 +1145,36 @@ namespace Hecton8.World.SeedShipAnomaly
             }
         }
 
-        private static void WriteColdDumpBytes(string path, byte[] bytes, int byteCount)
+        private static unsafe bool WriteColdDumpBytes(string path, byte[] bytes, int byteCount)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-            stream.Write(bytes, 0, math.min(byteCount, bytes.Length));
+            if (string.IsNullOrWhiteSpace(path) || bytes == null || byteCount <= 0)
+                return false;
+
+            int safeByteCount = math.min(byteCount, bytes.Length);
+            if (safeByteCount <= 0)
+                return false;
+
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                safeByteCount,
+                nameof(SeedShipAnomalyRuntime),
+                "seedShipAnomalyTelemetryDumpPayload");
+            try
+            {
+                void* destination = NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                fixed (byte* source = bytes)
+                {
+                    UnsafeUtility.MemCpy(destination, source, safeByteCount);
+                }
+
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, safeByteCount);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(SeedShipAnomalyRuntime),
+                    "seedShipAnomalyTelemetryDumpPayload");
+            }
         }
 
         private void ConsumeHackSignals(float dt)

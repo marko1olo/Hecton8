@@ -4,7 +4,6 @@
 // ============================================================================
 
 using System;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
@@ -445,16 +444,10 @@ namespace Hecton8.Gameplay.AirlockPressurization
             if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return false;
 
-            Directory.CreateDirectory(Path.GetDirectoryName(path) ?? "Docs/AgentLogs");
             int count = math.min(telemetry.Length, AirlockPressurizationConstants.TelemetryFrameCount);
             int bytes = count * UnsafeUtility.SizeOf<AirlockTelemetryEntry>();
             byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-            {
-                stream.Write(new ReadOnlySpan<byte>(source, bytes));
-            }
-
-            return true;
+            return Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(path, new ReadOnlySpan<byte>(source, bytes), bytes);
         }
     }
 

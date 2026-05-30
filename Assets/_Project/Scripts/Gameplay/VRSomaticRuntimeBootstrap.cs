@@ -26,6 +26,7 @@ namespace Hecton8.Gameplay
         private bool _registeredSlowTick;
         private bool _registeredBootstrap;
         private bool _hotSwapRegistered;
+        private bool _runtimeActive;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -93,7 +94,8 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            if (!Application.isPlaying)
+            _runtimeActive = Application.isPlaying;
+            if (!_runtimeActive)
                 return;
 
             _runtime = this;
@@ -111,7 +113,9 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            if (!Application.isPlaying)
+            bool wasRuntimeActive = _runtimeActive;
+            _runtimeActive = false;
+            if (!wasRuntimeActive)
             {
                 if (ReferenceEquals(_runtime, this))
                     _runtime = null;
@@ -157,7 +161,7 @@ namespace Hecton8.Gameplay
 
         public void SlowTick()
         {
-            if (!Application.isPlaying)
+            if (!_runtimeActive)
                 return;
 
             if (!HectonXRRuntimeState.IsXRActive)
@@ -172,7 +176,7 @@ namespace Hecton8.Gameplay
 
         public void OnGameBootstrapperEvent(in GameBootstrapperEventPayload payload)
         {
-            if (!Application.isPlaying)
+            if (!_runtimeActive)
                 return;
 
             if ((GameBootstrapperEventType)payload.EventType != GameBootstrapperEventType.GameReady)
@@ -204,7 +208,7 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterHotSwapListener()
         {
-            if (_hotSwapRegistered || !Application.isPlaying)
+            if (_hotSwapRegistered || !_runtimeActive)
                 return;
 
             _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);

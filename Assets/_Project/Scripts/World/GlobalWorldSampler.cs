@@ -292,7 +292,7 @@ namespace Hecton8.World
         public const int WarningInvalidNumber = 2;
         public const int WarningOutOfBoundsOrUnloaded = 3;
         public const int WarningFrameHeartbeat = 0;
-        public const string DefaultDumpPath = @"C:\hades\Hecton8\Docs\AgentLogs\Dump_TERRAIN_SPLICER.bin";
+        public const string DefaultDumpPath = "Docs/AgentLogs/Dump_TERRAIN_SPLICER.bin";
         public const int CounterBlockSizeBytes = 64;
         public const int CounterBlockValueOffset = 0;
         public const int TerrainSampleDTOSizeBytes = 32;
@@ -1228,58 +1228,99 @@ namespace Hecton8.World
             MockTerrainGenerator(ref data, sineFrequency, caveRadius, caveDepth);
         }
 
-        public static bool TryDumpTelemetryBuffer(NativeArray<GlobalWorldSamplerTelemetryEntry> telemetryRing, string absolutePath = DefaultDumpPath)
+        public static bool TryDumpTelemetryBuffer(NativeArray<GlobalWorldSamplerTelemetryEntry> telemetryRing, string dumpPath = DefaultDumpPath)
         {
-            if (!telemetryRing.IsCreated || telemetryRing.Length == 0 || string.IsNullOrEmpty(absolutePath))
+            if (!telemetryRing.IsCreated || telemetryRing.Length == 0 || string.IsNullOrEmpty(dumpPath))
             {
                 return false;
             }
 
+            NativeArray<byte> payload = default;
             try
             {
-                string directory = Path.GetDirectoryName(absolutePath);
-                if (!string.IsNullOrEmpty(directory))
+                int headerBytes = 20;
+                int rowBytes = UnsafeUtility.SizeOf<GlobalWorldSamplerTelemetryEntry>();
+                int totalBytes = headerBytes + telemetryRing.Length * rowBytes;
+                payload = Hecton8.Core.NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(GlobalWorldSampler),
+                    "GlobalWorldSamplerTelemetryDumpPayload");
+                Span<byte> bytes = new Span<byte>(payload.GetUnsafePtr(), totalBytes);
+                WriteUInt64LittleEndian(bytes, 0, TelemetryDumpMagic);
+                WriteInt32LittleEndian(bytes, 8, TelemetryDumpVersion);
+                WriteInt32LittleEndian(bytes, 12, telemetryRing.Length);
+                WriteInt32LittleEndian(bytes, 16, rowBytes);
+                int writeOffset = headerBytes;
+                for (int i = 0; i < telemetryRing.Length; i++)
                 {
-                    Directory.CreateDirectory(directory);
+                    GlobalWorldSamplerTelemetryEntry entry = telemetryRing[i];
+                    WriteTelemetryEntryLittleEndian(bytes.Slice(writeOffset, rowBytes), in entry);
+                    writeOffset += rowBytes;
                 }
 
-                using (var stream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (var writer = new BinaryWriter(stream))
-                {
-                    writer.Write(TelemetryDumpMagic);
-                    writer.Write(TelemetryDumpVersion);
-                    writer.Write(telemetryRing.Length);
-                    writer.Write(UnsafeUtility.SizeOf<GlobalWorldSamplerTelemetryEntry>());
-                    for (int i = 0; i < telemetryRing.Length; i++)
-                    {
-                        GlobalWorldSamplerTelemetryEntry entry = telemetryRing[i];
-                        writer.Write(entry.LocalPosition.x);
-                        writer.Write(entry.LocalPosition.y);
-                        writer.Write(entry.LocalPosition.z);
-                        writer.Write(entry.Distance);
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.QueryHash);
-                        writer.Write(entry.SampleCount);
-                        writer.Write(entry.WarningCode);
-                        writer.Write(entry.Normal.x);
-                        writer.Write(entry.Normal.y);
-                        writer.Write(entry.Normal.z);
-                        writer.Write(entry.MaterialID);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.SectorIndex);
-                        writer.Write(entry.Reserved0);
-                        writer.Write(entry.Reserved1);
-                        writer.Write(entry.Reserved2);
-                        writer.Write(entry.Reserved3);
-                    }
-                }
-
-                return true;
+                return Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, totalBytes);
             }
             catch
             {
                 return false;
             }
+            finally
+            {
+                Hecton8.Core.NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(GlobalWorldSampler),
+                    "GlobalWorldSamplerTelemetryDumpPayload");
+            }
+        }
+
+        private static void WriteTelemetryEntryLittleEndian(Span<byte> destination, in GlobalWorldSamplerTelemetryEntry entry)
+        {
+            WriteFloat3LittleEndian(destination, 0, entry.LocalPosition);
+            WriteSingleLittleEndian(destination, 12, entry.Distance);
+            WriteUInt32LittleEndian(destination, 16, entry.Frame);
+            WriteUInt32LittleEndian(destination, 20, entry.QueryHash);
+            WriteInt32LittleEndian(destination, 24, entry.SampleCount);
+            WriteInt32LittleEndian(destination, 28, entry.WarningCode);
+            WriteFloat3LittleEndian(destination, 32, entry.Normal);
+            destination[44] = entry.MaterialID;
+            destination[45] = entry.Flags;
+            WriteUInt16LittleEndian(destination, 46, entry.SectorIndex);
+            WriteInt32LittleEndian(destination, 48, entry.Reserved0);
+            WriteInt32LittleEndian(destination, 52, entry.Reserved1);
+            WriteInt32LittleEndian(destination, 56, entry.Reserved2);
+            WriteInt32LittleEndian(destination, 60, entry.Reserved3);
+        }
+
+        private static void WriteFloat3LittleEndian(Span<byte> destination, int offset, float3 value)
+        {
+            WriteSingleLittleEndian(destination, offset, value.x);
+            WriteSingleLittleEndian(destination, offset + 4, value.y);
+            WriteSingleLittleEndian(destination, offset + 8, value.z);
+        }
+
+        private static void WriteSingleLittleEndian(Span<byte> destination, int offset, float value)
+        {
+            WriteUInt32LittleEndian(destination, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(Span<byte> destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt16LittleEndian(Span<byte> destination, int offset, ushort value)
+        {
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(offset, 2), value);
+        }
+
+        private static void WriteUInt32LittleEndian(Span<byte> destination, int offset, uint value)
+        {
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(offset, 4), value);
+        }
+
+        private static void WriteUInt64LittleEndian(Span<byte> destination, int offset, ulong value)
+        {
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(destination.Slice(offset, 8), value);
         }
 
         public static bool TryReadTerrainPayloadHeader(ReadOnlySpan<byte> source, byte sourceBigEndian, out TerrainPayloadHeaderDTO header)
@@ -1314,7 +1355,7 @@ namespace Hecton8.World
                    IsFinite(header.SdfRange);
         }
 
-        public static bool TryFlushRequestedTelemetryDump(in GlobalWorldSamplerData data, string absolutePath = DefaultDumpPath)
+        public static bool TryFlushRequestedTelemetryDump(in GlobalWorldSamplerData data, string dumpPath = DefaultDumpPath)
         {
             if (!data.TelemetryRing.IsCreated ||
                 !TryGetCounterPointer(data, SampleCounterDumpRequestIndex, out int* requestCounter))
@@ -1323,7 +1364,7 @@ namespace Hecton8.World
             }
 
             int request = Interlocked.Exchange(ref requestCounter[0], 0);
-            return request != 0 && TryDumpTelemetryBuffer(data.TelemetryRing, absolutePath);
+            return request != 0 && TryDumpTelemetryBuffer(data.TelemetryRing, dumpPath);
         }
 
         internal static int AddSampleCount(in GlobalWorldSamplerData data, int amount)

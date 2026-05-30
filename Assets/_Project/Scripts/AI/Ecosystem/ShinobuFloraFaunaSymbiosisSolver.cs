@@ -78,8 +78,10 @@ namespace Hecton8.AI.Ecosystem
         private const uint LegacyLinksMagicBigEndian = 0x42323653u; // S62B
         private const int LegacyLinksHeaderBytes = 16;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
+        private const string DumpPayloadLabel = "shinobuSymbiosisTelemetryDumpPayload";
         private const ulong DumpMagic = 0x5348594D42493632UL; // SHYMBI62
         private const int DumpVersion = 1;
+        private const int DumpHeaderBytes = 32;
         private const uint SourceHash = 0x53363253u; // S62S
         internal const uint FaunaHashHerbivore = 0x48455242u; // HERB
         internal const uint FaunaHashCarnivore = 0x4341524Eu; // CARN
@@ -100,9 +102,6 @@ namespace Hecton8.AI.Ecosystem
         private VaultGenerationHandle<SymbiosisExchangeDTO> _exchangeHandle;
         private VaultGenerationHandle<SymbiosisTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<SymbiosisCounterDTO> _counterHandle;
-#if UNITY_EDITOR
-        private VaultGenerationHandle<byte> _csvScratchHandle;
-#endif
         private VaultGenerationHandle<ScannerVfxDTO> _scannerVfxHandle;
         private VaultGenerationHandle<SymbiosisOxygenEmitterDTO> _oxygenEmitterHandle;
         private VaultGenerationHandle<AdherenceDTO> _adherenceHandle;
@@ -112,7 +111,6 @@ namespace Hecton8.AI.Ecosystem
         private VaultGenerationHandle<int> _floraBucketHeadHandle;
         private VaultGenerationHandle<int> _floraBucketNextHandle;
         private VaultGenerationHandle<MockBoidArray> _mockBoidHandle;
-        private VaultGenerationHandle<byte> _legacyScratchHandle;
         private VaultGenerationHandle<MockFishSymbiosisDTO> _mockFishHandle;
         private VaultGenerationHandle<AmbientEntityDTO> _ambientEntityHandle;
         private VaultGenerationHandle<AmbientEntityAupDTO> _ambientAupHandle;
@@ -547,13 +545,6 @@ namespace Hecton8.AI.Ecosystem
                 BufferID.ShinobuSymbiosisCounters,
                 1,
                 NativeArrayOptions.ClearMemory);
-#if UNITY_EDITOR
-            _csvScratchHandle = ClaimGenerationHandle<byte>(
-                vault,
-                BufferID.ShinobuSymbiosisCsvScratch,
-                CsvMaxBytes,
-                NativeArrayOptions.UninitializedMemory);
-#endif
             _scannerVfxHandle = ClaimGenerationHandle<ScannerVfxDTO>(
                 vault,
                 BufferID.ShinobuSymbiosisScannerVfx,
@@ -599,11 +590,6 @@ namespace Hecton8.AI.Ecosystem
                 BufferID.ShinobuSymbiosisMockBoids,
                 1,
                 NativeArrayOptions.ClearMemory);
-            _legacyScratchHandle = ClaimGenerationHandle<byte>(
-                vault,
-                BufferID.ShinobuSymbiosisLegacyScratch,
-                LegacyScratchBytes,
-                NativeArrayOptions.UninitializedMemory);
             _mockFishHandle = ClaimGenerationHandle<MockFishSymbiosisDTO>(
                 vault,
                 BufferID.ShinobuSymbiosisMockFish,
@@ -810,7 +796,6 @@ namespace Hecton8.AI.Ecosystem
                    IsOwnedVaultHandle(in _floraBucketHeadHandle, BufferID.ShinobuSymbiosisFloraHashBucketHeads) &&
                    IsOwnedVaultHandle(in _floraBucketNextHandle, BufferID.ShinobuSymbiosisFloraHashNext) &&
                    IsOwnedVaultHandle(in _mockBoidHandle, BufferID.ShinobuSymbiosisMockBoids) &&
-                   IsOwnedVaultHandle(in _legacyScratchHandle, BufferID.ShinobuSymbiosisLegacyScratch) &&
                    IsOwnedVaultHandle(in _mockFishHandle, BufferID.ShinobuSymbiosisMockFish) &&
                    IsVaultHandleForBuffer(in _ambientEntityHandle, BufferID.ShinobuAmbientEntities) &&
                    IsVaultHandleForBuffer(in _ambientAupHandle, BufferID.ShinobuAmbientAups);
@@ -1740,9 +1725,6 @@ namespace Hecton8.AI.Ecosystem
             _exchangeHandle = default;
             _telemetryHandle = default;
             _counterHandle = default;
-#if UNITY_EDITOR
-            _csvScratchHandle = default;
-#endif
             _scannerVfxHandle = default;
             _oxygenEmitterHandle = default;
             _adherenceHandle = default;
@@ -1752,7 +1734,6 @@ namespace Hecton8.AI.Ecosystem
             _floraBucketHeadHandle = default;
             _floraBucketNextHandle = default;
             _mockBoidHandle = default;
-            _legacyScratchHandle = default;
             _mockFishHandle = default;
             _ambientEntityHandle = default;
             _ambientAupHandle = default;
@@ -1786,9 +1767,6 @@ namespace Hecton8.AI.Ecosystem
             ReleaseOwnedVaultHandle(vault, ref _exchangeHandle, BufferID.ShinobuSymbiosisExchanges);
             ReleaseOwnedVaultHandle(vault, ref _telemetryHandle, BufferID.ShinobuSymbiosisTelemetryRing);
             ReleaseOwnedVaultHandle(vault, ref _counterHandle, BufferID.ShinobuSymbiosisCounters);
-#if UNITY_EDITOR
-            ReleaseOwnedVaultHandle(vault, ref _csvScratchHandle, BufferID.ShinobuSymbiosisCsvScratch);
-#endif
             ReleaseOwnedVaultHandle(vault, ref _scannerVfxHandle, BufferID.ShinobuSymbiosisScannerVfx);
             ReleaseOwnedVaultHandle(vault, ref _oxygenEmitterHandle, BufferID.ShinobuSymbiosisOxygenEmitters);
             ReleaseOwnedVaultHandle(vault, ref _adherenceHandle, BufferID.ShinobuSymbiosisAdherence);
@@ -1798,7 +1776,6 @@ namespace Hecton8.AI.Ecosystem
             ReleaseOwnedVaultHandle(vault, ref _floraBucketHeadHandle, BufferID.ShinobuSymbiosisFloraHashBucketHeads);
             ReleaseOwnedVaultHandle(vault, ref _floraBucketNextHandle, BufferID.ShinobuSymbiosisFloraHashNext);
             ReleaseOwnedVaultHandle(vault, ref _mockBoidHandle, BufferID.ShinobuSymbiosisMockBoids);
-            ReleaseOwnedVaultHandle(vault, ref _legacyScratchHandle, BufferID.ShinobuSymbiosisLegacyScratch);
             ReleaseOwnedVaultHandle(vault, ref _mockFishHandle, BufferID.ShinobuSymbiosisMockFish);
 
             if (_ownsAmbientEntityHandle)
@@ -1850,22 +1827,6 @@ namespace Hecton8.AI.Ecosystem
             _runtimeFlags = 0u;
         }
 
-        private static unsafe int LoadFileIntoNativeScratch(string path, NativeArray<byte> scratch, int maxBytes, FileShare share)
-        {
-            if (!scratch.IsCreated || path == null || path.Length == 0)
-                return 0;
-
-            int limit = math.min(math.max(0, maxBytes), scratch.Length);
-            if (limit <= 0)
-                return 0;
-
-            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, share, math.max(1, limit), FileOptions.SequentialScan))
-            {
-                void* pointer = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                return stream.Read(new Span<byte>(pointer, limit));
-            }
-        }
-
         private static string BuildCsvPath()
         {
             string root = BuildProjectRootForIo();
@@ -1891,70 +1852,97 @@ namespace Hecton8.AI.Ecosystem
 
         private static void DumpBlackBox(NativeArray<SymbiosisTelemetryEntry> telemetry, int cursor)
         {
-            _ = cursor;
             if (!telemetry.IsCreated || telemetry.Length <= 0)
-                GlobalTelemetryBus.PublishPerformanceWarning(0x53364450u, SourceHash, 0f);
-        }
-
-        private static void WriteBlackBoxFile(string path, NativeArray<SymbiosisTelemetryEntry> telemetry, int cursor)
-        {
-            _ = path;
-            _ = telemetry;
-            _ = cursor;
-        }
-
-        private static void ParseCsvOverrides(
-            NativeArray<byte> bytes,
-            int length,
-            ref SymbiosisTuningDTO tuning,
-            NativeArray<SymbiosisChemicalLinkDTO> links)
-        {
-            if (!bytes.IsCreated)
-                return;
-
-            length = math.min(length, bytes.Length);
-            int cursor = 0;
-            int linkCursor = 0;
-            while (cursor < length)
             {
-                int keyStart = cursor;
-                while (cursor < length && bytes[cursor] != (byte)',' && bytes[cursor] != (byte)'\n' && bytes[cursor] != (byte)'\r')
-                    cursor++;
-
-                int keyEnd = cursor;
-                uint keyHash = HashAsciiLower(bytes, keyStart, keyEnd);
-                if (cursor >= length || bytes[cursor] != (byte)',')
-                {
-                    cursor = SkipLine(bytes, cursor, length);
-                    continue;
-                }
-
-                cursor++;
-                if (keyHash == 0x0DDB0669u)
-                {
-                    if (linkCursor < links.Length)
-                    {
-                        SymbiosisChemicalLinkDTO link = default;
-                        cursor = ParseCsvUInt(bytes, cursor, length, out link.FloraHash);
-                        cursor = ParseCsvUInt(bytes, cursor, length, out link.FaunaHash);
-                        cursor = ParseCsvFloat(bytes, cursor, length, out link.ChemicalTransferRate);
-                        cursor = ParseCsvUInt(bytes, cursor, length, out link.Flags);
-                        links[linkCursor] = link;
-                        linkCursor++;
-                        tuning.ActiveLinkCount = math.max(tuning.ActiveLinkCount, linkCursor);
-                    }
-
-                    cursor = SkipLine(bytes, cursor, length);
-                    continue;
-                }
-
-                float value;
-                cursor = ParseCsvFloat(bytes, cursor, length, out value);
-                if (math.isfinite(value))
-                    ApplyCsvScalar(keyHash, value, ref tuning);
-
-                cursor = SkipLine(bytes, cursor, length);
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53364450u, SourceHash, 0f);
+                return;
             }
+
+            WriteBlackBoxFile(DumpRelativePath, telemetry, cursor);
+        }
+
+        private static unsafe void WriteBlackBoxFile(string path, NativeArray<SymbiosisTelemetryEntry> telemetry, int cursor)
+        {
+            int entrySize = UnsafeUtility.SizeOf<SymbiosisTelemetryEntry>();
+            if (string.IsNullOrEmpty(path) ||
+                entrySize != 64 ||
+                !telemetry.IsCreated ||
+                telemetry.Length <= 0)
+            {
+                return;
+            }
+
+            int capacity = telemetry.Length;
+            int written = math.max(0, cursor);
+            int count = math.min(math.min(capacity, TelemetryCapacity), written);
+            if (count <= 0)
+                count = math.min(capacity, TelemetryCapacity);
+
+            int start = written < capacity ? 0 : cursor % capacity;
+            if (start < 0)
+                start = 0;
+
+            int byteCount = DumpHeaderBytes + (count * entrySize);
+            NativeArray<byte> payload = default;
+            try
+            {
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(ShinobuFloraFaunaSymbiosisSolver),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteUInt64LittleEndian(target, 0, DumpMagic);
+                WriteInt32LittleEndian(target, 8, DumpVersion);
+                WriteInt32LittleEndian(target, 12, capacity);
+                WriteInt32LittleEndian(target, 16, count);
+                WriteInt32LittleEndian(target, 20, cursor);
+                WriteInt32LittleEndian(target, 24, start);
+                WriteInt32LittleEndian(target, 28, entrySize);
+
+                int offset = DumpHeaderBytes;
+                for (int i = 0; i < count; i++)
+                {
+                    int slot = start + i;
+                    if (slot >= capacity)
+                        slot -= capacity;
+
+                    SymbiosisTelemetryEntry entry = telemetry[slot];
+                    UnsafeUtility.MemCpy(target + offset, &entry, entrySize);
+                    offset += entrySize;
+                }
+
+                NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(ShinobuFloraFaunaSymbiosisSolver),
+                    DumpPayloadLabel);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void WriteInt32LittleEndian(byte* destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void WriteUInt64LittleEndian(byte* destination, int offset, ulong value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+            WriteUInt32LittleEndian(destination, offset + 4, unchecked((uint)(value >> 32)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, int offset, uint value)
+        {
+            destination[offset] = unchecked((byte)value);
+            destination[offset + 1] = unchecked((byte)(value >> 8));
+            destination[offset + 2] = unchecked((byte)(value >> 16));
+            destination[offset + 3] = unchecked((byte)(value >> 24));
         }
 
         private static void ParseCsvOverrides(
@@ -2044,83 +2032,6 @@ namespace Hecton8.AI.Ecosystem
             }
         }
 
-        private static int ParseCsvFloat(NativeArray<byte> bytes, int cursor, int length, out float value)
-        {
-            value = 0f;
-            while (cursor < length && (bytes[cursor] == (byte)' ' || bytes[cursor] == (byte)'\t'))
-                cursor++;
-
-            int sign = 1;
-            if (cursor < length && bytes[cursor] == (byte)'-')
-            {
-                sign = -1;
-                cursor++;
-            }
-
-            double result = 0.0d;
-            bool found = false;
-            while (cursor < length && bytes[cursor] >= (byte)'0' && bytes[cursor] <= (byte)'9')
-            {
-                found = true;
-                result = (result * 10.0d) + (bytes[cursor] - (byte)'0');
-                cursor++;
-            }
-
-            if (cursor < length && bytes[cursor] == (byte)'.')
-            {
-                cursor++;
-                double factor = 0.1d;
-                while (cursor < length && bytes[cursor] >= (byte)'0' && bytes[cursor] <= (byte)'9')
-                {
-                    found = true;
-                    result += (bytes[cursor] - (byte)'0') * factor;
-                    factor *= 0.1d;
-                    cursor++;
-                }
-            }
-
-            value = found ? (float)(result * sign) : 0f;
-            while (cursor < length && bytes[cursor] != (byte)',' && bytes[cursor] != (byte)'\n' && bytes[cursor] != (byte)'\r')
-                cursor++;
-            if (cursor < length && bytes[cursor] == (byte)',')
-                cursor++;
-            return cursor;
-        }
-
-        private static int ParseCsvUInt(NativeArray<byte> bytes, int cursor, int length, out uint value)
-        {
-            value = 0u;
-            while (cursor < length && (bytes[cursor] == (byte)' ' || bytes[cursor] == (byte)'\t'))
-                cursor++;
-
-            bool hex = cursor + 1 < length && bytes[cursor] == (byte)'0' && (bytes[cursor + 1] == (byte)'x' || bytes[cursor + 1] == (byte)'X');
-            if (hex)
-                cursor += 2;
-
-            while (cursor < length)
-            {
-                byte b = bytes[cursor];
-                uint digit;
-                if (b >= (byte)'0' && b <= (byte)'9')
-                    digit = (uint)(b - (byte)'0');
-                else if (hex && b >= (byte)'a' && b <= (byte)'f')
-                    digit = (uint)(10 + b - (byte)'a');
-                else if (hex && b >= (byte)'A' && b <= (byte)'F')
-                    digit = (uint)(10 + b - (byte)'A');
-                else
-                    break;
-
-                value = hex ? ((value << 4) | digit) : ((value * 10u) + digit);
-                cursor++;
-            }
-
-            while (cursor < length && bytes[cursor] != (byte)',' && bytes[cursor] != (byte)'\n' && bytes[cursor] != (byte)'\r')
-                cursor++;
-            if (cursor < length && bytes[cursor] == (byte)',')
-                cursor++;
-            return cursor;
-        }
-
         private static int ParseCsvFloat(ReadOnlySpan<byte> bytes, int cursor, int length, out float value)
         {
             value = 0f;
@@ -2198,32 +2109,11 @@ namespace Hecton8.AI.Ecosystem
             return cursor;
         }
 
-        private static int SkipLine(NativeArray<byte> bytes, int cursor, int length)
-        {
-            while (cursor < length && bytes[cursor] != (byte)'\n')
-                cursor++;
-            return cursor < length ? cursor + 1 : cursor;
-        }
-
         private static int SkipLine(ReadOnlySpan<byte> bytes, int cursor, int length)
         {
             while (cursor < length && bytes[cursor] != (byte)'\n')
                 cursor++;
             return cursor < length ? cursor + 1 : cursor;
-        }
-
-        private static uint HashAsciiLower(NativeArray<byte> bytes, int start, int end)
-        {
-            uint hash = 2166136261u;
-            for (int i = start; i < end; i++)
-            {
-                byte b = bytes[i];
-                if (b >= (byte)'A' && b <= (byte)'Z')
-                    b = (byte)(b + 32);
-                hash = (hash ^ b) * 16777619u;
-            }
-
-            return hash;
         }
 
         private static uint HashAsciiLower(ReadOnlySpan<byte> bytes, int start, int end)
@@ -2240,27 +2130,6 @@ namespace Hecton8.AI.Ecosystem
             return hash;
         }
 #endif
-
-        private static void ResolveLegacyLinkEncoding(NativeArray<byte> bytes, int bytesRead, out bool bigEndian, out int payloadOffset)
-        {
-            bigEndian = false;
-            payloadOffset = 0;
-            if (!bytes.IsCreated || bytesRead < LegacyLinksHeaderBytes)
-                return;
-
-            uint marker = ReadUInt32(bytes, 0, false);
-            if (marker == LegacyLinksMagicLittleEndian)
-            {
-                payloadOffset = LegacyLinksHeaderBytes;
-                return;
-            }
-
-            if (marker == LegacyLinksMagicBigEndian)
-            {
-                bigEndian = true;
-                payloadOffset = LegacyLinksHeaderBytes;
-            }
-        }
 
         private static void ResolveLegacyLinkEncoding(ReadOnlySpan<byte> bytes, out bool bigEndian, out int payloadOffset)
         {
@@ -2283,18 +2152,6 @@ namespace Hecton8.AI.Ecosystem
             }
         }
 
-        private static uint ReadUInt32(NativeArray<byte> bytes, int offset, bool bigEndian)
-        {
-            if (!bytes.IsCreated || offset < 0 || offset > bytes.Length - 4)
-                return 0u;
-
-            uint raw = (uint)(bytes[offset] |
-                              (bytes[offset + 1] << 8) |
-                              (bytes[offset + 2] << 16) |
-                              (bytes[offset + 3] << 24));
-            return bigEndian ? ReverseUInt32(raw) : raw;
-        }
-
         private static uint ReadUInt32(ReadOnlySpan<byte> bytes, int offset, bool bigEndian)
         {
             if (offset < 0 || offset > bytes.Length - 4)
@@ -2314,13 +2171,6 @@ namespace Hecton8.AI.Ecosystem
                    ((value & 0x0000FF00u) << 8) |
                    ((value & 0x00FF0000u) >> 8) |
                    ((value & 0xFF000000u) >> 24);
-        }
-
-        private static float ReadFloat32(NativeArray<byte> bytes, int offset, bool bigEndian, float fallback)
-        {
-            uint raw = ReadUInt32(bytes, offset, bigEndian);
-            float value = math.asfloat(raw);
-            return math.isfinite(value) ? value : fallback;
         }
 
         private static float ReadFloat32(ReadOnlySpan<byte> bytes, int offset, bool bigEndian, float fallback)

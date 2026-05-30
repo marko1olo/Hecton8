@@ -761,6 +761,8 @@ namespace Hecton8.Physics.Vehicles
         public int CellCount;
         public int GridWriteCapacity;
         public int GridReadCapacity;
+        public int StateWriteCapacity;
+        public int StateReadCapacity;
 
         public void Execute()
         {
@@ -774,8 +776,13 @@ namespace Hecton8.Physics.Vehicles
                 UnsafeUtility.MemCpy(GridRead, GridWrite, bytes);
             }
 
-            if (StateWrite != null && StateRead != null)
+            if (StateWrite != null &&
+                StateRead != null &&
+                StateWriteCapacity >= 1 &&
+                StateReadCapacity >= 1)
+            {
                 UnsafeUtility.MemCpy(StateRead, StateWrite, UnsafeUtility.SizeOf<VehicleDamageStateDTO>());
+            }
         }
     }
 }

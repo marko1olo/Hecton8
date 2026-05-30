@@ -1518,9 +1518,8 @@ namespace Hecton8.Physics
         private const double FlushBudgetWarningMilliseconds = 0.2d;
         private const int FlushBudgetWarningCooldownFrames = 30;
         private const int ForcePacketWarningCooldownFrames = 30;
-        private static readonly ulong ValidationScheduleMutationGuardMask =
-            PhysicsApplyMutationGuardBit(BufferID.PhysicsForceValidationPackets) |
-            PhysicsApplyMutationGuardBit(BufferID.PhysicsForceValidationMask);
+        private const uint ValidationSchedulePinPackets = 1u << 0;
+        private const uint ValidationSchedulePinMask = 1u << 1;
         private static readonly uint ForcePacketClipWarningHash = unchecked((uint)LocHash.Compute("PhysicsApplySystem.ForcePacketClip"));
         private static readonly uint ForcePacketQueueHash = unchecked((uint)LocHash.Compute("PhysicsApplySystem.ForcePacketQueue"));
         private static readonly uint PhysicsFlushBudgetWarningHash = unchecked((uint)LocHash.Compute("PhysicsApplySystem.FlushBudget"));
@@ -1595,8 +1594,8 @@ namespace Hecton8.Physics
         private bool _frontBufferValidationReady;
         private bool _packetValidationScheduled;
         private JobHandle _packetValidationHandle;
-        private IDataVault _validationScheduleGuardVault;
-        private bool _validationScheduleGuardHeld;
+        private IDataVault _validationSchedulePinVault;
+        private uint _validationSchedulePinMask;
         private bool _contactModifySubscribed;
         private bool _submarineModifiableContactsArmed;
         private ulong _submarineHullEntityId;
@@ -3507,26 +3506,28 @@ namespace Hecton8.Physics
             dataVault?.ReleaseWriteLock(in handle, OwnerSystemId);
         }
 
-        private bool TryAcquireValidationScheduleBufferGuard(
+        private bool TryPinValidationScheduleBuffers(
             out NativeArray<ForcePacket> validationPackets,
             out NativeArray<byte> validationMask)
         {
             validationPackets = default;
             validationMask = default;
-            if (_validationScheduleGuardHeld)
+            if (_validationSchedulePinMask != 0u)
                 return false;
 
             IDataVault dataVault = _dataVault;
             if (dataVault == null ||
-                dataVault.IsCompactionFenceActive ||
-                !dataVault.TryAcquireMutationGuard(ValidationScheduleMutationGuardMask))
+                dataVault.IsCompactionFenceActive)
                 return false;
 
             bool success = false;
-            _validationScheduleGuardVault = dataVault;
-            _validationScheduleGuardHeld = true;
+            _validationSchedulePinVault = dataVault;
             try
             {
+                if (!TryLockValidationScheduleBuffer(dataVault, BufferID.PhysicsForceValidationPackets, ValidationSchedulePinPackets) ||
+                    !TryLockValidationScheduleBuffer(dataVault, BufferID.PhysicsForceValidationMask, ValidationSchedulePinMask))
+                    return false;
+
                 if (!TryResolveValidationScheduleBuffer(
                         in _validationPacketBufferHandle,
                         BufferID.PhysicsForceValidationPackets,
@@ -3547,7 +3548,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (!success)
-                    ReleaseValidationScheduleBufferGuard();
+                    ReleaseValidationScheduleBufferPins();
             }
         }
 
@@ -3579,21 +3580,35 @@ namespace Hecton8.Physics
             return true;
         }
 
-        private void ReleaseValidationScheduleBufferGuard()
+        private void ReleaseValidationScheduleBufferPins()
         {
-            if (!_validationScheduleGuardHeld)
+            IDataVault dataVault = _validationSchedulePinVault;
+            uint pinMask = _validationSchedulePinMask;
+            _validationSchedulePinVault = null;
+            _validationSchedulePinMask = 0u;
+            if (dataVault == null || pinMask == 0u)
                 return;
 
-            IDataVault dataVault = _validationScheduleGuardVault;
-            _validationScheduleGuardVault = null;
-            _validationScheduleGuardHeld = false;
-            if (dataVault != null)
-                dataVault.ReleaseMutationGuard(ValidationScheduleMutationGuardMask);
+            TryUnlockValidationScheduleBuffer(dataVault, pinMask, ValidationSchedulePinMask, BufferID.PhysicsForceValidationMask);
+            TryUnlockValidationScheduleBuffer(dataVault, pinMask, ValidationSchedulePinPackets, BufferID.PhysicsForceValidationPackets);
         }
 
-        private static ulong PhysicsApplyMutationGuardBit(BufferID bufferId)
+        private bool TryLockValidationScheduleBuffer(IDataVault dataVault, BufferID bufferId, uint pinBit)
         {
-            return 1UL << (unchecked((int)(uint)(int)bufferId) & 63);
+            if ((_validationSchedulePinMask & pinBit) != 0u)
+                return true;
+
+            if (dataVault == null || !dataVault.TryLockBuffer(bufferId, OwnerSystemId))
+                return false;
+
+            _validationSchedulePinMask |= pinBit;
+            return true;
+        }
+
+        private static void TryUnlockValidationScheduleBuffer(IDataVault dataVault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if ((pinMask & pinBit) != 0u)
+                dataVault.TryUnlockBuffer(bufferId, OwnerSystemId);
         }
 
         private static void ClearForcePacketRange(NativeArray<ForcePacket> buffer, int count, int startIndex = 0)
@@ -3873,7 +3888,7 @@ namespace Hecton8.Physics
 
             int validationCount = math.min(queuedCount, MaxQueuedPackets);
             bool clipped = queuedCount > validationCount;
-            if (!TryAcquireValidationScheduleBufferGuard(
+            if (!TryPinValidationScheduleBuffers(
                     out NativeArray<ForcePacket> validationPackets,
                     out NativeArray<byte> validationMask))
             {
@@ -3888,7 +3903,7 @@ namespace Hecton8.Physics
                     MaxQueuedPackets,
                     out NativeArray<ForcePacket> frontPackets))
             {
-                ReleaseValidationScheduleBufferGuard();
+                ReleaseValidationScheduleBufferPins();
                 _frontBufferValidationReady = false;
                 _frontCount = 0;
                 return;
@@ -3920,7 +3935,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (!scheduled)
-                    ReleaseValidationScheduleBufferGuard();
+                    ReleaseValidationScheduleBufferPins();
             }
 
             if (clipped)
@@ -3938,7 +3953,7 @@ namespace Hecton8.Physics
                     return;
 
                 _packetValidationScheduled = false;
-                ReleaseValidationScheduleBufferGuard();
+                ReleaseValidationScheduleBufferPins();
                 _frontBufferValidationReady = _frontCount > 0;
                 H8Memory.RegisterActiveJob(OwnerSystemId, default);
             }
@@ -4378,7 +4393,7 @@ namespace Hecton8.Physics
                 H8Memory.RegisterActiveJob(OwnerSystemId, default);
             }
 
-            ReleaseValidationScheduleBufferGuard();
+            ReleaseValidationScheduleBufferPins();
             ReleaseVaultBufferView(ref _validationPacketBufferHandle);
             ReleaseVaultBufferView(ref _validationMaskBufferHandle);
             _validationPacketBufferHandle = default;

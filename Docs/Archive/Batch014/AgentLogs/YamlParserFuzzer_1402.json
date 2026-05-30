@@ -1,0 +1,82 @@
+{
+  "agentId": "1402",
+  "generatedUtc": "2026-05-28T01:09:57+00:00",
+  "mode": "self_test",
+  "evidenceClass": "STATIC_SOURCE",
+  "failures": 0,
+  "results": [
+    {
+      "case": "missing_dash",
+      "expectedCode": "ARRAY_ITEM_MISSING_DASH",
+      "warningCodes": [
+        "ARRAY_ITEM_MISSING_DASH"
+      ],
+      "warnings": [
+        {
+          "code": "ARRAY_ITEM_MISSING_DASH",
+          "line": 5,
+          "text": "1.0"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "non_numeric",
+      "expectedCode": "NON_NUMERIC_ARRAY_SCALAR",
+      "warningCodes": [
+        "NON_NUMERIC_ARRAY_SCALAR"
+      ],
+      "warnings": [
+        {
+          "code": "NON_NUMERIC_ARRAY_SCALAR",
+          "line": 6,
+          "text": "- rotten"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "case": "valid_references",
+      "expectedCode": "",
+      "warningCodes": [],
+      "warnings": [],
+      "passed": true
+    },
+    {
+      "case": "partial_class_merge",
+      "expectedCode": "",
+      "warningCodes": [],
+      "warnings": [],
+      "mergedSerializedNames": [
+        "leftForearm",
+        "torso"
+      ],
+      "mergedFormerlyNames": [
+        "legacyTorso"
+      ],
+      "passed": true
+    },
+    {
+      "case": "base_class_merge",
+      "expectedCode": "",
+      "warningCodes": [],
+      "warnings": [],
+      "mergedSerializedNames": [
+        "_toolData",
+        "builderSpecific"
+      ],
+      "mergedFormerlyNames": [
+        "legacyToolData"
+      ],
+      "passed": true
+    },
+    {
+      "case": "global_qualified_field_type",
+      "expectedCode": "",
+      "warningCodes": [],
+      "warnings": [],
+      "matchedName": "crestOceanRenderer",
+      "passed": true
+    }
+  ]
+}

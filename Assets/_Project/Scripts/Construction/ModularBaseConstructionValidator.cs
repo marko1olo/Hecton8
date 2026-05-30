@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Burst;
 using Unity.Collections;
@@ -1016,30 +1017,22 @@ namespace Hecton8.Construction
                 (result.FailureFlags & (uint)ConstructionValidationFlags.NonFiniteInput) != 0u;
             if (nonFinite && !s_TelemetryDumped)
             {
-                s_TelemetryDumped = true;
-                DumpTelemetry(telemetryRing);
+                s_TelemetryDumped = DumpTelemetry(telemetryRing);
             }
         }
 
-        public static void DumpTelemetry(NativeArray<ConstructionTelemetryEntry> telemetryRing, string absolutePath = DefaultDumpPath)
+        public static bool DumpTelemetry(NativeArray<ConstructionTelemetryEntry> telemetryRing, string absolutePath = DefaultDumpPath)
         {
             if (!telemetryRing.IsCreated || telemetryRing.Length <= 0 || string.IsNullOrWhiteSpace(absolutePath))
-                return;
+                return false;
 
             void* ptr = telemetryRing.GetUnsafeReadOnlyPtr();
             int byteLength = telemetryRing.Length * UnsafeUtility.SizeOf<ConstructionTelemetryEntry>();
             string resolvedPath = ResolveDumpPath(absolutePath);
             if (string.IsNullOrEmpty(resolvedPath))
-                return;
+                return false;
 
-            string directory = Path.GetDirectoryName(resolvedPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(resolvedPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            {
-                stream.Write(new ReadOnlySpan<byte>(ptr, byteLength));
-            }
+            return NativeFaultDumpWriter.TryWriteAll(resolvedPath, new ReadOnlySpan<byte>(ptr, byteLength), byteLength);
         }
 
         private static string ResolveDumpPath(string path)

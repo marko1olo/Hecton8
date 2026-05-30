@@ -351,6 +351,7 @@ namespace Hecton8.Biolum
 
             if (_resourceRefreshRequested || _volumeA == null || _volumeB == null || _activePointBuffer == null || !HasValidKernelState())
             {
+                EnsureResources();
                 if (!HasRequiredResources())
                     return;
 

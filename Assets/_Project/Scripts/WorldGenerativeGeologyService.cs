@@ -139,6 +139,8 @@ namespace Hecton8.World
         internal Material CachedSeamMaterial => _cachedSeamRenderer != null ? _cachedSeamRenderer.sharedMaterial : null;
         public static int ActiveBindingCount => _activeBindings.Count;
 
+        private bool HasConfiguredRuntimeKey => runtimeKey != 0L;
+
         public WorldGenerativeGeologyProfile.ShapeArchetype Archetype
         {
             get
@@ -173,7 +175,8 @@ namespace Hecton8.World
         {
             CacheReferences();
             RegisterKnownBinding(this);
-            RegisterActiveBinding(this);
+            if (HasConfiguredRuntimeKey)
+                RegisterActiveBinding(this);
         }
 
         private void OnDisable()
@@ -200,7 +203,7 @@ namespace Hecton8.World
                 _cachedProxyInstance = null;
 
             if (!TryGetComponent(out _cachedSeamRenderer))
-                _cachedSeamRenderer = GetComponentInChildren<Renderer>(true);
+                _cachedSeamRenderer = ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
         }
 
         public static void CopyActiveBindingsTo(List<WorldGenerativeGeologyBinding> destination)
@@ -455,6 +458,44 @@ namespace Hecton8.World
             int resolvedLodCount)
         {
             CacheReferences();
+            ApplyConfiguration(
+                request,
+                resolvedComposition,
+                resolvedBlendRadius,
+                resolvedTerrainRaise,
+                resolvedTerrainCut,
+                resolvedDebrisCount,
+                resolvedLodCount);
+        }
+
+        public void ConfigureHot(
+            WorldGenerativeGeologyRequest request,
+            string resolvedComposition,
+            float resolvedBlendRadius,
+            float resolvedTerrainRaise,
+            float resolvedTerrainCut,
+            int resolvedDebrisCount,
+            int resolvedLodCount)
+        {
+            ApplyConfiguration(
+                request,
+                resolvedComposition,
+                resolvedBlendRadius,
+                resolvedTerrainRaise,
+                resolvedTerrainCut,
+                resolvedDebrisCount,
+                resolvedLodCount);
+        }
+
+        private void ApplyConfiguration(
+            WorldGenerativeGeologyRequest request,
+            string resolvedComposition,
+            float resolvedBlendRadius,
+            float resolvedTerrainRaise,
+            float resolvedTerrainCut,
+            int resolvedDebrisCount,
+            int resolvedLodCount)
+        {
             runtimeKey = request.RuntimeKey;
             familyId = request.Family != null ? request.Family.familyId : "world.family.generic";
             geologyProfileId = request.Profile != null ? request.Profile.profileId : "geology.generic";
@@ -475,6 +516,8 @@ namespace Hecton8.World
             suggestedTerrainRaise = resolvedTerrainRaise;
             suggestedTerrainCut = resolvedTerrainCut;
             suggestedDebrisCount = resolvedDebrisCount;
+            if (isActiveAndEnabled && HasConfiguredRuntimeKey)
+                RegisterActiveBinding(this);
         }
     }
 
@@ -491,25 +534,70 @@ namespace Hecton8.World
             _activeGeneratedRootCount = 0;
             _activeGeneratedRendererCount = 0;
             ActiveRuntimeInstance = null;
+            GeneratedRuntimeState.ResetStaticState();
         }
 
         [DisallowMultipleComponent]
         private sealed class GeneratedRuntimeState : MonoBehaviour
         {
+            private const int PreparedLodCapacity = 3;
+
+            private static readonly Dictionary<GameObject, GeneratedRuntimeState> _preparedRuntimeStates =
+                new Dictionary<GameObject, GeneratedRuntimeState>(256);
+
             [SerializeField] private int buildSignature;
             [SerializeField] private int rendererCount;
 
             private bool _registeredInGlobalCounters;
+            private LODGroup _lodGroup;
+            private WorldGenerativeGeologyBinding _binding;
             private LOD[] _lodArrayCache = _EmptyLods;
+            private LOD[] _lod1ArrayCache;
+            private LOD[] _lod2ArrayCache;
+            private LOD[] _lod3ArrayCache;
             private Renderer[] _lod0RendererCache = System.Array.Empty<Renderer>();
             private Renderer[] _lod1RendererCache = System.Array.Empty<Renderer>();
             private Renderer[] _lod2RendererCache = System.Array.Empty<Renderer>();
+            private Renderer[][] _lod0PreparedRendererCaches;
+            private Renderer[][] _lod1PreparedRendererCaches;
+            private Renderer[][] _lod2PreparedRendererCaches;
+            private Transform[] _preparedLodRoots;
+            private GameObject[][] _preparedPrimitiveObjects;
+            private MeshFilter[][] _preparedPrimitiveFilters;
+            private MeshRenderer[][] _preparedPrimitiveRenderers;
 
             public int BuildSignature => buildSignature;
             public int RendererCount => rendererCount;
+            public LODGroup LodGroup => _lodGroup;
+            public WorldGenerativeGeologyBinding Binding => _binding;
+
+            public static void ResetStaticState()
+            {
+                _preparedRuntimeStates.Clear();
+            }
+
+            public static bool TryGetPrepared(Transform generatedRoot, out GeneratedRuntimeState runtimeState)
+            {
+                if (generatedRoot != null &&
+                    _preparedRuntimeStates.TryGetValue(generatedRoot.gameObject, out runtimeState) &&
+                    runtimeState != null)
+                {
+                    return true;
+                }
+
+                runtimeState = null;
+                return false;
+            }
+
+            private void Awake()
+            {
+                _preparedRuntimeStates[gameObject] = this;
+            }
 
             private void OnEnable()
             {
+                _preparedRuntimeStates[gameObject] = this;
+
                 if (_registeredInGlobalCounters)
                     return;
 
@@ -526,6 +614,50 @@ namespace Hecton8.World
                 _registeredInGlobalCounters = false;
                 _activeGeneratedRootCount = Mathf.Max(0, _activeGeneratedRootCount - 1);
                 _activeGeneratedRendererCount = Mathf.Max(0, _activeGeneratedRendererCount - Mathf.Max(0, rendererCount));
+            }
+
+            private void OnDestroy()
+            {
+                GameObject owner = gameObject;
+                if (owner == null)
+                    return;
+
+                if (_preparedRuntimeStates.TryGetValue(owner, out GeneratedRuntimeState state) &&
+                    ReferenceEquals(state, this))
+                {
+                    _preparedRuntimeStates.Remove(owner);
+                }
+            }
+
+            public void PrepareCold(
+                LODGroup lodGroup,
+                WorldGenerativeGeologyBinding binding,
+                int maxLodCount,
+                int maxRendererCount)
+            {
+                _lodGroup = lodGroup;
+                _binding = binding;
+
+                int lodCapacity = Mathf.Clamp(maxLodCount, 1, PreparedLodCapacity);
+                int rendererCapacity = Mathf.Max(1, maxRendererCount);
+                if (lodCapacity >= 1 && (_lod1ArrayCache == null || _lod1ArrayCache.Length != 1))
+                    _lod1ArrayCache = new LOD[1];
+                if (lodCapacity >= 2 && (_lod2ArrayCache == null || _lod2ArrayCache.Length != 2))
+                    _lod2ArrayCache = new LOD[2];
+                if (lodCapacity >= 3 && (_lod3ArrayCache == null || _lod3ArrayCache.Length != 3))
+                    _lod3ArrayCache = new LOD[3];
+
+                if (lodCapacity >= 1)
+                    EnsurePreparedRendererCaches(ref _lod0PreparedRendererCaches, rendererCapacity);
+                if (lodCapacity >= 2)
+                    EnsurePreparedRendererCaches(ref _lod1PreparedRendererCaches, rendererCapacity);
+                if (lodCapacity >= 3)
+                    EnsurePreparedRendererCaches(ref _lod2PreparedRendererCaches, rendererCapacity);
+
+                if (_preparedLodRoots == null || _preparedLodRoots.Length != PreparedLodCapacity)
+                    _preparedLodRoots = new Transform[PreparedLodCapacity];
+
+                EnsurePreparedPrimitiveCaches(lodCapacity, rendererCapacity);
             }
 
             public void Configure(int signature, int configuredRendererCount)
@@ -572,6 +704,182 @@ namespace Hecton8.World
                 }
             }
 
+            public bool TryGetPreparedLodArray(int lodCount, out LOD[] lods)
+            {
+                switch (lodCount)
+                {
+                    case 1:
+                        lods = _lod1ArrayCache;
+                        return lods != null && lods.Length == 1;
+                    case 2:
+                        lods = _lod2ArrayCache;
+                        return lods != null && lods.Length == 2;
+                    case 3:
+                        lods = _lod3ArrayCache;
+                        return lods != null && lods.Length == 3;
+                    default:
+                        lods = null;
+                        return false;
+                }
+            }
+
+            public bool TryCopyPreparedRendererArray(
+                int lodIndex,
+                List<Renderer> source,
+                out Renderer[] renderers)
+            {
+                int rendererCountForLod = source != null ? source.Count : 0;
+                if (rendererCountForLod <= 0)
+                {
+                    renderers = System.Array.Empty<Renderer>();
+                    return true;
+                }
+
+                Renderer[][] caches = lodIndex switch
+                {
+                    0 => _lod0PreparedRendererCaches,
+                    1 => _lod1PreparedRendererCaches,
+                    _ => _lod2PreparedRendererCaches
+                };
+
+                if (caches == null ||
+                    rendererCountForLod >= caches.Length ||
+                    caches[rendererCountForLod] == null)
+                {
+                    renderers = null;
+                    return false;
+                }
+
+                renderers = caches[rendererCountForLod];
+                for (int i = 0; i < rendererCountForLod; i++)
+                    renderers[i] = source[i];
+
+                return true;
+            }
+
+            public void CachePreparedPrimitiveCold(
+                int lodIndex,
+                int primitiveIndex,
+                GameObject primitive,
+                MeshFilter filter,
+                MeshRenderer renderer)
+            {
+                if ((uint)lodIndex >= (uint)PreparedLodCapacity ||
+                    primitiveIndex < 0 ||
+                    _preparedPrimitiveObjects == null ||
+                    lodIndex >= _preparedPrimitiveObjects.Length ||
+                    _preparedPrimitiveObjects[lodIndex] == null ||
+                    (uint)primitiveIndex >= (uint)_preparedPrimitiveObjects[lodIndex].Length)
+                {
+                    return;
+                }
+
+                _preparedPrimitiveObjects[lodIndex][primitiveIndex] = primitive;
+                _preparedPrimitiveFilters[lodIndex][primitiveIndex] = filter;
+                _preparedPrimitiveRenderers[lodIndex][primitiveIndex] = renderer;
+            }
+
+            public void CachePreparedLodRootCold(int lodIndex, Transform lodRoot)
+            {
+                if ((uint)lodIndex >= (uint)PreparedLodCapacity ||
+                    _preparedLodRoots == null)
+                {
+                    return;
+                }
+
+                _preparedLodRoots[lodIndex] = lodRoot;
+            }
+
+            public bool TryGetPreparedLodRootHot(int lodIndex, out Transform lodRoot)
+            {
+                lodRoot = null;
+                if ((uint)lodIndex >= (uint)PreparedLodCapacity ||
+                    _preparedLodRoots == null ||
+                    (uint)lodIndex >= (uint)_preparedLodRoots.Length)
+                {
+                    return false;
+                }
+
+                lodRoot = _preparedLodRoots[lodIndex];
+                return lodRoot != null;
+            }
+
+            public void DisableUnusedPreparedLodRootsHot(int activeLodCount)
+            {
+                if (_preparedLodRoots == null)
+                    return;
+
+                for (int i = 0; i < _preparedLodRoots.Length; i++)
+                {
+                    Transform lodRoot = _preparedLodRoots[i];
+                    if (lodRoot == null)
+                        continue;
+
+                    bool keepActive = i < activeLodCount;
+                    GameObject lodObject = lodRoot.gameObject;
+                    if (lodObject.activeSelf != keepActive)
+                        lodObject.SetActive(keepActive);
+                }
+            }
+
+            public void DisableUnusedPreparedPrimitivesHot(int lodIndex, int activePrimitiveCount)
+            {
+                if ((uint)lodIndex >= (uint)PreparedLodCapacity ||
+                    _preparedPrimitiveObjects == null ||
+                    lodIndex >= _preparedPrimitiveObjects.Length ||
+                    _preparedPrimitiveObjects[lodIndex] == null)
+                {
+                    return;
+                }
+
+                GameObject[] primitives = _preparedPrimitiveObjects[lodIndex];
+                for (int i = 0; i < primitives.Length; i++)
+                {
+                    GameObject primitive = primitives[i];
+                    if (primitive == null)
+                        continue;
+
+                    bool keepActive = i < activePrimitiveCount;
+                    if (primitive.activeSelf != keepActive)
+                        primitive.SetActive(keepActive);
+                }
+            }
+
+            public bool TryGetPreparedPrimitiveHot(
+                int lodIndex,
+                int primitiveIndex,
+                out GameObject primitive,
+                out MeshFilter filter,
+                out MeshRenderer renderer)
+            {
+                primitive = null;
+                filter = null;
+                renderer = null;
+
+                if ((uint)lodIndex >= (uint)PreparedLodCapacity ||
+                    primitiveIndex < 0 ||
+                    _preparedPrimitiveObjects == null ||
+                    _preparedPrimitiveFilters == null ||
+                    _preparedPrimitiveRenderers == null ||
+                    lodIndex >= _preparedPrimitiveObjects.Length ||
+                    lodIndex >= _preparedPrimitiveFilters.Length ||
+                    lodIndex >= _preparedPrimitiveRenderers.Length ||
+                    _preparedPrimitiveObjects[lodIndex] == null ||
+                    _preparedPrimitiveFilters[lodIndex] == null ||
+                    _preparedPrimitiveRenderers[lodIndex] == null ||
+                    (uint)primitiveIndex >= (uint)_preparedPrimitiveObjects[lodIndex].Length ||
+                    (uint)primitiveIndex >= (uint)_preparedPrimitiveFilters[lodIndex].Length ||
+                    (uint)primitiveIndex >= (uint)_preparedPrimitiveRenderers[lodIndex].Length)
+                {
+                    return false;
+                }
+
+                primitive = _preparedPrimitiveObjects[lodIndex][primitiveIndex];
+                filter = _preparedPrimitiveFilters[lodIndex][primitiveIndex];
+                renderer = _preparedPrimitiveRenderers[lodIndex][primitiveIndex];
+                return primitive != null && filter != null && renderer != null;
+            }
+
             private static Renderer[] EnsureRendererArray(ref Renderer[] cache, int requiredCount)
             {
                 if (cache == null || cache.Length != requiredCount)
@@ -579,12 +887,48 @@ namespace Hecton8.World
 
                 return cache;
             }
+
+            private static void EnsurePreparedRendererCaches(ref Renderer[][] caches, int maxRendererCount)
+            {
+                int requiredLength = maxRendererCount + 1;
+                if (caches == null || caches.Length != requiredLength)
+                    caches = new Renderer[requiredLength][];
+
+                for (int count = 1; count < requiredLength; count++)
+                {
+                    if (caches[count] == null || caches[count].Length != count)
+                        caches[count] = new Renderer[count];
+                }
+            }
+
+            private void EnsurePreparedPrimitiveCaches(int lodCapacity, int maxPrimitiveCount)
+            {
+                EnsurePreparedPrimitiveMatrix(ref _preparedPrimitiveObjects, lodCapacity, maxPrimitiveCount);
+                EnsurePreparedPrimitiveMatrix(ref _preparedPrimitiveFilters, lodCapacity, maxPrimitiveCount);
+                EnsurePreparedPrimitiveMatrix(ref _preparedPrimitiveRenderers, lodCapacity, maxPrimitiveCount);
+            }
+
+            private static void EnsurePreparedPrimitiveMatrix<T>(ref T[][] matrix, int lodCapacity, int maxPrimitiveCount)
+            {
+                int lodLength = Mathf.Clamp(lodCapacity, 1, PreparedLodCapacity);
+                int primitiveLength = Mathf.Max(1, maxPrimitiveCount);
+                if (matrix == null || matrix.Length != PreparedLodCapacity)
+                    matrix = new T[PreparedLodCapacity][];
+
+                for (int lodIndex = 0; lodIndex < lodLength; lodIndex++)
+                {
+                    if (matrix[lodIndex] == null || matrix[lodIndex].Length != primitiveLength)
+                        matrix[lodIndex] = new T[primitiveLength];
+                }
+            }
         }
 
         private const string GeneratedRootName = "__GENERATED_GEOLOGY";
         private const string CompositionSingleFeature = "SingleFeature";
         private const string CompositionPairedFeature = "PairedFeature";
         private const string CompositionContextPack = "ContextPack";
+        private const int GeneratedRuntimeLodCapacity = 3;
+        private const int GeneratedRuntimePrimitiveCapacityPerLod = 16;
         private static readonly LOD[] _EmptyLods = new LOD[0];
 
         [Header("Fallback Generation")]
@@ -593,6 +937,7 @@ namespace Hecton8.World
         [SerializeField] private float debrisScale = 0.28f;
 
         private readonly List<Renderer> _rendererBuildBuffer = new List<Renderer>(24);
+        private bool _allowStructuralPrimitiveBuild = true;
 
         public static int ActiveGeneratedRootCount => Mathf.Max(0, _activeGeneratedRootCount);
         public static int ActiveGeneratedRendererCount => Mathf.Max(0, _activeGeneratedRendererCount);
@@ -608,6 +953,64 @@ namespace Hecton8.World
                 ActiveRuntimeInstance = null;
         }
 
+        public static bool TryPrepareRuntimeShellCold(GameObject host, out Transform generatedRoot)
+        {
+            generatedRoot = null;
+            if (host == null)
+                return false;
+
+            WorldGeneratedPrimitiveFactory.PrewarmPrimitiveResources();
+            generatedRoot = GetOrCreateGeneratedRoot(host.transform);
+            if (!generatedRoot.TryGetComponent(out LODGroup lodGroup))
+                lodGroup = generatedRoot.gameObject.AddComponent<LODGroup>();
+
+            if (!generatedRoot.TryGetComponent(out GeneratedRuntimeState runtimeState))
+                runtimeState = generatedRoot.gameObject.AddComponent<GeneratedRuntimeState>();
+
+            if (!host.TryGetComponent(out WorldGenerativeGeologyBinding binding))
+                binding = host.AddComponent<WorldGenerativeGeologyBinding>();
+
+            lodGroup.fadeMode = LODFadeMode.CrossFade;
+            lodGroup.animateCrossFading = true;
+            runtimeState.PrepareCold(
+                lodGroup,
+                binding,
+                GeneratedRuntimeLodCapacity,
+                GeneratedRuntimePrimitiveCapacityPerLod);
+
+            for (int lodIndex = 0; lodIndex < GeneratedRuntimeLodCapacity; lodIndex++)
+            {
+                Transform lodRoot = GetOrCreateLodRoot(generatedRoot, lodIndex);
+                runtimeState.CachePreparedLodRootCold(lodIndex, lodRoot);
+                while (lodRoot.childCount < GeneratedRuntimePrimitiveCapacityPerLod)
+                {
+                    WorldGeneratedPrimitiveFactory.CreateCachedPrimitiveShell(
+                        lodRoot,
+                        "PrimitiveShell_" + lodRoot.childCount);
+                }
+
+                for (int primitiveIndex = 0; primitiveIndex < GeneratedRuntimePrimitiveCapacityPerLod; primitiveIndex++)
+                {
+                    GameObject primitive = lodRoot.GetChild(primitiveIndex).gameObject;
+                    if (WorldGeneratedPrimitiveFactory.TryResolvePrimitiveComponentsCold(
+                            primitive,
+                            out MeshFilter filter,
+                            out MeshRenderer renderer))
+                    {
+                        runtimeState.CachePreparedPrimitiveCold(lodIndex, primitiveIndex, primitive, filter, renderer);
+                    }
+                }
+
+                DisableUnusedPrimitiveChildren(lodRoot, 0);
+            }
+
+            DisableUnusedLodRoots(generatedRoot, 0);
+            if (generatedRoot.gameObject.activeSelf)
+                generatedRoot.gameObject.SetActive(false);
+
+            return true;
+        }
+
         public bool TryApplyGeneratedGeology(GameObject host, in WorldGenerativeGeologyRequest request)
         {
             if (host == null || request.Profile == null || !request.Profile.IsEnabled)
@@ -615,6 +1018,9 @@ namespace Hecton8.World
 
             if (!Application.isPlaying && !allowEditorGeneration)
                 return false;
+
+            if (Application.isPlaying)
+                return TryApplyGeneratedGeologyHot(host, request);
 
             bool finalVariantRequested = request.FinalVariantActive != 0;
             float visualQualityWeight = ResolveGlobalQualityWeight();
@@ -646,30 +1052,87 @@ namespace Hecton8.World
                 debrisCount,
                 lodCount);
 
-            Transform generatedRoot = GetOrCreateGeneratedRoot(host.transform);
-            GeneratedRuntimeState runtimeState = generatedRoot.GetComponent<GeneratedRuntimeState>();
-            WorldGenerativeGeologyBinding binding = host.GetComponent<WorldGenerativeGeologyBinding>();
+            bool runtimeHotPath = Application.isPlaying;
+            Transform generatedRoot;
+            GeneratedRuntimeState runtimeState;
+            LODGroup lodGroup;
+            WorldGenerativeGeologyBinding binding;
+            if (runtimeHotPath)
+            {
+                if (!WorldProceduralProxyInstance.TryGetCached(host, out WorldProceduralProxyInstance proxy) ||
+                    !TryResolvePreparedRuntimeStateHot(proxy, out generatedRoot, out runtimeState, out lodGroup, out binding))
+                {
+                    return false;
+                }
+
+                ActivateTransform(generatedRoot);
+            }
+            else
+            {
+                generatedRoot = GetOrCreateGeneratedRoot(host.transform);
+                generatedRoot.TryGetComponent(out runtimeState);
+                host.TryGetComponent(out binding);
+                if (!generatedRoot.TryGetComponent(out lodGroup))
+                    lodGroup = generatedRoot.gameObject.AddComponent<LODGroup>();
+
+                if (runtimeState == null)
+                    runtimeState = generatedRoot.gameObject.AddComponent<GeneratedRuntimeState>();
+
+                if (binding == null)
+                    binding = host.AddComponent<WorldGenerativeGeologyBinding>();
+
+                runtimeState.PrepareCold(
+                    lodGroup,
+                    binding,
+                    GeneratedRuntimeLodCapacity,
+                    GeneratedRuntimePrimitiveCapacityPerLod);
+            }
+
             if (runtimeState != null && runtimeState.BuildSignature == buildSignature && binding != null)
                 return true;
 
-            StripHostPrimitiveVisuals(host);
-
-            LODGroup lodGroup = generatedRoot.GetComponent<LODGroup>();
-            if (lodGroup == null)
-                lodGroup = generatedRoot.gameObject.AddComponent<LODGroup>();
+            if (!runtimeHotPath)
+                StripHostPrimitiveVisuals(host);
 
             lodGroup.fadeMode = LODFadeMode.CrossFade;
             lodGroup.animateCrossFading = true;
 
-            if (runtimeState == null)
-                runtimeState = generatedRoot.gameObject.AddComponent<GeneratedRuntimeState>();
+            LOD[] lodArray;
+            if (runtimeHotPath)
+            {
+                if (!runtimeState.TryGetPreparedLodArray(lodCount, out lodArray))
+                    return false;
+            }
+            else
+            {
+                lodArray = runtimeState.GetOrCreateLodArray(lodCount);
+            }
 
-            LOD[] lodArray = runtimeState.GetOrCreateLodArray(lodCount);
             int totalRendererCount = 0;
             for (int lodIndex = 0; lodIndex < lodCount; lodIndex++)
             {
-                Transform lodRoot = GetOrCreateLodRoot(generatedRoot, lodIndex);
-                Renderer[] renderers = BuildCompositionLod(runtimeState, lodRoot, request, resolvedComposition, lodIndex, debrisCount);
+                Transform lodRoot;
+                if (runtimeHotPath)
+                {
+                    if (!runtimeState.TryGetPreparedLodRootHot(lodIndex, out lodRoot))
+                        return false;
+                }
+                else
+                {
+                    lodRoot = GetOrCreateLodRoot(generatedRoot, lodIndex);
+                }
+
+                Renderer[] renderers = BuildCompositionLod(
+                    runtimeState,
+                    lodRoot,
+                    request,
+                    resolvedComposition,
+                    lodIndex,
+                    debrisCount,
+                    allowStructuralChanges: !runtimeHotPath);
+                if (renderers == null)
+                    return false;
+
                 float transitionHeight = ResolveLodScreenHeight(request.Profile, lodIndex, lodCount);
                 lodArray[lodIndex] = new LOD(transitionHeight, renderers);
                 totalRendererCount += renderers.Length;
@@ -679,10 +1142,71 @@ namespace Hecton8.World
             lodGroup.SetLODs(lodArray);
             lodGroup.RecalculateBounds();
 
-            if (binding == null)
-                binding = host.AddComponent<WorldGenerativeGeologyBinding>();
+            if (runtimeHotPath)
+            {
+                binding.ConfigureHot(
+                    request,
+                    resolvedComposition,
+                    blendRadius,
+                    terrainRaise,
+                    terrainCut,
+                    debrisCount,
+                    lodCount);
+            }
+            else
+            {
+                binding.Configure(
+                    request,
+                    resolvedComposition,
+                    blendRadius,
+                    terrainRaise,
+                    terrainCut,
+                    debrisCount,
+                    lodCount);
+            }
 
-            binding.Configure(
+            runtimeState.Configure(buildSignature, totalRendererCount);
+
+            return true;
+        }
+
+        public bool TryApplyGeneratedGeologyHot(GameObject host, in WorldGenerativeGeologyRequest request)
+        {
+            return WorldProceduralProxyInstance.TryGetCached(host, out WorldProceduralProxyInstance proxy) &&
+                TryApplyPreparedGeneratedGeologyHot(proxy, request);
+        }
+
+        public bool TryApplyPreparedGeneratedGeologyHot(WorldProceduralProxyInstance proxy, in WorldGenerativeGeologyRequest request)
+        {
+            if (proxy == null ||
+                request.Profile == null ||
+                !request.Profile.IsEnabled ||
+                !TryResolvePreparedRuntimeStateHot(proxy, out Transform generatedRoot, out GeneratedRuntimeState runtimeState, out LODGroup lodGroup, out WorldGenerativeGeologyBinding binding))
+            {
+                return false;
+            }
+
+            bool finalVariantRequested = request.FinalVariantActive != 0;
+            float visualQualityWeight = ResolveGlobalQualityWeight();
+            string resolvedComposition = ResolveQualityComposition(
+                ResolveComposition(request),
+                request.StableHash,
+                finalVariantRequested,
+                visualQualityWeight);
+            int lodCount = ResolvePresentationLodCount(
+                request.Profile,
+                request.StableHash,
+                finalVariantRequested,
+                visualQualityWeight);
+            float blendRadius = Mathf.Max(0.5f, request.Profile.seamBlendRadius * Mathf.Max(0.25f, request.WorldScale));
+            float terrainRaise = request.Profile.terrainRaiseMeters * Mathf.Clamp01(request.RidgeSignal + request.CompositionPotential * 0.25f);
+            float terrainCut = request.Profile.terrainCutMeters * Mathf.Clamp01(request.CaveProximity + request.CanyonSignal * 0.35f);
+            int debrisCount = ResolvePresentationDebrisCount(
+                request.Profile,
+                request.StableHash,
+                finalVariantRequested,
+                visualQualityWeight);
+            int buildSignature = ComputeBuildSignature(
                 request,
                 resolvedComposition,
                 blendRadius,
@@ -691,8 +1215,50 @@ namespace Hecton8.World
                 debrisCount,
                 lodCount);
 
-            runtimeState.Configure(buildSignature, totalRendererCount);
+            if (runtimeState.BuildSignature == buildSignature)
+                return true;
 
+            if (!runtimeState.TryGetPreparedLodArray(lodCount, out LOD[] lodArray))
+                return false;
+
+            ActivateTransform(generatedRoot);
+            lodGroup.fadeMode = LODFadeMode.CrossFade;
+            lodGroup.animateCrossFading = true;
+
+            int totalRendererCount = 0;
+            for (int lodIndex = 0; lodIndex < lodCount; lodIndex++)
+            {
+                if (!runtimeState.TryGetPreparedLodRootHot(lodIndex, out Transform lodRoot))
+                    return false;
+
+                Renderer[] renderers = BuildCompositionLodHot(
+                    runtimeState,
+                    lodRoot,
+                    request,
+                    resolvedComposition,
+                    lodIndex,
+                    debrisCount);
+                if (renderers == null)
+                    return false;
+
+                float transitionHeight = ResolveLodScreenHeight(request.Profile, lodIndex, lodCount);
+                lodArray[lodIndex] = new LOD(transitionHeight, renderers);
+                totalRendererCount += renderers.Length;
+            }
+
+            runtimeState.DisableUnusedPreparedLodRootsHot(lodCount);
+            lodGroup.SetLODs(lodArray);
+            lodGroup.RecalculateBounds();
+
+            binding.ConfigureHot(
+                request,
+                resolvedComposition,
+                blendRadius,
+                terrainRaise,
+                terrainCut,
+                debrisCount,
+                lodCount);
+            runtimeState.Configure(buildSignature, totalRendererCount);
             return true;
         }
 
@@ -708,7 +1274,100 @@ namespace Hecton8.World
             DestroyGeneratedObject(generatedRoot.gameObject);
         }
 
+        private static bool TryResolvePreparedRuntimeStateHot(
+            WorldProceduralProxyInstance proxy,
+            out Transform generatedRoot,
+            out GeneratedRuntimeState runtimeState,
+            out LODGroup lodGroup,
+            out WorldGenerativeGeologyBinding binding)
+        {
+            generatedRoot = null;
+            runtimeState = null;
+            lodGroup = null;
+            binding = null;
+
+            if (proxy == null)
+            {
+                return false;
+            }
+
+            generatedRoot = proxy.CachedGeneratedGeologyRoot;
+            if (generatedRoot == null ||
+                !GeneratedRuntimeState.TryGetPrepared(generatedRoot, out runtimeState) ||
+                runtimeState == null)
+            {
+                return false;
+            }
+
+            lodGroup = runtimeState.LodGroup;
+            binding = runtimeState.Binding;
+            return lodGroup != null && binding != null;
+        }
+
         private Renderer[] BuildCompositionLod(
+            GeneratedRuntimeState runtimeState,
+            Transform lodRoot,
+            in WorldGenerativeGeologyRequest request,
+            string composition,
+            int lodIndex,
+            int debrisCount,
+            bool allowStructuralChanges)
+        {
+            _rendererBuildBuffer.Clear();
+            ActivateTransform(lodRoot);
+            int primitiveIndex = 0;
+            float lodScale = Mathf.Lerp(1f, 0.7f, lodIndex / 2f);
+            bool previousStructuralBuild = _allowStructuralPrimitiveBuild;
+            _allowStructuralPrimitiveBuild = allowStructuralChanges;
+
+            try
+            {
+                switch (request.Profile.shapeArchetype)
+                {
+                    case WorldGenerativeGeologyProfile.ShapeArchetype.Arch:
+                    case WorldGenerativeGeologyProfile.ShapeArchetype.CaveBridge:
+                        BuildArch(_rendererBuildBuffer, lodRoot, request, composition, lodScale, lodIndex, ref primitiveIndex);
+                        break;
+
+                    case WorldGenerativeGeologyProfile.ShapeArchetype.Canopy:
+                        BuildCanopy(_rendererBuildBuffer, lodRoot, request, composition, lodScale, lodIndex, ref primitiveIndex);
+                        break;
+
+                    default:
+                        BuildRockPack(_rendererBuildBuffer, lodRoot, request, composition, lodScale, lodIndex, ref primitiveIndex);
+                        break;
+                }
+
+                if (lodIndex == 0 && request.Profile.terrainSeamMode != WorldGenerativeGeologyProfile.TerrainSeamMode.None)
+                    BuildDebris(_rendererBuildBuffer, lodRoot, request, debrisCount, ref primitiveIndex);
+            }
+            finally
+            {
+                _allowStructuralPrimitiveBuild = previousStructuralBuild;
+            }
+
+            DisableUnusedPrimitiveChildren(lodRoot, primitiveIndex);
+            if (!allowStructuralChanges && primitiveIndex > lodRoot.childCount)
+                return null;
+
+            int rendererCount = _rendererBuildBuffer.Count;
+            if (rendererCount == 0)
+                return allowStructuralChanges ? System.Array.Empty<Renderer>() : null;
+
+            if (!allowStructuralChanges)
+            {
+                if (!runtimeState.TryCopyPreparedRendererArray(lodIndex, _rendererBuildBuffer, out Renderer[] preparedRenderers))
+                    return null;
+
+                return preparedRenderers;
+            }
+
+            Renderer[] renderers = runtimeState.GetOrCreateRendererArray(lodIndex, rendererCount);
+            _rendererBuildBuffer.CopyTo(renderers);
+            return renderers;
+        }
+
+        private Renderer[] BuildCompositionLodHot(
             GeneratedRuntimeState runtimeState,
             Transform lodRoot,
             in WorldGenerativeGeologyRequest request,
@@ -725,30 +1384,28 @@ namespace Hecton8.World
             {
                 case WorldGenerativeGeologyProfile.ShapeArchetype.Arch:
                 case WorldGenerativeGeologyProfile.ShapeArchetype.CaveBridge:
-                    BuildArch(_rendererBuildBuffer, lodRoot, request, composition, lodScale, lodIndex, ref primitiveIndex);
+                    BuildArchHot(runtimeState, _rendererBuildBuffer, request, composition, lodScale, lodIndex, ref primitiveIndex);
                     break;
 
                 case WorldGenerativeGeologyProfile.ShapeArchetype.Canopy:
-                    BuildCanopy(_rendererBuildBuffer, lodRoot, request, composition, lodScale, lodIndex, ref primitiveIndex);
+                    BuildCanopyHot(runtimeState, _rendererBuildBuffer, request, composition, lodScale, lodIndex, ref primitiveIndex);
                     break;
 
                 default:
-                    BuildRockPack(_rendererBuildBuffer, lodRoot, request, composition, lodScale, lodIndex, ref primitiveIndex);
+                    BuildRockPackHot(runtimeState, _rendererBuildBuffer, request, composition, lodScale, lodIndex, ref primitiveIndex);
                     break;
             }
 
             if (lodIndex == 0 && request.Profile.terrainSeamMode != WorldGenerativeGeologyProfile.TerrainSeamMode.None)
-                BuildDebris(_rendererBuildBuffer, lodRoot, request, debrisCount, ref primitiveIndex);
+                BuildDebrisHot(runtimeState, _rendererBuildBuffer, lodIndex, request, debrisCount, ref primitiveIndex);
 
-            DisableUnusedPrimitiveChildren(lodRoot, primitiveIndex);
+            runtimeState.DisableUnusedPreparedPrimitivesHot(lodIndex, primitiveIndex);
+            if (primitiveIndex > GeneratedRuntimePrimitiveCapacityPerLod || _rendererBuildBuffer.Count == 0)
+                return null;
 
-            int rendererCount = _rendererBuildBuffer.Count;
-            if (rendererCount == 0)
-                return System.Array.Empty<Renderer>();
-
-            Renderer[] renderers = runtimeState.GetOrCreateRendererArray(lodIndex, rendererCount);
-            _rendererBuildBuffer.CopyTo(renderers);
-            return renderers;
+            return runtimeState.TryCopyPreparedRendererArray(lodIndex, _rendererBuildBuffer, out Renderer[] renderers)
+                ? renderers
+                : null;
         }
 
         private void BuildArch(
@@ -772,6 +1429,30 @@ namespace Hecton8.World
             {
                 CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(0f, height * 0.55f, width * 0.22f), Quaternion.Euler(0f, 24f, -14f), new Vector3(width * 0.42f, thickness * 0.8f, thickness), ref primitiveIndex);
                 CreatePrimitive(renderers, root, PrimitiveType.Cube, new Vector3(0f, height * 0.42f, -width * 0.24f), Quaternion.Euler(0f, -22f, 10f), new Vector3(width * 0.36f, thickness * 0.75f, thickness), ref primitiveIndex);
+            }
+        }
+
+        private void BuildArchHot(
+            GeneratedRuntimeState runtimeState,
+            List<Renderer> renderers,
+            in WorldGenerativeGeologyRequest request,
+            string composition,
+            float lodScale,
+            int lodIndex,
+            ref int primitiveIndex)
+        {
+            float width = Mathf.Lerp(10f, 5f, lodIndex / 2f) * request.WorldScale;
+            float height = Mathf.Lerp(7f, 4f, lodIndex / 2f) * request.WorldScale;
+            float thickness = primitiveThickness * request.WorldScale * lodScale;
+
+            CreatePrimitiveHot(runtimeState, renderers, lodIndex, PrimitiveType.Cylinder, new Vector3(-width * 0.4f, height * 0.45f, 0f), Quaternion.identity, new Vector3(thickness, height * 0.45f, thickness), ref primitiveIndex);
+            CreatePrimitiveHot(runtimeState, renderers, lodIndex, PrimitiveType.Cylinder, new Vector3(width * 0.4f, height * 0.45f, 0f), Quaternion.identity, new Vector3(thickness, height * 0.45f, thickness), ref primitiveIndex);
+            CreatePrimitiveHot(runtimeState, renderers, lodIndex, PrimitiveType.Cube, new Vector3(0f, height, 0f), Quaternion.Euler(0f, 0f, Mathf.Lerp(18f, 6f, lodIndex / 2f)), new Vector3(width, thickness, thickness * 1.1f), ref primitiveIndex);
+
+            if (composition == CompositionContextPack && lodIndex == 0)
+            {
+                CreatePrimitiveHot(runtimeState, renderers, lodIndex, PrimitiveType.Cube, new Vector3(0f, height * 0.55f, width * 0.22f), Quaternion.Euler(0f, 24f, -14f), new Vector3(width * 0.42f, thickness * 0.8f, thickness), ref primitiveIndex);
+                CreatePrimitiveHot(runtimeState, renderers, lodIndex, PrimitiveType.Cube, new Vector3(0f, height * 0.42f, -width * 0.24f), Quaternion.Euler(0f, -22f, 10f), new Vector3(width * 0.36f, thickness * 0.75f, thickness), ref primitiveIndex);
             }
         }
 
@@ -799,6 +1480,30 @@ namespace Hecton8.World
             }
         }
 
+        private void BuildCanopyHot(
+            GeneratedRuntimeState runtimeState,
+            List<Renderer> renderers,
+            in WorldGenerativeGeologyRequest request,
+            string composition,
+            float lodScale,
+            int lodIndex,
+            ref int primitiveIndex)
+        {
+            float span = Mathf.Lerp(12f, 6f, lodIndex / 2f) * request.WorldScale;
+            float shelfThickness = primitiveThickness * request.WorldScale * lodScale;
+            float height = Mathf.Lerp(4.5f, 2.2f, lodIndex / 2f) * request.WorldScale;
+
+            CreatePrimitiveHot(runtimeState, renderers, lodIndex, PrimitiveType.Cylinder, new Vector3(0f, height * 0.65f, 0f), Quaternion.identity, new Vector3(shelfThickness * 1.1f, height, shelfThickness * 1.1f), ref primitiveIndex);
+            CreatePrimitiveHot(runtimeState, renderers, lodIndex, PrimitiveType.Cube, new Vector3(0f, height, 0f), Quaternion.Euler(0f, 18f, request.CanyonSignal * 14f), new Vector3(span, shelfThickness, span * 0.55f), ref primitiveIndex);
+
+            if (composition != CompositionSingleFeature)
+            {
+                CreatePrimitiveHot(runtimeState, renderers, lodIndex, PrimitiveType.Cube, new Vector3(span * 0.18f, height * 0.82f, span * 0.16f), Quaternion.Euler(0f, -16f, 8f), new Vector3(span * 0.56f, shelfThickness * 0.8f, span * 0.28f), ref primitiveIndex);
+                if (lodIndex == 0)
+                    CreatePrimitiveHot(runtimeState, renderers, lodIndex, PrimitiveType.Cube, new Vector3(-span * 0.22f, height * 0.72f, -span * 0.2f), Quaternion.Euler(0f, 24f, -10f), new Vector3(span * 0.42f, shelfThickness * 0.75f, span * 0.22f), ref primitiveIndex);
+            }
+        }
+
         private void BuildRockPack(
             List<Renderer> renderers,
             Transform root,
@@ -820,6 +1525,27 @@ namespace Hecton8.World
             }
         }
 
+        private void BuildRockPackHot(
+            GeneratedRuntimeState runtimeState,
+            List<Renderer> renderers,
+            in WorldGenerativeGeologyRequest request,
+            string composition,
+            float lodScale,
+            int lodIndex,
+            ref int primitiveIndex)
+        {
+            float baseScale = Mathf.Lerp(6f, 3f, lodIndex / 2f) * request.WorldScale;
+            CreatePrimitiveHot(runtimeState, renderers, lodIndex, PrimitiveType.Sphere, new Vector3(0f, baseScale * 0.45f, 0f), Quaternion.identity, Vector3.one * baseScale, ref primitiveIndex);
+            CreatePrimitiveHot(runtimeState, renderers, lodIndex, PrimitiveType.Cube, new Vector3(baseScale * 0.36f, baseScale * 0.52f, -baseScale * 0.18f), Quaternion.Euler(18f, 22f, 12f), new Vector3(baseScale * 0.9f, baseScale * 0.45f, baseScale * 0.64f), ref primitiveIndex);
+
+            if (composition != CompositionSingleFeature)
+            {
+                CreatePrimitiveHot(runtimeState, renderers, lodIndex, PrimitiveType.Sphere, new Vector3(-baseScale * 0.42f, baseScale * 0.34f, baseScale * 0.24f), Quaternion.identity, Vector3.one * (baseScale * 0.7f), ref primitiveIndex);
+                if (lodIndex == 0)
+                    CreatePrimitiveHot(runtimeState, renderers, lodIndex, PrimitiveType.Cube, new Vector3(0f, baseScale * 0.92f, 0f), Quaternion.Euler(-8f, 32f, 20f), new Vector3(baseScale * 0.55f, baseScale * 0.18f, baseScale * 0.42f), ref primitiveIndex);
+            }
+        }
+
         private void BuildDebris(List<Renderer> renderers, Transform root, in WorldGenerativeGeologyRequest request, int debrisCount, ref int primitiveIndex)
         {
             float radius = Mathf.Max(2f, request.Profile.seamBlendRadius * 0.22f) * request.WorldScale;
@@ -833,6 +1559,28 @@ namespace Hecton8.World
                 float scale = Mathf.Lerp(0.35f, 1f, ((i % 3) + 1) / 3f) * debrisScale * request.WorldScale * 4f;
                 PrimitiveType primitive = (i % 2 == 0) ? PrimitiveType.Sphere : PrimitiveType.Cube;
                 CreatePrimitive(renderers, root, primitive, localPos, Quaternion.Euler(11f * i, angle, 17f), Vector3.one * scale, ref primitiveIndex);
+            }
+        }
+
+        private void BuildDebrisHot(
+            GeneratedRuntimeState runtimeState,
+            List<Renderer> renderers,
+            int lodIndex,
+            in WorldGenerativeGeologyRequest request,
+            int debrisCount,
+            ref int primitiveIndex)
+        {
+            float radius = Mathf.Max(2f, request.Profile.seamBlendRadius * 0.22f) * request.WorldScale;
+            int count = Mathf.Max(0, debrisCount);
+            for (int i = 0; i < count; i++)
+            {
+                float angle = ((i + 1) / (float)(count + 1)) * 360f + (request.StableHash % 37);
+                float distance = Mathf.Lerp(radius * 0.2f, radius, (i + 1) / (float)(count + 1));
+                Vector3 localPos = Quaternion.Euler(0f, angle, 0f) * (Vector3.forward * distance);
+                localPos.y = debrisScale * request.WorldScale;
+                float scale = Mathf.Lerp(0.35f, 1f, ((i % 3) + 1) / 3f) * debrisScale * request.WorldScale * 4f;
+                PrimitiveType primitive = (i % 2 == 0) ? PrimitiveType.Sphere : PrimitiveType.Cube;
+                CreatePrimitiveHot(runtimeState, renderers, lodIndex, primitive, localPos, Quaternion.Euler(11f * i, angle, 17f), Vector3.one * scale, ref primitiveIndex);
             }
         }
 
@@ -1088,8 +1836,26 @@ namespace Hecton8.World
             {
                 GameObject existing = parent.GetChild(primitiveIndex).gameObject;
                 ActivateTransform(existing.transform);
-                renderer = WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisual(
-                    existing,
+                renderer = _allowStructuralPrimitiveBuild
+                    ? WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisual(
+                        existing,
+                        primitiveType,
+                        WorldGeneratedPrimitiveFactory.GetPrimitiveName(primitiveType),
+                        localPosition,
+                        localRotation,
+                        localScale)
+                    : WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisualHot(
+                        existing,
+                        primitiveType,
+                        WorldGeneratedPrimitiveFactory.GetPrimitiveName(primitiveType),
+                        localPosition,
+                        localRotation,
+                        localScale);
+            }
+            else if (_allowStructuralPrimitiveBuild)
+            {
+                renderer = WorldGeneratedPrimitiveFactory.CreatePrimitiveVisual(
+                    parent,
                     primitiveType,
                     WorldGeneratedPrimitiveFactory.GetPrimitiveName(primitiveType),
                     localPosition,
@@ -1098,8 +1864,38 @@ namespace Hecton8.World
             }
             else
             {
-                renderer = WorldGeneratedPrimitiveFactory.CreatePrimitiveVisual(
-                    parent,
+                renderer = null;
+            }
+
+            primitiveIndex++;
+            if (renderer != null)
+                renderers.Add(renderer);
+        }
+
+        private static void CreatePrimitiveHot(
+            GeneratedRuntimeState runtimeState,
+            List<Renderer> renderers,
+            int lodIndex,
+            PrimitiveType primitiveType,
+            Vector3 localPosition,
+            Quaternion localRotation,
+            Vector3 localScale,
+            ref int primitiveIndex)
+        {
+            Renderer renderer = null;
+            if (runtimeState != null &&
+                runtimeState.TryGetPreparedPrimitiveHot(
+                    lodIndex,
+                    primitiveIndex,
+                    out GameObject existing,
+                    out MeshFilter filter,
+                    out MeshRenderer meshRenderer))
+            {
+                ActivateTransform(existing.transform);
+                renderer = WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisualCachedHot(
+                    existing,
+                    filter,
+                    meshRenderer,
                     primitiveType,
                     WorldGeneratedPrimitiveFactory.GetPrimitiveName(primitiveType),
                     localPosition,
@@ -1117,9 +1913,9 @@ namespace Hecton8.World
             if (host == null || host.transform.childCount > 1)
                 return;
 
-            MeshRenderer renderer = host.GetComponent<MeshRenderer>();
-            MeshFilter filter = host.GetComponent<MeshFilter>();
-            Collider collider = host.GetComponent<Collider>();
+            host.TryGetComponent(out MeshRenderer renderer);
+            host.TryGetComponent(out MeshFilter filter);
+            host.TryGetComponent(out Collider collider);
 
             if (collider != null)
                 DestroyGeneratedObject(collider);

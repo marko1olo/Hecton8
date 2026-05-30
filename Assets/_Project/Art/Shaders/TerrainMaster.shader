@@ -220,7 +220,8 @@ Shader "HECTON/Terrain/TerrainMaster"
             half enabled = step(0.5h, (half)_HectonVoxelBlendMaskParams.x);
             half inside = step(0.0h, (half)uv.x) * step(0.0h, (half)uv.y) *
                 step((half)uv.x, 1.0h) * step((half)uv.y, 1.0h);
-            half mask = SAMPLE_TEXTURE2D(_HectonVoxelBlendMask, sampler_HectonVoxelBlendMask, saturate(uv)).r;
+            float2 maskUv = saturate(uv * max(_HectonVoxelBlendMaskParams.zw, float2(0.0, 0.0)));
+            half mask = SAMPLE_TEXTURE2D(_HectonVoxelBlendMask, sampler_HectonVoxelBlendMask, maskUv).r;
             return saturate(mask * (half)_HectonVoxelBlendMaskParams.y * enabled * inside);
         }
 

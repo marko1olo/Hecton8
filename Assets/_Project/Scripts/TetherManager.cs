@@ -38,17 +38,16 @@ namespace Hecton8.Physics
         private const string TetherBlackBoxH8DumpRelativePath = "Docs/AgentLogs/Dump_VERLET_CABLES_MANAGER.h8dump";
         private const ulong TetherBlackBoxMagic = 0x4D47524D48544554ul;
         private const float TetherFixedClockWrapSeconds = 4096f;
-        private static readonly ulong Shinobu143AupMutationGuardMask =
-            TetherMutationGuardBit(BufferID.Shinobu143TetherAupNodes) |
-            TetherMutationGuardBit(BufferID.Shinobu143TetherConstraints) |
-            TetherMutationGuardBit(BufferID.Shinobu143TetherEndpoints) |
-            TetherMutationGuardBit(BufferID.Shinobu143TetherSegmentTensions) |
-            TetherMutationGuardBit(BufferID.Shinobu143TetherSolverStats) |
-            TetherMutationGuardBit(BufferID.Shinobu143TetherForcePackets) |
-            TetherMutationGuardBit(BufferID.Shinobu143TetherTelemetryRing) |
-            TetherMutationGuardBit(BufferID.Shinobu143TetherTelemetryHead) |
-            TetherMutationGuardBit(BufferID.Shinobu143TetherPinnedAups) |
-            TetherMutationGuardBit(BufferID.Shinobu143TetherPinnedMask);
+        private const uint Shinobu143AupPinNodes = 1u << 0;
+        private const uint Shinobu143AupPinConstraints = 1u << 1;
+        private const uint Shinobu143AupPinEndpoints = 1u << 2;
+        private const uint Shinobu143AupPinSegmentTensions = 1u << 3;
+        private const uint Shinobu143AupPinSolverStats = 1u << 4;
+        private const uint Shinobu143AupPinForcePackets = 1u << 5;
+        private const uint Shinobu143AupPinTelemetryRing = 1u << 6;
+        private const uint Shinobu143AupPinTelemetryHead = 1u << 7;
+        private const uint Shinobu143AupPinPinnedAups = 1u << 8;
+        private const uint Shinobu143AupPinPinnedMask = 1u << 9;
         // COLD ALLOC: Plane[6] - reused camera frustum for tether upload rejection - owner: TetherManager
         private static readonly Plane[] s_TetherFrustumPlanes = new Plane[6];
 
@@ -126,8 +125,8 @@ namespace Hecton8.Physics
         private TetherTelemetryState _telemetryState;
         private JobHandle _shinobu143AupMockHandle;
         private bool _shinobu143AupMockScheduled;
-        private IDataVault _shinobu143AupMockLeaseVault;
-        private ulong _shinobu143AupMockLeaseMask;
+        private IDataVault _shinobu143AupMockPinVault;
+        private uint _shinobu143AupMockPinMask;
         private long _shinobu143AupMockScheduleTicks;
         private float _shinobu143LastMockElapsedUs;
         private JobHandle _shinobu132CableMockHandle;
@@ -1236,16 +1235,14 @@ namespace Hecton8.Physics
             if (_shinobu143AupMockScheduled)
                 return;
 
-            if (!TryAcquireTetherMutationGuard(_dataVault, Shinobu143AupMutationGuardMask, out IDataVault guardVault))
-            {
+            if (!TryLockShinobu143AupMockBuffers(_dataVault, out IDataVault pinVault))
                 return;
-            }
 
-            bool leaseTransferred = false;
+            bool pinsTransferred = false;
             try
             {
                 if (!_shinobu143AupViews.TryRead(
-                        guardVault,
+                        pinVault,
                         out NativeArray<TetherNodeDTO> nodes,
                         out NativeArray<TetherConstraintDTO> constraints,
                         out NativeArray<TetherEndpointAupDTO> endpoints,
@@ -1293,15 +1290,13 @@ namespace Hecton8.Physics
                     qualityWeight,
                     default);
                 _shinobu143AupMockScheduled = true;
-                _shinobu143AupMockLeaseVault = guardVault;
-                _shinobu143AupMockLeaseMask = Shinobu143AupMutationGuardMask;
-                leaseTransferred = true;
+                pinsTransferred = true;
                 H8Memory.RegisterActiveJob(SystemID.Physics, _shinobu143AupMockHandle);
             }
             finally
             {
-                if (!leaseTransferred)
-                    ReleaseTetherMutationGuard(guardVault, Shinobu143AupMutationGuardMask);
+                if (!pinsTransferred)
+                    ReleaseShinobu143AupMockPins();
             }
         }
 
@@ -1337,7 +1332,7 @@ namespace Hecton8.Physics
 
             try
             {
-                IDataVault telemetryVault = _shinobu143AupMockLeaseVault;
+                IDataVault telemetryVault = _shinobu143AupMockPinVault;
                 if (TetherAupRuntimeIntrospection.TrySampleLatestTelemetry(telemetryVault, out TetherAupTelemetryEntry telemetry) &&
                     (telemetry.Flags & (TetherNodeRuntimeFlags.NonFiniteRecovered | TetherNodeRuntimeFlags.ConstraintFault)) != 0u)
                 {
@@ -1346,7 +1341,7 @@ namespace Hecton8.Physics
             }
             finally
             {
-                ReleaseShinobu143AupMockLease();
+                ReleaseShinobu143AupMockPins();
             }
         }
 
@@ -1618,7 +1613,7 @@ namespace Hecton8.Physics
             switch (tier)
             {
                 case HectonQualityTier.Low:
-                case HectonQualityTier.Mx350:
+                case HectonQualityTier.CompactPc:
                 case HectonQualityTier.Mid:
                 case HectonQualityTier.High:
                 case HectonQualityTier.Ultra:
@@ -1801,37 +1796,82 @@ namespace Hecton8.Physics
                    handle.Generation != 0u;
         }
 
-        private static bool TryAcquireTetherMutationGuard(
-            IDataVault vault,
-            ulong guardMask,
-            out IDataVault guardVault)
+        private bool TryLockShinobu143AupMockBuffers(IDataVault vault, out IDataVault pinVault)
         {
-            guardVault = null;
-            if (vault == null || guardMask == 0UL || !vault.TryAcquireMutationGuard(guardMask))
+            pinVault = null;
+            if (vault == null || _shinobu143AupMockPinMask != 0u || vault.IsCompactionFenceActive)
                 return false;
 
-            guardVault = vault;
+            _shinobu143AupMockPinVault = vault;
+            bool locked = false;
+            try
+            {
+                if (!TryLockShinobu143AupMockBuffer(BufferID.Shinobu143TetherAupNodes, Shinobu143AupPinNodes) ||
+                    !TryLockShinobu143AupMockBuffer(BufferID.Shinobu143TetherConstraints, Shinobu143AupPinConstraints) ||
+                    !TryLockShinobu143AupMockBuffer(BufferID.Shinobu143TetherEndpoints, Shinobu143AupPinEndpoints) ||
+                    !TryLockShinobu143AupMockBuffer(BufferID.Shinobu143TetherSegmentTensions, Shinobu143AupPinSegmentTensions) ||
+                    !TryLockShinobu143AupMockBuffer(BufferID.Shinobu143TetherSolverStats, Shinobu143AupPinSolverStats) ||
+                    !TryLockShinobu143AupMockBuffer(BufferID.Shinobu143TetherForcePackets, Shinobu143AupPinForcePackets) ||
+                    !TryLockShinobu143AupMockBuffer(BufferID.Shinobu143TetherTelemetryRing, Shinobu143AupPinTelemetryRing) ||
+                    !TryLockShinobu143AupMockBuffer(BufferID.Shinobu143TetherTelemetryHead, Shinobu143AupPinTelemetryHead) ||
+                    !TryLockShinobu143AupMockBuffer(BufferID.Shinobu143TetherPinnedAups, Shinobu143AupPinPinnedAups) ||
+                    !TryLockShinobu143AupMockBuffer(BufferID.Shinobu143TetherPinnedMask, Shinobu143AupPinPinnedMask))
+                {
+                    return false;
+                }
+
+                pinVault = vault;
+                locked = true;
+                return true;
+            }
+            finally
+            {
+                if (!locked)
+                    ReleaseShinobu143AupMockPins();
+            }
+        }
+
+        private bool TryLockShinobu143AupMockBuffer(BufferID bufferId, uint pinBit)
+        {
+            IDataVault vault = _shinobu143AupMockPinVault;
+            if (vault == null)
+                return false;
+
+            if ((_shinobu143AupMockPinMask & pinBit) != 0u)
+                return true;
+
+            if (!vault.TryLockBuffer(bufferId, SystemID.Physics))
+                return false;
+
+            _shinobu143AupMockPinMask |= pinBit;
             return true;
         }
 
-        private void ReleaseShinobu143AupMockLease()
+        private void ReleaseShinobu143AupMockPins()
         {
-            IDataVault leaseVault = _shinobu143AupMockLeaseVault;
-            ulong leaseMask = _shinobu143AupMockLeaseMask;
-            _shinobu143AupMockLeaseVault = null;
-            _shinobu143AupMockLeaseMask = 0UL;
-            ReleaseTetherMutationGuard(leaseVault, leaseMask);
+            IDataVault vault = _shinobu143AupMockPinVault;
+            uint mask = _shinobu143AupMockPinMask;
+            _shinobu143AupMockPinVault = null;
+            _shinobu143AupMockPinMask = 0u;
+            if (vault == null || mask == 0u)
+                return;
+
+            TryUnlockShinobu143AupMockPin(vault, mask, Shinobu143AupPinPinnedMask, BufferID.Shinobu143TetherPinnedMask);
+            TryUnlockShinobu143AupMockPin(vault, mask, Shinobu143AupPinPinnedAups, BufferID.Shinobu143TetherPinnedAups);
+            TryUnlockShinobu143AupMockPin(vault, mask, Shinobu143AupPinTelemetryHead, BufferID.Shinobu143TetherTelemetryHead);
+            TryUnlockShinobu143AupMockPin(vault, mask, Shinobu143AupPinTelemetryRing, BufferID.Shinobu143TetherTelemetryRing);
+            TryUnlockShinobu143AupMockPin(vault, mask, Shinobu143AupPinForcePackets, BufferID.Shinobu143TetherForcePackets);
+            TryUnlockShinobu143AupMockPin(vault, mask, Shinobu143AupPinSolverStats, BufferID.Shinobu143TetherSolverStats);
+            TryUnlockShinobu143AupMockPin(vault, mask, Shinobu143AupPinSegmentTensions, BufferID.Shinobu143TetherSegmentTensions);
+            TryUnlockShinobu143AupMockPin(vault, mask, Shinobu143AupPinEndpoints, BufferID.Shinobu143TetherEndpoints);
+            TryUnlockShinobu143AupMockPin(vault, mask, Shinobu143AupPinConstraints, BufferID.Shinobu143TetherConstraints);
+            TryUnlockShinobu143AupMockPin(vault, mask, Shinobu143AupPinNodes, BufferID.Shinobu143TetherAupNodes);
         }
 
-        private static void ReleaseTetherMutationGuard(IDataVault guardVault, ulong guardMask)
+        private static void TryUnlockShinobu143AupMockPin(IDataVault vault, uint mask, uint pinBit, BufferID bufferId)
         {
-            if (guardVault != null && guardMask != 0UL)
-                guardVault.ReleaseMutationGuard(guardMask);
-        }
-
-        private static ulong TetherMutationGuardBit(BufferID bufferId)
-        {
-            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+            if ((mask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, SystemID.Physics);
         }
 
         private void WriteBlackBoxSample(int activeTethers, float peakTension, uint flags)

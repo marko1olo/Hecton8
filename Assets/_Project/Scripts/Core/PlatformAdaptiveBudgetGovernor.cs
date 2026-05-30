@@ -447,9 +447,10 @@ namespace Hecton8.Core
             _coldQuest3Like = HardwareTierDetector.IsQuest3Like;
             _coldRecommendedVramBudgetBytes = HardwareTierDetector.RecommendedVramBudgetBytes;
             _coldTargetFrameTimeMs = ResolveColdTargetFrameTimeMs(_coldQuest3Like, _coldSteamDeckLike);
-            _coldSharedMemoryBaselineRenderScaleMilli = _coldQuest3Like
-                ? HardwareProfileCatalog.Quest3BaselineRenderScaleMilli
-                : HardwareProfileCatalog.SteamDeckLcdBaselineRenderScaleMilli;
+            _coldSharedMemoryBaselineRenderScaleMilli = ResolveSharedMemoryBaselineRenderScaleMilli(
+                _coldQuest3Like,
+                _coldSteamDeckLike,
+                _coldRecommendedVramBudgetBytes);
         }
 
         private static float ResolveColdTargetFrameTimeMs(bool quest3Like, bool steamDeckLike)
@@ -460,6 +461,25 @@ namespace Hecton8.Core
                 return MillisecondsPerSecond / HardwareProfileCatalog.SteamDeckLcdTargetFps;
 
             return DefaultTargetFrameTimeMs;
+        }
+
+        private static int ResolveSharedMemoryBaselineRenderScaleMilli(
+            bool quest3Like,
+            bool steamDeckLike,
+            long recommendedVramBudgetBytes)
+        {
+            if (quest3Like)
+                return HardwareProfileCatalog.Quest3BaselineRenderScaleMilli;
+            if (steamDeckLike)
+                return HardwareProfileCatalog.SteamDeckLcdBaselineRenderScaleMilli;
+
+            long budgetMegabytes = recommendedVramBudgetBytes >> 20;
+            if (budgetMegabytes <= 1024L)
+                return HardwareProfileCatalog.SteamDeckLcdBaselineRenderScaleMilli;
+            if (budgetMegabytes <= 1536L)
+                return HardwareProfileCatalog.Quest3BaselineRenderScaleMilli;
+
+            return 900;
         }
 
         private static void TryRegisterHotSwap()

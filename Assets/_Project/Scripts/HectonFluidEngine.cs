@@ -1086,7 +1086,7 @@ namespace Hecton8.Physics
         private float3 _resolvedGiantWakeCurrent;
 
         [Header("â”€â”€ GPU Buoyancy Offload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
-        [SerializeField] private bool enableGpuBuoyancySampling = true;
+        [SerializeField] private bool enableGpuBuoyancySampling;
         [SerializeField] private ComputeShader gpuBuoyancyCompute;
         [SerializeField, Range(64, 1024)] private int gpuBuoyancyActivationThreshold = 256;
         [SerializeField] private bool enableGpuAbyssalFlowField = true;
@@ -3168,17 +3168,15 @@ namespace Hecton8.Physics
 
         private static string ResolveFluidDumpPath(string relativePath)
         {
-            return Application.dataPath + "/../" + relativePath;
+            return relativePath;
         }
 
-        private static unsafe void WriteNativeDump(string absolutePath, NativeArray<byte> payload, int byteCount)
+        private static unsafe void WriteNativeDump(string dumpPath, NativeArray<byte> payload, int byteCount)
         {
-            if (!payload.IsCreated || byteCount <= 0 || byteCount > payload.Length)
-                return;
-
-            void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(payload);
-            Hecton8.SaveSystem.AsyncWriteManager.WriteAll(absolutePath, source, byteCount, out _);
+            NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, byteCount);
         }
+
+        private static bool BinaryFaultDumpsEnabled => false;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void WriteUInt64LittleEndian(NativeArray<byte> destination, ref int cursor, ulong value)
@@ -3230,9 +3228,14 @@ namespace Hecton8.Physics
             }
 
             _lastOceanSurfaceDumpFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (!BinaryFaultDumpsEnabled)
+                return;
             int entryBytes = 60;
             int byteCount = 8 + _oceanSurfaceTelemetry.Length * entryBytes;
-            NativeArray<byte> dump = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> dump = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(HectonFluidEngine),
+                "OceanSurfaceTelemetryDumpPayload");
             try
             {
                 int cursor = 0;
@@ -3262,7 +3265,10 @@ namespace Hecton8.Physics
             }
             finally
             {
-                dump.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref dump,
+                    nameof(HectonFluidEngine),
+                    "OceanSurfaceTelemetryDumpPayload");
             }
         }
 
@@ -3495,12 +3501,17 @@ namespace Hecton8.Physics
                 0f,
                 _objects.Count);
 
+            if (!BinaryFaultDumpsEnabled)
+                return;
             NativeArray<FluidTelemetryEntry>.ReadOnly ring = _fluidSovereigntyTelemetry.AsReadOnly();
             if (!ring.IsCreated || ring.Length == 0)
                 return;
 
             int byteCount = 20 + ring.Length * FluidSovereigntyTelemetryEntrySizeBytes;
-            NativeArray<byte> dump = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> dump = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(HectonFluidEngine),
+                "FluidSovereigntyTelemetryDumpPayload");
             try
             {
                 int cursor = 0;
@@ -3536,7 +3547,10 @@ namespace Hecton8.Physics
             }
             finally
             {
-                dump.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref dump,
+                    nameof(HectonFluidEngine),
+                    "FluidSovereigntyTelemetryDumpPayload");
             }
         }
 
@@ -5453,6 +5467,8 @@ namespace Hecton8.Physics
                 return;
 
             _fluidAdvectionTelemetryDumped = true;
+            if (!BinaryFaultDumpsEnabled)
+                return;
             try
             {
                 WriteFluidAdvectionTelemetryDump(ResolveFluidDumpPath(FluidAdvectionDumpRelativePath), reasonFlags);
@@ -5469,7 +5485,10 @@ namespace Hecton8.Physics
         {
             int entryBytes = 36;
             int byteCount = 16 + _fluidAdvectionTelemetry.Length * entryBytes;
-            NativeArray<byte> dump = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> dump = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(HectonFluidEngine),
+                "FluidAdvectionTelemetryDumpPayload");
             try
             {
                 int cursor = 0;
@@ -5496,7 +5515,10 @@ namespace Hecton8.Physics
             }
             finally
             {
-                dump.Dispose();
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref dump,
+                    nameof(HectonFluidEngine),
+                    "FluidAdvectionTelemetryDumpPayload");
             }
         }
 
@@ -7303,11 +7325,16 @@ namespace Hecton8.Physics
                 return;
 
             _maelstromTelemetryDumped = true;
+            if (!BinaryFaultDumpsEnabled)
+                return;
             try
             {
                 int entryBytes = 64;
                 int byteCount = 16 + _maelstromTelemetry.Length * entryBytes;
-                NativeArray<byte> dump = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                NativeArray<byte> dump = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(HectonFluidEngine),
+                    "MaelstromTelemetryDumpPayload");
                 try
                 {
                     int cursor = 0;
@@ -7341,7 +7368,10 @@ namespace Hecton8.Physics
                 }
                 finally
                 {
-                    dump.Dispose();
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref dump,
+                        nameof(HectonFluidEngine),
+                        "MaelstromTelemetryDumpPayload");
                 }
             }
             catch (System.Exception)
@@ -8763,11 +8793,16 @@ namespace Hecton8.Physics
                 return;
 
             _abyssalFlowTelemetryDumped = true;
+            if (!BinaryFaultDumpsEnabled)
+                return;
             try
             {
                 int entryBytes = 64;
                 int byteCount = 16 + _abyssalFlowTelemetry.Length * entryBytes;
-                NativeArray<byte> dump = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                NativeArray<byte> dump = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(HectonFluidEngine),
+                    "AbyssalFlowTelemetryDumpPayload");
                 try
                 {
                     int cursor = 0;
@@ -8801,7 +8836,10 @@ namespace Hecton8.Physics
                 }
                 finally
                 {
-                    dump.Dispose();
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref dump,
+                        nameof(HectonFluidEngine),
+                        "AbyssalFlowTelemetryDumpPayload");
                 }
             }
             catch (System.Exception)

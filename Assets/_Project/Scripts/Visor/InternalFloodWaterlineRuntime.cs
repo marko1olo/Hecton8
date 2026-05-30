@@ -7,6 +7,7 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -770,7 +771,7 @@ namespace Hecton8.Visor
                 DumpBlackBoxOnce();
         }
 
-        private void DumpBlackBoxOnce()
+        private unsafe void DumpBlackBoxOnce()
         {
             IDataVault vault = _dataVault;
             if (_blackBoxDumped ||
@@ -780,26 +781,29 @@ namespace Hecton8.Visor
                 return;
             }
 
-            _blackBoxDumped = true;
+            NativeArray<byte> payload = default;
             try
             {
                 string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", DumpFileName));
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                int totalBytes = 24 + TelemetryCapacity * TelemetryEntrySizeBytes;
+                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+
+                Span<byte> header = new Span<byte>(payloadPtr, 24);
+                WriteTelemetryDumpHeader(header, _telemetryCursor, _tickCount);
+
+                int offset = 24;
+                for (int i = 0; i < TelemetryCapacity; i++)
                 {
-                    Span<byte> header = stackalloc byte[24];
-                    WriteTelemetryDumpHeader(header, _telemetryCursor, _tickCount);
-                    stream.Write(header);
+                    if (!TryReadTelemetryEntry(vault, i, out WaterlineTelemetryEntry entry))
+                        entry = default;
 
-                    Span<byte> row = stackalloc byte[TelemetryEntrySizeBytes];
-                    for (int i = 0; i < TelemetryCapacity; i++)
-                    {
-                        if (!TryReadTelemetryEntry(vault, i, out WaterlineTelemetryEntry entry))
-                            entry = default;
-
-                        WriteTelemetryEntry(row, in entry);
-                        stream.Write(row);
-                    }
+                    Span<byte> row = new Span<byte>(payloadPtr + offset, TelemetryEntrySizeBytes);
+                    WriteTelemetryEntry(row, in entry);
+                    offset += TelemetryEntrySizeBytes;
                 }
+
+                _blackBoxDumped = NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
             }
             catch (IOException)
             {
@@ -836,6 +840,11 @@ namespace Hecton8.Visor
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogError("[InternalFloodWaterlineRuntime] Black box dump path unsupported.");
 #endif
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 

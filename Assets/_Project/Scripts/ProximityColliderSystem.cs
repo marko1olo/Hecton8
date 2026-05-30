@@ -47,6 +47,14 @@ namespace Hecton8.Core
     public sealed class ProximityColliderSystem : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         internal static ProximityColliderSystem ActiveRuntimeInstance { get; private set; }
+        internal static event System.Action<ProximityColliderSystem> ActiveRuntimeInstanceChanged;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeForSubsystemRegistration()
+        {
+            ActiveRuntimeInstance = null;
+            ActiveRuntimeInstanceChanged = null;
+        }
 #if UNITY_EDITOR
         private static bool _assemblyReloadHookRegistered;
 #endif
@@ -115,6 +123,7 @@ namespace Hecton8.Core
         private bool      _hotSwapRegistered;
         private bool      _jobBuffersLocked;
         private int       _jobPendingFrameCount;
+        private IPlayerRuntimeContext _playerRuntimeContext;
 
         // ── Cached squared radii (avoid sqrt in Job) ──
         private float _activateRadiusSq;
@@ -349,12 +358,12 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
-            ActiveRuntimeInstance = this;
+            PublishActiveRuntimeInstance();
 #if UNITY_EDITOR
             EnsureAssemblyReloadHook();
 #endif
             // ── Avto-resolve igroka cherez bootstrap, esli ssylka ne zadana ──
-            TryResolvePlayerTransform();
+            CachePlayerRuntimeContextCold();
             CacheDataVaultCold();
             CacheObjectPool(GlobalRegistry.ObjectPoolService);
             TryRegisterHotSwapListener();
@@ -425,6 +434,14 @@ namespace Hecton8.Core
                     if (currentService != null && isActiveAndEnabled)
                         TryRegisterDispatcherRoutes();
                     break;
+                case GlobalRegistryServiceSlot.Player:
+                    IPlayerRuntimeContext previousContext = previousService as IPlayerRuntimeContext;
+                    if (previousContext != null && ReferenceEquals(playerTransform, previousContext.PlayerTransform))
+                        playerTransform = null;
+
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    RefreshPlayerTransformFromCachedContext();
+                    break;
             }
         }
 
@@ -470,7 +487,22 @@ namespace Hecton8.Core
             Cleanup();
             TryUnregisterHotSwapListener();
             if (ReferenceEquals(ActiveRuntimeInstance, this))
-                ActiveRuntimeInstance = null;
+                ClearActiveRuntimeInstance();
+        }
+
+        private void PublishActiveRuntimeInstance()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                return;
+
+            ActiveRuntimeInstance = this;
+            ActiveRuntimeInstanceChanged?.Invoke(this);
+        }
+
+        private void ClearActiveRuntimeInstance()
+        {
+            ActiveRuntimeInstance = null;
+            ActiveRuntimeInstanceChanged?.Invoke(null);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -523,11 +555,13 @@ namespace Hecton8.Core
 
         private static void TeardownActiveRuntimeInstanceForEditorReload()
         {
-            if (ActiveRuntimeInstance == null)
+            ProximityColliderSystem activeRuntime = ActiveRuntimeInstance;
+            if (activeRuntime == null)
                 return;
 
-            ActiveRuntimeInstance.PrepareForReinitialize();
+            activeRuntime.PrepareForReinitialize();
             ActiveRuntimeInstance = null;
+            ActiveRuntimeInstanceChanged?.Invoke(null);
         }
 #endif
 
@@ -536,7 +570,7 @@ namespace Hecton8.Core
             if (!_initialized) return;
             if (playerTransform == null)
             {
-                TryResolvePlayerTransform();
+                RefreshPlayerTransformFromCachedContext();
                 if (playerTransform == null)
                 {
                     float now = (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds;
@@ -1132,13 +1166,21 @@ namespace Hecton8.Core
             playerTransform = newPlayer;
         }
 
-        private void TryResolvePlayerTransform()
+        private void CachePlayerRuntimeContextCold()
+        {
+            if (_playerRuntimeContext == null)
+                _playerRuntimeContext = GlobalRegistry.Player;
+
+            RefreshPlayerTransformFromCachedContext();
+        }
+
+        private void RefreshPlayerTransformFromCachedContext()
         {
             if (playerTransform != null)
                 return;
 
-            IPlayerRuntimeContext playerRuntimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
-            if (playerRuntimeContext != null)
+            IPlayerRuntimeContext playerRuntimeContext = _playerRuntimeContext;
+            if (playerRuntimeContext != null && playerRuntimeContext.PlayerTransform != null)
                 playerTransform = playerRuntimeContext.PlayerTransform;
         }
 

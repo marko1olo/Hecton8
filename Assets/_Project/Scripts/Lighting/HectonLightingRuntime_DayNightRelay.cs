@@ -558,12 +558,6 @@ namespace Hecton8.Lighting
 
             try
             {
-                string fullPath = Path.Combine(Application.dataPath, "..", DayNightBlackBoxDumpPath);
-                string directory = Path.GetDirectoryName(fullPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using FileStream stream = File.Open(fullPath, FileMode.Create, FileAccess.Write, FileShare.Read);
                 DayNightLightingDumpHeader header = new DayNightLightingDumpHeader
                 {
                     Magic = 0x53483334u,
@@ -575,18 +569,37 @@ namespace Hecton8.Lighting
                     LastDepthMeters = _snapshot.DepthMeters,
                     Reserved0 = 0f
                 };
-                stream.Write(new ReadOnlySpan<byte>(UnsafeUtility.AddressOf(ref header), UnsafeUtility.SizeOf<DayNightLightingDumpHeader>()));
 
                 int count = telemetryRing.Length;
+                int headerBytes = UnsafeUtility.SizeOf<DayNightLightingDumpHeader>();
+                int entryBytes = UnsafeUtility.SizeOf<LightingRelayTelemetryEntry>();
+                int byteCount = headerBytes + count * entryBytes;
                 int startIndex = _dayNightTelemetryCount >= count ? _dayNightTelemetryCursorCached : 0;
-                for (int i = 0; i < count; i++)
+                NativeArray<byte> payload = default;
+                try
                 {
-                    int entryIndex = startIndex + i;
-                    if (entryIndex >= count)
-                        entryIndex -= count;
+                    payload = NativeFaultDumpWriter.CreateTransientPayload(
+                        byteCount,
+                        nameof(HectonGIRelaySystem),
+                        "DayNightLightingDumpPayload");
+                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    UnsafeUtility.MemCpy(target, UnsafeUtility.AddressOf(ref header), headerBytes);
 
-                    LightingRelayTelemetryEntry entry = telemetryRing[entryIndex];
-                    stream.Write(new ReadOnlySpan<byte>(UnsafeUtility.AddressOf(ref entry), UnsafeUtility.SizeOf<LightingRelayTelemetryEntry>()));
+                    byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
+                    int firstCount = math.min(count, count - startIndex);
+                    UnsafeUtility.MemCpy(target + headerBytes, source + startIndex * entryBytes, firstCount * entryBytes);
+                    int secondCount = count - firstCount;
+                    if (secondCount > 0)
+                        UnsafeUtility.MemCpy(target + headerBytes + firstCount * entryBytes, source, secondCount * entryBytes);
+
+                    NativeFaultDumpWriter.TryWriteAll(DayNightBlackBoxDumpPath, payload, byteCount);
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(HectonGIRelaySystem),
+                        "DayNightLightingDumpPayload");
                 }
             }
             catch (Exception exception)
@@ -734,7 +747,8 @@ namespace Hecton8.Lighting
                 PhaseSeconds = (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
                 QualityWeight = ResolveDayNightQualityWeight()
             };
-            job.Run(samples.Length);
+            for (int index = 0; index < samples.Length; index++)
+                job.Execute(index);
 #endif
         }
 

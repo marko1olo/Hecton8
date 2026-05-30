@@ -63,11 +63,14 @@ namespace Hecton8.Visor
             private bool _hasStagedBuffer;
             private DynamicDecalFrameStats _lastFrameStats;
             private bool _hasLastFrameStats;
+            private Texture _boundDecalAtlas;
+            private RTHandle _decalAtlasHandle;
 
             private sealed class PassData
             {
                 public TextureHandle Source;
                 public TextureHandle Depth;
+                public TextureHandle DecalAtlas;
                 public BufferHandle DecalBuffer;
                 public Material Material;
                 public Vector4 DecalAtlasParams;
@@ -166,6 +169,7 @@ namespace Hecton8.Visor
 
             public void Dispose()
             {
+                ReleaseDecalAtlasHandle();
                 ReleaseBuffers();
             }
 
@@ -187,8 +191,6 @@ namespace Hecton8.Visor
                 if (readableBuffer == null || readableCount <= 0)
                     return;
                 DynamicDecalFrameStats stats = _hasLastFrameStats ? _lastFrameStats : default;
-                if (_settings.decalAtlas != null)
-                    _material.SetTexture(ShaderConstants.DecalAtlasId, _settings.decalAtlas);
 
                 TextureHandle sourceTexture = resourceData.activeColorTexture;
                 TextureHandle depthTexture = resourceData.cameraDepthTexture;
@@ -204,6 +206,14 @@ namespace Hecton8.Visor
                 TextureHandle compositeTexture = renderGraph.CreateTexture(compositeDesc);
                 Vector3 cameraPosition = cameraData.camera != null ? cameraData.camera.transform.position : Vector3.zero;
                 BufferHandle decalBufferHandle = renderGraph.ImportBuffer(readableBuffer);
+                RTHandle decalAtlasHandle = GetDecalAtlasHandle(_settings.decalAtlas);
+                bool hasDecalAtlas = decalAtlasHandle != null;
+                TextureHandle decalAtlasTexture = TextureHandle.nullHandle;
+                if (hasDecalAtlas)
+                {
+                    decalAtlasTexture = renderGraph.ImportTexture(decalAtlasHandle);
+                    hasDecalAtlas = decalAtlasTexture.IsValid();
+                }
 
                 using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<PassData>(
                            "Hecton Visor Trauma Composite",
@@ -212,6 +222,7 @@ namespace Hecton8.Visor
                 {
                     passData.Source = sourceTexture;
                     passData.Depth = depthTexture;
+                    passData.DecalAtlas = decalAtlasTexture;
                     passData.DecalBuffer = decalBufferHandle;
                     passData.Material = _material;
                     passData.DecalCount = readableCount;
@@ -219,7 +230,7 @@ namespace Hecton8.Visor
                         Mathf.Max(1, _settings.atlasSlices),
                         Mathf.Clamp01(stats.GlobalQualityWeight),
                         Mathf.Max(0f, _settings.intensity),
-                        _settings.decalAtlas != null ? 1f : 0f);
+                        hasDecalAtlas ? 1f : 0f);
                     passData.DecalRefractionParams = MakeVector4(
                         Mathf.Max(0f, stats.NormalRefractionIntensity),
                         readableCount,
@@ -230,6 +241,8 @@ namespace Hecton8.Visor
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
+                    if (hasDecalAtlas)
+                        builder.UseTexture(decalAtlasTexture, AccessFlags.Read);
                     builder.UseBuffer(decalBufferHandle, AccessFlags.Read);
                     builder.SetRenderAttachment(compositeTexture, 0, AccessFlags.Write);
                     builder.AllowGlobalStateModification(true);
@@ -241,6 +254,8 @@ namespace Hecton8.Visor
 
                         context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
                         context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.Depth);
+                        if (data.DecalAtlasParams.w > 0.5f)
+                            context.cmd.SetGlobalTexture(ShaderConstants.DecalAtlasId, data.DecalAtlas);
                         context.cmd.SetGlobalBuffer(ShaderConstants.DecalBufferId, decalBuffer);
                         context.cmd.SetGlobalInt(ShaderConstants.DecalCountId, data.DecalCount);
                         context.cmd.SetGlobalVector(ShaderConstants.DecalAtlasParamsId, data.DecalAtlasParams);
@@ -355,6 +370,44 @@ namespace Hecton8.Visor
                 return result;
             }
 
+            public void PrepareDecalAtlasHandleCold(FeatureSettings settings)
+            {
+                Texture atlas = settings != null ? settings.decalAtlas : null;
+                EnsureDecalAtlasHandle(atlas);
+            }
+
+            private RTHandle GetDecalAtlasHandle(Texture atlas)
+            {
+                return atlas != null && ReferenceEquals(_boundDecalAtlas, atlas) ? _decalAtlasHandle : null;
+            }
+
+            private void EnsureDecalAtlasHandle(Texture atlas)
+            {
+                if (atlas == null)
+                {
+                    ReleaseDecalAtlasHandle();
+                    return;
+                }
+
+                if (ReferenceEquals(_boundDecalAtlas, atlas) && _decalAtlasHandle != null)
+                    return;
+
+                ReleaseDecalAtlasHandle();
+                _boundDecalAtlas = atlas;
+                _decalAtlasHandle = RTHandles.Alloc(atlas);
+            }
+
+            private void ReleaseDecalAtlasHandle()
+            {
+                if (_decalAtlasHandle != null)
+                {
+                    RTHandles.Release(_decalAtlasHandle);
+                    _decalAtlasHandle = null;
+                }
+
+                _boundDecalAtlas = null;
+            }
+
             private void ReleaseBuffers()
             {
                 if (_decalBufferA != null)
@@ -413,6 +466,7 @@ namespace Hecton8.Visor
             if (Application.isPlaying)
                 DynamicDecalVaultRuntime.TryInitializeColdStorage();
             RecreateMaterial();
+            _pass.PrepareDecalAtlasHandleCold(settings);
             TryRegisterLateFrame();
         }
 

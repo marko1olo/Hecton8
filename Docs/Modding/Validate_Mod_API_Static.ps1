@@ -464,6 +464,46 @@ function Invoke-StarterInvalidVersionProbe([string]$TemplatePath) {
     }
 }
 
+function Invoke-StarterIdentityRollbackProbe([string]$TemplatePath) {
+    $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) 'Hecton8ModApiStaticValidation'
+    $probeRoot = Join-Path $tempRoot ([System.Guid]::NewGuid().ToString('N'))
+    $probeFull = $null
+    try {
+        [void](New-Item -ItemType Directory -Path $probeRoot -Force)
+        Get-ChildItem -LiteralPath $TemplatePath -Force | Copy-Item -Destination $probeRoot -Recurse -Force
+        $probeFull = (Resolve-Path -LiteralPath $probeRoot).Path
+        $authoringPath = Join-Path $probeFull 'mod.h8manifest.json'
+        $runtimePath = Join-Path $probeFull 'mod.json'
+        $authoringBefore = Get-Content -Raw -LiteralPath $authoringPath | ConvertFrom-Json
+        $runtimeBefore = Get-Content -Raw -LiteralPath $runtimePath | ConvertFrom-Json
+        Remove-Item -LiteralPath (Join-Path $probeFull 'Reference\allowed_opcodes.csv') -Force
+        $toolPath = Join-Path $probeFull 'Tools\set_mod_identity.ps1'
+        $output = & powershell -NoProfile -ExecutionPolicy Bypass -File $toolPath -Root $probeFull -Id 'com.validation.rollback' -DisplayName 'Rollback Identity' -Author 'StaticValidator' -Version '9.9.8'
+        $exitCode = $LASTEXITCODE
+        $authoringAfter = Get-Content -Raw -LiteralPath $authoringPath | ConvertFrom-Json
+        $runtimeAfter = Get-Content -Raw -LiteralPath $runtimePath | ConvertFrom-Json
+        return [pscustomobject]@{
+            ExitCode = $exitCode
+            Output = @($output)
+            AuthoringBeforeId = [string]$authoringBefore.Id
+            RuntimeBeforeId = [string]$runtimeBefore.Id
+            AuthoringAfterId = [string]$authoringAfter.Id
+            RuntimeAfterId = [string]$runtimeAfter.Id
+            AuthoringAfterDisplayName = [string]$authoringAfter.DisplayName
+            RuntimeAfterName = [string]$runtimeAfter.Name
+        }
+    } finally {
+        if ($null -ne $probeFull) {
+            $tempRootFull = [System.IO.Path]::GetFullPath($tempRoot)
+            $probeFullPath = [System.IO.Path]::GetFullPath($probeFull)
+            if ($probeFullPath.StartsWith($tempRootFull, [System.StringComparison]::OrdinalIgnoreCase) -and
+                (Test-Path -LiteralPath $probeFullPath -PathType Container)) {
+                Remove-Item -LiteralPath $probeFullPath -Recurse -Force
+            }
+        }
+    }
+}
+
 function Invoke-StarterPrepareToolProbe([string]$TemplatePath) {
     $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) 'Hecton8ModApiStaticValidation'
     $probeRoot = Join-Path $tempRoot ([System.Guid]::NewGuid().ToString('N'))
@@ -2671,6 +2711,19 @@ $externalStarterKitDependencyToolMirrorsBothManifests =
     $externalStarterKitTemplateDependenciesToolSource.Contains("Set-JsonStringArray `$authoring 'Dependencies'") -and
     $externalStarterKitTemplateDependenciesToolSource.Contains("Set-JsonStringArray `$runtime 'Dependencies'") -and
     $externalStarterKitTemplateDependenciesToolSource.Contains('Write-ManifestsWithValidation $authoring $runtime')
+$externalStarterKitDependenciesToolWritesStrictUtf8NoBom =
+    $externalStarterKitTemplateDependenciesToolSource.Contains('function Write-TextFileUtf8NoBom') -and
+    $externalStarterKitTemplateDependenciesToolSource.Contains('function Write-JsonFileUtf8NoBom') -and
+    $externalStarterKitTemplateDependenciesToolSource.Contains('New-Object System.Text.UTF8Encoding $false') -and
+    $externalStarterKitTemplateDependenciesToolSource.Contains('[System.IO.File]::WriteAllText') -and
+    $externalStarterKitTemplateDependenciesToolSource.Contains("Read-H8JsonFileCapped `$Path 'Written dependency manifest' `$MaxManifestJsonBytes") -and
+    (-not $externalStarterKitTemplateDependenciesToolSource.Contains('Set-Content -LiteralPath $authoringTemp -Encoding UTF8')) -and
+    (-not $externalStarterKitTemplateDependenciesToolSource.Contains('Set-Content -LiteralPath $runtimeTemp -Encoding UTF8')) -and
+    (-not $externalStarterKitTemplateDependenciesToolSource.Contains('Set-Content -LiteralPath $authoringPath -Encoding UTF8')) -and
+    (-not $externalStarterKitTemplateDependenciesToolSource.Contains('Set-Content -LiteralPath $runtimePath -Encoding UTF8')) -and
+    $externalStarterKitContractText.Contains('dependency helper writes UTF-8 without BOM') -and
+    $runtimePlaybookText.Contains('ExternalStarterKitDependenciesToolWritesStrictUtf8NoBom = True') -and
+    $specText.Contains('schema revision `132`')
 $externalStarterKitDiagnoseLocalUsesRecursiveManifestDiscovery =
     $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('[System.IO.SearchOption]::AllDirectories') -and
     $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('Get-DiscoveredManifestFiles') -and
@@ -2848,6 +2901,16 @@ $externalStarterKitIdentityToolValidatesCanonicalId =
 $externalStarterKitInvalidVersionProbe = Invoke-StarterInvalidVersionProbe $externalStarterKitTemplatePath
 $externalStarterKitIdentityToolRejectsInvalidVersion =
     $externalStarterKitInvalidVersionProbe.ExitCode -ne 0
+$externalStarterKitIdentityRollbackProbe = Invoke-StarterIdentityRollbackProbe $externalStarterKitTemplatePath
+$externalStarterKitIdentityToolRollsBackBothManifestsOnValidationFailure =
+    $externalStarterKitTemplateIdentityToolSource.Contains('Restore-FileBackup $authoringBackupPath $authoringPath') -and
+    $externalStarterKitTemplateIdentityToolSource.Contains('Restore-FileBackup $runtimeBackupPath $runtimePath') -and
+    $externalStarterKitTemplateIdentityToolSource.Contains('Read-H8JsonFileCapped $Path ''Written identity manifest'' $MaxManifestJsonBytes') -and
+    $externalStarterKitIdentityRollbackProbe.ExitCode -ne 0 -and
+    $externalStarterKitIdentityRollbackProbe.AuthoringAfterId -eq $externalStarterKitIdentityRollbackProbe.AuthoringBeforeId -and
+    $externalStarterKitIdentityRollbackProbe.RuntimeAfterId -eq $externalStarterKitIdentityRollbackProbe.RuntimeBeforeId -and
+    $externalStarterKitIdentityRollbackProbe.AuthoringAfterDisplayName -eq 'Starter Mod' -and
+    $externalStarterKitIdentityRollbackProbe.RuntimeAfterName -eq 'Starter Mod'
 $externalStarterKitValidatorChecksSemver =
     $externalStarterKitTemplateValidatorSource.Contains('function Validate-Version') -and
     $externalStarterKitTemplateIdentityToolSource.Contains('function Validate-Version') -and
@@ -3500,6 +3563,7 @@ Assert-True $externalStarterKitDiagnoseLocalUsesRecursiveManifestDiscovery 'Exte
 Assert-True $externalStarterKitDiagnoseLocalChecksDependencyGraph 'External starter kit local diagnosis must report duplicate IDs, missing dependencies, dependency cycles, and load order.'
 Assert-True $externalStarterKitWritesDependenciesTool 'External starter kit must write a no-Unity dependency configuration helper.'
 Assert-True $externalStarterKitDependencyToolMirrorsBothManifests 'External starter kit dependency helper must mirror Dependencies across authoring/runtime manifests and validate after write.'
+Assert-True $externalStarterKitDependenciesToolWritesStrictUtf8NoBom 'External starter kit dependency helper must write manifest JSON as strict UTF-8 without BOM.'
 Assert-True $externalStarterKitWritesDoctorTool 'External starter kit must write a no-Unity read-only package doctor.'
 Assert-True $externalStarterKitDoctorToolIsReadOnly 'External starter kit package doctor must be read-only and bounded.'
 Assert-True $externalStarterKitDoctorVerifiesSubmissionZipContents 'External starter kit package doctor must verify submission zip contents against the review manifest.'
@@ -3530,6 +3594,7 @@ Assert-True $externalStarterKitIdentityToolValidatesCanonicalId 'External starte
 Assert-True $externalStarterKitValidatorChecksSemver 'External starter kit validator and identity helper must enforce semantic version strings.'
 Assert-True $externalStarterKitValidatorChecksManifestIdentityTextParity 'External starter kit local validator must enforce display name, author, and version parity across manifests.'
 Assert-True $externalStarterKitIdentityToolRejectsInvalidVersion 'External starter kit identity helper must reject invalid version strings on a temp copy.'
+Assert-True $externalStarterKitIdentityToolRollsBackBothManifestsOnValidationFailure 'External starter kit identity helper must restore both manifests when post-write validation fails.'
 Assert-True $externalStarterKitToolsAvoidNestedPowerShell 'External starter kit tools must chain scripts in-process instead of requiring nested Windows PowerShell.'
 Assert-True $externalStarterKitToolsUsePortableJoinPath 'External starter kit tools must compose child paths through portable Join-Path segments.'
 Assert-True $externalStarterKitWritesJsonSchemas 'External starter kit must write JSON Schemas and editor schema mapping.'
@@ -4250,6 +4315,7 @@ Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDiagnoseLocalUses
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDiagnoseLocalChecksDependencyGraph) 'Schema sdkAuthoringAudit must record local Mods dependency graph diagnosis.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesDependenciesTool) 'Schema sdkAuthoringAudit must record starter dependency helper output.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDependencyToolMirrorsBothManifests) 'Schema sdkAuthoringAudit must record starter dependency helper authoring/runtime manifest parity.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDependenciesToolWritesStrictUtf8NoBom) 'Schema sdkAuthoringAudit must record starter dependency helper strict UTF-8 no-BOM writes.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesDoctorTool) 'Schema sdkAuthoringAudit must record starter package doctor helper output.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDoctorToolIsReadOnly) 'Schema sdkAuthoringAudit must record starter package doctor read-only contract.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDoctorVerifiesSubmissionZipContents) 'Schema sdkAuthoringAudit must record starter package doctor submission zip content proof.'
@@ -4289,6 +4355,7 @@ Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitIdentityToolValid
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksSemver) 'Schema sdkAuthoringAudit must record starter semantic version validation.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksManifestIdentityTextParity) 'Schema sdkAuthoringAudit must record starter identity text parity validation.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitIdentityToolRejectsInvalidVersion) 'Schema sdkAuthoringAudit must record starter invalid version rejection.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitIdentityToolRollsBackBothManifestsOnValidationFailure) 'Schema sdkAuthoringAudit must record starter identity rollback on validation failure.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitToolsAvoidNestedPowerShell) 'Schema sdkAuthoringAudit must record starter tools in-process script chaining.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitToolsUsePortableJoinPath) 'Schema sdkAuthoringAudit must record starter portable path composition.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesJsonSchemas) 'Schema sdkAuthoringAudit must record starter JSON Schema outputs.'
@@ -4929,6 +4996,7 @@ Assert-True ($lastStaticValidation.externalStarterKitDiagnoseLocalUsesRecursiveM
 Assert-True ($lastStaticValidation.externalStarterKitDiagnoseLocalChecksDependencyGraph -eq $true) "Schema lastStaticValidationSnapshot must record local Mods dependency graph diagnosis."
 Assert-True ($lastStaticValidation.externalStarterKitWritesDependenciesTool -eq $true) "Schema lastStaticValidationSnapshot must record starter dependency helper output."
 Assert-True ($lastStaticValidation.externalStarterKitDependencyToolMirrorsBothManifests -eq $true) "Schema lastStaticValidationSnapshot must record starter dependency helper authoring/runtime manifest parity."
+Assert-True ($lastStaticValidation.externalStarterKitDependenciesToolWritesStrictUtf8NoBom -eq $true) "Schema lastStaticValidationSnapshot must record starter dependency helper strict UTF-8 no-BOM writes."
 Assert-True ($lastStaticValidation.externalStarterKitWritesDoctorTool -eq $true) "Schema lastStaticValidationSnapshot must record starter package doctor helper output."
 Assert-True ($lastStaticValidation.externalStarterKitDoctorToolIsReadOnly -eq $true) "Schema lastStaticValidationSnapshot must record starter package doctor read-only contract."
 Assert-True ($lastStaticValidation.externalStarterKitDoctorVerifiesSubmissionZipContents -eq $true) "Schema lastStaticValidationSnapshot must record starter package doctor submission zip content proof."
@@ -4969,6 +5037,7 @@ Assert-True ($lastStaticValidation.externalStarterKitIdentityToolValidatesCanoni
 Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksSemver -eq $true) "Schema lastStaticValidationSnapshot must record starter semantic version validation."
 Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksManifestIdentityTextParity -eq $true) "Schema lastStaticValidationSnapshot must record starter identity text parity validation."
 Assert-True ($lastStaticValidation.externalStarterKitIdentityToolRejectsInvalidVersion -eq $true) "Schema lastStaticValidationSnapshot must record starter invalid version rejection."
+Assert-True ($lastStaticValidation.externalStarterKitIdentityToolRollsBackBothManifestsOnValidationFailure -eq $true) "Schema lastStaticValidationSnapshot must record starter identity rollback on validation failure."
 Assert-True ($lastStaticValidation.externalStarterKitToolsAvoidNestedPowerShell -eq $true) "Schema lastStaticValidationSnapshot must record starter tools in-process script chaining."
 Assert-True ($lastStaticValidation.externalStarterKitToolsUsePortableJoinPath -eq $true) "Schema lastStaticValidationSnapshot must record starter portable path composition."
 Assert-True ($lastStaticValidation.externalStarterKitWritesJsonSchemas -eq $true) "Schema lastStaticValidationSnapshot must record starter JSON Schema outputs."
@@ -5224,6 +5293,7 @@ Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDiagnoseLocalUsesR
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDiagnoseLocalChecksDependencyGraph = True')) 'Runtime playbook missing local Mods dependency graph diagnosis evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesDependenciesTool = True')) 'Runtime playbook missing starter dependency helper evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDependencyToolMirrorsBothManifests = True')) 'Runtime playbook missing starter dependency helper manifest parity evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDependenciesToolWritesStrictUtf8NoBom = True')) 'Runtime playbook missing starter dependency helper strict UTF-8 no-BOM evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesDoctorTool = True')) 'Runtime playbook missing starter package doctor helper evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDoctorToolIsReadOnly = True')) 'Runtime playbook missing starter package doctor read-only evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDoctorVerifiesSubmissionZipContents = True')) 'Runtime playbook missing starter package doctor submission zip content evidence.'
@@ -5258,6 +5328,7 @@ Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitIdentityToolValida
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorChecksSemver = True')) 'Runtime playbook missing starter semver validation evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorChecksManifestIdentityTextParity = True')) 'Runtime playbook missing starter identity text parity evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitIdentityToolRejectsInvalidVersion = True')) 'Runtime playbook missing starter invalid version rejection evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitIdentityToolRollsBackBothManifestsOnValidationFailure = True')) 'Runtime playbook missing starter identity rollback evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitToolsAvoidNestedPowerShell = True')) 'Runtime playbook missing starter cross-platform tool chaining evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitToolsUsePortableJoinPath = True')) 'Runtime playbook missing starter portable path composition evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesJsonSchemas = True')) 'Runtime playbook missing starter JSON Schema output evidence.'
@@ -5560,6 +5631,7 @@ $result = [pscustomobject]@{
     ExternalStarterKitDiagnoseLocalChecksDependencyGraph = $externalStarterKitDiagnoseLocalChecksDependencyGraph
     ExternalStarterKitWritesDependenciesTool = $externalStarterKitWritesDependenciesTool
     ExternalStarterKitDependencyToolMirrorsBothManifests = $externalStarterKitDependencyToolMirrorsBothManifests
+    ExternalStarterKitDependenciesToolWritesStrictUtf8NoBom = $externalStarterKitDependenciesToolWritesStrictUtf8NoBom
     ExternalStarterKitWritesDoctorTool = $externalStarterKitWritesDoctorTool
     ExternalStarterKitDoctorToolIsReadOnly = $externalStarterKitDoctorToolIsReadOnly
     ExternalStarterKitDoctorVerifiesSubmissionZipContents = $externalStarterKitDoctorVerifiesSubmissionZipContents
@@ -5599,6 +5671,7 @@ $result = [pscustomobject]@{
     ExternalStarterKitValidatorChecksSemver = $externalStarterKitValidatorChecksSemver
     ExternalStarterKitValidatorChecksManifestIdentityTextParity = $externalStarterKitValidatorChecksManifestIdentityTextParity
     ExternalStarterKitIdentityToolRejectsInvalidVersion = $externalStarterKitIdentityToolRejectsInvalidVersion
+    ExternalStarterKitIdentityToolRollsBackBothManifestsOnValidationFailure = $externalStarterKitIdentityToolRollsBackBothManifestsOnValidationFailure
     ExternalStarterKitToolsAvoidNestedPowerShell = $externalStarterKitToolsAvoidNestedPowerShell
     ExternalStarterKitToolsUsePortableJoinPath = $externalStarterKitToolsUsePortableJoinPath
     ExternalStarterKitWritesJsonSchemas = $externalStarterKitWritesJsonSchemas

@@ -1,0 +1,29 @@
+﻿{
+    "timestampUtc":  "2026-05-28T02:25:07.7280691Z",
+    "cpuLoadSamplesPercent":  [
+                                  46,
+                                  47,
+                                  82
+                              ],
+    "cpuLoadMaxPercent":  82,
+    "compilerProcessCount":  2,
+    "compilerProcesses":  [
+                              {
+                                  "ProcessName":  "csc",
+                                  "Id":  44804,
+                                  "CPU":  6.40625,
+                                  "StartTime":  "\/Date(1779935105302)\/"
+                              },
+                              {
+                                  "ProcessName":  "dotnet",
+                                  "Id":  9696,
+                                  "CPU":  24.71875,
+                                  "StartTime":  "\/Date(1779935087474)\/"
+                              }
+                          ],
+    "launched":  false,
+    "reason":  "BLOCKED_BY_CONTENTION",
+    "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+    "logPath":  "Docs/AgentLogs/Build_1405_Apex15.dotnet.log",
+    "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc is active."
+}

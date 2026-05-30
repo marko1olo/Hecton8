@@ -2372,6 +2372,54 @@ namespace Hecton8.Physics.KCC
             return count;
         }
 
+        public static int ParseProfiles(
+            ReadOnlySpan<byte> bytes,
+            Span<HydrodynamicFluidProfileDTO> profiles,
+            Span<int> buckets)
+        {
+            if (profiles.Length == 0)
+                return 0;
+
+            profiles.Clear();
+            for (int i = 0; i < buckets.Length; i++)
+                buckets[i] = -1;
+
+            int count = 0;
+            int lineStart = 0;
+            for (int i = 0; i <= bytes.Length; i++)
+            {
+                if (i != bytes.Length && bytes[i] != NewLine)
+                    continue;
+
+                int lineEnd = i;
+                if (lineEnd > lineStart && bytes[lineEnd - 1] == CarriageReturn)
+                    lineEnd--;
+
+                if (TryParseLine(bytes.Slice(lineStart, lineEnd - lineStart), out HydrodynamicFluidProfileDTO profile))
+                {
+                    int profileIndex = count;
+                    if (profileIndex >= profiles.Length)
+                        return count;
+
+                    profile.NextIndex = -1;
+                    profiles[profileIndex] = profile;
+                    if (buckets.Length > 0)
+                    {
+                        int bucket = (int)(profile.ProfileHash % (uint)buckets.Length);
+                        profile.NextIndex = buckets[bucket];
+                        profiles[profileIndex] = profile;
+                        buckets[bucket] = profileIndex;
+                    }
+
+                    count++;
+                }
+
+                lineStart = i + 1;
+            }
+
+            return count;
+        }
+
         private static bool TryParseLine(ReadOnlySpan<byte> line, out HydrodynamicFluidProfileDTO profile)
         {
             profile = default;
@@ -2561,7 +2609,73 @@ namespace Hecton8.Physics.KCC
             return count;
         }
 
+        public static int ParseProfiles(
+            ReadOnlySpan<byte> bytes,
+            Span<KccEnvironmentProfileDTO> profiles,
+            Span<uint> profileHashes,
+            Span<int> buckets)
+        {
+            if (profiles.Length == 0 || profileHashes.Length < profiles.Length)
+                return 0;
+
+            profiles.Clear();
+            profileHashes.Clear();
+            for (int i = 0; i < buckets.Length; i++)
+                buckets[i] = -1;
+
+            int count = 0;
+            int lineStart = 0;
+            for (int i = 0; i <= bytes.Length; i++)
+            {
+                if (i != bytes.Length && bytes[i] != NewLine)
+                    continue;
+
+                int lineEnd = i;
+                if (lineEnd > lineStart && bytes[lineEnd - 1] == CarriageReturn)
+                    lineEnd--;
+
+                if (TryParseLine(bytes.Slice(lineStart, lineEnd - lineStart), out uint profileHash, out KccEnvironmentProfileDTO profile))
+                {
+                    int profileIndex = count;
+                    if (profileIndex >= profiles.Length)
+                        return count;
+
+                    profiles[profileIndex] = profile;
+                    profileHashes[profileIndex] = profileHash;
+                    if (buckets.Length > 0)
+                    {
+                        int bucket = (int)(profileHash % (uint)buckets.Length);
+                        InsertProfileBucket(profileHash, profileIndex, profileHashes, buckets, bucket);
+                    }
+
+                    count++;
+                }
+
+                lineStart = i + 1;
+            }
+
+            return count;
+        }
+
         private static void InsertProfileBucket(uint profileHash, int profileIndex, NativeArray<uint> profileHashes, NativeArray<int> buckets, int startBucket)
+        {
+            for (int probe = 0; probe < buckets.Length; probe++)
+            {
+                int bucket = startBucket + probe;
+                if (bucket >= buckets.Length)
+                    bucket -= buckets.Length;
+
+                int existing = buckets[bucket];
+                if (existing < 0 ||
+                    ((uint)existing < (uint)profileHashes.Length && profileHashes[existing] == profileHash))
+                {
+                    buckets[bucket] = profileIndex;
+                    return;
+                }
+            }
+        }
+
+        private static void InsertProfileBucket(uint profileHash, int profileIndex, ReadOnlySpan<uint> profileHashes, Span<int> buckets, int startBucket)
         {
             for (int probe = 0; probe < buckets.Length; probe++)
             {
@@ -2727,31 +2841,28 @@ namespace Hecton8.Physics.KCC
         private const int EnvironmentGridAxisZ = 16;
         private const int EnvironmentGridCellCount = EnvironmentGridAxisX * EnvironmentGridAxisY * EnvironmentGridAxisZ;
         private const uint MetabolismFatigueFlag = 1u << 9;
-        private static readonly ulong ScheduledVaultMutationGuardMask =
-            KccVaultMutationGuardBit(BufferID.ShinobuHydroKccStates) |
-            KccVaultMutationGuardBit(BufferID.ShinobuHydroKccInputs) |
-            KccVaultMutationGuardBit(BufferID.ShinobuHydroKccProposedVelocities) |
-            KccVaultMutationGuardBit(BufferID.ShinobuHydroKccResolvedHits) |
-            KccVaultMutationGuardBit(BufferID.ShinobuHydroKccFaultFlags) |
-            KccVaultMutationGuardBit(BufferID.ShinobuHydroKccWakePackets) |
-            KccVaultMutationGuardBit(BufferID.ShinobuHydroKccTuning) |
-            KccVaultMutationGuardBit(BufferID.ShinobuKccEnvironmentProfile) |
-            KccVaultMutationGuardBit(BufferID.ShinobuKccEnvironmentGrid) |
-            KccVaultMutationGuardBit(BufferID.ShinobuKccEnvironmentFlowField) |
-            KccVaultMutationGuardBit(BufferID.ShinobuKccEnvironmentSdf) |
-            KccVaultMutationGuardBit(BufferID.ShinobuMetabolismStates) |
-            KccVaultMutationGuardBit(BufferID.ShinobuKccEnvironmentMockMetabolism) |
-            KccVaultMutationGuardBit(BufferID.ShinobuKccEnvironmentDebug) |
-            KccVaultMutationGuardBit(BufferID.ShinobuHydroKccPreviousAup) |
-            KccVaultMutationGuardBit(BufferID.ShinobuHydroKccVisualOutputs) |
-            KccVaultMutationGuardBit(BufferID.ShinobuHydroKccTelemetryRing) |
-            KccVaultMutationGuardBit(BufferID.ShinobuHydroKccTelemetryCursor) |
-            KccVaultMutationGuardBit(BufferID.ShinobuHydroKccRollbackBytes) |
-            KccVaultMutationGuardBit(BufferID.ShinobuHydroKccDebugOutputs) |
-            KccVaultMutationGuardBit(BufferID.ShinobuKccEnvironmentTelemetryRing) |
-            KccVaultMutationGuardBit(BufferID.ShinobuKccEnvironmentTelemetryCursor);
-        private static readonly ulong MetabolismStateMutationGuardMask =
-            KccVaultMutationGuardBit(BufferID.ShinobuMetabolismStates);
+        private const uint ScheduledVaultPinStates = 1u << 0;
+        private const uint ScheduledVaultPinInputs = 1u << 1;
+        private const uint ScheduledVaultPinProposedVelocities = 1u << 2;
+        private const uint ScheduledVaultPinResolvedHits = 1u << 3;
+        private const uint ScheduledVaultPinFaultFlags = 1u << 4;
+        private const uint ScheduledVaultPinWakePackets = 1u << 5;
+        private const uint ScheduledVaultPinTuning = 1u << 6;
+        private const uint ScheduledVaultPinEnvironmentProfile = 1u << 7;
+        private const uint ScheduledVaultPinEnvironmentGrid = 1u << 8;
+        private const uint ScheduledVaultPinEnvironmentFlowField = 1u << 9;
+        private const uint ScheduledVaultPinEnvironmentSdf = 1u << 10;
+        private const uint ScheduledVaultPinEnvironmentMockMetabolism = 1u << 11;
+        private const uint ScheduledVaultPinEnvironmentDebug = 1u << 12;
+        private const uint ScheduledVaultPinPreviousAup = 1u << 13;
+        private const uint ScheduledVaultPinVisualOutputs = 1u << 14;
+        private const uint ScheduledVaultPinTelemetryRing = 1u << 15;
+        private const uint ScheduledVaultPinTelemetryCursor = 1u << 16;
+        private const uint ScheduledVaultPinRollbackBytes = 1u << 17;
+        private const uint ScheduledVaultPinDebugOutputs = 1u << 18;
+        private const uint ScheduledVaultPinEnvironmentTelemetryRing = 1u << 19;
+        private const uint ScheduledVaultPinEnvironmentTelemetryCursor = 1u << 20;
+        private const uint ScheduledVaultPinPublishedMetabolismStates = 1u << 21;
         private const uint KccFaultEventHash = 0x4B464654u; // KFFT
         private const uint KccFaultDumpHash = 0x4B464450u; // KFDP
 
@@ -2807,11 +2918,11 @@ namespace Hecton8.Physics.KCC
         private bool _collisionScheduled;
         private bool _postScheduled;
         private bool _externalInputArmed;
-        private bool _metabolismStateReadGuardHeld;
+        private bool _metabolismStateReadPinHeld;
         private bool _coreBlackboxWarmed;
-        private bool _scheduledVaultBufferGuardHeld;
-        private IDataVault _scheduledVaultBufferGuardVault;
-        private IDataVault _metabolismStateReadGuardVault;
+        private uint _scheduledVaultBufferPinMask;
+        private IDataVault _scheduledVaultBufferPinVault;
+        private IDataVault _metabolismStateReadPinVault;
         private int _dumpedFaultMask;
         private int _rollbackVisualBypassFrames;
         private int _respawnCollisionBypassFrames;
@@ -2855,22 +2966,22 @@ namespace Hecton8.Physics.KCC
                 return false;
             }
 
-            if (!TryReadVaultBuffer(runtime._dataVault, in runtime._telemetryRingHandle, BufferID.ShinobuHydroKccTelemetryRing, SystemID.Physics, TelemetryCapacity, out NativeArray<KinematicTelemetryEntry> telemetryBuffer))
+            if (!TryReadOnlyVaultBuffer(runtime._dataVault, in runtime._telemetryRingHandle, BufferID.ShinobuHydroKccTelemetryRing, SystemID.Physics, TelemetryCapacity, out NativeArray<KinematicTelemetryEntry>.ReadOnly telemetryBuffer))
                 return false;
 
-            NativeArray<int> cursorBuffer = TryReadVaultBuffer(
+            NativeArray<int>.ReadOnly cursorBuffer = TryReadOnlyVaultBuffer(
                 runtime._dataVault,
                 in runtime._telemetryCursorHandle,
                 BufferID.ShinobuHydroKccTelemetryCursor,
                 SystemID.Physics,
                 1,
-                out NativeArray<int> resolvedCursor)
+                out NativeArray<int>.ReadOnly resolvedCursor)
                 ? resolvedCursor
                 : default;
             if (!telemetryBuffer.IsCreated || telemetryBuffer.Length == 0)
                 return false;
 
-            telemetry = telemetryBuffer.AsReadOnly();
+            telemetry = telemetryBuffer;
             length = math.min(TelemetryCapacity, telemetry.Length);
             cursor = cursorBuffer.IsCreated && cursorBuffer.Length > 0
                 ? math.clamp(cursorBuffer[0], 0, length - 1)
@@ -2908,22 +3019,22 @@ namespace Hecton8.Physics.KCC
                 return false;
             }
 
-            if (!TryReadVaultBuffer(runtime._dataVault, in runtime._environmentTelemetryRingHandle, BufferID.ShinobuKccEnvironmentTelemetryRing, SystemID.Physics, TelemetryCapacity, out NativeArray<KccEnvironmentTelemetryEntry> telemetryBuffer))
+            if (!TryReadOnlyVaultBuffer(runtime._dataVault, in runtime._environmentTelemetryRingHandle, BufferID.ShinobuKccEnvironmentTelemetryRing, SystemID.Physics, TelemetryCapacity, out NativeArray<KccEnvironmentTelemetryEntry>.ReadOnly telemetryBuffer))
                 return false;
 
-            NativeArray<int> cursorBuffer = TryReadVaultBuffer(
+            NativeArray<int>.ReadOnly cursorBuffer = TryReadOnlyVaultBuffer(
                 runtime._dataVault,
                 in runtime._environmentTelemetryCursorHandle,
                 BufferID.ShinobuKccEnvironmentTelemetryCursor,
                 SystemID.Physics,
                 1,
-                out NativeArray<int> resolvedCursor)
+                out NativeArray<int>.ReadOnly resolvedCursor)
                 ? resolvedCursor
                 : default;
             if (!telemetryBuffer.IsCreated || telemetryBuffer.Length == 0)
                 return false;
 
-            telemetry = telemetryBuffer.AsReadOnly();
+            telemetry = telemetryBuffer;
             length = math.min(TelemetryCapacity, telemetry.Length);
             cursor = cursorBuffer.IsCreated && cursorBuffer.Length > 0
                 ? math.clamp(cursorBuffer[0], 0, length - 1)
@@ -2985,7 +3096,7 @@ namespace Hecton8.Physics.KCC
             int capacity = math.min(_entityCapacity, _resolvedBufferCapacity);
             int maxHits = MaxCollisionHitsPerCommand;
             int rawHitCapacity = capacity * maxHits;
-            if (!TryAcquireScheduledVaultBufferGuard())
+            if (!TryPinScheduledVaultBuffers())
                 return;
 
             bool scheduled = false;
@@ -3164,7 +3275,7 @@ namespace Hecton8.Physics.KCC
             finally
             {
                 if (!scheduled)
-                    ReleaseScheduledVaultBufferGuard();
+                    ReleaseScheduledVaultBufferPins();
             }
         }
 
@@ -3347,7 +3458,7 @@ namespace Hecton8.Physics.KCC
                 }
 
                 ReleaseMetabolismStateReadGuard();
-                ReleaseScheduledVaultBufferGuard();
+                ReleaseScheduledVaultBufferPins();
                 _postScheduled = false;
                 _collisionScheduled = false;
                 _scheduledEntityCount = 0;
@@ -3440,7 +3551,7 @@ namespace Hecton8.Physics.KCC
                 return;
 
             ReleaseMetabolismStateReadGuard();
-            ReleaseScheduledVaultBufferGuard();
+            ReleaseScheduledVaultBufferPins();
             _postScheduled = false;
             if (!HasVaultBuffersReady())
                 return;
@@ -3589,12 +3700,14 @@ namespace Hecton8.Physics.KCC
             if (csvBytes.Length == 0 || !EnsureVaultBuffers())
                 return false;
 
-            if (!TryOpenVaultBuffer(_dataVault, ref _fluidProfilesHandle, BufferID.ShinobuHydroKccFluidProfiles, SystemID.Physics, DefaultFluidProfileCapacity, out NativeArray<HydrodynamicFluidProfileDTO> profiles) ||
-                !TryOpenVaultBuffer(_dataVault, ref _fluidProfileBucketsHandle, BufferID.ShinobuHydroKccFluidProfileBuckets, SystemID.Physics, DefaultFluidProfileBucketCount, out NativeArray<int> buckets))
+            Span<HydrodynamicFluidProfileDTO> profileScratch = stackalloc HydrodynamicFluidProfileDTO[DefaultFluidProfileCapacity];
+            Span<int> bucketScratch = stackalloc int[DefaultFluidProfileBucketCount];
+            int count = HydrodynamicFluidProfileCsvParser.ParseProfiles(csvBytes, profileScratch, bucketScratch);
+            if (count <= 0)
                 return false;
 
-            int count = HydrodynamicFluidProfileCsvParser.ParseProfiles(csvBytes, profiles, buckets);
-            return count > 0 && TryApplyFluidProfile(profiles[0].ProfileHash);
+            uint firstProfileHash = profileScratch[0].ProfileHash;
+            return TryCommitFluidProfileScratch(profileScratch, bucketScratch, firstProfileHash);
         }
 
         /// <summary>Applies a previously ingested fluid profile to the Vault-backed KCC tuning record.</summary>
@@ -3603,9 +3716,75 @@ namespace Hecton8.Physics.KCC
             if (profileHash == 0u || !EnsureVaultBuffers())
                 return false;
 
-            if (!TryOpenVaultBuffer(_dataVault, ref _fluidProfilesHandle, BufferID.ShinobuHydroKccFluidProfiles, SystemID.Physics, DefaultFluidProfileCapacity, out NativeArray<HydrodynamicFluidProfileDTO> profiles) ||
-                !TryOpenVaultBuffer(_dataVault, ref _fluidProfileBucketsHandle, BufferID.ShinobuHydroKccFluidProfileBuckets, SystemID.Physics, DefaultFluidProfileBucketCount, out NativeArray<int> buckets) ||
-                !TryOpenVaultBuffer(_dataVault, ref _tuningHandle, BufferID.ShinobuHydroKccTuning, SystemID.Physics, 1, out NativeArray<HydrodynamicKccTuningDTO> tuningBuffer))
+            IDataVault vault = _dataVault;
+            return vault != null && TryApplyFluidProfileFromVault(vault, profileHash);
+        }
+
+        /// <summary>Parses locomotion_environment_profiles.csv bytes into Vault-backed environmental profile buffers.</summary>
+        public bool TryIngestEnvironmentProfiles(ReadOnlySpan<byte> csvBytes)
+        {
+            if (csvBytes.Length == 0 || !EnsureVaultBuffers())
+                return false;
+
+            Span<KccEnvironmentProfileDTO> profileScratch = stackalloc KccEnvironmentProfileDTO[DefaultFluidProfileCapacity];
+            Span<uint> hashScratch = stackalloc uint[DefaultFluidProfileCapacity];
+            Span<int> bucketScratch = stackalloc int[DefaultFluidProfileBucketCount];
+            int count = KccEnvironmentProfileCsvParser.ParseProfiles(csvBytes, profileScratch, hashScratch, bucketScratch);
+            if (count <= 0)
+                return false;
+
+            return TryCommitEnvironmentProfileScratch(profileScratch, hashScratch, bucketScratch, SanitizeEnvironmentProfile(profileScratch[0]));
+        }
+#endif
+
+        /// <summary>Applies a cold-ingested locomotion environment profile by FNV-1a hash bucket.</summary>
+        public bool TryApplyEnvironmentProfile(uint profileHash)
+        {
+            if (profileHash == 0u || !EnsureVaultBuffers())
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            if (!TryReadOnlyVaultBuffer(vault, in _environmentProfilesHandle, BufferID.ShinobuKccEnvironmentProfiles, SystemID.Physics, DefaultFluidProfileCapacity, out NativeArray<KccEnvironmentProfileDTO>.ReadOnly profiles) ||
+                !TryReadOnlyVaultBuffer(vault, in _environmentProfileBucketsHandle, BufferID.ShinobuKccEnvironmentProfileBuckets, SystemID.Physics, DefaultFluidProfileBucketCount, out NativeArray<int>.ReadOnly buckets) ||
+                !TryReadOnlyVaultBuffer(vault, in _environmentProfileHashesHandle, BufferID.ShinobuKccEnvironmentProfileHashes, SystemID.Physics, DefaultFluidProfileCapacity, out NativeArray<uint>.ReadOnly hashes))
+            {
+                return false;
+            }
+
+            int profileIndex = FindEnvironmentProfileIndex(profileHash, hashes, buckets);
+            if (profileIndex < 0 || profileIndex >= profiles.Length)
+                return false;
+
+            KccEnvironmentProfileDTO activeProfile = SanitizeEnvironmentProfile(profiles[profileIndex]);
+            return TryWriteActiveEnvironmentProfile(vault, in activeProfile);
+        }
+
+        private bool TryCommitFluidProfileScratch(
+            ReadOnlySpan<HydrodynamicFluidProfileDTO> profiles,
+            ReadOnlySpan<int> buckets,
+            uint activeProfileHash)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                profiles.Length < DefaultFluidProfileCapacity ||
+                buckets.Length < DefaultFluidProfileBucketCount)
+            {
+                return false;
+            }
+
+            return TryWriteFluidProfiles(vault, profiles) &&
+                   TryWriteFluidProfileBuckets(vault, buckets) &&
+                   TryApplyFluidProfileFromVault(vault, activeProfileHash);
+        }
+
+        private bool TryApplyFluidProfileFromVault(IDataVault vault, uint profileHash)
+        {
+            if (!TryReadOnlyVaultBuffer(vault, in _fluidProfilesHandle, BufferID.ShinobuHydroKccFluidProfiles, SystemID.Physics, DefaultFluidProfileCapacity, out NativeArray<HydrodynamicFluidProfileDTO>.ReadOnly profiles) ||
+                !TryReadOnlyVaultBuffer(vault, in _fluidProfileBucketsHandle, BufferID.ShinobuHydroKccFluidProfileBuckets, SystemID.Physics, DefaultFluidProfileBucketCount, out NativeArray<int>.ReadOnly buckets) ||
+                !TryReadOnlyVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuHydroKccTuning, SystemID.Physics, 1, out NativeArray<HydrodynamicKccTuningDTO>.ReadOnly tuningBuffer))
             {
                 return false;
             }
@@ -3626,8 +3805,7 @@ namespace Hecton8.Physics.KCC
                     tuning.BuoyancyScalar = profile.BuoyancyScalar;
                     tuning.ProfileHash = profile.ProfileHash;
                     tuning.Flags |= 1u;
-                    tuningBuffer[0] = SanitizeTuning(tuning);
-                    return true;
+                    return TryWriteActiveFluidTuning(vault, in tuning);
                 }
 
                 profileIndex = profile.NextIndex;
@@ -3637,49 +3815,189 @@ namespace Hecton8.Physics.KCC
             return false;
         }
 
-        /// <summary>Parses locomotion_environment_profiles.csv bytes into Vault-backed environmental profile buffers.</summary>
-        public bool TryIngestEnvironmentProfiles(ReadOnlySpan<byte> csvBytes)
+        private bool TryCommitEnvironmentProfileScratch(
+            ReadOnlySpan<KccEnvironmentProfileDTO> profiles,
+            ReadOnlySpan<uint> hashes,
+            ReadOnlySpan<int> buckets,
+            in KccEnvironmentProfileDTO activeProfile)
         {
-            if (csvBytes.Length == 0 || !EnsureVaultBuffers())
-                return false;
-
-            if (!TryOpenVaultBuffer(_dataVault, ref _environmentProfilesHandle, BufferID.ShinobuKccEnvironmentProfiles, SystemID.Physics, DefaultFluidProfileCapacity, out NativeArray<KccEnvironmentProfileDTO> profiles) ||
-                !TryOpenVaultBuffer(_dataVault, ref _environmentProfileBucketsHandle, BufferID.ShinobuKccEnvironmentProfileBuckets, SystemID.Physics, DefaultFluidProfileBucketCount, out NativeArray<int> buckets) ||
-                !TryOpenVaultBuffer(_dataVault, ref _environmentProfileHashesHandle, BufferID.ShinobuKccEnvironmentProfileHashes, SystemID.Physics, DefaultFluidProfileCapacity, out NativeArray<uint> hashes) ||
-                !TryOpenVaultBuffer(_dataVault, ref _environmentProfileHandle, BufferID.ShinobuKccEnvironmentProfile, SystemID.Physics, 1, out NativeArray<KccEnvironmentProfileDTO> activeProfile))
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                profiles.Length < DefaultFluidProfileCapacity ||
+                hashes.Length < DefaultFluidProfileCapacity ||
+                buckets.Length < DefaultFluidProfileBucketCount)
             {
                 return false;
             }
 
-            int count = KccEnvironmentProfileCsvParser.ParseProfiles(csvBytes, profiles, hashes, buckets);
-            if (count <= 0)
-                return false;
-
-            activeProfile[0] = SanitizeEnvironmentProfile(profiles[0]);
-            return true;
+            return TryWriteEnvironmentProfiles(vault, profiles) &&
+                   TryWriteEnvironmentProfileHashes(vault, hashes) &&
+                   TryWriteEnvironmentProfileBuckets(vault, buckets) &&
+                   TryWriteActiveEnvironmentProfile(vault, in activeProfile);
         }
-#endif
 
-        /// <summary>Applies a cold-ingested locomotion environment profile by FNV-1a hash bucket.</summary>
-        public bool TryApplyEnvironmentProfile(uint profileHash)
+        private bool TryWriteFluidProfiles(IDataVault vault, ReadOnlySpan<HydrodynamicFluidProfileDTO> source)
         {
-            if (profileHash == 0u || !EnsureVaultBuffers())
-                return false;
-
-            if (!TryOpenVaultBuffer(_dataVault, ref _environmentProfilesHandle, BufferID.ShinobuKccEnvironmentProfiles, SystemID.Physics, DefaultFluidProfileCapacity, out NativeArray<KccEnvironmentProfileDTO> profiles) ||
-                !TryOpenVaultBuffer(_dataVault, ref _environmentProfileBucketsHandle, BufferID.ShinobuKccEnvironmentProfileBuckets, SystemID.Physics, DefaultFluidProfileBucketCount, out NativeArray<int> buckets) ||
-                !TryOpenVaultBuffer(_dataVault, ref _environmentProfileHashesHandle, BufferID.ShinobuKccEnvironmentProfileHashes, SystemID.Physics, DefaultFluidProfileCapacity, out NativeArray<uint> hashes) ||
-                !TryOpenVaultBuffer(_dataVault, ref _environmentProfileHandle, BufferID.ShinobuKccEnvironmentProfile, SystemID.Physics, 1, out NativeArray<KccEnvironmentProfileDTO> activeProfile))
+            if (!IsVaultHandle(in _fluidProfilesHandle, BufferID.ShinobuHydroKccFluidProfiles, SystemID.Physics) ||
+                !vault.TryAcquireWriteLock(in _fluidProfilesHandle, SystemID.Physics, out NativeArray<HydrodynamicFluidProfileDTO> destination))
             {
                 return false;
             }
 
-            int profileIndex = FindEnvironmentProfileIndex(profileHash, hashes, buckets);
-            if (profileIndex < 0 || profileIndex >= profiles.Length)
-                return false;
+            try
+            {
+                if (!destination.IsCreated || destination.Length < DefaultFluidProfileCapacity)
+                    return false;
 
-            activeProfile[0] = SanitizeEnvironmentProfile(profiles[profileIndex]);
-            return true;
+                for (int i = 0; i < DefaultFluidProfileCapacity; i++)
+                    destination[i] = source[i];
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _fluidProfilesHandle, SystemID.Physics);
+            }
+        }
+
+        private bool TryWriteFluidProfileBuckets(IDataVault vault, ReadOnlySpan<int> source)
+        {
+            if (!IsVaultHandle(in _fluidProfileBucketsHandle, BufferID.ShinobuHydroKccFluidProfileBuckets, SystemID.Physics) ||
+                !vault.TryAcquireWriteLock(in _fluidProfileBucketsHandle, SystemID.Physics, out NativeArray<int> destination))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!destination.IsCreated || destination.Length < DefaultFluidProfileBucketCount)
+                    return false;
+
+                for (int i = 0; i < DefaultFluidProfileBucketCount; i++)
+                    destination[i] = source[i];
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _fluidProfileBucketsHandle, SystemID.Physics);
+            }
+        }
+
+        private bool TryWriteActiveFluidTuning(IDataVault vault, in HydrodynamicKccTuningDTO tuning)
+        {
+            if (!IsVaultHandle(in _tuningHandle, BufferID.ShinobuHydroKccTuning, SystemID.Physics) ||
+                !vault.TryAcquireWriteLock(in _tuningHandle, SystemID.Physics, out NativeArray<HydrodynamicKccTuningDTO> destination))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!destination.IsCreated || destination.Length < 1)
+                    return false;
+
+                destination[0] = SanitizeTuning(tuning);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _tuningHandle, SystemID.Physics);
+            }
+        }
+
+        private bool TryWriteEnvironmentProfiles(IDataVault vault, ReadOnlySpan<KccEnvironmentProfileDTO> source)
+        {
+            if (!IsVaultHandle(in _environmentProfilesHandle, BufferID.ShinobuKccEnvironmentProfiles, SystemID.Physics) ||
+                !vault.TryAcquireWriteLock(in _environmentProfilesHandle, SystemID.Physics, out NativeArray<KccEnvironmentProfileDTO> destination))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!destination.IsCreated || destination.Length < DefaultFluidProfileCapacity)
+                    return false;
+
+                for (int i = 0; i < DefaultFluidProfileCapacity; i++)
+                    destination[i] = source[i];
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _environmentProfilesHandle, SystemID.Physics);
+            }
+        }
+
+        private bool TryWriteEnvironmentProfileHashes(IDataVault vault, ReadOnlySpan<uint> source)
+        {
+            if (!IsVaultHandle(in _environmentProfileHashesHandle, BufferID.ShinobuKccEnvironmentProfileHashes, SystemID.Physics) ||
+                !vault.TryAcquireWriteLock(in _environmentProfileHashesHandle, SystemID.Physics, out NativeArray<uint> destination))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!destination.IsCreated || destination.Length < DefaultFluidProfileCapacity)
+                    return false;
+
+                for (int i = 0; i < DefaultFluidProfileCapacity; i++)
+                    destination[i] = source[i];
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _environmentProfileHashesHandle, SystemID.Physics);
+            }
+        }
+
+        private bool TryWriteEnvironmentProfileBuckets(IDataVault vault, ReadOnlySpan<int> source)
+        {
+            if (!IsVaultHandle(in _environmentProfileBucketsHandle, BufferID.ShinobuKccEnvironmentProfileBuckets, SystemID.Physics) ||
+                !vault.TryAcquireWriteLock(in _environmentProfileBucketsHandle, SystemID.Physics, out NativeArray<int> destination))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!destination.IsCreated || destination.Length < DefaultFluidProfileBucketCount)
+                    return false;
+
+                for (int i = 0; i < DefaultFluidProfileBucketCount; i++)
+                    destination[i] = source[i];
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _environmentProfileBucketsHandle, SystemID.Physics);
+            }
+        }
+
+        private bool TryWriteActiveEnvironmentProfile(IDataVault vault, in KccEnvironmentProfileDTO profile)
+        {
+            if (!IsVaultHandle(in _environmentProfileHandle, BufferID.ShinobuKccEnvironmentProfile, SystemID.Physics) ||
+                !vault.TryAcquireWriteLock(in _environmentProfileHandle, SystemID.Physics, out NativeArray<KccEnvironmentProfileDTO> destination))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!destination.IsCreated || destination.Length < 1)
+                    return false;
+
+                destination[0] = SanitizeEnvironmentProfile(profile);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _environmentProfileHandle, SystemID.Physics);
+            }
         }
 
         private static int FindEnvironmentProfileIndex(uint profileHash, NativeArray<uint> hashes, NativeArray<int> buckets)
@@ -3704,61 +4022,153 @@ namespace Hecton8.Physics.KCC
             return -1;
         }
 
-        private bool TryAcquireScheduledVaultBufferGuard()
+        private static int FindEnvironmentProfileIndex(uint profileHash, NativeArray<uint>.ReadOnly hashes, NativeArray<int>.ReadOnly buckets)
+        {
+            if (profileHash == 0u || !hashes.IsCreated || !buckets.IsCreated || buckets.Length == 0)
+                return -1;
+
+            int start = (int)(profileHash % (uint)buckets.Length);
+            for (int probe = 0; probe < buckets.Length; probe++)
+            {
+                int bucket = start + probe;
+                if (bucket >= buckets.Length)
+                    bucket -= buckets.Length;
+
+                int index = buckets[bucket];
+                if (index < 0)
+                    return -1;
+                if ((uint)index < (uint)hashes.Length && hashes[index] == profileHash)
+                    return index;
+            }
+
+            return -1;
+        }
+
+        private bool TryPinScheduledVaultBuffers()
         {
             IDataVault vault = _dataVault;
-            if (vault == null || _scheduledVaultBufferGuardHeld)
+            if (vault == null || _scheduledVaultBufferPinMask != 0u)
                 return false;
 
-            if (!vault.TryAcquireMutationGuard(ScheduledVaultMutationGuardMask))
-                return false;
+            _scheduledVaultBufferPinVault = vault;
+            bool pinned = false;
+            try
+            {
+                if (!TryLockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccStates, ScheduledVaultPinStates) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccInputs, ScheduledVaultPinInputs) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccProposedVelocities, ScheduledVaultPinProposedVelocities) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccResolvedHits, ScheduledVaultPinResolvedHits) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccFaultFlags, ScheduledVaultPinFaultFlags) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccWakePackets, ScheduledVaultPinWakePackets) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccTuning, ScheduledVaultPinTuning) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuKccEnvironmentProfile, ScheduledVaultPinEnvironmentProfile) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuKccEnvironmentGrid, ScheduledVaultPinEnvironmentGrid) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuKccEnvironmentFlowField, ScheduledVaultPinEnvironmentFlowField) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuKccEnvironmentSdf, ScheduledVaultPinEnvironmentSdf) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuKccEnvironmentMockMetabolism, ScheduledVaultPinEnvironmentMockMetabolism) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuKccEnvironmentDebug, ScheduledVaultPinEnvironmentDebug) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccPreviousAup, ScheduledVaultPinPreviousAup) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccVisualOutputs, ScheduledVaultPinVisualOutputs) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccTelemetryRing, ScheduledVaultPinTelemetryRing) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccTelemetryCursor, ScheduledVaultPinTelemetryCursor) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccRollbackBytes, ScheduledVaultPinRollbackBytes) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuHydroKccDebugOutputs, ScheduledVaultPinDebugOutputs) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuKccEnvironmentTelemetryRing, ScheduledVaultPinEnvironmentTelemetryRing) ||
+                    !TryLockScheduledVaultBuffer(vault, BufferID.ShinobuKccEnvironmentTelemetryCursor, ScheduledVaultPinEnvironmentTelemetryCursor))
+                {
+                    return false;
+                }
 
-            _scheduledVaultBufferGuardVault = vault;
-            _scheduledVaultBufferGuardHeld = true;
+                pinned = true;
+                return true;
+            }
+            finally
+            {
+                if (!pinned)
+                    ReleaseScheduledVaultBufferPins();
+            }
+        }
+
+        private void ReleaseScheduledVaultBufferPins()
+        {
+            IDataVault vault = _scheduledVaultBufferPinVault;
+            uint pinMask = _scheduledVaultBufferPinMask;
+            _scheduledVaultBufferPinVault = null;
+            _scheduledVaultBufferPinMask = 0u;
+            _metabolismStateReadPinHeld = false;
+            _metabolismStateReadPinVault = null;
+            if (vault == null || pinMask == 0u)
+                return;
+
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinPublishedMetabolismStates, BufferID.ShinobuMetabolismStates);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinEnvironmentTelemetryCursor, BufferID.ShinobuKccEnvironmentTelemetryCursor);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinEnvironmentTelemetryRing, BufferID.ShinobuKccEnvironmentTelemetryRing);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinDebugOutputs, BufferID.ShinobuHydroKccDebugOutputs);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinRollbackBytes, BufferID.ShinobuHydroKccRollbackBytes);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinTelemetryCursor, BufferID.ShinobuHydroKccTelemetryCursor);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinTelemetryRing, BufferID.ShinobuHydroKccTelemetryRing);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinVisualOutputs, BufferID.ShinobuHydroKccVisualOutputs);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinPreviousAup, BufferID.ShinobuHydroKccPreviousAup);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinEnvironmentDebug, BufferID.ShinobuKccEnvironmentDebug);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinEnvironmentMockMetabolism, BufferID.ShinobuKccEnvironmentMockMetabolism);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinEnvironmentSdf, BufferID.ShinobuKccEnvironmentSdf);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinEnvironmentFlowField, BufferID.ShinobuKccEnvironmentFlowField);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinEnvironmentGrid, BufferID.ShinobuKccEnvironmentGrid);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinEnvironmentProfile, BufferID.ShinobuKccEnvironmentProfile);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinTuning, BufferID.ShinobuHydroKccTuning);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinWakePackets, BufferID.ShinobuHydroKccWakePackets);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinFaultFlags, BufferID.ShinobuHydroKccFaultFlags);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinResolvedHits, BufferID.ShinobuHydroKccResolvedHits);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinProposedVelocities, BufferID.ShinobuHydroKccProposedVelocities);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinInputs, BufferID.ShinobuHydroKccInputs);
+            TryUnlockScheduledVaultBuffer(vault, pinMask, ScheduledVaultPinStates, BufferID.ShinobuHydroKccStates);
+        }
+
+        private bool TryLockScheduledVaultBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        {
+            if ((_scheduledVaultBufferPinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null ||
+                (_scheduledVaultBufferPinVault != null && !ReferenceEquals(_scheduledVaultBufferPinVault, vault)) ||
+                !vault.TryLockBuffer(bufferId, SystemID.Physics))
+            {
+                return false;
+            }
+
+            _scheduledVaultBufferPinVault = vault;
+            _scheduledVaultBufferPinMask |= pinBit;
             return true;
         }
 
-        private void ReleaseScheduledVaultBufferGuard()
+        private static void TryUnlockScheduledVaultBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
         {
-            if (!_scheduledVaultBufferGuardHeld)
-            {
-                _scheduledVaultBufferGuardVault = null;
-                return;
-            }
-
-            IDataVault vault = _scheduledVaultBufferGuardVault;
-            _scheduledVaultBufferGuardVault = null;
-            _scheduledVaultBufferGuardHeld = false;
-            vault?.ReleaseMutationGuard(ScheduledVaultMutationGuardMask);
-        }
-
-        private static ulong KccVaultMutationGuardBit(BufferID bufferId)
-        {
-            return 1UL << ((int)bufferId & 63);
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, SystemID.Physics);
         }
 
         private bool OpenPublishedMetabolismStateView(int requiredLength, out NativeArray<MetabolicStateDTO> states)
         {
             states = default;
             IDataVault vault = _dataVault;
-            if (vault == null || requiredLength <= 0 || _metabolismStateReadGuardHeld)
+            if (vault == null || requiredLength <= 0 || _metabolismStateReadPinHeld)
                 return false;
 
             BufferID bufferId = BufferID.ShinobuMetabolismStates;
-            bool coveredByScheduledGuard = _scheduledVaultBufferGuardHeld &&
-                                           ReferenceEquals(_scheduledVaultBufferGuardVault, vault);
-            bool acquiredReadGuard = false;
+            bool coveredByScheduledPins = (_scheduledVaultBufferPinMask & ScheduledVaultPinPublishedMetabolismStates) != 0u &&
+                                          ReferenceEquals(_scheduledVaultBufferPinVault, vault);
+            bool acquiredReadPin = false;
             bool success = false;
             try
             {
-                if (!coveredByScheduledGuard)
+                if (!coveredByScheduledPins)
                 {
-                    if (!vault.TryAcquireMutationGuard(MetabolismStateMutationGuardMask))
+                    if (!TryLockScheduledVaultBuffer(vault, bufferId, ScheduledVaultPinPublishedMetabolismStates))
                         return false;
 
-                    _metabolismStateReadGuardVault = vault;
-                    _metabolismStateReadGuardHeld = true;
-                    acquiredReadGuard = true;
+                    _metabolismStateReadPinVault = vault;
+                    _metabolismStateReadPinHeld = true;
+                    acquiredReadPin = true;
                 }
 
                 if (!IsVaultHandle(in _metabolismStatesHandle, bufferId, SystemID.GameplayPlayer))
@@ -3789,21 +4199,30 @@ namespace Hecton8.Physics.KCC
             }
             finally
             {
-                if (!success && acquiredReadGuard)
+                if (!success && acquiredReadPin)
                     ReleaseMetabolismStateReadGuard();
             }
         }
 
         private void ReleaseMetabolismStateReadGuard()
         {
-            if (!_metabolismStateReadGuardHeld)
+            if (!_metabolismStateReadPinHeld)
                 return;
 
-            IDataVault vault = _metabolismStateReadGuardVault;
-            _metabolismStateReadGuardVault = null;
-            _metabolismStateReadGuardHeld = false;
-            if (vault != null)
-                vault.ReleaseMutationGuard(MetabolismStateMutationGuardMask);
+            IDataVault vault = _metabolismStateReadPinVault;
+            _metabolismStateReadPinVault = null;
+            _metabolismStateReadPinHeld = false;
+            if (vault == null ||
+                !ReferenceEquals(_scheduledVaultBufferPinVault, vault) ||
+                (_scheduledVaultBufferPinMask & ScheduledVaultPinPublishedMetabolismStates) == 0u)
+            {
+                return;
+            }
+
+            vault.TryUnlockBuffer(BufferID.ShinobuMetabolismStates, SystemID.Physics);
+            _scheduledVaultBufferPinMask &= ~ScheduledVaultPinPublishedMetabolismStates;
+            if (_scheduledVaultBufferPinMask == 0u)
+                _scheduledVaultBufferPinVault = null;
         }
 
         private bool OpenOrAcquirePhysicsVaultBuffer<T>(
@@ -3878,6 +4297,23 @@ namespace Hecton8.Physics.KCC
                    requiredLength > 0 &&
                    IsVaultHandle(in handle, bufferId, systemId) &&
                    vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryReadOnlyVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            SystemID systemId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   IsVaultHandle(in handle, bufferId, systemId) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
         }
@@ -4081,7 +4517,7 @@ namespace Hecton8.Physics.KCC
         private void ClearScheduledBatchState()
         {
             ReleaseMetabolismStateReadGuard();
-            ReleaseScheduledVaultBufferGuard();
+            ReleaseScheduledVaultBufferPins();
             _collisionScheduled = false;
             _postScheduled = false;
             _scheduledEntityCount = 0;

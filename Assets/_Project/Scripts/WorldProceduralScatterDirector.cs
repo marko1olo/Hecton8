@@ -36,7 +36,13 @@ namespace Hecton8.World
 
         private static float RuntimeNowSeconds()
         {
-            return Application.isPlaying ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
+            return HasRuntimeScatterOwner() ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
+        }
+
+        private static bool HasRuntimeScatterOwner()
+        {
+            WorldProceduralScatterDirector owner = s_activeRuntimeInstance;
+            return owner != null && owner._runtimeScatterCallbacksActive;
         }
 
         /// <summary>
@@ -115,6 +121,7 @@ namespace Hecton8.World
         private Vector3 _observerAbsolutePositionCache;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private IObjectPoolService _cachedObjectPool;
+        private bool _runtimeScatterCallbacksActive;
         private bool _registeredHotSwapListener;
 #if UNITY_EDITOR
         private static bool _assemblyReloadHookRegistered;
@@ -668,7 +675,7 @@ namespace Hecton8.World
 
         public void Tick(float dt)
         {
-            if (!Application.isPlaying)
+            if (!_runtimeScatterCallbacksActive)
                 return;
 
             if (ShouldDeferUntilBootstrapReady())
@@ -700,6 +707,7 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            _runtimeScatterCallbacksActive = Application.isPlaying;
             _scatterState = ScatterState.Idle;
             _isSamplingJobRunning = false;
             CachePlayerContextCold();
@@ -727,6 +735,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            _runtimeScatterCallbacksActive = Application.isPlaying;
             PublishActiveRuntimeInstance();
             CachePlayerContextCold();
             TryRegisterHotSwapListener();
@@ -768,6 +777,7 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            _runtimeScatterCallbacksActive = false;
             TryUnregisterHotSwapListener();
             ClearActiveRuntimeInstance();
             TryUnregisterRuntimeDirector();
@@ -795,6 +805,7 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
+            _runtimeScatterCallbacksActive = false;
             TryUnregisterHotSwapListener();
             ClearActiveRuntimeInstance();
             TryUnregisterRuntimeDirector();
@@ -827,7 +838,7 @@ namespace Hecton8.World
 
         private void TryRegisterRuntimeDirector()
         {
-            if (_registeredRuntimeDirector || !Application.isPlaying)
+            if (_registeredRuntimeDirector || !_runtimeScatterCallbacksActive)
                 return;
 
             _registeredRuntimeDirector = _registeredScatterDirectors.TryRegister(this);
@@ -902,6 +913,7 @@ namespace Hecton8.World
 
         internal void PrepareForEditorReload()
         {
+            _runtimeScatterCallbacksActive = false;
             UnsubscribeFromBootstrap();
             UnregisterProceduralStateRegistryCallbacks();
             CompleteSamplingJobForTeardown();
@@ -971,7 +983,7 @@ namespace Hecton8.World
         public void SlowTick()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (Application.isPlaying && _lifecycleRuntimeState.LoggedFirstSlowTick == 0 && ShouldLogScatterLifecycleDiagnostics())
+            if (_runtimeScatterCallbacksActive && _lifecycleRuntimeState.LoggedFirstSlowTick == 0 && ShouldLogScatterLifecycleDiagnostics())
             {
                 _lifecycleRuntimeState.LoggedFirstSlowTick = 1;
                 _nextScatterLifecycleLogTime = RuntimeNowSeconds() + 5f;
@@ -1052,7 +1064,7 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
-            if (!Application.isPlaying)
+            if (!_runtimeScatterCallbacksActive)
                 return;
 
             FlushScatterVisualSync();
@@ -1114,7 +1126,7 @@ namespace Hecton8.World
 
             using (_scatterRebuildDispatcherProfilerMarker.Auto())
             {
-                if (!Application.isPlaying)
+                if (!_runtimeScatterCallbacksActive)
                 {
                     if (TryRunScatterSamplingSynchronously())
                         return;
@@ -1163,7 +1175,7 @@ namespace Hecton8.World
 
         public bool TryPrimeBootstrapScatterPass()
         {
-            if (!Application.isPlaying)
+            if (!_runtimeScatterCallbacksActive)
                 return false;
 
             ResolveReferences();
@@ -1214,7 +1226,7 @@ namespace Hecton8.World
 
         internal bool TryPrewarmBootstrapSamplingPipeline()
         {
-            if (!Application.isPlaying)
+            if (!_runtimeScatterCallbacksActive)
                 return false;
 
             if (_bootstrapRuntimeState.SamplingPipelinePrewarmed != 0)
@@ -1236,7 +1248,7 @@ namespace Hecton8.World
             if (_bootstrapRuntimeState.AllowPrimePass != 0)
                 return false;
 
-            if (!Application.isPlaying || !waitForGameBootstrapper || BootstrapState.IsGameReady)
+            if (!_runtimeScatterCallbacksActive || !waitForGameBootstrapper || BootstrapState.IsGameReady)
                 return false;
 
             if (_bootstrapRuntimeState.Failed != 0)
@@ -1262,7 +1274,7 @@ namespace Hecton8.World
                     this);
             }
 #endif
-            if (Application.isPlaying && !ShouldDeferUntilBootstrapReady())
+            if (_runtimeScatterCallbacksActive && !ShouldDeferUntilBootstrapReady())
                 RebuildScatterPreview();
         }
 
@@ -1361,7 +1373,7 @@ namespace Hecton8.World
             }
 
             if (_startupRuntimeState.StabilizationPending != 0 &&
-                Application.isPlaying &&
+                _runtimeScatterCallbacksActive &&
                 RuntimeNowSeconds() - _startupRuntimeState.StartTime >= StartupScatterStabilizationDelaySeconds)
             {
                 _startupRuntimeState.StabilizationPending = 0;
@@ -1372,7 +1384,7 @@ namespace Hecton8.World
             if (enableForcedScatterRefresh && scatterForcedRefreshInterval > 0f)
             {
                 float forcedInterval = math.max(0.5f, scatterForcedRefreshInterval);
-                if (Application.isPlaying && RuntimeNowSeconds() - _scatterRefreshSampleState.Time >= forcedInterval)
+                if (_runtimeScatterCallbacksActive && RuntimeNowSeconds() - _scatterRefreshSampleState.Time >= forcedInterval)
                 {
                     _debugLastScatterRefreshReason = "forced-interval";
                     return false;
@@ -1421,7 +1433,7 @@ namespace Hecton8.World
         private int ResolveActiveScatterSamplingRadiusCells(int runtimeRadiusCells)
         {
             int resolvedRadiusCells = math.max(2, runtimeRadiusCells);
-            if (Application.isPlaying && _bootstrapRuntimeState.AllowPrimePass != 0)
+            if (_runtimeScatterCallbacksActive && _bootstrapRuntimeState.AllowPrimePass != 0)
                 resolvedRadiusCells = math.min(resolvedRadiusCells, math.max(2, bootstrapPrimeRadiusCells));
 
             return resolvedRadiusCells;
@@ -1634,7 +1646,7 @@ namespace Hecton8.World
             InvalidateScatterRefreshSample(reason);
             TryEnsureTickRegistration();
 
-            if (Application.isPlaying)
+            if (_runtimeScatterCallbacksActive)
                 return;
 
             RefreshRuntimeStreamingSettings();
@@ -1644,7 +1656,7 @@ namespace Hecton8.World
 
         private void TryEnsureTickRegistration()
         {
-            if (_lifecycleRuntimeState.RegisteredToTickManager != 0 || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_lifecycleRuntimeState.RegisteredToTickManager != 0 || !_runtimeScatterCallbacksActive || GlobalRegistry.Dispatcher == null)
                 return;
 
             bool updateRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
@@ -4084,7 +4096,7 @@ namespace Hecton8.World
                 placement.Rotation,
                 placement.Scale);
 
-            if (geologyService.TryApplyGeneratedGeology(metadata.gameObject, request))
+            if (geologyService.TryApplyPreparedGeneratedGeologyHot(metadata, request))
             {
                 metadata.ResolveGeneratedGeologyRoot(GeneratedGeologyRootName);
                 _debugGeneratedGeologyCount++;
@@ -4205,8 +4217,7 @@ namespace Hecton8.World
                 serviceTransform.SetParent(root.transform, false);
             }
 
-            generativeGeologyService = serviceTransform.GetComponent<WorldGenerativeGeologyService>();
-            if (generativeGeologyService == null)
+            if (!serviceTransform.TryGetComponent(out generativeGeologyService))
                 generativeGeologyService = serviceTransform.gameObject.AddComponent<WorldGenerativeGeologyService>();
 
             return generativeGeologyService;

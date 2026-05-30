@@ -36,7 +36,8 @@ namespace Hecton8.Power
         private const float MinEdgeResistanceSquared = MinEdgeResistance * MinEdgeResistance;
         private const float RuptureDemandFactor = 0.015f;
         private const float ShortCircuitResistanceMultiplier = 100f;
-        private const float BatteryDispatchDeltaTimeSeconds = 0.5f;
+        internal const float LogisticsTickDeltaTimeSeconds = 0.2f;
+        private const float BatteryDispatchDeltaTimeSeconds = LogisticsTickDeltaTimeSeconds;
         private const float BatteryEmergencyReserveThreshold = 0.10f;
         private const float OverloadHeatWattsScale = 0.22f;
         private const float MinimumOverloadHeatWatts = 1800f;
@@ -183,7 +184,18 @@ namespace Hecton8.Power
         private readonly HashSet<PowerNode> _nodes;
         private readonly List<IPowerComponent> _consumerRefs;
         private readonly List<uint> _consumerNodeIds;
+        private readonly List<int> _consumerNodeIndices;
         private readonly List<BatteryBankModule> _batteryRefs;
+        private readonly List<int> _batteryNodeIndices;
+        private readonly List<int> _batteryChargeConsumerIndices;
+        private readonly List<int> _batteryReserveComponentIds;
+        private readonly List<float> _batteryReserveComponentStoredEnergyWattSeconds;
+        private readonly List<float> _batteryReserveComponentCapacityWattSeconds;
+        private readonly List<float> _batteryReserveComponentMinDischargeEfficiency;
+        private readonly List<float> _batteryReserveComponentPowerLimitedGridEnergyWattSeconds;
+        private readonly List<float> _batteryReserveComponentWirelessAvailableEnergyWattSeconds;
+        private readonly List<float> _batteryReserveComponentReservedWirelessEnergyWattSeconds;
+        private readonly List<byte> _batteryReserveComponentStates;
         private readonly List<PowerNode> _topologyNodes;
         private readonly List<OverloadThermalBinding> _overloadThermalBindings;
         private readonly Dictionary<PowerNode, float> _overloadThermalDamageByNode;
@@ -213,6 +225,8 @@ namespace Hecton8.Power
         private float _supplyRatio = 1f;
         private float _totalBatteryStoredEnergyWattSeconds;
         private float _totalBatteryCapacityWattSeconds;
+        private float _cachedWirelessToolAvailableEnergyWattSeconds;
+        private float _reservedWirelessToolDrainWattSeconds;
         private bool _hasPowerDeficit;
         private bool _hasBatteryBanks;
         private bool _batteryEmergencyReserveActive;
@@ -255,6 +269,8 @@ namespace Hecton8.Power
         /// <summary>True while the remaining battery charge is reserved for emergency-only loads.</summary>
         public bool IsBatteryEmergencyReserveActive => _batteryEmergencyReserveActive;
 
+        internal float WirelessToolAvailableEnergyWattSeconds => _cachedWirelessToolAvailableEnergyWattSeconds;
+
         /// <summary>True when a topology or demand change is waiting for the next SlowTick evaluation.</summary>
         public bool IsDirty => _isDirty;
 
@@ -270,12 +286,67 @@ namespace Hecton8.Power
         /// <summary>Read-only access for manager-level membership changes.</summary>
         public HashSet<PowerNode> Nodes => _nodes;
 
-        internal float TryConsumeWirelessToolDemand(float requestedEnergyWattSeconds)
+        internal float TryReserveWirelessToolDemand(float requestedEnergyWattSeconds)
         {
-            if (requestedEnergyWattSeconds <= 0f || !_hasBatteryBanks || _batteryEmergencyReserveActive)
+            if (requestedEnergyWattSeconds <= 0f || !_hasBatteryBanks)
                 return 0f;
 
+            if (_cachedWirelessToolAvailableEnergyWattSeconds <= 0.0001f ||
+                _batteryReserveComponentIds.Count <= 0 ||
+                _batteryReserveComponentReservedWirelessEnergyWattSeconds.Count < _batteryReserveComponentIds.Count)
+            {
+                return 0f;
+            }
+
             float remaining = requestedEnergyWattSeconds;
+            int componentCount = _batteryReserveComponentIds.Count;
+            for (int cacheIndex = 0; cacheIndex < componentCount; cacheIndex++)
+            {
+                if (remaining <= 0.0001f)
+                    break;
+
+                if (cacheIndex >= _batteryReserveComponentWirelessAvailableEnergyWattSeconds.Count ||
+                    cacheIndex >= _batteryReserveComponentStates.Count ||
+                    _batteryReserveComponentStates[cacheIndex] != 0)
+                {
+                    continue;
+                }
+
+                float componentAvailableEnergy = _batteryReserveComponentWirelessAvailableEnergyWattSeconds[cacheIndex];
+                if (componentAvailableEnergy <= 0.0001f)
+                    continue;
+
+                float reservedEnergy = math.min(remaining, componentAvailableEnergy);
+                if (reservedEnergy <= 0.0001f)
+                    continue;
+
+                remaining -= reservedEnergy;
+                _batteryReserveComponentWirelessAvailableEnergyWattSeconds[cacheIndex] =
+                    math.max(0f, componentAvailableEnergy - reservedEnergy);
+                _batteryReserveComponentReservedWirelessEnergyWattSeconds[cacheIndex] += reservedEnergy;
+            }
+
+            float reservedTotal = math.max(0f, requestedEnergyWattSeconds - remaining);
+            _cachedWirelessToolAvailableEnergyWattSeconds = math.max(0f, _cachedWirelessToolAvailableEnergyWattSeconds - reservedTotal);
+            _reservedWirelessToolDrainWattSeconds += reservedTotal;
+            return reservedTotal;
+        }
+
+        internal float ConsumeReservedWirelessToolDemand()
+        {
+            if (_reservedWirelessToolDrainWattSeconds <= 0.0001f)
+                return 0f;
+
+            if (!_hasBatteryBanks)
+            {
+                _reservedWirelessToolDrainWattSeconds = 0f;
+                int reservedComponentCount = _batteryReserveComponentReservedWirelessEnergyWattSeconds.Count;
+                for (int cacheIndex = 0; cacheIndex < reservedComponentCount; cacheIndex++)
+                    _batteryReserveComponentReservedWirelessEnergyWattSeconds[cacheIndex] = 0f;
+                return 0f;
+            }
+
+            float remaining = _reservedWirelessToolDrainWattSeconds;
             int batteryCount = _batteryRefs.Count;
             for (int batteryIndex = 0; batteryIndex < batteryCount; batteryIndex++)
             {
@@ -286,7 +357,28 @@ namespace Hecton8.Power
                 if (battery == null)
                     continue;
 
-                remaining -= battery.TryConsumeDirectGridEnergy(remaining, BatteryEmergencyReserveThreshold);
+                int componentIndex = ResolveBatteryComponentIndex(batteryIndex);
+                int cacheIndex = FindBatteryReserveComponentCacheIndex(componentIndex);
+                if (cacheIndex < 0 ||
+                    cacheIndex >= _batteryReserveComponentReservedWirelessEnergyWattSeconds.Count)
+                {
+                    continue;
+                }
+
+                float componentReservedEnergy = _batteryReserveComponentReservedWirelessEnergyWattSeconds[cacheIndex];
+                if (componentReservedEnergy <= 0.0001f)
+                    continue;
+
+                float requestedFromBattery = math.min(remaining, componentReservedEnergy);
+                float batteryConsumedEnergy = battery.TryConsumeDirectGridEnergy(
+                    requestedFromBattery,
+                    BatteryEmergencyReserveThreshold);
+                if (batteryConsumedEnergy <= 0.0001f)
+                    continue;
+
+                remaining -= batteryConsumedEnergy;
+                _batteryReserveComponentReservedWirelessEnergyWattSeconds[cacheIndex] =
+                    math.max(0f, componentReservedEnergy - batteryConsumedEnergy);
             }
 
             _totalBatteryStoredEnergyWattSeconds = 0f;
@@ -304,7 +396,13 @@ namespace Hecton8.Power
             _batteryEmergencyReserveActive = ResolveBatteryEmergencyReserveActive(
                 _totalBatteryStoredEnergyWattSeconds,
                 _totalBatteryCapacityWattSeconds);
-            return requestedEnergyWattSeconds - remaining;
+            float consumedEnergy = math.max(0f, _reservedWirelessToolDrainWattSeconds - remaining);
+            _reservedWirelessToolDrainWattSeconds = 0f;
+            int componentCount = _batteryReserveComponentReservedWirelessEnergyWattSeconds.Count;
+            for (int cacheIndex = 0; cacheIndex < componentCount; cacheIndex++)
+                _batteryReserveComponentReservedWirelessEnergyWattSeconds[cacheIndex] = 0f;
+
+            return consumedEnergy;
         }
 
         public PowerGrid(int initialCapacity = 16, IDataVault dataVault = null)
@@ -323,7 +421,21 @@ namespace Hecton8.Power
             _consumerRefs = new List<IPowerComponent>(safeCapacity);
             // COLD ALLOC: List<uint>[initialCapacity] - stable node ids parallel to consumer references - owner: PowerGrid
             _consumerNodeIds = new List<uint>(safeCapacity);
+            // COLD ALLOC: List<int>[initialCapacity] - graph node indices parallel to consumer references - owner: PowerGrid
+            _consumerNodeIndices = new List<int>(safeCapacity);
+            // COLD ALLOC: List<BatteryBankModule>[initialCapacity] - storage banks in the current graph snapshot - owner: PowerGrid
             _batteryRefs = new List<BatteryBankModule>(safeCapacity);
+            // COLD ALLOC: List<int>[initialCapacity] - graph node indices parallel to battery references - owner: PowerGrid
+            _batteryNodeIndices = new List<int>(safeCapacity);
+            _batteryChargeConsumerIndices = new List<int>(safeCapacity);
+            _batteryReserveComponentIds = new List<int>(safeCapacity);
+            _batteryReserveComponentStoredEnergyWattSeconds = new List<float>(safeCapacity);
+            _batteryReserveComponentCapacityWattSeconds = new List<float>(safeCapacity);
+            _batteryReserveComponentMinDischargeEfficiency = new List<float>(safeCapacity);
+            _batteryReserveComponentPowerLimitedGridEnergyWattSeconds = new List<float>(safeCapacity);
+            _batteryReserveComponentWirelessAvailableEnergyWattSeconds = new List<float>(safeCapacity);
+            _batteryReserveComponentReservedWirelessEnergyWattSeconds = new List<float>(safeCapacity);
+            _batteryReserveComponentStates = new List<byte>(safeCapacity);
             // COLD ALLOC: List<PowerNode>[initialCapacity] — topology node snapshot — owner: PowerGrid
             _topologyNodes = new List<PowerNode>(safeCapacity);
             // COLD ALLOC: List<OverloadThermalBinding>[initialCapacity] — per-node overload heat ownership cache — owner: PowerGrid
@@ -336,6 +448,8 @@ namespace Hecton8.Power
 
         public void InjectDataVault(IDataVault dataVault)
         {
+            ConsumeReservedWirelessToolDemand();
+
             bool samePowerVault = ReferenceEquals(_dataVault, dataVault);
             bool graphRebound = _logisticsGraph.InjectDataVault(dataVault);
             if (samePowerVault && !graphRebound)
@@ -353,11 +467,21 @@ namespace Hecton8.Power
 
         public void Dispose()
         {
-            CompleteThermalDissipationForTeardown();
-            _logisticsGraph.CompleteEvaluation();
-            _logisticsGraph.CompleteNodeStatePublish();
+            CancelPendingSlowTickWorkForTeardown();
             _logisticsGraph.Dispose();
             DisposeThermalDissipationBuffers();
+        }
+
+        internal void CancelPendingSlowTickWorkForTeardown()
+        {
+            ConsumeReservedWirelessToolDemand();
+            CompleteThermalDissipationForTeardown();
+            _logisticsGraph.CancelPendingWorkForTeardown();
+            ResetBatteryDispatchPlans();
+            _slowTickEvaluationPending = false;
+            _slowTickNodeStatePublishScheduled = false;
+            _slowTickEvaluationPhase = SlowTickEvaluationPhase.Idle;
+            _isDirty = true;
         }
 
         /// <summary>
@@ -418,6 +542,7 @@ namespace Hecton8.Power
                 return;
 
             node.SetGrid(this);
+            EnsureGraphSnapshotCapacityForCurrentTopologyCold();
             WarmOverloadServiceCacheForNode(node);
             _isDirty = true;
         }
@@ -428,6 +553,7 @@ namespace Hecton8.Power
             if (node == null)
                 return;
 
+            ConsumeReservedWirelessToolDemand();
             _nodes.Remove(node);
             RemoveOverloadServiceCacheForNode(node);
             if (ReferenceEquals(node.Grid, this))
@@ -441,6 +567,9 @@ namespace Hecton8.Power
         {
             if (other == null || ReferenceEquals(other, this))
                 return;
+
+            ConsumeReservedWirelessToolDemand();
+            other.ConsumeReservedWirelessToolDemand();
 
             HashSet<PowerNode>.Enumerator enumerator = other._nodes.GetEnumerator();
             while (enumerator.MoveNext())
@@ -456,6 +585,7 @@ namespace Hecton8.Power
 
             other._nodes.Clear();
             other._overloadServiceCache.Clear();
+            EnsureGraphSnapshotCapacityForCurrentTopologyCold();
             _isDirty = true;
         }
 
@@ -473,6 +603,8 @@ namespace Hecton8.Power
         {
             if (_slowTickEvaluationPending || _logisticsGraph.HasPendingNodeStatePublish || _logisticsGraph.HasPendingEvaluation)
                 return;
+
+            ConsumeReservedWirelessToolDemand();
 
             if (!_isDirty && _hasEvaluatedAtLeastOnce && !_hasBatteryBanks)
             {
@@ -497,6 +629,8 @@ namespace Hecton8.Power
                 _brownoutTier = LogisticsBrownoutTier.None;
                 _totalBatteryStoredEnergyWattSeconds = 0f;
                 _totalBatteryCapacityWattSeconds = 0f;
+                _cachedWirelessToolAvailableEnergyWattSeconds = 0f;
+                _reservedWirelessToolDrainWattSeconds = 0f;
                 _hasBatteryBanks = false;
                 _batteryEmergencyReserveActive = false;
                 _islandCount = 0;
@@ -626,6 +760,7 @@ namespace Hecton8.Power
             _slowTickNodeStatePublishScheduled = false;
             _slowTickEvaluationPhase = SlowTickEvaluationPhase.Idle;
             ResetBatteryDispatchPlans();
+            ConsumeReservedWirelessToolDemand();
             if (!BuildGraphSnapshot())
                 return;
 
@@ -639,6 +774,8 @@ namespace Hecton8.Power
                 _brownoutTier = LogisticsBrownoutTier.None;
                 _totalBatteryStoredEnergyWattSeconds = 0f;
                 _totalBatteryCapacityWattSeconds = 0f;
+                _cachedWirelessToolAvailableEnergyWattSeconds = 0f;
+                _reservedWirelessToolDrainWattSeconds = 0f;
                 _hasBatteryBanks = false;
                 _batteryEmergencyReserveActive = false;
                 _islandCount = 0;
@@ -731,13 +868,25 @@ namespace Hecton8.Power
             if (_logisticsGraph.HasPendingEvaluation || _logisticsGraph.HasPendingNodeStatePublish)
                 return false;
 
+            int rawNodeCount = _nodes.Count;
+            EnsureGraphSnapshotNodeCapacity(rawNodeCount);
             _consumerRefs.Clear();
             _consumerNodeIds.Clear();
+            _consumerNodeIndices.Clear();
             _batteryRefs.Clear();
+            _batteryNodeIndices.Clear();
+            _batteryChargeConsumerIndices.Clear();
+            _batteryReserveComponentIds.Clear();
+            _batteryReserveComponentStoredEnergyWattSeconds.Clear();
+            _batteryReserveComponentCapacityWattSeconds.Clear();
+            _batteryReserveComponentMinDischargeEfficiency.Clear();
+            _batteryReserveComponentPowerLimitedGridEnergyWattSeconds.Clear();
+            _batteryReserveComponentWirelessAvailableEnergyWattSeconds.Clear();
+            _batteryReserveComponentReservedWirelessEnergyWattSeconds.Clear();
+            _batteryReserveComponentStates.Clear();
             _topologyNodes.Clear();
             _overloadThermalBindings.Clear();
 
-            int rawNodeCount = _nodes.Count;
             if (rawNodeCount <= 0)
             {
                 _logisticsGraph.BeginBuild(LogisticsNetworkType.PowerDc, 1, 1, 1);
@@ -771,6 +920,7 @@ namespace Hecton8.Power
 
             int edgeCount = 0;
             int consumerCount = 0;
+            int batteryCount = 0;
 
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
@@ -807,7 +957,13 @@ namespace Hecton8.Power
                 for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
                 {
                     IPowerComponent component = components[componentIndex];
-                    if (component == null || component.PowerRating >= 0f)
+                    if (component == null)
+                        continue;
+
+                    if (component is BatteryBankModule)
+                        batteryCount++;
+
+                    if (component.PowerRating >= 0f)
                         continue;
 
                     consumerCount++;
@@ -817,6 +973,7 @@ namespace Hecton8.Power
                     consumerCount++;
             }
 
+            EnsureGraphSnapshotCapacity(nodeCount, consumerCount, batteryCount);
             _logisticsGraph.BeginBuild(LogisticsNetworkType.PowerDc, nodeCount, edgeCount, consumerCount);
 
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
@@ -850,8 +1007,14 @@ namespace Hecton8.Power
                         if (component == null)
                             continue;
 
+                        int batteryIndex = -1;
                         if (component is BatteryBankModule batteryBank)
+                        {
+                            batteryIndex = _batteryRefs.Count;
                             _batteryRefs.Add(batteryBank);
+                            _batteryNodeIndices.Add(nodeIndex);
+                            _batteryChargeConsumerIndices.Add(-1);
+                        }
 
                         if (!overloadBindingResolved && component is BaseModule baseModule)
                         {
@@ -882,8 +1045,13 @@ namespace Hecton8.Power
                         if (rating >= 0f)
                             continue;
 
+                        int consumerIndex = _consumerRefs.Count;
+                        if (batteryIndex >= 0 && batteryIndex < _batteryChargeConsumerIndices.Count)
+                            _batteryChargeConsumerIndices[batteryIndex] = consumerIndex;
+
                         _consumerRefs.Add(component);
                         _consumerNodeIds.Add(nodeId);
+                        _consumerNodeIndices.Add(nodeIndex);
                         _logisticsGraph.AddConsumer(
                             nodeIndex,
                             -rating,
@@ -900,6 +1068,7 @@ namespace Hecton8.Power
                     {
                         _consumerRefs.Add(null);
                         _consumerNodeIds.Add(nodeId);
+                        _consumerNodeIndices.Add(nodeIndex);
                         _logisticsGraph.AddConsumer(
                             nodeIndex,
                             ruptureDemand,
@@ -931,8 +1100,70 @@ namespace Hecton8.Power
                 }
             }
 
+            EnsureBatteryReserveComponentCacheCapacity(_batteryRefs.Count);
             _logisticsGraph.FinalizeBuild();
             return true;
+        }
+
+        private void EnsureGraphSnapshotCapacity(int nodeCapacity, int consumerCapacity, int batteryCapacity)
+        {
+            EnsureGraphSnapshotNodeCapacity(nodeCapacity);
+            EnsureListCapacity(_consumerRefs, consumerCapacity);
+            EnsureListCapacity(_consumerNodeIds, consumerCapacity);
+            EnsureListCapacity(_consumerNodeIndices, consumerCapacity);
+            EnsureListCapacity(_batteryRefs, batteryCapacity);
+            EnsureListCapacity(_batteryNodeIndices, batteryCapacity);
+            EnsureListCapacity(_batteryChargeConsumerIndices, batteryCapacity);
+            EnsureBatteryReserveComponentCacheCapacity(batteryCapacity);
+        }
+
+        private void EnsureGraphSnapshotCapacityForCurrentTopologyCold()
+        {
+            int nodeCapacity = _nodes.Count;
+            int consumerCapacity = 0;
+            int batteryCapacity = 0;
+
+            HashSet<PowerNode>.Enumerator nodeEnumerator = _nodes.GetEnumerator();
+            while (nodeEnumerator.MoveNext())
+            {
+                PowerNode node = nodeEnumerator.Current;
+                if (node == null)
+                    continue;
+
+                List<IPowerComponent> components = node.Components;
+                if (components != null)
+                {
+                    int componentCount = components.Count;
+                    for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
+                    {
+                        IPowerComponent component = components[componentIndex];
+                        if (component == null)
+                            continue;
+
+                        if (component is BatteryBankModule)
+                            batteryCapacity++;
+                        if (component.PowerRating < 0f)
+                            consumerCapacity++;
+                    }
+                }
+
+                consumerCapacity++;
+            }
+
+            EnsureGraphSnapshotCapacity(nodeCapacity, consumerCapacity, batteryCapacity);
+        }
+
+        private void EnsureGraphSnapshotNodeCapacity(int nodeCapacity)
+        {
+            int safeNodeCapacity = math.max(0, nodeCapacity);
+            EnsureListCapacity(_topologyNodes, safeNodeCapacity);
+            EnsureListCapacity(_overloadThermalBindings, safeNodeCapacity);
+        }
+
+        private static void EnsureListCapacity<T>(List<T> list, int requiredCapacity)
+        {
+            if (list != null && list.Capacity < requiredCapacity)
+                list.Capacity = requiredCapacity;
         }
 
         private CachedOverloadServices ReadCachedOverloadServices(BaseModule baseModule)
@@ -988,11 +1219,12 @@ namespace Hecton8.Power
             if (baseModule == null || _overloadServiceCache.ContainsKey(baseModule))
                 return;
 
+            baseModule.TryGetComponent(out IDamageReceiver damageReceiver);
             CachedOverloadServices services = new CachedOverloadServices
             {
                 Atmosphere = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomMutationSink>(baseModule),
-                FluidDynamics = baseModule.GetComponentInParent<SubmarineFluidDynamics>(),
-                DamageReceiver = baseModule.GetComponent<IDamageReceiver>()
+                FluidDynamics = ComponentReferenceUtility.ResolveParentService<SubmarineFluidDynamics>(baseModule),
+                DamageReceiver = damageReceiver
             };
             _overloadServiceCache[baseModule] = services;
         }
@@ -1013,7 +1245,8 @@ namespace Hecton8.Power
 
         private void ApplyConsumerStates()
         {
-            bool ambientLightsBrownedOut = _brownoutTier != LogisticsBrownoutTier.None || _batteryEmergencyReserveActive;
+            RebuildBatteryReserveComponentCache();
+
             int consumerCount = _consumerRefs.Count;
             for (int consumerIndex = 0; consumerIndex < consumerCount; consumerIndex++)
             {
@@ -1021,6 +1254,10 @@ namespace Hecton8.Power
                 if (consumer == null)
                     continue;
 
+                int componentIndex = ResolveConsumerComponentIndex(consumerIndex);
+                bool componentReserveActive = TryGetCachedBatteryEmergencyReserveActive(
+                    componentIndex,
+                    out bool cachedReserveActive) && cachedReserveActive;
                 bool consumerVoltageResolved = _logisticsGraph.TryGetConsumerVoltageSupplyRatio(
                     consumerIndex,
                     out float consumerVoltageSupplyRatio);
@@ -1040,13 +1277,13 @@ namespace Hecton8.Power
                 bool voltageBrownout = consumerVoltageSupplyRatio < BrownoutPotentialThreshold;
                 if (baseModule != null)
                     baseModule.SetAmbientPowerVisualState(
-                        ambientLightsBrownedOut || consumerVoltageSupplyRatio < 0.80f,
+                        componentReserveActive || consumerVoltageSupplyRatio < 0.80f,
                         consumerVoltageSupplyRatio);
 
                 bool shouldHavePower = _logisticsGraph.IsConsumerPowered(consumerIndex);
                 if (voltageBrownout && baseModule == null && continuousPower == null)
                     shouldHavePower = false;
-                if (_batteryEmergencyReserveActive && !ShouldRemainPoweredDuringBatteryReserve(consumer))
+                if (componentReserveActive && !ShouldRemainPoweredDuringBatteryReserve(consumer))
                     shouldHavePower = false;
                 if (consumer.HasPower != shouldHavePower)
                 {
@@ -1934,9 +2171,7 @@ namespace Hecton8.Power
             _balance = distribution.Balance;
             _supplyRatio = distribution.SupplyRatio;
             _hasPowerDeficit = distribution.HasDeficit != 0;
-            _brownoutTier = _batteryEmergencyReserveActive
-                ? LogisticsBrownoutTier.EmergencyOnly
-                : distribution.BrownoutTier;
+            _brownoutTier = distribution.BrownoutTier;
             _islandCount = topology.IslandCount;
             _cycleCount = topology.CycleCount;
         }
@@ -1952,7 +2187,6 @@ namespace Hecton8.Power
 
         private void ResolveBatteryDispatch(LogisticsNetworkGraph.DistributionSummary rawDistribution)
         {
-            float rawBalance = rawDistribution.Balance;
             int batteryCount = _batteryRefs.Count;
             _hasBatteryBanks = batteryCount > 0;
             _totalBatteryStoredEnergyWattSeconds = 0f;
@@ -1964,7 +2198,6 @@ namespace Hecton8.Power
 
             float totalChargeAcceptanceWatts = 0f;
             float totalDischargeAvailabilityWatts = 0f;
-            float totalReservePreservingDischargeWatts = 0f;
             for (int batteryIndex = 0; batteryIndex < batteryCount; batteryIndex++)
             {
                 BatteryBankModule battery = _batteryRefs[batteryIndex];
@@ -1973,48 +2206,15 @@ namespace Hecton8.Power
 
                 float chargeAcceptanceWatts = battery.ResolveChargeAcceptanceWatts(BatteryDispatchDeltaTimeSeconds);
                 float dischargeAvailabilityWatts = battery.ResolveDischargeAvailabilityWatts(BatteryDispatchDeltaTimeSeconds);
-                float reservePreservingDischargeWatts = battery.ResolveDischargeAvailabilityWatts(
-                    BatteryDispatchDeltaTimeSeconds,
-                    BatteryEmergencyReserveThreshold);
 
                 _totalBatteryStoredEnergyWattSeconds += battery.StoredEnergyWattSeconds;
                 _totalBatteryCapacityWattSeconds += battery.CapacityWattSeconds;
                 totalChargeAcceptanceWatts += chargeAcceptanceWatts;
                 totalDischargeAvailabilityWatts += dischargeAvailabilityWatts;
-                totalReservePreservingDischargeWatts += reservePreservingDischargeWatts;
             }
 
-            bool reserveAlreadyActive = ResolveBatteryEmergencyReserveActive(
-                _totalBatteryStoredEnergyWattSeconds,
-                _totalBatteryCapacityWattSeconds);
-
-            BatteryDispatchMode dispatchMode = BatteryDispatchMode.Idle;
-            float requestedPowerWatts = 0f;
-            float totalAvailablePowerWatts = 0f;
-            if (rawBalance > 0.0001f && totalChargeAcceptanceWatts > 0.0001f)
-            {
-                dispatchMode = BatteryDispatchMode.Charge;
-                requestedPowerWatts = rawBalance;
-                totalAvailablePowerWatts = totalChargeAcceptanceWatts;
-            }
-            else if (rawBalance < -0.0001f && totalDischargeAvailabilityWatts > 0.0001f)
-            {
-                dispatchMode = BatteryDispatchMode.Discharge;
-                if (reserveAlreadyActive)
-                {
-                    requestedPowerWatts = math.max(0f, ResolveEmergencyReservedDemandWatts() - rawDistribution.TotalGeneration);
-                    totalAvailablePowerWatts = totalDischargeAvailabilityWatts;
-                }
-                else
-                {
-                    requestedPowerWatts = -rawBalance;
-                    totalAvailablePowerWatts = totalReservePreservingDischargeWatts;
-                }
-            }
-
-            if (dispatchMode == BatteryDispatchMode.Idle ||
-                requestedPowerWatts <= 0.0001f ||
-                totalAvailablePowerWatts <= 0.0001f)
+            if (!math.isfinite(rawDistribution.Balance) ||
+                (totalChargeAcceptanceWatts <= 0.0001f && totalDischargeAvailabilityWatts <= 0.0001f))
             {
                 _batteryEmergencyReserveActive = ResolveBatteryEmergencyReserveActive(
                     _totalBatteryStoredEnergyWattSeconds,
@@ -2029,6 +2229,19 @@ namespace Hecton8.Power
                 BatteryBankModule battery = _batteryRefs[batteryIndex];
                 if (battery == null)
                     continue;
+
+                int componentIndex = ResolveBatteryComponentIndex(batteryIndex);
+                if (!TryResolveComponentBatteryDispatch(
+                        componentIndex,
+                        out BatteryDispatchMode dispatchMode,
+                        out float requestedPowerWatts,
+                        out float totalAvailablePowerWatts,
+                        out bool reserveAlreadyActive))
+                {
+                    _totalBatteryStoredEnergyWattSeconds += battery.StoredEnergyWattSeconds;
+                    _totalBatteryCapacityWattSeconds += battery.CapacityWattSeconds;
+                    continue;
+                }
 
                 float chargeAcceptanceWatts = battery.ResolveChargeAcceptanceWatts(BatteryDispatchDeltaTimeSeconds);
                 float dischargeAvailabilityWatts = battery.ResolveDischargeAvailabilityWatts(BatteryDispatchDeltaTimeSeconds);
@@ -2061,6 +2274,313 @@ namespace Hecton8.Power
             _batteryEmergencyReserveActive = ResolveBatteryEmergencyReserveActive(
                 _totalBatteryStoredEnergyWattSeconds,
                 _totalBatteryCapacityWattSeconds);
+        }
+
+        private int ResolveBatteryComponentIndex(int batteryIndex)
+        {
+            if (batteryIndex < 0 || batteryIndex >= _batteryNodeIndices.Count)
+                return -1;
+
+            return _logisticsGraph.GetNodeComponentId(_batteryNodeIndices[batteryIndex]);
+        }
+
+        private int ResolveConsumerComponentIndex(int consumerIndex)
+        {
+            if (consumerIndex < 0 || consumerIndex >= _consumerNodeIndices.Count)
+                return -1;
+
+            return _logisticsGraph.GetNodeComponentId(_consumerNodeIndices[consumerIndex]);
+        }
+
+        private bool ResolveBatteryEmergencyReserveActiveForComponent(int componentIndex)
+        {
+            ResolveComponentBatteryStorage(componentIndex, out float storedEnergyWattSeconds, out float capacityWattSeconds);
+            return ResolveBatteryEmergencyReserveActive(storedEnergyWattSeconds, capacityWattSeconds);
+        }
+
+        private void ResolveComponentBatteryStorage(
+            int componentIndex,
+            out float storedEnergyWattSeconds,
+            out float capacityWattSeconds)
+        {
+            storedEnergyWattSeconds = 0f;
+            capacityWattSeconds = 0f;
+            if (componentIndex < 0)
+                return;
+
+            int batteryCount = _batteryRefs.Count;
+            for (int batteryIndex = 0; batteryIndex < batteryCount; batteryIndex++)
+            {
+                if (ResolveBatteryComponentIndex(batteryIndex) != componentIndex)
+                    continue;
+
+                BatteryBankModule battery = _batteryRefs[batteryIndex];
+                if (battery == null)
+                    continue;
+
+                storedEnergyWattSeconds += battery.StoredEnergyWattSeconds;
+                capacityWattSeconds += battery.CapacityWattSeconds;
+            }
+        }
+
+        private bool TryResolveComponentBatteryDispatch(
+            int componentIndex,
+            out BatteryDispatchMode dispatchMode,
+            out float requestedPowerWatts,
+            out float totalAvailablePowerWatts,
+            out bool reserveAlreadyActive)
+        {
+            dispatchMode = BatteryDispatchMode.Idle;
+            requestedPowerWatts = 0f;
+            totalAvailablePowerWatts = 0f;
+            reserveAlreadyActive = false;
+
+            if (!_logisticsGraph.TryGetComponentDistribution(componentIndex, out float generationWatts, out float demandWatts))
+                return false;
+
+            float componentBalanceWatts = generationWatts - demandWatts;
+            if (componentBalanceWatts > 0.0001f)
+            {
+                totalAvailablePowerWatts = ResolveComponentBatteryChargeAcceptanceWatts(componentIndex);
+                if (totalAvailablePowerWatts <= 0.0001f)
+                    return false;
+
+                dispatchMode = BatteryDispatchMode.Charge;
+                requestedPowerWatts = componentBalanceWatts;
+                return true;
+            }
+
+            if (componentBalanceWatts >= -0.0001f)
+                return false;
+
+            reserveAlreadyActive = ResolveBatteryEmergencyReserveActiveForComponent(componentIndex);
+            if (reserveAlreadyActive)
+            {
+                totalAvailablePowerWatts = ResolveComponentBatteryDischargeAvailabilityWatts(componentIndex, 0f);
+                if (totalAvailablePowerWatts <= 0.0001f)
+                    return false;
+
+                dispatchMode = BatteryDispatchMode.Discharge;
+                requestedPowerWatts = math.max(0f, ResolveEmergencyReservedDemandWatts(componentIndex) - generationWatts);
+                return requestedPowerWatts > 0.0001f;
+            }
+
+            float reserveSafeAvailablePowerWatts = ResolveComponentBatteryAggregateReserveDischargeAvailabilityWatts(componentIndex);
+            if (reserveSafeAvailablePowerWatts <= 0.0001f)
+                return false;
+
+            totalAvailablePowerWatts = ResolveComponentBatteryDischargeAvailabilityWatts(
+                componentIndex,
+                BatteryEmergencyReserveThreshold);
+            if (totalAvailablePowerWatts <= 0.0001f)
+                return false;
+
+            dispatchMode = BatteryDispatchMode.Discharge;
+            requestedPowerWatts = math.min(-componentBalanceWatts, reserveSafeAvailablePowerWatts);
+            return requestedPowerWatts > 0.0001f;
+        }
+
+        private float ResolveComponentBatteryChargeAcceptanceWatts(int componentIndex)
+        {
+            if (componentIndex < 0)
+                return 0f;
+
+            float totalWatts = 0f;
+            int batteryCount = _batteryRefs.Count;
+            for (int batteryIndex = 0; batteryIndex < batteryCount; batteryIndex++)
+            {
+                if (ResolveBatteryComponentIndex(batteryIndex) != componentIndex)
+                    continue;
+
+                BatteryBankModule battery = _batteryRefs[batteryIndex];
+                if (battery == null)
+                    continue;
+
+                totalWatts += battery.ResolveChargeAcceptanceWatts(BatteryDispatchDeltaTimeSeconds);
+            }
+
+            return totalWatts;
+        }
+
+        private float ResolveComponentBatteryDischargeAvailabilityWatts(int componentIndex, float reserveFloorNormalized)
+        {
+            if (componentIndex < 0)
+                return 0f;
+
+            float totalWatts = 0f;
+            int batteryCount = _batteryRefs.Count;
+            for (int batteryIndex = 0; batteryIndex < batteryCount; batteryIndex++)
+            {
+                if (ResolveBatteryComponentIndex(batteryIndex) != componentIndex)
+                    continue;
+
+                BatteryBankModule battery = _batteryRefs[batteryIndex];
+                if (battery == null)
+                    continue;
+
+                totalWatts += battery.ResolveDischargeAvailabilityWatts(
+                    BatteryDispatchDeltaTimeSeconds,
+                    reserveFloorNormalized);
+            }
+
+            return totalWatts;
+        }
+
+        private float ResolveComponentBatteryAggregateReserveDischargeAvailabilityWatts(int componentIndex)
+        {
+            if (componentIndex < 0)
+                return 0f;
+
+            float storedEnergyWattSeconds = 0f;
+            float capacityWattSeconds = 0f;
+            float minDischargeEfficiency = 1f;
+            float powerLimitedGridEnergyWattSeconds = 0f;
+            int batteryCount = _batteryRefs.Count;
+            for (int batteryIndex = 0; batteryIndex < batteryCount; batteryIndex++)
+            {
+                if (ResolveBatteryComponentIndex(batteryIndex) != componentIndex)
+                    continue;
+
+                BatteryBankModule battery = _batteryRefs[batteryIndex];
+                if (battery == null)
+                    continue;
+
+                storedEnergyWattSeconds += battery.StoredEnergyWattSeconds;
+                capacityWattSeconds += battery.CapacityWattSeconds;
+                minDischargeEfficiency = math.min(minDischargeEfficiency, battery.DischargeEfficiency);
+                powerLimitedGridEnergyWattSeconds += battery.ResolveDischargeAvailabilityWatts(
+                    BatteryDispatchDeltaTimeSeconds,
+                    0f) * BatteryDispatchDeltaTimeSeconds;
+            }
+
+            if (capacityWattSeconds <= 0.0001f)
+                return 0f;
+
+            float reserveSafeGridEnergyWattSeconds = math.max(
+                0f,
+                (storedEnergyWattSeconds - (capacityWattSeconds * BatteryEmergencyReserveThreshold)) *
+                math.max(0.1f, minDischargeEfficiency));
+            float reserveSafeGridPowerWatts = math.min(
+                powerLimitedGridEnergyWattSeconds,
+                reserveSafeGridEnergyWattSeconds) / BatteryDispatchDeltaTimeSeconds;
+            return math.max(0f, reserveSafeGridPowerWatts);
+        }
+
+        private void RebuildBatteryReserveComponentCache()
+        {
+            int batteryCount = _batteryRefs.Count;
+            EnsureBatteryReserveComponentCacheCapacity(batteryCount);
+            _batteryReserveComponentIds.Clear();
+            _batteryReserveComponentStoredEnergyWattSeconds.Clear();
+            _batteryReserveComponentCapacityWattSeconds.Clear();
+            _batteryReserveComponentMinDischargeEfficiency.Clear();
+            _batteryReserveComponentPowerLimitedGridEnergyWattSeconds.Clear();
+            _batteryReserveComponentWirelessAvailableEnergyWattSeconds.Clear();
+            _batteryReserveComponentReservedWirelessEnergyWattSeconds.Clear();
+            _batteryReserveComponentStates.Clear();
+            _cachedWirelessToolAvailableEnergyWattSeconds = 0f;
+
+            for (int batteryIndex = 0; batteryIndex < batteryCount; batteryIndex++)
+            {
+                BatteryBankModule battery = _batteryRefs[batteryIndex];
+                if (battery == null)
+                    continue;
+
+                int componentIndex = ResolveBatteryComponentIndex(batteryIndex);
+                if (componentIndex < 0)
+                    continue;
+
+                float dischargeEfficiency = battery.DischargeEfficiency;
+                float powerLimitedGridEnergyWattSeconds = battery.ResolveDischargeAvailabilityWatts(
+                    BatteryDispatchDeltaTimeSeconds,
+                    BatteryEmergencyReserveThreshold) * BatteryDispatchDeltaTimeSeconds;
+                int cacheIndex = FindBatteryReserveComponentCacheIndex(componentIndex);
+                if (cacheIndex < 0)
+                {
+                    _batteryReserveComponentIds.Add(componentIndex);
+                    _batteryReserveComponentStoredEnergyWattSeconds.Add(battery.StoredEnergyWattSeconds);
+                    _batteryReserveComponentCapacityWattSeconds.Add(battery.CapacityWattSeconds);
+                    _batteryReserveComponentMinDischargeEfficiency.Add(dischargeEfficiency);
+                    _batteryReserveComponentPowerLimitedGridEnergyWattSeconds.Add(powerLimitedGridEnergyWattSeconds);
+                    _batteryReserveComponentWirelessAvailableEnergyWattSeconds.Add(0f);
+                    _batteryReserveComponentReservedWirelessEnergyWattSeconds.Add(0f);
+                    _batteryReserveComponentStates.Add(0);
+                    continue;
+                }
+
+                _batteryReserveComponentStoredEnergyWattSeconds[cacheIndex] += battery.StoredEnergyWattSeconds;
+                _batteryReserveComponentCapacityWattSeconds[cacheIndex] += battery.CapacityWattSeconds;
+                _batteryReserveComponentMinDischargeEfficiency[cacheIndex] = math.min(
+                    _batteryReserveComponentMinDischargeEfficiency[cacheIndex],
+                    dischargeEfficiency);
+                _batteryReserveComponentPowerLimitedGridEnergyWattSeconds[cacheIndex] += powerLimitedGridEnergyWattSeconds;
+            }
+
+            int componentCount = _batteryReserveComponentIds.Count;
+            for (int cacheIndex = 0; cacheIndex < componentCount; cacheIndex++)
+            {
+                float storedEnergyWattSeconds = _batteryReserveComponentStoredEnergyWattSeconds[cacheIndex];
+                float capacityWattSeconds = _batteryReserveComponentCapacityWattSeconds[cacheIndex];
+                bool reserveActive = ResolveBatteryEmergencyReserveActive(
+                    storedEnergyWattSeconds,
+                    capacityWattSeconds);
+                float reserveSafeGridEnergyWattSeconds = reserveActive
+                    ? 0f
+                    : math.max(
+                        0f,
+                        (storedEnergyWattSeconds - (capacityWattSeconds * BatteryEmergencyReserveThreshold)) *
+                        math.max(0.1f, _batteryReserveComponentMinDischargeEfficiency[cacheIndex]));
+                float wirelessAvailableEnergyWattSeconds = math.min(
+                    math.max(0f, _batteryReserveComponentPowerLimitedGridEnergyWattSeconds[cacheIndex]),
+                    reserveSafeGridEnergyWattSeconds);
+                _batteryReserveComponentWirelessAvailableEnergyWattSeconds[cacheIndex] = wirelessAvailableEnergyWattSeconds;
+                _batteryReserveComponentStates[cacheIndex] = reserveActive ? (byte)1 : (byte)0;
+                _cachedWirelessToolAvailableEnergyWattSeconds += wirelessAvailableEnergyWattSeconds;
+            }
+        }
+
+        private void EnsureBatteryReserveComponentCacheCapacity(int componentCapacity)
+        {
+            int safeCapacity = math.max(0, componentCapacity);
+            if (_batteryReserveComponentIds.Capacity < safeCapacity)
+                _batteryReserveComponentIds.Capacity = safeCapacity;
+            if (_batteryReserveComponentStoredEnergyWattSeconds.Capacity < safeCapacity)
+                _batteryReserveComponentStoredEnergyWattSeconds.Capacity = safeCapacity;
+            if (_batteryReserveComponentCapacityWattSeconds.Capacity < safeCapacity)
+                _batteryReserveComponentCapacityWattSeconds.Capacity = safeCapacity;
+            if (_batteryReserveComponentMinDischargeEfficiency.Capacity < safeCapacity)
+                _batteryReserveComponentMinDischargeEfficiency.Capacity = safeCapacity;
+            if (_batteryReserveComponentPowerLimitedGridEnergyWattSeconds.Capacity < safeCapacity)
+                _batteryReserveComponentPowerLimitedGridEnergyWattSeconds.Capacity = safeCapacity;
+            if (_batteryReserveComponentWirelessAvailableEnergyWattSeconds.Capacity < safeCapacity)
+                _batteryReserveComponentWirelessAvailableEnergyWattSeconds.Capacity = safeCapacity;
+            if (_batteryReserveComponentReservedWirelessEnergyWattSeconds.Capacity < safeCapacity)
+                _batteryReserveComponentReservedWirelessEnergyWattSeconds.Capacity = safeCapacity;
+            if (_batteryReserveComponentStates.Capacity < safeCapacity)
+                _batteryReserveComponentStates.Capacity = safeCapacity;
+        }
+
+        private int FindBatteryReserveComponentCacheIndex(int componentIndex)
+        {
+            int componentCount = _batteryReserveComponentIds.Count;
+            for (int cacheIndex = 0; cacheIndex < componentCount; cacheIndex++)
+            {
+                if (_batteryReserveComponentIds[cacheIndex] == componentIndex)
+                    return cacheIndex;
+            }
+
+            return -1;
+        }
+
+        private bool TryGetCachedBatteryEmergencyReserveActive(int componentIndex, out bool reserveActive)
+        {
+            reserveActive = false;
+            int cacheIndex = FindBatteryReserveComponentCacheIndex(componentIndex);
+            if (cacheIndex < 0 || cacheIndex >= _batteryReserveComponentStates.Count)
+                return false;
+
+            reserveActive = _batteryReserveComponentStates[cacheIndex] != 0;
+            return true;
         }
 
         private static BatteryDispatchResult ResolveBatteryDispatchRecord(
@@ -2130,7 +2650,26 @@ namespace Hecton8.Power
                 if (battery == null)
                     continue;
 
-                battery.CommitResolvedDispatch();
+                int chargeConsumerIndex = batteryIndex < _batteryChargeConsumerIndices.Count
+                    ? _batteryChargeConsumerIndices[batteryIndex]
+                    : -1;
+                if (chargeConsumerIndex >= 0 && !_logisticsGraph.IsConsumerPowered(chargeConsumerIndex))
+                {
+                    battery.ResetDispatchPlan();
+                }
+                else if (chargeConsumerIndex >= 0 && battery.PlannedGridPowerWatts < -0.0001f)
+                {
+                    float chargeServiceRatio = 1f;
+                    if (_logisticsGraph.TryGetConsumerVoltageSupplyRatio(chargeConsumerIndex, out float resolvedServiceRatio))
+                        chargeServiceRatio = resolvedServiceRatio;
+
+                    battery.CommitResolvedDispatch(chargeServiceRatio);
+                }
+                else
+                {
+                    battery.CommitResolvedDispatch();
+                }
+
                 _totalBatteryStoredEnergyWattSeconds += battery.StoredEnergyWattSeconds;
                 _totalBatteryCapacityWattSeconds += battery.CapacityWattSeconds;
             }
@@ -2323,8 +2862,11 @@ namespace Hecton8.Power
             return consumer is BaseModule || consumer is SubmarineElectrolysisModule;
         }
 
-        private float ResolveEmergencyReservedDemandWatts()
+        private float ResolveEmergencyReservedDemandWatts(int componentIndex)
         {
+            if (componentIndex < 0)
+                return 0f;
+
             float demandWatts = 0f;
             int consumerCount = _consumerRefs.Count;
             for (int consumerIndex = 0; consumerIndex < consumerCount; consumerIndex++)
@@ -2332,6 +2874,12 @@ namespace Hecton8.Power
                 IPowerComponent consumer = _consumerRefs[consumerIndex];
                 if (consumer == null)
                     continue;
+
+                if (consumerIndex >= _consumerNodeIndices.Count ||
+                    _logisticsGraph.GetNodeComponentId(_consumerNodeIndices[consumerIndex]) != componentIndex)
+                {
+                    continue;
+                }
 
                 if ((ResolveConsumerFlags(consumer) & LogisticsConsumerFlags.EmergencyReserved) == 0)
                     continue;

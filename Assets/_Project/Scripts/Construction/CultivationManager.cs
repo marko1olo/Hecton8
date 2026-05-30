@@ -316,8 +316,15 @@ namespace Hecton8.Construction
             for (int i = 0; i < _slots.Length && written < copyCount; i++)
             {
                 CultivationSlotState slot = _slots[i];
-                items[written] = resolvedCatalog != null ? resolvedCatalog.FindByHash(slot.SeedItemHashId) : null;
-                quantities[written] = slot.SeedItemHashId != 0 ? 1 : 0;
+                if (slot.SeedItemHashId == 0)
+                    continue;
+
+                ItemData item = resolvedCatalog != null ? resolvedCatalog.FindByHash(slot.SeedItemHashId) : null;
+                if (item == null)
+                    continue;
+
+                items[written] = item;
+                quantities[written] = 1;
                 written++;
             }
 

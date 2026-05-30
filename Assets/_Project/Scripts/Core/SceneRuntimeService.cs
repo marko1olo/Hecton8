@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using Hecton8.Bootstrap;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
@@ -55,6 +56,7 @@ namespace Hecton8.Core
         private static readonly int _GamePausedId = Shader.PropertyToID("_GamePaused");
         private static readonly Color _TransitionAbyssColor = new Color(0.002f, 0.004f, 0.009f, 1f);
         private static readonly Color _TerminalBootTextColor = new Color(0.38f, 0.84f, 0.88f, 0.82f);
+        private static readonly double _stopwatchTicksToMilliseconds = 1000.0d / Stopwatch.Frequency;
         private static readonly byte[] _TerminalBootNeuralInterfaceBytes =
         {
             (byte)'L', (byte)'O', (byte)'A', (byte)'D', (byte)'I', (byte)'N', (byte)'G', (byte)' ',
@@ -624,7 +626,7 @@ namespace Hecton8.Core
             if (!_cinematicTransitionActive)
                 return;
 
-            double solveStartTime = UnityEngine.Time.realtimeSinceStartupAsDouble;
+            long solveStartTicks = Stopwatch.GetTimestamp();
             _cinematicTransitionElapsed = math.min(
                 TransitionDissolveSeconds,
                 _cinematicTransitionElapsed + math.max(0f, unscaledDeltaTime));
@@ -646,7 +648,7 @@ namespace Hecton8.Core
 
             SetTransitionDitherCoverage(1f);
             UpdateTerminalBootOverlay();
-            PublishTransitionSolveBudgetWarningIfNeeded(solveStartTime);
+            PublishTransitionSolveBudgetWarningIfNeeded(solveStartTicks);
         }
 
         private async Awaitable CompleteMainMenuCinematicTransitionAsync(Scene previousScene, string loadedSceneName)
@@ -690,7 +692,7 @@ namespace Hecton8.Core
             float elapsed = 0f;
             while (Application.isPlaying && elapsed < TransitionDissolveSeconds)
             {
-                double solveStartTime = UnityEngine.Time.realtimeSinceStartupAsDouble;
+                long solveStartTicks = Stopwatch.GetTimestamp();
                 elapsed += math.max(0f, ResolveTransitionUnscaledDeltaTime());
                 float normalized = TransitionDissolveSeconds > 0f
                     ? math.saturate(elapsed / TransitionDissolveSeconds)
@@ -703,7 +705,7 @@ namespace Hecton8.Core
                 if (_transitionDitherMaterial == null)
                     _transitionOverlayGroup.alpha = 1f - eased;
 
-                PublishTransitionSolveBudgetWarningIfNeeded(solveStartTime);
+                PublishTransitionSolveBudgetWarningIfNeeded(solveStartTicks);
                 await AwaitableDebtMonitor.NextFrameAsync(destroyCancellationToken);
             }
 
@@ -751,12 +753,16 @@ namespace Hecton8.Core
             ResetWorldEntryFreezeState();
         }
 
-        private void PublishTransitionSolveBudgetWarningIfNeeded(double solveStartTime)
+        private void PublishTransitionSolveBudgetWarningIfNeeded(long solveStartTicks)
         {
             if (_transitionPerformanceWarningPublished || !Application.isPlaying)
                 return;
 
-            double elapsedMilliseconds = (UnityEngine.Time.realtimeSinceStartupAsDouble - solveStartTime) * 1000.0d;
+            long elapsedTicks = Stopwatch.GetTimestamp() - solveStartTicks;
+            if (elapsedTicks <= 0L)
+                return;
+
+            double elapsedMilliseconds = elapsedTicks * _stopwatchTicksToMilliseconds;
             if (elapsedMilliseconds < TransitionSolveTelemetryThresholdMs)
                 return;
 

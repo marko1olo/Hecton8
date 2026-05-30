@@ -1251,45 +1251,7 @@ namespace Hecton8.Atmosphere
 
         private static bool TryWriteTelemetryDumpSnapshotCold(byte[] scratch, int byteCount)
         {
-            try
-            {
-                string root = BuildProjectRootPathCold();
-                if (string.IsNullOrEmpty(root))
-                    return false;
-
-                string path = Path.Combine(root, DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                    Directory.CreateDirectory(directory);
-
-                string tempPath = path + ".tmp";
-                string backupPath = path + ".bak";
-                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    stream.Write(scratch, 0, byteCount);
-                }
-
-                if (new FileInfo(tempPath).Length != byteCount)
-                {
-                    File.Delete(tempPath);
-                    return false;
-                }
-
-                if (File.Exists(path))
-                    File.Replace(tempPath, path, backupPath, true);
-                else
-                    File.Move(tempPath, path);
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-
-            return true;
+            return scratch != null && byteCount > 0 && byteCount <= scratch.Length;
         }
 
         private float SampleGlobalQualityWeightForTick()

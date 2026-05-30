@@ -1,0 +1,22 @@
+﻿{
+    "agent":  "1405",
+    "timestamp":  "2026-05-28T04:20:34.7185283+04:00",
+    "cpuLoadSamplesPercent":  [
+                                  100,
+                                  100,
+                                  100
+                              ],
+    "cpuLoadMaxPercent":  100,
+    "compilerProcessCount":  1,
+    "compilerProcesses":  [
+                              {
+                                  "ProcessName":  "dotnet",
+                                  "Id":  40436,
+                                  "CPU":  440.484375,
+                                  "StartTime":  "\/Date(1779926711519)\/"
+                              }
+                          ],
+    "launched":  false,
+    "reason":  "BLOCKED_BY_CONTENTION",
+    "rule":  "No dotnet build when CPU \u003e 50 or dotnet/csc/MSBuild/VBCSCompiler is active."
+}

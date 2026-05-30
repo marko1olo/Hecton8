@@ -1,0 +1,38 @@
+Agent: 1420
+Domain: ECHELON 6 HABITAT & VEHICLES / Submarine Navigation (Auto-Level)
+Event: targeted C# build gate after SubmarineKinematicConfig by-value snapshot patch
+Date: 2026-05-28
+
+Gate sample:
+CPU_AVG=64.45
+COMPILERS=none
+
+Final recheck:
+CPU_AVG=50.87
+COMPILERS=dotnet:68208
+
+Decision:
+dotnet build was not launched because the first CPU_AVG exceeded the >50% Compilation Resource Throttling rule and the final recheck still had CPU above 50% with an active dotnet process.
+
+Static verification completed before this gate:
+stale Configs array job matches=0
+brace balance:
+SubmarineAutoLevelBallastController.cs 384/384
+SubmarineDynamicsRuntime.cs 201/201
+SubmarineDynamicsRuntime_Gyroscopes.cs 69/69
+SubmarineAutopilotSdfNavigator.cs 251/251
+SubmarineDynamicsContracts.cs 145/145
+
+Zero-GC scan over current modified runtime/job files:
+new Native*=0
+Allocator.Persistent=0
+foreach=0
+string.Format=0
+.ToString()=0
+LINQ .Where/.Select/.ToList/.ToArray=0
+interpolated strings=0
+binary low-end switches=0
+
+Current source hashes:
+Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs E01F2FE2E15DE7C6682489B18BEB7CC4D996622B142DEFEE81344B2D6973B801
+Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs 953772C2292E6151388D02C428FCABAC6B87774F87F8DAA6156224D5C73A3BFA

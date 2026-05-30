@@ -54,7 +54,9 @@ namespace Hecton8.World
                 return existing.HoleId;
             }
 
-            EnsureTerrainHoleCapacity(_terrainHoleCount + 1);
+            if (!HasTerrainHoleCapacity(_terrainHoleCount + 1))
+                return InvalidTerrainHoleId;
+
             int transientCount = _terrainHoleCount - _persistentTerrainHoleCount;
             if (transientCount > 0)
             {
@@ -214,7 +216,13 @@ namespace Hecton8.World
                 return;
             }
 
-            EnsureTerrainHoleCapacity(_persistentTerrainHoleCount + matchingSectionCount);
+            if (!HasTerrainHoleCapacity(_persistentTerrainHoleCount + matchingSectionCount))
+            {
+                ClearArtificialInteriorState();
+                ClearTransientMegaWreckInteriorHoles(currentTransientCount);
+                return;
+            }
+
             int newHash = ComputeMegaWreckInteriorMaskHash(wreckId);
             if (currentTransientCount == matchingSectionCount && _megaWreckInteriorMaskHash == newHash)
                 return;
@@ -361,32 +369,20 @@ namespace Hecton8.World
 
         /// <summary>
 
-        private void EnsureTerrainHoleCapacity(int requiredCount)
+        private bool HasTerrainHoleCapacity(int requiredCount)
         {
             if (_terrainHoleRecords != null && _terrainHoleRecords.Length >= requiredCount)
-                return;
+                return true;
 
-            int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(4, requiredCount));
-            // COLD ALLOC: TerrainHoleRecord[nextCapacity] - terrain-hole registry growth - owner: HectonMapMagicVegetationBridge
-            TerrainHoleRecord[] expanded = new TerrainHoleRecord[nextCapacity];
-            if (_terrainHoleRecords != null && _terrainHoleCount > 0)
-                Array.Copy(_terrainHoleRecords, expanded, _terrainHoleCount);
-
-            _terrainHoleRecords = expanded;
+            return false;
         }
 
-        private static void EnsureTerrainHoleStreamingCapacity(ref TerrainHoleStreamingRecord[] cache, int requiredCount)
+        private static bool HasTerrainHoleStreamingCapacity(TerrainHoleStreamingRecord[] cache, int requiredCount)
         {
             if (cache != null && cache.Length >= requiredCount)
-                return;
+                return true;
 
-            int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(4, requiredCount));
-            // COLD ALLOC: TerrainHoleStreamingRecord[nextCapacity] - terrain-hole streaming snapshot growth - owner: HectonMapMagicVegetationBridge
-            TerrainHoleStreamingRecord[] expanded = new TerrainHoleStreamingRecord[nextCapacity];
-            if (cache != null && cache.Length > 0)
-                Array.Copy(cache, expanded, cache.Length);
-
-            cache = expanded;
+            return false;
         }
 
         private static float EstimateHorizontalHalfExtent(float sizeX, float sizeZ)
@@ -409,7 +405,12 @@ namespace Hecton8.World
                 return;
             }
 
-            EnsureTerrainHoleStreamingCapacity(ref _terrainHoleStreamingRecords, _terrainHoleCount);
+            if (!HasTerrainHoleStreamingCapacity(_terrainHoleStreamingRecords, _terrainHoleCount))
+            {
+                MarkAllTileTerrainHolesDirty();
+                return;
+            }
+
             if (!WriteTerrainHoleRecordsNativeCache())
             {
                 MarkAllTileTerrainHolesDirty();
@@ -1007,29 +1008,20 @@ namespace Hecton8.World
             state.TerrainHolesDirty = true;
         }
 
-        private void EnsureTileTerrainHoleMaskCapacity(TileRuntimeState state)
+        private bool TryPrepareTileTerrainHoleMaskHot(TileRuntimeState state)
         {
-            if (state == null)
-                return;
+            if (!TryEnsureTileTerrainHoleNativeMaskCapacity(state, out int safeResolution))
+                return false;
 
-            int safeResolution = Mathf.Max(0, state.HolesResolution);
-            int safeLength = safeResolution > 0 ? safeResolution * safeResolution : 0;
-            if (safeLength <= 0)
-            {
-                ReleaseVegetationMemoryBuffer(ref state.TerrainHoleMaskHandle);
-                state.TerrainHoleMaskCount = 0;
-                state.TerrainHoleMaskManaged = null;
-                return;
-            }
+            return state.TerrainHoleMaskManaged != null &&
+                   state.TerrainHoleMaskManaged.GetLength(0) == safeResolution &&
+                   state.TerrainHoleMaskManaged.GetLength(1) == safeResolution;
+        }
 
-            if (state.TileNativeCacheSlot < 0 ||
-                !EnsureAggregateBuffer(
-                    ref state.TerrainHoleMaskHandle,
-                    ResolveTileTerrainHoleMaskBufferId(state.TileNativeCacheSlot),
-                    safeLength))
-                return;
-
-            state.TerrainHoleMaskCount = safeLength;
+        private bool EnsureTileTerrainHoleMaskCapacityCold(TileRuntimeState state)
+        {
+            if (!TryEnsureTileTerrainHoleNativeMaskCapacity(state, out int safeResolution))
+                return false;
 
             if (state.TerrainHoleMaskManaged == null ||
                 state.TerrainHoleMaskManaged.GetLength(0) != safeResolution ||
@@ -1038,6 +1030,35 @@ namespace Hecton8.World
                 // COLD ALLOC: bool[safeResolution,safeResolution] - reusable TerrainData.SetHolesDelayLOD staging buffer for one MapMagic tile - owner: HectonMapMagicVegetationBridge
                 state.TerrainHoleMaskManaged = new bool[safeResolution, safeResolution];
             }
+
+            return true;
+        }
+
+        private bool TryEnsureTileTerrainHoleNativeMaskCapacity(TileRuntimeState state, out int safeResolution)
+        {
+            safeResolution = 0;
+            if (state == null)
+                return false;
+
+            safeResolution = Mathf.Max(0, state.HolesResolution);
+            int safeLength = safeResolution > 0 ? safeResolution * safeResolution : 0;
+            if (safeLength <= 0)
+            {
+                ReleaseVegetationMemoryBuffer(ref state.TerrainHoleMaskHandle);
+                state.TerrainHoleMaskCount = 0;
+                state.TerrainHoleMaskManaged = null;
+                return false;
+            }
+
+            if (state.TileNativeCacheSlot < 0 ||
+                !EnsureAggregateBuffer(
+                    ref state.TerrainHoleMaskHandle,
+                    ResolveTileTerrainHoleMaskBufferId(state.TileNativeCacheSlot),
+                    safeLength))
+                return false;
+
+            state.TerrainHoleMaskCount = safeLength;
+            return true;
         }
 
         private void TryScheduleTerrainHoleJobs()
@@ -1062,7 +1083,9 @@ namespace Hecton8.World
                 }
 
                 state.HolesResolution = state.TerrainData.holesResolution;
-                EnsureTileTerrainHoleMaskCapacity(state);
+                if (!TryPrepareTileTerrainHoleMaskHot(state))
+                    continue;
+
                 if (state.TerrainHoleMaskHandle.BufferID == 0u ||
                     state.TerrainHoleMaskCount <= 0 ||
                     state.HolesResolution <= 0)

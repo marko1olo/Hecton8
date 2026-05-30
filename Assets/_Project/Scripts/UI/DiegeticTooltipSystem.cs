@@ -11,6 +11,7 @@ using Hecton8.UI.Diegetic.Contracts;
 using Hecton8.World;
 using TMPro;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -1546,7 +1547,7 @@ namespace Hecton8.UI
             DumpBlackBox();
         }
 
-        private void DumpBlackBox()
+        private unsafe void DumpBlackBox()
         {
             IDataVault vault = _dataVault;
             if (_blackBoxDumped ||
@@ -1559,35 +1560,41 @@ namespace Hecton8.UI
             }
 
             _blackBoxDumped = true;
+            NativeArray<byte> payload = default;
             try
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string dumpPath = Path.Combine(projectRoot, DumpRelativePath);
-                Directory.CreateDirectory(Path.GetDirectoryName(dumpPath));
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                int writtenCount = math.min(_blackBoxWrittenCount, BlackBoxCapacity);
+                const int headerBytes = 12;
+                const int rowBytes = 32;
+                int byteCount = headerBytes + (writtenCount * rowBytes);
+                payload = new NativeArray<byte>(
+                    byteCount,
+                    Allocator.Temp,
+                    NativeArrayOptions.UninitializedMemory);
+
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                Span<byte> header = new Span<byte>(payloadPtr, headerBytes);
+                WriteIntLittleEndian(header.Slice(0, 4), _blackBoxCursor);
+                WriteIntLittleEndian(header.Slice(4, 4), BlackBoxCapacity);
+                WriteIntLittleEndian(header.Slice(8, 4), _blackBoxWrittenCount);
+
+                int firstIndex = writtenCount >= BlackBoxCapacity ? _blackBoxCursor : 0;
+                for (int i = 0; i < writtenCount; i++)
                 {
-                    Span<byte> header = stackalloc byte[12];
-                    WriteIntLittleEndian(header.Slice(0, 4), _blackBoxCursor);
-                    WriteIntLittleEndian(header.Slice(4, 4), BlackBoxCapacity);
-                    WriteIntLittleEndian(header.Slice(8, 4), _blackBoxWrittenCount);
-                    stream.Write(header);
+                    int entryIndex = firstIndex + i;
+                    if (entryIndex >= BlackBoxCapacity)
+                        entryIndex -= BlackBoxCapacity;
 
-                    int writtenCount = math.min(_blackBoxWrittenCount, BlackBoxCapacity);
-                    int firstIndex = writtenCount >= BlackBoxCapacity ? _blackBoxCursor : 0;
-                    Span<byte> row = stackalloc byte[32];
-                    for (int i = 0; i < writtenCount; i++)
-                    {
-                        int entryIndex = firstIndex + i;
-                        if (entryIndex >= BlackBoxCapacity)
-                            entryIndex -= BlackBoxCapacity;
+                    if (!TryReadBlackBoxEntry(vault, entryIndex, out TooltipBlackBoxEntry entry))
+                        entry = default;
 
-                        if (!TryReadBlackBoxEntry(vault, entryIndex, out TooltipBlackBoxEntry entry))
-                            entry = default;
-
-                        WriteBlackBoxEntry(row, in entry);
-                        stream.Write(row);
-                    }
+                    Span<byte> row = new Span<byte>(payloadPtr + headerBytes + (i * rowBytes), rowBytes);
+                    WriteBlackBoxEntry(row, in entry);
                 }
+
+                _blackBoxDumped = NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, byteCount);
             }
             catch (IOException)
             {
@@ -1612,6 +1619,11 @@ namespace Hecton8.UI
             catch (NotSupportedException)
             {
                 _blackBoxDumped = false;
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 

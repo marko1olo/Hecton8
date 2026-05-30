@@ -45,6 +45,10 @@ namespace Hecton8.UI
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_1309_TerminalOS.bin";
         private const string DumpMirrorRelativePath = "Docs/AgentLogs/Dump_1309_TerminalOSMirror.h8dump";
         private const string DecryptionDumpRelativePath = "Docs/AgentLogs/Dump_1309_TerminalDecryption.bin";
+        private const uint TerminalDumpMagic = 0x544F5338u; // 8SOT
+        private const uint TerminalDumpVersion = 1u;
+        private const int TerminalDumpHeaderBytes = 32;
+        private const uint SourceHash = 0x544F5331u; // 1SOT
         private const BufferID TerminalStatesBufferId = (BufferID)71360;
         private const BufferID ScreenCommandsBufferId = (BufferID)71361;
         private const BufferID GlyphUvsBufferId = (BufferID)71362;
@@ -922,9 +926,9 @@ namespace Hecton8.UI
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 _csvFullPath = Path.GetFullPath(Path.Combine(projectRoot, layoutCsvRelativePath));
                 _decryptionCsvFullPath = Path.GetFullPath(Path.Combine(projectRoot, decryptionCsvRelativePath));
-                _dumpFullPath = Path.GetFullPath(Path.Combine(projectRoot, DumpRelativePath));
-                _dumpMirrorFullPath = Path.GetFullPath(Path.Combine(projectRoot, DumpMirrorRelativePath));
-                _decryptionDumpFullPath = Path.GetFullPath(Path.Combine(projectRoot, DecryptionDumpRelativePath));
+                _dumpFullPath = DumpRelativePath;
+                _dumpMirrorFullPath = DumpMirrorRelativePath;
+                _decryptionDumpFullPath = DecryptionDumpRelativePath;
                 EnsureTerminalProjectionColdPaths(projectRoot);
             }
 
@@ -1503,24 +1507,28 @@ namespace Hecton8.UI
             if (clearCount > 0)
             {
                 DecryptionPuzzleDTO* puzzlePtr = (DecryptionPuzzleDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(puzzles);
-                new ClearDecryptionFlagsJob
+                ClearDecryptionFlagsJob clearJob = new ClearDecryptionFlagsJob
                 {
                     Puzzles = puzzlePtr,
                     PuzzleCount = clearCount
-                }.Run(clearCount);
+                };
+                for (int index = 0; index < clearCount; index++)
+                    clearJob.Execute(index);
             }
 
             int generateCount = math.min(clearCount, decryptionTerminals.Length);
             if (generateCount > 0)
             {
-                new GenerateMockPuzzleDataJob
+                GenerateMockPuzzleDataJob generateJob = new GenerateMockPuzzleDataJob
                 {
                     Puzzles = puzzles,
                     Terminals = decryptionTerminals,
                     Planes = terminalPlanes,
                     PuzzleCount = generateCount,
                     BasePlayerFrequency = decryptionBaseFrequency
-                }.Run(generateCount);
+                };
+                for (int index = 0; index < generateCount; index++)
+                    generateJob.Execute(index);
             }
             _decryptionTelemetryCursor = 0;
             _lastDecryptionTelemetryFrame = -1;
@@ -3730,12 +3738,13 @@ namespace Hecton8.UI
                 !TryReadTerminalTelemetryDumpShape(out int telemetryLength, out int telemetryRingLength, out int telemetryCursor))
                 return;
 
-            _blackBoxDumped = true;
             try
             {
-                WriteBlackBoxDump(_dumpFullPath, faultFlags, telemetryLength, telemetryRingLength, telemetryCursor);
-                if (!string.IsNullOrEmpty(_dumpMirrorFullPath))
+                bool primaryWritten = WriteBlackBoxDump(_dumpFullPath, faultFlags, telemetryLength, telemetryRingLength, telemetryCursor);
+                if (primaryWritten && !string.IsNullOrEmpty(_dumpMirrorFullPath))
                     WriteBlackBoxDump(_dumpMirrorFullPath, faultFlags, telemetryLength, telemetryRingLength, telemetryCursor);
+
+                _blackBoxDumped = primaryWritten;
             }
             catch (IOException exception)
             {
@@ -3798,16 +3807,109 @@ namespace Hecton8.UI
             return _vault != null && !_vault.IsCompactionFenceActive;
         }
 
-        private unsafe void WriteBlackBoxDump(string path, uint faultFlags, int telemetryLength, int telemetryRingLength, int telemetryCursor)
+        private unsafe bool WriteBlackBoxDump(string path, uint faultFlags, int telemetryLength, int telemetryRingLength, int telemetryCursor)
         {
-            _ = path;
-            _ = faultFlags;
-            _ = telemetryLength;
-            _ = telemetryRingLength;
-            _ = telemetryCursor;
+            if (string.IsNullOrEmpty(path) ||
+                telemetryLength <= 0 ||
+                telemetryRingLength <= 0 ||
+                !TryReadVaultBuffer(in _telemetryRingHandle, out NativeArray<TerminalTelemetryEntry> telemetryRing) ||
+                !telemetryRing.IsCreated ||
+                telemetryRing.Length <= 0)
+            {
+                return false;
+            }
+
+            int entrySize = UnsafeUtility.SizeOf<TerminalTelemetryEntry>();
+            int ringLength = math.min(telemetryRingLength, telemetryRing.Length);
+            int count = math.min(math.min(telemetryLength, ringLength), TerminalOsConstants.BlackBoxFrameCount);
+            if (entrySize != 64 || count <= 0)
+                return false;
+
+            int byteCount = TerminalDumpHeaderBytes + (count * entrySize);
+            NativeArray<byte> payload = default;
+            try
+            {
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(TerminalOsRuntime),
+                    "terminalTelemetryBlackBoxPayload");
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteUInt32LittleEndian(target, 0, TerminalDumpMagic);
+                WriteUInt32LittleEndian(target, 4, TerminalDumpVersion);
+                WriteUInt32LittleEndian(target, 8, faultFlags);
+                WriteInt32LittleEndian(target, 12, count);
+                WriteInt32LittleEndian(target, 16, ringLength);
+                WriteInt32LittleEndian(target, 20, telemetryCursor);
+                WriteInt32LittleEndian(target, 24, entrySize);
+                WriteUInt32LittleEndian(target, 28, SourceHash);
+
+                int start = telemetryCursor - count;
+                while (start < 0)
+                    start += ringLength;
+                if (start >= ringLength)
+                    start %= ringLength;
+
+                int offset = TerminalDumpHeaderBytes;
+                for (int i = 0; i < count; i++)
+                {
+                    int index = start + i;
+                    if (index >= ringLength)
+                        index -= ringLength;
+
+                    WriteTerminalTelemetryEntry(target, offset, telemetryRing[index]);
+                    offset += entrySize;
+                }
+
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(TerminalOsRuntime),
+                    "terminalTelemetryBlackBoxPayload");
+            }
         }
 
         private static void WriteUInt32LittleEndian(Span<byte> destination, int offset, uint value)
+        {
+            destination[offset] = unchecked((byte)value);
+            destination[offset + 1] = unchecked((byte)(value >> 8));
+            destination[offset + 2] = unchecked((byte)(value >> 16));
+            destination[offset + 3] = unchecked((byte)(value >> 24));
+        }
+
+        private static unsafe void WriteTerminalTelemetryEntry(byte* destination, int offset, in TerminalTelemetryEntry entry)
+        {
+            WriteInt32LittleEndian(destination, offset, entry.Frame);
+            WriteInt32LittleEndian(destination, offset + 4, entry.TerminalCount);
+            WriteInt32LittleEndian(destination, offset + 8, entry.DirtyCount);
+            WriteInt32LittleEndian(destination, offset + 12, entry.DispatchedCount);
+            WriteFloatLittleEndian(destination, offset + 16, entry.FormatMainThreadMilliseconds);
+            WriteFloatLittleEndian(destination, offset + 20, entry.UploadMicroseconds);
+            WriteFloatLittleEndian(destination, offset + 24, entry.DispatchMicroseconds);
+            WriteUInt32LittleEndian(destination, offset + 28, entry.FaultFlags);
+            WriteUInt32LittleEndian(destination, offset + 32, entry.LayoutHash);
+            WriteUInt32LittleEndian(destination, offset + 36, entry.HoveredTerminalHash);
+            WriteFloatLittleEndian(destination, offset + 40, entry.LastPower01);
+            WriteFloatLittleEndian(destination, offset + 44, entry.LastDamage01);
+            WriteInt32LittleEndian(destination, offset + 48, entry.EvaluatedTerminals);
+            WriteInt32LittleEndian(destination, offset + 52, entry.FramesBetweenUpdates);
+            WriteFloatLittleEndian(destination, offset + 56, entry.IntersectionMicroseconds);
+            WriteFloatLittleEndian(destination, offset + 60, entry.GlobalQualityWeight);
+        }
+
+        private static unsafe void WriteFloatLittleEndian(byte* destination, int offset, float value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)BitConverter.SingleToInt32Bits(value)));
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, int offset, uint value)
         {
             destination[offset] = unchecked((byte)value);
             destination[offset + 1] = unchecked((byte)(value >> 8));
@@ -4189,10 +4291,76 @@ namespace Hecton8.UI
 
             private unsafe void WritePendingUnsafe()
             {
-                _hasPending = false;
+                int count = math.min(_pendingCount, _records.Length);
+                if (count <= 0 || string.IsNullOrEmpty(_path))
+                    return;
+
+                int entrySize = TerminalOsConstants.DecryptionTelemetryStrideBytes;
+                int byteCount = DumpHeaderBytes + (count * entrySize);
+                NativeArray<byte> payload = default;
+                try
+                {
+                    payload = NativeFaultDumpWriter.CreateTransientPayload(
+                        byteCount,
+                        nameof(TerminalOsRuntime),
+                        "terminalDecryptionBlackBoxPayload");
+                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    WriteUInt32LittleEndian(target, 0, DumpMagic);
+                    WriteUInt32LittleEndian(target, 4, DumpVersion);
+                    WriteUInt32LittleEndian(target, 8, _pendingFaultFlags);
+                    WriteInt32LittleEndian(target, 12, _pendingCursor);
+                    WriteInt32LittleEndian(target, 16, count);
+                    WriteInt32LittleEndian(target, 20, entrySize);
+
+                    int offset = DumpHeaderBytes;
+                    for (int i = 0; i < count; i++)
+                    {
+                        WriteDecryptionTelemetryEntry(target, offset, _records[i]);
+                        offset += entrySize;
+                    }
+
+                    NativeFaultDumpWriter.TryWriteAll(_path, payload, byteCount);
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(TerminalOsRuntime),
+                        "terminalDecryptionBlackBoxPayload");
+                }
             }
 
-            private static void WriteUInt32LittleEndian(Span<byte> destination, int offset, uint value)
+            private static unsafe void WriteDecryptionTelemetryEntry(byte* destination, int offset, in DecryptionTelemetryEntry entry)
+            {
+                WriteUInt32LittleEndian(destination, offset, entry.Frame);
+                WriteUInt32LittleEndian(destination, offset + 4, entry.PuzzleID);
+                WriteFloatLittleEndian(destination, offset + 8, entry.PlayerFrequency);
+                WriteFloatLittleEndian(destination, offset + 12, entry.PlayerPhase);
+                WriteFloatLittleEndian(destination, offset + 16, entry.TargetFrequency);
+                WriteFloatLittleEndian(destination, offset + 20, entry.TargetPhase);
+                WriteFloatLittleEndian(destination, offset + 24, entry.AlignmentAccuracy01);
+                WriteFloatLittleEndian(destination, offset + 28, entry.BurstMicroseconds);
+                WriteUInt32LittleEndian(destination, offset + 32, entry.Flags);
+                WriteUInt32LittleEndian(destination, offset + 36, entry.NodeHash);
+                WriteUInt32LittleEndian(destination, offset + 40, entry.TerminalHash);
+                WriteUInt32LittleEndian(destination, offset + 44, entry.FaultFlags);
+                WriteUInt32LittleEndian(destination, offset + 48, 0u);
+                WriteUInt32LittleEndian(destination, offset + 52, 0u);
+                WriteUInt32LittleEndian(destination, offset + 56, 0u);
+                WriteUInt32LittleEndian(destination, offset + 60, 0u);
+            }
+
+            private static unsafe void WriteFloatLittleEndian(byte* destination, int offset, float value)
+            {
+                WriteUInt32LittleEndian(destination, offset, unchecked((uint)BitConverter.SingleToInt32Bits(value)));
+            }
+
+            private static unsafe void WriteInt32LittleEndian(byte* destination, int offset, int value)
+            {
+                WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+            }
+
+            private static unsafe void WriteUInt32LittleEndian(byte* destination, int offset, uint value)
             {
                 destination[offset] = unchecked((byte)value);
                 destination[offset + 1] = unchecked((byte)(value >> 8));

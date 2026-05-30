@@ -3203,7 +3203,6 @@ namespace Hecton.Localization
             try
             {
                 string docsPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs"));
-                Directory.CreateDirectory(docsPath);
                 int byteCount = UnsafeUtility.SizeOf<BabelTelemetryEntry>() * _telemetryFrames.Length;
                 byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_telemetryFrames);
                 WriteTelemetryDump(Path.Combine(docsPath, "Dump_SHINOBU_39.bin"), source, byteCount);
@@ -3220,8 +3219,7 @@ namespace Hecton.Localization
 
         private static unsafe void WriteTelemetryDump(string dumpPath, byte* source, int byteCount)
         {
-            using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-            stream.Write(new ReadOnlySpan<byte>(source, byteCount));
+            NativeFaultDumpWriter.TryWriteAll(dumpPath, new ReadOnlySpan<byte>(source, byteCount), byteCount);
         }
 
         private static void DisposeUtf8State()

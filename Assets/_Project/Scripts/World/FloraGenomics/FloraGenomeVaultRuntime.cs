@@ -630,7 +630,6 @@ namespace Hecton8.World
             string h8DumpPath = Path.Combine(dumpDirectory, "Dump_SHINOBU_08.h8dump");
             try
             {
-                Directory.CreateDirectory(dumpDirectory);
                 WriteBlackBoxDump(dumpPath, blackBox);
                 WriteBlackBoxDump(h8DumpPath, blackBox);
             }
@@ -644,10 +643,9 @@ namespace Hecton8.World
 
         private static unsafe void WriteBlackBoxDump(string path, NativeArray<FloraGenomeBlackBoxEntry> blackBox)
         {
-            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
             void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox);
             int byteCount = blackBox.Length * UnsafeUtility.SizeOf<FloraGenomeBlackBoxEntry>();
-            stream.Write(new ReadOnlySpan<byte>(ptr, byteCount));
+            NativeFaultDumpWriter.TryWriteAll(path, new ReadOnlySpan<byte>(ptr, byteCount), byteCount);
         }
 
         private static bool EnsureFloraGenomeVaultBuffer<T>(

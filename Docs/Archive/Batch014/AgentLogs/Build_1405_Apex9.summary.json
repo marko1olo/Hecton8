@@ -1,0 +1,23 @@
+﻿{
+    "agent":  "1405",
+    "phase":  "APEX9_FINAL_PREFLIGHT",
+    "timestampUtc":  "2026-05-28T00:48:01.8943335Z",
+    "cpuLoadSamplesPercent":  [
+                                  100,
+                                  100,
+                                  100
+                              ],
+    "cpuLoadMaxPercent":  100,
+    "compilerProcessCount":  1,
+    "compilerProcesses":  [
+                              {
+                                  "id":  53704,
+                                  "name":  "dotnet",
+                                  "cpu":  0.703125,
+                                  "startTime":  "2026-05-28T00:48:00.9177490Z"
+                              }
+                          ],
+    "buildLaunched":  false,
+    "buildDecision":  "BLOCKED_BY_CONTENTION",
+    "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/MSBuild/VBCSCompiler is active."
+}

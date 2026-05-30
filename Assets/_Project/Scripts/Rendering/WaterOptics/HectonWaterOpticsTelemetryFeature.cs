@@ -44,8 +44,8 @@ namespace Hecton8.Rendering.WaterOptics
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                if (!Application.isPlaying ||
-                    !IsTelemetryMarkerAllowed(_settings))
+                if (!IsTelemetryMarkerAllowed(_settings) ||
+                    !WaterOpticsRuntime.TryGetRuntimeInstance(out _))
                 {
                     return;
                 }
@@ -92,8 +92,12 @@ namespace Hecton8.Rendering.WaterOptics
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            if (!Application.isPlaying || _pass == null || !IsTelemetryMarkerAllowed(settings))
+            if (_pass == null ||
+                !IsTelemetryMarkerAllowed(settings) ||
+                !WaterOpticsRuntime.TryGetRuntimeInstance(out _))
+            {
                 return;
+            }
 
             CameraType cameraType = renderingData.cameraData.cameraType;
             if (cameraType == CameraType.Preview ||

@@ -3710,7 +3710,7 @@ namespace Hecton8.World
                     continue;
 
                 catalog.QueueWorldPrefabPrewarm(signedHashId);
-                if (catalog.TryGetLoadedWorldPrefab(signedHashId, out GameObject loadedPrefab))
+                if (catalog.PollLoadedWorldPrefab(signedHashId, out GameObject loadedPrefab))
                     _lootPrefabCache[i] = loadedPrefab;
             }
         }
@@ -4740,52 +4740,40 @@ namespace Hecton8.World
                 telemetryEntries.Length <= 0)
                 return false;
 
+            NativeArray<byte> payload = default;
             try
             {
-                string fullPath = Path.Combine(Application.dataPath, "..", BlackBoxDumpPath);
-                string directory = Path.GetDirectoryName(fullPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using FileStream stream = new FileStream(
-                    fullPath,
-                    FileMode.Create,
-                    FileAccess.Write,
-                    FileShare.Read,
-                    4096,
-                    FileOptions.WriteThrough);
-
                 int capacity = telemetryEntries.Length;
                 int count = math.min(_telemetryWrittenCount, capacity);
                 int start = count >= capacity
                     ? _telemetryCursor % capacity
                     : (_telemetryCursor - count + capacity) % capacity;
+                const int headerBytes = 16;
+                int byteCount = headerBytes + count * WreckBlackBoxEntrySizeBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(ProceduralWreckGenerator),
+                    "ProceduralWreckBlackBoxDumpPayload");
 
-                WriteUInt32LittleEndian(stream, WreckBlackBoxDumpMagic);
-                WriteInt32LittleEndian(stream, WreckBlackBoxEntrySizeBytes);
-                WriteInt32LittleEndian(stream, count);
-                WriteInt32LittleEndian(stream, _telemetryCursor);
-
-                for (int i = 0; i < count; i++)
+                unsafe
                 {
-                    int index = (start + i) % capacity;
-                    WreckTelemetryEntry entry = telemetryEntries[index];
-                    WriteInt32LittleEndian(stream, unchecked((int)entry.FrameIndex));
-                    WriteUInt32LittleEndian(stream, entry.EventHash);
-                    WriteUInt32LittleEndian(stream, entry.Seed);
-                    WriteUInt32LittleEndian(stream, entry.Flags);
-                    WriteFloatLittleEndian(stream, entry.Position.x);
-                    WriteFloatLittleEndian(stream, entry.Position.y);
-                    WriteFloatLittleEndian(stream, entry.Position.z);
-                    WriteInt32LittleEndian(stream, entry.DebrisCount);
-                    WriteInt32LittleEndian(stream, entry.ArtifactCount);
-                    WriteInt32LittleEndian(stream, entry.SealedCount);
-                    WriteInt32LittleEndian(stream, entry.RupturedCount);
-                    WriteFloatLittleEndian(stream, entry.Value0);
-                    WriteFloatLittleEndian(stream, entry.Value1);
+                    byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    WriteUInt32LittleEndian(bytes, 0, WreckBlackBoxDumpMagic);
+                    WriteInt32LittleEndian(bytes, 4, WreckBlackBoxEntrySizeBytes);
+                    WriteInt32LittleEndian(bytes, 8, count);
+                    WriteInt32LittleEndian(bytes, 12, _telemetryCursor);
+
+                    int cursor = headerBytes;
+                    for (int i = 0; i < count; i++)
+                    {
+                        int index = (start + i) % capacity;
+                        WreckTelemetryEntry entry = telemetryEntries[index];
+                        UnsafeUtility.CopyStructureToPtr(ref entry, bytes + cursor);
+                        cursor += WreckBlackBoxEntrySizeBytes;
+                    }
                 }
 
-                return true;
+                return NativeFaultDumpWriter.TryWriteAll(BlackBoxDumpPath, payload, byteCount);
             }
             catch (IOException)
             {
@@ -4803,26 +4791,26 @@ namespace Hecton8.World
             {
                 return false;
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(ProceduralWreckGenerator),
+                    "ProceduralWreckBlackBoxDumpPayload");
+            }
         }
 
-        private static void WriteInt32LittleEndian(FileStream stream, int value)
+        private static unsafe void WriteInt32LittleEndian(byte* data, int offset, int value)
         {
-            WriteUInt32LittleEndian(stream, unchecked((uint)value));
+            WriteUInt32LittleEndian(data, offset, unchecked((uint)value));
         }
 
-        private static void WriteFloatLittleEndian(FileStream stream, float value)
+        private static unsafe void WriteUInt32LittleEndian(byte* data, int offset, uint value)
         {
-            WriteUInt32LittleEndian(stream, math.asuint(value));
-        }
-
-        private static void WriteUInt32LittleEndian(FileStream stream, uint value)
-        {
-            Span<byte> bytes = stackalloc byte[4];
-            bytes[0] = (byte)value;
-            bytes[1] = (byte)(value >> 8);
-            bytes[2] = (byte)(value >> 16);
-            bytes[3] = (byte)(value >> 24);
-            stream.Write(bytes);
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+            data[offset + 2] = (byte)(value >> 16);
+            data[offset + 3] = (byte)(value >> 24);
         }
 
         private static int ResolveDebrisBudget(float qualityWeight01)

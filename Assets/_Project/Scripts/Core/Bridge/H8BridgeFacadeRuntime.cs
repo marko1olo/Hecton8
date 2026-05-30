@@ -862,12 +862,10 @@ namespace Hecton8.Core.Bridge
             }
 
             string path = ResolveDumpPath();
+            NativeArray<byte> payload = default;
+            const string dumpPayloadLabel = "h8BridgeFacadeTelemetryDumpPayload";
             try
             {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
                 int capacity = math.min(ringBuffer.Length, BlackBoxFrameCount);
                 int cursor = Volatile.Read(ref _blackBoxCursor);
                 if (cursor < 0)
@@ -888,20 +886,33 @@ namespace Hecton8.Core.Bridge
                     PayloadHash = payloadHash
                 };
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                int headerBytes = UnsafeUtility.SizeOf<H8FacadeTelemetryDumpHeader>();
+                int byteCount = headerBytes + (entryCount * entrySize);
+                payload = Hecton8.Core.NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(H8BridgeFacadeRuntime),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                UnsafeUtility.MemCpy(target, &header, headerBytes);
+                int writeCursor = headerBytes;
+                for (int i = 0; i < entryCount; i++)
                 {
-                    stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<H8FacadeTelemetryDumpHeader>()));
-                    for (int i = 0; i < entryCount; i++)
-                    {
-                        int index = (startIndex + i) % capacity;
-                        H8FacadeTelemetryEntry entry = ringBuffer[index];
-                        stream.Write(new ReadOnlySpan<byte>(&entry, entrySize));
-                    }
+                    int index = (startIndex + i) % capacity;
+                    H8FacadeTelemetryEntry entry = ringBuffer[index];
+                    UnsafeUtility.MemCpy(target + writeCursor, &entry, entrySize);
+                    writeCursor += entrySize;
                 }
+
+                Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(path, payload, writeCursor);
             }
             catch (Exception)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(PointerFenceFaultHash, H8BridgeHashes.DesignFacade, 0f);
+            }
+            finally
+            {
+                Hecton8.Core.NativeFaultDumpWriter.DisposeTransientPayload(ref payload, nameof(H8BridgeFacadeRuntime), dumpPayloadLabel);
             }
         }
 

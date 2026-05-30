@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Collections;
@@ -17,12 +16,7 @@ namespace Hecton8.AI.Pathfinding
         private const int MaxVoxelPathRawPathCapacity = 8192;
         private const int MaxVoxelPathWaypointCapacity = 4096;
         private const int MaxVoxelPathGridDimension = 96;
-#if UNITY_EDITOR
-        private const int DefaultVoxelPathCsvScratchBytes = 4096;
-        private const int MaxVoxelPathCsvScratchBytes = 65536;
-#endif
         private const int MaxVoxelPathProfileCapacity = 256;
-        private const string VoxelAStarDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
         private static readonly ulong VoxelPathProfileMutationGuardMask =
             PathFunnelMutationGuardBit(BufferID.ShinobuVoxelPathSpeciesProfiles) |
             PathFunnelMutationGuardBit(BufferID.ShinobuVoxelPathSpeciesProfileCount);
@@ -49,11 +43,6 @@ namespace Hecton8.AI.Pathfinding
         [SerializeField, Min(2), Tooltip("Mock SDF grid Z dimension until the real cave bake publishes a snapshot.")]
         private int _voxelPathGridZ = VoxelAStarConstants.DefaultGridZ;
 
-#if UNITY_EDITOR
-        [SerializeField, Min(1), Tooltip("Cold CSV scratch bytes for pathing profile ingestion.")]
-        private int _voxelPathCsvScratchBytes = DefaultVoxelPathCsvScratchBytes;
-#endif
-
         [SerializeField, Min(1), Tooltip("Cold native profile slots for fauna pathing profile authoring.")]
         private int _voxelPathProfileCapacity = 64;
 
@@ -72,9 +61,6 @@ namespace Hecton8.AI.Pathfinding
         private VaultGenerationHandle<VoxelSdfGridHeader> _voxelPathSdfHeaderHandle;
         private VaultGenerationHandle<VoxelPathingProfileDTO> _voxelPathSpeciesProfilesHandle;
         private VaultGenerationHandle<int> _voxelPathSpeciesProfileCountHandle;
-#if UNITY_EDITOR
-        private VaultGenerationHandle<byte> _voxelPathCsvScratchHandle;
-#endif
         private VaultGenerationHandle<int> _voxelPathClosedDebugHandle;
         private JobHandle _voxelAStarEvaluateHandle;
         private JobHandle _voxelAStarSmoothHandle;
@@ -83,6 +69,7 @@ namespace Hecton8.AI.Pathfinding
         private bool _voxelAStarSmoothScheduled;
         private uint _voxelAStarFrame;
         private uint _voxelAStarLastDumpFrame;
+        private uint _voxelAStarLastDumpHash;
         private uint _voxelAStarMockGridVersion = 1u;
         private long _voxelAStarEvaluateScheduleTicks;
         private long _voxelAStarSmoothScheduleTicks;
@@ -284,8 +271,16 @@ namespace Hecton8.AI.Pathfinding
         public bool TryLoadVoxelPathingProfiles(ReadOnlySpan<byte> csvBytes, out uint flags)
         {
             flags = 0u;
-            if (!_voxelAStarColdBootstrapped ||
-                !TryAcquirePathFunnelMutationGuard(VoxelPathProfileMutationGuardMask, out IDataVault guardVault))
+            if (!_voxelAStarColdBootstrapped)
+                return false;
+
+            int stagingCapacity = ResolveVoxelProfileCapacity();
+            Span<VoxelPathingProfileDTO> stagedProfiles = stackalloc VoxelPathingProfileDTO[stagingCapacity];
+            bool parsed = VoxelPathingProfileCsvParser.TryParse(csvBytes, stagedProfiles, out int written, out flags);
+            if (!parsed || written <= 0)
+                return false;
+
+            if (!TryAcquirePathFunnelMutationGuard(VoxelPathProfileMutationGuardMask, out IDataVault guardVault))
             {
                 return false;
             }
@@ -300,16 +295,20 @@ namespace Hecton8.AI.Pathfinding
                     !vault.TryResolveHandle(in _voxelPathSpeciesProfilesHandle, out NativeArray<VoxelPathingProfileDTO> profiles) ||
                     !vault.TryResolveHandle(in _voxelPathSpeciesProfileCountHandle, out NativeArray<int> profileCount) ||
                     !profiles.IsCreated ||
-                    profiles.Length < ResolveVoxelProfileCapacity() ||
                     !profileCount.IsCreated ||
                     profileCount.Length < 1)
                 {
                     return false;
                 }
 
-                bool parsed = VoxelPathingProfileCsvParser.TryParse(csvBytes, profiles, out int written, out flags);
-                profileCount[0] = written;
-                return parsed;
+                int copyCount = math.min(written, profiles.Length);
+                for (int i = 0; i < copyCount; i++)
+                    profiles[i] = stagedProfiles[i];
+                for (int i = copyCount; i < profiles.Length; i++)
+                    profiles[i] = default;
+
+                profileCount[0] = copyCount;
+                return copyCount > 0;
             }
             finally
             {
@@ -330,9 +329,6 @@ namespace Hecton8.AI.Pathfinding
             int waypointCapacity = ResolveVoxelWaypointCapacity();
             int nodeCapacity = ResolveVoxelGridCellCapacity();
             int profileCapacity = ResolveVoxelProfileCapacity();
-#if UNITY_EDITOR
-            int csvScratchBytes = ResolveVoxelCsvScratchBytes();
-#endif
             int closedDebugCapacity = math.max(2, nodeCapacity + 1);
 
             bool ready =
@@ -351,9 +347,6 @@ namespace Hecton8.AI.Pathfinding
                 EnsureVoxelAStarBuffer(vault, BufferID.ShinobuVoxelPathSdfHeader, 1, NativeArrayOptions.ClearMemory, ref _voxelPathSdfHeaderHandle, out _) &&
                 EnsureVoxelAStarBuffer(vault, BufferID.ShinobuVoxelPathSpeciesProfiles, profileCapacity, NativeArrayOptions.UninitializedMemory, ref _voxelPathSpeciesProfilesHandle, out _) &&
                 EnsureVoxelAStarBuffer(vault, BufferID.ShinobuVoxelPathSpeciesProfileCount, 1, NativeArrayOptions.ClearMemory, ref _voxelPathSpeciesProfileCountHandle, out _) &&
-#if UNITY_EDITOR
-                EnsureVoxelAStarBuffer(vault, BufferID.ShinobuVoxelPathCsvScratch, csvScratchBytes, NativeArrayOptions.UninitializedMemory, ref _voxelPathCsvScratchHandle, out _) &&
-#endif
                 EnsureVoxelAStarBuffer(vault, BufferID.ShinobuVoxelPathClosedDebug, closedDebugCapacity, NativeArrayOptions.UninitializedMemory, ref _voxelPathClosedDebugHandle, out _);
 
             if (!ready)
@@ -695,9 +688,6 @@ namespace Hecton8.AI.Pathfinding
             ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathSdfHeader, ref _voxelPathSdfHeaderHandle);
             ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathSpeciesProfiles, ref _voxelPathSpeciesProfilesHandle);
             ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathSpeciesProfileCount, ref _voxelPathSpeciesProfileCountHandle);
-#if UNITY_EDITOR
-            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathCsvScratch, ref _voxelPathCsvScratchHandle);
-#endif
             ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathClosedDebug, ref _voxelPathClosedDebugHandle);
         }
 
@@ -718,9 +708,6 @@ namespace Hecton8.AI.Pathfinding
             _voxelPathSdfHeaderHandle = default;
             _voxelPathSpeciesProfilesHandle = default;
             _voxelPathSpeciesProfileCountHandle = default;
-#if UNITY_EDITOR
-            _voxelPathCsvScratchHandle = default;
-#endif
             _voxelPathClosedDebugHandle = default;
             _voxelAStarColdBootstrapped = false;
         }
@@ -749,13 +736,6 @@ namespace Hecton8.AI.Pathfinding
         {
             return math.clamp(_voxelPathProfileCapacity, 1, MaxVoxelPathProfileCapacity);
         }
-
-#if UNITY_EDITOR
-        private int ResolveVoxelCsvScratchBytes()
-        {
-            return math.clamp(_voxelPathCsvScratchBytes, 1, MaxVoxelPathCsvScratchBytes);
-        }
-#endif
 
         private int3 ResolveVoxelGridDimensions()
         {
@@ -807,48 +787,33 @@ namespace Hecton8.AI.Pathfinding
             telemetry[cursor] = entry;
         }
 
-        private static unsafe bool TryDumpVoxelAStarBlackBox(NativeArray<PathfindingTelemetryEntry> telemetry)
+        private unsafe bool TryDumpVoxelAStarBlackBox(NativeArray<PathfindingTelemetryEntry> telemetry)
         {
             if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return false;
 
-            try
-            {
-                string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string path = Path.Combine(root, VoxelAStarDumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (string.IsNullOrEmpty(directory))
-                    return false;
+            int entryCount = math.min(telemetry.Length, VoxelAStarConstants.TelemetryFrames);
+            int byteCount = UnsafeUtility.SizeOf<PathfindingTelemetryEntry>() * entryCount;
+            if (byteCount <= 0)
+                return false;
 
-                Directory.CreateDirectory(directory);
+            byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+            uint hash = 2166136261u ^ (uint)byteCount ^ (uint)entryCount;
+            for (int i = 0; i < byteCount; i++)
+                hash = (hash ^ source[i]) * 16777619u;
 
-                int byteCount = UnsafeUtility.SizeOf<PathfindingTelemetryEntry>() * math.min(telemetry.Length, VoxelAStarConstants.TelemetryFrames);
-                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                ReadOnlySpan<byte> telemetryBytes = new ReadOnlySpan<byte>(source, byteCount);
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-                {
-                    stream.Write(telemetryBytes);
-                    stream.Flush(true);
-                }
+            string path = System.IO.Path.GetFullPath(System.IO.Path.Combine(
+                Application.dataPath,
+                "..",
+                "Docs",
+                "AgentLogs",
+                "Dump_1403_VOXEL_ASTAR.bin"));
 
-                return true;
-            }
-            catch (IOException)
-            {
+            if (!NativeFaultDumpWriter.TryWriteAll(path, new ReadOnlySpan<byte>(source, byteCount), byteCount))
                 return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
+
+            _voxelAStarLastDumpHash = hash == 0u ? 2166136261u : hash;
+            return true;
         }
     }
 }

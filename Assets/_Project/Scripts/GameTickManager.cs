@@ -157,6 +157,7 @@ namespace Hecton8.Core
         private bool _serviceRegistered;
         private bool _registeredToDispatcher;
         private bool _hotSwapRegistered;
+        private bool _runtimeGameplayBootstrapGateActive;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -167,11 +168,13 @@ namespace Hecton8.Core
             if (ActiveRuntimeInstance == null)
                 ActiveRuntimeInstance = this;
 
+            _runtimeGameplayBootstrapGateActive = Application.isPlaying;
             EnsureInitialized();
         }
 
         private void OnEnable()
         {
+            _runtimeGameplayBootstrapGateActive = Application.isPlaying;
             EnsureInitialized();
             ResetSlowTickState();
 
@@ -192,6 +195,7 @@ namespace Hecton8.Core
             TryUnregisterHotSwapListener();
             UnregisterDispatcherLanes();
             ResetSlowTickState();
+            _runtimeGameplayBootstrapGateActive = false;
         }
 
         private void OnDestroy()
@@ -209,6 +213,7 @@ namespace Hecton8.Core
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
+            _runtimeGameplayBootstrapGateActive = false;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (enableSlowTickProfiling && ShouldLogUnexpectedDisable())
             {
@@ -343,7 +348,7 @@ namespace Hecton8.Core
 
             float dt = deltaTime;
             float slowTickDt = dt;
-            if (Application.isPlaying &&
+            if (_runtimeGameplayBootstrapGateActive &&
                 BootstrapState.HasActiveInstance &&
                 !BootstrapState.IsGameReady &&
                 slowTickDt <= 0f)

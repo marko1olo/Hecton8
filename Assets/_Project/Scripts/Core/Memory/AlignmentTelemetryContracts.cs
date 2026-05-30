@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Unity.Burst;
@@ -216,33 +215,50 @@ namespace Hecton8.Core.Memory
                 return false;
             }
 
-            string directory = Path.GetDirectoryName(DumpRelativePath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(DumpRelativePath, FileMode.Create, FileAccess.Write, FileShare.Read))
+            int rowBytes = UnsafeUtility.SizeOf<AlignmentTelemetryEntry>();
+            int byteCount = DumpHeaderBytes + (ring.Length * rowBytes);
+            NativeArray<byte> payload = Hecton8.Core.NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(Arm64AlignmentTelemetry),
+                "alignmentTelemetryFaultDumpPayload");
+            try
             {
-                int rowBytes = UnsafeUtility.SizeOf<AlignmentTelemetryEntry>();
-                Span<byte> header = stackalloc byte[DumpHeaderBytes];
-                WriteUInt64LittleEndian(header, DumpMagic);
-                WriteInt32LittleEndian(header.Slice(sizeof(ulong)), DumpVersion);
-                WriteInt32LittleEndian(header.Slice(sizeof(ulong) + sizeof(int)), ring.Length);
-                WriteInt32LittleEndian(header.Slice(sizeof(ulong) + (sizeof(int) * 2)), rowBytes);
-                stream.Write(header);
+                int writeCursor = 0;
+                WriteUInt64LittleEndian(payload, ref writeCursor, DumpMagic);
+                WriteInt32LittleEndian(payload, ref writeCursor, DumpVersion);
+                WriteInt32LittleEndian(payload, ref writeCursor, ring.Length);
+                WriteInt32LittleEndian(payload, ref writeCursor, rowBytes);
 
                 int start = cursorBuffer[0];
-                for (int i = 0; i < ring.Length; i++)
+                unsafe
                 {
-                    int index = (start + i) % ring.Length;
-                    AlignmentTelemetryEntry entry = ring[index];
-                    unsafe
+                    byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    for (int i = 0; i < ring.Length; i++)
                     {
-                        stream.Write(new ReadOnlySpan<byte>(UnsafeUtility.AddressOf(ref entry), rowBytes));
+                        int index = (start + i) % ring.Length;
+                        AlignmentTelemetryEntry entry = ring[index];
+                        if (!Hecton8.Core.UnsafeMemoryCopyGuard.SafeCopy(
+                                destination + writeCursor,
+                                byteCount - writeCursor,
+                                UnsafeUtility.AddressOf(ref entry),
+                                rowBytes))
+                        {
+                            return false;
+                        }
+
+                        writeCursor += rowBytes;
                     }
                 }
-            }
 
-            return true;
+                return Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, writeCursor);
+            }
+            finally
+            {
+                Hecton8.Core.NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(Arm64AlignmentTelemetry),
+                    "alignmentTelemetryFaultDumpPayload");
+            }
         }
 #endif
 
@@ -442,26 +458,26 @@ namespace Hecton8.Core.Memory
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void WriteUInt64LittleEndian(Span<byte> target, ulong value)
+        private static void WriteUInt64LittleEndian(NativeArray<byte> target, ref int cursor, ulong value)
         {
-            target[0] = (byte)value;
-            target[1] = (byte)(value >> 8);
-            target[2] = (byte)(value >> 16);
-            target[3] = (byte)(value >> 24);
-            target[4] = (byte)(value >> 32);
-            target[5] = (byte)(value >> 40);
-            target[6] = (byte)(value >> 48);
-            target[7] = (byte)(value >> 56);
+            target[cursor++] = (byte)value;
+            target[cursor++] = (byte)(value >> 8);
+            target[cursor++] = (byte)(value >> 16);
+            target[cursor++] = (byte)(value >> 24);
+            target[cursor++] = (byte)(value >> 32);
+            target[cursor++] = (byte)(value >> 40);
+            target[cursor++] = (byte)(value >> 48);
+            target[cursor++] = (byte)(value >> 56);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void WriteInt32LittleEndian(Span<byte> target, int value)
+        private static void WriteInt32LittleEndian(NativeArray<byte> target, ref int cursor, int value)
         {
             uint unsigned = (uint)value;
-            target[0] = (byte)unsigned;
-            target[1] = (byte)(unsigned >> 8);
-            target[2] = (byte)(unsigned >> 16);
-            target[3] = (byte)(unsigned >> 24);
+            target[cursor++] = (byte)unsigned;
+            target[cursor++] = (byte)(unsigned >> 8);
+            target[cursor++] = (byte)(unsigned >> 16);
+            target[cursor++] = (byte)(unsigned >> 24);
         }
     }
 }

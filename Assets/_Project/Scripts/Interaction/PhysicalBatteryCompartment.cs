@@ -60,6 +60,7 @@ namespace Hecton8.Interaction
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
         private bool _tickDormant;
+        private bool _lateFrameRetirePending;
         private bool _batteryVisualStateCached;
         private bool _batteryVisualActive;
         private Transform _pendingSnapPoseTransform;
@@ -67,6 +68,7 @@ namespace Hecton8.Interaction
         private Quaternion _pendingSnapPoseLocalRotation;
         private bool _hasPendingSnapPose;
         private bool _hasPendingBatteryVisualRefresh;
+        private bool _hasPendingDoorVisualRefresh;
 
         public float DoorOpen01 => _doorOpen01;
         public bool DoorOpenEnoughForSwap => _doorOpen01 >= _resolvedDoorOpenThreshold01;
@@ -137,12 +139,14 @@ namespace Hecton8.Interaction
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
+            bool hasPendingRuntimeWork = HasPendingRuntimeWork();
             bool shouldRestoreTick = (_registeredTick && !_tickDormant)
-                || _registeredLateFrame
-                || HasPendingRuntimeWork();
+                || hasPendingRuntimeWork
+                || (_registeredLateFrame && !_lateFrameRetirePending);
             _registeredTick = false;
             _registeredLateFrame = false;
             _tickDormant = false;
+            _lateFrameRetirePending = false;
             if (shouldRestoreTick && currentService != null && isActiveAndEnabled)
                 TryRegisterTick();
         }
@@ -150,7 +154,14 @@ namespace Hecton8.Interaction
         public void SetBatteryDoorOpen01(float open01)
         {
             _doorOpen01 = math.isfinite(open01) ? math.saturate(open01) : 0f;
-            ApplyDoorVisual();
+            if (!Application.isPlaying)
+            {
+                ApplyDoorVisual();
+                return;
+            }
+
+            QueueDoorVisualRefresh();
+            TryRegisterLateFrameTick();
         }
 
         public bool TryPullInstalledCell(out ItemData removedBattery, out float removedCharge01)
@@ -163,7 +174,8 @@ namespace Hecton8.Interaction
 
             removedCharge01 = SanitizeCharge01(tool.BatteryCharge);
             removedBattery = tool.RemoveBattery();
-            ApplyBatteryVisual();
+            QueueBatteryVisualRefresh();
+            TryRegisterLateFrameTick();
             return removedBattery != null;
         }
 
@@ -190,7 +202,12 @@ namespace Hecton8.Interaction
             if (insertedCellTransform == null || snapTarget == null)
             {
                 bool inserted = tool.InsertBattery(battery, SanitizeCharge01(charge01));
-                ApplyBatteryVisual();
+                if (inserted)
+                {
+                    QueueBatteryVisualRefresh();
+                    TryRegisterLateFrameTick();
+                }
+
                 return inserted;
             }
 
@@ -224,7 +241,6 @@ namespace Hecton8.Interaction
             _snapElapsedSeconds = math.min(_resolvedBatterySnapDurationSeconds, _snapElapsedSeconds + safeDeltaTime);
             float t = math.saturate(_snapElapsedSeconds / _resolvedBatterySnapDurationSeconds);
             QueueBatterySnapPose(t);
-            TryRegisterLateFrameTick();
 
             if (t >= 1f)
                 CompleteBatterySnap(false);
@@ -232,6 +248,7 @@ namespace Hecton8.Interaction
 
         public void LateFrameTick()
         {
+            FlushDoorVisualRefresh();
             FlushBatteryVisualRefresh();
             FlushPendingSnapPose();
             TryRetireDormantTickRegistration();
@@ -256,6 +273,21 @@ namespace Hecton8.Interaction
             batteryDoor.localRotation = _doorClosedRotation * ApproximateAngleAxisDegreesNoTrig(_resolvedDoorTravelDegrees * _doorOpen01, _resolvedDoorLocalAxis);
         }
 
+        private void QueueDoorVisualRefresh()
+        {
+            _lateFrameRetirePending = false;
+            _hasPendingDoorVisualRefresh = true;
+        }
+
+        private void FlushDoorVisualRefresh()
+        {
+            if (!_hasPendingDoorVisualRefresh)
+                return;
+
+            _hasPendingDoorVisualRefresh = false;
+            ApplyDoorVisual();
+        }
+
         private void ApplyBatteryVisual()
         {
             if (batteryCellVisual == null)
@@ -272,6 +304,7 @@ namespace Hecton8.Interaction
 
         private void QueueBatteryVisualRefresh()
         {
+            _lateFrameRetirePending = false;
             _hasPendingBatteryVisualRefresh = true;
         }
 
@@ -307,7 +340,7 @@ namespace Hecton8.Interaction
 
             _snapInProgress = true;
             _tickDormant = false;
-            ApplyBatteryVisual();
+            QueueBatteryVisualRefresh();
             TryRegisterTick();
         }
 
@@ -328,6 +361,7 @@ namespace Hecton8.Interaction
             _pendingSnapPoseTransform = cell;
             _pendingSnapPoseLocalPosition = position;
             _pendingSnapPoseLocalRotation = rotation;
+            _lateFrameRetirePending = false;
             _hasPendingSnapPose = true;
         }
 
@@ -384,7 +418,7 @@ namespace Hecton8.Interaction
                             tool.InsertBattery(_pendingBattery, _pendingCharge01);
             if (!inserted)
             {
-                RestoreSnappingCellPose();
+                RestoreSnappingCellPose(unregisterTick);
                 RestoreSnappingCellBodyState();
             }
             else
@@ -417,7 +451,7 @@ namespace Hecton8.Interaction
             if (!_snapInProgress)
                 return;
 
-            RestoreSnappingCellPose();
+            RestoreSnappingCellPose(unregisterTick);
             RestoreSnappingCellBodyState();
 
             _snappingCell = null;
@@ -441,7 +475,7 @@ namespace Hecton8.Interaction
                 _tickDormant = true;
         }
 
-        private void RestoreSnappingCellPose()
+        private void RestoreSnappingCellPose(bool immediate)
         {
             if (_snappingCell == null)
                 return;
@@ -452,7 +486,16 @@ namespace Hecton8.Interaction
                 _snapStartLocalRotation.value.z,
                 _snapStartLocalRotation.value.w);
             if (IsFiniteQuaternion(startRotation) && IsFiniteVector(_snapStartLocalPosition))
+            {
+                if (immediate)
+                {
+                    _snappingCell.localPosition = _snapStartLocalPosition;
+                    _snappingCell.localRotation = startRotation;
+                    return;
+                }
+
                 QueueSnappingCellPose(_snapStartLocalPosition, startRotation);
+            }
         }
 
         private void QueueSnappingCellPose(Vector3 localPosition, Quaternion localRotation)
@@ -463,6 +506,7 @@ namespace Hecton8.Interaction
             _pendingSnapPoseTransform = _snappingCell;
             _pendingSnapPoseLocalPosition = localPosition;
             _pendingSnapPoseLocalRotation = localRotation;
+            _lateFrameRetirePending = false;
             _hasPendingSnapPose = true;
         }
 
@@ -574,15 +618,32 @@ namespace Hecton8.Interaction
 
         private void TryRetireDormantTickRegistration()
         {
-            if (!_tickDormant)
-                return;
-
             if (HasPendingRuntimeWork())
             {
-                TryRegisterLateFrameTick();
+                _lateFrameRetirePending = false;
                 return;
             }
 
+            if (_registeredTick)
+            {
+                if (!_tickDormant)
+                    return;
+
+                _lateFrameRetirePending = false;
+                TryUnregisterTick(false);
+                return;
+            }
+
+            if (!_registeredLateFrame)
+                return;
+
+            if (!_lateFrameRetirePending)
+            {
+                _lateFrameRetirePending = true;
+                return;
+            }
+
+            _lateFrameRetirePending = false;
             TryUnregisterTick(false);
         }
 
@@ -604,15 +665,17 @@ namespace Hecton8.Interaction
             {
                 _hasPendingSnapPose = false;
                 _hasPendingBatteryVisualRefresh = false;
+                _hasPendingDoorVisualRefresh = false;
                 _pendingSnapPoseTransform = null;
             }
 
+            _lateFrameRetirePending = false;
             _tickDormant = false;
         }
 
         private bool HasPendingRuntimeWork()
         {
-            return _snapInProgress || _hasPendingSnapPose || _hasPendingBatteryVisualRefresh;
+            return _snapInProgress || _hasPendingSnapPose || _hasPendingBatteryVisualRefresh || _hasPendingDoorVisualRefresh;
         }
 
         private void TryRegisterHotSwapListener()

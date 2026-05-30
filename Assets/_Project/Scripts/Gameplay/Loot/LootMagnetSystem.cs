@@ -2248,38 +2248,49 @@ namespace Hecton8.Gameplay.Loot
             if (!views.Telemetry.IsCreated)
                 return;
 
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string dumpPath = Path.Combine(projectRoot, DumpRelativePath);
-            Directory.CreateDirectory(Path.GetDirectoryName(dumpPath));
-            using (FileStream stream = new FileStream(
-                       dumpPath,
-                       FileMode.Create,
-                       FileAccess.Write,
-                       FileShare.Read,
-                       TelemetryDumpFileBufferBytes))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            const int HeaderBytes = 20;
+            const int RowBytes = 128;
+            int telemetryLength = views.Telemetry.Length;
+            int totalBytes = HeaderBytes + telemetryLength * RowBytes;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                totalBytes,
+                nameof(LootMagnetSystem),
+                "lootMagnetTelemetryDumpPayload");
+            try
             {
-                writer.Write(TelemetryDumpMagic);
-                writer.Write(TelemetryDumpVersion);
-                writer.Write(LootMagnetConstants.TelemetryEntrySizeBytes);
-                int telemetryLength = views.Telemetry.Length;
-                writer.Write(telemetryLength);
-                writer.Write(_telemetryIndex);
+                WriteUInt32LittleEndian(payload, 0, TelemetryDumpMagic);
+                WriteUInt32LittleEndian(payload, 4, TelemetryDumpVersion);
+                WriteInt32LittleEndian(payload, 8, LootMagnetConstants.TelemetryEntrySizeBytes);
+                WriteInt32LittleEndian(payload, 12, telemetryLength);
+                WriteInt32LittleEndian(payload, 16, _telemetryIndex);
                 for (int offset = 0; offset < telemetryLength; offset++)
                 {
                     int index = (_telemetryIndex + offset) % telemetryLength;
                     LootMagnetTelemetryEntry entry = views.Telemetry[index];
-                    WriteAupPacked48(writer, entry.PlayerAup);
-                    WriteAupPacked48(writer, entry.SampleLootAup);
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.ActiveCount);
-                    writer.Write(entry.ActiveLootPullsCount);
-                    writer.Write(entry.AcquiredCount);
-                    writer.Write(entry.FlagsHash);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.PeakMagnetVelocity);
-                    writer.Write(entry.Reserved);
+                    int rowOffset = HeaderBytes + offset * RowBytes;
+                    WriteAupPacked48(payload, rowOffset, entry.PlayerAup);
+                    WriteAupPacked48(payload, rowOffset + 48, entry.SampleLootAup);
+                    WriteUInt32LittleEndian(payload, rowOffset + 96, entry.Frame);
+                    WriteUInt32LittleEndian(payload, rowOffset + 100, entry.ActiveCount);
+                    WriteUInt32LittleEndian(payload, rowOffset + 104, entry.ActiveLootPullsCount);
+                    WriteUInt32LittleEndian(payload, rowOffset + 108, entry.AcquiredCount);
+                    WriteUInt32LittleEndian(payload, rowOffset + 112, entry.FlagsHash);
+                    WriteUInt32LittleEndian(payload, rowOffset + 116, entry.Flags);
+                    WriteFloat32LittleEndian(payload, rowOffset + 120, entry.PeakMagnetVelocity);
+                    WriteUInt32LittleEndian(payload, rowOffset + 124, entry.Reserved);
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(
+                    DumpRelativePath,
+                    payload,
+                    totalBytes);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(LootMagnetSystem),
+                    "lootMagnetTelemetryDumpPayload");
             }
         }
 
@@ -2324,16 +2335,51 @@ namespace Hecton8.Gameplay.Loot
             }
         }
 
-        private static void WriteAupPacked48(BinaryWriter writer, AbsoluteUniversePosition aup)
+        private static void WriteAupPacked48(NativeArray<byte> payload, int offset, AbsoluteUniversePosition aup)
         {
-            writer.Write(aup.GridX);
-            writer.Write(aup.GridY);
-            writer.Write(aup.GridZ);
-            writer.Write(aup.LocalX);
-            writer.Write(aup.LocalY);
-            writer.Write(aup.LocalZ);
-            writer.Write(0f);
-            writer.Write(0UL);
+            WriteInt64LittleEndian(payload, offset, aup.GridX);
+            WriteInt64LittleEndian(payload, offset + 8, aup.GridY);
+            WriteInt64LittleEndian(payload, offset + 16, aup.GridZ);
+            WriteFloat32LittleEndian(payload, offset + 24, aup.LocalX);
+            WriteFloat32LittleEndian(payload, offset + 28, aup.LocalY);
+            WriteFloat32LittleEndian(payload, offset + 32, aup.LocalZ);
+            WriteFloat32LittleEndian(payload, offset + 36, 0f);
+            WriteUInt64LittleEndian(payload, offset + 40, 0UL);
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> payload, int offset, float value)
+        {
+            WriteUInt32LittleEndian(payload, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, int offset, int value)
+        {
+            WriteUInt32LittleEndian(payload, offset, unchecked((uint)value));
+        }
+
+        private static void WriteInt64LittleEndian(NativeArray<byte> payload, int offset, long value)
+        {
+            WriteUInt64LittleEndian(payload, offset, unchecked((ulong)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, int offset, uint value)
+        {
+            payload[offset] = (byte)value;
+            payload[offset + 1] = (byte)(value >> 8);
+            payload[offset + 2] = (byte)(value >> 16);
+            payload[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> payload, int offset, ulong value)
+        {
+            payload[offset] = (byte)value;
+            payload[offset + 1] = (byte)(value >> 8);
+            payload[offset + 2] = (byte)(value >> 16);
+            payload[offset + 3] = (byte)(value >> 24);
+            payload[offset + 4] = (byte)(value >> 32);
+            payload[offset + 5] = (byte)(value >> 40);
+            payload[offset + 6] = (byte)(value >> 48);
+            payload[offset + 7] = (byte)(value >> 56);
         }
     }
 }

@@ -12,7 +12,7 @@ using UnityEngine.Profiling;
 namespace Hecton8.Optimization.Editor
 {
     /// <summary>
-    /// Build gate for the MX350 texture memory ceiling.
+    /// Build gate for the compact texture memory ceiling.
     /// </summary>
     public sealed class VRAMValidator : IPreprocessBuildWithReport
     {

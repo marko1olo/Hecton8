@@ -1,0 +1,24 @@
+{
+  "agent": "1405",
+  "phase": "APEX22_FINAL_BUILD_PREFLIGHT",
+  "timestampLocal": "2026-05-28T14:29:12.7567734+04:00",
+  "intendedCommand": "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+  "cpuAverageLoadPercentage": 77,
+  "activeCompilerProcesses": [
+    {
+      "id": 11072,
+      "processName": "csc",
+      "cpu": 233.734375,
+      "startTime": "2026-05-28T14:27:57+04:00"
+    },
+    {
+      "id": 43068,
+      "processName": "dotnet",
+      "cpu": 30.71875,
+      "startTime": "2026-05-28T14:27:33+04:00"
+    }
+  ],
+  "decision": "BLOCKED_BY_CONTENTION",
+  "buildLaunched": false,
+  "reason": "Compilation Resource Throttling forbids dotnet build when CPU > 50 or csc/dotnet/VBCSCompiler is active."
+}

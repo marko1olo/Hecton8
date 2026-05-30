@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Memory;
@@ -506,31 +505,14 @@ namespace Hecton8.Core.Bucketing
             if (_entityCapacity <= 0)
                 return false;
 
-            NativeArray<int> entityBuckets = OpenEntityBucketsForOwner();
-            NativeArray<int> work = OpenEntityBucketsWorkForOwner();
-            NativeArray<float> costs = OpenEntityCostEwmaForOwner();
-            NativeArray<float> bucketLoads = OpenBucketLoadEwmaForOwner();
-            NativeArray<float> rebalanceLoads = OpenRebalanceBucketLoadsForOwner();
-            NativeArray<SimulationBucketRebalanceResult> result = OpenRebalanceResultForOwner();
-            NativeArray<SimulationBucketFrameState> frameState = OpenFrameStateBufferForOwner();
-            NativeArray<SimulationBucketBlackBoxEntry> blackBox = OpenBlackBoxBufferForOwner();
-
-            return entityBuckets.IsCreated &&
-                   entityBuckets.Length >= _entityCapacity &&
-                   work.IsCreated &&
-                   work.Length >= _entityCapacity &&
-                   costs.IsCreated &&
-                   costs.Length >= _entityCapacity &&
-                   bucketLoads.IsCreated &&
-                   bucketLoads.Length >= SimulationBucketConstants.SurvivalSlowBucketCount &&
-                   rebalanceLoads.IsCreated &&
-                   rebalanceLoads.Length >= SimulationBucketConstants.SurvivalSlowBucketCount &&
-                   result.IsCreated &&
-                   result.Length >= RebalanceResultLength &&
-                   frameState.IsCreated &&
-                   frameState.Length >= FrameStateLength &&
-                   blackBox.IsCreated &&
-                   blackBox.Length >= BlackBoxFrameCount;
+            return HasReadableVaultBuffer(in _entityBucketsHandle, _entityCapacity) &&
+                   HasReadableVaultBuffer(in _entityBucketsWorkHandle, _entityCapacity) &&
+                   HasReadableVaultBuffer(in _entityCostEwmaHandle, _entityCapacity) &&
+                   HasReadableVaultBuffer(in _bucketLoadEwmaHandle, SimulationBucketConstants.SurvivalSlowBucketCount) &&
+                   HasReadableVaultBuffer(in _rebalanceBucketLoadsHandle, SimulationBucketConstants.SurvivalSlowBucketCount) &&
+                   HasReadableVaultBuffer(in _rebalanceResultHandle, RebalanceResultLength) &&
+                   HasReadableVaultBuffer(in _frameStateHandle, FrameStateLength) &&
+                   HasReadableVaultBuffer(in _blackBoxHandle, BlackBoxFrameCount);
         }
 
         private NativeArray<int> OpenEntityBucketsForOwner()
@@ -604,6 +586,15 @@ namespace Hecton8.Core.Bucketing
             }
 
             return vault.TryReadOnlyHandle(in handle, out buffer) && buffer.Length > 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasReadableVaultBuffer<T>(in VaultGenerationHandle<T> handle, int requiredLength)
+            where T : struct
+        {
+            return requiredLength > 0 &&
+                   TryReadVaultBuffer(in handle, out NativeArray<T>.ReadOnly buffer) &&
+                   buffer.Length >= requiredLength;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -986,6 +977,7 @@ namespace Hecton8.Core.Bucketing
         private void WriteBlackBoxEntry()
         {
             bool blackBoxLocked = false;
+            bool dumpAfterRelease = false;
             try
             {
                 blackBoxLocked = TryAcquireWriteView(in _blackBoxHandle, out NativeArray<SimulationBucketBlackBoxEntry> blackBox);
@@ -1029,13 +1021,20 @@ namespace Hecton8.Core.Bucketing
                     _lastBlackBoxFrame = _currentFrameCount;
                 }
 
-                TryDumpBlackBoxIfRequested(blackBox);
+                if (_pendingBlackBoxDump)
+                {
+                    _pendingBlackBoxDump = false;
+                    dumpAfterRelease = true;
+                }
             }
             finally
             {
                 if (blackBoxLocked)
                     ReleaseWriteView(in _blackBoxHandle);
             }
+
+            if (dumpAfterRelease)
+                DumpBlackBoxSnapshot();
         }
 
         private uint ComputeBlackBoxStateHash()
@@ -1056,59 +1055,112 @@ namespace Hecton8.Core.Bucketing
             }
         }
 
-        private void TryDumpBlackBoxIfRequested(NativeArray<SimulationBucketBlackBoxEntry> blackBox)
+        private void DumpBlackBoxSnapshot()
         {
-            if (!_pendingBlackBoxDump)
+            if (!TryReadVaultBuffer(in _blackBoxHandle, out NativeArray<SimulationBucketBlackBoxEntry>.ReadOnly blackBox) ||
+                !blackBox.IsCreated ||
+                blackBox.Length < BlackBoxFrameCount)
+            {
                 return;
+            }
 
-            _pendingBlackBoxDump = false;
+            NativeArray<byte> payload = default;
+            const string dumpPayloadLabel = "moduloSimulationBucketDumpPayload";
             try
             {
-                string folder = Path.GetDirectoryName(BlackBoxDumpPath);
-                if (!string.IsNullOrEmpty(folder))
-                    Directory.CreateDirectory(folder);
+                int byteCount = 32 + (BlackBoxFrameCount * BlackBoxEntrySizeBytes);
+                payload = Hecton8.Core.NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(ModuloSimulationBucketer),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                int writeCursor = 0;
 
-                using (FileStream stream = new FileStream(BlackBoxDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                WriteUInt64LittleEndian(payload, ref writeCursor, BlackBoxDumpMagic);
+                WriteUInt32LittleEndian(payload, ref writeCursor, BlackBoxDumpVersion);
+                WriteInt32LittleEndian(payload, ref writeCursor, BlackBoxFrameCount);
+                WriteInt32LittleEndian(payload, ref writeCursor, BlackBoxEntrySizeBytes);
+                WriteInt32LittleEndian(payload, ref writeCursor, _blackBoxCursor);
+                WriteInt32LittleEndian(payload, ref writeCursor, _currentFrameCount);
+                WriteUInt32LittleEndian(payload, ref writeCursor, _rebalanceSequence);
+
+                for (int i = 0; i < BlackBoxFrameCount; i++)
                 {
-                    writer.Write(BlackBoxDumpMagic);
-                    writer.Write(BlackBoxDumpVersion);
-                    writer.Write(BlackBoxFrameCount);
-                    writer.Write(BlackBoxEntrySizeBytes);
-                    writer.Write(_blackBoxCursor);
-                    writer.Write(_currentFrameCount);
-                    writer.Write(_rebalanceSequence);
-                    for (int i = 0; i < BlackBoxFrameCount; i++)
-                    {
-                        int index = _blackBoxCursor + i;
-                        if (index >= BlackBoxFrameCount)
-                            index -= BlackBoxFrameCount;
+                    int index = _blackBoxCursor + i;
+                    if (index >= BlackBoxFrameCount)
+                        index -= BlackBoxFrameCount;
 
-                        SimulationBucketBlackBoxEntry entry = blackBox[index];
-                        writer.Write(entry.CurrentFrameCount);
-                        writer.Write(entry.ActiveFastBucket);
-                        writer.Write(entry.ActiveSlowBucket);
-                        writer.Write(entry.ActiveColdBucket);
-                        writer.Write(entry.SlowBucketCount);
-                        writer.Write(entry.CriticalDebtFrames);
-                        writer.Write(entry.FramePacingFlags);
-                        writer.Write(entry.RebalanceSequence);
-                        writer.Write(entry.ActiveBucketLoadMs);
-                        writer.Write(entry.JitterVarianceMs);
-                        writer.Write(entry.ExpectedMaxBucketLoadMs);
-                        writer.Write(entry.ExpectedMeanBucketLoadMs);
-                        writer.Write(entry.PreSimulationCostMs);
-                        writer.Write(entry.SimulationBucketInterpolationAlpha);
-                        writer.Write(entry.ActiveSlowBucketCount);
-                        writer.Write(entry.AupBarrierActive);
-                        writer.Write(entry.ReservedPadding);
-                        writer.Write(entry.StateHash);
-                    }
+                    SimulationBucketBlackBoxEntry entry = blackBox[index];
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.CurrentFrameCount);
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.ActiveFastBucket);
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.ActiveSlowBucket);
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.ActiveColdBucket);
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.SlowBucketCount);
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.CriticalDebtFrames);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.FramePacingFlags);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.RebalanceSequence);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.ActiveBucketLoadMs);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.JitterVarianceMs);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.ExpectedMaxBucketLoadMs);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.ExpectedMeanBucketLoadMs);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.PreSimulationCostMs);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.SimulationBucketInterpolationAlpha);
+                    WriteByte(payload, ref writeCursor, entry.ActiveSlowBucketCount);
+                    WriteByte(payload, ref writeCursor, entry.AupBarrierActive);
+                    WriteUInt16LittleEndian(payload, ref writeCursor, entry.ReservedPadding);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.StateHash);
                 }
+
+                Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(BlackBoxDumpPath, payload, writeCursor);
             }
             catch (Exception)
             {
             }
+            finally
+            {
+                Hecton8.Core.NativeFaultDumpWriter.DisposeTransientPayload(ref payload, nameof(ModuloSimulationBucketer), dumpPayloadLabel);
+            }
+        }
+
+        private static void WriteFloatLittleEndian(NativeArray<byte> target, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(target, ref cursor, math.asuint(value));
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> target, ref int cursor, ulong value)
+        {
+            target[cursor++] = (byte)value;
+            target[cursor++] = (byte)(value >> 8);
+            target[cursor++] = (byte)(value >> 16);
+            target[cursor++] = (byte)(value >> 24);
+            target[cursor++] = (byte)(value >> 32);
+            target[cursor++] = (byte)(value >> 40);
+            target[cursor++] = (byte)(value >> 48);
+            target[cursor++] = (byte)(value >> 56);
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> target, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(target, ref cursor, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> target, ref int cursor, uint value)
+        {
+            target[cursor++] = (byte)value;
+            target[cursor++] = (byte)(value >> 8);
+            target[cursor++] = (byte)(value >> 16);
+            target[cursor++] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt16LittleEndian(NativeArray<byte> target, ref int cursor, ushort value)
+        {
+            target[cursor++] = (byte)value;
+            target[cursor++] = (byte)(value >> 8);
+        }
+
+        private static void WriteByte(NativeArray<byte> target, ref int cursor, byte value)
+        {
+            target[cursor++] = value;
         }
 
         private void UpdateFrameStateBuffer()

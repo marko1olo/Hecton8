@@ -1229,8 +1229,7 @@ namespace Hecton8.Physics
             VaultMutationGuardBit(BufferID.Shinobu143TetherPinnedMask) |
             VaultMutationGuardBit(BufferID.Shinobu143TetherTelemetryRing) |
             VaultMutationGuardBit(BufferID.Shinobu143TetherTelemetryHead) |
-            VaultMutationGuardBit(BufferID.Shinobu143CableMaterials) |
-            VaultMutationGuardBit(BufferID.Shinobu143CableMaterialCsvScratch);
+            VaultMutationGuardBit(BufferID.Shinobu143CableMaterials);
 
         private static bool TryOpenExistingBuffer<T>(
             IDataVault vault,
@@ -1412,13 +1411,7 @@ namespace Hecton8.Physics
                     BufferID.Shinobu143CableMaterials,
                     TetherAupRuntimeConstants.MaterialCapacity,
                     NativeArrayOptions.UninitializedMemory,
-                    out materials) &&
-                OpenOrAcquireBuffer<byte>(
-                    vault,
-                    BufferID.Shinobu143CableMaterialCsvScratch,
-                    16 * 1024,
-                    NativeArrayOptions.UninitializedMemory,
-                    out _);
+                    out materials);
 
             if (!buffersReady ||
                 !nodes.IsCreated ||

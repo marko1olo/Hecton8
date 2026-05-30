@@ -176,6 +176,9 @@ namespace Hecton8.Gameplay
                 return;
 
             EnsureInstanceTable();
+            SolarPowerGenerationRuntime.TryPrepareCold(
+                SolarPowerGenerationConstants.DefaultPanelCapacity,
+                SolarPowerGenerationConstants.DefaultPowerNodeCapacity);
             if (s_activeCount >= SolarPowerGenerationConstants.DefaultPanelCapacity)
                 return;
 
@@ -224,13 +227,35 @@ namespace Hecton8.Gameplay
         public void OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Weather)
+            {
                 _cachedWeatherService = currentService as IWeatherService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                SolarPowerGenerationRuntime.TryPrepareCold(
+                    SolarPowerGenerationConstants.DefaultPanelCapacity,
+                    SolarPowerGenerationConstants.DefaultPowerNodeCapacity);
+                WriteSlotStateFromInstance();
+            }
         }
 
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Weather)
+            {
                 _cachedWeatherService = currentService as IWeatherService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                SolarPowerGenerationRuntime.TryPrepareCold(
+                    SolarPowerGenerationConstants.DefaultPanelCapacity,
+                    SolarPowerGenerationConstants.DefaultPowerNodeCapacity);
+                WriteSlotStateFromInstance();
+            }
         }
 
         private static void RefreshLeader()
@@ -250,6 +275,9 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying)
                 return;
 
+            SolarPowerGenerationRuntime.TryPrepareCold(
+                SolarPowerGenerationConstants.DefaultPanelCapacity,
+                SolarPowerGenerationConstants.DefaultPowerNodeCapacity);
             _cachedWeatherService = GlobalRegistry.Weather;
             if (!_registeredHotSwap)
                 _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);

@@ -1,0 +1,11 @@
+{
+  "agentId": "1402",
+  "generatedUtc": "2026-05-28T01:09:50+00:00",
+  "mode": "dry_run",
+  "evidenceClass": "STATIC_SOURCE",
+  "ledger": "Docs/AgentLogs/YamlDesyncLedger_1402.json",
+  "wouldModifyFiles": [],
+  "wouldRemoveLines": [],
+  "wouldAddBlocks": [],
+  "abortReason": "NO_EXACT_OBSOLETE_PROPERTY_HITS"
+}

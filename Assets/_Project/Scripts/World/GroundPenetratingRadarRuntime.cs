@@ -30,6 +30,8 @@ namespace Hecton8.World
         private const uint TelemetryFaultFlag = 1u << 31;
         private const uint TelemetryPublishDropFlag = 1u << 30;
         private const uint GroundRadarProceduralVertexCount = 6u;
+        private const int BlackBoxDumpHeaderBytes = 8;
+        private const int BlackBoxDumpEntryBytes = 36;
         private static readonly WaitCallback BlackBoxDumpWorkerCallback = WriteBlackBoxDumpWorker;
         private static readonly int GroundRadarPingsId = Shader.PropertyToID("_GroundRadarPings");
         private static readonly int GroundRadarPulseId = Shader.PropertyToID("_GroundRadarPulse");
@@ -969,10 +971,10 @@ namespace Hecton8.World
                 UpdateIndirectArgsBuffer((uint)_activeGprPings);
             }
 
-            WriteTelemetry(frameId, addedCount, rayCount, highestSignalStrength, 0u);
-            if (!math.all(math.isfinite(_lastProbeOrigin)) || !math.isfinite(highestSignalStrength))
+            bool hasTelemetryFault = !math.all(math.isfinite(_lastProbeOrigin)) || !math.isfinite(highestSignalStrength);
+            WriteTelemetry(frameId, addedCount, rayCount, highestSignalStrength, hasTelemetryFault ? TelemetryFaultFlag : 0u);
+            if (hasTelemetryFault)
             {
-                WriteTelemetry(frameId, addedCount, rayCount, highestSignalStrength, TelemetryFaultFlag);
                 DumpBlackBox();
             }
 
@@ -1522,7 +1524,7 @@ namespace Hecton8.World
             if (!string.IsNullOrEmpty(_blackBoxDumpPath))
                 return;
 
-            _blackBoxDumpPath = Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_TERRAIN_GPR_SYSTEM.bin"); // COLD ALLOC: string[path] - GPR blackbox dump destination - owner: TERRAIN_GPR_SYSTEM
+            _blackBoxDumpPath = "Docs/AgentLogs/Dump_TERRAIN_GPR_SYSTEM.bin"; // COLD ALLOC: string[path] - GPR blackbox dump destination - owner: TERRAIN_GPR_SYSTEM
         }
 
         private void WriteTelemetry(uint frameId, int addedCount, int rayCount, float highestStrength, uint flags)
@@ -1623,34 +1625,72 @@ namespace Hecton8.World
 
             try
             {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
                 int count = math.min(math.max(0, Volatile.Read(ref _blackBoxDumpSnapshotCount)), _blackBoxDumpSnapshot.Length);
                 int cursor = Volatile.Read(ref _blackBoxDumpSnapshotCursor);
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read); // COLD ALLOC: FileStream[GPR telemetry dump] - blackbox dump file writer - owner: TERRAIN_GPR_SYSTEM
-                using BinaryWriter writer = new BinaryWriter(stream); // COLD ALLOC: BinaryWriter[GPR telemetry dump] - blackbox binary row serializer - owner: TERRAIN_GPR_SYSTEM
-                writer.Write(count);
-                writer.Write(cursor);
-                for (int i = 0; i < count; i++)
+                int byteCount = BlackBoxDumpHeaderBytes + count * BlackBoxDumpEntryBytes;
+                NativeArray<byte> payload = default;
+                try
                 {
-                    GroundRadarTelemetryEntry entry = _blackBoxDumpSnapshot[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.ActiveGprPings);
-                    writer.Write(entry.AddedGprPings);
-                    writer.Write(entry.RayCount);
-                    writer.Write(entry.HighestSignalStrength);
-                    writer.Write(entry.ProbeOrigin.x);
-                    writer.Write(entry.ProbeOrigin.y);
-                    writer.Write(entry.ProbeOrigin.z);
-                    writer.Write(entry.Flags);
+                    payload = NativeFaultDumpWriter.CreateTransientPayload(
+                        byteCount,
+                        nameof(GroundPenetratingRadarRuntime),
+                        "GroundRadarTelemetryDumpPayload");
+                    int writeCursor = 0;
+                    WriteInt32LittleEndian(payload, ref writeCursor, count);
+                    WriteInt32LittleEndian(payload, ref writeCursor, cursor);
+
+                    for (int i = 0; i < count; i++)
+                    {
+                        GroundRadarTelemetryEntry entry = _blackBoxDumpSnapshot[i];
+                        WriteUInt32LittleEndian(payload, ref writeCursor, entry.Frame);
+                        WriteInt32LittleEndian(payload, ref writeCursor, entry.ActiveGprPings);
+                        WriteInt32LittleEndian(payload, ref writeCursor, entry.AddedGprPings);
+                        WriteInt32LittleEndian(payload, ref writeCursor, entry.RayCount);
+                        WriteFloatLittleEndian(payload, ref writeCursor, entry.HighestSignalStrength);
+                        WriteFloat3LittleEndian(payload, ref writeCursor, entry.ProbeOrigin);
+                        WriteUInt32LittleEndian(payload, ref writeCursor, entry.Flags);
+                    }
+
+                    if (writeCursor == byteCount)
+                        NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(GroundPenetratingRadarRuntime),
+                        "GroundRadarTelemetryDumpPayload");
                 }
             }
             catch (Exception exception)
             {
                 Hecton8.Core.H8Debug.LogException(exception);
             }
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(payload, ref cursor, (uint)value);
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, ref int cursor, uint value)
+        {
+            payload[cursor++] = (byte)value;
+            payload[cursor++] = (byte)(value >> 8);
+            payload[cursor++] = (byte)(value >> 16);
+            payload[cursor++] = (byte)(value >> 24);
+        }
+
+        private static void WriteFloatLittleEndian(NativeArray<byte> payload, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(payload, ref cursor, math.asuint(value));
+        }
+
+        private static void WriteFloat3LittleEndian(NativeArray<byte> payload, ref int cursor, float3 value)
+        {
+            WriteFloatLittleEndian(payload, ref cursor, value.x);
+            WriteFloatLittleEndian(payload, ref cursor, value.y);
+            WriteFloatLittleEndian(payload, ref cursor, value.z);
         }
 
         private void EnsureRuntimeDrawResourcesCold()

@@ -48,7 +48,8 @@ namespace Hecton8.QA
         MetricStorageUnavailable = 5u,
         SceneRouteTimeout = 6u,
         NativeSentinelLeak = 7u,
-        NonFinitePlayerState = 8u
+        NonFinitePlayerState = 8u,
+        ApplicationQuitBeforeTerminalExport = 9u
     }
 
     [Flags]
@@ -132,17 +133,16 @@ namespace Hecton8.QA
         private const int BlackBoxCapacity = 300;
         private const int P95WindowCapacity = 2048;
         private const int P95BucketCount = 128;
+        private const int AutoCreateRootScratchCapacity = 128;
         private const float P95FrameBudgetMilliseconds = 16.67f;
         private const int FrameSpikeMicroseconds = 25000;
         private const int HardFrameSpikeStreak = 3;
         private const int TargetVramMegabytes = 1600;
-        private const int HardVramMegabytes = 1800;
         private const float TargetDistanceMeters = 10000f;
-        private const float StuckProbeSeconds = 4f;
+        private const float StuckRecoverySeconds = 1.5f;
         private const float NoKccVelocityFailSeconds = 30f;
         private const float SceneRouteTimeoutSeconds = 40f;
         private const float DefragCadenceSeconds = 60f;
-        private const float BytesPerMegabyte = 1024f * 1024f;
 
         private const BufferID MetricsBufferId = (BufferID)74240;
         private const BufferID BlackBoxBufferId = (BufferID)74241;
@@ -154,6 +154,7 @@ namespace Hecton8.QA
         private static readonly string[] BatchesCounters = { "Batches Count" };
         private static readonly string[] SetPassCounters = { "SetPass Calls Count" };
         private static readonly Type[] SentinelShutdownAssertSignature = { typeof(string) }; // COLD ALLOC: Type[1] - terminal sentinel reflection signature - owner: QA_WatchdogBot
+        private static readonly List<GameObject> s_autoCreateRootScratch = new List<GameObject>(AutoCreateRootScratchCapacity); // COLD ALLOC: List<GameObject>[128] - autorun root duplicate scan - owner: QA_WatchdogBot
 
         [SerializeField] private bool runOnEnable = true;
         [SerializeField] private bool failOnGcAlloc = true;
@@ -232,13 +233,38 @@ namespace Hecton8.QA
             if (!ShouldAutoStartCold())
                 return;
 
-            GameObject existing = GameObject.Find(AutoObjectName);
-            if (existing != null)
+            if (HasAutoCreatedWatchdogRootCold())
                 return;
 
-            GameObject botObject = new GameObject(AutoObjectName);
+            GameObject botObject = new GameObject(AutoObjectName); // COLD ALLOC: GameObject[1] - autorun QA watchdog root - owner: QA_WatchdogBot
             DontDestroyOnLoad(botObject);
             botObject.AddComponent<QA_WatchdogBot>();
+        }
+
+        private static bool HasAutoCreatedWatchdogRootCold()
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (!activeScene.IsValid())
+                return false;
+
+            int rootCount = activeScene.rootCount;
+            if (s_autoCreateRootScratch.Capacity < rootCount)
+                s_autoCreateRootScratch.Capacity = rootCount;
+
+            s_autoCreateRootScratch.Clear();
+            activeScene.GetRootGameObjects(s_autoCreateRootScratch);
+            for (int i = 0; i < s_autoCreateRootScratch.Count; i++)
+            {
+                GameObject root = s_autoCreateRootScratch[i];
+                if (root != null && string.Equals(root.name, AutoObjectName, StringComparison.Ordinal))
+                {
+                    s_autoCreateRootScratch.Clear();
+                    return true;
+                }
+            }
+
+            s_autoCreateRootScratch.Clear();
+            return false;
         }
 
         private static bool ShouldAutoStartCold()
@@ -272,12 +298,12 @@ namespace Hecton8.QA
         private void OnDisable()
         {
             UnregisterQuitHookCold();
-            StopRunCold();
+            FinalizeLifecycleStopCold();
         }
 
         private void OnDestroy()
         {
-            StopRunCold();
+            FinalizeLifecycleStopCold();
         }
 
         private void BeginRunCold()
@@ -429,9 +455,9 @@ namespace Hecton8.QA
         private void EnsureManagedFallbackCold()
         {
             if (_managedMetrics == null || _managedMetrics.Length != MetricCapacity)
-                _managedMetrics = new QAWatchdogFrameMetric1424[MetricCapacity]; // COLD ALLOC: managed fallback metric ring - owner: QA_WatchdogBot
+                _managedMetrics = new QAWatchdogFrameMetric1424[MetricCapacity]; // COLD ALLOC: QAWatchdogFrameMetric1424[36000] = 1,152,000 B - managed fallback metric ring - owner: QA_WatchdogBot
             if (_managedBlackBox == null || _managedBlackBox.Length != BlackBoxCapacity)
-                _managedBlackBox = new QAWatchdogBlackBoxEntry1424[BlackBoxCapacity]; // COLD ALLOC: managed fallback black-box ring - owner: QA_WatchdogBot
+                _managedBlackBox = new QAWatchdogBlackBoxEntry1424[BlackBoxCapacity]; // COLD ALLOC: QAWatchdogBlackBoxEntry1424[300] = 19,200 B - managed fallback black-box ring - owner: QA_WatchdogBot
         }
 
         private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle)
@@ -624,13 +650,16 @@ namespace Hecton8.QA
         {
             _sceneFallbackAttempts++;
             ISceneService sceneService = _sceneService;
-            if (sceneService != null)
+            if (sceneService == null)
             {
-                sceneService.LoadScene(WorldSceneName);
-                return true;
+                CacheSceneServiceCold();
+                sceneService = _sceneService;
             }
 
-            SceneManager.LoadSceneAsync(WorldSceneName, LoadSceneMode.Single);
+            if (sceneService == null || !sceneService.CanLoadScene)
+                return false;
+
+            sceneService.LoadScene(WorldSceneName);
             return true;
         }
 
@@ -662,7 +691,7 @@ namespace Hecton8.QA
             float cruiseVertical = math.lerp(0.05f, 0.1f, quality);
             float recoveryVertical = math.lerp(0.2f, 0.34f, quality);
             float lateral = ResolveTriangleWave(_simulationSeconds * 0.125f) * cruiseLateralAmplitude;
-            if (_stuckSeconds > 1.5f)
+            if (_stuckSeconds > StuckRecoverySeconds)
             {
                 _avoidancePhase += 0.25f;
                 lateral = ResolveTriangleWave(_avoidancePhase) * recoveryLateralAmplitude;
@@ -672,7 +701,7 @@ namespace Hecton8.QA
             state.MoveDelta.y = 1f;
             state.LookDelta.x = lateral * 0.015f;
             state.LookDelta.y = -0.006f;
-            state.VerticalDelta = _stuckSeconds > 1.5f ? recoveryVertical : cruiseVertical;
+            state.VerticalDelta = _stuckSeconds > StuckRecoverySeconds ? recoveryVertical : cruiseVertical;
             state.ActionsBitmask = (uint)PlayerInputAction.Sprint;
             CoreDeterminismSignals.TryPublishInputOverride(in state, SystemDispatcher.CurrentFrameId);
         }
@@ -793,7 +822,7 @@ namespace Hecton8.QA
                 flags |= QAWatchdogMetricFlags1424.NativeSentinelFailed;
             if (enableMockGcFuzzer)
                 flags |= QAWatchdogMetricFlags1424.MockFuzzerArmed;
-            if (_stuckSeconds > 1.5f)
+            if (_stuckSeconds > StuckRecoverySeconds)
                 flags |= QAWatchdogMetricFlags1424.StuckRecovery;
             if (_lastKccVelocityFresh)
                 flags |= QAWatchdogMetricFlags1424.KccVelocityFresh;
@@ -935,8 +964,10 @@ namespace Hecton8.QA
             }
 
             _vaultWriteFailures++;
+            QAWatchdogFrameMetric1424 failedMetric = metric;
+            failedMetric.Flags = (ushort)(failedMetric.Flags | (ushort)QAWatchdogMetricFlags1424.DataVaultWriteFailed);
             if (_managedMetrics != null && slot < _managedMetrics.Length)
-                _managedMetrics[slot] = metric;
+                _managedMetrics[slot] = failedMetric;
         }
 
         private void WriteBlackBoxHot(in QAWatchdogFrameMetric1424 metric)
@@ -992,6 +1023,8 @@ namespace Hecton8.QA
             }
 
             _vaultWriteFailures++;
+            entry.Flags = (ushort)(entry.Flags | (ushort)QAWatchdogMetricFlags1424.DataVaultWriteFailed);
+            entry.VaultWriteFailures = _vaultWriteFailures;
             if (_managedBlackBox != null && slot < _managedBlackBox.Length)
                 _managedBlackBox[slot] = entry;
         }
@@ -1022,6 +1055,12 @@ namespace Hecton8.QA
             }
 
             if (!_storageReady)
+            {
+                FailCold(QAWatchdogFailReason1424.MetricStorageUnavailable);
+                return;
+            }
+
+            if (_vaultWriteFailures != 0u && !_usingManagedFallback)
                 FailCold(QAWatchdogFailReason1424.MetricStorageUnavailable);
         }
 
@@ -1165,9 +1204,9 @@ namespace Hecton8.QA
         private void WriteCsvCold()
         {
             EnsureDirectoryCold(_csvPath);
-            using (StreamWriter writer = new StreamWriter(_csvPath, false, Encoding.UTF8))
+            using (StreamWriter writer = new StreamWriter(_csvPath, false, Encoding.UTF8)) // COLD ALLOC: StreamWriter[1] - terminal CSV export - owner: QA_WatchdogBot
             {
-                writer.WriteLine("frame,state,frame_time_ms,gc_alloc_bytes,vram_mb,batches,setpass,distance_m,aup_x,aup_y,aup_z,flags");
+                writer.WriteLine("frame,state,frame_time_ms,gc_alloc_bytes,vram_mb,batches,setpass,aup_x,aup_y,aup_z,flags");
                 int total = math.min(_metricSamples, MetricCapacity);
                 int start = _metricSamples < MetricCapacity ? 0 : _metricWriteIndex;
 
@@ -1215,8 +1254,6 @@ namespace Hecton8.QA
             WriteUShortCold(writer, metric.Batches);
             writer.Write(',');
             WriteUShortCold(writer, metric.SetPassCalls);
-            writer.Write(',');
-            WriteFloatCold(writer, _distanceMeters, "0.000");
             writer.Write(',');
             WriteFloatCold(writer, metric.AupX, "0.000");
             writer.Write(',');
@@ -1395,15 +1432,31 @@ namespace Hecton8.QA
             if (!_runActive || _terminalExportWritten)
                 return;
 
-            if (_state != QAWatchdogState1424.Completed)
+            FinalizeLifecycleStopCold();
+        }
+
+        private void FinalizeLifecycleStopCold()
+        {
+            if (!_runActive || _terminalExportWritten)
             {
-                _state = QAWatchdogState1424.Failed;
-                if (_failReason == QAWatchdogFailReason1424.None)
-                    _failReason = QAWatchdogFailReason1424.NativeSentinelLeak;
+                StopRunCold();
+                return;
             }
 
-            _terminalExportQueued = true;
-            CoreDeterminismSignals.ClearInputOverride();
+            if (!_terminalExportQueued)
+            {
+                if (_state != QAWatchdogState1424.Completed)
+                {
+                    _state = QAWatchdogState1424.Failed;
+                    if (_failReason == QAWatchdogFailReason1424.None)
+                        _failReason = QAWatchdogFailReason1424.ApplicationQuitBeforeTerminalExport;
+                }
+
+                _terminalExportQueued = true;
+                CoreDeterminismSignals.ClearInputOverride();
+            }
+
+            WriteTerminalArtifactsCold();
         }
 
         private void StopRunCold()

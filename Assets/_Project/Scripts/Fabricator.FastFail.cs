@@ -305,7 +305,7 @@ namespace Hecton8.Crafting
                     continue;
 
                 uint hash = unchecked((uint)cost.item.PersistentHashId);
-                int adjustedAmount = GetAdjustedIngredientAmount(cost);
+                int adjustedAmount = CalculateAdjustedIngredientAmount(cost);
                 if (adjustedAmount <= 0)
                     continue;
 

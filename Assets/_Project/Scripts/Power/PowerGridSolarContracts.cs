@@ -960,6 +960,11 @@ namespace Hecton8.Power
             return true;
         }
 
+        public static bool TryPrepareCold(int panelCapacity, int powerNodeCapacity)
+        {
+            return TryEnsure(panelCapacity, powerNodeCapacity);
+        }
+
         public static bool TryWritePanelState(int slot, in SolarPanelStateDTO state)
         {
             if (s_pending || !TryEnsure(SolarPowerGenerationConstants.DefaultPanelCapacity, SolarPowerGenerationConstants.DefaultPowerNodeCapacity))
@@ -993,7 +998,7 @@ namespace Hecton8.Power
             states = default;
             if (s_pending ||
                 s_panelStateWriteVault != null ||
-                !TryEnsure(SolarPowerGenerationConstants.DefaultPanelCapacity, SolarPowerGenerationConstants.DefaultPowerNodeCapacity))
+                !HasPreparedBuffers(SolarPowerGenerationConstants.DefaultPanelCapacity, SolarPowerGenerationConstants.DefaultPowerNodeCapacity))
             {
                 return false;
             }
@@ -1047,7 +1052,7 @@ namespace Hecton8.Power
             if (s_pending)
                 return false;
 
-            if (!TryEnsure(SolarPowerGenerationConstants.DefaultPanelCapacity, SolarPowerGenerationConstants.DefaultPowerNodeCapacity))
+            if (!HasPreparedBuffers(SolarPowerGenerationConstants.DefaultPanelCapacity, SolarPowerGenerationConstants.DefaultPowerNodeCapacity))
                 return false;
 
             int activePanels = math.clamp(panelCount, 0, s_panelCapacity);
@@ -1529,6 +1534,16 @@ namespace Hecton8.Power
             return true;
         }
 
+        private static bool HasPreparedBuffers(int panelCapacity, int powerNodeCapacity)
+        {
+            int safePanels = math.clamp(panelCapacity, 1, SolarPowerGenerationConstants.DefaultPanelCapacity);
+            int safeNodes = math.max(1, powerNodeCapacity);
+            return s_buffersReady &&
+                   s_vault != null &&
+                   safePanels <= s_panelCapacity &&
+                   safeNodes <= s_powerNodeCapacity;
+        }
+
         private static void UnlockJobBuffers()
         {
             if (!s_jobMutationGuardHeld)
@@ -1744,33 +1759,44 @@ namespace Hecton8.Power
                 return;
             }
 
-            s_blackBoxDumped = true;
+            NativeArray<byte> payload = default;
             try
             {
-                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", SolarPowerGenerationConstants.DumpRelativePath));
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
                 int count = math.min(telemetry.Length, SolarPowerGenerationConstants.TelemetryFrameCount);
+                int headerBytes = UnsafeUtility.SizeOf<SolarBlackBoxDumpHeaderDTO>();
+                int entryBytes = UnsafeUtility.SizeOf<SolarTelemetryEntry>();
+                int byteCount = headerBytes + count * entryBytes;
                 SolarBlackBoxDumpHeaderDTO header = default;
                 header.Magic = SolarPowerGenerationConstants.DumpMagic;
                 header.Version = SolarPowerGenerationConstants.DumpVersion;
                 header.ReasonFlags = reasonFlags;
                 header.EntryCount = (uint)count;
-                header.EntryStrideBytes = (uint)UnsafeUtility.SizeOf<SolarTelemetryEntry>();
+                header.EntryStrideBytes = (uint)entryBytes;
                 header.FrameIndex = s_frameIndex;
 
-                using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    stream.Write(new ReadOnlySpan<byte>(UnsafeUtility.AddressOf(ref header), UnsafeUtility.SizeOf<SolarBlackBoxDumpHeaderDTO>()));
-                    void* telemetryPtr = telemetry.GetUnsafeReadOnlyPtr();
-                    stream.Write(new ReadOnlySpan<byte>(telemetryPtr, count * UnsafeUtility.SizeOf<SolarTelemetryEntry>()));
-                }
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(SolarPowerGenerationRuntime),
+                    "solarPowerBlackBoxPayload");
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                UnsafeUtility.MemCpy(target, UnsafeUtility.AddressOf(ref header), headerBytes);
+                void* telemetryPtr = telemetry.GetUnsafeReadOnlyPtr();
+                UnsafeUtility.MemCpy(target + headerBytes, telemetryPtr, count * entryBytes);
+                s_blackBoxDumped = NativeFaultDumpWriter.TryWriteAll(
+                    SolarPowerGenerationConstants.DumpRelativePath,
+                    payload,
+                    byteCount);
             }
             catch (Exception)
             {
                 // Crash dump is diagnostic-only; runtime authority remains in Vault telemetry.
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(SolarPowerGenerationRuntime),
+                    "solarPowerBlackBoxPayload");
             }
         }
     }

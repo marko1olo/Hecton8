@@ -807,3 +807,377 @@ Exact microseconds saved:
 - `SYNC_JOB_HITS=0` across `ShinobuOceanSurfaceAtmosphereRuntime.cs`, `HectonMarineSnowRenderer.cs`, and `HectonPlayerMovement.cs`.
 - All three files report `BRACE_DELTA=0`; `git diff --check` reports only CRLF normalization warnings.
 - `dotnet build` was not launched because CPU load was 96 percent and compiler processes `csc` PID 44884 and `dotnet` PID 33044 were active.
+
+## 2026-05-30 APEX Integrator Pass 21
+
+What was wrong:
+- `ToxicOutgassingChemistryRuntime.TryUpsertSource` and `TryUpsertEntity` could call `EnsureNativeState`, allowing public mutation routes to repair DataVault handles from unknown caller phases.
+- Toxic outgassing had slow/late registration without explicit registration booleans and no cold repair owner.
+- `NativeTrailRenderer.SlowTick` repaired trail arrays and Mesh resources after late-frame queued missing-buffer repair.
+
+What was done:
+- Toxic outgassing now implements `IColdTickable`; `ColdTick` owns `EnsureNativeState`.
+- Toxic source/entity upsert routes now fail closed until native state is prepared.
+- Toxic slow/cold/late registration is tracked and conditionally unregistered.
+- Native trail now implements `IColdTickable` instead of `ISlowTickable`; `ColdTick` owns `EnsureBuffers`, while late-frame only queues repair.
+
+Cinematic cheats used:
+- Toxic source/entity mutation skips until cold prep owns buffers; no gameplay caller gets hidden DataVault repair.
+- Native trails may miss samples during missing-buffer windows; this is cheaper than arrays/Mesh allocation in runtime cadence.
+
+Exact microseconds saved:
+- No profiler microseconds claimed.
+- Static saving: removed DataVault repair branch from toxic mutation APIs and trail buffer/Mesh repair from slow visual cadence.
+- Verification: toxic hot graph `30/0`; native trail hot graph `14/0`.
+- Both files report `BRACE_DELTA=0`; `git diff --check` reports only CRLF normalization warnings.
+- `dotnet build` was not launched due compile throttle.
+
+## 2026-05-30 APEX Integrator Pass 22
+
+What was wrong:
+- `VocalWarningSystem`, `HectonInputRuntime_HapticSynth`, `CameraJuiceSystem_CameraJuiceBurst`, and `BiolumPulseSyncRuntime` still used synchronous `IJob.Run()` wrappers in owner phases where results were consumed immediately.
+
+What was done:
+- Replaced vocal warning mock injection, priority evaluation, and voice dispatch wrappers with direct `Execute()`.
+- Replaced haptic late-frame fallback mock/evaluate/coalesce/timing wrappers with direct `Execute()`; the primary scheduled simulation/post-simulation route remains unchanged.
+- Replaced camera juice seed, telemetry init, mock trauma, trauma evaluation, and shake integration wrappers with direct `Execute()`.
+- Replaced biolum cold mock lighting seed wrapper with direct `Execute()`.
+
+Cinematic cheats used:
+- Camera juice remains a late-frame visual fake and never changes gameplay truth.
+- Haptic, vocal, and biolum fallbacks remain bounded by existing quality/capacity gates.
+
+Exact microseconds saved:
+- No profiler microseconds claimed.
+- Static saving: 13 same-frame Job API wrappers removed from runtime presentation/fallback/cold-owner systems.
+- Verification: targeted `.Run/.Complete` grep across the touched runtime files returns no hits.
+- All four files report `BRACE_DELTA=0`; `git diff --check` reports only CRLF normalization warnings.
+- `dotnet build` was not launched because `dotnet` PID 29280 was active.
+
+## 2026-05-30 APEX Integrator Pass 23
+
+What was wrong:
+- `GasDynamicsSolver.ScheduleStep` ran `GasDynamicsStepJob` synchronously with `job.Run()` inside fixed phase while holding the gas state mutation guard.
+- The completion path swapped gas buffers and published telemetry directly after the guarded solve, leaving a weak proof boundary between gas state ownership and telemetry writer ownership.
+- `PostFixedTick` called a method named `TryCompleteStep` that only returned a boolean because the job was not actually scheduled.
+
+What was done:
+- Added a real scheduled gas step handle: fixed phase now schedules `GasDynamicsStepJob`, registers the handle with `H8Memory`, and batches jobs.
+- `PostFixedTick` now completes the scheduled handle through `DispatcherJobFence.TryComplete` in the dispatcher post-fixed swap window.
+- State guard release moved into `ResetScheduledStepState`; normal completion releases the gas state guard before buffer handle swaps and before `TryPublishStepTelemetryFromScratch` can acquire telemetry write ownership.
+- Teardown now force-completes pending gas work in a post-fixed swap window before releasing gas DataVault handles.
+- Fixed tick no longer seeds standard atmosphere while a scheduled gas step is active; pending base/hull signals are staged instead.
+
+Cinematic cheats used:
+- Gas simulation truth stays authoritative, but UI/toxicity presentation remains deferred through primitive pending fields to `LateFrameTick`.
+- No low/ultra branch changes were made; the existing continuous cadence path remains controlled by quality weight and fixed room/bulkhead capacities.
+
+Exact microseconds saved:
+- No profiler microseconds claimed.
+- Static saving: removed the synchronous `IJob.Run()` wrapper and fixed-phase gas solve from `ScheduleStep`.
+- Verification: `GasDynamicsSolver.cs BRACE_DELTA=0`.
+- Structural hot-body scan reports zero direct `GlobalRegistry.Get`, `GetComponent`, `.Run`, or `.Complete` in `FixedTick`, `PostFixedTick`, `LateFrameTick`, `FrostTick`, `ScheduleStep`, and `CompleteScheduledStep*`.
+- `git diff --check` reports only CRLF normalization warnings.
+- `dotnet build` was not launched because compile gates saw `dotnet` PIDs 52676/44260 and CPU above threshold.
+
+## 2026-05-30 APEX Integrator Pass 24
+
+What was wrong:
+- Non-core direct `.Run()` calls were still present in runtime cold/mock/presentation/editor routes, and one gameplay `.Complete()` bypassed `DispatcherJobFence`.
+- Respawn default hydration wrote several DataVault buffers without an explicit mutation guard.
+- `SubmarineStructuralGrid` schedule-named hull jobs were synchronous fixed-phase `Run()` calls, leaving post-fixed consumers mostly inert.
+
+What was done:
+- Replaced non-parallel owner-route `Run()` wrappers with direct `Execute()`/bounded loops across fauna, gameplay, physiology, UI, lighting, environment, and VFX editor tooling.
+- Routed `SomaticKinematicsRuntime` completion through `DispatcherJobFence`.
+- Added `DefaultsMutationGuardMask` to respawn default hydration.
+- Converted submarine breach repair, mapping, fatigue, and damage jobs to real scheduled jobs finalized in `PostFixedTick`, with teardown force completion.
+
+Cinematic cheats used:
+- Kept editor voxel debris and terminal decryption as deterministic direct owner execution; no fake parallelism.
+- Kept fauna GPU bone upload as validated bounded memcpy in late-frame visual sync, not a scheduled same-frame wrapper.
+
+Exact microseconds saved:
+- Not claimed. Static proof: project grep now leaves only central `DispatcherJobFence.Complete()` and smoke-test string literals for `.Run/.Complete`; hot-body scan visited 120 bodies with 0 forbidden hits; brace deltas are 0 for 13 touched files.
+- Build proof blocked before source compilation by existing MSBuild circular target errors in `MoreMountains.Tools.csproj` and `Unity.RenderPipelines.Universal.Runtime.csproj`; build server was shut down afterward.
+
+## 2026-05-30 APEX Integrator Pass 25
+
+What was wrong:
+- `PlayerSwimPresentationController.SyncFromLocomotion` repaired references from the render path.
+- Dynamic music and migratory Sargassum kept DataVault mutation guards alive across scheduled job execution.
+
+What was done:
+- Swim presentation now defers reference and guide repair to `ColdTick`; render sync only sets a primitive flag.
+- Dynamic music synth jobs now use DataVault buffer pins plus `H8Memory.RegisterActiveJob`; shared-state/telemetry publish uses a short `try/finally` mutation guard after completion.
+- Migratory Sargassum splits flow prep guard, scheduled drift buffer pins, and spatial publish guard.
+
+Cinematic cheats used:
+- Preserved swim feel as presentation-only math and migratory canopy as low-count visual/ecology drift.
+- No realism escalation.
+
+Exact microseconds saved:
+- Not claimed. Static proof: edited hot roots report `HOT_SCAN_FORBIDDEN_HITS=0`; `.Run/.Complete` grep still only reports central `DispatcherJobFence` and smoke-test strings; edited files have `BRACE_DELTA=0`.
+- Build skipped because CPU average was 99 percent.
+
+## 2026-05-30 APEX Integrator Pass 26
+
+What was wrong:
+- `SumpPumpPipeGridRuntime.ScheduleDrainageSolve` held `DrainageVaultMutationGuardMask` across a scheduled drainage job chain until `LateFrameTick`.
+- Solver wall-time telemetry was tied to the old broad guard instead of a short visual-sync write window.
+- `ConstructionManager.ExecuteDeconstructionTransaction` tried to acquire deconstruction telemetry as a second write guard while transaction buffers were already guarded; the depth gate rejected it and the teardown job could receive default telemetry arrays.
+
+What was done:
+- Replaced the sump solver cross-frame mutation guard with owner-tagged buffer pins for local solver buffers and optional fluid/power source buffers.
+- Released sump solver pins after `DispatcherJobFence.TryFinalizeCompleted`/teardown, then stamped wall-time telemetry under a short `LateFrameTick` guard.
+- Borrowed deconstruction telemetry under the active single transaction guard and deferred black-box dumping until after transaction release.
+
+Cinematic cheats used:
+- Drainage remains a CSR scalar pressure/flow fake, not a water-particle simulation.
+- Deconstruction telemetry stays fixed-ring state hashing; no verbose binary dump path was added.
+
+Exact microseconds saved:
+- Not claimed. Structural proof: `SumpPumpPipeGridRuntime.cs` and `ConstructionManager.cs` braces are balanced; targeted scan reports `TARGETED_HOT_SCAN_HITS=0`; project `.Run/.Complete` grep is still limited to `DispatcherJobFence` and smoke-test strings.
+- Build skipped because CPU was 93 percent and PID 21592 was already running `dotnet build Hecton8.slnx`.
+
+## 2026-05-30 APEX Integrator Pass 27
+
+What was wrong:
+- `HabitatFluidIncursionDirector.FixedTick` held a broad fluid mutation guard across a scheduled solver and into post-fixed completion.
+- Flood wall-time, mass/acoustic, and shader dirty publication depended on that broad write-owner span.
+
+What was done:
+- Replaced the cross-frame fluid mutation guard with exact owner-tagged buffer pins for the flood solver buffers.
+- Kept fixed phase as schedule-only and moved completion/publication to `PostFixedTick` after `DispatcherJobFence.TryFinalizeCompleted`.
+- Released all pins in strict `finally` paths for failed schedule, normal post-fixed completion, and teardown.
+
+Cinematic cheats used:
+- Flood remains a compartment/BFS scalar fake with waterline DTOs, not particle water.
+- State transfer is primitive timestamp/dirty flags plus pinned NativeArray DTOs; no managed presentation queue.
+
+Exact microseconds saved:
+- Not claimed. Structural proof: `HabitatFluidIncursionDirector.cs BRACE_DELTA=0`; targeted hot scan reports `TARGETED_HOT_SCAN_HITS=0`; project `.Run/.Complete` grep remains limited to `DispatcherJobFence` and smoke-test literals.
+- Roslyn AST parse was attempted but Windows PowerShell could not load SDK Roslyn assemblies; no false AST claim made.
+
+## 2026-05-30 APEX Integrator Pass 28
+
+What was wrong:
+- `ProceduralBoneBlenderRuntime` kept `JobMutationGuardMask` across scheduled fauna bone jobs until late-frame finalization.
+- Broad hot method scan still needed a real remaining debt after fluid/sump fixes.
+
+What was done:
+- Replaced the procedural bone cross-frame mutation guard with owner-tagged pins for rig/input/parent/bind pose/bone state/matrix/stats/telemetry/cursor/tuning/mock buffers.
+- Scheduled jobs still register through `H8Memory`; `LateFrameTick` finalizes via `DispatcherJobFence` and releases pins before GPU upload.
+- Removed stale job guard symbols: `TryAcquireJobMutationGuardAndResolveBuffers`, `ReleaseJobMutationGuard`, `JobMutationGuardMask`, `_jobMutationGuardActive`, `_jobBufferGuardVault`.
+
+Cinematic cheats used:
+- Fauna bone solving stays visual/presentation owned; no gameplay truth route was added.
+- Low tier can run fewer active skeletons through existing quality/tuning; higher tiers can spend the unlocked lock budget on more skeletons/bones.
+
+Exact microseconds saved:
+- Not claimed. Static proof: `ProceduralBoneBlenderRuntime.cs BRACE_DELTA=0`; targeted job-pin scan reports `TARGETED_JOB_PIN_SCAN_HITS=0`.
+- Broad runtime hot method scan reports `BROAD_DIRECT_LOOKUP_SYNC_HITS=0` for direct service/component/scene lookup and direct `.Run/.Complete` patterns.
+
+## 2026-05-30 Compile Gate Pass
+
+What was wrong:
+- One throttled build reached C# and failed with CS0111 duplicate `WriteInt32LittleEndian` and `WriteUInt32LittleEndian` in `PredatorCognitionDomain_Steering.cs`.
+
+What was done:
+- Removed the duplicate little-endian helpers from the steering partial. The file now uses the single helper implementation in `PredatorCognitionDomain.cs`.
+- Rechecked brace balance for `PredatorCognitionDomain_Steering.cs`, procedural bone, and habitat fluid files.
+
+Cinematic cheats used:
+- None. This was a compile-blocker removal only.
+
+Exact microseconds saved:
+- Runtime microseconds not claimed.
+- Build attempts: exactly one throttled `dotnet build` was launched after CPU was below 50 percent and compiler process count was 0.
+- Rebuild retry was skipped because CPU rose above the project threshold after the fix.
+- The lingering `dotnet build Hecton8.slnx` PID 6984 was verified by command line as this agent's build, waited 30 seconds, then cleared; final compiler process count is 0.
+## 2026-05-30 APEX Integrator Passes 29-34
+
+What was wrong:
+- `ProceduralBoneBlenderRuntime.Tick` still attempted a tuning writer guard for hot sanitize state.
+- `ProceduralLadderClimbRuntime`, `HectonCelestialEngine`, `TetherManager`, `SpatialAudioManager`, and `HarpoonTensionSolver328` retained broad DataVault mutation guards across scheduled job lifetimes.
+- `PredatorCognitionDomain_Steering.cs` duplicated little-endian dump helpers already owned by another partial.
+
+What was done:
+- Converted procedural bone hot tuning to read-only NativeArray snapshot plus primitive cached fields.
+- Replaced scheduled ladder IK, celestial orbit output, tether AUP, virtual voice sort, and harpoon tension mock cross-frame guards with exact owner-tagged `TryLockBuffer` pins released in strict failure/completion/teardown paths.
+- Kept harpoon bootstrap writes under a renamed cold `MockBootstrapMutationGuardMask`.
+- Removed duplicate predator cognition dump helpers from the steering partial.
+
+Cinematic cheats used:
+- Preserved visual/solver fakes as scheduled NativeArray jobs instead of forcing realism or same-frame barriers.
+- Quality remains continuous through existing `GlobalQualityWeight` consumers; no binary quality switch or DTO layout change was introduced.
+
+Exact microseconds saved:
+- No profiler microseconds claimed. Structural removals: one hot procedural-bone writer attempt plus five cross-frame DataVault write-lock lifetimes.
+
+Verification:
+- Brace deltas are zero for edited C# files checked after each pass.
+- Targeted hot-body scans across touched schedule/tick/completion roots report no direct `GlobalRegistry.Get`, `GlobalRegistry.DataVault`, `GlobalRegistry.Dispatcher`, `GlobalRegistry.Player`, Unity component lookup, `.Run`, `.Complete`, `TryAcquireMutationGuard`, or `ReleaseMutationGuard` hits.
+- `git diff --check` on touched files reports only existing CRLF normalization warnings.
+- One throttled build was launched only at CPU 49 percent with no compiler process. It timed out after 120 seconds; PID 39176 was verified as this agent's `dotnet build`, waited 30 seconds, then stopped. Final compiler process count: zero. Compile success is not claimed.
+
+## 2026-05-30 APEX Integrator Passes 35-45
+
+What was wrong:
+- Logistics sort, spatial audio occlusion, AUP precision localization, Cable132 mock solve, Quest DAG resolution, haptic synthesis, AUP origin rebase, physics force validation, hydrodynamic KCC, voxel carve/compaction, and base atmosphere CSR diffusion still had scheduled routes retaining broad DataVault mutation guards or misleading guard-named scheduled ownership.
+- `HectonInputRuntime_HapticSynth` had a dead aggregate pin constant after the schedule-pin conversion.
+- Broad project scan still shows many remaining job mutation guards outside this slice.
+
+What was done:
+- Converted each listed scheduled route to exact owner-tagged `TryLockBuffer` pins released in failure, dispatcher completion, teardown, or post-fence `finally` paths.
+- Kept short same-phase guards where they are not cross-frame: quest debug API, spatial SDF snapshot copy, atmosphere pre-sim/init writes.
+- Renamed atmosphere scheduled ownership out of `AtmosphereJobMutationGuardMask`; scheduled CSR gas diffusion now pins its actual NativeArray buffers and uses `AtmosphereFrameMutationGuardMask` only for short frame writes.
+- Removed the unused haptic aggregate pin constant.
+
+Cinematic cheats used:
+- Preserved cheap scheduled approximations and data-local jobs; no realism expansion, no DTO layout change, no binary quality switch.
+- Quality remains continuous through existing `GlobalQualityWeight` fields where these systems already expose fidelity/cadence.
+
+Exact microseconds saved:
+- No profiler microseconds claimed.
+- Structural removals: eleven cross-frame DataVault writer-lock lifetimes plus one unused haptic constant.
+
+Verification:
+- 11 edited files report `BRACE_DELTA=0`.
+- Removed scheduled/broad job guard symbols are absent from the touched file set.
+- `BaseAtmosphereLogisticsRuntime` method-body scan for pre-sim, schedule, post-sim, pin, and release roots reports zero direct `GlobalRegistry.Get`, component lookup, `.Run`, or `.Complete` hits.
+- `git diff --check` on the touched file set reports only CRLF normalization warnings.
+- Build was not launched: CPU stayed below threshold, but an existing `dotnet build Hecton8.Core.csproj` compiler lane was active; later gate check showed `dotnet.exe` PID 35496 and `csc.exe` PID 45540. Compile success is not claimed.
+
+Remaining hard debt:
+- Broad scheduled/job mutation guards remain in AI ambient/ecosystem, Bulkhead, DroneFleet, foveated simulation, fauna spawn, pressure/material/shadow culling, nutrient drift, combat, hazard exposure, hand IK, loot magnet, exosuit, seaglide, buoyancy, physiology, plasma beam, ground radar, voxel surface nets, and related files.
+- `EquipmentInteractionHandler` surface query guards appear same-frame, but still need either exact pin conversion or explicit same-frame proof/rename.
+
+## 2026-05-30 APEX Integrator Passes 46-50
+
+What was wrong:
+- Gerstner water, buoyancy displacement, seaglide hydrodynamics, and hand IK still had scheduled or hot-phase broad DataVault guard debt.
+- Buoyancy displacement also kept broad runtime guards in post-fixed force drain and completion telemetry after its scheduled solver pin route was introduced.
+
+What was done:
+- Converted Gerstner scheduled spectrum/tuning/request/result/macro-grid/counter ownership to exact `TryLockBuffer` pins.
+- Converted buoyancy scheduled solver buffers plus post-fixed force drain, completion telemetry, and SIMD utilization telemetry to exact pins with strict `finally` unlock.
+- Converted seaglide state/request/force/flow/tuning/telemetry/counter/visual/audio/cavitation scheduled ownership to exact pins and moved runtime view resolution after pin acquisition.
+- Converted hand IK state/published state/target/matrix/telemetry/cursor/config scheduled ownership to exact pins; optional VR bridge state/tuning buffers are pinned only when bridge input is enabled and released immediately if the bridge view is invalid.
+
+Cinematic cheats used:
+- No new physical simulation. Existing approximations and scheduled jobs were preserved; the change is ownership narrowing and phase cleanup.
+- Continuous quality behavior remains in existing tuning paths; no binary quality switch or DTO layout change was introduced.
+
+Exact microseconds saved:
+- No profiler microseconds claimed.
+- Structural removals: four cross-frame writer-lock lifetimes plus three hot same-phase buoyancy broad guard attempts.
+
+Verification:
+- Four edited runtime files report `BRACE_DELTA=0`.
+- Removed broad guard symbols are absent from the touched file set.
+- Targeted hot method-body scan reports `COMBINED_HOT_FORBIDDEN_HITS=0` for direct registry/component lookup, `.Run`, `.Complete`, `TryAcquireMutationGuard`, and `ReleaseMutationGuard`.
+- `git diff --check` on the touched file set reports only CRLF normalization warnings.
+- One gated build attempt started only at CPU 14 percent with no compiler processes, timed out after 180 seconds, PID 64920 was stopped, and final compiler-process count is zero. Compile success is not claimed.
+
+Remaining hard debt:
+- Broad scheduled/job mutation guards remain outside this slice. Continue converting each scheduled route to exact buffer pins or prove cold/editor/same-frame-only scope with strict `finally`.
+- Full compile remains unproven until an allowed build completes and real diagnostics, if any, are fixed.
+
+## 2026-05-30 APEX Integrator Passes 51-56
+
+What was wrong:
+- Ambient biota, Shinobu ecosystem, procedural field sampling, migratory sargassum, stress-driven spawn, and dynamic point-light culling still retained broad scheduled/job mutation guards or broad same-phase state guards.
+- Dynamic point-light jobs held NativeArray views for read-only frustum/SDF/profile buffers that were not explicitly pinned by the old scheduled guard.
+- Stress spawn partial pin cleanup depended too much on scheduled-state success.
+
+What was done:
+- Converted ambient biota drift/spawn to exact AUP/velocity/state pins.
+- Converted Shinobu frame and macro pipelines to exact entity/AUP/state/snapshot/spatial/counter pins and released pins before post-completion publication.
+- Converted procedural field sampling to exact sampling-table pins with partial-failure release.
+- Converted migratory sargassum scheduled flow prep and same-phase island/spatial publication to exact pins.
+- Converted stress spawn scheduled rule/candidate/input/tuning/telemetry/counter/frustum/slot/ticket/debug ownership to exact pins.
+- Converted dynamic point-light culling to exact scheduled pins for sources, states, frustum planes, SDF samples, profile rules, sort buffers, both GPU payloads, probe lights, and counters.
+
+Cinematic cheats used:
+- No new realism work. Existing scheduled approximations, mock SDF, procedural scatter, and visual culling remain; ownership was narrowed so saved frame budget can buy visible density later.
+- Continuous `GlobalQualityWeight` behavior remains unchanged. No binary quality switch, DTO layout change, or save identity change.
+
+Exact microseconds saved:
+- No profiler microseconds claimed.
+- Structural removals: six cross-frame DataVault writer-lock lifetimes plus one hot same-phase migratory sargassum broad state guard.
+
+Verification:
+- Six edited files report `BRACE_DELTA=0`.
+- Removed broad scheduled/job symbols are absent from the touched file set.
+- Targeted method-body scan reports `PASS_51_56_TARGETED_METHOD_FORBIDDEN_HITS=0` for direct `GlobalRegistry.Get`, `GlobalRegistry.DataVault`, Unity component lookup, scene find, `.Run`, `.Complete`, `TryAcquireMutationGuard`, and `ReleaseMutationGuard` in touched hot/schedule/pin/completion roots.
+- `git diff --check` reports only CRLF normalization warnings.
+- Build was not launched: CPU was 69 percent and `dotnet.exe` PID 59332 was already running `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal`. Compile success is not claimed.
+
+Remaining hard debt:
+- Full compile remains unproven until the build gate opens and a single throttled build completes.
+- Broad scheduled/job guards still exist elsewhere and must continue to be converted to exact pins or formally proven cold/editor/same-frame-only.
+
+## 2026-05-30 APEX Integrator Passes 57-60
+
+What was wrong:
+- Bulkhead containment, macro ecosystem, abyssal shadow culling, and seed ship anomaly still retained broad scheduled/job mutation guards.
+- Bulkhead optional hatch fluid/structural paths tracked optional bits without actually pinning those optional buffers.
+- Seed ship anomaly unlock state reset happened after release attempts, leaving a weaker forced-teardown edge.
+
+What was done:
+- Converted bulkhead scheduled collision/update/hatch/telemetry ownership to exact bulkhead and hatch pins; optional hatch fluid-front and structural-state paths now lock and unlock their actual buffers.
+- Converted macro ecosystem population/diffusion/copy/telemetry ownership to exact sector, tuning, counter, fault, and telemetry pins.
+- Converted abyssal shadow culling ownership to exact instance/state/illumination/frustum/profile/counter/HZB/indirect pins; upload remains in the visual-sync completion path after simulation has settled.
+- Converted seed ship anomaly field/rebase/frenzy/telemetry ownership to exact pins and changed unlock to clear local held state before reverse-order release.
+
+Cinematic cheats used:
+- No new simulation realism was added. Existing scheduled approximations and visual culling/anomaly cheats remain; this pass narrows ownership and keeps saved budget available for density/fidelity later.
+- Continuous `GlobalQualityWeight` behavior and DTO/save/authority layout remain unchanged. No binary quality switch introduced.
+
+Exact microseconds saved:
+- No profiler microseconds claimed.
+- Structural removals: four cross-frame DataVault writer-lock lifetimes and one bit-only optional hatch ownership bug.
+
+Verification:
+- Four edited files report `BRACE_DELTA=0`.
+- Removed broad scheduled/job symbols are absent from the touched file set.
+- Explicit search reports zero `GlobalRegistry.Get<T>()`, `GetComponent`, `TryGetComponent`, or `GetComponentInParent` hits across touched runtime files and hatch-lock partial.
+- Targeted method-body scan reports `PASS_57_60_TARGETED_METHOD_FORBIDDEN_HITS=0` across 47 hot/schedule/completion/pin method bodies for direct registry/data-vault lookup, Unity component lookup, scene find, `.Run`, `.Complete`, `TryAcquireMutationGuard`, and `ReleaseMutationGuard`.
+- `git diff --check` reports only CRLF normalization warnings.
+- Build was not launched: CPU average was 59 percent and `dotnet.exe` PID 36140 was already running `dotnet build Hecton8.Core.csproj -nologo -clp:ErrorsOnly -maxcpucount:1 --no-restore /p:UseSharedCompilation=false`. Compile success is not claimed.
+
+Remaining hard debt:
+- Full compile remains unproven until the CPU/compiler gate opens and one throttled build completes.
+- Broad scheduled/job guards still exist elsewhere and must continue to be converted to exact pins or formally proven cold/editor/same-frame-only.
+
+## 2026-05-30 APEX Integrator Pass 61
+
+What was wrong:
+- `FoveatedSimulationManager` still held a broad importance scoring mutation guard across a scheduled cadence job.
+- The job only needed seven concrete NativeArray buffers, so the broad SystemDispatcher ownership was larger than the data route.
+
+What was done:
+- Replaced `ImportanceJobMutationGuardMask` with exact pins for score positions, entity AUPs, importance scores, tick-rate codes, frustum flags, sim tiers, and distances.
+- Partial pin acquisition releases in `finally`; schedule failure and completion use the same reverse-order release route.
+- Existing foveated tick-rate math, continuous quality thresholds, DTO layout, and result application phase are unchanged.
+
+Cinematic cheats used:
+- No new simulation or visual realism added. Existing foveated cadence scoring remains the core performance cheat: spend updates near the player/camera and starve distant or rear targets predictably.
+- Low/Middle/High/Ultra behavior stays continuous through existing threshold resolution, not binary switches.
+
+Exact microseconds saved:
+- No profiler microseconds claimed.
+- Structural removal: one cross-frame DataVault writer-lock lifetime in the central foveated simulation scheduler.
+
+Verification:
+- `FoveatedSimulationManager.cs BRACE_DELTA=0`.
+- Removed importance guard symbols are absent.
+- Explicit search reports zero `GlobalRegistry.Get<T>()`, `GetComponent`, `TryGetComponent`, or `GetComponentInParent` hits in the file.
+- Targeted method-body scan reports `PASS_61_FOVEATED_METHOD_FORBIDDEN_HITS=0` across 14 hot/schedule/completion/pin/execute method bodies.
+- `git diff --check` reports only CRLF normalization warnings.
+- One build was launched only after CPU dropped to 4 percent and compiler-process scan was empty: `dotnet build Hecton8.slnx --no-restore /maxcpucount:1 -v:minimal`. It timed out after 244 seconds without diagnostics; this agent's `dotnet`, `csc`, and `VBCSCompiler` PIDs were stopped, and final compiler-process scan is empty. Compile success is not claimed.
+
+Remaining hard debt:
+- Full compile remains unproven until the CPU/compiler gate opens.
+- Broad scheduled/job guards remain in interaction, voxel, physiology, graphics material, nutrient, vehicle/exosuit, power, loot, hazard, plasma, radar, flora, drone, combat, and related systems.

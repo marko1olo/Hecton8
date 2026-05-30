@@ -189,6 +189,20 @@ namespace Hecton8.Bootstrap
         private const int SurvivalAsyncUploadTimeSliceMs = 1;
         private const int MidTierAsyncUploadTimeSliceMs = 2;
         private const int HighTierAsyncUploadTimeSliceMs = 4;
+        private const int SurfaceMediumQualityIndex = 0;
+        private const int AbyssLowQualityIndex = 1;
+        private const int OrbitHighQualityIndex = 2;
+        private const int QuestVrQualityIndex = 3;
+        private const int HandheldUmaQualityIndex = 4;
+        private const int CompactPcQualityIndex = 5;
+        private const int LeviathanUltraQualityIndex = 6;
+        private const string SurfaceMediumQualityName = "Surface (Medium)";
+        private const string AbyssLowQualityName = "Abyss (Low)";
+        private const string OrbitHighQualityName = "Orbit (High)";
+        private const string QuestVrQualityName = "Quest (VR)";
+        private const string HandheldUmaQualityName = "Handheld (UMA)";
+        private const string CompactPcQualityName = "Compact PC";
+        private const string LeviathanUltraQualityName = "Leviathan (Ultra)";
         private const int HeartbeatFreezeSlowTickLimit = 3;
         private const double ServiceHeartbeatPollIntervalSeconds = 60.0d;
         private const double BootstrapSceneLoadWatchdogSeconds = 10.0d;
@@ -5205,7 +5219,7 @@ namespace Hecton8.Bootstrap
             }
 
             if (q < 0.38f)
-                return global::Hecton8.Core.HectonQualityTier.Mx350;
+                return global::Hecton8.Core.HectonQualityTier.CompactPc;
 
             if (q < 0.62f)
                 return global::Hecton8.Core.HectonQualityTier.Mid;
@@ -5235,6 +5249,8 @@ namespace Hecton8.Bootstrap
 
         private static void ApplyScalabilityMatrix(in HectonHardwareProfile hardwareProfile)
         {
+            HardwareTierDetector.EnsureInitialized();
+            ApplyUnityQualityEnvelope(in hardwareProfile);
             QualitySettings.vSyncCount = 0;
             Application.targetFrameRate = ResolveTargetFrameRate(in hardwareProfile);
             QualitySettings.maximumLODLevel = ResolveMaximumLodLevel(in hardwareProfile);
@@ -5243,6 +5259,67 @@ namespace Hecton8.Bootstrap
             QualitySettings.asyncUploadTimeSlice = ResolveAsyncUploadTimeSliceMs(in hardwareProfile);
             QualitySettings.asyncUploadPersistentBuffer = true;
             ConfigureJobWorkerThreads(in hardwareProfile);
+        }
+
+        private static void ApplyUnityQualityEnvelope(in HectonHardwareProfile hardwareProfile)
+        {
+            int qualityIndex = ResolveUnityQualityIndex(in hardwareProfile);
+            string[] qualityNames = QualitySettings.names;
+            int qualityCount = qualityNames != null ? qualityNames.Length : 0;
+            if (qualityIndex < 0 || qualityIndex >= qualityCount)
+                return;
+
+            if (QualitySettings.GetQualityLevel() == qualityIndex)
+                return;
+
+            QualitySettings.SetQualityLevel(qualityIndex, true);
+        }
+
+        private static int ResolveUnityQualityIndex(in HectonHardwareProfile hardwareProfile)
+        {
+            if (Application.platform == RuntimePlatform.Android || HardwareTierDetector.IsQuest3Like)
+                return FindUnityQualityIndex(QuestVrQualityName, QuestVrQualityIndex);
+
+            if (HardwareTierDetector.IsSteamDeckLike)
+                return FindUnityQualityIndex(HandheldUmaQualityName, HandheldUmaQualityIndex);
+
+            if (HardwareTierDetector.SharedMemoryModeActive &&
+                (int)hardwareProfile.QualityTier <= (int)HectonQualityTier.Mid)
+            {
+                return FindUnityQualityIndex(HandheldUmaQualityName, HandheldUmaQualityIndex);
+            }
+
+            switch (hardwareProfile.QualityTier)
+            {
+                case HectonQualityTier.Low:
+                    return FindUnityQualityIndex(AbyssLowQualityName, AbyssLowQualityIndex);
+                case HectonQualityTier.CompactPc:
+                    return FindUnityQualityIndex(CompactPcQualityName, CompactPcQualityIndex);
+                case HectonQualityTier.Ultra:
+                    return FindUnityQualityIndex(LeviathanUltraQualityName, LeviathanUltraQualityIndex);
+                case HectonQualityTier.High:
+                    return FindUnityQualityIndex(OrbitHighQualityName, OrbitHighQualityIndex);
+                case HectonQualityTier.Mid:
+                default:
+                    return FindUnityQualityIndex(SurfaceMediumQualityName, SurfaceMediumQualityIndex);
+            }
+        }
+
+        private static int FindUnityQualityIndex(string qualityName, int fallbackIndex)
+        {
+            string[] names = QualitySettings.names;
+            if (names == null || names.Length == 0)
+                return -1;
+
+            for (int i = 0; i < names.Length; i++)
+            {
+                if (string.Equals(names[i], qualityName, StringComparison.Ordinal))
+                    return i;
+            }
+
+            return fallbackIndex >= 0 && fallbackIndex < names.Length
+                ? fallbackIndex
+                : QualitySettings.GetQualityLevel();
         }
 
         private static void DisableGarbageCollectorAfterCoreReady()
@@ -5279,6 +5356,14 @@ namespace Hecton8.Bootstrap
                 return HardwareProfileCatalog.Quest3TextureBudgetMegabytes;
             if (HardwareTierDetector.IsSteamDeckLike)
                 return HardwareProfileCatalog.SteamDeckLcdTextureBudgetMegabytes;
+
+            if (HardwareTierDetector.SharedMemoryModeActive)
+            {
+                return math.clamp(
+                    HardwareTierDetector.RecommendedVramBudgetMegabytes * 0.5f,
+                    512f,
+                    1536f);
+            }
 
             return ResolveBootQualityCurve(
                 ResolveBootQualityWeight01(in hardwareProfile),
@@ -5325,15 +5410,15 @@ namespace Hecton8.Bootstrap
         private static float ResolveBootQualityCurve(
             float qualityWeight,
             float low,
-            float mx350,
+            float compact,
             float middle,
             float high,
             float ultra)
         {
             float q = math.saturate(math.isfinite(qualityWeight) ? qualityWeight : 0f);
             return low +
-                (mx350 - low) * math.smoothstep(0f, 0.25f, q) +
-                (middle - mx350) * math.smoothstep(0.25f, 0.5f, q) +
+                (compact - low) * math.smoothstep(0f, 0.25f, q) +
+                (middle - compact) * math.smoothstep(0.25f, 0.5f, q) +
                 (high - middle) * math.smoothstep(0.5f, 0.75f, q) +
                 (ultra - high) * math.smoothstep(0.75f, 1f, q);
         }
@@ -5350,6 +5435,9 @@ namespace Hecton8.Bootstrap
                 return HardwareProfileCatalog.Quest3JobWorkerBudget;
             if (HardwareTierDetector.IsSteamDeckLike)
                 return HardwareProfileCatalog.SteamDeckLcdJobWorkerBudget;
+
+            if (HardwareTierDetector.SharedMemoryModeActive)
+                return math.max(1, math.min(hardwareProfile.ProcessorCount - 2, 6));
 
             return math.max(1, hardwareProfile.ProcessorCount - 1);
         }
@@ -5769,10 +5857,10 @@ namespace Hecton8.Bootstrap
             }
 
             if (playerRigidbody == null && playerObject != null)
-                playerRigidbody = playerObject.GetComponent<Rigidbody>();
+                playerObject.TryGetComponent(out playerRigidbody);
 
             if (playerController == null && playerObject != null)
-                playerController = playerObject.GetComponent<MonoBehaviour>();
+                playerObject.TryGetComponent(out playerController);
 
             PublishPlayerRuntimeReference();
         }
@@ -6156,7 +6244,7 @@ namespace Hecton8.Bootstrap
         {
             PublishPlayerRuntimeReference();
             if (playerRigidbody == null && playerObject != null)
-                playerRigidbody = playerObject.GetComponent<Rigidbody>();
+                playerObject.TryGetComponent(out playerRigidbody);
 
             SetLegacyPlayerRigidbodyKinematic(playerRigidbody, true);
 

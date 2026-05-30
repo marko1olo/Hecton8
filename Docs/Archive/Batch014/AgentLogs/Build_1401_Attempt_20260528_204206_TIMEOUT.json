@@ -1,0 +1,38 @@
+{
+  "agent": "1401",
+  "timestamp": "20260528_204206",
+  "evidenceClass": "CLI_COMPILE_PARTIAL_TIMEOUT",
+  "status": "PENDING_VERIFICATION",
+  "reason": "Guarded wrapper command exceeded caller timeout before writing a final SUMMARY artifact.",
+  "guardedWrapper": "Tools/Run_Guarded_Vendor_Compile_1401.ps1",
+  "directDotnetBuildUsed": false,
+  "directMSBuildUsed": false,
+  "summaryArtifactWritten": false,
+  "startedArtifactWritten": false,
+  "partialLogs": [
+    {
+      "path": "Docs/AgentLogs/Build_1401_Attempt_20260528_204206_AmplifyImpostors.Runtime.log",
+      "observedTail": "Build succeeded. 0 Warning(s). 0 Error(s). Time Elapsed 00:00:28.82.",
+      "classification": "partial log only; not a complete wrapper proof"
+    },
+    {
+      "path": "Docs/AgentLogs/Build_1401_Attempt_20260528_204206_AmplifyImpostors.Editor.log",
+      "observedTail": "Build succeeded. 0 Warning(s). 0 Error(s). Time Elapsed 00:01:03.83.",
+      "classification": "partial log only; not a complete wrapper proof"
+    }
+  ],
+  "survivingCompilerProcessCheck": {
+    "command": "Get-Process -Name dotnet,csc,MSBuild,VBCSCompiler -ErrorAction SilentlyContinue",
+    "latestObserved": [
+      {
+        "processName": "dotnet",
+        "id": 29180,
+        "cpuSeconds": 43.90625
+      }
+    ],
+    "classification": "compiler process is active after timeout; no new compile attempt may start until the guard permits it"
+  },
+  "mitigationApplied": "Wrapper now writes a STARTED JSON artifact immediately after the preflight contention gate passes.",
+  "mitigationSyntaxProof": "POWERSHELL_PARSE_OK",
+  "residualRisk": "No full post-patch vendor compile proof exists from this attempt."
+}

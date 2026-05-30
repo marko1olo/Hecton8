@@ -1,53 +1,53 @@
 ﻿# TOKEN USAGE AUDIT FAST REFRESH 2026-05-30
 
-Generated UTC: 2026-05-30T08:10:27.525790+00:00
-Generated Samara: 2026-05-30T12:10:27.525790+04:00
+Generated UTC: 2026-05-30T19:24:08.230194+00:00
+Generated Samara: 2026-05-30T23:24:08.230194+04:00
 Evidence class: FAST_INCREMENTAL_LOCAL_CODEX_JSONL_AND_FILESYSTEM. Previous all-time snapshot plus post-cutoff JSONL deltas. Not billing-provider proof.
 
 ## Totals
 
 | Metric | Value |
 |---|---:|
-| file_count | 3,130 |
-| sessions_with_usage | 2,985 |
-| input_tokens | 120,697,236,985 |
-| cached_input_tokens | 116,046,101,376 |
-| output_tokens | 418,490,206 |
-| reasoning_output_tokens | 129,954,328 |
-| total_tokens | 121,116,760,791 |
-| GPT-5.5 standard under-272K API-equivalent | $93,833.43 |
-| GPT-5.5 long-context sensitivity upper bound | $181,389.52 |
-| GPT-5.5 long-context + regional sensitivity upper bound | $199,528.47 |
-| GPT-5.5 regional +10% sensitivity | $103,216.78 |
+| file_count | 3,151 |
+| sessions_with_usage | 3,005 |
+| input_tokens | 123,041,537,283 |
+| cached_input_tokens | 118,317,848,064 |
+| output_tokens | 425,802,228 |
+| reasoning_output_tokens | 131,900,809 |
+| total_tokens | 123,468,373,111 |
+| GPT-5.5 standard under-272K API-equivalent | $95,551.44 |
+| GPT-5.5 long-context sensitivity upper bound | $184,715.84 |
+| GPT-5.5 long-context + regional sensitivity upper bound | $203,187.42 |
+| GPT-5.5 regional +10% sensitivity | $105,106.58 |
 
 ## Increment Since Previous Snapshot
 
-Previous report: `C:\hades\Hecton8\Docs\DEPRECATED\Root_Docs_Noise_2026-05-26\TOKEN_USAGE_AUDIT_2026-05-29.json`
-Previous snapshot mode: `prior_dated_report`
-Cutoff UTC: `2026-05-29T15:38:45.744000+00:00`
-Changed JSONL files scanned: 49
-Increment events after cutoff: 19,728
+Previous report: `C:\hades\Hecton8\Docs\DEPRECATED\Root_Docs_Noise_2026-05-26\TOKEN_USAGE_AUDIT_2026-05-30.json`
+Previous snapshot mode: `same_day_existing_report`
+Cutoff UTC: `2026-05-30T08:10:49.673000+00:00`
+Changed JSONL files scanned: 40
+Increment events after cutoff: 13,547
 Post-cutoff long-context delta events detected (lower-bound): 0
 
 | Metric | Delta |
 |---|---:|
-| total_tokens | 3,431,972,122 |
-| input_tokens | 3,421,357,743 |
-| cached_input_tokens | 3,321,414,656 |
-| output_tokens | 10,614,379 |
-| reasoning_output_tokens | 2,853,785 |
-| GPT-5.5 standard $ | $2,478.85 |
-| primary C# lines | 17,856 |
+| total_tokens | 2,351,612,320 |
+| input_tokens | 2,344,300,298 |
+| cached_input_tokens | 2,271,746,688 |
+| output_tokens | 7,312,022 |
+| reasoning_output_tokens | 1,946,481 |
+| GPT-5.5 standard $ | $1,718.00 |
+| primary C# lines | 14,765 |
 
 ## Velocity
 
 | Metric | Value |
 |---|---:|
-| total tokens / hour | 207,591,690.17 |
-| total tokens / second | 57,664.36 |
-| GPT-5.5 standard $ / hour | $149.94 |
-| primary C# lines / hour | 1,080.07 |
-| tokens / net primary C# line | 192,202.74 |
+| total tokens / hour | 209,442,276.60 |
+| total tokens / second | 58,178.41 |
+| GPT-5.5 standard $ / hour | $153.01 |
+| primary C# lines / hour | 1,315.02 |
+| tokens / net primary C# line | 159,269.37 |
 | post-cutoff detected long-context surcharge delta (lower-bound) | $0.00 |
 
 ## Residual Risk

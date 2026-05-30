@@ -1,14 +1,11 @@
 using System;
-using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -208,10 +205,12 @@ namespace Hecton8.Core
         private const uint ScalabilityShaderDirtyQualityWeight = 1u << 2;
         private const string ScalabilityDumpFileName = "Dump_SCALABILITY_DICTATOR.bin";
         private const string ScalabilityH8DumpFileName = "Dump_SCALABILITY_DICTATOR.h8dump";
+        private const string ScalabilityDumpRelativePath = "Docs/AgentLogs/Dump_SCALABILITY_DICTATOR.bin";
+        private const string ScalabilityH8DumpRelativePath = "Docs/AgentLogs/Dump_SCALABILITY_DICTATOR.h8dump";
+        private const int ScalabilityDumpHeaderBytes = 20;
+        private const int ScalabilityDumpEntryBytes = 64;
         private const string ScalabilityCsvFileName = "scalability_curves.csv";
 
-        private static readonly ulong MockTerrainSamplerMutationGuardMask =
-            VaultMutationGuardBit(BufferID.ShinobuScalabilityMockScatterDensity);
         private static readonly int _mathLodLowScalarId = Shader.PropertyToID("_HectonMathLodLowWeight");
         private static readonly int _cullingMultiplierId = Shader.PropertyToID("_H8CullingMultiplier");
         private static readonly int _globalQualityWeightId = Shader.PropertyToID("_GlobalQualityWeight");
@@ -223,10 +222,7 @@ namespace Hecton8.Core
         private static VaultGenerationHandle<MockTerrainSamplerStatus> _mockTerrainSamplerStatusHandle;
         private static VaultGenerationHandle<ScalabilityTelemetryEntry> _scalabilityTelemetryHandle;
         private static VaultGenerationHandle<ScalabilityTuningDTO> _scalabilityTuningHandle;
-        private static VaultGenerationHandle<byte> _csvScratchHandle;
 
-        private static JobHandle _mockTerrainSamplerJobHandle;
-        private static bool _mockTerrainSamplerJobPending;
         private static IDynamicResolutionRuntime _dynamicResolutionRuntime;
         private static long _lastStopwatchTimestamp;
         private static bool _stopwatchSeeded;
@@ -283,8 +279,6 @@ namespace Hecton8.Core
         private static float _qualityPidPreviousError;
         private static int _scalabilityTelemetryCursor;
         private static int _scalabilityTelemetrySampleCount;
-        private static bool _mockTerrainSamplerGuardHeld;
-
         /// <summary>Current culling multiplier written by the dictator.</summary>
         public static float CullingMultiplier => SanitizeCullingMultiplier(_cullingMultiplier);
 
@@ -320,7 +314,6 @@ namespace Hecton8.Core
             NativeArray<float> frameTimes,
             NativeArray<HomeostasisBlackBoxEntry> blackBox)
         {
-            CompleteMockTerrainSamplerJobIfReady();
             ValidateScalabilityDtoLayouts(blackBox);
             ResolveHardwareConstraintPolicy();
             _graphicsMemoryBudgetBytes = ResolveGraphicsMemoryBudgetBytes();
@@ -388,25 +381,70 @@ namespace Hecton8.Core
             IDataVault vault = _dataVault;
             if (EnsureScalabilityStateHandles(vault))
             {
-                if (TryResolveScalabilityStateViews(vault, out NativeArray<SystemHealthDTO> health, out NativeArray<ScalabilityStateDTO> state))
+                if (TryAcquireWriteView(vault, in _systemHealthDtoHandle, DictatorSingletonLength, out NativeArray<SystemHealthDTO> health))
                 {
-                    MemClearIfCreated(health);
-                    MemClearIfCreated(state);
+                    try
+                    {
+                        MemClearIfCreated(health);
+                    }
+                    finally
+                    {
+                        vault.ReleaseWriteLock(in _systemHealthDtoHandle, SystemID.HardwareHomeostasis);
+                    }
+                }
+
+                if (TryAcquireWriteView(vault, in _scalabilityStateHandle, DictatorSingletonLength, out NativeArray<ScalabilityStateDTO> state))
+                {
+                    try
+                    {
+                        MemClearIfCreated(state);
+                    }
+                    finally
+                    {
+                        vault.ReleaseWriteLock(in _scalabilityStateHandle, SystemID.HardwareHomeostasis);
+                    }
                 }
             }
 
-            if (EnsureMockHeavyLoadHandle(vault) && TryResolveMockHeavyLoadView(vault, out NativeArray<MockHeavyLoadSignal> heavyLoad))
-                MemClearIfCreated(heavyLoad);
+            if (EnsureMockHeavyLoadHandle(vault) &&
+                TryAcquireWriteView(vault, in _mockHeavyLoadHandle, DictatorSingletonLength, out NativeArray<MockHeavyLoadSignal> heavyLoad))
+            {
+                try
+                {
+                    MemClearIfCreated(heavyLoad);
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _mockHeavyLoadHandle, SystemID.HardwareHomeostasis);
+                }
+            }
 
-            if (EnsureMockTerrainSamplerStatusHandle(vault) && TryResolveMockTerrainSamplerStatusView(vault, out NativeArray<MockTerrainSamplerStatus> terrainStatus))
-                MemClearIfCreated(terrainStatus);
+            if (EnsureMockTerrainSamplerStatusHandle(vault) &&
+                TryAcquireWriteView(vault, in _mockTerrainSamplerStatusHandle, DictatorSingletonLength, out NativeArray<MockTerrainSamplerStatus> terrainStatus))
+            {
+                try
+                {
+                    MemClearIfCreated(terrainStatus);
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _mockTerrainSamplerStatusHandle, SystemID.HardwareHomeostasis);
+                }
+            }
 
-#if UNITY_EDITOR
-            if (OpenOrAcquireCsvScratchForOwnerRoute(out NativeArray<byte> csvScratch))
-                MemClearIfCreated(csvScratch);
-#endif
-            if (OpenOrAcquireScalabilityTelemetryForOwnerRoute(out NativeArray<ScalabilityTelemetryEntry> telemetry))
-                MemClearIfCreated(telemetry);
+            if (EnsureScalabilityTelemetryHandle(vault) &&
+                TryAcquireWriteView(vault, in _scalabilityTelemetryHandle, ScalabilityTelemetryCapacity, out NativeArray<ScalabilityTelemetryEntry> telemetry))
+            {
+                try
+                {
+                    MemClearIfCreated(telemetry);
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _scalabilityTelemetryHandle, SystemID.HardwareHomeostasis);
+                }
+            }
+
             GenerateEmergencyMockProfiles();
             _pendingCullingMultiplier = 1f;
             _pendingScalabilityShaderDirtyFlags |= ScalabilityShaderDirtyCullingMultiplier;
@@ -417,8 +455,6 @@ namespace Hecton8.Core
 
         private static void ShutdownScalabilityDictator()
         {
-            ForceCompleteMockTerrainSamplerJobInPostSimulationWindow(_dataVault);
-
             if (_gcFrozenByDictator)
             {
                 GarbageCollector.GCMode = GarbageCollector.Mode.Enabled;
@@ -439,7 +475,6 @@ namespace Hecton8.Core
             _pendingMathLodLowScalar = 0f;
             _pendingCullingMultiplier = 1f;
             _pendingGlobalQualityWeight = 1f;
-            ReleaseMockTerrainSamplerJobGuard(_dataVault);
             ReleaseScalabilityDictatorVaultHandles(_dataVault);
             _systemHealthDtoHandle = default;
             _scalabilityStateHandle = default;
@@ -447,7 +482,6 @@ namespace Hecton8.Core
             _mockTerrainSamplerStatusHandle = default;
             _scalabilityTelemetryHandle = default;
             _scalabilityTuningHandle = default;
-            _csvScratchHandle = default;
             _scalabilityTelemetryCursor = 0;
             _scalabilityTelemetrySampleCount = 0;
             _qualityPidIntegral = 0f;
@@ -468,9 +502,6 @@ namespace Hecton8.Core
 
         private static void ResetScalabilityDictatorVaultHandles(IDataVault releaseVault)
         {
-            ForceCompleteMockTerrainSamplerJobInPostSimulationWindow(releaseVault);
-
-            ReleaseMockTerrainSamplerJobGuard(releaseVault);
             ReleaseScalabilityDictatorVaultHandles(releaseVault);
             _systemHealthDtoHandle = default;
             _scalabilityStateHandle = default;
@@ -478,30 +509,11 @@ namespace Hecton8.Core
             _mockTerrainSamplerStatusHandle = default;
             _scalabilityTelemetryHandle = default;
             _scalabilityTuningHandle = default;
-            _csvScratchHandle = default;
             _scalabilityTelemetryCursor = 0;
             _scalabilityTelemetrySampleCount = 0;
             _qualityPidIntegral = 0f;
             _qualityPidPreviousError = 0f;
             _mockProfilesGenerated = false;
-        }
-
-        private static void ForceCompleteMockTerrainSamplerJobInPostSimulationWindow(IDataVault releaseVault)
-        {
-            if (!_mockTerrainSamplerJobPending)
-                return;
-
-            DispatcherJobFence.BeginPostSimulationSwapWindow();
-            try
-            {
-                DispatcherJobFence.TryComplete(ref _mockTerrainSamplerJobHandle, forceComplete: true);
-                _mockTerrainSamplerJobPending = false;
-            }
-            finally
-            {
-                DispatcherJobFence.EndPostSimulationSwapWindow();
-                ReleaseMockTerrainSamplerJobGuard(releaseVault);
-            }
         }
 
         private static void ReleaseScalabilityDictatorVaultHandles(IDataVault vault)
@@ -523,8 +535,6 @@ namespace Hecton8.Core
                 vault.ReleaseBuffer(in _scalabilityTelemetryHandle);
             if (_scalabilityTuningHandle.BufferID != 0u)
                 vault.ReleaseBuffer(in _scalabilityTuningHandle);
-            if (_csvScratchHandle.BufferID != 0u)
-                vault.ReleaseBuffer(in _csvScratchHandle);
         }
 
         private static float ResolveTargetFrameMs(float targetFps)
@@ -852,7 +862,7 @@ namespace Hecton8.Core
             UpdateCullingMultiplier(math.lerp(1f, SanitizeLowCullingMultiplier(_lowCullingMultiplier), ResolveMathLodLowWeight()));
             UpdateRegistryKillMask(targetMask);
             WriteDictatorState(frame, safeFrameMs, vramPressure01, thermalIndex, targetMask);
-            ScheduleMockTerrainSamplerJob(frame, targetMask);
+            RefreshMockTerrainSamplerStatus(frame, targetMask);
 
             bool survivalFailure = safeFrameMs > ScalabilityHardFailFrameMs && GlobalQualityWeight <= 0.0001f;
             bool emergencyFailure = safeFrameMs > CriticalFrameDumpThresholdMs &&
@@ -1212,33 +1222,59 @@ namespace Hecton8.Core
             }
 
             float weight = SanitizeQualityWeight01(_globalQualityWeight, 0f);
-            if (!TryResolveScalabilityStateViews(vault, out NativeArray<SystemHealthDTO> ignoredHealth, out NativeArray<ScalabilityStateDTO> stateArray) ||
-                !TryResolveMockHeavyLoadView(vault, out NativeArray<MockHeavyLoadSignal> heavyArray) ||
-                !TryResolveMockTerrainSamplerStatusView(vault, out NativeArray<MockTerrainSamplerStatus> terrainArray))
+            if (!TryAcquireWriteView(vault, in _scalabilityStateHandle, DictatorSingletonLength, out NativeArray<ScalabilityStateDTO> stateArray))
             {
                 return;
             }
 
-            ScalabilityStateDTO state = stateArray[0];
-            state.GlobalQualityWeight = weight;
-            state.FractionalTimeSlice = ResolveFractionalTimeSliceFromWeight(weight);
-            state.VramPressure = 0f;
-            state.ThermalIndex = 0f;
-            stateArray[0] = state;
+            try
+            {
+                ScalabilityStateDTO state = stateArray[0];
+                state.GlobalQualityWeight = weight;
+                state.FractionalTimeSlice = ResolveFractionalTimeSliceFromWeight(weight);
+                state.VramPressure = 0f;
+                state.ThermalIndex = 0f;
+                stateArray[0] = state;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _scalabilityStateHandle, SystemID.HardwareHomeostasis);
+            }
 
-            MockHeavyLoadSignal heavy = heavyArray[0];
-            heavy.FrameSpikeMs = DefaultMockFrameSpikeMs;
-            heavy.VramPressure01 = 0f;
-            heavy.Flags = 0u;
-            heavy._pad0 = 0u;
-            heavyArray[0] = heavy;
+            if (!TryAcquireWriteView(vault, in _mockHeavyLoadHandle, DictatorSingletonLength, out NativeArray<MockHeavyLoadSignal> heavyArray))
+                return;
 
-            MockTerrainSamplerStatus terrain = terrainArray[0];
-            terrain.GlobalQualityWeight = weight;
-            terrain.TrilinearSampleProbability01 = weight;
-            terrain.SkippedTrilinearPercent01 = 1f - weight;
-            terrain.Frame = 0u;
-            terrainArray[0] = terrain;
+            try
+            {
+                MockHeavyLoadSignal heavy = heavyArray[0];
+                heavy.FrameSpikeMs = DefaultMockFrameSpikeMs;
+                heavy.VramPressure01 = 0f;
+                heavy.Flags = 0u;
+                heavy._pad0 = 0u;
+                heavyArray[0] = heavy;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _mockHeavyLoadHandle, SystemID.HardwareHomeostasis);
+            }
+
+            if (!TryAcquireWriteView(vault, in _mockTerrainSamplerStatusHandle, DictatorSingletonLength, out NativeArray<MockTerrainSamplerStatus> terrainArray))
+                return;
+
+            try
+            {
+                MockTerrainSamplerStatus terrain = terrainArray[0];
+                terrain.GlobalQualityWeight = weight;
+                terrain.TrilinearSampleProbability01 = weight;
+                terrain.SkippedTrilinearPercent01 = 1f - weight;
+                terrain.Frame = 0u;
+                terrainArray[0] = terrain;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _mockTerrainSamplerStatusHandle, SystemID.HardwareHomeostasis);
+            }
+
             _mockProfilesGenerated = true;
         }
 
@@ -1246,27 +1282,11 @@ namespace Hecton8.Core
         {
             signal = default;
             IDataVault vault = _dataVault;
-            if (!TryResolveMockHeavyLoadView(vault, out NativeArray<MockHeavyLoadSignal> signals))
+            if (!TryReadMockHeavyLoadView(vault, out NativeArray<MockHeavyLoadSignal>.ReadOnly signals))
                 return false;
 
             signal = signals[0];
             return true;
-        }
-
-        private static bool TryResolveScalabilityStateViews(
-            IDataVault vault,
-            out NativeArray<SystemHealthDTO> health,
-            out NativeArray<ScalabilityStateDTO> state)
-        {
-            health = default;
-            state = default;
-            return vault != null &&
-                   vault.TryResolveHandle(in _systemHealthDtoHandle, out health) &&
-                   vault.TryResolveHandle(in _scalabilityStateHandle, out state) &&
-                   health.IsCreated &&
-                   health.Length >= DictatorSingletonLength &&
-                   state.IsCreated &&
-                   state.Length >= DictatorSingletonLength;
         }
 
         private static bool TryReadScalabilityStateViews(
@@ -1283,15 +1303,6 @@ namespace Hecton8.Core
                    state.Length >= DictatorSingletonLength;
         }
 
-        private static bool TryResolveScalabilityTuningView(IDataVault vault, out NativeArray<ScalabilityTuningDTO> tuning)
-        {
-            tuning = default;
-            return vault != null &&
-                   vault.TryResolveHandle(in _scalabilityTuningHandle, out tuning) &&
-                   tuning.IsCreated &&
-                   tuning.Length >= DictatorSingletonLength;
-        }
-
         private static bool TryReadScalabilityTuningView(IDataVault vault, out NativeArray<ScalabilityTuningDTO>.ReadOnly tuning)
         {
             tuning = default;
@@ -1300,22 +1311,12 @@ namespace Hecton8.Core
                    tuning.Length >= DictatorSingletonLength;
         }
 
-        private static bool TryResolveMockHeavyLoadView(IDataVault vault, out NativeArray<MockHeavyLoadSignal> signal)
+        private static bool TryReadMockHeavyLoadView(IDataVault vault, out NativeArray<MockHeavyLoadSignal>.ReadOnly signal)
         {
             signal = default;
             return vault != null &&
-                   vault.TryResolveHandle(in _mockHeavyLoadHandle, out signal) &&
-                   signal.IsCreated &&
+                   vault.TryReadOnlyHandle(in _mockHeavyLoadHandle, out signal) &&
                    signal.Length >= DictatorSingletonLength;
-        }
-
-        private static bool TryResolveMockTerrainSamplerStatusView(IDataVault vault, out NativeArray<MockTerrainSamplerStatus> terrainSampler)
-        {
-            terrainSampler = default;
-            return vault != null &&
-                   vault.TryResolveHandle(in _mockTerrainSamplerStatusHandle, out terrainSampler) &&
-                   terrainSampler.IsCreated &&
-                   terrainSampler.Length >= DictatorSingletonLength;
         }
 
         private static bool TryReadMockTerrainSamplerStatusView(IDataVault vault, out NativeArray<MockTerrainSamplerStatus>.ReadOnly terrainSampler)
@@ -1392,15 +1393,22 @@ namespace Hecton8.Core
             if (!EnsureScalabilityTuningHandle(vault))
                 return;
 
-            if (!TryResolveScalabilityTuningView(vault, out NativeArray<ScalabilityTuningDTO> tuningArray))
+            if (!TryAcquireWriteView(vault, in _scalabilityTuningHandle, DictatorSingletonLength, out NativeArray<ScalabilityTuningDTO> tuningArray))
                 return;
 
-            ScalabilityTuningDTO tuning = tuningArray[0];
-            tuning.TargetFrameMs = SanitizeTunerTargetFrameMs(_targetFrameMsOverride);
-            tuning.EmergencyThreshold = SanitizeTunerEmergencyThreshold(_emergencyThresholdOverride);
-            tuning.HysteresisReleaseFrames = SanitizeTunerHysteresisFrames(_hysteresisReleaseFrames);
-            tuning.Flags = 0u;
-            tuningArray[0] = tuning;
+            try
+            {
+                ScalabilityTuningDTO tuning = tuningArray[0];
+                tuning.TargetFrameMs = SanitizeTunerTargetFrameMs(_targetFrameMsOverride);
+                tuning.EmergencyThreshold = SanitizeTunerEmergencyThreshold(_emergencyThresholdOverride);
+                tuning.HysteresisReleaseFrames = SanitizeTunerHysteresisFrames(_hysteresisReleaseFrames);
+                tuning.Flags = 0u;
+                tuningArray[0] = tuning;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _scalabilityTuningHandle, SystemID.HardwareHomeostasis);
+            }
         }
 
         private static bool EnsureMockHeavyLoadHandle(IDataVault vault)
@@ -1441,60 +1449,6 @@ namespace Hecton8.Core
             return true;
         }
 
-        private static bool TryResolveMockTerrainSamplerStatus(out NativeArray<MockTerrainSamplerStatus> terrainSampler)
-        {
-            terrainSampler = default;
-            return TryResolveMockTerrainSamplerStatusView(_dataVault, out terrainSampler);
-        }
-
-        private static bool TryResolveCsvScratch(out NativeArray<byte> csvScratch)
-        {
-            csvScratch = default;
-#if !UNITY_EDITOR
-            return false;
-#else
-            IDataVault vault = _dataVault;
-            if (vault == null)
-                return false;
-
-            if (_csvScratchHandle.BufferID == 0u || _csvScratchHandle.Generation == 0u)
-                return false;
-
-            return vault.TryResolveHandle(in _csvScratchHandle, out csvScratch) &&
-                   csvScratch.IsCreated &&
-                   csvScratch.Length >= ScalabilityCsvScratchBytes;
-#endif
-        }
-
-        private static bool OpenOrAcquireCsvScratchForOwnerRoute(out NativeArray<byte> csvScratch)
-        {
-            csvScratch = default;
-#if !UNITY_EDITOR
-            return false;
-#else
-            IDataVault vault = _dataVault;
-            if (vault == null)
-                return false;
-
-            if (!OpenOrAcquireVaultBufferForOwnerRoute(
-                    vault,
-                    ref _csvScratchHandle,
-                    BufferID.ShinobuScalabilityCsvScratch,
-                    ScalabilityCsvScratchBytes,
-                    NativeArrayOptions.UninitializedMemory,
-                    out csvScratch,
-                    out bool created))
-            {
-                return false;
-            }
-
-            if (created)
-                MemClearIfCreated(csvScratch);
-
-            return csvScratch.IsCreated && csvScratch.Length >= ScalabilityCsvScratchBytes;
-#endif
-        }
-
         private static bool EnsureScalabilityTelemetryHandle(IDataVault vault)
         {
             if (!OpenOrAcquireVaultBufferForOwnerRoute(
@@ -1529,16 +1483,6 @@ namespace Hecton8.Core
                 return false;
 
             return vault.TryReadOnlyHandle(in _scalabilityTelemetryHandle, out telemetry) &&
-                   telemetry.Length >= ScalabilityTelemetryCapacity;
-        }
-
-        private static bool OpenOrAcquireScalabilityTelemetryForOwnerRoute(out NativeArray<ScalabilityTelemetryEntry> telemetry)
-        {
-            telemetry = default;
-            IDataVault vault = _dataVault;
-            return EnsureScalabilityTelemetryHandle(vault) &&
-                   vault.TryResolveHandle(in _scalabilityTelemetryHandle, out telemetry) &&
-                   telemetry.IsCreated &&
                    telemetry.Length >= ScalabilityTelemetryCapacity;
         }
 
@@ -1634,25 +1578,11 @@ namespace Hecton8.Core
                    UnsafeUtility.SizeOf<MockTerrainSamplerStatus>() +
                    UnsafeUtility.SizeOf<ScalabilityTuningDTO>() +
                    ((long)ScalabilityTelemetryCapacity * UnsafeUtility.SizeOf<ScalabilityTelemetryEntry>()) +
-                   MathLodRuntimeConfig.ResolveRequestedBytes() +
-                   ResolveScalabilityCsvScratchRequestedBytes();
+                   MathLodRuntimeConfig.ResolveRequestedBytes();
         }
 
-        private static int ResolveScalabilityCsvScratchRequestedBytes()
+        private static void RefreshMockTerrainSamplerStatus(int frame, ulong targetMask)
         {
-#if UNITY_EDITOR
-            return ScalabilityCsvScratchBytes;
-#else
-            return 0;
-#endif
-        }
-
-        private static void ScheduleMockTerrainSamplerJob(int frame, ulong targetMask)
-        {
-            CompleteMockTerrainSamplerJobIfReady();
-            if (_mockTerrainSamplerJobPending)
-                return;
-
             uint foldedFlags = FoldMaskToUInt(targetMask);
             float safeGlobalQualityWeight = SanitizeQualityWeight01(_globalQualityWeight, 0f);
             int qualityBucket = (int)math.round(safeGlobalQualityWeight * 100f);
@@ -1665,7 +1595,6 @@ namespace Hecton8.Core
                 return;
             }
 
-#if UNITY_EDITOR
             IDataVault vault = _dataVault;
             if (!TryAcquireWriteView(
                     vault,
@@ -1678,114 +1607,43 @@ namespace Hecton8.Core
 
             try
             {
-                MockTerrainSamplerStatusJob job = default;
-                job.Signal = terrainSampler;
-                job.GlobalQualityWeight = safeGlobalQualityWeight;
-                job.Frame = unchecked((uint)frame);
-                job.Execute();
+                WriteMockTerrainSamplerStatus(terrainSampler, safeGlobalQualityWeight, unchecked((uint)frame));
             }
             finally
             {
                 vault.ReleaseWriteLock(in _mockTerrainSamplerStatusHandle, SystemID.HardwareHomeostasis);
             }
 
-            _mockTerrainSamplerJobHandle = default;
-            _mockTerrainSamplerJobPending = false;
-#else
-            if (!TryResolveMockTerrainSamplerStatus(out NativeArray<MockTerrainSamplerStatus> terrainSampler) ||
-                !TryAcquireMockTerrainSamplerJobGuard())
-            {
-                return;
-            }
-
-            MockTerrainSamplerStatusJob job = default;
-            job.Signal = terrainSampler;
-            job.GlobalQualityWeight = safeGlobalQualityWeight;
-            job.Frame = unchecked((uint)frame);
-            bool scheduled = false;
-            try
-            {
-                _mockTerrainSamplerJobHandle = job.Schedule();
-                H8Memory.RegisterActiveJob(SystemID.HardwareHomeostasis, _mockTerrainSamplerJobHandle);
-                _mockTerrainSamplerJobPending = true;
-                scheduled = true;
-            }
-            finally
-            {
-                if (!scheduled)
-                    ReleaseMockTerrainSamplerJobGuard(_dataVault);
-            }
-#endif
             _lastMockTerrainScheduleFrame = frame;
             _lastMockTerrainQualityBucket = qualityBucket;
             _lastMockTerrainFlags = foldedFlags;
         }
 
-        private static void CompleteMockTerrainSamplerJobIfReady()
+        private static void WriteMockTerrainSamplerStatus(
+            NativeArray<MockTerrainSamplerStatus> terrainSampler,
+            float globalQualityWeight,
+            uint frame)
         {
-            if (!_mockTerrainSamplerJobPending || !_mockTerrainSamplerJobHandle.IsCompleted)
-                return;
-
-            DispatcherJobFence.TryFinalizeCompleted(ref _mockTerrainSamplerJobHandle);
-            _mockTerrainSamplerJobPending = false;
-            ReleaseMockTerrainSamplerJobGuard(_dataVault);
-        }
-
-        private static bool TryAcquireMockTerrainSamplerJobGuard()
-        {
-            IDataVault vault = _dataVault;
-            if (vault == null || vault.IsCompactionFenceActive || _mockTerrainSamplerGuardHeld)
-                return false;
-
-            if (!vault.TryAcquireMutationGuard(MockTerrainSamplerMutationGuardMask))
-                return false;
-
-            _mockTerrainSamplerGuardHeld = true;
-            return true;
-        }
-
-        private static void ReleaseMockTerrainSamplerJobGuard(IDataVault vault)
-        {
-            if (!_mockTerrainSamplerGuardHeld)
-                return;
-
-            if (vault != null)
-                vault.ReleaseMutationGuard(MockTerrainSamplerMutationGuardMask);
-
-            _mockTerrainSamplerGuardHeld = false;
-        }
-
-        private static ulong VaultMutationGuardBit(BufferID bufferId)
-        {
-            int bitIndex = unchecked((int)((uint)(int)bufferId & 63u));
-            return 1UL << bitIndex;
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct MockTerrainSamplerStatusJob : IJob
-        {
-            [NoAlias] public NativeArray<MockTerrainSamplerStatus> Signal;
-            public float GlobalQualityWeight;
-            public uint Frame;
-
-            public void Execute()
+            if (!terrainSampler.IsCreated || terrainSampler.Length < DictatorSingletonLength)
             {
-                float weight = SanitizeQualityWeight01(GlobalQualityWeight, 0f);
-                MockTerrainSamplerStatus status = default;
-                status.GlobalQualityWeight = weight;
-                status.TrilinearSampleProbability01 = weight;
-                status.SkippedTrilinearPercent01 = 1f - weight;
-                status.Frame = Frame;
-                Signal[0] = status;
+                return;
             }
+
+            float weight = SanitizeQualityWeight01(globalQualityWeight, 0f);
+            MockTerrainSamplerStatus status = default;
+            status.GlobalQualityWeight = weight;
+            status.TrilinearSampleProbability01 = weight;
+            status.SkippedTrilinearPercent01 = 1f - weight;
+            status.Frame = frame;
+            terrainSampler[0] = status;
         }
 
         private static void ResolveHardwareConstraintPolicy()
         {
             string model = SystemInfo.deviceModel;
-            string gpuName = SystemInfo.graphicsDeviceName;
+            HardwareTierDetector.EnsureInitialized();
             _deviceModelHash = HashOrdinalIgnoreCase(model);
-            float modelConstraint01 = ResolveKnownHardwareConstraint01(model, gpuName);
+            float modelConstraint01 = ResolveKnownHardwareConstraint01(model);
             float memoryConstraint01 = ResolveMemoryConstraint01(SystemInfo.systemMemorySize, 12288f, 8192f);
             float vramConstraint01 = ResolveMemoryConstraint01(SystemInfo.graphicsMemorySize, 4096f, 3072f);
             _hardwareConstraintPressure01 = math.saturate(math.max(modelConstraint01, math.max(memoryConstraint01, vramConstraint01)));
@@ -1799,13 +1657,16 @@ namespace Hecton8.Core
             return math.saturate(math.isfinite(_hardwareConstraintPressure01) ? _hardwareConstraintPressure01 : 0f);
         }
 
-        private static float ResolveKnownHardwareConstraint01(string model, string gpuName)
+        private static float ResolveKnownHardwareConstraint01(string model)
         {
             float constraint01 = 0f;
-            if (ContainsOrdinalIgnoreCase(model, "quest 2") ||
-                ContainsOrdinalIgnoreCase(gpuName, "mx350"))
+            if (ContainsOrdinalIgnoreCase(model, "quest 2"))
             {
                 constraint01 = 1f;
+            }
+            else if (HardwareTierDetector.SharedMemoryModeActive)
+            {
+                constraint01 = HardwareTierDetector.RecommendedVramBudgetMegabytes <= 1024 ? 0.85f : 0.65f;
             }
             else if (ContainsOrdinalIgnoreCase(model, "quest 3") ||
                      ContainsOrdinalIgnoreCase(model, "steam deck"))
@@ -1918,28 +1779,36 @@ namespace Hecton8.Core
                 return;
 
             _csvLastWriteUtc = lastWriteUtc;
-            if (!TryResolveCsvScratch(out NativeArray<byte> csvScratch))
-            {
-                return;
-            }
-
+            Span<byte> csvScratch = stackalloc byte[ScalabilityCsvScratchBytes];
             int bytesRead = TryReadCsvFile(path, csvScratch);
             if (bytesRead > 0)
-                ParseScalabilityCsv(csvScratch, bytesRead, frame);
+                ParseScalabilityCsv(csvScratch.Slice(0, bytesRead), frame);
 #endif
         }
 
 #if UNITY_EDITOR
-        private static unsafe int TryReadCsvFile(string path, NativeArray<byte> csvScratch)
+        private static int TryReadCsvFile(string path, Span<byte> csvScratch)
         {
             try
             {
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    int maxBytes = math.min(csvScratch.Length, ScalabilityCsvScratchBytes);
-                    void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(csvScratch);
-                    Span<byte> span = new Span<byte>(ptr, maxBytes);
-                    return stream.Read(span);
+                    long streamLength = stream.Length;
+                    if (streamLength <= 0L || streamLength > csvScratch.Length)
+                        return 0;
+
+                    int expectedBytes = (int)streamLength;
+                    int bytesRead = 0;
+                    while (bytesRead < expectedBytes)
+                    {
+                        int read = stream.Read(csvScratch.Slice(bytesRead, expectedBytes - bytesRead));
+                        if (read <= 0)
+                            return 0;
+
+                        bytesRead += read;
+                    }
+
+                    return bytesRead;
                 }
             }
             catch (IOException)
@@ -1952,10 +1821,10 @@ namespace Hecton8.Core
             }
         }
 
-        private static void ParseScalabilityCsv(NativeArray<byte> bytes, int length, int frame)
+        private static void ParseScalabilityCsv(ReadOnlySpan<byte> bytes, int frame)
         {
             int cursor = 0;
-            while (TryReadCsvLine(bytes, length, ref cursor, out int lineStart, out int lineEnd))
+            while (TryReadCsvLine(bytes, ref cursor, out int lineStart, out int lineEnd))
             {
                 TrimAscii(bytes, ref lineStart, ref lineEnd);
                 if (lineStart >= lineEnd || bytes[lineStart] == (byte)'#')
@@ -1976,7 +1845,7 @@ namespace Hecton8.Core
         }
 
         private static void ApplyCsvOverride(
-            NativeArray<byte> bytes,
+            ReadOnlySpan<byte> bytes,
             int keyStart,
             int keyEnd,
             int valueStart,
@@ -2048,14 +1917,14 @@ namespace Hecton8.Core
         }
 
         private static bool TryReadCsvLine(
-            NativeArray<byte> bytes,
-            int length,
+            ReadOnlySpan<byte> bytes,
             ref int cursor,
             out int lineStart,
             out int lineEnd)
         {
             lineStart = cursor;
             lineEnd = cursor;
+            int length = bytes.Length;
             if (cursor >= length)
                 return false;
 
@@ -2073,7 +1942,7 @@ namespace Hecton8.Core
             return true;
         }
 
-        private static void TrimAscii(NativeArray<byte> bytes, ref int start, ref int end)
+        private static void TrimAscii(ReadOnlySpan<byte> bytes, ref int start, ref int end)
         {
             while (start < end && IsAsciiWhitespace(bytes[start]))
                 start++;
@@ -2081,7 +1950,7 @@ namespace Hecton8.Core
                 end--;
         }
 
-        private static int FindSeparator(NativeArray<byte> bytes, int start, int end)
+        private static int FindSeparator(ReadOnlySpan<byte> bytes, int start, int end)
         {
             for (int i = start; i < end; i++)
             {
@@ -2093,7 +1962,7 @@ namespace Hecton8.Core
             return -1;
         }
 
-        private static bool EqualsAscii(NativeArray<byte> bytes, int start, int end, string expected)
+        private static bool EqualsAscii(ReadOnlySpan<byte> bytes, int start, int end, string expected)
         {
             int length = end - start;
             if (expected == null || length != expected.Length)
@@ -2114,7 +1983,7 @@ namespace Hecton8.Core
             return true;
         }
 
-        private static bool TryParseIntAscii(NativeArray<byte> bytes, int start, int end, out int value)
+        private static bool TryParseIntAscii(ReadOnlySpan<byte> bytes, int start, int end, out int value)
         {
             value = 0;
             bool negative = false;
@@ -2142,7 +2011,7 @@ namespace Hecton8.Core
             return true;
         }
 
-        private static bool TryParseFloatAscii(NativeArray<byte> bytes, int start, int end, out float value)
+        private static bool TryParseFloatAscii(ReadOnlySpan<byte> bytes, int start, int end, out float value)
         {
             value = 0f;
             bool negative = false;
@@ -2218,43 +2087,47 @@ namespace Hecton8.Core
             _scalabilityDumped = true;
             try
             {
-                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-                string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
                 if (TryReadScalabilityTelemetry(out NativeArray<ScalabilityTelemetryEntry>.ReadOnly telemetry))
                 {
-                    WriteScalabilityTelemetryFile(Path.Combine(directory, ScalabilityDumpFileName), telemetry);
-                    WriteScalabilityTelemetryFile(Path.Combine(directory, ScalabilityH8DumpFileName), telemetry);
+                    WriteScalabilityTelemetryFile(ScalabilityDumpRelativePath, telemetry);
+                    WriteScalabilityTelemetryFile(ScalabilityH8DumpRelativePath, telemetry);
                 }
                 else
                 {
-                    WriteScalabilityDictatorBlackBoxFile(Path.Combine(directory, ScalabilityDumpFileName), blackBox);
-                    WriteScalabilityDictatorBlackBoxFile(Path.Combine(directory, ScalabilityH8DumpFileName), blackBox);
+                    WriteScalabilityDictatorBlackBoxFile(ScalabilityDumpRelativePath, blackBox);
+                    WriteScalabilityDictatorBlackBoxFile(ScalabilityH8DumpRelativePath, blackBox);
                 }
             }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
+            catch (Exception)
             {
             }
         }
 
-        private static void WriteScalabilityTelemetryFile(
+        private static unsafe void WriteScalabilityTelemetryFile(
             string path,
             NativeArray<ScalabilityTelemetryEntry>.ReadOnly telemetry)
         {
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            {
-                Span<byte> header = stackalloc byte[20];
-                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), 0x53434454u);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), 2);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), ScalabilityTelemetryCapacity);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(12, 4), _scalabilityTelemetryCursor);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(16, 4), 64);
-                stream.Write(header);
+            if (!telemetry.IsCreated || telemetry.Length < ScalabilityTelemetryCapacity)
+                return;
 
-                Span<byte> entryBytes = stackalloc byte[64];
+            int byteCount = ScalabilityDumpHeaderBytes + (ScalabilityTelemetryCapacity * ScalabilityDumpEntryBytes);
+            NativeArray<byte> payload = default;
+            const string dumpPayloadLabel = "scalabilityTelemetryDumpPayload";
+            try
+            {
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(HomeostasisBrain),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteUInt32LittleEndian(target, 0, 0x53434454u);
+                WriteInt32LittleEndian(target, 4, 2);
+                WriteInt32LittleEndian(target, 8, ScalabilityTelemetryCapacity);
+                WriteInt32LittleEndian(target, 12, _scalabilityTelemetryCursor);
+                WriteInt32LittleEndian(target, 16, ScalabilityDumpEntryBytes);
+
+                int cursor = ScalabilityDumpHeaderBytes;
                 float fallbackFrameMs = ResolveTargetFrameMs(ResolveTargetFrameRate());
                 for (int i = 0; i < ScalabilityTelemetryCapacity; i++)
                 {
@@ -2263,16 +2136,22 @@ namespace Hecton8.Core
                         index -= ScalabilityTelemetryCapacity;
 
                     ScalabilityTelemetryEntry entry = SanitizeTelemetryEntryForDump(telemetry[index], fallbackFrameMs);
-                    entryBytes.Clear();
-                    BinaryPrimitives.WriteUInt64LittleEndian(entryBytes.Slice(0, 8), entry.Timestamp);
-                    WriteFloatLittleEndian(entryBytes.Slice(8, 4), entry.RawFrameMs);
-                    WriteFloatLittleEndian(entryBytes.Slice(12, 4), entry.SmoothedFrameMs);
-                    WriteFloatLittleEndian(entryBytes.Slice(16, 4), entry.GlobalQualityWeight);
-                    WriteFloatLittleEndian(entryBytes.Slice(20, 4), entry.VramPressure);
-                    BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(24, 4), entry.Flags);
-                    BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(28, 4), entry._pad0);
-                    stream.Write(entryBytes);
+                    UnsafeUtility.MemClear(target + cursor, ScalabilityDumpEntryBytes);
+                    WriteUInt64LittleEndian(target + cursor, 0, entry.Timestamp);
+                    WriteFloatLittleEndian(target + cursor, 8, entry.RawFrameMs);
+                    WriteFloatLittleEndian(target + cursor, 12, entry.SmoothedFrameMs);
+                    WriteFloatLittleEndian(target + cursor, 16, entry.GlobalQualityWeight);
+                    WriteFloatLittleEndian(target + cursor, 20, entry.VramPressure);
+                    WriteUInt32LittleEndian(target + cursor, 24, entry.Flags);
+                    WriteUInt32LittleEndian(target + cursor, 28, entry._pad0);
+                    cursor += ScalabilityDumpEntryBytes;
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(path, payload, cursor);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(ref payload, nameof(HomeostasisBrain), dumpPayloadLabel);
             }
         }
 
@@ -2322,26 +2201,36 @@ namespace Hecton8.Core
             return entry;
         }
 
-        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        private static unsafe void WriteFloatLittleEndian(byte* destination, int offset, float value)
         {
-            BinaryPrimitives.WriteUInt32LittleEndian(destination, math.asuint(value));
+            WriteUInt32LittleEndian(destination, offset, math.asuint(value));
         }
 
-        private static void WriteScalabilityDictatorBlackBoxFile(
+        private static unsafe void WriteScalabilityDictatorBlackBoxFile(
             string path,
             NativeArray<HomeostasisBlackBoxEntry> blackBox)
         {
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            {
-                Span<byte> header = stackalloc byte[20];
-                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), 0x53484944u);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), 1);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), BlackBoxCapacity);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(12, 4), _blackBoxCursor);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(16, 4), 64);
-                stream.Write(header);
+            if (!blackBox.IsCreated || blackBox.Length < BlackBoxCapacity)
+                return;
 
-                Span<byte> entryBytes = stackalloc byte[64];
+            int byteCount = ScalabilityDumpHeaderBytes + (BlackBoxCapacity * ScalabilityDumpEntryBytes);
+            NativeArray<byte> payload = default;
+            const string dumpPayloadLabel = "scalabilityDictatorBlackBoxDumpPayload";
+            try
+            {
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(HomeostasisBrain),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteUInt32LittleEndian(target, 0, 0x53484944u);
+                WriteInt32LittleEndian(target, 4, 1);
+                WriteInt32LittleEndian(target, 8, BlackBoxCapacity);
+                WriteInt32LittleEndian(target, 12, _blackBoxCursor);
+                WriteInt32LittleEndian(target, 16, ScalabilityDumpEntryBytes);
+
+                int cursor = ScalabilityDumpHeaderBytes;
                 for (int i = 0; i < BlackBoxCapacity; i++)
                 {
                     int index = _blackBoxCursor + i;
@@ -2354,27 +2243,58 @@ namespace Hecton8.Core
                         qualityWeight = SanitizeQualityWeight01(1f - entry.SystemHealthIndex01, 0f);
                     else
                         qualityWeight = SanitizeQualityWeight01(qualityWeight, 0f);
-                    entryBytes.Clear();
-                    BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(0, 4), entry.Frame);
-                    WriteFloatLittleEndian(entryBytes.Slice(4, 4), qualityWeight);
-                    BinaryPrimitives.WriteUInt64LittleEndian(entryBytes.Slice(8, 8), entry.KillSwitchMask);
-                    WriteFloatLittleEndian(entryBytes.Slice(16, 4), entry.FpsEwma);
-                    WriteFloatLittleEndian(entryBytes.Slice(20, 4), entry.JitterSigmaMs);
-                    WriteFloatLittleEndian(entryBytes.Slice(24, 4), entry.CpuTempC);
-                    WriteFloatLittleEndian(entryBytes.Slice(28, 4), entry.GpuUtil01);
-                    WriteFloatLittleEndian(entryBytes.Slice(32, 4), entry.BatteryLife01);
-                    entryBytes[36] = entry.PressureLevel;
-                    entryBytes[37] = entry.FoveatedPressureTier;
-                    BinaryPrimitives.WriteUInt16LittleEndian(entryBytes.Slice(38, 2), entry.Flags);
-                    WriteFloatLittleEndian(entryBytes.Slice(40, 4), entry.TimeDilationScalar);
-                    WriteFloatLittleEndian(entryBytes.Slice(44, 4), entry.PeakSystemHealthIndex01);
-                    BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(48, 4), entry.LastThermalAction);
-                    WriteFloatLittleEndian(entryBytes.Slice(52, 4), math.asfloat(entry.Reserved0));
-                    WriteFloatLittleEndian(entryBytes.Slice(56, 4), math.asfloat(entry.Reserved1));
-                    BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(60, 4), entry.Reserved2);
-                    stream.Write(entryBytes);
+                    UnsafeUtility.MemClear(target + cursor, ScalabilityDumpEntryBytes);
+                    WriteUInt32LittleEndian(target + cursor, 0, entry.Frame);
+                    WriteFloatLittleEndian(target + cursor, 4, qualityWeight);
+                    WriteUInt64LittleEndian(target + cursor, 8, entry.KillSwitchMask);
+                    WriteFloatLittleEndian(target + cursor, 16, entry.FpsEwma);
+                    WriteFloatLittleEndian(target + cursor, 20, entry.JitterSigmaMs);
+                    WriteFloatLittleEndian(target + cursor, 24, entry.CpuTempC);
+                    WriteFloatLittleEndian(target + cursor, 28, entry.GpuUtil01);
+                    WriteFloatLittleEndian(target + cursor, 32, entry.BatteryLife01);
+                    target[cursor + 36] = entry.PressureLevel;
+                    target[cursor + 37] = entry.FoveatedPressureTier;
+                    WriteUInt16LittleEndian(target + cursor, 38, entry.Flags);
+                    WriteFloatLittleEndian(target + cursor, 40, entry.TimeDilationScalar);
+                    WriteFloatLittleEndian(target + cursor, 44, entry.PeakSystemHealthIndex01);
+                    WriteUInt32LittleEndian(target + cursor, 48, entry.LastThermalAction);
+                    WriteFloatLittleEndian(target + cursor, 52, math.asfloat(entry.Reserved0));
+                    WriteFloatLittleEndian(target + cursor, 56, math.asfloat(entry.Reserved1));
+                    WriteUInt32LittleEndian(target + cursor, 60, entry.Reserved2);
+                    cursor += ScalabilityDumpEntryBytes;
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(path, payload, cursor);
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(ref payload, nameof(HomeostasisBrain), dumpPayloadLabel);
+            }
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* target, int offset, int value)
+        {
+            WriteUInt32LittleEndian(target, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt16LittleEndian(byte* target, int offset, ushort value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* target, int offset, uint value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+            target[offset + 2] = (byte)(value >> 16);
+            target[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static unsafe void WriteUInt64LittleEndian(byte* target, int offset, ulong value)
+        {
+            WriteUInt32LittleEndian(target, offset, unchecked((uint)value));
+            WriteUInt32LittleEndian(target, offset + 4, unchecked((uint)(value >> 32)));
         }
 
         /// <summary>
@@ -2392,7 +2312,10 @@ namespace Hecton8.Core
             float thermalIndex = 0f;
             IDataVault vault = _dataVault;
             if (EnsureScalabilityStateHandles(vault) &&
-                TryResolveScalabilityStateViews(vault, out NativeArray<SystemHealthDTO> healthArray, out NativeArray<ScalabilityStateDTO> ignoredState))
+                TryReadScalabilityStateViews(
+                    vault,
+                    out NativeArray<SystemHealthDTO>.ReadOnly healthArray,
+                    out _))
             {
                 SystemHealthDTO health = healthArray[0];
                 frameMs = health.FrameTimeMs;

@@ -832,9 +832,16 @@ namespace Hecton8.UI
         private char[] _cachedHullStressWhisperBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
         private int _cachedHullStressWhisperLength;
         private HectonMapMagicVegetationBridge _vegetationBridge;
+        private TMP_FontAsset _cachedFontMaterialAsset0;
+        private TMP_FontAsset _cachedFontMaterialAsset1;
+        private Material _cachedFontSharedMaterial0;
+        private Material _cachedFontSharedMaterial1;
         private Material _ditheredUiBackgroundMaterial;
         private Material _acousticRadarMaterial;
         private Material _savingProgressDataPulseMaterial;
+        private bool _acousticRadarOverlayMaterialBound;
+        private bool _savingProgressDataLampPulseMaterialBound;
+        private bool _savingProgressDataNeedlePulseMaterialBound;
         private Texture2D _acousticRadarTexture;
         private int _acousticRadarResolution;
         private int _pendingAcousticRadarResolution;
@@ -880,12 +887,6 @@ namespace Hecton8.UI
         private float _appliedThreatChevronFlickerIntensity;
         private float _appliedThreatChevronFillAlpha;
         private int _threatChevronVisibleCount;
-        // COLD ALLOC: Matrix4x4[1] — scanner visor hologram draw buffer — owner: SuitHUDV4CanvasOverlay
-        private readonly Matrix4x4[] _scannerHologramMatrices = new Matrix4x4[1];
-        // COLD ALLOC: MaterialPropertyBlock[1] — scanner visor hologram per-draw properties — owner: SuitHUDV4CanvasOverlay
-        private MaterialPropertyBlock _scannerHologramPropertyBlock;
-        private Material _scannerHologramMaterial;
-        private Mesh _scannerHologramFallbackMesh;
         private float _scannerHologramAnimationTime;
 
         public Canvas TargetCanvas => targetCanvas;
@@ -1137,10 +1138,11 @@ namespace Hecton8.UI
         private bool _floatingOriginRegistered;
         private int _hudProxyLightKey;
         private bool _hudProxyLightRegistered;
+        private bool _runtimeHudCallbacksActive;
 
         private static bool IsStencilRenderGraphSuppressedRuntime()
         {
-            return Application.isPlaying && s_stencilRenderGraphRuntimeActive;
+            return SystemDispatcher.ActiveRuntimeInstance != null && s_stencilRenderGraphRuntimeActive;
         }
 
         private void ApplyStencilRenderGraphSuppressionIfNeeded()
@@ -1200,6 +1202,7 @@ namespace Hecton8.UI
 
         private void Awake()
         {
+            _runtimeHudCallbacksActive = Application.isPlaying;
             CharBufferPool.Prewarm();
             _hudProxyLightKey = unchecked((int)(EntityId.ToULong(gameObject.GetEntityId()) ^ 0x48445544u));
             if (_hudProxyLightKey == 0)
@@ -1207,11 +1210,11 @@ namespace Hecton8.UI
 
             ResolveGraphicRaycasterCold();
             EnsureDitheredUiBackgroundRuntimeResources();
-            _scannerHologramPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — scanner visor hologram per-draw properties — owner: SuitHUDV4CanvasOverlay
         }
 
         private void OnEnable()
         {
+            _runtimeHudCallbacksActive = Application.isPlaying;
             EnsureLayerCache();
             ResolveGraphicRaycasterCold();
             RegisterActiveOverlay();
@@ -1275,6 +1278,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            _runtimeHudCallbacksActive = false;
             LocalizationEvents.UnregisterLanguageListener(this);
             LocalizationEvents.UnregisterCorruptionVisualStateListener(this);
             GameBootstrapper.Unregister(this);
@@ -1319,6 +1323,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            _runtimeHudCallbacksActive = false;
             SaveEvents.Unregister(this);
             TryUnregisterHotSwapListener();
             UnregisterUiService();
@@ -1593,7 +1598,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!Application.isPlaying)
+            if (!_runtimeHudCallbacksActive)
                 return;
 
             RefreshQualityPolicy();
@@ -1649,7 +1654,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!Application.isPlaying || _pendingRuntimeCanvasRefresh || _forceResolveOnSlowTick || !IsRuntimeHierarchyReady())
+            if (!_runtimeHudCallbacksActive || _pendingRuntimeCanvasRefresh || _forceResolveOnSlowTick || !IsRuntimeHierarchyReady())
                 return;
 
             if (!_reactiveLateFrameSolveRequested)
@@ -2714,7 +2719,7 @@ namespace Hecton8.UI
             EnsureDitheredUiBackgroundRuntimeResources();
             if (image is MaskableGraphic maskableGraphic)
                 maskableGraphic.maskable = true;
-            if (_ditheredUiBackgroundMaterial != null && image.material != _ditheredUiBackgroundMaterial)
+            if (_ditheredUiBackgroundMaterial != null)
                 image.material = _ditheredUiBackgroundMaterial;
         }
 
@@ -2740,33 +2745,41 @@ namespace Hecton8.UI
                 }; // COLD ALLOC: Material[1] — shader-time DATA save lamp pulse — owner: SuitHUDV4CanvasOverlay
             }
 
-            if (_savingProgressDataLamp != null &&
-                _savingProgressDataPulseMaterial != null &&
-                _savingProgressDataLamp.material != _savingProgressDataPulseMaterial)
-            {
-                _savingProgressDataLamp.material = _savingProgressDataPulseMaterial;
-            }
-
-            if (_savingProgressDataNeedle != null &&
-                _savingProgressDataPulseMaterial != null &&
-                _savingProgressDataNeedle.material != _savingProgressDataPulseMaterial)
-            {
-                _savingProgressDataNeedle.material = _savingProgressDataPulseMaterial;
-            }
+            BindSavingProgressPulseMaterials();
         }
 
         private void DisposeSavingProgressPulseRuntimeResources()
         {
-            if (_savingProgressDataLamp != null && _savingProgressDataLamp.material == _savingProgressDataPulseMaterial)
+            if (_savingProgressDataLamp != null && _savingProgressDataLampPulseMaterialBound)
                 _savingProgressDataLamp.material = null;
+            _savingProgressDataLampPulseMaterialBound = false;
 
-            if (_savingProgressDataNeedle != null && _savingProgressDataNeedle.material == _savingProgressDataPulseMaterial)
+            if (_savingProgressDataNeedle != null && _savingProgressDataNeedlePulseMaterialBound)
                 _savingProgressDataNeedle.material = null;
+            _savingProgressDataNeedlePulseMaterialBound = false;
 
             if (_savingProgressDataPulseMaterial != null)
             {
                 Destroy(_savingProgressDataPulseMaterial);
                 _savingProgressDataPulseMaterial = null;
+            }
+        }
+
+        private void BindSavingProgressPulseMaterials()
+        {
+            if (_savingProgressDataPulseMaterial == null)
+                return;
+
+            if (_savingProgressDataLamp != null && !_savingProgressDataLampPulseMaterialBound)
+            {
+                _savingProgressDataLamp.material = _savingProgressDataPulseMaterial;
+                _savingProgressDataLampPulseMaterialBound = true;
+            }
+
+            if (_savingProgressDataNeedle != null && !_savingProgressDataNeedlePulseMaterialBound)
+            {
+                _savingProgressDataNeedle.material = _savingProgressDataPulseMaterial;
+                _savingProgressDataNeedlePulseMaterialBound = true;
             }
         }
 
@@ -2789,14 +2802,14 @@ namespace Hecton8.UI
                 InvalidateAcousticRadarMaterialState();
             }
 
-            if (_acousticRadarOverlay != null && _acousticRadarMaterial != null && _acousticRadarOverlay.material != _acousticRadarMaterial)
-                _acousticRadarOverlay.material = _acousticRadarMaterial;
+            BindAcousticRadarOverlayMaterial();
         }
 
         private void DisposeAcousticRadarRuntimeResources()
         {
-            if (_acousticRadarOverlay != null && _acousticRadarOverlay.material == _acousticRadarMaterial)
+            if (_acousticRadarOverlay != null && _acousticRadarOverlayMaterialBound)
                 _acousticRadarOverlay.material = null;
+            _acousticRadarOverlayMaterialBound = false;
 
             if (_acousticRadarMaterial != null)
             {
@@ -3507,8 +3520,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (_acousticRadarOverlay.material != _acousticRadarMaterial)
-                _acousticRadarOverlay.material = _acousticRadarMaterial;
+            BindAcousticRadarOverlayMaterial();
 
             float overlayOpacity = math.saturate(acousticRadarOpacity * math.lerp(0.2f, 1f, _acousticRadarPeakIntensity));
             bool visible = overlayOpacity > 0.001f && _acousticRadarPeakIntensity > 0.001f;
@@ -3570,6 +3582,15 @@ namespace Hecton8.UI
 
             _acousticRadarMaterial.SetTexture(_AcousticRadarTexId, _acousticRadarTexture);
             _acousticRadarTextureBindingDirty = false;
+        }
+
+        private void BindAcousticRadarOverlayMaterial()
+        {
+            if (_acousticRadarOverlay == null || _acousticRadarMaterial == null || _acousticRadarOverlayMaterialBound)
+                return;
+
+            _acousticRadarOverlay.material = _acousticRadarMaterial;
+            _acousticRadarOverlayMaterialBound = true;
         }
 
         private void ApplyAcousticRadarColor(int propertyId, Color value, ref Color cachedValue, ref bool hasCachedValue)
@@ -5482,6 +5503,9 @@ namespace Hecton8.UI
             if (parent == null)
                 return;
 
+            _savingProgressDataLampPulseMaterialBound = false;
+            _savingProgressDataNeedlePulseMaterialBound = false;
+
             _savingProgressRoot = CreateRect("SavingProgressRoot", parent);
             Anchor(
                 _savingProgressRoot,
@@ -5799,18 +5823,38 @@ namespace Hecton8.UI
             RectTransform rect = CreateRect(name, parent);
             // COLD ALLOC: TextMeshProUGUI[1] — HUD text hierarchy bootstrap factory — owner: SuitHUDV4CanvasOverlay
             TextMeshProUGUI label = rect.gameObject.AddComponent<TextMeshProUGUI>();
-            label.font = fontAsset != null ? fontAsset : ResolveLabelFontAsset();
+            TMP_FontAsset resolvedFont = fontAsset != null ? fontAsset : ResolveLabelFontAsset();
+            label.font = resolvedFont;
             label.fontSize = size;
             label.fontStyle = style;
             label.alignment = alignment;
             label.textWrappingMode = TextWrappingModes.NoWrap;
             label.characterSpacing = size >= 36f ? 4f : 1.5f;
             label.color = Alpha(Color.white, alpha);
-            label.fontSharedMaterial = label.font != null ? label.font.material : null;
+            label.fontSharedMaterial = ResolveFontSharedMaterial(resolvedFont);
             label.maskable = false;
             ApplyHudCharArray(label, ReadOnlySpan<char>.Empty);
             TMP_TextRegistry.EnsureRegistered(label);
             return label;
+        }
+
+        private Material ResolveFontSharedMaterial(TMP_FontAsset fontAsset)
+        {
+            if (fontAsset == null)
+                return null;
+
+            if (ReferenceEquals(fontAsset, _cachedFontMaterialAsset0))
+                return _cachedFontSharedMaterial0;
+
+            if (ReferenceEquals(fontAsset, _cachedFontMaterialAsset1))
+                return _cachedFontSharedMaterial1;
+
+            Material material = fontAsset.material;
+            _cachedFontMaterialAsset1 = _cachedFontMaterialAsset0;
+            _cachedFontSharedMaterial1 = _cachedFontSharedMaterial0;
+            _cachedFontMaterialAsset0 = fontAsset;
+            _cachedFontSharedMaterial0 = material;
+            return material;
         }
 
         private TMP_FontAsset ResolveLabelFontAsset()
@@ -7188,6 +7232,12 @@ namespace Hecton8.UI
             _cachedHullStressWhisperBucket = int.MinValue;
             _cachedHullStressWhisperLength = 0;
             _rootBaseAnchoredPositionCaptured = false;
+            _savingProgressDataLampPulseMaterialBound = false;
+            _savingProgressDataNeedlePulseMaterialBound = false;
+            _cachedFontMaterialAsset0 = null;
+            _cachedFontMaterialAsset1 = null;
+            _cachedFontSharedMaterial0 = null;
+            _cachedFontSharedMaterial1 = null;
         }
 
         private Canvas ResolveTargetCanvas()
@@ -7293,10 +7343,9 @@ namespace Hecton8.UI
             if (root.TryGetComponent(out Image image) && image.name == "AcousticRadarOverlay")
             {
                 image.enabled = false;
-                if (_acousticRadarMaterial != null && image.material == _acousticRadarMaterial)
-                    image.material = null;
-                if (_ditheredUiBackgroundMaterial != null && image.material == _ditheredUiBackgroundMaterial)
-                    image.material = null;
+                image.material = null;
+                if (ReferenceEquals(image, _acousticRadarOverlay))
+                    _acousticRadarOverlayMaterialBound = false;
                 return;
             }
 
@@ -7429,7 +7478,7 @@ namespace Hecton8.UI
 
         private void TryRegisterRuntimeTick()
         {
-            if (!Application.isPlaying)
+            if (!_runtimeHudCallbacksActive)
                 return;
 
             if (IsStencilRenderGraphSuppressedRuntime())
@@ -7619,6 +7668,7 @@ namespace Hecton8.UI
         private bool _registeredToTickManager;
         private bool _registeredToSlowTickManager;
         private bool _hotSwapRegistered;
+        private bool _runtimeScalerCallbacksActive;
         private bool _pendingContentRootBootstrap = true;
         private int _cachedRenderWidth = 1;
         private int _cachedRenderHeight = 1;
@@ -7640,12 +7690,13 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            _runtimeScalerCallbacksActive = Application.isPlaying;
             ResolveCanvas();
             RefreshRenderDimensionsSlowSample();
             EnsureContentRoot();
             ApplyScale(force: true, allowContentRootCreation: false);
             _pendingContentRootBootstrap = ResolveContentRootInternal(createIfMissing: false) == null;
-            if (!Application.isPlaying)
+            if (!_runtimeScalerCallbacksActive)
                 return;
 
             HectonFloatingOrigin.RegisterListener(this);
@@ -7655,6 +7706,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            _runtimeScalerCallbacksActive = false;
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
@@ -7662,6 +7714,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            _runtimeScalerCallbacksActive = false;
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
@@ -7681,7 +7734,7 @@ namespace Hecton8.UI
 
         public void SlowTick()
         {
-            if (!Application.isPlaying)
+            if (!_runtimeScalerCallbacksActive)
                 return;
 
             bool dimensionsChanged = RefreshRenderDimensionsSlowSample();
@@ -7763,7 +7816,7 @@ namespace Hecton8.UI
 
             referenceResolution = sanitizedResolution;
             matchWidthOrHeight = sanitizedMatch;
-            if (Application.isPlaying)
+            if (_runtimeScalerCallbacksActive)
             {
                 _pendingContentRootBootstrap = _pendingContentRootBootstrap || !TryRefreshExistingContentRootHot();
                 if (!_pendingContentRootBootstrap)
@@ -8020,7 +8073,7 @@ namespace Hecton8.UI
 
         private void RegisterToTickManager()
         {
-            if (!Application.isPlaying)
+            if (!_runtimeScalerCallbacksActive)
                 return;
 
             if (!_registeredToTickManager && GlobalRegistry.Dispatcher != null)
@@ -8052,7 +8105,7 @@ namespace Hecton8.UI
 
         private void TryRegisterHotSwapListener()
         {
-            if (_hotSwapRegistered || !Application.isPlaying)
+            if (_hotSwapRegistered || !_runtimeScalerCallbacksActive)
                 return;
 
             _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);

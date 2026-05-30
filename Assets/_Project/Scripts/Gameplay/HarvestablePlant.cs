@@ -18,6 +18,7 @@
 //   3. Player uses knife to harvest, segment regrows after time.
 // ============================================================================
 
+using System;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -62,6 +63,7 @@ namespace Hecton8.Gameplay
     public sealed class HarvestablePlant : MonoBehaviour, ICuttable, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float OneOver127 = 1f / 127f;
+        private static readonly PlantSegment[] EmptySegments = Array.Empty<PlantSegment>();
 
         // ══════════════════════════════════════════════════════════
         //  SHADER PROPERTY IDs — cached once, zero GC
@@ -158,16 +160,21 @@ namespace Hecton8.Gameplay
             get
             {
                 int count = 0;
-                for (int i = 0; i < segments.Length; i++)
+                PlantSegment[] localSegments = segments;
+                if (localSegments == null)
+                    return 0;
+
+                for (int i = 0; i < localSegments.Length; i++)
                 {
-                    if (segments[i].isAvailable) count++;
+                    PlantSegment segment = localSegments[i];
+                    if (segment != null && segment.isAvailable) count++;
                 }
                 return count;
             }
         }
 
         /// <summary>Total number of segments.</summary>
-        public int TotalSegments => segments.Length;
+        public int TotalSegments => segments != null ? segments.Length : 0;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -175,6 +182,9 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            if (segments == null)
+                segments = EmptySegments;
+
             _transform = transform;
             _lootScatterSeed = MixLootHash(2166136261u, (uint)EntityId.ToULong(gameObject.GetEntityId()));
             CacheRegistryServicesCold();
@@ -233,15 +243,21 @@ namespace Hecton8.Gameplay
             if (_tickDormant) return;
 
             bool anyRegrowing = false;
+            PlantSegment[] localSegments = segments;
+            float[] timers = _regrowTimers;
+            if (localSegments == null || timers == null)
+                return;
 
-            for (int i = 0; i < segments.Length; i++)
+            int segmentCount = localSegments.Length < timers.Length ? localSegments.Length : timers.Length;
+            for (int i = 0; i < segmentCount; i++)
             {
-                if (segments[i].isAvailable) continue;
-                if (_regrowTimers[i] <= 0f) continue;
+                PlantSegment segment = localSegments[i];
+                if (segment == null || segment.isAvailable) continue;
+                if (timers[i] <= 0f) continue;
 
-                _regrowTimers[i] -= deltaTime;
+                timers[i] -= deltaTime;
 
-                if (_regrowTimers[i] <= 0f)
+                if (timers[i] <= 0f)
                 {
                     RegrowSegment(i);
                 }
@@ -292,13 +308,17 @@ namespace Hecton8.Gameplay
         {
             int nearestIndex = -1;
             float nearestDistanceSq = float.MaxValue;
+            PlantSegment[] localSegments = segments;
+            if (localSegments == null)
+                return nearestIndex;
 
-            for (int i = 0; i < segments.Length; i++)
+            for (int i = 0; i < localSegments.Length; i++)
             {
-                if (!segments[i].isAvailable) continue;
-                if (segments[i].meshRenderer == null) continue;
+                PlantSegment segment = localSegments[i];
+                if (segment == null || !segment.isAvailable) continue;
+                if (segment.meshRenderer == null) continue;
 
-                Vector3 segmentVisualPosition = segments[i].meshRenderer.transform.position;
+                Vector3 segmentVisualPosition = segment.meshRenderer.transform.position;
                 Vector3 segmentVisualDelta = hitPoint - segmentVisualPosition;
                 float distanceSq = segmentVisualDelta.sqrMagnitude;
                 if (distanceSq < nearestDistanceSq)
@@ -313,10 +333,14 @@ namespace Hecton8.Gameplay
 
         private void HarvestSegment(int index, Vector3 hitPoint)
         {
-            if (index < 0 || index >= segments.Length) return;
-            if (!segments[index].isAvailable) return;
+            PlantSegment[] localSegments = segments;
+            float[] timers = _regrowTimers;
+            if (localSegments == null || timers == null) return;
+            if (index < 0 || index >= localSegments.Length || index >= timers.Length) return;
 
-            PlantSegment segment = segments[index];
+            PlantSegment segment = localSegments[index];
+            if (segment == null || !segment.isAvailable) return;
+
             segment.isAvailable = false;
 
             segment.pendingRendererEnabled = false;
@@ -329,7 +353,7 @@ namespace Hecton8.Gameplay
             SpawnLoot(segment, index, hitPoint);
 
             // Start regrow timer
-            _regrowTimers[index] = regrowTime;
+            timers[index] = regrowTime;
 
             // Register for tick
             RegisterToTick();
@@ -458,10 +482,16 @@ namespace Hecton8.Gameplay
 
         private void RegrowSegment(int index)
         {
-            if (index < 0 || index >= segments.Length) return;
+            PlantSegment[] localSegments = segments;
+            if (localSegments == null) return;
+            if (index < 0 || index >= localSegments.Length) return;
 
-            PlantSegment segment = segments[index];
+            PlantSegment segment = localSegments[index];
+            if (segment == null) return;
+
             segment.isAvailable = true;
+            if (_regrowTimers != null && index < _regrowTimers.Length)
+                _regrowTimers[index] = 0f;
 
             // Enable mesh
             if (segment.meshRenderer != null)
@@ -483,10 +513,14 @@ namespace Hecton8.Gameplay
         /// <param name="index">Segment index.</param>
         public void HarvestSegment(int index)
         {
-            if (index < 0 || index >= segments.Length) return;
-            if (segments[index].meshRenderer == null) return;
+            PlantSegment[] localSegments = segments;
+            if (localSegments == null) return;
+            if (index < 0 || index >= localSegments.Length) return;
 
-            HarvestSegment(index, segments[index].meshRenderer.transform.position);
+            PlantSegment segment = localSegments[index];
+            if (segment == null || segment.meshRenderer == null) return;
+
+            HarvestSegment(index, segment.meshRenderer.transform.position);
         }
 
         /// <summary>
@@ -503,9 +537,13 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void RegrowAll()
         {
-            for (int i = 0; i < segments.Length; i++)
+            PlantSegment[] localSegments = segments;
+            if (localSegments == null) return;
+
+            for (int i = 0; i < localSegments.Length; i++)
             {
-                if (!segments[i].isAvailable)
+                PlantSegment segment = localSegments[i];
+                if (segment != null && !segment.isAvailable)
                 {
                     RegrowSegment(i);
                 }
@@ -518,9 +556,12 @@ namespace Hecton8.Gameplay
 
         private void CheckRegistration()
         {
-            for (int i = 0; i < _regrowTimers.Length; i++)
+            float[] timers = _regrowTimers;
+            if (timers == null) return;
+
+            for (int i = 0; i < timers.Length; i++)
             {
-                if (_regrowTimers[i] > 0f)
+                if (timers[i] > 0f)
                 {
                     RegisterToTick();
                     return;
@@ -693,7 +734,8 @@ namespace Hecton8.Gameplay
 
             for (int i = 0; i < segments.Length; i++)
             {
-                if (segments[i].meshRenderer == null)
+                PlantSegment segment = segments[i];
+                if (segment == null || segment.meshRenderer == null)
                 {
                     Hecton8.Core.H8Debug.LogWarning($"[HarvestablePlant] Segment {i} has no mesh renderer assigned.", this);
                 }
@@ -706,13 +748,14 @@ namespace Hecton8.Gameplay
 
             for (int i = 0; i < segments.Length; i++)
             {
-                if (segments[i].meshRenderer == null) continue;
+                PlantSegment segment = segments[i];
+                if (segment == null || segment.meshRenderer == null) continue;
 
-                Gizmos.color = segments[i].isAvailable
+                Gizmos.color = segment.isAvailable
                     ? new Color(0.3f, 1f, 0.5f, 0.3f)
                     : new Color(0.5f, 0.5f, 0.5f, 0.3f);
 
-                Gizmos.DrawWireSphere(segments[i].meshRenderer.transform.position, 0.15f);
+                Gizmos.DrawWireSphere(segment.meshRenderer.transform.position, 0.15f);
             }
         }
 #endif

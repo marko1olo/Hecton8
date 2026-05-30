@@ -24,7 +24,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Map Tab")]
-    public sealed class PDAMapTab : MonoBehaviour, ILateFrameTickable, IPDAEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PDAMapTab : MonoBehaviour, ILateFrameTickable, ISlowTickable, IPDAEventListener, IGlobalRegistryHotSwapListener
     {
         private const string SonarPointCloudShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_SonarPointCloud.shader";
         private const string SonarMapComputePath = "Assets/_Project/Art/Shaders/Hecton_MapMesh.compute";
@@ -145,6 +145,7 @@ namespace Hecton8.UI
         private readonly Vector4[] _hlodImpostorAupUpload = new Vector4[MaxHlodImpostorAupPoints]; // COLD ALLOC: Vector4[16] - distant HLOD POI upload cache - owner: PDAMapTab
         private readonly SonarMapConstants[] _sonarMapConstantsUpload = new SonarMapConstants[1]; // COLD ALLOC: SonarMapConstants[1] — PDA compute constant-buffer upload lane — owner: PDAMapTab
         private bool _registeredLateFrame;
+        private bool _registeredSlowTick;
         private bool _pdaEventsRegistered;
         private float _refreshCountdown;
         private float _animationTime;
@@ -180,6 +181,7 @@ namespace Hecton8.UI
         private int _sonarBuildMapPointsThreadGroupSizeY;
         private int _sonarBuildMapPointsThreadGroupSizeZ;
         private bool _sonarComputeKernelsResolved;
+        private bool _sonarComputeKernelRepairRequested = true;
         private uint _uploadedCartographyRevision = uint.MaxValue;
         private uint _uploadedPackedCartographyRevision = uint.MaxValue;
         private int _packedUploadCountdown;
@@ -258,6 +260,11 @@ namespace Hecton8.UI
             ProcessPendingMarkerUpdates(MaxMarkerUiUpdatesPerLateFrame);
         }
 
+        public void SlowTick()
+        {
+            FlushSonarComputeKernelRepairSlow();
+        }
+
         /// <inheritdoc />
         public void OnPDAEvent(in PDAEventPayload payload)
         {
@@ -300,8 +307,9 @@ namespace Hecton8.UI
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _registeredLateFrame = false;
+                    _registeredSlowTick = false;
                     if (currentService != null && isActiveAndEnabled)
-                        TryRegisterLateFrame();
+                        RegisterToTickManager();
                     break;
             }
         }
@@ -334,6 +342,7 @@ namespace Hecton8.UI
             {
                 sonarMapCompute = mapCompute;
                 ResetSonarComputeKernelState();
+                QueueSonarComputeKernelRepair();
                 _pointCloudAssetLookupAttempted = false;
             }
         }
@@ -341,6 +350,7 @@ namespace Hecton8.UI
         private void RegisterToTickManager()
         {
             TryRegisterLateFrame();
+            TryRegisterSlowTick();
         }
 
         private void UnregisterFromTickManager()
@@ -350,6 +360,12 @@ namespace Hecton8.UI
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
             }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = false;
+            }
         }
 
         private void TryRegisterLateFrame()
@@ -358,6 +374,14 @@ namespace Hecton8.UI
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryRegisterSlowTick()
+        {
+            if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void RunVisualSync(float deltaTime)
@@ -623,6 +647,7 @@ namespace Hecton8.UI
         {
             _coldSupportsSetConstantBuffer = SystemInfo.supportsSetConstantBuffer;
             _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
+            QueueSonarComputeKernelRepair();
         }
 
         private void TryRegisterHotSwapListener()
@@ -757,7 +782,40 @@ namespace Hecton8.UI
                 name = "Runtime_PDASonarPointCloud"
             }; // COLD ALLOC: Material[1] — GPU-resident PDA sonar point-cloud draw material — owner: PDAMapTab
             _pointCloudMaterial.SetBuffer(SonarPointsId, _pointCloudAppendBuffer);
-            TryResolveSonarComputeKernels();
+            QueueSonarComputeKernelRepair();
+            FlushSonarComputeKernelRepairSlow();
+        }
+
+        private bool HasSonarComputeKernelsReady()
+        {
+            return _sonarComputeKernelsResolved &&
+                   _sonarClearArgsKernel >= 0 &&
+                   _sonarBuildMapPointsKernel >= 0 &&
+                   _sonarClearArgsThreadGroupSizeX > 0 &&
+                   _sonarBuildMapPointsThreadGroupSizeX > 0 &&
+                   _sonarBuildMapPointsThreadGroupSizeY > 0 &&
+                   _sonarBuildMapPointsThreadGroupSizeZ > 0;
+        }
+
+        private void QueueSonarComputeKernelRepair()
+        {
+            _sonarComputeKernelRepairRequested = true;
+        }
+
+        private void FlushSonarComputeKernelRepairSlow()
+        {
+            if (!_sonarComputeKernelRepairRequested && HasSonarComputeKernelsReady())
+                return;
+
+            _sonarComputeKernelRepairRequested = false;
+            if (!TryResolvePointCloudAssets())
+            {
+                _sonarComputeKernelRepairRequested = true;
+                return;
+            }
+
+            if (!TryResolveSonarComputeKernels())
+                _sonarComputeKernelRepairRequested = sonarMapCompute != null && _coldSupportsComputeShaders;
         }
 
         private bool TryResolvePointCloudAssets()
@@ -838,6 +896,7 @@ namespace Hecton8.UI
             _sonarBuildMapPointsThreadGroupSizeY = (int)threadGroupSizeY;
             _sonarBuildMapPointsThreadGroupSizeZ = (int)threadGroupSizeZ;
             _sonarComputeKernelsResolved = true;
+            _sonarComputeKernelRepairRequested = false;
 
             return _sonarComputeKernelsResolved;
         }
@@ -960,9 +1019,14 @@ namespace Hecton8.UI
                 !_pointCloudAppendBuffer.IsValid() ||
                 _pointCloudIndirectArgsBuffer == null ||
                 !_pointCloudIndirectArgsBuffer.IsValid() ||
-                _pointCloudQuadMesh == null ||
-                !TryResolveSonarComputeKernels())
+                _pointCloudQuadMesh == null)
             {
+                return;
+            }
+
+            if (!HasSonarComputeKernelsReady())
+            {
+                QueueSonarComputeKernelRepair();
                 return;
             }
 
@@ -1093,9 +1157,14 @@ namespace Hecton8.UI
                 !_activeHlodImpostorAupBuffer.IsValid() ||
                 _cartographySectorWordBuffer == null ||
                 !_cartographySectorWordBuffer.IsValid() ||
-                !_coldSupportsComputeShaders ||
-                !TryResolveSonarComputeKernels())
+                !_coldSupportsComputeShaders)
             {
+                return false;
+            }
+
+            if (!HasSonarComputeKernelsReady())
+            {
+                QueueSonarComputeKernelRepair();
                 return false;
             }
 
@@ -2144,6 +2213,7 @@ namespace Hecton8.UI
             }
 
             ResetSonarComputeKernelState();
+            QueueSonarComputeKernelRepair();
             _uploadedCartographyRevision = uint.MaxValue;
             _uploadedPackedCartographyRevision = uint.MaxValue;
             _packedUploadCountdown = 0;

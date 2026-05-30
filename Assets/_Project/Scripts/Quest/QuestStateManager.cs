@@ -977,7 +977,7 @@ namespace Hecton8.Quest
                 RefreshStateMetadata(resetVersion: false);
         }
 
-        public void RestoreLegacyState(IEnumerable<string> activeQuestIds, IEnumerable<string> completedQuestIds)
+        public void RestoreLegacyState(List<string> activeQuestIds, List<string> completedQuestIds)
         {
             if (!_globalPrerequisites.IsCreated)
                 return;
@@ -1002,13 +1002,15 @@ namespace Hecton8.Quest
                 default);
         }
 
-        private void RestoreLegacyRange(IEnumerable<string> questIds, bool completed)
+        private void RestoreLegacyRange(List<string> questIds, bool completed)
         {
             if (questIds == null)
                 return;
 
-            foreach (string questId in questIds)
+            int questCount = questIds.Count;
+            for (int i = 0; i < questCount; i++)
             {
+                string questId = questIds[i];
                 if (string.IsNullOrWhiteSpace(questId))
                     continue;
 

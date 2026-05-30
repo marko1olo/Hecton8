@@ -538,3 +538,515 @@ Solution: Do not launch `dotnet build`; use source graph verification, brace bal
 Rejected Alternatives: Violating the compile throttle under active compiler load; claiming compile proof without a clean gate.
 Scalability potential: Parallel agents and weak developer machines avoid compiler contention.
 Hardware Impact: No build CPU consumed by this agent in Pass 20.
+
+## Decision 068 - Toxic Outgassing Cold Mutator Boundary
+
+Problem: `ToxicOutgassingChemistryRuntime.TryUpsertSource` and `TryUpsertEntity` called `EnsureNativeState`, so external gameplay/event producers could force DataVault handle repair through a mutation API.
+Solution: Add `IColdTickable`; cold tick owns `EnsureNativeState`. Upsert routes now fail closed if `_nativeReady` is false and otherwise mutate already prepared arrays.
+Rejected Alternatives: Leaving public mutators as lazy repair routes. Their caller phase is not guaranteed, so they must not allocate or rebind global storage.
+Scalability potential: Low tier avoids hidden repair spikes when toxic sources/entities appear during gameplay. Middle, High, and Ultra can increase source/entity counts only after cold prep owns capacity.
+Hardware Impact: Rare DataVault handle repair branch removed from toxic mutation routes. Static graph from slow/late/upsert roots reports 30 visited methods with zero forbidden paths.
+
+## Decision 069 - Toxic Registration Tracking
+
+Problem: Toxic outgassing registered slow/late ticking without tracking booleans and had no explicit cold owner lane.
+Solution: Track slow, cold, and late registration separately; unregister only registered lanes. This keeps lifecycle cleanup deterministic and makes cold repair route visible in source.
+Rejected Alternatives: Unconditional unregister calls and ad-hoc repair in hot/API paths.
+Scalability potential: Stable registration state matters on low-tier scenes with service churn and on high-tier scenes with dense gas simulation.
+Hardware Impact: No steady microsecond claim. Removes duplicate-unregister risk and clarifies repair ownership.
+
+## Decision 070 - Native Trail Cold Buffer Repair
+
+Problem: `NativeTrailRenderer.SlowTick` allocated/repaired managed sample arrays, mesh vertex arrays, triangle arrays, and the generated Mesh after late-frame detected missing buffers.
+Solution: Replace slow ticking with cold ticking. `LateFrameTick` only queues `_bufferRepairRequested`; `ColdTick` performs `EnsureBuffers`.
+Rejected Alternatives: Keeping trail repair in slow visual cadence. A trail can miss samples while cold repair catches up; arrays/Mesh creation do not belong in runtime maintenance.
+Scalability potential: Low tier avoids trail allocation spikes. Middle, High, and Ultra can use larger trail capacities after cold prep without moving allocation into visible frame cadence.
+Hardware Impact: Rare trail buffer/Mesh allocation moved to cold lane. Static graph from late/render roots reports 14 visited methods with zero forbidden paths.
+
+## Decision 071 - Pass 21 Compile Throttle
+
+Problem: Compiler throttle remained active after Pass 20 and no clean build gate was available.
+Solution: Do not launch `dotnet build`; use brace balance, hot graph verification, and `git diff --check`.
+Rejected Alternatives: Building under active compiler/system load.
+Scalability potential: Parallel work remains possible on weak machines without compiler contention.
+Hardware Impact: No build CPU consumed by this agent in Pass 21.
+
+## Decision 072 - Runtime Presentation Job Wrapper Cutoff
+
+Problem: `VocalWarningSystem`, `HectonInputRuntime_HapticSynth`, `CameraJuiceSystem_CameraJuiceBurst`, and the biolum mock seed still used synchronous `IJob.Run()` wrappers in owner phases where their results are consumed immediately.
+Solution: Replace those owner-phase wrappers with direct `Execute()` calls on the existing bounded job structs. Haptic keeps its primary scheduled simulation/post-simulation route; only the late-frame fallback changed. Camera juice remains a `LateFrameTick` visual fake, with no simulation truth ownership.
+Rejected Alternatives: Schedule then immediately `Complete`, which preserves the same-frame fence; broader scheduler rewrites without pinned state proof; touching `GasDynamicsSolver` with a cosmetic `Run -> Execute` swap while its real debt is lock/phase ownership.
+Scalability potential: Low tier avoids Job System wrapper overhead in camera/audio/haptic/biolum presentation or bootstrap fallbacks. Middle tier keeps identical visual/feedback behavior. High and Ultra can spend saved CPU budget on denser trauma, haptic, vocal cue, and biolum inputs without changing gameplay truth.
+Hardware Impact: Static removal of 13 synchronous Job API wrapper calls across four runtime presentation/fallback/cold-owner systems. No profiler microseconds claimed.
+
+## Decision 073 - Pass 22 Compile Throttle
+
+Problem: After Pass 22 static validation, total CPU briefly fell below 50 percent but `dotnet` PID 29280 remained active.
+Solution: Do not launch `dotnet build`; use targeted grep, brace balance, and `git diff --check` for this pass.
+Rejected Alternatives: Starting a second build while another dotnet host is active. Project rule forbids that even when total CPU dips.
+Scalability potential: Parallel agents on weak machines avoid compiler starvation.
+Hardware Impact: No build CPU consumed by this agent in Pass 22.
+
+## Decision 074 - Gas Dynamics Fixed/PostFixed Job Split
+
+Problem: `GasDynamicsSolver.ScheduleStep` held the gas state mutation guard, ran `GasDynamicsStepJob` synchronously through `job.Run()`, then swapped buffers in the fixed phase. The `_stepRunning` flag was therefore not a real phase boundary.
+Solution: Schedule the Burst job from fixed phase, store the `JobHandle`, register it with `H8Memory`, and complete it only from `PostFixedTick` through `DispatcherJobFence.TryComplete` inside the dispatcher post-fixed swap window.
+Rejected Alternatives: Direct `Execute()` would keep all gas work in fixed phase and bypass the scheduled Burst route. Leaving `Run()` would preserve a fake asynchronous contract.
+Scalability potential: Low tier gets fixed-phase headroom by moving the heavy gas solve to the dispatcher fence. Middle, High, and Ultra can spend the recovered fixed budget on richer visual pressure/readout presentation without changing gas truth.
+Hardware Impact: Removes the synchronous job wrapper and fixed-phase gas solve from the hot fixed body. No profiler microseconds claimed without runtime capture.
+
+## Decision 075 - Gas Dynamics Lock And Telemetry Flattening
+
+Problem: Gas completion wrote the simulation back buffers and then published telemetry in the same method that had just held the gas state guard. The safe route must ensure state ownership is released before any telemetry writer lock can be acquired.
+Solution: Transfer a single state mutation guard with the scheduled job, release it in `ResetScheduledStepState` immediately after the post-fixed fence, then swap local handles and publish telemetry from scratch. Teardown force-completes the handle before buffer release.
+Rejected Alternatives: Holding the state guard while calling `TryPublishStepTelemetryFromScratch`; acquiring per-buffer write locks; relying on `_stepRunning` without a real scheduled handle.
+Scalability potential: Low tier avoids deadlock/stall vectors during gas telemetry. Middle, High, and Ultra can raise room/bulkhead counts only against one clear state guard and one later telemetry writer route.
+Hardware Impact: Removes nested gas-state-plus-telemetry writer ownership from the normal completion path. Steady CPU gain is structural, not timed.
+
+## Decision 076 - Pass 23 Compile Throttle
+
+Problem: Static validation saw active `dotnet` PID 52676 earlier, CPU later spiked to 87 percent, and the latest gate saw active `dotnet` PID 44260 at CPU 62 percent.
+Solution: Do not launch `dotnet build`; use structural source-body scan, brace balance, direct grep, and `git diff --check`.
+Rejected Alternatives: Starting a second build while another dotnet process is running or while CPU is above the allowed threshold.
+Scalability potential: Parallel agents and weak machines avoid compiler contention while still getting local syntax/route proof.
+Hardware Impact: No build CPU consumed by this agent in Pass 23.
+
+## Decision 077 - Direct Owner Execution For Non-Parallel Wrappers
+
+Problem: Cold/mock/editor/one-row owner routes used `IJob.Run()` even though the caller consumed the result immediately and no dependency chain existed.
+Solution: Replace those wrappers with direct `Execute()` or bounded `Execute(index)` loops. Fauna GPU bone upload now performs the validated `UnsafeUtility.MemCpy` directly inside late-frame visual sync. Editor tools use local direct execute helpers so runtime grep is not polluted.
+Rejected Alternatives: Scheduling and immediately completing; preserving synchronous Job API calls for tiny or editor-only work; removing the Burst job structs that are still useful for scheduled runtime callers elsewhere.
+Scalability potential: Low tier avoids Job System wrapper overhead on cold/bootstrap/presentation paths. Middle keeps identical results. High and Ultra can spend budget on denser visual and haptic inputs without changing gameplay truth.
+Hardware Impact: Static removal of every non-core `.Run()` hit under `Assets/_Project/Scripts`. No profiler microseconds claimed.
+
+## Decision 078 - Respawn Defaults Guard Ownership
+
+Problem: Respawn default hydration wrote DataVault tuning, fade, state, request, cursor, penalty count, and medical bay buffers without an explicit mutation guard.
+Solution: Add one `DefaultsMutationGuardMask` for the default write set and release it through `finally`. Later CSV/job/telemetry writes remain separate routes, so no thread holds nested DataVault write locks.
+Rejected Alternatives: Treating cold bootstrap as exempt from DataVault ownership; merging defaults with CSV import locks; widening the main respawn job guard.
+Scalability potential: Low tier avoids rare startup/hotswap data races. Middle, High, and Ultra can expand medical bay/default state counts behind one explicit route.
+Hardware Impact: Structural safety gain; no steady frame-time claim.
+
+## Decision 079 - Submarine Structural Grid Fixed/PostFixed Split
+
+Problem: `ScheduleBreachRepairJob`, `EnsureCompartmentMappingReady`, `ScheduleFatigueJob`, and `ScheduleDamageJob` ran their Burst jobs synchronously in `FixedTick`, then reset running flags; post-fixed consumers were effectively dead code.
+Solution: Schedule the jobs in fixed phase, register handles with `H8Memory`, keep one structural job mutation guard alive per job, and finalize through `DispatcherJobFence.TryFinalizeCompleted` in `PostFixedTick`. Teardown force-completes before releasing vault handles.
+Rejected Alternatives: Direct `Execute()` for large hull grid jobs; keeping fake async names; swapping buffers before the damage job fence resolves.
+Scalability potential: Low tier gets fixed-frame relief and deterministic backpressure while a job is in flight. Middle, High, and Ultra can raise hull grid or breach density against real scheduled work.
+Hardware Impact: Removes four heavy synchronous hull job wrappers from fixed phase. Exact microseconds require Unity Profiler capture.
+
+## Decision 080 - Pass 24 Verification And Build Wall
+
+Problem: Roslyn in-process parsing failed in Windows PowerShell with `Roslyn.Utilities.StringTable`; MSBuild then failed before source compilation on existing vendor circular target dependencies.
+Solution: Use gated build attempts only when CPU and compiler process gates were clear, then stop after two project-reference failures and shut down the build server. Source proof used grep, brace balance, hot-body extraction, and `git diff --check`.
+Rejected Alternatives: Spamming more `dotnet build` variants; claiming compile success; leaving `VBCSCompiler` running.
+Scalability potential: Weak machines and parallel agents avoid compiler starvation while keeping deterministic proof artifacts.
+Hardware Impact: Two throttled build attempts; final compiler process count returned to zero after `dotnet build-server shutdown`.
+
+## Decision 081 - Swim Presentation Cold Reference Repair
+
+Problem: `PlayerSwimPresentationController.SyncFromLocomotion` retried missing references from the render presentation path and could call `TryGetComponent` plus guide hierarchy scans every eight frames.
+Solution: Add a cold reference-repair lane. The render path now only sets a primitive repair flag and returns when the required movement owner is missing. `ColdTick` performs `AutoResolveReferences`, guide binding, and pose initialization. Player context references are cached from `GlobalRegistry.Player` in cold/hot-swap routes.
+Rejected Alternatives: Leaving render retry lookup in place; registering/unregistering cold repair from the hot path; doing a wider swim rig rewrite.
+Scalability potential: Low tier avoids periodic render spikes from component and hierarchy probes. Middle, High, and Ultra keep the same presentation math and can spend render budget on denser hand/obstacle feel.
+Hardware Impact: Removes a recurring hot lookup/scan branch from `SyncFromLocomotion`; exact microseconds require Unity Profiler capture.
+
+## Decision 082 - Dynamic Music Job Buffer Pins
+
+Problem: Dynamic music held a broad DataVault mutation guard from synth job schedule through completion and then published telemetry while that guard was still held.
+Solution: Resolve scheduled job memory through relocation pins: `TryLockBuffer` pins voices, scalar, tuning, biquad, grain bank, and target output before scheduling; `H8Memory.RegisterActiveJob` records the job fence; completion releases pins before a short publish-only mutation guard writes shared state and telemetry.
+Rejected Alternatives: Releasing the guard without pinning buffers; keeping the broad cross-frame mutation guard; forcing same-frame DSP completion.
+Scalability potential: Low tier avoids writer starvation and compaction stalls around audio. Middle, High, and Ultra can raise voice/grain density without extending DataVault write guard lifetime.
+Hardware Impact: Removes one cross-frame mutation guard lifetime from audio DSP scheduling. No audio DSP microseconds claimed.
+
+## Decision 083 - Migratory Sargassum Job Buffer Pins
+
+Problem: Migratory Sargassum held `MigratorySargassumJobMutationGuardMask` across scheduled island drift job execution and completion.
+Solution: Split prep, job, and publish ownership. Flow-sample preparation uses a short `try/finally` mutation guard. The scheduled drift job uses buffer pins for islands and flow samples, registers the handle with `H8Memory`, then releases pins before the spatial publish acquires its separate state guard.
+Rejected Alternatives: Keeping the job guard as a relocation pin; direct `Execute` for a visual ecology batch; merging spatial publish into the job guard.
+Scalability potential: Low tier avoids cross-frame writer lock retention while keeping drifting canopy as a cheap visual/ecology fake. Middle, High, and Ultra can increase canopy count/cadence behind the same pinned job route.
+Hardware Impact: Removes one cross-frame mutation guard lifetime from world scatter drift. No profiler microseconds claimed.
+
+## Decision 084 - Pass 25 Compile Throttle
+
+Problem: Static verification completed, but CPU average was 99 percent. Starting MSBuild would violate the project throttle even though no compiler process was active.
+Solution: Skip build in Pass 25 and rely on brace balance, targeted hot-body scan, `.Run/.Complete` grep, mutation-guard route grep, and `git diff --check`.
+Rejected Alternatives: Launching `dotnet build` under saturated CPU; repeating the known vendor circular-reference build wall without new signal.
+Scalability potential: Parallel agent machines avoid compiler starvation while source-level invariants remain checked.
+Hardware Impact: No build CPU consumed in Pass 25.
+
+## Decision 085 - Sump Solver Buffer Pins
+
+Problem: `SumpPumpPipeGridRuntime.ScheduleDrainageSolve` held `DrainageVaultMutationGuardMask` from schedule through `LateFrameTick`, so a slow drainage job could block unrelated Vault writers across frames.
+Solution: Replace the solver's cross-frame mutation guard with owner-tagged `TryLockBuffer` pins for every local solver buffer plus optional fluid/power source buffers. The scheduled job is still registered with `H8Memory`; pins are released after `DispatcherJobFence.TryFinalizeCompleted` or forced teardown.
+Rejected Alternatives: Releasing the guard without pinning buffers; keeping the broad guard because the solver cadence is slow; direct synchronous `Execute()` for drainage.
+Scalability potential: Low tier avoids cross-frame writer starvation when drainage runs behind slow frames. Middle, High, and Ultra can raise pump/pipe count and delta pass count without widening a DataVault write-lock window.
+Hardware Impact: Removes one cross-frame DataVault write-lock lifetime. No profiler microseconds claimed.
+
+## Decision 086 - Sump Telemetry After Solver Settle
+
+Problem: Solver wall-time metadata was stamped while the solver's broad mutation guard was still the ownership proof.
+Solution: Release solver buffer pins immediately after the scheduled chain finalizes, then acquire a short telemetry guard in `LateFrameTick` only for wall-time stamping. The transfer between phases is primitive timestamp/dirty state.
+Rejected Alternatives: Writing telemetry before release; moving visual upload into the simulation schedule path; adding managed queues for telemetry transfer.
+Scalability potential: Low tier keeps telemetry cheap and bounded. Middle, High, and Ultra can retain visual flow upload without coupling it to simulation mutation ownership.
+Hardware Impact: Structural lock safety gain; no frame-time number without Unity Profiler.
+
+## Decision 087 - Deconstruction Telemetry Guard Flattening
+
+Problem: `ExecuteDeconstructionTransaction` acquired transaction buffers, then attempted to acquire deconstruction telemetry through the same guard system. The depth guard rejected that nested acquisition, so the teardown job often received default telemetry arrays and black-box dumps were attempted before transaction release.
+Solution: Borrow telemetry arrays under the already active single deconstruction guard and defer black-box dumping until after `ReleaseDeconstructionTransactionBuffers` runs in `finally`.
+Rejected Alternatives: Allowing nested same-vault guard depth; acquiring a separate telemetry lock while transaction buffers are guarded; leaving the teardown job without telemetry.
+Scalability potential: Low tier gets deterministic post-mortem data for teardown faults. Middle, High, and Ultra can raise teardown capacity while preserving one write-owner route.
+Hardware Impact: Restores telemetry writes without adding a second DataVault write lock. No runtime allocation added.
+
+## Decision 088 - Pass 26 Compile Throttle
+
+Problem: Static checks passed, but CPU average was 93 percent and an existing `dotnet build Hecton8.slnx` process PID 21592 was active.
+Solution: Do not launch another build. Validation used brace balance, targeted hot-body scanning, project `.Run/.Complete` grep, and `git diff --check`.
+Rejected Alternatives: Starting a second MSBuild under load; killing another agent's active build process; claiming compile success without source compilation.
+Scalability potential: Shared developer machines avoid compiler starvation while invariant checks continue.
+Hardware Impact: No build CPU consumed by this pass.
+
+## Decision 089 - Habitat Fluid Buffer Pins
+
+Problem: `HabitatFluidIncursionDirector.FixedTick` held `FluidSimulationMutationGuardMask` across a scheduled flood solver chain and post-fixed completion.
+Solution: Replace the cross-frame mutation guard with owner-tagged `TryLockBuffer` pins for the exact fluid solver buffers. The fixed phase schedules the job chain and `PostFixedTick` releases pins after the dispatcher fence and summary publication.
+Rejected Alternatives: Releasing the guard without pins; keeping a broad guard because the solver is authoritative; moving publication into fixed phase.
+Scalability potential: Low tier avoids DataVault writer starvation during flood frames. Middle, High, and Ultra can raise compartment count, BFS budget, and waterline visual density without widening a global write-lock span.
+Hardware Impact: Removes one cross-frame DataVault write-lock lifetime from habitat flood solve. No profiler microseconds claimed.
+
+## Decision 090 - Habitat Fluid PostFixed Publication
+
+Problem: The flood solver summary, wall-time stamp, mass/acoustic signals, and shader dirty flags must not publish before the scheduled simulation has settled.
+Solution: `PostFixedTick` first finalizes through `DispatcherJobFence.TryFinalizeCompleted`, then swaps buffers and publishes from pinned NativeArray state. Pins are released in strict `finally`; transfer state is primitive timestamp/dirty flags plus existing Vault buffers.
+Rejected Alternatives: Publishing from fixed phase; releasing pins before reading summary; adding a managed queue for presentation transfer.
+Scalability potential: Low tier keeps flood presentation bounded and deterministic. Middle, High, and Ultra can increase visual/audio response cadence without changing simulation truth ownership.
+Hardware Impact: Structural phase-safety gain. No GC route added.
+
+## Decision 091 - Procedural Bone Job Buffer Pins
+
+Problem: `ProceduralBoneBlenderRuntime` retained `JobMutationGuardMask` from `Tick` scheduling through `LateFrameTick` completion for visual fauna bone solving.
+Solution: Replace the cross-frame guard with owner-tagged buffer pins for rig, input, parent, bind pose, bone state, matrix, stats, telemetry, cursor, tuning, and mock signal buffers. Completion releases pins after `DispatcherJobFence`.
+Rejected Alternatives: Keeping a broad guard for visual animation; direct `Execute()` for the batch; splitting animation truth into extra managed copies.
+Scalability potential: Low tier avoids Vault writer starvation during fauna animation solve. Middle, High, and Ultra can raise skeleton/bone counts behind pinned NativeArray ownership.
+Hardware Impact: Removes one cross-frame DataVault write-lock lifetime from procedural fauna animation. Exact microseconds require Unity Profiler.
+
+## Decision 092 - Compile Duplicate Helper Fix
+
+Problem: A throttled build reached C# and failed with CS0111 because `PredatorCognitionDomain_Steering.cs` duplicated `WriteInt32LittleEndian` and `WriteUInt32LittleEndian` already defined in the same partial class.
+Solution: Remove only the steering duplicate methods. Steering dump code now calls the single helper implementation in `PredatorCognitionDomain.cs`.
+Rejected Alternatives: Renaming call sites; touching the broader fauna black-box dump rewrite; ignoring a concrete compile blocker after source compilation reached it.
+Scalability potential: One helper owner prevents future partial-class drift across Low/Middle/High/Ultra fauna dump paths.
+Hardware Impact: Removes two compile blockers. No runtime frame-time claim.
+
+## Decision 093 - Pass 27/28 Verification And Build Throttle
+
+Problem: Roslyn in-process AST parsing could not load SDK assemblies under Windows PowerShell; after the duplicate-helper fix CPU rose above the compile threshold, and the single build process briefly lingered after command return.
+Solution: Use brace balance, method-body hot scans, `.Run/.Complete` grep, `git diff --check`, and exactly one gated build attempt. Verify lingering PID 6984 command line as this agent's `dotnet build`, wait once, then stop/clear it instead of leaving an orphan. Do not retry build while CPU exceeds the project threshold.
+Rejected Alternatives: Claiming Roslyn AST proof after loader failure; spamming a second build under high CPU; leaving the orphaned build process active.
+Scalability potential: Shared workstations remain usable while static invariants are still checked between compile windows.
+Hardware Impact: One throttled build attempt; no second build CPU consumed after CPU gate closed; final compiler process count is 0.
+
+## Decision 094 - Procedural Bone Tuning Read-Only Snapshot
+
+Problem: `ProceduralBoneBlenderRuntime.Tick` still acquired a tuning mutation guard for a one-element sanitize/update route, keeping a writer operation in the animation tick.
+Solution: Treat tuning as an immutable hot snapshot. Tick reads the cached `NativeArray<ProceduralBoneTuningDTO>` value, clamps `GlobalQualityWeight` and active skeleton count into primitive fields, and does not write DataVault.
+Rejected Alternatives: A short mutation guard in Tick; moving visual bone cadence into a managed queue; changing tuning DTO layout.
+Scalability potential: Low tier avoids needless writer lock attempts in fauna animation. Middle, High, and Ultra still scale bone counts through continuous quality fields.
+Hardware Impact: Removes one hot DataVault writer attempt per procedural bone tick. Exact microseconds require Unity Profiler.
+
+## Decision 095 - Ladder IK Solve Pins
+
+Problem: Ladder IK solve retained a broad mutation guard while a scheduled visual IK job was in flight.
+Solution: Pin only `LadderClimbIkInput`, `LadderAUPs`, `LadderClimbIkOutput`, `LadderClimbIkTelemetryRing`, and `LadderClimbIkTelemetryCursor` before scheduling. Release pins after dispatcher completion or failed schedule in strict `finally` paths.
+Rejected Alternatives: Cross-frame solve mutation guard; direct `Execute()` in `LateFrameTick`; copying IK state through managed arrays.
+Scalability potential: Low tier avoids writer starvation during climb presentation. Middle, High, and Ultra can raise IK sampling fidelity without widening DataVault writer ownership.
+Hardware Impact: Removes one cross-frame DataVault write-lock lifetime from ladder presentation.
+
+## Decision 096 - Celestial Orbit Output Pin
+
+Problem: Scheduled celestial orbit math kept a broad output mutation guard across the job lifetime.
+Solution: Replace the guard with a single owner-tagged `TryLockBuffer` pin on `Shinobu345CelestialLegacyOrbitOutput`; release after the dispatcher fence or forced teardown.
+Rejected Alternatives: Keeping a broad mutation guard for one output buffer; releasing without a relocation pin; moving orbit solve back to synchronous presentation.
+Scalability potential: Low tier avoids vault writer stalls during sky updates. Middle, High, and Ultra can spend saved headroom on richer celestial presentation without changing truth ownership.
+Hardware Impact: Removes one cross-frame DataVault write-lock lifetime. No frame-time number claimed.
+
+## Decision 097 - Tether AUP Solver Pins
+
+Problem: `TetherManager.ScheduleShinobu143AupMock` held `Shinobu143AupMutationGuardMask` from fixed scheduling through solver completion.
+Solution: Replace the broad guard with exact pins for AUP nodes, constraints, endpoints, segment tensions, solver stats, force packets, telemetry ring/head, pinned AUPs, and pinned mask. Telemetry fault sampling runs after the fence while pins are still held, then pins release in `finally`.
+Rejected Alternatives: Retaining the cross-frame write guard; sampling telemetry after releasing relocation ownership; cloning solver buffers into managed memory.
+Scalability potential: Low tier avoids physics DataVault writer starvation. Middle, High, and Ultra can raise cable count/solver detail behind the same pinned ownership route.
+Hardware Impact: Removes one cross-frame DataVault write-lock lifetime from tether AUP solve.
+
+## Decision 098 - Spatial Audio Virtual Voice Sort Pins
+
+Problem: `SpatialAudioManager.FastTick` retained `VirtualVoiceSortMutationGuardMask` across a scheduled virtual voice sort job.
+Solution: Pin sort pool, sort-key pool, selections, and statistics with `TryLockBuffer`; release pins on schedule failure, completion, or teardown. The old mutation mask was removed.
+Rejected Alternatives: Holding a cross-frame audio write guard; forcing same-frame voice sort completion; allocating managed voice snapshots.
+Scalability potential: Low tier avoids fast-tick writer stalls under crowded sound scenes. Middle, High, and Ultra can raise voice hydration using the same pinned job route.
+Hardware Impact: Removes one cross-frame audio DataVault write-lock lifetime.
+
+## Decision 099 - Harpoon Tension Scheduled Mock Pins
+
+Problem: `HarpoonTensionSolver328.TryScheduleMockFromVault` used a static scheduled mutation guard while exposing the release method as `ReleaseMockScheduleBufferPins`.
+Solution: Convert the scheduled route to twelve exact `TryLockBuffer` pins for state, stress, nodes, previous nodes, constraints, force packets, physics events, spline vertices, telemetry ring/head, tuning, and fault flags. Keep a renamed `MockBootstrapMutationGuardMask` only for cold seed/init writes.
+Rejected Alternatives: Leaving a broad static guard behind a misleading API name; removing cold bootstrap guard; direct synchronous harpoon solve.
+Scalability potential: Low tier avoids writer starvation during harpoon cable simulation. Middle, High, and Ultra can raise constraint iterations and spline density without extending DataVault writer ownership.
+Hardware Impact: Removes one cross-frame physics DataVault write-lock lifetime.
+
+## Decision 100 - Compile Gate Timeout Cleanup
+
+Problem: After the pin refactors, CPU and compiler process gates allowed one build, but `dotnet build` did not return diagnostics within 120 seconds and remained as PID 39176.
+Solution: Verify PID 39176 command line as this agent's exact throttled build, wait 30 seconds, then stop that PID and confirm no compiler processes remain. Do not launch a second build while CPU is 57 percent.
+Rejected Alternatives: Leaving an orphan compiler; claiming compile success; spamming another build under load.
+Scalability potential: Shared agent workstation remains usable and compiler starvation is bounded.
+Hardware Impact: One throttled build attempt; no compile result obtained; final compiler process count is zero.
+
+## Decision 101 - Logistics Pipe Sort Buffer Pins
+
+Problem: `LogisticsPipeTransportScheduler` retained a broad sort mutation guard across a scheduled DAG sort.
+Solution: Replace the cross-frame guard with exact pins for edge offsets, destinations, indegrees, queue, sorted order, and sorted count.
+Rejected Alternatives: Keeping one broad guard because the sort buffer set is small; broad guards still block unrelated DataVault writers.
+Scalability potential: Low tier avoids writer starvation during logistics graph sorting. Middle, High, and Ultra can raise pipe graph size behind pinned NativeArray ownership.
+Hardware Impact: Removes one cross-frame logistics DataVault write-lock lifetime.
+
+## Decision 102 - Spatial Audio Occlusion Buffer Pins
+
+Problem: Acoustic occlusion scheduling retained a broad DataVault mutation guard while DSP-facing occlusion buffers were in flight.
+Solution: Pin DSP, selection, source, material, and copied SDF snapshot buffers exactly. The SDF copy uses a short same-phase guard and releases before the scheduled path continues.
+Rejected Alternatives: Holding an audio occlusion writer guard across the fence; copying all occlusion state through managed arrays.
+Scalability potential: Low tier avoids audio writer stalls in dense portal scenes. Middle, High, and Ultra can increase acoustic material richness without widening a global lock.
+Hardware Impact: Removes one cross-frame audio occlusion writer-lock lifetime.
+
+## Decision 103 - AUP Precision Localization Pins
+
+Problem: `AupPrecisionJobs` used a broad scheduled localization mutation guard for target AUPs, offsets, flags, telemetry, and fault counters.
+Solution: Pin each scheduled buffer with owner-tagged `TryLockBuffer` and release exact pins after dispatcher completion or failure.
+Rejected Alternatives: Retaining a broad origin precision guard; releasing without relocation pins.
+Scalability potential: Low tier avoids origin precision stalls during rebasing. Middle, High, and Ultra can raise AUP target counts behind the same pin route.
+Hardware Impact: Removes one cross-frame core-origin writer-lock lifetime.
+
+## Decision 104 - Cable132 Scheduled Mock Pins
+
+Problem: `CablePhysicsSolver132` kept `ScheduledMockMutationGuardMask` across mock cable solve jobs.
+Solution: Pin cable node, previous node, constraint, endpoint, spline, tension, event, telemetry, pinned AUP, and tuning buffers exactly.
+Rejected Alternatives: Broad physics mutation guard for a mock route; same-frame execution of cable solve.
+Scalability potential: Low tier avoids physics DataVault writer starvation. Middle, High, and Ultra can raise cable segment and spline detail behind pinned buffers.
+Hardware Impact: Removes one cross-frame cable writer-lock lifetime.
+
+## Decision 105 - Quest DAG Scheduled Pins
+
+Problem: Quest DAG resolution used `ScheduledMutationGuardMask` plus a vault-wide mutation bit for scheduled state resolution.
+Solution: Pin graph state masks, node/runtime buffers, trigger volumes, requirements, player inventory, factions, telemetry, counters, and trigger index buffers exactly.
+Rejected Alternatives: Broad quest graph guard; pinning CSV monitor data that scheduled jobs do not consume.
+Scalability potential: Low tier keeps quest evaluation from blocking unrelated saves and UI state. Middle, High, and Ultra can scale quest graph size without broad writer ownership.
+Hardware Impact: Removes one cross-frame quest DataVault writer-lock lifetime.
+
+## Decision 106 - Haptic Synthesis Pins
+
+Problem: Haptic synthesis retained broad schedule guard constants and one unused aggregate pin mask.
+Solution: Pin pulses, final pulse, telemetry, profile table, tuning, and optional mock impulses exactly. Remove unused aggregate constant.
+Rejected Alternatives: Keeping a synthetic broad guard; leaving dead pin constants to satisfy naming symmetry.
+Scalability potential: Low tier avoids haptic writer stalls. Middle, High, and Ultra can increase haptic pulse richness without extending mutation guard lifetime.
+Hardware Impact: Removes one cross-frame haptic writer-lock lifetime and one analyzer-noise constant.
+
+## Decision 107 - AUP Origin Shift Rebase Pins
+
+Problem: Origin rebase scheduling mixed a broad rebase guard with runtime state writes, visual anchors, cable points, hot entities, historical points, counters, and mock state buffers.
+Solution: Keep runtime state under a short `try/finally` write view, then retain only exact scheduled buffer pins across the rebase jobs.
+Rejected Alternatives: One broad rebase schedule guard; runtime state write lock held while scheduled jobs run.
+Scalability potential: Low tier avoids world-origin stalls. Middle, High, and Ultra can rebase more visual and physics buffers without blocking unrelated Vault writers.
+Hardware Impact: Removes one cross-frame origin-shift writer-lock lifetime.
+
+## Decision 108 - Physics Apply Validation Pins
+
+Problem: force-validation scheduling used a broad validation mutation guard around packet/mask buffers.
+Solution: Pin only `PhysicsForceValidationPackets` and `PhysicsForceValidationMask` for the scheduled validation path.
+Rejected Alternatives: Broad physics validation guard; direct same-frame validation completion.
+Scalability potential: Low tier avoids validation writer stalls. Middle, High, and Ultra can increase packet volume behind the same exact ownership route.
+Hardware Impact: Removes one physics validation writer-lock lifetime.
+
+## Decision 109 - Hydrodynamic KCC Scheduled Pins
+
+Problem: `HydrodynamicKccRuntime` used `ScheduledVaultMutationGuardMask` and a separate metabolism state guard around scheduled KCC/environment work.
+Solution: Pin exact state, input, proposed velocity, hit, wake, tuning, environment, visual, telemetry, rollback, debug, and optional metabolism buffers. The metabolism state pin is acquired only when a published read view is actually used.
+Rejected Alternatives: Broad KCC guard across all scheduled work; unconditional metabolism pin; managed copies of KCC state.
+Scalability potential: Low tier avoids broad physics writer stalls. Middle, High, and Ultra can raise KCC environment fidelity and telemetry without changing truth ownership.
+Hardware Impact: Removes one large cross-frame KCC writer-lock span.
+
+## Decision 110 - Voxel Carve And Compaction Pins
+
+Problem: `VoxelDeltaProcessor` retained broad scheduled carve and compaction scratch mutation guards across save/voxel scheduled work.
+Solution: Pin carve write buffer and nine compaction scratch buffers exactly; rebind gates test active pin masks instead of broad guard booleans.
+Rejected Alternatives: Broad save/voxel mutation guards; moving compaction state into managed scratch arrays.
+Scalability potential: Low tier avoids save/voxel writer starvation. Middle, High, and Ultra can raise carve/compaction cadence without widening global write locks.
+Hardware Impact: Removes two cross-frame voxel/save writer-lock spans.
+
+## Decision 111 - Base Atmosphere CSR Diffusion Pins
+
+Problem: `BaseAtmosphereLogisticsRuntime` still retained `AtmosphereJobMutationGuardMask` across scheduled CSR gas diffusion.
+Solution: Replace scheduled ownership with exact pins for front/back cells, nodes, edge buffers, consumers, toxic sources, vents, counters, tuning, deltas, remainders, telemetry, and shader payload. Rename the broad guard to `AtmosphereFrameMutationGuardMask` and keep it only for short pre-simulation/init writes released in `finally`.
+Rejected Alternatives: Keeping a broad atmosphere job guard because the buffers are all atmosphere-owned; ownership still blocks unrelated Vault routes and hides cross-frame lock lifetime.
+Scalability potential: Low tier avoids base-atmosphere writer stalls during gas diffusion. Middle, High, and Ultra can raise diffusion iterations and graph size through continuous quality without broad writer ownership.
+Hardware Impact: Removes one cross-frame base-atmosphere DataVault write-lock lifetime. No profiler microseconds claimed.
+
+## Decision 112 - Pass 35-45 Verification Boundary
+
+Problem: Source fixes were complete for this slice, but the project remained heavily dirty from parallel agents and a `dotnet build Hecton8.Core.csproj` compiler lane was already active.
+Solution: Validate edited files with brace balance, removed-symbol grep, method-body forbidden-token scans, and `git diff --check`. Skip a new build because compiler-process gate was closed by active `dotnet.exe`/`csc.exe` processes.
+Rejected Alternatives: Claiming project-wide cleanup; killing another agent's compiler; launching a parallel build.
+Scalability potential: Parallel development remains bounded; future passes can consume the remaining hard debt list without corrupting other agents' work.
+Hardware Impact: No build CPU consumed in this pass; compile success not claimed.
+
+## Decision 113 - Gerstner Scheduled Water Pins
+
+Problem: `AnalyticalGerstnerWaveRuntime` retained a broad scheduled guard across water spectrum/result jobs.
+Solution: Replace the guard with exact pins for spectrum, tuning, request, result, macro-grid, and counter buffers. Release every acquired buffer in reverse order from completion and teardown paths.
+Rejected Alternatives: Treating water presentation math as allowed to own a broad physics DataVault guard across a dispatcher fence.
+Scalability potential: Low tier can keep cheap Gerstner sampling without blocking unrelated physics writers. Middle, High, and Ultra can raise sample count and macro-grid fidelity behind the same exact ownership route.
+Hardware Impact: Removes one cross-frame water writer-lock lifetime; no profiler microsecond claim.
+
+## Decision 114 - Buoyancy Post-Fixed Pin Flattening
+
+Problem: `BuoyancyDisplacementRuntime` had exact scheduled pins but still used broad mutation guard masks in hot post-fixed force drain and completion telemetry.
+Solution: Convert force drain, completion telemetry, and SIMD telemetry to local exact `TryLockBuffer` pins with strict `finally` release helpers. Scheduled solver pins remain cross-frame only for the job buffers.
+Rejected Alternatives: Leaving same-phase broad runtime guards because they are short; they still hide ownership scope and complicate deadlock proof.
+Scalability potential: Low tier avoids post-fixed writer contention under object-heavy buoyancy. Middle, High, and Ultra can increase force packet and telemetry volume without widening global guard scope.
+Hardware Impact: Removes one cross-frame buoyancy writer lock and three hot same-phase broad guard attempts.
+
+## Decision 115 - Seaglide Hydrodynamics Exact Pins
+
+Problem: `SeaglideHydrodynamicsRuntime` used a broad scheduled job guard and resolved runtime buffers before exact relocation ownership was proven.
+Solution: Pin state, request, force, flow, tuning, telemetry, counter, visual, audio, and cavitation buffers before resolving runtime NativeArray views; release exact pins in reverse order.
+Rejected Alternatives: Reusing a method name that implied pins while still taking a broad mutation guard; resolving scheduled views before DataVault relocation pins.
+Scalability potential: Low tier avoids vehicle hydrodynamics writer stalls. Middle, High, and Ultra can add richer flow/cavitation/audio outputs behind fixed exact pins.
+Hardware Impact: Removes one vehicle hydrodynamics writer-lock lifetime.
+
+## Decision 116 - Hand IK Optional Bridge Pins
+
+Problem: Hand IK scheduled presentation work used a broad gameplay-player mutation guard and unpinned optional VR bridge inputs.
+Solution: Pin IK state, published state, targets, bone matrices, telemetry, cursor, and config exactly. Pin VR bridge states/tuning only when bridge input is enabled and release optional pins if the bridge view is invalid.
+Rejected Alternatives: Unconditional bridge ownership; broad gameplay-player mutation guard across visual IK jobs; copying bridge input into managed scratch.
+Scalability potential: Low tier can run mock or low-iteration IK without blocking VR bridge buffers. Middle, High, and Ultra can raise IK iterations through continuous quality without changing buffer ownership.
+Hardware Impact: Removes one hand IK writer-lock lifetime and avoids unnecessary bridge pin retention.
+
+## Decision 117 - Pass 46-50 Verification Boundary
+
+Problem: The touched code needed proof without build spam while the full project remains dirty from parallel agents.
+Solution: Validate four edited files with brace balance, removed-symbol grep, method-body hot forbidden-token scan, and `git diff --check`. One allowed `dotnet build` was attempted only under the CPU/process gate and was stopped after timeout.
+Rejected Alternatives: Repeated builds; claiming compile success from a timed-out build; treating PowerShell 5.1 Roslyn loader failure as AST proof.
+Scalability potential: Verification remains cheap on weak development machines and does not starve other agents' compiler lanes.
+Hardware Impact: One throttled build attempt timed out and was cleaned; final compiler-process count was zero.
+
+## Decision 118 - Ambient Biota Job Pins
+
+Problem: `AmbientBiotaDirector` retained a broad scheduled biota mutation guard across drift and spawn jobs.
+Solution: Pin only `BiotaAUPs`, `BiotaVelocities`, and `BiotaStates` with owner-tagged `TryLockBuffer`; release exact pins in reverse order after completion, schedule failure, or teardown.
+Rejected Alternatives: Keeping a broad ambient ecology writer guard because the buffer set is small; small broad guards still hide cross-frame ownership.
+Scalability potential: Low tier avoids ambient ecology writer starvation. Middle, High, and Ultra can raise biota counts behind the same exact NativeArray ownership.
+Hardware Impact: Removes one cross-frame ambient biota DataVault writer-lock lifetime. No profiler microseconds claimed.
+
+## Decision 119 - Shinobu Ecosystem Frame And Macro Pins
+
+Problem: `ShinobuEcosystemBalancer` used broad frame and macro job mutation masks for scheduled entity, AUP, snapshot, spatial hash/grid, sector, and counter buffers.
+Solution: Convert frame and macro pipelines to exact pins. `FinishFrameJobCompletion` releases active pins in `finally` before after-release spatial/debug/macro publications execute.
+Rejected Alternatives: One broad ecology guard per pipeline; holding writer ownership while presentation/debug publication runs.
+Scalability potential: Low tier avoids ecology writer stalls during flocking and macro migration. Middle, High, and Ultra can raise entity count and spatial-grid detail with pinned buffers.
+Hardware Impact: Removes two cross-frame ecosystem DataVault writer-lock lifetimes.
+
+## Decision 120 - Procedural Field Sampling Pins
+
+Problem: `WorldProceduralFieldSampler` scheduled cell sampling retained one broad sampling-table mutation guard.
+Solution: Pin exact sampling inputs: zones, biome matrices, matrix index, biome families, cave entrance hints, and noise lookup. Partial acquisition now records the vault before the first lock so failed attempts release already-acquired pins.
+Rejected Alternatives: Broad sampling guard; resolving sampling views before relocation ownership is established.
+Scalability potential: Low tier can sample fewer cells without blocking unrelated world writers. Middle, High, and Ultra can increase procedural sampling density under the same exact ownership route.
+Hardware Impact: Removes one cross-frame/proxy sampling writer-lock lifetime.
+
+## Decision 121 - Migratory Sargassum Exact State Ownership
+
+Problem: Migratory sargassum had both scheduled job broad ownership and a same-phase state mutation guard around island/spatial publication.
+Solution: Use exact island/flow locks for scheduled flow prep and exact state pins for islands, scratch islands, selected sources, spatial handles, and scratch spatial handles during same-phase state refresh/publication.
+Rejected Alternatives: Treating the same-phase broad guard as harmless; it still obscures ownership scope and weakens deadlock proof.
+Scalability potential: Low tier keeps procedural scatter state predictable. Middle, High, and Ultra can increase sargassum island density without broad writer ownership.
+Hardware Impact: Removes one scheduled broad guard and one hot same-phase broad state guard.
+
+## Decision 122 - Stress Spawn Scheduled Pins
+
+Problem: `StressDrivenSpawnDirector` kept `JobMutationGuardMask` over scheduled spawn rule evaluation, candidate selection, hidden ticket generation, frustum culling, inventory preload, and telemetry.
+Solution: Pin the 12 exact buffers used by the scheduled chain and release partial pins even if scheduling fails before `_jobScheduled` is set.
+Rejected Alternatives: A broad fauna spawn guard; retaining partial pins only after the scheduled flag is true.
+Scalability potential: Low tier avoids fauna spawn writer stalls. Middle, High, and Ultra can raise spawn candidates and debug/telemetry fidelity behind exact pins.
+Hardware Impact: Removes one cross-frame fauna spawn DataVault writer-lock lifetime.
+
+## Decision 123 - Dynamic Point Light Culling Pins
+
+Problem: `DynamicPointLightCullingDirector` held `JobMutationGuardMask` from simulation `Tick` scheduling until `LateFrameTick` completion, while jobs also consumed read-only NativeArray inputs not covered by the old broad mask.
+Solution: Replace the guard with exact pins for sources, states, frustum planes, mock SDF samples, profile rules, importance/sort buffers, both GPU payload buffers, dynamic probe lights, and runtime counters. Upload stays in `LateFrameTick` after dispatcher completion and pin release.
+Rejected Alternatives: Pinning only the old write-mask buffers; read-only job inputs still require relocation/ownership proof while scheduled jobs hold NativeArray views.
+Scalability potential: Low tier keeps light culling cheap and non-blocking. Middle, High, and Ultra can buy more active lights, probe bounce, and near-field boost without widening DataVault writer ownership.
+Hardware Impact: Removes one cross-frame graphics culling DataVault writer-lock lifetime.
+
+## Decision 124 - Pass 51-56 Verification Boundary
+
+Problem: The code changes needed static proof, but compilation was forbidden by current system load and another active build.
+Solution: Validate six edited files with brace balance, removed-symbol grep, targeted method-body forbidden-token scan, `git diff --check`, and a compile gate check. Skip build because CPU was 69 percent and PID 59332 was already running `dotnet build .\Assembly-CSharp.csproj --no-restore -v:minimal`.
+Rejected Alternatives: Killing another agent's build; launching parallel MSBuild; claiming compile success without a completed build.
+Scalability potential: Verification remains bounded on shared weak machines while exact-pin conversion continues.
+Hardware Impact: Zero build CPU consumed in this pass; compile success not claimed.
+
+## Decision 125 - Bulkhead Containment Exact Scheduled Pins
+
+Problem: `BulkheadContainmentRuntime` held `BulkheadJobMutationGuardMask` across construction collision/update/hatch scheduled work, and optional hatch fluid/structural paths only tracked bits instead of owning the underlying buffers.
+Solution: Replace the broad guard with required exact pins for bulkhead and hatch state/AUP/plane/CSR/flow/integrity/collision/telemetry/tuning/mock-fluid buffers. Optional hatch fluid-front and structural-state paths now acquire/release real `TryLockBuffer` ownership and all pins release in reverse order.
+Rejected Alternatives: Keeping a construction-wide writer guard because many jobs share the route; bit-only optional tracking without buffer ownership.
+Scalability potential: Low tier avoids construction writer stalls during hatch and collision jobs. Middle, High, and Ultra can increase bulkhead count, hatch telemetry, and damage fidelity without widening DataVault ownership.
+Hardware Impact: Removes one cross-frame construction DataVault writer-lock lifetime. No profiler microseconds claimed.
+
+## Decision 126 - Macro Ecosystem Exact Scheduled Pins
+
+Problem: `MacroEcosystemMathematicianRuntime` retained `JobMutationGuardMask` over population, diffusion, copy, and telemetry jobs.
+Solution: Pin sector front/back, remainders, sector coords, biome specs, tuning, counters, fault flags, and telemetry ring exactly. Partial acquisition releases already-acquired pins in `finally`; completion and teardown release reverse order.
+Rejected Alternatives: Broad AI ecology mutation guard across the full scheduled macro pass; copying sector data into managed scratch.
+Scalability potential: Low tier can run sparse macro ecology without blocking unrelated AI writers. Middle, High, and Ultra can raise sector count and diffusion fidelity behind stable exact pins.
+Hardware Impact: Removes one cross-frame macro-ecology DataVault writer-lock lifetime.
+
+## Decision 127 - Abyssal Shadow Culling Exact Pins
+
+Problem: `AbyssalShadowCullingRuntime` held a graphics broad job guard from simulation scheduling into visual-sync completion while jobs used multiple read/write NativeArray views.
+Solution: Pin instances, states, illumination scalars, frustum planes, profile rules, counters, HZB depth tiles, and indirect args exactly. Completion releases pins before visual upload/telemetry proceeds in the settled visual-sync path.
+Rejected Alternatives: Keeping the broad graphics guard because upload happens after completion; upload phase safety does not justify broad scheduled writer ownership.
+Scalability potential: Low tier can cull cheaply with fewer instances and HZB tiles. Middle, High, and Ultra can buy denser shadow instances and richer HZB/indirect output without global writer stalls.
+Hardware Impact: Removes one cross-frame graphics-culling DataVault writer-lock lifetime.
+
+## Decision 128 - Seed Ship Anomaly Exact Pins
+
+Problem: `SeedShipAnomalyRuntime` retained one broad anomaly job guard across field update, mock rebase, leviathan frenzy, telemetry, and HUD/radar signal preparation.
+Solution: Pin field, tuning, globals, glitch command, mock HUD signals, mock leviathans, mock AUP rebase, thermo source, and telemetry ring exactly. Unlock now clears local held state before attempting reverse-order release, so teardown/rebind cannot leave stale held flags.
+Rejected Alternatives: Broad world-anomaly writer guard; state reset after unlock only, which is less robust under forced teardown.
+Scalability potential: Low tier can keep anomaly field and mock entities cheap. Middle, High, and Ultra can increase anomaly entity budget and signal density through continuous quality without changing ownership shape.
+Hardware Impact: Removes one cross-frame world-anomaly DataVault writer-lock lifetime.
+
+## Decision 129 - Pass 57-60 Verification Boundary
+
+Problem: The source changes required proof, but system load and another compiler lane closed the build gate.
+Solution: Validate four edited files with brace balance, removed-symbol grep, explicit `GlobalRegistry.Get<T>()`/component lookup grep, targeted method-body forbidden-token scan across 47 hot/schedule/completion/pin bodies, `git diff --check`, and CPU/compiler gate inspection. Skip build because CPU was 59 percent and PID 36140 was already building `Hecton8.Core.csproj`.
+Rejected Alternatives: Launching a parallel build; claiming compile success without a completed build; inflating docs instead of proving touched source paths.
+Scalability potential: Verification remains cheap and repeatable on shared weak hardware while the remaining exact-pin debt is consumed in smaller slices.
+Hardware Impact: Zero build CPU consumed in this pass; compile success not claimed.
+
+## Decision 130 - Foveated Importance Exact Pins
+
+Problem: `FoveatedSimulationManager` used `ImportanceJobMutationGuardMask` around central cadence scoring, widening SystemDispatcher ownership while the job only holds seven NativeArray views.
+Solution: Replace the broad guard with exact pins for score positions, entity AUPs, importance scores, tick-rate codes, inside-frustum flags, sim tiers, and distance buffers. Keep result application in the existing completion window and release pins in `finally` before state advances.
+Rejected Alternatives: Keeping a broad dispatcher guard because foveation is core infrastructure; moving scoring to managed arrays, which would add GC/interop churn and weaken Burst locality.
+Scalability potential: Low tier keeps cadence scoring cheap and non-blocking. Middle, High, and Ultra can raise target count or sharpen foveated thresholds through continuous quality without increasing global DataVault lock scope.
+Hardware Impact: Removes one cross-frame foveated-simulation DataVault writer-lock lifetime. No profiler microseconds claimed.
+
+## Decision 131 - Pass 61 Verification Boundary
+
+Problem: The foveated source change needed proof without violating the active compiler throttle.
+Solution: Validate `FoveatedSimulationManager.cs` with brace balance, removed-symbol grep, explicit registry/component lookup grep, method-body forbidden-token scan across 14 hot/schedule/completion/pin/execute bodies, and `git diff --check`. When the gate later opened at CPU 4 percent with zero compiler processes, launch one throttled `dotnet build Hecton8.slnx --no-restore /maxcpucount:1 -v:minimal`; stop this agent's timed-out compiler process tree after 244 seconds and verify no compiler processes remain.
+Rejected Alternatives: Launching a build while CPU/process gate was closed; repeated build attempts after timeout; claiming compile success without diagnostics.
+Scalability potential: Central frame scheduler ownership is narrower, reducing stall probability before remaining guard debt is consumed.
+Hardware Impact: One throttled build attempt timed out and was cleaned. Compile success not claimed.

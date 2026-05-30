@@ -1326,11 +1326,6 @@ namespace Hecton8.Habitat.Deformation
             if (!telemetry.IsCreated)
                 return;
 
-            string path = ResolveProjectPath(BaseStructuralWarningDumpRelativePath);
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
             int cursorValue = cursor.IsCreated && cursor.Length > 0 ? cursor[0] : 0;
             BaseStructuralWarningDumpHeader header = new BaseStructuralWarningDumpHeader
             {
@@ -1344,13 +1339,28 @@ namespace Hecton8.Habitat.Deformation
                 StateHash = faultEntry.StateHash
             };
 
-            using (FileStream stream = File.Create(path))
+            int headerBytes = UnsafeUtility.SizeOf<BaseStructuralWarningDumpHeader>();
+            int stride = UnsafeUtility.SizeOf<BaseStructuralWarningTelemetryEntry>();
+            int entryBytes = telemetry.Length * stride;
+            int totalBytes = headerBytes + entryBytes;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                totalBytes,
+                nameof(StructuralIntegrityCalculatorRuntime),
+                "BaseStructuralWarningTelemetryDumpPayload");
+            try
             {
-                stream.Write(new ReadOnlySpan<byte>((byte*)&header, UnsafeUtility.SizeOf<BaseStructuralWarningDumpHeader>()));
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                UnsafeUtility.MemCpy(target, &header, headerBytes);
                 byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                int stride = UnsafeUtility.SizeOf<BaseStructuralWarningTelemetryEntry>();
-                for (int i = 0; i < telemetry.Length; i++)
-                    stream.Write(new ReadOnlySpan<byte>(source + i * stride, stride));
+                UnsafeUtility.MemCpy(target + headerBytes, source, entryBytes);
+                NativeFaultDumpWriter.TryWriteAll(BaseStructuralWarningDumpRelativePath, payload, totalBytes);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(StructuralIntegrityCalculatorRuntime),
+                    "BaseStructuralWarningTelemetryDumpPayload");
             }
         }
 

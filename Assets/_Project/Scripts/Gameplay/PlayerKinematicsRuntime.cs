@@ -1063,7 +1063,7 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _cachedTransform = transform;
-            _body = GetComponent<Rigidbody>();
+            TryGetComponent(out _body);
             TryGetComponent<IPlayerKinematicsMovementRuntime>(out _movement);
             TryGetComponent<IPlayerKinematicsMotorSyncSink>(out _motor);
             TryGetComponent(out _hydrodynamicKccRuntime);
@@ -3996,8 +3996,7 @@ namespace Hecton8.Gameplay
 
         private void DumpFaultTelemetryIfNeeded()
         {
-            if ((_dumpWrittenForFault && _desyncDumpWritten) ||
-                !HasFaultFlagStorage() ||
+            if (!HasFaultFlagStorage() ||
                 !_telemetry.IsCreated ||
                 _telemetry.Length <= 0 ||
                 _faultFlags[0] == 0)
@@ -4005,37 +4004,49 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _dumpWrittenForFault = true;
-            if ((_faultFlags[0] & FaultDesync) != 0)
-                _desyncDumpWritten = true;
-            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-            if (string.IsNullOrEmpty(projectRoot))
+            int faultFlags = _faultFlags[0];
+            bool requiresDesyncDump = (faultFlags & FaultDesync) != 0;
+            if (_dumpWrittenForFault && (!requiresDesyncDump || _desyncDumpWritten))
                 return;
 
-            string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-            Directory.CreateDirectory(logDirectory);
-            string physicsPath = Path.Combine(logDirectory, "Dump_PHYSICS_DETERMINISM_SYNC.bin");
-            string ikPath = Path.Combine(logDirectory, "Dump_PLAYER_IK_ENVIRONMENT_ADAPTER.bin");
-            string aupWatchdogPath = Path.Combine(logDirectory, AupWatchdogDumpFileName);
-            string sdfSqueezePath = Path.Combine(logDirectory, SdfSqueezeDumpFileName);
-            WriteTelemetryDump(physicsPath, 0x48503844u);
-            WriteTelemetryDump(ikPath, 0x50494B42u);
-            WriteTelemetryDump(aupWatchdogPath, AupWatchdogDumpMagic);
-            WriteTelemetryDump(sdfSqueezePath, SdfSqueezeDumpMagic);
+            const string physicsPath = "Docs/AgentLogs/Dump_PHYSICS_DETERMINISM_SYNC.bin";
+            const string ikPath = "Docs/AgentLogs/Dump_PLAYER_IK_ENVIRONMENT_ADAPTER.bin";
+            string aupWatchdogPath = "Docs/AgentLogs/" + AupWatchdogDumpFileName;
+            string sdfSqueezePath = "Docs/AgentLogs/" + SdfSqueezeDumpFileName;
+            bool wroteAll =
+                WriteTelemetryDump(physicsPath, 0x48503844u, faultFlags) &
+                WriteTelemetryDump(ikPath, 0x50494B42u, faultFlags) &
+                WriteTelemetryDump(aupWatchdogPath, AupWatchdogDumpMagic, faultFlags) &
+                WriteTelemetryDump(sdfSqueezePath, SdfSqueezeDumpMagic, faultFlags);
+
+            if (!wroteAll)
+                return;
+
+            _dumpWrittenForFault = true;
+            if (requiresDesyncDump)
+                _desyncDumpWritten = true;
         }
 
-        private void WriteTelemetryDump(string path, uint magic)
+        private bool WriteTelemetryDump(string path, uint magic, int faultFlags)
         {
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            const int HeaderBytes = 20;
+            const int RowBytes = 68;
+            int telemetryHead = ResolveTelemetryHeadIndex();
+            int telemetryLength = _telemetry.Length;
+            int totalBytes = HeaderBytes + telemetryLength * RowBytes;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                totalBytes,
+                nameof(PlayerKinematicsRuntime),
+                "PlayerKinematicsRuntimeTelemetryDumpPayload");
+            try
             {
-                writer.Write(magic);
-                writer.Write(_faultFlags[0]);
-                int telemetryHead = ResolveTelemetryHeadIndex();
-                writer.Write(telemetryHead);
-                writer.Write(_accumulatorState.LastSyncFenceHash);
-                writer.Write(_accumulatorState.LastSyncFenceFrame);
-                int telemetryLength = _telemetry.Length;
+                WriteUInt32LittleEndian(payload, 0, magic);
+                WriteInt32LittleEndian(payload, 4, faultFlags);
+                WriteInt32LittleEndian(payload, 8, telemetryHead);
+                WriteUInt32LittleEndian(payload, 12, _accumulatorState.LastSyncFenceHash);
+                WriteUInt32LittleEndian(payload, 16, _accumulatorState.LastSyncFenceFrame);
+
+                int offset = HeaderBytes;
                 for (int i = 0; i < telemetryLength; i++)
                 {
                     int telemetryIndex = telemetryHead + i;
@@ -4043,25 +4054,53 @@ namespace Hecton8.Gameplay
                         telemetryIndex -= telemetryLength;
 
                     PlayerKinematicsRuntimeTelemetryEntry entry = _telemetry[telemetryIndex];
-                    writer.Write(entry.Position.x);
-                    writer.Write(entry.Position.y);
-                    writer.Write(entry.Position.z);
-                    writer.Write(entry.Velocity.x);
-                    writer.Write(entry.Velocity.y);
-                    writer.Write(entry.Velocity.z);
-                    writer.Write(entry.IntendedMovement.x);
-                    writer.Write(entry.IntendedMovement.y);
-                    writer.Write(entry.IntendedMovement.z);
-                    writer.Write(entry.DragCoefficient);
-                    writer.Write(entry.WaterDensity);
-                    writer.Write(entry.SolidDensity);
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.SyncFenceHash);
-                    writer.Write(entry.AuxFlags);
-                    writer.Write(entry.AupMaxDriftErrorMeters);
+                    WriteFloat32LittleEndian(payload, offset, entry.Position.x);
+                    WriteFloat32LittleEndian(payload, offset + 4, entry.Position.y);
+                    WriteFloat32LittleEndian(payload, offset + 8, entry.Position.z);
+                    WriteFloat32LittleEndian(payload, offset + 12, entry.Velocity.x);
+                    WriteFloat32LittleEndian(payload, offset + 16, entry.Velocity.y);
+                    WriteFloat32LittleEndian(payload, offset + 20, entry.Velocity.z);
+                    WriteFloat32LittleEndian(payload, offset + 24, entry.IntendedMovement.x);
+                    WriteFloat32LittleEndian(payload, offset + 28, entry.IntendedMovement.y);
+                    WriteFloat32LittleEndian(payload, offset + 32, entry.IntendedMovement.z);
+                    WriteFloat32LittleEndian(payload, offset + 36, entry.DragCoefficient);
+                    WriteFloat32LittleEndian(payload, offset + 40, entry.WaterDensity);
+                    WriteFloat32LittleEndian(payload, offset + 44, entry.SolidDensity);
+                    WriteUInt32LittleEndian(payload, offset + 48, entry.Frame);
+                    WriteUInt32LittleEndian(payload, offset + 52, entry.Flags);
+                    WriteUInt32LittleEndian(payload, offset + 56, entry.SyncFenceHash);
+                    WriteUInt32LittleEndian(payload, offset + 60, entry.AuxFlags);
+                    WriteFloat32LittleEndian(payload, offset + 64, entry.AupMaxDriftErrorMeters);
+                    offset += RowBytes;
                 }
+
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(PlayerKinematicsRuntime),
+                    "PlayerKinematicsRuntimeTelemetryDumpPayload");
+            }
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> destination, int offset, float value)
+        {
+            WriteUInt32LittleEndian(destination, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> destination, int offset, uint value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
         }
 
         private float3 SafeRight()

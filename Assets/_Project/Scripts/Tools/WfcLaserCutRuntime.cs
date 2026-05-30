@@ -1,7 +1,6 @@
 namespace Hecton8.Tools
 {
     using System;
-    using System.IO;
     using System.Runtime.InteropServices;
     using Hecton8.Core;
     using Hecton8.Core.Contracts;
@@ -617,14 +616,103 @@ namespace Hecton8.Tools
                 return;
 
             int cursor = (int)(_blackBoxCursor % (uint)entryCount);
-            for (int i = 0; i < entryCount; i++)
+            int byteCount = BlackBoxDumpHeaderBytes + entryCount * entrySize;
+            NativeArray<byte> payload = default;
+            try
             {
-                int index = cursor + i;
-                if (index >= entryCount)
-                    index -= entryCount;
+                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int writeCursor = 0;
+                WriteUInt32LittleEndian(destination, ref writeCursor, BlackBoxDumpMagic);
+                WriteUInt32LittleEndian(destination, ref writeCursor, BlackBoxDumpVersion);
+                WriteUInt32LittleEndian(destination, ref writeCursor, unchecked((uint)entryCount));
+                WriteUInt32LittleEndian(destination, ref writeCursor, unchecked((uint)entrySize));
+                WriteUInt32LittleEndian(destination, ref writeCursor, unchecked((uint)cursor));
+                WriteUInt32LittleEndian(destination, ref writeCursor, SourceHash);
+                WriteUInt32LittleEndian(destination, ref writeCursor, 0u);
+                WriteUInt32LittleEndian(destination, ref writeCursor, 0u);
 
-                _ = blackBox[index].Frame;
+                for (int i = 0; i < entryCount; i++)
+                {
+                    int index = cursor + i;
+                    if (index >= entryCount)
+                        index -= entryCount;
+
+                    int rowEnd = writeCursor + entrySize;
+                    WriteTelemetryEntryLittleEndian(destination, ref writeCursor, blackBox[index]);
+                    if (writeCursor > rowEnd)
+                        return;
+
+                    writeCursor = rowEnd;
+                }
+
+                NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, writeCursor);
             }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
+            }
+        }
+
+        private static unsafe void WriteTelemetryEntryLittleEndian(byte* destination, ref int cursor, WfcLaserCutTelemetryEntry entry)
+        {
+            WriteDouble3LittleEndian(destination, ref cursor, entry.CutOriginAup);
+            WriteDouble3LittleEndian(destination, ref cursor, entry.HitAup);
+            WriteUInt64LittleEndian(destination, ref cursor, entry.SectorHash);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Frame);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.ToolHash);
+            WriteFloatLittleEndian(destination, ref cursor, entry.Progress01);
+            WriteFloatLittleEndian(destination, ref cursor, entry.ProgressDelta01);
+            WriteFloatLittleEndian(destination, ref cursor, entry.CutterPower01);
+            WriteFloatLittleEndian(destination, ref cursor, entry.Heat01);
+            WriteFloatLittleEndian(destination, ref cursor, entry.SystemStress01);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.DoorsCutCount);
+            WriteUInt16LittleEndian(destination, ref cursor, entry.CellIndex);
+            destination[cursor++] = entry.Flags;
+            destination[cursor++] = entry.Reserved;
+            WriteUInt32LittleEndian(destination, ref cursor, entry.ReservedPadding);
+        }
+
+        private static unsafe void WriteDouble3LittleEndian(byte* destination, ref int cursor, double3 value)
+        {
+            WriteUInt64LittleEndian(destination, ref cursor, unchecked((ulong)BitConverter.DoubleToInt64Bits(value.x)));
+            WriteUInt64LittleEndian(destination, ref cursor, unchecked((ulong)BitConverter.DoubleToInt64Bits(value.y)));
+            WriteUInt64LittleEndian(destination, ref cursor, unchecked((ulong)BitConverter.DoubleToInt64Bits(value.z)));
+        }
+
+        private static unsafe void WriteFloatLittleEndian(byte* destination, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, math.asuint(value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, ref int cursor, uint value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
+            cursor += sizeof(uint);
+        }
+
+        private static unsafe void WriteUInt16LittleEndian(byte* destination, ref int cursor, ushort value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            cursor += sizeof(ushort);
+        }
+
+        private static unsafe void WriteUInt64LittleEndian(byte* destination, ref int cursor, ulong value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
+            destination[cursor + 4] = (byte)(value >> 32);
+            destination[cursor + 5] = (byte)(value >> 40);
+            destination[cursor + 6] = (byte)(value >> 48);
+            destination[cursor + 7] = (byte)(value >> 56);
+            cursor += sizeof(ulong);
         }
     }
 

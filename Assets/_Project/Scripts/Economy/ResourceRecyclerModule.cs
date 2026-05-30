@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Interaction;
@@ -26,13 +25,18 @@ namespace Hecton8.Economy
         private const string DefaultPausedText = "Recycler Paused";
         private const string DefaultCollectText = "Collect Recycled Output";
         private const int MaxBufferSlots = 8;
+        private const int MaxActiveModuleCapacity = 128;
 
-        private static readonly List<ResourceRecyclerModule> s_ActiveModules = new List<ResourceRecyclerModule>(8);
+        private static readonly ResourceRecyclerModule[] s_ActiveModules = new ResourceRecyclerModule[MaxActiveModuleCapacity];
+        private static int s_ActiveModuleCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            s_ActiveModules.Clear();
+            for (int i = 0; i < s_ActiveModuleCount; i++)
+                s_ActiveModules[i] = null;
+
+            s_ActiveModuleCount = 0;
         }
 
         [Header("── Process Settings ───────────────────────")]
@@ -76,19 +80,21 @@ namespace Hecton8.Economy
         private float _activePowerMultiplier = 1f;
         private ItemData _activeSourceItem;
         private ResourceStack[] _pendingYield;
+        private int _pendingYieldCount;
         private int _pendingYieldUnits;
+        private readonly ResourceStack[] _pendingYieldScratch = new ResourceStack[ScrapManager.MaxRecycleYieldSlots];
         private int _processedBatchCount;
         private readonly ItemData[] _bufferItems = new ItemData[MaxBufferSlots];
         private readonly int[] _bufferQuantities = new int[MaxBufferSlots];
         private int _bufferedItemCount;
 
         /// <summary>Active recycler count used by world pollution telemetry.</summary>
-        internal static int ActiveModuleCount => s_ActiveModules.Count;
+        internal static int ActiveModuleCount => s_ActiveModuleCount;
 
         /// <summary>Returns an active recycler by index without exposing mutable registry storage.</summary>
         internal static ResourceRecyclerModule GetActiveModuleAt(int index)
         {
-            return index >= 0 && index < s_ActiveModules.Count ? s_ActiveModules[index] : null;
+            return index >= 0 && index < s_ActiveModuleCount ? s_ActiveModules[index] : null;
         }
 
         /// <summary>True while the recycler is actively drawing process power.</summary>
@@ -154,7 +160,7 @@ namespace Hecton8.Economy
 
             _isProcessing = false;
             _debugIsProcessing = false;
-            _hasPendingOutput = _pendingYield != null && _pendingYield.Length > 0;
+            _hasPendingOutput = _pendingYield != null && _pendingYieldCount > 0;
             _debugHasPendingOutput = _hasPendingOutput;
             NotifyGridBalanceChanged();
         }
@@ -169,7 +175,7 @@ namespace Hecton8.Economy
 
         void IInteractable.Interact(Transform interactor)
         {
-            PlayerInventory inventory = ResolveInventory(interactor);
+            PlayerInventory inventory = EnsureCachedInventory();
             if (_hasPendingOutput)
             {
                 TryDeliverPendingYield(inventory);
@@ -256,6 +262,9 @@ namespace Hecton8.Economy
             int copied = 0;
             for (int i = 0; i < bufferSlotCount && copied < maxCount; i++)
             {
+                if (_bufferItems[i] == null || _bufferQuantities[i] <= 0)
+                    continue;
+
                 items[copied] = _bufferItems[i];
                 quantities[copied] = _bufferQuantities[i];
                 copied++;
@@ -292,7 +301,7 @@ namespace Hecton8.Economy
             {
                 case GlobalRegistryServiceSlot.PlayerInventory:
                     _inventoryService = currentService as IPlayerInventoryService;
-                    _cachedInventory = ResolveCachedInventory(_inventoryService);
+                    _cachedInventory = ReadInventoryFromService(_inventoryService);
                     break;
                 case GlobalRegistryServiceSlot.ResourceScarcityRuntime:
                     _scarcityReadModel = currentService as IResourceScarcityReadModel;
@@ -315,30 +324,40 @@ namespace Hecton8.Economy
 
         private void RegisterModuleInstance()
         {
-            for (int i = 0; i < s_ActiveModules.Count; i++)
+            for (int i = 0; i < s_ActiveModuleCount; i++)
             {
                 if (ReferenceEquals(s_ActiveModules[i], this))
                     return;
             }
 
-            s_ActiveModules.Add(this);
+            if (s_ActiveModuleCount >= s_ActiveModules.Length)
+                return;
+
+            s_ActiveModules[s_ActiveModuleCount] = this;
+            s_ActiveModuleCount++;
         }
 
         private void UnregisterModuleInstance()
         {
-            for (int i = s_ActiveModules.Count - 1; i >= 0; i--)
+            for (int i = s_ActiveModuleCount - 1; i >= 0; i--)
             {
-                if (ReferenceEquals(s_ActiveModules[i], this))
-                    s_ActiveModules.RemoveAt(i);
+                if (!ReferenceEquals(s_ActiveModules[i], this))
+                    continue;
+
+                int lastIndex = s_ActiveModuleCount - 1;
+                s_ActiveModules[i] = s_ActiveModules[lastIndex];
+                s_ActiveModules[lastIndex] = null;
+                s_ActiveModuleCount--;
+                return;
             }
         }
 
-        private PlayerInventory ResolveInventory(Transform interactor)
+        private PlayerInventory EnsureCachedInventory()
         {
             if (_cachedInventory != null)
                 return _cachedInventory;
 
-            _cachedInventory = ResolveCachedInventory(_inventoryService);
+            _cachedInventory = ReadInventoryFromService(_inventoryService);
             return _cachedInventory;
         }
 
@@ -350,16 +369,17 @@ namespace Hecton8.Economy
             if (!TryDequeueNextBufferedItem(out ItemData sourceItem))
                 return false;
 
-            if (!ScrapManager.TryResolveRecycleYield(sourceItem, out ResourceStack[] resolvedYield) ||
-                resolvedYield == null ||
-                resolvedYield.Length == 0)
+            if (!ScrapManager.TryBuildRecycleYieldSnapshot(sourceItem, _pendingYieldScratch, out int resolvedYieldCount))
             {
+                TryBufferItem(sourceItem);
+                _debugBufferedItemCount = _bufferedItemCount;
                 return false;
             }
 
             _activeSourceItem = sourceItem;
-            _pendingYield = resolvedYield;
-            _pendingYieldUnits = ScrapManager.CountYieldUnits(resolvedYield);
+            _pendingYield = _pendingYieldScratch;
+            _pendingYieldCount = resolvedYieldCount;
+            _pendingYieldUnits = ScrapManager.CountYieldUnits(_pendingYield, _pendingYieldCount);
             _debugPendingYieldUnits = _pendingYieldUnits;
             _currentDuration = ResolveRecycleDuration(sourceItem, _pendingYieldUnits);
             _activePowerMultiplier = ResolvePowerMultiplier(sourceItem, _pendingYieldUnits);
@@ -379,13 +399,13 @@ namespace Hecton8.Economy
 
         private bool TryDeliverPendingYield(PlayerInventory inventory)
         {
-            if (!_hasPendingOutput || inventory == null || _pendingYield == null)
+            if (!_hasPendingOutput || inventory == null || _pendingYield == null || _pendingYieldCount <= 0)
                 return false;
 
             int grantedStackCount = 0;
-            if (!ScrapManager.GrantYield(inventory, _pendingYield, ref grantedStackCount))
+            if (!ScrapManager.GrantYield(inventory, _pendingYield, _pendingYieldCount, ref grantedStackCount))
             {
-                ScrapManager.RollbackYield(inventory, _pendingYield, grantedStackCount);
+                ScrapManager.RollbackYield(inventory, _pendingYield, _pendingYieldCount, grantedStackCount);
                 return false;
             }
 
@@ -529,11 +549,11 @@ namespace Hecton8.Economy
         private void CacheRuntimeServicesCold()
         {
             _inventoryService = GlobalRegistry.PlayerInventory;
-            _cachedInventory = ResolveCachedInventory(_inventoryService);
+            _cachedInventory = ReadInventoryFromService(_inventoryService);
             _scarcityReadModel = GlobalRegistry.ResourceScarcityReadModel;
         }
 
-        private static PlayerInventory ResolveCachedInventory(IPlayerInventoryService inventoryService)
+        private static PlayerInventory ReadInventoryFromService(IPlayerInventoryService inventoryService)
         {
             return inventoryService != null && inventoryService.IsInitialized
                 ? inventoryService.Inventory
@@ -552,7 +572,9 @@ namespace Hecton8.Economy
             _hasPendingOutput = false;
             _debugHasPendingOutput = false;
             _activeSourceItem = null;
+            ScrapManager.ClearYieldScratch(_pendingYieldScratch, _pendingYieldCount);
             _pendingYield = null;
+            _pendingYieldCount = 0;
             _pendingYieldUnits = 0;
             _debugPendingYieldUnits = 0;
             _debugActiveItemId = string.Empty;

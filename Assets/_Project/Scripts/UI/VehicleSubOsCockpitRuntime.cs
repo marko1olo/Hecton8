@@ -72,6 +72,7 @@ namespace Hecton8.UI
         private const int DumpHeaderBytes = 16;
         private const int CockpitTelemetryDumpEntryBytes = 64;
         private const int DamageHologramDumpEntryBytes = 24;
+        private const string DamageHolographerMirrorDumpPath = "Docs/AgentLogs/Dump_VEHICLE_SUB_OS_DAMAGE_HOLOGRAPHER.bin";
         private const int InvalidDisplayBucket = int.MinValue;
         private const int StatusModeInternalBus = 0;
         private const int StatusModeExternalLive = 1;
@@ -2987,93 +2988,52 @@ namespace Hecton8.UI
             if (!TryReadTelemetryRing(out NativeArray<CockpitTelemetryEntry>.ReadOnly telemetryRing))
                 return;
 
-            try
-            {
-                string root = Directory.GetParent(Application.dataPath)?.FullName;
-                if (string.IsNullOrEmpty(root))
-                    return;
-
-                string directory = Path.Combine(root, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, "Dump_VEHICLE_SUB_OS.bin");
-                int entryCount = math.min(_telemetryCursor, TelemetryCapacity);
-                int dumpBytes = DumpHeaderBytes + entryCount * CockpitTelemetryDumpEntryBytes;
-                NativeArray<byte> dump = new NativeArray<byte>(
-                    dumpBytes,
-                    Allocator.Temp,
-                    NativeArrayOptions.UninitializedMemory);
-                try
-                {
-                    int cursor = 0;
-                    WriteUInt32LittleEndian(dump, ref cursor, TelemetryContextHash);
-                    WriteInt32LittleEndian(dump, ref cursor, _telemetryCursor);
-                    WriteInt32LittleEndian(dump, ref cursor, _telemetryWriteIndex);
-                    WriteInt32LittleEndian(dump, ref cursor, entryCount);
-
-                    int readIndex = _telemetryCursor >= TelemetryCapacity ? _telemetryWriteIndex : 0;
-                    for (int i = 0; i < entryCount; i++)
-                    {
-                        int slot = readIndex + i;
-                        if (slot >= TelemetryCapacity)
-                            slot -= TelemetryCapacity;
-
-                        CockpitTelemetryEntry entry = telemetryRing[slot];
-                        WriteCockpitTelemetryDumpEntry(dump, ref cursor, in entry);
-                    }
-
-                    if (!WriteDumpBytes(path, dump, cursor))
-                        GlobalTelemetryBus.PublishPerformanceWarning(0x44554D50u, TelemetryContextHash, 2f);
-                }
-                finally
-                {
-                    if (dump.IsCreated)
-                        dump.Dispose();
-                }
-
-                WriteDamageHolographerMirrorDump(directory, entryCount, telemetryRing);
-            }
-            catch (Exception)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x44554D50u, TelemetryContextHash, 1f);
-            }
+            int entryCount = telemetryRing.IsCreated ? math.min(telemetryRing.Length, TelemetryCapacity) : 0;
+            WriteDamageHolographerMirrorDump(entryCount, _telemetryWriteIndex, telemetryRing);
         }
 
         private void WriteDamageHolographerMirrorDump(
-            string directory,
             int entryCount,
+            int telemetryWriteIndex,
             NativeArray<CockpitTelemetryEntry>.ReadOnly telemetryRing)
         {
-            string path = Path.Combine(directory, "Dump_DIEGETIC_DAMAGE_HOLOGRAPHER.bin");
-            int dumpBytes = DumpHeaderBytes + entryCount * DamageHologramDumpEntryBytes;
-            NativeArray<byte> dump = new NativeArray<byte>(
-                dumpBytes,
-                Allocator.Temp,
-                NativeArrayOptions.UninitializedMemory);
+            if (!telemetryRing.IsCreated || entryCount <= 0)
+                return;
+
+            int count = math.min(math.min(entryCount, telemetryRing.Length), TelemetryCapacity);
+            if (count <= 0)
+                return;
+
+            int byteCount = DumpHeaderBytes + count * DamageHologramDumpEntryBytes;
+            NativeArray<byte> dump = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             try
             {
                 int cursor = 0;
                 WriteUInt32LittleEndian(dump, ref cursor, DamageHologramTelemetryHash);
-                WriteInt32LittleEndian(dump, ref cursor, _telemetryCursor);
-                WriteInt32LittleEndian(dump, ref cursor, _telemetryWriteIndex);
-                WriteInt32LittleEndian(dump, ref cursor, entryCount);
-                int readIndex = _telemetryCursor >= TelemetryCapacity ? _telemetryWriteIndex : 0;
-                for (int i = 0; i < entryCount; i++)
-                {
-                    int slot = readIndex + i;
-                    if (slot >= TelemetryCapacity)
-                        slot -= TelemetryCapacity;
+                WriteInt32LittleEndian(dump, ref cursor, count);
+                WriteInt32LittleEndian(dump, ref cursor, DamageHologramDumpEntryBytes);
+                WriteInt32LittleEndian(dump, ref cursor, telemetryWriteIndex);
 
-                    CockpitTelemetryEntry entry = telemetryRing[slot];
-                    WriteDamageHologramDumpEntry(dump, ref cursor, in entry);
+                int start = telemetryWriteIndex - count;
+                while (start < 0)
+                    start += telemetryRing.Length;
+                if (start >= telemetryRing.Length)
+                    start %= telemetryRing.Length;
+
+                for (int i = 0; i < count; i++)
+                {
+                    int slot = start + i;
+                    if (slot >= telemetryRing.Length)
+                        slot -= telemetryRing.Length;
+
+                    WriteDamageHologramDumpEntry(dump, ref cursor, telemetryRing[slot]);
                 }
 
-                if (!WriteDumpBytes(path, dump, cursor))
-                    GlobalTelemetryBus.PublishPerformanceWarning(0x44554D50u, DamageHologramTelemetryHash, 2f);
+                WriteDumpBytes(DamageHolographerMirrorDumpPath, dump, cursor);
             }
             finally
             {
-                if (dump.IsCreated)
-                    dump.Dispose();
+                dump.Dispose();
             }
         }
 
@@ -3135,13 +3095,9 @@ namespace Hecton8.UI
             cursor += 4;
         }
 
-        private static unsafe bool WriteDumpBytes(string path, NativeArray<byte> dump, int byteCount)
+        private static bool WriteDumpBytes(string path, NativeArray<byte> dump, int byteCount)
         {
-            if (string.IsNullOrEmpty(path) || !dump.IsCreated || byteCount <= 0 || byteCount > dump.Length)
-                return false;
-
-            void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(dump);
-            return AsyncWriteManager.WriteAll(path, source, byteCount, out _);
+            return NativeFaultDumpWriter.TryWriteAll(path, dump, byteCount);
         }
 
         private bool HasButtonTransitions()

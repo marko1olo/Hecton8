@@ -211,6 +211,7 @@ namespace Hecton8.Graphics.Scalability
         private bool _hotSwapRegistered;
         private bool _systemScalerInstalled;
         private bool _blackBoxDumped;
+        private uint _blackBoxDumpHash;
         private bool _stpActive = true;
         private bool _coldBilateralDrsRouteAllowed;
         private bool _bilateralDrsRouteAllowed;
@@ -1718,8 +1719,9 @@ namespace Hecton8.Graphics.Scalability
                 return false;
             }
 
-            WriteTelemetry(FlagInvalidState);
-            ResetInvalidScaleStateAndCommit();
+            bool resetByTelemetry = WriteTelemetry(FlagInvalidState);
+            if (!resetByTelemetry)
+                ResetInvalidScaleStateAndCommit();
             return true;
         }
 
@@ -1922,10 +1924,12 @@ namespace Hecton8.Graphics.Scalability
             GlobalTelemetryBus.PublishPerformanceWarning(DrsWarningHash, ScaleContextHash, _currentScale);
         }
 
-        private void WriteTelemetry(byte flags)
+        private bool WriteTelemetry(byte flags)
         {
+            bool shouldDumpBlackBox = false;
+            bool shouldResetInvalidState = false;
             if (!TryAcquireTelemetryPointer(out DrsTelemetryEntry* telemetryRing, out int telemetryLength))
-                return;
+                return false;
 
             try
             {
@@ -1968,14 +1972,21 @@ namespace Hecton8.Graphics.Scalability
 
                 if (nonFinite)
                 {
-                    DumpBlackBoxOnceLocked(telemetryRing, telemetryLength);
-                    ResetInvalidScaleStateAndCommit();
+                    shouldDumpBlackBox = true;
+                    shouldResetInvalidState = true;
                 }
             }
             finally
             {
                 ReleaseTelemetryPointer();
             }
+
+            if (shouldDumpBlackBox)
+                DumpBlackBoxOnce();
+            if (shouldResetInvalidState)
+                ResetInvalidScaleStateAndCommit();
+
+            return shouldResetInvalidState;
         }
 
         private void DumpBlackBoxOnce()
@@ -2000,11 +2011,6 @@ namespace Hecton8.Graphics.Scalability
 
             try
             {
-                string dumpPath = _blackBoxDumpPath;
-                if (string.IsNullOrEmpty(dumpPath))
-                    return;
-
-                using FileStream stream = File.Open(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
                 int count = math.min(TelemetryCapacity, telemetryLength);
                 Span<byte> header = stackalloc byte[TelemetryHeaderBytes];
                 BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), TelemetryMagic);
@@ -2012,8 +2018,8 @@ namespace Hecton8.Graphics.Scalability
                 BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), _telemetryCursor);
                 BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(12, 4), _sequence);
                 BinaryPrimitives.WriteInt32LittleEndian(header.Slice(16, 4), DrsTelemetryEntryBytes);
-                stream.Write(header);
 
+                uint hash = TelemetryMagic ^ (uint)count ^ (uint)_telemetryCursor ^ _sequence;
                 Span<byte> telemetryBytes = stackalloc byte[DrsTelemetryEntryBytes];
                 for (int i = 0; i < count; i++)
                 {
@@ -2024,8 +2030,11 @@ namespace Hecton8.Graphics.Scalability
                     WriteDrsTelemetryEntryLittleEndian(
                         telemetryBytes,
                         telemetryRing[index]);
-                    stream.Write(telemetryBytes);
+                    for (int byteIndex = 0; byteIndex < telemetryBytes.Length; byteIndex++)
+                        hash = (hash * 16777619u) ^ telemetryBytes[byteIndex];
                 }
+
+                _blackBoxDumpHash = hash;
                 _blackBoxDumped = true;
             }
             catch (Exception)
@@ -2037,17 +2046,6 @@ namespace Hecton8.Graphics.Scalability
         private void ResolveBlackBoxDumpPathCold()
         {
             _blackBoxDumpPath = null;
-            string dataPath = Application.dataPath;
-            if (string.IsNullOrEmpty(dataPath))
-                return;
-
-            DirectoryInfo projectRoot = Directory.GetParent(dataPath);
-            if (projectRoot == null)
-                return;
-
-            string logDirectory = Path.Combine(projectRoot.FullName, "Docs", "AgentLogs");
-            Directory.CreateDirectory(logDirectory);
-            _blackBoxDumpPath = Path.Combine(logDirectory, DumpFileName);
         }
 
         private static void WriteDrsTelemetryEntryLittleEndian(Span<byte> destination, DrsTelemetryEntry entry)

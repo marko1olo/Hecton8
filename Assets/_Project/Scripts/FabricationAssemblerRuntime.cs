@@ -222,7 +222,6 @@ namespace Hecton8.Crafting
         private readonly PostSimulationPhaseSystem _postSimulationPhase;
         private readonly VisualSyncPhaseSystem _visualSyncPhase;
         private readonly FabricationTelemetryEntry[] _telemetryDumpSnapshot = new FabricationTelemetryEntry[TelemetryFrameCount];
-        private readonly string _dumpPath;
 
         private IDataVault _vault;
         private VaultGenerationHandle<FabricationJobDTO> _jobsHandle;
@@ -783,9 +782,6 @@ namespace Hecton8.Crafting
 
         private FabricationAssemblerRuntime()
         {
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            _dumpPath = Path.GetFullPath(Path.Combine(projectRoot, DumpRelativePath));
-
             // COLD ALLOC: IDispatcherSystem[4] - phase adapters registered into GlobalRegistry dispatcher - owner: SHINOBU_142
             _preSimulationPhase = new PreSimulationPhaseSystem(this);
             _simulationPhase = new SimulationPhaseSystem(this);
@@ -1203,9 +1199,7 @@ namespace Hecton8.Crafting
             }
 
             if (!TryOpenReadArray(BufferID.ShinobuFabricationJobs, in _jobsHandle, MaxFabricationJobs, out NativeArray<FabricationJobDTO> jobs) ||
-                !TryOpenReadArray(BufferID.ShinobuFabricationRuntime, in _runtimeHandle, MaxFabricationJobs, out NativeArray<FabricationRuntimeDTO> states) ||
-                !TryOpenArray(BufferID.ShinobuFabricationTelemetryRing, in _telemetryHandle, TelemetryFrameCount, out NativeArray<FabricationTelemetryEntry> telemetry) ||
-                telemetry.Length == 0)
+                !TryOpenReadArray(BufferID.ShinobuFabricationRuntime, in _runtimeHandle, MaxFabricationJobs, out NativeArray<FabricationRuntimeDTO> states))
             {
                 return;
             }
@@ -1267,17 +1261,46 @@ namespace Hecton8.Crafting
             entry.MaxProgress01 = active > 0u ? max : 0f;
             entry.LastTargetPrefabHash = lastHash;
             entry.LastFabricatorHash = lastFabricator;
-            unsafe
-            {
-                ref FabricationTelemetryEntry telemetryEntry = ref UnsafeUtility.ArrayElementAsRef<FabricationTelemetryEntry>(
-                    NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(telemetry),
-                    _telemetryCursor % telemetry.Length);
-                telemetryEntry = entry;
-            }
-            _telemetryCursor = (_telemetryCursor + 1) % telemetry.Length;
+            if (!TryWriteTelemetryEntry(entry, faultFlags != 0u, out bool shouldDumpTelemetry))
+                return;
 
-            if (faultFlags != 0u)
-                QueueTelemetryDump(telemetry, faultFlags);
+            if (shouldDumpTelemetry)
+                QueueTelemetryDump(faultFlags);
+        }
+
+        private bool TryWriteTelemetryEntry(FabricationTelemetryEntry entry, bool shouldDump, out bool shouldDumpTelemetry)
+        {
+            shouldDumpTelemetry = false;
+            IDataVault vault = ResolveVault();
+            if (vault == null ||
+                !HasFabricationHandle(in _telemetryHandle, BufferID.ShinobuFabricationTelemetryRing) ||
+                !vault.TryAcquireWriteLock(in _telemetryHandle, OwnerSystemId, out NativeArray<FabricationTelemetryEntry> telemetry))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (telemetry.Length == 0)
+                    return false;
+
+                int cursor = _telemetryCursor % telemetry.Length;
+                unsafe
+                {
+                    ref FabricationTelemetryEntry telemetryEntry = ref UnsafeUtility.ArrayElementAsRef<FabricationTelemetryEntry>(
+                        NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(telemetry),
+                        cursor);
+                    telemetryEntry = entry;
+                }
+
+                _telemetryCursor = (_telemetryCursor + 1) % telemetry.Length;
+                shouldDumpTelemetry = shouldDump;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
+            }
         }
 
         private void CompleteSimulationForLifecycle()
@@ -1367,12 +1390,18 @@ namespace Hecton8.Crafting
             SignalCorridorRuntime.EnsureInitialized();
         }
 
-        private void QueueTelemetryDump(NativeArray<FabricationTelemetryEntry> telemetry, uint reasonFlags)
+        private void QueueTelemetryDump(uint reasonFlags)
         {
             if (_shutdown ||
-                !telemetry.IsCreated ||
                 System.Threading.Interlocked.CompareExchange(ref _telemetryDumpInFlight, 1, 0) != 0)
             {
+                return;
+            }
+
+            if (!TryOpenReadArray(BufferID.ShinobuFabricationTelemetryRing, in _telemetryHandle, TelemetryFrameCount, out NativeArray<FabricationTelemetryEntry> telemetry) ||
+                !telemetry.IsCreated)
+            {
+                System.Threading.Volatile.Write(ref _telemetryDumpInFlight, 0);
                 return;
             }
 
@@ -1380,9 +1409,9 @@ namespace Hecton8.Crafting
             for (int i = 0; i < count; i++)
                 _telemetryDumpSnapshot[i] = telemetry[i];
 
-            _telemetryDumpCount = count;
             _telemetryDumpFrame = _lastFrame;
             _telemetryDumpReasonFlags = reasonFlags;
+            System.Threading.Volatile.Write(ref _telemetryDumpCount, count);
             if (!System.Threading.ThreadPool.QueueUserWorkItem(TelemetryDumpWorkerCallback, this))
                 System.Threading.Volatile.Write(ref _telemetryDumpInFlight, 0);
         }
@@ -1393,39 +1422,38 @@ namespace Hecton8.Crafting
             runtime?.WriteTelemetryDumpWorker();
         }
 
-        private void WriteTelemetryDumpWorker()
+        private unsafe void WriteTelemetryDumpWorker()
         {
+            NativeArray<byte> payload = default;
             try
             {
-                string directory = Path.GetDirectoryName(_dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                int count = math.clamp(System.Threading.Volatile.Read(ref _telemetryDumpCount), 0, TelemetryFrameCount);
+                int entryBytes = UnsafeUtility.SizeOf<FabricationTelemetryEntry>();
+                const int headerBytes = 16;
+                int byteCount = headerBytes + count * entryBytes;
+                const string dumpPayloadLabel = "FabricationAssemblerTelemetryDumpPayload";
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(FabricationAssemblerRuntime),
+                    dumpPayloadLabel,
+                    allocator: Allocator.TempJob);
 
-                using FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(0x53483142u);
-                writer.Write(_telemetryDumpFrame);
-                writer.Write(_telemetryDumpReasonFlags);
-                writer.Write(_telemetryDumpCount);
-                for (int i = 0; i < _telemetryDumpCount; i++)
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteUInt32LittleEndian(target, 0, SystemHash);
+                WriteUInt32LittleEndian(target, 4, _telemetryDumpFrame);
+                WriteUInt32LittleEndian(target, 8, _telemetryDumpReasonFlags);
+                WriteUInt32LittleEndian(target, 12, unchecked((uint)count));
+
+                int cursor = headerBytes;
+                for (int i = 0; i < count; i++)
                 {
                     FabricationTelemetryEntry entry = _telemetryDumpSnapshot[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.ActiveJobs);
-                    writer.Write(entry.CompletedJobs);
-                    writer.Write(entry.FaultFlags);
-                    writer.Write(entry.RollbackHash);
-                    writer.Write(entry.AverageProgress01);
-                    writer.Write(entry.GlobalQualityWeight);
-                    writer.Write(entry.VisualUploadMicroseconds);
-                    writer.Write(entry.SimulationBudgetMicroseconds);
-                    writer.Write(entry.PowerPotential01);
-                    writer.Write(entry.MinProgress01);
-                    writer.Write(entry.MaxProgress01);
-                    writer.Write(entry.LastTargetPrefabHash);
-                    writer.Write(entry.LastFabricatorHash);
-                    writer.Write(entry.Reserved0);
+                    UnsafeUtility.MemCpy(target + cursor, UnsafeUtility.AddressOf(ref entry), entryBytes);
+                    cursor += entryBytes;
                 }
+
+                if (!NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, cursor))
+                    _lastFaultFlags |= FabricationAssemblerFlags.Fault;
             }
             catch (Exception)
             {
@@ -1433,8 +1461,23 @@ namespace Hecton8.Crafting
             }
             finally
             {
+                const string dumpPayloadLabel = "FabricationAssemblerTelemetryDumpPayload";
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(FabricationAssemblerRuntime),
+                    dumpPayloadLabel,
+                    Allocator.TempJob);
+
                 System.Threading.Volatile.Write(ref _telemetryDumpInFlight, 0);
             }
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* target, int offset, uint value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+            target[offset + 2] = (byte)(value >> 16);
+            target[offset + 3] = (byte)(value >> 24);
         }
 
         private float ResolveGlobalQualityWeight()

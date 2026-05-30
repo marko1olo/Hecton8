@@ -633,7 +633,7 @@ namespace Hecton8.World
 
             public void Execute()
             {
-                float maxMagnitude = 0f;
+                float maxMagnitudeSq = 0f;
                 uint nonZeroCells = 0u;
                 uint outputFlags = Flags;
                 int safeCount = math.min(NodeCount, FieldValues.IsCreated ? FieldValues.Length : 0);
@@ -645,12 +645,13 @@ namespace Hecton8.World
                     bool nonZero = finite & magnitudeSq > 0.0000001f;
                     outputFlags |= math.select(0u, FloraSwayFieldNaNFlag, !finite);
                     nonZeroCells += math.select(0u, 1u, nonZero);
-                    maxMagnitude = math.max(maxMagnitude, math.select(0f, math.sqrt(math.max(magnitudeSq, 0f)), nonZero));
+                    maxMagnitudeSq = math.max(maxMagnitudeSq, math.select(0f, math.max(magnitudeSq, 0f), nonZero));
                 }
 
                 if (!FieldMeta.IsCreated || FieldMeta.Length < FloraSwayFieldMetaVectorCount)
                     return;
 
+                float maxMagnitude = math.sqrt(maxMagnitudeSq);
                 FieldMeta[0] = new float4(FieldCenterWS.x, FieldCenterWS.y, FieldCenterWS.z, CellSize);
                 FieldMeta[1] = new float4(Resolution, math.select(0f, 1f, maxMagnitude > 0.0001f), QualityWeight, maxMagnitude);
                 FieldMeta[2] = new float4(NodeCount, UpdateIntervalSeconds, ActiveWakeCount, nonZeroCells);
@@ -1384,6 +1385,7 @@ namespace Hecton8.World
         private HectonPlayerMovement _playerMovement;
         private PlayerToolManager _playerToolManager;
         private IPlayerRuntimeContext _playerRuntimeContext;
+        private bool _playerReferenceRefreshRequested = true;
         private ISubmarineRuntimeContext _submarineRuntimeContext;
         private Rigidbody _submarineHullRigidbody;
         private IFluidSurfaceCurrentReadModel _fluidReadModel;
@@ -2094,6 +2096,8 @@ namespace Hecton8.World
             RefreshCachedSubmarineContext();
             FlushWakeTrailResourceRefreshSlow();
             ScheduleWakeDecayJob();
+            if (_playerReferenceRefreshRequested || _playerTransform == null)
+                RefreshPlayerReferenceCacheCold();
 
             if (_vegetationBridge == null || _vegetationBridgeResolveRequested)
                 RefreshVegetationBridgeFromCachedService();
@@ -2196,11 +2200,15 @@ namespace Hecton8.World
             if (contextTransform != null)
                 return contextTransform;
 
-            Transform runtimePlayerTransform = BootstrapState.CurrentPlayerTransform;
-            if (runtimePlayerTransform != null)
-                return runtimePlayerTransform;
+            Transform cachedTransform = _playerTransform;
+            if (cachedTransform != null)
+                return cachedTransform;
 
-            return _playerTransformOverride;
+            if (_playerTransformOverride != null)
+                return _playerTransformOverride;
+
+            _playerReferenceRefreshRequested = true;
+            return null;
         }
 
         private void ResolvePlayerState(Transform runtimePlayerTransform, Vector3 runtimePlayerPosition)
@@ -2507,15 +2515,14 @@ namespace Hecton8.World
             if (_vegetationBridgeOverride != null)
                 return _vegetationBridgeOverride;
 
-            HectonMapMagicVegetationBridge directBridge = GetComponent<HectonMapMagicVegetationBridge>();
-            if (directBridge != null)
+            if (TryGetComponent(out HectonMapMagicVegetationBridge directBridge) && directBridge != null)
                 return directBridge;
 
             HectonMapMagicVegetationBridge childBridge = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<HectonMapMagicVegetationBridge>(transform);
             if (childBridge != null)
                 return childBridge;
 
-            return GetComponentInParent<HectonMapMagicVegetationBridge>();
+            return Hecton8.Core.ComponentReferenceUtility.ResolveParentService<HectonMapMagicVegetationBridge>(this);
         }
 
         private HectonMapMagicVegetationBridge GetCachedVegetationBridgeOrRequestColdResolve()
@@ -2561,8 +2568,7 @@ namespace Hecton8.World
             if (_destructibleOrganicManagerOverride != null)
                 return _destructibleOrganicManagerOverride;
 
-            DestructibleOrganicManager directManager = GetComponent<DestructibleOrganicManager>();
-            if (directManager != null)
+            if (TryGetComponent(out DestructibleOrganicManager directManager) && directManager != null)
                 return directManager;
 
             return DestructibleOrganicManager.ActiveRuntimeInstance;
@@ -2612,9 +2618,11 @@ namespace Hecton8.World
             velocityOverLifetime.space = ParticleSystemSimulationSpace.World;
             velocityOverLifetime.y = new ParticleSystem.MinMaxCurve(0.06f, 0.22f);
 
-            ParticleSystemRenderer renderer = _sedimentBurstParticleSystem.GetComponent<ParticleSystemRenderer>();
-            renderer.renderMode = ParticleSystemRenderMode.Billboard;
-            renderer.alignment = ParticleSystemRenderSpace.View;
+            if (_sedimentBurstParticleSystem.TryGetComponent(out ParticleSystemRenderer renderer) && renderer != null)
+            {
+                renderer.renderMode = ParticleSystemRenderMode.Billboard;
+                renderer.alignment = ParticleSystemRenderSpace.View;
+            }
         }
 
         private void UpdateSedimentCooldowns(float deltaTime)
@@ -4895,48 +4903,37 @@ namespace Hecton8.World
             return hash == 0u ? 1u : hash;
         }
 
-        private void DumpWakeBlackBoxOnce()
+        private unsafe void DumpWakeBlackBoxOnce()
         {
             if (_wakeBlackBoxDumped ||
                 !TryResolveWakeBlackBox(out NativeArray<WakeTelemetryEntry> wakeBlackBox) ||
                 !wakeBlackBox.IsCreated)
                 return;
 
-            _wakeBlackBoxDumped = true;
+            NativeArray<byte> payload = default;
             try
             {
-                string root = Directory.GetCurrentDirectory();
-                if (!string.Equals(Path.GetFileName(root), "Hecton8", StringComparison.OrdinalIgnoreCase))
-                    root = Path.Combine(root, "Hecton8");
-
-                string directory = Path.Combine(root, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, "Dump_INTERACTIVE_WAKE_VFX.bin");
-                using BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read));
-                writer.Write(0x57414B45u);
-                writer.Write(wakeBlackBox.Length);
-                writer.Write(_wakeBlackBoxCursor);
+                const string path = "Docs/AgentLogs/Dump_INTERACTIVE_WAKE_VFX.bin";
+                int headerBytes = 12;
+                int rowBytes = UnsafeUtility.SizeOf<WakeTelemetryEntry>();
+                int totalBytes = headerBytes + wakeBlackBox.Length * rowBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(FloraInteractionManager),
+                    "InteractiveWakeTelemetryDumpPayload");
+                Span<byte> bytes = new Span<byte>(payload.GetUnsafePtr(), totalBytes);
+                WriteUInt32LittleEndian(bytes, 0, 0x57414B45u);
+                WriteInt32LittleEndian(bytes, 4, wakeBlackBox.Length);
+                WriteInt32LittleEndian(bytes, 8, _wakeBlackBoxCursor);
+                int writeOffset = headerBytes;
                 for (int i = 0; i < wakeBlackBox.Length; i++)
                 {
                     WakeTelemetryEntry entry = wakeBlackBox[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.ActiveWakeSourcesCount);
-                    writer.Write(entry.SlotLimit);
-                    writer.Write(entry.StrongestWakePositionWS.x);
-                    writer.Write(entry.StrongestWakePositionWS.y);
-                    writer.Write(entry.StrongestWakePositionWS.z);
-                    writer.Write(entry.StrongestIntensity);
-                    writer.Write(entry.StrongestVelocityWS.x);
-                    writer.Write(entry.StrongestVelocityWS.y);
-                    writer.Write(entry.StrongestVelocityWS.z);
-                    writer.Write(entry.MaxRadius);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.DataVaultGeneration);
-                    writer.Write(entry.AupShiftSequence);
-                    writer.Write(entry.SystemStress01);
-                    writer.Write(entry.BudgetPressure01);
+                    WriteWakeTelemetryEntry(bytes.Slice(writeOffset, rowBytes), in entry);
+                    writeOffset += rowBytes;
                 }
+
+                _wakeBlackBoxDumped = NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
             }
             catch (IOException)
             {
@@ -4945,6 +4942,13 @@ namespace Hecton8.World
             catch (UnauthorizedAccessException)
             {
                 CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(FloraInteractionManager),
+                    "InteractiveWakeTelemetryDumpPayload");
             }
         }
 
@@ -5046,48 +5050,37 @@ namespace Hecton8.World
                 DumpFloraSwayFieldBlackBoxOnce();
         }
 
-        private void DumpFloraSwayFieldBlackBoxOnce()
+        private unsafe void DumpFloraSwayFieldBlackBoxOnce()
         {
             if (_floraSwayFieldBlackBoxDumped ||
                 !TryResolveFloraSwayFieldBlackBox(out NativeArray<FloraSwayFieldTelemetryEntry> blackBox) ||
                 !blackBox.IsCreated)
                 return;
 
-            _floraSwayFieldBlackBoxDumped = true;
+            NativeArray<byte> payload = default;
             try
             {
-                string root = Directory.GetCurrentDirectory();
-                if (!string.Equals(Path.GetFileName(root), "Hecton8", StringComparison.OrdinalIgnoreCase))
-                    root = Path.Combine(root, "Hecton8");
-
-                string directory = Path.Combine(root, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, "Dump_FLORA_SWAY_DIRECTOR.bin");
-                using BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read));
-                writer.Write(FloraSwayFieldSourceHash);
-                writer.Write(blackBox.Length);
-                writer.Write(_floraSwayFieldBlackBoxCursor);
+                const string path = "Docs/AgentLogs/Dump_FLORA_SWAY_DIRECTOR.bin";
+                int headerBytes = 12;
+                int rowBytes = UnsafeUtility.SizeOf<FloraSwayFieldTelemetryEntry>();
+                int totalBytes = headerBytes + blackBox.Length * rowBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(FloraInteractionManager),
+                    "FloraSwayFieldTelemetryDumpPayload");
+                Span<byte> bytes = new Span<byte>(payload.GetUnsafePtr(), totalBytes);
+                WriteUInt32LittleEndian(bytes, 0, FloraSwayFieldSourceHash);
+                WriteInt32LittleEndian(bytes, 4, blackBox.Length);
+                WriteInt32LittleEndian(bytes, 8, _floraSwayFieldBlackBoxCursor);
+                int writeOffset = headerBytes;
                 for (int i = 0; i < blackBox.Length; i++)
                 {
                     FloraSwayFieldTelemetryEntry entry = blackBox[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.Resolution);
-                    writer.Write(entry.ActiveWakeSourcesCount);
-                    writer.Write(entry.NonZeroCellsCount);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.FieldCenterWS.x);
-                    writer.Write(entry.FieldCenterWS.y);
-                    writer.Write(entry.FieldCenterWS.z);
-                    writer.Write(entry.CellSize);
-                    writer.Write(entry.MaxMagnitude);
-                    writer.Write(entry.GlobalQualityWeight);
-                    writer.Write(entry.UpdateIntervalSeconds);
-                    writer.Write(entry.SystemStress01);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.DataVaultGeneration);
-                    writer.Write(entry.AupShiftSequence);
-                    writer.Write(entry.CpuMicroseconds);
+                    WriteFloraSwayFieldTelemetryEntry(bytes.Slice(writeOffset, rowBytes), in entry);
+                    writeOffset += rowBytes;
                 }
+
+                _floraSwayFieldBlackBoxDumped = NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
             }
             catch (IOException)
             {
@@ -5096,6 +5089,13 @@ namespace Hecton8.World
             catch (UnauthorizedAccessException)
             {
                 CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(FloraInteractionManager),
+                    "FloraSwayFieldTelemetryDumpPayload");
             }
         }
 
@@ -8839,8 +8839,11 @@ namespace Hecton8.World
 
         private void RefreshPlayerReferenceCacheCold()
         {
+            _playerReferenceRefreshRequested = false;
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerTransform == null)
+                playerTransform = BootstrapState.CurrentPlayerTransform;
             if (playerTransform == null)
                 playerTransform = _playerTransformOverride;
 
@@ -9868,7 +9871,7 @@ namespace Hecton8.World
             }
         }
 
-        private void DumpFloraMemoryTelemetryOnce()
+        private unsafe void DumpFloraMemoryTelemetryOnce()
         {
             if (_floraMemoryTelemetryDumped ||
                 !TryResolveFloraMemoryTelemetryReadOnly(out NativeArray<FloraMemoryTelemetryEntry>.ReadOnly telemetry))
@@ -9876,48 +9879,28 @@ namespace Hecton8.World
                 return;
             }
 
-            _floraMemoryTelemetryDumped = true;
+            NativeArray<byte> payload = default;
             try
             {
-                string fullPath = Path.Combine(Application.dataPath, "..", FloraMemoryTelemetryDumpPath);
-                string directory = Path.GetDirectoryName(fullPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using MemoryStream memoryStream = new MemoryStream(8 + telemetry.Length * 64);
-                using BinaryWriter writer = new BinaryWriter(memoryStream);
-                writer.Write(telemetry.Length);
-                writer.Write(_floraMemoryTelemetryCursor);
+                int headerBytes = 8;
+                int rowBytes = UnsafeUtility.SizeOf<FloraMemoryTelemetryEntry>();
+                int totalBytes = headerBytes + telemetry.Length * rowBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(FloraInteractionManager),
+                    "FloraMemoryTelemetryDumpPayload");
+                Span<byte> bytes = new Span<byte>(payload.GetUnsafePtr(), totalBytes);
+                WriteInt32LittleEndian(bytes, 0, telemetry.Length);
+                WriteInt32LittleEndian(bytes, 4, _floraMemoryTelemetryCursor);
+                int writeOffset = headerBytes;
                 for (int i = 0; i < telemetry.Length; i++)
                 {
                     FloraMemoryTelemetryEntry entry = telemetry[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.EventHash);
-                    writer.Write(entry.BufferID);
-                    writer.Write(entry.SystemID);
-                    writer.Write(entry.Generation);
-                    writer.Write(entry.RequiredLength);
-                    writer.Write(entry.ActualLength);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.ConsecutiveFailures);
-                    writer.Write(entry.VaultGeneration);
-                    writer.Write(entry.GlobalQualityWeight);
-                    writer.Write(entry.SystemStress01);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.AupShiftSequence);
-                    writer.Write(entry.CpuMicroseconds);
-                    writer.Write(0u);
+                    WriteFloraMemoryTelemetryEntry(bytes.Slice(writeOffset, rowBytes), in entry);
+                    writeOffset += rowBytes;
                 }
 
-                writer.Flush();
-                FloraMemoryTelemetryDumpWork work = new FloraMemoryTelemetryDumpWork
-                {
-                    Path = fullPath,
-                    Payload = memoryStream.GetBuffer()
-                };
-
-                if (!ThreadPool.QueueUserWorkItem(s_floraMemoryTelemetryDumpCallback, work))
-                    File.WriteAllBytes(fullPath, work.Payload);
+                _floraMemoryTelemetryDumped = NativeFaultDumpWriter.TryWriteAll(FloraMemoryTelemetryDumpPath, payload, totalBytes);
             }
             catch (IOException)
             {
@@ -9926,6 +9909,13 @@ namespace Hecton8.World
             catch (UnauthorizedAccessException)
             {
                 CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(FloraInteractionManager),
+                    "FloraMemoryTelemetryDumpPayload");
             }
         }
 
@@ -9937,7 +9927,7 @@ namespace Hecton8.World
 
             try
             {
-                File.WriteAllBytes(work.Path, work.Payload);
+                NativeFaultDumpWriter.TryWriteAll(work.Path, new ReadOnlySpan<byte>(work.Payload), work.Payload.Length);
             }
             catch (IOException)
             {
@@ -9947,6 +9937,89 @@ namespace Hecton8.World
             {
                 CrashTelemetryBuffer.ReportBlackBoxExportFailure();
             }
+        }
+
+        private static void WriteWakeTelemetryEntry(Span<byte> destination, in WakeTelemetryEntry entry)
+        {
+            WriteUInt32LittleEndian(destination, 0, entry.Frame);
+            WriteUInt16LittleEndian(destination, 4, entry.ActiveWakeSourcesCount);
+            WriteUInt16LittleEndian(destination, 6, entry.SlotLimit);
+            WriteFloat3LittleEndian(destination, 8, entry.StrongestWakePositionWS);
+            WriteSingleLittleEndian(destination, 20, entry.StrongestIntensity);
+            WriteFloat3LittleEndian(destination, 24, entry.StrongestVelocityWS);
+            WriteSingleLittleEndian(destination, 36, entry.MaxRadius);
+            WriteUInt32LittleEndian(destination, 40, entry.Flags);
+            WriteUInt32LittleEndian(destination, 44, entry.StateHash);
+            WriteUInt32LittleEndian(destination, 48, entry.DataVaultGeneration);
+            WriteUInt32LittleEndian(destination, 52, entry.AupShiftSequence);
+            WriteSingleLittleEndian(destination, 56, entry.SystemStress01);
+            WriteSingleLittleEndian(destination, 60, entry.BudgetPressure01);
+        }
+
+        private static void WriteFloraSwayFieldTelemetryEntry(Span<byte> destination, in FloraSwayFieldTelemetryEntry entry)
+        {
+            WriteUInt32LittleEndian(destination, 0, entry.Frame);
+            WriteUInt16LittleEndian(destination, 4, entry.Resolution);
+            WriteUInt16LittleEndian(destination, 6, entry.ActiveWakeSourcesCount);
+            WriteUInt32LittleEndian(destination, 8, entry.NonZeroCellsCount);
+            WriteUInt32LittleEndian(destination, 12, entry.Flags);
+            WriteFloat3LittleEndian(destination, 16, entry.FieldCenterWS);
+            WriteSingleLittleEndian(destination, 28, entry.CellSize);
+            WriteSingleLittleEndian(destination, 32, entry.MaxMagnitude);
+            WriteSingleLittleEndian(destination, 36, entry.GlobalQualityWeight);
+            WriteSingleLittleEndian(destination, 40, entry.UpdateIntervalSeconds);
+            WriteSingleLittleEndian(destination, 44, entry.SystemStress01);
+            WriteUInt32LittleEndian(destination, 48, entry.StateHash);
+            WriteUInt32LittleEndian(destination, 52, entry.DataVaultGeneration);
+            WriteUInt32LittleEndian(destination, 56, entry.AupShiftSequence);
+            WriteUInt32LittleEndian(destination, 60, entry.CpuMicroseconds);
+        }
+
+        private static void WriteFloraMemoryTelemetryEntry(Span<byte> destination, in FloraMemoryTelemetryEntry entry)
+        {
+            WriteUInt32LittleEndian(destination, 0, entry.Frame);
+            WriteUInt32LittleEndian(destination, 4, entry.EventHash);
+            WriteUInt32LittleEndian(destination, 8, entry.BufferID);
+            WriteUInt32LittleEndian(destination, 12, entry.SystemID);
+            WriteUInt32LittleEndian(destination, 16, entry.Generation);
+            WriteUInt32LittleEndian(destination, 20, entry.RequiredLength);
+            WriteUInt32LittleEndian(destination, 24, entry.ActualLength);
+            WriteUInt32LittleEndian(destination, 28, entry.Flags);
+            WriteUInt32LittleEndian(destination, 32, entry.ConsecutiveFailures);
+            WriteUInt32LittleEndian(destination, 36, entry.VaultGeneration);
+            WriteSingleLittleEndian(destination, 40, entry.GlobalQualityWeight);
+            WriteSingleLittleEndian(destination, 44, entry.SystemStress01);
+            WriteUInt32LittleEndian(destination, 48, entry.StateHash);
+            WriteUInt32LittleEndian(destination, 52, entry.AupShiftSequence);
+            WriteUInt32LittleEndian(destination, 56, entry.CpuMicroseconds);
+            WriteUInt32LittleEndian(destination, 60, 0u);
+        }
+
+        private static void WriteFloat3LittleEndian(Span<byte> destination, int offset, float3 value)
+        {
+            WriteSingleLittleEndian(destination, offset, value.x);
+            WriteSingleLittleEndian(destination, offset + 4, value.y);
+            WriteSingleLittleEndian(destination, offset + 8, value.z);
+        }
+
+        private static void WriteSingleLittleEndian(Span<byte> destination, int offset, float value)
+        {
+            WriteUInt32LittleEndian(destination, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(Span<byte> destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt16LittleEndian(Span<byte> destination, int offset, ushort value)
+        {
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(offset, 2), value);
+        }
+
+        private static void WriteUInt32LittleEndian(Span<byte> destination, int offset, uint value)
+        {
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(offset, 4), value);
         }
 
         private bool EnsureFloraSwayFieldGraphicsBuffers(bool allowCreate = true)

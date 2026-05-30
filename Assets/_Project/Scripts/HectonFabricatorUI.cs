@@ -158,8 +158,6 @@ namespace Hecton8.UI
         private readonly List<RecipeData> _filteredRecipes = new List<RecipeData>(Fabricator.MaxRecipeCacheEntries);
         // COLD ALLOC: Matrix4x4[16] — instanced hologram draw buffer mirror — owner: HectonFabricatorUI
         private readonly Matrix4x4[] _hologramMatrixBuffer = new Matrix4x4[MaxVisibleHologramInstances];
-        // COLD ALLOC: Matrix4x4[1] — selected recipe hologram draw buffer — owner: HectonFabricatorUI
-        private readonly Matrix4x4[] _selectedRecipeHologramBuffer = new Matrix4x4[1];
         // COLD ALLOC: RecipeListEntry[12] — fixed diegetic recipe row cache — owner: HectonFabricatorUI
         private readonly RecipeListEntry[] _recipeEntries = new RecipeListEntry[MaxVisibleRecipeEntries];
         // COLD ALLOC: char[96] — reusable diegetic recipe label buffer — owner: HectonFabricatorUI
@@ -1042,19 +1040,19 @@ namespace Hecton8.UI
                 _selectedHologramYawRadians -= math.PI * 2f;
 
             float4x4 previewMatrix = math.mul(_selectedHologramBaseMatrix, BuildYRotationMatrix(_selectedHologramYawRadians));
-            WriteMatrix(_selectedRecipeHologramBuffer, 0, in previewMatrix);
+            Matrix4x4 previewUnityMatrix = ToMatrix4x4(in previewMatrix);
             UpdateHologramMaterialState(recipe);
 
-            UnityEngine.Graphics.DrawMeshInstanced(
+            UnityEngine.Graphics.DrawMesh(
                 _runtimeHologramMesh,
-                0,
+                previewUnityMatrix,
                 _runtimeHologramMaterial,
-                _selectedRecipeHologramBuffer,
-                1,
+                0,
+                null,
+                0,
                 null,
                 ShadowCastingMode.Off,
                 false,
-                0,
                 null,
                 LightProbeUsage.Off,
                 null);
@@ -1174,7 +1172,7 @@ namespace Hecton8.UI
                     continue;
 
                 int adjustedAmount = _currentFabricator != null
-                    ? _currentFabricator.GetAdjustedIngredientAmount(ingredient)
+                    ? _currentFabricator.CalculateAdjustedIngredientAmount(ingredient)
                     : ingredient.amount;
                 int unitCount = Mathf.Clamp(adjustedAmount, 1, MaxVisibleHologramInstances - instanceCount);
                 for (int unitIndex = 0; unitIndex < unitCount && instanceCount < MaxVisibleHologramInstances; unitIndex++)
@@ -1229,22 +1227,29 @@ namespace Hecton8.UI
             if (matrices == null || (uint)index >= (uint)matrices.Length)
                 return;
 
-            matrices[index].m00 = matrix.c0.x;
-            matrices[index].m10 = matrix.c0.y;
-            matrices[index].m20 = matrix.c0.z;
-            matrices[index].m30 = matrix.c0.w;
-            matrices[index].m01 = matrix.c1.x;
-            matrices[index].m11 = matrix.c1.y;
-            matrices[index].m21 = matrix.c1.z;
-            matrices[index].m31 = matrix.c1.w;
-            matrices[index].m02 = matrix.c2.x;
-            matrices[index].m12 = matrix.c2.y;
-            matrices[index].m22 = matrix.c2.z;
-            matrices[index].m32 = matrix.c2.w;
-            matrices[index].m03 = matrix.c3.x;
-            matrices[index].m13 = matrix.c3.y;
-            matrices[index].m23 = matrix.c3.z;
-            matrices[index].m33 = matrix.c3.w;
+            matrices[index] = ToMatrix4x4(in matrix);
+        }
+
+        private static Matrix4x4 ToMatrix4x4(in float4x4 matrix)
+        {
+            Matrix4x4 result = default;
+            result.m00 = matrix.c0.x;
+            result.m10 = matrix.c0.y;
+            result.m20 = matrix.c0.z;
+            result.m30 = matrix.c0.w;
+            result.m01 = matrix.c1.x;
+            result.m11 = matrix.c1.y;
+            result.m21 = matrix.c1.z;
+            result.m31 = matrix.c1.w;
+            result.m02 = matrix.c2.x;
+            result.m12 = matrix.c2.y;
+            result.m22 = matrix.c2.z;
+            result.m32 = matrix.c2.w;
+            result.m03 = matrix.c3.x;
+            result.m13 = matrix.c3.y;
+            result.m23 = matrix.c3.z;
+            result.m33 = matrix.c3.w;
+            return result;
         }
 
         private void EnsureHologramResources()
@@ -1840,7 +1845,7 @@ namespace Hecton8.UI
                 entry.LabelRecipe = recipe;
                 entry.CachedDisplayNameVersion = _recipeLabelTextVersion;
                 if (!recipe.TryWriteDisplayNameOrFallback(_localizationManager, entry.CachedDisplayNameBuffer, out int nameLength))
-                    nameLength = CopySpanToBuffer(recipe.name.AsSpan(), entry.CachedDisplayNameBuffer);
+                    nameLength = CopySpanToBuffer((recipe.recipeName ?? string.Empty).AsSpan(), entry.CachedDisplayNameBuffer);
                 entry.CachedDisplayNameLength = math.clamp(nameLength, 0, entry.CachedDisplayNameBuffer.Length);
             }
 

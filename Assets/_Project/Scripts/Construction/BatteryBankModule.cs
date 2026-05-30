@@ -15,7 +15,7 @@ namespace Hecton8.Construction
     [AddComponentMenu("Hecton8/Construction/Battery Bank Module")]
     public sealed class BatteryBankModule : MonoBehaviour, IPowerComponent, IPoolable
     {
-        private const float DispatchDeltaTimeSeconds = 0.5f;
+        private const float DispatchDeltaTimeSeconds = PowerGrid.LogisticsTickDeltaTimeSeconds;
 
         [Header("Storage")]
         [Tooltip("Total storable energy in watt-seconds.")]
@@ -55,6 +55,8 @@ namespace Hecton8.Construction
         private bool _hasPendingDispatch;
         private bool _hasPower = true;
         private int _cachedRoomIndex = -1;
+        private bool _hasCachedRoomWorldPosition;
+        private float3 _cachedRoomWorldPosition;
         private Transform _cachedTransform;
         private ISubmarineAtmosphereRoomMutationSink _atmosphereSystem;
 
@@ -80,6 +82,8 @@ namespace Hecton8.Construction
 
         internal float DischargeEfficiency => math.max(0.1f, dischargeEfficiency);
 
+        internal float PlannedGridPowerWatts => _plannedGridPowerWatts;
+
         private void Awake()
         {
             CacheReferences();
@@ -88,6 +92,7 @@ namespace Hecton8.Construction
 
         private void OnEnable()
         {
+            ResetCachedRoomBinding();
             CacheReferences();
             ResetDispatchPlan();
             RefreshDebugState();
@@ -98,6 +103,7 @@ namespace Hecton8.Construction
         {
             _hasPower = true;
             _debugHasPower = true;
+            ResetCachedRoomBinding();
             ResetChargeToInitialState();
             ResetDispatchPlan();
             RefreshDebugState();
@@ -108,6 +114,7 @@ namespace Hecton8.Construction
         {
             _hasPower = true;
             _debugHasPower = true;
+            ResetCachedRoomBinding();
             ResetChargeToInitialState();
             ResetDispatchPlan();
             RefreshDebugState();
@@ -176,10 +183,49 @@ namespace Hecton8.Construction
             RefreshDebugState();
         }
 
+        internal void CommitResolvedDispatch(float serviceRatio)
+        {
+            float safeServiceRatio = math.saturate(math.select(0f, serviceRatio, math.isfinite(serviceRatio)));
+            if (_hasPendingDispatch && _plannedGridPowerWatts < -0.0001f)
+            {
+                if (safeServiceRatio <= 0.0001f)
+                {
+                    ResetDispatchPlan();
+                    RefreshDebugState();
+                    return;
+                }
+
+                if (safeServiceRatio < 0.9999f)
+                {
+                    float scaledStoredGain = math.max(0f, _pendingStoredEnergyWattSeconds - _storedEnergyWattSeconds) * safeServiceRatio;
+                    _pendingStoredEnergyWattSeconds = math.clamp(
+                        _storedEnergyWattSeconds + scaledStoredGain,
+                        0f,
+                        math.max(1f, energyCapacityWattSeconds));
+                    _plannedGridPowerWatts *= safeServiceRatio;
+                    _pendingHeatLossJoules = ResolvePendingHeatLossJoules(
+                        _storedEnergyWattSeconds,
+                        _pendingStoredEnergyWattSeconds,
+                        _plannedGridPowerWatts);
+                    _debugPlannedGridPowerWatts = _plannedGridPowerWatts;
+                }
+            }
+
+            CommitResolvedDispatch();
+        }
+
         private void ResetChargeToInitialState()
         {
             _storedEnergyWattSeconds = math.saturate(initialChargeNormalized) * math.max(1f, energyCapacityWattSeconds);
             _pendingStoredEnergyWattSeconds = _storedEnergyWattSeconds;
+        }
+
+        private void ResetCachedRoomBinding()
+        {
+            _cachedRoomIndex = -1;
+            _hasCachedRoomWorldPosition = false;
+            _cachedRoomWorldPosition = default;
+            _atmosphereSystem = null;
         }
 
         private void CacheReferences()
@@ -194,10 +240,24 @@ namespace Hecton8.Construction
                     ConstructionParentLookup.TryCaptureSelfOrParent(this, out _atmosphereSystem);
             }
 
-            if (_cachedRoomIndex >= 0 || _atmosphereSystem == null || _cachedTransform == null)
+            if (_atmosphereSystem == null || _cachedTransform == null)
+                return;
+
+            Vector3 worldPosition = _cachedTransform.position;
+            float3 currentPosition = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
+            if (_hasCachedRoomWorldPosition &&
+                math.lengthsq(currentPosition - _cachedRoomWorldPosition) > 0.25f)
+            {
+                _cachedRoomIndex = -1;
+                _hasCachedRoomWorldPosition = false;
+            }
+
+            if (_cachedRoomIndex >= 0)
                 return;
 
             _cachedRoomIndex = _atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(_cachedTransform.position);
+            _cachedRoomWorldPosition = currentPosition;
+            _hasCachedRoomWorldPosition = _cachedRoomIndex >= 0;
         }
 
         private float ResolvePendingHeatLossJoules(float currentStoredEnergyWattSeconds, float nextStoredEnergyWattSeconds, float plannedGridPowerWatts)

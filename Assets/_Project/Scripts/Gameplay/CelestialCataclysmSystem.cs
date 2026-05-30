@@ -372,8 +372,17 @@ namespace Hecton8.Gameplay
                 new Vector4(
                     Mathf.Clamp01(intensity01),
                     Mathf.Max(0f, _solarEmpGlitchRemainingSeconds),
-                    Time.unscaledTime,
+                    ResolveSolarEmpGlitchTimeSeconds(),
                     Mathf.Clamp01(solarEmpClaritySuppression01)));
+        }
+
+        private static float ResolveSolarEmpGlitchTimeSeconds()
+        {
+            double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (double.IsNaN(now) || double.IsInfinity(now) || now <= 0d)
+                return 0f;
+
+            return now >= float.MaxValue ? float.MaxValue : (float)now;
         }
 
         private void FlushQueuedCataclysmVisuals()

@@ -21,6 +21,10 @@ namespace Hecton8.Rendering
         private const uint SimulationSystemHash = 0x4232534Du; // B2SM
         private const uint PostSimulationSystemHash = 0x4232504Fu; // B2PO
         private const uint VisualSyncSystemHash = 0x42325653u; // B2VS
+        private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_BILATERAL_DRS_UPSCALER.bin";
+        private const uint BlackBoxDumpMagic = 0x42324438u; // 8D2B
+        private const uint BlackBoxDumpVersion = 1u;
+        private const int BlackBoxDumpHeaderBytes = 32;
         private const int QualityProfileCsvColumnCount = 8;
         private sealed class SimulationKernelBridge : IDispatcherSystem, IDispatcherFenceDomainProvider
         {
@@ -2080,9 +2084,87 @@ namespace Hecton8.Rendering
             if (!TryReadTelemetryDumpShape(out int entryCount, out int telemetryWriteCursor))
                 return;
 
-            _ = entryCount;
-            _ = telemetryWriteCursor;
-            _ = _lastFaultFlags;
+            if (!TryReadVaultBuffer(
+                    in _telemetryHandle,
+                    BufferID.Shinobu236BilateralDrsTelemetry,
+                    BilateralDrsUpscalerConstants.TelemetryCapacity,
+                    out NativeArray<UpscalerTelemetryEntry>.ReadOnly telemetry))
+            {
+                return;
+            }
+
+            WriteBlackBoxDump(entryCount, telemetryWriteCursor, _lastFaultFlags, telemetry);
+        }
+
+        private static unsafe void WriteBlackBoxDump(
+            int entryCount,
+            int telemetryWriteCursor,
+            uint faultFlags,
+            NativeArray<UpscalerTelemetryEntry>.ReadOnly telemetry)
+        {
+            int entrySize = UnsafeUtility.SizeOf<UpscalerTelemetryEntry>();
+            if (entrySize != BilateralDrsUpscalerConstants.TelemetryBytes ||
+                !telemetry.IsCreated ||
+                telemetry.Length <= 0)
+            {
+                return;
+            }
+
+            int count = math.min(math.min(entryCount, telemetry.Length), BilateralDrsUpscalerConstants.TelemetryCapacity);
+            if (count <= 0)
+                return;
+
+            int byteCount = BlackBoxDumpHeaderBytes + count * entrySize;
+            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            try
+            {
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteUInt32LittleEndian(target, 0, BlackBoxDumpMagic);
+                WriteUInt32LittleEndian(target, 4, BlackBoxDumpVersion);
+                WriteUInt32LittleEndian(target, 8, faultFlags);
+                WriteInt32LittleEndian(target, 12, telemetryWriteCursor);
+                WriteInt32LittleEndian(target, 16, count);
+                WriteInt32LittleEndian(target, 20, entrySize);
+                WriteUInt32LittleEndian(target, 24, BilateralDrsUpscalerConstants.StateHash);
+                WriteUInt32LittleEndian(target, 28, 0u);
+
+                int start = telemetryWriteCursor - count;
+                while (start < 0)
+                    start += telemetry.Length;
+                if (start >= telemetry.Length)
+                    start %= telemetry.Length;
+
+                int offset = BlackBoxDumpHeaderBytes;
+                for (int i = 0; i < count; i++)
+                {
+                    int slot = start + i;
+                    if (slot >= telemetry.Length)
+                        slot -= telemetry.Length;
+
+                    UpscalerTelemetryEntry entry = telemetry[slot];
+                    UnsafeUtility.MemCpy(target + offset, &entry, entrySize);
+                    offset += entrySize;
+                }
+
+                NativeFaultDumpWriter.TryWriteAll(BlackBoxDumpPath, payload, byteCount);
+            }
+            finally
+            {
+                payload.Dispose();
+            }
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, int offset, uint value)
+        {
+            destination[offset] = unchecked((byte)value);
+            destination[offset + 1] = unchecked((byte)(value >> 8));
+            destination[offset + 2] = unchecked((byte)(value >> 16));
+            destination[offset + 3] = unchecked((byte)(value >> 24));
         }
 
         private bool TryReadTelemetryDumpShape(out int entryCount, out int telemetryWriteCursor)

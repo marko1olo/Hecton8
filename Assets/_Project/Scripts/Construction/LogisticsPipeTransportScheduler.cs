@@ -26,7 +26,14 @@ namespace Hecton8.Construction
         private const BufferID QueueBufferId = (BufferID)72058;
         private const BufferID SortedOrderBufferId = (BufferID)72059;
         private const BufferID SortedCountBufferId = (BufferID)72060;
-        private const ulong SortBuffersMutationGuardMask = 0x000000001FC00000UL;
+        private const ulong SortBufferEnsureMutationGuardMask = 0x000000001FC00000UL;
+        private const uint SortPinEdgeOffsets = 1u << 0;
+        private const uint SortPinEdgeDestinations = 1u << 1;
+        private const uint SortPinInputIndegrees = 1u << 2;
+        private const uint SortPinWorkIndegrees = 1u << 3;
+        private const uint SortPinQueue = 1u << 4;
+        private const uint SortPinSortedOrder = 1u << 5;
+        private const uint SortPinSortedCount = 1u << 6;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const string CycleRepairWarningMessage = "LogisticsPipeTransportScheduler dropped cyclic edge to keep pipe DAG valid.";
 #endif
@@ -42,7 +49,8 @@ namespace Hecton8.Construction
         private static VaultGenerationHandle<int> _queueHandle;
         private static VaultGenerationHandle<int> _sortedOrderHandle;
         private static VaultGenerationHandle<int> _sortedCountHandle;
-        private static bool _sortGuardHeld;
+        private static IDataVault _sortPinVault;
+        private static uint _sortPinMask;
 
         private static JobHandle _pendingSortHandle;
         private static bool _pendingSort;
@@ -118,7 +126,7 @@ namespace Hecton8.Construction
             JobHandle.ScheduleBatchedJobs();
             DispatcherJobSwap.TryComplete(ref teardownDependency, forceComplete: true);
             IDataVault vault = _dataVault;
-            ReleaseSortWriteLocks(vault);
+            ReleaseSortBufferPins(vault);
             ReleaseVaultHandles(vault);
             System.Array.Clear(_activeNodes, 0, _activeNodeCount);
             _activeNodeCount = 0;
@@ -141,7 +149,7 @@ namespace Hecton8.Construction
             JobHandle teardownDependency = CancelPendingSortForTeardown();
             JobHandle.ScheduleBatchedJobs();
             DispatcherJobSwap.TryComplete(ref teardownDependency, forceComplete: true);
-            ReleaseSortWriteLocks(_dataVault);
+            ReleaseSortBufferPins(_dataVault);
             ReleaseVaultHandles(_dataVault);
             _dataVault = vault;
         }
@@ -394,7 +402,7 @@ namespace Hecton8.Construction
             finally
             {
                 if (!scheduled)
-                    ReleaseSortWriteLocks(vault);
+                    ReleaseSortBufferPins(vault);
             }
         }
 
@@ -453,7 +461,7 @@ namespace Hecton8.Construction
                 _sortTopologyVersion = -1;
                 _scheduledTopologySignature = -1;
                 _sortTopologySignature = -1;
-                ReleaseSortWriteLocks(vault);
+                ReleaseSortBufferPins(vault);
                 return;
             }
 
@@ -471,7 +479,7 @@ namespace Hecton8.Construction
                 _scheduledTopologySignature = -1;
             }
 
-            ReleaseSortWriteLocks(vault);
+            ReleaseSortBufferPins(vault);
         }
 
         private static JobHandle CancelPendingSortForTeardown()
@@ -530,10 +538,10 @@ namespace Hecton8.Construction
             sortedOrder = default;
             sortedCount = default;
 
-            if (vault == null || !vault.TryAcquireMutationGuard(SortBuffersMutationGuardMask))
+            if (vault == null || !vault.TryAcquireMutationGuard(SortBufferEnsureMutationGuardMask))
                 return false;
 
-            bool guardHeld = true;
+            bool pinsTransferred = false;
             try
             {
                 if (!TryBorrowSortBuffer(vault, EdgeOffsetsBufferId, nodeCount + 1, ref _edgeOffsetsHandle, out edgeOffsets) ||
@@ -547,14 +555,17 @@ namespace Hecton8.Construction
                     return false;
                 }
 
-                _sortGuardHeld = true;
-                guardHeld = false;
+                if (!TryLockSortBuffers(vault))
+                    return false;
+
+                pinsTransferred = true;
                 return true;
             }
             finally
             {
-                if (guardHeld)
-                    vault.ReleaseMutationGuard(SortBuffersMutationGuardMask);
+                vault.ReleaseMutationGuard(SortBufferEnsureMutationGuardMask);
+                if (!pinsTransferred)
+                    ReleaseSortBufferPins(vault);
             }
         }
 
@@ -634,14 +645,75 @@ namespace Hecton8.Construction
                    buffer.Length >= math.max(1, requiredLength);
         }
 
-        private static void ReleaseSortWriteLocks(IDataVault vault)
+        private static bool TryLockSortBuffers(IDataVault vault)
         {
-            if (!_sortGuardHeld)
+            if (vault == null ||
+                _sortPinVault != null ||
+                _sortPinMask != 0u ||
+                vault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            _sortPinVault = vault;
+            bool locked = false;
+            try
+            {
+                if (!TryLockSortBuffer(vault, EdgeOffsetsBufferId, SortPinEdgeOffsets) ||
+                    !TryLockSortBuffer(vault, EdgeDestinationsBufferId, SortPinEdgeDestinations) ||
+                    !TryLockSortBuffer(vault, InputIndegreesBufferId, SortPinInputIndegrees) ||
+                    !TryLockSortBuffer(vault, WorkIndegreesBufferId, SortPinWorkIndegrees) ||
+                    !TryLockSortBuffer(vault, QueueBufferId, SortPinQueue) ||
+                    !TryLockSortBuffer(vault, SortedOrderBufferId, SortPinSortedOrder) ||
+                    !TryLockSortBuffer(vault, SortedCountBufferId, SortPinSortedCount))
+                {
+                    return false;
+                }
+
+                locked = true;
+                return true;
+            }
+            finally
+            {
+                if (!locked)
+                    ReleaseSortBufferPins(vault);
+            }
+        }
+
+        private static bool TryLockSortBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        {
+            if ((_sortPinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null || !vault.TryLockBuffer(bufferId, OwnerSystemId))
+                return false;
+
+            _sortPinMask |= pinBit;
+            return true;
+        }
+
+        private static void ReleaseSortBufferPins(IDataVault vault)
+        {
+            IDataVault pinVault = _sortPinVault ?? vault;
+            uint pinMask = _sortPinMask;
+            _sortPinVault = null;
+            _sortPinMask = 0u;
+            if (pinVault == null || pinMask == 0u)
                 return;
 
-            if (vault != null)
-                vault.ReleaseMutationGuard(SortBuffersMutationGuardMask);
-            _sortGuardHeld = false;
+            TryUnlockSortPin(pinVault, pinMask, SortPinSortedCount, SortedCountBufferId);
+            TryUnlockSortPin(pinVault, pinMask, SortPinSortedOrder, SortedOrderBufferId);
+            TryUnlockSortPin(pinVault, pinMask, SortPinQueue, QueueBufferId);
+            TryUnlockSortPin(pinVault, pinMask, SortPinWorkIndegrees, WorkIndegreesBufferId);
+            TryUnlockSortPin(pinVault, pinMask, SortPinInputIndegrees, InputIndegreesBufferId);
+            TryUnlockSortPin(pinVault, pinMask, SortPinEdgeDestinations, EdgeDestinationsBufferId);
+            TryUnlockSortPin(pinVault, pinMask, SortPinEdgeOffsets, EdgeOffsetsBufferId);
+        }
+
+        private static void TryUnlockSortPin(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, OwnerSystemId);
         }
 
         private static void ReleaseVaultHandles(IDataVault vault)

@@ -240,19 +240,21 @@ namespace Hecton8.Visor
                 if (!HasBrownoutGlobalsBuffer())
                     return false;
 
-                BrownoutGlobalsDTO globals = new BrownoutGlobalsDTO(
-                    new Vector4(
-                        HectonVRBrownoutFeature.Sanitize01(runtimeState.BrownoutIntensity),
-                        HectonVRBrownoutFeature.Sanitize01(runtimeState.WorldFocusBlur),
-                        HectonVRBrownoutFeature.Sanitize01(runtimeState.NearCollisionIntensity),
-                        HectonVRBrownoutFeature.SanitizeRange(settings.worldBlurTexelRadius, 0f, 3f)),
-                    new Vector4(
-                        HectonVRBrownoutFeature.Sanitize01(settings.scanlineStrength),
-                        HectonVRBrownoutFeature.Sanitize01(settings.ditherStrength),
-                        0f,
-                        0f),
-                    SanitizeVrComfortSignals(runtimeState.VrComfortSignals),
-                    SanitizeVrComfortMotion(runtimeState.VrComfortMotion));
+                Vector4 params0 = default;
+                params0.x = HectonVRBrownoutFeature.Sanitize01(runtimeState.BrownoutIntensity);
+                params0.y = HectonVRBrownoutFeature.Sanitize01(runtimeState.WorldFocusBlur);
+                params0.z = HectonVRBrownoutFeature.Sanitize01(runtimeState.NearCollisionIntensity);
+                params0.w = HectonVRBrownoutFeature.SanitizeRange(settings.worldBlurTexelRadius, 0f, 3f);
+
+                Vector4 params1 = default;
+                params1.x = HectonVRBrownoutFeature.Sanitize01(settings.scanlineStrength);
+                params1.y = HectonVRBrownoutFeature.Sanitize01(settings.ditherStrength);
+
+                BrownoutGlobalsDTO globals = default;
+                globals.Params0 = params0;
+                globals.Params1 = params1;
+                globals.VrComfortSignals = SanitizeVrComfortSignals(runtimeState.VrComfortSignals);
+                globals.VrComfortMotion = SanitizeVrComfortMotion(runtimeState.VrComfortMotion);
                 if (_hasBrownoutGlobals && BrownoutGlobalsEqual(in _lastBrownoutGlobals, in globals))
                 {
                     return _brownoutGlobalsBuffer != null && _brownoutGlobalsBuffer.IsValid();
@@ -601,31 +603,34 @@ namespace Hecton8.Visor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Vector4 SanitizeVrComfortSignals(Vector4 value)
         {
-            return new Vector4(
-                Sanitize01(value.x),
-                Sanitize01(value.y),
-                Sanitize01(value.z),
-                Sanitize01(value.w));
+            Vector4 result = default;
+            result.x = Sanitize01(value.x);
+            result.y = Sanitize01(value.y);
+            result.z = Sanitize01(value.z);
+            result.w = Sanitize01(value.w);
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Vector4 SanitizeVrComfortMotion(Vector4 value)
         {
-            return new Vector4(
-                math.isfinite(value.x) ? math.clamp(value.x, -1f, 1f) : 0f,
-                math.isfinite(value.y) ? math.clamp(value.y, -1f, 1f) : 0f,
-                Sanitize01(value.z),
-                Sanitize01(value.w));
+            Vector4 result = default;
+            result.x = math.isfinite(value.x) ? math.clamp(value.x, -1f, 1f) : 0f;
+            result.y = math.isfinite(value.y) ? math.clamp(value.y, -1f, 1f) : 0f;
+            result.z = Sanitize01(value.z);
+            result.w = Sanitize01(value.w);
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Vector4 SanitizeVrSomaticComfortState(Vector4 value)
         {
-            return new Vector4(
-                Sanitize01(value.x),
-                Sanitize01(value.y),
-                math.isfinite(value.z) ? math.max(1f, value.z) : 1f,
-                Sanitize01(value.w));
+            Vector4 result = default;
+            result.x = Sanitize01(value.x);
+            result.y = Sanitize01(value.y);
+            result.z = math.isfinite(value.z) ? math.max(1f, value.z) : 1f;
+            result.w = Sanitize01(value.w);
+            return result;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

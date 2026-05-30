@@ -1,0 +1,212 @@
+{
+  "agent": "1401",
+  "generatedAt": "2026-05-28T05:51:49.623014+04:00",
+  "evidenceClass": "STATIC_SOURCE",
+  "status": "PENDING_VERIFICATION",
+  "pluginImporters": [
+    {
+      "path": "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Save System\\Plugins\\Mono.Data.Sqlite.dll.meta",
+      "enabledOneLines": [],
+      "enabledZeroLines": [
+        17,
+        22,
+        28
+      ],
+      "isPreloadedOneLines": [],
+      "isExplicitlyReferencedOneLines": [],
+      "sha256": "e957d69cb21b64e1c8e9c7bd2d8693f6c2ffc84a54aea776e1b5ca25d760af3b"
+    },
+    {
+      "path": "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Save System\\Plugins\\sqlite3.dll.meta",
+      "enabledOneLines": [],
+      "enabledZeroLines": [
+        17,
+        22
+      ],
+      "isPreloadedOneLines": [],
+      "isExplicitlyReferencedOneLines": [],
+      "sha256": "4de9c8df3c0a4b70b820e7df1fa2afcaa84f42688f631f9f3a97564bf8fabe8d"
+    },
+    {
+      "path": "Assets\\Technie\\PhysicsCreator\\Plugins\\VHACD\\libvhacd.dll.meta",
+      "enabledOneLines": [],
+      "enabledZeroLines": [
+        14,
+        19
+      ],
+      "isPreloadedOneLines": [],
+      "isExplicitlyReferencedOneLines": [],
+      "sha256": "fafd72b094951b450ff0505e2d4248fca6f5e809f76057bcc71e259709a73d6d"
+    }
+  ],
+  "asmdefs": [
+    {
+      "path": "Assets\\Candice AI for Games\\Scripts\\CandiceAIforGames.Runtime.asmdef",
+      "exists": true,
+      "name": "CandiceAIforGames.Runtime",
+      "autoReferenced": false,
+      "overrideReferences": false,
+      "references": [],
+      "includePlatforms": [],
+      "excludePlatforms": [],
+      "sha256": "c1d72eed1fb488f01275b7b6efd8f3c142d718f13a387a5ed4deead0c4655218"
+    },
+    {
+      "path": "Assets\\Candice AI for Games\\Scripts\\Editor\\CandiceAIforGames.Editor.asmdef",
+      "exists": true,
+      "name": "CandiceAIforGames.Editor",
+      "autoReferenced": false,
+      "overrideReferences": false,
+      "references": [
+        "CandiceAIforGames.Runtime"
+      ],
+      "includePlatforms": [
+        "Editor"
+      ],
+      "excludePlatforms": [],
+      "sha256": "c09789d77e0895ccb52f7c5f7a8bf891b9a74d9bbee45686dcecb161842c62df"
+    },
+    {
+      "path": "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostors.Runtime.asmdef",
+      "exists": true,
+      "name": "AmplifyImpostors.Runtime",
+      "autoReferenced": false,
+      "overrideReferences": false,
+      "references": [],
+      "includePlatforms": [],
+      "excludePlatforms": [],
+      "sha256": "a581cbf08fc7848ef9519d9f86458ea320780b6c0e50dfab6640412e37a55ad2"
+    },
+    {
+      "path": "Assets\\AmplifyImpostors\\Plugins\\Editor\\AmplifyImpostors.Editor.asmdef",
+      "exists": true,
+      "name": "AmplifyImpostors.Editor",
+      "autoReferenced": false,
+      "overrideReferences": false,
+      "references": [
+        "GUID:a1a7cacb6cec073439a2b2c1849d773b"
+      ],
+      "includePlatforms": [
+        "Editor"
+      ],
+      "excludePlatforms": [],
+      "sha256": "87d63fce5586ab9c684069a97ad3d1aebf75c5df4111f3142007083c6ebbc8f0"
+    },
+    {
+      "path": "Assets\\Technie\\PhysicsCreator\\Scripts\\TechniePhysicsCreator.asmdef",
+      "exists": true,
+      "name": "TechniePhysicsCreator",
+      "autoReferenced": false,
+      "overrideReferences": false,
+      "references": [],
+      "includePlatforms": [],
+      "excludePlatforms": [],
+      "sha256": "259cfed441de8c00dd8bc2061718f78aee015bb25e690e3a0ab01a2f38a6dbcb"
+    },
+    {
+      "path": "Assets\\GPUInstancer\\GPUInstancer.asmdef",
+      "exists": true,
+      "name": "GPUInstancer",
+      "autoReferenced": true,
+      "overrideReferences": false,
+      "references": [
+        "GUID:15fc0a57446b3144c949da3e2b9737a9",
+        "GUID:2665a8d13d1b3f18800f46e256720795"
+      ],
+      "includePlatforms": [],
+      "excludePlatforms": [],
+      "sha256": "fc3d306e5cfc6e31cb0932809e0d5c6985ea8f847582e98081858db2c2917fc4"
+    },
+    {
+      "path": "Assets\\GPUInstancer\\Scripts\\Editor\\GPUInstancer.Editor.asmdef",
+      "exists": true,
+      "name": "GPUInstancer.Editor",
+      "autoReferenced": true,
+      "overrideReferences": false,
+      "references": [
+        "GUID:74b7ab95492e74e49804395faecc2951",
+        "GUID:15fc0a57446b3144c949da3e2b9737a9",
+        "GUID:2665a8d13d1b3f18800f46e256720795"
+      ],
+      "includePlatforms": [
+        "Editor"
+      ],
+      "excludePlatforms": [],
+      "sha256": "15ed6c247f2fba3caae1b807369ffe4bf7e9a75c0386774fa5117ab77249f013"
+    },
+    {
+      "path": "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\DarkTonic.MasterAudio.Runtime.asmdef",
+      "exists": true,
+      "name": "DarkTonic.MasterAudio.Runtime",
+      "autoReferenced": false,
+      "overrideReferences": false,
+      "references": [],
+      "includePlatforms": [],
+      "excludePlatforms": [],
+      "sha256": "e3115de00763e2d4360a84ad526e560c1525414e375ba350a30e0f4d43b455e7"
+    },
+    {
+      "path": "Assets\\Plugins\\DarkTonic\\MasterAudio\\ExampleScenes\\Scripts\\DarkTonic.MasterAudio.Examples.asmdef",
+      "exists": true,
+      "name": "DarkTonic.MasterAudio.Examples",
+      "autoReferenced": false,
+      "overrideReferences": false,
+      "references": [
+        "DarkTonic.MasterAudio.Runtime"
+      ],
+      "includePlatforms": [],
+      "excludePlatforms": [],
+      "sha256": "fa754d488ad0ca7df051ae2664c65284abc96899be8cfea0b2ae37dc5292c856"
+    },
+    {
+      "path": "Assets\\Plugins\\Editor\\DarkTonic\\MasterAudio\\DarkTonic.MasterAudio.Editor.asmdef",
+      "exists": true,
+      "name": "DarkTonic.MasterAudio.Editor",
+      "autoReferenced": false,
+      "overrideReferences": false,
+      "references": [
+        "DarkTonic.MasterAudio.Runtime"
+      ],
+      "includePlatforms": [
+        "Editor"
+      ],
+      "excludePlatforms": [],
+      "sha256": "a043eb72554540044af63be1f31d7e00ec904986f7e98cfbb99e3ccbe502a804"
+    },
+    {
+      "path": "Assets\\Plugins\\Editor\\RelationsInspector\\RelationsInspector.Editor.asmdef",
+      "exists": true,
+      "name": "RelationsInspector.Editor",
+      "autoReferenced": false,
+      "overrideReferences": false,
+      "references": [
+        "DarkTonic.MasterAudio.Runtime"
+      ],
+      "includePlatforms": [
+        "Editor"
+      ],
+      "excludePlatforms": [],
+      "sha256": "1d181594895b7e15bfe1c3926197f8078acc3aa8ece3e954c955918b541cf2c5"
+    }
+  ],
+  "findings": [
+    {
+      "severity": "PATCHED",
+      "path": "Assets\\Technie\\PhysicsCreator\\Plugins\\VHACD\\libvhacd.dll.meta",
+      "line": 14,
+      "issue": "Native VHACD DLL was enabled for Any platform; now enabledOneLines is empty."
+    },
+    {
+      "severity": "ACCEPTABLE_RESIDUAL",
+      "path": "Assets\\GPUInstancer\\GPUInstancer.asmdef",
+      "line": 12,
+      "issue": "autoReferenced remains true because first-party Hecton8 asmdefs intentionally reference GPUInstancer; changing it blindly risks active scatter route."
+    },
+    {
+      "severity": "EXTERNAL_UNITY_IMPORT_PENDING",
+      "path": "Generated csproj files",
+      "line": 0,
+      "issue": "Candice and MasterAudio dedicated csproj files remain absent until Unity imports/regenerates asmdefs."
+    }
+  ]
+}

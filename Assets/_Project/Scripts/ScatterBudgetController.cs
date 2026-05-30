@@ -53,9 +53,6 @@ namespace Hecton8.World
         [SerializeField] private BiomeSamplerCache biomeSamplerCache;
         [SerializeField] private WorldChunkStreamingProfile chunkStreamingProfile;
 
-        [Header("Runtime Auto Resolve")]
-        [SerializeField, Min(0f)] private float autoResolveRetryInterval = 1f;
-
         [Header("Depth Thresholds")]
         [SerializeField] private float midDepthStart = 60f;
         [SerializeField] private float deepDepthStart = 180f;
@@ -107,12 +104,13 @@ namespace Hecton8.World
         private float _zoneSpawnScale = 1f;
         private float _zoneColliderRadiusScale = 1f;
         private float _zoneColliderOpsScale = 1f;
-        private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
         private float _lastAppliedDepth = float.NaN;
         private float _lastAppliedQualityWeight = -1f;
         private float _cachedGlobalQualityWeight = 1f;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private HectonPlayerMovement _playerMovement;
+        private bool _proximityColliderListenerRegistered;
+        private bool _biomeSamplerListenerRegistered;
 
         private void Reset()
         {
@@ -150,8 +148,7 @@ namespace Hecton8.World
         private void Awake()
         {
             PublishActiveRuntimeInstance();
-            _playerRuntimeContext = GlobalRegistry.Player;
-            ResolveReferences();
+            RefreshColdReferences(force: true);
             ApplyChunkProfileDefaults();
             ClampProfiles();
             UpdateDiagnostics();
@@ -162,6 +159,8 @@ namespace Hecton8.World
             if (Application.isPlaying)
                 GlobalRegistry.TryRegisterHotSwapListener(this);
 
+            RegisterRuntimeDependencyListeners();
+            RefreshColdReferences(force: false);
             TryRegister();
         }
 
@@ -175,12 +174,14 @@ namespace Hecton8.World
         private void OnDisable()
         {
             TryUnregister();
+            UnregisterRuntimeDependencyListeners();
             GlobalRegistry.TryUnregisterHotSwapListener(this);
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            UnregisterRuntimeDependencyListeners();
             GlobalRegistry.TryUnregisterHotSwapListener(this);
 
             if (ActiveRuntimeInstance == this)
@@ -216,12 +217,36 @@ namespace Hecton8.World
 
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
+                IPlayerRuntimeContext previousContext = previousService as IPlayerRuntimeContext;
+                if (previousContext != null && ReferenceEquals(playerTransform, previousContext.PlayerTransform))
+                    playerTransform = null;
+
                 _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                 if (_playerRuntimeContext == null)
                 {
                     playerTransform = null;
                     _playerMovement = null;
                 }
+                else
+                {
+                    RefreshPlayerFromCachedContext();
+                }
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.MapMagicRuntime)
+            {
+                if (previousService != null && ReferenceEquals(mapMagicBridge, previousService))
+                    mapMagicBridge = null;
+
+                if (currentService is MapMagicBridge currentMapMagic)
+                    mapMagicBridge = currentMapMagic;
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.ScavengePopulatorRuntime)
+            {
+                if (previousService != null && ReferenceEquals(scavengePopulator, previousService))
+                    scavengePopulator = null;
+
+                if (currentService is ScavengePopulator currentScavenge)
+                    scavengePopulator = currentScavenge;
             }
         }
 
@@ -350,7 +375,7 @@ namespace Hecton8.World
 
         private void ApplyCurrentBudget(bool force)
         {
-            ResolveReferences();
+            RefreshPlayerFromCachedContext();
             ApplyChunkProfileDefaults();
             ClampProfiles();
 
@@ -491,42 +516,84 @@ namespace Hecton8.World
             }
         }
 
-        private void ResolveReferences()
+        private void RefreshColdReferences(bool force)
         {
-            if (playerTransform != null &&
-                mapMagicBridge != null &&
-                scavengePopulator != null &&
-                proximityColliderSystem != null &&
-                biomeSamplerCache != null)
-                return;
+            if (force || _playerRuntimeContext == null)
+                _playerRuntimeContext = GlobalRegistry.Player;
 
-            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
-            if (now < _nextAutoResolveAttemptTime)
-                return;
+            RefreshPlayerFromCachedContext();
 
-            _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
+            if (force || mapMagicBridge == null)
+                mapMagicBridge = GlobalRegistry.MapMagic;
 
-            IPlayerRuntimeContext playerContext = _playerRuntimeContext ?? PlayerRuntimeContextService.ActiveRuntimeContext;
-            if (playerContext != null)
+            if (force || scavengePopulator == null)
+                scavengePopulator = GlobalRegistry.ScavengePopulator;
+
+            if (force || proximityColliderSystem == null)
+                proximityColliderSystem = ProximityColliderSystem.ActiveRuntimeInstance;
+
+            if (force || biomeSamplerCache == null)
+                biomeSamplerCache = BiomeSamplerCache.ActiveRuntimeInstance;
+        }
+
+        private void RefreshPlayerFromCachedContext()
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null)
             {
-                _playerRuntimeContext = playerContext;
-                if (playerTransform == null)
-                    playerTransform = playerContext.PlayerTransform;
-                if (_playerMovement == null)
-                    _playerMovement = playerContext.PlayerMovement;
+                playerTransform = null;
+                _playerMovement = null;
+                return;
             }
 
-#if UNITY_EDITOR
-            if (playerTransform == null && !Application.isPlaying)
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
-#endif
+            if (playerTransform == null && playerContext.PlayerTransform != null)
+                playerTransform = playerContext.PlayerTransform;
+
+            if (_playerMovement == null && playerContext.PlayerMovement != null)
+                _playerMovement = playerContext.PlayerMovement;
+
             if (playerTransform == null)
                 _playerMovement = null;
+        }
 
-            WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
-            WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref scavengePopulator);
-            WorldRuntimeReferenceUtility.TryResolveProximityColliderSystem(ref proximityColliderSystem);
-            WorldRuntimeReferenceUtility.TryResolveBiomeSamplerCache(ref biomeSamplerCache);
+        private void RegisterRuntimeDependencyListeners()
+        {
+            if (!_proximityColliderListenerRegistered)
+            {
+                ProximityColliderSystem.ActiveRuntimeInstanceChanged += HandleProximityColliderSystemChanged;
+                _proximityColliderListenerRegistered = true;
+            }
+
+            if (!_biomeSamplerListenerRegistered)
+            {
+                BiomeSamplerCache.ActiveRuntimeInstanceChanged += HandleBiomeSamplerCacheChanged;
+                _biomeSamplerListenerRegistered = true;
+            }
+        }
+
+        private void UnregisterRuntimeDependencyListeners()
+        {
+            if (_proximityColliderListenerRegistered)
+            {
+                ProximityColliderSystem.ActiveRuntimeInstanceChanged -= HandleProximityColliderSystemChanged;
+                _proximityColliderListenerRegistered = false;
+            }
+
+            if (_biomeSamplerListenerRegistered)
+            {
+                BiomeSamplerCache.ActiveRuntimeInstanceChanged -= HandleBiomeSamplerCacheChanged;
+                _biomeSamplerListenerRegistered = false;
+            }
+        }
+
+        private void HandleProximityColliderSystemChanged(ProximityColliderSystem current)
+        {
+            proximityColliderSystem = current;
+        }
+
+        private void HandleBiomeSamplerCacheChanged(BiomeSamplerCache current)
+        {
+            biomeSamplerCache = current;
         }
 
         private bool TryResolveCurrentDepth(out float depth)

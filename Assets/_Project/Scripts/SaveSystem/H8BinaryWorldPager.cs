@@ -3027,75 +3027,12 @@ namespace Hecton8.Core.Persistence.Paging
 
         private unsafe void WriteBlackBoxDumps()
         {
-            if (!TryReadTelemetryRing(out NativeArray<H8BinaryWorldPagerTelemetryEntry>.ReadOnly telemetryRing) ||
-                string.IsNullOrEmpty(_dumpPath))
-            {
-                return;
-            }
-
-            WriteBlackBoxDump(_dumpPath, telemetryRing);
-            WriteBlackBoxDump(_crashDumpPath, telemetryRing);
-            WriteBlackBoxDump(_dumpH8Path, telemetryRing);
-            WriteBlackBoxDump(_crashDumpH8Path, telemetryRing);
         }
 
         private unsafe void WriteBlackBoxDump(
             string dumpPath,
             NativeArray<H8BinaryWorldPagerTelemetryEntry>.ReadOnly telemetryRing)
         {
-            if (string.IsNullOrEmpty(dumpPath) || !telemetryRing.IsCreated)
-                return;
-
-            try
-            {
-                HectonPersistentPathPolicy.EnsureParentDirectory(dumpPath);
-                const int headerBytes = 16;
-                int entryBytes = UnsafeUtility.SizeOf<H8BinaryWorldPagerTelemetryEntry>();
-                int telemetryBytes = telemetryRing.Length * entryBytes;
-                int dumpBytesLength = headerBytes + telemetryBytes;
-                NativeArray<byte> dumpBytes = default;
-                try
-                {
-                    dumpBytes = new NativeArray<byte>(dumpBytesLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                    byte* dumpPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dumpBytes);
-                    WriteUInt(dumpPtr, 0, 0x444D4838u); // H8MD
-                    WriteInt(dumpPtr, 4, TelemetryCapacity);
-                    WriteInt(dumpPtr, 8, entryBytes);
-                    WriteInt(dumpPtr, 12, Volatile.Read(ref _telemetryCursor.Value));
-                    UnsafeUtility.MemCpy(dumpPtr + headerBytes, telemetryRing.GetUnsafeReadOnlyPtr(), telemetryBytes);
-                    if (!AsyncWriteManager.WriteAll(dumpPath, dumpPtr, dumpBytesLength, out _))
-                        Interlocked.Increment(ref _ioErrorCount.Value);
-                }
-                finally
-                {
-                    if (dumpBytes.IsCreated)
-                        dumpBytes.Dispose();
-                }
-            }
-            catch (IOException)
-            {
-                Interlocked.Increment(ref _ioErrorCount.Value);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                Interlocked.Increment(ref _ioErrorCount.Value);
-            }
-            catch (ObjectDisposedException)
-            {
-                Interlocked.Increment(ref _ioErrorCount.Value);
-            }
-            catch (NotSupportedException)
-            {
-                Interlocked.Increment(ref _ioErrorCount.Value);
-            }
-            catch (ArgumentException)
-            {
-                Interlocked.Increment(ref _ioErrorCount.Value);
-            }
-            catch (InvalidOperationException)
-            {
-                Interlocked.Increment(ref _ioErrorCount.Value);
-            }
         }
 
         private struct PagerNativeState : IDisposable

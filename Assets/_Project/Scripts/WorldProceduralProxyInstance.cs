@@ -122,6 +122,7 @@ namespace Hecton8.World
         public float CanyonSignal => canyonSignal;
         public float CompositionPotential => compositionPotential;
         public bool IsGeneratedGeologyApplied => generatedGeologyApplied;
+        public Transform CachedGeneratedGeologyRoot => _generatedGeologyRoot;
 
         public static bool TryGetCached(GameObject instance, out WorldProceduralProxyInstance proxy)
         {
@@ -139,6 +140,7 @@ namespace Hecton8.World
         private void Awake()
         {
             s_instanceCache[gameObject] = this;
+            PrepareGeneratedGeologyRuntimeCold();
             RefreshRuntimeComponentCachesCold();
             MarkOptimizationRegistrationDirty(componentTopologyChanged: false);
         }
@@ -146,6 +148,7 @@ namespace Hecton8.World
         private void OnEnable()
         {
             s_instanceCache[gameObject] = this;
+            PrepareGeneratedGeologyRuntimeCold();
             MarkOptimizationRegistrationDirty(componentTopologyChanged: false);
         }
 
@@ -260,6 +263,8 @@ namespace Hecton8.World
             sourceWaterPattern = "None";
             sourceBiomeContext = "None";
             usesGenerativeGeology = family != null && family.UsesGenerativeGeology();
+            if (!Application.isPlaying)
+                PrepareGeneratedGeologyRuntimeCold();
             collisionEnabled = true;
             geologyProfileId = family != null && family.generativeGeologyProfile != null ? family.generativeGeologyProfile.profileId : "None";
             geologyArchetype = ResolveGeologyArchetypeLabel(family);
@@ -271,6 +276,15 @@ namespace Hecton8.World
             macroZoneX = 0;
             macroZoneZ = 0;
             MarkOptimizationRegistrationDirty(componentTopologyChanged: true);
+        }
+
+        private void PrepareGeneratedGeologyRuntimeCold()
+        {
+            if (!usesGenerativeGeology || _generatedGeologyRoot != null)
+                return;
+
+            if (WorldGenerativeGeologyService.TryPrepareRuntimeShellCold(gameObject, out Transform generatedRoot))
+                _generatedGeologyRoot = generatedRoot;
         }
 
         public void ConfigureScatter(
@@ -342,6 +356,8 @@ namespace Hecton8.World
             sourceWaterPattern = string.IsNullOrWhiteSpace(configuredWaterPattern) ? "None" : configuredWaterPattern;
             sourceBiomeContext = string.IsNullOrWhiteSpace(configuredBiomeContext) ? "None" : configuredBiomeContext;
             usesGenerativeGeology = family != null && family.UsesGenerativeGeology();
+            if (!Application.isPlaying)
+                PrepareGeneratedGeologyRuntimeCold();
             collisionEnabled = configuredCollisionEnabled;
             geologyProfileId = family != null && family.generativeGeologyProfile != null ? family.generativeGeologyProfile.profileId : "None";
             geologyArchetype = ResolveGeologyArchetypeLabel(family);

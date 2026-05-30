@@ -286,6 +286,7 @@ namespace Hecton8.Core.Determinism
         private const int TelemetryEntryBytes = 64;
         private const int MasterHashHistoryEntryBytes = 32;
         private const int SignalPayloadBytes = 32;
+        private const int LockstepBlackBoxHeaderBytes = 32;
         private const int LockstepSnapshotSignalCapacity = 16;
         private const int SystemGlitchSignalCapacity = 8;
         private const int MaxHashElements = 8192;
@@ -293,12 +294,15 @@ namespace Hecton8.Core.Determinism
         private const int MaxGhostReplayBlocks = 128;
         private const int ReplayBlockBytes = ReplayHeaderBytes + (ReplayInputFrameCapacity * ReplayInputBytes);
         private const ulong ReplayMagic = 0x48384C4F434B5354ul;
+        private const ulong LockstepBlackBoxMagic = 0x504D5544534C3848ul;
         private const uint ReplayVersion = 2u;
+        private const uint LockstepBlackBoxVersion = 1u;
         private const uint StablePlayerId = 0x504C5952u;
         private const uint ReasonDesyncHash = 0x4453594Eu;
         private const uint ReasonGhostReplayHash = 0x47525350u;
         private const uint LockstepSnapshotLaneHash = 0x4C535348u;
         private const uint SystemGlitchLaneHash = 0x5359474Cu;
+        private const string LockstepBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1403_LOCKSTEP_STATE_VALIDATOR.bin";
         private const uint TelemetryFlagHashExecuted = 1u << 0;
         private const uint TelemetryFlagMissingData = 1u << 1;
         private const uint TelemetryFlagTruncated = 1u << 2;
@@ -1440,7 +1444,92 @@ namespace Hecton8.Core.Determinism
             if (!TryGetReadVaultBuffer(BufferID.LockstepTelemetryRing, out NativeArray<LockstepTelemetryEntry>.ReadOnly telemetryRing))
                 return;
 
-            _ = telemetryRing.Length;
+            int entryCount = math.min(TelemetryFrameCapacity, telemetryRing.Length);
+            if (entryCount <= 0)
+                return;
+
+            NativeArray<byte> payload = default;
+            const string dumpPayloadLabel = "lockstepStateValidatorBlackBoxDumpPayload";
+            try
+            {
+                int byteCount = LockstepBlackBoxHeaderBytes + (entryCount * TelemetryEntryBytes);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(LockstepStateValidator),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                int cursor = 0;
+                ulong masterHash = ((ulong)_lastMasterHashHi << 32) | _lastMasterHashLo;
+
+                WriteUInt64LittleEndian(payload, ref cursor, LockstepBlackBoxMagic);
+                WriteUInt32LittleEndian(payload, ref cursor, LockstepBlackBoxVersion);
+                WriteUInt32LittleEndian(payload, ref cursor, (uint)entryCount);
+                WriteUInt32LittleEndian(payload, ref cursor, TelemetryEntryBytes);
+                WriteUInt32LittleEndian(payload, ref cursor, (uint)_telemetryWriteIndex);
+                WriteUInt64LittleEndian(payload, ref cursor, masterHash);
+
+                int readStart = _telemetryWriteIndex;
+                if ((uint)readStart >= (uint)entryCount)
+                    readStart = 0;
+
+                for (int i = 0; i < entryCount; i++)
+                {
+                    int index = readStart + i;
+                    if (index >= entryCount)
+                        index -= entryCount;
+
+                    WriteLockstepTelemetryEntry(payload, ref cursor, telemetryRing[index]);
+                }
+
+                NativeFaultDumpWriter.TryWriteAll(LockstepBlackBoxDumpRelativePath, payload, cursor);
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(ref payload, nameof(LockstepStateValidator), dumpPayloadLabel);
+            }
+        }
+
+        private static void WriteLockstepTelemetryEntry(NativeArray<byte> target, ref int cursor, in LockstepTelemetryEntry entry)
+        {
+            WriteUInt32LittleEndian(target, ref cursor, entry.Frame);
+            WriteUInt32LittleEndian(target, ref cursor, entry.HashLo);
+            WriteUInt32LittleEndian(target, ref cursor, entry.HashHi);
+            WriteUInt32LittleEndian(target, ref cursor, entry.RigidbodyHash);
+            WriteUInt32LittleEndian(target, ref cursor, entry.PlayerHash);
+            WriteUInt32LittleEndian(target, ref cursor, entry.RoomHash);
+            WriteUInt32LittleEndian(target, ref cursor, entry.EntityHash);
+            WriteUInt32LittleEndian(target, ref cursor, entry.Flags);
+            WriteUInt32LittleEndian(target, ref cursor, entry.RigidbodyCount);
+            WriteUInt32LittleEndian(target, ref cursor, entry.PlayerCount);
+            WriteUInt32LittleEndian(target, ref cursor, entry.RoomCount);
+            WriteUInt32LittleEndian(target, ref cursor, entry.EntityCount);
+            WriteUInt32LittleEndian(target, ref cursor, entry.MissingMask);
+            WriteUInt32LittleEndian(target, ref cursor, entry.NonFiniteMask);
+            WriteUInt32LittleEndian(target, ref cursor, entry.ReplayBlock);
+            WriteUInt32LittleEndian(target, ref cursor, entry.Reserved0);
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> target, ref int cursor, ulong value)
+        {
+            target[cursor++] = (byte)value;
+            target[cursor++] = (byte)(value >> 8);
+            target[cursor++] = (byte)(value >> 16);
+            target[cursor++] = (byte)(value >> 24);
+            target[cursor++] = (byte)(value >> 32);
+            target[cursor++] = (byte)(value >> 40);
+            target[cursor++] = (byte)(value >> 48);
+            target[cursor++] = (byte)(value >> 56);
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> target, ref int cursor, uint value)
+        {
+            target[cursor++] = (byte)value;
+            target[cursor++] = (byte)(value >> 8);
+            target[cursor++] = (byte)(value >> 16);
+            target[cursor++] = (byte)(value >> 24);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

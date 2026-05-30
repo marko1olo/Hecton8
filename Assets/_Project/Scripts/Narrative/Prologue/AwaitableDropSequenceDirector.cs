@@ -6,6 +6,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -776,38 +777,82 @@ namespace Hecton8.Narrative.Prologue
                 return;
             }
 
-            _blackBoxDumped = true;
+            NativeArray<byte> payload = default;
             try
             {
                 string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-                string folder = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(folder);
-                string path = Path.Combine(folder, DumpFileName);
+                string path = Path.Combine(projectRoot, "Docs", "AgentLogs", DumpFileName);
+                const int headerBytes = 12;
+                const int rowBytes = 28;
+                int length = math.min(TelemetryCapacity, blackBox.Length);
+                int byteCount = headerBytes + length * rowBytes;
+                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 
-                using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
+                unsafe
                 {
-                    writer.Write(SourceHash);
-                    writer.Write(TelemetryCapacity);
-                    writer.Write(_blackBoxCursor);
-                    int length = math.min(TelemetryCapacity, blackBox.Length);
+                    byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    WriteUInt(bytes, 0, SourceHash);
+                    WriteInt(bytes, 4, TelemetryCapacity);
+                    WriteInt(bytes, 8, _blackBoxCursor);
+                    int writeCursor = headerBytes;
                     for (int i = 0; i < length; i++)
                     {
                         int index = (_blackBoxCursor + i) % length;
                         PrologueSequenceTelemetryEntry entry = blackBox[index];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.UniverseSpeedMetersPerSecond);
-                        writer.Write(entry.PlanetDistanceMeters);
-                        writer.Write(entry.Sequence);
-                        writer.Write(entry.Stage);
-                        writer.Write(entry.Flags);
+                        WriteUInt(bytes, writeCursor, entry.Frame);
+                        WriteUInt(bytes, writeCursor + 4, entry.StateHash);
+                        WriteDouble(bytes, writeCursor + 8, entry.UniverseSpeedMetersPerSecond);
+                        WriteDouble(bytes, writeCursor + 16, entry.PlanetDistanceMeters);
+                        WriteUShort(bytes, writeCursor + 24, entry.Sequence);
+                        bytes[writeCursor + 26] = entry.Stage;
+                        bytes[writeCursor + 27] = entry.Flags;
+                        writeCursor += rowBytes;
                     }
                 }
+
+                _blackBoxDumped = NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
             }
             catch (Exception)
             {
                 TryPushTelemetryNoThrow(PrologueStage.Faulted, DumpFailedHash, 1);
             }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
+            }
+        }
+
+        private static unsafe void WriteUInt(byte* data, int offset, uint value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+            data[offset + 2] = (byte)(value >> 16);
+            data[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static unsafe void WriteInt(byte* data, int offset, int value)
+        {
+            WriteUInt(data, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUShort(byte* data, int offset, ushort value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+        }
+
+        private static unsafe void WriteDouble(byte* data, int offset, double value)
+        {
+            ulong bits = unchecked((ulong)BitConverter.DoubleToInt64Bits(value));
+            data[offset] = (byte)bits;
+            data[offset + 1] = (byte)(bits >> 8);
+            data[offset + 2] = (byte)(bits >> 16);
+            data[offset + 3] = (byte)(bits >> 24);
+            data[offset + 4] = (byte)(bits >> 32);
+            data[offset + 5] = (byte)(bits >> 40);
+            data[offset + 6] = (byte)(bits >> 48);
+            data[offset + 7] = (byte)(bits >> 56);
         }
 
         private IDataVault CacheDataVaultCold()

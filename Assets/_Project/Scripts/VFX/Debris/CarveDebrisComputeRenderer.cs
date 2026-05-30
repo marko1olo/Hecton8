@@ -2194,33 +2194,51 @@ namespace Hecton8.VFX.Debris
             if (_blackBoxDumped || !blackBox.IsCreated)
                 return;
 
-            _blackBoxDumped = true;
-            string path = Path.Combine(Application.dataPath, "..", DumpPath);
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
+            NativeArray<byte> payload = default;
             int entrySize = UnsafeUtility.SizeOf<CarveDebrisTelemetryEntry>();
-            Span<byte> header = stackalloc byte[sizeof(uint) * 5];
-            WriteUInt32LittleEndian(header, 0, DebrisBlackBoxDumpMagic);
-            WriteUInt32LittleEndian(header, 4, (uint)blackBox.Length);
-            WriteUInt32LittleEndian(header, 8, (uint)entrySize);
-            WriteUInt32LittleEndian(header, 12, (uint)_blackBoxCursor);
-            WriteUInt32LittleEndian(header, 16, reasonFlags);
-            void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox);
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            int byteCount = sizeof(uint) * 5 + blackBox.Length * entrySize;
+            try
             {
-                stream.Write(header);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(CarveDebrisComputeRenderer),
+                    "CarveDebrisTelemetryDumpPayload");
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteUInt32LittleEndian(target, 0, DebrisBlackBoxDumpMagic);
+                WriteUInt32LittleEndian(target, 4, (uint)blackBox.Length);
+                WriteUInt32LittleEndian(target, 8, (uint)entrySize);
+                WriteUInt32LittleEndian(target, 12, (uint)_blackBoxCursor);
+                WriteUInt32LittleEndian(target, 16, reasonFlags);
+                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox);
+                int offset = sizeof(uint) * 5;
                 for (int i = 0; i < blackBox.Length; i++)
                 {
                     int index = (_blackBoxCursor + i) % blackBox.Length;
                     void* entry = (byte*)source + (entrySize * index);
-                    stream.Write(new ReadOnlySpan<byte>(entry, entrySize));
+                    UnsafeUtility.MemCpy(target + offset, entry, entrySize);
+                    offset += entrySize;
                 }
+
+                _blackBoxDumped = NativeFaultDumpWriter.TryWriteAll(DumpPath, payload, byteCount);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(CarveDebrisComputeRenderer),
+                    "CarveDebrisTelemetryDumpPayload");
             }
         }
 
         private static void WriteUInt32LittleEndian(Span<byte> buffer, int offset, uint value)
+        {
+            buffer[offset] = (byte)value;
+            buffer[offset + 1] = (byte)(value >> 8);
+            buffer[offset + 2] = (byte)(value >> 16);
+            buffer[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* buffer, int offset, uint value)
         {
             buffer[offset] = (byte)value;
             buffer[offset + 1] = (byte)(value >> 8);

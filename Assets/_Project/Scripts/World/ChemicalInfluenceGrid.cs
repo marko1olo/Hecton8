@@ -2123,44 +2123,35 @@ namespace Hecton8.World
 
             string root = ResolveProjectRoot();
             string path = Path.Combine(root, DumpRelativePath);
+            NativeArray<byte> payload = default;
             try
             {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                int rowBytes = UnsafeUtility.SizeOf<ChemicalTelemetryEntry>();
+                int headerBytes = 20;
+                int totalBytes = headerBytes + ring.Length * rowBytes;
+                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                Span<byte> bytes = new Span<byte>(payload.GetUnsafePtr(), totalBytes);
+                WriteUInt64LittleEndian(bytes, 0, ChemicalDumpMagic);
+                WriteInt32LittleEndian(bytes, 8, 1);
+                WriteInt32LittleEndian(bytes, 12, ring.Length);
+                WriteInt32LittleEndian(bytes, 16, rowBytes);
+                int start = cursor.IsCreated && cursor.Length > 0 ? cursor[0] : 0;
+                if ((uint)start >= (uint)ring.Length)
+                    start = 0;
 
-                using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
+                int writeOffset = headerBytes;
+                for (int i = 0; i < ring.Length; i++)
                 {
-                    writer.Write(ChemicalDumpMagic);
-                    writer.Write(1);
-                    writer.Write(ring.Length);
-                    writer.Write(UnsafeUtility.SizeOf<ChemicalTelemetryEntry>());
-                    int start = cursor.IsCreated && cursor.Length > 0 ? cursor[0] : 0;
-                    if ((uint)start >= (uint)ring.Length)
-                        start = 0;
+                    int index = start + i;
+                    if (index >= ring.Length)
+                        index -= ring.Length;
 
-                    for (int i = 0; i < ring.Length; i++)
-                    {
-                        int index = start + i;
-                        if (index >= ring.Length)
-                            index -= ring.Length;
-
-                        ChemicalTelemetryEntry entry = ring[index];
-                        writer.Write(entry.GridOriginAup.x);
-                        writer.Write(entry.GridOriginAup.y);
-                        writer.Write(entry.GridOriginAup.z);
-                        writer.Write(entry.MaxBlood);
-                        writer.Write(entry.SolverMicros);
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.ActiveEmitters);
-                        writer.Write(entry.MockEmitters);
-                        writer.Write(entry.Iterations);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.GlobalQualityWeight);
-                        writer.Write(entry.GridShiftManhattan);
-                    }
+                    ChemicalTelemetryEntry entry = ring[index];
+                    WriteChemicalTelemetryEntry(bytes.Slice(writeOffset, rowBytes), in entry);
+                    writeOffset += rowBytes;
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
             }
             catch (IOException)
             {
@@ -2168,6 +2159,53 @@ namespace Hecton8.World
             catch (UnauthorizedAccessException)
             {
             }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
+            }
+        }
+
+        private static void WriteChemicalTelemetryEntry(Span<byte> destination, in ChemicalTelemetryEntry entry)
+        {
+            WriteDoubleLittleEndian(destination, 0, entry.GridOriginAup.x);
+            WriteDoubleLittleEndian(destination, 8, entry.GridOriginAup.y);
+            WriteDoubleLittleEndian(destination, 16, entry.GridOriginAup.z);
+            WriteSingleLittleEndian(destination, 24, entry.MaxBlood);
+            WriteSingleLittleEndian(destination, 28, entry.SolverMicros);
+            WriteUInt32LittleEndian(destination, 32, entry.Frame);
+            WriteInt32LittleEndian(destination, 36, entry.ActiveEmitters);
+            WriteInt32LittleEndian(destination, 40, entry.MockEmitters);
+            WriteInt32LittleEndian(destination, 44, entry.Iterations);
+            WriteUInt32LittleEndian(destination, 48, entry.StateHash);
+            WriteUInt32LittleEndian(destination, 52, entry.Flags);
+            WriteSingleLittleEndian(destination, 56, entry.GlobalQualityWeight);
+            WriteInt32LittleEndian(destination, 60, entry.GridShiftManhattan);
+        }
+
+        private static void WriteDoubleLittleEndian(Span<byte> destination, int offset, double value)
+        {
+            WriteUInt64LittleEndian(destination, offset, unchecked((ulong)BitConverter.DoubleToInt64Bits(value)));
+        }
+
+        private static void WriteSingleLittleEndian(Span<byte> destination, int offset, float value)
+        {
+            WriteUInt32LittleEndian(destination, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(Span<byte> destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(Span<byte> destination, int offset, uint value)
+        {
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(offset, 4), value);
+        }
+
+        private static void WriteUInt64LittleEndian(Span<byte> destination, int offset, ulong value)
+        {
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(destination.Slice(offset, 8), value);
         }
 
         private void OnDrawGizmos()

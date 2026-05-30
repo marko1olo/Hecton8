@@ -51,6 +51,11 @@ namespace Hecton8.Visor
             return 1f - ResolveSurvivalPressure01();
         }
 
+        internal static bool HasRuntimeRenderOwner()
+        {
+            return SystemDispatcher.ActiveRuntimeInstance != null;
+        }
+
         internal static void Invalidate()
         {
             s_cachedScaler = null;

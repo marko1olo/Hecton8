@@ -1,0 +1,20 @@
+﻿{
+    "generatedAt":  "2026-05-28T05:17:39.5612557+04:00",
+    "status":  "BLOCKED_BY_CONTENTION",
+    "solutionPath":  "Hecton8.slnx",
+    "logPath":  "Docs/AgentLogs/Build_1400_Output.log",
+    "cpuLoadPercent":  100,
+    "compilerProcesses":  [
+                              {
+                                  "Id":  55080,
+                                  "ProcessName":  "dotnet",
+                                  "CPU":  469.59375,
+                                  "StartTime":  "2026-05-28T04:58:33.0068704+04:00"
+                              }
+                          ],
+    "exitCode":  -1,
+    "durationMilliseconds":  0,
+    "warnings":  null,
+    "errors":  null,
+    "message":  "BLOCKED_BY_CONTENTION: cpu=100 compilerProcessCount=1"
+}

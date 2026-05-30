@@ -210,7 +210,10 @@ namespace Hecton8.Gameplay
             bool bodyChanged = _body != body || _capsule != capsule;
             _body = body;
             _capsule = capsule;
-            _hydrodynamicKccRuntime = body != null ? body.GetComponent<HydrodynamicKccRuntime>() : null;
+            if (body != null && body.TryGetComponent(out HydrodynamicKccRuntime hydrodynamicKccRuntime))
+                _hydrodynamicKccRuntime = hydrodynamicKccRuntime;
+            else
+                _hydrodynamicKccRuntime = null;
             if (bodyChanged)
             {
                 unchecked

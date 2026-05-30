@@ -6,6 +6,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -1699,66 +1700,64 @@ namespace Hecton8.Visor
             return !vault.IsCompactionFenceActive;
         }
 
-        private void DumpBlackBoxOnce(uint reasonFlags, int blackBoxLength, int startIndex)
+        private unsafe void DumpBlackBoxOnce(uint reasonFlags, int blackBoxLength, int startIndex)
         {
             if (_blackBoxDumped || blackBoxLength <= 0)
                 return;
 
             blackBoxLength = math.min(blackBoxLength, BlackBoxFrameCount);
-            _blackBoxDumped = true;
 
+            NativeArray<byte> payload = default;
             try
             {
                 string path = Path.Combine(Application.dataPath, "..", BlackBoxDumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                int totalBytes = 20 + blackBoxLength * BlackBoxEntrySizeBytes;
+                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                Span<byte> header = new Span<byte>(payloadPtr, 20);
+                WriteBlackBoxHeader(header, reasonFlags, blackBoxLength);
+
+                int offset = 20;
+                int index = ResolveBlackBoxIndex(startIndex, blackBoxLength);
+                for (int i = 0; i < blackBoxLength; i++)
                 {
-                    Span<byte> header = stackalloc byte[20];
-                    WriteBlackBoxHeader(header, reasonFlags, blackBoxLength);
-                    stream.Write(header);
+                    if (index >= blackBoxLength)
+                        index = 0;
 
-                    Span<byte> entryBytes = stackalloc byte[BlackBoxEntrySizeBytes];
-                    int index = ResolveBlackBoxIndex(startIndex, blackBoxLength);
-                    for (int i = 0; i < blackBoxLength; i++)
-                    {
-                        if (index >= blackBoxLength)
-                            index = 0;
+                    if (!TryReadBlackBoxEntry(index, out VisorRefractionTelemetryEntry entry))
+                        return;
 
-                        if (!TryReadBlackBoxEntry(index, out VisorRefractionTelemetryEntry entry))
-                            return;
-
-                        WriteTelemetryEntry(entryBytes, in entry);
-                        stream.Write(entryBytes);
-                        index++;
-                    }
+                    Span<byte> entryBytes = new Span<byte>(payloadPtr + offset, BlackBoxEntrySizeBytes);
+                    WriteTelemetryEntry(entryBytes, in entry);
+                    offset += BlackBoxEntrySizeBytes;
+                    index++;
                 }
+
+                _blackBoxDumped = NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
             }
             catch (ObjectDisposedException)
             {
-                _blackBoxDumped = true;
             }
             catch (IOException)
             {
-                _blackBoxDumped = true;
             }
             catch (UnauthorizedAccessException)
             {
-                _blackBoxDumped = true;
             }
             catch (ArgumentException)
             {
-                _blackBoxDumped = true;
             }
             catch (InvalidOperationException)
             {
-                _blackBoxDumped = true;
             }
             catch (NotSupportedException)
             {
-                _blackBoxDumped = true;
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 

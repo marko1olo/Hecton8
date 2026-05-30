@@ -40,6 +40,10 @@ namespace Hecton8.Core
         private const uint TelemetryFlagLayoutFault = 1u << 0;
         private const uint TelemetryFlagNonFinite = 1u << 1;
         private const uint TelemetryFlagVaultUnavailable = 1u << 2;
+        private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_UBER_NOIR_RUNTIME.bin";
+        private const uint BlackBoxDumpMagic = 0x55424E38u; // 8NBU
+        private const uint BlackBoxDumpVersion = 1u;
+        private const int BlackBoxDumpHeaderBytes = 32;
 
         private static HectonUberNoirRuntimeBridge s_runtimeInstance;
 
@@ -419,10 +423,7 @@ namespace Hecton8.Core
             }
 
             _dumpedFault = true;
-            _ = reasonFlags;
-            _ = telemetryCursor;
-            _ = entryCount;
-            _ = snapshot.Length;
+            WriteBlackBoxDump(reasonFlags, telemetryCursor, entryCount, snapshot);
         }
 
         private void WriteEmptyBlackBox(uint reasonFlags)
@@ -431,7 +432,64 @@ namespace Hecton8.Core
                 return;
 
             _dumpedFault = true;
-            _ = reasonFlags;
+            WriteBlackBoxDump(reasonFlags, 0, 0, default);
+        }
+
+        private static unsafe void WriteBlackBoxDump(
+            uint reasonFlags,
+            int telemetryCursor,
+            int entryCount,
+            Span<UberNoirShaderTelemetryEntry> snapshot)
+        {
+            int entrySize = UnsafeUtility.SizeOf<UberNoirShaderTelemetryEntry>();
+            int count = entrySize == TelemetryEntrySizeBytes ? math.clamp(entryCount, 0, TelemetryCapacity) : 0;
+            int byteCount = BlackBoxDumpHeaderBytes + count * TelemetryEntrySizeBytes;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(HectonUberNoirRuntimeBridge),
+                "UberNoirBlackBoxDumpPayload");
+            try
+            {
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteUInt32LittleEndian(target, 0, BlackBoxDumpMagic);
+                WriteUInt32LittleEndian(target, 4, BlackBoxDumpVersion);
+                WriteUInt32LittleEndian(target, 8, reasonFlags);
+                WriteInt32LittleEndian(target, 12, telemetryCursor);
+                WriteInt32LittleEndian(target, 16, count);
+                WriteInt32LittleEndian(target, 20, TelemetryEntrySizeBytes);
+                WriteInt32LittleEndian(target, 24, Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
+                WriteUInt32LittleEndian(target, 28, 0u);
+
+                int offset = BlackBoxDumpHeaderBytes;
+                for (int i = 0; i < count; i++)
+                {
+                    UberNoirShaderTelemetryEntry entry = snapshot[i];
+                    UnsafeUtility.MemCpy(target + offset, &entry, TelemetryEntrySizeBytes);
+                    offset += TelemetryEntrySizeBytes;
+                }
+
+                NativeFaultDumpWriter.TryWriteAll(BlackBoxDumpPath, payload, byteCount);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HectonUberNoirRuntimeBridge),
+                    "UberNoirBlackBoxDumpPayload");
+            }
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, int offset, uint value)
+        {
+            destination[offset] = unchecked((byte)value);
+            destination[offset + 1] = unchecked((byte)(value >> 8));
+            destination[offset + 2] = unchecked((byte)(value >> 16));
+            destination[offset + 3] = unchecked((byte)(value >> 24));
         }
 
         private bool TryCopyTelemetrySnapshot(

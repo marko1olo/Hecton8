@@ -171,7 +171,15 @@ namespace Hecton8.Graphics.Materials
             VisualAgingMutationGuardBit(BufferID.VisualPressureAgingRuntime) |
             VisualAgingMutationGuardBit(BufferID.VisualPressureAgingTuning) |
             VisualAgingMutationGuardBit(BufferID.VisualPressureAgingMockTemperature) |
+            VisualAgingMutationGuardBit(BufferID.VisualPressureAgingCsvScratch) |
             VisualAgingMutationGuardBit(BufferID.UberNoirInstanceDegradation);
+
+        private static readonly ulong TelemetryDumpMutationGuardMask =
+            VisualAgingMutationGuardBit(BufferID.VisualPressureAgingTelemetryRing) |
+            VisualAgingMutationGuardBit(BufferID.VisualPressureAgingTelemetryCursor) |
+            VisualAgingMutationGuardBit(BufferID.UberNoirDegradationTelemetryRing) |
+            VisualAgingMutationGuardBit(BufferID.UberNoirDegradationTelemetryCursor) |
+            VisualAgingMutationGuardBit(BufferID.VisualPressureAgingCsvScratch);
 
         private static readonly ulong ThermalInputMutationGuardMask =
             VisualAgingMutationGuardBit(BufferID.ThermodynamicsTemperatureFrontMirror);
@@ -225,8 +233,6 @@ namespace Hecton8.Graphics.Materials
         private string _degradationCsvPath;
         private string _dumpPath;
         private string _degradationDumpPath;
-        private FileStream _dumpStream;
-        private FileStream _degradationDumpStream;
 #if UNITY_EDITOR
         private byte[] _csvManagedScratch;
 #endif
@@ -525,8 +531,8 @@ namespace Hecton8.Graphics.Materials
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             _csvPath = Path.GetFullPath(Path.Combine(projectRoot, CsvRelativePath));
             _degradationCsvPath = _csvPath;
-            _dumpPath = Path.GetFullPath(Path.Combine(projectRoot, DumpRelativePath));
-            _degradationDumpPath = Path.GetFullPath(Path.Combine(projectRoot, DegradationDumpRelativePath));
+            _dumpPath = DumpRelativePath;
+            _degradationDumpPath = DegradationDumpRelativePath;
             _preSimulationPhase = new PreSimulationPhaseSystem(this); // COLD ALLOC: phase adapter - owner: SHINOBU_219
             _simulationPhase = new SimulationPhaseSystem(this);       // COLD ALLOC: phase adapter - owner: SHINOBU_219
             _postSimulationPhase = new PostSimulationPhaseSystem(this);// COLD ALLOC: phase adapter - owner: SHINOBU_219
@@ -938,17 +944,29 @@ namespace Hecton8.Graphics.Materials
             if ((currentFaultFlags & (FlagUploadFault | FlagLayoutFault | FlagNonFinite)) != 0u &&
                 (!_dumpedFault || !_dumpedDegradationFault))
             {
-                Span<byte> telemetryDumpScratch = stackalloc byte[TelemetryDumpSnapshotBytes];
-                int telemetryDumpBytes = CopyTelemetryDumpSnapshot(vault, telemetryDumpScratch);
-                if (telemetryDumpBytes > 0)
-                {
-                    if (!_dumpedFault &&
-                        TryWriteTelemetryDumpSnapshot(telemetryDumpScratch, telemetryDumpBytes, _dumpStream, ref _dumpWriteFailureLogged))
-                        _dumpedFault = true;
+                if (!TryAcquireVisualAgingGuard(vault, TelemetryDumpMutationGuardMask))
+                    return;
 
-                    if (!_dumpedDegradationFault &&
-                        TryWriteTelemetryDumpSnapshot(telemetryDumpScratch, telemetryDumpBytes, _degradationDumpStream, ref _degradationDumpWriteFailureLogged))
-                        _dumpedDegradationFault = true;
+                try
+                {
+                    if (!IsCurrentOwnedBuffer(vault, in _csvScratchHandle, BufferID.VisualPressureAgingCsvScratch, CsvScratchBytes, out NativeArray<byte> telemetryDumpScratch))
+                        return;
+
+                    int telemetryDumpBytes = CopyTelemetryDumpSnapshot(vault, telemetryDumpScratch);
+                    if (telemetryDumpBytes > 0)
+                    {
+                        if (!_dumpedFault &&
+                            TryWriteTelemetryDumpSnapshot(_dumpPath, telemetryDumpScratch, telemetryDumpBytes, ref _dumpWriteFailureLogged))
+                            _dumpedFault = true;
+
+                        if (!_dumpedDegradationFault &&
+                            TryWriteTelemetryDumpSnapshot(_degradationDumpPath, telemetryDumpScratch, telemetryDumpBytes, ref _degradationDumpWriteFailureLogged))
+                            _dumpedDegradationFault = true;
+                    }
+                }
+                finally
+                {
+                    ReleaseVisualAgingGuard(vault, TelemetryDumpMutationGuardMask);
                 }
             }
         }
@@ -1502,67 +1520,14 @@ namespace Hecton8.Graphics.Materials
 
         private void EnsureDumpStreams()
         {
-            if (_dumpStream == null)
-                _dumpStream = OpenDumpStreamCold(_dumpPath, ref _dumpWriteFailureLogged);
-
-            if (_degradationDumpStream == null)
-                _degradationDumpStream = OpenDumpStreamCold(_degradationDumpPath, ref _degradationDumpWriteFailureLogged);
-        }
-
-        private static FileStream OpenDumpStreamCold(string path, ref bool failureLogged)
-        {
-            if (string.IsNullOrEmpty(path))
-                return null;
-
-            try
-            {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                // COLD ALLOC: pre-opened black-box dump stream. Fault path writes spans only.
-                return new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, TelemetryDumpSnapshotBytes, FileOptions.WriteThrough);
-            }
-            catch (Exception exception) when (
-                exception is IOException ||
-                exception is UnauthorizedAccessException ||
-                exception is NotSupportedException ||
-                exception is ArgumentException)
-            {
-                if (!failureLogged)
-                {
-#if UNITY_EDITOR
-                    Hecton8.Core.H8Debug.LogError("Hecton8 VisualPressureAgingRuntime failed to open black-box dump stream.");
-#endif
-                    failureLogged = true;
-                }
-
-                return null;
-            }
+            _dumpWriteFailureLogged = false;
+            _degradationDumpWriteFailureLogged = false;
         }
 
         private void ReleaseDumpStreams()
         {
-            ReleaseDumpStream(ref _degradationDumpStream);
-            ReleaseDumpStream(ref _dumpStream);
-        }
-
-        private static void ReleaseDumpStream(ref FileStream stream)
-        {
-            if (stream == null)
-                return;
-
-            try
-            {
-                stream.Dispose();
-            }
-            catch (Exception exception) when (exception is IOException || exception is ObjectDisposedException)
-            {
-            }
-            finally
-            {
-                stream = null;
-            }
+            _dumpWriteFailureLogged = false;
+            _degradationDumpWriteFailureLogged = false;
         }
 
         private GraphicsBuffer SelectAgingBuffer(int index)
@@ -1862,8 +1827,14 @@ namespace Hecton8.Graphics.Materials
         }
 #endif
 
-        private int CopyTelemetryDumpSnapshot(IDataVault vault, Span<byte> destinationBytes)
+        private int CopyTelemetryDumpSnapshot(IDataVault vault, NativeArray<byte> destination)
         {
+            if (!destination.IsCreated)
+                return 0;
+
+            Span<byte> destinationBytes = new Span<byte>(
+                NativeArrayUnsafeUtility.GetUnsafePtr(destination),
+                destination.Length);
             if (vault == null ||
                 destinationBytes.Length < TelemetryDumpHeaderBytes ||
                 string.IsNullOrEmpty(_dumpPath))
@@ -1966,41 +1937,20 @@ namespace Hecton8.Graphics.Materials
             return true;
         }
 
-        private bool TryWriteTelemetryDumpSnapshot(ReadOnlySpan<byte> snapshot, int byteCount, FileStream stream, ref bool failureLogged)
+        private static bool TryWriteTelemetryDumpSnapshot(string path, NativeArray<byte> snapshot, int byteCount, ref bool failureLogged)
         {
-            if (byteCount <= 0 || byteCount > snapshot.Length || stream == null)
-                return false;
-
-            try
+            if (string.IsNullOrEmpty(path) ||
+                !snapshot.IsCreated ||
+                byteCount <= 0 ||
+                byteCount > snapshot.Length)
             {
-                if (!stream.CanWrite)
-                    return false;
-
-                ReadOnlySpan<byte> snapshotBytes = snapshot.Slice(0, byteCount);
-                stream.SetLength(0L);
-                stream.Position = 0L;
-                stream.Write(snapshotBytes);
-                stream.Flush();
-
-                return true;
-            }
-            catch (Exception exception) when (
-                exception is IOException ||
-                exception is UnauthorizedAccessException ||
-                exception is NotSupportedException ||
-                exception is ObjectDisposedException ||
-                exception is ArgumentException)
-            {
-                if (!failureLogged)
-                {
-#if UNITY_EDITOR
-                    Hecton8.Core.H8Debug.LogError("Hecton8 VisualPressureAgingRuntime failed to write black-box dump.");
-#endif
-                    failureLogged = true;
-                }
-
+                failureLogged = true;
                 return false;
             }
+
+            bool written = NativeFaultDumpWriter.TryWriteAll(path, snapshot, byteCount);
+            failureLogged = !written;
+            return written;
         }
 
         private static int WrapTelemetryIndex(int cursor, int length)

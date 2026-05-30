@@ -1,0 +1,26 @@
+﻿{
+    "timestampUtc":  "2026-05-28T21:07:19.3526738Z",
+    "status":  "BLOCKED_BY_CONTENTION",
+    "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+    "cpuLoadSamplesPercent":  [
+                                  71
+                              ],
+    "cpuLoadMaxPercent":  71,
+    "compilerProcessCount":  2,
+    "compilerProcesses":  [
+                              "dotnet pid 55948 CPU 196.71875 StartTime 2026-05-29T01:02:59+04:00",
+                              "VBCSCompiler pid 44636 CPU 14.265625 StartTime 2026-05-29T01:04:29+04:00"
+                          ],
+    "launched":  false,
+    "reason":  "Build blocked by Compilation Resource Throttling: CPU \u003e 50 and compiler processes active.",
+    "lastSuccessfulBuild":  "Docs/AgentLogs/Build_1405_Apex26.summary.json",
+    "apex28StaticEvidence":  {
+                                 "promptFound":  true,
+                                 "taskCount":  20,
+                                 "diffCheck":  "exit 0; LF-\u003eCRLF warnings only",
+                                 "oversizedThreadScan":  "0 hits for numthreads/macros \u003e 256 in Crest/GPUInstancer domain",
+                                 "dataVaultAndQualityTokenScan":  "0 hits in APEX28 touched files",
+                                 "computeSetupProof":  "GPUInstancerManager.cs tracks matrixHandlingType, resets COMPUTE_MAX_LOD_BUFFER to 2 or 3 before static cache reuse, reloads compute shaders on matrix handling change, and guards null compute shaders before FindKernel.",
+                                 "billboardResourceProof":  "GPUInstancerUtility.cs restores RenderTexture.active and releases RenderTexture.GetTemporary allocations through finally/RenderTexture.ReleaseTemporary."
+                             }
+}

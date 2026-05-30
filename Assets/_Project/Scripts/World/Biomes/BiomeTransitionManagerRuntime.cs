@@ -1368,7 +1368,7 @@ namespace Hecton8.World.Biomes
             }
         }
 
-        private bool TryWriteBlackBoxSnapshotCold()
+        private unsafe bool TryWriteBlackBoxSnapshotCold()
         {
             int count = _blackBoxDumpSnapshotCount;
             if (count <= 0)
@@ -1381,20 +1381,20 @@ namespace Hecton8.World.Biomes
             try
             {
                 string fullPath = Path.Combine(root, BlackBoxDumpPath);
-                string directory = Path.GetDirectoryName(fullPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using FileStream stream = File.Open(fullPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                Span<byte> record = stackalloc byte[BiomeTransitionConstants.TelemetryStrideBytes];
+                int rowBytes = BiomeTransitionConstants.TelemetryStrideBytes;
+                int totalBytes = count * rowBytes;
+                using NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                Span<byte> bytes = new Span<byte>(payload.GetUnsafePtr(), totalBytes);
+                int writeOffset = 0;
                 for (int i = 0; i < count; i++)
                 {
+                    Span<byte> record = bytes.Slice(writeOffset, rowBytes);
                     record.Clear();
                     WriteTelemetryRecordLittleEndian(record, in _blackBoxDumpSnapshot[i]);
-                    stream.Write(record);
+                    writeOffset += rowBytes;
                 }
 
-                return true;
+                return NativeFaultDumpWriter.TryWriteAll(fullPath, payload, totalBytes);
             }
             catch (IOException)
             {
@@ -1787,7 +1787,7 @@ namespace Hecton8.World.Biomes
             handle = default;
         }
 
-        private static bool TryDumpTelemetry(
+        private static unsafe bool TryDumpTelemetry(
             NativeArray<BiomeTransitionTelemetryEntry>.ReadOnly telemetry,
             int cursor,
             string root,
@@ -1796,14 +1796,13 @@ namespace Hecton8.World.Biomes
             try
             {
                 string fullPath = Path.Combine(root, relativePath);
-                string directory = Path.GetDirectoryName(fullPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using FileStream stream = File.Open(fullPath, FileMode.Create, FileAccess.Write, FileShare.Read);
                 int count = telemetry.Length;
+                int rowBytes = BiomeTransitionConstants.TelemetryStrideBytes;
+                int totalBytes = count * rowBytes;
+                using NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                Span<byte> bytes = new Span<byte>(payload.GetUnsafePtr(), totalBytes);
                 int start = math.clamp(cursor, 0, math.max(0, count - 1));
-                Span<byte> record = stackalloc byte[BiomeTransitionConstants.TelemetryStrideBytes];
+                int writeOffset = 0;
                 for (int i = 0; i < count; i++)
                 {
                     int index = start + i;
@@ -1811,12 +1810,13 @@ namespace Hecton8.World.Biomes
                         index -= count;
 
                     BiomeTransitionTelemetryEntry entry = telemetry[index];
+                    Span<byte> record = bytes.Slice(writeOffset, rowBytes);
                     record.Clear();
                     WriteTelemetryRecordLittleEndian(record, in entry);
-                    stream.Write(record);
+                    writeOffset += rowBytes;
                 }
 
-                return true;
+                return NativeFaultDumpWriter.TryWriteAll(fullPath, payload, totalBytes);
             }
             catch (Exception exception)
             {

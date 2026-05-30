@@ -86,6 +86,47 @@ namespace Hecton8.Physiology
             MutationGuardBit(BufferID.ShinobuMockPredatorAggroSignals) |
             MutationGuardBit(BufferID.ShinobuMockMedicalItemSignals) |
             MutationGuardBit(BufferID.ShinobuPhysiologyTuning);
+        private const ulong DefaultTuningMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuPhysiologyTuning) |
+            MutationGuardBit(ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer);
+        private const ulong EmergencyMetabolismMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuHaldaneCoefficients) |
+            MutationGuardBit(BufferID.ShinobuPhysiologyTuning);
+        private const ulong DefaultStateMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuPhysiologyVitals) |
+            MutationGuardBit(BufferID.ShinobuDecompressionStates) |
+            MutationGuardBit(BufferID.ShinobuTissueCompartments) |
+            MutationGuardBit(BufferID.ShinobuPhysiologyScalars) |
+            MutationGuardBit(ShinobuPhysiologyConstants.StatusEffectStatesBuffer) |
+            MutationGuardBit(ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer) |
+            MutationGuardBit(ShinobuPhysiologyConstants.BreathingGasFractionsBuffer) |
+            MutationGuardBit(BufferID.ShinobuCardiacPulseStates);
+#if UNITY_EDITOR
+        private const ulong BiologyCsvMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuPhysiologyTuning) |
+            MutationGuardBit(BufferID.ShinobuBiologyCsvOverrides) |
+            MutationGuardBit(BufferID.ShinobuHaldaneCoefficients) |
+            MutationGuardBit(BufferID.ShinobuTissueCompartments);
+        private const ulong GasCsvMutationGuardMask =
+            MutationGuardBit(ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer);
+
+        // COLD ALLOC: editor CSV import scratch. Never used by Tick/SlowTick/LateFrameTick.
+        private static readonly byte[] s_csvScratchCold = new byte[CsvMaxBytes];
+        // COLD ALLOC: parsed editor biology override rows before DataVault commit.
+        private static readonly BiologyConstantOverrideDTO[] s_csvOverrideScratchCold = new BiologyConstantOverrideDTO[CsvOverrideCapacity];
+        // COLD ALLOC: parsed Haldane coefficients before DataVault commit.
+        private static readonly HaldaneTissueCoefficientDTO[] s_coefficientScratchCold = new HaldaneTissueCoefficientDTO[ShinobuPhysiologyConstants.TissueCompartmentCount];
+        // COLD ALLOC: tissue row deltas derived from coefficient CSV lines before DataVault commit.
+        private static readonly TissueCsvOverrideScratch[] s_tissueOverrideScratchCold = new TissueCsvOverrideScratch[ShinobuPhysiologyConstants.TissueCompartmentCount];
+        private static int s_csvScratchBusy;
+
+        private struct TissueCsvOverrideScratch
+        {
+            public float Halftime;
+            public float MValue;
+            public byte HasOverride;
+        }
+#endif
 
         [Header("Runtime Capacity")]
         [Tooltip("Maximum player or humanoid rows simulated by the physiology jobs.")]
@@ -125,9 +166,6 @@ namespace Hecton8.Physiology
         private VaultGenerationHandle<BiologyConstantOverrideDTO> _csvOverrideHandle;
 #endif
         private VaultGenerationHandle<DiveProfileSampleDTO> _mockDiveProfileHandle;
-#if UNITY_EDITOR
-        private VaultGenerationHandle<byte> _csvScratchHandle;
-#endif
 
         private IDataVault _dataVault;
         private IPlayerRuntimeContext _playerContext;
@@ -178,7 +216,7 @@ namespace Hecton8.Physiology
             _csvPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", CsvRelativePath));
             _gasCsvPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", GasCsvRelativePath));
 #endif
-            _dumpPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath));
+            _dumpPath = DumpRelativePath;
         }
 
         private void OnEnable()
@@ -913,9 +951,6 @@ namespace Hecton8.Physiology
                 OpenOrAcquirePhysiologyVaultBuffer(ref _csvOverrideHandle, BufferID.ShinobuBiologyCsvOverrides, CsvOverrideCapacity, NativeArrayOptions.ClearMemory, out _) &&
 #endif
                 OpenOrAcquirePhysiologyVaultBuffer(ref _mockDiveProfileHandle, BufferID.ShinobuMockDiveProfile, ShinobuPhysiologyConstants.TelemetryFrameCount, NativeArrayOptions.ClearMemory, out _)
-#if UNITY_EDITOR
-                && OpenOrAcquirePhysiologyVaultBuffer(ref _csvScratchHandle, BufferID.ShinobuTissueCsvScratch, CsvMaxBytes, NativeArrayOptions.UninitializedMemory, out _)
-#endif
                 ;
             if (!created || !HandlesReady())
                 return false;
@@ -950,9 +985,6 @@ namespace Hecton8.Physiology
                    OpenPhysiologyVaultBuffer(ref _csvOverrideHandle, BufferID.ShinobuBiologyCsvOverrides, CsvOverrideCapacity, out _) &&
 #endif
                    OpenPhysiologyVaultBuffer(ref _mockDiveProfileHandle, BufferID.ShinobuMockDiveProfile, ShinobuPhysiologyConstants.TelemetryFrameCount, out _)
-#if UNITY_EDITOR
-                   && OpenPhysiologyVaultBuffer(ref _csvScratchHandle, BufferID.ShinobuTissueCsvScratch, CsvMaxBytes, out _)
-#endif
                    ;
         }
 
@@ -1069,12 +1101,8 @@ namespace Hecton8.Physiology
             if (_defaultsInitialized)
                 return;
 
-            NativeArray<PhysiologyTuningDTO> tuning = OpenPhysiologyVaultArray(ref _tuningHandle, BufferID.ShinobuPhysiologyTuning, 1);
-            if (tuning.IsCreated && tuning.Length > 0)
-                tuning[0] = ShinobuPhysiologyJobMath.SanitizeTuning(tuning[0]);
-            NativeArray<GasPhysiologyTuningDTO> gasTuning = OpenPhysiologyVaultArray(ref _gasTuningHandle, ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer, 1);
-            if (gasTuning.IsCreated && gasTuning.Length > 0)
-                gasTuning[0] = ShinobuPhysiologyJobMath.SanitizeGasTuning(gasTuning[0]);
+            if (!SanitizeDefaultTuningRows(vault))
+                return;
 
 #if UNITY_EDITOR
             if (!TryLoadLegacyMetabolismTables(vault))
@@ -1084,6 +1112,11 @@ namespace Hecton8.Physiology
             LoadCsvOverridesFromDisk(vault);
 #endif
 
+            if (!vault.TryAcquireMutationGuard(DefaultStateMutationGuardMask))
+                return;
+
+            try
+            {
             NativeArray<PhysiologyDTO> vitals = OpenPhysiologyVaultArray(ref _vitalsHandle, BufferID.ShinobuPhysiologyVitals, entityCapacity);
             NativeArray<DecompressionStateDTO> states = OpenPhysiologyVaultArray(ref _decompressionHandle, BufferID.ShinobuDecompressionStates, entityCapacity);
             NativeArray<TissueCompartmentDTO> tissues = OpenPhysiologyVaultArray(ref _tissueHandle, BufferID.ShinobuTissueCompartments, entityCapacity * ShinobuPhysiologyConstants.TissueCompartmentCount);
@@ -1166,6 +1199,42 @@ namespace Hecton8.Physiology
             }
 
             _defaultsInitialized = true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(DefaultStateMutationGuardMask);
+            }
+        }
+
+        private bool SanitizeDefaultTuningRows(IDataVault vault)
+        {
+            if (vault == null)
+                return false;
+
+            NativeArray<PhysiologyTuningDTO> tuning = OpenPhysiologyVaultArray(ref _tuningHandle, BufferID.ShinobuPhysiologyTuning, 1);
+            if (!tuning.IsCreated || tuning.Length <= 0)
+                return false;
+
+            NativeArray<GasPhysiologyTuningDTO> gasTuning = OpenPhysiologyVaultArray(ref _gasTuningHandle, ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer, 1);
+            if (!gasTuning.IsCreated || gasTuning.Length <= 0)
+                return false;
+
+            PhysiologyTuningDTO sanitizedTuning = ShinobuPhysiologyJobMath.SanitizeTuning(tuning[0]);
+            GasPhysiologyTuningDTO sanitizedGasTuning = ShinobuPhysiologyJobMath.SanitizeGasTuning(gasTuning[0]);
+
+            if (!vault.TryAcquireMutationGuard(DefaultTuningMutationGuardMask))
+                return false;
+
+            try
+            {
+                tuning[0] = sanitizedTuning;
+                gasTuning[0] = sanitizedGasTuning;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(DefaultTuningMutationGuardMask);
+            }
         }
 
         private bool TryResolveBuffers(
@@ -1239,10 +1308,26 @@ namespace Hecton8.Physiology
         }
 
 #if UNITY_EDITOR
-        private bool TryResolveCsvScratch(IDataVault vault, out NativeArray<byte> scratch)
+        private static bool TryAcquireCsvScratchCold()
         {
-            scratch = OpenPhysiologyVaultArray(ref _csvScratchHandle, BufferID.ShinobuTissueCsvScratch, CsvMaxBytes);
-            return scratch.IsCreated && scratch.Length >= CsvMaxBytes;
+            return System.Threading.Interlocked.CompareExchange(ref s_csvScratchBusy, 1, 0) == 0;
+        }
+
+        private static void ReleaseCsvScratchCold()
+        {
+            System.Threading.Volatile.Write(ref s_csvScratchBusy, 0);
+        }
+
+        private static int ReadCsvBytesCold(string path, byte[] scratch)
+        {
+            if (string.IsNullOrEmpty(path) || scratch == null || scratch.Length <= 0)
+                return 0;
+
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                int byteCount = math.min((int)stream.Length, math.min(scratch.Length, CsvMaxBytes));
+                return byteCount > 0 ? stream.Read(scratch, 0, byteCount) : 0;
+            }
         }
 #endif
 
@@ -1690,24 +1775,27 @@ namespace Hecton8.Physiology
             if (!fatal)
                 return;
 
-            _autopsyDumped = true;
-            DumpAutopsyReport(telemetry, decompressionTelemetry);
+            _autopsyDumped = DumpAutopsyReport(telemetry, decompressionTelemetry);
         }
 
-        private void DumpAutopsyReport(NativeArray<PhysiologyTelemetryEntry> telemetry, NativeArray<DecompressionTelemetryEntry> decompressionTelemetry)
+        private bool DumpAutopsyReport(NativeArray<PhysiologyTelemetryEntry> telemetry, NativeArray<DecompressionTelemetryEntry> decompressionTelemetry)
         {
             if (!telemetry.IsCreated || !decompressionTelemetry.IsCreated)
-                return;
+                return false;
 
             try
             {
-                string directory = Path.GetDirectoryName(_dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                int telemetryByteCount = telemetry.Length * UnsafeUtility.SizeOf<PhysiologyTelemetryEntry>();
+                int decompressionByteCount = decompressionTelemetry.Length * UnsafeUtility.SizeOf<DecompressionTelemetryEntry>();
+                int totalBytes = 48 + telemetryByteCount + decompressionByteCount;
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(ShinobuPhysiologyRuntime),
+                    "shinobuPhysiologyAutopsyPayload");
+                try
                 {
-                    Span<byte> header = stackalloc byte[48];
+                    byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    Span<byte> header = new Span<byte>(payloadPtr, 48);
                     WriteUInt64LittleEndian(header.Slice(0, 8), DumpMagic);
                     WriteUInt32LittleEndian(header.Slice(8, 4), DumpVersion);
                     WriteUInt32LittleEndian(header.Slice(12, 4), (uint)telemetry.Length);
@@ -1719,30 +1807,36 @@ namespace Hecton8.Physiology
                     WriteUInt32LittleEndian(header.Slice(36, 4), (uint)UnsafeUtility.SizeOf<DecompressionTelemetryEntry>());
                     WriteUInt32LittleEndian(header.Slice(40, 4), unchecked((uint)_decompressionTelemetryCursor));
                     WriteUInt32LittleEndian(header.Slice(44, 4), unchecked((uint)ShinobuPhysiologyConstants.DecompressionTelemetryRingBuffer));
-                    stream.Write(header);
 
                     void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                    int byteCount = telemetry.Length * UnsafeUtility.SizeOf<PhysiologyTelemetryEntry>();
-                    stream.Write(new ReadOnlySpan<byte>(telemetryPtr, byteCount));
+                    UnsafeUtility.MemCpy(payloadPtr + 48, telemetryPtr, telemetryByteCount);
                     void* decompressionTelemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(decompressionTelemetry);
-                    int decompressionByteCount = decompressionTelemetry.Length * UnsafeUtility.SizeOf<DecompressionTelemetryEntry>();
-                    stream.Write(new ReadOnlySpan<byte>(decompressionTelemetryPtr, decompressionByteCount));
-                    stream.Flush();
+                    UnsafeUtility.MemCpy(payloadPtr + 48 + telemetryByteCount, decompressionTelemetryPtr, decompressionByteCount);
+                    return NativeFaultDumpWriter.TryWriteAll(_dumpPath, payload, totalBytes);
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(ShinobuPhysiologyRuntime),
+                        "shinobuPhysiologyAutopsyPayload");
                 }
             }
             catch (IOException)
             {
+                return false;
             }
             catch (UnauthorizedAccessException)
             {
+                return false;
             }
         }
 
 #if UNITY_EDITOR
         private bool TryLoadLegacyMetabolismTables(IDataVault vault)
         {
-            NativeArray<HaldaneTissueCoefficientDTO> coefficients = OpenPhysiologyVaultArray(ref _coefficientHandle, BufferID.ShinobuHaldaneCoefficients, ShinobuPhysiologyConstants.TissueCompartmentCount);
-            if (!coefficients.IsCreated || coefficients.Length < ShinobuPhysiologyConstants.TissueCompartmentCount)
+            NativeArray<HaldaneTissueCoefficientDTO> sourceCoefficients = OpenPhysiologyVaultArray(ref _coefficientHandle, BufferID.ShinobuHaldaneCoefficients, ShinobuPhysiologyConstants.TissueCompartmentCount);
+            if (!sourceCoefficients.IsCreated || sourceCoefficients.Length < ShinobuPhysiologyConstants.TissueCompartmentCount)
                 return false;
 
             string streamingAssets = Path.Combine(Application.dataPath, "StreamingAssets");
@@ -1751,13 +1845,22 @@ namespace Hecton8.Physiology
             if (!File.Exists(halfTimePath) && !File.Exists(mValuePath))
                 return false;
 
+            if (!TryAcquireCsvScratchCold())
+                return false;
+
             bool anyLoaded = false;
             try
             {
+                Span<HaldaneTissueCoefficientDTO> coefficientScratch = s_coefficientScratchCold;
+                for (int i = 0; i < ShinobuPhysiologyConstants.TissueCompartmentCount; i++)
+                    coefficientScratch[i] = sourceCoefficients[i];
+
                 if (File.Exists(halfTimePath))
-                    anyLoaded |= TryReadLegacyFloatTable(vault, halfTimePath, coefficients, readHalfTimes: true);
+                    anyLoaded |= TryReadLegacyFloatTable(halfTimePath, s_csvScratchCold, coefficientScratch, readHalfTimes: true);
                 if (File.Exists(mValuePath))
-                    anyLoaded |= TryReadLegacyFloatTable(vault, mValuePath, coefficients, readHalfTimes: false);
+                    anyLoaded |= TryReadLegacyFloatTable(mValuePath, s_csvScratchCold, coefficientScratch, readHalfTimes: false);
+
+                return anyLoaded && CommitLegacyMetabolismTables(vault, coefficientScratch);
             }
             catch (IOException)
             {
@@ -1767,31 +1870,29 @@ namespace Hecton8.Physiology
             {
                 return false;
             }
-
-            return anyLoaded;
+            finally
+            {
+                ReleaseCsvScratchCold();
+            }
         }
 
         private bool TryReadLegacyFloatTable(
-            IDataVault vault,
             string path,
-            NativeArray<HaldaneTissueCoefficientDTO> coefficients,
+            byte[] scratch,
+            Span<HaldaneTissueCoefficientDTO> coefficients,
             bool readHalfTimes)
         {
-            if (!TryResolveCsvScratch(vault, out NativeArray<byte> scratch))
-                return false;
-
-            byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-            Span<byte> buffer = new Span<byte>(scratchPtr, math.min(scratch.Length, CsvMaxBytes));
             using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 int byteCount = math.min((int)stream.Length, ShinobuPhysiologyConstants.TissueCompartmentCount * 4);
-                if (byteCount < ShinobuPhysiologyConstants.TissueCompartmentCount * 4 || byteCount > buffer.Length)
+                if (byteCount < ShinobuPhysiologyConstants.TissueCompartmentCount * 4 || byteCount > scratch.Length)
                     return false;
 
-                int read = stream.Read(buffer.Slice(0, byteCount));
+                int read = stream.Read(scratch, 0, byteCount);
                 if (read < ShinobuPhysiologyConstants.TissueCompartmentCount * 4)
                     return false;
 
+                ReadOnlySpan<byte> buffer = new ReadOnlySpan<byte>(scratch, 0, read);
                 bool bigEndian = ShouldReadLegacyTableAsBigEndian(buffer, readHalfTimes);
                 for (int i = 0; i < ShinobuPhysiologyConstants.TissueCompartmentCount; i++)
                 {
@@ -1835,10 +1936,54 @@ namespace Hecton8.Physiology
 
             return true;
         }
+
+        private bool CommitLegacyMetabolismTables(IDataVault vault, ReadOnlySpan<HaldaneTissueCoefficientDTO> coefficients)
+        {
+            if (vault == null)
+                return false;
+
+            NativeArray<HaldaneTissueCoefficientDTO> coefficientArray = OpenPhysiologyVaultArray(ref _coefficientHandle, BufferID.ShinobuHaldaneCoefficients, ShinobuPhysiologyConstants.TissueCompartmentCount);
+            if (!coefficientArray.IsCreated || coefficientArray.Length < ShinobuPhysiologyConstants.TissueCompartmentCount)
+                return false;
+
+            int count = math.min(coefficients.Length, coefficientArray.Length);
+            NativeArray<PhysiologyTuningDTO> tuning = OpenPhysiologyVaultArray(ref _tuningHandle, BufferID.ShinobuPhysiologyTuning, 1);
+            byte hasTuning = 0;
+            PhysiologyTuningDTO tuningRow = default;
+            if (tuning.IsCreated && tuning.Length > 0)
+            {
+                tuningRow = ShinobuPhysiologyJobMath.SanitizeTuning(tuning[0]);
+                tuningRow.Flags |= ShinobuPhysiologyFlags.EmergencyMockCoefficients;
+                hasTuning = 1;
+            }
+
+            if (!vault.TryAcquireMutationGuard(EmergencyMetabolismMutationGuardMask))
+                return false;
+
+            try
+            {
+                for (int i = 0; i < count; i++)
+                    coefficientArray[i] = coefficients[i];
+
+                if (hasTuning != 0)
+                    tuning[0] = tuningRow;
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(EmergencyMetabolismMutationGuardMask);
+            }
+        }
 #endif
 
         private void GenerateEmergencyMockMetabolism(IDataVault vault)
         {
+            if (vault == null || !vault.TryAcquireMutationGuard(EmergencyMetabolismMutationGuardMask))
+                return;
+
+            try
+            {
             NativeArray<HaldaneTissueCoefficientDTO> coefficients = OpenPhysiologyVaultArray(ref _coefficientHandle, BufferID.ShinobuHaldaneCoefficients, ShinobuPhysiologyConstants.TissueCompartmentCount);
             if (!coefficients.IsCreated)
                 return;
@@ -1866,6 +2011,11 @@ namespace Hecton8.Physiology
                 PhysiologyTuningDTO row = ShinobuPhysiologyJobMath.SanitizeTuning(tuning[0]);
                 row.Flags |= ShinobuPhysiologyFlags.EmergencyMockCoefficients;
                 tuning[0] = row;
+            }
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(EmergencyMetabolismMutationGuardMask);
             }
         }
 
@@ -1900,30 +2050,50 @@ namespace Hecton8.Physiology
             if (stamp.Ticks == 0L || stamp.Ticks == _csvLastWriteTicks)
                 return;
 
-            _csvLastWriteTicks = stamp.Ticks;
+            if (!TryAcquireCsvScratchCold())
+                return;
+
             try
             {
-                if (!TryResolveCsvScratch(vault, out NativeArray<byte> scratch))
+                int read = ReadCsvBytesCold(_csvPath, s_csvScratchCold);
+                if (read <= 0)
                     return;
 
-                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                Span<byte> buffer = new Span<byte>(scratchPtr, math.min(scratch.Length, CsvMaxBytes));
-                using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                ReadOnlySpan<byte> buffer = new ReadOnlySpan<byte>(s_csvScratchCold, 0, read);
+                if (!TryParseBiologyConstantsCsv(
+                    vault,
+                    buffer,
+                    out PhysiologyTuningDTO tuning,
+                    s_csvOverrideScratchCold,
+                    out int overrideCount,
+                    s_coefficientScratchCold,
+                    s_tissueOverrideScratchCold))
                 {
-                    int byteCount = math.min((int)stream.Length, buffer.Length);
-                    if (byteCount <= 0)
-                        return;
-
-                    int read = stream.Read(buffer.Slice(0, byteCount));
-                    if (read > 0)
-                        ParseBiologyConstantsCsv(vault, buffer.Slice(0, read));
+                    return;
                 }
+
+                if (!CommitBiologyConstantsCsv(
+                    vault,
+                    in tuning,
+                    s_csvOverrideScratchCold,
+                    overrideCount,
+                    s_coefficientScratchCold,
+                    s_tissueOverrideScratchCold))
+                {
+                    return;
+                }
+
+                _csvLastWriteTicks = stamp.Ticks;
             }
             catch (IOException)
             {
             }
             catch (UnauthorizedAccessException)
             {
+            }
+            finally
+            {
+                ReleaseCsvScratchCold();
             }
         }
 
@@ -1936,24 +2106,25 @@ namespace Hecton8.Physiology
             if (stamp.Ticks == 0L || stamp.Ticks == _gasCsvLastWriteTicks)
                 return;
 
-            _gasCsvLastWriteTicks = stamp.Ticks;
+            if (!TryAcquireCsvScratchCold())
+                return;
+
             try
             {
-                if (!TryResolveCsvScratch(vault, out NativeArray<byte> scratch))
+                int read = ReadCsvBytesCold(_gasCsvPath, s_csvScratchCold);
+                if (read <= 0)
                     return;
 
-                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                Span<byte> buffer = new Span<byte>(scratchPtr, math.min(scratch.Length, CsvMaxBytes));
-                using (FileStream stream = new FileStream(_gasCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    int byteCount = math.min((int)stream.Length, buffer.Length);
-                    if (byteCount <= 0)
-                        return;
+                ReadOnlySpan<byte> buffer = new ReadOnlySpan<byte>(s_csvScratchCold, 0, read);
+                if (!TryParseGasProfilesCsv(vault, buffer, out BreathingGasFractionsDTO gas, out GasPhysiologyTuningDTO gasTuning))
+                    return;
 
-                    int read = stream.Read(buffer.Slice(0, byteCount));
-                    if (read > 0)
-                        ParseGasProfilesCsv(vault, buffer.Slice(0, read));
-                }
+                if (!CommitGasProfilesCsv(vault, in gasTuning))
+                    return;
+
+                _breathingGasOverride = ShinobuPhysiologyJobMath.SanitizeBreathingGas(gas);
+                _breathingGasOverrideActive = true;
+                _gasCsvLastWriteTicks = stamp.Ticks;
             }
             catch (IOException)
             {
@@ -1961,11 +2132,19 @@ namespace Hecton8.Physiology
             catch (UnauthorizedAccessException)
             {
             }
+            finally
+            {
+                ReleaseCsvScratchCold();
+            }
         }
 
-        private void ParseGasProfilesCsv(IDataVault vault, ReadOnlySpan<byte> bytes)
+        private bool TryParseGasProfilesCsv(
+            IDataVault vault,
+            ReadOnlySpan<byte> bytes,
+            out BreathingGasFractionsDTO gas,
+            out GasPhysiologyTuningDTO gasTuning)
         {
-            BreathingGasFractionsDTO gas = _breathingGasOverrideActive
+            gas = _breathingGasOverrideActive
                 ? _breathingGasOverride
                 : new BreathingGasFractionsDTO
                 {
@@ -1975,10 +2154,13 @@ namespace Hecton8.Physiology
                     GasHash = 0x43535631u,
                     Flags = ShinobuPhysiologyFlags.CsvOverride
                 };
-            NativeArray<GasPhysiologyTuningDTO> tuningArray = OpenPhysiologyVaultArray(ref _gasTuningHandle, ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer, 1);
-            GasPhysiologyTuningDTO gasTuning = tuningArray.IsCreated && tuningArray.Length > 0
-                ? ShinobuPhysiologyJobMath.SanitizeGasTuning(tuningArray[0])
-                : ShinobuPhysiologyJobMath.BuildDefaultGasTuning();
+            if (!TryReadPhysiologyVaultArray(in _gasTuningHandle, ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer, 1, out NativeArray<GasPhysiologyTuningDTO> tuningArray))
+            {
+                gasTuning = default;
+                return false;
+            }
+
+            gasTuning = ShinobuPhysiologyJobMath.SanitizeGasTuning(tuningArray[0]);
 
             int cursor = 0;
             while (cursor < bytes.Length)
@@ -1995,10 +2177,33 @@ namespace Hecton8.Physiology
             }
 
             gas.Flags |= ShinobuPhysiologyFlags.CsvOverride;
-            _breathingGasOverride = ShinobuPhysiologyJobMath.SanitizeBreathingGas(gas);
-            _breathingGasOverrideActive = true;
-            if (tuningArray.IsCreated && tuningArray.Length > 0)
-                tuningArray[0] = ShinobuPhysiologyJobMath.SanitizeGasTuning(gasTuning);
+            gas = ShinobuPhysiologyJobMath.SanitizeBreathingGas(gas);
+            gasTuning = ShinobuPhysiologyJobMath.SanitizeGasTuning(gasTuning);
+            return true;
+        }
+
+        private bool CommitGasProfilesCsv(IDataVault vault, in GasPhysiologyTuningDTO gasTuning)
+        {
+            if (vault == null)
+                return false;
+
+            GasPhysiologyTuningDTO sanitizedGasTuning = ShinobuPhysiologyJobMath.SanitizeGasTuning(gasTuning);
+            NativeArray<GasPhysiologyTuningDTO> tuningArray = OpenPhysiologyVaultArray(ref _gasTuningHandle, ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer, 1);
+            if (!tuningArray.IsCreated || tuningArray.Length <= 0)
+                return false;
+
+            if (!vault.TryAcquireMutationGuard(GasCsvMutationGuardMask))
+                return false;
+
+            try
+            {
+                tuningArray[0] = sanitizedGasTuning;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(GasCsvMutationGuardMask);
+            }
         }
 
         private static void ParseGasCsvLine(ReadOnlySpan<byte> line, ref BreathingGasFractionsDTO gas, ref GasPhysiologyTuningDTO gasTuning)
@@ -2054,17 +2259,32 @@ namespace Hecton8.Physiology
                 gasTuning.CarbonDioxideToxicityFullAtm = value;
         }
 
-        private void ParseBiologyConstantsCsv(IDataVault vault, ReadOnlySpan<byte> bytes)
+        private bool TryParseBiologyConstantsCsv(
+            IDataVault vault,
+            ReadOnlySpan<byte> bytes,
+            out PhysiologyTuningDTO tuning,
+            Span<BiologyConstantOverrideDTO> overrides,
+            out int overrideIndex,
+            Span<HaldaneTissueCoefficientDTO> coefficients,
+            Span<TissueCsvOverrideScratch> tissueOverrides)
         {
-            NativeArray<PhysiologyTuningDTO> tuningArray = OpenPhysiologyVaultArray(ref _tuningHandle, BufferID.ShinobuPhysiologyTuning, 1);
-            NativeArray<BiologyConstantOverrideDTO> overrides = OpenPhysiologyVaultArray(ref _csvOverrideHandle, BufferID.ShinobuBiologyCsvOverrides, CsvOverrideCapacity);
-            NativeArray<HaldaneTissueCoefficientDTO> coefficients = OpenPhysiologyVaultArray(ref _coefficientHandle, BufferID.ShinobuHaldaneCoefficients, ShinobuPhysiologyConstants.TissueCompartmentCount);
-            NativeArray<TissueCompartmentDTO> tissues = OpenPhysiologyVaultArray(ref _tissueHandle, BufferID.ShinobuTissueCompartments, entityCapacity * ShinobuPhysiologyConstants.TissueCompartmentCount);
-            if (!tuningArray.IsCreated || tuningArray.Length <= 0)
-                return;
+            tuning = default;
+            overrideIndex = 0;
+            if (!TryReadPhysiologyVaultArray(in _tuningHandle, BufferID.ShinobuPhysiologyTuning, 1, out NativeArray<PhysiologyTuningDTO> tuningArray) ||
+                !TryReadPhysiologyVaultArray(in _coefficientHandle, BufferID.ShinobuHaldaneCoefficients, ShinobuPhysiologyConstants.TissueCompartmentCount, out NativeArray<HaldaneTissueCoefficientDTO> sourceCoefficients))
+            {
+                return false;
+            }
 
-            PhysiologyTuningDTO tuning = ShinobuPhysiologyJobMath.SanitizeTuning(tuningArray[0]);
-            int overrideIndex = 0;
+            tuning = ShinobuPhysiologyJobMath.SanitizeTuning(tuningArray[0]);
+            int coefficientCount = math.min(ShinobuPhysiologyConstants.TissueCompartmentCount, coefficients.Length);
+            for (int i = 0; i < coefficientCount; i++)
+                coefficients[i] = sourceCoefficients[i];
+            for (int i = 0; i < overrides.Length; i++)
+                overrides[i] = default;
+            for (int i = 0; i < tissueOverrides.Length; i++)
+                tissueOverrides[i] = default;
+
             int cursor = 0;
             while (cursor < bytes.Length)
             {
@@ -2076,19 +2296,95 @@ namespace Hecton8.Physiology
                 while (cursor < bytes.Length && (bytes[cursor] == (byte)'\n' || bytes[cursor] == (byte)'\r'))
                     cursor++;
 
-                ParseCsvLine(bytes.Slice(lineStart, lineEnd - lineStart), ref tuning, overrides, coefficients, tissues, ref overrideIndex);
+                ParseCsvLine(bytes.Slice(lineStart, lineEnd - lineStart), ref tuning, overrides, coefficients, tissueOverrides, ref overrideIndex);
             }
 
             tuning.Flags |= ShinobuPhysiologyFlags.CsvOverride;
-            tuningArray[0] = ShinobuPhysiologyJobMath.SanitizeTuning(tuning);
+            tuning = ShinobuPhysiologyJobMath.SanitizeTuning(tuning);
+            return true;
+        }
+
+        private bool CommitBiologyConstantsCsv(
+            IDataVault vault,
+            in PhysiologyTuningDTO tuning,
+            ReadOnlySpan<BiologyConstantOverrideDTO> overrides,
+            int overrideCount,
+            ReadOnlySpan<HaldaneTissueCoefficientDTO> coefficients,
+            ReadOnlySpan<TissueCsvOverrideScratch> tissueOverrides)
+        {
+            if (vault == null)
+                return false;
+
+            PhysiologyTuningDTO sanitizedTuning = ShinobuPhysiologyJobMath.SanitizeTuning(tuning);
+            NativeArray<PhysiologyTuningDTO> tuningArray = OpenPhysiologyVaultArray(ref _tuningHandle, BufferID.ShinobuPhysiologyTuning, 1);
+            NativeArray<BiologyConstantOverrideDTO> overrideArray = OpenPhysiologyVaultArray(ref _csvOverrideHandle, BufferID.ShinobuBiologyCsvOverrides, CsvOverrideCapacity);
+            NativeArray<HaldaneTissueCoefficientDTO> coefficientArray = OpenPhysiologyVaultArray(ref _coefficientHandle, BufferID.ShinobuHaldaneCoefficients, ShinobuPhysiologyConstants.TissueCompartmentCount);
+            NativeArray<TissueCompartmentDTO> tissueArray = OpenPhysiologyVaultArray(ref _tissueHandle, BufferID.ShinobuTissueCompartments, entityCapacity * ShinobuPhysiologyConstants.TissueCompartmentCount);
+            if (!tuningArray.IsCreated || tuningArray.Length <= 0 ||
+                !overrideArray.IsCreated ||
+                !coefficientArray.IsCreated ||
+                coefficientArray.Length <= 0)
+            {
+                return false;
+            }
+
+            int safeOverrideCount = math.min(math.max(0, overrideCount), math.min(overrides.Length, overrideArray.Length));
+            int coefficientCount = math.min(coefficients.Length, coefficientArray.Length);
+
+            if (!vault.TryAcquireMutationGuard(BiologyCsvMutationGuardMask))
+                return false;
+
+            try
+            {
+                tuningArray[0] = sanitizedTuning;
+
+                for (int i = 0; i < safeOverrideCount; i++)
+                    overrideArray[i] = overrides[i];
+                for (int i = safeOverrideCount; i < overrideArray.Length; i++)
+                    overrideArray[i] = default;
+
+                for (int i = 0; i < coefficientCount; i++)
+                    coefficientArray[i] = coefficients[i];
+
+                if (tissueArray.IsCreated && tissueArray.Length > 0)
+                    CommitTissueCsvOverrides(tissueArray, tissueOverrides);
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(BiologyCsvMutationGuardMask);
+            }
+        }
+
+        private static void CommitTissueCsvOverrides(
+            NativeArray<TissueCompartmentDTO> tissues,
+            ReadOnlySpan<TissueCsvOverrideScratch> tissueOverrides)
+        {
+            int tissueCount = math.min(ShinobuPhysiologyConstants.TissueCompartmentCount, tissueOverrides.Length);
+            for (int index = 0; index < tissueCount; index++)
+            {
+                TissueCsvOverrideScratch overrideRow = tissueOverrides[index];
+                if (overrideRow.HasOverride == 0)
+                    continue;
+
+                for (int tissueIndex = index; tissueIndex < tissues.Length; tissueIndex += ShinobuPhysiologyConstants.TissueCompartmentCount)
+                {
+                    TissueCompartmentDTO tissue = tissues[tissueIndex];
+                    tissue.Halftime = overrideRow.Halftime;
+                    tissue.MValue = overrideRow.MValue;
+                    tissue.Flags |= ShinobuPhysiologyFlags.CsvOverride;
+                    tissues[tissueIndex] = tissue;
+                }
+            }
         }
 
         private static void ParseCsvLine(
             ReadOnlySpan<byte> line,
             ref PhysiologyTuningDTO tuning,
-            NativeArray<BiologyConstantOverrideDTO> overrides,
-            NativeArray<HaldaneTissueCoefficientDTO> coefficients,
-            NativeArray<TissueCompartmentDTO> tissues,
+            Span<BiologyConstantOverrideDTO> overrides,
+            Span<HaldaneTissueCoefficientDTO> coefficients,
+            Span<TissueCsvOverrideScratch> tissueOverrides,
             ref int overrideIndex)
         {
             int keyStart = 0;
@@ -2148,7 +2444,7 @@ namespace Hecton8.Physiology
                         thirdValue,
                         hasThirdValue,
                         coefficients,
-                        tissues);
+                        tissueOverrides);
                     WriteCsvOverride(overrides, ref overrideIndex, keyHash, value);
                     return;
                 }
@@ -2159,12 +2455,12 @@ namespace Hecton8.Physiology
         }
 
         private static void WriteCsvOverride(
-            NativeArray<BiologyConstantOverrideDTO> overrides,
+            Span<BiologyConstantOverrideDTO> overrides,
             ref int overrideIndex,
             uint keyHash,
             float value)
         {
-            if (overrides.IsCreated && overrideIndex < overrides.Length)
+            if (overrideIndex < overrides.Length)
             {
                 overrides[overrideIndex++] = new BiologyConstantOverrideDTO
                 {
@@ -2182,10 +2478,10 @@ namespace Hecton8.Physiology
             float secondValue,
             float thirdValue,
             byte hasBuhlmannColumns,
-            NativeArray<HaldaneTissueCoefficientDTO> coefficients,
-            NativeArray<TissueCompartmentDTO> tissues)
+            Span<HaldaneTissueCoefficientDTO> coefficients,
+            Span<TissueCsvOverrideScratch> tissueOverrides)
         {
-            if (!coefficients.IsCreated || coefficients.Length <= 0)
+            if (coefficients.Length <= 0)
                 return;
 
             int index = ResolveCsvCompartmentIndex(key, keyHash);
@@ -2214,16 +2510,14 @@ namespace Hecton8.Physiology
                 Flags = ShinobuPhysiologyFlags.CsvOverride
             };
 
-            if (!tissues.IsCreated)
-                return;
-
-            for (int tissueIndex = index; tissueIndex < tissues.Length; tissueIndex += ShinobuPhysiologyConstants.TissueCompartmentCount)
+            if ((uint)index < (uint)tissueOverrides.Length)
             {
-                TissueCompartmentDTO tissue = tissues[tissueIndex];
-                tissue.Halftime = safeHalfTime;
-                tissue.MValue = safeB;
-                tissue.Flags |= ShinobuPhysiologyFlags.CsvOverride;
-                tissues[tissueIndex] = tissue;
+                tissueOverrides[index] = new TissueCsvOverrideScratch
+                {
+                    Halftime = safeHalfTime,
+                    MValue = safeB,
+                    HasOverride = 1
+                };
             }
         }
 
@@ -2364,9 +2658,6 @@ namespace Hecton8.Physiology
             _csvOverrideHandle = default;
 #endif
             _mockDiveProfileHandle = default;
-#if UNITY_EDITOR
-            _csvScratchHandle = default;
-#endif
             _simulationAccumulator = 0f;
             _previousDepthValid = false;
             _insideHabitat = false;

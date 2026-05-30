@@ -13,7 +13,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-119)]
-    public sealed class FloraRegrowthDirector : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public sealed class FloraRegrowthDirector : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const float RegrowthDelaySeconds = 4f * 60f * 60f;
         private const float DefaultRegrowthDurationSeconds = 90f;
@@ -189,7 +189,6 @@ namespace Hecton8.World
         private float _lastSeedPlayTime;
         private bool _tickRegistered;
         private bool _slowTickRegistered;
-        private bool _lateFrameRegistered;
         private bool _originShiftRegistered;
         private bool _hotSwapRegistered;
 
@@ -247,12 +246,6 @@ namespace Hecton8.World
                 _slowTickRegistered = false;
             }
 
-            if (_lateFrameRegistered)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = false;
-            }
-
             if (_originShiftRegistered)
             {
                 HectonFloatingOrigin.UnregisterListener(this);
@@ -264,12 +257,6 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
-            if (_lateFrameRegistered)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = false;
-            }
-
             if (_originShiftRegistered)
             {
                 HectonFloatingOrigin.UnregisterListener(this);
@@ -306,10 +293,6 @@ namespace Hecton8.World
                 _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             }
 
-            if (!_lateFrameRegistered)
-            {
-                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
-            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -345,7 +328,6 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _tickRegistered = false;
                     _slowTickRegistered = false;
-                    _lateFrameRegistered = false;
                     if (currentService != null && isActiveAndEnabled)
                         TryRegisterDispatcherLanes();
                     break;
@@ -854,13 +836,6 @@ namespace Hecton8.World
                 registry?.TryClearDestroyedFlora(state.InstanceUid);
                 RemoveStateAtSwapBack(i);
             }
-        }
-
-        /// <summary>
-        /// Retained for dispatcher lane compatibility; maturation is evaluated during SlowTick.
-        /// </summary>
-        public void LateFrameTick()
-        {
         }
 
         /// <summary>

@@ -16,8 +16,8 @@ namespace Hecton8.Dev
     {
         private const long BytesPerKilobyte = 1024L;
         private const long BytesPerMegabyte = BytesPerKilobyte * 1024L;
-        private const int Mx350GraphicsMemoryCeilingMb = 2048;
-        private static readonly int VolumetricShadowStepCapMx350 = 15;
+        private const int CompactGraphicsMemoryCeilingMb = 2048;
+        private static readonly int VolumetricShadowStepCapCompact = 15;
         private const int CausticsResolution = 256;
         private const int CausticsR8BytesPerPixel = 1;
         private const int BiolumVolumeResolution = 64;
@@ -74,7 +74,7 @@ namespace Hecton8.Dev
             _debugBiolumMb = BytesToMegabytes(biolumBytes);
             _debugExposureKb = exposureBytes / (float)BytesPerKilobyte;
 
-            if (VolumetricShadowStepCapMx350 >= 16)
+            if (VolumetricShadowStepCapCompact >= 16)
                 return Fail("volumetric-shadow-step-cap");
 
             if (!ValidateRetinaContinuousQualityBudget())
@@ -93,13 +93,13 @@ namespace Hecton8.Dev
 
         private static bool ValidateRetinaContinuousQualityBudget()
         {
-            float mx350Weight = HectonRetinaDistortionFeature.ResolveRetinaVisualQualityWeight(Mx350GraphicsMemoryCeilingMb);
-            float midWeight = HectonRetinaDistortionFeature.ResolveRetinaVisualQualityWeight(Mx350GraphicsMemoryCeilingMb + 1024);
-            float highWeight = HectonRetinaDistortionFeature.ResolveRetinaVisualQualityWeight(Mx350GraphicsMemoryCeilingMb + 4096);
+            float compactWeight = HectonRetinaDistortionFeature.ResolveRetinaVisualQualityWeight(CompactGraphicsMemoryCeilingMb);
+            float midWeight = HectonRetinaDistortionFeature.ResolveRetinaVisualQualityWeight(CompactGraphicsMemoryCeilingMb + 1024);
+            float highWeight = HectonRetinaDistortionFeature.ResolveRetinaVisualQualityWeight(CompactGraphicsMemoryCeilingMb + 4096);
             HectonRetinaDistortionFeature.RetinaOffsetBudget fullBudget =
                 HectonRetinaDistortionFeature.ResolveRetinaOffsetBudget(0.0038f, 0.014f, 1f);
 
-            bool weightRamp = mx350Weight > 0f && mx350Weight < midWeight && midWeight < highWeight && highWeight <= 1f;
+            bool weightRamp = compactWeight > 0f && compactWeight < midWeight && midWeight < highWeight && highWeight <= 1f;
             bool fullBudgetPresent = fullBudget.ChromaticOffset > 0f && fullBudget.DistortionOffset > 0f;
             return weightRamp && fullBudgetPresent;
         }

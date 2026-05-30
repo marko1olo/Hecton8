@@ -595,37 +595,54 @@ namespace Hecton8.VFX.Materials
             if (_dumpedFault || !TryResolveBlackBox(out var blackBox))
                 return;
 
-            _dumpedFault = true;
+            NativeArray<byte> payload = default;
             try
             {
-                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-                string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(logDirectory);
-                string dumpPath = Path.Combine(logDirectory, "Dump_MATERIAL_DECAY_ARTIST.bin");
-                using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write((uint)0x4D445350u); // MDSP
-                writer.Write(reason);
-                writer.Write(_blackBoxCursor);
-                writer.Write(blackBox.Length);
-                for (int i = 0; i < blackBox.Length; i++)
+                const string dumpPath = "Docs/AgentLogs/Dump_MATERIAL_DECAY_ARTIST.bin";
+                const int headerBytes = 13;
+                const int rowBytes = 29;
+                int byteCount = headerBytes + blackBox.Length * rowBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(MaterialDecayRuntime),
+                    "MaterialDecayTelemetryDumpPayload");
+                unsafe
                 {
-                    MaterialDecayState state = blackBox[(_blackBoxCursor + i) % blackBox.Length];
-                    writer.Write(state.Frame);
-                    writer.Write(state.ItemHash);
-                    writer.Write(state.Rust01);
-                    writer.Write(state.Wetness01);
-                    writer.Write(state.Blood01);
-                    writer.Write(state.SlotIndex);
-                    writer.Write(state.Reason);
-                    writer.Write(state.QualityWeightByte);
-                    writer.Write(state.Flags);
-                    writer.Write(state.StateHash);
+                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    WriteUInt32LittleEndian(target, 0, 0x4D445350u);
+                    target[4] = reason;
+                    WriteInt32LittleEndian(target, 5, _blackBoxCursor);
+                    WriteInt32LittleEndian(target, 9, blackBox.Length);
+                    int offset = headerBytes;
+                    for (int i = 0; i < blackBox.Length; i++)
+                    {
+                        MaterialDecayState state = blackBox[(_blackBoxCursor + i) % blackBox.Length];
+                        WriteUInt32LittleEndian(target, offset, state.Frame);
+                        WriteUInt32LittleEndian(target, offset + 4, state.ItemHash);
+                        WriteFloatLittleEndian(target, offset + 8, state.Rust01);
+                        WriteFloatLittleEndian(target, offset + 12, state.Wetness01);
+                        WriteFloatLittleEndian(target, offset + 16, state.Blood01);
+                        WriteUInt16LittleEndian(target, offset + 20, state.SlotIndex);
+                        target[offset + 22] = state.Reason;
+                        target[offset + 23] = state.QualityWeightByte;
+                        target[offset + 24] = state.Flags;
+                        WriteUInt32LittleEndian(target, offset + 25, state.StateHash);
+                        offset += rowBytes;
+                    }
                 }
+
+                _dumpedFault = NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, byteCount);
             }
             catch (Exception)
             {
                 _dumpedFault = false;
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(MaterialDecayRuntime),
+                    "MaterialDecayTelemetryDumpPayload");
             }
         }
 
@@ -669,6 +686,30 @@ namespace Hecton8.VFX.Materials
             value *= 0x846CA68Bu;
             value ^= value >> 16;
             return value;
+        }
+
+        private static unsafe void WriteUInt16LittleEndian(byte* target, int offset, ushort value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* target, int offset, int value)
+        {
+            WriteUInt32LittleEndian(target, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteFloatLittleEndian(byte* target, int offset, float value)
+        {
+            WriteUInt32LittleEndian(target, offset, math.asuint(value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* target, int offset, uint value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+            target[offset + 2] = (byte)(value >> 16);
+            target[offset + 3] = (byte)(value >> 24);
         }
 
         [StructLayout(LayoutKind.Explicit, Size = MaterialDecayStateSizeBytes)]

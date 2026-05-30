@@ -66,11 +66,18 @@ namespace Hecton8.Caves
             _cavitationRadius = Mathf.Max(_eruptionRadius, config.cavitationRadius);
             _updraftStrength = Mathf.Max(0f, config.updraftStrength * Mathf.Max(0.1f, globalIntensity));
 
-            ResolveRuntimeWiring();
             ConfigureCurrentVolume();
             _phaseTimer = _quietDuration;
             _isErupting = false;
             _mineralEjectionTimer = Mathf.Max(60f, mineralEjectionIntervalSeconds);
+        }
+
+        internal void CacheRuntimeWiringCold(CurrentVolume currentVolumeComponent)
+        {
+            if (currentVolumeComponent != null)
+                currentVolume = currentVolumeComponent;
+
+            ResolveRuntimeWiring();
         }
 
         public void Tick(float dt)

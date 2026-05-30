@@ -138,7 +138,20 @@ namespace Hecton8.World
         public void RefreshZoneAnchorCold()
         {
             if (!TryGetComponent(out _cachedZoneAnchor))
-                _cachedZoneAnchor = GetComponentInParent<WorldZoneAnchor>();
+                TryResolveComponentInParents(transform.parent, out _cachedZoneAnchor);
+        }
+
+        private static bool TryResolveComponentInParents<T>(Transform current, out T component) where T : Component
+        {
+            component = null;
+
+            for (; current != null; current = current.parent)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+            }
+
+            return false;
         }
 
         public float GetFlatDistance(Vector3 position)
@@ -287,8 +300,8 @@ namespace Hecton8.World
             _debugProceduralFamily = family != null && !string.IsNullOrWhiteSpace(family.familyLabel) ? family.familyLabel : "None";
             _debugProceduralVariant = string.IsNullOrWhiteSpace(variantId) ? "None" : variantId;
             _debugProceduralSource = string.IsNullOrWhiteSpace(source) ? "None" : source;
-            _debugProceduralDomain = family != null ? family.proceduralDomain.ToString() : WorldPrefabFamilyProfile.ProceduralDomain.Generic.ToString();
-            _debugProceduralPlacementMode = family != null ? family.placementMode.ToString() : WorldPrefabFamilyProfile.PlacementMode.Scatter.ToString();
+            _debugProceduralDomain = family != null ? ResolveProceduralDomainLabel(family.proceduralDomain) : "Generic";
+            _debugProceduralPlacementMode = family != null ? ResolvePlacementModeLabel(family.placementMode) : "Scatter";
             _debugProceduralHeatmap = string.IsNullOrWhiteSpace(heatmapChannel) ? "None" : heatmapChannel;
             _debugProceduralIntent = string.IsNullOrWhiteSpace(intent) ? "None" : intent;
             _debugProceduralReason = string.IsNullOrWhiteSpace(reason) ? "None" : reason;
@@ -305,8 +318,8 @@ namespace Hecton8.World
             _debugProceduralFamily = "None";
             _debugProceduralVariant = "None";
             _debugProceduralSource = "None";
-            _debugProceduralDomain = WorldPrefabFamilyProfile.ProceduralDomain.Generic.ToString();
-            _debugProceduralPlacementMode = WorldPrefabFamilyProfile.PlacementMode.Scatter.ToString();
+            _debugProceduralDomain = "Generic";
+            _debugProceduralPlacementMode = "Scatter";
             _debugProceduralHeatmap = "None";
             _debugProceduralIntent = "None";
             _debugProceduralReason = "None";
@@ -328,6 +341,72 @@ namespace Hecton8.World
                 return contentProfile.preferredFidelity;
 
             return preferredFidelity;
+        }
+
+        private static string ResolveProceduralDomainLabel(WorldPrefabFamilyProfile.ProceduralDomain domain)
+        {
+            switch (domain)
+            {
+                case WorldPrefabFamilyProfile.ProceduralDomain.Rock:
+                    return "Rock";
+                case WorldPrefabFamilyProfile.ProceduralDomain.RockCluster:
+                    return "RockCluster";
+                case WorldPrefabFamilyProfile.ProceduralDomain.RockArch:
+                    return "RockArch";
+                case WorldPrefabFamilyProfile.ProceduralDomain.RockShelf:
+                    return "RockShelf";
+                case WorldPrefabFamilyProfile.ProceduralDomain.Kelp:
+                    return "Kelp";
+                case WorldPrefabFamilyProfile.ProceduralDomain.Plant:
+                    return "Plant";
+                case WorldPrefabFamilyProfile.ProceduralDomain.Coral:
+                    return "Coral";
+                case WorldPrefabFamilyProfile.ProceduralDomain.Egg:
+                    return "Egg";
+                case WorldPrefabFamilyProfile.ProceduralDomain.Debris:
+                    return "Debris";
+                case WorldPrefabFamilyProfile.ProceduralDomain.RuinModule:
+                    return "RuinModule";
+                case WorldPrefabFamilyProfile.ProceduralDomain.CaveEntrance:
+                    return "CaveEntrance";
+                case WorldPrefabFamilyProfile.ProceduralDomain.Landmark:
+                    return "Landmark";
+                case WorldPrefabFamilyProfile.ProceduralDomain.CreatureSpawn:
+                    return "CreatureSpawn";
+                case WorldPrefabFamilyProfile.ProceduralDomain.ResourcePocket:
+                    return "ResourcePocket";
+                case WorldPrefabFamilyProfile.ProceduralDomain.HazardPocket:
+                    return "HazardPocket";
+                case WorldPrefabFamilyProfile.ProceduralDomain.SafePocket:
+                    return "SafePocket";
+                case WorldPrefabFamilyProfile.ProceduralDomain.PowerRoute:
+                    return "PowerRoute";
+                case WorldPrefabFamilyProfile.ProceduralDomain.ServiceScar:
+                    return "ServiceScar";
+                default:
+                    return "Generic";
+            }
+        }
+
+        private static string ResolvePlacementModeLabel(WorldPrefabFamilyProfile.PlacementMode placementMode)
+        {
+            switch (placementMode)
+            {
+                case WorldPrefabFamilyProfile.PlacementMode.Cluster:
+                    return "Cluster";
+                case WorldPrefabFamilyProfile.PlacementMode.Patch:
+                    return "Patch";
+                case WorldPrefabFamilyProfile.PlacementMode.Solitary:
+                    return "Solitary";
+                case WorldPrefabFamilyProfile.PlacementMode.Landmark:
+                    return "Landmark";
+                case WorldPrefabFamilyProfile.PlacementMode.SpawnAnchor:
+                    return "SpawnAnchor";
+                case WorldPrefabFamilyProfile.PlacementMode.SocketDriven:
+                    return "SocketDriven";
+                default:
+                    return "Scatter";
+            }
         }
 
         private static void RegisterActiveSocket(WorldContentSocket socket)

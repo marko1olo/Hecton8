@@ -21,9 +21,6 @@ namespace Hecton8.Physics
         public const BufferID VisualStates = BufferID.ShinobuSeaglideVisualStates;
         public const BufferID AudioSignals = BufferID.ShinobuSeaglideAudioSignals;
         public const BufferID CavitationSignals = BufferID.ShinobuSeaglideCavitationSignals;
-#if UNITY_EDITOR
-        public const BufferID CsvScratch = BufferID.ShinobuSeaglideCsvScratch;
-#endif
     }
 
     [StructLayout(LayoutKind.Explicit, Size = SeaglideHydrodynamicsConstants.StateBytes)]

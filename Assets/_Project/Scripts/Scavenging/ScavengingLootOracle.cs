@@ -1018,7 +1018,7 @@ namespace Hecton8.Scavenging
     }
 #endif
 
-    public sealed class ScavengingLootOracleRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class ScavengingLootOracleRuntime : MonoBehaviour, IGlobalRegistryHotSwapListener
     {
         private static ScavengingLootOracleRuntime _host;
         private static bool _signalLanesConfigured;
@@ -1116,7 +1116,6 @@ namespace Hecton8.Scavenging
         private bool _lootTableHydrated;
         private uint _activeLootTableHash;
         private uint _activeLootTableVersion;
-        private bool _registeredLateFrame;
         private bool _registeredSimulationDispatcher;
         private bool _registeredPostSimulationDispatcher;
         private bool _registeredHotSwap;
@@ -1379,39 +1378,94 @@ namespace Hecton8.Scavenging
             if (!ring.IsCreated)
                 return false;
 
-            string path = Path.Combine(Application.dataPath, "..", ScavengingLootOracleConstants.TelemetryDumpRelativePath);
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            const int HeaderBytes = 4;
+            const int RowBytes = 100;
+            int totalBytes = HeaderBytes + ring.Length * RowBytes;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                totalBytes,
+                nameof(ScavengingLootOracleRuntime),
+                "scavengingLootOracleTelemetryDumpPayload");
+            try
             {
-                writer.Write(ring.Length);
+                WriteInt32LittleEndian(payload, 0, ring.Length);
                 for (int i = 0; i < ring.Length; i++)
                 {
                     ScavengingTelemetryEntry entry = ring[i];
-                    writer.Write(entry.NodeAup.GridX);
-                    writer.Write(entry.NodeAup.GridY);
-                    writer.Write(entry.NodeAup.GridZ);
-                    writer.Write(entry.NodeAup.LocalX);
-                    writer.Write(entry.NodeAup.LocalY);
-                    writer.Write(entry.NodeAup.LocalZ);
-                    writer.Write(entry.ResourceNodeHash);
-                    writer.Write(entry.SelectedItemHashID);
-                    writer.Write(entry.OreHash);
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.TotalWeight);
-                    writer.Write(entry.Roll);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.EstimatedCpuMicroseconds);
-                    writer.Write(entry.TableHash);
-                    writer.Write(entry.RequestId);
-                    writer.Write(entry.GlobalQualityWeight);
-                    writer.Write(entry.DepletionWordIndex);
-                    writer.Write(entry.DistributionBucket);
-                    writer.Write(entry.DepletionMask);
+                    int offset = HeaderBytes + i * RowBytes;
+                    WriteAupCompact36(payload, offset, entry.NodeAup);
+                    WriteUInt64LittleEndian(payload, offset + 36, entry.ResourceNodeHash);
+                    WriteUInt32LittleEndian(payload, offset + 44, entry.SelectedItemHashID);
+                    WriteUInt32LittleEndian(payload, offset + 48, entry.OreHash);
+                    WriteUInt32LittleEndian(payload, offset + 52, entry.Frame);
+                    WriteUInt32LittleEndian(payload, offset + 56, entry.TotalWeight);
+                    WriteUInt32LittleEndian(payload, offset + 60, entry.Roll);
+                    WriteUInt32LittleEndian(payload, offset + 64, entry.Flags);
+                    WriteUInt32LittleEndian(payload, offset + 68, entry.EstimatedCpuMicroseconds);
+                    WriteUInt32LittleEndian(payload, offset + 72, entry.TableHash);
+                    WriteUInt32LittleEndian(payload, offset + 76, entry.RequestId);
+                    WriteFloat32LittleEndian(payload, offset + 80, entry.GlobalQualityWeight);
+                    WriteUInt32LittleEndian(payload, offset + 84, entry.DepletionWordIndex);
+                    WriteUInt32LittleEndian(payload, offset + 88, entry.DistributionBucket);
+                    WriteUInt64LittleEndian(payload, offset + 92, entry.DepletionMask);
                 }
-            }
 
-            return true;
+                return NativeFaultDumpWriter.TryWriteAll(
+                    ScavengingLootOracleConstants.TelemetryDumpRelativePath,
+                    payload,
+                    totalBytes);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(ScavengingLootOracleRuntime),
+                    "scavengingLootOracleTelemetryDumpPayload");
+            }
+        }
+
+        private static void WriteAupCompact36(NativeArray<byte> payload, int offset, AbsoluteUniversePosition aup)
+        {
+            WriteInt64LittleEndian(payload, offset, aup.GridX);
+            WriteInt64LittleEndian(payload, offset + 8, aup.GridY);
+            WriteInt64LittleEndian(payload, offset + 16, aup.GridZ);
+            WriteFloat32LittleEndian(payload, offset + 24, aup.LocalX);
+            WriteFloat32LittleEndian(payload, offset + 28, aup.LocalY);
+            WriteFloat32LittleEndian(payload, offset + 32, aup.LocalZ);
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> payload, int offset, float value)
+        {
+            WriteUInt32LittleEndian(payload, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, int offset, int value)
+        {
+            WriteUInt32LittleEndian(payload, offset, unchecked((uint)value));
+        }
+
+        private static void WriteInt64LittleEndian(NativeArray<byte> payload, int offset, long value)
+        {
+            WriteUInt64LittleEndian(payload, offset, unchecked((ulong)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, int offset, uint value)
+        {
+            payload[offset] = (byte)value;
+            payload[offset + 1] = (byte)(value >> 8);
+            payload[offset + 2] = (byte)(value >> 16);
+            payload[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> payload, int offset, ulong value)
+        {
+            payload[offset] = (byte)value;
+            payload[offset + 1] = (byte)(value >> 8);
+            payload[offset + 2] = (byte)(value >> 16);
+            payload[offset + 3] = (byte)(value >> 24);
+            payload[offset + 4] = (byte)(value >> 32);
+            payload[offset + 5] = (byte)(value >> 40);
+            payload[offset + 6] = (byte)(value >> 48);
+            payload[offset + 7] = (byte)(value >> 56);
         }
 
         public static bool TryRunDistributionSelfAudit(out NativeArray<uint>.ReadOnly auditCounts)
@@ -1494,7 +1548,6 @@ namespace Hecton8.Scavenging
             PrepareVaultCold();
             TryRegisterHotSwapListener();
             TryRegisterDispatcherPhases();
-            TryRegisterLateFrame();
         }
 
         private void OnDisable()
@@ -1511,7 +1564,6 @@ namespace Hecton8.Scavenging
         {
             ForceCompletePendingPublishForLifecycle();
             TryUnregisterDispatcherPhases();
-            TryUnregisterLateFrame();
             TryUnregisterHotSwapListener();
             ReleaseVaultBinding();
         }
@@ -1546,14 +1598,8 @@ namespace Hecton8.Scavenging
                 case GlobalRegistryServiceSlot.Dispatcher:
                     TryUnregisterDispatcherPhases();
                     TryRegisterDispatcherPhases();
-                    TryUnregisterLateFrame();
-                    TryRegisterLateFrame();
                     break;
             }
-        }
-
-        public void LateFrameTick()
-        {
         }
 
         private JobHandle ScheduleSimulation(
@@ -1713,13 +1759,12 @@ namespace Hecton8.Scavenging
             if (_host != null)
             {
                 _host.TryRegisterHotSwapListener();
-                _host.TryRegisterLateFrame();
                 return _host;
             }
 
             GameObject hostObject = new GameObject("ScavengingLootOracleRuntime"); // COLD ALLOC: GameObject[1] - scene-local dispatcher bridge for Burst loot signal completion - owner: SHINOBU_125
             hostObject.hideFlags = HideFlags.HideAndDontSave;
-            _host = hostObject.AddComponent<ScavengingLootOracleRuntime>(); // COLD ALLOC: MonoBehaviour[1] - late-frame job owner - owner: SHINOBU_125
+            _host = hostObject.AddComponent<ScavengingLootOracleRuntime>(); // COLD ALLOC: MonoBehaviour[1] - dispatcher-phase job owner - owner: SHINOBU_125
             return _host;
         }
 
@@ -1940,14 +1985,6 @@ namespace Hecton8.Scavenging
             }
         }
 
-        private void TryRegisterLateFrame()
-        {
-            if (_registeredLateFrame)
-                return;
-
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
-        }
-
         private void TryRegisterDispatcherPhases()
         {
             if (_simulationPhase == null)
@@ -1969,15 +2006,6 @@ namespace Hecton8.Scavenging
 
             GlobalRegistry.UnregisterDispatcherSystem(_simulationPhase);
             _registeredSimulationDispatcher = false;
-        }
-
-        private void TryUnregisterLateFrame()
-        {
-            if (!_registeredLateFrame)
-                return;
-
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
-            _registeredLateFrame = false;
         }
 
         private void TryUnregisterDispatcherPhases()

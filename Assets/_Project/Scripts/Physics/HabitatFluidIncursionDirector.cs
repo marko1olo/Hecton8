@@ -27,6 +27,25 @@ namespace Hecton8.Physics
         private const int FloodMuffleSignalCapacity = 32;
         private const int FloodMuffleMinimumQualityFrameSignals = 8;
         private const ulong FluidSimulationMutationGuardMask = 0x00000000F00C4FFFUL;
+        private const uint FluidPinFront = 1u << 0;
+        private const uint FluidPinBack = 1u << 1;
+        private const uint FluidPinIntegrity = 1u << 2;
+        private const uint FluidPinEdgeOffsets = 1u << 3;
+        private const uint FluidPinEdgeDestinations = 1u << 4;
+        private const uint FluidPinEdgeFlags = 1u << 5;
+        private const uint FluidPinEdgeConductivity = 1u << 6;
+        private const uint FluidPinCentroids = 1u << 7;
+        private const uint FluidPinWaterline = 1u << 8;
+        private const uint FluidPinMassState = 1u << 9;
+        private const uint FluidPinTuning = 1u << 10;
+        private const uint FluidPinTelemetry = 1u << 11;
+        private const uint FluidPinCompartmentTelemetry = 1u << 12;
+        private const uint FluidPinTelemetryCursor = 1u << 13;
+        private const uint FluidPinBfsQueue = 1u << 14;
+        private const uint FluidPinBfsVisited = 1u << 15;
+        private const uint FluidPinDeltaVolumes = 1u << 16;
+        private const uint FluidPinTransferRemainders = 1u << 17;
+        private const uint FluidPinSummary = 1u << 18;
         private static readonly int s_WaterlineBufferId = Shader.PropertyToID("_H8HabitatFluidWaterlines");
         private static readonly int s_WaterlineCountId = Shader.PropertyToID("_H8HabitatFluidWaterlineCount");
         private static readonly int s_GlobalFloodScalarId = Shader.PropertyToID("_H8HabitatFloodScalar");
@@ -73,7 +92,9 @@ namespace Hecton8.Physics
         private int _waterlineBufferCapacity;
         private int _waterlineWriteBufferIndex;
         private ulong _activeMutationGuardMask;
+        private uint _simulationBufferPinMask;
         private IDataVault _activeMutationGuardVault;
+        private IDataVault _simulationBufferPinVault;
         private int _droppedSignalCount;
         private int _frame;
         private long _simulationScheduleTimestamp;
@@ -117,6 +138,7 @@ namespace Hecton8.Physics
         private void OnDisable()
         {
             CompleteScheduledSimulationForAuthoritativeWrite();
+            ReleaseFluidSimulationBufferPins();
             ReleaseFluidSimulationMutationGuard();
 
             if (_registeredFixed)
@@ -146,6 +168,7 @@ namespace Hecton8.Physics
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
                 CompleteScheduledSimulationForAuthoritativeWrite();
+                ReleaseFluidSimulationBufferPins();
                 ReleaseFluidSimulationMutationGuard();
                 CacheDataVaultCold(currentService as IDataVault);
                 if (isActiveAndEnabled)
@@ -204,7 +227,7 @@ namespace Hecton8.Physics
             if (!_buffersReady && !EnsureBuffersInitialized(false))
                 return;
 
-            if (!TryAcquireFluidSimulationMutationGuard())
+            if (!TryLockFluidSimulationBuffers())
                 return;
 
             bool scheduled = false;
@@ -330,7 +353,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (!scheduled)
-                    ReleaseFluidSimulationMutationGuard();
+                    ReleaseFluidSimulationBufferPins();
             }
         }
 
@@ -378,7 +401,8 @@ namespace Hecton8.Physics
             }
             finally
             {
-                ReleaseFluidSimulationMutationGuard();
+                _simulationScheduleTimestamp = 0L;
+                ReleaseFluidSimulationBufferPins();
             }
         }
 
@@ -657,7 +681,7 @@ namespace Hecton8.Physics
                     : read[compartmentIndex].NodeHashID;
                 float flow01 = math.saturate(math.isfinite(signal.FlowRate01) ? signal.FlowRate01 : 0f);
                 float breachArea = math.lerp(0.002f, math.max(0.002f, mockBreachAreaM2), flow01);
-                AbsoluteUniversePositionBlit leakBlit = AbsoluteUniversePositionBlit.FromAup(in signal.LeakAup);
+                FluidAup48 leakBlit = ToFluidAup48(in signal.LeakAup);
 
                 ApplyIncursionSignalToCompartment(read, compartmentIndex, nodeHash);
                 ApplyIncursionSignalToCompartment(write, compartmentIndex, nodeHash);
@@ -795,6 +819,8 @@ namespace Hecton8.Physics
             _edgeCount = 0;
             _activeMutationGuardMask = 0UL;
             _activeMutationGuardVault = null;
+            _simulationBufferPinMask = 0u;
+            _simulationBufferPinVault = null;
             _buffersReady = false;
         }
 
@@ -943,7 +969,7 @@ namespace Hecton8.Physics
             if (!front.IsCreated || !back.IsCreated || !integrity.IsCreated || !centroids.IsCreated || !waterlines.IsCreated)
                 return;
 
-            AbsoluteUniversePositionBlit origin = ResolveColdBootOriginAup();
+            FluidAup48 origin = ResolveColdBootOriginAup();
             FluidCompartmentDTO* frontPtr = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(front);
             FluidCompartmentDTO* backPtr = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(back);
             IntegrityStateDTO* integrityPtr = (IntegrityStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(integrity);
@@ -1015,7 +1041,7 @@ namespace Hecton8.Physics
             }
         }
 
-        private AbsoluteUniversePositionBlit ResolveColdBootOriginAup()
+        private FluidAup48 ResolveColdBootOriginAup()
         {
             Vector3 runtimePosition = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
             if (!math.isfinite(runtimePosition.x) ||
@@ -1032,7 +1058,7 @@ namespace Hecton8.Physics
             AbsoluteUniversePosition resolvedAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            return AbsoluteUniversePositionBlit.FromAup(in resolvedAup);
+            return ToFluidAup48(in resolvedAup);
         }
 
         private void BuildDefaultLineTopology(int safeCount)
@@ -1193,7 +1219,7 @@ namespace Hecton8.Physics
             float intensity = math.saturate(summary.AcousticFloodIntensity01);
             float cutoffHz = math.lerp(9000f, HabitatFluidIncursionConstants.DefaultLowPassCutoffHz, intensity);
             float transmission01 = math.saturate(math.lerp(1f, 0.22f, intensity));
-            AbsoluteUniversePositionBlit sourceAup = ResolveSourceAupBlit();
+            FluidAup48 sourceAup = ResolveSourceAupBlit();
             HabitatFloodAcousticMuffleSignal signal = new HabitatFloodAcousticMuffleSignal
             {
                 SourceGridX = sourceAup.GridX,
@@ -1219,7 +1245,7 @@ namespace Hecton8.Physics
                 _droppedSignalCount++;
         }
 
-        private AbsoluteUniversePositionBlit ResolveSourceAupBlit()
+        private FluidAup48 ResolveSourceAupBlit()
         {
             NativeArray<IntegrityStateDTO> integrity = ResolveFluidVaultBuffer(ref _integrityHandle, BufferID.ShinobuFluidIntegrityState, ResolveCompartmentCapacity());
             if (integrity.IsCreated && integrity.Length > 0)
@@ -1257,6 +1283,7 @@ namespace Hecton8.Physics
             }
             finally
             {
+                ReleaseFluidSimulationBufferPins();
                 ReleaseFluidSimulationMutationGuard();
             }
         }
@@ -1271,6 +1298,95 @@ namespace Hecton8.Physics
 
             _hasScheduled = false;
             return true;
+        }
+
+        private bool TryLockFluidSimulationBuffers()
+        {
+            if (_simulationBufferPinMask != 0u)
+                return false;
+
+            IDataVault vault = _vault;
+            if (vault == null)
+                return false;
+
+            _simulationBufferPinVault = vault;
+            if (!TryLockFluidSimulationBuffer(BufferID.ShinobuFluidCompartmentFront, FluidPinFront) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidCompartmentBack, FluidPinBack) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidIntegrityState, FluidPinIntegrity) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidEdgeOffsets, FluidPinEdgeOffsets) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidEdgeDestinations, FluidPinEdgeDestinations) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidEdgeFlags, FluidPinEdgeFlags) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidEdgeConductivity, FluidPinEdgeConductivity) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidCompartmentCentroids, FluidPinCentroids) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidWaterlineShader, FluidPinWaterline) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidMassState, FluidPinMassState) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidTuning, FluidPinTuning) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidTelemetryRing, FluidPinTelemetry) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidCompartmentTelemetry, FluidPinCompartmentTelemetry) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidTelemetryCursor, FluidPinTelemetryCursor) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidBfsQueue, FluidPinBfsQueue) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidBfsVisited, FluidPinBfsVisited) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidDeltaVolumes, FluidPinDeltaVolumes) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidTransferRemainders, FluidPinTransferRemainders) ||
+                !TryLockFluidSimulationBuffer(BufferID.ShinobuFluidFrameSummary, FluidPinSummary))
+            {
+                ReleaseFluidSimulationBufferPins();
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryLockFluidSimulationBuffer(BufferID bufferId, uint pinBit)
+        {
+            IDataVault vault = _simulationBufferPinVault;
+            if (vault == null || bufferId == BufferID.Unknown)
+                return false;
+
+            if ((_simulationBufferPinMask & pinBit) != 0u)
+                return true;
+
+            if (!vault.TryLockBuffer(bufferId, OwnerSystem))
+                return false;
+
+            _simulationBufferPinMask |= pinBit;
+            return true;
+        }
+
+        private void ReleaseFluidSimulationBufferPins()
+        {
+            IDataVault vault = _simulationBufferPinVault;
+            uint mask = _simulationBufferPinMask;
+            _simulationBufferPinVault = null;
+            _simulationBufferPinMask = 0u;
+            if (vault == null || mask == 0u)
+                return;
+
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinSummary, BufferID.ShinobuFluidFrameSummary);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinTransferRemainders, BufferID.ShinobuFluidTransferRemainders);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinDeltaVolumes, BufferID.ShinobuFluidDeltaVolumes);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinBfsVisited, BufferID.ShinobuFluidBfsVisited);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinBfsQueue, BufferID.ShinobuFluidBfsQueue);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinTelemetryCursor, BufferID.ShinobuFluidTelemetryCursor);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinCompartmentTelemetry, BufferID.ShinobuFluidCompartmentTelemetry);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinTelemetry, BufferID.ShinobuFluidTelemetryRing);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinTuning, BufferID.ShinobuFluidTuning);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinMassState, BufferID.ShinobuFluidMassState);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinWaterline, BufferID.ShinobuFluidWaterlineShader);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinCentroids, BufferID.ShinobuFluidCompartmentCentroids);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinEdgeConductivity, BufferID.ShinobuFluidEdgeConductivity);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinEdgeFlags, BufferID.ShinobuFluidEdgeFlags);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinEdgeDestinations, BufferID.ShinobuFluidEdgeDestinations);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinEdgeOffsets, BufferID.ShinobuFluidEdgeOffsets);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinIntegrity, BufferID.ShinobuFluidIntegrityState);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinBack, BufferID.ShinobuFluidCompartmentBack);
+            TryUnlockFluidSimulationPin(vault, mask, FluidPinFront, BufferID.ShinobuFluidCompartmentFront);
+        }
+
+        private static void TryUnlockFluidSimulationPin(IDataVault vault, uint mask, uint pinBit, BufferID bufferId)
+        {
+            if ((mask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, OwnerSystem);
         }
 
         private bool TryAcquireFluidSimulationMutationGuard()
@@ -1360,7 +1476,7 @@ namespace Hecton8.Physics
             buffer = null;
         }
 
-        private AbsoluteUniversePositionBlit ResolveExternalWaterlineAup()
+        private FluidAup48 ResolveExternalWaterlineAup()
         {
             double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
             AbsoluteUniversePosition originAup = math.all(math.isfinite(origin))
@@ -1369,7 +1485,20 @@ namespace Hecton8.Physics
             AbsoluteUniversePosition waterlineAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
                 new double3(0d, externalWaterlineRuntimeY, 0d));
-            return AbsoluteUniversePositionBlit.FromAup(in waterlineAup);
+            return ToFluidAup48(in waterlineAup);
+        }
+
+        private static FluidAup48 ToFluidAup48(in AbsoluteUniversePosition position)
+        {
+            return new FluidAup48
+            {
+                GridX = position.GridX,
+                GridY = position.GridY,
+                GridZ = position.GridZ,
+                Local = new float3(position.LocalX, position.LocalY, position.LocalZ),
+                Reserved0 = 0u,
+                Reserved1 = 0UL
+            };
         }
 
         private static ushort ResolveSolverIterations(float quality)

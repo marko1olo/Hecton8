@@ -136,7 +136,9 @@ namespace Hecton8.Core
         private const long PersistentNativeBudgetBytes = ScalabilityContract.HomeostasisPersistentNativeBudgetBytes;
         private const string OwnerName = nameof(HomeostasisBrain);
         private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_HARDWARE_THROTTLING_DIRECTOR.bin";
+        private const int BlackBoxDumpHeaderBytes = 24;
         private const uint ReasonHash = 0x484F4D45u; // HOME
+        private const uint BlackBoxDumpVersion = 1u;
 
         private const ulong Level1Mask =
             (ulong)(SystemBit.CausticsDetail |
@@ -928,7 +930,7 @@ namespace Hecton8.Core
                 _blackBoxCursor = 0;
         }
 
-        private static void DumpBlackBoxOnce(NativeArray<HomeostasisBlackBoxEntry> blackBox)
+        private static unsafe void DumpBlackBoxOnce(NativeArray<HomeostasisBlackBoxEntry> blackBox)
         {
             if (_blackBoxDumped || !blackBox.IsCreated)
                 return;
@@ -944,17 +946,41 @@ namespace Hecton8.Core
             int cursor = _blackBoxCursor;
             if (cursor < 0 || cursor >= BlackBoxCapacity)
                 cursor = 0;
-
-            for (int i = 0; i < BlackBoxCapacity; i++)
+            int byteCount = BlackBoxDumpHeaderBytes + BlackBoxCapacity * entryBytes;
+            NativeArray<byte> payload = default;
+            const string dumpPayloadLabel = "homeostasisBlackBoxDumpPayload";
+            try
             {
-                int index = cursor + i;
-                if (index >= BlackBoxCapacity)
-                    index -= BlackBoxCapacity;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(HomeostasisBrain),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int writeCursor = 0;
+                WriteUInt32LittleEndian(destination, ref writeCursor, ReasonHash);
+                WriteUInt32LittleEndian(destination, ref writeCursor, BlackBoxDumpVersion);
+                WriteUInt32LittleEndian(destination, ref writeCursor, unchecked((uint)BlackBoxCapacity));
+                WriteUInt32LittleEndian(destination, ref writeCursor, unchecked((uint)entryBytes));
+                WriteUInt32LittleEndian(destination, ref writeCursor, unchecked((uint)cursor));
+                WriteUInt32LittleEndian(destination, ref writeCursor, 0u);
 
-                _ = blackBox[index].Frame;
+                for (int i = 0; i < BlackBoxCapacity; i++)
+                {
+                    int index = cursor + i;
+                    if (index >= BlackBoxCapacity)
+                        index -= BlackBoxCapacity;
+
+                    WriteBlackBoxEntryLittleEndian(destination, ref writeCursor, blackBox[index]);
+                }
+
+                NativeFaultDumpWriter.TryWriteAll(BlackBoxDumpPath, payload, writeCursor);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(ref payload, nameof(HomeostasisBrain), dumpPayloadLabel);
             }
         }
-
         private static unsafe void WriteBlackBoxEntryLittleEndian(byte* destination, ref int cursor, HomeostasisBlackBoxEntry entry)
         {
             WriteUInt32LittleEndian(destination, ref cursor, entry.Frame);

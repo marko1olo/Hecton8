@@ -31,15 +31,14 @@ namespace Hecton8.Graphics.Culling
         private const SystemID OwnerSystemId = SystemID.GraphicsScalability;
         private const uint TelemetryFlagVaultLockFailed = 1u << 21;
 
-        private static readonly ulong JobMutationGuardMask =
-            MutationGuardBit(AbyssalShadowBufferIds.Instances) |
-            MutationGuardBit(AbyssalShadowBufferIds.States) |
-            MutationGuardBit(AbyssalShadowBufferIds.IlluminationScalars) |
-            MutationGuardBit(AbyssalShadowBufferIds.FrustumPlanes) |
-            MutationGuardBit(AbyssalShadowBufferIds.ProfileRules) |
-            MutationGuardBit(AbyssalShadowBufferIds.Counters) |
-            MutationGuardBit(AbyssalShadowBufferIds.HzbDepthTiles) |
-            MutationGuardBit(AbyssalShadowBufferIds.IndirectArgs);
+        private const uint JobPinInstances = 1u << 0;
+        private const uint JobPinStates = 1u << 1;
+        private const uint JobPinIlluminationScalars = 1u << 2;
+        private const uint JobPinFrustumPlanes = 1u << 3;
+        private const uint JobPinProfileRules = 1u << 4;
+        private const uint JobPinCounters = 1u << 5;
+        private const uint JobPinHzbDepthTiles = 1u << 6;
+        private const uint JobPinIndirectArgs = 1u << 7;
 
         private static readonly int ShadowCullStatesShaderId = Shader.PropertyToID("_H8AbyssalShadowCullStates");
         private static readonly int ShadowCullIndirectArgsShaderId = Shader.PropertyToID("_H8AbyssalShadowIndirectArgs");
@@ -98,6 +97,9 @@ namespace Hecton8.Graphics.Culling
         private bool _initialized;
         private bool _resourceRefreshRequested;
         private bool _jobPending;
+        private bool _jobPinsHeld;
+        private IDataVault _jobPinVault;
+        private uint _jobPinMask;
         private bool _mockSeeded;
         private bool _hzbSeeded;
         private bool _runtimeDefaultsWritten;
@@ -111,11 +113,6 @@ namespace Hecton8.Graphics.Culling
         private ShadowCullCountersDTO _lastCounters;
 
         public static bool IsActive => s_active != null;
-
-        private static ulong MutationGuardBit(BufferID bufferId)
-        {
-            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
-        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -873,13 +870,13 @@ namespace Hecton8.Graphics.Culling
             if (_jobPending)
                 return dependsOn;
 
-            if (!TryLockJobBuffers(vault, out int lockedCount))
+            if (!TryLockJobBuffers(vault))
             {
                 RecordTelemetry(vault, frame, TelemetryFlagVaultLockFailed, 0u, 0f);
                 return dependsOn;
             }
 
-            bool keepJobGuard = false;
+            bool keepJobPins = false;
             try
             {
             int instanceCapacity = math.max(1, _instanceCapacity);
@@ -1017,13 +1014,13 @@ namespace Hecton8.Graphics.Culling
             _scheduledInstanceCount = count;
             _lastTelemetryExtraFlags |= producerFlags;
             _jobPending = true;
-            keepJobGuard = true;
+            keepJobPins = true;
             return handle;
             }
             finally
             {
-                if (!keepJobGuard)
-                    UnlockJobBuffers(vault, lockedCount);
+                if (!keepJobPins)
+                    UnlockJobBuffers();
             }
         }
 
@@ -1071,8 +1068,7 @@ namespace Hecton8.Graphics.Culling
         {
             _jobPending = false;
             IDataVault vault = _dataVault;
-            if (vault != null)
-                UnlockJobBuffers(vault);
+            UnlockJobBuffers();
 
             long elapsedTicks = Stopwatch.GetTimestamp() - _scheduleTimestamp;
             double tickMs = Stopwatch.Frequency > 0 ? elapsedTicks * 1000.0 / Stopwatch.Frequency : 0.0;
@@ -1190,25 +1186,72 @@ namespace Hecton8.Graphics.Culling
             }
         }
 
-        private bool TryLockJobBuffers(IDataVault vault, out int lockedCount)
+        private bool TryLockJobBuffers(IDataVault vault)
         {
-            lockedCount = 0;
-            if (!vault.TryAcquireMutationGuard(JobMutationGuardMask))
+            if (_jobPinsHeld)
+                return true;
+            if (vault == null)
                 return false;
 
-            lockedCount = 1;
+            _jobPinVault = vault;
+            try
+            {
+                if (!TryLockJobBuffer(vault, AbyssalShadowBufferIds.Instances, JobPinInstances) ||
+                    !TryLockJobBuffer(vault, AbyssalShadowBufferIds.States, JobPinStates) ||
+                    !TryLockJobBuffer(vault, AbyssalShadowBufferIds.IlluminationScalars, JobPinIlluminationScalars) ||
+                    !TryLockJobBuffer(vault, AbyssalShadowBufferIds.FrustumPlanes, JobPinFrustumPlanes) ||
+                    !TryLockJobBuffer(vault, AbyssalShadowBufferIds.ProfileRules, JobPinProfileRules) ||
+                    !TryLockJobBuffer(vault, AbyssalShadowBufferIds.Counters, JobPinCounters) ||
+                    !TryLockJobBuffer(vault, AbyssalShadowBufferIds.HzbDepthTiles, JobPinHzbDepthTiles) ||
+                    !TryLockJobBuffer(vault, AbyssalShadowBufferIds.IndirectArgs, JobPinIndirectArgs))
+                    return false;
+
+                _jobPinsHeld = true;
+                return true;
+            }
+            finally
+            {
+                if (!_jobPinsHeld)
+                    UnlockJobBuffers();
+            }
+        }
+
+        private void UnlockJobBuffers()
+        {
+            IDataVault vault = _jobPinVault;
+            uint pinMask = _jobPinMask;
+            _jobPinVault = null;
+            _jobPinMask = 0u;
+            _jobPinsHeld = false;
+            if (vault == null || pinMask == 0u)
+                return;
+
+            TryUnlockJobBuffer(vault, pinMask, JobPinIndirectArgs, AbyssalShadowBufferIds.IndirectArgs);
+            TryUnlockJobBuffer(vault, pinMask, JobPinHzbDepthTiles, AbyssalShadowBufferIds.HzbDepthTiles);
+            TryUnlockJobBuffer(vault, pinMask, JobPinCounters, AbyssalShadowBufferIds.Counters);
+            TryUnlockJobBuffer(vault, pinMask, JobPinProfileRules, AbyssalShadowBufferIds.ProfileRules);
+            TryUnlockJobBuffer(vault, pinMask, JobPinFrustumPlanes, AbyssalShadowBufferIds.FrustumPlanes);
+            TryUnlockJobBuffer(vault, pinMask, JobPinIlluminationScalars, AbyssalShadowBufferIds.IlluminationScalars);
+            TryUnlockJobBuffer(vault, pinMask, JobPinStates, AbyssalShadowBufferIds.States);
+            TryUnlockJobBuffer(vault, pinMask, JobPinInstances, AbyssalShadowBufferIds.Instances);
+        }
+
+        private bool TryLockJobBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        {
+            if ((_jobPinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null || !vault.TryLockBuffer(bufferId, OwnerSystemId))
+                return false;
+
+            _jobPinMask |= pinBit;
             return true;
         }
 
-        private void UnlockJobBuffers(IDataVault vault)
+        private static void TryUnlockJobBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
         {
-            UnlockJobBuffers(vault, 1);
-        }
-
-        private void UnlockJobBuffers(IDataVault vault, int lockedCount)
-        {
-            if (lockedCount > 0)
-                vault.ReleaseMutationGuard(JobMutationGuardMask);
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, OwnerSystemId);
         }
 
         private float ResolveGlobalQualityWeight(in AbyssalShadowRuntimeStateDTO runtime)

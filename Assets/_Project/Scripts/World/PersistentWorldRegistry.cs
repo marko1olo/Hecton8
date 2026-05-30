@@ -3135,7 +3135,6 @@ namespace Hecton8.World
             if (pool == null)
                 return false;
 
-            _resolvedItemCatalog.PumpWorldPrefabDispatchTickets();
             HashSet<int>.Enumerator residentEnumerator = _residentWorldPrefabHashes.GetEnumerator();
             while (residentEnumerator.MoveNext())
             {
@@ -3143,7 +3142,7 @@ namespace Hecton8.World
                 if (itemHashId == 0)
                     continue;
 
-                if (!_resolvedItemCatalog.TryGetLoadedWorldPrefab(itemHashId, out GameObject prefab) ||
+                if (!_resolvedItemCatalog.PollLoadedWorldPrefab(itemHashId, out GameObject prefab) ||
                     prefab == null ||
                     !pool.HasPool(prefab))
                 {
@@ -5427,9 +5426,8 @@ namespace Hecton8.World
             _resolvedItemCatalog.QueueWorldPrefabPrewarmNonAlloc(_worldPrefabPrewarmHashScratch);
             while (Application.isPlaying &&
                    ReferenceEquals(s_activeRuntimeInstance, this) &&
-                   !_resolvedItemCatalog.AreWorldPrefabsReadyNonAlloc(_worldPrefabPrewarmHashScratch))
+                   !_resolvedItemCatalog.PollWorldPrefabsReadyNonAlloc(_worldPrefabPrewarmHashScratch))
             {
-                _resolvedItemCatalog.PumpWorldPrefabDispatchTickets();
                 await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: destroyCancellationToken);
             }
         }
@@ -5728,7 +5726,7 @@ namespace Hecton8.World
             if (itemHashId == 0)
                 return false;
 
-            if (!_resolvedItemCatalog.TryGetLoadedWorldPrefab(itemHashId, out GameObject prefab) || prefab == null)
+            if (!_resolvedItemCatalog.PollLoadedWorldPrefab(itemHashId, out GameObject prefab) || prefab == null)
             {
                 _resolvedItemCatalog.QueueWorldPrefabPrewarm(itemHashId);
                 return false;
@@ -6093,11 +6091,18 @@ namespace Hecton8.World
             if (ReferenceEquals(_resolvedItemCatalog, currentCatalog) && _itemLookupByHash.Count > 0)
                 return true;
 
-            _resolvedItemCatalog = currentCatalog;
-            _itemLookupByHash.Clear();
             _itemCatalogScratch.Clear();
 
-            int itemCount = currentCatalog.GetAllItemsNonAlloc(_itemCatalogScratch);
+            if (!currentCatalog.TryCopyAllItemsNonAlloc(_itemCatalogScratch, out int itemCount))
+            {
+                _itemCatalogScratch.Clear();
+                _resolvedItemCatalog = null;
+                _itemLookupByHash.Clear();
+                return false;
+            }
+
+            _resolvedItemCatalog = currentCatalog;
+            _itemLookupByHash.Clear();
             for (int i = 0; i < itemCount; i++)
             {
                 ItemData itemData = _itemCatalogScratch[i];
@@ -7210,7 +7215,7 @@ namespace Hecton8.World
             return TryCacheSpecialEntityState(in whaleFallState);
         }
 
-        internal float ResolveWhaleFallSpawnInfluence01(Vector3 worldPosition, float currentTimeSeconds, float radiusMeters)
+        internal float UpdateWhaleFallSpawnInfluence01(Vector3 worldPosition, float currentTimeSeconds, float radiusMeters)
         {
             if (!_entityStateByInstanceUid.IsCreated || radiusMeters <= 0f || _whaleFallPoiInstanceUidCount <= 0)
                 return 0f;

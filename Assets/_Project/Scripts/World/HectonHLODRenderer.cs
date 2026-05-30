@@ -444,7 +444,11 @@ namespace Hecton8.World
                 return editorShader;
 #endif
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             return Shader.Find("Hidden/Hecton8/World/HLODUnlitFog");
+#else
+            return null;
+#endif
         }
 
         private Bounds ResolveDrawBounds()

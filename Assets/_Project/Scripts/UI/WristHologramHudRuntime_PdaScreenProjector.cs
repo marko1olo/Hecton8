@@ -25,9 +25,6 @@ namespace Hecton8.UI
         public const int TelemetryCursor = 348733;
         public const int Tuning = 348734;
         public const int InterfaceProfiles = 348735;
-#if UNITY_EDITOR
-        public const int CsvScratch = 348736;
-#endif
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 80)]
@@ -165,7 +162,7 @@ namespace Hecton8.UI
         private const int PdaProjectionTelemetryCapacity = 300;
         private const int PdaProjectionInterfaceProfileCapacity = 64;
 #if UNITY_EDITOR
-        private const int PdaProjectionCsvScratchBytes = 16384;
+        private const int PdaProjectionCsvImportByteCapacity = 16384;
 #endif
         private const int PdaProjectionGlobalsStrideBytes = 64;
         private const int PdaProjectionMinimumShaderLevel = 45;
@@ -191,9 +188,6 @@ namespace Hecton8.UI
         private static readonly BufferID PdaProjectionTelemetryCursorBufferId = (BufferID)PdaProjectionVaultIds.TelemetryCursor;
         private static readonly BufferID PdaProjectionTuningBufferId = (BufferID)PdaProjectionVaultIds.Tuning;
         private static readonly BufferID PdaProjectionProfilesBufferId = (BufferID)PdaProjectionVaultIds.InterfaceProfiles;
-#if UNITY_EDITOR
-        private static readonly BufferID PdaProjectionCsvScratchBufferId = (BufferID)PdaProjectionVaultIds.CsvScratch;
-#endif
         private static WristHologramHudRuntime s_activePdaProjectorRuntime;
 
         [Header("Screen-Space PDA Projector")]
@@ -217,9 +211,6 @@ namespace Hecton8.UI
         private VaultGenerationHandle<int> _pdaProjectionTelemetryCursorHandle;
         private VaultGenerationHandle<PdaProjectionTuningDTO> _pdaProjectionTuningHandle;
         private VaultGenerationHandle<PdaInterfaceProfileDTO> _pdaProjectionProfileHandle;
-#if UNITY_EDITOR
-        private VaultGenerationHandle<byte> _pdaProjectionCsvScratchHandle;
-#endif
         private GraphicsBuffer _pdaProjectionStateBufferA;
         private GraphicsBuffer _pdaProjectionStateBufferB;
         private GraphicsBuffer _pdaProjectionActiveStateBuffer;
@@ -384,9 +375,6 @@ namespace Hecton8.UI
                 IsExactVaultHandle(in _pdaProjectionTelemetryCursorHandle, PdaProjectionTelemetryCursorBufferId) &&
                 IsExactVaultHandle(in _pdaProjectionTuningHandle, PdaProjectionTuningBufferId) &&
                 IsExactVaultHandle(in _pdaProjectionProfileHandle, PdaProjectionProfilesBufferId)
-#if UNITY_EDITOR
-                && IsExactVaultHandle(in _pdaProjectionCsvScratchHandle, PdaProjectionCsvScratchBufferId)
-#endif
                 ;
 
             if (!valid)
@@ -397,9 +385,6 @@ namespace Hecton8.UI
                 _pdaProjectionTelemetryCursorHandle = vault.EnsureGenerationHandle<int>(PdaProjectionTelemetryCursorBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
                 _pdaProjectionTuningHandle = vault.EnsureGenerationHandle<PdaProjectionTuningDTO>(PdaProjectionTuningBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
                 _pdaProjectionProfileHandle = vault.EnsureGenerationHandle<PdaInterfaceProfileDTO>(PdaProjectionProfilesBufferId, PdaProjectionInterfaceProfileCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-#if UNITY_EDITOR
-                _pdaProjectionCsvScratchHandle = vault.EnsureGenerationHandle<byte>(PdaProjectionCsvScratchBufferId, PdaProjectionCsvScratchBytes, SystemID.UI, NativeArrayOptions.UninitializedMemory);
-#endif
                 _pdaProjectionTuningSeeded = false;
                 _pdaProjectionDefaultProfilesSeeded = false;
                 _pdaProjectionProfilesLoaded = false;
@@ -442,9 +427,6 @@ namespace Hecton8.UI
             ReleaseWristHudVaultHandle(vault, ref _pdaProjectionTelemetryCursorHandle, PdaProjectionTelemetryCursorBufferId);
             ReleaseWristHudVaultHandle(vault, ref _pdaProjectionTuningHandle, PdaProjectionTuningBufferId);
             ReleaseWristHudVaultHandle(vault, ref _pdaProjectionProfileHandle, PdaProjectionProfilesBufferId);
-#if UNITY_EDITOR
-            ReleaseWristHudVaultHandle(vault, ref _pdaProjectionCsvScratchHandle, PdaProjectionCsvScratchBufferId);
-#endif
             _pdaProjectionTuningSeeded = false;
             _pdaProjectionDefaultProfilesSeeded = false;
             _pdaProjectionProfilesLoaded = false;
@@ -1063,7 +1045,7 @@ namespace Hecton8.UI
             if (!File.Exists(path))
                 return false;
 
-            Span<byte> csvScratch = stackalloc byte[PdaProjectionCsvScratchBytes];
+            Span<byte> csvScratch = stackalloc byte[PdaProjectionCsvImportByteCapacity];
             int byteCount = TryReadPdaProfileCsvBytes(path, csvScratch);
             if (byteCount <= 0)
                 return false;
@@ -1122,22 +1104,21 @@ namespace Hecton8.UI
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
                     long streamBytes = stream.Length;
-                    if (streamBytes < 0L)
-                        streamBytes = 0L;
+                    if (streamBytes <= 0L || streamBytes > destination.Length)
+                        return 0;
 
-                    long boundedBytes = streamBytes < destination.Length ? streamBytes : destination.Length;
-                    int targetBytes = (int)boundedBytes;
+                    int targetBytes = (int)streamBytes;
                     Span<byte> target = destination.Slice(0, targetBytes);
                     int total = 0;
                     while (total < targetBytes)
                     {
                         int read = stream.Read(target.Slice(total));
                         if (read <= 0)
-                            break;
+                            return 0;
                         total += read;
                     }
 
-                    return total;
+                    return total == targetBytes ? total : 0;
                 }
             }
             catch (IOException)
@@ -1355,23 +1336,34 @@ namespace Hecton8.UI
             header.PayloadBytes = payloadBytes;
             header.TelemetryValidCount = validCount;
             header.TelemetryStartIndex = startIndex;
-            telemetry = default;
-            cursor = default;
-
-            _pdaProjectionBlackBoxDumped = true;
+            int headerBytes = UnsafeUtility.SizeOf<PdaProjectionBlackBoxDumpHeader>();
+            int byteCount = headerBytes + payloadBytes;
+            NativeArray<byte> payload = default;
             try
             {
-                string directory = ResolvePdaProjectionDumpDirectory();
-                if (string.IsNullOrEmpty(directory))
-                    return;
-
-                Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, "Dump_1335_UIPresentation_PdaProjection.bin");
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(WristHologramHudRuntime),
+                    "pdaProjectionBlackBoxDumpPayload",
+                    NativeArrayOptions.ClearMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                UnsafeUtility.MemCpy(destination, UnsafeUtility.AddressOf(ref header), headerBytes);
+                byte* rowDestination = destination + headerBytes;
+                for (int i = 0; i < validCount; i++)
                 {
-                    stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(&header), UnsafeUtility.SizeOf<PdaProjectionBlackBoxDumpHeader>()));
-                    WritePdaProjectionTelemetryDump(stream, startIndex, validCount, entrySize);
+                    int sourceIndex = startIndex + i;
+                    if (sourceIndex >= telemetryCapacity)
+                        sourceIndex -= telemetryCapacity;
+
+                    PdaProjectionTelemetryEntry row = telemetry[sourceIndex];
+                    UnsafeUtility.MemCpy(rowDestination + i * entrySize, UnsafeUtility.AddressOf(ref row), entrySize);
                 }
+
+                telemetry = default;
+                cursor = default;
+
+                if (NativeFaultDumpWriter.TryWriteAll("Docs/AgentLogs/Dump_1335_UIPresentation_PdaProjection.bin", payload, byteCount))
+                    _pdaProjectionBlackBoxDumped = true;
             }
             catch (IOException)
             {
@@ -1396,6 +1388,13 @@ namespace Hecton8.UI
             catch (NotSupportedException)
             {
                 Hecton8.Core.H8Debug.LogError("Agent1335 PDA projection dump failed.");
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(WristHologramHudRuntime),
+                    "pdaProjectionBlackBoxDumpPayload");
             }
         }
 
@@ -1435,28 +1434,6 @@ namespace Hecton8.UI
             if (cursor <= 0)
                 return 0;
             return cursor >= capacity ? 0 : cursor;
-        }
-
-        private void WritePdaProjectionTelemetryDump(
-            FileStream stream,
-            int startIndex,
-            int validCount,
-            int entrySize)
-        {
-            if (stream == null || validCount <= 0 || entrySize <= 0)
-                return;
-
-            for (int i = 0; i < validCount; i++)
-            {
-                int sourceIndex = startIndex + i;
-                if (sourceIndex >= PdaProjectionTelemetryCapacity)
-                    sourceIndex -= PdaProjectionTelemetryCapacity;
-
-                if (!TryReadPdaProjectionTelemetryRow(sourceIndex, out PdaProjectionTelemetryEntry row))
-                    return;
-
-                stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(&row), entrySize));
-            }
         }
 
         private bool TryReadPdaProjectionTelemetryRow(int index, out PdaProjectionTelemetryEntry row)

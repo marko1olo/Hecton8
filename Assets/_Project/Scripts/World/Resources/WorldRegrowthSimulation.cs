@@ -453,6 +453,9 @@ namespace Hecton8.World
     {
         public const int TelemetryCapacity = 300;
         public const string DefaultBlackBoxDumpPath = "Docs/AgentLogs/Dump_ORGANIC_ENTROPY_REGENERATOR.bin";
+        private const uint BlackBoxDumpMagic = 0x57524738u; // 8GRW
+        private const uint BlackBoxDumpVersion = 1u;
+        private const int BlackBoxDumpHeaderBytes = 24;
         private const int MaxSafePermille = 1000;
         private const int MaxSafeBaseGrowthQ = 255;
 
@@ -623,11 +626,33 @@ namespace Hecton8.World
 
             try
             {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    _ = directory;
+                int entrySize = UnsafeUtility.SizeOf<WorldRegrowthTelemetryEntry>();
+                int byteCount = BlackBoxDumpHeaderBytes + memory.BlackBox.Length * entrySize;
+                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                try
+                {
+                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    WriteUInt32LittleEndian(target, 0, BlackBoxDumpMagic);
+                    WriteUInt32LittleEndian(target, 4, BlackBoxDumpVersion);
+                    WriteInt32LittleEndian(target, 8, memory.BlackBox.Length);
+                    WriteInt32LittleEndian(target, 12, entrySize);
+                    WriteUInt32LittleEndian(target, 16, (uint)entrySize);
+                    WriteUInt32LittleEndian(target, 20, 0u);
 
-                return true;
+                    int offset = BlackBoxDumpHeaderBytes;
+                    for (int i = 0; i < memory.BlackBox.Length; i++)
+                    {
+                        WorldRegrowthTelemetryEntry entry = memory.BlackBox[i];
+                        UnsafeUtility.MemCpy(target + offset, &entry, entrySize);
+                        offset += entrySize;
+                    }
+
+                    return NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+                }
+                finally
+                {
+                    payload.Dispose();
+                }
             }
             catch (IOException)
             {
@@ -645,6 +670,19 @@ namespace Hecton8.World
             {
                 return false;
             }
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, int offset, uint value)
+        {
+            destination[offset] = unchecked((byte)value);
+            destination[offset + 1] = unchecked((byte)(value >> 8));
+            destination[offset + 2] = unchecked((byte)(value >> 16));
+            destination[offset + 3] = unchecked((byte)(value >> 24));
         }
     }
 

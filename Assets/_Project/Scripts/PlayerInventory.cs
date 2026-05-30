@@ -68,6 +68,10 @@ namespace Hecton8.Inventory
         private const float HeavyBulkTransferAudioThresholdKg = 50f;
         private const int InventoryBlackBoxCapacity = 300;
         private const int InventoryBlackBoxEntrySizeBytes = 64;
+        private const int InventoryBlackBoxDumpHeaderBytes = 32;
+        private const uint InventoryBlackBoxDumpVersion = 1u;
+        private const uint InventoryBlackBoxDumpMagic = 0x494E5638u;
+        private const uint SalinityCorrosionBlackBoxDumpMagic = 0x53434F52u;
         private const string InventoryBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1317_Inventory.bin";
         private const int PendingScavengingItemSignalCapacity = 128;
         private const int PendingInventoryCommandSignalCapacity = 16;
@@ -5743,8 +5747,51 @@ namespace Hecton8.Inventory
                 return;
 
             _salinityCorrosionBlackBoxDumped = 1;
-            for (int i = 0; i < _salinityCorrosionBlackBox.Length; i++)
-                _ = _salinityCorrosionBlackBox[i].Frame;
+            int count = _salinityCorrosionBlackBox.Length;
+            if (count <= 0)
+                return;
+
+            int cursor = _salinityCorrosionBlackBoxCursor;
+            if ((uint)cursor >= (uint)count)
+                cursor = 0;
+
+            int byteCount = InventoryBlackBoxDumpHeaderBytes + count * SalinityCorrosionBlackBoxEntrySizeBytes;
+            NativeArray<byte> payload = default;
+            try
+            {
+                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int writeCursor = 0;
+                WriteUInt32LittleEndian(destination, ref writeCursor, SalinityCorrosionBlackBoxDumpMagic);
+                WriteUInt32LittleEndian(destination, ref writeCursor, InventoryBlackBoxDumpVersion);
+                WriteUInt32LittleEndian(destination, ref writeCursor, unchecked((uint)count));
+                WriteUInt32LittleEndian(destination, ref writeCursor, unchecked((uint)SalinityCorrosionBlackBoxEntrySizeBytes));
+                WriteUInt32LittleEndian(destination, ref writeCursor, unchecked((uint)cursor));
+                WriteUInt32LittleEndian(destination, ref writeCursor, unchecked((uint)InventoryVersion));
+                WriteUInt32LittleEndian(destination, ref writeCursor, 0u);
+                WriteUInt32LittleEndian(destination, ref writeCursor, 0u);
+
+                for (int i = 0; i < count; i++)
+                {
+                    int index = cursor + i;
+                    if (index >= count)
+                        index -= count;
+
+                    int rowEnd = writeCursor + SalinityCorrosionBlackBoxEntrySizeBytes;
+                    WriteSalinityCorrosionTelemetryEntry(destination, ref writeCursor, _salinityCorrosionBlackBox[index]);
+                    if (writeCursor > rowEnd)
+                        return;
+
+                    writeCursor = rowEnd;
+                }
+
+                NativeFaultDumpWriter.TryWriteAll(SalinityCorrosionBlackBoxDumpRelativePath, payload, writeCursor);
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
+            }
         }
 
         private static float ResolveSalinityFactor(uint biomeHash)
@@ -5892,8 +5939,83 @@ namespace Hecton8.Inventory
                 return;
 
             _inventoryBlackBoxDumped = 1;
-            for (int i = 0; i < _inventoryBlackBox.Length; i++)
-                _ = _inventoryBlackBox[i].Frame;
+            int count = _inventoryBlackBox.Length;
+            if (count <= 0)
+                return;
+
+            int cursor = _inventoryBlackBoxCursor;
+            if ((uint)cursor >= (uint)count)
+                cursor = 0;
+
+            int byteCount = InventoryBlackBoxDumpHeaderBytes + count * InventoryBlackBoxEntrySizeBytes;
+            NativeArray<byte> payload = default;
+            try
+            {
+                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int writeCursor = 0;
+                WriteUInt32LittleEndian(destination, ref writeCursor, InventoryBlackBoxDumpMagic);
+                WriteUInt32LittleEndian(destination, ref writeCursor, InventoryBlackBoxDumpVersion);
+                WriteUInt32LittleEndian(destination, ref writeCursor, unchecked((uint)count));
+                WriteUInt32LittleEndian(destination, ref writeCursor, unchecked((uint)InventoryBlackBoxEntrySizeBytes));
+                WriteUInt32LittleEndian(destination, ref writeCursor, unchecked((uint)cursor));
+                WriteUInt32LittleEndian(destination, ref writeCursor, unchecked((uint)InventoryVersion));
+                WriteUInt32LittleEndian(destination, ref writeCursor, 0u);
+                WriteUInt32LittleEndian(destination, ref writeCursor, 0u);
+
+                for (int i = 0; i < count; i++)
+                {
+                    int index = cursor + i;
+                    if (index >= count)
+                        index -= count;
+
+                    int rowEnd = writeCursor + InventoryBlackBoxEntrySizeBytes;
+                    WriteInventoryTelemetryEntry(destination, ref writeCursor, _inventoryBlackBox[index]);
+                    if (writeCursor > rowEnd)
+                        return;
+
+                    writeCursor = rowEnd;
+                }
+
+                NativeFaultDumpWriter.TryWriteAll(InventoryBlackBoxDumpRelativePath, payload, writeCursor);
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
+            }
+        }
+
+        private static unsafe void WriteSalinityCorrosionTelemetryEntry(byte* destination, ref int cursor, SalinityCorrosionTelemetryEntry entry)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Frame);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.InventoryVersion);
+            WriteFloatLittleEndian(destination, ref cursor, entry.AverageEquipmentDurability01);
+            WriteFloatLittleEndian(destination, ref cursor, entry.RustScalar01);
+            WriteFloatLittleEndian(destination, ref cursor, entry.SalinityFactor);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.CurrentBiomeHash);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.InventoryMaskLow);
+            WriteInt32LittleEndian(destination, ref cursor, entry.Flags);
+        }
+
+        private static unsafe void WriteInventoryTelemetryEntry(byte* destination, ref int cursor, InventoryTelemetryEntry entry)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Frame);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Version);
+            WriteFloatLittleEndian(destination, ref cursor, entry.WeightKg);
+            WriteFloatLittleEndian(destination, ref cursor, entry.VolumeLiters);
+            WriteFloatLittleEndian(destination, ref cursor, entry.Load01);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.InventoryMaskLow);
+            WriteInt32LittleEndian(destination, ref cursor, entry.OccupiedCells);
+            WriteInt32LittleEndian(destination, ref cursor, entry.Flags);
+            WriteFloatLittleEndian(destination, ref cursor, entry.MaxWeightKg);
+            WriteFloatLittleEndian(destination, ref cursor, entry.MaxVolumeLiters);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.ShadowHash);
+            WriteInt32LittleEndian(destination, ref cursor, entry.ShadowPayloadLength);
+            WriteFloatLittleEndian(destination, ref cursor, entry.RadiationSv);
+            WriteInt32LittleEndian(destination, ref cursor, entry.Columns);
+            WriteInt32LittleEndian(destination, ref cursor, entry.Rows);
+            WriteInt32LittleEndian(destination, ref cursor, entry.DefragTimeMicroseconds);
         }
 
         private static unsafe void WriteFloatLittleEndian(byte* destination, ref int cursor, float value)
@@ -6460,7 +6582,7 @@ namespace Hecton8.Inventory
             if (!TryResolveInventoryPlayerAup(out AbsoluteUniversePosition playerAup))
                 return false;
 
-            AbsoluteUniversePosition impactAup = impactSignal.ResolvePointAup();
+            AbsoluteUniversePosition impactAup = AbsoluteUniversePosition.FromAbsolutePosition(impactSignal.ResolvePointAupMeters());
             if (!impactAup.IsFinite())
                 return false;
 

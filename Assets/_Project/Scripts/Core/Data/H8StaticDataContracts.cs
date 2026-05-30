@@ -2289,6 +2289,9 @@ namespace Hecton8.Core.Data
 
     internal static unsafe class H8StaticDataBlackBoxDump
     {
+        private const string DumpPayloadOwner = nameof(H8StaticDataBlackBoxDump);
+        private const string DumpPayloadLabel = "h8StaticDataBlackBoxDumpPayload";
+
         public static void Write(
             string path,
             H8StaticDataTelemetryEntry* ring,
@@ -2299,14 +2302,12 @@ namespace Hecton8.Core.Data
             if (ring == null || string.IsNullOrEmpty(path))
                 return;
 
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
             if ((uint)cursorValue >= H8StaticDataFormat.TelemetryFrameCount)
                 cursorValue = 0;
 
             int entrySize = UnsafeUtility.SizeOf<H8StaticDataTelemetryEntry>();
+            int headerSize = UnsafeUtility.SizeOf<H8StaticDataDumpHeader>();
+            int byteCount = headerSize + H8StaticDataFormat.TelemetryFrameCount * entrySize;
             H8StaticDataDumpHeader header = new H8StaticDataDumpHeader
             {
                 Magic = H8StaticDataFormat.TelemetryDumpMagic,
@@ -2317,20 +2318,43 @@ namespace Hecton8.Core.Data
                 Flags = flags
             };
 
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            NativeArray<byte> payload = default;
+            try
             {
-                stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<H8StaticDataDumpHeader>()));
+                payload = Hecton8.Core.NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    DumpPayloadOwner,
+                    DumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int writeCursor = 0;
+                if (!Hecton8.Core.UnsafeMemoryCopyGuard.SafeCopy(destination, byteCount, &header, headerSize))
+                    return;
+
+                writeCursor += headerSize;
                 for (int i = 0; i < H8StaticDataFormat.TelemetryFrameCount; i++)
                 {
                     int sourceIndex = (cursorValue + i) % H8StaticDataFormat.TelemetryFrameCount;
-                    stream.Write(new ReadOnlySpan<byte>(ring + sourceIndex, entrySize));
+                    if (!Hecton8.Core.UnsafeMemoryCopyGuard.SafeCopy(destination + writeCursor, byteCount - writeCursor, ring + sourceIndex, entrySize))
+                        return;
+
+                    writeCursor += entrySize;
                 }
+
+                Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(path, payload, writeCursor);
+            }
+            finally
+            {
+                Hecton8.Core.NativeFaultDumpWriter.DisposeTransientPayload(ref payload, DumpPayloadOwner, DumpPayloadLabel);
             }
         }
     }
 
     public static unsafe class H8BTreeTelemetryDump
     {
+        private const string DumpPayloadOwner = nameof(H8BTreeTelemetryDump);
+        private const string DumpPayloadLabel = "h8BTreeTelemetryDumpPayload";
+
         public static void Write(
             string path,
             BTreeTelemetryEntry* ring,
@@ -2340,14 +2364,12 @@ namespace Hecton8.Core.Data
             if (ring == null || string.IsNullOrEmpty(path))
                 return;
 
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
             if ((uint)cursorValue >= H8StaticDataFormat.TelemetryFrameCount)
                 cursorValue = 0;
 
             int entrySize = UnsafeUtility.SizeOf<BTreeTelemetryEntry>();
+            int headerSize = UnsafeUtility.SizeOf<H8StaticDataDumpHeader>();
+            int byteCount = headerSize + H8StaticDataFormat.TelemetryFrameCount * entrySize;
             H8StaticDataDumpHeader header = new H8StaticDataDumpHeader
             {
                 Magic = H8StaticDataFormat.TelemetryDumpMagic,
@@ -2358,14 +2380,34 @@ namespace Hecton8.Core.Data
                 Flags = flags
             };
 
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            NativeArray<byte> payload = default;
+            try
             {
-                stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<H8StaticDataDumpHeader>()));
+                payload = Hecton8.Core.NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    DumpPayloadOwner,
+                    DumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int writeCursor = 0;
+                if (!Hecton8.Core.UnsafeMemoryCopyGuard.SafeCopy(destination, byteCount, &header, headerSize))
+                    return;
+
+                writeCursor += headerSize;
                 for (int i = 0; i < H8StaticDataFormat.TelemetryFrameCount; i++)
                 {
                     int sourceIndex = (cursorValue + i) % H8StaticDataFormat.TelemetryFrameCount;
-                    stream.Write(new ReadOnlySpan<byte>(ring + sourceIndex, entrySize));
+                    if (!Hecton8.Core.UnsafeMemoryCopyGuard.SafeCopy(destination + writeCursor, byteCount - writeCursor, ring + sourceIndex, entrySize))
+                        return;
+
+                    writeCursor += entrySize;
                 }
+
+                Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(path, payload, writeCursor);
+            }
+            finally
+            {
+                Hecton8.Core.NativeFaultDumpWriter.DisposeTransientPayload(ref payload, DumpPayloadOwner, DumpPayloadLabel);
             }
         }
     }

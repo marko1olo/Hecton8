@@ -1,0 +1,82 @@
+{
+  "agent_id": "AUDIT_NATIVE_STATE",
+  "artifact": "APEX_AUDIT_NATIVE_STATE_MIGRATORY_SARGASSUM_SWEEP1_20260528",
+  "timestamp_local": "2026-05-28T20:44:00+04:00",
+  "scope": "WorldProceduralScatterDirector migratory Sargassum DataVault descriptor sovereignty",
+  "modified_files": [
+    "Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs"
+  ],
+  "unchanged_contract_files_referenced": [
+    "Assets/_Project/Scripts/Core/Memory/H8Memory.cs"
+  ],
+  "git_status_before_patch": "clean for Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs",
+  "diff_numstat": {
+    "insertions": 22,
+    "deletions": 9,
+    "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs"
+  },
+  "problem": "MigratoryVaultArray stored a VaultGenerationHandle without storing the expected BufferID. Resolve, write-lock, unlock, and release accepted any nonzero generated handle, so same-owner WorldSargassum lanes could be confused after DataVault churn.",
+  "solution": "Store the expected BufferID in MigratoryVaultArray.Bind and validate every resolve, write-lock, release, and newly acquired handle with exact BufferID, SystemID.WorldSargassum, and generation.",
+  "buffer_ids_secured": [
+    {"name": "WorldScatterMigratorySargassumIslands", "value": 74369, "owner": "SystemID.WorldSargassum"},
+    {"name": "WorldScatterMigratorySargassumScratchIslands", "value": 74370, "owner": "SystemID.WorldSargassum"},
+    {"name": "WorldScatterMigratorySargassumSelectedSources", "value": 74371, "owner": "SystemID.WorldSargassum"},
+    {"name": "WorldScatterMigratorySargassumFlowSamples", "value": 74372, "owner": "SystemID.WorldSargassum"},
+    {"name": "WorldScatterMigratorySargassumSpatialHandles", "value": 74373, "owner": "SystemID.WorldSargassum"},
+    {"name": "WorldScatterMigratorySargassumScratchSpatialHandles", "value": 74374, "owner": "SystemID.WorldSargassum"}
+  ],
+  "source_anchors": {
+    "wrapper_expected_buffer_storage": "115-141",
+    "resolve_exact_gate": "147-151",
+    "write_lock_exact_gate": "155-169",
+    "unlock_exact_gate": "174-181",
+    "release_exact_gate": "184-190",
+    "ensure_exact_acquire_release": "385-406",
+    "exact_predicate": "413-418",
+    "job_lock_release_pair": ["623-628", "639-644"]
+  },
+  "zero_gc_diff_scan": {
+    "command": "git diff -U0 -- Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs | rg new|string.Format|.ToString|LINQ|foreach",
+    "matches": 0,
+    "stderr": "LF will be replaced by CRLF warning only"
+  },
+  "layout_diff_scan": {
+    "command": "git diff -U0 -- Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs | rg StructLayout|FieldOffset|SizeOf|OffsetOf|sizeof",
+    "matches": 0,
+    "stderr": "LF will be replaced by CRLF warning only"
+  },
+  "bad_pattern_scan": {
+    "command": "rg currentService as IDataVault|previousService as IDataVault|IsHandleCreated(|IsVaultHandleCreated|handle.BufferID != 0u|handle.BufferID == 0u|OwnerSystemID|Bind(vault, in handle) Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs",
+    "matches": 0
+  },
+  "diff_check": {
+    "command": "git diff --check -- Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs",
+    "exit_code": 0,
+    "stdout": "LF will be replaced by CRLF warning only"
+  },
+  "data_sovereignty": {
+    "try_acquire_write_lock_added": false,
+    "try_acquire_write_lock_helper": "MigratoryVaultArray.TryAcquireWriteLock now rejects non-WorldSargassum writer requests and non-exact handles before vault.TryAcquireWriteLock.",
+    "release_proof": "If flow-sample lock acquisition fails, islands lock is released immediately. Scheduled job lock release releases flow samples then islands through exact-gated ReleaseWriteLock.",
+    "new_finally_blocks": 0
+  },
+  "continuous_scalability": {
+    "quality_route": "No quality route changed in this patch.",
+    "low_middle_high_ultra": "Existing bounded island count of 24 and cadence-based job scheduling remain unchanged; this patch adds only descriptor gates.",
+    "cinematic_cheat": "Migratory Sargassum stays as data-only canopy islands and AUP spatial hash volumes, not a physical seaweed simulation."
+  },
+  "compilation_resource_throttling": {
+    "dotnet_build_invoked_by_this_patch": false,
+    "cpu_sample_before_compile_decision_percent": 74,
+    "active_compiler_processes": [],
+    "decision": "No build, Unity import, Play Mode, profiler, GCMonitor, or fresh native ledger was launched because CPU was above 50 percent."
+  },
+  "proof_level": "STATIC_SOURCE_ONLY",
+  "not_proven": [
+    "No C# compile verdict after this patch.",
+    "No Unity import verdict.",
+    "No Play Mode or profiler proof.",
+    "No runtime GC allocation sample.",
+    "No fresh all-scripts Roslyn native ledger after this patch."
+  ]
+}

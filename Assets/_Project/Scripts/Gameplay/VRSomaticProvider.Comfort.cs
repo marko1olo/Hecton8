@@ -130,7 +130,6 @@ namespace Hecton8.Gameplay
         private const int SomaticComfortProfileCapacity = 4;
         private const int SomaticComfortProfileLookupCapacity = 8;
         private const int SomaticMockSicknessSampleCapacity = 128;
-        private const int SomaticCsvScratchBytes = 4096;
         private const int SomaticComfortStateBytes = 32;
         private const int ComfortTelemetryEntryBytes = 64;
         private const string SomaticComfortTelemetryDumpFileName = "Dump_1335_SomaticComfortTelemetry.bin";
@@ -155,7 +154,6 @@ namespace Hecton8.Gameplay
         private VaultBufferView<VrComfortProfileLookupSlotDTO> _somaticProfileLookup;
         private VaultBufferView<ComfortTelemetryEntry> _somaticComfortTelemetry;
         private VaultBufferView<SomaticMockSicknessSampleDTO> _somaticMockSicknessSamples;
-        private VaultBufferView<byte> _somaticCsvScratch;
         private JobHandle _somaticComfortHandle;
         private bool _somaticComfortBuffersSeeded;
         private bool _somaticComfortJobScheduled;
@@ -391,11 +389,6 @@ namespace Hecton8.Gameplay
                     BufferID.ShinobuVRSomaticMockSickness,
                     SomaticMockSicknessSampleCapacity,
                     NativeArrayOptions.UninitializedMemory);
-                _somaticCsvScratch = VaultBufferView<byte>.Create(
-                    vault,
-                    BufferID.ShinobuVRSomaticCsvScratch,
-                    SomaticCsvScratchBytes,
-                    NativeArrayOptions.UninitializedMemory);
             }
             if (!_somaticKccStateMirror.IsCreated)
             {
@@ -451,8 +444,7 @@ namespace Hecton8.Gameplay
                 !_somaticHorizonRead.IsCreated ||
                 !_somaticHorizonTelemetry.IsCreated ||
                 !_somaticComfortTelemetry.IsCreated ||
-                !_somaticMockSicknessSamples.IsCreated ||
-                !_somaticCsvScratch.IsCreated)
+                !_somaticMockSicknessSamples.IsCreated)
             {
                 return;
             }
@@ -814,7 +806,6 @@ namespace Hecton8.Gameplay
             _somaticProfileLookup.Release();
             _somaticComfortTelemetry.Release();
             _somaticMockSicknessSamples.Release();
-            _somaticCsvScratch.Release();
             ResetHorizonLockBuffers();
             _somaticComfortWrite = default;
             _somaticComfortRead = default;
@@ -824,7 +815,6 @@ namespace Hecton8.Gameplay
             _somaticProfileLookup = default;
             _somaticComfortTelemetry = default;
             _somaticMockSicknessSamples = default;
-            _somaticCsvScratch = default;
             _somaticComfortBuffersSeeded = false;
             _somaticComfortJobScheduled = false;
             _somaticComfortTelemetryDumped = false;
@@ -1173,11 +1163,12 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void DumpComfortTelemetryOnce()
+        private unsafe void DumpComfortTelemetryOnce()
         {
             if (_somaticComfortTelemetryDumped)
                 return;
 
+            NativeArray<byte> payload = default;
             try
             {
                 bool hasComfort = TryGetComfortTelemetryLength(out int comfortLength);
@@ -1192,45 +1183,49 @@ namespace Hecton8.Gameplay
                     "Docs",
                     "AgentLogs",
                     SomaticComfortTelemetryDumpFileName));
-                using (System.IO.FileStream stream = new System.IO.FileStream(path, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
+                int byteCount = 40 +
+                    (hasComfort ? comfortLength * ComfortTelemetryEntryBytes : 0) +
+                    (hasHorizon ? horizonLength * SomaticTelemetryEntryBytes : 0);
+                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
+
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                Span<byte> bytes = new Span<byte>(target, byteCount);
+                WriteUInt32LittleEndian(bytes, 0, SomaticHorizonTelemetryHash);
+                WriteUInt32LittleEndian(bytes, 4, 3u);
+                WriteUInt32LittleEndian(bytes, 8, hasComfort ? (uint)comfortLength : 0u);
+                WriteUInt32LittleEndian(bytes, 12, (uint)ComfortTelemetryEntryBytes);
+                WriteUInt32LittleEndian(bytes, 16, hasHorizon ? (uint)horizonLength : 0u);
+                WriteUInt32LittleEndian(bytes, 20, (uint)SomaticTelemetryEntryBytes);
+                WriteUInt32LittleEndian(bytes, 24, unchecked((uint)_somaticTelemetryCursor));
+                WriteUInt32LittleEndian(bytes, 28, unchecked((uint)_somaticHorizonTelemetryCursor));
+                WriteUInt32LittleEndian(bytes, 32, SomaticComfortTelemetryHash);
+                WriteUInt32LittleEndian(bytes, 36, SomaticHorizonTelemetryHash);
+
+                int offset = 40;
+                if (hasComfort)
                 {
-                    Span<byte> header = stackalloc byte[40];
-                    WriteUInt32LittleEndian(header, 0, SomaticHorizonTelemetryHash);
-                    WriteUInt32LittleEndian(header, 4, 3u);
-                    WriteUInt32LittleEndian(header, 8, hasComfort ? (uint)comfortLength : 0u);
-                    WriteUInt32LittleEndian(header, 12, (uint)ComfortTelemetryEntryBytes);
-                    WriteUInt32LittleEndian(header, 16, hasHorizon ? (uint)horizonLength : 0u);
-                    WriteUInt32LittleEndian(header, 20, (uint)SomaticTelemetryEntryBytes);
-                    WriteUInt32LittleEndian(header, 24, unchecked((uint)_somaticTelemetryCursor));
-                    WriteUInt32LittleEndian(header, 28, unchecked((uint)_somaticHorizonTelemetryCursor));
-                    WriteUInt32LittleEndian(header, 32, SomaticComfortTelemetryHash);
-                    WriteUInt32LittleEndian(header, 36, SomaticHorizonTelemetryHash);
-                    stream.Write(header);
-
-                    if (hasComfort)
+                    for (int i = 0; i < comfortLength; i++)
                     {
-                        Span<byte> row = stackalloc byte[ComfortTelemetryEntryBytes];
-                        for (int i = 0; i < comfortLength; i++)
-                        {
-                            row.Clear();
-                            if (TryReadComfortTelemetryEntry(i, out ComfortTelemetryEntry entry))
-                                WriteComfortTelemetryEntry(row, in entry);
-                            stream.Write(row);
-                        }
-                    }
-
-                    if (hasHorizon)
-                    {
-                        Span<byte> row = stackalloc byte[SomaticTelemetryEntryBytes];
-                        for (int i = 0; i < horizonLength; i++)
-                        {
-                            row.Clear();
-                            if (TryReadHorizonTelemetryEntry(i, out SomaticTelemetryEntry entry))
-                                WriteHorizonTelemetryEntry(row, in entry);
-                            stream.Write(row);
-                        }
+                        Span<byte> row = bytes.Slice(offset, ComfortTelemetryEntryBytes);
+                        if (TryReadComfortTelemetryEntry(i, out ComfortTelemetryEntry entry))
+                            WriteComfortTelemetryEntry(row, in entry);
+                        offset += ComfortTelemetryEntryBytes;
                     }
                 }
+
+                if (hasHorizon)
+                {
+                    for (int i = 0; i < horizonLength; i++)
+                    {
+                        Span<byte> row = bytes.Slice(offset, SomaticTelemetryEntryBytes);
+                        if (TryReadHorizonTelemetryEntry(i, out SomaticTelemetryEntry entry))
+                            WriteHorizonTelemetryEntry(row, in entry);
+                        offset += SomaticTelemetryEntryBytes;
+                    }
+                }
+
+                if (!NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount))
+                    PublishComfortDumpFault(unchecked((int)0x80004005));
             }
             catch (System.IO.IOException exception)
             {
@@ -1255,6 +1250,11 @@ namespace Hecton8.Gameplay
             catch (InvalidOperationException exception)
             {
                 PublishComfortDumpFault(exception.HResult);
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 
@@ -1666,7 +1666,7 @@ namespace Hecton8.Gameplay
                         Derivatives = (SomaticDerivativeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(derivativeBuffer),
                         Profile = (VrComfortProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profileBuffer)
                     };
-                    job.Run();
+                    job.Execute();
 
                     SomaticComfortStateDTO state = stateBuffer[0];
                     float current = state.FovTunnelingIntensity;

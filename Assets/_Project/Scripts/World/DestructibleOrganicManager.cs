@@ -233,7 +233,6 @@ namespace Hecton8.World
         private const string NativeMemoryOwner = nameof(DestructibleOrganicManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const string TemplateLootBuildScratchLabel = nameof(TemplateLootBuildScratchLabel);
-        private const string TemplateLootCountScratchLabel = nameof(TemplateLootCountScratchLabel);
 
         private enum HarvestState : byte
         {
@@ -1902,10 +1901,10 @@ namespace Hecton8.World
             _underwaterSemanticTypes = new BridgeSemanticTypeLane(this, underwater: true);
 
             if (vegetationBridge == null)
-                vegetationBridge = GetComponent<HectonMapMagicVegetationBridge>();
+                TryGetComponent(out vegetationBridge);
 
             if (floraInteractionManager == null)
-                floraInteractionManager = GetComponent<FloraInteractionManager>();
+                TryGetComponent(out floraInteractionManager);
 
             hitSearchRadius = Mathf.Max(MinimumSearchRadius, hitSearchRadius);
             kelpHeightTolerance = Mathf.Max(0.05f, kelpHeightTolerance);
@@ -4064,27 +4063,40 @@ namespace Hecton8.World
             if (snapshotCount <= 0)
                 return;
 
-            string path = global::System.IO.Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_1318_Organics.bin");
+            NativeArray<byte> payload = default;
             try
             {
-                using (global::System.IO.FileStream stream = new global::System.IO.FileStream(path, global::System.IO.FileMode.Create, global::System.IO.FileAccess.Write, global::System.IO.FileShare.Read))
+                int stride = UnsafeUtility.SizeOf<FloraDearLieTelemetryEntry>();
+                int byteCount = snapshotCount * stride;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(DestructibleOrganicManager),
+                    "DestructibleOrganicTelemetryDumpPayload");
+
+                unsafe
                 {
-                    int stride = UnsafeUtility.SizeOf<FloraDearLieTelemetryEntry>();
-                    byte* scratchPtr = stackalloc byte[stride];
+                    byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
                     for (int i = 0; i < snapshotCount; i++)
                     {
                         FloraDearLieTelemetryEntry entry = _dearLieTelemetryDumpSnapshot[i];
-                        UnsafeUtility.MemCpy(scratchPtr, UnsafeUtility.AddressOf(ref entry), stride);
-                        for (int byteIndex = 0; byteIndex < stride; byteIndex++)
-                            stream.WriteByte(scratchPtr[byteIndex]);
+                        UnsafeUtility.CopyStructureToPtr(ref entry, bytes + i * stride);
                     }
                 }
+
+                NativeFaultDumpWriter.TryWriteAll("Docs/AgentLogs/Dump_1318_Organics.bin", payload, byteCount);
             }
             catch (global::System.IO.IOException)
             {
             }
             catch (global::System.UnauthorizedAccessException)
             {
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(DestructibleOrganicManager),
+                    "DestructibleOrganicTelemetryDumpPayload");
             }
         }
 
@@ -4475,7 +4487,8 @@ namespace Hecton8.World
 
                 uint h = Seed ^ ((uint)index * 747796405u);
                 float angle = Hash01(h) * 6.28318530718f;
-                float radius = math.sqrt(Hash01(h ^ 0x9E3779B9u)) * 7f;
+                float radius01 = Hash01(h ^ 0x9E3779B9u);
+                float radius = (radius01 * (2f - radius01)) * 7f;
                 MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
                 double3 offset = default;
                 offset.x = cos * radius;
@@ -5538,24 +5551,7 @@ namespace Hecton8.World
 
         private static int CountTemplateLootEntries(HarvestableTemplate template)
         {
-            NativeList<HarvestableTemplate.LootRuntimeEntry> scratch =
-                new NativeList<HarvestableTemplate.LootRuntimeEntry>(byte.MaxValue, Allocator.Temp);
-            NativeMemorySentinel.RegisterNativeList(
-                scratch,
-                NativeMemoryOwner,
-                TemplateLootCountScratchLabel,
-                NativeAllocationLifetime.Temp);
-            try
-            {
-                return template != null ? template.CopyLootTableNonAlloc(scratch) : 0;
-            }
-            finally
-            {
-                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, TemplateLootCountScratchLabel);
-
-                if (scratch.IsCreated)
-                    scratch.Dispose();
-            }
+            return template != null ? template.CountRuntimeLootEntries(byte.MaxValue) : 0;
         }
 
         private bool RefreshActiveCachesIfNeeded(bool force, bool allowMutation = true)

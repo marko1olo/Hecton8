@@ -461,25 +461,31 @@ namespace Hecton8.Narrative
             if (data == null) return;
 
             data.corporateReceivedOrderIds.Clear();
-            foreach (string id in _receivedOrders)
+            HashSet<string>.Enumerator receivedEnumerator = _receivedOrders.GetEnumerator();
+            while (receivedEnumerator.MoveNext())
             {
                 if (data.corporateReceivedOrderIds.Count >= OrderCapacity)
                     break;
 
+                string id = receivedEnumerator.Current;
                 data.corporateReceivedOrderIds.Add(id);
             }
+            receivedEnumerator.Dispose();
 
             // Sohranyaem taymery ozhidaniya
             data.corporatePendingOrderIds.Clear();
             data.corporatePendingOrderTimers.Clear();
-            foreach (var kvp in _pendingTimers)
+            Dictionary<string, float>.Enumerator pendingEnumerator = _pendingTimers.GetEnumerator();
+            while (pendingEnumerator.MoveNext())
             {
                 if (data.corporatePendingOrderIds.Count >= OrderCapacity)
                     break;
 
+                KeyValuePair<string, float> kvp = pendingEnumerator.Current;
                 data.corporatePendingOrderIds.Add(kvp.Key);
                 data.corporatePendingOrderTimers.Add(kvp.Value);
             }
+            pendingEnumerator.Dispose();
         }
 
         public void LoadFromSaveData(SaveData data)
@@ -492,13 +498,17 @@ namespace Hecton8.Narrative
             if (data == null) return;
 
             if (data.corporateReceivedOrderIds != null)
-                foreach (string id in data.corporateReceivedOrderIds)
+            {
+                int receivedCount = data.corporateReceivedOrderIds.Count;
+                for (int i = 0; i < receivedCount; i++)
                 {
                     if (_receivedOrders.Count >= OrderCapacity)
                         break;
 
+                    string id = data.corporateReceivedOrderIds[i];
                     if (!string.IsNullOrEmpty(id)) _receivedOrders.Add(id);
                 }
+            }
 
             RebuildActiveConflictsFromReceivedOrders();
 

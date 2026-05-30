@@ -203,6 +203,7 @@ namespace Hecton8.Core
         }
     }
 
+#if false
     /// <summary>Bounded multi-producer/single-consumer ring using CAS tail reservation and per-slot publication tickets.</summary>
     public struct MpscSignalRingBuffer<T> : IDisposable
         where T : unmanaged
@@ -377,4 +378,5 @@ namespace Hecton8.Core
             }
         }
     }
+#endif
 }

@@ -142,8 +142,10 @@ namespace Hecton8.World
             }
 
             int activeLayerCount = 0;
-            foreach (var kvp in layerBuildStates)
+            Dictionary<int, LayerBuildState>.Enumerator layerStateEnumerator = layerBuildStates.GetEnumerator();
+            while (layerStateEnumerator.MoveNext())
             {
+                KeyValuePair<int, LayerBuildState> kvp = layerStateEnumerator.Current;
                 if (kvp.Value.Count > 0)
                     activeLayerCount++;
             }
@@ -155,8 +157,10 @@ namespace Hecton8.World
                 layerMatrices = new Dictionary<int, Matrix4x4[]>(activeLayerCount)
             };
 
-            foreach (var kvp in layerBuildStates)
+            layerStateEnumerator = layerBuildStates.GetEnumerator();
+            while (layerStateEnumerator.MoveNext())
             {
+                KeyValuePair<int, LayerBuildState> kvp = layerStateEnumerator.Current;
                 if (kvp.Value.Count > 0)
                     applyData.layerMatrices[kvp.Key] = new Matrix4x4[kvp.Value.Count];
             }
@@ -225,8 +229,10 @@ namespace Hecton8.World
                     return;
                 }
 
-                foreach (var kvp in layerMatrices)
+                Dictionary<int, Matrix4x4[]>.Enumerator layerMatrixEnumerator = layerMatrices.GetEnumerator();
+                while (layerMatrixEnumerator.MoveNext())
                 {
+                    KeyValuePair<int, Matrix4x4[]> kvp = layerMatrixEnumerator.Current;
                     int layerId = kvp.Key;
                     Matrix4x4[] matrices = kvp.Value;
 

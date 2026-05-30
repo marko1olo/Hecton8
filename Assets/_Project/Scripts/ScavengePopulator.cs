@@ -236,6 +236,7 @@ namespace Hecton8.Core
 
         /// <summary>Keshirovannyy Transform igroka.</summary>
         private Transform _playerTransform;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private IObjectPoolService _objectPool;
         private WorldStateManager _worldState;
 
@@ -413,6 +414,10 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.WorldStateRuntime:
                     _worldState = currentService as WorldStateManager;
                     break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    FindPlayer();
+                    break;
             }
         }
 
@@ -423,12 +428,20 @@ namespace Hecton8.Core
 
             if (_worldState == null)
                 _worldState = GlobalRegistry.WorldState;
+
+            if (_playerRuntimeContext == null)
+                _playerRuntimeContext = GlobalRegistry.Player;
+
+            if (_playerTransform == null)
+                FindPlayer();
         }
 
         private void ClearCachedRegistryServices()
         {
             _objectPool = null;
             _worldState = null;
+            _playerRuntimeContext = null;
+            _playerTransform = null;
         }
 
         private void TryRegisterHotSwapListener()
@@ -480,7 +493,7 @@ namespace Hecton8.Core
             SpawnContext  context = SpawnContext.Surface)
         {
             // Ensure chunk tracking entry exists
-            GetOrCreateChunk(chunkCoord, 256);
+            EnsureChunk(chunkCoord, 256);
 
             SpawnRequest request = new SpawnRequest
             {
@@ -520,7 +533,7 @@ namespace Hecton8.Core
             // (edge case: esli predyduschaya generatsiya esche ne byla obrabotana)
             PurgePendingForChunk(chunkCoord);
 
-            GetOrCreateChunk(chunkCoord, expectedCount);
+            EnsureChunk(chunkCoord, expectedCount);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -809,7 +822,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Poluchaet ili sozdaet ChunkData dlya ukazannyh koordinat.
         /// </summary>
-        private ChunkData GetOrCreateChunk(Vector2Int coord, int expectedNodeCount)
+        private ChunkData EnsureChunk(Vector2Int coord, int expectedNodeCount)
         {
             if (_chunks.TryGetValue(coord, out ChunkData existing))
             {
@@ -1043,7 +1056,10 @@ namespace Hecton8.Core
 
         private void FindPlayer()
         {
-            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
+            IPlayerRuntimeContext playerRuntimeContext = _playerRuntimeContext;
+            Transform playerTransform = playerRuntimeContext != null ? playerRuntimeContext.PlayerTransform : null;
+            if (playerTransform != null)
+                _playerTransform = playerTransform;
         }
 
         // ══════════════════════════════════════════════════════════

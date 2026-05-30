@@ -834,25 +834,30 @@ namespace Hecton8.Core
 
             string root = string.IsNullOrWhiteSpace(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
             string path = Path.Combine(root, DumpRelativePath.Replace('/', Path.DirectorySeparatorChar));
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
+            int entryBytes = telemetryRing.Length * entrySize;
+            int totalBytes = DumpHeaderBytes + entryBytes;
+            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            try
+            {
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                Span<byte> header = new Span<byte>(target, DumpHeaderBytes);
+                WriteUInt32LittleEndian(header.Slice(0, 4), DumpMagic);
+                WriteUInt32LittleEndian(header.Slice(4, 4), DumpVersion);
+                WriteUInt32LittleEndian(header.Slice(8, 4), (uint)telemetryRing.Length);
+                WriteUInt32LittleEndian(header.Slice(12, 4), (uint)math.max(0, cursor));
+                WriteUInt32LittleEndian(header.Slice(16, 4), (uint)entrySize);
+                WriteUInt32LittleEndian(header.Slice(20, 4), (uint)entryBytes);
+                WriteUInt32LittleEndian(header.Slice(24, 4), 0u);
+                WriteUInt32LittleEndian(header.Slice(28, 4), 0u);
 
-            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-            Span<byte> header = stackalloc byte[DumpHeaderBytes];
-            WriteUInt32LittleEndian(header.Slice(0, 4), DumpMagic);
-            WriteUInt32LittleEndian(header.Slice(4, 4), DumpVersion);
-            WriteUInt32LittleEndian(header.Slice(8, 4), (uint)telemetryRing.Length);
-            WriteUInt32LittleEndian(header.Slice(12, 4), (uint)math.max(0, cursor));
-            WriteUInt32LittleEndian(header.Slice(16, 4), (uint)entrySize);
-            WriteUInt32LittleEndian(header.Slice(20, 4), (uint)(entrySize * telemetryRing.Length));
-            WriteUInt32LittleEndian(header.Slice(24, 4), 0u);
-            WriteUInt32LittleEndian(header.Slice(28, 4), 0u);
-            stream.Write(header);
-
-            byte* telemetryPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
-            stream.Write(new ReadOnlySpan<byte>(telemetryPtr, telemetryRing.Length * entrySize));
-            return true;
+                byte* telemetryPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
+                UnsafeUtility.MemCpy(target + DumpHeaderBytes, telemetryPtr, entryBytes);
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
+            }
+            finally
+            {
+                payload.Dispose();
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

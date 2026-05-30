@@ -40,7 +40,7 @@ platform fields, or an editor-only validator exists.
 
    load, return to the same state.
 
-4. Low-end PC/MX350 capture: frame time, GC, memory, VRAM, hitches, readability.
+4. Low-end compact PC capture: frame time, GC, memory, VRAM, hitches, readability.
 
 5. Content payload gate: DataMonolith blob, Addressables settings/groups,
 

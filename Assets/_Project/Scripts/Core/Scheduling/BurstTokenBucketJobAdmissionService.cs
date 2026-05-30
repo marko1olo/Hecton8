@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
@@ -1139,38 +1138,45 @@ namespace Hecton8.Core.Scheduling
             if (!blackbox.IsCreated || blackbox.Length < BlackboxCapacity)
                 return;
 
+            NativeArray<byte> payload = default;
             try
             {
-                string folder = Path.GetDirectoryName(AdmissionBlackboxDumpPath);
-                if (!string.IsNullOrEmpty(folder))
-                    Directory.CreateDirectory(folder);
+                int byteCount = 32 + (BlackboxCapacity * BlackboxEntrySizeBytes);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(BurstTokenBucketJobAdmissionService),
+                    "jobAdmissionBlackboxDumpPayload");
+                int writeCursor = 0;
 
-                using (FileStream stream = new FileStream(AdmissionBlackboxDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                WriteUInt64LittleEndian(payload, ref writeCursor, AdmissionBlackboxDumpMagic);
+                WriteUInt32LittleEndian(payload, ref writeCursor, AdmissionBlackboxDumpVersion);
+                WriteInt32LittleEndian(payload, ref writeCursor, BlackboxCapacity);
+                WriteInt32LittleEndian(payload, ref writeCursor, BlackboxEntrySizeBytes);
+                WriteInt32LittleEndian(payload, ref writeCursor, _blackboxCursor);
+                WriteUInt32LittleEndian(payload, ref writeCursor, _refillFrameSequence);
+                WriteUInt32LittleEndian(payload, ref writeCursor, 0u);
+
+                for (int i = 0; i < BlackboxCapacity; i++)
                 {
-                    Span<byte> header = stackalloc byte[32];
-                    WriteUInt64LittleEndian(header.Slice(0, 8), AdmissionBlackboxDumpMagic);
-                    WriteUInt32LittleEndian(header.Slice(8, 4), AdmissionBlackboxDumpVersion);
-                    WriteInt32LittleEndian(header.Slice(12, 4), BlackboxCapacity);
-                    WriteInt32LittleEndian(header.Slice(16, 4), BlackboxEntrySizeBytes);
-                    WriteInt32LittleEndian(header.Slice(20, 4), _blackboxCursor);
-                    WriteUInt32LittleEndian(header.Slice(24, 4), _refillFrameSequence);
-                    stream.Write(header);
+                    int index = _blackboxCursor + i;
+                    if (index >= BlackboxCapacity)
+                        index -= BlackboxCapacity;
 
-                    Span<byte> entryBytes = stackalloc byte[BlackboxEntrySizeBytes];
-                    for (int i = 0; i < BlackboxCapacity; i++)
-                    {
-                        int index = _blackboxCursor + i;
-                        if (index >= BlackboxCapacity)
-                            index -= BlackboxCapacity;
-
-                        JobAdmissionBlackboxEntry entry = blackbox[index];
-                        WriteBlackboxEntry(entryBytes, in entry);
-                        stream.Write(entryBytes);
-                    }
+                    JobAdmissionBlackboxEntry entry = blackbox[index];
+                    WriteBlackboxEntry(payload, ref writeCursor, in entry);
                 }
+
+                Hecton8.Core.NativeFaultDumpWriter.TryWriteAll(AdmissionBlackboxDumpPath, payload, writeCursor);
             }
             catch (Exception)
             {
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(BurstTokenBucketJobAdmissionService),
+                    "jobAdmissionBlackboxDumpPayload");
             }
         }
 
@@ -1188,55 +1194,57 @@ namespace Hecton8.Core.Scheduling
             return false;
         }
 
-        private static void WriteBlackboxEntry(Span<byte> destination, in JobAdmissionBlackboxEntry entry)
+        private static void WriteBlackboxEntry(NativeArray<byte> destination, ref int cursor, in JobAdmissionBlackboxEntry entry)
         {
-            destination.Clear();
-            WriteUInt32LittleEndian(destination.Slice(0, 4), entry.FrameSequence);
-            WriteUInt32LittleEndian(destination.Slice(4, 4), entry.JobHash);
-            WriteSingleLittleEndian(destination.Slice(8, 4), entry.EstimatedCostMs);
-            WriteSingleLittleEndian(destination.Slice(12, 4), entry.RemainingBudgetMs);
-            WriteInt32LittleEndian(destination.Slice(16, 4), entry.CriticalDebtFrames);
-            WriteUInt32LittleEndian(destination.Slice(20, 4), entry.KillSwitchMask);
-            destination[24] = entry.Lane;
-            destination[25] = entry.Flags;
-            WriteUInt16LittleEndian(destination.Slice(26, 2), entry.Reserved);
-            WriteUInt32LittleEndian(destination.Slice(28, 4), entry.StateHash);
+            int entryStart = cursor;
+            WriteUInt32LittleEndian(destination, ref cursor, entry.FrameSequence);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.JobHash);
+            WriteSingleLittleEndian(destination, ref cursor, entry.EstimatedCostMs);
+            WriteSingleLittleEndian(destination, ref cursor, entry.RemainingBudgetMs);
+            WriteInt32LittleEndian(destination, ref cursor, entry.CriticalDebtFrames);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.KillSwitchMask);
+            destination[cursor++] = entry.Lane;
+            destination[cursor++] = entry.Flags;
+            WriteUInt16LittleEndian(destination, ref cursor, entry.Reserved);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.StateHash);
+            while (cursor - entryStart < BlackboxEntrySizeBytes)
+                destination[cursor++] = 0;
         }
 
-        private static void WriteSingleLittleEndian(Span<byte> destination, float value)
+        private static void WriteSingleLittleEndian(NativeArray<byte> destination, ref int cursor, float value)
         {
-            WriteUInt32LittleEndian(destination, math.asuint(value));
+            WriteUInt32LittleEndian(destination, ref cursor, math.asuint(value));
         }
 
-        private static void WriteInt32LittleEndian(Span<byte> destination, int value)
+        private static void WriteInt32LittleEndian(NativeArray<byte> destination, ref int cursor, int value)
         {
-            WriteUInt32LittleEndian(destination, unchecked((uint)value));
+            WriteUInt32LittleEndian(destination, ref cursor, unchecked((uint)value));
         }
 
-        private static void WriteUInt64LittleEndian(Span<byte> destination, ulong value)
+        private static void WriteUInt64LittleEndian(NativeArray<byte> destination, ref int cursor, ulong value)
         {
-            destination[0] = (byte)value;
-            destination[1] = (byte)(value >> 8);
-            destination[2] = (byte)(value >> 16);
-            destination[3] = (byte)(value >> 24);
-            destination[4] = (byte)(value >> 32);
-            destination[5] = (byte)(value >> 40);
-            destination[6] = (byte)(value >> 48);
-            destination[7] = (byte)(value >> 56);
+            destination[cursor++] = (byte)value;
+            destination[cursor++] = (byte)(value >> 8);
+            destination[cursor++] = (byte)(value >> 16);
+            destination[cursor++] = (byte)(value >> 24);
+            destination[cursor++] = (byte)(value >> 32);
+            destination[cursor++] = (byte)(value >> 40);
+            destination[cursor++] = (byte)(value >> 48);
+            destination[cursor++] = (byte)(value >> 56);
         }
 
-        private static void WriteUInt32LittleEndian(Span<byte> destination, uint value)
+        private static void WriteUInt32LittleEndian(NativeArray<byte> destination, ref int cursor, uint value)
         {
-            destination[0] = (byte)value;
-            destination[1] = (byte)(value >> 8);
-            destination[2] = (byte)(value >> 16);
-            destination[3] = (byte)(value >> 24);
+            destination[cursor++] = (byte)value;
+            destination[cursor++] = (byte)(value >> 8);
+            destination[cursor++] = (byte)(value >> 16);
+            destination[cursor++] = (byte)(value >> 24);
         }
 
-        private static void WriteUInt16LittleEndian(Span<byte> destination, ushort value)
+        private static void WriteUInt16LittleEndian(NativeArray<byte> destination, ref int cursor, ushort value)
         {
-            destination[0] = (byte)value;
-            destination[1] = (byte)(value >> 8);
+            destination[cursor++] = (byte)value;
+            destination[cursor++] = (byte)(value >> 8);
         }
 
         [StructLayout(LayoutKind.Explicit, Size = BlackboxEntrySizeBytes)]

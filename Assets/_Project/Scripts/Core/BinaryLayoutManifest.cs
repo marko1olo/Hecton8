@@ -1,10 +1,10 @@
 using System;
-using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory.Layout;
+using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
@@ -27,7 +27,10 @@ namespace Hecton8.Core
         private const uint AttributeContextHash = 0x41545452u; // ATTR
         private const uint DumpMagic = 0x4838424Cu; // H8BL
         private const int DumpVersion = 1;
+        private const int DumpHeaderBytes = 28;
+        private const int DumpTypeNameMaxBytes = 160;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_BINARY_LAYOUT_SENTINEL.bin";
+        private const string DumpPayloadLabel = "binaryLayoutFailureDumpPayload";
         private const string ConstructionLayoutNamespace = "Hecton8.Construction.";
         private const string SaveLayoutNamespace = "Hecton8.SaveSystem.";
         private const string WorldLayoutNamespace = "Hecton8.World.";
@@ -1055,23 +1058,55 @@ namespace Hecton8.Core
             SignalBus<ComplianceViolationSignal>.TryPushTracked(in signal, ref s_x001BinaryLayoutManifestSignalPushDropCount);
         }
 
-        private static void DumpFailure(string structName, int expected, int observed, uint contextHash)
+        private static unsafe void DumpFailure(string structName, int expected, int observed, uint contextHash)
         {
-            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath));
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
+            string safeName = structName ?? string.Empty;
+            int nameBytes = safeName.Length;
+            if (nameBytes > DumpTypeNameMaxBytes)
+                nameBytes = DumpTypeNameMaxBytes;
 
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            int byteCount = DumpHeaderBytes + nameBytes;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(BinaryLayoutManifest),
+                DumpPayloadLabel,
+                NativeArrayOptions.UninitializedMemory);
+
+            try
             {
-                writer.Write(DumpMagic);
-                writer.Write(DumpVersion);
-                writer.Write(contextHash);
-                writer.Write(expected);
-                writer.Write(observed);
-                writer.Write(structName ?? string.Empty);
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteUInt32LittleEndian(target, 0, DumpMagic);
+                WriteInt32LittleEndian(target, 4, DumpVersion);
+                WriteUInt32LittleEndian(target, 8, contextHash);
+                WriteInt32LittleEndian(target, 12, expected);
+                WriteInt32LittleEndian(target, 16, observed);
+                WriteInt32LittleEndian(target, 20, nameBytes);
+                WriteUInt32LittleEndian(target, 24, ComputeFnv1A32(safeName));
+                for (int i = 0; i < nameBytes; i++)
+                {
+                    char c = safeName[i];
+                    target[DumpHeaderBytes + i] = c <= 0x7F ? (byte)c : (byte)'?';
+                }
+
+                NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, byteCount);
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(ref payload, nameof(BinaryLayoutManifest), DumpPayloadLabel);
+            }
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* target, int offset, int value)
+        {
+            WriteUInt32LittleEndian(target, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* target, int offset, uint value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+            target[offset + 2] = (byte)(value >> 16);
+            target[offset + 3] = (byte)(value >> 24);
         }
 
         private static string ResolveTypeName<T>() where T : unmanaged

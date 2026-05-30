@@ -39,6 +39,7 @@ namespace Hecton8.Core
         private const uint DumpMagic = 0x494E5447u; // INTG
         private const uint DumpVersion = 1u;
         private const string DumpPath = "Docs/AgentLogs/Dump_INTEGRITY_SURGEON.bin";
+        private const string DumpPayloadLabel = "memorySentinelTelemetryDumpPayload";
         private const string CsvRootPath = "validation_rules.csv";
         private const string CsvDocsPath = "Docs/Tasks/validation_rules.csv";
         private const SystemID OwnerSystemId = SystemID.CoreDeterminism;
@@ -50,7 +51,6 @@ namespace Hecton8.Core
         private const BufferID TelemetryBuffer = (BufferID)70878;
         private const BufferID RuntimeStateBuffer = (BufferID)70879;
         private const BufferID AupSnapshotBuffer = (BufferID)70880;
-        private const BufferID CsvScratchBuffer = (BufferID)70881;
         private const BufferID ModQuarantineBuffer = (BufferID)70882;
 
         private const uint TelemetryFlagJobBusy = 1u << 0;
@@ -85,7 +85,6 @@ namespace Hecton8.Core
         private VaultGenerationHandle<MemorySentinelTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<MemorySentinelRuntimeStateDTO> _runtimeStateHandle;
         private VaultGenerationHandle<MemorySentinelAupSnapshotDTO> _aupSnapshotHandle;
-        private VaultGenerationHandle<byte> _csvScratchHandle;
         private IDataVault _targetBufferGuardVault;
         private ulong _targetBufferGuardMask;
         private bool _targetBufferGuardHeld;
@@ -223,8 +222,6 @@ namespace Hecton8.Core
                 States = states,
                 Targets = targets,
                 Results = results,
-                DesyncWriter = SignalBus<MemoryDesyncSignal>.OpenParallelWriter(),
-                DesyncWriterBudget = SignalBus<MemoryDesyncSignal>.ParallelWriterBudget,
                 Frame = frame,
                 GlobalQualityWeight = quality
             }.Schedule(_targetCount, DefaultTargetBatch, dependsOn);
@@ -590,7 +587,6 @@ namespace Hecton8.Core
             ReleaseVaultHandle(vault, ref _telemetryHandle);
             ReleaseVaultHandle(vault, ref _runtimeStateHandle);
             ReleaseVaultHandle(vault, ref _aupSnapshotHandle);
-            ReleaseVaultHandle(vault, ref _csvScratchHandle);
             _stateMemoryCleared = false;
             _runtimeDefaultsWritten = false;
             _mockSeeded = false;
@@ -667,15 +663,13 @@ namespace Hecton8.Core
             NativeArray<MemorySentinelTelemetryEntry> telemetry = default;
             NativeArray<MemorySentinelRuntimeStateDTO> runtimeState = default;
             NativeArray<MemorySentinelAupSnapshotDTO> aupSnapshot = default;
-            NativeArray<byte> csvScratch = default;
 
             if (!OpenOrAcquireVaultBuffer(vault, ref _rollbackHandle, RollbackBytesBuffer, RollbackByteCapacity, NativeArrayOptions.UninitializedMemory, out rollback) ||
                 !OpenOrAcquireVaultBuffer(vault, ref _mockInventoryHandle, MockInventoryBuffer, MockInventoryCount, NativeArrayOptions.UninitializedMemory, out mockInventory) ||
                 !OpenOrAcquireVaultBuffer(vault, ref _modQuarantineHandle, ModQuarantineBuffer, ModQuarantineSpanCount, NativeArrayOptions.UninitializedMemory, out modQuarantine) ||
                 !OpenOrAcquireVaultBuffer(vault, ref _telemetryHandle, TelemetryBuffer, MemorySentinelConstants.TelemetryCapacity, NativeArrayOptions.ClearMemory, out telemetry) ||
                 !OpenOrAcquireVaultBuffer(vault, ref _runtimeStateHandle, RuntimeStateBuffer, RuntimeStateCount, NativeArrayOptions.ClearMemory, out runtimeState) ||
-                !OpenOrAcquireVaultBuffer(vault, ref _aupSnapshotHandle, AupSnapshotBuffer, AupSnapshotCount, NativeArrayOptions.ClearMemory, out aupSnapshot) ||
-                !OpenOrAcquireVaultBuffer(vault, ref _csvScratchHandle, CsvScratchBuffer, CsvScratchCapacity, NativeArrayOptions.UninitializedMemory, out csvScratch))
+                !OpenOrAcquireVaultBuffer(vault, ref _aupSnapshotHandle, AupSnapshotBuffer, AupSnapshotCount, NativeArrayOptions.ClearMemory, out aupSnapshot))
             {
                 return false;
             }
@@ -683,8 +677,7 @@ namespace Hecton8.Core
                 !mockInventory.IsCreated ||
                 !modQuarantine.IsCreated ||
                 !telemetry.IsCreated ||
-                !aupSnapshot.IsCreated ||
-                !csvScratch.IsCreated)
+                !aupSnapshot.IsCreated)
             {
                 return false;
             }
@@ -719,8 +712,7 @@ namespace Hecton8.Core
                    TryResolveRequired(vault, in _modQuarantineHandle, ModQuarantineSpanCount, out NativeArray<MemorySentinelModQuarantineSpan> _) &&
                    TryResolveRequired(vault, in _telemetryHandle, MemorySentinelConstants.TelemetryCapacity, out NativeArray<MemorySentinelTelemetryEntry> _) &&
                    TryResolveRequired(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<MemorySentinelRuntimeStateDTO> _) &&
-                   TryResolveRequired(vault, in _aupSnapshotHandle, AupSnapshotCount, out NativeArray<MemorySentinelAupSnapshotDTO> _) &&
-                   TryResolveRequired(vault, in _csvScratchHandle, CsvScratchCapacity, out NativeArray<byte> _);
+                   TryResolveRequired(vault, in _aupSnapshotHandle, AupSnapshotCount, out NativeArray<MemorySentinelAupSnapshotDTO> _);
         }
 
         private MemorySentinelRuntimeStateDTO OpenRuntimeStateForOwner(NativeArray<MemorySentinelRuntimeStateDTO> runtimeArray)
@@ -1308,6 +1300,9 @@ namespace Hecton8.Core
                     DumpBlackBox(vault);
                     throw new FatalArchitectureException("SHINOBU_73 critical memory tamper is uncorrectable.");
                 }
+
+                if (!corrected && !critical)
+                    PublishDesync(in target, in result, corrected: false, fatal: false, teleport: false);
             }
 
             _lastBytesHashed = bytesHashed;
@@ -1670,26 +1665,31 @@ namespace Hecton8.Core
             if (!TryReadRequired(vault, in _telemetryHandle, MemorySentinelConstants.TelemetryCapacity, out NativeArray<MemorySentinelTelemetryEntry>.ReadOnly telemetry))
                 return;
 
-            string projectRoot = Directory.GetCurrentDirectory();
-            string path = Path.Combine(projectRoot, DumpPath);
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            int headerSize = UnsafeUtility.SizeOf<MemorySentinelDumpHeader>();
+            int entrySize = UnsafeUtility.SizeOf<MemorySentinelTelemetryEntry>();
+            int byteCount = headerSize + (telemetry.Length * entrySize);
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(MemorySentinelRuntime),
+                DumpPayloadLabel,
+                NativeArrayOptions.UninitializedMemory);
+            try
             {
                 MemorySentinelDumpHeader header = default;
                 header.Magic = DumpMagic;
                 header.Version = DumpVersion;
-                header.EntrySize = (uint)UnsafeUtility.SizeOf<MemorySentinelTelemetryEntry>();
+                header.EntrySize = (uint)entrySize;
                 header.Capacity = (uint)telemetry.Length;
                 header.LastIndex = (uint)math.max(0, _lastTelemetryIndex);
                 header.Flags = _lastTelemetryFlags;
                 header.LastBytesHashed = _lastBytesHashed;
-                stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<MemorySentinelDumpHeader>()));
 
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                if (!UnsafeMemoryCopyGuard.SafeCopy(destination, byteCount, &header, headerSize))
+                    return;
+
+                int writeCursor = headerSize;
                 byte* source = (byte*)telemetry.GetUnsafeReadOnlyPtr();
-                int entrySize = UnsafeUtility.SizeOf<MemorySentinelTelemetryEntry>();
                 int start = (_lastTelemetryIndex + 1) % telemetry.Length;
                 for (int offset = 0; offset < telemetry.Length; offset++)
                 {
@@ -1697,8 +1697,23 @@ namespace Hecton8.Core
                     if (index >= telemetry.Length)
                         index -= telemetry.Length;
 
-                    stream.Write(new ReadOnlySpan<byte>(source + (index * entrySize), entrySize));
+                    if (!UnsafeMemoryCopyGuard.SafeCopy(
+                            destination + writeCursor,
+                            byteCount - writeCursor,
+                            source + (index * entrySize),
+                            entrySize))
+                    {
+                        return;
+                    }
+
+                    writeCursor += entrySize;
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(DumpPath, payload, writeCursor);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(ref payload, nameof(MemorySentinelRuntime), DumpPayloadLabel);
             }
         }
 
@@ -1736,18 +1751,15 @@ namespace Hecton8.Core
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            if (!TryResolveRequired(vault, in _csvScratchHandle, CsvScratchCapacity, out NativeArray<byte> scratch))
-                return false;
-
             int bytesRead;
+            Span<byte> scratch = stackalloc byte[CsvScratchCapacity];
             using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 int readLength = Math.Min(scratch.Length, (int)Math.Min(stream.Length, scratch.Length));
-                byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                bytesRead = stream.Read(new Span<byte>(ptr, readLength));
+                bytesRead = stream.Read(scratch.Slice(0, readLength));
             }
 
-            bool parsed = ParseCsvBytes(vault, scratch, bytesRead);
+            bool parsed = ParseCsvBytes(vault, scratch.Slice(0, bytesRead));
             if (parsed)
                 _lastTelemetryFlags |= TelemetryFlagCsvLoaded;
             return parsed;
@@ -1764,38 +1776,50 @@ namespace Hecton8.Core
             return File.Exists(docsPath) ? docsPath : rootPath;
         }
 
-        private bool ParseCsvBytes(IDataVault vault, NativeArray<byte> scratch, int bytesRead)
+        private bool ParseCsvBytes(IDataVault vault, ReadOnlySpan<byte> bytes)
         {
-            if (!scratch.IsCreated || bytesRead <= 0)
+            if (bytes.Length <= 0 ||
+                vault == null ||
+                !vault.TryAcquireWriteLock(in _runtimeStateHandle, OwnerSystemId, out NativeArray<MemorySentinelRuntimeStateDTO> runtimeArray))
                 return false;
 
-            if (!TryResolveRequired(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<MemorySentinelRuntimeStateDTO> runtimeArray))
-                return false;
-
-            MemorySentinelRuntimeStateDTO runtime = OpenRuntimeStateForOwner(runtimeArray);
-            byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
-            int lineStart = 0;
-            bool changed = false;
-            for (int i = 0; i <= bytesRead; i++)
+            try
             {
-                if (i < bytesRead && bytes[i] != '\n')
-                    continue;
+                if (!runtimeArray.IsCreated || runtimeArray.Length < RuntimeStateCount)
+                    return false;
 
-                int lineEnd = i;
-                if (lineEnd > lineStart && bytes[lineEnd - 1] == '\r')
-                    lineEnd--;
+                MemorySentinelRuntimeStateDTO runtime = OpenRuntimeStateForOwner(runtimeArray);
+                int byteLength = bytes.Length;
+                bool changed = false;
+                fixed (byte* csvBytes = bytes)
+                {
+                    int lineStart = 0;
+                    for (int i = 0; i <= byteLength; i++)
+                    {
+                        if (i < byteLength && csvBytes[i] != '\n')
+                            continue;
 
-                changed |= ParseCsvLine(bytes, lineStart, lineEnd, ref runtime);
-                lineStart = i + 1;
+                        int lineEnd = i;
+                        if (lineEnd > lineStart && csvBytes[lineEnd - 1] == '\r')
+                            lineEnd--;
+
+                        changed |= ParseCsvLine(csvBytes, lineStart, lineEnd, ref runtime);
+                        lineStart = i + 1;
+                    }
+                }
+
+                if (changed)
+                {
+                    runtimeArray[0] = runtime;
+                    _forceValidationNextFrame = true;
+                }
+
+                return changed;
             }
-
-            if (changed)
+            finally
             {
-                runtimeArray[0] = runtime;
-                _forceValidationNextFrame = true;
+                vault.ReleaseWriteLock(in _runtimeStateHandle, OwnerSystemId);
             }
-
-            return changed;
         }
 
         private static bool ParseCsvLine(byte* bytes, int lineStart, int lineEnd, ref MemorySentinelRuntimeStateDTO runtime)

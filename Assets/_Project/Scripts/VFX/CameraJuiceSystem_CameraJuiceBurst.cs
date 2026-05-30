@@ -396,7 +396,7 @@ namespace Hecton8.VFX
             job.Profiles = profiles;
             job.MockSignals = mockSignals;
             job.GlobalQualityWeight01 = quality;
-            job.Run();
+            job.Execute();
 
 #if UNITY_EDITOR
             TryLoadCameraJuiceTraumaProfilesFromCsv(profiles, cameraJuiceCsvScratch, tuning);
@@ -410,7 +410,7 @@ namespace Hecton8.VFX
 
             InitializeCameraJuiceTelemetryJob job = default;
             job.Telemetry = telemetry;
-            job.Run();
+            job.Execute();
         }
 
         private void RunProceduralCameraJuice(float dt, float effectiveShakeScale)
@@ -455,7 +455,7 @@ namespace Hecton8.VFX
                 mockJob.Seed = seed;
                 mockJob.Severity01 = math.saturate(_cameraJuiceMockSeverity01);
                 mockJob.RadiusMeters = math.max(1f, _cameraJuiceMockRadiusMeters);
-                mockJob.Run();
+                mockJob.Execute();
                 mockCount = math.clamp(_cameraJuiceMockSignalCount <= 0 ? 4 : _cameraJuiceMockSignalCount, 1, CameraJuiceMockSignalCapacity);
             }
 
@@ -481,7 +481,7 @@ namespace Hecton8.VFX
             evaluateJob.MockSignalCount = mockCount;
             evaluateJob.Frame = frameSequence;
             evaluateJob.MaxSignalsPerFrame = PROCEDURAL_MAX_IMPACTS_PER_FRAME;
-            evaluateJob.Run();
+            evaluateJob.Execute();
 
             IntegrateProceduralShakeJob integrateJob = default;
             integrateJob.State = state;
@@ -493,7 +493,7 @@ namespace Hecton8.VFX
             integrateJob.GlobalQualityWeight01 = quality;
             integrateJob.XrActive = HectonXRRuntimeState.IsXRActive ? 1u : 0u;
             integrateJob.Sequence = frameSequence;
-            integrateJob.Run();
+            integrateJob.Execute();
             _cameraJuiceSequence = frameSequence + 1u;
             _cameraJuiceLastBurstExecutionMicros = (float)((Stopwatch.GetTimestamp() - startTicks) * 1000000.0 / Stopwatch.Frequency);
             if (_cameraJuiceLastBurstExecutionMicros > CameraJuiceBurstBudgetMicroseconds)

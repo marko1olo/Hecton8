@@ -8,6 +8,7 @@ using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Meta;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -879,7 +880,7 @@ namespace Hecton8.UI
             DumpTelemetryCold();
         }
 
-        private void DumpTelemetryCold()
+        private unsafe void DumpTelemetryCold()
         {
             if (!IsExactVaultHandle(in _telemetryRingHandle, BufferID.PdaFrequencyTelemetryRing))
             {
@@ -889,17 +890,18 @@ namespace Hecton8.UI
 
             try
             {
-                string directory = Path.GetDirectoryName(TelemetryDumpPath);
-                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                    Directory.CreateDirectory(directory);
-
-                using FileStream stream = new FileStream(TelemetryDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                Span<byte> header = stackalloc byte[8];
+                const int headerBytes = 8;
+                const int rowBytes = 32;
+                int byteCount = headerBytes + TelemetryCapacity * rowBytes;
+                NativeArray<byte> payload = default;
+                try
+                {
+                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                Span<byte> header = new Span<byte>(destination, headerBytes);
                 BinaryPrimitives.WriteInt32LittleEndian(header.Slice(0, 4), TelemetryCapacity);
                 BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), _telemetryCursor);
-                stream.Write(header);
 
-                Span<byte> row = stackalloc byte[32];
                 for (int i = 0; i < TelemetryCapacity; i++)
                 {
                     if (!TryReadTelemetryEntry(i, out FrequencyTuningTelemetryEntry entry))
@@ -908,8 +910,17 @@ namespace Hecton8.UI
                         return;
                     }
 
+                    Span<byte> row = new Span<byte>(destination + headerBytes + i * rowBytes, rowBytes);
                     WriteFrequencyTuningTelemetryEntry(row, in entry);
-                    stream.Write(row);
+                }
+
+                    if (!NativeFaultDumpWriter.TryWriteAll(TelemetryDumpPath, payload, byteCount))
+                        _telemetryDumpQueued = true;
+                }
+                finally
+                {
+                    if (payload.IsCreated)
+                        payload.Dispose();
                 }
             }
             catch (IOException)

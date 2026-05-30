@@ -139,7 +139,6 @@ namespace Hecton8.Rendering.Scatter
         private const int IndirectArgsElementCount = 5;
         private const int IndirectArgsInstanceCountIndex = 1;
         private const int IndirectArgsReadbackByteCount = sizeof(uint) * IndirectArgsElementCount;
-        private const int MissingRegistryRefreshStrideFrames = 120;
         private const uint PortableMaxThreadsPerThreadGroup = 256u;
         private const int MaxDispatchGroupsPerDimension = 65535;
         private const float DefaultFallbackAspect = 1.7777778f;
@@ -147,6 +146,7 @@ namespace Hecton8.Rendering.Scatter
         private const float CullingHysteresisSeconds = 2f;
         private const uint BlackBoxMagic = 0x47534C4Du;
         private const uint BlackBoxVersion = 2u;
+        private const int BlackBoxHeaderBytes = 20;
         private const uint BlackBoxFlagGpuReady = 1u << 0;
         private const uint BlackBoxFlagCameraSignal = 1u << 1;
         private const uint BlackBoxFlagStressShed = 1u << 2;
@@ -242,7 +242,7 @@ namespace Hecton8.Rendering.Scatter
         [Tooltip("Local bounds extents for one flora mesh before matrix transform.")]
         [SerializeField] private Vector3 localBoundsExtents = new Vector3(0.7f, 1.2f, 0.7f);
 
-        [Tooltip("MX350/low-tier maximum flora cull distance.")]
+        [Tooltip("Compact/low-tier maximum flora cull distance.")]
         [SerializeField, Min(1f)] private float lowTierCullDistanceMeters = 100f;
 
         [Tooltip("Middle-tier maximum flora cull distance.")]
@@ -258,7 +258,7 @@ namespace Hecton8.Rendering.Scatter
         [SerializeField, Min(0.25f)] private float fallbackAspect = DefaultFallbackAspect;
 
         [Header("Presentation")]
-        [Tooltip("Shadow policy for the indirect draw. Flora defaults to off for MX350.")]
+        [Tooltip("Shadow policy for the indirect draw. Flora defaults to off for compact memory tiers.")]
         [SerializeField] private ShadowCastingMode shadowCastingMode = ShadowCastingMode.Off;
 
         [Tooltip("Whether the indirect flora draw receives shadows.")]
@@ -283,7 +283,7 @@ namespace Hecton8.Rendering.Scatter
         [Tooltip("High-tier organic subsurface scale.")]
         [SerializeField, Range(0f, 4f)] private float highTierOrganicSssScale = 1.65f;
 
-        [Tooltip("Low-tier edge bloom kept cheap for MX350.")]
+        [Tooltip("Low-tier edge bloom kept cheap for compact memory tiers.")]
         [SerializeField, Range(0f, 2f)] private float lowTierEdgeBloomStrength = 0.28f;
 
         [Tooltip("High-tier edge bloom for dense translucent kelp silhouettes.")]
@@ -298,6 +298,8 @@ namespace Hecton8.Rendering.Scatter
         [Header("Diagnostics")]
         [Tooltip("Optional CPU Burst audit. Off by default; RenderMeshIndirect path is GPU authoritative.")]
         [SerializeField] private bool enableBurstCullAudit;
+        [Tooltip("Optional delayed AsyncGPUReadback of indirect args for diagnostics. Off by default to keep render flow CPU->GPU.")]
+        [SerializeField] private bool enableVisibleCountReadback;
 
         private GraphicsBuffer[] _matrixBuffers;
         private GraphicsBuffer[] _metadataBuffers;
@@ -356,7 +358,6 @@ namespace Hecton8.Rendering.Scatter
         private int _blackBoxCursor;
         private int _frameIndex;
         private int _lastVisibleFloraCount;
-        private int _nextMissingRegistryRefreshFrame;
         private bool _registeredLateFrame;
         private bool _registeredSlowTick;
         private bool _hotSwapRegistered;
@@ -517,6 +518,7 @@ namespace Hecton8.Rendering.Scatter
             RefreshAupOffsetCold();
             TryRegisterHotSwapListener();
             RefreshContinuousQualityPolicy(forceCommit: true);
+            TryEnsureGpuStateCold();
             TryRegisterOriginShiftListener();
             TryRegisterLateFrame();
             TryRegisterSlowTick();
@@ -555,14 +557,20 @@ namespace Hecton8.Rendering.Scatter
         {
             if (_registryRefreshRequested || _registryDataVault == null)
             {
-                RefreshCachedRegistryServices();
-                _registryRefreshRequested = _registryDataVault == null;
+                _registryRefreshRequested = true;
+                _gpuReady = false;
+                InvalidateDataVaultLease();
+                return;
             }
 
             if (!_gpuReady || !IsGpuStateValid())
-                TryEnsureGpuState();
+            {
+                _gpuReady = false;
+                return;
+            }
 
-            FlushVisibleCountReadbackRepairSlow();
+            if (enableVisibleCountReadback)
+                FlushVisibleCountReadbackRepairSlow();
         }
 
         private void RunScatterVisualTick(float deltaTime)
@@ -697,7 +705,7 @@ namespace Hecton8.Rendering.Scatter
             if (!_hotSwapRegistered)
                 _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
 
-            RefreshCachedRegistryServices();
+            RefreshCachedRegistryServicesCold();
         }
 
         private void TryUnregisterHotSwapListener()
@@ -727,23 +735,9 @@ namespace Hecton8.Rendering.Scatter
             _originShiftListenerRegistered = false;
         }
 
-        private void RefreshCachedRegistryServices()
+        private void RefreshCachedRegistryServicesCold()
         {
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DataVault, GlobalRegistry.DataVault);
-            _nextMissingRegistryRefreshFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + MissingRegistryRefreshStrideFrames;
-        }
-
-        private void RefreshMissingRegistryServicesIfNeeded()
-        {
-            if (_registryDataVault != null)
-                return;
-
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            if (frame < _nextMissingRegistryRefreshFrame)
-                return;
-
-            _registryRefreshRequested = true;
-            _nextMissingRegistryRefreshFrame = frame + MissingRegistryRefreshStrideFrames;
         }
 
         private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
@@ -759,9 +753,13 @@ namespace Hecton8.Rendering.Scatter
                 InvalidateDataVaultLease();
                 _gpuReady = false;
             }
+
+            _registryRefreshRequested = currentVault == null;
+            if (currentVault != null && isActiveAndEnabled && _registeredLateFrame)
+                TryEnsureGpuStateCold();
         }
 
-        private bool TryEnsureGpuState()
+        private bool TryEnsureGpuStateCold()
         {
             if (!_abiLayoutValid)
                 return false;
@@ -776,10 +774,10 @@ namespace Hecton8.Rendering.Scatter
                 !HasAnyConfiguredMaterial())
                 return false;
 
-            RefreshMissingRegistryServicesIfNeeded();
             IDataVault vault = _registryDataVault;
             if (vault == null || vault.IsCompactionFenceActive)
             {
+                _registryRefreshRequested = vault == null;
                 InvalidateDataVaultLease();
                 return false;
             }
@@ -804,7 +802,8 @@ namespace Hecton8.Rendering.Scatter
 
             EnsureGpuBuffers();
             InitializeIndirectArgs(floraMesh);
-            EnsureVisibleCountReadbackData();
+            if (enableVisibleCountReadback)
+                EnsureVisibleCountReadbackDataCold();
             _gpuReady = IsGpuStateValid();
             return _gpuReady;
         }
@@ -1614,6 +1613,17 @@ namespace Hecton8.Rendering.Scatter
 
         private void UpdateVisibleCountReadback(int frameIndex)
         {
+            if (!enableVisibleCountReadback)
+            {
+                if (_visibleCountReadbackPending && !_visibleCountReadbackRequest.done)
+                    return;
+
+                _visibleCountReadbackPending = false;
+                _visibleCountReadbackRequest = default;
+                _visibleCountReadbackRepairRequested = false;
+                return;
+            }
+
             if (_visibleCountReadbackPending)
             {
                 if (!_visibleCountReadbackRequest.done)
@@ -1653,7 +1663,7 @@ namespace Hecton8.Rendering.Scatter
                 _visibleCountReadbackRequest = default;
         }
 
-        private bool EnsureVisibleCountReadbackData()
+        private bool EnsureVisibleCountReadbackDataCold()
         {
             if (HasVisibleCountReadbackData())
                 return true;
@@ -1690,7 +1700,13 @@ namespace Hecton8.Rendering.Scatter
             if (_argsBuffer == null || _visibleCountReadbackPending)
                 return;
 
-            EnsureVisibleCountReadbackData();
+            if (!HasVisibleCountReadbackData())
+            {
+                _visibleCountReadbackRepairRequested = false;
+                return;
+            }
+
+            _visibleCountReadbackRepairRequested = false;
         }
 
         private void CompletePendingVisibleCountReadbackForRelease()
@@ -2139,21 +2155,22 @@ namespace Hecton8.Rendering.Scatter
                 return;
 
             _blackBoxDumped = true;
+            NativeArray<byte> payload = default;
             try
             {
-                string path = ResolveAgentLogPath("Dump_GPU_SCATTER_LOD_MANAGER.bin");
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(BlackBoxMagic);
-                writer.Write(BlackBoxVersion);
-                writer.Write(reason);
+                const string path = "Docs/AgentLogs/Dump_GPU_SCATTER_LOD_MANAGER.bin";
                 int blackBoxLength = blackBox.Length;
-                writer.Write(blackBoxLength);
-                writer.Write(_blackBoxCursor);
+                int byteCount = BlackBoxHeaderBytes + blackBoxLength * ScatterBlackBoxEntryStrideBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(GpuScatterLodManager),
+                    "GpuScatterLodBlackBoxDumpPayload");
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                WriteUInt32LittleEndian(destination, 0, BlackBoxMagic);
+                WriteUInt32LittleEndian(destination, 4, BlackBoxVersion);
+                WriteUInt32LittleEndian(destination, 8, reason);
+                WriteInt32LittleEndian(destination, 12, blackBoxLength);
+                WriteInt32LittleEndian(destination, 16, _blackBoxCursor);
                 for (int i = 0; i < blackBoxLength; i++)
                 {
                     int ringIndex = _blackBoxCursor + i;
@@ -2161,28 +2178,39 @@ namespace Hecton8.Rendering.Scatter
                         ringIndex -= blackBoxLength;
 
                     ScatterBlackBoxEntry entry = blackBox[ringIndex];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.ActiveInstanceCount);
-                    writer.Write(entry.VisibleFloraCount);
-                    writer.Write(entry.CullDistanceMeters);
-                    writer.Write(entry.SystemStress01);
-                    writer.Write(entry.CameraPosition.x);
-                    writer.Write(entry.CameraPosition.y);
-                    writer.Write(entry.CameraPosition.z);
-                    writer.Write(entry.AupShiftOffset.x);
-                    writer.Write(entry.AupShiftOffset.y);
-                    writer.Write(entry.AupShiftOffset.z);
-                    writer.Write(entry.MatrixGeneration);
-                    writer.Write(entry.MetadataGeneration);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.AuxiliaryGenerationHash);
-                    writer.Write(entry.VisualPayloadGeneration);
+                    UnsafeUtility.MemCpy(
+                        destination + BlackBoxHeaderBytes + i * ScatterBlackBoxEntryStrideBytes,
+                        &entry,
+                        ScatterBlackBoxEntryStrideBytes);
                 }
+
+                if (!NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount))
+                    GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)reason));
             }
             catch (Exception)
             {
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)reason));
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(GpuScatterLodManager),
+                    "GpuScatterLodBlackBoxDumpPayload");
+            }
+        }
+
+        private static void WriteInt32LittleEndian(byte* destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(byte* destination, int offset, uint value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
         }
 
         private bool TryEnsureBlackBoxView(out NativeArray<ScatterBlackBoxEntry> blackBox)
@@ -2327,12 +2355,6 @@ namespace Hecton8.Rendering.Scatter
             value *= 0x846ca68bu;
             value ^= value >> 16;
             return (value & 0xFFFFu) * (1f / 65535f);
-        }
-
-        private static string ResolveAgentLogPath(string fileName)
-        {
-            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Directory.GetCurrentDirectory();
-            return Path.Combine(projectRoot, "Docs", "AgentLogs", fileName);
         }
 
         private static uint CombineGenerationHash(uint generationA, uint generationB)

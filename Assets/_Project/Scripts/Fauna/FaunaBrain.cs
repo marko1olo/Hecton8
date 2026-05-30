@@ -4790,7 +4790,11 @@ namespace Hecton8.AI
 
         private static float ResolveCorpseBloatShaderClockSeconds()
         {
-            return Time.timeSinceLevelLoad;
+            double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (double.IsNaN(now) || double.IsInfinity(now) || now <= 0d)
+                return 0f;
+
+            return now >= float.MaxValue ? float.MaxValue : (float)now;
         }
 
         private void ApplyCorpseBloatShaderTimer(float startTimeSeconds)
@@ -7729,7 +7733,7 @@ namespace Hecton8.AI
 
         private bool ValidatePrimitiveColliderRig()
         {
-            MeshCollider meshCollider = GetComponentInChildren<MeshCollider>(true);
+            MeshCollider meshCollider = ComponentReferenceUtility.ResolveOwnedComponent<MeshCollider>(transform);
             if (meshCollider != null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -7738,8 +7742,8 @@ namespace Hecton8.AI
                 return false;
             }
 
-            CapsuleCollider capsuleCollider = GetComponentInChildren<CapsuleCollider>(true);
-            SphereCollider sphereCollider = GetComponentInChildren<SphereCollider>(true);
+            CapsuleCollider capsuleCollider = ComponentReferenceUtility.ResolveOwnedComponent<CapsuleCollider>(transform);
+            SphereCollider sphereCollider = ComponentReferenceUtility.ResolveOwnedComponent<SphereCollider>(transform);
             _predatorLungeCcdCapsule = capsuleCollider;
             _predatorLungeCcdSphere = sphereCollider;
             if (capsuleCollider == null && sphereCollider == null)

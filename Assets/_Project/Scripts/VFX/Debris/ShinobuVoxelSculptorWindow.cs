@@ -130,17 +130,17 @@ namespace Hecton8.VFX.Debris
                     out particles,
                     out rlePairs);
 
-                new MockVoxelGridGeneratorJob
+                ExecuteParallelFor(new MockVoxelGridGeneratorJob
                 {
                     Densities = densities,
                     Density = ShinobuDeltaCrusher.MockSolidDensity
-                }.Run(densities.Length);
+                }, densities.Length);
 
-                new InitializeDensityAccumulatorJob
+                ExecuteParallelFor(new InitializeDensityAccumulatorJob
                 {
                     SourceDensities = densities,
                     DensityAccumulator = accumulator
-                }.Run(accumulator.Length);
+                }, accumulator.Length);
 
                 removedMass[0] = 0;
                 debrisCount[0] = 0;
@@ -152,7 +152,7 @@ namespace Hecton8.VFX.Debris
                 int3 span = (maxCell - minCell) + 1;
                 int candidateCount = span.x * span.y * span.z;
 
-                new VoxelSphericalCarveJob
+                ExecuteParallelFor(new VoxelSphericalCarveJob
                 {
                     MinCell = minCell,
                     Span = span,
@@ -162,25 +162,25 @@ namespace Hecton8.VFX.Debris
                     DeltaDensity = _deltaDensity,
                     DensityAccumulatorPtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(accumulator),
                     RemovedMassPtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(removedMass)
-                }.Run(candidateCount);
+                }, candidateCount);
 
-                new ApplyCarveDensityDeltasJob
+                ExecuteParallelFor(new ApplyCarveDensityDeltasJob
                 {
                     DensityAccumulator = accumulator,
                     OutputDensities = densities
-                }.Run(densities.Length);
+                }, densities.Length);
 
                 RunRleValidation(densities, decompressed, stats, writtenCount, rlePairs);
-                new DebrisMassToCountJob
+                ExecuteSingle(new DebrisMassToCountJob
                 {
                     RemovedMass = removedMass,
                     DebrisCount = debrisCount,
                     MassUnitsPerParticle = _massUnitsPerParticle,
                     MaxDebris = _maxDebris
-                }.Run();
+                });
 
                 int clampedDebrisCount = math.clamp(debrisCount[0], 0, particles.Length);
-                new DebrisEmitFromMassJob
+                ExecuteParallelFor(new DebrisEmitFromMassJob
                 {
                     Particles = particles,
                     DebrisCount = debrisCount,
@@ -189,9 +189,9 @@ namespace Hecton8.VFX.Debris
                     Impulse = new float3(0f, 1f, 0f),
                     MaterialHash = ShinobuDeltaCrusher.TitaniumOreHash,
                     Seed = 0x5348494Eu
-                }.Run(math.max(1, clampedDebrisCount));
+                }, math.max(1, clampedDebrisCount));
 
-                new DebrisPhysicsFakeJob
+                ExecuteParallelFor(new DebrisPhysicsFakeJob
                 {
                     Particles = particles,
                     Count = clampedDebrisCount,
@@ -200,7 +200,7 @@ namespace Hecton8.VFX.Debris
                     Bounce = _bounce,
                     SleepSpeedSq = ShinobuDeltaCrusher.DefaultSleepSpeedSq,
                     Sampler = default
-                }.Run(math.max(1, clampedDebrisCount));
+                }, math.max(1, clampedDebrisCount));
 
                 _lastRemovedMass = removedMass[0];
                 _lastDebrisCount = clampedDebrisCount;
@@ -251,11 +251,11 @@ namespace Hecton8.VFX.Debris
                 writtenCount = new NativeArray<int>(CounterLength, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 rlePairs = new NativeList<short>(RlePairCapacity, Allocator.TempJob);
 
-                new MockVoxelGridGeneratorJob
+                ExecuteParallelFor(new MockVoxelGridGeneratorJob
                 {
                     Densities = densities,
                     Density = ShinobuDeltaCrusher.MockSolidDensity
-                }.Run(densities.Length);
+                }, densities.Length);
 
                 RunRleValidation(densities, decompressed, stats, writtenCount, rlePairs);
                 _lastRemovedMass = 0;
@@ -283,19 +283,19 @@ namespace Hecton8.VFX.Debris
             NativeArray<int> writtenCount,
             NativeList<short> rlePairs)
         {
-            new RleCompressSByteJob
+            ExecuteSingle(new RleCompressSByteJob
             {
                 Input = densities,
                 OutputPairs = rlePairs,
                 Stats = stats
-            }.Run();
+            });
 
-            new RleDecompressSByteJob
+            ExecuteSingle(new RleDecompressSByteJob
             {
                 InputPairs = rlePairs,
                 Output = decompressed,
                 WrittenCount = writtenCount
-            }.Run();
+            });
 
             bool valid = writtenCount[0] == densities.Length;
             for (int i = 0; valid && i < densities.Length; i++)
@@ -315,6 +315,17 @@ namespace Hecton8.VFX.Debris
             _lastStatus = TryWriteTuningToVault(in tuning)
                 ? "Tuning saved to DataVault job state"
                 : "Tuning write rejected";
+        }
+
+        private static void ExecuteSingle<TJob>(TJob job) where TJob : struct, IJob
+        {
+            job.Execute();
+        }
+
+        private static void ExecuteParallelFor<TJob>(TJob job, int count) where TJob : struct, IJobParallelFor
+        {
+            for (int index = 0; index < count; index++)
+                job.Execute(index);
         }
 
         private void ExportCurrentTuningCsv()

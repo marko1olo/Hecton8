@@ -237,7 +237,7 @@ namespace Hecton8.VFX.Parasites
             if (_lastCandidateOverflowCount > 0)
                 flags |= ParasiteSwarmContracts.TelemetryFlagTargetOverflow;
 
-            bool shouldQueueDump = false;
+            bool shouldStageDump = false;
             if (TryAcquireTelemetryOwnerViews(out NativeArray<SwarmTelemetryEntry> telemetry, out NativeArray<int> telemetryCursor))
             {
                 try
@@ -246,7 +246,7 @@ namespace Hecton8.VFX.Parasites
                         ((flags & (ParasiteSwarmContracts.TelemetryFlagTargetOverflow | ParasiteSwarmContracts.TelemetryFlagGpuBudgetSpike | ParasiteSwarmContracts.TelemetryFlagInvalidMath)) != 0u) &&
                         !System.Threading.Volatile.Read(ref _blackBoxDumped))
                     {
-                        shouldQueueDump = TryStageTelemetryDump(telemetry, telemetryCursor);
+                        shouldStageDump = true;
                     }
                 }
                 finally
@@ -255,6 +255,7 @@ namespace Hecton8.VFX.Parasites
                 }
             }
 
+            bool shouldQueueDump = shouldStageDump && TryStageTelemetryDump();
             if (shouldQueueDump)
                 QueueTelemetryDumpWorker();
         }
@@ -762,7 +763,38 @@ namespace Hecton8.VFX.Parasites
             vault?.ReleaseMutationGuard(TelemetryMutationGuardMask);
         }
 
-        private bool TryStageTelemetryDump(NativeArray<SwarmTelemetryEntry> telemetry, NativeArray<int> telemetryCursor)
+        private bool TryReadTelemetryViews(
+            out NativeArray<SwarmTelemetryEntry> telemetry,
+            out NativeArray<int> telemetryCursor)
+        {
+            telemetry = default;
+            telemetryCursor = default;
+
+            return TryReadHandle(
+                       in _telemetryHandle,
+                       BufferID.ShinobuParasiteTelemetryRing,
+                       ParasiteSwarmContracts.TelemetryCapacity,
+                       out telemetry) &&
+                   TryReadHandle(
+                       in _telemetryCursorHandle,
+                       BufferID.ShinobuParasiteTelemetryCursor,
+                       1,
+                       out telemetryCursor);
+        }
+
+        private bool TryStageTelemetryDump()
+        {
+            if (_vault == null ||
+                _vault.IsCompactionFenceActive ||
+                !TryReadTelemetryViews(out NativeArray<SwarmTelemetryEntry> telemetry, out NativeArray<int> telemetryCursor))
+            {
+                return false;
+            }
+
+            return TryStageTelemetryDumpFromReadOnly(telemetry, telemetryCursor);
+        }
+
+        private bool TryStageTelemetryDumpFromReadOnly(NativeArray<SwarmTelemetryEntry> telemetry, NativeArray<int> telemetryCursor)
         {
             if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return false;
@@ -776,9 +808,9 @@ namespace Hecton8.VFX.Parasites
             for (int i = 0; i < count; i++)
                 _telemetryDumpSnapshot[i] = telemetry[i];
 
-            _telemetryDumpSnapshotCount = count;
             _telemetryDumpCursorSnapshot = cursor;
             _telemetryDumpRootSnapshot = _dumpRootPath;
+            System.Threading.Volatile.Write(ref _telemetryDumpSnapshotCount, count);
             return true;
         }
 
@@ -798,11 +830,13 @@ namespace Hecton8.VFX.Parasites
         {
             try
             {
+                int snapshotCount = System.Threading.Volatile.Read(ref _telemetryDumpSnapshotCount);
+                int cursorSnapshot = System.Threading.Volatile.Read(ref _telemetryDumpCursorSnapshot);
                 if (ParasiteSwarmContracts.TryWriteTelemetryDump(
                         _telemetryDumpRootSnapshot,
                         _telemetryDumpSnapshot,
-                        _telemetryDumpSnapshotCount,
-                        _telemetryDumpCursorSnapshot))
+                        snapshotCount,
+                        cursorSnapshot))
                 {
                     System.Threading.Volatile.Write(ref _blackBoxDumped, true);
                 }

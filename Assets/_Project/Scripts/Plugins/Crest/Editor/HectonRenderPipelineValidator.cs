@@ -25,8 +25,10 @@ namespace Hecton8.Editor
         private const string ValidateMenuPath = "Hecton/Validation/Graphics/Run Render Pipeline Validator";
         private const string RepairMenuPath = "Hecton/Validation/Graphics/Repair Render Pipeline Assets";
         private const string LogPrefix = "[HectonRenderPipelineValidator]";
-        private const float MaxMx350ShadowDistanceMeters = 30f;
-        private const int Mx350ShadowCascadeCount = 2;
+        private const float CompactShadowDistanceMeters = 30f;
+        private const int CompactShadowCascadeCount = 2;
+        private const float HighShadowDistanceMeters = 42f;
+        private const int HighShadowCascadeCount = 4;
         private const string WorldScenePath = "Assets/_Project/Scenes/02_HECTON_WORLD.unity";
         private const string BlendedSkyboxMaterialPath = "Assets/_Project/Art/Materials/Mat_HectonSky.mat";
         private const string DaySkyboxMaterialPath = "Assets/_Project/Art/Skyboxes/Mat_Skybox_Day.mat";
@@ -236,15 +238,16 @@ namespace Hecton8.Editor
                 changed = true;
             }
 
-            if (urpAsset.shadowDistance > MaxMx350ShadowDistanceMeters)
+            ResolveShadowBudget(urpAsset, out float targetShadowDistance, out int targetShadowCascadeCount);
+            if (!Mathf.Approximately(urpAsset.shadowDistance, targetShadowDistance))
             {
-                urpAsset.shadowDistance = MaxMx350ShadowDistanceMeters;
+                urpAsset.shadowDistance = targetShadowDistance;
                 changed = true;
             }
 
-            if (urpAsset.shadowCascadeCount != Mx350ShadowCascadeCount)
+            if (urpAsset.shadowCascadeCount != targetShadowCascadeCount)
             {
-                urpAsset.shadowCascadeCount = Mx350ShadowCascadeCount;
+                urpAsset.shadowCascadeCount = targetShadowCascadeCount;
                 changed = true;
             }
 
@@ -277,6 +280,23 @@ namespace Hecton8.Editor
             }
 
             return changed;
+        }
+
+        private static void ResolveShadowBudget(
+            UniversalRenderPipelineAsset urpAsset,
+            out float shadowDistanceMeters,
+            out int shadowCascadeCount)
+        {
+            string assetName = urpAsset != null ? urpAsset.name : string.Empty;
+            if (assetName.IndexOf("High", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                shadowDistanceMeters = HighShadowDistanceMeters;
+                shadowCascadeCount = HighShadowCascadeCount;
+                return;
+            }
+
+            shadowDistanceMeters = CompactShadowDistanceMeters;
+            shadowCascadeCount = CompactShadowCascadeCount;
         }
 
         private static bool IsPlayModeUnsafeForRepairs()

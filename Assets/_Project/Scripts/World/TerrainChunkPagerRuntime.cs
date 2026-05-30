@@ -141,7 +141,6 @@ namespace Hecton8.World
         private char[] _pathBuffer;
         private byte[] _utf8PathBuffer;
         private string _chunkRootFullPath;
-        private string _dumpFullPath;
         private int _workerRunning;
         private int _forceMockDiskIo;
         private int _requestHead;
@@ -395,7 +394,6 @@ namespace Hecton8.World
             _pathBuffer = new char[512];
             _utf8PathBuffer = new byte[4096];
             _chunkRootFullPath = ResolveChunkRootPath();
-            _dumpFullPath = PrepareDumpPathCold();
             if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
                 _cachedRuntimeContext = runtimeContext;
 
@@ -444,7 +442,6 @@ namespace Hecton8.World
             _vault = null;
             _pendingLifecycleRebindVault = null;
             _chunkRootFullPath = null;
-            _dumpFullPath = null;
             _pathBuffer = null;
             _utf8PathBuffer = null;
             _cachedRuntimeContext = null;
@@ -473,7 +470,6 @@ namespace Hecton8.World
             _vault = null;
             _pendingLifecycleRebindVault = null;
             _chunkRootFullPath = null;
-            _dumpFullPath = null;
             _pathBuffer = null;
             _utf8PathBuffer = null;
             _cachedRuntimeContext = null;
@@ -870,15 +866,24 @@ namespace Hecton8.World
             if (!vault.TryAcquireWriteLock(in handle, SystemID.WorldStreaming, out buffer))
                 return false;
 
-            if (buffer.IsCreated && buffer.Length >= math.max(1, minLength))
+            bool keepLock = false;
+            try
             {
-                writeVault = vault;
-                return true;
-            }
+                if (buffer.IsCreated && buffer.Length >= math.max(1, minLength))
+                {
+                    writeVault = vault;
+                    keepLock = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, SystemID.WorldStreaming);
-            buffer = default;
-            return false;
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (!keepLock)
+                    vault.ReleaseWriteLock(in handle, SystemID.WorldStreaming);
+            }
         }
 
         private static void ReleaseWriteArray<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
@@ -2327,8 +2332,7 @@ namespace Hecton8.World
         private void DumpTelemetryOnWorker(uint frame, uint faults)
         {
             if (_telemetryLength <= 0 ||
-                !TryResolveArray(in _telemetryDumpSnapshotBytesHandle, _dumpSnapshotByteLength, out NativeArray<byte> telemetryDumpSnapshotBytes) ||
-                string.IsNullOrEmpty(_dumpFullPath))
+                !TryResolveArray(in _telemetryDumpSnapshotBytesHandle, _dumpSnapshotByteLength, out NativeArray<byte> telemetryDumpSnapshotBytes))
                 return;
 
             int bytes = _telemetryLength * UnsafeUtility.SizeOf<PagerTelemetryEntry>();
@@ -2337,17 +2341,31 @@ namespace Hecton8.World
 
             try
             {
-                using (FileStream stream = new FileStream(_dumpFullPath, FileMode.Create, FileAccess.Write, FileShare.Read)) // BLACKBOX_DUMP_1305_STREAMING: worker-only fault dump.
+                const int headerBytes = 24;
+                int totalBytes = headerBytes + bytes;
+                NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                try
                 {
-                    Span<byte> header = stackalloc byte[24];
-                    WriteUInt64(header, 0, HectonDumpMagic);
-                    WriteUInt32(header, 8, DumpVersion);
-                    WriteUInt32(header, 12, (uint)_telemetryLength);
-                    WriteUInt32(header, 16, (uint)UnsafeUtility.SizeOf<PagerTelemetryEntry>());
-                    WriteUInt32(header, 20, faults);
-                    stream.Write(header); // BLACKBOX_DUMP_1305_STREAMING
-                    void* snapshotPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryDumpSnapshotBytes);
-                    stream.Write(new ReadOnlySpan<byte>(snapshotPtr, bytes)); // BLACKBOX_DUMP_1305_STREAMING
+                    unsafe
+                    {
+                        byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                        Span<byte> header = new Span<byte>(payloadPtr, headerBytes);
+                        WriteUInt64(header, 0, HectonDumpMagic);
+                        WriteUInt32(header, 8, DumpVersion);
+                        WriteUInt32(header, 12, (uint)_telemetryLength);
+                        WriteUInt32(header, 16, (uint)UnsafeUtility.SizeOf<PagerTelemetryEntry>());
+                        WriteUInt32(header, 20, faults);
+
+                        void* snapshotPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryDumpSnapshotBytes);
+                        UnsafeUtility.MemCpy(payloadPtr + headerBytes, snapshotPtr, bytes);
+                    }
+
+                    NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, totalBytes);
+                }
+                finally
+                {
+                    if (payload.IsCreated)
+                        payload.Dispose();
                 }
             }
             catch (IOException)
@@ -2365,26 +2383,6 @@ namespace Hecton8.World
 
             string streamingRoot = Application.streamingAssetsPath;
             return Path.Combine(streamingRoot, string.IsNullOrEmpty(chunkRootRelativePath) ? DefaultChunkRootRelativePath : chunkRootRelativePath);
-        }
-
-        private static string PrepareDumpPathCold()
-        {
-            try
-            {
-                string path = Path.Combine(ResolveProjectRoot(), DumpRelativePath);
-                string dir = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(dir))
-                    Directory.CreateDirectory(dir);
-                return path;
-            }
-            catch (IOException)
-            {
-                return null;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return null;
-            }
         }
 
         private static string ResolveProjectRoot()

@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -37,6 +36,8 @@ namespace Hecton8.Atmosphere
         private const int MaxDispatchGroupsPerDimension = 65535;
         private const int TelemetryDumpCooldownFrames = OceanSurfaceAtmosphereConstants.TelemetryFrameCount;
         private const uint QualityStepTuningHash = OceanSurfaceAtmosphereConstants.QualityStepTuningHash;
+        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_147.bin";
+        private const string TelemetryDumpPayloadLabel = "shinobuOceanSurfaceTelemetryDumpPayload";
         private const string WaveHeightSamplerKernelName = "SampleWaveHeights";
         private const string WaveHeightSamplerComputeGuid = "60f3dfa702904496933e12041a3e1764";
 
@@ -80,6 +81,8 @@ namespace Hecton8.Atmosphere
         [Header("GPU Height Sampling")]
         [Tooltip("Compute shader that evaluates Gerstner height for the tiny physics query footprint.")]
         [SerializeField] private ComputeShader waveHeightSamplerCompute;
+        [Tooltip("Opt-in diagnostics path. Gameplay wave sampling uses the analytical CPU snapshot to keep runtime CPU->GPU by default.")]
+        [SerializeField] private bool enableGpuWaveHeightReadback;
         [SerializeField, Range(0f, 1f)] private float qualityStepLimitMin = 0f;
         [SerializeField, Range(0f, 1f)] private float qualityStepLimitMax = 1f;
 
@@ -161,6 +164,7 @@ namespace Hecton8.Atmosphere
         private bool _telemetryDumpRequested;
         private bool _waveParameterJobScheduled;
         private bool _waveParameterPayloadDirty = true;
+        private bool _runtimeActive;
 
         private struct WaveReadbackOwner
         {
@@ -182,11 +186,12 @@ namespace Hecton8.Atmosphere
 
         private void OnEnable()
         {
-            if (!Application.isPlaying)
+            _runtimeActive = Application.isPlaying;
+            if (!_runtimeActive)
                 return;
 
-            _readbackDispatchEnabled = true;
             CacheGraphicsCapabilitiesCold();
+            _readbackDispatchEnabled = enableGpuWaveHeightReadback && _coldSupportsComputeShaders;
             ConfigureSignalLanes();
             TryRegisterHotSwapListener();
             CachePlayerRuntimeContext(Hecton8.Core.GlobalRegistry.Player);
@@ -202,7 +207,8 @@ namespace Hecton8.Atmosphere
 
             RefreshCachedSurfaceSnapshot();
             EnsureWaveGraphicsBuffers();
-            EnsureWaveReadbackGraphicsBuffers();
+            if (_readbackDispatchEnabled)
+                EnsureWaveReadbackGraphicsBuffers();
             TryResolveWaveSamplerKernel();
             UploadPreparedWaveBufferToGpu();
 
@@ -221,6 +227,7 @@ namespace Hecton8.Atmosphere
 
         private void OnDisable()
         {
+            _runtimeActive = false;
             _readbackDispatchEnabled = false;
             CompleteWaveParameterKernelForShutdown();
 
@@ -295,7 +302,7 @@ namespace Hecton8.Atmosphere
             EvaluateCameraWaterline();
             RecordTelemetry();
             _shaderGlobalsDirty = true;
-            _waveHeightReadbackDispatchRequested = true;
+            _waveHeightReadbackDispatchRequested = _readbackDispatchEnabled;
             ScheduleWaveParameterKernel();
         }
 
@@ -313,12 +320,13 @@ namespace Hecton8.Atmosphere
 
         public void ColdTick()
         {
-            if (!Application.isPlaying || !_vaultBuffersReady)
+            if (!_runtimeActive || !_vaultBuffersReady)
                 return;
 
             ResolveCameraTransformCold();
             EnsureWaveGraphicsBuffers();
-            EnsureWaveReadbackGraphicsBuffers();
+            if (_readbackDispatchEnabled)
+                EnsureWaveReadbackGraphicsBuffers();
             TryResolveWaveSamplerKernel();
         }
 
@@ -757,14 +765,16 @@ namespace Hecton8.Atmosphere
             float windSpeed,
             float foamThreshold)
         {
+            float safeWindSpeed = math.max(0f, windSpeed);
+            float safeFoamThreshold = math.saturate(foamThreshold);
             if (!TryAcquireTunerWriteView(vault, in handle, BufferID.ShinobuOceanWeatherState, 1, out NativeArray<WeatherStateDTO> weather))
                 return false;
 
             try
             {
                 WeatherStateDTO state = weather[0];
-                state.WindDirectionSpeedStorm.z = math.max(0f, windSpeed);
-                state.SurfaceScalars.z = math.saturate(foamThreshold);
+                state.WindDirectionSpeedStorm.z = safeWindSpeed;
+                state.SurfaceScalars.z = safeFoamThreshold;
                 weather[0] = state;
                 return true;
             }
@@ -779,13 +789,14 @@ namespace Hecton8.Atmosphere
             in VaultGenerationHandle<AtmosphereDTO> handle,
             float gasGiantGlow)
         {
+            float safeGasGiantGlow = math.max(0f, gasGiantGlow);
             if (!TryAcquireTunerWriteView(vault, in handle, BufferID.ShinobuOceanAtmosphere, 1, out NativeArray<AtmosphereDTO> atmosphere))
                 return false;
 
             try
             {
                 AtmosphereDTO dto = atmosphere[0];
-                dto.ScatteringParams.y = math.max(0f, gasGiantGlow);
+                dto.ScatteringParams.y = safeGasGiantGlow;
                 atmosphere[0] = dto;
                 return true;
             }
@@ -800,22 +811,19 @@ namespace Hecton8.Atmosphere
             in VaultGenerationHandle<WaveParametersDTO> handle,
             float waveSteepness)
         {
+            float safeWaveSteepness = math.saturate(waveSteepness);
             if (!TryAcquireTunerWriteView(vault, in handle, BufferID.ShinobuOceanWaveParameters, OceanSurfaceAtmosphereConstants.WaveCapacity, out NativeArray<WaveParametersDTO> waves))
                 return false;
 
             try
             {
-                for (int i = 0; i < waves.Length; i++)
+                for (int i = 0; i < OceanSurfaceAtmosphereConstants.WaveCapacity; i++)
                 {
                     WaveParametersDTO wave = waves[i];
-                    for (int laneIndex = 0; laneIndex < OceanSurfaceAtmosphereConstants.WavesPerParameters; laneIndex++)
-                    {
-                        float4 lane = HectonOceanSurfaceMath.GetWaveLane(wave, laneIndex);
-                        lane.y = math.saturate(waveSteepness);
-                        HectonOceanSurfaceMath.SetWaveLane(ref wave, laneIndex, lane);
-                    }
-
-                    waves[i] = HectonOceanSurfaceMath.SanitizeWave(wave);
+                    wave.Wave1.y = safeWaveSteepness;
+                    wave.Wave2.y = safeWaveSteepness;
+                    wave.Wave3.y = safeWaveSteepness;
+                    waves[i] = wave;
                 }
 
                 return true;
@@ -833,6 +841,14 @@ namespace Hecton8.Atmosphere
             float qualityMin,
             float qualityMax)
         {
+            BeaufortProfileDTO tuning = default;
+            tuning.StateHash = QualityStepTuningHash;
+            tuning.BaseSteepness = math.saturate(qualityMin);
+            tuning.StormIntensity = math.saturate(waveSteepness);
+            tuning.FoamThreshold = math.saturate(foamThreshold);
+            tuning.FrequencyScale = math.saturate(qualityMax);
+            tuning.Flags = 1u;
+
             if (!TryPrepareTunerHandle(vault, BufferID.ShinobuOceanBeaufortProfiles, OceanSurfaceAtmosphereConstants.BeaufortProfileCapacity, out VaultGenerationHandle<BeaufortProfileDTO> handle) ||
                 !TryAcquireTunerWriteView(vault, in handle, BufferID.ShinobuOceanBeaufortProfiles, OceanSurfaceAtmosphereConstants.BeaufortProfileCapacity, out NativeArray<BeaufortProfileDTO> profiles))
             {
@@ -841,16 +857,6 @@ namespace Hecton8.Atmosphere
 
             try
             {
-                if (profiles.Length <= 0)
-                    return;
-
-                BeaufortProfileDTO tuning = profiles[0];
-                tuning.StateHash = QualityStepTuningHash;
-                tuning.BaseSteepness = math.saturate(qualityMin);
-                tuning.StormIntensity = math.saturate(waveSteepness);
-                tuning.FoamThreshold = math.saturate(foamThreshold);
-                tuning.FrequencyScale = math.saturate(qualityMax);
-                tuning.Flags = 1u;
                 profiles[0] = tuning;
             }
             finally
@@ -1249,7 +1255,7 @@ namespace Hecton8.Atmosphere
 
         private void QueueWaveHeightSample(float3 position)
         {
-            if (!ResolveReadbackQueries(out NativeArray<float4> queries))
+            if (!_readbackDispatchEnabled || !ResolveReadbackQueries(out NativeArray<float4> queries))
                 return;
 
             int budget = ResolveReadbackSampleBudget(_globalQualityWeight);
@@ -1990,49 +1996,43 @@ namespace Hecton8.Atmosphere
             if (entryCount <= 0 || payloadBytes < 0 || payloadBytes > TelemetryDumpMaxBytes - 32)
                 return false;
 
-            Span<byte> snapshot = stackalloc byte[TelemetryDumpMaxBytes];
-            WriteUInt32LE(snapshot, 0, 0x53555246u);
-            WriteUInt32LE(snapshot, 4, 0x36325F57u);
-            WriteUInt32LE(snapshot, 8, unchecked((uint)entryCount));
-            WriteUInt32LE(snapshot, 12, unchecked((uint)entrySize));
-            WriteUInt32LE(snapshot, 16, _lastStateHash);
-            WriteUInt32LE(snapshot, 20, unchecked((uint)_telemetryCursor));
-
-            int cursor = 32;
-            for (int i = 0; i < entryCount; i++)
-            {
-                OceanSurfaceTelemetryEntry entry = telemetry[i];
-                MemoryMarshal.Write(snapshot.Slice(cursor, entrySize), ref entry);
-                cursor += entrySize;
-            }
-
-            return WriteColdTelemetryDump(snapshot.Slice(0, 32 + payloadBytes));
-        }
-
-        private bool WriteColdTelemetryDump(ReadOnlySpan<byte> bytes)
-        {
+            const int headerBytes = 32;
+            int byteCount = headerBytes + payloadBytes;
+            NativeArray<byte> payload = default;
             try
             {
-                string root = ResolveProjectRoot();
-                if (string.IsNullOrEmpty(root))
-                    return false;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(ShinobuOceanSurfaceAtmosphereRuntime),
+                    TelemetryDumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                Span<byte> header = new Span<byte>(destination, headerBytes);
+                WriteUInt32LE(header, 0, 0x53555246u);
+                WriteUInt32LE(header, 4, 0x36325F57u);
+                WriteUInt32LE(header, 8, unchecked((uint)entryCount));
+                WriteUInt32LE(header, 12, unchecked((uint)entrySize));
+                WriteUInt32LE(header, 16, _lastStateHash);
+                WriteUInt32LE(header, 20, unchecked((uint)_telemetryCursor));
 
-                string path = Path.Combine(root, "Docs/AgentLogs/Dump_SHINOBU_147.bin");
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                int cursor = headerBytes;
+                for (int i = 0; i < entryCount; i++)
+                {
+                    OceanSurfaceTelemetryEntry entry = telemetry[i];
+                    byte* source = (byte*)UnsafeUtility.AddressOf(ref entry);
+                    for (int byteIndex = 0; byteIndex < entrySize; byteIndex++)
+                        destination[cursor + byteIndex] = source[byteIndex];
+                    cursor += entrySize;
+                }
 
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                stream.Write(bytes);
-                return true;
+                return NativeFaultDumpWriter.TryWriteAll(TelemetryDumpRelativePath, payload, byteCount);
             }
-            catch (IOException)
+            finally
             {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(ShinobuOceanSurfaceAtmosphereRuntime),
+                    TelemetryDumpPayloadLabel);
             }
         }
 
@@ -2490,7 +2490,7 @@ namespace Hecton8.Atmosphere
 
         private void TryRegisterHotSwapListener()
         {
-            if (_registeredHotSwap || !Application.isPlaying)
+            if (_registeredHotSwap || !_runtimeActive)
                 return;
 
             _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);

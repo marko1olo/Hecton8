@@ -95,7 +95,7 @@ namespace Hecton8.Physics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double3 ResolveAupMeters(in AbsoluteUniversePositionBlit origin, float3 localOffset)
+        public static double3 ResolveAupMeters(in FluidAup48 origin, float3 localOffset)
         {
             return new double3(
                 ((double)origin.GridX * HabitatFluidIncursionConstants.AupCellSizeMeters) + origin.Local.x + localOffset.x,
@@ -104,9 +104,23 @@ namespace Hecton8.Physics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static double ResolveAupYMeters(in AbsoluteUniversePositionBlit aup)
+        public static double ResolveAupYMeters(in FluidAup48 aup)
         {
             return ((double)aup.GridY * HabitatFluidIncursionConstants.AupCellSizeMeters) + aup.Local.y;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static AbsoluteUniversePosition ToAbsoluteUniversePosition(in FluidAup48 aup)
+        {
+            return new AbsoluteUniversePosition
+            {
+                GridX = aup.GridX,
+                GridY = aup.GridY,
+                GridZ = aup.GridZ,
+                LocalX = aup.Local.x,
+                LocalY = aup.Local.y,
+                LocalZ = aup.Local.z
+            };
         }
     }
 
@@ -125,7 +139,7 @@ namespace Hecton8.Physics
         [NoAlias, NativeDisableUnsafePtrRestriction] public IntegrityStateDTO* Integrity;
         [NoAlias] public NativeArray<float3> LocalCentroids;
         [NoAlias] public NativeArray<FluidWaterlineShaderDTO> Waterlines;
-        public AbsoluteUniversePositionBlit OriginAup;
+        public FluidAup48 OriginAup;
         public uint NodeHashSeed;
         public float DefaultVolumeM3;
         public float DefaultFloorHeightLocal;
@@ -272,7 +286,7 @@ namespace Hecton8.Physics
         public float DeltaTime;
         public float DischargeCoefficient;
         public float MaxIngressPerSecondNormalized;
-        public AbsoluteUniversePositionBlit ExternalWaterlineAup;
+        public FluidAup48 ExternalWaterlineAup;
 
         public void Execute(int index)
         {
@@ -330,7 +344,7 @@ namespace Hecton8.Physics
         private bool PublishIncursion(in IntegrityStateDTO integrity, in FluidCompartmentDTO dto, float deltaM3)
         {
             FluidIncursionSignal signal = default;
-            signal.LeakAup = integrity.CenterAup.ToAup();
+            signal.LeakAup = HabitatFluidIncursionMath.ToAbsoluteUniversePosition(in integrity.CenterAup);
             signal.CompartmentId = dto.NodeHashID;
             signal.FloodLevel01 = dto.MaxWaterVolume > HabitatFluidIncursionConstants.WaterEpsilonM3
                 ? math.saturate(dto.CurrentWaterVolume * math.rcp(dto.MaxWaterVolume))

@@ -1,0 +1,15 @@
+Agent: 1407
+Fault: delayed build-gate command timed out before persisting build exit code.
+CommandTimeoutMs: 904009
+Observed timeout wall-clock from tool: command timed out after 904009 ms.
+Pre-delay persisted gate artifact before delayed command: CPU 76 percent, no compiler processes, build not invoked.
+Observed during timeout follow-up: dotnet PID 25684 CPU 778.46875 StartTime 2026-05-28T12:37:41 local; VBCSCompiler PID 27088 CPU 115.671875 StartTime 2026-05-28T12:39:05 local.
+CurrentSampleAt:
+2026-05-28T12:55:35.6511160+04:00
+CurrentCpuLoadPercent:
+63
+CurrentCompilerProcesses:
+csc PID 52688, dotnet PID 52900
+BuildExitCode: UNKNOWN
+BuildStdout: unavailable; temp files C:\Users\danat\AppData\Local\Temp\tmpCC9A.tmp and tmpCC9B.tmp were 0 bytes.
+Forensic conclusion: one build attempt likely started after the delayed gate opened, but its exact pre-invocation CPU sample and exit code were not captured because the shell command hit the external timeout. No second build was launched after the timeout.

@@ -1215,19 +1215,15 @@ namespace Hecton8.UI
 
         private static void WriteDump(string path, int entryCount, int entrySize)
         {
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
             int count = math.min(entryCount, TelemetryFrameCapacity);
-            for (int i = 0; i < count; i++)
-            {
-                if (!TryReadTelemetryRow(i, out LocalizationTelemetryEntry row))
-                    return;
+            if (count <= 0 ||
+                !TryReadOnlyTelemetryBuffer(out NativeArray<LocalizationTelemetryEntry>.ReadOnly telemetry) ||
+                count > telemetry.Length)
+                return;
 
-                stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(&row), entrySize));
-            }
+            byte* source = (byte*)telemetry.GetUnsafeReadOnlyPtr();
+            int byteCount = count * entrySize;
+            NativeFaultDumpWriter.TryWriteAll(path, new ReadOnlySpan<byte>(source, byteCount), byteCount);
         }
 
         private static bool TryReadTelemetryRow(int index, out LocalizationTelemetryEntry row)
@@ -1246,19 +1242,15 @@ namespace Hecton8.UI
 
         private static void WriteUIOptimizationDump(string path, int entryCount, int entrySize)
         {
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
             int count = math.min(entryCount, TelemetryFrameCapacity);
-            for (int i = 0; i < count; i++)
-            {
-                if (!TryReadUIOptimizationTelemetryRow(i, out UIOptimizationTelemetryEntry row))
-                    return;
+            if (count <= 0 ||
+                !TryReadOnlyUIOptimizationTelemetryBuffer(out NativeArray<UIOptimizationTelemetryEntry>.ReadOnly telemetry) ||
+                count > telemetry.Length)
+                return;
 
-                stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(&row), entrySize));
-            }
+            byte* source = (byte*)telemetry.GetUnsafeReadOnlyPtr();
+            int byteCount = count * entrySize;
+            NativeFaultDumpWriter.TryWriteAll(path, new ReadOnlySpan<byte>(source, byteCount), byteCount);
         }
 
         private static bool TryReadUIOptimizationTelemetryRow(int index, out UIOptimizationTelemetryEntry row)

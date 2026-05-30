@@ -35,8 +35,11 @@ namespace Hecton8.World
         private const int IndirectArgsCount = 1;
         private const uint OreProceduralVertexCount = 36u;
         private const int ClearedCandidateSlot = -1;
-        private const string PrimaryTelemetryDumpFile = "Dump_SHINOBU_153.bin";
-        private const string PromptTelemetryDumpFile = "Dump_GEOLOGY_ARCHITECT.bin";
+        private const uint TelemetryDumpMagic = 0x47454F38u; // GEO8
+        private const uint TelemetryDumpVersion = 1u;
+        private const int TelemetryDumpHeaderBytes = 24;
+        private const string PrimaryTelemetryDumpFile = "Docs/AgentLogs/Dump_SHINOBU_153.bin";
+        private const string PromptTelemetryDumpFile = "Docs/AgentLogs/Dump_GEOLOGY_ARCHITECT.bin";
         private const int CopperBiomeId = 4;
         private const float SlopeRejectNormalY = 0.5f;
         private const int OreTypeBasaltIron = WorldOreTypeIds.BasaltIron;
@@ -3065,74 +3068,60 @@ namespace Hecton8.World
                     out NativeArray<GeologyGenerationTelemetryEntry> telemetryRing))
                 return;
 
-            string root = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs"));
-            TryWriteTelemetryDump(Path.Combine(root, PrimaryTelemetryDumpFile), telemetryRing);
-            TryWriteTelemetryDump(Path.Combine(root, PromptTelemetryDumpFile), telemetryRing);
+            TryWriteTelemetryDump(PrimaryTelemetryDumpFile, telemetryRing);
+            TryWriteTelemetryDump(PromptTelemetryDumpFile, telemetryRing);
         }
 
         private unsafe void TryWriteTelemetryDump(string path, NativeArray<GeologyGenerationTelemetryEntry> telemetryRing)
         {
-            const int HeaderBytes = sizeof(uint) * 4;
-            int entryBytes = UnsafeUtility.SizeOf<GeologyGenerationTelemetryEntry>();
-            if (!telemetryRing.IsCreated ||
-                telemetryRing.Length < 0 ||
-                entryBytes <= 0 ||
-                telemetryRing.Length > (int.MaxValue - HeaderBytes) / entryBytes)
+            int entrySize = UnsafeUtility.SizeOf<GeologyGenerationTelemetryEntry>();
+            if (string.IsNullOrEmpty(path) ||
+                entrySize != 64 ||
+                !telemetryRing.IsCreated ||
+                telemetryRing.Length <= 0)
             {
                 return;
             }
 
-            NativeArray<byte> dumpBytes = default;
-            bool dumpRegistered = false;
+            int count = math.min(telemetryRing.Length, ProceduralGeologyConstants.TelemetryFrames);
+            if (count <= 0)
+                return;
+
+            int byteCount = TelemetryDumpHeaderBytes + count * entrySize;
+            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             try
             {
-                int byteCount = HeaderBytes + telemetryRing.Length * entryBytes;
-                dumpBytes = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(dumpBytes, OwnerName, nameof(dumpBytes), NativeAllocationLifetime.Temp);
-                dumpRegistered = true;
-                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(dumpBytes);
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
                 int cursor = 0;
-                WriteUInt32LittleEndian(destination, ref cursor, ProceduralGeologyConstants.DumpMagic);
-                WriteUInt32LittleEndian(destination, ref cursor, ProceduralGeologyConstants.DumpVersion);
-                WriteUInt32LittleEndian(destination, ref cursor, (uint)entryBytes);
-                WriteUInt32LittleEndian(destination, ref cursor, (uint)telemetryRing.Length);
-                for (int i = 0; i < telemetryRing.Length; i++)
+                WriteUInt32LittleEndian(target, ref cursor, TelemetryDumpMagic);
+                WriteUInt32LittleEndian(target, ref cursor, TelemetryDumpVersion);
+                WriteInt32LittleEndian(target, ref cursor, count);
+                WriteInt32LittleEndian(target, ref cursor, entrySize);
+                WriteInt32LittleEndian(target, ref cursor, _telemetryWriteIndex);
+                WriteUInt32LittleEndian(target, ref cursor, ProceduralGeologyLayoutAudit.LayoutHash);
+
+                int start = _telemetryWriteIndex - count;
+                while (start < 0)
+                    start += telemetryRing.Length;
+                if (start >= telemetryRing.Length)
+                    start %= telemetryRing.Length;
+
+                for (int i = 0; i < count; i++)
                 {
-                    GeologyGenerationTelemetryEntry entry = telemetryRing[i];
-                    WriteInt64LittleEndian(destination, ref cursor, entry.SectorHash);
-                    WriteUInt32LittleEndian(destination, ref cursor, entry.Frame);
-                    WriteInt32LittleEndian(destination, ref cursor, entry.AuthoritativeNodeCount);
-                    WriteInt32LittleEndian(destination, ref cursor, entry.RenderNodeCount);
-                    WriteInt32LittleEndian(destination, ref cursor, entry.DepletedCullCount);
-                    WriteInt32LittleEndian(destination, ref cursor, entry.VisualOnlyNodeCount);
-                    WriteInt32LittleEndian(destination, ref cursor, entry.OverflowCount);
-                    WriteFloatLittleEndian(destination, ref cursor, entry.GenerationBudgetUs);
-                    WriteFloatLittleEndian(destination, ref cursor, entry.GlobalQualityWeight);
-                    WriteUInt32LittleEndian(destination, ref cursor, entry.Flags);
-                    WriteUInt32LittleEndian(destination, ref cursor, entry.FirstNodeHash);
-                    WriteUInt32LittleEndian(destination, ref cursor, entry.LayoutHash);
-                    WriteUInt32LittleEndian(destination, ref cursor, entry.ActiveDepletionWord0);
-                    WriteUInt64LittleEndian(destination, ref cursor, entry.StateHash);
+                    int slot = start + i;
+                    if (slot >= telemetryRing.Length)
+                        slot -= telemetryRing.Length;
+
+                    GeologyGenerationTelemetryEntry entry = telemetryRing[slot];
+                    UnsafeUtility.MemCpy(target + cursor, &entry, entrySize);
+                    cursor += entrySize;
                 }
 
-                Hecton8.SaveSystem.AsyncWriteManager.WriteAll(path, destination, cursor, out _);
-            }
-            catch (IOException)
-            {
-                // Crash-path dump failure must not cascade into gameplay exception spam.
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // Crash-path dump failure must not cascade into gameplay exception spam.
+                NativeFaultDumpWriter.TryWriteAll(path, payload, cursor);
             }
             finally
             {
-                if (dumpBytes.IsCreated)
-                {
-                    if (dumpRegistered)
-                        NativeMemorySentinel.UnregisterNativeArray(dumpBytes);
-                    dumpBytes.Dispose();
-                }
+                payload.Dispose();
             }
         }
 

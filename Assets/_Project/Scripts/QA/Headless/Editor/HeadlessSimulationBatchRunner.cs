@@ -22,8 +22,10 @@ namespace Hecton8.QA.Headless.Editor
         private const string BlackboxRelativePath = "Docs/AgentLogs/Dump_HEADLESS_SIMULATION_RUNNER.bin";
         private const string RunnerStatusRelativePath = "Docs/AgentLogs/HeadlessSimulationBatchRunner_HEADLESS_SIMULATION_RUNNER.txt";
         private const double TimeoutSeconds = 7200.0;
+        private const double PollIntervalSeconds = 0.25;
         // COLD ALLOC: byte[1] - batch flag file payload, editor-only setup path - owner: HeadlessSimulationBatchRunner
         private static readonly byte[] FlagBytes = { (byte)'1' };
+        private static double _nextPollTime;
 
         static HeadlessSimulationBatchRunner()
         {
@@ -36,6 +38,7 @@ namespace Hecton8.QA.Headless.Editor
             SessionState.SetBool(ActiveKey, true);
             SessionState.SetBool(ExitRequestedKey, false);
             SessionState.SetString(StartTimeKey, EditorApplication.timeSinceStartup.ToString("R", CultureInfo.InvariantCulture));
+            _nextPollTime = 0.0;
             TryDeleteFile(ResolveProjectPath(ResultRelativePath));
             TryDeleteFile(ResolveProjectPath(ResultRelativePath + ".tmp"));
             TryDeleteFile(ResolveProjectPath(CsvRelativePath));
@@ -83,6 +86,14 @@ namespace Hecton8.QA.Headless.Editor
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
                 return;
 
+            if (!ShouldPollNow())
+                return;
+
+            PollRunState();
+        }
+
+        private static void PollRunState()
+        {
             string resultPath = ResolveProjectPath(ResultRelativePath);
             if (File.Exists(resultPath))
             {
@@ -115,6 +126,16 @@ namespace Hecton8.QA.Headless.Editor
 
                 EditorApplication.isPlaying = true;
             }
+        }
+
+        private static bool ShouldPollNow()
+        {
+            double now = EditorApplication.timeSinceStartup;
+            if (now < _nextPollTime)
+                return false;
+
+            _nextPollTime = now + PollIntervalSeconds;
+            return true;
         }
 
         private static bool HasTimedOut()

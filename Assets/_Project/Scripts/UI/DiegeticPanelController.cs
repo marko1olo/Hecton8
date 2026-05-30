@@ -5,6 +5,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace Hecton8.UI
@@ -325,8 +326,8 @@ namespace Hecton8.UI
         [SerializeField, Tooltip("Enables the RT-backed panel path for physical screen meshes.")]
         private bool enableRenderTexturePresentation = true;
 
-        [SerializeField, Tooltip("Treat this panel as an MX350-tier target and keep the RT in RGB565 + D16.")]
-        private bool forceMx350Tier = true;
+        [SerializeField, FormerlySerializedAs("forceMx350Tier"), Tooltip("Treat this panel as a compact-memory target and keep the RT in RGB565 + D16.")]
+        private bool forceCompactTier = true;
 
         [SerializeField, Tooltip("RenderTexture filter mode applied to the panel surface.")]
         private FilterMode renderTextureFilterMode = FilterMode.Bilinear;
@@ -472,7 +473,7 @@ namespace Hecton8.UI
         private bool _applyingLateFramePresentation;
         private bool _matrixStateInitialized;
         private bool _canvasSettingsApplied;
-        private bool _isMx350Tier;
+        private bool _isCompactTier;
         private bool _ownsPanelRenderTexture;
         private float _qualityWeight01 = 1f;
         private float _phosphorBlend01;
@@ -1092,11 +1093,10 @@ namespace Hecton8.UI
 
         private void DetermineTargetHardwareTier()
         {
-            string gpuName = SystemInfo.graphicsDeviceName;
-            _isMx350Tier = forceMx350Tier ||
-                           SystemInfo.graphicsMemorySize <= 2048 ||
-                           (!string.IsNullOrEmpty(gpuName) &&
-                            gpuName.IndexOf("MX350", System.StringComparison.OrdinalIgnoreCase) >= 0);
+            HardwareTierDetector.EnsureInitialized();
+            _isCompactTier = forceCompactTier ||
+                             HardwareTierDetector.SharedMemoryModeActive ||
+                             SystemInfo.graphicsMemorySize <= 2048;
         }
 
         private void RefreshQualityPolicy()
@@ -1394,7 +1394,7 @@ namespace Hecton8.UI
 
         private GraphicsFormat ResolveColorGraphicsFormat()
         {
-            return _isMx350Tier
+            return _isCompactTier
                     ? GraphicsFormat.B5G6R5_UNormPack16
                     : GraphicsFormat.R8G8B8A8_UNorm;
         }

@@ -17,7 +17,7 @@ namespace Hecton8.Physics
         public const int MaterialSettlingProfileCapacity = 512;
         public const int SleepSdfCellCapacity = 65536;
 #if UNITY_EDITOR
-        public const int CsvScratchBytes = 65536;
+        public const int CsvImportByteCapacity = 65536;
 #endif
         public const int ForceQueueSoftCapacity = 8192;
         public const int TelemetryCapacity = 300;
@@ -83,9 +83,6 @@ namespace Hecton8.Physics
         public const BufferID TelemetryRing = BufferID.ShinobuBuoyancyTelemetryRing;
         public const BufferID TelemetryCursor = BufferID.ShinobuBuoyancyTelemetryCursor;
         public const BufferID MaterialVolumes = BufferID.ShinobuBuoyancyMaterialVolumes;
-#if UNITY_EDITOR
-        public const BufferID CsvScratch = BufferID.ShinobuBuoyancyCsvScratch;
-#endif
         public const BufferID DebugForces = BufferID.ShinobuBuoyancyDebugForces;
         public const BufferID Counters = BufferID.ShinobuBuoyancyCounters;
         public const BufferID BodyBindings = BufferID.ShinobuBuoyancyBodyBindings;

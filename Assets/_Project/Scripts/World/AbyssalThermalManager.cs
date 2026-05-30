@@ -219,6 +219,7 @@ namespace Hecton8.World
         private const uint ThermalTelemetryFlagHeatSource = 1u << 0;
         private const uint ThermalTelemetryFlagPlayerAmbientTemp = 1u << 1;
         private const uint ThermalTelemetryFlagThermalShock = 1u << 2;
+        private const string ThermalTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_THERMODYNAMICS_LEAD.bin";
         private const byte ThermalShockAcousticChannel = 11;
         private const BufferID ThermalMapReadCelsiusBufferId = (BufferID)70056;
         private const BufferID ThermalMapWriteCelsiusBufferId = (BufferID)70057;
@@ -1279,8 +1280,7 @@ namespace Hecton8.World
             if (!_hasSmokeData || _activeVentCount <= 0)
                 return;
 
-            _pendingSmokeVisualDeltaTime = deltaTime;
-            _smokeVisualSyncRequested = true;
+            QueueSmokeVisualSync(deltaTime);
         }
 
         /// <summary>
@@ -1288,18 +1288,17 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
-            CacheVoxelDeltaProcessorCold();
+            if (!HasSlowTickStorageReady())
+                return;
+
             ApplySeismicSignalEruptionScalar();
             AdvancePassiveCrystallizationCooldowns(0.5f);
-            EnsureStorage();
             SyncPersistentThermalVents();
             RebuildVentField();
-            PrepareThermalMapResourcesCold();
-            EnsureBuffers();
-            if (_forceVentBufferUpload)
-                UploadVentBuffer();
-            if (_forceParticleReset)
-                ResetParticles();
+            if (!HasThermalMapRuntimeResourcesReady())
+                PublishThermalMapMetadata(active: false);
+            if ((_forceVentBufferUpload || _forceParticleReset) && HasSmokeGpuRuntimeResourcesReady())
+                QueueSmokeVisualSync(0f);
             ApplyThermalInfiltrationToBaseModules(0.5f);
             QueueVentBoundaryCrystallizationSamples();
             ScheduleCrystallizationJobIfNeeded();
@@ -2284,26 +2283,29 @@ namespace Hecton8.World
                 return;
             }
 
-            _thermalTelemetryDumped = true;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             NativeArray<byte> dumpBytes = default;
             bool dumpRegistered = false;
             try
             {
-                string path = System.IO.Path.Combine(
-                    System.IO.Directory.GetCurrentDirectory(),
-                    "Docs",
-                    "AgentLogs",
-                    "Dump_THERMODYNAMICS_LEAD.bin");
-
                 const int HeaderBytes = sizeof(int) * 2;
-                const int EntryBytes = (sizeof(double) * 3) + sizeof(long) + sizeof(ulong) + (sizeof(float) * 2) + sizeof(uint) + sizeof(int) + sizeof(uint);
+                const int EntryBytes = (sizeof(double) * 3) +
+                                       sizeof(long) +
+                                       sizeof(ulong) +
+                                       (sizeof(float) * 2) +
+                                       sizeof(uint) +
+                                       sizeof(int) +
+                                       sizeof(uint);
+
                 if (ring.Length > (int.MaxValue - HeaderBytes) / EntryBytes)
                     return;
 
                 int byteCount = HeaderBytes + ring.Length * EntryBytes;
                 dumpBytes = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(dumpBytes, nameof(AbyssalThermalManager), nameof(dumpBytes), NativeAllocationLifetime.Temp);
+                NativeMemorySentinel.RegisterNativeArray(
+                    dumpBytes,
+                    nameof(AbyssalThermalManager),
+                    nameof(dumpBytes),
+                    NativeAllocationLifetime.Temp);
                 dumpRegistered = true;
 
                 unsafe
@@ -2327,14 +2329,23 @@ namespace Hecton8.World
                         WriteUInt32LittleEndian(destination, ref cursor, entry.FailureCode);
                     }
 
-                    AsyncWriteManager.WriteAll(path, destination, cursor, out _);
+                    _thermalTelemetryDumped = NativeFaultDumpWriter.TryWriteAll(ThermalTelemetryDumpRelativePath, dumpBytes, cursor);
                 }
+
+                if (!_thermalTelemetryDumped)
+                    GlobalTelemetryBus.PublishUnityLogFault(ThermalHashSeed, 0u, 1u);
             }
             catch (System.IO.IOException)
             {
+                GlobalTelemetryBus.PublishUnityLogFault(ThermalHashSeed, 0u, 1u);
             }
             catch (System.UnauthorizedAccessException)
             {
+                GlobalTelemetryBus.PublishUnityLogFault(ThermalHashSeed, 0u, 1u);
+            }
+            catch (System.ArgumentException)
+            {
+                GlobalTelemetryBus.PublishUnityLogFault(ThermalHashSeed, 0u, 1u);
             }
             finally
             {
@@ -2345,7 +2356,6 @@ namespace Hecton8.World
                     dumpBytes.Dispose();
                 }
             }
-#endif
         }
 
         private static unsafe void WriteDoubleLittleEndian(byte* destination, ref int cursor, double value)
@@ -3187,11 +3197,8 @@ namespace Hecton8.World
                 return;
             }
 
-            if (_activeVentCount > 0 || _thermalMapJobActive || HasThermalMapStorage())
-                EnsureThermalMapBuffers();
-
-            if (_activeVentCount > 0)
-                PrepareThermalMapTextureCold();
+            EnsureThermalMapBuffers();
+            PrepareThermalMapTextureCold();
         }
 
         private bool HasThermalMapBuffersReady()
@@ -3646,8 +3653,7 @@ namespace Hecton8.World
             Transform current = start;
             for (int depth = 0; depth < 6 && current != null; depth++)
             {
-                IDamageReceiver candidateReceiver = current.GetComponent<IDamageReceiver>();
-                if (candidateReceiver != null)
+                if (current.TryGetComponent(out IDamageReceiver candidateReceiver))
                 {
                     receiver = candidateReceiver;
                     receiverTransform = current;
@@ -3781,6 +3787,9 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.SimulationBucketerRuntime:
                     _simulationBucketer = currentService as ISimulationBucketer;
+                    break;
+                case GlobalRegistryServiceSlot.VoxelEngineRuntime:
+                    _voxelDeltaProcessor = currentService is HectonVoxelEngine engine ? engine.DeltaProcessor : null;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     DisposeThermalMapBuffers();
@@ -3961,8 +3970,7 @@ namespace Hecton8.World
 
             if (UsesThermalGrid())
             {
-                if (_activeVentCount > 0 || _thermalMapJobActive || HasThermalMapStorage())
-                    EnsureThermalMapBuffers();
+                EnsureThermalMapBuffers();
             }
             else
             {
@@ -3984,16 +3992,90 @@ namespace Hecton8.World
             _materialPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - abyssal smoke draw parameters - owner: AbyssalThermalManager
         }
 
+        private bool HasSlowTickStorageReady()
+        {
+            return _ventStates != null &&
+                   _ventStates.Length == MaxVentCapacity &&
+                   _ventGpuData != null &&
+                   _ventGpuData.Length == MaxVentCapacity &&
+                   _lastUploadedVentGpuData != null &&
+                   _lastUploadedVentGpuData.Length == MaxVentCapacity &&
+                   _lastSeededVentStates != null &&
+                   _lastSeededVentStates.Length == MaxVentCapacity &&
+                   _initialParticles != null &&
+                   _initialParticles.Length == smokeParticleCount &&
+                   _empNests != null &&
+                   _empNests.Length == MaxEmpNestCapacity &&
+                   _cableReleasedStates != null &&
+                   _cableReleasedStates.Length == MaxVentCapacity &&
+                   _cableReleaseProgress != null &&
+                   _cableReleaseProgress.Length == MaxVentCapacity &&
+                   _cableElasticReleaseTimers != null &&
+                   _cableElasticReleaseTimers.Length == MaxVentCapacity &&
+                   _cableEmpChainDelayTimers != null &&
+                   _cableEmpChainDelayTimers.Length == MaxVentCapacity &&
+                   _cableEmpChainGlowTimers != null &&
+                   _cableEmpChainGlowTimers.Length == MaxVentCapacity &&
+                   _ventCrystallizationCooldowns != null &&
+                   _ventCrystallizationCooldowns.Length == MaxVentCapacity &&
+                   _crystallizationSamples != null &&
+                   _crystallizationSamples.Length == MaxCrystallizationSampleCapacity &&
+                   _crystallizationResults != null &&
+                   _crystallizationResults.Length == MaxCrystallizationSampleCapacity &&
+                   _bioCableVisuals != null &&
+                   _bioCableVisuals.Length == MaxVentCapacity &&
+                   _thermalBubbleCommands != null &&
+                   _thermalBubbleCommands.Length == MaxVentCapacity &&
+                   _materialPropertyBlock != null &&
+                   HasThermalVaultBuffer(
+                       _dataVault,
+                       in _thermalTelemetryRingHandle,
+                       BufferID.AbyssalThermalManagerTelemetryRing,
+                       ThermalTelemetryCapacity);
+        }
+
+        private bool HasThermalMapRuntimeResourcesReady()
+        {
+            if (!UsesThermalGrid())
+                return true;
+
+            if (_activeVentCount <= 0 && !_thermalMapJobActive && !HasThermalMapStorage())
+                return true;
+
+            if (!HasThermalMapBuffersReady())
+                return false;
+
+            return _activeVentCount <= 0 ||
+                   _thermalMapTexture != null ||
+                   !_supportsThermalMapTextureCold ||
+                   _thermalMapTextureFormatRejected;
+        }
+
+        private bool HasSmokeGpuRuntimeResourcesReady()
+        {
+            return IsBufferReady<AshParticleData>(_particleBufferA, smokeParticleCount) &&
+                   IsBufferReady<AshParticleData>(_particleBufferB, smokeParticleCount) &&
+                   IsBufferReady<AshParticleData>(_particleUploadStagingBuffer, smokeParticleCount) &&
+                   HasVentBufferRingReady();
+        }
+
         private void EnsureBuffers()
         {
             bool particleBufferARecreated = EnsureGpuWriteBuffer<AshParticleData>(ref _particleBufferA, smokeParticleCount);
             bool particleBufferBRecreated = EnsureGpuWriteBuffer<AshParticleData>(ref _particleBufferB, smokeParticleCount);
+            bool particleUploadWasReady = IsBufferReady<AshParticleData>(_particleUploadStagingBuffer, smokeParticleCount);
+            bool particleUploadReady = EnsureParticleUploadStagingBuffer(smokeParticleCount);
             bool ventBufferRingRecreated = EnsureVentBufferRing();
             if (particleBufferARecreated || particleBufferBRecreated)
             {
                 _smokeDispatchFenceArmed = false;
                 _forceParticleReset = true;
             }
+            if (!particleUploadReady)
+                _forceParticleReset = false;
+            else if (!particleUploadWasReady)
+                _forceParticleReset = true;
+
             if (ventBufferRingRecreated)
                 _forceVentBufferUpload = true;
 
@@ -4910,6 +4992,15 @@ namespace Hecton8.World
                 RenderSmoke();
 
             CaptureInFlightFences(_activeVentBufferIndex);
+        }
+
+        private void QueueSmokeVisualSync(float dt)
+        {
+            float safeDt = math.max(0f, dt);
+            _pendingSmokeVisualDeltaTime = _smokeVisualSyncRequested
+                ? math.max(_pendingSmokeVisualDeltaTime, safeDt)
+                : safeDt;
+            _smokeVisualSyncRequested = true;
         }
 
         private bool IsSmokeVisible()

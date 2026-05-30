@@ -10,10 +10,19 @@ namespace Hecton8.Core
     /// </summary>
     public static class HardwareTierDetector
     {
-        private const int DefaultVramBudgetMegabytes = 1600;
+        private const int DefaultVramBudgetMegabytes = 1800;
         private const int GenericSharedMemoryVramBudgetMegabytes = 960;
+        private const int GenericSharedMemoryMidBudgetMegabytes = 1536;
+        private const int GenericSharedMemoryHighBudgetMegabytes = 2048;
+        private const int CompactDiscreteVramBudgetMegabytes = 1800;
+        private const int MidDiscreteVramBudgetMegabytes = 3072;
+        private const int HighDiscreteVramBudgetMegabytes = 4096;
+        private const int UltraDiscreteVramBudgetMegabytes = 6144;
         private const int LowVramGraphicsMemoryMegabytes = 2048;
+        private const int MidVramGraphicsMemoryMegabytes = 4096;
+        private const int HighVramGraphicsMemoryMegabytes = 8192;
         private const int LowSystemMemoryMegabytes = 8192;
+        private const int MidSystemMemoryMegabytes = 16384;
 
         private static bool _initialized;
         private static bool _isLegacyDirect3D11;
@@ -40,7 +49,7 @@ namespace Hecton8.Core
         /// <summary>True when the active backend is Metal.</summary>
         public static bool IsMetal => _isMetal;
 
-        /// <summary>True for Steam Deck or a Linux handheld signature close enough to use Deck limits.</summary>
+        /// <summary>True for the known SteamOS handheld signature lane.</summary>
         public static bool IsSteamDeckLike => _isSteamDeckLike;
 
         /// <summary>True for Meta Quest 3 signatures that should use the generated Quest 3 profile.</summary>
@@ -124,17 +133,26 @@ namespace Hecton8.Core
         {
             if (sharedMemory)
             {
+                int genericBudget = ResolveGenericSharedMemoryBudgetMegabytes();
                 return HardwareProfileCatalog.ResolveSharedMemoryGraphicsBudgetMegabytes(
                     steamDeckLike,
                     quest3Like,
-                    GenericSharedMemoryVramBudgetMegabytes);
+                    genericBudget);
             }
 
             int reportedGraphicsMemory = SystemInfo.graphicsMemorySize;
             if (reportedGraphicsMemory <= 0)
                 return DefaultVramBudgetMegabytes;
 
-            return Mathf.Min(DefaultVramBudgetMegabytes, Mathf.Max(512, reportedGraphicsMemory));
+            int targetBudget = reportedGraphicsMemory <= LowVramGraphicsMemoryMegabytes
+                ? CompactDiscreteVramBudgetMegabytes
+                : reportedGraphicsMemory <= MidVramGraphicsMemoryMegabytes
+                    ? MidDiscreteVramBudgetMegabytes
+                    : reportedGraphicsMemory <= HighVramGraphicsMemoryMegabytes
+                        ? HighDiscreteVramBudgetMegabytes
+                        : UltraDiscreteVramBudgetMegabytes;
+
+            return Mathf.Clamp(targetBudget, 512, reportedGraphicsMemory);
         }
 
         private static bool DetectSharedMemoryArchitecture(bool steamDeckLike, bool quest3Like)
@@ -142,18 +160,43 @@ namespace Hecton8.Core
             if (steamDeckLike || quest3Like)
                 return true;
 
+            if (Application.isMobilePlatform)
+                return true;
+
+            if (DetectIntegratedGraphicsSignature())
+                return true;
+
+            if (_isMetal && ContainsIgnoreCase(SystemInfo.processorType, "apple"))
+                return true;
+
             int graphicsMemory = SystemInfo.graphicsMemorySize;
             int systemMemory = SystemInfo.systemMemorySize;
             if (graphicsMemory > 0 &&
                 graphicsMemory <= LowVramGraphicsMemoryMegabytes &&
                 systemMemory > 0 &&
-                systemMemory <= LowSystemMemoryMegabytes &&
-                (_isVulkan || _isMetal))
+                systemMemory <= MidSystemMemoryMegabytes &&
+                (_isDirect3D12 || _isVulkan || _isMetal))
             {
                 return true;
             }
 
             return false;
+        }
+
+        private static int ResolveGenericSharedMemoryBudgetMegabytes()
+        {
+            int systemMemory = SystemInfo.systemMemorySize;
+            int budget = systemMemory > MidSystemMemoryMegabytes
+                ? GenericSharedMemoryHighBudgetMegabytes
+                : systemMemory > LowSystemMemoryMegabytes
+                    ? GenericSharedMemoryMidBudgetMegabytes
+                    : GenericSharedMemoryVramBudgetMegabytes;
+
+            int reportedGraphicsMemory = SystemInfo.graphicsMemorySize;
+            if (reportedGraphicsMemory > 0)
+                budget = Mathf.Min(budget, Mathf.Max(512, reportedGraphicsMemory));
+
+            return budget;
         }
 
         private static bool DetectSteamDeckLike()
@@ -173,6 +216,24 @@ namespace Hecton8.Core
                    ContainsIgnoreCase(SystemInfo.deviceName, "quest3") ||
                    ContainsIgnoreCase(SystemInfo.operatingSystem, "quest 3") ||
                    ContainsIgnoreCase(SystemInfo.processorType, "xr2 gen 2");
+        }
+
+        private static bool DetectIntegratedGraphicsSignature()
+        {
+            string deviceName = SystemInfo.graphicsDeviceName;
+            string vendor = SystemInfo.graphicsDeviceVendor;
+            string processor = SystemInfo.processorType;
+            return ContainsIgnoreCase(deviceName, "intel uhd") ||
+                   ContainsIgnoreCase(deviceName, "intel iris") ||
+                   ContainsIgnoreCase(deviceName, "intel arc graphics") ||
+                   ContainsIgnoreCase(deviceName, "radeon graphics") ||
+                   ContainsIgnoreCase(deviceName, "amd radeon(tm) graphics") ||
+                   ContainsIgnoreCase(deviceName, "adreno") ||
+                   ContainsIgnoreCase(deviceName, "mali") ||
+                   ContainsIgnoreCase(deviceName, "apple") ||
+                   ContainsIgnoreCase(vendor, "qualcomm") ||
+                   ContainsIgnoreCase(vendor, "arm") ||
+                   ContainsIgnoreCase(processor, "apple");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -3334,7 +3334,6 @@ namespace Hecton8.Gameplay
                     out NativeArray<PlayerKinematicsTelemetryEntry> telemetryRing))
                 return;
 
-            _playerKinematicsTelemetryDumpedThisFault = true;
             TelemetryAnomalySignal anomaly = default;
             anomaly.SystemHash = _playerKinematicsSourceId;
             anomaly.AnomalyHash = anomalyHash;
@@ -3343,35 +3342,41 @@ namespace Hecton8.Gameplay
             anomaly.Severity = 2;
             SignalBus<TelemetryAnomalySignal>.TryPushTracked(in anomaly, ref _signalPushDropCount);
 
-            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-            if (string.IsNullOrEmpty(projectRoot))
-                return;
-
-            string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-            Directory.CreateDirectory(logDirectory);
-            string dumpPath = Path.Combine(logDirectory, "Dump_PLAYER_KINEMATICS.bin");
-            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            const int HeaderBytes = 8;
+            const int RowBytes = 52;
+            int totalBytes = HeaderBytes + telemetryRing.Length * RowBytes;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                totalBytes,
+                nameof(HectonPlayerMovement),
+                "PlayerKinematicsTelemetryDumpPayload");
+            try
             {
-                writer.Write(_playerKinematicsNativeState.TelemetryFrameSequence);
-                writer.Write(_playerKinematicsNativeState.TelemetryWriteIndex);
+                WriteUInt32LittleEndian(payload, 0, _playerKinematicsNativeState.TelemetryFrameSequence);
+                WriteInt32LittleEndian(payload, 4, _playerKinematicsNativeState.TelemetryWriteIndex);
                 for (int i = 0; i < telemetryRing.Length; i++)
                 {
                     PlayerKinematicsTelemetryEntry entry = telemetryRing[i];
-                    writer.Write(entry.Position.x);
-                    writer.Write(entry.Position.y);
-                    writer.Write(entry.Position.z);
-                    writer.Write(entry.Velocity.x);
-                    writer.Write(entry.Velocity.y);
-                    writer.Write(entry.Velocity.z);
-                    writer.Write(entry.IntendedMovement.x);
-                    writer.Write(entry.IntendedMovement.y);
-                    writer.Write(entry.IntendedMovement.z);
-                    writer.Write(entry.DragCoefficient);
-                    writer.Write(entry.WaterDensityScale);
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.Flags);
+                    int offset = HeaderBytes + i * RowBytes;
+                    WriteFloat3LittleEndian(payload, offset, entry.Position);
+                    WriteFloat3LittleEndian(payload, offset + 12, entry.Velocity);
+                    WriteFloat3LittleEndian(payload, offset + 24, entry.IntendedMovement);
+                    WriteFloat32LittleEndian(payload, offset + 36, entry.DragCoefficient);
+                    WriteFloat32LittleEndian(payload, offset + 40, entry.WaterDensityScale);
+                    WriteUInt32LittleEndian(payload, offset + 44, entry.Frame);
+                    WriteUInt32LittleEndian(payload, offset + 48, entry.Flags);
                 }
+
+                _playerKinematicsTelemetryDumpedThisFault = NativeFaultDumpWriter.TryWriteAll(
+                    "Docs/AgentLogs/Dump_PLAYER_KINEMATICS.bin",
+                    payload,
+                    totalBytes);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HectonPlayerMovement),
+                    "PlayerKinematicsTelemetryDumpPayload");
             }
         }
 
@@ -4165,7 +4170,7 @@ namespace Hecton8.Gameplay
             EnsureDegreeSinCosLutInitialized();
             _cachedTransform = transform;
 
-            _rb = GetComponent<Rigidbody>();
+            TryGetComponent(out _rb);
             if (_rb != null)
                 CacheAuthoritativeBodyMassKg(_rb.mass);
             TryGetComponent(out _capsuleCollider);
@@ -4212,7 +4217,7 @@ namespace Hecton8.Gameplay
 
             // Cache camera component for FOV manipulation
             if (playerCamera != null)
-                _cameraComponent = playerCamera.GetComponent<Camera>();
+                playerCamera.TryGetComponent(out _cameraComponent);
             if (!TryGetComponent(out _cameraRig))
             {
                 _cameraRig = gameObject.AddComponent<HectonPlayerCameraRig>(); // COLD ALLOC: HectonPlayerCameraRig[1] â€” dedicated player camera owner consuming locomotion camera state â€” owner: HectonPlayerMovement
@@ -8566,50 +8571,52 @@ namespace Hecton8.Gameplay
             if (frame - _cinematicFocusLastDumpFrame < CinematicFocusBlackBoxDumpCooldownFrames)
                 return;
 
-            _cinematicFocusLastDumpFrame = frame;
             GlobalTelemetryBus.PublishPerformanceWarning(_cinematicFocusFaultHash, reasonHash, _cinematicFocusHash);
+            const int HeaderBytes = 16;
+            const int RowBytes = 81;
+            int totalBytes = HeaderBytes + _cinematicFocusBlackBoxCount * RowBytes;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                totalBytes,
+                nameof(HectonPlayerMovement),
+                "CinematicFocusBlackBoxDumpPayload");
             try
             {
-                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-                if (string.IsNullOrEmpty(projectRoot))
-                    return;
-
-                string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, "Dump_CINEMATIC_FRAMER.bin");
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                WriteInt32LittleEndian(payload, 0, CinematicFocusBlackBoxCapacity);
+                WriteInt32LittleEndian(payload, 4, _cinematicFocusBlackBoxCursor);
+                WriteUInt32LittleEndian(payload, 8, reasonHash);
+                WriteInt32LittleEndian(payload, 12, _cinematicFocusBlackBoxCount);
+                int startIndex = _cinematicFocusBlackBoxCount >= CinematicFocusBlackBoxCapacity
+                    ? _cinematicFocusBlackBoxCursor
+                    : 0;
+                for (int i = 0; i < _cinematicFocusBlackBoxCount; i++)
                 {
-                    writer.Write(CinematicFocusBlackBoxCapacity);
-                    writer.Write(_cinematicFocusBlackBoxCursor);
-                    writer.Write(reasonHash);
-                    writer.Write(_cinematicFocusBlackBoxCount);
-                    int startIndex = _cinematicFocusBlackBoxCount >= CinematicFocusBlackBoxCapacity
-                        ? _cinematicFocusBlackBoxCursor
-                        : 0;
-                    for (int i = 0; i < _cinematicFocusBlackBoxCount; i++)
-                    {
-                        int entryIndex = startIndex + i;
-                        if (entryIndex >= CinematicFocusBlackBoxCapacity)
-                            entryIndex -= CinematicFocusBlackBoxCapacity;
+                    int entryIndex = startIndex + i;
+                    if (entryIndex >= CinematicFocusBlackBoxCapacity)
+                        entryIndex -= CinematicFocusBlackBoxCapacity;
 
-                        CinematicFocusTelemetryEntry entry = blackBox[entryIndex];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.FocusHash);
-                        writer.Write(entry.PlayerGridX);
-                        writer.Write(entry.PlayerGridY);
-                        writer.Write(entry.PlayerGridZ);
-                        writer.Write(entry.TargetGridX);
-                        writer.Write(entry.TargetGridY);
-                        writer.Write(entry.TargetGridZ);
-                        writer.Write(entry.TargetDirection.x);
-                        writer.Write(entry.TargetDirection.y);
-                        writer.Write(entry.TargetDirection.z);
-                        writer.Write(entry.DistanceSq);
-                        writer.Write(entry.PullWeight);
-                        writer.Write(entry.SubtitleAlpha01);
-                        writer.Write(entry.Flags);
-                    }
+                    CinematicFocusTelemetryEntry entry = blackBox[entryIndex];
+                    int offset = HeaderBytes + i * RowBytes;
+                    WriteUInt32LittleEndian(payload, offset, entry.Frame);
+                    WriteUInt32LittleEndian(payload, offset + 4, entry.FocusHash);
+                    WriteInt64LittleEndian(payload, offset + 8, entry.PlayerGridX);
+                    WriteInt64LittleEndian(payload, offset + 16, entry.PlayerGridY);
+                    WriteInt64LittleEndian(payload, offset + 24, entry.PlayerGridZ);
+                    WriteInt64LittleEndian(payload, offset + 32, entry.TargetGridX);
+                    WriteInt64LittleEndian(payload, offset + 40, entry.TargetGridY);
+                    WriteInt64LittleEndian(payload, offset + 48, entry.TargetGridZ);
+                    WriteFloat3LittleEndian(payload, offset + 56, entry.TargetDirection);
+                    WriteFloat32LittleEndian(payload, offset + 68, entry.DistanceSq);
+                    WriteFloat32LittleEndian(payload, offset + 72, entry.PullWeight);
+                    WriteFloat32LittleEndian(payload, offset + 76, entry.SubtitleAlpha01);
+                    payload[offset + 80] = entry.Flags;
+                }
+
+                if (NativeFaultDumpWriter.TryWriteAll(
+                        "Docs/AgentLogs/Dump_CINEMATIC_FRAMER.bin",
+                        payload,
+                        totalBytes))
+                {
+                    _cinematicFocusLastDumpFrame = frame;
                 }
             }
             catch (System.Exception)
@@ -8618,6 +8625,51 @@ namespace Hecton8.Gameplay
                 Hecton8.Core.H8Debug.LogError("[CinematicFocus] Failed to dump blackbox.");
 #endif
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HectonPlayerMovement),
+                    "CinematicFocusBlackBoxDumpPayload");
+            }
+        }
+
+        private static void WriteFloat3LittleEndian(NativeArray<byte> payload, int offset, float3 value)
+        {
+            WriteFloat32LittleEndian(payload, offset, value.x);
+            WriteFloat32LittleEndian(payload, offset + 4, value.y);
+            WriteFloat32LittleEndian(payload, offset + 8, value.z);
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> payload, int offset, float value)
+        {
+            WriteUInt32LittleEndian(payload, offset, math.asuint(value));
+        }
+
+        private static void WriteInt64LittleEndian(NativeArray<byte> payload, int offset, long value)
+        {
+            ulong unsigned = unchecked((ulong)value);
+            payload[offset] = (byte)unsigned;
+            payload[offset + 1] = (byte)(unsigned >> 8);
+            payload[offset + 2] = (byte)(unsigned >> 16);
+            payload[offset + 3] = (byte)(unsigned >> 24);
+            payload[offset + 4] = (byte)(unsigned >> 32);
+            payload[offset + 5] = (byte)(unsigned >> 40);
+            payload[offset + 6] = (byte)(unsigned >> 48);
+            payload[offset + 7] = (byte)(unsigned >> 56);
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, int offset, int value)
+        {
+            WriteUInt32LittleEndian(payload, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, int offset, uint value)
+        {
+            payload[offset] = (byte)value;
+            payload[offset + 1] = (byte)(value >> 8);
+            payload[offset + 2] = (byte)(value >> 16);
+            payload[offset + 3] = (byte)(value >> 24);
         }
 
         private void PublishCinematicMixerState(float intensity01)

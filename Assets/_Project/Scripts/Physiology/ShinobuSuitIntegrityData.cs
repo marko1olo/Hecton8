@@ -11,7 +11,6 @@ namespace Hecton8.Physiology
         public const int TelemetryFrameCount = 300;
         public const int MockPressureSampleCount = 300;
         public const int CsvMaxBytes = 8192;
-        public const int DumpScratchBytes = 19232;
         public const int FrameJobBatchSize = 16;
         public const uint SourceHash = 0x53333233u; // S323
         public const uint PlayerTargetHash = ShinobuPhysiologyConstants.PlayerTargetHash;
@@ -31,8 +30,6 @@ namespace Hecton8.Physiology
         public const BufferID TelemetryBuffer = BufferID.ShinobuSuitIntegrityTelemetryRing;
         public const BufferID VisualBuffer = BufferID.ShinobuSuitIntegrityVisuals;
         public const BufferID MockAupBuffer = BufferID.ShinobuSuitIntegrityMockAups;
-        public const BufferID CsvScratchBuffer = BufferID.ShinobuSuitIntegrityCsvScratch;
-        public const BufferID DumpScratchBuffer = BufferID.ShinobuSuitIntegrityDumpScratch;
     }
 
     public static class SuitIntegrityFlags

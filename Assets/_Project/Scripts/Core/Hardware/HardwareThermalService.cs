@@ -1,12 +1,11 @@
 using System;
-using System.Buffers.Binary;
-using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Tools;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -58,7 +57,8 @@ namespace Hecton8.Core.Hardware
         private const uint ActionSlowTick = 1u << 3;
         private const uint ActionHapticMute = 1u << 4;
         private const uint ActionVisorWarning = 1u << 5;
-        private const string DumpFileName = "Dump_HARDWARE_THROTTLING_DIRECTOR_ThermalService.bin";
+        private const int HardwareThermalDumpHeaderBytes = 16;
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_HARDWARE_THROTTLING_DIRECTOR_ThermalService.bin";
 
         private static bool s_sceneHooked;
 
@@ -677,90 +677,137 @@ namespace Hecton8.Core.Hardware
 
         private void WriteBlackBox(uint frame)
         {
-            if (!TryAcquireThermalBlackBoxWriteView(out NativeArray<HardwareThermalTelemetryEntry> blackBox))
+            if (!TryResolveThermalBlackBoxWriteViewCurrentPhase(out NativeArray<HardwareThermalTelemetryEntry> blackBox))
                 return;
 
-            try
+            int index = _blackBoxCursor;
+            blackBox[index] = new HardwareThermalTelemetryEntry
             {
-                int index = _blackBoxCursor;
-                blackBox[index] = new HardwareThermalTelemetryEntry
-                {
-                    Frame = frame,
-                    Sequence = _sequence,
-                    ActionMask = _lastActionMask,
-                    TemperatureTenthsCelsius = _temperatureTenthsCelsius,
-                    Severity = _severity,
-                    BatteryPercent = _batteryPercent,
-                    BatteryStatus = _batteryStatus,
-                    ThermalStatus = _thermalStatus,
-                    Flags = (byte)(_hapticMuteApplied ? 1 : 0)
-                };
+                Frame = frame,
+                Sequence = _sequence,
+                ActionMask = _lastActionMask,
+                TemperatureTenthsCelsius = _temperatureTenthsCelsius,
+                Severity = _severity,
+                BatteryPercent = _batteryPercent,
+                BatteryStatus = _batteryStatus,
+                ThermalStatus = _thermalStatus,
+                Flags = (byte)(_hapticMuteApplied ? 1 : 0)
+            };
 
-                index++;
-                if (index >= BlackBoxFrameCount)
-                    index = 0;
-                _blackBoxCursor = index;
-            }
-            finally
-            {
-                ReleaseThermalBlackBoxWriteView();
-            }
+            index++;
+            if (index >= BlackBoxFrameCount)
+                index = 0;
+            _blackBoxCursor = index;
         }
 
-        private void DumpBlackBoxCold()
+        private unsafe void DumpBlackBoxCold()
         {
             if (!TryReadThermalBlackBox(out NativeArray<HardwareThermalTelemetryEntry>.ReadOnly blackBox))
                 return;
 
+            int byteCount = HardwareThermalDumpHeaderBytes + BlackBoxFrameCount * HardwareThermalTelemetryEntryBytes;
+            NativeArray<byte> payload = default;
+            const string dumpPayloadLabel = "hardwareThermalBlackBoxDumpPayload";
             try
             {
-                string projectRoot = Application.dataPath;
-                DirectoryInfo parent = Directory.GetParent(projectRoot);
-                if (parent != null)
-                    projectRoot = parent.FullName;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(HardwareThermalService),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int writeCursor = 0;
+                WriteUInt32LittleEndian(destination, ref writeCursor, _sequence);
+                WriteInt32LittleEndian(destination, ref writeCursor, _blackBoxCursor);
+                WriteInt32LittleEndian(destination, ref writeCursor, BlackBoxFrameCount);
+                WriteInt32LittleEndian(destination, ref writeCursor, HardwareThermalTelemetryEntryBytes);
 
-                string folder = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(folder);
-                string path = Path.Combine(folder, DumpFileName);
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                for (int i = 0; i < BlackBoxFrameCount; i++)
                 {
-                    Span<byte> header = stackalloc byte[16];
-                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), _sequence);
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), _blackBoxCursor);
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), BlackBoxFrameCount);
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(12, 4), HardwareThermalTelemetryEntryBytes);
-                    stream.Write(header);
+                    int index = _blackBoxCursor + i;
+                    if (index >= BlackBoxFrameCount)
+                        index -= BlackBoxFrameCount;
 
-                    Span<byte> entryBytes = stackalloc byte[HardwareThermalTelemetryEntryBytes];
-                    for (int i = 0; i < BlackBoxFrameCount; i++)
-                    {
-                        int index = _blackBoxCursor + i;
-                        if (index >= BlackBoxFrameCount)
-                            index -= BlackBoxFrameCount;
-
-                        HardwareThermalTelemetryEntry entry = blackBox[index];
-                        entryBytes.Clear();
-                        BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(0, 4), entry.Frame);
-                        BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(4, 4), entry.Sequence);
-                        BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(8, 4), entry.ActionMask);
-                        BinaryPrimitives.WriteInt16LittleEndian(entryBytes.Slice(12, 2), entry.TemperatureTenthsCelsius);
-                        entryBytes[14] = entry.Severity;
-                        entryBytes[15] = entry.BatteryPercent;
-                        entryBytes[16] = entry.BatteryStatus;
-                        entryBytes[17] = entry.ThermalStatus;
-                        entryBytes[18] = entry.Flags;
-                        entryBytes[19] = entry.Reserved0;
-                        entryBytes[20] = entry.Reserved1;
-                        entryBytes[21] = entry.Reserved2;
-                        entryBytes[22] = entry.Reserved3;
-                        entryBytes[23] = entry.Reserved4;
-                        stream.Write(entryBytes);
-                    }
+                    WriteThermalTelemetryEntry(destination, ref writeCursor, blackBox[index]);
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, writeCursor);
             }
             catch (Exception)
             {
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(ref payload, nameof(HardwareThermalService), dumpPayloadLabel);
+            }
+        }
+
+        private static unsafe void WriteThermalTelemetryEntry(byte* destination, ref int cursor, HardwareThermalTelemetryEntry entry)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Frame);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Sequence);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.ActionMask);
+            WriteInt16LittleEndian(destination, ref cursor, entry.TemperatureTenthsCelsius);
+            WriteByte(destination, ref cursor, entry.Severity);
+            WriteByte(destination, ref cursor, entry.BatteryPercent);
+            WriteByte(destination, ref cursor, entry.BatteryStatus);
+            WriteByte(destination, ref cursor, entry.ThermalStatus);
+            WriteByte(destination, ref cursor, entry.Flags);
+            WriteByte(destination, ref cursor, entry.Reserved0);
+            WriteByte(destination, ref cursor, entry.Reserved1);
+            WriteByte(destination, ref cursor, entry.Reserved2);
+            WriteByte(destination, ref cursor, entry.Reserved3);
+            WriteByte(destination, ref cursor, entry.Reserved4);
+            WriteUInt64LittleEndian(destination, ref cursor, entry.ReservedPadding0);
+            WriteUInt64LittleEndian(destination, ref cursor, entry.ReservedPadding1);
+            WriteUInt64LittleEndian(destination, ref cursor, entry.ReservedPadding2);
+            WriteUInt64LittleEndian(destination, ref cursor, entry.ReservedPadding3);
+            WriteUInt64LittleEndian(destination, ref cursor, entry.ReservedPadding4);
+        }
+
+        private static unsafe void WriteByte(byte* destination, ref int cursor, byte value)
+        {
+            destination[cursor] = value;
+            cursor++;
+        }
+
+        private static unsafe void WriteInt16LittleEndian(byte* destination, ref int cursor, short value)
+        {
+            WriteUInt16LittleEndian(destination, ref cursor, unchecked((ushort)value));
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* destination, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt16LittleEndian(byte* destination, ref int cursor, ushort value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            cursor += sizeof(ushort);
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, ref int cursor, uint value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
+            cursor += sizeof(uint);
+        }
+
+        private static unsafe void WriteUInt64LittleEndian(byte* destination, ref int cursor, ulong value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
+            destination[cursor + 4] = (byte)(value >> 32);
+            destination[cursor + 5] = (byte)(value >> 40);
+            destination[cursor + 6] = (byte)(value >> 48);
+            destination[cursor + 7] = (byte)(value >> 56);
+            cursor += sizeof(ulong);
         }
 
         private void EnsureNativeState()
@@ -934,6 +981,18 @@ namespace Hecton8.Core.Hardware
                 if (!handedOff)
                     vault.ReleaseWriteLock(in _blackBoxHandle, SystemID.HardwareHomeostasis);
             }
+        }
+
+        private bool TryResolveThermalBlackBoxWriteViewCurrentPhase(out NativeArray<HardwareThermalTelemetryEntry> blackBox)
+        {
+            blackBox = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || _blackBoxHandle.BufferID == 0u)
+                return false;
+
+            return vault.TryResolveHandle(in _blackBoxHandle, out blackBox) &&
+                   blackBox.IsCreated &&
+                   blackBox.Length >= BlackBoxFrameCount;
         }
 
         private bool OpenOrAcquireThermalBlackBoxWriteViewForOwnerRoute(out NativeArray<HardwareThermalTelemetryEntry> blackBox)

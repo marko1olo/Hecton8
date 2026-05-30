@@ -23,7 +23,6 @@ namespace Hecton8.Physiology
         public const BufferID MutationTuningBuffer = (BufferID)75321;
         public const BufferID MutationTelemetryBuffer = (BufferID)75322;
         public const BufferID MutationProfileBuffer = (BufferID)75323;
-        public const BufferID MutationCsvScratchBuffer = (BufferID)75324;
         public const BufferID MutationMockDoseBuffer = (BufferID)75325;
 
         public const float DefaultSafeDoseRad = 25f;

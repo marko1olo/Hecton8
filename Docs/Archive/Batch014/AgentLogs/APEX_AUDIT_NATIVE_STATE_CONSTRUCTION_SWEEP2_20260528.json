@@ -1,0 +1,127 @@
+{
+  "agentId": "AUDIT_NATIVE_STATE",
+  "domain": "NativeArray/GlobalDataVault/MonoBehaviour lifecycle",
+  "artifact": "construction_autonomous_vr_pipe_exact_gates",
+  "timestampLocal": "2026-05-28T16:48:39+04:00",
+  "sourceFilesModified": [
+    "Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs",
+    "Assets/_Project/Scripts/Construction/VRPipeBlueprintPreview.cs"
+  ],
+  "vaultLanesSecured": [
+    {
+      "path": "Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs",
+      "owner": "SystemID.Construction",
+      "bufferIds": [
+        "BufferID.AutonomousExtractorJobInputs",
+        "BufferID.AutonomousExtractorJobResults",
+        "BufferID.AutonomousExtractorCycleTimers",
+        "BufferID.AutonomousExtractorBufferedItemHashIds",
+        "BufferID.AutonomousExtractorBufferedUnitCounts",
+        "BufferID.AutonomousExtractorCompletedCycleCounts"
+      ],
+      "proof": "ReleaseVaultBuffer(vault, expectedBufferId, ref handle) -> IsExactVaultHandle(handle, expectedBufferId)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/VRPipeBlueprintPreview.cs",
+      "owner": "SystemID.Construction",
+      "bufferIds": [
+        "(BufferID)70946 PipeStateBufferId",
+        "(BufferID)70947 PipeVisualBufferId",
+        "(BufferID)70948 PipeIndirectArgsBufferId"
+      ],
+      "proof": "IsPipeVaultHandle(handle, expectedBufferId) before read, post-ensure acceptance, write lock, and locked resolve"
+    }
+  ],
+  "lineReferences": {
+    "Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs": [
+      224,
+      225,
+      226,
+      909,
+      910,
+      911,
+      912,
+      913,
+      914,
+      925,
+      931
+    ],
+    "Assets/_Project/Scripts/Construction/VRPipeBlueprintPreview.cs": [
+      165,
+      576,
+      577,
+      578,
+      608,
+      609,
+      610,
+      633,
+      634,
+      643,
+      644,
+      656,
+      657,
+      684,
+      685,
+      686,
+      731
+    ]
+  },
+  "lockProof": {
+    "AutonomousExtractorSystem": "Existing write-lock release/finally structure unchanged; release ownership now exact BufferID-gated.",
+    "VRPipeBlueprintPreview": "Existing acquiredCount release ladder unchanged; each write lock is acquired only after IsPipeVaultHandle(expectedBufferId)."
+  },
+  "zeroGcDiffScan": {
+    "command": "git diff --unified=0 -- Assets/_Project/Scripts/Construction/VRPipeBlueprintPreview.cs Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs | rg -n \"^\\+.*(new |string\\.Format|\\.ToString\\(|\\.Select\\(|\\.Where\\(|\\.ToArray\\(|\\.ToList\\(|foreach\\s*\\()\"",
+    "exitCode": 1,
+    "hits": 0
+  },
+  "layoutDiffScan": {
+    "command": "git diff --unified=0 -- Assets/_Project/Scripts/Construction/VRPipeBlueprintPreview.cs Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs | rg -n \"^\\+.*(StructLayout|FieldOffset|UnsafeUtility\\.SizeOf|Marshal\\.OffsetOf|sizeof\\()\"",
+    "exitCode": 1,
+    "hits": 0
+  },
+  "scopedBadPatternScan": {
+    "command": "rg -n \"currentService as IDataVault|previousService as IDataVault|handle\\.BufferID != 0u|handle\\.BufferID == 0u|OwnerSystemID|IsVaultHandleCreated|IsValidVaultHandle|TryAcquireWriteLock\\([^\\n]*&&|&&[^\\n]*TryAcquireWriteLock\" Assets/_Project/Scripts/Construction/VRPipeBlueprintPreview.cs Assets/_Project/Scripts/Construction/AutonomousExtractorSystem.cs",
+    "exitCode": 1,
+    "hits": 0
+  },
+  "diffStats": {
+    "AutonomousExtractorSystem.cs": {
+      "insertions": 14,
+      "deletions": 14
+    },
+    "VRPipeBlueprintPreview.cs": {
+      "insertions": 30,
+      "deletions": 5
+    },
+    "zeroContextHunks": 13
+  },
+  "continuousScalability": {
+    "globalQualityWeightBehaviorChanged": false,
+    "binaryQualitySwitchAdded": false,
+    "physicalSimulationAdded": false,
+    "cinematicCheatDecision": "Existing pipe hologram visual fake and extractor cadence are preserved."
+  },
+  "compilationResourceThrottling": {
+    "dotnetBuildLaunchedByThisPass": false,
+    "cpuLoadPercentBeforeFinalCompileCheck": 8,
+    "blockedByProcesses": [
+      {
+        "pid": 14544,
+        "name": "VBCSCompiler.exe",
+        "commandLine": "Roslyn VBCSCompiler"
+      }
+    ]
+  },
+  "runtimeProof": {
+    "unityImport": false,
+    "playMode": false,
+    "profiler": false,
+    "gcMonitor": false,
+    "nativeLedger": false
+  },
+  "knownFaults": [
+    "Build/import/profiler proof is absent because VBCSCompiler remained active.",
+    "VR pipe preview ReleaseBuffer ownership was not changed in this pass; it needs separate cross-system ownership proof before release semantics are altered."
+  ]
+}

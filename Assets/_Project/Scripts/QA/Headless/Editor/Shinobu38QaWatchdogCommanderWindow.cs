@@ -91,8 +91,10 @@ namespace Hecton8.QA.Headless.Editor
         private const string ResultRelativePath = "Docs/AgentLogs/SHINOBU_79_QA_Endurance_Result.json";
         private const string RunnerStatusRelativePath = "Docs/AgentLogs/SHINOBU_79_QA_BatchRunner.txt";
         private const double TimeoutSeconds = 900.0;
+        private const double PollIntervalSeconds = 0.25;
         private const float ManualBatchDeltaSeconds = 1f / 60f;
         private const int ManualBatchStepsPerEditorUpdate = 128;
+        private static double _nextPollTime;
         private static int _manualBatchTickCounter;
         private static bool _batchProcessResolved;
         private static bool _isBatchProcess;
@@ -123,6 +125,7 @@ namespace Hecton8.QA.Headless.Editor
             SessionState.SetFloat(AvoidanceKey, avoidance);
             SessionState.SetFloat(TelemetryKey, telemetryHz);
             _manualBatchTickCounter = 0;
+            _nextPollTime = 0.0;
             TryDeleteFile(ResolveProjectPath(ResultRelativePath));
             Directory.CreateDirectory(Path.GetDirectoryName(ResolveProjectPath(FlagRelativePath)));
             WriteFlagFile(ResolveProjectPath(FlagRelativePath));
@@ -165,6 +168,14 @@ namespace Hecton8.QA.Headless.Editor
 
             DriveRuntimeManuallyInBatchMode();
 
+            if (!ShouldPollNow())
+                return;
+
+            PollBatchState();
+        }
+
+        private static void PollBatchState()
+        {
             string resultPath = ResolveProjectPath(ResultRelativePath);
             if (File.Exists(resultPath))
             {
@@ -187,6 +198,16 @@ namespace Hecton8.QA.Headless.Editor
 
             if (!EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode)
                 EditorApplication.isPlaying = true;
+        }
+
+        private static bool ShouldPollNow()
+        {
+            double now = EditorApplication.timeSinceStartup;
+            if (now < _nextPollTime)
+                return false;
+
+            _nextPollTime = now + PollIntervalSeconds;
+            return true;
         }
 
         private static void DriveRuntimeManuallyInBatchMode()

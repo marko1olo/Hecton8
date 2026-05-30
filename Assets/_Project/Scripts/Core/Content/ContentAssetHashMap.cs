@@ -182,15 +182,12 @@ namespace Hecton8.Core.Content
 
         public ContentAssetEntry GetEntryAt(int index)
         {
-            EnsureSortState();
             return entries[index];
         }
 
         public bool TryGetEntry(uint hash, out ContentAssetEntry entry)
         {
-            EnsureSortState();
-
-            if (_sortState == SortStateUnsorted)
+            if (_sortState != SortStateSorted)
                 return TryGetEntryLinear(hash, out entry);
 
             int lo = 0;
@@ -222,7 +219,6 @@ namespace Hecton8.Core.Content
 
         public int CopyRequiredHashes(uint[] destination)
         {
-            EnsureSortState();
             int requiredCount = CountRequiredBuildHashes();
             if (requiredCount == 0)
                 return 0;
@@ -249,7 +245,6 @@ namespace Hecton8.Core.Content
 
         public int CountRequiredBuildHashes()
         {
-            EnsureSortState();
             int count = 0;
             int length = entries != null ? entries.Length : 0;
             for (int i = 0; i < length; i++)
@@ -286,11 +281,13 @@ namespace Hecton8.Core.Content
 #endif
         }
 
-        private void EnsureSortState()
+        private void OnEnable()
         {
-            if (_sortState != SortStateUnknown)
-                return;
+            RefreshSortStateCold();
+        }
 
+        private void RefreshSortStateCold()
+        {
             _sortState = IsSortedAscending() ? SortStateSorted : SortStateUnsorted;
         }
 
@@ -376,7 +373,6 @@ namespace Hecton8.Core.Content
                 entries[i].Hash = ComputeFnv1a32(entries[i].StableKey);
             }
 
-            _sortState = SortStateUnknown;
             SortEntries();
         }
 #endif

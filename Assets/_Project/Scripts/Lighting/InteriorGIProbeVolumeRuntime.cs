@@ -201,6 +201,7 @@ namespace Hecton8.Lighting
         public const int MaxAmbientProfileCount = 64;
         public const int TelemetryCapacity = 300;
         public const int CsvBufferBytes = 32768;
+        private const int TelemetryDumpHeaderBytes = 40;
 
         public const uint SourceFlagPowered = 1u << 0;
         public const uint SourceFlagEmergency = 1u << 1;
@@ -1762,51 +1763,96 @@ namespace Hecton8.Lighting
                 return;
 
             NativeArray<InteriorGITelemetryEntry> ring = ResolveTelemetryRing();
-            WriteTelemetryDump(Path.Combine(Application.dataPath, "..", "Docs/AgentLogs/Dump_13KRA.bin"), ring);
+            WriteTelemetryDump("Docs/AgentLogs/Dump_13KRA.bin", ring);
         }
 
         private void WriteTelemetryDump(string path, NativeArray<InteriorGITelemetryEntry> ring)
         {
+            if (!ring.IsCreated || ring.Length < TelemetryCapacity)
+                return;
+
             try
             {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(0x63474953u);
-                writer.Write(TelemetryCapacity);
-                writer.Write(_telemetryCursor);
-                writer.Write(_activeResolution);
-                writer.Write(_rootAup.x);
-                writer.Write(_rootAup.y);
-                writer.Write(_rootAup.z);
-                for (int i = 0; i < TelemetryCapacity; i++)
+                int entrySize = UnsafeUtility.SizeOf<InteriorGITelemetryEntry>();
+                int byteCount = TelemetryDumpHeaderBytes + TelemetryCapacity * entrySize;
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(InteriorGIProbeVolumeRuntime),
+                    "InteriorGITelemetryDumpPayload");
+                try
                 {
-                    InteriorGITelemetryEntry e = ring[i];
-                    writer.Write(e.FrameIndex);
-                    writer.Write(e.ActiveProbeCount);
-                    writer.Write(e.SourceCount);
-                    writer.Write(e.SourceSampleLimit);
-                    writer.Write(e.GlobalQualityWeight);
-                    writer.Write(e.SolverCompleteMs);
-                    writer.Write(e.MaxL0);
-                    writer.Write(e.AverageL0);
-                    writer.Write(e.NaNCount);
-                    writer.Write(e.Flags);
-                    writer.Write(e.GridHash);
-                    writer.Write(e.RootHash);
-                    writer.Write(e.WaterAbsorption);
-                    writer.Write(e.DirectionalWeight);
-                    writer.Write(e.BouncesEstimated);
-                    writer.Write(e._pad0);
+                    byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    int offset = 0;
+                    if (!TryWriteUInt32LittleEndian(destination, byteCount, ref offset, 0x63474953u) ||
+                        !TryWriteInt32LittleEndian(destination, byteCount, ref offset, TelemetryCapacity) ||
+                        !TryWriteInt32LittleEndian(destination, byteCount, ref offset, _telemetryCursor) ||
+                        !TryWriteInt32LittleEndian(destination, byteCount, ref offset, _activeResolution) ||
+                        !TryWriteDouble64LittleEndian(destination, byteCount, ref offset, _rootAup.x) ||
+                        !TryWriteDouble64LittleEndian(destination, byteCount, ref offset, _rootAup.y) ||
+                        !TryWriteDouble64LittleEndian(destination, byteCount, ref offset, _rootAup.z))
+                    {
+                        return;
+                    }
+
+                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
+                    UnsafeUtility.MemCpy(destination + offset, source, TelemetryCapacity * entrySize);
+                    offset += TelemetryCapacity * entrySize;
+                    if (offset == byteCount)
+                        NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(InteriorGIProbeVolumeRuntime),
+                        "InteriorGITelemetryDumpPayload");
                 }
             }
             catch (Exception ex)
             {
                 Hecton8.Core.H8Debug.LogWarning("Interior GI black box dump failed: " + ex.Message);
             }
+        }
+
+        private static bool TryWriteUInt64LittleEndian(byte* destination, int capacity, ref int offset, ulong value)
+        {
+            if (offset > capacity - 8)
+                return false;
+
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
+            destination[offset + 4] = (byte)(value >> 32);
+            destination[offset + 5] = (byte)(value >> 40);
+            destination[offset + 6] = (byte)(value >> 48);
+            destination[offset + 7] = (byte)(value >> 56);
+            offset += 8;
+            return true;
+        }
+
+        private static bool TryWriteUInt32LittleEndian(byte* destination, int capacity, ref int offset, uint value)
+        {
+            if (offset > capacity - 4)
+                return false;
+
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
+            offset += 4;
+            return true;
+        }
+
+        private static bool TryWriteInt32LittleEndian(byte* destination, int capacity, ref int offset, int value)
+        {
+            return TryWriteUInt32LittleEndian(destination, capacity, ref offset, unchecked((uint)value));
+        }
+
+        private static bool TryWriteDouble64LittleEndian(byte* destination, int capacity, ref int offset, double value)
+        {
+            ulong bits = math.asulong(value);
+            return TryWriteUInt64LittleEndian(destination, capacity, ref offset, bits);
         }
 
         private static uint HashAup(double3 aup)

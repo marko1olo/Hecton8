@@ -7,8 +7,9 @@ namespace Hecton8.Caves
 {
     internal static class CaveWallGrowthRuntimeBuilder
     {
+        public const int RuntimeCapacity = 18;
         private const string WallGrowthRootName = "_WallGrowth";
-        private const int MaxGrowthCount = 18;
+        private const int MaxGrowthCount = RuntimeCapacity;
         private static readonly string[] _GrowthNames = CreateNameCache("Growth_", MaxGrowthCount); // COLD ALLOC: bounded wall-growth child names.
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
@@ -16,6 +17,15 @@ namespace Hecton8.Caves
         private static MaterialPropertyBlock _GrowthPropertyBlock;
 
         public static Transform Prewarm(Transform parent)
+        {
+            return Prewarm(parent, null, null, null);
+        }
+
+        public static Transform Prewarm(
+            Transform parent,
+            GameObject[] primitiveObjects,
+            MeshFilter[] primitiveFilters,
+            MeshRenderer[] primitiveRenderers)
         {
             if (parent == null)
                 return null;
@@ -25,13 +35,15 @@ namespace Hecton8.Caves
             {
                 if (i < root.childCount)
                 {
+                    GameObject primitiveObject = root.GetChild(i).gameObject;
                     WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisual(
-                        root.GetChild(i).gameObject,
+                        primitiveObject,
                         PrimitiveType.Capsule,
                         GetCachedName(i),
                         Vector3.zero,
                         Quaternion.identity,
                         Vector3.one);
+                    CachePrimitiveCold(i, primitiveObject, primitiveObjects, primitiveFilters, primitiveRenderers);
                     continue;
                 }
 
@@ -43,7 +55,10 @@ namespace Hecton8.Caves
                     Quaternion.identity,
                     Vector3.one);
                 if (renderer != null)
+                {
+                    CachePrimitiveCold(i, renderer.gameObject, primitiveObjects, primitiveFilters, primitiveRenderers);
                     renderer.gameObject.SetActive(false);
+                }
             }
 
             DisableUnusedChildren(root, 0);
@@ -55,37 +70,15 @@ namespace Hecton8.Caves
             _ = GetGrowthPropertyBlock();
         }
 
-        public static void Build(
-            Transform parent,
+        public static void BuildPreparedCachedHot(
+            Transform growthRoot,
+            GameObject[] primitiveObjects,
+            MeshFilter[] primitiveFilters,
+            MeshRenderer[] primitiveRenderers,
             HectonVoxelVolume volume,
             CavePreset preset,
             WallGrowthConfig config,
             float globalIntensity)
-        {
-            if (parent == null || volume == null || config == null || !config.enabled)
-                return;
-
-            Transform growthRoot = GetOrCreateRoot(parent);
-            BuildPrepared(growthRoot, volume, preset, config, globalIntensity, createMissing: true);
-        }
-
-        public static void BuildPrepared(
-            Transform growthRoot,
-            HectonVoxelVolume volume,
-            CavePreset preset,
-            WallGrowthConfig config,
-            float globalIntensity)
-        {
-            BuildPrepared(growthRoot, volume, preset, config, globalIntensity, createMissing: false);
-        }
-
-        private static void BuildPrepared(
-            Transform growthRoot,
-            HectonVoxelVolume volume,
-            CavePreset preset,
-            WallGrowthConfig config,
-            float globalIntensity,
-            bool createMissing)
         {
             if (growthRoot == null || volume == null || config == null || !config.enabled)
                 return;
@@ -95,35 +88,53 @@ namespace Hecton8.Caves
 
             Material growthMaterial = ResolveGrowthMaterial(volume);
             int growthCount = ResolveGrowthCount(preset, volumeBounds, config, globalIntensity);
+            ActivateTransform(growthRoot);
 
             for (int i = 0; i < growthCount; i++)
             {
-                Renderer growthRenderer = CreateOrConfigureGrowth(
-                    growthRoot,
+                Renderer growthRenderer = CreateOrConfigureGrowthCachedHot(
+                    primitiveObjects,
+                    primitiveFilters,
+                    primitiveRenderers,
                     i,
                     volumeBounds,
                     growthMaterial,
                     config,
                     globalIntensity,
-                    volume.caveKey != 0L ? volume.caveKey : ComputeFallbackSeed(volume.transform.position, preset),
-                    createMissing);
+                    volume.caveKey != 0L ? volume.caveKey : ComputeFallbackSeed(volume.transform.position, preset));
                 ApplyGrowthVisuals(growthRenderer, config, globalIntensity);
             }
 
-            DisableUnusedChildren(growthRoot, growthCount);
+            DisableUnusedCachedPrimitives(primitiveObjects, growthCount);
         }
 
-        private static Renderer CreateOrConfigureGrowth(
-            Transform root,
+        private static Renderer CreateOrConfigureGrowthCachedHot(
+            GameObject[] primitiveObjects,
+            MeshFilter[] primitiveFilters,
+            MeshRenderer[] primitiveRenderers,
             int index,
             Bounds volumeBounds,
             Material growthMaterial,
             WallGrowthConfig config,
             float globalIntensity,
-            long runtimeSeed,
-            bool createMissing)
+            long runtimeSeed)
         {
-            string name = GetCachedName(index);
+            if (primitiveObjects == null ||
+                primitiveFilters == null ||
+                primitiveRenderers == null ||
+                (uint)index >= (uint)primitiveObjects.Length ||
+                (uint)index >= (uint)primitiveFilters.Length ||
+                (uint)index >= (uint)primitiveRenderers.Length)
+            {
+                return null;
+            }
+
+            GameObject primitiveObject = primitiveObjects[index];
+            MeshFilter filter = primitiveFilters[index];
+            MeshRenderer renderer = primitiveRenderers[index];
+            if (primitiveObject == null || filter == null || renderer == null)
+                return null;
+
             bool ceilingBias = Hash01(runtimeSeed, index, 11) > 0.55f;
             float side = HashSigned(runtimeSeed, index, 17);
             float intensityT = math.saturate(globalIntensity);
@@ -147,31 +158,58 @@ namespace Hecton8.Caves
             Vector3 localScale = new Vector3(radius, length, radius);
             Quaternion localRotation = Quaternion.Euler(pitch, yaw, roll);
 
-            if (index < root.childCount)
-            {
-                Transform existing = root.GetChild(index);
-                ActivateTransform(existing);
-                return WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisualHot(
-                    existing.gameObject,
-                    PrimitiveType.Capsule,
-                    name,
-                    localPosition,
-                    localRotation,
-                    localScale,
-                    growthMaterial);
-            }
+            if (!primitiveObject.activeSelf)
+                primitiveObject.SetActive(true);
 
-            if (!createMissing)
-                return null;
-
-            return WorldGeneratedPrimitiveFactory.CreatePrimitiveVisual(
-                root,
+            return WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisualCachedHot(
+                primitiveObject,
+                filter,
+                renderer,
                 PrimitiveType.Capsule,
-                name,
+                GetCachedName(index),
                 localPosition,
                 localRotation,
                 localScale,
                 growthMaterial);
+        }
+
+        private static void CachePrimitiveCold(
+            int index,
+            GameObject primitiveObject,
+            GameObject[] primitiveObjects,
+            MeshFilter[] primitiveFilters,
+            MeshRenderer[] primitiveRenderers)
+        {
+            if (primitiveObject == null ||
+                primitiveObjects == null ||
+                primitiveFilters == null ||
+                primitiveRenderers == null ||
+                (uint)index >= (uint)primitiveObjects.Length ||
+                (uint)index >= (uint)primitiveFilters.Length ||
+                (uint)index >= (uint)primitiveRenderers.Length)
+            {
+                return;
+            }
+
+            if (!WorldGeneratedPrimitiveFactory.TryResolvePrimitiveComponentsCold(primitiveObject, out MeshFilter filter, out MeshRenderer renderer))
+                return;
+
+            primitiveObjects[index] = primitiveObject;
+            primitiveFilters[index] = filter;
+            primitiveRenderers[index] = renderer;
+        }
+
+        private static void DisableUnusedCachedPrimitives(GameObject[] primitiveObjects, int usedChildCount)
+        {
+            if (primitiveObjects == null)
+                return;
+
+            for (int i = usedChildCount; i < primitiveObjects.Length; i++)
+            {
+                GameObject primitiveObject = primitiveObjects[i];
+                if (primitiveObject != null && primitiveObject.activeSelf)
+                    primitiveObject.SetActive(false);
+            }
         }
 
         private static void ApplyGrowthVisuals(Renderer renderer, WallGrowthConfig config, float globalIntensity)

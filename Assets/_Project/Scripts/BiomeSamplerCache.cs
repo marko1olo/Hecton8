@@ -8,6 +8,14 @@ namespace Hecton8.World
     public sealed class BiomeSamplerCache : MonoBehaviour, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         internal static BiomeSamplerCache ActiveRuntimeInstance { get; private set; }
+        internal static event System.Action<BiomeSamplerCache> ActiveRuntimeInstanceChanged;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeForSubsystemRegistration()
+        {
+            ActiveRuntimeInstance = null;
+            ActiveRuntimeInstanceChanged = null;
+        }
 
         public struct CachedSample
         {
@@ -39,6 +47,7 @@ namespace Hecton8.World
         private int _sampleCount;
         private bool _registeredToTickManager;
         private bool _hotSwapListenerRegistered;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private Vector3 _lastCenterPosition;
         private bool _hasLastCenterPosition;
 
@@ -47,20 +56,16 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            ActiveRuntimeInstance = this;
-
-            if (mapMagicBridge == null)
-                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
-
-            if (playerTransform == null)
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
-
-            EnsureStorage();
+            PublishActiveRuntimeInstance();
+            CacheRuntimeReferencesCold();
+            EnsureStorageCold();
             UpdateDiagnostics();
         }
 
         private void OnEnable()
         {
+            CacheRuntimeReferencesCold();
+            EnsureStorageCold();
             HectonFloatingOrigin.RegisterListener(this);
             TryRegisterHotSwapListener();
             TryRegister();
@@ -88,7 +93,22 @@ namespace Hecton8.World
             HectonFloatingOrigin.UnregisterListener(this);
 
             if (ActiveRuntimeInstance == this)
-                ActiveRuntimeInstance = null;
+                ClearActiveRuntimeInstance();
+        }
+
+        private void PublishActiveRuntimeInstance()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                return;
+
+            ActiveRuntimeInstance = this;
+            ActiveRuntimeInstanceChanged?.Invoke(this);
+        }
+
+        private void ClearActiveRuntimeInstance()
+        {
+            ActiveRuntimeInstance = null;
+            ActiveRuntimeInstanceChanged?.Invoke(null);
         }
 
         private void TryRegister()
@@ -116,19 +136,36 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
-                return;
-
-            if (currentService == null)
+            switch (serviceSlot)
             {
-                _registeredToTickManager = false;
-                return;
-            }
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        _registeredToTickManager = false;
+                        return;
+                    }
 
-            if (isActiveAndEnabled)
-            {
-                TryUnregister();
-                TryRegister();
+                    if (isActiveAndEnabled)
+                    {
+                        TryUnregister();
+                        TryRegister();
+                    }
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicRuntime:
+                    if (previousService != null && ReferenceEquals(mapMagicBridge, previousService))
+                        mapMagicBridge = null;
+
+                    if (currentService is MapMagicBridge currentMapMagic)
+                        mapMagicBridge = currentMapMagic;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    IPlayerRuntimeContext previousContext = previousService as IPlayerRuntimeContext;
+                    if (previousContext != null && ReferenceEquals(playerTransform, previousContext.PlayerTransform))
+                        playerTransform = null;
+
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    RefreshRuntimeReferencesFromCachedContext();
+                    break;
             }
         }
 
@@ -194,8 +231,14 @@ namespace Hecton8.World
 
         private void RebuildCache(bool force)
         {
-            EnsureReferences();
-            EnsureStorage();
+            RefreshRuntimeReferencesFromCachedContext();
+            if (!HasStorageForCurrentShape())
+            {
+                _sampleCount = 0;
+                _debugCacheReady = false;
+                UpdateDiagnostics();
+                return;
+            }
 
             if (mapMagicBridge == null || playerTransform == null)
             {
@@ -296,16 +339,51 @@ namespace Hecton8.World
             }
         }
 
-        private void EnsureReferences()
+        private void CacheRuntimeReferencesCold()
         {
             if (mapMagicBridge == null)
-                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
+                mapMagicBridge = GlobalRegistry.MapMagic;
 
-            if (playerTransform == null)
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            if (_cachedPlayerContext == null)
+                _cachedPlayerContext = GlobalRegistry.Player;
+
+            RefreshRuntimeReferencesFromCachedContext();
         }
 
-        private void EnsureStorage()
+        private void RefreshRuntimeReferencesFromCachedContext()
+        {
+            if (playerTransform != null)
+                return;
+
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null && playerContext.PlayerTransform != null)
+                playerTransform = playerContext.PlayerTransform;
+        }
+
+        private void EnsureStorageCold()
+        {
+            int newWidth = ClampSamplingSettings(out int requiredSamples);
+
+            if (_samples == null || _samples.Length != requiredSamples)
+                _samples = new CachedSample[requiredSamples];
+
+            _gridWidth = newWidth;
+        }
+
+        private bool HasStorageForCurrentShape()
+        {
+            int newWidth = ClampSamplingSettings(out int requiredSamples);
+            if (_samples == null || _samples.Length != requiredSamples)
+            {
+                _gridWidth = 0;
+                return false;
+            }
+
+            _gridWidth = newWidth;
+            return true;
+        }
+
+        private int ClampSamplingSettings(out int requiredSamples)
         {
             int clampedRadius = Mathf.Max(1, radiusCells);
             float clampedCellSize = Mathf.Max(8f, cellSize);
@@ -316,12 +394,8 @@ namespace Hecton8.World
             rebuildDistance = clampedRebuild;
 
             int newWidth = clampedRadius * 2 + 1;
-            int requiredSamples = newWidth * newWidth;
-
-            if (_samples == null || _samples.Length != requiredSamples)
-                _samples = new CachedSample[requiredSamples];
-
-            _gridWidth = newWidth;
+            requiredSamples = newWidth * newWidth;
+            return newWidth;
         }
 
         private void UpdateDiagnostics()

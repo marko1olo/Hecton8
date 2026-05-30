@@ -41,6 +41,7 @@ namespace Hecton8.Habitat.Deformation
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_HULL_INTEGRITY.bin";
         private const string DumpH8RelativePath = "Docs/AgentLogs/Dump_HULL_INTEGRITY.h8dump";
         private const string DeformationDumpRelativePath = "Docs/AgentLogs/Dump_DEFORMATION_SCULPTOR.bin";
+        private const string DumpPayloadLabel = "hullIntegrityTelemetryDumpPayload";
         private const float DentCapUpgradeHysteresisSeconds = 2.5f;
         private const int HealthStateNominal = 0;
         private const int HealthStateWarning = 1;
@@ -2223,70 +2224,54 @@ namespace Hecton8.Habitat.Deformation
 
         private void WriteTelemetryDump(string relativePath, NativeArray<HullIntegrityTelemetryEntry> telemetry)
         {
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string path = Path.Combine(projectRoot, relativePath);
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            {
-                WriteUInt32(stream, DumpMagic);
-                WriteUInt32(stream, DumpVersion);
-                WriteUInt32(stream, (uint)telemetry.Length);
-                WriteUInt32(stream, (uint)UnsafeUtility.SizeOf<HullIntegrityTelemetryEntry>());
-
-                byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                int stride = UnsafeUtility.SizeOf<HullIntegrityTelemetryEntry>();
-                int remaining = telemetry.Length * stride;
-                int offset = 0;
-                while (remaining > 0)
-                {
-                    int bytes = math.min(16 * 1024, remaining);
-                    stream.Write(new ReadOnlySpan<byte>(source + offset, bytes));
-                    offset += bytes;
-                    remaining -= bytes;
-                }
-            }
+            WriteNativeTelemetryDump(relativePath, telemetry);
         }
 
         private void WriteDeformationTelemetryDump(string relativePath, NativeArray<DeformationTelemetryEntry> telemetry)
         {
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string path = Path.Combine(projectRoot, relativePath);
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
+            WriteNativeTelemetryDump(relativePath, telemetry);
+        }
 
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+        private static void WriteNativeTelemetryDump<T>(string relativePath, NativeArray<T> telemetry)
+            where T : struct
+        {
+            int headerBytes = 16;
+            int stride = UnsafeUtility.SizeOf<T>();
+            int entryBytes = telemetry.Length * stride;
+            int totalBytes = headerBytes + entryBytes;
+            NativeArray<byte> payload = default;
+            try
             {
-                WriteUInt32(stream, DumpMagic);
-                WriteUInt32(stream, DumpVersion);
-                WriteUInt32(stream, (uint)telemetry.Length);
-                WriteUInt32(stream, (uint)UnsafeUtility.SizeOf<DeformationTelemetryEntry>());
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(HullIntegrityRuntime),
+                    DumpPayloadLabel);
+                WriteUInt32LittleEndian(payload, 0, DumpMagic);
+                WriteUInt32LittleEndian(payload, 4, DumpVersion);
+                WriteUInt32LittleEndian(payload, 8, (uint)telemetry.Length);
+                WriteUInt32LittleEndian(payload, 12, (uint)stride);
 
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
                 byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                int stride = UnsafeUtility.SizeOf<DeformationTelemetryEntry>();
-                int remaining = telemetry.Length * stride;
-                int offset = 0;
-                while (remaining > 0)
-                {
-                    int bytes = math.min(16 * 1024, remaining);
-                    stream.Write(new ReadOnlySpan<byte>(source + offset, bytes));
-                    offset += bytes;
-                    remaining -= bytes;
-                }
+                UnsafeUtility.MemCpy(target + headerBytes, source, entryBytes);
+
+                NativeFaultDumpWriter.TryWriteAll(relativePath, payload, totalBytes);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HullIntegrityRuntime),
+                    DumpPayloadLabel);
             }
         }
 
-        private void WriteUInt32(FileStream stream, uint value)
+        private static void WriteUInt32LittleEndian(NativeArray<byte> destination, int offset, uint value)
         {
-            Span<byte> bytes = stackalloc byte[4];
-            bytes[0] = (byte)value;
-            bytes[1] = (byte)(value >> 8);
-            bytes[2] = (byte)(value >> 16);
-            bytes[3] = (byte)(value >> 24);
-            stream.Write(bytes);
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
         }
 
 #if UNITY_EDITOR

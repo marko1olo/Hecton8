@@ -111,8 +111,29 @@ namespace Hecton8.VFX
         /// <summary>Visual-overkill flow resample cadence in frames.</summary>
         public const int OverkillQualityFlowResampleFrames = 2;
 
+        /// <summary>Emergency flow resample cadence in frames. Non-zero keeps sparse visual drift alive.</summary>
+        public const int EmergencyFlowResampleFrames = 16;
+
+        /// <summary>Minimum policy-compressed particle advection weight.</summary>
+        public const float MaskedParticleAdvectionWeightFloor = 0.12f;
+
+        /// <summary>Minimum policy-compressed fake occlusion/depth weight.</summary>
+        public const float MaskedVolumetricQualityWeightFloor = 0.18f;
+
+        /// <summary>Minimum pressure scalar applied when a shadow policy mask is active without pressure.</summary>
+        public const float MaskedShadowPolicyPressureFloor = 0.33333334f;
+
         /// <summary>Emergency MarineSnow multiplier encoded as permille to avoid float policy drift.</summary>
         public const int EmergencyMarineSnowMultiplierPermille = 500;
+
+        /// <summary>Emergency non-critical VFX survival multiplier encoded as permille.</summary>
+        public const int EmergencyNonCriticalVfxMultiplierPermille = 125;
+
+        /// <summary>Bubble floor preserved under non-critical VFX pressure.</summary>
+        public const int EmergencyBubbleSurvivalCount = 32;
+
+        /// <summary>Debris floor preserved under non-critical VFX pressure.</summary>
+        public const int EmergencyDebrisSurvivalCount = 8;
 
         /// <summary>Homeostasis bit that disables particle flow advection.</summary>
         public const ulong ParticleAdvectionMask = (ulong)SystemBit.ParticleAdvection;
@@ -190,6 +211,122 @@ namespace Hecton8.VFX
                 return killSwitchMask | PressureLevel1DisableMask;
 
             return killSwitchMask;
+        }
+
+        /// <summary>
+        /// Converts a policy mask into a continuous quality multiplier. A masked feature is compressed, not killed.
+        /// </summary>
+        /// <param name="killSwitchMask">Effective VFX policy mask.</param>
+        /// <param name="policyMask">Policy bit consumed by the caller.</param>
+        /// <param name="pressureLevel">Homeostasis pressure level encoded as 0..3.</param>
+        /// <param name="floorWeight">Emergency survival floor for the feature.</param>
+        /// <returns>Continuous multiplier in the range floor..1.</returns>
+        public static float ResolvePolicyQualityWeight(
+            ulong killSwitchMask,
+            ulong policyMask,
+            byte pressureLevel,
+            float floorWeight)
+        {
+            float pressure01 = pressureLevel == byte.MaxValue
+                ? 1f
+                : math.saturate(pressureLevel * 0.33333334f);
+            return ResolvePolicyQualityWeight(killSwitchMask, policyMask, pressure01, floorWeight);
+        }
+
+        /// <summary>
+        /// Converts a policy mask into a continuous quality multiplier using caller-owned pressure.
+        /// </summary>
+        /// <param name="killSwitchMask">Effective VFX policy mask.</param>
+        /// <param name="policyMask">Policy bit consumed by the caller.</param>
+        /// <param name="pressure01">Continuous pressure scalar.</param>
+        /// <param name="floorWeight">Emergency survival floor for the feature.</param>
+        /// <returns>Continuous multiplier in the range floor..1.</returns>
+        public static float ResolvePolicyQualityWeight(
+            ulong killSwitchMask,
+            ulong policyMask,
+            float pressure01,
+            float floorWeight)
+        {
+            float mask01 = (killSwitchMask & policyMask) != 0UL ? 1f : 0f;
+            float pressure = math.saturate(pressure01);
+            float midPressure01 = math.smoothstep(0.18f, 0.45f, pressure);
+            float emergencyPressure01 = math.smoothstep(0.48f, 0.90f, pressure);
+            float compressedWeight = math.lerp(0.70f, 0.42f, midPressure01);
+            compressedWeight = math.lerp(compressedWeight, math.saturate(floorWeight), emergencyPressure01);
+            return math.lerp(1f, compressedWeight, mask01);
+        }
+
+        /// <summary>
+        /// Keeps masked particle advection on a sparse cadence instead of disabling it.
+        /// </summary>
+        /// <param name="flowResampleFrames">Resolved flow resample cadence.</param>
+        /// <param name="killSwitchMask">Effective VFX policy mask.</param>
+        /// <param name="pressureLevel">Homeostasis pressure level encoded as 0..3.</param>
+        /// <returns>Pressure-compressed non-zero cadence when advection is masked.</returns>
+        public static int ResolvePolicyFlowResampleFrames(
+            int flowResampleFrames,
+            ulong killSwitchMask,
+            byte pressureLevel)
+        {
+            if ((killSwitchMask & ParticleAdvectionMask) == 0UL)
+                return math.max(0, flowResampleFrames);
+
+            float pressure01 = pressureLevel == byte.MaxValue
+                ? 1f
+                : math.saturate(pressureLevel * 0.33333334f);
+            float midPressure01 = math.smoothstep(0.18f, 0.45f, pressure01);
+            float emergencyPressure01 = math.smoothstep(0.48f, 0.90f, pressure01);
+            float cadence = math.lerp(
+                math.max(1f, flowResampleFrames),
+                MiddleQualityFlowResampleFrames,
+                midPressure01);
+            cadence = math.lerp(cadence, EmergencyFlowResampleFrames, emergencyPressure01);
+            return math.clamp((int)(cadence + 0.5f), 1, EmergencyFlowResampleFrames);
+        }
+
+        /// <summary>
+        /// Compresses fake depth/fog shadow taps under volumetric pressure instead of a hard middle-tier clamp.
+        /// </summary>
+        /// <param name="shadowTaps">Resolved fake depth/fog tap count.</param>
+        /// <param name="killSwitchMask">Effective VFX policy mask.</param>
+        /// <param name="pressureLevel">Homeostasis pressure level encoded as 0..3.</param>
+        /// <returns>Pressure-compressed tap count.</returns>
+        public static int ResolvePolicyShadowTaps(
+            int shadowTaps,
+            ulong killSwitchMask,
+            byte pressureLevel)
+        {
+            float pressure01 = pressureLevel == byte.MaxValue
+                ? 1f
+                : math.saturate(pressureLevel * 0.33333334f);
+            return ResolvePolicyShadowTaps(shadowTaps, killSwitchMask, pressure01);
+        }
+
+        /// <summary>
+        /// Compresses fake depth/fog shadow taps under caller-owned pressure.
+        /// </summary>
+        /// <param name="shadowTaps">Resolved fake depth/fog tap count.</param>
+        /// <param name="killSwitchMask">Effective VFX policy mask.</param>
+        /// <param name="pressure01">Continuous pressure scalar.</param>
+        /// <returns>Pressure-compressed tap count.</returns>
+        public static int ResolvePolicyShadowTaps(
+            int shadowTaps,
+            ulong killSwitchMask,
+            float pressure01)
+        {
+            int clampedTaps = math.clamp(shadowTaps, MinimumQualityShadowTaps, OverkillQualityShadowTaps);
+            if ((killSwitchMask & VolumetricFogHighResMask) == 0UL)
+                return clampedTaps;
+
+            float pressure = math.max(math.saturate(pressure01), MaskedShadowPolicyPressureFloor);
+            float midPressure01 = math.smoothstep(0.18f, 0.45f, pressure);
+            float emergencyPressure01 = math.smoothstep(0.48f, 0.90f, pressure);
+            float taps = math.lerp(
+                clampedTaps,
+                math.min(clampedTaps, MiddleQualityShadowTaps),
+                midPressure01);
+            taps = math.lerp(taps, MinimumQualityShadowTaps, emergencyPressure01);
+            return math.clamp((int)(taps + 0.5f), MinimumQualityShadowTaps, clampedTaps);
         }
 
         /// <summary>
@@ -362,13 +499,31 @@ namespace Hecton8.VFX
             if (fluidType == VFXEmissionProfile.FluidType.Bubble ||
                 fluidType == VFXEmissionProfile.FluidType.Debris)
             {
-                return 0;
+                return ResolveNonCriticalVfxSurvivalCount(fluidType, activeParticleCount, pressureLevel);
             }
 
             if (pressureLevel >= 3)
                 return math.max(64, activeParticleCount * EmergencyMarineSnowMultiplierPermille / 1000);
 
             return activeParticleCount;
+        }
+
+        private static int ResolveNonCriticalVfxSurvivalCount(
+            VFXEmissionProfile.FluidType fluidType,
+            int activeParticleCount,
+            byte pressureLevel)
+        {
+            int survivalFloor = fluidType == VFXEmissionProfile.FluidType.Bubble
+                ? EmergencyBubbleSurvivalCount
+                : EmergencyDebrisSurvivalCount;
+            int floor = math.min(activeParticleCount, survivalFloor);
+            float pressure01 = pressureLevel == byte.MaxValue
+                ? 1f
+                : math.saturate(pressureLevel * 0.33333334f);
+            float emergency01 = math.smoothstep(0.48f, 0.90f, pressure01);
+            float survivalScale = math.lerp(1f, EmergencyNonCriticalVfxMultiplierPermille / 1000f, emergency01);
+            int scaled = math.max(floor, (int)(activeParticleCount * survivalScale + 0.5f));
+            return math.clamp(scaled, floor, activeParticleCount);
         }
 
         /// <summary>

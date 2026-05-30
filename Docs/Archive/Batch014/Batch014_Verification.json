@@ -1,0 +1,35 @@
+﻿{
+    "batch":  "Batch014",
+    "created":  "2026-05-30 20:14:35",
+    "mode":  "copy-only; active source files preserved; batch14-filtered",
+    "archiveRoot":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch014",
+    "tasksCopied":  59,
+    "agentLogsCopied":  295,
+    "currentBatchCopied":  false,
+    "sourceCurrentBatchStillPresent":  true,
+    "summaryFiles":  [
+                         {
+                             "Name":  "AGENTLOGS_ARTIFACT_INDEX.md",
+                             "Bytes":  23451
+                         },
+                         {
+                             "Name":  "LOGS_SUMMARY.md",
+                             "Bytes":  133579
+                         },
+                         {
+                             "Name":  "RATIONALE_SUMMARY.md",
+                             "Bytes":  336474
+                         },
+                         {
+                             "Name":  "TASKS_SUMMARY.md",
+                             "Bytes":  380601
+                         }
+                     ],
+    "summaryTotalBytes":  874105,
+    "summaryLimitBytes":  2621440,
+    "archiveFileCount":  359,
+    "sourceTasksFileCountAfter":  165,
+    "sourceAgentLogsFileCountAfter":  532,
+    "evidenceClass":  "STATIC_FILESYSTEM",
+    "compileOrUnityRun":  "NOT RUN"
+}

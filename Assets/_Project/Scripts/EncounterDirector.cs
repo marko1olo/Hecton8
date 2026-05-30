@@ -1135,55 +1135,43 @@ namespace Hecton8.Systems.AI
             return hash == 0u ? 1u : hash;
         }
 
-        private void DumpBlackBoxOnce()
+        private unsafe void DumpBlackBoxOnce()
         {
             if (_blackBoxDumpedThisActivation || !_blackBox.IsCreated || !_blackBoxHead.IsCreated)
                 return;
 
-            _blackBoxDumpedThisActivation = true;
+            NativeArray<byte> payload = default;
             try
             {
-                string root = Application.dataPath;
-                DirectoryInfo directory = Directory.GetParent(root);
-                if (directory == null)
-                    return;
+                const int headerBytes = 16;
+                const int rowBytes = 48;
+                int head = _blackBoxHead[0];
+                int count = math.min(DirectorBlackBoxCapacity, math.max(0, head));
+                int byteCount = headerBytes + count * rowBytes;
+                const string dumpPayloadLabel = "EncounterDirectorBlackBoxDumpPayload";
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(EncounterDirector),
+                    dumpPayloadLabel);
 
-                string path = Path.Combine(
-                    directory.FullName,
-                    DirectorTelemetryDumpRelativePath.Replace('/', Path.DirectorySeparatorChar));
-                string parent = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(parent))
-                    Directory.CreateDirectory(parent);
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteUInt64LittleEndian(target, 0, DirectorTelemetryDumpMagic);
+                WriteUInt32LittleEndian(target, 8, unchecked((uint)DirectorBlackBoxCapacity));
+                WriteUInt32LittleEndian(target, 12, rowBytes);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                int cursor = headerBytes;
+                for (int i = 0; i < count; i++)
                 {
-                    writer.Write(DirectorTelemetryDumpMagic);
-                    writer.Write((uint)DirectorBlackBoxCapacity);
-                    writer.Write((uint)48);
-                    int head = _blackBoxHead[0];
-                    int count = math.min(DirectorBlackBoxCapacity, math.max(0, head));
-                    for (int i = 0; i < count; i++)
-                    {
-                        int index = (head - count + i) % DirectorBlackBoxCapacity;
-                        if (index < 0)
-                            index += DirectorBlackBoxCapacity;
+                    int index = (head - count + i) % DirectorBlackBoxCapacity;
+                    if (index < 0)
+                        index += DirectorBlackBoxCapacity;
 
-                        EncounterDirectorBlackBoxEntry entry = _blackBox[index];
-                        writer.Write(entry.FrameIndex);
-                        writer.Write(entry.DirectorStateHash);
-                        writer.Write(entry.ActiveThreatCount);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.Stress01);
-                        writer.Write(entry.Intensity01);
-                        writer.Write(entry.SpawnCredits);
-                        writer.Write(entry.PlayerSpeed);
-                        writer.Write(entry.PlayerPosition.x);
-                        writer.Write(entry.PlayerPosition.y);
-                        writer.Write(entry.PlayerPosition.z);
-                        writer.Write(entry.Padding0);
-                    }
+                    EncounterDirectorBlackBoxEntry entry = _blackBox[index];
+                    WriteEncounterBlackBoxRow(target + cursor, in entry);
+                    cursor += rowBytes;
                 }
+
+                _blackBoxDumpedThisActivation = NativeFaultDumpWriter.TryWriteAll(DirectorTelemetryDumpRelativePath, payload, cursor);
             }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             catch (Exception exception)
@@ -1195,6 +1183,49 @@ namespace Hecton8.Systems.AI
             {
             }
 #endif
+            finally
+            {
+                const string dumpPayloadLabel = "EncounterDirectorBlackBoxDumpPayload";
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(EncounterDirector),
+                    dumpPayloadLabel);
+            }
+        }
+
+        private static unsafe void WriteEncounterBlackBoxRow(byte* target, in EncounterDirectorBlackBoxEntry entry)
+        {
+            WriteUInt32LittleEndian(target, 0, entry.FrameIndex);
+            WriteUInt32LittleEndian(target, 4, entry.DirectorStateHash);
+            WriteUInt32LittleEndian(target, 8, entry.ActiveThreatCount);
+            WriteUInt32LittleEndian(target, 12, entry.Flags);
+            WriteFloatLittleEndian(target, 16, entry.Stress01);
+            WriteFloatLittleEndian(target, 20, entry.Intensity01);
+            WriteFloatLittleEndian(target, 24, entry.SpawnCredits);
+            WriteFloatLittleEndian(target, 28, entry.PlayerSpeed);
+            WriteFloatLittleEndian(target, 32, entry.PlayerPosition.x);
+            WriteFloatLittleEndian(target, 36, entry.PlayerPosition.y);
+            WriteFloatLittleEndian(target, 40, entry.PlayerPosition.z);
+            WriteUInt32LittleEndian(target, 44, entry.Padding0);
+        }
+
+        private static unsafe void WriteUInt64LittleEndian(byte* target, int offset, ulong value)
+        {
+            WriteUInt32LittleEndian(target, offset, unchecked((uint)value));
+            WriteUInt32LittleEndian(target, offset + 4, unchecked((uint)(value >> 32)));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* target, int offset, uint value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+            target[offset + 2] = (byte)(value >> 16);
+            target[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static unsafe void WriteFloatLittleEndian(byte* target, int offset, float value)
+        {
+            WriteUInt32LittleEndian(target, offset, unchecked((uint)BitConverter.SingleToInt32Bits(value)));
         }
 
         private void WriteDebugEvent(int code, float context, float auxiliary)

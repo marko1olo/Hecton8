@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -1323,6 +1322,10 @@ namespace Hecton8.World
         [SerializeField, Range(0.05f, 0.5f)]
         [Tooltip("Minimum interval between asynchronous GPU latch-count readbacks. Keeps the CPU informed without stalling the render thread.")]
         private float parasiteLatchReadbackInterval = 0.12f;
+
+        [SerializeField]
+        [Tooltip("Diagnostics-only GPU latch-count readback. Gameplay drag uses a deterministic CPU estimate by default.")]
+        private bool enableParasiteLatchGpuReadback;
 
         [SerializeField, Range(1, 32)]
         [Tooltip("Minimum latched parasite count required before the hive starts dragging the player toward the nearest DeadZone massive structure.")]
@@ -6891,67 +6894,8 @@ namespace Hecton8.World
             }
 
             _foodChainTelemetryDumped = true;
-            try
-            {
-                string dumpPath = Path.Combine(
-                    Application.dataPath,
-                    "..",
-                    "Docs",
-                    "AgentLogs",
-                    "Dump_ECOSYSTEM_FOOD_CHAIN.bin");
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(FoodChainTelemetryMagicLow);
-                    writer.Write(FoodChainTelemetryMagicHigh);
-                    writer.Write((uint)FoodChainTelemetryCapacity);
-                    writer.Write((uint)FoodChainTelemetryEntrySizeBytes);
-                    writer.Write((uint)_foodChainTelemetryCursor);
-                    writer.Write(anomalyHash);
-
-                    for (int i = 0; i < FoodChainTelemetryCapacity; i++)
-                        WriteFoodChainTelemetryEntry(writer, foodChainTelemetryRing[i]);
-                }
-            }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-            catch (ArgumentException)
-            {
-            }
-            catch (NotSupportedException)
-            {
-            }
-            catch (System.Security.SecurityException)
-            {
-            }
-        }
-
-        private static void WriteFoodChainTelemetryEntry(BinaryWriter writer, in FoodChainTelemetryEntry entry)
-        {
-            writer.Write(entry.FrameIndex);
-            writer.Write(entry.StateHash);
-            writer.Write(entry.SourceHash);
-            writer.Write(entry.Flags);
-            writer.Write(entry.ActiveBoidCount);
-            writer.Write(entry.ConsumedBoidCount);
-            writer.Write(entry.PendingKillJob);
-            writer.Write(entry.LodTier);
-            writer.Write(entry.FieldCenterWS.x);
-            writer.Write(entry.FieldCenterWS.y);
-            writer.Write(entry.FieldCenterWS.z);
-            writer.Write(entry.EventPositionWS.x);
-            writer.Write(entry.EventPositionWS.y);
-            writer.Write(entry.EventPositionWS.z);
-            writer.Write(entry.AnomalyHash);
-            writer.Write(entry.SimulationTime);
+            _ = anomalyHash;
+            _ = foodChainTelemetryRing;
         }
 
         private void RecordBoidSensoryBlackBox(
@@ -7081,70 +7025,8 @@ namespace Hecton8.World
                 return;
 
             _boidSensoryBlackBoxDumped = true;
-            try
-            {
-                string dumpPath = Path.Combine(
-                    Application.dataPath,
-                    "..",
-                    "Docs",
-                    "AgentLogs",
-                    "Dump_BOID_SENSORY_INPUT_PUMP.bin");
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                int ringLength = math.min(boidSensoryBlackBox.Length, BoidSensoryBlackBoxCapacity);
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(BoidSensoryBlackBoxMagicLow);
-                    writer.Write(BoidSensoryBlackBoxMagicHigh);
-                    writer.Write((uint)BoidSensoryBlackBoxCapacity);
-                    writer.Write((uint)BoidSensoryBlackBoxEntrySizeBytes);
-                    writer.Write((uint)_boidSensoryBlackBoxCursor);
-                    writer.Write(anomalyHash);
-
-                    for (int i = 0; i < ringLength; i++)
-                    {
-                        int index = (_boidSensoryBlackBoxCursor + i) % ringLength;
-                        WriteBoidSensoryBlackBoxEntry(writer, boidSensoryBlackBox[index]);
-                    }
-                }
-            }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-            catch (ArgumentException)
-            {
-            }
-            catch (NotSupportedException)
-            {
-            }
-            catch (System.Security.SecurityException)
-            {
-            }
-        }
-
-        private static void WriteBoidSensoryBlackBoxEntry(BinaryWriter writer, in BoidSensoryBlackBoxEntry entry)
-        {
-            writer.Write(entry.FrameIndex);
-            writer.Write(entry.StateHash);
-            writer.Write(entry.Flags);
-            writer.Write(entry.ActiveThreatCount);
-            WriteFloat4(writer, entry.SubmarineThreat);
-            WriteFloat4(writer, entry.FlashlightThreat);
-            WriteFloat4(writer, entry.AcousticPingRadii);
-        }
-
-        private static void WriteFloat4(BinaryWriter writer, float4 value)
-        {
-            writer.Write(value.x);
-            writer.Write(value.y);
-            writer.Write(value.z);
-            writer.Write(value.w);
+            _ = anomalyHash;
+            _ = boidSensoryBlackBox;
         }
 
         /// <summary>
@@ -7683,7 +7565,8 @@ namespace Hecton8.World
 
         private void TryRequestParasiteLatchReadback(float hibernation01)
         {
-            if (_parasiteLatchReadbackPending ||
+            if (!enableParasiteLatchGpuReadback ||
+                _parasiteLatchReadbackPending ||
                 _latchStatsBuffer == null ||
                 _parasiteLatchReadbackTimer > 0f)
             {
@@ -7739,6 +7622,12 @@ namespace Hecton8.World
 
         private void FlushParasiteLatchReadbackRepairSlow()
         {
+            if (!enableParasiteLatchGpuReadback)
+            {
+                _parasiteLatchReadbackRepairRequested = false;
+                return;
+            }
+
             if (!_parasiteLatchReadbackRepairRequested && HasParasiteLatchReadbackData())
                 return;
 
@@ -7764,6 +7653,9 @@ namespace Hecton8.World
             if (_playerMovement == null || !_parasiteModeActive || _playerTransportCoordinator == null || !_playerTransportCoordinator.IsTransportActive())
                 return;
 
+            if (!enableParasiteLatchGpuReadback)
+                UpdateParasiteLatchAnalyticalEstimate();
+
             float latch01 = math.saturate(_reportedLatchedDroneCount / math.max(1f, parasiteMaxLatchedDronesForFullDrag));
             _playerMovement.ApplyParasiteLatchInfluence(
                 _reportedLatchedDroneCount,
@@ -7779,6 +7671,44 @@ namespace Hecton8.World
                 return;
 
             _playerMovement.ApplyEnvironmentalDrag(requestedDragMultiplier);
+        }
+
+        private void UpdateParasiteLatchAnalyticalEstimate()
+        {
+            float aggression01 = ResolveParasiteAggression01();
+            if (aggression01 <= 0.0001f || _activeBoidCount <= 0)
+            {
+                _reportedLatchedDroneCount = 0;
+                _reportedParasiteCenterOfMassLS = Vector3.zero;
+                _reportedParasiteHarvesterPullWS = Vector3.zero;
+                _debugLatchedDroneCount = 0;
+                _debugParasiteCenterOfMassLS = Vector3.zero;
+                _debugParasiteHarvesterPullWS = Vector3.zero;
+                return;
+            }
+
+            float populationScale = math.saturate(_activeBoidCount / math.max(1f, boidCount));
+            float latchFraction = math.lerp(0.015f, 0.085f, aggression01) * math.lerp(0.65f, 1f, populationScale);
+            _reportedLatchedDroneCount = math.clamp(
+                RoundToIntPositive(_activeBoidCount * latchFraction),
+                0,
+                math.max(1, parasiteMaxLatchedDronesForFullDrag));
+            _reportedParasiteCenterOfMassLS = Vector3.zero;
+
+            if (_reportedLatchedDroneCount >= parasiteHarvesterLatchThreshold &&
+                RefreshPlayerRuntimePosition(out Vector3 playerPosition) &&
+                TryResolveNearestHarvesterAnchor(playerPosition, out Vector3 harvesterAnchorWS))
+            {
+                _reportedParasiteHarvesterPullWS = FastNormalizeVector3(harvesterAnchorWS - playerPosition, Vector3.zero);
+            }
+            else
+            {
+                _reportedParasiteHarvesterPullWS = Vector3.zero;
+            }
+
+            _debugLatchedDroneCount = _reportedLatchedDroneCount;
+            _debugParasiteCenterOfMassLS = _reportedParasiteCenterOfMassLS;
+            _debugParasiteHarvesterPullWS = _reportedParasiteHarvesterPullWS;
         }
 
         private void ApplyLeviathanPhysicalStrike()
@@ -7999,7 +7929,8 @@ namespace Hecton8.World
 
         private bool ShouldCollectLatchStats(SimulationLodTier simulationLodTier, bool leaderFollowerSchooling, bool shouldRender)
         {
-            return simulationLodTier != SimulationLodTier.Sleep &&
+            return enableParasiteLatchGpuReadback &&
+                   simulationLodTier != SimulationLodTier.Sleep &&
                    !leaderFollowerSchooling &&
                    _latchStatsBuffer != null &&
                    !_parasiteLatchReadbackPending &&

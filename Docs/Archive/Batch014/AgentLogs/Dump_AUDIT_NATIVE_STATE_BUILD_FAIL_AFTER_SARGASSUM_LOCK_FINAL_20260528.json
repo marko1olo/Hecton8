@@ -1,0 +1,21 @@
+{
+  "agentId": "AUDIT_NATIVE_STATE",
+  "timestampLocal": "2026-05-28T20:52:00+04:00",
+  "failureType": "dotnet-build-exit-1-empty-output",
+  "command": "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
+  "preBuildCpuLoadPercent": 45,
+  "preBuildCompilerProcesses": "NO_DOTNET_CSC_VBCSCOMPILER_PROCESSES",
+  "exitCode": 1,
+  "wallSeconds": 123.2,
+  "stdoutStderrBytes": 0,
+  "stdoutStderr": "",
+  "postBuildCpuLoadPercent": 77,
+  "postBuildCompilerProcess": {
+    "processId": 53456,
+    "name": "dotnet.exe",
+    "commandLine": "\"C:\\Program Files\\dotnet\\dotnet.exe\" build C:\\hades\\Hecton8\\Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /p:BuildProjectReferences=false",
+    "creationDateLocal": "2026-05-28T20:49:47+04:00"
+  },
+  "postWaitCompilerProcesses": "NO_DOTNET_CSC_VBCSCOMPILER_PROCESSES",
+  "interpretation": "The final compilation check was attempted once under the CPU/compiler-lane guard. It failed without diagnostic text. No second build was launched to avoid spamming the compiler lane."
+}

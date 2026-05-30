@@ -25,6 +25,7 @@ namespace Hecton8.World.Biomes
         private const int BiomeHeatmapResolution = 256;
         private const int BiomeHeatmapPixelCount = BiomeHeatmapResolution * BiomeHeatmapResolution;
         private const int TelemetryCapacity = 300;
+        private const int BlackBoxDumpEntryBytes = 62;
         private const float DefaultCellSizeMeters = 50f;
         private const float DefaultBlendWidthMeters = 50f;
         private const uint RuntimeContextHash = 0x42424C44u;
@@ -820,16 +821,22 @@ namespace Hecton8.World.Biomes
                     return false;
 
                 string fullPath = Path.Combine(root, BlackBoxDumpPath);
-                string directory = Path.GetDirectoryName(fullPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                int byteCount = count * BlackBoxDumpEntryBytes;
+                NativeArray<byte> payload = default;
+                try
+                {
+                    payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    int cursor = 0;
+                    for (int i = 0; i < count; i++)
+                        WriteTelemetryEntry(payload, ref cursor, _blackBoxDumpSnapshot[i]);
 
-                using FileStream stream = File.Open(fullPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                for (int i = 0; i < count; i++)
-                    WriteTelemetryEntry(writer, _blackBoxDumpSnapshot[i]);
-
-                return true;
+                    return cursor == byteCount && NativeFaultDumpWriter.TryWriteAll(fullPath, payload, byteCount);
+                }
+                finally
+                {
+                    if (payload.IsCreated)
+                        payload.Dispose();
+                }
             }
             catch (IOException)
             {
@@ -853,24 +860,64 @@ namespace Hecton8.World.Biomes
             }
         }
 
-        private static void WriteTelemetryEntry(BinaryWriter writer, BiomeBoundaryTelemetryEntry entry)
+        private static void WriteTelemetryEntry(NativeArray<byte> payload, ref int cursor, BiomeBoundaryTelemetryEntry entry)
         {
-            writer.Write(entry.FrameIndex);
-            writer.Write(entry.Sequence);
-            writer.Write(entry.OriginShiftSequence);
-            writer.Write(entry.StateHash);
-            writer.Write(entry.GridX);
-            writer.Write(entry.GridZ);
-            writer.Write(entry.LocalX);
-            writer.Write(entry.LocalZ);
-            writer.Write(entry.BiomeAHash);
-            writer.Write(entry.BiomeBHash);
-            writer.Write(entry.BlendFactor01);
-            writer.Write(entry.BoundaryDistanceMeters);
-            writer.Write(entry.MacroCellX);
-            writer.Write(entry.MacroCellY);
-            writer.Write(entry.Flags);
-            writer.Write(entry.SampleDiameter);
+            WriteInt32LittleEndian(payload, ref cursor, entry.FrameIndex);
+            WriteUInt32LittleEndian(payload, ref cursor, entry.Sequence);
+            WriteUInt32LittleEndian(payload, ref cursor, entry.OriginShiftSequence);
+            WriteUInt32LittleEndian(payload, ref cursor, entry.StateHash);
+            WriteInt64LittleEndian(payload, ref cursor, entry.GridX);
+            WriteInt64LittleEndian(payload, ref cursor, entry.GridZ);
+            WriteFloatLittleEndian(payload, ref cursor, entry.LocalX);
+            WriteFloatLittleEndian(payload, ref cursor, entry.LocalZ);
+            WriteUInt32LittleEndian(payload, ref cursor, entry.BiomeAHash);
+            WriteUInt32LittleEndian(payload, ref cursor, entry.BiomeBHash);
+            WriteFloatLittleEndian(payload, ref cursor, entry.BlendFactor01);
+            WriteFloatLittleEndian(payload, ref cursor, entry.BoundaryDistanceMeters);
+            WriteInt16LittleEndian(payload, ref cursor, entry.MacroCellX);
+            WriteInt16LittleEndian(payload, ref cursor, entry.MacroCellY);
+            payload[cursor++] = entry.Flags;
+            payload[cursor++] = entry.SampleDiameter;
+        }
+
+        private static void WriteInt16LittleEndian(NativeArray<byte> payload, ref int cursor, short value)
+        {
+            WriteUInt16LittleEndian(payload, ref cursor, (ushort)value);
+        }
+
+        private static void WriteUInt16LittleEndian(NativeArray<byte> payload, ref int cursor, ushort value)
+        {
+            payload[cursor++] = (byte)value;
+            payload[cursor++] = (byte)(value >> 8);
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(payload, ref cursor, (uint)value);
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, ref int cursor, uint value)
+        {
+            payload[cursor++] = (byte)value;
+            payload[cursor++] = (byte)(value >> 8);
+            payload[cursor++] = (byte)(value >> 16);
+            payload[cursor++] = (byte)(value >> 24);
+        }
+
+        private static void WriteInt64LittleEndian(NativeArray<byte> payload, ref int cursor, long value)
+        {
+            WriteUInt64LittleEndian(payload, ref cursor, (ulong)value);
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> payload, ref int cursor, ulong value)
+        {
+            WriteUInt32LittleEndian(payload, ref cursor, (uint)value);
+            WriteUInt32LittleEndian(payload, ref cursor, (uint)(value >> 32));
+        }
+
+        private static void WriteFloatLittleEndian(NativeArray<byte> payload, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(payload, ref cursor, math.asuint(value));
         }
 
         private bool TryEnsureBlackBoxDumpRootCold()

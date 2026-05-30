@@ -225,7 +225,7 @@ namespace Hecton8.Gameplay
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-renderer props — owner: MessageTerminal
 
             if (statusLightRenderer == null)
-                statusLightRenderer = GetComponent<Renderer>();
+                TryGetComponent(out statusLightRenderer);
 
             CacheRegistryServicesCold();
             CaptureInitialReadStates();

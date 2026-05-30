@@ -231,7 +231,7 @@ namespace Hecton8.Gameplay
                 if (targetController == null)
                 {
                     if (!TryGetComponent(out targetController))
-                        targetController = GetComponentInParent<LifePodTactilePrologueController>();
+                        TryResolveParentComponent(_cachedTransform, out targetController);
                 }
                 _coldReferenceSearchMask |= ColdReferenceTargetController;
             }
@@ -426,6 +426,22 @@ namespace Hecton8.Gameplay
             _nextHapticPulseSeconds = 0f;
             _tickDormant = true;
             ResetFoamFlowCache();
+        }
+
+        private static bool TryResolveParentComponent<T>(Transform start, out T component)
+            where T : Component
+        {
+            component = null;
+            Transform current = start != null ? start.parent : null;
+            while (current != null)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+
+                current = current.parent;
+            }
+
+            return false;
         }
 
 #if UNITY_EDITOR

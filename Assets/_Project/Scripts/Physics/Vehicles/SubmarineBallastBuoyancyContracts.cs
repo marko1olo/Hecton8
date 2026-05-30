@@ -20,7 +20,7 @@ namespace Hecton8.Physics.Vehicles
         public const int TankCount = 4;
         public const int TelemetryCapacity = 300;
 #if UNITY_EDITOR
-        public const int CsvScratchBytes = 32768;
+        public const int CsvImportByteCapacity = 32768;
 #endif
         public const int ProfileCapacity = 64;
         public const int TankBytes = 32;
@@ -69,9 +69,6 @@ namespace Hecton8.Physics.Vehicles
         public const BufferID TelemetryRing = BufferID.Shinobu333BallastTelemetryRing;
         public const BufferID Profiles = BufferID.Shinobu333BallastProfiles;
         public const BufferID Tuning = BufferID.Shinobu333BallastTuning;
-#if UNITY_EDITOR
-        public const BufferID CsvScratch = BufferID.Shinobu333BallastCsvScratch;
-#endif
     }
 
     [StructLayout(LayoutKind.Explicit, Size = SubmarineBallastConstants.TankBytes)]
@@ -268,6 +265,33 @@ namespace Hecton8.Physics.Vehicles
         public static int ParseProfiles(ReadOnlySpan<byte> csv, NativeArray<SubmarineBallastProfileDTO> profiles)
         {
             if (!profiles.IsCreated || profiles.Length <= 0 || csv.Length <= 0)
+                return 0;
+
+            int row = 0;
+            int index = 0;
+            while (index < csv.Length && row < profiles.Length)
+            {
+                int lineStart = index;
+                while (index < csv.Length && csv[index] != (byte)'\n' && csv[index] != (byte)'\r')
+                    index++;
+
+                ReadOnlySpan<byte> line = csv.Slice(lineStart, index - lineStart);
+                while (index < csv.Length && (csv[index] == (byte)'\n' || csv[index] == (byte)'\r'))
+                    index++;
+
+                if (line.Length == 0 || line[0] == (byte)'#')
+                    continue;
+
+                if (TryParseProfile(line, (uint)row, out SubmarineBallastProfileDTO profile))
+                    profiles[row++] = profile;
+            }
+
+            return row;
+        }
+
+        public static int ParseProfiles(ReadOnlySpan<byte> csv, Span<SubmarineBallastProfileDTO> profiles)
+        {
+            if (profiles.Length <= 0 || csv.Length <= 0)
                 return 0;
 
             int row = 0;

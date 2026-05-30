@@ -352,6 +352,7 @@ namespace Hecton8.Inventory
         public const int CargoMergeResultDtoSizeBytes = 64;
         public const int LootCacheDtoSizeBytes = 128;
         public const int CargoTelemetryEntrySizeBytes = 64;
+        private const int CargoTelemetryDumpHeaderBytes = 20;
         public const int CargoAtomicCounterDtoSizeBytes = 64;
         public const int CargoRuntimeSelfAuditDtoSizeBytes = 128;
         public const uint CargoDumpMagic = 0x43415247u; // CARG
@@ -762,25 +763,33 @@ namespace Hecton8.Inventory
 
             try
             {
-                string root = Directory.GetCurrentDirectory();
-                string path = Path.Combine(root, relativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                int telemetryBytes = telemetryRing.Length * CargoTelemetryEntrySizeBytes;
+                int byteCount = CargoTelemetryDumpHeaderBytes + telemetryBytes;
+                NativeArray<byte> payload = default;
+                try
                 {
-                    writer.Write(CargoDumpMagic);
-                    writer.Write(CargoDumpVersion);
-                    writer.Write(cursor);
-                    writer.Write(telemetryRing.Length);
-                    writer.Write(CargoTelemetryEntrySizeBytes);
-                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
-                    stream.Write(new ReadOnlySpan<byte>(source, telemetryRing.Length * CargoTelemetryEntrySizeBytes));
-                }
+                    payload = NativeFaultDumpWriter.CreateTransientPayload(
+                        byteCount,
+                        nameof(SoaInventoryQueryEngine),
+                        "CargoTelemetryDumpPayload");
+                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    WriteUInt32LittleEndian(target, 0, CargoDumpMagic);
+                    WriteUInt32LittleEndian(target, 4, CargoDumpVersion);
+                    WriteInt32LittleEndian(target, 8, cursor);
+                    WriteInt32LittleEndian(target, 12, telemetryRing.Length);
+                    WriteInt32LittleEndian(target, 16, CargoTelemetryEntrySizeBytes);
 
-                return true;
+                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
+                    UnsafeUtility.MemCpy(target + CargoTelemetryDumpHeaderBytes, source, telemetryBytes);
+                    return NativeFaultDumpWriter.TryWriteAll(relativePath, payload, byteCount);
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(SoaInventoryQueryEngine),
+                        "CargoTelemetryDumpPayload");
+                }
             }
             catch (IOException)
             {

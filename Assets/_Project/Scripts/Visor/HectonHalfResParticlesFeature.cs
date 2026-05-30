@@ -157,7 +157,7 @@ namespace Hecton8.Visor
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                if (!Application.isPlaying || _settings == null || _compositeMaterial == null || _settings.compositeStrength <= 0.0001f)
+                if (!HectonDrsRenderFeatureGate.HasRuntimeRenderOwner() || _settings == null || _compositeMaterial == null || _settings.compositeStrength <= 0.0001f)
                 {
                     SetGlobalActive(0f);
                     return;
@@ -266,7 +266,7 @@ namespace Hecton8.Visor
                     builder.SetRenderAttachment(particlesTexture, 0, AccessFlags.Write);
                     builder.AllowPassCulling(false);
 
-                    builder.SetRenderFunc((DrawPassData data, RasterGraphContext context) =>
+                    builder.SetRenderFunc(static (DrawPassData data, RasterGraphContext context) =>
                     {
                         context.cmd.DrawRendererList(data.RendererList);
                     });
@@ -474,7 +474,7 @@ namespace Hecton8.Visor
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            if (!Application.isPlaying)
+            if (!HectonDrsRenderFeatureGate.HasRuntimeRenderOwner())
             {
                 SetGlobalActive(0f);
                 return;

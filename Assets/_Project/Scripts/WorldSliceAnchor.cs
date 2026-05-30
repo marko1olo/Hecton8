@@ -261,7 +261,13 @@ namespace Hecton8.World
         {
             _FidelityRootScratch.Clear();
             GetComponentsInChildren<WorldFidelityRoot>(true, _FidelityRootScratch);
-            fidelityRoots = _FidelityRootScratch.ToArray();
+            int rootCount = _FidelityRootScratch.Count;
+            if (fidelityRoots == null || fidelityRoots.Length != rootCount)
+                fidelityRoots = new WorldFidelityRoot[rootCount];
+
+            for (int i = 0; i < rootCount; i++)
+                fidelityRoots[i] = _FidelityRootScratch[i];
+
             _FidelityRootScratch.Clear();
         }
 

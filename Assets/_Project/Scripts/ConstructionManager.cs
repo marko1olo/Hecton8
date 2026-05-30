@@ -23,7 +23,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Building;
 using Hecton8.Core;
@@ -71,8 +70,6 @@ namespace Hecton8.Construction
         private const int DeconstructionTransactionCapacity = HabitatDeconstructionTransactionKernel.MaxTeardownsUltra;
         private const int DeconstructionRefundCommandCapacity = DeconstructionTransactionCapacity * HabitatDeconstructionTransactionKernel.MaxCostPairs;
         private const int DeconstructionLootCacheCapacity = DeconstructionRefundCommandCapacity;
-        private const string DeconstructionDumpRelativePath = "Docs/AgentLogs/Dump_1306_Construction_DeconstructionBlackBox.bin";
-        private const string Shinobu336DumpRelativePath = "Docs/AgentLogs/Dump_1306_Construction_DeconstructionTelemetry.bin";
         private const int DeconstructionCounterLaneLength = 2;
         private const int DeconstructionRefundCommandCountIndex = 0;
         private const int DeconstructionLootCacheCountIndex = 1;
@@ -95,6 +92,9 @@ namespace Hecton8.Construction
             DeconstructionMutationGuardBit(BufferID.Shinobu336TelemetryCursor) |
             DeconstructionMutationGuardBit(BufferID.Shinobu336RefundProfiles) |
             DeconstructionMutationGuardBit(BufferID.Shinobu336CsvScratch);
+        private static readonly ulong DeconstructionTelemetryMutationGuardMask =
+            DeconstructionMutationGuardBit(BufferID.Shinobu336TelemetryRing) |
+            DeconstructionMutationGuardBit(BufferID.Shinobu336TelemetryCursor);
 
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
         private struct HabitatDeconstructionTelemetryEntry
@@ -298,6 +298,8 @@ namespace Hecton8.Construction
         private int _lastShinobu336OverflowCaches;
         private int _lastShinobu336SeveredEdges;
         private int _lastShinobu336NodeIndex;
+        private int _lastShinobu336BlackBoxEntryCount;
+        private int _lastDeconstructionBlackBoxEntryCount;
         private int _lastDeconstructionDfsVisitedCount;
         private int _lastDeconstructionDfsExpectedCount;
         private float _lastShinobu336BurstMicroseconds;
@@ -305,6 +307,10 @@ namespace Hecton8.Construction
         private uint _deconstructionSequence;
         private uint _lastShinobu336StateHash;
         private uint _lastShinobu336FaultFlags;
+        private uint _lastShinobu336BlackBoxHash;
+        private uint _lastShinobu336BlackBoxFaultFlags;
+        private uint _lastDeconstructionBlackBoxHash;
+        private uint _lastDeconstructionBlackBoxFlags;
 
         // CONSTANTS - DEFAULT MODULE STATE
 
@@ -1256,8 +1262,6 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            bool telemetryLocked = false;
-
             NativeArray<int> edgeOffsets = default;
             NativeArray<int> edgeDestinations = default;
             NativeArray<float> edgeStrength = default;
@@ -1265,6 +1269,8 @@ namespace Hecton8.Construction
             int nodeCount = 0;
             int edgeCount = 0;
             bool deconstructionCsrLocked = false;
+            bool transactionCompleted = false;
+            bool dumpBlackBoxAfterRelease = false;
             try
             {
                 transactions[0] = transaction;
@@ -1291,7 +1297,7 @@ namespace Hecton8.Construction
                 }
 
                 IDataVault vault = _cachedDataVault;
-                telemetryLocked = TryAcquireDeconstructionTelemetry(
+                TryBorrowDeconstructionTelemetryUnderActiveGuard(
                     vault,
                     out NativeArray<TeardownTelemetryEntry> telemetryRing,
                     out NativeArray<int> telemetryCursor);
@@ -1367,25 +1373,23 @@ namespace Hecton8.Construction
                 _lastShinobu336StateHash = stateHash;
                 _lastShinobu336FaultFlags = faultFlags;
 
-                if (telemetryLocked)
-                {
-                    ReleaseDeconstructionTelemetry(vault);
-                    telemetryLocked = false;
-                }
-
-                if ((faultFlags & HabitatDeconstructionTransactionKernel.FaultNaN) != 0u || burstMicroseconds > 500f)
-                    DumpShinobu336BlackBox();
-
-                return true;
+                dumpBlackBoxAfterRelease = (faultFlags & HabitatDeconstructionTransactionKernel.FaultNaN) != 0u || burstMicroseconds > 500f;
+                transactionCompleted = true;
             }
             finally
             {
                 if (deconstructionCsrLocked && _habitatGraphManager != null)
                     _habitatGraphManager.ReleaseDeconstructionCsrLanes();
-                if (telemetryLocked)
-                    ReleaseDeconstructionTelemetry(_cachedDataVault);
                 ReleaseDeconstructionTransactionBuffers(transactionVault);
             }
+
+            if (!transactionCompleted)
+                return false;
+
+            if (dumpBlackBoxAfterRelease)
+                DumpShinobu336BlackBox();
+
+            return true;
         }
 
         private static bool TryBuildDeconstructionTransaction(
@@ -1568,6 +1572,35 @@ namespace Hecton8.Construction
         private void ReleaseDeconstructionTelemetry(IDataVault vault)
         {
             ReleaseDeconstructionMutationGuard(vault);
+        }
+
+        private bool TryBorrowDeconstructionTelemetryUnderActiveGuard(
+            IDataVault vault,
+            out NativeArray<TeardownTelemetryEntry> telemetryRing,
+            out NativeArray<int> telemetryCursor)
+        {
+            telemetryRing = default;
+            telemetryCursor = default;
+            if (vault == null ||
+                _deconstructionMutationGuardDepth <= 0 ||
+                !ReferenceEquals(_deconstructionMutationGuardVault, vault) ||
+                (_deconstructionMutationGuardMask & DeconstructionTelemetryMutationGuardMask) != DeconstructionTelemetryMutationGuardMask)
+            {
+                return false;
+            }
+
+            return TryOpenDeconstructionVaultBuffer(
+                       vault,
+                       in _deconstructionTelemetryHandle,
+                       BufferID.Shinobu336TelemetryRing,
+                       HabitatDeconstructionTransactionKernel.TelemetryCapacity,
+                       out telemetryRing) &&
+                   TryOpenDeconstructionVaultBuffer(
+                       vault,
+                       in _deconstructionTelemetryCursorHandle,
+                       BufferID.Shinobu336TelemetryCursor,
+                       1,
+                       out telemetryCursor);
         }
 
         private int ApplyRefundCommandsOrOverflow(
@@ -1766,34 +1799,30 @@ namespace Hecton8.Construction
                     return;
                 }
 
-                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", Shinobu336DumpRelativePath));
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                uint hash = HabitatDeconstructionTransactionKernel.SystemHash ^ (uint)telemetryRing.Length;
+                uint faultFlags = 0u;
+                for (int i = 0; i < telemetryRing.Length; i++)
                 {
-                    writer.Write(HabitatDeconstructionTransactionKernel.SystemHash);
-                    writer.Write(telemetryRing.Length);
-                    for (int i = 0; i < telemetryRing.Length; i++)
-                    {
-                        TeardownTelemetryEntry entry = telemetryRing[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.TargetModuleHash);
-                        writer.Write(entry.InitiatorEntityHash);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.ModulesProcessed);
-                        writer.Write(entry.ResourcesRefunded);
-                        writer.Write(entry.OverflowLootCaches);
-                        writer.Write(entry.EdgesSevered);
-                        writer.Write(entry.BurstMicroseconds);
-                        writer.Write(entry.GlobalQualityWeight);
-                        writer.Write(entry.FaultFlags);
-                        writer.Write(entry.TargetNodeIndex);
-                        writer.Write(entry.AupLocalMagnitude);
-                    }
+                    TeardownTelemetryEntry entry = telemetryRing[i];
+                    faultFlags |= entry.FaultFlags;
+                    hash = MixConstructionBlackBoxHash(hash, entry.Frame);
+                    hash = MixConstructionBlackBoxHash(hash, entry.TargetModuleHash);
+                    hash = MixConstructionBlackBoxHash(hash, entry.InitiatorEntityHash);
+                    hash = MixConstructionBlackBoxHash(hash, entry.StateHash);
+                    hash = MixConstructionBlackBoxHash(hash, (uint)entry.ModulesProcessed);
+                    hash = MixConstructionBlackBoxHash(hash, (uint)entry.ResourcesRefunded);
+                    hash = MixConstructionBlackBoxHash(hash, (uint)entry.OverflowLootCaches);
+                    hash = MixConstructionBlackBoxHash(hash, (uint)entry.EdgesSevered);
+                    hash = MixConstructionBlackBoxHash(hash, math.asuint(entry.BurstMicroseconds));
+                    hash = MixConstructionBlackBoxHash(hash, math.asuint(entry.GlobalQualityWeight));
+                    hash = MixConstructionBlackBoxHash(hash, entry.FaultFlags);
+                    hash = MixConstructionBlackBoxHash(hash, (uint)entry.TargetNodeIndex);
+                    hash = MixConstructionBlackBoxHash(hash, math.asulong(entry.AupLocalMagnitude));
                 }
+
+                _lastShinobu336BlackBoxHash = hash;
+                _lastShinobu336BlackBoxFaultFlags = faultFlags;
+                _lastShinobu336BlackBoxEntryCount = telemetryRing.Length;
             }
             finally
             {
@@ -1897,16 +1926,7 @@ namespace Hecton8.Construction
                 return false;
 
             if (_deconstructionMutationGuardDepth > 0)
-            {
-                if (!ReferenceEquals(_deconstructionMutationGuardVault, vault) ||
-                    _deconstructionMutationGuardMask != DeconstructionMutationGuardMask)
-                {
-                    return false;
-                }
-
-                _deconstructionMutationGuardDepth++;
-                return true;
-            }
+                return false;
 
             if (!vault.TryAcquireMutationGuard(DeconstructionMutationGuardMask))
                 return false;
@@ -2186,10 +2206,16 @@ namespace Hecton8.Construction
             _lastShinobu336OverflowCaches = 0;
             _lastShinobu336SeveredEdges = 0;
             _lastShinobu336NodeIndex = -1;
+            _lastShinobu336BlackBoxEntryCount = 0;
+            _lastDeconstructionBlackBoxEntryCount = 0;
             _lastShinobu336BurstMicroseconds = 0f;
             _lastShinobu336TargetRuntimePosition = default;
             _lastShinobu336StateHash = 0u;
             _lastShinobu336FaultFlags = 0u;
+            _lastShinobu336BlackBoxHash = 0u;
+            _lastShinobu336BlackBoxFaultFlags = 0u;
+            _lastDeconstructionBlackBoxHash = 0u;
+            _lastDeconstructionBlackBoxFlags = 0u;
         }
 
         private int ReadDfsVisitedCount()
@@ -2255,36 +2281,44 @@ namespace Hecton8.Construction
 
             try
             {
-                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DeconstructionDumpRelativePath));
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                uint hash = 2166136261u ^ (uint)DeconstructionBlackBoxCapacity ^ (uint)_deconstructionBlackBoxCursor;
+                uint flags = 0u;
+                for (int i = 0; i < blackBox.Length; i++)
                 {
-                    writer.Write(DeconstructionBlackBoxCapacity);
-                    writer.Write(_deconstructionBlackBoxCursor);
-                    for (int i = 0; i < blackBox.Length; i++)
-                    {
-                        HabitatDeconstructionTelemetryEntry entry = blackBox[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.TargetEntityId);
-                        writer.Write(entry.RequesterEntityId);
-                        writer.Write(entry.DistanceMeters);
-                        writer.Write(entry.DfsVisitedCount);
-                        writer.Write(entry.DfsExpectedCount);
-                        writer.Write(entry.Result);
-                        writer.Write(entry.Reason);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.Reserved);
-                    }
+                    HabitatDeconstructionTelemetryEntry entry = blackBox[i];
+                    flags |= entry.Flags;
+                    hash = MixConstructionBlackBoxHash(hash, entry.Frame);
+                    hash = MixConstructionBlackBoxHash(hash, entry.TargetEntityId);
+                    hash = MixConstructionBlackBoxHash(hash, entry.RequesterEntityId);
+                    hash = MixConstructionBlackBoxHash(hash, math.asuint(entry.DistanceMeters));
+                    hash = MixConstructionBlackBoxHash(hash, entry.DfsVisitedCount);
+                    hash = MixConstructionBlackBoxHash(hash, entry.DfsExpectedCount);
+                    hash = MixConstructionBlackBoxHash(hash, entry.Result);
+                    hash = MixConstructionBlackBoxHash(hash, entry.Reason);
+                    hash = MixConstructionBlackBoxHash(hash, entry.Flags);
+                    hash = MixConstructionBlackBoxHash(hash, entry.Reserved);
                 }
+
+                _lastDeconstructionBlackBoxHash = hash;
+                _lastDeconstructionBlackBoxFlags = flags;
+                _lastDeconstructionBlackBoxEntryCount = blackBox.Length;
             }
             finally
             {
                 ReleaseDeconstructionBlackBox(vault);
             }
+        }
+
+        private static uint MixConstructionBlackBoxHash(uint hash, uint value)
+        {
+            hash ^= value;
+            return hash * 16777619u;
+        }
+
+        private static uint MixConstructionBlackBoxHash(uint hash, ulong value)
+        {
+            hash = MixConstructionBlackBoxHash(hash, (uint)value);
+            return MixConstructionBlackBoxHash(hash, (uint)(value >> 32));
         }
 
         private int ResolveRegisteredModuleIndex(GameObject module)

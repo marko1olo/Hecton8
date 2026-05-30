@@ -761,15 +761,13 @@ namespace Hecton8.Gameplay
 
             #endif
 
-            HectonScanMarkerSystem markerSystem = GetComponent<HectonScanMarkerSystem>();
-            if (markerSystem == null)
+            if (!TryGetComponent(out HectonScanMarkerSystem markerSystem))
                 markerSystem = gameObject.AddComponent<HectonScanMarkerSystem>(); // COLD ALLOC: HectonScanMarkerSystem[1] � scanner marker owner � owner: ScannerTool
 
             if (markerSystem != null)
                 markerSystem.Initialize(scannerMarkerShader);
 
-            _dataArchaeology = GetComponent<DataArchaeologyRuntime>();
-            if (_dataArchaeology == null)
+            if (!TryGetComponent(out _dataArchaeology))
                 _dataArchaeology = gameObject.AddComponent<DataArchaeologyRuntime>(); // COLD ALLOC: DataArchaeologyRuntime[1] - scanner archaeology owner - owner: ScannerTool
         }
 
@@ -1321,64 +1319,92 @@ namespace Hecton8.Gameplay
             if (!TryReadScannerBlackBoxRing(out NativeArray<ScannerBlackBoxEntry> scannerBlackBox))
                 return false;
 
+            const int HeaderBytes = 16;
+            const int RowBytes = 96;
+            int entryCount = scannerBlackBox.Length;
+            int totalBytes = HeaderBytes + entryCount * RowBytes;
+            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             try
             {
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, ScannerBlackBoxFileName);
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                WriteUInt32LittleEndian(payload, 0, ScannerBlackBoxMagic);
+                WriteInt32LittleEndian(payload, 4, 1);
+                WriteInt32LittleEndian(payload, 8, ScannerBlackBoxCapacity);
+                WriteInt32LittleEndian(payload, 12, _scannerBlackBoxCursor);
+                int validCount = math.clamp(_scannerBlackBoxRecordedCount, 0, entryCount);
+                int startIndex = validCount >= entryCount ? _scannerBlackBoxCursor : 0;
+                for (int i = 0; i < entryCount; i++)
                 {
-                    writer.Write(ScannerBlackBoxMagic);
-                    writer.Write(1);
-                    writer.Write(ScannerBlackBoxCapacity);
-                    writer.Write(_scannerBlackBoxCursor);
-                    int entryCount = scannerBlackBox.Length;
-                    int validCount = math.clamp(_scannerBlackBoxRecordedCount, 0, entryCount);
-                    int startIndex = validCount >= entryCount ? _scannerBlackBoxCursor : 0;
-                    for (int i = 0; i < entryCount; i++)
-                    {
-                        int sourceIndex = startIndex + i;
-                        if (sourceIndex >= entryCount)
-                            sourceIndex -= entryCount;
-                        ScannerBlackBoxEntry entry = scannerBlackBox[sourceIndex];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.ToolHash);
-                        writer.Write(entry.ArtifactHash);
-                        writer.Write(entry.BlueprintHash);
-                        writer.Write(entry.ActiveEntityHash);
-                        writer.Write(entry.PendingEntityHash);
-                        writer.Write(entry.Progress01);
-                        writer.Write(entry.Battery01);
-                        writer.Write(entry.DeltaTime);
-                        writer.Write(entry.LastContactAge);
-                        writer.Write(entry.PendingDistance);
-                        writer.Write(entry.ToolPosition.x);
-                        writer.Write(entry.ToolPosition.y);
-                        writer.Write(entry.ToolPosition.z);
-                        writer.Write(entry.ToolForward.x);
-                        writer.Write(entry.ToolForward.y);
-                        writer.Write(entry.ToolForward.z);
-                        writer.Write(entry.ActiveProbePosition.x);
-                        writer.Write(entry.ActiveProbePosition.y);
-                        writer.Write(entry.ActiveProbePosition.z);
-                        writer.Write(entry.PendingOcclusionPosition.x);
-                        writer.Write(entry.PendingOcclusionPosition.y);
-                        writer.Write(entry.PendingOcclusionPosition.z);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.QualityWeightByte);
-                    }
+                    int sourceIndex = startIndex + i;
+                    if (sourceIndex >= entryCount)
+                        sourceIndex -= entryCount;
+                    ScannerBlackBoxEntry entry = scannerBlackBox[sourceIndex];
+                    int offset = HeaderBytes + i * RowBytes;
+                    WriteUInt32LittleEndian(payload, offset, entry.Frame);
+                    WriteUInt32LittleEndian(payload, offset + 4, entry.ToolHash);
+                    WriteUInt32LittleEndian(payload, offset + 8, entry.ArtifactHash);
+                    WriteUInt32LittleEndian(payload, offset + 12, entry.BlueprintHash);
+                    WriteUInt32LittleEndian(payload, offset + 16, entry.ActiveEntityHash);
+                    WriteUInt32LittleEndian(payload, offset + 20, entry.PendingEntityHash);
+                    WriteFloat32LittleEndian(payload, offset + 24, entry.Progress01);
+                    WriteFloat32LittleEndian(payload, offset + 28, entry.Battery01);
+                    WriteFloat32LittleEndian(payload, offset + 32, entry.DeltaTime);
+                    WriteFloat32LittleEndian(payload, offset + 36, entry.LastContactAge);
+                    WriteFloat32LittleEndian(payload, offset + 40, entry.PendingDistance);
+                    WriteFloat3LittleEndian(payload, offset + 44, entry.ToolPosition);
+                    WriteFloat3LittleEndian(payload, offset + 56, entry.ToolForward);
+                    WriteFloat3LittleEndian(payload, offset + 68, entry.ActiveProbePosition);
+                    WriteFloat3LittleEndian(payload, offset + 80, entry.PendingOcclusionPosition);
+                    WriteUInt16LittleEndian(payload, offset + 92, entry.Flags);
+                    WriteUInt16LittleEndian(payload, offset + 94, entry.QualityWeightByte);
                 }
 
-                _scannerBlackBoxDumped = true;
-                return true;
+                _scannerBlackBoxDumped = NativeFaultDumpWriter.TryWriteAll(
+                    Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", ScannerBlackBoxFileName)),
+                    payload,
+                    totalBytes);
+                return _scannerBlackBoxDumped;
             }
             catch (Exception)
             {
                 CrashTelemetryBuffer.ReportBlackBoxExportFailure();
                 return false;
             }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
+            }
+        }
+
+        private static void WriteFloat3LittleEndian(NativeArray<byte> payload, int offset, float3 value)
+        {
+            WriteFloat32LittleEndian(payload, offset, value.x);
+            WriteFloat32LittleEndian(payload, offset + 4, value.y);
+            WriteFloat32LittleEndian(payload, offset + 8, value.z);
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> payload, int offset, float value)
+        {
+            WriteUInt32LittleEndian(payload, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, int offset, int value)
+        {
+            WriteUInt32LittleEndian(payload, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt16LittleEndian(NativeArray<byte> payload, int offset, ushort value)
+        {
+            payload[offset] = (byte)value;
+            payload[offset + 1] = (byte)(value >> 8);
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, int offset, uint value)
+        {
+            payload[offset] = (byte)value;
+            payload[offset + 1] = (byte)(value >> 8);
+            payload[offset + 2] = (byte)(value >> 16);
+            payload[offset + 3] = (byte)(value >> 24);
         }
 
         private void TryRegisterScientificLanes()

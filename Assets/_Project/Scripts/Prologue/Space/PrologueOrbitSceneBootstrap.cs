@@ -89,9 +89,9 @@ namespace Hecton8.Prologue.Space
             Renderer cloudRenderer = ResolveRenderer(clouds);
             Transform plasmaOverlay = null;
             Renderer plasmaOverlayRenderer = null;
-            PrologueOrbitSceneBootstrap bootstrap = camera != null
-                ? camera.GetComponent<PrologueOrbitSceneBootstrap>()
-                : null;
+            PrologueOrbitSceneBootstrap bootstrap = null;
+            if (camera != null)
+                camera.TryGetComponent(out bootstrap);
             if (bootstrap != null)
                 EnsureCameraLocalPlasmaOverlay(
                     camera,
@@ -152,7 +152,7 @@ namespace Hecton8.Prologue.Space
             if (root.TryGetComponent(out Renderer renderer))
                 return renderer;
 
-            return root.GetComponentInChildren<Renderer>(true);
+            return ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(root);
         }
 
         private static void EnsureCameraLocalPlasmaOverlay(
@@ -184,13 +184,11 @@ namespace Hecton8.Prologue.Space
             overlayTransform.localRotation = Quaternion.identity;
             overlayTransform.localScale = Vector3.one;
 
-            MeshFilter meshFilter = overlayObject.GetComponent<MeshFilter>();
-            if (meshFilter == null)
+            if (!overlayObject.TryGetComponent(out MeshFilter meshFilter))
                 meshFilter = overlayObject.AddComponent<MeshFilter>();
             meshFilter.sharedMesh = ResolvePlasmaOverlayMesh();
 
-            overlayRenderer = overlayObject.GetComponent<MeshRenderer>();
-            if (overlayRenderer == null)
+            if (!overlayObject.TryGetComponent(out overlayRenderer))
                 overlayRenderer = overlayObject.AddComponent<MeshRenderer>();
 
             overlayRenderer.sharedMaterial = plasmaMaterial;

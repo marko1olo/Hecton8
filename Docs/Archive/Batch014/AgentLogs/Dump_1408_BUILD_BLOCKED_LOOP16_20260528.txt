@@ -1,0 +1,6 @@
+﻿Loop 16 build check blocked.
+CPU sample 1: 100%
+CPU sample 2 after 30s: 57%
+Active compiler process: dotnet PID 36752 CPU 76.53125
+CommandLine: dotnet build MapMagic.MicroSplat.csproj --no-restore -nologo -v:minimal /m:1 /p:UseSharedCompilation=false /nr:false
+Action: did not launch Hecton8.slnx build.

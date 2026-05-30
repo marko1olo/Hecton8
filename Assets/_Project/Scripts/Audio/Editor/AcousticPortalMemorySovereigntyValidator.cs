@@ -43,6 +43,14 @@ namespace Hecton8.Audio.Editor
         public static bool RunDefragRaceFuzzer(out uint failureFlags)
         {
             failureFlags = 0u;
+            NativeArray<AcousticPortalNode> nodes = default;
+            NativeArray<AcousticPortalEdge> edges = default;
+            NativeArray<AcousticPathResult> result = default;
+            NativeArray<int> openSet = default;
+            NativeArray<int> closedSet = default;
+            NativeArray<float> costs = default;
+            NativeArray<int> cameFrom = default;
+            NativeArray<byte> states = default;
             NativeArray<AcousticPathQuery> queries = default;
 
             using GlobalDataVault vault = GlobalDataVault.Create(128, 16L * 1024L * 1024L);
@@ -100,73 +108,52 @@ namespace Hecton8.Audio.Editor
                 return false;
             }
 
-            bool nodesLocked = false;
-            bool edgesLocked = false;
-            bool resultLocked = false;
-            bool openLocked = false;
-            bool closedLocked = false;
-            bool costsLocked = false;
-            bool cameFromLocked = false;
-            bool statesLocked = false;
-
             try
             {
-                if (!vault.TryAcquireWriteLock(in nodeHandle, SystemID.Audio, out NativeArray<AcousticPortalNode> nodes))
+                if (!ValidateSingleLaneWriteLock(vault, in nodeHandle, AcousticPortalConstants.MaxPathNodes, ref failureFlags) ||
+                    !ValidateSingleLaneWriteLock(vault, in edgeHandle, AcousticPortalConstants.MaxPathEdges, ref failureFlags) ||
+                    !ValidateSingleLaneWriteLock(vault, in resultHandle, 1, ref failureFlags) ||
+                    !ValidateSingleLaneWriteLock(vault, in openHandle, AcousticPortalConstants.MaxPathNodes, ref failureFlags) ||
+                    !ValidateSingleLaneWriteLock(vault, in closedHandle, AcousticPortalConstants.MaxPathNodes, ref failureFlags) ||
+                    !ValidateSingleLaneWriteLock(vault, in costHandle, AcousticPortalConstants.MaxPathNodes, ref failureFlags) ||
+                    !ValidateSingleLaneWriteLock(vault, in cameFromHandle, AcousticPortalConstants.MaxPathNodes, ref failureFlags) ||
+                    !ValidateSingleLaneWriteLock(vault, in stateHandle, AcousticPortalConstants.MaxPathNodes, ref failureFlags))
                 {
-                    failureFlags |= FailureLock;
                     return false;
                 }
 
-                nodesLocked = true;
-                if (!vault.TryAcquireWriteLock(in edgeHandle, SystemID.Audio, out NativeArray<AcousticPortalEdge> edges))
-                {
-                    failureFlags |= FailureLock;
-                    return false;
-                }
-
-                edgesLocked = true;
-                if (!vault.TryAcquireWriteLock(in resultHandle, SystemID.Audio, out NativeArray<AcousticPathResult> result))
-                {
-                    failureFlags |= FailureLock;
-                    return false;
-                }
-
-                resultLocked = true;
-                if (!vault.TryAcquireWriteLock(in openHandle, SystemID.Audio, out NativeArray<int> openSet))
-                {
-                    failureFlags |= FailureLock;
-                    return false;
-                }
-
-                openLocked = true;
-                if (!vault.TryAcquireWriteLock(in closedHandle, SystemID.Audio, out NativeArray<int> closedSet))
-                {
-                    failureFlags |= FailureLock;
-                    return false;
-                }
-
-                closedLocked = true;
-                if (!vault.TryAcquireWriteLock(in costHandle, SystemID.Audio, out NativeArray<float> costs))
-                {
-                    failureFlags |= FailureLock;
-                    return false;
-                }
-
-                costsLocked = true;
-                if (!vault.TryAcquireWriteLock(in cameFromHandle, SystemID.Audio, out NativeArray<int> cameFrom))
-                {
-                    failureFlags |= FailureLock;
-                    return false;
-                }
-
-                cameFromLocked = true;
-                if (!vault.TryAcquireWriteLock(in stateHandle, SystemID.Audio, out NativeArray<byte> states))
-                {
-                    failureFlags |= FailureLock;
-                    return false;
-                }
-
-                statesLocked = true;
+                nodes = new NativeArray<AcousticPortalNode>(
+                    AcousticPortalConstants.MaxPathNodes,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+                edges = new NativeArray<AcousticPortalEdge>(
+                    AcousticPortalConstants.MaxPathEdges,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+                result = new NativeArray<AcousticPathResult>(
+                    1,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+                openSet = new NativeArray<int>(
+                    AcousticPortalConstants.MaxPathNodes,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+                closedSet = new NativeArray<int>(
+                    AcousticPortalConstants.MaxPathNodes,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+                costs = new NativeArray<float>(
+                    AcousticPortalConstants.MaxPathNodes,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+                cameFrom = new NativeArray<int>(
+                    AcousticPortalConstants.MaxPathNodes,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
+                states = new NativeArray<byte>(
+                    AcousticPortalConstants.MaxPathNodes,
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
                 queries = new NativeArray<AcousticPathQuery>(
                     StressSourceCount,
                     Allocator.TempJob,
@@ -186,6 +173,12 @@ namespace Hecton8.Audio.Editor
                 vault.RequestEditorForceDefragmentation();
                 vault.FrostTickDefrag(1f / 60f, 1f, MemoryDefragPhase.PreSimulation, vault.ActiveBurstLockMask);
                 loadHandle.Complete();
+
+                if (!CopySingleLaneToVault(vault, in nodeHandle, nodes, AcousticPortalConstants.MaxPathNodes, ref failureFlags) ||
+                    !CopySingleLaneToVault(vault, in edgeHandle, edges, AcousticPortalConstants.MaxPathEdges, ref failureFlags))
+                {
+                    return false;
+                }
 
                 int queryCount = queries.Length;
                 if (queryCount <= 0)
@@ -235,22 +228,22 @@ namespace Hecton8.Audio.Editor
             {
                 if (queries.IsCreated)
                     queries.Dispose();
-                if (statesLocked)
-                    vault.ReleaseWriteLock(in stateHandle, SystemID.Audio);
-                if (cameFromLocked)
-                    vault.ReleaseWriteLock(in cameFromHandle, SystemID.Audio);
-                if (costsLocked)
-                    vault.ReleaseWriteLock(in costHandle, SystemID.Audio);
-                if (closedLocked)
-                    vault.ReleaseWriteLock(in closedHandle, SystemID.Audio);
-                if (openLocked)
-                    vault.ReleaseWriteLock(in openHandle, SystemID.Audio);
-                if (resultLocked)
-                    vault.ReleaseWriteLock(in resultHandle, SystemID.Audio);
-                if (edgesLocked)
-                    vault.ReleaseWriteLock(in edgeHandle, SystemID.Audio);
-                if (nodesLocked)
-                    vault.ReleaseWriteLock(in nodeHandle, SystemID.Audio);
+                if (states.IsCreated)
+                    states.Dispose();
+                if (cameFrom.IsCreated)
+                    cameFrom.Dispose();
+                if (costs.IsCreated)
+                    costs.Dispose();
+                if (closedSet.IsCreated)
+                    closedSet.Dispose();
+                if (openSet.IsCreated)
+                    openSet.Dispose();
+                if (result.IsCreated)
+                    result.Dispose();
+                if (edges.IsCreated)
+                    edges.Dispose();
+                if (nodes.IsCreated)
+                    nodes.Dispose();
             }
 
             bool relocated = vault.GenerateMockVaultRelocationForValidation(
@@ -278,6 +271,72 @@ namespace Hecton8.Audio.Editor
             }
 
             return failureFlags == 0u;
+        }
+
+        private static bool ValidateSingleLaneWriteLock<T>(
+            GlobalDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int minimumLength,
+            ref uint failureFlags)
+            where T : struct
+        {
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.Audio, out NativeArray<T> view))
+            {
+                failureFlags |= FailureLock;
+                return false;
+            }
+
+            try
+            {
+                if (!view.IsCreated || view.Length < minimumLength)
+                {
+                    failureFlags |= FailureHandle;
+                    return false;
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.Audio);
+            }
+        }
+
+        private static bool CopySingleLaneToVault<T>(
+            GlobalDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            NativeArray<T> source,
+            int count,
+            ref uint failureFlags)
+            where T : struct
+        {
+            if (!source.IsCreated || source.Length < count)
+            {
+                failureFlags |= FailureStressJob;
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.Audio, out NativeArray<T> target))
+            {
+                failureFlags |= FailureLock;
+                return false;
+            }
+
+            try
+            {
+                if (!target.IsCreated || target.Length < count)
+                {
+                    failureFlags |= FailureHandle;
+                    return false;
+                }
+
+                NativeArray<T>.Copy(source, 0, target, 0, count);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.Audio);
+            }
         }
 
         private static void ValidateLayoutsOrThrow()

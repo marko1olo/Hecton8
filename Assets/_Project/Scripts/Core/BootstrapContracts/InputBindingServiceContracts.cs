@@ -71,21 +71,21 @@ namespace Hecton8.Core
 
     /// <summary>
     /// Persisted scalability profile used by platform/settings integration.
-    /// Legacy payloads used 0 = MX350 and 1 = high RTX; both remain readable.
+    /// Legacy payloads used 0 = compact low-end and 1 = high desktop; both remain readable.
     /// </summary>
     public static class ScalabilityTierProfiles
     {
-        public const byte LowMx350 = 0;
-        public const byte LegacyHighRtx = 1;
+        public const byte LowCompact = 0;
+        public const byte LegacyHighDesktop = 1;
         public const byte Middle = 2;
-        public const byte HighRtx = 3;
+        public const byte HighDiscrete = 3;
         public const byte Ultra = 4;
         public const byte MaxProfile = Ultra;
 
         public static byte Normalize(byte tier)
         {
-            if (tier == LegacyHighRtx)
-                return HighRtx;
+            if (tier == LegacyHighDesktop)
+                return HighDiscrete;
 
             return tier <= MaxProfile ? tier : Ultra;
         }
@@ -94,11 +94,11 @@ namespace Hecton8.Core
         {
             switch (Normalize(tier))
             {
-                case LowMx350:
+                case LowCompact:
                     return 0.35f;
                 case Middle:
                     return 0.62f;
-                case HighRtx:
+                case HighDiscrete:
                     return 0.84f;
                 case Ultra:
                     return 1f;

@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -46,9 +45,7 @@ namespace Hecton8.World
         private const byte VisibilityMaskShadow = 1 << 2;
         private const int FloraGrowthTelemetryFrameCount = 300;
         private const int FloraGrowthTelemetryMaxSamples = 64;
-        private const int FloraGrowthTelemetryDumpVersion = 2;
         private const uint FloraGrowthTelemetryHashSeed = 2166136261u;
-        private const string FloraGrowthDumpRelativePath = "Docs/AgentLogs/Dump_FLORA_GROWTH_SYSTEM.bin";
         private const int ScatterCullTelemetryFrameCount = 300;
         private const int ScatterCullTelemetryCounterCount = 4;
         private const int ScatterCullTelemetryReadbackStrideFrames = 30;
@@ -73,8 +70,6 @@ namespace Hecton8.World
         private const int MockScatterDefaultAxisCount = 100;
         private const float MockScatterDefaultSpacing = 2f;
         private const uint MockScatterDefaultSeed = 0x53484939u;
-        private const string ScatterCullDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_09.bin";
-        private const string ScatterCullH8DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_09.h8dump";
         private const Allocator TransientVegetationCullingAllocator = Allocator.TempJob;
 #if UNITY_EDITOR
         private const string ComputeShaderAssetPath = "Assets/_Project/Art/Shaders/FloraCulling.compute";
@@ -335,7 +330,7 @@ namespace Hecton8.World
 
         [SerializeField]
         [Tooltip("Samples GPU cull counters into a 300-frame native ring for the Scatter Diagnostics window.")]
-        private bool _enableCullTelemetry = true;
+        private bool _enableCullTelemetry;
 
         [Header("Legacy Fallback")]
         [SerializeField]
@@ -3706,49 +3701,14 @@ namespace Hecton8.World
 
         private void DumpFloraGrowthTelemetry()
         {
+            if (_floraGrowthTelemetryDumped)
+                return;
+
             _floraGrowthTelemetryDumped = true;
             if (!TryReadFloraGrowthTelemetry(out NativeArray<FloraGrowthTelemetryEntry>.ReadOnly floraGrowthTelemetry))
                 return;
 
-            try
-            {
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string dumpPath = Path.Combine(projectRoot, FloraGrowthDumpRelativePath);
-                string dumpDirectory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(dumpDirectory))
-                    Directory.CreateDirectory(dumpDirectory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(FloraGrowthTelemetryDumpVersion);
-                    writer.Write(FloraGrowthTelemetryFrameCount);
-                    writer.Write(_floraGrowthTelemetryCursor);
-                    writer.Write(_instanceCount);
-
-                    for (int offset = 0; offset < FloraGrowthTelemetryFrameCount; offset++)
-                    {
-                        int readIndex = (_floraGrowthTelemetryCursor + offset) % FloraGrowthTelemetryFrameCount;
-                        FloraGrowthTelemetryEntry entry = floraGrowthTelemetry[readIndex];
-                        writer.Write(entry.FrameIndex);
-                        writer.Write(entry.InstanceCount);
-                        writer.Write(entry.SampleCount);
-                        writer.Write(entry.NegativeAgeCount);
-                        writer.Write(entry.NanAgeCount);
-                        writer.Write(entry.DirtyUpload);
-                        writer.Write(entry.MinAge01);
-                        writer.Write(entry.MaxAge01);
-                        writer.Write(entry.AgeHash);
-                        writer.Write(entry.Reserved0);
-                    }
-                }
-            }
-            catch (Exception)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError("[HectonIndirectVegetationRenderer] Failed to dump flora growth telemetry.", this);
-#endif
-            }
+            _ = floraGrowthTelemetry;
         }
 
         private bool BeginCullTelemetrySample()
@@ -3947,57 +3907,14 @@ namespace Hecton8.World
 
         private void DumpScatterCullTelemetry()
         {
-            _scatterCullTelemetryDumped = true;
-            if (!TryReadScatterCullTelemetry(out _))
+            if (_scatterCullTelemetryDumped)
                 return;
 
-            TryWriteScatterCullTelemetryDump(ScatterCullDumpRelativePath);
-            TryWriteScatterCullTelemetryDump(ScatterCullH8DumpRelativePath);
-        }
-
-        private void TryWriteScatterCullTelemetryDump(string relativePath)
-        {
+            _scatterCullTelemetryDumped = true;
             if (!TryReadScatterCullTelemetry(out NativeArray<ScatterCullTelemetryEntry>.ReadOnly scatterCullTelemetry))
                 return;
 
-            try
-            {
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string dumpPath = Path.Combine(projectRoot, relativePath);
-                string dumpDirectory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(dumpDirectory))
-                    Directory.CreateDirectory(dumpDirectory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(ScatterCullTelemetryFrameCount);
-                    writer.Write(_scatterCullTelemetryCursor);
-                    writer.Write(_instanceCount);
-
-                    for (int offset = 0; offset < ScatterCullTelemetryFrameCount; offset++)
-                    {
-                        int readIndex = (_scatterCullTelemetryCursor + offset) % ScatterCullTelemetryFrameCount;
-                        ScatterCullTelemetryEntry entry = scatterCullTelemetry[readIndex];
-                        writer.Write(entry.FrameIndex);
-                        writer.Write(entry.TotalInstances);
-                        writer.Write(entry.FrustumCulledCount);
-                        writer.Write(entry.OcclusionCulledCount);
-                        writer.Write(entry.VisibleCount);
-                        writer.Write(entry.DensityDecimationStep);
-                        writer.Write(entry.OverdrawWarning);
-                        writer.Write(entry.SystemStress01);
-                        writer.Write(entry.MaxDensity01);
-                        writer.Write(entry.Reserved0);
-                    }
-                }
-            }
-            catch (Exception)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError("[HectonIndirectVegetationRenderer] Failed to dump scatter cull telemetry.", this);
-#endif
-            }
+            _ = scatterCullTelemetry;
         }
 
         private bool EnsureTelemetryBuffer<T>(

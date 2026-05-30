@@ -165,8 +165,6 @@ namespace Hecton8.UI
         private char[] _dynamicTextBuffer = new char[256];
         // COLD ALLOC: char[2048] — PDA archive long-form summary staging buffer — owner: PDADataLogTab
         private char[] _summaryTextBuffer = new char[2048];
-        // COLD ALLOC: Matrix4x4[1] — PDA data-log hologram draw buffer — owner: PDADataLogTab
-        private readonly Matrix4x4[] _hologramMatrices = new Matrix4x4[1];
 
         // State
         private int _selectedIndex = -1;
@@ -2367,8 +2365,20 @@ namespace Hecton8.UI
             int yawIndex = ((int)math.floor(spinTurns * HologramYawLutSize)) & HologramYawLutMask;
             Quaternion rotation = playerCamera.transform.rotation * s_hologramYawLut[yawIndex];
 
-            _hologramMatrices[0] = Matrix4x4.TRS(worldPosition, rotation, Vector3.one * hologramScale);
-            UnityEngine.Graphics.DrawMeshInstanced(mesh, 0, _runtimeHologramMaterial, _hologramMatrices, 1, null, UnityEngine.Rendering.ShadowCastingMode.Off, false, gameObject.layer);
+            Matrix4x4 matrix = Matrix4x4.TRS(worldPosition, rotation, Vector3.one * hologramScale);
+            UnityEngine.Graphics.DrawMesh(
+                mesh,
+                matrix,
+                _runtimeHologramMaterial,
+                gameObject.layer,
+                null,
+                0,
+                null,
+                UnityEngine.Rendering.ShadowCastingMode.Off,
+                false,
+                null,
+                UnityEngine.Rendering.LightProbeUsage.Off,
+                null);
         }
 
         private static float EvaluateCheapWaveSigned(float phaseRadians)

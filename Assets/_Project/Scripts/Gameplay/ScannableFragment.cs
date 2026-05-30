@@ -176,6 +176,7 @@ namespace Hecton8.Gameplay
         private float _pendingScanVisualProgress;
         private float _pendingScanVisualPulse;
         private Vector3 _pendingCompleteParticlePosition;
+        private Mesh _cachedSharedMesh;
 
         /// <summary>
         /// Cached MaterialPropertyBlock for scan VFX.
@@ -235,6 +236,9 @@ namespace Hecton8.Gameplay
         /// <summary>Resolved scan duration in seconds.</summary>
         public float ScanDurationSeconds => ResolveScanDuration();
 
+        /// <summary>Cold-cached source mesh used by archaeology reconstruction.</summary>
+        public Mesh CachedSharedMesh => _cachedSharedMesh;
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
@@ -254,6 +258,7 @@ namespace Hecton8.Gameplay
                 fragmentRenderer = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
             }
 
+            CacheSharedMeshCold();
             CacheRegistryServicesCold();
             RebuildLocalizedTextCache();
 
@@ -267,6 +272,7 @@ namespace Hecton8.Gameplay
             InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
             RefreshDiscoveryHash();
+            CacheSharedMeshCold();
             RebuildLocalizedTextCache();
             ResetState();
             RegisterSpatialContact();
@@ -810,6 +816,22 @@ namespace Hecton8.Gameplay
             _audioService = GlobalRegistry.Audio;
             _localization = GlobalRegistry.LocalizationText;
             _loreDatabase = GlobalRegistry.LoreDatabase;
+        }
+
+        private void CacheSharedMeshCold()
+        {
+            if (_cachedSharedMesh != null)
+                return;
+
+            if (fragmentRenderer is SkinnedMeshRenderer skinnedMeshRenderer && skinnedMeshRenderer.sharedMesh != null)
+            {
+                _cachedSharedMesh = skinnedMeshRenderer.sharedMesh;
+                return;
+            }
+
+            MeshFilter meshFilter = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<MeshFilter>(transform);
+            if (meshFilter != null)
+                _cachedSharedMesh = meshFilter.sharedMesh;
         }
 
         private void TryRegisterHotSwapListener()

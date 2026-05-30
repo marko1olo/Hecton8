@@ -7111,51 +7111,51 @@ namespace Hecton8.Construction
             TryWriteDroneBlackBoxFile(DroneFleetBlackBoxH8DumpPath, blackBox);
         }
 
-        private static void TryWriteDroneBlackBoxFile(string relativePath, NativeArray<DroneFleetBlackBoxEntry> blackBox)
+        private static unsafe void TryWriteDroneBlackBoxFile(string relativePath, NativeArray<DroneFleetBlackBoxEntry> blackBox)
         {
             try
             {
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string dumpPath = Path.Combine(projectRoot, relativePath);
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                const int headerBytes = 8;
+                const int expectedEntryBytes = 80;
+                int entryBytes = UnsafeUtility.SizeOf<DroneFleetBlackBoxEntry>();
+                if (entryBytes != expectedEntryBytes)
+                    return;
 
-                using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(DroneFleetBlackBoxFrameCapacity);
-                writer.Write(s_DroneBlackBoxCursor);
-                for (int i = 0; i < blackBox.Length; i++)
-                    WriteBlackBoxEntry(writer, blackBox[i]);
+                int byteCount = headerBytes + blackBox.Length * entryBytes;
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(DroneFleetManager),
+                    "DroneFleetBlackBoxDumpPayload",
+                    NativeArrayOptions.ClearMemory);
+                try
+                {
+                    byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    Span<byte> header = new Span<byte>(destination, headerBytes);
+                    WriteInt32LittleEndian(header, 0, DroneFleetBlackBoxFrameCapacity);
+                    WriteInt32LittleEndian(header, 4, s_DroneBlackBoxCursor);
+                    UnsafeUtility.MemCpy(destination + headerBytes, NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox), blackBox.Length * entryBytes);
+                    NativeFaultDumpWriter.TryWriteAll(relativePath, payload, byteCount);
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(DroneFleetManager),
+                        "DroneFleetBlackBoxDumpPayload");
+                }
             }
             catch (System.Exception)
             {
             }
         }
 
-        private static void WriteBlackBoxEntry(BinaryWriter writer, in DroneFleetBlackBoxEntry entry)
+        private static void WriteInt32LittleEndian(Span<byte> destination, int offset, int value)
         {
-            writer.Write(entry.Frame);
-            writer.Write(entry.ActiveCount);
-            writer.Write(entry.StateHash);
-            writer.Write(entry.Flags);
-            writer.Write(entry.DeltaTime);
-            writer.Write(entry.DockingAborts);
-            writer.Write(entry.PathSolves);
-            writer.Write(entry.PathFailures);
-            writer.Write(entry.PathIterations);
-            writer.Write(entry.AveragePathfindingTimeMs);
-            writer.Write(entry.TasksCompleted);
-            WriteFloat3(writer, entry.FirstPosition);
-            WriteFloat3(writer, entry.BoundsCenter);
-            WriteFloat3(writer, entry.BoundsExtents);
-        }
-
-        private static void WriteFloat3(BinaryWriter writer, float3 value)
-        {
-            writer.Write(value.x);
-            writer.Write(value.y);
-            writer.Write(value.z);
+            uint bits = unchecked((uint)value);
+            destination[offset] = (byte)bits;
+            destination[offset + 1] = (byte)(bits >> 8);
+            destination[offset + 2] = (byte)(bits >> 16);
+            destination[offset + 3] = (byte)(bits >> 24);
         }
 
         private static void WriteDefaultDroneTuningConstants()

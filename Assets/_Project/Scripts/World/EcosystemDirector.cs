@@ -3956,7 +3956,7 @@ namespace Hecton8.World
             float liveCorpseInfluence01 = ResolveCorpseSpawnInfluence01(worldPosition, radiusMeters);
             PersistentWorldRegistry registry = _cachedPersistentWorldRegistry;
             float persistentWhaleFallInfluence01 = registry != null
-                ? registry.ResolveWhaleFallSpawnInfluence01(worldPosition, ReadDispatcherTimeSeconds(), radiusMeters)
+                ? registry.UpdateWhaleFallSpawnInfluence01(worldPosition, ReadDispatcherTimeSeconds(), radiusMeters)
                 : 0f;
             return math.max(liveCorpseInfluence01, persistentWhaleFallInfluence01);
         }
@@ -6172,30 +6172,13 @@ namespace Hecton8.World
 
             try
             {
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string dumpPath = Path.Combine(projectRoot, MacroSwarmTelemetryDumpRelativePath);
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                if (!TryWriteTelemetryRingDump(
+                    MacroSwarmTelemetryDumpRelativePath,
+                    MacroSwarmTelemetryDumpMagic,
+                    macroSwarmBlackBox,
+                    _macroSwarmBlackBoxCursor))
                 {
-                    int entrySize = UnsafeUtility.SizeOf<MacroSwarmTelemetryEntry>();
-                    int entryCapacity = macroSwarmBlackBox.Length;
-                    int entryCount = math.min(math.max(0, _macroSwarmBlackBoxCursor), entryCapacity);
-                    int oldestIndex = entryCount == entryCapacity ? _macroSwarmBlackBoxCursor % entryCapacity : 0;
-                    const int headerBytes = sizeof(ulong) + (sizeof(int) * 4);
-                    byte* headerPtr = stackalloc byte[headerBytes];
-                    UnsafeUtility.WriteArrayElement<ulong>(headerPtr, 0, MacroSwarmTelemetryDumpMagic);
-                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong), 0, entryCount);
-                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + sizeof(int), 0, entrySize);
-                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + (sizeof(int) * 2), 0, oldestIndex);
-                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + (sizeof(int) * 3), 0, entryCapacity);
-                    stream.Write(new ReadOnlySpan<byte>(headerPtr, headerBytes));
-                    if (entryCount <= 0)
-                        return;
-
-                    WriteTelemetryRingEntries(stream, macroSwarmBlackBox, entrySize, entryCount, oldestIndex);
+                    GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)MacroSwarmSaveHeaderMarker));
                 }
             }
             catch (Exception)
@@ -6373,21 +6356,63 @@ namespace Hecton8.World
             hi = (hi & ~(0x0Fu << hiShift)) | (hiCount << hiShift);
         }
 
-        private static unsafe void WriteTelemetryRingEntries<T>(
-            FileStream stream,
+        private static unsafe bool TryWriteTelemetryRingDump<T>(
+            string dumpPath,
+            ulong magic,
+            NativeArray<T>.ReadOnly entries,
+            int cursor) where T : struct
+        {
+            if (string.IsNullOrEmpty(dumpPath) || !entries.IsCreated)
+                return false;
+
+            int entryCapacity = entries.Length;
+            if (entryCapacity <= 0)
+                return false;
+
+            int entrySize = UnsafeUtility.SizeOf<T>();
+            int entryCount = math.min(math.max(0, cursor), entryCapacity);
+            int oldestIndex = entryCount == entryCapacity ? cursor % entryCapacity : 0;
+            const int headerBytes = sizeof(ulong) + (sizeof(int) * 4);
+            int payloadBytes = headerBytes + (entryCount * entrySize);
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                payloadBytes,
+                nameof(EcosystemDirector),
+                "EcosystemTelemetryRingDumpPayload");
+            try
+            {
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                UnsafeUtility.WriteArrayElement<ulong>(payloadPtr, 0, magic);
+                UnsafeUtility.WriteArrayElement<int>(payloadPtr + sizeof(ulong), 0, entryCount);
+                UnsafeUtility.WriteArrayElement<int>(payloadPtr + sizeof(ulong) + sizeof(int), 0, entrySize);
+                UnsafeUtility.WriteArrayElement<int>(payloadPtr + sizeof(ulong) + (sizeof(int) * 2), 0, oldestIndex);
+                UnsafeUtility.WriteArrayElement<int>(payloadPtr + sizeof(ulong) + (sizeof(int) * 3), 0, entryCapacity);
+
+                CopyTelemetryRingEntries(payloadPtr + headerBytes, entries, entrySize, entryCount, oldestIndex);
+                return NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, payloadBytes);
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(EcosystemDirector),
+                    "EcosystemTelemetryRingDumpPayload");
+            }
+        }
+
+        private static unsafe void CopyTelemetryRingEntries<T>(
+            byte* destination,
             NativeArray<T>.ReadOnly entries,
             int entrySize,
             int entryCount,
             int oldestIndex) where T : struct
         {
-            if (!entries.IsCreated || entrySize <= 0 || entryCount <= 0)
+            if (destination == null || !entries.IsCreated || entrySize <= 0 || entryCount <= 0)
                 return;
 
             int entryCapacity = entries.Length;
             if (entryCapacity <= 0)
                 return;
 
-            byte* entryPtr = stackalloc byte[entrySize];
             for (int i = 0; i < entryCount; i++)
             {
                 int entryIndex = oldestIndex + i;
@@ -6395,8 +6420,7 @@ namespace Hecton8.World
                     entryIndex -= entryCapacity;
 
                 T entry = entries[entryIndex];
-                UnsafeUtility.CopyStructureToPtr(ref entry, entryPtr);
-                stream.Write(new ReadOnlySpan<byte>(entryPtr, entrySize));
+                UnsafeUtility.CopyStructureToPtr(ref entry, destination + (i * entrySize));
             }
         }
 
@@ -6408,30 +6432,13 @@ namespace Hecton8.World
 
             try
             {
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string dumpPath = Path.Combine(projectRoot, FaunaGeneticsTelemetryDumpRelativePath);
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                if (!TryWriteTelemetryRingDump(
+                    FaunaGeneticsTelemetryDumpRelativePath,
+                    FaunaGeneticsTelemetryDumpMagic,
+                    faunaGeneticsTelemetry,
+                    _faunaGeneticsTelemetryCursor))
                 {
-                    int entrySize = UnsafeUtility.SizeOf<GeneticsTelemetryEntry>();
-                    int entryCapacity = faunaGeneticsTelemetry.Length;
-                    int entryCount = math.min(math.max(0, _faunaGeneticsTelemetryCursor), entryCapacity);
-                    int oldestIndex = entryCount == entryCapacity ? _faunaGeneticsTelemetryCursor % entryCapacity : 0;
-                    const int headerBytes = sizeof(ulong) + (sizeof(int) * 4);
-                    byte* headerPtr = stackalloc byte[headerBytes];
-                    UnsafeUtility.WriteArrayElement<ulong>(headerPtr, 0, FaunaGeneticsTelemetryDumpMagic);
-                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong), 0, entryCount);
-                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + sizeof(int), 0, entrySize);
-                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + (sizeof(int) * 2), 0, oldestIndex);
-                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + (sizeof(int) * 3), 0, entryCapacity);
-                    stream.Write(new ReadOnlySpan<byte>(headerPtr, headerBytes));
-                    if (entryCount <= 0)
-                        return;
-
-                    WriteTelemetryRingEntries(stream, faunaGeneticsTelemetry, entrySize, entryCount, oldestIndex);
+                    GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)FaunaGenomeSaveHeaderMarker));
                 }
             }
             catch (Exception)
@@ -6448,30 +6455,13 @@ namespace Hecton8.World
 
             try
             {
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string dumpPath = Path.Combine(projectRoot, FaunaMutationTelemetryDumpRelativePath);
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                if (!TryWriteTelemetryRingDump(
+                    FaunaMutationTelemetryDumpRelativePath,
+                    FaunaMutationTelemetryDumpMagic,
+                    faunaMutationBlackBox,
+                    _faunaMutationBlackBoxCursor))
                 {
-                    int entrySize = UnsafeUtility.SizeOf<FaunaMutationTelemetryEntry>();
-                    int entryCapacity = faunaMutationBlackBox.Length;
-                    int entryCount = math.min(math.max(0, _faunaMutationBlackBoxCursor), entryCapacity);
-                    int oldestIndex = entryCount == entryCapacity ? _faunaMutationBlackBoxCursor % entryCapacity : 0;
-                    const int headerBytes = sizeof(ulong) + (sizeof(int) * 4);
-                    byte* headerPtr = stackalloc byte[headerBytes];
-                    UnsafeUtility.WriteArrayElement<ulong>(headerPtr, 0, FaunaMutationTelemetryDumpMagic);
-                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong), 0, entryCount);
-                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + sizeof(int), 0, entrySize);
-                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + (sizeof(int) * 2), 0, oldestIndex);
-                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + (sizeof(int) * 3), 0, entryCapacity);
-                    stream.Write(new ReadOnlySpan<byte>(headerPtr, headerBytes));
-                    if (entryCount <= 0)
-                        return;
-
-                    WriteTelemetryRingEntries(stream, faunaMutationBlackBox, entrySize, entryCount, oldestIndex);
+                    GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)_FaunaMutationTelemetryHash));
                 }
             }
             catch (Exception)
@@ -6681,6 +6671,7 @@ namespace Hecton8.World
                 _floraPredatorAupHits);
             int uploadCount = 0;
             bool uploadLocked = false;
+            bool publishEmptyFallback = false;
             NativeArray<float4> upload = default;
             float4[] uploadSnapshot = _floraPredatorAupUploadSnapshot;
             if (uploadSnapshot == null || uploadSnapshot.Length < FloraPredatorAupBufferCapacity)
@@ -6695,29 +6686,29 @@ namespace Hecton8.World
                 uploadLocked = _floraPredatorAupUpload.TryAcquireWriteLock(SystemID.AIEcology, out upload);
                 if (!uploadLocked || !upload.IsCreated)
                 {
-                    PublishFloraPredatorAupGlobalsImmediate(0);
-                    PublishApexPresenceFakeImmediate(IsApexInSector(queryOrigin));
-                    return;
+                    publishEmptyFallback = true;
                 }
-
-                int uploadCapacity = math.min(FloraPredatorAupBufferCapacity, upload.Length);
-                for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+                else
                 {
-                    SpatialQueryHit hit = _floraPredatorAupHits[hitIndex];
-                    IFaunaSpatialContact faunaContact = hit.Owner as IFaunaSpatialContact;
-                    if (faunaContact == null || faunaContact.IsDead || !faunaContact.IsApexPredatorContact)
-                        continue;
-
-                    if (uploadCount < uploadCapacity)
+                    int uploadCapacity = math.min(FloraPredatorAupBufferCapacity, upload.Length);
+                    for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
                     {
-                        float4 packedAup = new float4(
-                            hit.Position.x,
-                            hit.Position.y,
-                            hit.Position.z,
-                            FloraPredatorStealthRadiusMeters);
-                        upload[uploadCount] = packedAup;
-                        uploadSnapshot[uploadCount] = packedAup;
-                        uploadCount++;
+                        SpatialQueryHit hit = _floraPredatorAupHits[hitIndex];
+                        IFaunaSpatialContact faunaContact = hit.Owner as IFaunaSpatialContact;
+                        if (faunaContact == null || faunaContact.IsDead || !faunaContact.IsApexPredatorContact)
+                            continue;
+
+                        if (uploadCount < uploadCapacity)
+                        {
+                            float4 packedAup = new float4(
+                                hit.Position.x,
+                                hit.Position.y,
+                                hit.Position.z,
+                                FloraPredatorStealthRadiusMeters);
+                            upload[uploadCount] = packedAup;
+                            uploadSnapshot[uploadCount] = packedAup;
+                            uploadCount++;
+                        }
                     }
                 }
             }
@@ -6725,6 +6716,13 @@ namespace Hecton8.World
             {
                 if (uploadLocked)
                     _floraPredatorAupUpload.ReleaseWriteLock(SystemID.AIEcology);
+            }
+
+            if (publishEmptyFallback)
+            {
+                PublishFloraPredatorAupGlobalsImmediate(0);
+                PublishApexPresenceFakeImmediate(IsApexInSector(queryOrigin));
+                return;
             }
 
             if (uploadCount > 0)
@@ -7213,29 +7211,41 @@ namespace Hecton8.World
             if (!_pendingBiomassImpacts.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<BiomassImpactEvent> pendingImpacts))
                 return false;
 
+            bool queued = false;
+            bool publishOverflowWarning = false;
+            int overflowCount = 0;
             try
             {
                 if (_pendingBiomassImpactCount >= pendingImpacts.Length)
                 {
-                    GlobalTelemetryBus.PublishPerformanceWarning(
-                        _BiomassTelemetryHash,
-                        _EcosystemDirectorContextHash,
-                        _pendingBiomassImpactCount);
-                    return false;
+                    publishOverflowWarning = true;
+                    overflowCount = _pendingBiomassImpactCount;
                 }
-
-                pendingImpacts[_pendingBiomassImpactCount++] = new BiomassImpactEvent
+                else
                 {
-                    MacroCellCoord = macroCellCoord,
-                    Amount = math.saturate(amount),
-                    Kind = kind
-                };
-                return true;
+                    pendingImpacts[_pendingBiomassImpactCount++] = new BiomassImpactEvent
+                    {
+                        MacroCellCoord = macroCellCoord,
+                        Amount = math.saturate(amount),
+                        Kind = kind
+                    };
+                    queued = true;
+                }
             }
             finally
             {
                 _pendingBiomassImpacts.ReleaseWriteLock(SystemID.AIEcology);
             }
+
+            if (publishOverflowWarning)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _BiomassTelemetryHash,
+                    _EcosystemDirectorContextHash,
+                    overflowCount);
+            }
+
+            return queued;
         }
 
         private void ApplyPendingBiomassImpacts()
@@ -7492,30 +7502,13 @@ namespace Hecton8.World
 
             try
             {
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string dumpPath = Path.Combine(projectRoot, BiomassTelemetryDumpRelativePath);
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                if (!TryWriteTelemetryRingDump(
+                    BiomassTelemetryDumpRelativePath,
+                    BiomassTelemetryDumpMagic,
+                    biomassBlackBox,
+                    _biomassBlackBoxCursor))
                 {
-                    int entrySize = UnsafeUtility.SizeOf<BiomassTelemetryEntry>();
-                    int entryCapacity = biomassBlackBox.Length;
-                    int entryCount = math.min(math.max(0, _biomassBlackBoxCursor), entryCapacity);
-                    int oldestIndex = entryCount == entryCapacity ? _biomassBlackBoxCursor % entryCapacity : 0;
-                    const int headerBytes = sizeof(ulong) + (sizeof(int) * 4);
-                    byte* headerPtr = stackalloc byte[headerBytes];
-                    UnsafeUtility.WriteArrayElement<ulong>(headerPtr, 0, BiomassTelemetryDumpMagic);
-                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong), 0, entryCount);
-                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + sizeof(int), 0, entrySize);
-                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + (sizeof(int) * 2), 0, oldestIndex);
-                    UnsafeUtility.WriteArrayElement<int>(headerPtr + sizeof(ulong) + (sizeof(int) * 3), 0, entryCapacity);
-                    stream.Write(new ReadOnlySpan<byte>(headerPtr, headerBytes));
-                    if (entryCount <= 0)
-                        return;
-
-                    WriteTelemetryRingEntries(stream, biomassBlackBox, entrySize, entryCount, oldestIndex);
+                    GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)_BiomassTelemetryHash));
                 }
             }
             catch (Exception)

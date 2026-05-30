@@ -54,7 +54,6 @@ namespace Hecton8.Equipment.Auxiliary
         public const BufferID TelemetryRing = BufferID.ShinobuAuxiliaryTelemetryRing;
         public const BufferID TelemetryCursor = BufferID.ShinobuAuxiliaryTelemetryCursor;
         public const BufferID Profiles = BufferID.ShinobuAuxiliaryProfiles;
-        public const BufferID CsvScratch = BufferID.ShinobuAuxiliaryCsvScratch;
         public const BufferID ActiveEquipmentState = BufferID.ShinobuAuxiliaryActiveEquipmentState;
         public const BufferID TetherAnchors = BufferID.ShinobuAuxiliaryTetherAnchors;
     }

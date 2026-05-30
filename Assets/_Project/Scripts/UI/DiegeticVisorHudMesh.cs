@@ -8,6 +8,7 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -779,7 +780,7 @@ namespace Hecton8.UI
             DumpBlackBox();
         }
 
-        private void DumpBlackBox()
+        private unsafe void DumpBlackBox()
         {
             IDataVault vault = _dataVault;
             if (_blackBoxDumped ||
@@ -790,34 +791,37 @@ namespace Hecton8.UI
                 return;
             }
 
+            NativeArray<byte> payload = default;
             try
             {
                 string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string directory = Path.Combine(root, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, "Dump_UI_DIEGETIC_HUD.bin");
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                string path = Path.Combine(root, "Docs", "AgentLogs", "Dump_UI_DIEGETIC_HUD.bin");
+                const int headerBytes = 8;
+                const int rowBytes = 40;
+                int byteCount = headerBytes + (BlackBoxCapacity * rowBytes);
+                payload = new NativeArray<byte>(
+                    byteCount,
+                    Allocator.Temp,
+                    NativeArrayOptions.UninitializedMemory);
+
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                Span<byte> header = new Span<byte>(payloadPtr, headerBytes);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(0, 4), BlackBoxCapacity);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), _blackBoxCursor);
+
+                for (int i = 0; i < BlackBoxCapacity; i++)
                 {
-                    Span<byte> header = stackalloc byte[8];
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(0, 4), BlackBoxCapacity);
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), _blackBoxCursor);
-                    stream.Write(header);
-
-                    Span<byte> row = stackalloc byte[40];
-                    for (int i = 0; i < BlackBoxCapacity; i++)
+                    if (!TryReadBlackBoxEntry(vault, i, out DiegeticHudTelemetryEntry entry))
                     {
-                        if (!TryReadBlackBoxEntry(vault, i, out DiegeticHudTelemetryEntry entry))
-                        {
-                            _blackBoxDumpQueued = true;
-                            return;
-                        }
-
-                        WriteDiegeticHudTelemetryEntry(row, in entry);
-                        stream.Write(row);
+                        _blackBoxDumpQueued = true;
+                        return;
                     }
+
+                    Span<byte> row = new Span<byte>(payloadPtr + headerBytes + (i * rowBytes), rowBytes);
+                    WriteDiegeticHudTelemetryEntry(row, in entry);
                 }
 
-                _blackBoxDumped = true;
+                _blackBoxDumped = NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
             }
             catch (IOException)
             {
@@ -836,6 +840,11 @@ namespace Hecton8.UI
             }
             catch (NotSupportedException)
             {
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 

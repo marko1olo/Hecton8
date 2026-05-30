@@ -38,9 +38,6 @@ namespace Hecton8.Physics
             VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.Tuning) |
             VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.SdfDescriptor) |
             VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.SdfVoxels);
-        private static readonly ulong TelemetryMutationGuardMask =
-            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.TelemetryRing) |
-            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.ShockwaveCounters);
         private static readonly ulong CounterMutationGuardMask =
             VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.ShockwaveCounters);
         private static readonly ulong ColdInitMutationGuardMask =
@@ -55,13 +52,6 @@ namespace Hecton8.Physics
             VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.Tuning) |
             VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.SdfDescriptor) |
             VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.SdfVoxels);
-#if UNITY_EDITOR
-        private static readonly ulong CsvImportMutationGuardMask =
-            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.CsvScratch) |
-            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.OrdnanceProfiles) |
-            VaultMutationGuardBit(AbyssalCavitationVaultBufferIds.ShockwaveCounters);
-#endif
-
         private static IDataVault _vault;
         private static bool _initialized;
 #if UNITY_EDITOR
@@ -89,9 +79,6 @@ namespace Hecton8.Physics
         private static VaultGenerationHandle<CavitationVisualSphereDTO> _visualHandle;
         private static VaultGenerationHandle<ShockwaveTelemetryEntry> _telemetryHandle;
         private static VaultGenerationHandle<OrdnanceProfileDTO> _profileHandle;
-#if UNITY_EDITOR
-        private static VaultGenerationHandle<byte> _csvScratchHandle;
-#endif
         private static VaultGenerationHandle<AbyssalCavitationTuningDTO> _tuningHandle;
         private static VaultGenerationHandle<AbyssalCavitationSdfVolumeDTO> _sdfDescriptorHandle;
         private static VaultGenerationHandle<sbyte> _sdfVoxelsHandle;
@@ -193,13 +180,6 @@ namespace Hecton8.Physics
                 AbyssalCavitationConstants.OrdnanceProfileCapacity,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
-#if UNITY_EDITOR
-            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(
-                AbyssalCavitationVaultBufferIds.CsvScratch,
-                AbyssalCavitationConstants.CsvScratchBytes,
-                OwnerSystem,
-                NativeArrayOptions.UninitializedMemory);
-#endif
             _tuningHandle = vault.EnsureGenerationHandle<AbyssalCavitationTuningDTO>(
                 AbyssalCavitationVaultBufferIds.Tuning,
                 1,
@@ -296,9 +276,6 @@ namespace Hecton8.Physics
                    CanReadVaultDescriptor(vault, in _visualHandle, AbyssalCavitationVaultBufferIds.VisualSpheres, AbyssalCavitationConstants.MaxVisualSpheres) &&
                    CanReadVaultDescriptor(vault, in _telemetryHandle, AbyssalCavitationVaultBufferIds.TelemetryRing, AbyssalCavitationConstants.TelemetryCapacity) &&
                    CanReadVaultDescriptor(vault, in _profileHandle, AbyssalCavitationVaultBufferIds.OrdnanceProfiles, AbyssalCavitationConstants.OrdnanceProfileCapacity) &&
-#if UNITY_EDITOR
-                   CanReadVaultDescriptor(vault, in _csvScratchHandle, AbyssalCavitationVaultBufferIds.CsvScratch, AbyssalCavitationConstants.CsvScratchBytes) &&
-#endif
                    CanReadVaultDescriptor(vault, in _tuningHandle, AbyssalCavitationVaultBufferIds.Tuning, 1) &&
                    CanReadVaultDescriptor(vault, in _sdfDescriptorHandle, AbyssalCavitationVaultBufferIds.SdfDescriptor, AbyssalCavitationConstants.SdfDescriptorCount) &&
                    CanReadVaultDescriptor(vault, in _sdfVoxelsHandle, AbyssalCavitationVaultBufferIds.SdfVoxels, AbyssalCavitationConstants.SdfVoxelCapacity);
@@ -315,7 +292,7 @@ namespace Hecton8.Physics
                    handle.BufferID == (uint)bufferId &&
                    handle.SystemID == (uint)OwnerSystem &&
                    handle.Generation != 0u &&
-                   vault.TryReadHandle(in handle, out NativeArray<T> buffer) &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
         }
@@ -336,6 +313,26 @@ namespace Hecton8.Physics
             }
 
             return buffer;
+        }
+
+        private static bool TryOpenVaultReadOnlyView<T>(in VaultGenerationHandle<T> handle, out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            return TryOpenVaultReadOnlyView(_vault, in handle, out buffer);
+        }
+
+        private static bool TryOpenVaultReadOnlyView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   IsVaultHandleCreated(in handle) &&
+                   handle.SystemID == (uint)OwnerSystem &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
         }
 
         private static bool TryAcquireSimulationGuard(IDataVault vault)
@@ -828,27 +825,33 @@ namespace Hecton8.Physics
         private static void PatchLatestTelemetryCpu(float microseconds)
         {
             IDataVault vault = _vault;
-            if (!TryAcquireCavitationMutationGuard(vault, TelemetryMutationGuardMask))
-                return;
-
-            try
-            {
-            NativeArray<ShockwaveTelemetryEntry> ring = OpenVaultView(in _telemetryHandle);
-            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
-            if (!ring.IsCreated || !counters.IsCreated || ring.Length == 0)
+            if (!TryOpenVaultReadOnlyView(in _counterHandle, out NativeArray<ShockwaveCounterBlock>.ReadOnly counters) ||
+                counters.Length <= AbyssalCavitationCounterIndex.TelemetryHead)
                 return;
 
             int head = counters[AbyssalCavitationCounterIndex.TelemetryHead].Value;
-            int index = head - 1;
-            if (index < 0)
-                index = ring.Length - 1;
-            ShockwaveTelemetryEntry entry = ring[index];
-            entry.CpuMicroseconds = math.isfinite(microseconds) ? math.max(0f, microseconds) : 0f;
-            ring[index] = entry;
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in _telemetryHandle, OwnerSystem, out NativeArray<ShockwaveTelemetryEntry> ring))
+            {
+                return;
+            }
+
+            try
+            {
+                if (!ring.IsCreated || ring.Length == 0)
+                    return;
+
+                int index = head - 1;
+                if (index < 0)
+                    index = ring.Length - 1;
+
+                ShockwaveTelemetryEntry entry = ring[index];
+                entry.CpuMicroseconds = math.isfinite(microseconds) ? math.max(0f, microseconds) : 0f;
+                ring[index] = entry;
             }
             finally
             {
-                vault.ReleaseMutationGuard(TelemetryMutationGuardMask);
+                vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystem);
             }
         }
 
@@ -1065,46 +1068,34 @@ namespace Hecton8.Physics
             return TryLoadOrdnanceCsv(legacyPath);
         }
 
-        public static unsafe bool TryLoadOrdnanceCsv(string csvPath)
+        public static bool TryLoadOrdnanceCsv(string csvPath)
         {
             if (!EnsureInitialized() || _jobScheduled || string.IsNullOrEmpty(csvPath) || !File.Exists(csvPath))
                 return false;
 
             IDataVault vault = _vault;
-            if (!TryAcquireCavitationMutationGuard(vault, CsvImportMutationGuardMask))
-                return false;
-
-            try
-            {
-            NativeArray<byte> scratch = OpenVaultView(vault, in _csvScratchHandle);
-            NativeArray<OrdnanceProfileDTO> profiles = OpenVaultView(vault, in _profileHandle);
-            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(vault, in _counterHandle);
-            if (!scratch.IsCreated || !profiles.IsCreated || !counters.IsCreated)
-                return false;
+            Span<byte> csvScratch = stackalloc byte[AbyssalCavitationConstants.CsvScratchBytes];
+            Span<OrdnanceProfileDTO> profileScratch = stackalloc OrdnanceProfileDTO[AbyssalCavitationConstants.OrdnanceProfileCapacity];
 
             int bytesRead = 0;
             try
             {
-                using (FileStream stream = File.OpenRead(csvPath))
+                using FileStream stream = File.OpenRead(csvPath);
+                if (stream.Length <= 0L || stream.Length > csvScratch.Length)
+                    return false;
+
+                int targetLength = (int)stream.Length;
+                while (bytesRead < targetLength)
                 {
-                    if (stream.Length > scratch.Length)
-                        return false;
+                    int read = stream.Read(csvScratch.Slice(bytesRead, targetLength - bytesRead));
+                    if (read <= 0)
+                        break;
 
-                    int targetLength = (int)stream.Length;
-                    unsafe
-                    {
-                        byte* scratchPtr = (byte*)scratch.GetUnsafePtr();
-                        Span<byte> destination = new Span<byte>(scratchPtr, targetLength);
-                        while (bytesRead < targetLength)
-                        {
-                            int read = stream.Read(destination.Slice(bytesRead));
-                            if (read <= 0)
-                                break;
-
-                            bytesRead += read;
-                        }
-                    }
+                    bytesRead += read;
                 }
+
+                if (bytesRead != targetLength)
+                    return false;
             }
             catch (Exception)
             {
@@ -1114,25 +1105,69 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            int parsed;
-            unsafe
+            int parsed = AbyssalCavitationOrdnanceCsv.Parse(csvScratch.Slice(0, bytesRead), profileScratch);
+            if (parsed <= 0)
+                return false;
+
+            if (!TryCommitOrdnanceProfilesCsv(vault, profileScratch, parsed) ||
+                !TryCommitOrdnanceCsvCounter(vault, parsed))
             {
-                byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
-                ReadOnlySpan<byte> csvBytesView = System.Runtime.InteropServices.MemoryMarshal.CreateReadOnlySpan(
-                    ref UnsafeUtility.AsRef<byte>(ptr),
-                    bytesRead);
-                parsed = AbyssalCavitationOrdnanceCsv.Parse(csvBytesView, profiles);
+                return false;
             }
 
-            ShockwaveCounterBlock block = counters[AbyssalCavitationCounterIndex.CsvProfileCount];
-            block.Value = parsed;
-            counters[AbyssalCavitationCounterIndex.CsvProfileCount] = block;
-            _csvLoaded = parsed > 0;
-            return _csvLoaded;
+            _csvLoaded = true;
+            return true;
+        }
+
+        private static bool TryCommitOrdnanceProfilesCsv(IDataVault vault, ReadOnlySpan<OrdnanceProfileDTO> profileScratch, int count)
+        {
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in _profileHandle, OwnerSystem, out NativeArray<OrdnanceProfileDTO> profiles))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!profiles.IsCreated || profiles.Length == 0)
+                    return false;
+
+                for (int i = 0; i < profiles.Length; i++)
+                    profiles[i] = default;
+
+                int copyLength = math.min(math.min(profiles.Length, profileScratch.Length), count);
+                for (int i = 0; i < copyLength; i++)
+                    profiles[i] = profileScratch[i];
+
+                return true;
             }
             finally
             {
-                vault.ReleaseMutationGuard(CsvImportMutationGuardMask);
+                vault.ReleaseWriteLock(in _profileHandle, OwnerSystem);
+            }
+        }
+
+        private static bool TryCommitOrdnanceCsvCounter(IDataVault vault, int parsed)
+        {
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in _counterHandle, OwnerSystem, out NativeArray<ShockwaveCounterBlock> counters))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!counters.IsCreated || counters.Length <= AbyssalCavitationCounterIndex.CsvProfileCount)
+                    return false;
+
+                ShockwaveCounterBlock block = counters[AbyssalCavitationCounterIndex.CsvProfileCount];
+                block.Value = parsed;
+                counters[AbyssalCavitationCounterIndex.CsvProfileCount] = block;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _counterHandle, OwnerSystem);
             }
         }
 #endif
@@ -1143,10 +1178,13 @@ namespace Hecton8.Physics
             if (!_initialized || _vault == null || _jobScheduled || !IsVaultHandleCreated(in _telemetryHandle) || !IsVaultHandleCreated(in _counterHandle))
                 return false;
 
-            NativeArray<ShockwaveTelemetryEntry> ring = OpenVaultView(in _telemetryHandle);
-            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
-            if (!ring.IsCreated || !counters.IsCreated || ring.Length == 0)
+            if (!TryOpenVaultReadOnlyView(in _telemetryHandle, out NativeArray<ShockwaveTelemetryEntry>.ReadOnly ring) ||
+                !TryOpenVaultReadOnlyView(in _counterHandle, out NativeArray<ShockwaveCounterBlock>.ReadOnly counters) ||
+                ring.Length == 0 ||
+                counters.Length <= AbyssalCavitationCounterIndex.TelemetryHead)
+            {
                 return false;
+            }
 
             int head = counters[AbyssalCavitationCounterIndex.TelemetryHead].Value;
             int index = head - 1;
@@ -1169,10 +1207,14 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            NativeArray<ShockwaveTelemetryEntry> ring = OpenVaultView(in _telemetryHandle);
-            NativeArray<ShockwaveCounterBlock> counters = OpenVaultView(in _counterHandle);
-            if (!ring.IsCreated || !counters.IsCreated || ring.Length == 0 || ageFromLatest >= ring.Length)
+            if (!TryOpenVaultReadOnlyView(in _telemetryHandle, out NativeArray<ShockwaveTelemetryEntry>.ReadOnly ring) ||
+                !TryOpenVaultReadOnlyView(in _counterHandle, out NativeArray<ShockwaveCounterBlock>.ReadOnly counters) ||
+                ring.Length == 0 ||
+                ageFromLatest >= ring.Length ||
+                counters.Length <= AbyssalCavitationCounterIndex.TelemetryHead)
+            {
                 return false;
+            }
 
             int head = counters[AbyssalCavitationCounterIndex.TelemetryHead].Value;
             int index = head - 1 - ageFromLatest;
@@ -1188,9 +1230,11 @@ namespace Hecton8.Physics
             if (!IsRuntimeReady || _jobScheduled || !_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
                 return false;
 
-            NativeArray<ShockwaveTelemetryEntry> ring = OpenVaultView(in _telemetryHandle);
-            if (!ring.IsCreated || ring.Length <= 0)
+            if (!TryOpenVaultReadOnlyView(in _telemetryHandle, out NativeArray<ShockwaveTelemetryEntry>.ReadOnly ring) ||
+                ring.Length <= 0)
+            {
                 return false;
+            }
 
             int sampleIndex = (int)(_frameIndex % (uint)ring.Length);
             ShockwaveTelemetryEntry sample = ring[sampleIndex];

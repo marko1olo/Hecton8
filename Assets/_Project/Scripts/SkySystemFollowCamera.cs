@@ -42,6 +42,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
     private bool _registeredForTick;
     private bool _registeredForLateFrame;
     private bool _registeredHotSwapListener;
+    private bool _runtimeActive;
     private Vector3 _pendingFollowPosition;
     private bool _hasPendingFollowPosition;
     private IAtmosphereReadModel _cachedAtmosphereReadModel;
@@ -54,6 +55,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
             return;
 #endif
 
+        _runtimeActive = Application.isPlaying;
         CaptureFixedYPosition();
         CacheRegistryServicesCold();
         TryRegisterHotSwapListener();
@@ -77,6 +79,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
     {
         TryUnregisterFromTick();
         TryUnregisterHotSwapListener();
+        _runtimeActive = false;
 #if UNITY_EDITOR
         EditorApplication.update -= EditorTick;
 #endif
@@ -100,7 +103,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
     /// <inheritdoc />
     public void Tick(float deltaTime)
     {
-        if (!Application.isPlaying || !followInPlayMode)
+        if (!_runtimeActive || !followInPlayMode)
             return;
 
         QueueFollow();
@@ -117,7 +120,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable, ILateFram
 
     private void TryRegisterForTick()
     {
-        if (_registeredForTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+        if (_registeredForTick || !_runtimeActive || GlobalRegistry.Dispatcher == null)
             return;
 
         _registeredForTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);

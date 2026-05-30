@@ -11,6 +11,7 @@ using Hecton8.Tools;
 using Hecton8.UI.VR.Contracts;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -669,41 +670,43 @@ namespace Hecton8.UI.VR
             DumpBlackBox();
         }
 
-        private void DumpBlackBox()
+        private unsafe void DumpBlackBox()
         {
             if (_blackBoxDumped)
                 return;
 
+            NativeArray<byte> payload = default;
             try
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string path = Path.Combine(projectRoot, DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                const int headerBytes = 8;
+                int byteCount = headerBytes + (BlackBoxFrameCount * BlackBoxDumpEntryBytes);
+                payload = new NativeArray<byte>(
+                    byteCount,
+                    Allocator.Temp,
+                    NativeArrayOptions.UninitializedMemory);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                Span<byte> header = new Span<byte>(payloadPtr, headerBytes);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(0, 4), BlackBoxFrameCount);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), _blackBoxWriteIndex);
+
+                for (int i = 0; i < BlackBoxFrameCount; i++)
                 {
-                    Span<byte> header = stackalloc byte[8];
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(0, 4), BlackBoxFrameCount);
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), _blackBoxWriteIndex);
-                    stream.Write(header);
-
-                    Span<byte> entryBytes = stackalloc byte[BlackBoxDumpEntryBytes];
-                    for (int i = 0; i < BlackBoxFrameCount; i++)
+                    if (!TryReadBlackBoxEntry(i, out ManualOverrideLeverTelemetryEntry entry))
                     {
-                        if (!TryReadBlackBoxEntry(i, out ManualOverrideLeverTelemetryEntry entry))
-                        {
-                            _blackBoxDumpQueued = true;
-                            return;
-                        }
-
-                        WriteBlackBoxEntry(entryBytes, in entry);
-                        stream.Write(entryBytes);
+                        _blackBoxDumpQueued = true;
+                        return;
                     }
+
+                    Span<byte> entryBytes = new Span<byte>(
+                        payloadPtr + headerBytes + (i * BlackBoxDumpEntryBytes),
+                        BlackBoxDumpEntryBytes);
+                    WriteBlackBoxEntry(entryBytes, in entry);
                 }
 
-                _blackBoxDumped = true;
+                _blackBoxDumped = NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
             }
             catch (IOException)
             {
@@ -722,6 +725,11 @@ namespace Hecton8.UI.VR
             }
             catch (NotSupportedException)
             {
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 

@@ -20,10 +20,12 @@ namespace Hecton8.Economy
         private const float MaterialRecoveryRatio = 0.50f;
         private const float ComponentRecoveryRatio = 0.40f;
         private const float EquipmentRecoveryRatio = 0.25f;
+        internal const int MaxRecycleYieldSlots = 16;
 
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private IPlayerInventoryService _playerInventoryService;
+        private readonly ResourceStack[] _processYieldScratch = new ResourceStack[MaxRecycleYieldSlots];
 
         private static ScrapManager s_activeRuntimeInstance;
 
@@ -138,22 +140,29 @@ namespace Hecton8.Economy
             if (inventory == null)
                 return false;
 
-            if (!TryResolveRecycleYield(sourceItem, out ResourceStack[] resolvedYield))
+            if (!TryBuildRecycleYieldSnapshot(sourceItem, _processYieldScratch, out int resolvedYieldCount))
                 return false;
 
-            if (!inventory.TryRemoveQuantity(sourceItem.PersistentHashId, 1))
-                return false;
-
-            int grantedStackCount = 0;
-            if (!GrantYield(inventory, resolvedYield, ref grantedStackCount))
+            try
             {
-                RollbackYield(inventory, resolvedYield, grantedStackCount);
-                inventory.TryAddItem(sourceItem.PersistentHashId, 1);
-                return false;
-            }
+                if (!inventory.TryRemoveQuantity(sourceItem.PersistentHashId, 1))
+                    return false;
 
-            ItemLifecycleSignalRoute.TryPublishRecycled(sourceItem, 1, CountYieldUnits(resolvedYield));
-            return true;
+                int grantedStackCount = 0;
+                if (!GrantYield(inventory, _processYieldScratch, resolvedYieldCount, ref grantedStackCount))
+                {
+                    RollbackYield(inventory, _processYieldScratch, resolvedYieldCount, grantedStackCount);
+                    inventory.TryAddItem(sourceItem.PersistentHashId, 1);
+                    return false;
+                }
+
+                ItemLifecycleSignalRoute.TryPublishRecycled(sourceItem, 1, CountYieldUnits(_processYieldScratch, resolvedYieldCount));
+                return true;
+            }
+            finally
+            {
+                ClearYieldScratch(_processYieldScratch, resolvedYieldCount);
+            }
         }
 
         private void CacheRegistryServicesCold()
@@ -178,20 +187,14 @@ namespace Hecton8.Economy
             _hotSwapRegistered = false;
         }
 
-        internal static bool TryResolveRecycleYield(ItemData sourceItem, out ResourceStack[] resolvedYield)
+        internal static bool TryBuildRecycleYieldSnapshot(ItemData sourceItem, ResourceStack[] destination, out int resolvedCount)
         {
-            if (sourceItem == null)
-            {
-                resolvedYield = null;
+            resolvedCount = 0;
+            if (sourceItem == null || destination == null || destination.Length == 0)
                 return false;
-            }
 
-            if (RecyclingRegistry.TryGetYield(unchecked((uint)sourceItem.PersistentHashId), out resolvedYield) &&
-                resolvedYield != null &&
-                resolvedYield.Length > 0)
-            {
-                return true;
-            }
+            if (RecyclingRegistry.TryGetYield(unchecked((uint)sourceItem.PersistentHashId), out ResourceStack[] registeredYield))
+                return CopyYieldSnapshotNonAlloc(registeredYield, destination, out resolvedCount);
 
             RecipeData recipe;
             if (!Fabricator.TryResolveRecipeForResultItem(sourceItem, out recipe) ||
@@ -199,14 +202,11 @@ namespace Hecton8.Economy
                 recipe.ingredients == null ||
                 recipe.ingredients.Count == 0)
             {
-                resolvedYield = null;
                 return false;
             }
 
             float recoveryRatio = ResolveRecoveryRatio(sourceItem);
             int ingredientCount = recipe.ingredients.Count;
-            ResourceStack[] autoYield = new ResourceStack[ingredientCount]; // COLD ALLOC: ResourceStack[ingredientCount] - cold-path recycle yield derivation - owner: ScrapManager
-            int resolvedCount = 0;
 
             for (int i = 0; i < ingredientCount; i++)
             {
@@ -218,7 +218,14 @@ namespace Hecton8.Economy
                 if (recoveredAmount <= 0)
                     continue;
 
-                autoYield[resolvedCount] = new ResourceStack
+                if (resolvedCount >= destination.Length)
+                {
+                    ClearYieldScratch(destination, resolvedCount);
+                    resolvedCount = 0;
+                    return false;
+                }
+
+                destination[resolvedCount] = new ResourceStack
                 {
                     Item = cost.item,
                     Amount = recoveredAmount
@@ -226,22 +233,7 @@ namespace Hecton8.Economy
                 resolvedCount++;
             }
 
-            if (resolvedCount <= 0)
-            {
-                resolvedYield = null;
-                return false;
-            }
-
-            if (resolvedCount == autoYield.Length)
-            {
-                resolvedYield = autoYield;
-                return true;
-            }
-
-            ResourceStack[] compactYield = new ResourceStack[resolvedCount]; // COLD ALLOC: ResourceStack[resolvedCount] - compact recycle yield snapshot - owner: ScrapManager
-            System.Array.Copy(autoYield, compactYield, resolvedCount);
-            resolvedYield = compactYield;
-            return true;
+            return resolvedCount > 0;
         }
 
         private static float ResolveRecoveryRatio(ItemData sourceItem)
@@ -274,10 +266,16 @@ namespace Hecton8.Economy
 
         internal static bool GrantYield(PlayerInventory inventory, ResourceStack[] resolvedYield, ref int grantedStackCount)
         {
+            return GrantYield(inventory, resolvedYield, resolvedYield != null ? resolvedYield.Length : 0, ref grantedStackCount);
+        }
+
+        internal static bool GrantYield(PlayerInventory inventory, ResourceStack[] resolvedYield, int resolvedYieldCount, ref int grantedStackCount)
+        {
             if (inventory == null || resolvedYield == null)
                 return false;
 
-            for (int i = 0; i < resolvedYield.Length; i++)
+            int count = Mathf.Min(Mathf.Max(0, resolvedYieldCount), resolvedYield.Length);
+            for (int i = 0; i < count; i++)
             {
                 ResourceStack stack = resolvedYield[i];
                 if (stack.Item == null || stack.Amount <= 0)
@@ -297,11 +295,17 @@ namespace Hecton8.Economy
 
         internal static void RollbackYield(PlayerInventory inventory, ResourceStack[] resolvedYield, int grantedStackCount)
         {
+            RollbackYield(inventory, resolvedYield, resolvedYield != null ? resolvedYield.Length : 0, grantedStackCount);
+        }
+
+        internal static void RollbackYield(PlayerInventory inventory, ResourceStack[] resolvedYield, int resolvedYieldCount, int grantedStackCount)
+        {
             if (inventory == null || resolvedYield == null || grantedStackCount <= 0)
                 return;
 
             int remaining = grantedStackCount;
-            for (int i = 0; i < resolvedYield.Length && remaining > 0; i++)
+            int count = Mathf.Min(Mathf.Max(0, resolvedYieldCount), resolvedYield.Length);
+            for (int i = 0; i < count && remaining > 0; i++)
             {
                 ResourceStack stack = resolvedYield[i];
                 if (stack.Item == null || stack.Amount <= 0)
@@ -315,17 +319,59 @@ namespace Hecton8.Economy
 
         internal static int CountYieldUnits(ResourceStack[] resolvedYield)
         {
+            return CountYieldUnits(resolvedYield, resolvedYield != null ? resolvedYield.Length : 0);
+        }
+
+        internal static int CountYieldUnits(ResourceStack[] resolvedYield, int resolvedYieldCount)
+        {
             if (resolvedYield == null)
                 return 0;
 
             int total = 0;
-            for (int i = 0; i < resolvedYield.Length; i++)
+            int count = Mathf.Min(Mathf.Max(0, resolvedYieldCount), resolvedYield.Length);
+            for (int i = 0; i < count; i++)
             {
                 if (resolvedYield[i].Amount > 0)
                     total += resolvedYield[i].Amount;
             }
 
             return total;
+        }
+
+        private static bool CopyYieldSnapshotNonAlloc(ResourceStack[] source, ResourceStack[] destination, out int copiedCount)
+        {
+            copiedCount = 0;
+            if (source == null || destination == null || destination.Length == 0)
+                return false;
+
+            for (int i = 0; i < source.Length; i++)
+            {
+                ResourceStack stack = source[i];
+                if (stack.Item == null || stack.Amount <= 0)
+                    continue;
+
+                if (copiedCount >= destination.Length)
+                {
+                    ClearYieldScratch(destination, copiedCount);
+                    copiedCount = 0;
+                    return false;
+                }
+
+                destination[copiedCount] = stack;
+                copiedCount++;
+            }
+
+            return copiedCount > 0;
+        }
+
+        internal static void ClearYieldScratch(ResourceStack[] scratch, int count)
+        {
+            if (scratch == null || count <= 0)
+                return;
+
+            int safeCount = Mathf.Min(count, scratch.Length);
+            for (int i = 0; i < safeCount; i++)
+                scratch[i] = default;
         }
     }
 }

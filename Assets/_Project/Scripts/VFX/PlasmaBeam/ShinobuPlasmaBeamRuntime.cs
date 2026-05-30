@@ -204,7 +204,6 @@ namespace Hecton8.VFX.PlasmaBeam
         private VaultGenerationHandle<PlasmaBeamTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<MockLaserFireSignal> _mockSignalsHandle;
         private VaultGenerationHandle<PlasmaBeamAcousticEchoTap> _acousticTapsHandle;
-        private VaultGenerationHandle<byte> _csvScratchHandle;
 
         private PreSimulationPhaseSystem _preSimulationPhase;
         private SimulationPhaseSystem _simulationPhase;
@@ -387,7 +386,7 @@ namespace Hecton8.VFX.PlasmaBeam
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             _csvPath = Path.GetFullPath(Path.Combine(projectRoot, CsvRelativePath));
-            _dumpPath = Path.GetFullPath(Path.Combine(projectRoot, DumpRelativePath));
+            _dumpPath = DumpRelativePath;
             _drawBounds = new Bounds(Vector3.zero, new Vector3(256.0f, 256.0f, 256.0f));
 
             // COLD ALLOC: IDispatcherSystem[4] - phase adapters registered into GlobalRegistry dispatcher - owner: SHINOBU_69
@@ -550,7 +549,6 @@ namespace Hecton8.VFX.PlasmaBeam
             ReleaseVaultHandle(vault, ref _telemetryHandle, BufferID.ShinobuPlasmaBeamTelemetryRing);
             ReleaseVaultHandle(vault, ref _mockSignalsHandle, BufferID.ShinobuPlasmaBeamMockSignals);
             ReleaseVaultHandle(vault, ref _acousticTapsHandle, BufferID.ShinobuPlasmaBeamAcousticTaps);
-            ReleaseVaultHandle(vault, ref _csvScratchHandle, BufferID.ShinobuPlasmaBeamCsvScratch);
         }
 
         private static void ReleaseVaultHandle<T>(
@@ -860,7 +858,6 @@ namespace Hecton8.VFX.PlasmaBeam
             _telemetryHandle = vault.EnsureGenerationHandle<PlasmaBeamTelemetryEntry>(BufferID.ShinobuPlasmaBeamTelemetryRing, TelemetryFrameCount, OwnerSystemId, NativeArrayOptions.ClearMemory);
             _mockSignalsHandle = vault.EnsureGenerationHandle<MockLaserFireSignal>(BufferID.ShinobuPlasmaBeamMockSignals, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             _acousticTapsHandle = vault.EnsureGenerationHandle<PlasmaBeamAcousticEchoTap>(BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.ShinobuPlasmaBeamCsvScratch, CsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
 
             _vaultInitialized =
                 TryResolveVaultBuffer(vault, in _statesHandle, BufferID.ShinobuPlasmaBeamStates, MaxBeamCount, out NativeArray<BeamStateDTO> _) &&
@@ -870,8 +867,7 @@ namespace Hecton8.VFX.PlasmaBeam
                 TryResolveVaultBuffer(vault, in _argsHandle, BufferID.ShinobuPlasmaBeamIndirectArgs, 1, out NativeArray<PlasmaBeamIndirectArgsDTO> _) &&
                 TryResolveVaultBuffer(vault, in _telemetryHandle, BufferID.ShinobuPlasmaBeamTelemetryRing, TelemetryFrameCount, out NativeArray<PlasmaBeamTelemetryEntry> _) &&
                 TryResolveVaultBuffer(vault, in _mockSignalsHandle, BufferID.ShinobuPlasmaBeamMockSignals, MaxBeamCount, out NativeArray<MockLaserFireSignal> _) &&
-                TryResolveVaultBuffer(vault, in _acousticTapsHandle, BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, out NativeArray<PlasmaBeamAcousticEchoTap> _) &&
-                TryResolveVaultBuffer(vault, in _csvScratchHandle, BufferID.ShinobuPlasmaBeamCsvScratch, CsvScratchBytes, out NativeArray<byte> _);
+                TryResolveVaultBuffer(vault, in _acousticTapsHandle, BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, out NativeArray<PlasmaBeamAcousticEchoTap> _);
 
             if (!_vaultInitialized)
                 return false;
@@ -908,8 +904,7 @@ namespace Hecton8.VFX.PlasmaBeam
                 TryResolveVaultBuffer(vault, in _argsHandle, BufferID.ShinobuPlasmaBeamIndirectArgs, 1, out NativeArray<PlasmaBeamIndirectArgsDTO> _) &&
                 TryResolveVaultBuffer(vault, in _telemetryHandle, BufferID.ShinobuPlasmaBeamTelemetryRing, TelemetryFrameCount, out NativeArray<PlasmaBeamTelemetryEntry> _) &&
                 TryResolveVaultBuffer(vault, in _mockSignalsHandle, BufferID.ShinobuPlasmaBeamMockSignals, MaxBeamCount, out NativeArray<MockLaserFireSignal> _) &&
-                TryResolveVaultBuffer(vault, in _acousticTapsHandle, BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, out NativeArray<PlasmaBeamAcousticEchoTap> _) &&
-                TryResolveVaultBuffer(vault, in _csvScratchHandle, BufferID.ShinobuPlasmaBeamCsvScratch, CsvScratchBytes, out NativeArray<byte> _);
+                TryResolveVaultBuffer(vault, in _acousticTapsHandle, BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, out NativeArray<PlasmaBeamAcousticEchoTap> _);
         }
 
         private bool TryResolveVaultBuffer<T>(
@@ -1245,12 +1240,6 @@ namespace Hecton8.VFX.PlasmaBeam
             _csvLastWriteTicks = ticks;
             if (!TryResolveVaultBuffer(
                     vault,
-                    in _csvScratchHandle,
-                    BufferID.ShinobuPlasmaBeamCsvScratch,
-                    CsvScratchBytes,
-                    out NativeArray<byte> scratch) ||
-                !TryResolveVaultBuffer(
-                    vault,
                     in _scalarsHandle,
                     BufferID.ShinobuPlasmaBeamRuntimeScalars,
                     1,
@@ -1259,23 +1248,52 @@ namespace Hecton8.VFX.PlasmaBeam
                 return;
             }
 
+            PlasmaBeamRuntimeScalarsDTO parsed = scalars[0];
+            Span<byte> scratch = stackalloc byte[CsvScratchBytes];
+            int read;
             using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
-                long cappedLength = math.min(stream.Length, math.min((long)scratch.Length, (long)CsvScratchBytes));
+                long cappedLength = math.min(stream.Length, (long)CsvScratchBytes);
                 int maxBytes = (int)math.max(0L, cappedLength);
-                void* ptr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                Span<byte> span = new Span<byte>(ptr, maxBytes);
-                int read = stream.Read(span);
-                ParseBeamCsv(scratch, read, scalars);
+                read = stream.Read(scratch.Slice(0, maxBytes));
+            }
+
+            if (!TryParseBeamCsv(scratch, read, ref parsed))
+                return;
+
+            if (!vault.TryAcquireMutationGuard(PlasmaBeamJobMutationGuardMask))
+                return;
+
+            try
+            {
+                if (!TryResolveVaultBuffer(
+                        vault,
+                        in _scalarsHandle,
+                        BufferID.ShinobuPlasmaBeamRuntimeScalars,
+                        1,
+                        out scalars))
+                {
+                    return;
+                }
+
+                _csvGeneration++;
+                parsed.CsvGeneration = _csvGeneration;
+                parsed.Flags |= FlagCsvLoaded;
+                _runtimeFlags = parsed.Flags;
+                scalars[0] = parsed;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(PlasmaBeamJobMutationGuardMask);
             }
         }
 
-        private void ParseBeamCsv(NativeArray<byte> scratch, int length, NativeArray<PlasmaBeamRuntimeScalarsDTO> scalars)
+        private static bool TryParseBeamCsv(ReadOnlySpan<byte> scratch, int length, ref PlasmaBeamRuntimeScalarsDTO dto)
         {
-            if (!scratch.IsCreated || !scalars.IsCreated || scalars.Length == 0 || length <= 0)
-                return;
+            if (length <= 0)
+                return false;
 
-            PlasmaBeamRuntimeScalarsDTO dto = scalars[0];
+            length = math.min(length, scratch.Length);
             int i = 0;
             while (i < length)
             {
@@ -1317,11 +1335,7 @@ namespace Hecton8.VFX.PlasmaBeam
                     i++;
             }
 
-            _csvGeneration++;
-            dto.CsvGeneration = _csvGeneration;
-            dto.Flags |= FlagCsvLoaded;
-            _runtimeFlags = dto.Flags;
-            scalars[0] = dto;
+            return true;
         }
 #endif
 
@@ -1360,7 +1374,7 @@ namespace Hecton8.VFX.PlasmaBeam
             }
         }
 
-        private static float ParseFloat(NativeArray<byte> scratch, ref int index, int length)
+        private static float ParseFloat(ReadOnlySpan<byte> scratch, ref int index, int length)
         {
             while (index < length && (scratch[index] == (byte)' ' || scratch[index] == (byte)'\t'))
                 index++;
@@ -1422,32 +1436,44 @@ namespace Hecton8.VFX.PlasmaBeam
             if (!telemetry.IsCreated)
                 return;
 
+            NativeArray<byte> payload = default;
             try
             {
-                string directory = Path.GetDirectoryName(_dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                int headerBytes = UnsafeUtility.SizeOf<PlasmaBeamDumpHeader>();
+                int entryBytes = UnsafeUtility.SizeOf<PlasmaBeamTelemetryEntry>();
+                int count = math.min(telemetry.Length, TelemetryFrameCount);
+                int byteCount = headerBytes + (count * entryBytes);
+                PlasmaBeamDumpHeader header = default;
+                header.Magic = DumpMagic;
+                header.Version = DumpVersion;
+                header.FrameCount = (uint)count;
+                header.EntrySize = (uint)entryBytes;
+                header.Flags = _runtimeFlags;
 
-                using (FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                payload = new NativeArray<byte>(
+                    byteCount,
+                    Allocator.Temp,
+                    NativeArrayOptions.UninitializedMemory);
+
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                UnsafeUtility.MemCpy(payloadPtr, &header, headerBytes);
+                if (count > 0)
                 {
-                    PlasmaBeamDumpHeader header = default;
-                    header.Magic = DumpMagic;
-                    header.Version = DumpVersion;
-                    header.FrameCount = (uint)math.min(telemetry.Length, TelemetryFrameCount);
-                    header.EntrySize = (uint)UnsafeUtility.SizeOf<PlasmaBeamTelemetryEntry>();
-                    header.Flags = _runtimeFlags;
-                    stream.Write(new ReadOnlySpan<byte>((byte*)&header, UnsafeUtility.SizeOf<PlasmaBeamDumpHeader>()));
-
-                    for (int i = 0; i < telemetry.Length; i++)
-                    {
-                        PlasmaBeamTelemetryEntry entry = telemetry[i];
-                        stream.Write(new ReadOnlySpan<byte>((byte*)&entry, UnsafeUtility.SizeOf<PlasmaBeamTelemetryEntry>()));
-                    }
+                    void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                    UnsafeUtility.MemCpy(payloadPtr + headerBytes, telemetryPtr, (long)count * entryBytes);
                 }
+
+                if (!NativeFaultDumpWriter.TryWriteAll(_dumpPath, payload, byteCount))
+                    _runtimeFlags |= FlagDumpFailed;
             }
             catch (Exception)
             {
                 _runtimeFlags |= FlagDumpFailed;
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 

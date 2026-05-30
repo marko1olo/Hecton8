@@ -15,6 +15,7 @@ using Hecton8.World;
 using NASAPunk.Visor;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -1102,6 +1103,7 @@ namespace Hecton8.Atmosphere
         private const float BlendFactorPadeInstantThreshold = 8f;
         private const string NativeMemoryOwner = nameof(SubmarineAtmosphereSystem);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const string TelemetryDumpPayloadLabel = "submarineAtmosphereTelemetryDumpPayload";
         private const int PressureImpulseOverlapCapacity = 32;
         private const int HeatEmitterCapacity = 24;
         private const int TelemetryCapacity = 300;
@@ -1110,6 +1112,7 @@ namespace Hecton8.Atmosphere
         private const ushort TelemetryDumpFormatVersion = 1;
         private const ushort TelemetryFlagNaN = 1 << 0;
         private const string TelemetryDumpFileName = "Dump_1323_SubmarineAtmosphere.bin";
+        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/" + TelemetryDumpFileName;
         private static readonly ulong AtmospherePhaseMutationGuardMask =
             AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.RoomVolumes) |
             AtmosphereBufferGuardBit(SubmarineAtmosphereVaultBufferIds.FloodVolumes) |
@@ -6097,49 +6100,67 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            _blackBoxDumped = true;
             int cursor = _telemetryWriteIndex;
             TryReadTelemetryCursor(out cursor);
+            NativeArray<byte> payload = default;
             try
             {
-                string directory = System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs"));
-                System.IO.Directory.CreateDirectory(directory);
-                string path = System.IO.Path.Combine(directory, TelemetryDumpFileName);
-                using (System.IO.FileStream stream = new System.IO.FileStream(path, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.Read))
-                using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(stream))
+                const int headerBytes = 22;
+                int byteCount = headerBytes + telemetryRing.Length * TelemetryEntrySizeBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    NativeMemoryOwner,
+                    TelemetryDumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+
+                unsafe
                 {
-                    writer.Write(TelemetryDumpMagic);
-                    writer.Write(TelemetryDumpFormatVersion);
-                    writer.Write(TelemetryEntrySizeBytes);
-                    writer.Write(telemetryRing.Length);
-                    writer.Write(cursor);
-                    writer.Write(_atmosphereTickCount);
+                    byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    WriteUInt(bytes, 0, TelemetryDumpMagic);
+                    WriteUShort(bytes, 4, TelemetryDumpFormatVersion);
+                    WriteInt(bytes, 6, TelemetryEntrySizeBytes);
+                    WriteInt(bytes, 10, telemetryRing.Length);
+                    WriteInt(bytes, 14, cursor);
+                    WriteUInt(bytes, 18, _atmosphereTickCount);
+
+                    int writeCursor = headerBytes;
                     for (int i = 0; i < telemetryRing.Length; i++)
                     {
                         SubmarineAtmosphereTelemetryEntry entry = telemetryRing[i];
-                        writer.Write(entry.PackedOwner);
-                        writer.Write(entry.FrameIndex);
-                        writer.Write(entry.RoomCount);
-                        writer.Write(entry.DeltaTimeSeconds);
-                        writer.Write(entry.TotalO2KPa);
-                        writer.Write(entry.TotalCO2KPa);
-                        writer.Write(entry.TotalNitrogenKPa);
-                        writer.Write(entry.MaxPressureKPa);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.BufferId);
-                        writer.Write(entry.SystemId);
-                        writer.Write(entry.Generation);
-                        writer.Write(entry.RuntimeRoomStatusMask);
-                        writer.Write(entry.DroppedSignals);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.FailureCode);
+                        UnsafeUtility.CopyStructureToPtr(ref entry, bytes + writeCursor);
+                        writeCursor += TelemetryEntrySizeBytes;
                     }
                 }
+
+                _blackBoxDumped = NativeFaultDumpWriter.TryWriteAll(TelemetryDumpRelativePath, payload, byteCount);
             }
             catch (System.Exception)
             {
                 GlobalTelemetryBus.PublishUnityLogFault(TelemetryDumpMagic, 0u, 1u);
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(ref payload, NativeMemoryOwner, TelemetryDumpPayloadLabel);
+            }
+        }
+
+        private static unsafe void WriteUInt(byte* data, int offset, uint value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+            data[offset + 2] = (byte)(value >> 16);
+            data[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static unsafe void WriteInt(byte* data, int offset, int value)
+        {
+            WriteUInt(data, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUShort(byte* data, int offset, ushort value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
         }
 
         private void PublishCompartmentPartialPressureSnapshot()

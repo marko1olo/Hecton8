@@ -1,7 +1,4 @@
 using System.Runtime.InteropServices;
-using Hecton8.Core;
-using Hecton8.Core.Memory.Layout;
-using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -20,13 +17,12 @@ namespace Hecton8.Core.Contracts
     /// <summary>
     /// Immutable gameplay impact payload flushed in LateUpdate after the fixed-step collision phase.
     /// </summary>
-    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Explicit, Size = 128)]
     public readonly struct PhysicsImpactSignal
     {
         [FieldOffset(0)] public readonly ulong PrimaryBodyId;
         [FieldOffset(8)] public readonly ulong SecondaryBodyId;
-        [FieldOffset(16)] private readonly AbsoluteUniversePosition _pointAup;
+        [FieldOffset(16)] private readonly double3 _pointAupMeters;
         [FieldOffset(64)] public readonly Vector3 Point;
         [FieldOffset(76)] public readonly Vector3 Normal;
         [FieldOffset(88)] public readonly float Force;
@@ -76,17 +72,8 @@ namespace Hecton8.Core.Contracts
             PrimaryBodyId = primaryBodyId;
             SecondaryBodyId = secondaryBodyId;
             Point = point;
-            if (TryResolveAupFromRuntimeOrigin(point, out AbsoluteUniversePosition pointAup))
-            {
-                _pointAup = pointAup;
-                _hasPointAup = 1;
-            }
-            else
-            {
-                _pointAup = default;
-                _hasPointAup = 0;
-            }
-
+            _pointAupMeters = new double3(point.x, point.y, point.z);
+            _hasPointAup = 0;
             Normal = normal;
             Force = force;
             Intensity = intensity;
@@ -124,7 +111,7 @@ namespace Hecton8.Core.Contracts
             ulong primaryBodyId,
             ulong secondaryBodyId,
             Vector3 point,
-            in AbsoluteUniversePosition pointAup,
+            in double3 pointAupMeters,
             Vector3 normal,
             float force,
             float intensity,
@@ -136,8 +123,8 @@ namespace Hecton8.Core.Contracts
             PrimaryBodyId = primaryBodyId;
             SecondaryBodyId = secondaryBodyId;
             Point = point;
-            _pointAup = pointAup;
-            _hasPointAup = 1;
+            _pointAupMeters = IsFinite(pointAupMeters) ? pointAupMeters : new double3(point.x, point.y, point.z);
+            _hasPointAup = (byte)(IsFinite(pointAupMeters) ? 1 : 0);
             Normal = normal;
             Force = force;
             Intensity = intensity;
@@ -176,35 +163,14 @@ namespace Hecton8.Core.Contracts
             return signal._hasPointAup != 0;
         }
 
-        public AbsoluteUniversePosition ResolvePointAup()
+        public double3 ResolvePointAupMeters()
         {
-            return _hasPointAup != 0
-                ? _pointAup
-                : TryResolveAupFromRuntimeOrigin(Point, out AbsoluteUniversePosition pointAup)
-                    ? pointAup
-                    : default;
+            return _hasPointAup != 0 ? _pointAupMeters : new double3(Point.x, Point.y, Point.z);
         }
 
         public static bool IsHeavy(in PhysicsImpactSignal signal)
         {
             return signal.WeightClass == PhysicsImpactWeightClass.Heavy;
-        }
-
-        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
-        {
-            positionAup = default;
-            if (!IsFinite(runtimePosition))
-                return false;
-
-            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-            if (!math.all(math.isfinite(origin)))
-                return false;
-
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromAbsolutePosition(origin);
-            positionAup = AbsoluteUniversePosition.OffsetMeters(
-                in originAup,
-                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            return IsFinite(in positionAup);
         }
 
         private static bool IsFinite(Vector3 value)
@@ -213,11 +179,9 @@ namespace Hecton8.Core.Contracts
             return math.all(math.isfinite(value3));
         }
 
-        private static bool IsFinite(in AbsoluteUniversePosition value)
+        private static bool IsFinite(double3 value)
         {
-            return math.isfinite(value.LocalX) &&
-                   math.isfinite(value.LocalY) &&
-                   math.isfinite(value.LocalZ);
+            return math.all(math.isfinite(value));
         }
     }
 

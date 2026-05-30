@@ -21,7 +21,7 @@ namespace Hecton8.Construction
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4041)]
-    public sealed class AutonomousExtractorSystem : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class AutonomousExtractorSystem : MonoBehaviour, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxModuleCapacity = 256;
         private const float SlowTickDeltaSeconds = 0.5f;
@@ -184,7 +184,6 @@ namespace Hecton8.Construction
         private JobHandle _scheduledJobHandle;
         private bool _scheduledJobActive;
         private bool _slowTickRegistered;
-        private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private IPersistentDroppedItemRegistry _persistentDroppedItems;
@@ -293,8 +292,6 @@ namespace Hecton8.Construction
             if (!_slowTickRegistered)
                 _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
 
-            if (!_lateFrameRegistered)
-                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterRuntimeLoops()
@@ -302,7 +299,6 @@ namespace Hecton8.Construction
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
             {
                 _slowTickRegistered = false;
-                _lateFrameRegistered = false;
                 return;
             }
 
@@ -312,11 +308,6 @@ namespace Hecton8.Construction
                 _slowTickRegistered = false;
             }
 
-            if (_lateFrameRegistered)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = false;
-            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -406,13 +397,6 @@ namespace Hecton8.Construction
             _scheduledModuleCount = moduleCount;
             _scheduledJobHandle = job.Schedule(moduleCount, 8);
             _scheduledJobActive = true;
-        }
-
-        /// <summary>
-        /// Visual-only lane. Extractor simulation commits are owned by SlowTick.
-        /// </summary>
-        public void LateFrameTick()
-        {
         }
 
         private bool TryCompleteScheduledExtractorJob(bool forceComplete)

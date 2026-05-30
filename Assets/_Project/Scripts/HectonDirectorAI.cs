@@ -1570,28 +1570,37 @@ namespace Hecton8.Systems.AI
             if (!vault.TryAcquireMutationGuard(_predatorSpatialHashMutationGuardMask))
                 return false;
 
-            if (!TryOpenDirectorVaultView(
-                    vault,
-                    in _predatorSpatialAbsolutePositionsHandle,
-                    PredatorSpatialAbsolutePositionsBufferId,
-                    PredatorSpatialHashContactCapacity,
-                    out spatialAbsolutePositions) ||
-                !TryOpenDirectorVaultView(
-                    vault,
-                    in _predatorSpatialCellCoordsHandle,
-                    PredatorSpatialCellCoordsBufferId,
-                    PredatorSpatialHashContactCapacity,
-                    out spatialCellCoords))
+            bool keepGuard = false;
+            try
             {
-                vault.ReleaseMutationGuard(_predatorSpatialHashMutationGuardMask);
-                spatialAbsolutePositions = default;
-                spatialCellCoords = default;
-                return false;
-            }
+                if (!TryOpenDirectorVaultView(
+                        vault,
+                        in _predatorSpatialAbsolutePositionsHandle,
+                        PredatorSpatialAbsolutePositionsBufferId,
+                        PredatorSpatialHashContactCapacity,
+                        out spatialAbsolutePositions) ||
+                    !TryOpenDirectorVaultView(
+                        vault,
+                        in _predatorSpatialCellCoordsHandle,
+                        PredatorSpatialCellCoordsBufferId,
+                        PredatorSpatialHashContactCapacity,
+                        out spatialCellCoords))
+                {
+                    spatialAbsolutePositions = default;
+                    spatialCellCoords = default;
+                    return false;
+                }
 
-            _predatorSpatialHashGuardVault = vault;
-            _predatorSpatialHashBuffersPinned = true;
-            return true;
+                _predatorSpatialHashGuardVault = vault;
+                _predatorSpatialHashBuffersPinned = true;
+                keepGuard = true;
+                return true;
+            }
+            finally
+            {
+                if (!keepGuard)
+                    vault.ReleaseMutationGuard(_predatorSpatialHashMutationGuardMask);
+            }
         }
 
         private void ReleasePredatorSpatialHashVaultPins()

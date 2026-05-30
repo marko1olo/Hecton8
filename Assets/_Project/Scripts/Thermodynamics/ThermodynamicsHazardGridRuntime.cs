@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using Stopwatch = System.Diagnostics.Stopwatch;
@@ -53,7 +54,6 @@ namespace Hecton8.Thermodynamics
         private const BufferID VaultSignalCountersBuffer = BufferID.ThermodynamicsSignalCounters;
         private const BufferID VaultTelemetryRingBuffer = BufferID.ThermodynamicsTelemetryRing;
         private const BufferID VaultTelemetryScratchBuffer = BufferID.ThermodynamicsTelemetryScratch;
-        private const BufferID VaultCsvBytesBuffer = BufferID.ThermodynamicsCsvBytes;
         private const BufferID VaultBinaryConstantBytesBuffer = BufferID.ThermodynamicsBinaryConstantBytes;
         private const float DefaultCellSizeMeters = 10f;
         private const float TierSwitchHysteresisSeconds = 3f;
@@ -111,7 +111,6 @@ namespace Hecton8.Thermodynamics
         private VaultGenerationHandle<ThermodynamicsHazardConstants> _constants;
         private VaultGenerationHandle<float> _vaultTemperatureFrontMirror;
         private VaultGenerationHandle<float> _vaultRadiationFrontMirror;
-        private VaultGenerationHandle<byte> _csvBytes;
         private VaultGenerationHandle<byte> _binaryConstantBytes;
 
         private JobHandle _simulationHandle;
@@ -590,9 +589,6 @@ namespace Hecton8.Thermodynamics
             _entityIds = AcquireBuffer<uint>(VaultEntityIdsBuffer, MaxEntityCount);
             _updraftSignals = AcquireBuffer<ThermalUpdraftSignal>(VaultUpdraftSignalsBuffer, MaxSignalsPerFrame);
             _signalCounters = AcquireBuffer<int>(VaultSignalCountersBuffer, 4);
-#if UNITY_EDITOR
-            _csvBytes = AcquireBuffer<byte>(VaultCsvBytesBuffer, CsvBufferBytes);
-#endif
             _binaryConstantBytes = AcquireBuffer<byte>(VaultBinaryConstantBytesBuffer, BinaryConstantsBytes);
             _telemetryRing = AcquireBuffer<ThermodynamicsHazardTelemetryEntry>(VaultTelemetryRingBuffer, TelemetryCapacity);
             _telemetryScratch = AcquireBuffer<ThermodynamicsHazardTelemetryEntry>(VaultTelemetryScratchBuffer, 1);
@@ -767,7 +763,6 @@ namespace Hecton8.Thermodynamics
             _vaultRadiationFrontMirror = default;
             _vaultMirrorVersion = -1;
             _simulationFrame = 0u;
-            _csvBytes = default;
             _binaryConstantBytes = default;
             _simulationHandle = default;
             _simulationJobActive = false;
@@ -1248,32 +1243,6 @@ namespace Hecton8.Thermodynamics
             RequestCsvOverrideLoad();
         }
 
-        private static void ParseCsvConstants(NativeArray<byte> bytes, int length, ref ThermodynamicsHazardConstants constants)
-        {
-            int cursor = 0;
-            while (cursor < length)
-            {
-                uint keyHash = 2166136261u;
-                while (cursor < length)
-                {
-                    byte c = bytes[cursor++];
-                    if (c == (byte)',' || c == (byte)'=' || c == (byte)';')
-                        break;
-                    if (c == (byte)'\r' || c == (byte)'\n')
-                        goto NextLine;
-                    keyHash = (keyHash ^ ToLowerAscii(c)) * 16777619u;
-                }
-
-                float value = ParseFloat(bytes, ref cursor, length);
-                ApplyCsvValue(keyHash, value, ref constants);
-
-            NextLine:
-                while (cursor < length && bytes[cursor] != (byte)'\n')
-                    cursor++;
-                if (cursor < length)
-                    cursor++;
-            }
-        }
 #endif
 
         private static void ApplyCsvValue(uint keyHash, float value, ref ThermodynamicsHazardConstants constants)
@@ -1341,91 +1310,47 @@ namespace Hecton8.Thermodynamics
             if (!HasHandle(in _telemetryRing))
                 return;
 
+            NativeArray<byte> payload = default;
             try
             {
                 if (!TryOpenReadArray(in _telemetryRing, TelemetryCapacity, out NativeArray<ThermodynamicsHazardTelemetryEntry> telemetryRing))
                     return;
 
                 string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", fileName));
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                int stride = UnsafeUtility.SizeOf<ThermodynamicsHazardTelemetryEntry>();
+                int totalBytes = 20 + TelemetryCapacity * stride;
+                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
 
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(0x484543544F4E3800ul);
-                writer.Write(TelemetryCapacity);
-                writer.Write(UnsafeUtility.SizeOf<ThermodynamicsHazardTelemetryEntry>());
-                writer.Write(_telemetryWriteIndex);
+                Span<byte> header = new Span<byte>(payloadPtr, 20);
+                BinaryPrimitives.WriteUInt64LittleEndian(header.Slice(0, 8), 0x484543544F4E3800ul);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), TelemetryCapacity);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(12, 4), stride);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(16, 4), _telemetryWriteIndex);
+
+                int offset = 20;
                 for (int i = 0; i < TelemetryCapacity; i++)
                 {
                     ThermodynamicsHazardTelemetryEntry entry = telemetryRing[i];
-                    writer.Write(entry.MaxGridTemperature);
-                    writer.Write(entry.MaxRadiationLevel);
-                    writer.Write(entry.DiffusionComputeTimeMs);
-                    writer.Write(entry.GridOrigin.x);
-                    writer.Write(entry.GridOrigin.y);
-                    writer.Write(entry.GridOrigin.z);
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.GridVersion);
-                    writer.Write(entry.SourceCount);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.ShiftSequence);
-                    writer.Write(entry.NaNCellIndex);
-                    writer.Write(entry.ActiveResolution);
-                    writer.Write(entry.GridOriginHash);
-                    writer.Write(entry._pad0);
-                    writer.Write(entry._pad1);
+                    UnsafeUtility.MemCpy(payloadPtr + offset, &entry, stride);
+                    offset += stride;
                 }
+
+                _ = NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
             }
             catch (Exception)
             {
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 
         private static byte ToLowerAscii(byte c)
         {
             return c >= (byte)'A' && c <= (byte)'Z' ? (byte)(c + 32) : c;
-        }
-
-        private static float ParseFloat(NativeArray<byte> bytes, ref int cursor, int length)
-        {
-            while (cursor < length && (bytes[cursor] == (byte)' ' || bytes[cursor] == (byte)'\t'))
-                cursor++;
-
-            float sign = 1f;
-            if (cursor < length && bytes[cursor] == (byte)'-')
-            {
-                sign = -1f;
-                cursor++;
-            }
-
-            float value = 0f;
-            while (cursor < length)
-            {
-                byte c = bytes[cursor];
-                if (c < (byte)'0' || c > (byte)'9')
-                    break;
-                value = value * 10f + (c - (byte)'0');
-                cursor++;
-            }
-
-            if (cursor < length && bytes[cursor] == (byte)'.')
-            {
-                cursor++;
-                float scale = 0.1f;
-                while (cursor < length)
-                {
-                    byte c = bytes[cursor];
-                    if (c < (byte)'0' || c > (byte)'9')
-                        break;
-                    value += (c - (byte)'0') * scale;
-                    scale *= 0.1f;
-                    cursor++;
-                }
-            }
-
-            return value * sign;
         }
 
         private static uint HashAupMillimeters(double3 aup)

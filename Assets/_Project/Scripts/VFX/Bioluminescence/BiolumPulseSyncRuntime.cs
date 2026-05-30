@@ -237,6 +237,7 @@ namespace Hecton8.VFX.Bioluminescence
         private const string LegacyCsvOverrideFileName = "biolum_profiles.csv";
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_238.bin";
         private const string DumpMirrorRelativePath = "Docs/AgentLogs/Dump_SHINOBU_238.h8dump";
+        private const string NativeMemoryOwner = nameof(BiolumPulseSyncRuntime);
 
         private static readonly ProfilerMarker _tickMarker = new ProfilerMarker("H8.VFX.BiolumPulseSync.Tick");
         private static readonly ProfilerMarker _lateFrameMarker = new ProfilerMarker("H8.VFX.BiolumPulseSync.LateFrame");
@@ -287,6 +288,59 @@ namespace Hecton8.VFX.Bioluminescence
         private static readonly ulong BlackBoxDumpScratchGuardMask =
             BiolumMutationGuardBit(BiolumBlackBoxDumpScratchBufferId);
 
+        private struct BlackBoxDumpSnapshotOwner : IDisposable
+        {
+            public NativeArray<BiolumPulseTelemetryEntry> Entries;
+
+            public bool IsReady(int requiredLength)
+            {
+                return requiredLength > 0 &&
+                       Entries.IsCreated &&
+                       Entries.Length >= requiredLength;
+            }
+
+            public void Allocate(int requiredLength)
+            {
+                Dispose();
+
+                NativeArray<BiolumPulseTelemetryEntry> entries = default;
+                try
+                {
+                    // COLD NATIVE ALLOC: BiolumPulseTelemetryEntry[300] - black-box dump snapshot, flattens DataVault write locks - owner: BIOLUM_PULSE_SYNC
+                    entries = new NativeArray<BiolumPulseTelemetryEntry>(
+                        requiredLength,
+                        Allocator.Persistent,
+                        NativeArrayOptions.UninitializedMemory);
+                    NativeMemorySentinel.RegisterNativeArray(
+                        entries,
+                        NativeMemoryOwner,
+                        nameof(BlackBoxDumpSnapshotOwner),
+                        NativeAllocationLifetime.Session);
+                    Entries = entries;
+                }
+                catch
+                {
+                    if (entries.IsCreated)
+                        entries.Dispose();
+                    Entries = default;
+                    throw;
+                }
+            }
+
+            public void Dispose()
+            {
+                if (!Entries.IsCreated)
+                {
+                    Entries = default;
+                    return;
+                }
+
+                NativeMemorySentinel.UnregisterNativeArray(Entries);
+                Entries.Dispose();
+                Entries = default;
+            }
+        }
+
         private IDataVault _dataVault;
         private VaultGenerationHandle<float> _profileFloatsHandle;
         private VaultGenerationHandle<BiolumPulseStateDTO> _pulseStateHandle;
@@ -301,6 +355,7 @@ namespace Hecton8.VFX.Bioluminescence
         private VaultGenerationHandle<BiolumSpeciesTuningDTO> _speciesTuningHandle;
         private VaultGenerationHandle<byte> _csvScratchHandle;
         private VaultGenerationHandle<byte> _blackBoxDumpScratchHandle;
+        private BlackBoxDumpSnapshotOwner _blackBoxDumpSnapshot;
         private ITickDispatcher _tickDispatcher;
         private AutoResetEvent _blackBoxDumpSignal;
         private Thread _blackBoxDumpThread;
@@ -331,6 +386,8 @@ namespace Hecton8.VFX.Bioluminescence
         private int _activeGlowingInstanceCount;
         private int _activeBiolumProfileId;
         private int _blackBoxCursor;
+        private int _blackBoxDumpSnapshotCursor;
+        private int _blackBoxDumpSnapshotCount;
         private int _blackBoxDumpState;
         private int _blackBoxDumpByteCount;
         private int _blackBoxDumpStopRequested;
@@ -408,6 +465,7 @@ namespace Hecton8.VFX.Bioluminescence
             TryRegisterHotSwapListener();
             s_activeRuntime = this;
             EnsureVaultBuffers();
+            EnsureBlackBoxDumpSnapshot();
             EnsureBlackBoxDumpWorker();
 #if UNITY_EDITOR
             EnsureCsvBackgroundWatcher();
@@ -522,6 +580,7 @@ namespace Hecton8.VFX.Bioluminescence
             CompleteScheduledJobForTeardown();
             TryUnregisterHotSwapListener();
             bool dumpWorkerStopped = StopBlackBoxDumpWorker();
+            DisposeBlackBoxDumpSnapshot();
 #if UNITY_EDITOR
             StopCsvBackgroundWatcher();
 #endif
@@ -1462,8 +1521,8 @@ namespace Hecton8.VFX.Bioluminescence
                     AupReference = new double3(_aupOriginOffset.x, _aupOriginOffset.y, _aupOriginOffset.z),
                     GlobalQualityWeight = _globalQualityWeight
                 };
-                // Cold mock seed: keep the job system/Burst route visible without scheduling a tiny hot-path job.
-                job.Run();
+                // Cold mock seed: direct owner execution avoids a same-frame Job System wrapper.
+                job.Execute();
                 CopyPulseStateToManagedBuffer();
             }
             finally
@@ -2931,12 +2990,18 @@ namespace Hecton8.VFX.Bioluminescence
 
         private void DumpBlackBox(byte reason)
         {
-            if (_dumpedFault || !TryAcquireBlackBoxBuffer(out IDataVault vault, out NativeArray<BiolumPulseTelemetryEntry> blackBox))
+            if (_dumpedFault)
                 return;
 
             try
             {
-                if (!CopyBlackBoxDumpSnapshot(reason, blackBox))
+                if (!CopyBlackBoxDumpSnapshot())
+                {
+                    Volatile.Write(ref _blackBoxDumpState, BlackBoxDumpStateFailed);
+                    return;
+                }
+
+                if (!WriteBlackBoxDumpSnapshotToScratch(reason))
                 {
                     Volatile.Write(ref _blackBoxDumpState, BlackBoxDumpStateFailed);
                     return;
@@ -2949,16 +3014,45 @@ namespace Hecton8.VFX.Bioluminescence
             {
                 Volatile.Write(ref _blackBoxDumpState, BlackBoxDumpStateFailed);
             }
+        }
+
+        private bool CopyBlackBoxDumpSnapshot()
+        {
+            if (!_blackBoxDumpSnapshot.IsReady(BlackBoxFrameCount) ||
+                !TryAcquireBlackBoxBuffer(out IDataVault vault, out NativeArray<BiolumPulseTelemetryEntry> blackBox))
+                return false;
+
+            try
+            {
+                NativeArray<BiolumPulseTelemetryEntry> snapshot = _blackBoxDumpSnapshot.Entries;
+                int sourceCount = blackBox.Length;
+                int dumpCount = math.min(BlackBoxFrameCount, sourceCount);
+                int cursor = math.clamp(_blackBoxCursor, 0, sourceCount - 1);
+                int startIndex = cursor - dumpCount;
+                if (startIndex < 0)
+                    startIndex += sourceCount;
+
+                _blackBoxDumpSnapshotCursor = cursor;
+                _blackBoxDumpSnapshotCount = dumpCount;
+                for (int i = 0; i < dumpCount; i++)
+                    snapshot[i] = blackBox[(startIndex + i) % sourceCount];
+
+                return true;
+            }
             finally
             {
                 ReleaseBiolumGuard(vault, BlackBoxGuardMask);
             }
         }
 
-        private bool CopyBlackBoxDumpSnapshot(byte reason, NativeArray<BiolumPulseTelemetryEntry> blackBox)
+        private bool WriteBlackBoxDumpSnapshotToScratch(byte reason)
         {
             IDataVault vault = _dataVault;
-            if (vault == null || !blackBox.IsCreated || !HasBiolumVaultBuffer(vault, in _blackBoxDumpScratchHandle, BiolumBlackBoxDumpScratchBufferId, BlackBoxDumpByteCount))
+            int dumpCount = math.clamp(_blackBoxDumpSnapshotCount, 0, BlackBoxFrameCount);
+            if (vault == null ||
+                dumpCount <= 0 ||
+                !_blackBoxDumpSnapshot.IsReady(BlackBoxFrameCount) ||
+                !HasBiolumVaultBuffer(vault, in _blackBoxDumpScratchHandle, BiolumBlackBoxDumpScratchBufferId, BlackBoxDumpByteCount))
                 return false;
 
             if (!TryAcquireBiolumGuard(vault, BlackBoxDumpScratchGuardMask))
@@ -2969,19 +3063,12 @@ namespace Hecton8.VFX.Bioluminescence
                 if (!TryResolveBiolumVaultBuffer(vault, in _blackBoxDumpScratchHandle, BiolumBlackBoxDumpScratchBufferId, BlackBoxDumpByteCount, out NativeArray<byte> bytes))
                     return false;
 
-                int sourceCount = blackBox.Length;
-                int dumpCount = math.min(BlackBoxFrameCount, sourceCount);
-                int cursor = math.clamp(_blackBoxCursor, 0, sourceCount - 1);
-                int startIndex = cursor - dumpCount;
-                if (startIndex < 0)
-                    startIndex += sourceCount;
-
                 BiolumPulseDumpHeader header = new BiolumPulseDumpHeader
                 {
                     Magic = BlackBoxMagic,
                     Reason = reason,
                     EntrySizeBytes = BlackBoxEntrySizeBytes,
-                    WriteCursor = cursor,
+                    WriteCursor = _blackBoxDumpSnapshotCursor,
                     EntryCount = dumpCount
                 };
 
@@ -2989,7 +3076,7 @@ namespace Hecton8.VFX.Bioluminescence
                 int offset = BlackBoxDumpHeaderSizeBytes;
                 for (int i = 0; i < dumpCount; i++)
                 {
-                    BiolumPulseTelemetryEntry entry = blackBox[(startIndex + i) % sourceCount];
+                    BiolumPulseTelemetryEntry entry = _blackBoxDumpSnapshot.Entries[i];
                     WriteUnmanagedToBytes(bytes, offset, ref entry);
                     offset += BlackBoxEntrySizeBytes;
                 }
@@ -3001,6 +3088,34 @@ namespace Hecton8.VFX.Bioluminescence
             {
                 ReleaseBiolumGuard(vault, BlackBoxDumpScratchGuardMask);
             }
+        }
+
+        private bool EnsureBlackBoxDumpSnapshot()
+        {
+            if (_blackBoxDumpSnapshot.IsReady(BlackBoxFrameCount))
+                return true;
+
+            try
+            {
+                _blackBoxDumpSnapshot.Allocate(BlackBoxFrameCount);
+                _blackBoxDumpSnapshotCursor = 0;
+                _blackBoxDumpSnapshotCount = 0;
+                return _blackBoxDumpSnapshot.IsReady(BlackBoxFrameCount);
+            }
+            catch (Exception)
+            {
+                _blackBoxDumpSnapshot.Dispose();
+                _blackBoxDumpSnapshotCursor = 0;
+                _blackBoxDumpSnapshotCount = 0;
+                return false;
+            }
+        }
+
+        private void DisposeBlackBoxDumpSnapshot()
+        {
+            _blackBoxDumpSnapshot.Dispose();
+            _blackBoxDumpSnapshotCursor = 0;
+            _blackBoxDumpSnapshotCount = 0;
         }
 
         private bool QueueBlackBoxDumpWrite()
@@ -3037,7 +3152,8 @@ namespace Hecton8.VFX.Bioluminescence
 
             try
             {
-                if (!HasBiolumVaultBuffer(_dataVault, in _blackBoxDumpScratchHandle, BiolumBlackBoxDumpScratchBufferId, BlackBoxDumpByteCount))
+                if (!EnsureBlackBoxDumpSnapshot() ||
+                    !HasBiolumVaultBuffer(_dataVault, in _blackBoxDumpScratchHandle, BiolumBlackBoxDumpScratchBufferId, BlackBoxDumpByteCount))
                 {
                     Volatile.Write(ref _blackBoxDumpState, BlackBoxDumpStateFailed);
                     return;
@@ -3153,22 +3269,12 @@ namespace Hecton8.VFX.Bioluminescence
             }
         }
 
-        private static unsafe bool WriteBlackBoxDumpBytes(string dumpPath, NativeArray<byte> bytes, int count)
+        private static bool WriteBlackBoxDumpBytes(string dumpPath, NativeArray<byte> bytes, int count)
         {
             if (string.IsNullOrEmpty(dumpPath) || !bytes.IsCreated || count <= 0 || count > bytes.Length)
                 return false;
 
-            string directory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            {
-                void* bytesPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(bytes);
-                stream.Write(new ReadOnlySpan<byte>(bytesPtr, count));
-            }
-
-            return true;
+            return NativeFaultDumpWriter.TryWriteAll(dumpPath, bytes, count);
         }
 
         private static float SanitizeDelta(float deltaTime)

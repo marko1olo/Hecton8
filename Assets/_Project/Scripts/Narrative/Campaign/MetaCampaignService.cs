@@ -7,6 +7,7 @@ using Hecton8.Core.Memory;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -1498,33 +1499,46 @@ namespace Hecton8.Narrative.Campaign
             if (!TryReadBlackBox(out NativeArray<MetaCampaignBlackBoxEntry>.ReadOnly blackBox))
                 return;
 
+            NativeArray<byte> payload = default;
             try
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string dumpPath = Path.Combine(projectRoot, DumpRelativePath);
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                    Directory.CreateDirectory(directory);
+                const int headerBytes = 16;
+                const int rowBytes = 24;
+                int count = blackBox.Length;
+                int byteCount = headerBytes + count * rowBytes;
+                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                unsafe
                 {
-                    writer.Write(0x4D43424Cu);
-                    writer.Write(ServiceHash);
-                    writer.Write(_blackBoxCursor);
-                    writer.Write(blackBox.Length);
-                    for (int i = 0; i < blackBox.Length; i++)
+                    byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    WriteUInt(bytes, 0, 0x4D43424Cu);
+                    WriteUInt(bytes, 4, ServiceHash);
+                    WriteInt(bytes, 8, _blackBoxCursor);
+                    WriteInt(bytes, 12, count);
+
+                    int cursor = headerBytes;
+                    for (int i = 0; i < count; i++)
                     {
                         MetaCampaignBlackBoxEntry entry = blackBox[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.StageHash);
-                        writer.Write(entry.VariableHash);
-                        writer.Write(entry.Value);
-                        writer.Write(entry.Toxicity01);
-                        writer.Write(entry.ChangeKind);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.Sequence);
+                        WriteUInt(bytes, cursor, entry.Frame);
+                        WriteUInt(bytes, cursor + 4, entry.StageHash);
+                        WriteUInt(bytes, cursor + 8, entry.VariableHash);
+                        WriteInt(bytes, cursor + 12, entry.Value);
+                        WriteFloat(bytes, cursor + 16, entry.Toxicity01);
+                        bytes[cursor + 20] = entry.ChangeKind;
+                        bytes[cursor + 21] = entry.Flags;
+                        WriteUShort(bytes, cursor + 22, entry.Sequence);
+                        cursor += rowBytes;
                     }
+                }
+
+                if (!NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, byteCount))
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Hecton8.Core.H8Debug.LogError("MetaCampaignService blackbox native dump write failed.");
+#endif
                 }
             }
             catch (Exception)
@@ -1533,6 +1547,35 @@ namespace Hecton8.Narrative.Campaign
                 Hecton8.Core.H8Debug.LogError("MetaCampaignService blackbox dump failed.");
 #endif
             }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
+            }
+        }
+
+        private static unsafe void WriteUInt(byte* data, int offset, uint value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+            data[offset + 2] = (byte)(value >> 16);
+            data[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static unsafe void WriteInt(byte* data, int offset, int value)
+        {
+            WriteUInt(data, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUShort(byte* data, int offset, ushort value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+        }
+
+        private static unsafe void WriteFloat(byte* data, int offset, float value)
+        {
+            UnsafeUtility.MemCpy(data + offset, &value, sizeof(float));
         }
     }
 

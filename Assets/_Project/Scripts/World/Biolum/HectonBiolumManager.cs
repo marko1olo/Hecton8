@@ -192,6 +192,8 @@ namespace Hecton8.Biolum
         private const int MaxTouchRipples = 16;
         private const int MaxPredatorContacts = 16;
         private const int BiolumTelemetryCapacity = 300;
+        private const int BiolumDumpHeaderBytes = 13;
+        private const int BiolumDumpEntryBytes = 32;
         private const float PredatorBlackoutRadiusMeters = 50f;
         private const float PredatorBlackoutRadiusSq = PredatorBlackoutRadiusMeters * PredatorBlackoutRadiusMeters;
         private const float PredatorBlackoutMinimumIntensity = 0.1f;
@@ -1466,37 +1468,68 @@ namespace Hecton8.Biolum
                 _lastBiolumDumpFrame = frame;
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string dumpPath = Path.Combine(projectRoot, BiolumDumpRelativePath);
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                int byteCount = BiolumDumpHeaderBytes + BiolumTelemetryCapacity * BiolumDumpEntryBytes;
+                NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                try
                 {
-                    writer.Write(0x42494F4Cu);
-                    writer.Write(_telemetrySequence);
-                    writer.Write(reasonFlags);
-                    writer.Write(BiolumTelemetryCapacity);
+                    int cursor = 0;
+                    WriteUInt32LittleEndian(payload, ref cursor, 0x42494F4Cu);
+                    WriteUInt32LittleEndian(payload, ref cursor, _telemetrySequence);
+                    payload[cursor++] = reasonFlags;
+                    WriteInt32LittleEndian(payload, ref cursor, BiolumTelemetryCapacity);
+
                     for (int i = 0; i < BiolumTelemetryCapacity; i++)
                     {
                         BiolumTelemetryEntry entry = telemetryRing[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.CameraPositionX);
-                        writer.Write(entry.CameraPositionY);
-                        writer.Write(entry.CameraPositionZ);
-                        writer.Write(entry.Intensity);
-                        writer.Write(entry.Phase);
-                        writer.Write(entry.PredatorDim);
-                        writer.Write(entry.PredatorHits);
-                        writer.Write(entry.ActiveRipples);
-                        writer.Write(entry.Flags);
+                        WriteUInt32LittleEndian(payload, ref cursor, entry.Frame);
+                        WriteFloatLittleEndian(payload, ref cursor, entry.CameraPositionX);
+                        WriteFloatLittleEndian(payload, ref cursor, entry.CameraPositionY);
+                        WriteFloatLittleEndian(payload, ref cursor, entry.CameraPositionZ);
+                        WriteFloatLittleEndian(payload, ref cursor, entry.Intensity);
+                        WriteFloatLittleEndian(payload, ref cursor, entry.Phase);
+                        WriteFloatLittleEndian(payload, ref cursor, entry.PredatorDim);
+                        WriteUInt16LittleEndian(payload, ref cursor, entry.PredatorHits);
+                        payload[cursor++] = entry.ActiveRipples;
+                        payload[cursor++] = entry.Flags;
                     }
+
+                    if (cursor == byteCount)
+                        NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, byteCount);
+                }
+                finally
+                {
+                    if (payload.IsCreated)
+                        payload.Dispose();
                 }
             }
             finally
             {
                 ReleaseTelemetryRingGuard(telemetryVault);
             }
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(payload, ref cursor, (uint)value);
+        }
+
+        private static void WriteUInt16LittleEndian(NativeArray<byte> payload, ref int cursor, ushort value)
+        {
+            payload[cursor++] = (byte)value;
+            payload[cursor++] = (byte)(value >> 8);
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, ref int cursor, uint value)
+        {
+            payload[cursor++] = (byte)value;
+            payload[cursor++] = (byte)(value >> 8);
+            payload[cursor++] = (byte)(value >> 16);
+            payload[cursor++] = (byte)(value >> 24);
+        }
+
+        private static void WriteFloatLittleEndian(NativeArray<byte> payload, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(payload, ref cursor, math.asuint(value));
         }
 
         private static bool VectorDeltaExceeds(Vector4 left, Vector4 right, float epsilon)

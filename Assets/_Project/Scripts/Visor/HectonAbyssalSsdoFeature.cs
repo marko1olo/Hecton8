@@ -169,7 +169,7 @@ namespace Hecton8.Visor
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                if (!Application.isPlaying)
+                if (!HectonDrsRenderFeatureGate.HasRuntimeRenderOwner())
                     return;
 
                 if (_settings == null ||
@@ -515,7 +515,7 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            if (!Application.isPlaying)
+            if (!HectonDrsRenderFeatureGate.HasRuntimeRenderOwner())
                 return;
 
             if (settings == null ||

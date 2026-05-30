@@ -53,7 +53,7 @@ namespace Hecton8.Gameplay
         private MaterialPropertyBlock _mpb;
         private IPlayerTransportLifecycleOwner[] _trackedTransports;
         private MonoBehaviour[] _trackedBehaviours;
-        private bool _registered;
+        private bool _registeredTick;
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
         private bool _indicatorDirty;
@@ -75,8 +75,10 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _cachedTransform = transform;
-            _triggerCollider = GetComponent<Collider>();
-            _triggerCollider.isTrigger = true;
+            TryGetComponent(out _triggerCollider);
+            if (_triggerCollider != null)
+                _triggerCollider.isTrigger = true;
+
             _cachedVolume = CachedTriggerVolume.FromCollider(_triggerCollider, 2f);
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] -- transport charging station emission state -- owner: TransportChargingStation
 
@@ -89,9 +91,11 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             TryRegisterHotSwapListener();
-            TryRegister();
             RefreshTrackedTransportsFromRegistryCold();
+            TryRegisterTickIfNeeded();
             UpdateIndicators();
+            if (_indicatorDirty)
+                TryRegisterLateFrame();
         }
 
         private void OnDisable()
@@ -117,7 +121,11 @@ namespace Hecton8.Gameplay
 
             TryUnregister();
             if (currentService != null && isActiveAndEnabled)
-                TryRegister();
+            {
+                TryRegisterTickIfNeeded();
+                if (_indicatorDirty)
+                    TryRegisterLateFrame();
+            }
         }
 
         /// <summary>
@@ -125,7 +133,17 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Tick(float deltaTime)
         {
-            RefreshTrackedTransportsFromCachedOverlap();
+            if (!RefreshTrackedTransportsFromCachedOverlap())
+            {
+                if (_activeChargingCount != 0)
+                {
+                    _activeChargingCount = 0;
+                    UpdateIndicators();
+                }
+
+                TryUnregisterTickWhenDormant();
+                return;
+            }
 
             int nextActiveChargingCount = 0;
             if (_hasPower && chargeRatePerSecond > 0f)
@@ -162,6 +180,7 @@ namespace Hecton8.Gameplay
         public void LateFrameTick()
         {
             FlushIndicators();
+            TryUnregisterLateFrameWhenDormant();
         }
 
         /// <summary>
@@ -182,7 +201,10 @@ namespace Hecton8.Gameplay
                 return;
 
             if (PassesTransportFilter(lifecycleBehaviour) && IsTransportInsideStation(lifecycleBehaviour))
+            {
                 AddTrackedTransport(lifecycleOwner, lifecycleBehaviour);
+                TryRegisterTickIfNeeded();
+            }
         }
 
         private void OnTriggerExit(Collider other)
@@ -191,9 +213,10 @@ namespace Hecton8.Gameplay
                 return;
 
             RemoveTrackedTransport(lifecycleOwner, lifecycleBehaviour);
+            TryUnregisterTickWhenDormant();
         }
 
-        private void TryRegister()
+        private void TryRegisterTickIfNeeded()
         {
             if (!Application.isPlaying)
                 return;
@@ -201,10 +224,21 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registered)
-                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-            if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            if (_registeredTick || !HasTrackedTransports())
+                return;
+
+            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+        }
+
+        private void TryRegisterLateFrame()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (_registeredLateFrame || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -215,11 +249,29 @@ namespace Hecton8.Gameplay
                 _registeredLateFrame = false;
             }
 
-            if (_registered)
+            if (_registeredTick)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registered = false;
+                _registeredTick = false;
             }
+        }
+
+        private void TryUnregisterTickWhenDormant()
+        {
+            if (!_registeredTick || HasTrackedTransports())
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _registeredTick = false;
+        }
+
+        private void TryUnregisterLateFrameWhenDormant()
+        {
+            if (!_registeredLateFrame || _indicatorDirty)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -239,8 +291,9 @@ namespace Hecton8.Gameplay
             _registeredHotSwap = false;
         }
 
-        private void RefreshTrackedTransportsFromCachedOverlap()
+        private bool RefreshTrackedTransportsFromCachedOverlap()
         {
+            bool hasTrackedTransport = false;
             for (int i = 0; i < _trackedTransports.Length; i++)
             {
                 MonoBehaviour behaviour = _trackedBehaviours[i];
@@ -252,7 +305,13 @@ namespace Hecton8.Gameplay
                     _trackedTransports[i] = null;
                     _trackedBehaviours[i] = null;
                 }
+                else
+                {
+                    hasTrackedTransport = true;
+                }
             }
+
+            return hasTrackedTransport;
         }
 
         private void RefreshTrackedTransportsFromRegistryCold()
@@ -292,11 +351,11 @@ namespace Hecton8.Gameplay
             if (other == null)
                 return false;
 
-            lifecycleOwner = other.GetComponentInParent<IPlayerTransportLifecycleOwner>();
+            TryResolveParentInterface(other.transform, out lifecycleOwner);
             lifecycleBehaviour = lifecycleOwner as MonoBehaviour;
             if (lifecycleOwner == null || lifecycleBehaviour == null)
             {
-                IPlayerTransportLifecycleResolver transportResolver = other.GetComponentInParent<IPlayerTransportLifecycleResolver>();
+                TryResolveParentInterface(other.transform, out IPlayerTransportLifecycleResolver transportResolver);
                 if (transportResolver != null && transportResolver.TryResolveTransportLifecycleOwner(out lifecycleOwner))
                     lifecycleBehaviour = lifecycleOwner as MonoBehaviour;
             }
@@ -341,8 +400,29 @@ namespace Hecton8.Gameplay
 
                 _trackedTransports[i] = null;
                 _trackedBehaviours[i] = null;
+                if (!HasTrackedTransports() && _activeChargingCount != 0)
+                {
+                    _activeChargingCount = 0;
+                    UpdateIndicators();
+                }
+
                 return;
             }
+        }
+
+        private bool HasTrackedTransports()
+        {
+            if (_trackedTransports == null || _trackedBehaviours == null)
+                return false;
+
+            for (int i = 0; i < _trackedTransports.Length; i++)
+            {
+                MonoBehaviour behaviour = _trackedBehaviours[i];
+                if (_trackedTransports[i] != null && (object)behaviour != null && behaviour != null)
+                    return true;
+            }
+
+            return false;
         }
 
         private void ClearTrackedTransports()
@@ -375,6 +455,7 @@ namespace Hecton8.Gameplay
             _lastIndicatorColor = targetColor;
             _pendingIndicatorColor = targetColor;
             _indicatorDirty = true;
+            TryRegisterLateFrame();
         }
 
         private void FlushIndicators()
@@ -393,6 +474,21 @@ namespace Hecton8.Gameplay
                 _mpb.SetColor(_EmissionColorID, _pendingIndicatorColor);
                 targetRenderer.SetPropertyBlock(_mpb);
             }
+        }
+
+        private static bool TryResolveParentInterface<T>(Transform start, out T component)
+        {
+            component = default;
+            Transform current = start;
+            while (current != null)
+            {
+                if (current.TryGetComponent(out component) && component != null)
+                    return true;
+
+                current = current.parent;
+            }
+
+            return false;
         }
     }
 }

@@ -139,6 +139,8 @@ namespace Hecton8.Power
         public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_114.bin";
         public const string DumpSurgeonRelativePath = "Docs/AgentLogs/Dump_LOGISTICS_SURGEON.bin";
         public const string DumpH8RelativePath = "Docs/AgentLogs/Dump_SHINOBU_114.h8dump";
+        private const int DumpHeaderBytes = 20;
+        private const int DumpTelemetryRowBytes = 64;
 
         private const int PriorityLifeSupport = 0;
         private const int PriorityCorridor = 1;
@@ -1737,43 +1739,84 @@ namespace Hecton8.Power
             {
                 string root = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
                 string path = Path.Combine(root, relativePath.Replace('/', Path.DirectorySeparatorChar));
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                int telemetryCount = _blackBox.IsCreated ? _blackBox.Length : 0;
+                long totalBytes = DumpHeaderBytes + ((long)telemetryCount * DumpTelemetryRowBytes);
+                if (totalBytes < DumpHeaderBytes || totalBytes > int.MaxValue)
+                    return;
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                NativeArray<byte> payload = new NativeArray<byte>((int)totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                try
                 {
-                    writer.Write(SourceHash);
-                    writer.Write(faultFlags | LogisticsGraphFaultFlags.DumpedBlackBox);
-                    writer.Write(_frameIndex);
-                    writer.Write(_nodeCount);
-                    writer.Write(_edgeCount);
-                    for (int i = 0; i < _blackBox.Length; i++)
+                    WriteUInt32LittleEndian(payload, 0, SourceHash);
+                    WriteInt32LittleEndian(payload, 4, faultFlags | LogisticsGraphFaultFlags.DumpedBlackBox);
+                    WriteInt32LittleEndian(payload, 8, _frameIndex);
+                    WriteInt32LittleEndian(payload, 12, _nodeCount);
+                    WriteInt32LittleEndian(payload, 16, _edgeCount);
+
+                    int cursor = DumpHeaderBytes;
+                    for (int i = 0; i < telemetryCount; i++)
                     {
-                        LogisticsGraphTelemetryEntry entry = _blackBox[i];
-                        writer.Write(entry.FrameIndex);
-                        writer.Write(entry.NodeCount);
-                        writer.Write(entry.ActiveNodeCount);
-                        writer.Write(entry.FaultFlags);
-                        writer.Write(entry.TotalPowerGenerated);
-                        writer.Write(entry.TotalPowerConsumed);
-                        writer.Write(entry.TotalOxygen01);
-                        writer.Write(entry.SupplyRatio);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.BreachedCount);
-                        writer.Write(entry.UnpoweredCount);
-                        writer.Write(entry.OxygenCadence);
-                        writer.Write(entry.ComponentCount);
-                        writer.Write(entry.DeltaPassCount);
-                        writer.Write(entry.SolverMicros);
+                        WriteLogisticsTelemetryEntry(payload, cursor, _blackBox[i]);
+                        cursor += DumpTelemetryRowBytes;
                     }
+
+                    NativeFaultDumpWriter.TryWriteAll(path, payload, (int)totalBytes);
+                }
+                finally
+                {
+                    payload.Dispose();
                 }
             }
             catch (Exception exception)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(0x5348444Du, SourceHash, exception.HResult);
             }
+        }
+
+        private static void WriteLogisticsTelemetryEntry(
+            NativeArray<byte> destination,
+            int offset,
+            LogisticsGraphTelemetryEntry entry)
+        {
+            WriteInt32LittleEndian(destination, offset, entry.FrameIndex);
+            WriteInt32LittleEndian(destination, offset + 4, entry.NodeCount);
+            WriteInt32LittleEndian(destination, offset + 8, entry.ActiveNodeCount);
+            WriteInt32LittleEndian(destination, offset + 12, entry.FaultFlags);
+            WriteFloat32LittleEndian(destination, offset + 16, entry.TotalPowerGenerated);
+            WriteFloat32LittleEndian(destination, offset + 20, entry.TotalPowerConsumed);
+            WriteFloat32LittleEndian(destination, offset + 24, entry.TotalOxygen01);
+            WriteFloat32LittleEndian(destination, offset + 28, entry.SupplyRatio);
+            WriteUInt64LittleEndian(destination, offset + 32, entry.StateHash);
+            WriteInt32LittleEndian(destination, offset + 40, entry.BreachedCount);
+            WriteInt32LittleEndian(destination, offset + 44, entry.UnpoweredCount);
+            WriteInt32LittleEndian(destination, offset + 48, entry.OxygenCadence);
+            WriteInt32LittleEndian(destination, offset + 52, entry.ComponentCount);
+            WriteInt32LittleEndian(destination, offset + 56, entry.DeltaPassCount);
+            WriteInt32LittleEndian(destination, offset + 60, entry.SolverMicros);
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> destination, int offset, float value)
+        {
+            WriteUInt32LittleEndian(destination, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> destination, int offset, uint value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> destination, int offset, ulong value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+            WriteUInt32LittleEndian(destination, offset + 4, unchecked((uint)(value >> 32)));
         }
 
         private bool PublishFluidIncursion(int nodeIndex)

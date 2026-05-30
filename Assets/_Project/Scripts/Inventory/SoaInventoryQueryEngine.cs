@@ -6,6 +6,7 @@ namespace Hecton8.Inventory
     using System.Runtime.InteropServices;
     using System.Reflection;
     using System.Threading;
+    using Hecton8.Core;
     using Hecton8.Core.Memory;
     using Unity.Burst;
     using Unity.Burst.Intrinsics;
@@ -693,26 +694,34 @@ namespace Hecton8.Inventory
 
             try
             {
-                string root = Directory.GetCurrentDirectory();
-                string path = Path.Combine(root, relativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                int telemetryBytes = telemetryRing.Length * TelemetryEntrySizeBytes;
+                int byteCount = TelemetryDumpHeaderBytes + telemetryBytes;
+                NativeArray<byte> payload = default;
+                try
                 {
-                    writer.Write(DumpMagic);
-                    writer.Write(DumpVersion);
-                    writer.Write(cursor);
-                    writer.Write(telemetryRing.Length);
-                    writer.Write(TelemetryEntrySizeBytes);
-                    writer.Write(LayoutHash);
-                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
-                    stream.Write(new ReadOnlySpan<byte>(source, telemetryRing.Length * TelemetryEntrySizeBytes));
-                }
+                    payload = NativeFaultDumpWriter.CreateTransientPayload(
+                        byteCount,
+                        nameof(SoaInventoryQueryEngine),
+                        "InventorySoaTelemetryDumpPayload");
+                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    WriteUInt32LittleEndian(target, 0, DumpMagic);
+                    WriteUInt32LittleEndian(target, 4, DumpVersion);
+                    WriteInt32LittleEndian(target, 8, cursor);
+                    WriteInt32LittleEndian(target, 12, telemetryRing.Length);
+                    WriteInt32LittleEndian(target, 16, TelemetryEntrySizeBytes);
+                    WriteUInt32LittleEndian(target, 20, unchecked((uint)LayoutHash));
 
-                return true;
+                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
+                    UnsafeUtility.MemCpy(target + TelemetryDumpHeaderBytes, source, telemetryBytes);
+                    return NativeFaultDumpWriter.TryWriteAll(relativePath, payload, byteCount);
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(SoaInventoryQueryEngine),
+                        "InventorySoaTelemetryDumpPayload");
+                }
             }
             catch (IOException)
             {
@@ -730,6 +739,21 @@ namespace Hecton8.Inventory
             {
                 return false;
             }
+        }
+
+        private const int TelemetryDumpHeaderBytes = 24;
+
+        private static void WriteInt32LittleEndian(byte* target, int offset, int value)
+        {
+            WriteUInt32LittleEndian(target, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(byte* target, int offset, uint value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+            target[offset + 2] = (byte)(value >> 16);
+            target[offset + 3] = (byte)(value >> 24);
         }
 
         private static InventorySoaVaultLane AcquireLane<T>(

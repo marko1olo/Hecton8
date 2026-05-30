@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -47,7 +46,31 @@ namespace Hecton8.Construction
         private const BufferID PipeConnectionOffsetsBufferId = (BufferID)72101;
         private const BufferID PipeConnectionCsrDestinationsBufferId = (BufferID)72102;
         private const BufferID PipeConnectionWriteCursorBufferId = (BufferID)72103;
-        private const ulong PipeGraphMutationGuardMask = 0x00000000FFFFF2FFUL;
+        private static readonly ulong PipeGraphMutationGuardMask =
+            FluidPipeMutationGuardBit(PipePressureBufferId) |
+            FluidPipeMutationGuardBit(PipeContentsBufferId) |
+            FluidPipeMutationGuardBit(PipeFlagsBufferId) |
+            FluidPipeMutationGuardBit(PipeContentKindsBufferId) |
+            FluidPipeMutationGuardBit(PipeNetworkIdsBufferId) |
+            FluidPipeMutationGuardBit(PipeRoomIndicesBufferId) |
+            FluidPipeMutationGuardBit(PipeCapacitiesBufferId) |
+            FluidPipeMutationGuardBit(PipeMaxPressureBufferId) |
+            FluidPipeMutationGuardBit(PipeFlowRatesBufferId) |
+            FluidPipeMutationGuardBit(PipeSourceRatesBufferId) |
+            FluidPipeMutationGuardBit(PipeDemandRatesBufferId) |
+            FluidPipeMutationGuardBit(PipeFlowVectorsBufferId) |
+            FluidPipeMutationGuardBit(PipeRoomExchangeContentsBufferId) |
+            FluidPipeMutationGuardBit(PipeLastVisualFlowBufferId) |
+            FluidPipeMutationGuardBit(PipeAupsBufferId) |
+            FluidPipeMutationGuardBit(PipeTelemetryRingBufferId) |
+            FluidPipeMutationGuardBit(PipeRuptureTelemetryRingBufferId) |
+            FluidPipeMutationGuardBit(PipeRuptureBudgetBufferId) |
+            FluidPipeMutationGuardBit(PipeConnectionSourcesBufferId) |
+            FluidPipeMutationGuardBit(PipeConnectionDestinationsBufferId) |
+            FluidPipeMutationGuardBit(PipeRuptureDispatchBufferId) |
+            FluidPipeMutationGuardBit(PipeConnectionOffsetsBufferId) |
+            FluidPipeMutationGuardBit(PipeConnectionCsrDestinationsBufferId) |
+            FluidPipeMutationGuardBit(PipeConnectionWriteCursorBufferId);
         private const uint SolveLockMutationGuard = 1u << 31;
         private const uint SolveLockPressure = 1u << 0;
         private const uint SolveLockContents = 1u << 1;
@@ -114,6 +137,7 @@ namespace Hecton8.Construction
         private VaultGenerationHandle<FluidPipeRuptureRecord> _ruptureDispatchHandle;
 
         private JobHandle _solveHandle;
+        private IDataVault _solveLockVault;
         private uint _solveLockMask;
         private bool _solveScheduled;
         private bool _registeredSlowTick;
@@ -123,6 +147,10 @@ namespace Hecton8.Construction
         private bool _initialized;
         private bool _atmosphereResolveAttempted;
         private bool _blackBoxDumped;
+        private uint _blackBoxStateHash;
+        private uint _blackBoxFlags;
+        private int _blackBoxTelemetryCount;
+        private int _blackBoxRuptureCount;
         private bool _connectionTopologyDirty = true;
         private ISubmarineAtmosphereRoomMutationSink _atmosphereSystem;
         private int _nodeCount;
@@ -133,6 +161,24 @@ namespace Hecton8.Construction
 
         public bool IsInitialized => _initialized;
         public int PipeNodeCount => _nodeCount;
+
+        public bool TryGetLastBlackBoxSummary(out uint stateHash, out uint flags, out int telemetryCount, out int ruptureCount)
+        {
+            if (_blackBoxDumped)
+            {
+                stateHash = _blackBoxStateHash;
+                flags = _blackBoxFlags;
+                telemetryCount = _blackBoxTelemetryCount;
+                ruptureCount = _blackBoxRuptureCount;
+                return true;
+            }
+
+            stateHash = 0u;
+            flags = 0u;
+            telemetryCount = 0;
+            ruptureCount = 0;
+            return false;
+        }
 
         private void Awake()
         {
@@ -654,6 +700,7 @@ namespace Hecton8.Construction
                 }
 
                 _solveHandle = topologyDirty ? job.Schedule(dependency) : job.Schedule();
+                _solveLockVault = vault;
                 _solveLockMask = lockMask;
                 _solveScheduled = true;
                 _connectionTopologyDirty = false;
@@ -697,6 +744,7 @@ namespace Hecton8.Construction
                 return true;
 
             uint lockMask = _solveLockMask;
+            IDataVault lockVault = _solveLockVault;
             bool completed = false;
             if (!DispatcherJobSwap.TryComplete(ref _solveHandle, force))
                 return false;
@@ -711,7 +759,8 @@ namespace Hecton8.Construction
             {
                 if (completed)
                 {
-                    ReleaseSolveWriteLocks(ResolveDataVault(), lockMask);
+                    ReleaseSolveWriteLocks(lockVault, lockMask);
+                    _solveLockVault = null;
                     _solveLockMask = 0u;
                 }
             }
@@ -967,58 +1016,57 @@ namespace Hecton8.Construction
                 FluidPipeGraphConstants.BlackBoxFrameCount,
                 out NativeArray<FluidPipeRuptureRecord>.ReadOnly ruptureTelemetryRing);
 
-            _blackBoxDumped = true;
-            try
+            int ruptureCount = hasRuptureTelemetry ? ruptureTelemetryRing.Length : 0;
+            uint hash = 2166136261u ^ 0x48385049u ^ (uint)telemetryRing.Length ^ ((uint)ruptureCount * 16777619u);
+            uint flags = 0u;
+            for (int i = 0; i < telemetryRing.Length; i++)
             {
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(logDirectory);
-                string dumpPath = Path.Combine(logDirectory, "Dump_1421_FluidLogistics.bin");
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(0x48385049u);
-                    writer.Write(telemetryRing.Length);
-                    writer.Write(hasRuptureTelemetry ? ruptureTelemetryRing.Length : 0);
-                    for (int i = 0; i < telemetryRing.Length; i++)
-                    {
-                        FluidPipeTelemetryEntry entry = telemetryRing[i];
-                        writer.Write(entry.FrameIndex);
-                        writer.Write(entry.NodeCount);
-                        writer.Write(entry.RuptureCount);
-                        writer.Write(entry.NanCount);
-                        writer.Write(entry.TotalWater);
-                        writer.Write(entry.TotalOxygen);
-                        writer.Write(entry.MaxPressureKPa);
-                        writer.Write(entry.StateHash);
-                    }
+                FluidPipeTelemetryEntry entry = telemetryRing[i];
+                if (entry.NanCount > 0)
+                    flags |= 1u;
+                if (entry.RuptureCount > 0)
+                    flags |= 2u;
+                hash = MixPipeBlackBoxHash(hash, (uint)entry.FrameIndex);
+                hash = MixPipeBlackBoxHash(hash, (uint)entry.NodeCount);
+                hash = MixPipeBlackBoxHash(hash, (uint)entry.RuptureCount);
+                hash = MixPipeBlackBoxHash(hash, (uint)entry.NanCount);
+                hash = MixPipeBlackBoxHash(hash, math.asuint(entry.TotalWater));
+                hash = MixPipeBlackBoxHash(hash, math.asuint(entry.TotalOxygen));
+                hash = MixPipeBlackBoxHash(hash, math.asuint(entry.MaxPressureKPa));
+                hash = MixPipeBlackBoxHash(hash, entry.StateHash);
+            }
 
-                    if (hasRuptureTelemetry)
-                    {
-                        for (int i = 0; i < ruptureTelemetryRing.Length; i++)
-                        {
-                            FluidPipeRuptureRecord rupture = ruptureTelemetryRing[i];
-                            writer.Write(rupture.NodeIndex);
-                            writer.Write(rupture.NetworkId);
-                            writer.Write(rupture.RoomIndex);
-                            writer.Write(rupture.FrameIndex);
-                            writer.Write(rupture.PressureKPa);
-                            writer.Write(rupture.Contents);
-                            writer.Write(rupture.Flow01);
-                            writer.Write(rupture.NodeHash);
-                            writer.Write(rupture.ContentKind);
-                            writer.Write(rupture.Flags);
-                            writer.Write(rupture.Reserved);
-                        }
-                    }
+            if (hasRuptureTelemetry)
+            {
+                for (int i = 0; i < ruptureTelemetryRing.Length; i++)
+                {
+                    FluidPipeRuptureRecord rupture = ruptureTelemetryRing[i];
+                    hash = MixPipeBlackBoxHash(hash, (uint)rupture.NodeIndex);
+                    hash = MixPipeBlackBoxHash(hash, (uint)rupture.NetworkId);
+                    hash = MixPipeBlackBoxHash(hash, (uint)rupture.RoomIndex);
+                    hash = MixPipeBlackBoxHash(hash, (uint)rupture.FrameIndex);
+                    hash = MixPipeBlackBoxHash(hash, math.asuint(rupture.PressureKPa));
+                    hash = MixPipeBlackBoxHash(hash, math.asuint(rupture.Contents));
+                    hash = MixPipeBlackBoxHash(hash, math.asuint(rupture.Flow01));
+                    hash = MixPipeBlackBoxHash(hash, rupture.NodeHash);
+                    hash = MixPipeBlackBoxHash(hash, rupture.ContentKind);
+                    hash = MixPipeBlackBoxHash(hash, rupture.Flags);
+                    hash = MixPipeBlackBoxHash(hash, rupture.Reserved);
+                    flags |= rupture.Flags;
                 }
             }
-            catch (Exception)
-            {
-#if UNITY_EDITOR
-                Hecton8.Core.H8Debug.LogError("[FluidPipeGraphRuntime] Failed to dump pipe black box.");
-#endif
-            }
+
+            _blackBoxStateHash = hash;
+            _blackBoxFlags = flags;
+            _blackBoxTelemetryCount = telemetryRing.Length;
+            _blackBoxRuptureCount = ruptureCount;
+            _blackBoxDumped = true;
+        }
+
+        private static uint MixPipeBlackBoxHash(uint hash, uint value)
+        {
+            hash ^= value;
+            return hash * 16777619u;
         }
 
         private bool HasConnection(
@@ -1432,6 +1480,11 @@ namespace Hecton8.Construction
             return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
                    handle.SystemID == (uint)OwnerSystemId &&
                    handle.Generation != 0u;
+        }
+
+        private static ulong FluidPipeMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)bufferId) & 31);
         }
 
         private static bool TryResolveSolveLockBufferId(uint bit, out BufferID bufferId)

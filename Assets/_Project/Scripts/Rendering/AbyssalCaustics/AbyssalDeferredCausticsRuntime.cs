@@ -1915,16 +1915,6 @@ namespace Hecton8.Rendering
                 _blackBoxDumpPath = null;
                 return;
             }
-
-            try
-            {
-                Directory.CreateDirectory(_blackBoxDumpDirectory);
-            }
-            catch (Exception)
-            {
-                _blackBoxDumpPath = null;
-                _blackBoxDumpDirectory = null;
-            }
         }
 
         private void DumpBlackBox()
@@ -1942,55 +1932,52 @@ namespace Hecton8.Rendering
                 1,
                 out NativeArray<int> telemetryCursor);
             string path = _blackBoxDumpPath;
-            string directory = _blackBoxDumpDirectory;
-            if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(directory) || !Directory.Exists(directory))
+            if (string.IsNullOrEmpty(path))
                 return;
 
+            int entryCount = math.min(telemetry.Length, AbyssalCausticsConstants.TelemetryCapacity);
+            int telemetryWriteCursor = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? telemetryCursor[0] : 0;
+            int wrappedCursor = 0;
+            if (entryCount > 0)
+            {
+                wrappedCursor = telemetryWriteCursor % entryCount;
+                if (wrappedCursor < 0)
+                    wrappedCursor += entryCount;
+            }
+
+            const int HeaderBytes = 20;
+            const int RowBytes = 64;
+            int totalBytes = HeaderBytes + entryCount * RowBytes;
+            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             try
             {
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                WriteUInt32LittleEndian(payload, 0, 0x32334353u);
+                WriteInt32LittleEndian(payload, 4, entryCount);
+                WriteInt32LittleEndian(payload, 8, telemetryWriteCursor);
+                WriteUInt32LittleEndian(payload, 12, _lastFaultFlags);
+                WriteInt32LittleEndian(payload, 16, UnsafeUtility.SizeOf<CausticsTelemetryEntry>());
+                for (int i = 0; i < entryCount; i++)
                 {
-                    int entryCount = math.min(telemetry.Length, AbyssalCausticsConstants.TelemetryCapacity);
-                    int telemetryWriteCursor = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? telemetryCursor[0] : 0;
-                    int wrappedCursor = 0;
-                    if (entryCount > 0)
-                    {
-                        wrappedCursor = telemetryWriteCursor % entryCount;
-                        if (wrappedCursor < 0)
-                            wrappedCursor += entryCount;
-                    }
+                    int index = wrappedCursor + i;
+                    if (index >= entryCount)
+                        index -= entryCount;
 
-                    writer.Write(0x32334353u); // SC32
-                    writer.Write(entryCount);
-                    writer.Write(telemetryWriteCursor);
-                    writer.Write(_lastFaultFlags);
-                    writer.Write(UnsafeUtility.SizeOf<CausticsTelemetryEntry>());
-                    for (int i = 0; i < entryCount; i++)
-                    {
-                        int index = wrappedCursor + i;
-                        if (index >= entryCount)
-                            index -= entryCount;
-
-                        CausticsTelemetryEntry entry = telemetry[index];
-                        writer.Write(entry.FrameIndex);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.ActiveNoiseOctavesX1000);
-                        writer.Write(entry.SunIntensity);
-                        writer.Write(entry.ActiveNoiseOctaves);
-                        writer.Write(entry.MaxDepthMeters);
-                        writer.Write(entry.EstimatedGpuMicros);
-                        writer.Write(entry.ProjectionVectorAndScale.x);
-                        writer.Write(entry.ProjectionVectorAndScale.y);
-                        writer.Write(entry.ProjectionVectorAndScale.z);
-                        writer.Write(entry.ProjectionVectorAndScale.w);
-                        writer.Write(entry.NoiseAnimationSpeed.x);
-                        writer.Write(entry.NoiseAnimationSpeed.y);
-                        writer.Write(entry.NoiseAnimationSpeed.z);
-                        writer.Write(entry.NoiseAnimationSpeed.w);
-                    }
+                    CausticsTelemetryEntry entry = telemetry[index];
+                    int offset = HeaderBytes + i * RowBytes;
+                    WriteUInt32LittleEndian(payload, offset, entry.FrameIndex);
+                    WriteUInt32LittleEndian(payload, offset + 4, entry.StateHash);
+                    WriteUInt32LittleEndian(payload, offset + 8, entry.Flags);
+                    WriteUInt32LittleEndian(payload, offset + 12, entry.ActiveNoiseOctavesX1000);
+                    WriteFloat32LittleEndian(payload, offset + 16, entry.SunIntensity);
+                    WriteFloat32LittleEndian(payload, offset + 20, entry.ActiveNoiseOctaves);
+                    WriteFloat32LittleEndian(payload, offset + 24, entry.MaxDepthMeters);
+                    WriteFloat32LittleEndian(payload, offset + 28, entry.EstimatedGpuMicros);
+                    WriteFloat4LittleEndian(payload, offset + 32, entry.ProjectionVectorAndScale);
+                    WriteFloat4LittleEndian(payload, offset + 48, entry.NoiseAnimationSpeed);
                 }
+
+                if (!NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes))
+                    _lastFaultFlags |= AbyssalCausticsConstants.FaultDumpIo;
             }
             catch (IOException)
             {
@@ -2000,6 +1987,37 @@ namespace Hecton8.Rendering
             {
                 _lastFaultFlags |= AbyssalCausticsConstants.FaultDumpIo;
             }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
+            }
+        }
+
+        private static void WriteFloat4LittleEndian(NativeArray<byte> payload, int offset, float4 value)
+        {
+            WriteFloat32LittleEndian(payload, offset, value.x);
+            WriteFloat32LittleEndian(payload, offset + 4, value.y);
+            WriteFloat32LittleEndian(payload, offset + 8, value.z);
+            WriteFloat32LittleEndian(payload, offset + 12, value.w);
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> payload, int offset, float value)
+        {
+            WriteUInt32LittleEndian(payload, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, int offset, int value)
+        {
+            WriteUInt32LittleEndian(payload, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, int offset, uint value)
+        {
+            payload[offset] = (byte)value;
+            payload[offset + 1] = (byte)(value >> 8);
+            payload[offset + 2] = (byte)(value >> 16);
+            payload[offset + 3] = (byte)(value >> 24);
         }
     }
 

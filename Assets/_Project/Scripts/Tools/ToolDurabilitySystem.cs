@@ -287,8 +287,18 @@ namespace Hecton8.Tools
 
         public void Tick(float deltaTime)
         {
-            if (!enableDurabilityDrain || _decayScheduled)
+            if (!enableDurabilityDrain)
+            {
+                DrainQueuedDurabilityCommands();
                 return;
+            }
+
+            if (_decayScheduled)
+            {
+                TryRunPendingDecayPass();
+                DrainQueuedDurabilityCommands();
+                return;
+            }
 
             if (!EnsureNativeStateViews(
                     out _,
@@ -299,29 +309,27 @@ namespace Hecton8.Tools
                     createIfMissing: false) ||
                 !HasPendingDecay(pendingDecayDt))
             {
+                DrainQueuedDurabilityCommands();
                 return;
             }
 
             _decayScheduled = true;
             _managedMirrorDirty = true;
+            TryRunPendingDecayPass();
+            DrainQueuedDurabilityCommands();
         }
 
         public void LateFrameTick()
         {
-            if (!_decayScheduled)
-            {
-                DrainQueuedDurabilityCommands();
-                return;
-            }
-
-            if (!TryRunPendingDecayPass())
-                return;
-            DrainQueuedDurabilityCommands();
+            FlushBreakdownEvents();
         }
 
         public void SlowTick()
         {
             ApplyEnvironmentalCorrosion();
+            if (_decayScheduled)
+                TryRunPendingDecayPass();
+            DrainQueuedDurabilityCommands();
         }
 
         public float GetDurability(string toolID, float maxDurability)
@@ -1446,7 +1454,6 @@ namespace Hecton8.Tools
             _decayScheduled = false;
             _managedMirrorDirty = true;
             SyncManagedMirrorsFromNative();
-            FlushBreakdownEvents();
             return true;
         }
 

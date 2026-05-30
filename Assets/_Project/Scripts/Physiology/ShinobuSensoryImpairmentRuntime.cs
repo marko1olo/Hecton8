@@ -45,8 +45,10 @@ namespace Hecton8.Physiology
 #if UNITY_EDITOR
         private static readonly ulong CsvImportMutationGuardMask =
             MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryImpairmentProfilesBuffer) |
-            MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer) |
-            MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryImpairmentCsvScratchBuffer);
+            MutationGuardBit(ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer);
+        private static readonly byte[] s_profileCsvScratchCold = new byte[ShinobuSensoryImpairmentConstants.CsvMaxBytes];
+        private static readonly SensoryImpairmentProfileDTO[] s_profileImportScratch = new SensoryImpairmentProfileDTO[ShinobuSensoryImpairmentConstants.ProfileCapacity];
+        private static int s_profileCsvScratchBusy;
 #endif
 
         [Header("Emergency Mock")]
@@ -57,9 +59,6 @@ namespace Hecton8.Physiology
         private VaultGenerationHandle<SensoryImpairmentTuningDTO> _tuningHandle;
         private VaultGenerationHandle<SensoryImpairmentTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<SensoryImpairmentProfileDTO> _profilesHandle;
-#if UNITY_EDITOR
-        private VaultGenerationHandle<byte> _csvScratchHandle;
-#endif
         private VaultGenerationHandle<SensoryInputDriftDebugDTO> _driftDebugHandle;
         private VaultGenerationHandle<GasPhysiologyStateDTO> _gasStateHandle;
         private VaultGenerationHandle<MockEnvironmentVitalsSignal> _environmentHandle;
@@ -93,7 +92,7 @@ namespace Hecton8.Physiology
 #if UNITY_EDITOR
             _csvPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", CsvRelativePath));
 #endif
-            _dumpPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath));
+            _dumpPath = DumpRelativePath;
         }
 
         private void OnEnable()
@@ -257,6 +256,7 @@ namespace Hecton8.Physiology
                 return false;
             }
 
+            SensoryImpairmentTuningDTO sanitizedTuning = ShinobuSensoryImpairmentJobMath.SanitizeTuning(tuning);
             if (!vault.TryAcquireMutationGuard(TuningMutationGuardMask))
                 return false;
 
@@ -264,7 +264,7 @@ namespace Hecton8.Physiology
             {
                 void* tuningPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rows);
                 ref SensoryImpairmentTuningDTO target = ref UnsafeUtility.AsRef<SensoryImpairmentTuningDTO>(tuningPtr);
-                target = ShinobuSensoryImpairmentJobMath.SanitizeTuning(tuning);
+                target = sanitizedTuning;
                 return true;
             }
             finally
@@ -341,15 +341,18 @@ namespace Hecton8.Physiology
                 return false;
             }
 
+            float safeOxygenPartialPressureAtm = math.max(0f, ShinobuSensoryImpairmentJobMath.SanitizeFinite(oxygenPartialPressureAtm, ShinobuPhysiologyConstants.SurfaceOxygenPartialPressureAtm));
+            float safeNitrogenPartialPressureAtm = math.max(0f, ShinobuSensoryImpairmentJobMath.SanitizeFinite(nitrogenPartialPressureAtm, ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm));
+            float safeCarbonDioxidePartialPressureAtm = math.max(0f, ShinobuSensoryImpairmentJobMath.SanitizeFinite(carbonDioxidePartialPressureAtm, ShinobuPhysiologyConstants.CarbonDioxideFraction));
             if (!vault.TryAcquireMutationGuard(GasMutationGuardMask))
                 return false;
 
             try
             {
                 GasPhysiologyStateDTO gas = gasStates[0];
-                gas.OxygenPartialPressure = math.max(0f, ShinobuSensoryImpairmentJobMath.SanitizeFinite(oxygenPartialPressureAtm, ShinobuPhysiologyConstants.SurfaceOxygenPartialPressureAtm));
-                gas.NitrogenPartialPressure = math.max(0f, ShinobuSensoryImpairmentJobMath.SanitizeFinite(nitrogenPartialPressureAtm, ShinobuPhysiologyConstants.SurfaceNitrogenPartialPressureAtm));
-                gas.CarbonDioxidePartialPressure = math.max(0f, ShinobuSensoryImpairmentJobMath.SanitizeFinite(carbonDioxidePartialPressureAtm, ShinobuPhysiologyConstants.CarbonDioxideFraction));
+                gas.OxygenPartialPressure = safeOxygenPartialPressureAtm;
+                gas.NitrogenPartialPressure = safeNitrogenPartialPressureAtm;
+                gas.CarbonDioxidePartialPressure = safeCarbonDioxidePartialPressureAtm;
                 gas.Flags |= ShinobuPhysiologyFlags.EmergencyMockCoefficients;
                 gasStates[0] = gas;
                 return true;
@@ -422,9 +425,6 @@ namespace Hecton8.Physiology
                 OpenOrAcquireOwnBuffer(ref _tuningHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer, 1, NativeArrayOptions.UninitializedMemory, out _) &&
                 OpenOrAcquireOwnBuffer(ref _telemetryHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentTelemetryBuffer, ShinobuSensoryImpairmentConstants.TelemetryFrameCount, NativeArrayOptions.UninitializedMemory, out _) &&
                 OpenOrAcquireOwnBuffer(ref _profilesHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentProfilesBuffer, ShinobuSensoryImpairmentConstants.ProfileCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
-#if UNITY_EDITOR
-                OpenOrAcquireOwnBuffer(ref _csvScratchHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentCsvScratchBuffer, ShinobuSensoryImpairmentConstants.CsvMaxBytes, NativeArrayOptions.UninitializedMemory, out _) &&
-#endif
                 OpenOrAcquireOwnBuffer(ref _driftDebugHandle, ShinobuSensoryImpairmentConstants.SensoryInputDriftDebugBuffer, 1, NativeArrayOptions.UninitializedMemory, out _);
             if (!created || !HandlesReady())
                 return false;
@@ -439,9 +439,6 @@ namespace Hecton8.Physiology
                    TryResolveOwnBuffer(ref _tuningHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer, 1, out _) &&
                    TryResolveOwnBuffer(ref _telemetryHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentTelemetryBuffer, ShinobuSensoryImpairmentConstants.TelemetryFrameCount, out _) &&
                    TryResolveOwnBuffer(ref _profilesHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentProfilesBuffer, ShinobuSensoryImpairmentConstants.ProfileCapacity, out _) &&
-#if UNITY_EDITOR
-                   TryResolveOwnBuffer(ref _csvScratchHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentCsvScratchBuffer, ShinobuSensoryImpairmentConstants.CsvMaxBytes, out _) &&
-#endif
                    TryResolveOwnBuffer(ref _driftDebugHandle, ShinobuSensoryImpairmentConstants.SensoryInputDriftDebugBuffer, 1, out _);
         }
 
@@ -462,13 +459,15 @@ namespace Hecton8.Physiology
             {
                 if (initCount > 0)
                 {
-                    new InitSensoryImpairmentJob
+                    InitSensoryImpairmentJob initJob = new InitSensoryImpairmentJob
                     {
                         Impairments = impairment,
                         Telemetry = telemetry,
                         DriftDebug = driftDebug,
                         Count = impairment.IsCreated ? impairment.Length : 0
-                    }.Run(initCount);
+                    };
+                    for (int index = 0; index < initCount; index++)
+                        initJob.Execute(index);
                 }
 
                 if (TryResolveOwnBuffer(ref _tuningHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer, 1, out NativeArray<SensoryImpairmentTuningDTO> tuning) &&
@@ -514,6 +513,10 @@ namespace Hecton8.Physiology
                     _vaultRepairRequested = true;
             }
 
+            uint frameCounter = _frameCounter;
+            float safeMockMaxDepthMeters = math.max(1f, mockMaxDepthMeters);
+            float mockTimeSeconds = ResolveMockTimeSeconds(frameCounter);
+            bool shouldGenerateMock = enableEmergencyMockToxicity && hasEnvironment;
             if (!vault.TryAcquireMutationGuard(EvaluationMutationGuardMask))
                 return false;
 
@@ -521,30 +524,32 @@ namespace Hecton8.Physiology
             {
                 SensoryImpairmentTuningDTO localTuning = ShinobuSensoryImpairmentJobMath.SanitizeTuning(tuning[0]);
                 localTuning.GlobalQualityWeight = quality;
-                localTuning.MockMaxDepthMeters = math.max(1f, mockMaxDepthMeters);
+                localTuning.MockMaxDepthMeters = safeMockMaxDepthMeters;
                 tuning[0] = localTuning;
 
-                if (enableEmergencyMockToxicity && hasEnvironment)
+                if (shouldGenerateMock)
                 {
-                    new GenerateMockToxicityDataJob
+                    GenerateMockToxicityDataJob mockJob = new GenerateMockToxicityDataJob
                     {
                         GasStates = gasStates,
                         Environment = environment,
                         Tuning = localTuning,
-                        TimeSeconds = ResolveMockTimeSeconds(_frameCounter),
-                        Frame = _frameCounter,
+                        TimeSeconds = mockTimeSeconds,
+                        Frame = frameCounter,
                         Count = 1
-                    }.Run(1);
+                    };
+                    mockJob.Execute(0);
                 }
 
-                new EvaluateSensoryImpairmentJob
+                EvaluateSensoryImpairmentJob evaluateJob = new EvaluateSensoryImpairmentJob
                 {
                     GasStates = gasStates,
                     TuningArray = tuning,
                     Impairments = impairment,
                     GlobalQualityWeight = quality,
                     Count = 1
-                }.Run(1);
+                };
+                evaluateJob.Execute(0);
                 return true;
             }
             finally
@@ -567,15 +572,15 @@ namespace Hecton8.Physiology
             }
 
             TryResolveExistingBuffer(ref _predictedAupTargetHandle, BufferID.ShinobuPredictedInputAupTargets, 1, out NativeArray<PredictedInputAupTargetDTO> aupTargets);
+            double3 aupOrigin = ResolveAupOrigin();
             if (!vault.TryAcquireMutationGuard(InputMutationGuardMask))
                 return false;
 
             try
             {
-                double3 aupOrigin = ResolveAupOrigin();
                 SensoryImpairmentTuningDTO localTuning = ShinobuSensoryImpairmentJobMath.SanitizeTuning(tuning[0]);
                 long jobStart = Stopwatch.GetTimestamp();
-                new CorruptPlayerInputJob
+                CorruptPlayerInputJob corruptJob = new CorruptPlayerInputJob
                 {
                     CurrentInput = currentInput,
                     PredictedInputs = predictedInputs,
@@ -590,7 +595,8 @@ namespace Hecton8.Physiology
                     TelemetryCursor = _telemetryCursor,
                     DeltaSeconds = deltaTime,
                     GlobalQualityWeight = quality
-                }.Run(1);
+                };
+                corruptJob.Execute(0);
                 corruptionMicroseconds = ResolveElapsedMicroseconds(jobStart, Stopwatch.GetTimestamp());
 
                 _telemetryCursor++;
@@ -618,14 +624,15 @@ namespace Hecton8.Physiology
 
             try
             {
-                new PatchSensoryTelemetryGasJob
+                PatchSensoryTelemetryGasJob patchJob = new PatchSensoryTelemetryGasJob
                 {
                     GasStates = gasStates,
                     Environment = environment,
                     Telemetry = telemetry,
                     TelemetryCursor = (_telemetryCursor + telemetry.Length - 1) % telemetry.Length,
                     ExecutionMicroseconds = elapsedMicroseconds
-                }.Run();
+                };
+                patchJob.Execute();
             }
             finally
             {
@@ -674,21 +681,26 @@ namespace Hecton8.Physiology
             if (!faulted)
                 return;
 
-            _autopsyDumped = true;
-            DumpAutopsyReport(telemetry);
+            _autopsyDumped = DumpAutopsyReport(telemetry);
         }
 
-        private void DumpAutopsyReport(NativeArray<SensoryImpairmentTelemetryEntry> telemetry)
+        private bool DumpAutopsyReport(NativeArray<SensoryImpairmentTelemetryEntry> telemetry)
         {
+            if (!telemetry.IsCreated || telemetry.Length <= 0)
+                return false;
+
             try
             {
-                string directory = Path.GetDirectoryName(_dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                int telemetryBytes = telemetry.Length * UnsafeUtility.SizeOf<SensoryImpairmentTelemetryEntry>();
+                int totalBytes = 32 + telemetryBytes;
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(ShinobuSensoryImpairmentRuntime),
+                    "shinobuSensoryImpairmentAutopsyPayload");
+                try
                 {
-                    Span<byte> header = stackalloc byte[32];
+                    byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    Span<byte> header = new Span<byte>(payloadPtr, 32);
                     WriteUInt64LittleEndian(header.Slice(0, 8), ShinobuSensoryImpairmentConstants.DumpMagic);
                     WriteUInt32LittleEndian(header.Slice(8, 4), ShinobuSensoryImpairmentConstants.DumpVersion);
                     WriteUInt32LittleEndian(header.Slice(12, 4), (uint)telemetry.Length);
@@ -696,19 +708,26 @@ namespace Hecton8.Physiology
                     WriteUInt32LittleEndian(header.Slice(20, 4), unchecked((uint)_telemetryCursor));
                     WriteUInt32LittleEndian(header.Slice(24, 4), ShinobuSensoryImpairmentConstants.SourceHash);
                     WriteUInt32LittleEndian(header.Slice(28, 4), _frameCounter);
-                    stream.Write(header);
 
                     void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                    int byteCount = telemetry.Length * UnsafeUtility.SizeOf<SensoryImpairmentTelemetryEntry>();
-                    stream.Write(new ReadOnlySpan<byte>(telemetryPtr, byteCount));
-                    stream.Flush();
+                    UnsafeUtility.MemCpy(payloadPtr + 32, telemetryPtr, telemetryBytes);
+                    return NativeFaultDumpWriter.TryWriteAll(_dumpPath, payload, totalBytes);
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(ShinobuSensoryImpairmentRuntime),
+                        "shinobuSensoryImpairmentAutopsyPayload");
                 }
             }
             catch (IOException)
             {
+                return false;
             }
             catch (UnauthorizedAccessException)
             {
+                return false;
             }
         }
 
@@ -722,37 +741,37 @@ namespace Hecton8.Physiology
             if (writeTicks == _csvLastWriteTicks)
                 return false;
 
-            if (!TryResolveOwnBuffer(ref _profilesHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentProfilesBuffer, ShinobuSensoryImpairmentConstants.ProfileCapacity, out NativeArray<SensoryImpairmentProfileDTO> profiles) ||
-                !TryResolveOwnBuffer(ref _tuningHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer, 1, out NativeArray<SensoryImpairmentTuningDTO> tuning) ||
-                !TryResolveOwnBuffer(ref _csvScratchHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentCsvScratchBuffer, ShinobuSensoryImpairmentConstants.CsvMaxBytes, out NativeArray<byte> scratch))
-            {
-                return false;
-            }
-
-            if (!vault.TryAcquireMutationGuard(CsvImportMutationGuardMask))
+            if (System.Threading.Interlocked.CompareExchange(ref s_profileCsvScratchBusy, 1, 0) != 0)
                 return false;
 
             try
             {
-                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                int count = 0;
-                using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    int targetBytes = (int)math.min(stream.Length, scratch.Length);
-                    Span<byte> target = new Span<byte>(scratchPtr, targetBytes);
-                    while (count < targetBytes)
-                    {
-                        int read = stream.Read(target.Slice(count));
-                        if (read <= 0)
-                            break;
-                        count += read;
-                    }
-                }
+                int count = ReadCsvBytesCold(_csvPath, s_profileCsvScratchCold, ShinobuSensoryImpairmentConstants.CsvMaxBytes);
+                if (count <= 0)
+                    return false;
 
-                if (ParseProfilesCsv(new ReadOnlySpan<byte>(scratchPtr, count), profiles, tuning))
+                int profileCount = ParseProfilesCsv(s_profileCsvScratchCold.AsSpan(0, count), s_profileImportScratch.AsSpan());
+                if (profileCount <= 0)
+                    return false;
+
+                if (!vault.TryAcquireMutationGuard(CsvImportMutationGuardMask))
+                    return false;
+
+                try
                 {
+                    if (!TryResolveOwnBuffer(ref _profilesHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentProfilesBuffer, ShinobuSensoryImpairmentConstants.ProfileCapacity, out NativeArray<SensoryImpairmentProfileDTO> profiles) ||
+                        !TryResolveOwnBuffer(ref _tuningHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer, 1, out NativeArray<SensoryImpairmentTuningDTO> tuning))
+                    {
+                        return false;
+                    }
+
+                    CommitProfilesCsv(s_profileImportScratch.AsSpan(), profileCount, profiles, tuning);
                     _csvLastWriteTicks = writeTicks;
                     return true;
+                }
+                finally
+                {
+                    vault.ReleaseMutationGuard(CsvImportMutationGuardMask);
                 }
             }
             catch (IOException)
@@ -763,7 +782,7 @@ namespace Hecton8.Physiology
             }
             finally
             {
-                vault.ReleaseMutationGuard(CsvImportMutationGuardMask);
+                System.Threading.Volatile.Write(ref s_profileCsvScratchBusy, 0);
             }
 
             return false;
@@ -771,10 +790,34 @@ namespace Hecton8.Physiology
 #endif
 
 #if UNITY_EDITOR
-        private static bool ParseProfilesCsv(ReadOnlySpan<byte> bytes, NativeArray<SensoryImpairmentProfileDTO> profiles, NativeArray<SensoryImpairmentTuningDTO> tuningRows)
+        private static int ReadCsvBytesCold(string path, byte[] scratch, int maxBytes)
         {
-            if (!profiles.IsCreated || profiles.Length <= 0)
-                return false;
+            if (scratch == null || scratch.Length <= 0 || maxBytes <= 0)
+                return 0;
+
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                long boundedLength = stream.Length < maxBytes ? stream.Length : maxBytes;
+                int byteCount = boundedLength > scratch.Length ? scratch.Length : (int)boundedLength;
+                int total = 0;
+                while (total < byteCount)
+                {
+                    int read = stream.Read(scratch, total, byteCount - total);
+                    if (read <= 0)
+                        break;
+                    total += read;
+                }
+
+                return total;
+            }
+        }
+#endif
+
+#if UNITY_EDITOR
+        private static int ParseProfilesCsv(ReadOnlySpan<byte> bytes, Span<SensoryImpairmentProfileDTO> profiles)
+        {
+            if (profiles.Length <= 0)
+                return 0;
 
             int lineStart = 0;
             int profileCount = 0;
@@ -788,17 +831,6 @@ namespace Hecton8.Physiology
                 if (TryParseProfileLine(line, out SensoryImpairmentProfileDTO profile))
                 {
                     profiles[profileCount++] = profile;
-                    if (profileCount == 1 && tuningRows.IsCreated && tuningRows.Length > 0)
-                    {
-                        SensoryImpairmentTuningDTO tuning = ShinobuSensoryImpairmentJobMath.SanitizeTuning(tuningRows[0]);
-                        tuning.HypoxiaPartialPressureAtm = profile.HypoxiaPartialPressureAtm;
-                        tuning.AnoxiaPartialPressureAtm = profile.AnoxiaPartialPressureAtm;
-                        tuning.NarcosisStartAtm = profile.NarcosisStartAtm;
-                        tuning.NarcosisFullAtm = profile.NarcosisFullAtm;
-                        tuning.MaxInputLatencyMilliseconds = profile.MaxInputLatencyMilliseconds;
-                        tuning.Flags |= SensoryImpairmentFlags.CsvProfile;
-                        tuningRows[0] = ShinobuSensoryImpairmentJobMath.SanitizeTuning(tuning);
-                    }
                 }
 
                 lineStart = lineEnd + 1;
@@ -808,7 +840,34 @@ namespace Hecton8.Physiology
 
             for (int i = profileCount; i < profiles.Length; i++)
                 profiles[i] = default;
-            return profileCount > 0;
+            return profileCount;
+        }
+
+        private static void CommitProfilesCsv(
+            Span<SensoryImpairmentProfileDTO> sourceProfiles,
+            int profileCount,
+            NativeArray<SensoryImpairmentProfileDTO> profiles,
+            NativeArray<SensoryImpairmentTuningDTO> tuningRows)
+        {
+            int copyCount = math.min(profileCount, profiles.Length);
+            for (int i = 0; i < copyCount; i++)
+                profiles[i] = sourceProfiles[i];
+
+            for (int i = copyCount; i < profiles.Length; i++)
+                profiles[i] = default;
+
+            if (copyCount <= 0 || !tuningRows.IsCreated || tuningRows.Length <= 0)
+                return;
+
+            SensoryImpairmentProfileDTO firstProfile = sourceProfiles[0];
+            SensoryImpairmentTuningDTO tuning = ShinobuSensoryImpairmentJobMath.SanitizeTuning(tuningRows[0]);
+            tuning.HypoxiaPartialPressureAtm = firstProfile.HypoxiaPartialPressureAtm;
+            tuning.AnoxiaPartialPressureAtm = firstProfile.AnoxiaPartialPressureAtm;
+            tuning.NarcosisStartAtm = firstProfile.NarcosisStartAtm;
+            tuning.NarcosisFullAtm = firstProfile.NarcosisFullAtm;
+            tuning.MaxInputLatencyMilliseconds = firstProfile.MaxInputLatencyMilliseconds;
+            tuning.Flags |= SensoryImpairmentFlags.CsvProfile;
+            tuningRows[0] = ShinobuSensoryImpairmentJobMath.SanitizeTuning(tuning);
         }
 #endif
 
@@ -1235,9 +1294,6 @@ namespace Hecton8.Physiology
             _tuningHandle = default;
             _telemetryHandle = default;
             _profilesHandle = default;
-#if UNITY_EDITOR
-            _csvScratchHandle = default;
-#endif
             _driftDebugHandle = default;
             _gasStateHandle = default;
             _environmentHandle = default;

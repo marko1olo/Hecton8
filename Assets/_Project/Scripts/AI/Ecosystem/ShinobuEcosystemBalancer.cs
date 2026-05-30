@@ -82,24 +82,25 @@ namespace Hecton8.AI.Ecosystem
         private const string CsvPrecomputedRelativePath = "Data/Precomputed/ecosystem_balance.csv";
         private const uint SourceHash = 0x5348494Eu; // SHIN
 
-        private static readonly ulong FrameJobMutationGuardMask =
-            ShinobuMutationGuardBit(BufferID.ShinobuAmbientEntities) |
-            ShinobuMutationGuardBit(BufferID.ShinobuAmbientAups) |
-            ShinobuMutationGuardBit(BufferID.ShinobuBoidStates) |
-            ShinobuMutationGuardBit(BufferID.ShinobuEcosystemCounters);
-
-        private static readonly ulong MacroJobMutationGuardMask =
-            ShinobuMutationGuardBit(BufferID.ShinobuAmbientEntities) |
-            ShinobuMutationGuardBit(BufferID.ShinobuAmbientAups) |
-            ShinobuMutationGuardBit(BufferID.ShinobuEcosystemSectors) |
-            ShinobuMutationGuardBit(BufferID.ShinobuEcosystemCounters);
-
         private static readonly ulong InitialPopulationMutationGuardMask =
             ShinobuMutationGuardBit(BufferID.ShinobuEcosystemCounters) |
             ShinobuMutationGuardBit(BufferID.ShinobuAmbientEntities) |
             ShinobuMutationGuardBit(BufferID.ShinobuAmbientAups) |
             ShinobuMutationGuardBit(BufferID.ShinobuBoidStates) |
             ShinobuMutationGuardBit(BufferID.ShinobuEcosystemSectors);
+        private const uint JobPinEntities = 1u << 0;
+        private const uint JobPinAups = 1u << 1;
+        private const uint JobPinBoidStates = 1u << 2;
+        private const uint JobPinEntitySnapshot = 1u << 3;
+        private const uint JobPinAupSnapshot = 1u << 4;
+        private const uint JobPinBoidStateSnapshot = 1u << 5;
+        private const uint JobPinSectors = 1u << 6;
+        private const uint JobPinCounters = 1u << 7;
+        private const uint JobPinSpatialHashBucketHeads = 1u << 8;
+        private const uint JobPinSpatialHashNext = 1u << 9;
+        private const uint JobPinSpatialGridEntries = 1u << 10;
+        private const uint JobPinSpatialGridSortScratch = 1u << 11;
+        private const uint JobPinSpatialGridBucketRanges = 1u << 12;
 
         internal const uint EntityFlagActive = 1u << 0;
         internal const uint EntityFlagFree = 1u << 1;
@@ -178,11 +179,8 @@ namespace Hecton8.AI.Ecosystem
         private VaultGenerationHandle<int> _spatialGridTelemetryCursorHandle;
         private VaultGenerationHandle<SpatialGridTuningDTO> _spatialGridTuningHandle;
         private VaultGenerationHandle<SpatialGridProfileDTO> _spatialGridProfileHandle;
-        private VaultGenerationHandle<byte> _spatialGridCsvScratchHandle;
         private VaultGenerationHandle<byte> _spatialGridDumpSnapshotHandle;
         private VaultGenerationHandle<byte> _ecosystemDumpSnapshotHandle;
-        private VaultGenerationHandle<byte> _csvScratchHandle;
-        private VaultGenerationHandle<byte> _legacyScratchHandle;
         private VaultGenerationHandle<SwarmSpeciesProfileDTO> _swarmSpeciesProfileHandle;
 
         private NativeArray<EcosystemTelemetryEntry> _ecosystemTelemetryMirror;
@@ -241,7 +239,7 @@ namespace Hecton8.AI.Ecosystem
         private bool _registeredRender;
         private bool _registeredHotSwap;
         private bool _jobScheduled;
-        private bool _jobMutationGuardHeld;
+        private bool _jobBufferPinsHeld;
         private bool _vaultBuffersReady;
         private bool _dumpedFault;
         private bool _dumpedFlockingFault;
@@ -253,9 +251,9 @@ namespace Hecton8.AI.Ecosystem
         private bool _proceduralCullKernelsResolved;
         private byte _scheduledPipelineKind;
         private uint _runtimeFlags;
-        private ulong _jobMutationGuardMask;
+        private uint _jobBufferPinMask;
         private int _proceduralRenderLayer;
-        private IDataVault _jobMutationGuardVault;
+        private IDataVault _jobBufferPinVault;
         private Material _proceduralRenderMaterial;
         private Bounds _proceduralRenderBounds;
         private ComputeShader _proceduralCullCompute;
@@ -441,7 +439,7 @@ namespace Hecton8.AI.Ecosystem
             if (vault.IsCompactionFenceActive)
                 return;
 
-            if (!TryAcquireFrameJobMutationGuard(vault))
+            if (!TryPinFrameJobBuffers(vault))
                 return;
 
             JobHandle scheduledHandle = default;
@@ -690,7 +688,7 @@ namespace Hecton8.AI.Ecosystem
             finally
             {
                 if (!_jobScheduled)
-                    ReleaseActiveJobMutationGuard(vault);
+                    ReleaseActiveJobBufferPins(vault);
             }
         }
 
@@ -1154,11 +1152,6 @@ namespace Hecton8.AI.Ecosystem
                 BufferID.ShinobuSpatialGridProfiles,
                 SpatialGridProfileCapacity,
                 NativeArrayOptions.ClearMemory);
-            _spatialGridCsvScratchHandle = ClaimVaultHandle<byte>(
-                vault,
-                BufferID.ShinobuSpatialGridCsvScratch,
-                SpatialGridCsvMaxBytes,
-                NativeArrayOptions.UninitializedMemory);
             _spatialGridDumpSnapshotHandle = ClaimVaultHandle<byte>(
                 vault,
                 BufferID.ShinobuSpatialGridDumpSnapshot,
@@ -1168,16 +1161,6 @@ namespace Hecton8.AI.Ecosystem
                 vault,
                 BufferID.ShinobuEcosystemDumpSnapshot,
                 ShinobuEcosystemTelemetryForensics.DumpSnapshotBytes,
-                NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = ClaimVaultHandle<byte>(
-                vault,
-                BufferID.ShinobuEcosystemCsvScratch,
-                CsvMaxBytes,
-                NativeArrayOptions.UninitializedMemory);
-            _legacyScratchHandle = ClaimVaultHandle<byte>(
-                vault,
-                BufferID.ShinobuEcosystemLegacyScratch,
-                LegacyProfileReadBytes,
                 NativeArrayOptions.UninitializedMemory);
             _swarmSpeciesProfileHandle = ClaimVaultHandle<SwarmSpeciesProfileDTO>(
                 vault,
@@ -1236,11 +1219,8 @@ namespace Hecton8.AI.Ecosystem
                    TryOpenVaultView(vault, in _spatialGridTelemetryCursorHandle, BufferID.ShinobuSpatialGridTelemetryCursor, 1, out NativeArray<int> _) &&
                    TryOpenVaultView(vault, in _spatialGridTuningHandle, BufferID.ShinobuSpatialGridTuning, 1, out NativeArray<SpatialGridTuningDTO> _) &&
                    TryOpenVaultView(vault, in _spatialGridProfileHandle, BufferID.ShinobuSpatialGridProfiles, SpatialGridProfileCapacity, out NativeArray<SpatialGridProfileDTO> _) &&
-                   TryOpenVaultView(vault, in _spatialGridCsvScratchHandle, BufferID.ShinobuSpatialGridCsvScratch, SpatialGridCsvMaxBytes, out NativeArray<byte> _) &&
                    TryOpenVaultView(vault, in _spatialGridDumpSnapshotHandle, BufferID.ShinobuSpatialGridDumpSnapshot, ShinobuSpatialGridForensics.DumpSnapshotBytes, out NativeArray<byte> _) &&
                    TryOpenVaultView(vault, in _ecosystemDumpSnapshotHandle, BufferID.ShinobuEcosystemDumpSnapshot, ShinobuEcosystemTelemetryForensics.DumpSnapshotBytes, out NativeArray<byte> _) &&
-                   TryOpenVaultView(vault, in _csvScratchHandle, BufferID.ShinobuEcosystemCsvScratch, CsvMaxBytes, out NativeArray<byte> _) &&
-                   TryOpenVaultView(vault, in _legacyScratchHandle, BufferID.ShinobuEcosystemLegacyScratch, LegacyProfileReadBytes, out NativeArray<byte> _) &&
                    TryOpenVaultView(vault, in _swarmSpeciesProfileHandle, BufferID.ShinobuSwarmSpeciesProfiles, SwarmSpeciesProfileCapacity, out NativeArray<SwarmSpeciesProfileDTO> _);
         }
 
@@ -1911,36 +1891,6 @@ namespace Hecton8.AI.Ecosystem
                 out _);
         }
 
-        private bool TryResolveSpatialGridBuffers(
-            IDataVault vault,
-            out NativeArray<SpatialGridEntryDTO> entries,
-            out NativeArray<SpatialGridEntryDTO> sortScratch,
-            out NativeArray<SpatialGridBucketRangeDTO> bucketRanges,
-            out NativeArray<SpatialGridTelemetryEntry> telemetry,
-            out NativeArray<int> telemetryCursor,
-            out NativeArray<SpatialGridTuningDTO> tuning,
-            out NativeArray<SpatialGridProfileDTO> profiles,
-            out NativeArray<byte> csvScratch)
-        {
-            entries = default;
-            sortScratch = default;
-            bucketRanges = default;
-            telemetry = default;
-            telemetryCursor = default;
-            tuning = default;
-            profiles = default;
-            csvScratch = default;
-
-            return TryOpenVaultView(vault, in _spatialGridEntryHandle, BufferID.ShinobuSpatialGridEntries, entityCapacity, out entries) &&
-                   TryOpenVaultView(vault, in _spatialGridSortScratchHandle, BufferID.ShinobuSpatialGridSortScratch, entityCapacity, out sortScratch) &&
-                   TryOpenVaultView(vault, in _spatialGridBucketRangeHandle, BufferID.ShinobuSpatialGridBucketRanges, SpatialGridBucketRangeCapacity, out bucketRanges) &&
-                   TryOpenVaultView(vault, in _spatialGridTelemetryHandle, BufferID.ShinobuSpatialGridTelemetryRing, ShinobuSpatialGridConstants.TelemetryCapacity, out telemetry) &&
-                   TryOpenVaultView(vault, in _spatialGridTelemetryCursorHandle, BufferID.ShinobuSpatialGridTelemetryCursor, 1, out telemetryCursor) &&
-                   TryOpenVaultView(vault, in _spatialGridTuningHandle, BufferID.ShinobuSpatialGridTuning, 1, out tuning) &&
-                   TryOpenVaultView(vault, in _spatialGridProfileHandle, BufferID.ShinobuSpatialGridProfiles, SpatialGridProfileCapacity, out profiles) &&
-                   TryOpenVaultView(vault, in _spatialGridCsvScratchHandle, BufferID.ShinobuSpatialGridCsvScratch, SpatialGridCsvMaxBytes, out csvScratch);
-        }
-
         private bool TryResolveFrameSpatialGridBuffers(
             out NativeArray<SpatialGridEntryDTO> entries,
             out NativeArray<SpatialGridEntryDTO> sortScratch,
@@ -1988,50 +1938,119 @@ namespace Hecton8.AI.Ecosystem
             return true;
         }
 
-        private bool TryAcquireFrameJobMutationGuard(IDataVault vault)
+        private bool TryPinFrameJobBuffers(IDataVault vault)
         {
-            if (vault == null || _jobMutationGuardHeld || vault.IsCompactionFenceActive)
+            if (vault == null || _jobBufferPinsHeld || vault.IsCompactionFenceActive)
                 return false;
 
-            ulong guardMask = FrameJobMutationGuardMask;
-            if (!vault.TryAcquireMutationGuard(guardMask))
+            bool pinned = false;
+            try
+            {
+                _jobBufferPinVault = vault;
+                if (!TryLockJobBuffer(vault, BufferID.ShinobuAmbientEntities, JobPinEntities) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuAmbientAups, JobPinAups) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuBoidStates, JobPinBoidStates) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuAmbientEntitySnapshot, JobPinEntitySnapshot) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuAmbientAupSnapshot, JobPinAupSnapshot) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuBoidStateSnapshot, JobPinBoidStateSnapshot) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuEcosystemCounters, JobPinCounters) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuSpatialHashBucketHeads, JobPinSpatialHashBucketHeads) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuSpatialHashNext, JobPinSpatialHashNext) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuSpatialGridEntries, JobPinSpatialGridEntries) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuSpatialGridSortScratch, JobPinSpatialGridSortScratch) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuSpatialGridBucketRanges, JobPinSpatialGridBucketRanges))
+                {
+                    return false;
+                }
+
+                _jobBufferPinsHeld = true;
+                pinned = true;
+                return true;
+            }
+            finally
+            {
+                if (!pinned)
+                    ReleaseActiveJobBufferPins(vault);
+            }
+        }
+
+        private bool TryPinMacroJobBuffers(IDataVault vault)
+        {
+            if (vault == null || _jobBufferPinsHeld || vault.IsCompactionFenceActive)
                 return false;
 
-            _jobMutationGuardHeld = true;
-            _jobMutationGuardMask = guardMask;
-            _jobMutationGuardVault = vault;
+            bool pinned = false;
+            try
+            {
+                _jobBufferPinVault = vault;
+                if (!TryLockJobBuffer(vault, BufferID.ShinobuAmbientEntities, JobPinEntities) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuAmbientAups, JobPinAups) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuEcosystemSectors, JobPinSectors) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuEcosystemCounters, JobPinCounters) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuSpatialHashBucketHeads, JobPinSpatialHashBucketHeads) ||
+                    !TryLockJobBuffer(vault, BufferID.ShinobuSpatialHashNext, JobPinSpatialHashNext))
+                {
+                    return false;
+                }
+
+                _jobBufferPinsHeld = true;
+                pinned = true;
+                return true;
+            }
+            finally
+            {
+                if (!pinned)
+                    ReleaseActiveJobBufferPins(vault);
+            }
+        }
+
+        private void ReleaseActiveJobBufferPins(IDataVault vault)
+        {
+            IDataVault guardVault = _jobBufferPinVault ?? vault;
+            uint pinMask = _jobBufferPinMask;
+            _jobBufferPinsHeld = false;
+            _jobBufferPinMask = 0u;
+            _jobBufferPinVault = null;
+
+            if (guardVault == null || pinMask == 0u)
+                return;
+
+            TryUnlockJobBuffer(guardVault, pinMask, JobPinSpatialGridBucketRanges, BufferID.ShinobuSpatialGridBucketRanges);
+            TryUnlockJobBuffer(guardVault, pinMask, JobPinSpatialGridSortScratch, BufferID.ShinobuSpatialGridSortScratch);
+            TryUnlockJobBuffer(guardVault, pinMask, JobPinSpatialGridEntries, BufferID.ShinobuSpatialGridEntries);
+            TryUnlockJobBuffer(guardVault, pinMask, JobPinSpatialHashNext, BufferID.ShinobuSpatialHashNext);
+            TryUnlockJobBuffer(guardVault, pinMask, JobPinSpatialHashBucketHeads, BufferID.ShinobuSpatialHashBucketHeads);
+            TryUnlockJobBuffer(guardVault, pinMask, JobPinCounters, BufferID.ShinobuEcosystemCounters);
+            TryUnlockJobBuffer(guardVault, pinMask, JobPinSectors, BufferID.ShinobuEcosystemSectors);
+            TryUnlockJobBuffer(guardVault, pinMask, JobPinBoidStateSnapshot, BufferID.ShinobuBoidStateSnapshot);
+            TryUnlockJobBuffer(guardVault, pinMask, JobPinAupSnapshot, BufferID.ShinobuAmbientAupSnapshot);
+            TryUnlockJobBuffer(guardVault, pinMask, JobPinEntitySnapshot, BufferID.ShinobuAmbientEntitySnapshot);
+            TryUnlockJobBuffer(guardVault, pinMask, JobPinBoidStates, BufferID.ShinobuBoidStates);
+            TryUnlockJobBuffer(guardVault, pinMask, JobPinAups, BufferID.ShinobuAmbientAups);
+            TryUnlockJobBuffer(guardVault, pinMask, JobPinEntities, BufferID.ShinobuAmbientEntities);
+        }
+
+        private bool TryLockJobBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        {
+            if ((_jobBufferPinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null ||
+                (_jobBufferPinVault != null && !ReferenceEquals(_jobBufferPinVault, vault)) ||
+                !vault.TryLockBuffer(bufferId, SystemID.AIEcology))
+            {
+                return false;
+            }
+
+            _jobBufferPinVault = vault;
+            _jobBufferPinMask |= pinBit;
             return true;
         }
 
-        private bool TryAcquireMacroJobMutationGuard(IDataVault vault)
+        private static void TryUnlockJobBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
         {
-            if (vault == null || _jobMutationGuardHeld || vault.IsCompactionFenceActive)
-                return false;
-
-            if (!vault.TryAcquireMutationGuard(MacroJobMutationGuardMask))
-                return false;
-
-            _jobMutationGuardHeld = true;
-            _jobMutationGuardMask = MacroJobMutationGuardMask;
-            _jobMutationGuardVault = vault;
-            return true;
-        }
-
-        private void ReleaseActiveJobMutationGuard(IDataVault vault)
-        {
-            if (!_jobMutationGuardHeld)
-                return;
-
-            IDataVault guardVault = _jobMutationGuardVault ?? vault;
-            ulong guardMask = _jobMutationGuardMask;
-            _jobMutationGuardHeld = false;
-            _jobMutationGuardMask = 0UL;
-            _jobMutationGuardVault = null;
-
-            if (guardVault == null || guardMask == 0UL)
-                return;
-
-            guardVault.ReleaseMutationGuard(guardMask);
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, SystemID.AIEcology);
         }
 
         private static bool TryAcquireInitialPopulationMutationGuard(IDataVault vault)
@@ -2380,7 +2399,7 @@ namespace Hecton8.AI.Ecosystem
             if (vault.IsCompactionFenceActive)
                 return;
 
-            if (!TryAcquireMacroJobMutationGuard(vault))
+            if (!TryPinMacroJobBuffers(vault))
                 return;
 
             JobHandle scheduledHandle = default;
@@ -2448,7 +2467,7 @@ namespace Hecton8.AI.Ecosystem
             finally
             {
                 if (!_jobScheduled)
-                    ReleaseActiveJobMutationGuard(vault);
+                    ReleaseActiveJobBufferPins(vault);
             }
         }
 
@@ -2539,7 +2558,7 @@ namespace Hecton8.AI.Ecosystem
             }
             finally
             {
-                ReleaseActiveJobMutationGuard(vault);
+                ReleaseActiveJobBufferPins(vault);
                 if (!publishDebugCells || vault == null)
                     _debugCellPublishPending = false;
             }
@@ -3306,11 +3325,8 @@ namespace Hecton8.AI.Ecosystem
             _spatialGridTelemetryCursorHandle = default;
             _spatialGridTuningHandle = default;
             _spatialGridProfileHandle = default;
-            _spatialGridCsvScratchHandle = default;
             _spatialGridDumpSnapshotHandle = default;
             _ecosystemDumpSnapshotHandle = default;
-            _csvScratchHandle = default;
-            _legacyScratchHandle = default;
             _swarmSpeciesProfileHandle = default;
         }
 
@@ -3362,11 +3378,8 @@ namespace Hecton8.AI.Ecosystem
             ReleaseOwnedVaultHandle(vault, ref _spatialGridTelemetryCursorHandle, BufferID.ShinobuSpatialGridTelemetryCursor);
             ReleaseOwnedVaultHandle(vault, ref _spatialGridTuningHandle, BufferID.ShinobuSpatialGridTuning);
             ReleaseOwnedVaultHandle(vault, ref _spatialGridProfileHandle, BufferID.ShinobuSpatialGridProfiles);
-            ReleaseOwnedVaultHandle(vault, ref _spatialGridCsvScratchHandle, BufferID.ShinobuSpatialGridCsvScratch);
             ReleaseOwnedVaultHandle(vault, ref _spatialGridDumpSnapshotHandle, BufferID.ShinobuSpatialGridDumpSnapshot);
             ReleaseOwnedVaultHandle(vault, ref _ecosystemDumpSnapshotHandle, BufferID.ShinobuEcosystemDumpSnapshot);
-            ReleaseOwnedVaultHandle(vault, ref _csvScratchHandle, BufferID.ShinobuEcosystemCsvScratch);
-            ReleaseOwnedVaultHandle(vault, ref _legacyScratchHandle, BufferID.ShinobuEcosystemLegacyScratch);
             ReleaseOwnedVaultHandle(vault, ref _swarmSpeciesProfileHandle, BufferID.ShinobuSwarmSpeciesProfiles);
         }
 
@@ -4803,8 +4816,18 @@ namespace Hecton8.AI.Ecosystem
             Volatile.Write(ref s_pendingByteCount, byteCount);
             Thread.MemoryBarrier();
             Volatile.Write(ref s_lastDumpFailureFlags, 0);
+            bool ownerWritten = TryWriteQueuedDumpFile(DumpRelativePath);
+            bool h8Written = TryWriteQueuedDumpFile(DumpH8RelativePath);
+            bool agent1419Written = TryWriteQueuedDumpFile(Agent1419DumpRelativePath);
+            int failureFlags = ownerWritten ? 0 : DumpFailureOwnerPath;
+            failureFlags |= h8Written ? 0 : DumpFailureH8Path;
+            failureFlags |= agent1419Written ? 0 : DumpFailureAgent1419Path;
+            AddDumpFailureFlags(failureFlags);
+            if (failureFlags != 0)
+                Interlocked.Increment(ref s_totalDumpWriteFailures);
+
             Volatile.Write(ref s_dumpState, DumpStateIdle);
-            return true;
+            return ownerWritten || h8Written || agent1419Written;
         }
 
         public static void ShutdownDumpWorker()
@@ -4893,13 +4916,31 @@ namespace Hecton8.AI.Ecosystem
             if (Interlocked.CompareExchange(ref s_dumpState, DumpStateWriting, DumpStatePending) != DumpStatePending)
                 return;
 
+            bool ownerWritten = TryWriteQueuedDumpFile(DumpRelativePath);
+            bool h8Written = TryWriteQueuedDumpFile(DumpH8RelativePath);
+            bool agent1419Written = TryWriteQueuedDumpFile(Agent1419DumpRelativePath);
+            int failureFlags = ownerWritten ? 0 : DumpFailureOwnerPath;
+            failureFlags |= h8Written ? 0 : DumpFailureH8Path;
+            failureFlags |= agent1419Written ? 0 : DumpFailureAgent1419Path;
+            AddDumpFailureFlags(failureFlags);
+            if (failureFlags != 0)
+                Interlocked.Increment(ref s_totalDumpWriteFailures);
+
             Volatile.Write(ref s_dumpState, DumpStateIdle);
         }
 
         private static bool TryWriteQueuedDumpFile(string path)
         {
-            _ = path;
-            return false;
+            int byteCount = Volatile.Read(ref s_pendingByteCount);
+            if (byteCount <= DumpHeaderBytes ||
+                byteCount > DumpSnapshotBytes ||
+                !s_snapshotBuffer.IsCreated ||
+                s_snapshotBuffer.Length < byteCount)
+            {
+                return false;
+            }
+
+            return NativeFaultDumpWriter.TryWriteAll(path, s_snapshotBuffer, byteCount);
         }
 
         private static void EnsureSnapshotBuffer()
@@ -4936,7 +4977,6 @@ namespace Hecton8.AI.Ecosystem
 
         private static void EnsureDirectory(string path)
         {
-            _ = path;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

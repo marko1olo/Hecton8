@@ -18,9 +18,6 @@ EditorBuildSettings:
     path: Assets/_Project/Scenes/02_HECTON_WORLD.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:
-    com.unity.adaptivePerformance.basic.provider_settings: {fileID: 11400000, guid: d01b14be0ae19c9428329374631c67a7, type: 2}
-    com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: 6aabf3fda5cf45f41a8200d3c44b03cf, type: 2}
-    com.unity.adaptiveperformance.simulator.provider_settings: {fileID: 11400000, guid: 2137f6f54af46d845b78616070ec2d50, type: 2}
     com.unity.input.settings: {fileID: 11400000, guid: 817f8d3e6046c474e8b1fd38cca33d8a, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 3f1a06542f0878947a6b0e0bbec9c860, type: 2}

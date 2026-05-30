@@ -740,6 +740,9 @@ namespace Hecton8.Audio
         private bool _hasPendingSnapshotTransition;
         private AcousticZoneState _pendingSnapshotZone;
         private float _pendingSnapshotDuration;
+        private bool _isLateFramePresentationPhase;
+        private bool _hasPendingZonePresentationTransition;
+        private AcousticZoneState _pendingZonePresentationTransition;
         private bool _pendingAmbientLoopStateDirty;
         private AcousticZoneState _pendingAmbientLoopZone;
         private bool _pendingSourceLevelGraphDirty;
@@ -868,6 +871,11 @@ namespace Hecton8.Audio
                 TryRegister();
             }
 
+            if (!_registeredLateFrame)
+            {
+                TryRegisterLateFrameTick();
+            }
+
             if (!_registeredToTickManager)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -956,6 +964,15 @@ namespace Hecton8.Audio
                 case GlobalRegistryServiceSlot.PhysicsStateManager:
                     RebindPhysicsStateEventService(currentService as IPhysicsStateEventService);
                     break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregister();
+                    TryUnregisterLateFrameTick();
+                    if (currentService != null && isActiveAndEnabled)
+                    {
+                        TryRegister();
+                        TryRegisterLateFrameTick();
+                    }
+                    break;
             }
         }
 
@@ -1001,21 +1018,32 @@ namespace Hecton8.Audio
 
         public void LateFrameTick()
         {
-            if (_pendingSourceLevelGraphDirty)
+            _isLateFramePresentationPhase = true;
+            try
             {
-                _pendingSourceLevelGraphDirty = false;
-                UpdateSourceLevelAcousticGraph(_pendingSourceLevelGraphZone, _pendingSourceLevelGraphDeltaTime);
-                _pendingSourceLevelGraphDeltaTime = 0f;
-            }
+                FlushPendingZonePresentationTransition();
+                ProcessPendingSnapshotTransition();
 
-            if (_pendingAmbientLoopStateDirty)
+                if (_pendingSourceLevelGraphDirty)
+                {
+                    _pendingSourceLevelGraphDirty = false;
+                    UpdateSourceLevelAcousticGraph(_pendingSourceLevelGraphZone, _pendingSourceLevelGraphDeltaTime);
+                    _pendingSourceLevelGraphDeltaTime = 0f;
+                }
+
+                if (_pendingAmbientLoopStateDirty)
+                {
+                    _pendingAmbientLoopStateDirty = false;
+                    FlushAmbientLoopState(_pendingAmbientLoopZone);
+                }
+
+                FlushPendingAmbientSourceMixerRouting();
+                FlushQueuedAcousticCues();
+            }
+            finally
             {
-                _pendingAmbientLoopStateDirty = false;
-                FlushAmbientLoopState(_pendingAmbientLoopZone);
+                _isLateFramePresentationPhase = false;
             }
-
-            FlushPendingAmbientSourceMixerRouting();
-            FlushQueuedAcousticCues();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1200,8 +1228,6 @@ namespace Hecton8.Audio
                 return;
             }
 
-            ProcessPendingSnapshotTransition();
-
             // Edge detection: transition only when the zone changes.
             if (currentZone == _lastZone)
                 return;
@@ -1307,8 +1333,7 @@ namespace Hecton8.Audio
             _stateInitialized = true;
             _hasPendingExteriorZone = false;
             _nextExteriorTransitionAllowedTime = 0f;
-            ApplyAmbientLoopState(zone);
-            TransitionToResolvedSnapshot(zone, 0f);
+            QueueInitialSnapshotPresentation(zone);
 
             UpdateDiagnostics(zone);
 
@@ -1513,6 +1538,7 @@ namespace Hecton8.Audio
             _snapshotTransitionLockUntilTime = 0f;
             _hasPendingSnapshotTransition = false;
             _pendingSnapshotDuration = 0f;
+            _hasPendingZonePresentationTransition = false;
             _hasPendingExteriorZone = false;
             if (buoyancy != null)
             {
@@ -1868,6 +1894,36 @@ namespace Hecton8.Audio
 
         private void ApplyZoneTransition(AcousticZoneState zone)
         {
+            QueueZonePresentationTransition(zone);
+        }
+
+        private void QueueInitialSnapshotPresentation(AcousticZoneState zone)
+        {
+            QueueAmbientLoopState(zone);
+            QueuePendingSnapshotTransition(zone, 0f);
+        }
+
+        private void QueueZonePresentationTransition(AcousticZoneState zone)
+        {
+            _pendingZonePresentationTransition = zone;
+            _hasPendingZonePresentationTransition = true;
+            _hasPendingSnapshotTransition = false;
+            _pendingSnapshotDuration = 0f;
+        }
+
+        private void FlushPendingZonePresentationTransition()
+        {
+            if (!_hasPendingZonePresentationTransition)
+                return;
+
+            AcousticZoneState zone = _pendingZonePresentationTransition;
+            _hasPendingZonePresentationTransition = false;
+
+            ApplyZonePresentationTransition(zone);
+        }
+
+        private void ApplyZonePresentationTransition(AcousticZoneState zone)
+        {
             switch (zone)
             {
                 case AcousticZoneState.Interior:
@@ -1917,7 +1973,7 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            AbsoluteUniversePosition impactAup = impactSignal.ResolvePointAup();
+            AbsoluteUniversePosition impactAup = AbsoluteUniversePosition.FromAbsolutePosition(impactSignal.ResolvePointAupMeters());
             distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in impactAup);
             return true;
         }
@@ -2093,7 +2149,6 @@ namespace Hecton8.Audio
             _pendingAmbientSourceMixerRoutingSource = ambientSource;
             _pendingAmbientSourceMixerRoutingGroup = mixerGroup;
             _pendingAmbientSourceMixerRoutingDirty = true;
-            TryRegisterLateFrameTick();
         }
 
         private void FlushPendingAmbientSourceMixerRouting()
@@ -2302,7 +2357,6 @@ namespace Hecton8.Audio
         {
             _pendingAmbientLoopZone = zone;
             _pendingAmbientLoopStateDirty = true;
-            TryRegisterLateFrameTick();
         }
 
         private void UpdateStormInterferenceAudio(AcousticZoneState zone, float deltaTime)
@@ -2507,7 +2561,6 @@ namespace Hecton8.Audio
             _pendingStormStaticCueClip = clip;
             _pendingStormStaticCueVolume = volume;
             _pendingStormStaticCueDirty = true;
-            TryRegisterLateFrameTick();
         }
 
         private void QueueTransitionCue(AudioClip clip, float volume)
@@ -2515,7 +2568,6 @@ namespace Hecton8.Audio
             _pendingTransitionCueClip = clip;
             _pendingTransitionCueVolume = volume;
             _pendingTransitionCueDirty = true;
-            TryRegisterLateFrameTick();
         }
 
         private void QueueMadnessWhisperCue(AudioClip clip, float volume)
@@ -2523,7 +2575,6 @@ namespace Hecton8.Audio
             _pendingMadnessWhisperCueClip = clip;
             _pendingMadnessWhisperCueVolume = volume;
             _pendingMadnessWhisperCueDirty = true;
-            TryRegisterLateFrameTick();
         }
 
         private void QueueVegetationCue(AudioClip clip, float volume)
@@ -2531,7 +2582,6 @@ namespace Hecton8.Audio
             _pendingVegetationCueClip = clip;
             _pendingVegetationCueVolume = volume;
             _pendingVegetationCueDirty = true;
-            TryRegisterLateFrameTick();
         }
 
         private void QueueFatalPressureStressCue(Vector3 sourcePosition, float stress01, float pitch)
@@ -2540,21 +2590,18 @@ namespace Hecton8.Audio
             _pendingFatalPressureCueStress01 = stress01;
             _pendingFatalPressureCuePitch = pitch;
             _pendingFatalPressureCueDirty = true;
-            TryRegisterLateFrameTick();
         }
 
         private void QueueMantaMisfireCue(float volume)
         {
             _pendingMantaMisfireCueVolume = volume;
             _pendingMantaMisfireCueDirty = true;
-            TryRegisterLateFrameTick();
         }
 
         private void QueueSonarPingCue(float volume)
         {
             _pendingSonarPingCueVolume = volume;
             _pendingSonarPingCueDirty = true;
-            TryRegisterLateFrameTick();
         }
 
         private void FlushQueuedAcousticCues()
@@ -2674,7 +2721,7 @@ namespace Hecton8.Audio
                     math.max(0.0001f, 1f - stormStaticElectricalThreshold));
 
             if (_stateInitialized && _lastZone == AcousticZoneState.Surface)
-                TransitionToResolvedSnapshot(AcousticZoneState.Surface, surfaceWeatherTransitionDuration);
+                QueuePendingSnapshotTransition(AcousticZoneState.Surface, surfaceWeatherTransitionDuration);
         }
 
         internal void ClearSurfaceWeatherMix()
@@ -2693,7 +2740,7 @@ namespace Hecton8.Audio
             _debugStormInterference = 0f;
 
             if (_stateInitialized && _lastZone == AcousticZoneState.Surface)
-                TransitionToResolvedSnapshot(AcousticZoneState.Surface, surfaceWeatherTransitionDuration);
+                QueuePendingSnapshotTransition(AcousticZoneState.Surface, surfaceWeatherTransitionDuration);
         }
 
         private void ApplyAmbientLoopState(AcousticZoneState zone)
@@ -2745,7 +2792,6 @@ namespace Hecton8.Audio
             _pendingSourceLevelGraphZone = zone;
             _pendingSourceLevelGraphDeltaTime = math.max(0f, deltaTime);
             _pendingSourceLevelGraphDirty = true;
-            TryRegisterLateFrameTick();
         }
 
         private void UpdateSourceLevelAcousticGraph(AcousticZoneState zone, float deltaTime)
@@ -3139,6 +3185,12 @@ namespace Hecton8.Audio
 
         private bool TransitionToResolvedSnapshot(AcousticZoneState zone, float duration)
         {
+            if (!_isLateFramePresentationPhase)
+            {
+                QueuePendingSnapshotTransition(zone, duration);
+                return false;
+            }
+
             EnsureSnapshotBindings();
             bool blendResolved = false;
 

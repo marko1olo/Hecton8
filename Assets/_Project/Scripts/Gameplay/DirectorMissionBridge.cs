@@ -195,7 +195,7 @@ namespace Hecton8.Gameplay
             if (mm == null)
                 return;
 
-            float now = Time.time;
+            float now = ResolveDirectorCooldownTimeSeconds();
             for (int i = 0; i < totalWeight; i++)
             {
                 int weightedIndex = (_lastMissionIndex + i) % totalWeight;
@@ -353,6 +353,15 @@ namespace Hecton8.Gameplay
                    _profileWeightedMissionCount <= _profileWeightedMissionIndices.Length &&
                    _profileMissionCooldownUntil != null &&
                    _profileMissionCooldownUntil.Length >= _profileRuntimeMissionCount;
+        }
+
+        private static float ResolveDirectorCooldownTimeSeconds()
+        {
+            double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (double.IsNaN(now) || double.IsInfinity(now) || now <= 0d)
+                return 0f;
+
+            return now >= float.MaxValue ? float.MaxValue : (float)now;
         }
 
         public void OnGlobalRegistryServiceReplaced(

@@ -198,7 +198,7 @@ namespace Hecton8.Interaction
             RefreshCachedItemHash();
             ApplyPhysicalMetadata();
             InvalidateWorldStateIdentity();
-            ResolveWorldStateIdentity();
+            CaptureWorldStateIdentityCold();
             RebuildInteractTextCache();
         }
 
@@ -290,7 +290,7 @@ namespace Hecton8.Interaction
             if (ActiveRuntimeInstance == null)
                 ActiveRuntimeInstance = this;
 
-            ResolveWorldStateIdentity();
+            CaptureWorldStateIdentityCold();
 
             WorldStateManager worldStateManager = _worldStateManager;
             if (_worldStateIdentityAvailable &&
@@ -827,7 +827,7 @@ namespace Hecton8.Interaction
             _rigidbody.angularDamping = _defaultAngularDamping;
         }
 
-        private void ResolveWorldStateIdentity()
+        private void CaptureWorldStateIdentityCold()
         {
             if (_worldStateIdentityResolved)
                 return;

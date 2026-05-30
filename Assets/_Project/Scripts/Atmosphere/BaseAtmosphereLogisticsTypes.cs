@@ -259,7 +259,6 @@ namespace Hecton8.Atmosphere
         public const BufferID TemperatureDeltaMilli = BufferID.AtmosphereLogisticsTemperatureDeltaMilli;
         public const BufferID GasRemainders = BufferID.AtmosphereLogisticsGasRemainders;
         public const BufferID ShaderPayload = BufferID.AtmosphereLogisticsShaderPayload;
-        public const BufferID CsvScratch = BufferID.AtmosphereLogisticsCsvScratch;
         public const BufferID Profiles = BufferID.AtmosphereLogisticsProfiles;
     }
 

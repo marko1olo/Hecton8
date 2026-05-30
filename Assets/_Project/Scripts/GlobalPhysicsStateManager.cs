@@ -2545,7 +2545,7 @@ namespace Hecton8.Physics
                     impactEvent.PrimaryBodyId,
                     impactEvent.SecondaryBodyId,
                     impactPoint,
-                    in impactEvent.PointAup,
+                    impactEvent.PointAup.ToAbsoluteDouble3(),
                     impactNormal,
                     impactEvent.Force,
                     impactEvent.Intensity,
@@ -2579,8 +2579,9 @@ namespace Hecton8.Physics
             if (body.TryGetComponent(out Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider directProvider))
                 return directProvider.ImpactAudioMaterialId;
 
-            Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider provider = body.GetComponentInParent<Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider>();
-            return provider != null ? provider.ImpactAudioMaterialId : (byte)0;
+            return TryResolveComponentInParents(body.transform.parent, out Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider provider)
+                ? provider.ImpactAudioMaterialId
+                : (byte)0;
         }
 
         private void RegisterOrUpdateConnection(
@@ -4050,7 +4051,7 @@ namespace Hecton8.Physics
                 ImpactWakeMinimumRadiusMeters + (math.max(impactSignal.Intensity, 0f) * 12f),
                 ImpactWakeMinimumRadiusMeters,
                 ImpactWakeMaximumRadiusMeters);
-            AbsoluteUniversePosition originAup = impactSignal.ResolvePointAup();
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromAbsolutePosition(impactSignal.ResolvePointAupMeters());
             WakeCulledBodiesNear(in originAup, radiusMeters);
         }
 
@@ -4457,9 +4458,11 @@ namespace Hecton8.Physics
             if (body.TryGetComponent(out IPhysicsCullingFlagProvider directProvider))
                 flags |= directProvider.CullingFlags;
 
-            IPhysicsCullingFlagProvider parentProvider = body.GetComponentInParent<IPhysicsCullingFlagProvider>();
-            if (parentProvider != null && !ReferenceEquals(parentProvider, directProvider))
+            if (TryResolveComponentInParents(body.transform.parent, out IPhysicsCullingFlagProvider parentProvider) &&
+                !ReferenceEquals(parentProvider, directProvider))
+            {
                 flags |= parentProvider.CullingFlags;
+            }
 
             if (body.CompareTag("Player"))
             {
@@ -4486,6 +4489,19 @@ namespace Hecton8.Physics
                 return sink;
 
             return null;
+        }
+
+        private static bool TryResolveComponentInParents<T>(Transform current, out T component)
+        {
+            component = default;
+
+            for (; current != null; current = current.parent)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool IsColliderLodSinkAlive(IPhysicsColliderLodHysteresisSink sink)

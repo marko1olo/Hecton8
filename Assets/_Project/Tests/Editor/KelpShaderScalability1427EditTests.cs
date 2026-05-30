@@ -382,6 +382,31 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void DiegeticGyroCompass_IndirectBufferRepairIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "Navigation", "DiegeticGyroCompassRuntime.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string repairBody = ExtractMethodBody(source, "private void FlushIndirectBuffersRepairSlow()");
+            string ensureBody = ExtractMethodBody(source, "private void EnsureIndirectBuffersCold()");
+            string requirementBody = ExtractMethodBody(source, "private bool ShouldRequireIndirectBuffersCold()");
+
+            Assert.That(slowBody, Does.Contain("FlushIndirectBuffersRepairSlow();"));
+            Assert.That(slowBody, Does.Contain("ShouldRequireIndirectBuffersCold() && !HasIndirectBuffersReady()"));
+            Assert.That(lateFrameBody, Does.Contain("if (_indirectBuffersDirty)"));
+            Assert.That(lateFrameBody, Does.Not.Contain("EnsureIndirectBuffersCold();"));
+            Assert.That(lateFrameBody, Does.Not.Contain("FlushIndirectBuffersRepairSlow();"));
+            Assert.That(lateFrameBody, Does.Not.Contain("SupportsIndirectDialCold"));
+            Assert.That(lateFrameBody, Does.Not.Contain("SystemInfo."));
+            Assert.That(repairBody, Does.Contain("CacheGraphicsCapabilitiesCold();"));
+            Assert.That(repairBody, Does.Contain("EnsureIndirectBuffersCold();"));
+            Assert.That(repairBody, Does.Contain("_indirectBuffersDirty = false;"));
+            Assert.That(repairBody, Does.Contain("_indirectBuffersDirty = !HasIndirectBuffersReady();"));
+            Assert.That(requirementBody, Does.Contain("_supportsIndirectDialCold"));
+            Assert.That(ensureBody, Does.Contain("new GraphicsBuffer"));
+        }
+
+        [Test]
         public void MathLodRuntimeConfig_PublishesContinuousQualityWeightsWithoutBinaryQualityFlags()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "MathLodApproximation.cs");
@@ -1322,6 +1347,84 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void DynamicResolutionScaler_RenderScaleApplyUsesColdRuntimeLatch()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "DynamicResolutionScaler.cs");
+            string awakeBody = ExtractMethodBody(source, "private void Awake()");
+            string enableBody = ExtractMethodBody(source, "private void OnEnable()");
+            string disableBody = ExtractMethodBody(source, "private void OnDisable()");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string applyBody = ExtractMethodBody(source, "private void ApplyRenderScale()");
+
+            Assert.That(source, Does.Contain("private bool _runtimeRenderScaleQueueActive;"));
+            Assert.That(awakeBody, Does.Contain("_runtimeRenderScaleQueueActive = Application.isPlaying;"));
+            Assert.That(enableBody, Does.Contain("_runtimeRenderScaleQueueActive = Application.isPlaying;"));
+            Assert.That(disableBody, Does.Contain("_runtimeRenderScaleQueueActive = false;"));
+            Assert.That(applyBody, Does.Contain("_runtimeRenderScaleQueueActive && !_applyingRenderScaleLateFrame"));
+            Assert.That(applyBody, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(lateFrameBody, Does.Not.Contain("Application."));
+        }
+
+        [Test]
+        public void SystemDispatcher_GameplayBootstrapGateUsesColdRuntimeLatch()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Core", "SystemDispatcher.cs");
+            string awakeBody = ExtractMethodBody(source, "private void Awake()");
+            string enableBody = ExtractMethodBody(source, "private void OnEnable()");
+            string disableBody = ExtractMethodBody(source, "private void OnDisable()");
+            string shutdownBody = ExtractMethodBody(source, "private void ShutdownServiceState()");
+            string updateBody = ExtractMethodBody(source, "private void RunDispatcherUpdate()");
+
+            Assert.That(source, Does.Contain("private bool _runtimeGameplayBootstrapGateActive;"));
+            Assert.That(awakeBody, Does.Contain("_runtimeGameplayBootstrapGateActive = Application.isPlaying;"));
+            Assert.That(enableBody, Does.Contain("_runtimeGameplayBootstrapGateActive = Application.isPlaying;"));
+            Assert.That(disableBody, Does.Contain("_runtimeGameplayBootstrapGateActive = false;"));
+            Assert.That(shutdownBody, Does.Contain("_runtimeGameplayBootstrapGateActive = false;"));
+            Assert.That(updateBody, Does.Contain("bool blockGameplayLanes = _runtimeGameplayBootstrapGateActive &&"));
+            Assert.That(updateBody, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(updateBody, Does.Not.Contain("GlobalRegistry.Get<"));
+            Assert.That(updateBody, Does.Not.Contain("GetComponent"));
+        }
+
+        [Test]
+        public void GameTickManager_GameplayBootstrapGateUsesColdRuntimeLatch()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "GameTickManager.cs");
+            string awakeBody = ExtractMethodBody(source, "private void Awake()");
+            string enableBody = ExtractMethodBody(source, "private void OnEnable()");
+            string disableBody = ExtractMethodBody(source, "private void OnDisable()");
+            string shutdownBody = ExtractMethodBody(source, "private void ShutdownServiceState(");
+            string tickBody = ExtractMethodBody(source, "public void Tick(");
+
+            Assert.That(source, Does.Contain("private bool _runtimeGameplayBootstrapGateActive;"));
+            Assert.That(awakeBody, Does.Contain("_runtimeGameplayBootstrapGateActive = Application.isPlaying;"));
+            Assert.That(enableBody, Does.Contain("_runtimeGameplayBootstrapGateActive = Application.isPlaying;"));
+            Assert.That(disableBody, Does.Contain("_runtimeGameplayBootstrapGateActive = false;"));
+            Assert.That(shutdownBody, Does.Contain("_runtimeGameplayBootstrapGateActive = false;"));
+            Assert.That(tickBody, Does.Contain("if (_runtimeGameplayBootstrapGateActive &&"));
+            Assert.That(tickBody, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(tickBody, Does.Not.Contain("GlobalRegistry.Get<"));
+            Assert.That(tickBody, Does.Not.Contain("GetComponent"));
+        }
+
+        [Test]
+        public void NativeMemorySentinel_FrameResolveUsesDispatcherRuntimeState()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Core", "NativeMemorySentinel.cs");
+            string frameBody = ExtractMethodBody(source, "private static int ResolveCurrentFrame(");
+            string timeBody = ExtractMethodBody(source, "private static float ResolveCurrentUnscaledTime()");
+
+            Assert.That(frameBody, Does.Contain("SystemDispatcher.ActiveRuntimeInstance != null ? SystemDispatcher.CurrentFrameIndex : fallbackFrame"));
+            Assert.That(timeBody, Does.Contain("SystemDispatcher.ActiveRuntimeInstance != null ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f"));
+            Assert.That(frameBody, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(timeBody, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(frameBody, Does.Not.Contain("GlobalRegistry.Get<"));
+            Assert.That(timeBody, Does.Not.Contain("GlobalRegistry.Get<"));
+            Assert.That(frameBody, Does.Not.Contain("GetComponent"));
+            Assert.That(timeBody, Does.Not.Contain("GetComponent"));
+        }
+
+        [Test]
         public void SeismicShaderShake_NamesSuppressionByScalarPressure()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Environment", "HectonSeismicTideDirector.cs");
@@ -1493,6 +1596,24 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void UnderwaterHudFogLuminanceReadbackStorage_IsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "HectonUnderwaterVisuals.cs");
+            string updateBody = ExtractMethodBody(source, "private void UpdateHudFogLuminanceDownsample()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string flushBody = ExtractMethodBody(source, "private void FlushHudFogLuminanceReadbackRepairSlow()");
+            string ensureBody = ExtractMethodBody(source, "private void EnsureHudFogLuminanceReadbackData()");
+
+            Assert.That(source, Does.Contain("private bool _hudFogLuminanceReadbackRepairRequested = true;"));
+            Assert.That(updateBody, Does.Contain("QueueHudFogLuminanceReadbackRepair();"));
+            Assert.That(updateBody, Does.Not.Contain("EnsureHudFogLuminanceReadbackData();"));
+            Assert.That(updateBody, Does.Not.Contain("new NativeArray<float>"));
+            Assert.That(slowBody, Does.Contain("FlushHudFogLuminanceReadbackRepairSlow();"));
+            Assert.That(flushBody, Does.Contain("EnsureHudFogLuminanceReadbackData();"));
+            Assert.That(ensureBody, Does.Contain("new NativeArray<float>("));
+        }
+
+        [Test]
         public void OpenXrManualOverrideLever_UsesRuntimeXrStateNotXrSettingsInTick()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "VR", "OpenXRManualOverrideLever.cs");
@@ -1602,6 +1723,183 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void SargassumCrestFacade_KernelResolutionIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "SargassumCrestDampingController.cs");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string dispatchBody = ExtractMethodBody(source, "private void DispatchFacadeBake(");
+            string repairBody = ExtractMethodBody(source, "private void FlushFacadeBakeKernelRepairSlow()");
+
+            Assert.That(slowBody, Does.Contain("FlushFacadeBakeKernelRepairSlow();"));
+            Assert.That(lateFrameBody, Does.Contain("RefreshFacadeTexturesCached(force);"));
+            Assert.That(dispatchBody, Does.Contain("QueueFacadeBakeKernelRepair();"));
+            Assert.That(dispatchBody, Does.Not.Contain("ResolveSupportedKernel("));
+            Assert.That(dispatchBody, Does.Not.Contain("ResolveKernelThreadGroupSizes("));
+            Assert.That(dispatchBody, Does.Not.Contain(".FindKernel("));
+            Assert.That(dispatchBody, Does.Not.Contain(".HasKernel("));
+            Assert.That(dispatchBody, Does.Not.Contain(".GetKernelThreadGroupSizes("));
+            Assert.That(repairBody, Does.Contain("ResolveSupportedKernel(_facadeBakeCompute, \"CSMain\")"));
+            Assert.That(repairBody, Does.Contain("ResolveKernelThreadGroupSizes("));
+        }
+
+        [Test]
+        public void PDAMapTab_SonarKernelResolutionIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "PDAMapTab.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string renderBody = ExtractMethodBody(source, "private void RenderPointCloud()");
+            string dispatchBody = ExtractMethodBody(source, "private bool DispatchSonarPointCloud(");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string flushBody = ExtractMethodBody(source, "private void FlushSonarComputeKernelRepairSlow()");
+            string resolveBody = ExtractMethodBody(source, "private bool TryResolveSonarComputeKernels()");
+            string registerBody = ExtractMethodBody(source, "private void RegisterToTickManager()");
+            string unregisterBody = ExtractMethodBody(source, "private void UnregisterFromTickManager()");
+
+            Assert.That(source, Does.Contain("ILateFrameTickable, ISlowTickable"));
+            Assert.That(lateFrameBody, Does.Contain("RenderPointCloud();"));
+            Assert.That(lateFrameBody, Does.Not.Contain("TryResolveSonarComputeKernels"));
+            Assert.That(renderBody, Does.Contain("HasSonarComputeKernelsReady()"));
+            Assert.That(renderBody, Does.Contain("QueueSonarComputeKernelRepair();"));
+            Assert.That(renderBody, Does.Not.Contain("TryResolveSonarComputeKernels"));
+            Assert.That(renderBody, Does.Not.Contain(".FindKernel("));
+            Assert.That(renderBody, Does.Not.Contain(".HasKernel("));
+            Assert.That(renderBody, Does.Not.Contain(".GetKernelThreadGroupSizes("));
+            Assert.That(dispatchBody, Does.Contain("HasSonarComputeKernelsReady()"));
+            Assert.That(dispatchBody, Does.Contain("QueueSonarComputeKernelRepair();"));
+            Assert.That(dispatchBody, Does.Not.Contain("TryResolveSonarComputeKernels"));
+            Assert.That(dispatchBody, Does.Not.Contain(".FindKernel("));
+            Assert.That(dispatchBody, Does.Not.Contain(".HasKernel("));
+            Assert.That(dispatchBody, Does.Not.Contain(".GetKernelThreadGroupSizes("));
+            Assert.That(slowBody, Does.Contain("FlushSonarComputeKernelRepairSlow();"));
+            Assert.That(flushBody, Does.Contain("TryResolveSonarComputeKernels()"));
+            Assert.That(resolveBody, Does.Contain("sonarMapCompute.FindKernel"));
+            Assert.That(resolveBody, Does.Contain("TryValidateSonarKernelThreadGroup("));
+            Assert.That(registerBody, Does.Contain("TryRegisterSlowTick();"));
+            Assert.That(unregisterBody, Does.Contain("GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI)"));
+        }
+
+        [Test]
+        public void SubmarineStructuralGrid_LeakPlumeGpuResourcesAreSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "SubmarineStructuralGrid.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string visualBody = ExtractMethodBody(source, "private void FlushLeakPlumeVisualSync()");
+            string dispatchBody = ExtractMethodBody(source, "private void DispatchLeakPlumeCompute(");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string repairBody = ExtractMethodBody(source, "private void FlushLeakPlumeGpuResourceRepairSlow()");
+            string ensureBody = ExtractMethodBody(source, "private bool EnsureLeakPlumeGpuResources()");
+            string registerBody = ExtractMethodBody(source, "private void TryRegister()");
+            string unregisterBody = ExtractMethodBody(source, "private void TryUnregister()");
+
+            Assert.That(source, Does.Contain("ILateFrameTickable, ISlowTickable"));
+            Assert.That(lateFrameBody, Does.Contain("FlushLeakPlumeVisualSync();"));
+            Assert.That(lateFrameBody, Does.Not.Contain("EnsureLeakPlumeGpuResources"));
+            Assert.That(visualBody, Does.Contain("DispatchLeakPlumeCompute(deltaSeconds);"));
+            Assert.That(visualBody, Does.Not.Contain("EnsureLeakPlumeGpuResources"));
+            Assert.That(dispatchBody, Does.Contain("HasLeakPlumeGpuResourcesReady()"));
+            Assert.That(dispatchBody, Does.Contain("QueueLeakPlumeGpuResourceRepair();"));
+            Assert.That(dispatchBody, Does.Not.Contain("EnsureLeakPlumeGpuResources"));
+            Assert.That(dispatchBody, Does.Not.Contain(".FindKernel("));
+            Assert.That(dispatchBody, Does.Not.Contain(".HasKernel("));
+            Assert.That(dispatchBody, Does.Not.Contain(".GetKernelThreadGroupSizes("));
+            Assert.That(dispatchBody, Does.Not.Contain("GraphicsBufferUploadUtility.CreateStructuredLockBuffer"));
+            Assert.That(slowBody, Does.Contain("FlushLeakPlumeGpuResourceRepairSlow();"));
+            Assert.That(repairBody, Does.Contain("EnsureLeakPlumeGpuResources()"));
+            Assert.That(ensureBody, Does.Contain("leakPlumeCompute.FindKernel"));
+            Assert.That(ensureBody, Does.Contain("GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>"));
+            Assert.That(registerBody, Does.Contain("TryRegisterSlowTickable(this, PriorityLayer.Environment)"));
+            Assert.That(unregisterBody, Does.Contain("UnregisterSlowTickable(this, PriorityLayer.Environment)"));
+        }
+
+        [Test]
+        public void SubmarineStructuralGrid_StructuralJobLocksReleaseInFinally()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "SubmarineStructuralGrid.cs");
+            string breachRepairBody = ExtractMethodBody(source, "private void ConsumeCompletedBreachRepairJob()");
+            string mappingBody = ExtractMethodBody(source, "private void ConsumeCompletedMappingJob()");
+            string fatigueBody = ExtractMethodBody(source, "private void ConsumeCompletedFatigueJob()");
+            string damageBody = ExtractMethodBody(source, "private void ConsumeCompletedDamageJob()");
+            string telemetryBody = ExtractMethodBody(source, "private void WriteDamageControlTelemetry(uint reasonFlags, bool allowNativeBreachRead, ushort failureCode)");
+
+            AssertLockReleaseFinally(breachRepairBody, "UnlockStructuralJobBuffers(_breachRepairJobLockMask, _breachRepairJobMutationGuardVault);");
+            AssertLockReleaseFinally(mappingBody, "UnlockStructuralJobBuffers(_mappingJobLockMask, _mappingJobMutationGuardVault);");
+            AssertLockReleaseFinally(fatigueBody, "UnlockStructuralJobBuffers(_fatigueJobLockMask, _fatigueJobMutationGuardVault);");
+            AssertLockReleaseFinally(damageBody, "UnlockStructuralJobBuffers(_damageJobLockMask, _damageJobMutationGuardVault);");
+            AssertLockReleaseFinally(telemetryBody, "telemetryWriteVault.ReleaseWriteLock(in _damageControlTelemetryHandle, VaultOwnerSystemId);");
+            Assert.That(source, Does.Not.Contain("Run();"));
+        }
+
+        [Test]
+        public void SargassumDebris_RuntimeTargetsAreSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "SargassumDebrisParticleSystem.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string ambientBody = ExtractMethodBody(source, "private void AdvanceAmbientDebrisEmission(");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string registerBody = ExtractMethodBody(source, "private void TryRegister()");
+
+            Assert.That(source, Does.Contain("ILateFrameTickable, ISlowTickable"));
+            Assert.That(lateFrameBody, Does.Contain("AdvanceAmbientDebrisEmission(SystemDispatcher.CurrentFrameDeltaTime);"));
+            Assert.That(lateFrameBody, Does.Not.Contain("ResolveRuntimeTargets();"));
+            Assert.That(ambientBody, Does.Contain("QueueRuntimeTargetRefresh();"));
+            Assert.That(ambientBody, Does.Not.Contain("ResolveRuntimeTargets();"));
+            Assert.That(slowBody, Does.Contain("ResolveRuntimeTargets();"));
+            Assert.That(registerBody, Does.Contain("TryRegisterSlowTickable(this, PriorityLayer.Environment)"));
+        }
+
+        [Test]
+        public void SargassumCut_PlayerDependencyLookupIsColdOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "SargassumCutManager.cs");
+            string externalCutBody = ExtractMethodBody(source, "public bool RegisterExternalCut(");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string hotResolveBody = ExtractMethodBody(source, "private void ResolveDependencies()");
+            string coldResolveBody = ExtractMethodBody(source, "private void ResolveDependenciesCold(");
+
+            Assert.That(externalCutBody, Does.Contain("ResolveDependencies();"));
+            Assert.That(slowBody, Does.Contain("ResolveDependenciesCold(allowComponentLookup: false);"));
+            Assert.That(hotResolveBody, Does.Not.Contain("BootstrapState.CurrentPlayerTransform"));
+            Assert.That(hotResolveBody, Does.Not.Contain("TryGetComponent"));
+            Assert.That(coldResolveBody, Does.Contain("BootstrapState.CurrentPlayerTransform"));
+            Assert.That(coldResolveBody, Does.Contain("TryGetComponent"));
+        }
+
+        [Test]
+        public void FloraInteraction_PlayerBootstrapLookupIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "FloraInteractionManager.cs");
+            string tickBody = ExtractMethodBody(source, "public void Tick(");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string resolverBody = ExtractMethodBody(source, "private Transform ResolveRuntimePlayerTransform()");
+            string coldRefreshBody = ExtractMethodBody(source, "private void RefreshPlayerReferenceCacheCold()");
+
+            Assert.That(tickBody, Does.Contain("ResolveRuntimePlayerTransform();"));
+            Assert.That(slowBody, Does.Contain("RefreshPlayerReferenceCacheCold();"));
+            Assert.That(resolverBody, Does.Contain("_playerReferenceRefreshRequested = true;"));
+            Assert.That(resolverBody, Does.Not.Contain("BootstrapState.CurrentPlayerTransform"));
+            Assert.That(coldRefreshBody, Does.Contain("BootstrapState.CurrentPlayerTransform"));
+            Assert.That(coldRefreshBody, Does.Contain("playerTransform.TryGetComponent(out _playerMovement);"));
+        }
+
+        [Test]
+        public void CaveBioRoots_PlayerContextRefreshIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "CaveBioRootsGenerator.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string registerBody = ExtractMethodBody(source, "private void TryRegister()");
+            string resolveBody = ExtractMethodBody(source, "private void ResolvePlayerContext()");
+
+            Assert.That(source, Does.Contain("ILateFrameTickable, ISlowTickable"));
+            Assert.That(lateFrameBody, Does.Not.Contain("ResolvePlayerContext();"));
+            Assert.That(lateFrameBody, Does.Contain("ResolvePlayerRuntimePosition();"));
+            Assert.That(slowBody, Does.Contain("ResolvePlayerContext();"));
+            Assert.That(registerBody, Does.Contain("TryRegisterSlowTickable(this, PriorityLayer.Environment)"));
+            Assert.That(resolveBody, Does.Contain("BootstrapState.CurrentPlayerTransform"));
+        }
+
+        [Test]
         public void ScatterGpuiAdmission_UsesComputeSupportNotHardwareTierBool()
         {
             string director = ReadProjectFile("Assets", "_Project", "Scripts", "WorldProceduralScatterDirector.cs");
@@ -1678,6 +1976,24 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void BiolumDiffusionVolume_ResourceRefreshRepairsInSlowTick()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "Biolum", "HectonBiolumDiffusionVolume.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string ensureBody = ExtractMethodBody(source, "private void EnsureResources()");
+
+            Assert.That(lateFrameBody, Does.Contain("_resourceRefreshRequested |="));
+            Assert.That(lateFrameBody, Does.Not.Contain("EnsureResources();"));
+            Assert.That(slowBody, Does.Contain("EnsureResources();"));
+            Assert.That(slowBody.IndexOf("EnsureResources();", System.StringComparison.Ordinal),
+                Is.LessThan(slowBody.IndexOf("if (!HasRequiredResources())", System.StringComparison.Ordinal)));
+            Assert.That(ensureBody, Does.Contain("CreateVolumeTexture("));
+            Assert.That(ensureBody, Does.Contain("GraphicsBufferUploadUtility.CreateStructuredLockBuffer<BiolumPointGpuData>"));
+            Assert.That(ensureBody, Does.Contain("TryResolveKernel("));
+        }
+
+        [Test]
         public void PresentationComputeGates_UseCapabilityNotHardwareBucketSecondWave()
         {
             string parasites = ReadProjectFile("Assets", "_Project", "Scripts", "VFX", "Parasites", "ParasiteSwarmGpuRuntime.cs");
@@ -1709,6 +2025,68 @@ namespace Hecton8.Tests.Editor
             Assert.That(marineSnow, Does.Contain("marineSnowCompute == null || !_coldSupportsComputeShaders"));
             Assert.That(marineSnow, Does.Not.Contain("_coldAllowHighResourceComputeShaders"));
             Assert.That(marineSnow, Does.Not.Contain("HardwareTierDetector.AllowHighResourceComputeShaders"));
+        }
+
+        [Test]
+        public void RendererFeatures_DoNotPollApplicationPlayingFromRenderRoutes()
+        {
+            string oceanFeature = ReadProjectFile("Assets", "_Project", "Scripts", "Rendering", "OceanSinglePass", "HectonSinglePassOceanFeature.cs");
+            string oceanRuntime = ReadProjectFile("Assets", "_Project", "Scripts", "Rendering", "OceanSinglePass", "OceanSinglePassRuntime.cs");
+            string causticsFeature = ReadProjectFile("Assets", "_Project", "Scripts", "Rendering", "AbyssalCaustics", "HectonDeferredCausticsFeature.cs");
+            string bilateralFeature = ReadProjectFile("Assets", "_Project", "Scripts", "Rendering", "BilateralDrs", "HectonBilateralDrsUpscalerFeature.cs");
+            string waterOpticsFeature = ReadProjectFile("Assets", "_Project", "Scripts", "Rendering", "WaterOptics", "HectonWaterOpticsTelemetryFeature.cs");
+            string waterOpticsRuntime = ReadProjectFile("Assets", "_Project", "Scripts", "Rendering", "WaterOptics", "WaterOpticsRuntime.cs");
+
+            string oceanAddBody = ExtractMethodBody(oceanFeature, "public override void AddRenderPasses(");
+            string oceanRecordBody = ExtractMethodBody(oceanFeature, "public override void RecordRenderGraph(");
+            string causticsAddBody = ExtractMethodBody(causticsFeature, "public override void AddRenderPasses(");
+            string causticsRecordBody = ExtractMethodBody(causticsFeature, "public override void RecordRenderGraph(");
+            string bilateralAddBody = ExtractMethodBody(bilateralFeature, "public override void AddRenderPasses(");
+            string bilateralRecordBody = ExtractMethodBody(bilateralFeature, "public override void RecordRenderGraph(");
+            string waterAddBody = ExtractMethodBody(waterOpticsFeature, "public override void AddRenderPasses(");
+            string waterRecordBody = ExtractMethodBody(waterOpticsFeature, "public override void RecordRenderGraph(");
+
+            Assert.That(oceanRuntime, Does.Contain("public static bool HasRendererFeatureRuntimeGate()"));
+            Assert.That(oceanRuntime, Does.Contain("public static bool TryEnterRenderGraphRuntimeGate()"));
+            Assert.That(oceanAddBody, Does.Contain("OceanSinglePassRuntime.HasRendererFeatureRuntimeGate()"));
+            Assert.That(oceanRecordBody, Does.Contain("OceanSinglePassRuntime.TryEnterRenderGraphRuntimeGate()"));
+            Assert.That(oceanAddBody, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(oceanRecordBody, Does.Not.Contain("Application.isPlaying"));
+
+            Assert.That(causticsAddBody, Does.Contain("AbyssalDeferredCausticsRuntime.TryGetActiveConstantBuffer"));
+            Assert.That(causticsAddBody, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(causticsRecordBody, Does.Contain("AbyssalDeferredCausticsRuntime.TryGetActiveConstantBuffer"));
+            Assert.That(causticsRecordBody, Does.Not.Contain("Application.isPlaying"));
+
+            Assert.That(bilateralAddBody, Does.Contain("HectonBilateralDrsUpscalerRuntime.TryGetRuntimeInstance(out _)"));
+            Assert.That(bilateralAddBody, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(bilateralRecordBody, Does.Not.Contain("Application.isPlaying"));
+
+            Assert.That(waterOpticsRuntime, Does.Contain("public static bool TryGetRuntimeInstance(out WaterOpticsRuntime runtime)"));
+            Assert.That(waterAddBody, Does.Contain("WaterOpticsRuntime.TryGetRuntimeInstance(out _)"));
+            Assert.That(waterAddBody, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(waterRecordBody, Does.Contain("WaterOpticsRuntime.TryGetRuntimeInstance(out _)"));
+            Assert.That(waterRecordBody, Does.Not.Contain("Application.isPlaying"));
+        }
+
+        [Test]
+        public void VisorRenderFeatures_DoNotPollApplicationPlayingFromRenderRoutes()
+        {
+            string gate = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "HectonDrsRenderFeatureGate.cs");
+            string ssdo = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "HectonAbyssalSsdoFeature.cs");
+            string halfResParticles = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "HectonHalfResParticlesFeature.cs");
+            string depthFog = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "HectonNoirDepthFogFeature.cs");
+            string scooterShafts = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "HectonScooterVolumetricShaftsFeature.cs");
+            string stochasticSsr = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "HectonStochasticSsrFeature.cs");
+
+            Assert.That(gate, Does.Contain("internal static bool HasRuntimeRenderOwner()"));
+            Assert.That(gate, Does.Contain("SystemDispatcher.ActiveRuntimeInstance != null"));
+
+            AssertVisorRenderRouteUsesRuntimeOwnerGate(ssdo);
+            AssertVisorRenderRouteUsesRuntimeOwnerGate(halfResParticles);
+            AssertVisorRenderRouteUsesRuntimeOwnerGate(depthFog);
+            AssertVisorRenderRouteUsesRuntimeOwnerGate(scooterShafts);
+            AssertVisorRenderRouteUsesRuntimeOwnerGate(stochasticSsr);
         }
 
         [Test]
@@ -1883,6 +2261,40 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Not.Contain("ResolveSmoothGlobalQualityWeight01() <= ChunkImpostor"));
             Assert.That(source, Does.Not.Contain("flags |= HectonChunkImpostorResidency.FlagSurvivalSnap;"));
             Assert.That(source, Does.Contain("flags |= HectonChunkImpostorResidency.FlagDitherBlend;"));
+        }
+
+        [Test]
+        public void WorldChunkResidency_AsyncUploadQualityPolicyIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "WorldChunkResidencyManager.cs");
+            string awakeBody = ExtractMethodBody(source, "private void Awake()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string policyBody = ExtractMethodBody(source, "private void FlushAsyncUploadBudgetPolicySlow()");
+            int slowPolicyCall = slowBody.IndexOf("FlushAsyncUploadBudgetPolicySlow();", System.StringComparison.Ordinal);
+            int slowChunkGate = slowBody.IndexOf("if (_chunkCount <= 0)", System.StringComparison.Ordinal);
+
+            Assert.That(awakeBody, Does.Contain("FlushAsyncUploadBudgetPolicySlow();"));
+            Assert.That(slowPolicyCall, Is.GreaterThanOrEqualTo(0));
+            Assert.That(slowChunkGate, Is.GreaterThanOrEqualTo(0));
+            Assert.That(slowPolicyCall, Is.LessThan(slowChunkGate));
+            Assert.That(lateFrameBody, Does.Not.Contain("FlushAsyncUploadBudgetPolicySlow();"));
+            Assert.That(lateFrameBody, Does.Not.Contain("QualitySettings."));
+            Assert.That(policyBody, Does.Contain("QualitySettings.asyncUploadBufferSize = uploadBufferSize;"));
+            Assert.That(policyBody, Does.Contain("QualitySettings.asyncUploadTimeSlice = uploadTimeSlice;"));
+            Assert.That(policyBody, Does.Contain("QualitySettings.asyncUploadPersistentBuffer = true;"));
+        }
+
+        [Test]
+        public void ScreenSpaceLightShaft_LateFrameUsesRegistrationLatchNotApplicationPoll()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Lighting", "Shafts", "ScreenSpaceLightShaftRuntime.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+
+            Assert.That(lateFrameBody, Does.Contain("!_registeredLateFrame"));
+            Assert.That(lateFrameBody, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(lateFrameBody, Does.Not.Contain("GlobalRegistry.Get<"));
+            Assert.That(lateFrameBody, Does.Not.Contain("GetComponent"));
         }
 
         [Test]
@@ -2208,7 +2620,7 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void VisorHud_ScissorCommandBuffersAreColdPhaseOnly()
+        public void VisorHud_LegacyCameraCommandBuffersAreDecommissioned()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "VisorHUDController.cs");
             string slowBody = ExtractMethodBody(source, "public void SlowTick()");
@@ -2218,11 +2630,13 @@ namespace Hecton8.Tests.Editor
             string capabilityBody = ExtractMethodBody(source, "private void CacheGraphicsCapabilitiesCold()");
 
             Assert.That(slowBody, Does.Contain("FlushHudScissorCommandBufferRepairSlow();"));
-            Assert.That(configureBody, Does.Contain("HasHudScissorCommandBuffersReady()"));
+            Assert.That(configureBody, Does.Contain("ClearHudScissorCommandBufferState();"));
             Assert.That(configureBody, Does.Not.Contain("EnsureHudScissorCommandBuffersCold("));
             Assert.That(configureBody, Does.Not.Contain("new CommandBuffer"));
             Assert.That(repairBody, Does.Contain("EnsureHudScissorCommandBuffersCold();"));
-            Assert.That(coldBody, Does.Contain("new CommandBuffer"));
+            Assert.That(coldBody, Does.Not.Contain("new CommandBuffer"));
+            Assert.That(source, Does.Not.Contain("AddCommandBuffer("));
+            Assert.That(source, Does.Not.Contain("RemoveCommandBuffer("));
             Assert.That(capabilityBody, Does.Contain("SampleScriptableRenderPipelineActiveCold()"));
         }
 
@@ -2941,6 +3355,176 @@ namespace Hecton8.Tests.Editor
             Assert.That(pendingDrain, Is.GreaterThan(sectorUnlock));
         }
 
+        [Test]
+        public void WorldProceduralScatterDirector_RuntimeCallbacksUseColdRuntimeLatch()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "WorldProceduralScatterDirector.cs");
+            string runtimeNowBody = ExtractMethodBody(source, "private static float RuntimeNowSeconds()");
+            string ownerBody = ExtractMethodBody(source, "private static bool HasRuntimeScatterOwner()");
+            string awakeBody = ExtractMethodBody(source, "private void Awake()");
+            string onEnableBody = ExtractMethodBody(source, "private void OnEnable()");
+            string onDisableBody = ExtractMethodBody(source, "private void OnDisable()");
+            string onDestroyBody = ExtractMethodBody(source, "private void OnDestroy()");
+            string prepareReloadBody = ExtractMethodBody(source, "internal void PrepareForEditorReload()");
+            string tickBody = ExtractMethodBody(source, "public void Tick(");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string lateBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string rebuildBody = ExtractMethodBody(source, "public void RebuildScatterPreview()");
+            string deferBody = ExtractMethodBody(source, "private bool ShouldDeferUntilBootstrapReady()");
+            string skipBody = ExtractMethodBody(source, "private bool ShouldSkipScatterRefresh()");
+            string radiusBody = ExtractMethodBody(source, "private int ResolveActiveScatterSamplingRadiusCells(");
+            string registerBody = ExtractMethodBody(source, "private void TryEnsureTickRegistration()");
+
+            Assert.That(source, Does.Contain("private bool _runtimeScatterCallbacksActive;"));
+            Assert.That(ownerBody, Does.Contain("owner._runtimeScatterCallbacksActive"));
+            Assert.That(runtimeNowBody, Does.Contain("HasRuntimeScatterOwner()"));
+            Assert.That(runtimeNowBody, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(awakeBody, Does.Contain("_runtimeScatterCallbacksActive = Application.isPlaying;"));
+            Assert.That(onEnableBody, Does.Contain("_runtimeScatterCallbacksActive = Application.isPlaying;"));
+            Assert.That(onDisableBody, Does.Contain("_runtimeScatterCallbacksActive = false;"));
+            Assert.That(onDestroyBody, Does.Contain("_runtimeScatterCallbacksActive = false;"));
+            Assert.That(prepareReloadBody, Does.Contain("_runtimeScatterCallbacksActive = false;"));
+            AssertHotBodyUsesRuntimeLatch(tickBody, "_runtimeScatterCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(slowBody, "_runtimeScatterCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(lateBody, "_runtimeScatterCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(rebuildBody, "_runtimeScatterCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(deferBody, "_runtimeScatterCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(skipBody, "_runtimeScatterCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(radiusBody, "_runtimeScatterCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(registerBody, "_runtimeScatterCallbacksActive");
+        }
+
+        [Test]
+        public void SuitHudRuntimeCallbacksUseColdRuntimeLatches()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "SuitHUDV4CanvasOverlay.cs");
+            string suppressionBody = ExtractMethodBody(source, "private static bool IsStencilRenderGraphSuppressedRuntime()");
+            string awakeBody = ExtractMethodBody(source, "private void Awake()");
+            string onEnableBody = ExtractMethodBody(source, "private void OnEnable()");
+            string onDisableBody = ExtractMethodBody(source, "private void OnDisable()");
+            string onDestroyBody = ExtractMethodBody(source, "private void OnDestroy()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string lateBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string scalerBody = ExtractTypeBody(source, "public sealed class HectonUIScaler");
+            string scalerOnEnableBody = ExtractMethodBody(scalerBody, "private void OnEnable()");
+            string scalerOnDisableBody = ExtractMethodBody(scalerBody, "private void OnDisable()");
+            string scalerOnDestroyBody = ExtractMethodBody(scalerBody, "private void OnDestroy()");
+            string scalerSlowBody = ExtractMethodBody(scalerBody, "public void SlowTick()");
+            string scalerRegisterBody = ExtractMethodBody(scalerBody, "private void RegisterToTickManager()");
+            string scalerHotSwapBody = ExtractMethodBody(scalerBody, "private void TryRegisterHotSwapListener()");
+
+            Assert.That(source, Does.Contain("private bool _runtimeHudCallbacksActive;"));
+            Assert.That(source, Does.Contain("private bool _runtimeScalerCallbacksActive;"));
+            Assert.That(suppressionBody, Does.Contain("SystemDispatcher.ActiveRuntimeInstance != null"));
+            Assert.That(suppressionBody, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(awakeBody, Does.Contain("_runtimeHudCallbacksActive = Application.isPlaying;"));
+            Assert.That(onEnableBody, Does.Contain("_runtimeHudCallbacksActive = Application.isPlaying;"));
+            Assert.That(onDisableBody, Does.Contain("_runtimeHudCallbacksActive = false;"));
+            Assert.That(onDestroyBody, Does.Contain("_runtimeHudCallbacksActive = false;"));
+            AssertHotBodyUsesRuntimeLatch(slowBody, "_runtimeHudCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(lateBody, "_runtimeHudCallbacksActive");
+            Assert.That(scalerOnEnableBody, Does.Contain("_runtimeScalerCallbacksActive = Application.isPlaying;"));
+            Assert.That(scalerOnDisableBody, Does.Contain("_runtimeScalerCallbacksActive = false;"));
+            Assert.That(scalerOnDestroyBody, Does.Contain("_runtimeScalerCallbacksActive = false;"));
+            AssertHotBodyUsesRuntimeLatch(scalerSlowBody, "_runtimeScalerCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(scalerRegisterBody, "_runtimeScalerCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(scalerHotSwapBody, "_runtimeScalerCallbacksActive");
+        }
+
+        [Test]
+        public void HectonUnderwaterVisuals_HotCallbacksUseColdRuntimeLatch()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "HectonUnderwaterVisuals.cs");
+            string awakeBody = ExtractMethodBody(source, "private void Awake()");
+            string onEnableBody = ExtractMethodBody(source, "private void OnEnable()");
+            string startBody = ExtractMethodBody(source, "private void Start()");
+            string onDisableBody = ExtractMethodBody(source, "private void OnDisable()");
+            string onDestroyBody = ExtractMethodBody(source, "private void OnDestroy()");
+            string coldBody = ExtractMethodBody(source, "public void ColdTick()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string renderBody = ExtractMethodBody(source, "public void Render(");
+            string lateBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string runVisualBody = ExtractMethodBody(source, "private void RunUnderwaterVisualTick(");
+            string enforceFogBody = ExtractMethodBody(source, "private void EnforceFogState(");
+            string shouldRenderBody = ExtractMethodBody(source, "private bool ShouldRenderUnderwaterFogForCamera(");
+            string stackInitBody = ExtractMethodBody(source, "private void EnsureGameplayCameraStackInitializedOnTick()");
+            string biomeBlendBody = ExtractMethodBody(source, "private void ApplyBiomeFogBlend(");
+            string ownerResolveBody = ExtractMethodBody(source, "private void RequestRuntimeVisualOwnerResolveIfMissing()");
+            string thermoclineBody = ExtractMethodBody(source, "private void TryHandleThermoclineTransition(");
+            string motesBody = ExtractMethodBody(source, "private void UpdateUnderwaterSuspendedMotes(");
+            string skyboxBody = ExtractMethodBody(source, "private void ApplyRuntimeSkyboxOwnership()");
+            string noirBody = ExtractMethodBody(source, "private void ApplyNoirResolveGlobals()");
+            string photophobiaBody = ExtractMethodBody(source, "private void UpdateFlashlightPhotophobiaField(");
+            string healthGlitchBody = ExtractMethodBody(source, "private static void UpdateSuitHealthGlitchGlobal(");
+            string spaceDepthBody = ExtractMethodBody(source, "private void ApplySpaceCameraDepthState(");
+            string depthBody = ExtractMethodBody(source, "private float ResolveCurrentDepth()");
+            string stateBody = ExtractMethodBody(source, "private bool ResolveUnderwaterVisualStateForCameraDepth(");
+            string visualDepthBody = ExtractMethodBody(source, "private float ResolveActiveVisualCameraDepth()");
+            string oceanGlobalsBody = ExtractMethodBody(source, "private static void ApplyOceanUnderwaterGlobals(");
+            string tickRegisterBody = ExtractMethodBody(source, "private void TryRegisterTickManagers()");
+            string renderRegisterBody = ExtractMethodBody(source, "private void TryRegisterRenderDispatcher()");
+
+            Assert.That(source, Does.Contain("private bool _runtimeVisualCallbacksActive;"));
+            Assert.That(awakeBody, Does.Contain("_runtimeVisualCallbacksActive = Application.isPlaying;"));
+            Assert.That(onEnableBody, Does.Contain("_runtimeVisualCallbacksActive = Application.isPlaying;"));
+            Assert.That(startBody, Does.Contain("_runtimeVisualCallbacksActive = true;"));
+            Assert.That(onDisableBody, Does.Contain("_runtimeVisualCallbacksActive = false;"));
+            Assert.That(onDestroyBody, Does.Contain("_runtimeVisualCallbacksActive = false;"));
+            AssertHotBodyUsesRuntimeLatch(coldBody, "_runtimeVisualCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(slowBody, "_runtimeVisualCallbacksActive");
+            Assert.That(renderBody, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(lateBody, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(runVisualBody, Does.Not.Contain("Application.isPlaying"));
+            AssertHotBodyUsesRuntimeLatch(enforceFogBody, "_runtimeVisualCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(shouldRenderBody, "_runtimeVisualCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(stackInitBody, "_runtimeVisualCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(biomeBlendBody, "_runtimeVisualCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(ownerResolveBody, "_runtimeVisualCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(thermoclineBody, "_runtimeVisualCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(motesBody, "_runtimeVisualCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(skyboxBody, "_runtimeVisualCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(noirBody, "_runtimeVisualCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(photophobiaBody, "_runtimeVisualCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(healthGlitchBody, "runtimeCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(spaceDepthBody, "_runtimeVisualCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(depthBody, "_runtimeVisualCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(stateBody, "_runtimeVisualCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(visualDepthBody, "_runtimeVisualCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(oceanGlobalsBody, "runtimeCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(tickRegisterBody, "_runtimeVisualCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(renderRegisterBody, "_runtimeVisualCallbacksActive");
+        }
+
+        [Test]
+        public void AmbientWaterMotionManager_HotRegistrationUsesColdRuntimeLatch()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "AmbientWaterMotionManager.cs");
+            string awakeBody = ExtractMethodBody(source, "private void Awake()");
+            string onEnableBody = ExtractMethodBody(source, "private void OnEnable()");
+            string onDisableBody = ExtractMethodBody(source, "private void OnDisable()");
+            string onDestroyBody = ExtractMethodBody(source, "private void OnDestroy()");
+            string tickBody = ExtractMethodBody(source, "public void Tick(");
+            string lateBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string registerBody = ExtractMethodBody(source, "private void TryRegister()");
+            string registerLateBody = ExtractMethodBody(source, "private void TryRegisterLateFrame()");
+            string serviceBody = ExtractMethodBody(source, "private void TryRegisterService()");
+            string hotSwapBody = ExtractMethodBody(source, "private void TryRegisterHotSwapListener()");
+
+            Assert.That(source, Does.Contain("private bool _runtimeWaterMotionCallbacksActive;"));
+            Assert.That(awakeBody, Does.Contain("_runtimeWaterMotionCallbacksActive = Application.isPlaying;"));
+            Assert.That(onEnableBody, Does.Contain("_runtimeWaterMotionCallbacksActive = Application.isPlaying;"));
+            Assert.That(onEnableBody, Does.Contain("if (_runtimeWaterMotionCallbacksActive)"));
+            Assert.That(onDisableBody, Does.Contain("_runtimeWaterMotionCallbacksActive = false;"));
+            Assert.That(onDestroyBody, Does.Contain("_runtimeWaterMotionCallbacksActive = false;"));
+            Assert.That(tickBody, Does.Contain("TryRegisterLateFrame()"));
+            Assert.That(tickBody, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(lateBody, Does.Not.Contain("Application.isPlaying"));
+            AssertHotBodyUsesRuntimeLatch(registerBody, "_runtimeWaterMotionCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(registerLateBody, "_runtimeWaterMotionCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(serviceBody, "_runtimeWaterMotionCallbacksActive");
+            AssertHotBodyUsesRuntimeLatch(hotSwapBody, "_runtimeWaterMotionCallbacksActive");
+        }
+
         private static string ReadShader(string shaderFile)
         {
             return ReadProjectFile("Assets", "_Project", "Art", "Shaders", shaderFile);
@@ -2983,6 +3567,41 @@ namespace Hecton8.Tests.Editor
             }
 
             return count;
+        }
+
+        private static void AssertLockReleaseFinally(string sourceBody, string releaseCall)
+        {
+            int releaseIndex = sourceBody.IndexOf(releaseCall, System.StringComparison.Ordinal);
+            Assert.That(releaseIndex, Is.GreaterThanOrEqualTo(0), releaseCall);
+            int finallyIndex = sourceBody.LastIndexOf("finally", releaseIndex, System.StringComparison.Ordinal);
+            Assert.That(finallyIndex, Is.GreaterThanOrEqualTo(0), releaseCall);
+            int tryIndex = sourceBody.LastIndexOf("try", finallyIndex, System.StringComparison.Ordinal);
+            Assert.That(tryIndex, Is.GreaterThanOrEqualTo(0), releaseCall);
+            Assert.That(releaseIndex, Is.GreaterThan(finallyIndex), releaseCall);
+        }
+
+        private static void AssertVisorRenderRouteUsesRuntimeOwnerGate(string source)
+        {
+            string addBody = ExtractMethodBody(source, "public override void AddRenderPasses(");
+            string recordBody = ExtractMethodBody(source, "public override void RecordRenderGraph(");
+
+            Assert.That(addBody, Does.Contain("HectonDrsRenderFeatureGate.HasRuntimeRenderOwner()"));
+            Assert.That(recordBody, Does.Contain("HectonDrsRenderFeatureGate.HasRuntimeRenderOwner()"));
+            Assert.That(addBody, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(recordBody, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(addBody, Does.Not.Contain("GlobalRegistry.Get<"));
+            Assert.That(recordBody, Does.Not.Contain("GlobalRegistry.Get<"));
+            Assert.That(addBody, Does.Not.Contain("GetComponent"));
+            Assert.That(recordBody, Does.Not.Contain("GetComponent"));
+        }
+
+        private static void AssertHotBodyUsesRuntimeLatch(string body, string latch)
+        {
+            Assert.That(body, Does.Contain(latch));
+            Assert.That(body, Does.Not.Contain("Application.isPlaying"));
+            Assert.That(body, Does.Not.Contain("GlobalRegistry.Get<"));
+            Assert.That(body, Does.Not.Contain("GetComponent"));
+            Assert.That(body, Does.Not.Contain("TryGetComponent"));
         }
 
         private static string ExtractMethodBody(string source, string methodToken)

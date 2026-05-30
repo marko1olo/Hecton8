@@ -620,7 +620,7 @@ namespace Hecton8.Gameplay
             if (hostModule == null)
             {
                 if (!TryGetComponent(out hostModule))
-                    hostModule = GetComponentInParent<BaseModule>();
+                    TryResolveComponentInParents(transform.parent, out hostModule);
             }
 
             if (_atmosphereSystem == null || !_atmosphereSystem.IsAtmosphereRuntimeActive)
@@ -642,6 +642,19 @@ namespace Hecton8.Gameplay
                 _oceanKinematicsService = GlobalRegistry.OceanKinematics;
             if (_cachedDispatcher == null)
                 _cachedDispatcher = GlobalRegistry.Dispatcher;
+        }
+
+        private static bool TryResolveComponentInParents<T>(Transform current, out T component) where T : Component
+        {
+            component = null;
+
+            for (; current != null; current = current.parent)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+            }
+
+            return false;
         }
 
         internal static int ActiveElectrolysisCount => s_activeModules.Count;

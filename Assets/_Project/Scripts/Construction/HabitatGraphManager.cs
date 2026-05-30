@@ -2961,23 +2961,35 @@ namespace Hecton8.Construction
 
             try
             {
-                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", relativePath));
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
+                const int headerBytes = 20;
+                const int entryBytes = 40;
+                int byteCount = headerBytes + floodBlackBox.Length * entryBytes;
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(HabitatGraphManager),
+                    "HabitatFloodBlackBoxDumpPayload",
+                    NativeArrayOptions.ClearMemory);
+                try
                 {
-                    writer.Write(FloodBlackBoxMagic);
-                    writer.Write(FloodBlackBoxVersion);
-                    writer.Write((uint)FloodBlackBoxCapacity);
-                    writer.Write((uint)_floodBlackBoxCursor);
-                    writer.Write(reasonFlags);
+                    WriteUInt32LittleEndian(payload, 0, FloodBlackBoxMagic);
+                    WriteUInt32LittleEndian(payload, 4, FloodBlackBoxVersion);
+                    WriteUInt32LittleEndian(payload, 8, (uint)FloodBlackBoxCapacity);
+                    WriteUInt32LittleEndian(payload, 12, (uint)_floodBlackBoxCursor);
+                    WriteUInt32LittleEndian(payload, 16, reasonFlags);
                     for (int offset = 0; offset < floodBlackBox.Length; offset++)
                     {
                         int index = (_floodBlackBoxCursor + offset) % floodBlackBox.Length;
-                        WriteFloodBlackBoxEntry(writer, floodBlackBox[index]);
+                        WriteFloodBlackBoxEntry(payload, headerBytes + offset * entryBytes, floodBlackBox[index]);
                     }
+
+                    NativeFaultDumpWriter.TryWriteAll(relativePath, payload, byteCount);
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(HabitatGraphManager),
+                        "HabitatFloodBlackBoxDumpPayload");
                 }
             }
             catch (Exception exception)
@@ -2987,20 +2999,39 @@ namespace Hecton8.Construction
             }
         }
 
-        private static void WriteFloodBlackBoxEntry(BinaryWriter writer, HabitatFloodBlackBoxEntry entry)
+        private static void WriteFloodBlackBoxEntry(NativeArray<byte> payload, int offset, HabitatFloodBlackBoxEntry entry)
         {
-            writer.Write(entry.Frame);
-            writer.Write(entry.NodeCount);
-            writer.Write(entry.EdgeCount);
-            writer.Write(entry.FloodedRoomCount);
-            writer.Write(entry.Reserved0);
-            writer.Write(entry.BaseTotalStress);
-            writer.Write(entry.MaxWaterLevel01);
-            writer.Write(entry.TotalWaterVolumeM3);
-            writer.Write(entry.PeakModuleStress);
-            writer.Write(entry.Flags);
-            writer.Write(entry.StateHash);
-            writer.Write(entry.DeformationSequence);
+            WriteUInt32LittleEndian(payload, offset, (uint)entry.Frame);
+            WriteUInt16LittleEndian(payload, offset + 4, entry.NodeCount);
+            WriteUInt16LittleEndian(payload, offset + 6, entry.EdgeCount);
+            WriteUInt16LittleEndian(payload, offset + 8, entry.FloodedRoomCount);
+            WriteUInt16LittleEndian(payload, offset + 10, entry.Reserved0);
+            WriteSingleLittleEndian(payload, offset + 12, entry.BaseTotalStress);
+            WriteSingleLittleEndian(payload, offset + 16, entry.MaxWaterLevel01);
+            WriteSingleLittleEndian(payload, offset + 20, entry.TotalWaterVolumeM3);
+            WriteSingleLittleEndian(payload, offset + 24, entry.PeakModuleStress);
+            WriteUInt32LittleEndian(payload, offset + 28, entry.Flags);
+            WriteUInt32LittleEndian(payload, offset + 32, entry.StateHash);
+            WriteUInt32LittleEndian(payload, offset + 36, entry.DeformationSequence);
+        }
+
+        private static void WriteSingleLittleEndian(NativeArray<byte> payload, int offset, float value)
+        {
+            WriteUInt32LittleEndian(payload, offset, math.asuint(value));
+        }
+
+        private static void WriteUInt16LittleEndian(NativeArray<byte> payload, int offset, ushort value)
+        {
+            payload[offset] = (byte)value;
+            payload[offset + 1] = (byte)(value >> 8);
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, int offset, uint value)
+        {
+            payload[offset] = (byte)value;
+            payload[offset + 1] = (byte)(value >> 8);
+            payload[offset + 2] = (byte)(value >> 16);
+            payload[offset + 3] = (byte)(value >> 24);
         }
 
         private static uint QuantizeFloodBlackBoxFloat(float value)

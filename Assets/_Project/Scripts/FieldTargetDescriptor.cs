@@ -91,15 +91,27 @@ namespace Hecton8.Gameplay
             if (source == null)
                 return false;
 
-            if (!source.TryGetComponent(out descriptor))
-                descriptor = source.GetComponentInParent<FieldTargetDescriptor>();
-            return descriptor != null;
+            return source.TryGetComponent(out descriptor) ||
+                   TryResolveInParents(source.transform.parent, out descriptor);
         }
 
         public static bool TryResolveDirect(Component source, out FieldTargetDescriptor descriptor)
         {
             descriptor = null;
             return source != null && source.TryGetComponent(out descriptor);
+        }
+
+        private static bool TryResolveInParents(Transform current, out FieldTargetDescriptor descriptor)
+        {
+            descriptor = null;
+
+            for (; current != null; current = current.parent)
+            {
+                if (current.TryGetComponent(out descriptor))
+                    return true;
+            }
+
+            return false;
         }
 
         private void RegisterSpatialHandle()

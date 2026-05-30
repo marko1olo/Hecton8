@@ -1052,32 +1052,35 @@ namespace Hecton8.Visor
             }
         }
 
-        private bool TryDumpNoirTelemetry()
+        private unsafe bool TryDumpNoirTelemetry()
         {
             if (_dataVault == null ||
                 !TryGetNoirTelemetryEntryCount(out int entryCount) ||
                 entryCount <= 0)
                 return false;
 
+            NativeArray<byte> payload = default;
             try
             {
                 string directory = Path.Combine(Directory.GetCurrentDirectory(), "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
                 string path = Path.Combine(directory, NoirDumpFileName);
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    Span<byte> rowBytes = stackalloc byte[DrsContractLayout.NoirTelemetryEntryStrideBytes];
-                    for (int i = 0; i < entryCount; i++)
-                    {
-                        if (!TryReadNoirTelemetryEntry(i, out NoirTelemetryEntry entry))
-                            return false;
+                int stride = DrsContractLayout.NoirTelemetryEntryStrideBytes;
+                int totalBytes = entryCount * stride;
+                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
 
-                        WriteNoirTelemetryEntry(rowBytes, in entry);
-                        stream.Write(rowBytes);
-                    }
+                int offset = 0;
+                for (int i = 0; i < entryCount; i++)
+                {
+                    if (!TryReadNoirTelemetryEntry(i, out NoirTelemetryEntry entry))
+                        return false;
+
+                    Span<byte> rowBytes = new Span<byte>(payloadPtr + offset, stride);
+                    WriteNoirTelemetryEntry(rowBytes, in entry);
+                    offset += stride;
                 }
 
-                return true;
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
             }
             catch (IOException)
             {
@@ -1102,6 +1105,11 @@ namespace Hecton8.Visor
             catch (InvalidOperationException)
             {
                 return false;
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 

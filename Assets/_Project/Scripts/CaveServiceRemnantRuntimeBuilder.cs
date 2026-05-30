@@ -7,8 +7,9 @@ namespace Hecton8.Caves
 {
     internal static class CaveServiceRemnantRuntimeBuilder
     {
+        public const int RuntimeCapacity = 12;
         private const string RemnantRootName = "_ServiceRemnants";
-        private const int MaxRemnantCount = 12;
+        private const int MaxRemnantCount = RuntimeCapacity;
         private static readonly string[] _RemnantNames = CreateNameCache("Remnant_", MaxRemnantCount); // COLD ALLOC: bounded remnant child names.
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
@@ -16,6 +17,15 @@ namespace Hecton8.Caves
         private static MaterialPropertyBlock _RemnantPropertyBlock;
 
         public static Transform Prewarm(Transform parent)
+        {
+            return Prewarm(parent, null, null, null);
+        }
+
+        public static Transform Prewarm(
+            Transform parent,
+            GameObject[] primitiveObjects,
+            MeshFilter[] primitiveFilters,
+            MeshRenderer[] primitiveRenderers)
         {
             if (parent == null)
                 return null;
@@ -25,13 +35,15 @@ namespace Hecton8.Caves
             {
                 if (i < root.childCount)
                 {
+                    GameObject primitiveObject = root.GetChild(i).gameObject;
                     WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisual(
-                        root.GetChild(i).gameObject,
+                        primitiveObject,
                         PrimitiveType.Cube,
                         GetCachedName(i),
                         Vector3.zero,
                         Quaternion.identity,
                         Vector3.one);
+                    CachePrimitiveCold(i, primitiveObject, primitiveObjects, primitiveFilters, primitiveRenderers);
                     continue;
                 }
 
@@ -43,7 +55,10 @@ namespace Hecton8.Caves
                     Quaternion.identity,
                     Vector3.one);
                 if (renderer != null)
+                {
+                    CachePrimitiveCold(i, renderer.gameObject, primitiveObjects, primitiveFilters, primitiveRenderers);
                     renderer.gameObject.SetActive(false);
+                }
             }
 
             DisableAll(root);
@@ -55,44 +70,24 @@ namespace Hecton8.Caves
             _ = GetRemnantPropertyBlock();
         }
 
-        public static void Build(
-            Transform parent,
+        public static void BuildPreparedCachedHot(
+            Transform remnantRoot,
+            GameObject[] primitiveObjects,
+            MeshFilter[] primitiveFilters,
+            MeshRenderer[] primitiveRenderers,
             HectonVoxelVolume volume,
             CavePreset preset,
             ServiceRemnantConfig config,
             float globalIntensity)
-        {
-            if (parent == null || volume == null || preset == null || config == null || !config.enabled)
-                return;
-
-            Transform remnantRoot = GetOrCreateRoot(parent);
-            BuildPrepared(remnantRoot, volume, preset, config, globalIntensity, createMissing: true);
-        }
-
-        public static void BuildPrepared(
-            Transform remnantRoot,
-            HectonVoxelVolume volume,
-            CavePreset preset,
-            ServiceRemnantConfig config,
-            float globalIntensity)
-        {
-            BuildPrepared(remnantRoot, volume, preset, config, globalIntensity, createMissing: false);
-        }
-
-        private static void BuildPrepared(
-            Transform remnantRoot,
-            HectonVoxelVolume volume,
-            CavePreset preset,
-            ServiceRemnantConfig config,
-            float globalIntensity,
-            bool createMissing)
         {
             if (remnantRoot == null || volume == null || preset == null || config == null || !config.enabled)
                 return;
 
             if (config.ruinLinkedOnly && !preset.isRuinLinked)
             {
-                DisableAll(remnantRoot);
+                DisableUnusedCachedPrimitives(primitiveObjects, 0);
+                if (remnantRoot.gameObject.activeSelf)
+                    remnantRoot.gameObject.SetActive(false);
                 return;
             }
 
@@ -102,35 +97,53 @@ namespace Hecton8.Caves
             Material remnantMaterial = ResolveRemnantMaterial(volume);
             long runtimeSeed = volume.caveKey != 0L ? volume.caveKey : ComputeFallbackSeed(volume.transform.position, preset);
             int remnantCount = ResolveRemnantCount(preset, volumeBounds, config, globalIntensity);
+            ActivateTransform(remnantRoot);
 
             for (int i = 0; i < remnantCount; i++)
             {
-                Renderer renderer = CreateOrConfigureRemnant(
-                    remnantRoot,
+                Renderer renderer = CreateOrConfigureRemnantCachedHot(
+                    primitiveObjects,
+                    primitiveFilters,
+                    primitiveRenderers,
                     i,
                     volumeBounds,
                     remnantMaterial,
                     runtimeSeed,
                     config,
-                    globalIntensity,
-                    createMissing);
+                    globalIntensity);
                 ApplyRemnantVisuals(renderer, config, runtimeSeed, i);
             }
 
-            DisableUnusedChildren(remnantRoot, remnantCount);
+            DisableUnusedCachedPrimitives(primitiveObjects, remnantCount);
         }
 
-        private static Renderer CreateOrConfigureRemnant(
-            Transform root,
+        private static Renderer CreateOrConfigureRemnantCachedHot(
+            GameObject[] primitiveObjects,
+            MeshFilter[] primitiveFilters,
+            MeshRenderer[] primitiveRenderers,
             int index,
             Bounds volumeBounds,
             Material remnantMaterial,
             long runtimeSeed,
             ServiceRemnantConfig config,
-            float globalIntensity,
-            bool createMissing)
+            float globalIntensity)
         {
-            string name = GetCachedName(index);
+            if (primitiveObjects == null ||
+                primitiveFilters == null ||
+                primitiveRenderers == null ||
+                (uint)index >= (uint)primitiveObjects.Length ||
+                (uint)index >= (uint)primitiveFilters.Length ||
+                (uint)index >= (uint)primitiveRenderers.Length)
+            {
+                return null;
+            }
+
+            GameObject primitiveObject = primitiveObjects[index];
+            MeshFilter filter = primitiveFilters[index];
+            MeshRenderer renderer = primitiveRenderers[index];
+            if (primitiveObject == null || filter == null || renderer == null)
+                return null;
+
             bool cylindrical = Hash01(runtimeSeed, index, 11) > 0.45f;
             PrimitiveType primitiveType = cylindrical ? PrimitiveType.Cylinder : PrimitiveType.Cube;
             float intensityT = math.saturate(globalIntensity);
@@ -151,31 +164,58 @@ namespace Hecton8.Caves
             Vector3 localScale = new Vector3(width, height, depth);
             Quaternion localRotation = Quaternion.Euler(pitch, yaw, roll);
 
-            if (index < root.childCount)
-            {
-                Transform existing = root.GetChild(index);
-                ActivateTransform(existing);
-                return WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisualHot(
-                    existing.gameObject,
-                    primitiveType,
-                    name,
-                    localPosition,
-                    localRotation,
-                    localScale,
-                    remnantMaterial);
-            }
+            if (!primitiveObject.activeSelf)
+                primitiveObject.SetActive(true);
 
-            if (!createMissing)
-                return null;
-
-            return WorldGeneratedPrimitiveFactory.CreatePrimitiveVisual(
-                root,
+            return WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisualCachedHot(
+                primitiveObject,
+                filter,
+                renderer,
                 primitiveType,
-                name,
+                GetCachedName(index),
                 localPosition,
                 localRotation,
                 localScale,
                 remnantMaterial);
+        }
+
+        private static void CachePrimitiveCold(
+            int index,
+            GameObject primitiveObject,
+            GameObject[] primitiveObjects,
+            MeshFilter[] primitiveFilters,
+            MeshRenderer[] primitiveRenderers)
+        {
+            if (primitiveObject == null ||
+                primitiveObjects == null ||
+                primitiveFilters == null ||
+                primitiveRenderers == null ||
+                (uint)index >= (uint)primitiveObjects.Length ||
+                (uint)index >= (uint)primitiveFilters.Length ||
+                (uint)index >= (uint)primitiveRenderers.Length)
+            {
+                return;
+            }
+
+            if (!WorldGeneratedPrimitiveFactory.TryResolvePrimitiveComponentsCold(primitiveObject, out MeshFilter filter, out MeshRenderer renderer))
+                return;
+
+            primitiveObjects[index] = primitiveObject;
+            primitiveFilters[index] = filter;
+            primitiveRenderers[index] = renderer;
+        }
+
+        private static void DisableUnusedCachedPrimitives(GameObject[] primitiveObjects, int usedChildCount)
+        {
+            if (primitiveObjects == null)
+                return;
+
+            for (int i = usedChildCount; i < primitiveObjects.Length; i++)
+            {
+                GameObject primitiveObject = primitiveObjects[i];
+                if (primitiveObject != null && primitiveObject.activeSelf)
+                    primitiveObject.SetActive(false);
+            }
         }
 
         private static void ApplyRemnantVisuals(Renderer renderer, ServiceRemnantConfig config, long runtimeSeed, int index)

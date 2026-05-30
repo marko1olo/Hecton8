@@ -1,0 +1,29 @@
+Agent: 1423
+Timestamp: 2026-05-28T15:47+04:00
+Command: dotnet build Hecton8.Core.csproj --nologo -clp:ErrorsOnly -maxcpucount:1
+Pre-build CPU sample: 10 percent
+Pre-build active dotnet/csc/VBCSCompiler processes: none
+Exit code: 1
+Wall time: 96.4 seconds
+
+Failure summary:
+- Build failed before runtime/profiler/test verification.
+- First compile wall is outside agent 1423 domain:
+  Assets/_Project/Scripts/ModularEquipmentEngine.cs lines 1284-1311.
+- Error classes:
+  CS8168 Cannot return local 'acquiredCount' by reference because it is not a ref local.
+  CS8350 TryAcquireEquipmentWriteBuffer<T>(..., ref int acquiredCount, out EquipmentVaultView<T>) may expose variables referenced by parameter 'acquiredCount' outside declaration scope.
+- Count from compiler output: 56 errors, 0 warnings.
+
+1423-domain observation:
+- Compiler output did not report errors in:
+  Assets/_Project/Scripts/SpatialAudioManager.cs
+  Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs
+  Assets/_Project/Scripts/UI/SubtitleManager.cs
+  Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs
+  Assets/_Project/Scripts/LocRegistry.cs
+  Assets/_Project/Scripts/Core/Contracts/Signals/SubtitleCueSignal.cs
+
+Status:
+- PENDING VERIFICATION.
+- No GCMonitor/profiler/Unity Play Mode proof exists.

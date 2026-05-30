@@ -503,6 +503,7 @@ namespace Hecton8.Core
         private bool _masterHealthPressureShedThisFrame;
         private uint _masterRollbackFenceFlagsThisFrame;
         private bool _serviceRegistered;
+        private bool _runtimeGameplayBootstrapGateActive;
         private uint _dispatcherFrameSequence;
         private uint _currentDispatcherFrameId;
         private uint _memoryTelemetrySequence;
@@ -1921,6 +1922,7 @@ namespace Hecton8.Core
             if (ActiveRuntimeInstance == null)
                 ActiveRuntimeInstance = this;
 
+            _runtimeGameplayBootstrapGateActive = Application.isPlaying;
             _slowTickAccumulator = 0f;
             _fixedStepAccumulator = 0f;
             _fastTickAccumulator = 0f;
@@ -1946,12 +1948,14 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            _runtimeGameplayBootstrapGateActive = Application.isPlaying;
             if (_serviceRegistered)
                 GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void OnDisable()
         {
+            _runtimeGameplayBootstrapGateActive = false;
             if (_serviceRegistered)
                 GlobalRegistry.TryUnregisterHotSwapListener(this);
         }
@@ -1971,6 +1975,7 @@ namespace Hecton8.Core
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
+            _runtimeGameplayBootstrapGateActive = false;
             GlobalRegistry.TryUnregisterHotSwapListener(this);
 
             if (_serviceRegistered)
@@ -4646,7 +4651,12 @@ namespace Hecton8.Core
         private static void EmitVramPressureDefragSignalIfNeeded()
         {
             IVramBudgetReadModel monitor = ResolveCachedVramMonitor();
-            if (monitor == null || monitor.TotalVRAMBytes <= 1800L * 1024L * 1024L)
+            HardwareTierDetector.EnsureInitialized();
+            long vramPressureCeilingBytes = HardwareTierDetector.RecommendedVramBudgetBytes;
+            if (vramPressureCeilingBytes <= 0L)
+                vramPressureCeilingBytes = 1800L * 1024L * 1024L;
+
+            if (monitor == null || monitor.TotalVRAMBytes <= vramPressureCeilingBytes)
                 return;
 
             GlobalTelemetryBus.PublishVRAMWarningEvent(monitor.TotalVRAMBytes);
@@ -5013,7 +5023,7 @@ namespace Hecton8.Core
                 EndDispatcherPhaseTiming(beginDispatcherTimestamp, "FoveatedSimulationManager.BeginDispatcherFrame");
 #endif
                 PredatorCognitionDomain.BeginDispatcherFrame(CurrentFrameIndex);
-                bool blockGameplayLanes = Application.isPlaying &&
+                bool blockGameplayLanes = _runtimeGameplayBootstrapGateActive &&
                                           BootstrapState.HasActiveInstance &&
                                           !BootstrapState.IsGameReady;
                 long bucketWorkStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
@@ -5296,7 +5306,6 @@ namespace Hecton8.Core
                             lane.GetAt(itemIndex).LateFrameTick();
                     }
                 }
-                AcousticOcclusionUtility.LateFrameTick();
                 PredatorCognitionDomain.LateFrameTick();
                 CombatDamageRuntime.LateFrameTick();
                 VoxelDynamicNavGridRuntime.CompletePendingDynamicObstacleUpdates();

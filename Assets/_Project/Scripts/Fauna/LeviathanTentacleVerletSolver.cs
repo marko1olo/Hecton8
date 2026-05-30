@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Animation.IK;
 using Hecton8.Core;
@@ -33,6 +32,7 @@ namespace Hecton8.AI
         private const uint TentacleStateActive = 1u << 0;
         private const uint TentacleStateGrabbing = 1u << 1;
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
+        private const string TelemetryDumpPayloadLabel = "leviathanTentacleTelemetryDumpPayload";
         private const ulong TelemetryDumpMagic = 0x484543544F4E3800UL;
         private const int TelemetryEntryPayloadBytes = 64;
         private const float FlowGridIntegerEpsilon = 0.01f;
@@ -1645,48 +1645,88 @@ namespace Hecton8.AI
             return maxStretch;
         }
 
-        private void DumpTelemetryBlackBox()
+        private bool DumpTelemetryBlackBox()
         {
             if (!TryResolvePersistentBuffers(out TentacleVaultBuffers buffers))
-                return;
+                return false;
 
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string dumpPath = Path.Combine(projectRoot, TelemetryDumpRelativePath);
-            string directory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-            using BinaryWriter writer = new BinaryWriter(stream);
             int ringLength = math.min(TelemetryCapacity, buffers.TelemetryRing.Length);
             int entryCount = _telemetryCursor >= ringLength ? ringLength : math.max(0, _telemetryCursor);
             int firstEntryIndex = entryCount == ringLength && ringLength > 0 ? _telemetryCursor % ringLength : 0;
-
-            writer.Write(TelemetryDumpMagic);
-            writer.Write(entryCount);
-            writer.Write(_telemetryCursor);
-            writer.Write(TelemetryEntryPayloadBytes);
-            for (int i = 0; i < entryCount; i++)
+            int byteCount = 20 + entryCount * TelemetryEntryPayloadBytes;
+            NativeArray<byte> payload = default;
+            try
             {
-                int sourceIndex = (firstEntryIndex + i) % ringLength;
-                LeviathanTentacleTelemetryEntry entry = buffers.TelemetryRing[sourceIndex];
-                writer.Write(entry.FrameIndex);
-                writer.Write(entry.ActiveTentacleCount);
-                writer.Write(entry.Flags);
-                writer.Write(entry.StateHash);
-                writer.Write(entry.Root0.x);
-                writer.Write(entry.Root0.y);
-                writer.Write(entry.Root0.z);
-                writer.Write(entry.Tip0.x);
-                writer.Write(entry.Tip0.y);
-                writer.Write(entry.Tip0.z);
-                writer.Write(entry.FlowVector.x);
-                writer.Write(entry.FlowVector.y);
-                writer.Write(entry.FlowVector.z);
-                writer.Write(entry.MaxStretchFraction);
-                writer.Write(entry.Padding0);
-                writer.Write(entry.Padding1);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(LeviathanTentacleVerletSolver),
+                    TelemetryDumpPayloadLabel);
+                int cursor = 0;
+                WriteUInt64LittleEndian(payload, ref cursor, TelemetryDumpMagic);
+                WriteInt32LittleEndian(payload, ref cursor, entryCount);
+                WriteInt32LittleEndian(payload, ref cursor, _telemetryCursor);
+                WriteInt32LittleEndian(payload, ref cursor, TelemetryEntryPayloadBytes);
+
+                for (int i = 0; i < entryCount; i++)
+                {
+                    int sourceIndex = (firstEntryIndex + i) % ringLength;
+                    LeviathanTentacleTelemetryEntry entry = buffers.TelemetryRing[sourceIndex];
+                    WriteInt32LittleEndian(payload, ref cursor, entry.FrameIndex);
+                    WriteInt32LittleEndian(payload, ref cursor, entry.ActiveTentacleCount);
+                    WriteUInt32LittleEndian(payload, ref cursor, entry.Flags);
+                    WriteUInt32LittleEndian(payload, ref cursor, entry.StateHash);
+                    WriteFloat3LittleEndian(payload, ref cursor, entry.Root0);
+                    WriteFloat3LittleEndian(payload, ref cursor, entry.Tip0);
+                    WriteFloat3LittleEndian(payload, ref cursor, entry.FlowVector);
+                    WriteFloatLittleEndian(payload, ref cursor, entry.MaxStretchFraction);
+                    WriteFloatLittleEndian(payload, ref cursor, entry.Padding0);
+                    WriteFloatLittleEndian(payload, ref cursor, entry.Padding1);
+                }
+
+                return cursor == byteCount && NativeFaultDumpWriter.TryWriteAll(TelemetryDumpRelativePath, payload, byteCount);
             }
+            catch (System.Exception)
+            {
+                return false;
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(LeviathanTentacleVerletSolver),
+                    TelemetryDumpPayloadLabel);
+            }
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(payload, ref cursor, (uint)value);
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, ref int cursor, uint value)
+        {
+            payload[cursor++] = (byte)value;
+            payload[cursor++] = (byte)(value >> 8);
+            payload[cursor++] = (byte)(value >> 16);
+            payload[cursor++] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> payload, ref int cursor, ulong value)
+        {
+            WriteUInt32LittleEndian(payload, ref cursor, (uint)value);
+            WriteUInt32LittleEndian(payload, ref cursor, (uint)(value >> 32));
+        }
+
+        private static void WriteFloatLittleEndian(NativeArray<byte> payload, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(payload, ref cursor, math.asuint(value));
+        }
+
+        private static void WriteFloat3LittleEndian(NativeArray<byte> payload, ref int cursor, float3 value)
+        {
+            WriteFloatLittleEndian(payload, ref cursor, value.x);
+            WriteFloatLittleEndian(payload, ref cursor, value.y);
+            WriteFloatLittleEndian(payload, ref cursor, value.z);
         }
 
         private void DumpTelemetryBlackBoxOnce()
@@ -1694,8 +1734,8 @@ namespace Hecton8.AI
             if (_telemetryDumped || !HasPersistentBuffers())
                 return;
 
-            DumpTelemetryBlackBox();
-            _telemetryDumped = true;
+            if (DumpTelemetryBlackBox())
+                _telemetryDumped = true;
         }
 
         private float3 ResolveRootRuntimePosition(int tentacleIndex)

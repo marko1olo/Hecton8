@@ -26,7 +26,6 @@ namespace Hecton8.Audio.Synthesis
         public NativeArray<VocalBankIndexRecordDTO> MockRecords;
 #if UNITY_EDITOR
         public NativeArray<VocalDialogueMetadataDTO> CsvMetadata;
-        public NativeArray<byte> CsvScratch;
 #endif
     }
 
@@ -42,7 +41,7 @@ namespace Hecton8.Audio.Synthesis
         private const int MockRecordCapacity = 1;
 #if UNITY_EDITOR
         private const int CsvMetadataCapacity = 8192;
-        private const int CsvScratchBytes = 1048576;
+        private const int EditorCsvScratchBytes = 1048576;
 #endif
         private const int DefaultMockSamples = 32000;
         private const uint DefaultMockPhraseHash = 0x05203E88u; // FNV1a("VO_SHINOBU_MOCK").
@@ -60,7 +59,6 @@ namespace Hecton8.Audio.Synthesis
         private const int LockMockRecords = 1 << 6;
 #if UNITY_EDITOR
         private const int LockCsvMetadata = 1 << 7;
-        private const int LockCsvScratch = 1 << 8;
 #endif
         private static readonly ulong VocalMutationGuardMask =
             VocalMutationGuardBit(BufferID.AudioVocalSynthesisState) |
@@ -72,7 +70,6 @@ namespace Hecton8.Audio.Synthesis
             VocalMutationGuardBit(BufferID.AudioVocalSynthesisMockBankRecords)
 #if UNITY_EDITOR
             | VocalMutationGuardBit(BufferID.AudioVocalSynthesisCsvMetadata)
-            | VocalMutationGuardBit(BufferID.AudioVocalSynthesisCsvScratch)
 #endif
             ;
 
@@ -96,7 +93,6 @@ namespace Hecton8.Audio.Synthesis
         private VaultGenerationHandle<VocalBankIndexRecordDTO> _mockRecordsHandle;
 #if UNITY_EDITOR
         private VaultGenerationHandle<VocalDialogueMetadataDTO> _csvMetadataHandle;
-        private VaultGenerationHandle<byte> _csvScratchHandle;
 #endif
 
         private long _bankByteLength;
@@ -114,6 +110,8 @@ namespace Hecton8.Audio.Synthesis
         private int _vocalMutationGuardDepth;
 #if UNITY_EDITOR
         private int _csvMetadataCount;
+        private byte* _editorCsvScratch;
+        private int _editorCsvScratchCapacity;
 #endif
         private uint _frameCounter;
         private float _cachedGlobalQualityWeight = 1f;
@@ -613,9 +611,7 @@ namespace Hecton8.Audio.Synthesis
             try
             {
                 if (!TryAcquireLockedView(lockedVault, in _csvMetadataHandle, BufferID.AudioVocalSynthesisCsvMetadata, LockCsvMetadata, ref lockMask, out views.CsvMetadata) ||
-                    !TryAcquireLockedView(lockedVault, in _csvScratchHandle, BufferID.AudioVocalSynthesisCsvScratch, LockCsvScratch, ref lockMask, out views.CsvScratch) ||
-                    views.CsvMetadata.Length <= 0 ||
-                    views.CsvScratch.Length <= 0)
+                    views.CsvMetadata.Length <= 0)
                 {
                     return false;
                 }
@@ -924,7 +920,6 @@ namespace Hecton8.Audio.Synthesis
             _mockRecordsHandle = vault.EnsureGenerationHandle<VocalBankIndexRecordDTO>(BufferID.AudioVocalSynthesisMockBankRecords, MockRecordCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
 #if UNITY_EDITOR
             _csvMetadataHandle = vault.EnsureGenerationHandle<VocalDialogueMetadataDTO>(BufferID.AudioVocalSynthesisCsvMetadata, CsvMetadataCapacity, VaultOwner, NativeArrayOptions.UninitializedMemory);
-            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.AudioVocalSynthesisCsvScratch, CsvScratchBytes, VaultOwner, NativeArrayOptions.UninitializedMemory);
 #endif
 
             if (!TryAcquireInitializeViews(out VocalVaultViews views, out int lockMask, out IDataVault lockedVault))
@@ -969,8 +964,7 @@ namespace Hecton8.Audio.Synthesis
                    IsReadOnlyHandleResolvable(in _mockBankBytesHandle, BufferID.AudioVocalSynthesisMockBankBytes, 1) &&
                    IsReadOnlyHandleResolvable(in _mockRecordsHandle, BufferID.AudioVocalSynthesisMockBankRecords, MockRecordCapacity)
 #if UNITY_EDITOR
-                   && IsReadOnlyHandleResolvable(in _csvMetadataHandle, BufferID.AudioVocalSynthesisCsvMetadata, CsvMetadataCapacity) &&
-                   IsReadOnlyHandleResolvable(in _csvScratchHandle, BufferID.AudioVocalSynthesisCsvScratch, CsvScratchBytes)
+                   && IsReadOnlyHandleResolvable(in _csvMetadataHandle, BufferID.AudioVocalSynthesisCsvMetadata, CsvMetadataCapacity)
 #endif
                    ;
         }
@@ -1004,7 +998,7 @@ namespace Hecton8.Audio.Synthesis
                 ReleaseVaultBuffer(vault, ref _mockRecordsHandle, BufferID.AudioVocalSynthesisMockBankRecords);
 #if UNITY_EDITOR
                 ReleaseVaultBuffer(vault, ref _csvMetadataHandle, BufferID.AudioVocalSynthesisCsvMetadata);
-                ReleaseVaultBuffer(vault, ref _csvScratchHandle, BufferID.AudioVocalSynthesisCsvScratch);
+                ReleaseEditorCsvScratch();
 #endif
                 _bankByteLength = 0;
                 Volatile.Write(ref _usingMockBank, 0);
@@ -1227,25 +1221,12 @@ namespace Hecton8.Audio.Synthesis
                 if (!File.Exists(path))
                     return;
 
-                int bytesRead = 0;
-                int capacity = views.CsvScratch.Length;
-                byte* scratch = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.CsvScratch);
-                using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    while (bytesRead < capacity)
-                    {
-                        ref byte spanStart = ref UnsafeUtility.AsRef<byte>(scratch + bytesRead);
-                        Span<byte> span = MemoryMarshal.CreateSpan(ref spanStart, capacity - bytesRead);
-                        int read = stream.Read(span);
-                        if (read <= 0)
-                            break;
-                        bytesRead += read;
-                    }
-                }
+                if (!TryGetEditorCsvScratch(out byte* csvScratch, out int csvScratchCapacity) ||
+                    !TryReadColdCsvExact(path, csvScratch, csvScratchCapacity, out int bytesRead))
+                    return;
 
-                ref byte csvStart = ref UnsafeUtility.AsRef<byte>(scratch);
-                ReadOnlySpan<byte> csv = MemoryMarshal.CreateReadOnlySpan(ref csvStart, bytesRead);
-                _csvMetadataCount = ParseDialogueCsv(csv, views.CsvMetadata);
+                ref byte csvStart = ref UnsafeUtility.AsRef<byte>(csvScratch);
+                _csvMetadataCount = ParseDialogueCsv(MemoryMarshal.CreateReadOnlySpan(ref csvStart, bytesRead), views.CsvMetadata);
             }
             catch (Exception)
             {
@@ -1253,6 +1234,57 @@ namespace Hecton8.Audio.Synthesis
             finally
             {
                 ReleaseVocalWriteLocks(lockedVault, lockMask);
+            }
+        }
+
+        private bool TryGetEditorCsvScratch(out byte* scratch, out int capacity)
+        {
+            if (_editorCsvScratch == null || _editorCsvScratchCapacity != EditorCsvScratchBytes)
+            {
+                ReleaseEditorCsvScratch();
+                _editorCsvScratch = (byte*)UnsafeUtility.Malloc(EditorCsvScratchBytes, 16, Allocator.Persistent);
+                _editorCsvScratchCapacity = EditorCsvScratchBytes;
+            }
+
+            scratch = _editorCsvScratch;
+            capacity = _editorCsvScratchCapacity;
+            return scratch != null && capacity > 0;
+        }
+
+        private void ReleaseEditorCsvScratch()
+        {
+            if (_editorCsvScratch != null)
+                UnsafeUtility.Free(_editorCsvScratch, Allocator.Persistent);
+
+            _editorCsvScratch = null;
+            _editorCsvScratchCapacity = 0;
+        }
+
+        private static bool TryReadColdCsvExact(string path, byte* destination, int capacity, out int bytesRead)
+        {
+            bytesRead = 0;
+            if (string.IsNullOrEmpty(path) || destination == null || capacity <= 0)
+                return false;
+
+            using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                long length = stream.Length;
+                if (length <= 0L || length > capacity || length > int.MaxValue)
+                    return false;
+
+                int requiredBytes = (int)length;
+                while (bytesRead < requiredBytes)
+                {
+                    ref byte spanStart = ref UnsafeUtility.AsRef<byte>(destination + bytesRead);
+                    Span<byte> span = MemoryMarshal.CreateSpan(ref spanStart, requiredBytes - bytesRead);
+                    int read = stream.Read(span);
+                    if (read <= 0)
+                        break;
+
+                    bytesRead += read;
+                }
+
+                return bytesRead == requiredBytes;
             }
         }
 
@@ -1458,35 +1490,45 @@ namespace Hecton8.Audio.Synthesis
             try
             {
                 VocalDecodeCounters64 counters = countersView[0];
-                string path = Path.Combine(Application.dataPath, "..", DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                int capacity = math.min(TelemetryCapacity, telemetryView.Length);
+                int stride = UnsafeUtility.SizeOf<VocalTelemetryEntryDTO>();
+                int byteCount = 32 + capacity * stride;
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(VocalBankPlaybackRuntime),
+                    "vocalBankBlackBoxPayload");
+                try
                 {
-                    Span<byte> header = stackalloc byte[32];
+                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    Span<byte> header = new Span<byte>(target, 32);
                     WriteUInt32(header, 0, 0x44563848u); // H8VD.
                     WriteUInt32(header, 4, 1u);
-                    int capacity = math.min(TelemetryCapacity, telemetryView.Length);
                     WriteUInt32(header, 8, (uint)capacity);
-                    WriteUInt32(header, 12, (uint)UnsafeUtility.SizeOf<VocalTelemetryEntryDTO>());
+                    WriteUInt32(header, 12, (uint)stride);
                     WriteUInt32(header, 16, (uint)counters.TelemetryCursor);
                     WriteUInt32(header, 20, counters.LastFaultFlags);
                     WriteUInt32(header, 24, counters.LastPhraseHashID);
                     WriteUInt32(header, 28, _frameCounter);
-                    for (int i = 0; i < header.Length; i++)
-                        stream.WriteByte(header[i]);
 
                     int cursor = counters.TelemetryCursor;
+                    int offset = 32;
                     for (int i = 0; i < capacity; i++)
                     {
                         int index = (cursor + i) % capacity;
                         VocalTelemetryEntryDTO entry = telemetryView[index];
                         byte* source = (byte*)UnsafeUtility.AddressOf(ref entry);
-                        for (int b = 0; b < UnsafeUtility.SizeOf<VocalTelemetryEntryDTO>(); b++)
-                            stream.WriteByte(source[b]);
+                        UnsafeUtility.MemCpy(target + offset, source, stride);
+                        offset += stride;
                     }
+
+                    NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, byteCount);
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(VocalBankPlaybackRuntime),
+                        "vocalBankBlackBoxPayload");
                 }
             }
             catch (Exception)

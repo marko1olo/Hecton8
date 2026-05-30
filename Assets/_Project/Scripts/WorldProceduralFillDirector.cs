@@ -567,8 +567,8 @@ namespace Hecton8.World
             _debugPrimaryFamily = selection.Family != null ? selection.Family.familyLabel : "None";
             _debugPrimarySource = string.IsNullOrWhiteSpace(selection.Source) ? "None" : selection.Source;
             _debugPrimaryVariant = string.IsNullOrWhiteSpace(selection.VariantId) ? "None" : selection.VariantId;
-            _debugPrimaryDomain = selection.Family != null ? selection.Family.proceduralDomain.ToString() : WorldPrefabFamilyProfile.ProceduralDomain.Generic.ToString();
-            _debugPrimaryPlacementMode = selection.Family != null ? selection.Family.placementMode.ToString() : WorldPrefabFamilyProfile.PlacementMode.Scatter.ToString();
+            _debugPrimaryDomain = selection.Family != null ? ResolveProceduralDomainLabel(selection.Family.proceduralDomain) : "Generic";
+            _debugPrimaryPlacementMode = selection.Family != null ? ResolvePlacementModeLabel(selection.Family.placementMode) : "Scatter";
             _debugPrimaryHeatmap = string.IsNullOrWhiteSpace(selection.HeatmapChannel) ? "None" : selection.HeatmapChannel;
             _debugPrimaryIntent = string.IsNullOrWhiteSpace(selection.Intent) ? "None" : selection.Intent;
             _debugPrimaryReason = string.IsNullOrWhiteSpace(selection.Reason) ? "None" : selection.Reason;
@@ -591,6 +591,72 @@ namespace Hecton8.World
                     hash = (hash * 31) + value[i];
 
                 return hash;
+            }
+        }
+
+        private static string ResolveProceduralDomainLabel(WorldPrefabFamilyProfile.ProceduralDomain domain)
+        {
+            switch (domain)
+            {
+                case WorldPrefabFamilyProfile.ProceduralDomain.Rock:
+                    return "Rock";
+                case WorldPrefabFamilyProfile.ProceduralDomain.RockCluster:
+                    return "RockCluster";
+                case WorldPrefabFamilyProfile.ProceduralDomain.RockArch:
+                    return "RockArch";
+                case WorldPrefabFamilyProfile.ProceduralDomain.RockShelf:
+                    return "RockShelf";
+                case WorldPrefabFamilyProfile.ProceduralDomain.Kelp:
+                    return "Kelp";
+                case WorldPrefabFamilyProfile.ProceduralDomain.Plant:
+                    return "Plant";
+                case WorldPrefabFamilyProfile.ProceduralDomain.Coral:
+                    return "Coral";
+                case WorldPrefabFamilyProfile.ProceduralDomain.Egg:
+                    return "Egg";
+                case WorldPrefabFamilyProfile.ProceduralDomain.Debris:
+                    return "Debris";
+                case WorldPrefabFamilyProfile.ProceduralDomain.RuinModule:
+                    return "RuinModule";
+                case WorldPrefabFamilyProfile.ProceduralDomain.CaveEntrance:
+                    return "CaveEntrance";
+                case WorldPrefabFamilyProfile.ProceduralDomain.Landmark:
+                    return "Landmark";
+                case WorldPrefabFamilyProfile.ProceduralDomain.CreatureSpawn:
+                    return "CreatureSpawn";
+                case WorldPrefabFamilyProfile.ProceduralDomain.ResourcePocket:
+                    return "ResourcePocket";
+                case WorldPrefabFamilyProfile.ProceduralDomain.HazardPocket:
+                    return "HazardPocket";
+                case WorldPrefabFamilyProfile.ProceduralDomain.SafePocket:
+                    return "SafePocket";
+                case WorldPrefabFamilyProfile.ProceduralDomain.PowerRoute:
+                    return "PowerRoute";
+                case WorldPrefabFamilyProfile.ProceduralDomain.ServiceScar:
+                    return "ServiceScar";
+                default:
+                    return "Generic";
+            }
+        }
+
+        private static string ResolvePlacementModeLabel(WorldPrefabFamilyProfile.PlacementMode placementMode)
+        {
+            switch (placementMode)
+            {
+                case WorldPrefabFamilyProfile.PlacementMode.Cluster:
+                    return "Cluster";
+                case WorldPrefabFamilyProfile.PlacementMode.Patch:
+                    return "Patch";
+                case WorldPrefabFamilyProfile.PlacementMode.Solitary:
+                    return "Solitary";
+                case WorldPrefabFamilyProfile.PlacementMode.Landmark:
+                    return "Landmark";
+                case WorldPrefabFamilyProfile.PlacementMode.SpawnAnchor:
+                    return "SpawnAnchor";
+                case WorldPrefabFamilyProfile.PlacementMode.SocketDriven:
+                    return "SocketDriven";
+                default:
+                    return "Scatter";
             }
         }
 

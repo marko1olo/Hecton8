@@ -22,7 +22,6 @@ namespace Hecton8.Physiology
         public const BufferID SensoryImpairmentTuningBuffer = (BufferID)75221;
         public const BufferID SensoryImpairmentTelemetryBuffer = (BufferID)75222;
         public const BufferID SensoryImpairmentProfilesBuffer = (BufferID)75223;
-        public const BufferID SensoryImpairmentCsvScratchBuffer = (BufferID)75224;
         public const BufferID SensoryInputDriftDebugBuffer = (BufferID)75225;
 
         public const float DefaultHypoxiaCurveExponent = 3f;

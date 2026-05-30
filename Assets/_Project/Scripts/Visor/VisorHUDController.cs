@@ -36,8 +36,6 @@ namespace NASAPunk.Visor
         private const int MaxBrownoutSignalsPerTick = 4;
         private const int RuntimeHudCompositeMaxWidth = 1280;
         private const int RuntimeHudCompositeMaxHeight = 720;
-        private const float HelmetScissorNormalizedInsetX = 0.045f;
-        private const float HelmetScissorNormalizedInsetY = 0.04f;
         private const string HudPhosphorKeyword = "_HUD_PHOSPHOR_MODE";
         private const float MinimumProjectedHudIntensity = 1.25f;
         private const float RadiationFatigueMinimumScale = 0.65f;
@@ -174,11 +172,6 @@ namespace NASAPunk.Visor
 
         private RenderTexture _hudRT;
         private MaterialPropertyBlock _mpb;
-        private CommandBuffer _hudScissorBeginCommandBuffer;
-        private CommandBuffer _hudScissorEndCommandBuffer;
-        private Camera _hudScissorCamera;
-        private int _hudScissorWidth = -1;
-        private int _hudScissorHeight = -1;
         private bool _hudScissorCommandBufferRepairRequested = true;
         private bool _scriptableRenderPipelineActiveCold;
         private bool _ownsRuntimeTexture;
@@ -317,8 +310,11 @@ namespace NASAPunk.Visor
         private bool _hasSubmarinePowerSnapshot;
         private bool _hudPhosphorModeKeywordHeld;
         private TMP_FontAsset _activeTerminalBiosFont;
+        private Material _activeTerminalBiosFontMaterial;
         private TMP_FontAsset _primaryHudFont;
+        private Material _primaryHudFontMaterial;
         private TMP_FontAsset _queuedHudFont;
+        private Material _queuedHudFontMaterial;
         private bool _biosFontModeApplied;
         private float _appliedVRBrownoutIntensity = -1f;
         private bool _hotSwapListenerRegistered;
@@ -523,7 +519,7 @@ namespace NASAPunk.Visor
             CacheGraphicsCapabilitiesCold();
             CacheScreenSurfaceCold();
             EnsurePropertyBlock();
-            PrewarmBiosTerminalFont();
+            RefreshBiosFontCachesSlow();
             EnsureHudScissorCommandBuffersCold();
         }
 
@@ -544,7 +540,7 @@ namespace NASAPunk.Visor
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             EnsurePropertyBlock();
-            PrewarmBiosTerminalFont();
+            RefreshBiosFontCachesSlow();
             EnsureHudScissorCommandBuffersCold();
             _materialPropertiesDirty = true;
             AutoResolveReferences(force: true);
@@ -623,6 +619,7 @@ namespace NASAPunk.Visor
             Shader.SetGlobalFloat(ID_HectonVRBrownoutIntensity, 0f);
             _biosFontSwapScheduler.Clear();
             _queuedHudFont = null;
+            _queuedHudFontMaterial = null;
             _biosFontModeApplied = false;
             ReleaseHudPhosphorKeyword();
             HectonSubmarineOsEvents.Unregister(this);
@@ -845,6 +842,7 @@ namespace NASAPunk.Visor
         {
             CacheGraphicsCapabilitiesCold();
             CacheScreenSurfaceCold();
+            RefreshBiosFontCachesSlow();
             FlushHudScissorCommandBufferRepairSlow();
         }
 
@@ -2074,7 +2072,26 @@ namespace NASAPunk.Visor
             if (!_enableBiosFontSwap)
                 return;
 
-            _activeTerminalBiosFont = TMP_TextRegistry.PrewarmTerminalFont(_terminalBiosFont);
+            TMP_FontAsset activeFont = TMP_TextRegistry.PrewarmTerminalFont(_terminalBiosFont);
+            if (activeFont == _activeTerminalBiosFont && _activeTerminalBiosFontMaterial != null)
+                return;
+
+            _activeTerminalBiosFont = activeFont;
+            _activeTerminalBiosFontMaterial = ResolveFontMaterialCold(activeFont);
+        }
+
+        private void RefreshBiosFontCachesSlow()
+        {
+            if (!_enableBiosFontSwap)
+                return;
+
+            if (!LocalizedFontResolver.IsFontReady(_activeTerminalBiosFont) ||
+                _activeTerminalBiosFontMaterial == null)
+                PrewarmBiosTerminalFont();
+
+            if (!LocalizedFontResolver.IsFontReady(_primaryHudFont) ||
+                _primaryHudFontMaterial == null)
+                ResolvePrimaryHudFont();
         }
 
         private void UpdateBiosFontSwapState()
@@ -2082,25 +2099,28 @@ namespace NASAPunk.Visor
             if (!_enableBiosFontSwap)
                 return;
 
-            if (!LocalizedFontResolver.IsFontReady(_activeTerminalBiosFont))
-                PrewarmBiosTerminalFont();
-
             bool biosActive = _biosRecoveryModeBlend >= 0.5f;
             if (biosActive == _biosFontModeApplied)
                 return;
 
-            TMP_FontAsset targetFont = biosActive ? _activeTerminalBiosFont : ResolvePrimaryHudFont();
-            if (targetFont == null)
+            TMP_FontAsset targetFont = biosActive ? _activeTerminalBiosFont : _primaryHudFont;
+            if (!LocalizedFontResolver.IsFontReady(targetFont))
                 return;
 
-            QueueBiosFontSwap(targetFont);
+            Material targetMaterial = biosActive ? _activeTerminalBiosFontMaterial : _primaryHudFontMaterial;
+            QueueBiosFontSwap(targetFont, targetMaterial);
             _biosFontModeApplied = biosActive;
         }
 
         private TMP_FontAsset ResolvePrimaryHudFont()
         {
             if (LocalizedFontResolver.IsFontReady(_primaryHudFont))
+            {
+                if (_primaryHudFontMaterial == null)
+                    _primaryHudFontMaterial = ResolveFontMaterialCold(_primaryHudFont);
+
                 return _primaryHudFont;
+            }
 
             int registeredCount = TMP_TextRegistry.Count;
             for (int i = 0; i < registeredCount; i++)
@@ -2113,18 +2133,29 @@ namespace NASAPunk.Visor
                 if (text == null || !LocalizedFontResolver.IsFontReady(text.font))
                     continue;
 
-                _primaryHudFont = text.font;
-                return _primaryHudFont;
+                return CachePrimaryHudFont(text.font);
             }
 
-            _primaryHudFont = TMP_Settings.defaultFontAsset;
+            return CachePrimaryHudFont(TMP_Settings.defaultFontAsset);
+        }
+
+        private TMP_FontAsset CachePrimaryHudFont(TMP_FontAsset font)
+        {
+            _primaryHudFont = font;
+            _primaryHudFontMaterial = ResolveFontMaterialCold(font);
             return _primaryHudFont;
         }
 
-        private void QueueBiosFontSwap(TMP_FontAsset targetFont)
+        private static Material ResolveFontMaterialCold(TMP_FontAsset font)
+        {
+            return font != null ? font.material : null;
+        }
+
+        private void QueueBiosFontSwap(TMP_FontAsset targetFont, Material targetMaterial)
         {
             _biosFontSwapScheduler.Clear();
             _queuedHudFont = targetFont;
+            _queuedHudFontMaterial = targetMaterial;
 
             int registeredCount = TMP_TextRegistry.Count;
             for (int i = 0; i < registeredCount; i++)
@@ -2147,9 +2178,12 @@ namespace NASAPunk.Visor
             if (_queuedHudFont == null || !_biosFontSwapScheduler.HasPending)
                 return;
 
-            _biosFontSwapScheduler.DrainTick(_queuedHudFont, _queuedHudFont.material);
+            _biosFontSwapScheduler.DrainTick(_queuedHudFont, _queuedHudFontMaterial);
             if (!_biosFontSwapScheduler.HasPending)
+            {
                 _queuedHudFont = null;
+                _queuedHudFontMaterial = null;
+            }
         }
 
         private void PrepareProjectionTexture()
@@ -2393,58 +2427,14 @@ namespace NASAPunk.Visor
 
         private void ConfigureHudScissorCommandBuffers()
         {
-            if (_scriptableRenderPipelineActiveCold)
-            {
-                ClearHudScissorCommandBufferState();
-                return;
-            }
-
-            if (_hudCamera == null || _projectionMode == ProjectionMode.Disabled || _hudRT == null)
-            {
-                ReleaseHudScissorCommandBuffers();
-                return;
-            }
-
-            int width = math.max(1, _hudRT.width);
-            int height = math.max(1, _hudRT.height);
-            if (_hudScissorCamera == _hudCamera && _hudScissorWidth == width && _hudScissorHeight == height)
-                return;
-
-            ReleaseHudScissorCommandBuffers();
-            if (!HasHudScissorCommandBuffersReady())
-            {
-                _hudScissorCommandBufferRepairRequested = true;
-                return;
-            }
-
-            Rect scissorRect = ResolveHudScissorRect(width, height);
-            _hudScissorBeginCommandBuffer.Clear();
-            _hudScissorBeginCommandBuffer.EnableScissorRect(scissorRect);
-            _hudScissorEndCommandBuffer.Clear();
-            _hudScissorEndCommandBuffer.DisableScissorRect();
-
-            _hudCamera.AddCommandBuffer(CameraEvent.BeforeForwardOpaque, _hudScissorBeginCommandBuffer);
-            _hudCamera.AddCommandBuffer(CameraEvent.AfterEverything, _hudScissorEndCommandBuffer);
-            _hudScissorCamera = _hudCamera;
-            _hudScissorWidth = width;
-            _hudScissorHeight = height;
+            ClearHudScissorCommandBufferState();
+            _hudScissorCommandBufferRepairRequested = false;
         }
 
         private void EnsureHudScissorCommandBuffersCold()
         {
-            if (_scriptableRenderPipelineActiveCold)
-            {
-                _hudScissorCommandBufferRepairRequested = false;
-                return;
-            }
-
-            if (_hudScissorBeginCommandBuffer == null)
-                _hudScissorBeginCommandBuffer = new CommandBuffer { name = "Hecton HUD Scissor Begin" }; // COLD ALLOC: CommandBuffer[1] â€” HUD camera scissor begin guard â€” owner: VisorHUDController
-
-            if (_hudScissorEndCommandBuffer == null)
-                _hudScissorEndCommandBuffer = new CommandBuffer { name = "Hecton HUD Scissor End" }; // COLD ALLOC: CommandBuffer[1] â€” HUD camera scissor end guard â€” owner: VisorHUDController
-
-            _hudScissorCommandBufferRepairRequested = !HasHudScissorCommandBuffersReady();
+            ClearHudScissorCommandBufferState();
+            _hudScissorCommandBufferRepairRequested = false;
         }
 
         private void FlushHudScissorCommandBufferRepairSlow()
@@ -2453,22 +2443,6 @@ namespace NASAPunk.Visor
                 return;
 
             EnsureHudScissorCommandBuffersCold();
-            if (HasHudScissorCommandBuffersReady() && _hudCamera != null && _projectionMode != ProjectionMode.Disabled && _hudRT != null)
-                ConfigureHudScissorCommandBuffers();
-        }
-
-        private bool HasHudScissorCommandBuffersReady()
-        {
-            return _hudScissorBeginCommandBuffer != null && _hudScissorEndCommandBuffer != null;
-        }
-
-        private static Rect ResolveHudScissorRect(int width, int height)
-        {
-            float insetX = math.floor(width * HelmetScissorNormalizedInsetX);
-            float insetY = math.floor(height * HelmetScissorNormalizedInsetY);
-            float scissorWidth = math.max(1f, width - insetX - insetX);
-            float scissorHeight = math.max(1f, height - insetY - insetY);
-            return new Rect(insetX, insetY, scissorWidth, scissorHeight);
         }
 
         private static bool SampleScriptableRenderPipelineActiveCold()
@@ -2478,40 +2452,17 @@ namespace NASAPunk.Visor
 
         private void ClearHudScissorCommandBufferState()
         {
-            _hudScissorCamera = null;
-            _hudScissorWidth = -1;
-            _hudScissorHeight = -1;
+            // Legacy camera command-buffer scissor path is intentionally retired; RenderGraph owns visor clipping.
         }
 
         private void ReleaseHudScissorCommandBuffers()
         {
-            if (_hudScissorCamera != null && !_scriptableRenderPipelineActiveCold)
-            {
-                if (_hudScissorBeginCommandBuffer != null)
-                    _hudScissorCamera.RemoveCommandBuffer(CameraEvent.BeforeForwardOpaque, _hudScissorBeginCommandBuffer);
-
-                if (_hudScissorEndCommandBuffer != null)
-                    _hudScissorCamera.RemoveCommandBuffer(CameraEvent.AfterEverything, _hudScissorEndCommandBuffer);
-            }
-
             ClearHudScissorCommandBufferState();
         }
 
         private void DisposeHudScissorCommandBuffers()
         {
             ReleaseHudScissorCommandBuffers();
-
-            if (_hudScissorBeginCommandBuffer != null)
-            {
-                _hudScissorBeginCommandBuffer.Release();
-                _hudScissorBeginCommandBuffer = null;
-            }
-
-            if (_hudScissorEndCommandBuffer != null)
-            {
-                _hudScissorEndCommandBuffer.Release();
-                _hudScissorEndCommandBuffer = null;
-            }
         }
 
         private void ReleaseOwnedRuntimeTexture()

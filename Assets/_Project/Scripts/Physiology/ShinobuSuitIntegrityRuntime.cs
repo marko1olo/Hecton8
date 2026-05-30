@@ -32,11 +32,28 @@ namespace Hecton8.Physiology
             MutationGuardBit(ShinobuSuitIntegrityConstants.TelemetryBuffer) |
             MutationGuardBit(ShinobuSuitIntegrityConstants.VisualBuffer) |
             MutationGuardBit(ShinobuSuitIntegrityConstants.MockAupBuffer);
-        private static readonly ulong DumpMutationGuardMask =
-            MutationGuardBit(ShinobuSuitIntegrityConstants.TelemetryBuffer) |
-            MutationGuardBit(ShinobuSuitIntegrityConstants.DumpScratchBuffer);
+        private static readonly ulong DefaultsMutationGuardMask =
+            MutationGuardBit(ShinobuSuitIntegrityConstants.StateBuffer) |
+            MutationGuardBit(ShinobuSuitIntegrityConstants.ProfileBuffer) |
+            MutationGuardBit(ShinobuSuitIntegrityConstants.TuningBuffer);
+        private static readonly ulong MockAupMutationGuardMask =
+            MutationGuardBit(ShinobuSuitIntegrityConstants.MockAupBuffer);
+        private static readonly ulong ProfileCsvMutationGuardMask =
+            MutationGuardBit(ShinobuSuitIntegrityConstants.ProfileBuffer);
         private static readonly uint _HeaderSuitNameHash = HashLowerAsciiString("suit_name");
         private static readonly uint _HeaderNameHash = HashLowerAsciiString("name");
+        // COLD ALLOC: SuitPressureProfileDTO[ProfileCapacity] - default profile commit scratch - owner: ShinobuSuitIntegrityRuntime
+        private static readonly SuitPressureProfileDTO[] s_defaultProfileScratch = new SuitPressureProfileDTO[ShinobuSuitIntegrityConstants.ProfileCapacity];
+        // COLD ALLOC: SuitHydrostaticMockAupDTO[MockPressureSampleCount] - mock AUP commit scratch - owner: ShinobuSuitIntegrityRuntime
+        private static readonly SuitHydrostaticMockAupDTO[] s_mockAupScratchCold = new SuitHydrostaticMockAupDTO[ShinobuSuitIntegrityConstants.MockPressureSampleCount];
+        private static int s_mockAupScratchBusy;
+#if UNITY_EDITOR
+        // COLD ALLOC: byte[CsvMaxBytes] - editor CSV import scratch - owner: ShinobuSuitIntegrityRuntime
+        private static readonly byte[] s_profileCsvScratchCold = new byte[ShinobuSuitIntegrityConstants.CsvMaxBytes];
+        // COLD ALLOC: SuitPressureProfileDTO[ProfileCapacity] - editor CSV profile import scratch - owner: ShinobuSuitIntegrityRuntime
+        private static readonly SuitPressureProfileDTO[] s_profileImportScratch = new SuitPressureProfileDTO[ShinobuSuitIntegrityConstants.ProfileCapacity];
+        private static int s_profileCsvScratchBusy;
+#endif
 
         [Header("Runtime Capacity")]
         [SerializeField, Min(1)] private int entityCapacity = ShinobuSuitIntegrityConstants.DefaultEntityCapacity;
@@ -54,8 +71,6 @@ namespace Hecton8.Physiology
         private VaultGenerationHandle<SuitIntegrityTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<SuitIntegrityVisualDTO> _visualHandle;
         private VaultGenerationHandle<SuitHydrostaticMockAupDTO> _mockAupHandle;
-        private VaultGenerationHandle<byte> _csvScratchHandle;
-        private VaultGenerationHandle<byte> _dumpScratchHandle;
         private VaultGenerationHandle<LockstepPlayerKinematicState> _playerKinematicStateHandle;
         private VaultGenerationHandle<MetabolicStateDTO> _metabolismStateHandle;
 
@@ -92,7 +107,7 @@ namespace Hecton8.Physiology
         {
             entityCapacity = math.max(1, entityCapacity);
             _csvPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", CsvRelativePath));
-            _dumpPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath));
+            _dumpPath = DumpRelativePath;
         }
 
         private void OnEnable()
@@ -195,29 +210,30 @@ namespace Hecton8.Physiology
                 return;
             }
 
+            if (!TryResolveBuffers(
+                    vault,
+                    out NativeArray<SuitIntegrityDTO> integrity,
+                    out NativeArray<SuitPressureProfileDTO> profiles,
+                    out NativeArray<SuitIntegrityTuningDTO> tuningArray,
+                    out NativeArray<SuitIntegrityTelemetryEntry> telemetry,
+                    out NativeArray<SuitIntegrityVisualDTO> visuals,
+                    out NativeArray<SuitHydrostaticMockAupDTO> mockAups))
+            {
+                return;
+            }
+
+            int count = math.min(entityCapacity, integrity.Length);
+            count = math.min(count, visuals.Length);
+            if (count <= 0)
+                return;
+
+            int profileCount = math.min(ShinobuSuitIntegrityConstants.ProfileCapacity, profiles.Length);
             if (!TryLockJobBuffers(vault))
                 return;
 
             bool keepJobGuard = false;
             try
             {
-                if (!TryResolveBuffers(
-                        vault,
-                        out NativeArray<SuitIntegrityDTO> integrity,
-                        out NativeArray<SuitPressureProfileDTO> profiles,
-                        out NativeArray<SuitIntegrityTuningDTO> tuningArray,
-                        out NativeArray<SuitIntegrityTelemetryEntry> telemetry,
-                        out NativeArray<SuitIntegrityVisualDTO> visuals,
-                        out NativeArray<SuitHydrostaticMockAupDTO> mockAups))
-                {
-                    return;
-                }
-
-                int count = math.min(entityCapacity, integrity.Length);
-                count = math.min(count, visuals.Length);
-                if (count <= 0)
-                    return;
-
                 tuningArray[0] = tuning;
                 double3 playerDouble = hasPlayerAup ? _lastPlayerAupDouble : new double3(0d, seaLevelAupY, 0d);
                 AbsoluteUniversePosition playerAup = hasPlayerAup ? _lastPlayerAup : AbsoluteUniversePosition.FromAbsolutePosition(playerDouble);
@@ -254,7 +270,7 @@ namespace Hecton8.Physiology
                     PlayerTargetHash = playerTargetHash,
                     Frame = frame,
                     Count = count,
-                    ProfileCount = math.min(ShinobuSuitIntegrityConstants.ProfileCapacity, profiles.Length),
+                    ProfileCount = profileCount,
                     TelemetryCursor = _telemetryCursor,
                     DeltaSeconds = dt,
                     TickIntervalSeconds = _lastTickInterval
@@ -372,23 +388,48 @@ namespace Hecton8.Physiology
             if (vault == null)
                 return false;
 
-            NativeArray<SuitIntegrityTuningDTO> tuningArray = OpenVaultArray(ref _tuningHandle, ShinobuSuitIntegrityConstants.TuningBuffer, 1);
-            NativeArray<SuitHydrostaticMockAupDTO> mock = OpenVaultArray(ref _mockAupHandle, ShinobuSuitIntegrityConstants.MockAupBuffer, ShinobuSuitIntegrityConstants.MockPressureSampleCount);
-            if (!tuningArray.IsCreated || tuningArray.Length <= 0 || !mock.IsCreated)
+            NativeArray<SuitIntegrityTuningDTO> tuningArray = ReadVaultArray(ref _tuningHandle, ShinobuSuitIntegrityConstants.TuningBuffer, 1);
+            if (!tuningArray.IsCreated || tuningArray.Length <= 0)
                 return false;
 
             SuitIntegrityTuningDTO tuning = ShinobuSuitIntegrityJobMath.SanitizeTuning(tuningArray[0]);
             double3 seaLevel = new double3(0d, seaLevelAupY, 0d);
-            new GenerateMockHydrostaticPressureJob
+            if (System.Threading.Interlocked.CompareExchange(ref s_mockAupScratchBusy, 1, 0) != 0)
+                return false;
+
+            try
             {
-                Samples = mock,
-                SeaLevelAup = seaLevel,
-                MaxDepthMeters = tuning.MockMaxDepthMeters,
-                DurationSeconds = tuning.MockDurationSeconds,
-                FrameBase = 0u,
-                Count = math.min(ShinobuSuitIntegrityConstants.MockPressureSampleCount, mock.Length)
-            }.Run(math.min(ShinobuSuitIntegrityConstants.MockPressureSampleCount, mock.Length));
-            return true;
+                int sampleCount = BuildMockHydrostaticPressureScratch(
+                    s_mockAupScratchCold.AsSpan(),
+                    seaLevel,
+                    tuning.MockMaxDepthMeters,
+                    tuning.MockDurationSeconds,
+                    0u,
+                    ShinobuSuitIntegrityConstants.MockPressureSampleCount);
+                if (sampleCount <= 0)
+                    return false;
+
+                NativeArray<SuitHydrostaticMockAupDTO> mock = OpenVaultArray(ref _mockAupHandle, ShinobuSuitIntegrityConstants.MockAupBuffer, ShinobuSuitIntegrityConstants.MockPressureSampleCount);
+                if (!mock.IsCreated)
+                    return false;
+
+                if (!vault.TryAcquireMutationGuard(MockAupMutationGuardMask))
+                    return false;
+
+                try
+                {
+                    CommitMockHydrostaticPressure(s_mockAupScratchCold.AsSpan(), sampleCount, mock);
+                    return true;
+                }
+                finally
+                {
+                    vault.ReleaseMutationGuard(MockAupMutationGuardMask);
+                }
+            }
+            finally
+            {
+                System.Threading.Volatile.Write(ref s_mockAupScratchBusy, 0);
+            }
         }
 
         private void RebindColdServices()
@@ -424,9 +465,7 @@ namespace Hecton8.Physiology
                 OpenOrAcquireVaultBuffer(ref _tuningHandle, ShinobuSuitIntegrityConstants.TuningBuffer, 1, NativeArrayOptions.ClearMemory, out _) &&
                 OpenOrAcquireVaultBuffer(ref _telemetryHandle, ShinobuSuitIntegrityConstants.TelemetryBuffer, ShinobuSuitIntegrityConstants.TelemetryFrameCount, NativeArrayOptions.ClearMemory, out _) &&
                 OpenOrAcquireVaultBuffer(ref _visualHandle, ShinobuSuitIntegrityConstants.VisualBuffer, entityCapacity, NativeArrayOptions.ClearMemory, out _) &&
-                OpenOrAcquireVaultBuffer(ref _mockAupHandle, ShinobuSuitIntegrityConstants.MockAupBuffer, ShinobuSuitIntegrityConstants.MockPressureSampleCount, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireVaultBuffer(ref _csvScratchHandle, ShinobuSuitIntegrityConstants.CsvScratchBuffer, ShinobuSuitIntegrityConstants.CsvMaxBytes, NativeArrayOptions.UninitializedMemory, out _) &&
-                OpenOrAcquireVaultBuffer(ref _dumpScratchHandle, ShinobuSuitIntegrityConstants.DumpScratchBuffer, ShinobuSuitIntegrityConstants.DumpScratchBytes, NativeArrayOptions.UninitializedMemory, out _);
+                OpenOrAcquireVaultBuffer(ref _mockAupHandle, ShinobuSuitIntegrityConstants.MockAupBuffer, ShinobuSuitIntegrityConstants.MockPressureSampleCount, NativeArrayOptions.UninitializedMemory, out _);
             if (!created || !HandlesReady())
                 return false;
 
@@ -442,9 +481,7 @@ namespace Hecton8.Physiology
                    OpenVaultBuffer(ref _tuningHandle, ShinobuSuitIntegrityConstants.TuningBuffer, 1, out _) &&
                    OpenVaultBuffer(ref _telemetryHandle, ShinobuSuitIntegrityConstants.TelemetryBuffer, ShinobuSuitIntegrityConstants.TelemetryFrameCount, out _) &&
                    OpenVaultBuffer(ref _visualHandle, ShinobuSuitIntegrityConstants.VisualBuffer, entityCapacity, out _) &&
-                   OpenVaultBuffer(ref _mockAupHandle, ShinobuSuitIntegrityConstants.MockAupBuffer, ShinobuSuitIntegrityConstants.MockPressureSampleCount, out _) &&
-                   OpenVaultBuffer(ref _csvScratchHandle, ShinobuSuitIntegrityConstants.CsvScratchBuffer, ShinobuSuitIntegrityConstants.CsvMaxBytes, out _) &&
-                   OpenVaultBuffer(ref _dumpScratchHandle, ShinobuSuitIntegrityConstants.DumpScratchBuffer, ShinobuSuitIntegrityConstants.DumpScratchBytes, out _);
+                   OpenVaultBuffer(ref _mockAupHandle, ShinobuSuitIntegrityConstants.MockAupBuffer, ShinobuSuitIntegrityConstants.MockPressureSampleCount, out _);
         }
 
         private void InitializeDefaults(IDataVault vault)
@@ -452,40 +489,55 @@ namespace Hecton8.Physiology
             if (_defaultsInitialized)
                 return;
 
-            NativeArray<SuitIntegrityTuningDTO> tuningArray = OpenVaultArray(ref _tuningHandle, ShinobuSuitIntegrityConstants.TuningBuffer, 1);
-            SuitIntegrityTuningDTO tuning = tuningArray.IsCreated && tuningArray.Length > 0
-                ? ShinobuSuitIntegrityJobMath.SanitizeTuning(tuningArray[0])
+            NativeArray<SuitIntegrityTuningDTO> tuningRead = ReadVaultArray(ref _tuningHandle, ShinobuSuitIntegrityConstants.TuningBuffer, 1);
+            SuitIntegrityTuningDTO tuning = tuningRead.IsCreated && tuningRead.Length > 0
+                ? ShinobuSuitIntegrityJobMath.SanitizeTuning(tuningRead[0])
                 : ShinobuSuitIntegrityJobMath.SanitizeTuning(default);
-            if (tuningArray.IsCreated && tuningArray.Length > 0)
-                tuningArray[0] = tuning;
+            int defaultProfileCount = BuildDefaultProfiles(s_defaultProfileScratch.AsSpan());
+            int stateCount = math.max(0, entityCapacity);
+            SuitIntegrityDTO defaultState = new SuitIntegrityDTO
+            {
+                CurrentIntegrity01 = 1f,
+                AppliedPressureATM = ShinobuSuitIntegrityConstants.SurfacePressureAtm,
+                MicroFractureAccumulation = 0f,
+                EquippedSuitHash = tuning.DefaultSuitHash != 0u ? tuning.DefaultSuitHash : ShinobuSuitIntegrityConstants.StandardSuitHash,
+                IntegrityFlags = SuitIntegrityFlags.Initialized
+            };
 
-            NativeArray<SuitPressureProfileDTO> profiles = OpenVaultArray(ref _profileHandle, ShinobuSuitIntegrityConstants.ProfileBuffer, ShinobuSuitIntegrityConstants.ProfileCapacity);
-            if (profiles.IsCreated)
-                WriteDefaultProfiles(profiles);
+            if (!vault.TryAcquireMutationGuard(DefaultsMutationGuardMask))
+                return;
+
+            try
+            {
+                NativeArray<SuitIntegrityTuningDTO> tuningArray = OpenVaultArray(ref _tuningHandle, ShinobuSuitIntegrityConstants.TuningBuffer, 1);
+                if (tuningArray.IsCreated && tuningArray.Length > 0)
+                    tuningArray[0] = tuning;
+
+                NativeArray<SuitPressureProfileDTO> profiles = OpenVaultArray(ref _profileHandle, ShinobuSuitIntegrityConstants.ProfileBuffer, ShinobuSuitIntegrityConstants.ProfileCapacity);
+                if (profiles.IsCreated)
+                    CommitDefaultProfiles(s_defaultProfileScratch.AsSpan(), defaultProfileCount, profiles);
+
+                NativeArray<SuitIntegrityDTO> states = OpenVaultArray(ref _integrityHandle, ShinobuSuitIntegrityConstants.StateBuffer, entityCapacity);
+                if (states.IsCreated)
+                    CommitDefaultStates(defaultState, stateCount, states);
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(DefaultsMutationGuardMask);
+            }
 
 #if UNITY_EDITOR
             LoadCsvProfilesFromDisk(vault);
 #endif
-            NativeArray<SuitIntegrityDTO> states = OpenVaultArray(ref _integrityHandle, ShinobuSuitIntegrityConstants.StateBuffer, entityCapacity);
-            if (states.IsCreated)
-            {
-                new InitializeSuitIntegrityJob
-                {
-                    Integrity = states,
-                    DefaultSuitHash = tuning.DefaultSuitHash,
-                    Count = math.min(entityCapacity, states.Length)
-                }.Run(math.min(entityCapacity, states.Length));
-            }
-
             GenerateMockHydrostaticPressureData();
             _defaultsInitialized = true;
         }
 
-        private static void WriteDefaultProfiles(NativeArray<SuitPressureProfileDTO> profiles)
+        private static int BuildDefaultProfiles(Span<SuitPressureProfileDTO> profiles)
         {
             int length = profiles.Length;
             if (length <= 0)
-                return;
+                return 0;
 
             profiles[0] = ShinobuSuitIntegrityJobMath.SanitizeProfile(new SuitPressureProfileDTO
             {
@@ -504,7 +556,9 @@ namespace Hecton8.Physiology
                 Flags = SuitIntegrityFlags.Initialized
             }, ShinobuSuitIntegrityConstants.StandardSuitHash);
 
+            int count = 1;
             if (length > 1)
+            {
                 profiles[1] = ShinobuSuitIntegrityJobMath.SanitizeProfile(new SuitPressureProfileDTO
                 {
                     SuitHash = ShinobuSuitIntegrityConstants.ReinforcedSuitHash,
@@ -521,8 +575,11 @@ namespace Hecton8.Physiology
                     ProfileIndex = 1u,
                     Flags = SuitIntegrityFlags.Initialized
                 }, ShinobuSuitIntegrityConstants.ReinforcedSuitHash);
+                count = 2;
+            }
 
             if (length > 2)
+            {
                 profiles[2] = ShinobuSuitIntegrityJobMath.SanitizeProfile(new SuitPressureProfileDTO
                 {
                     SuitHash = ShinobuSuitIntegrityConstants.ExosuitHash,
@@ -539,8 +596,11 @@ namespace Hecton8.Physiology
                     ProfileIndex = 2u,
                     Flags = SuitIntegrityFlags.Initialized
                 }, ShinobuSuitIntegrityConstants.ExosuitHash);
+                count = 3;
+            }
 
             if (length > 3)
+            {
                 profiles[3] = ShinobuSuitIntegrityJobMath.SanitizeProfile(new SuitPressureProfileDTO
                 {
                     SuitHash = ShinobuSuitIntegrityConstants.SubmarineHullHash,
@@ -557,9 +617,77 @@ namespace Hecton8.Physiology
                     ProfileIndex = 3u,
                     Flags = SuitIntegrityFlags.Initialized
                 }, ShinobuSuitIntegrityConstants.SubmarineHullHash);
+                count = 4;
+            }
 
-            for (int i = 4; i < length; i++)
+            return count;
+        }
+
+        private static void CommitDefaultProfiles(
+            ReadOnlySpan<SuitPressureProfileDTO> defaultProfiles,
+            int defaultProfileCount,
+            NativeArray<SuitPressureProfileDTO> profiles)
+        {
+            int safeCount = math.min(math.min(defaultProfileCount, defaultProfiles.Length), profiles.Length);
+            for (int i = 0; i < safeCount; i++)
+                profiles[i] = defaultProfiles[i];
+            for (int i = safeCount; i < profiles.Length; i++)
                 profiles[i] = default;
+        }
+
+        private static void CommitDefaultStates(
+            in SuitIntegrityDTO defaultState,
+            int requestedCount,
+            NativeArray<SuitIntegrityDTO> states)
+        {
+            int safeCount = math.min(math.max(0, requestedCount), states.Length);
+            for (int i = 0; i < safeCount; i++)
+                states[i] = defaultState;
+        }
+
+        private static int BuildMockHydrostaticPressureScratch(
+            Span<SuitHydrostaticMockAupDTO> scratch,
+            double3 seaLevelAup,
+            float maxDepthMeters,
+            float durationSeconds,
+            uint frameBase,
+            int requestedCount)
+        {
+            int count = math.min(math.max(0, requestedCount), scratch.Length);
+            if (count <= 0)
+                return 0;
+
+            float denom = math.max(1f, count - 1);
+            float maxDepth = math.max(0f, maxDepthMeters);
+            float duration = math.max(0f, durationSeconds);
+            for (int index = 0; index < count; index++)
+            {
+                float t = math.saturate(index * math.rcp(denom));
+                float depth = maxDepth * t;
+                double3 playerAup = seaLevelAup;
+                playerAup.y -= depth;
+                scratch[index] = new SuitHydrostaticMockAupDTO
+                {
+                    PlayerAup = playerAup,
+                    SeaLevelAup = seaLevelAup,
+                    TimeSeconds = duration * t,
+                    DepthMeters = depth,
+                    Frame = frameBase + (uint)index,
+                    Flags = SuitIntegrityFlags.MockProfile
+                };
+            }
+
+            return count;
+        }
+
+        private static void CommitMockHydrostaticPressure(
+            ReadOnlySpan<SuitHydrostaticMockAupDTO> source,
+            int sourceCount,
+            NativeArray<SuitHydrostaticMockAupDTO> destination)
+        {
+            int safeCount = math.min(math.min(sourceCount, source.Length), destination.Length);
+            for (int i = 0; i < safeCount; i++)
+                destination[i] = source[i];
         }
 
         private SuitIntegrityTuningDTO ReadSanitizedTuning(IDataVault vault)
@@ -791,72 +919,63 @@ namespace Hecton8.Physiology
             if (_autopsyDumped)
                 return;
 
-            IDataVault vault = _dataVault;
-            if (vault == null || !vault.TryAcquireMutationGuard(DumpMutationGuardMask))
+            NativeArray<SuitIntegrityTelemetryEntry> telemetry = ReadVaultArray(ref _telemetryHandle, ShinobuSuitIntegrityConstants.TelemetryBuffer, ShinobuSuitIntegrityConstants.TelemetryFrameCount);
+            if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return;
 
-            try
-            {
-                NativeArray<SuitIntegrityTelemetryEntry> telemetry = OpenVaultArray(ref _telemetryHandle, ShinobuSuitIntegrityConstants.TelemetryBuffer, ShinobuSuitIntegrityConstants.TelemetryFrameCount);
-                if (!telemetry.IsCreated || telemetry.Length <= 0)
-                    return;
+            int latestIndex = telemetryCursor % telemetry.Length;
+            SuitIntegrityTelemetryEntry entry = telemetry[latestIndex];
+            bool faulted = (entry.Flags & (SuitIntegrityFlags.NonFinitePressure | SuitIntegrityFlags.OverBudget | SuitIntegrityFlags.Imploded)) != 0u;
+            if (!faulted)
+                return;
 
-                int latestIndex = telemetryCursor % telemetry.Length;
-                SuitIntegrityTelemetryEntry entry = telemetry[latestIndex];
-                bool faulted = (entry.Flags & (SuitIntegrityFlags.NonFinitePressure | SuitIntegrityFlags.OverBudget | SuitIntegrityFlags.Imploded)) != 0u;
-                if (!faulted)
-                    return;
-
-                _autopsyDumped = true;
-                DumpAutopsyReport(telemetry);
-            }
-            finally
-            {
-                vault.ReleaseMutationGuard(DumpMutationGuardMask);
-            }
+            _autopsyDumped = DumpAutopsyReport(telemetry);
         }
 
-        private void DumpAutopsyReport(NativeArray<SuitIntegrityTelemetryEntry> telemetry)
+        private bool DumpAutopsyReport(NativeArray<SuitIntegrityTelemetryEntry> telemetry)
         {
             if (!telemetry.IsCreated)
-                return;
+                return false;
 
             try
             {
-                NativeArray<byte> scratch = OpenVaultArray(ref _dumpScratchHandle, ShinobuSuitIntegrityConstants.DumpScratchBuffer, ShinobuSuitIntegrityConstants.DumpScratchBytes);
                 int byteCount = telemetry.Length * UnsafeUtility.SizeOf<SuitIntegrityTelemetryEntry>();
                 int totalBytes = 32 + byteCount;
-                if (!scratch.IsCreated || scratch.Length < totalBytes)
-                    return;
-
-                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                Span<byte> header = new Span<byte>(scratchPtr, 32);
-                WriteUInt64LittleEndian(header.Slice(0, 8), DumpMagic);
-                WriteUInt32LittleEndian(header.Slice(8, 4), DumpVersion);
-                WriteUInt32LittleEndian(header.Slice(12, 4), (uint)telemetry.Length);
-                WriteUInt32LittleEndian(header.Slice(16, 4), (uint)UnsafeUtility.SizeOf<SuitIntegrityTelemetryEntry>());
-                WriteUInt32LittleEndian(header.Slice(20, 4), unchecked((uint)_telemetryCursor));
-                WriteUInt32LittleEndian(header.Slice(24, 4), ShinobuSuitIntegrityConstants.SourceHash);
-                WriteUInt32LittleEndian(header.Slice(28, 4), _frameCounter);
-
-                void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                UnsafeUtility.MemCpy(scratchPtr + 32, telemetryPtr, byteCount);
-
-                string directory = Path.GetDirectoryName(_dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(ShinobuSuitIntegrityRuntime),
+                    "shinobuSuitIntegrityAutopsyPayload");
+                try
                 {
-                    stream.Write(new ReadOnlySpan<byte>(scratchPtr, totalBytes));
-                    stream.Flush();
+                    byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    Span<byte> header = new Span<byte>(scratchPtr, 32);
+                    WriteUInt64LittleEndian(header.Slice(0, 8), DumpMagic);
+                    WriteUInt32LittleEndian(header.Slice(8, 4), DumpVersion);
+                    WriteUInt32LittleEndian(header.Slice(12, 4), (uint)telemetry.Length);
+                    WriteUInt32LittleEndian(header.Slice(16, 4), (uint)UnsafeUtility.SizeOf<SuitIntegrityTelemetryEntry>());
+                    WriteUInt32LittleEndian(header.Slice(20, 4), unchecked((uint)_telemetryCursor));
+                    WriteUInt32LittleEndian(header.Slice(24, 4), ShinobuSuitIntegrityConstants.SourceHash);
+                    WriteUInt32LittleEndian(header.Slice(28, 4), _frameCounter);
+
+                    void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                    UnsafeUtility.MemCpy(scratchPtr + 32, telemetryPtr, byteCount);
+                    return NativeFaultDumpWriter.TryWriteAll(_dumpPath, payload, totalBytes);
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(ShinobuSuitIntegrityRuntime),
+                        "shinobuSuitIntegrityAutopsyPayload");
                 }
             }
             catch (IOException)
             {
+                return false;
             }
             catch (UnauthorizedAccessException)
             {
+                return false;
             }
         }
 
@@ -870,25 +989,39 @@ namespace Hecton8.Physiology
             if (stamp.Ticks == 0L || stamp.Ticks == _csvLastWriteTicks)
                 return;
 
-            _csvLastWriteTicks = stamp.Ticks;
+            if (System.Threading.Interlocked.CompareExchange(ref s_profileCsvScratchBusy, 1, 0) != 0)
+                return;
+
             try
             {
-                NativeArray<byte> scratch = OpenVaultArray(ref _csvScratchHandle, ShinobuSuitIntegrityConstants.CsvScratchBuffer, ShinobuSuitIntegrityConstants.CsvMaxBytes);
-                NativeArray<SuitPressureProfileDTO> profiles = OpenVaultArray(ref _profileHandle, ShinobuSuitIntegrityConstants.ProfileBuffer, ShinobuSuitIntegrityConstants.ProfileCapacity);
-                if (!scratch.IsCreated || !profiles.IsCreated)
+                int read = ReadCsvBytesCold(_csvPath, s_profileCsvScratchCold, ShinobuSuitIntegrityConstants.CsvMaxBytes);
+                if (read <= 0)
                     return;
 
-                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                Span<byte> buffer = new Span<byte>(scratchPtr, math.min(scratch.Length, ShinobuSuitIntegrityConstants.CsvMaxBytes));
-                using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    int byteCount = math.min((int)stream.Length, buffer.Length);
-                    if (byteCount <= 0)
-                        return;
+                int profileCount = ParseSuitProfilesCsv(
+                    s_profileCsvScratchCold.AsSpan(0, read),
+                    s_profileImportScratch.AsSpan());
+                if (profileCount <= 0)
+                    return;
 
-                    int read = stream.Read(buffer.Slice(0, byteCount));
-                    if (read > 0)
-                        ParseSuitProfilesCsv(buffer.Slice(0, read), profiles);
+                if (vault == null)
+                    return;
+
+                NativeArray<SuitPressureProfileDTO> profiles = OpenVaultArray(ref _profileHandle, ShinobuSuitIntegrityConstants.ProfileBuffer, ShinobuSuitIntegrityConstants.ProfileCapacity);
+                if (!profiles.IsCreated)
+                    return;
+
+                if (!vault.TryAcquireMutationGuard(ProfileCsvMutationGuardMask))
+                    return;
+
+                try
+                {
+                    CommitSuitProfilesCsv(s_profileImportScratch.AsSpan(), profileCount, profiles);
+                    _csvLastWriteTicks = stamp.Ticks;
+                }
+                finally
+                {
+                    vault.ReleaseMutationGuard(ProfileCsvMutationGuardMask);
                 }
             }
             catch (IOException)
@@ -897,9 +1030,33 @@ namespace Hecton8.Physiology
             catch (UnauthorizedAccessException)
             {
             }
+            finally
+            {
+                System.Threading.Volatile.Write(ref s_profileCsvScratchBusy, 0);
+            }
         }
 
-        private static void ParseSuitProfilesCsv(ReadOnlySpan<byte> bytes, NativeArray<SuitPressureProfileDTO> profiles)
+        private static int ReadCsvBytesCold(string path, byte[] scratch, int maxBytes)
+        {
+            using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            long boundedLength = stream.Length < maxBytes ? stream.Length : maxBytes;
+            int byteCount = boundedLength > scratch.Length ? scratch.Length : (int)boundedLength;
+            if (byteCount <= 0)
+                return 0;
+
+            int totalRead = 0;
+            while (totalRead < byteCount)
+            {
+                int read = stream.Read(scratch, totalRead, byteCount - totalRead);
+                if (read <= 0)
+                    break;
+                totalRead += read;
+            }
+
+            return totalRead;
+        }
+
+        private static int ParseSuitProfilesCsv(ReadOnlySpan<byte> bytes, Span<SuitPressureProfileDTO> profiles)
         {
             int cursor = 0;
             int profileIndex = 0;
@@ -919,6 +1076,18 @@ namespace Hecton8.Physiology
                     profileIndex++;
                 }
             }
+
+            return profileIndex;
+        }
+
+        private static void CommitSuitProfilesCsv(
+            ReadOnlySpan<SuitPressureProfileDTO> parsedProfiles,
+            int parsedCount,
+            NativeArray<SuitPressureProfileDTO> profiles)
+        {
+            int safeCount = math.min(math.min(parsedCount, parsedProfiles.Length), profiles.Length);
+            for (int i = 0; i < safeCount; i++)
+                profiles[i] = parsedProfiles[i];
         }
 #endif
 
@@ -1288,8 +1457,6 @@ namespace Hecton8.Physiology
             _telemetryHandle = default;
             _visualHandle = default;
             _mockAupHandle = default;
-            _csvScratchHandle = default;
-            _dumpScratchHandle = default;
             _playerKinematicStateHandle = default;
             _metabolismStateHandle = default;
             _jobScheduled = false;
@@ -1310,8 +1477,6 @@ namespace Hecton8.Physiology
             ReleaseVaultHandle(vault, ref _telemetryHandle);
             ReleaseVaultHandle(vault, ref _visualHandle);
             ReleaseVaultHandle(vault, ref _mockAupHandle);
-            ReleaseVaultHandle(vault, ref _csvScratchHandle);
-            ReleaseVaultHandle(vault, ref _dumpScratchHandle);
         }
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)

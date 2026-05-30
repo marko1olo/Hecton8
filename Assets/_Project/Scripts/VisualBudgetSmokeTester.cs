@@ -1,6 +1,6 @@
 // ============================================================================
 // HECTON-8 - VisualBudgetSmokeTester.cs
-// Dev-only smoke coverage for MX350 visual memory budgets.
+// Dev-only smoke coverage for profile-aware visual memory budgets.
 // ============================================================================
 
 using System.Collections.Generic;
@@ -19,12 +19,12 @@ namespace Hecton8.Dev
     public sealed class VisualBudgetSmokeTester : MonoBehaviour
     {
         private const long BytesPerMegabyte = 1024L * 1024L;
-        private const int Mx350HardBudgetMb = 1800;
+        private const int CompactHardBudgetMb = 1800;
         private const float VramGuardRatio = 0.90f;
-        private const long RtDepthBudgetBytes = 320L * BytesPerMegabyte;
-        private const long PostFxBudgetBytes = 96L * BytesPerMegabyte;
-        private const long UiRtBudgetBytes = 180L * BytesPerMegabyte;
-        private const long VisorRtBudgetBytes = 64L * BytesPerMegabyte;
+        private const long CompactRtDepthBudgetBytes = 320L * BytesPerMegabyte;
+        private const long CompactPostFxBudgetBytes = 96L * BytesPerMegabyte;
+        private const long CompactUiRtBudgetBytes = 180L * BytesPerMegabyte;
+        private const long CompactVisorRtBudgetBytes = 64L * BytesPerMegabyte;
 
         [Header("Execution")]
         [Tooltip("Run the visual budget smoke pass once when the component starts.")]
@@ -78,7 +78,7 @@ namespace Hecton8.Dev
         }
 
         /// <summary>
-        /// Runs a one-shot visual memory budget smoke pass against MX350 limits.
+        /// Runs a one-shot visual memory budget smoke pass against the active device-class limits.
         /// </summary>
         /// <returns>True when all sampled visual memory buckets remain under budget.</returns>
         public bool RunSmokePass()
@@ -88,7 +88,8 @@ namespace Hecton8.Dev
             _debugLastIssue = string.Empty;
 
             long graphicsDriverBytes = ReadGraphicsDriverMemoryBytes();
-            long graphicsBudgetBytes = ResolveGraphicsBudgetBytes();
+            VRAMBudgetThresholds runtimeThresholds = VRAMBudgetThresholds.RuntimeDefault;
+            long graphicsBudgetBytes = ResolveGraphicsBudgetBytes(runtimeThresholds);
             long trackedRtBytes = CaptureRenderTextureBudgets(
                 out long visorRtBytes,
                 out long postFxRtBytes,
@@ -107,16 +108,16 @@ namespace Hecton8.Dev
             if (graphicsDriverBytes > 0L && graphicsDriverBytes > (long)(graphicsBudgetBytes * VramGuardRatio))
                 return Fail("graphics-driver-vram-guard-ratio");
 
-            if (trackedRtBytes > RtDepthBudgetBytes)
+            if (trackedRtBytes > ResolveBudgetBytes(runtimeThresholds.RenderTextureMemoryBudgetBytes, CompactRtDepthBudgetBytes))
                 return Fail("render-texture-depth-budget");
 
-            if (visorRtBytes > VisorRtBudgetBytes)
+            if (visorRtBytes > ResolveBudgetBytes(runtimeThresholds.VisorRTBudgetBytes, CompactVisorRtBudgetBytes))
                 return Fail("visor-rt-budget");
 
-            if (postFxRtBytes > PostFxBudgetBytes)
+            if (postFxRtBytes > ResolveBudgetBytes(runtimeThresholds.PostFXRTBudgetBytes, CompactPostFxBudgetBytes))
                 return Fail("postfx-rt-budget");
 
-            if (uiRtBytes > UiRtBudgetBytes)
+            if (uiRtBytes > ResolveBudgetBytes(runtimeThresholds.UIRTBudgetBytes, CompactUiRtBudgetBytes))
                 return Fail("ui-rt-budget");
 
             _debugLastPass = true;
@@ -180,13 +181,26 @@ namespace Hecton8.Dev
             return graphicsDriverBytes > 0L ? graphicsDriverBytes : 0L;
         }
 
-        private static long ResolveGraphicsBudgetBytes()
+        private static long ResolveGraphicsBudgetBytes(VRAMBudgetThresholds thresholds)
         {
             int reportedGraphicsMemoryMb = Mathf.Max(0, SystemInfo.graphicsMemorySize);
-            int budgetMb = reportedGraphicsMemoryMb > 0
-                ? Mathf.Min(reportedGraphicsMemoryMb, Mx350HardBudgetMb)
-                : Mx350HardBudgetMb;
-            return (long)budgetMb * BytesPerMegabyte;
+            long budgetBytes = thresholds.TotalVRAMBudgetBytes > 0L
+                ? thresholds.TotalVRAMBudgetBytes
+                : CompactHardBudgetMb * BytesPerMegabyte;
+
+            if (reportedGraphicsMemoryMb > 0)
+            {
+                long reportedBytes = (long)reportedGraphicsMemoryMb * BytesPerMegabyte;
+                if (budgetBytes > reportedBytes)
+                    budgetBytes = reportedBytes;
+            }
+
+            return budgetBytes;
+        }
+
+        private static long ResolveBudgetBytes(long profileBudgetBytes, long compactFallbackBytes)
+        {
+            return profileBudgetBytes > 0L ? profileBudgetBytes : compactFallbackBytes;
         }
 
         private bool Fail(string issue)

@@ -597,3 +597,193 @@ Exact microseconds saved:
 - DataVault proof: `domainWriteLockMethods=6 findings=0` with max held writer count <= 1.
 - `git diff --check` returned only CRLF warnings.
 - Build not launched: active `dotnet` PID 17292 and CPU sample was 100%.
+
+2026-05-30 14VOX pass 33
+
+What was wrong:
+- `ScatterBudgetController`, `WorldSliceDirector`, `BiomeSamplerCache`, and `ProximityColliderSystem` still performed dependency repair from `SlowTick`/`Tick` routes.
+- `HectonMapMagicVegetationBridge` deferred startup repaired references from `LateFrameTick`.
+- `WorldGenerativeGeologyTerrainSeamApplier.SlowTick` structurally reached cold terrain bucket list allocation.
+- `MapMagicRuntimeBridge.SlowTick` structurally reached a method containing cold `GetComponentsInChildren`.
+
+What was done:
+- Added owner-change events and cold cache paths for scatter, slice, biome, and proximity runtime owners.
+- Replaced hot resolver calls with cached `IPlayerRuntimeContext`, `GlobalRegistry` hot-swap rebinding, and static owner event updates.
+- Split terrain seam cold initialization from hot signal draining.
+- Split MapMagic tile-cache validation from cold hierarchy traversal.
+
+Cinematic cheats used:
+- Budgets remain continuous scalar fakes driven by depth, quality, zone, and interest weights; no physical scatter or terrain resimulation was introduced.
+- Voxel/heightmap seam work remains cached blend-mask and bucket-state driven instead of per-frame terrain mutation.
+
+Exact microseconds saved:
+- Not profiler-measured.
+- Static domain proof: `domainFiles=95 methods=3365 hotRoots=127 transitiveDepth3Findings=0`.
+- DataVault proof: `domainWriteLockMethods=7 findings=0`.
+- Delimiter proof: 10 touched/domain files returned zero brace/paren/bracket imbalance.
+- `git diff --check` returned only CRLF warnings.
+- Build not launched: active `dotnet` PID 29280 and CPU sample was 97%.
+
+2026-05-30 14VOX pass 34
+
+What was wrong:
+- `BiomeSamplerCache.SlowTick` could resize `CachedSample[]` when sampler shape changed after startup.
+- `HectonMapMagicVegetationBridge.LateFrameTick` deferred startup could resize startup tile snapshots and reach cold reference repair.
+- Terrain-hole startup/sync could grow record/streaming arrays, per-tile `bool[,]` masks, texture caches, and height-readback NativeArrays from `LateFrameTick` or `SlowTick`.
+
+What was done:
+- Split biome sample storage into cold allocation and hot shape validation; hot rebuild fails closed if cold storage is missing.
+- Replaced growable startup tile snapshots with a fixed cold snapshot array and removed late startup dependency cold refresh.
+- Split tile upsert into cold event and deferred startup paths; deferred startup only uses resident texture/readback/mask storage.
+- Fixed terrain-hole record/streaming capacity at cold runtime capacity and made slow readback repair validate resident storage instead of allocating it.
+
+Cinematic cheats used:
+- Fail-closed terrain-hole and vegetation bootstrap when authored capacity or cold storage is absent, preserving frame stability over last-second visual repair.
+
+Exact microseconds saved:
+- Not profiler-measured.
+- Static target proof: `targetFiles=3 methods=439 findings=0`.
+- DataVault proof: `targetWriteLockMethods=0 findings=0`.
+- Delimiter proof: three touched files returned zero brace/paren/bracket imbalance.
+- `git diff --check` returned only CRLF warnings.
+- Build not launched: CPU samples were 80 then 70, above the 50% throttle.
+
+2026-05-30 14VOX pass 35
+
+What was wrong:
+- `WorldCaveDirector.LateFrameTick` could indirectly call `PrepareCaveVisualRuntimeState` through `EnsureCaveVisualRuntimeState`.
+- That fallback path allocated cave visual runtime state, marker/geyser arrays, child GameObjects, and missing presentation components from the visual phase.
+
+What was done:
+- Moved cave visual runtime-state preparation into the generated-volume activation path, immediately after cave key/position/preset/entrances are assigned.
+- Replaced late visual-state repair with `HasCaveVisualRuntimeState`, making `LateFrameTick` consume cached state only.
+
+Cinematic cheats used:
+- Fail-closed visual sync if cold visual state is absent; no last-frame object/component repair. Rich dressing still exists when the cold/generated-volume phase successfully prepares it.
+
+Exact microseconds saved:
+- Not profiler-measured.
+- Static cave visual-sync proof: `WorldCaveDirector` callgraph parser reported `methods=93 reachableMethods=23 findings=0` for `LateFrameTick`/`FlushPendingCaveVisualSyncs`.
+- DataVault proof: focused vegetation writer scan reported `writeLockCallerMethods=7 findings=0`.
+- Delimiter proof: `WorldCaveDirector` returned zero brace/paren/bracket imbalance.
+- `git diff --check` returned only CRLF warnings.
+- Build not launched: CPU sample was 99, above the 50% throttle.
+
+2026-05-30 14VOX pass 36
+
+What was wrong:
+- `WorldGenerativeGeologyTerrainSeamApplier.LateFrameTick` could allocate/resize the voxel blend-mask `Texture2D`.
+- `WorldGenerativeGeologyVoxelBridgeDirector.SpawnOrRefreshVolumeAsync` could call `AddComponent<WorldGenerativeGeologyVoxelRuntime>` after async generation.
+
+What was done:
+- Added cold fixed-size seam blend-mask texture and reusable byte upload buffer in `WorldGenerativeGeologyTerrainSeamApplier`.
+- Updated terrain shader sampling to use `_HectonVoxelBlendMaskParams.zw` as active subregion UV scale.
+- Replaced runtime `AddComponent` fallback with a fail-closed cold-authoring contract: generated volumes must already expose `WorldGenerativeGeologyVoxelRuntime`.
+
+Cinematic cheats used:
+- The terrain/voxel seam mask remains a bounded 2D visual fake; no per-frame terrain material rebuild or physics-grade blending was introduced.
+- Missing runtime component now drops the visual/geology volume instead of mutating scene structure mid-completion.
+
+Exact microseconds saved:
+- Not profiler-measured.
+- Focused source callgraph proof: `files=35 methods=1914 hotRoots=35 findings=0`.
+- DataVault proof: `writeLockCallerMethods=7 findings=0`.
+- Delimiter proof: four touched files returned zero brace/paren/bracket imbalance.
+- `git diff --check` returned only CRLF warnings.
+- Build not launched: active `dotnet` PID 30580 and CPU sample was 100.
+
+2026-05-30 14VOX pass 37
+
+What was wrong:
+- `HectonVoxelEngine` still used `PlayerRuntimeContextService.TryGetActiveRuntimeContext` in predictive voxel proxy target resolution.
+- Voxel AUP and camera-facing overhang noise had already been moved to cached context in this pass but still needed source proof across the whole touched set.
+- `HectonMapMagicVegetationBridge.RefreshActiveViewCameraCache` could call `playerTransform.TryGetComponent` and the runtime context singleton from camera refresh.
+- Streaming and scavenge player routes still needed proof that player ownership is cold cached and hot-swap driven.
+- Geology voxel completion needed proof that generated volume components come from the registered voxel-engine route, not runtime scene mutation.
+
+What was done:
+- `HectonVoxelEngine` now caches `IPlayerRuntimeContext` from cold `GlobalRegistry.Player` and `Player` hot-swap; predictive proxy, AUP, and overhang-noise helpers consume that cache only.
+- `HectonMapMagicVegetationBridge` now caches local camera only in cold lifecycle and resolves runtime camera from serialized camera or cached player context, with no player/local component lookup in camera refresh.
+- `HectonVoxelStreamingBridge` and `ScavengePopulator` consume cached `IPlayerRuntimeContext` for player transform/AUP binding.
+- `WorldGenerativeGeologyVoxelBridgeDirector` requires cold-authored runtime component plus registered `HectonVoxelVolume`; missing components despawn and black-box fault instead of mutating structure.
+
+Cinematic cheats used:
+- Missing player/camera/geology component state fails closed instead of doing runtime repair. The visual result is predictable on weak devices and still supports high/ultra fidelity when cold-authored pools and player context are present.
+
+Exact microseconds saved:
+- Not profiler-measured.
+- Target callgraph proof: `targetFiles=5 methods=885 hotRoots=36 findings=0`.
+- Broad domain direct hot proof: `domainFiles=253 methods=7210 hotRoots=220 directFindings=0`.
+- DataVault proof: `domainFiles=253 writeLockMethods=18 findings=0`.
+- Delimiter proof: five touched files returned zero brace/paren/bracket imbalance.
+- `git diff --check` returned only CRLF warnings.
+- Build not launched: no compiler process was reported, but CPU sample was 87, above the 50% throttle.
+
+2026-05-30 14VOX pass 38
+
+What was wrong:
+- `GPUScatterDirector.SlowTick` had a one-hop path into `ResolveDependencies`, which called `WorldRuntimeReferenceUtility`.
+- Optional visible-count diagnostics could allocate `NativeArray<uint>` from slow runtime repair.
+- Biome heatmap refresh was branch-safe but still allocator-visible in the hot callgraph because cold ensure and hot refresh were the same helper.
+
+What was done:
+- Moved GPU scatter scene resolution to cold lifecycle only.
+- Added direct `MapMagicVegetationRuntime` hot-swap assignment and cached player-context refresh for runtime recovery.
+- Prewarmed visible-count readback storage only in cold lifecycle when diagnostics are enabled; slow repair now fails closed if storage is absent.
+- Split biome heatmap `TryEnsure...Cold` from `TryRefresh...Hot` so `SlowTick` cannot reach texture/upload allocation code.
+
+Cinematic cheats used:
+- GPU scatter runtime now favors fail-closed cached-owner behavior over last-second scene repair. Missing diagnostics or cold heatmap resources do not steal frame time.
+
+Exact microseconds saved:
+- Not profiler-measured.
+- GPUScatter depth-2 proof: `methods=100 hotRoots=2 depth2Findings=0`.
+- Expanded domain one-hop proof: `domainFiles=253 methods=7240 hotRoots=220 findings=0`.
+- DataVault proof: `domainFiles=253 writeLockMethods=18 findings=0`.
+- Delimiter proof: six touched files returned zero brace/paren/bracket imbalance.
+- `git diff --check` returned only CRLF warnings.
+- Build not launched: final compiler-process sample was empty and CPU was 30, but this pass followed the requested in-memory AST validation path and did not spend a full solution build.
+
+2026-05-30 14VOX pass 39
+
+What was wrong:
+- `HectonCaveVoxelLightingVolume.SlowTick` could enter a resource ensure path that allocates spatial hit storage and a 3D lighting texture.
+- `GpuScatterLodManager.SlowTick` could call a cold registry helper and reach `GlobalRegistry.DataVault`.
+- The same scatter LOD slow lane could repair GPU buffers and optional visible-count `NativeArray<uint>` storage instead of treating those as cold lifecycle resources.
+
+What was done:
+- Moved cave lighting resource preparation to `EnsureResourcesCold` from lifecycle and DataVault hot-swap only.
+- Changed cave lighting `SlowTick` to fail closed and publish inactive globals until resources are already resident.
+- Renamed scatter LOD registry cache to `RefreshCachedRegistryServicesCold` and removed slow-lane registry retry.
+- Moved scatter GPU state creation to `OnEnable` and DataVault hot-swap; slow lane now returns when GPU state is missing or invalid.
+- Renamed visible-count readback allocation to `EnsureVisibleCountReadbackDataCold`; slow repair no longer allocates.
+
+Cinematic cheats used:
+- Missing cave-lighting or scatter diagnostics now drop to cached/inactive presentation instead of stealing frame time with scene/global repair.
+- Scatter diagnostics stay optional and cold-prepared; no gameplay truth changes and no binary quality switch was introduced.
+
+Exact microseconds saved:
+- Not profiler-measured.
+- Focused 14VOX callgraph proof: `targetFiles=8 methods=1228 hotRoots=40 findings=0`.
+- Focused DataVault proof: `targetWriteLockSites=6 findings=0`.
+- Roslyn audit executable proof over the same 8 files: `parseFailures=0 nativeTempJobAllocations=0`.
+- Wide runtime scan completed: `runtimeFiles=1802 methods=68704 hotRoots=2021 findings=81`; none of the new findings were in `GpuScatterLodManager`, and the remaining hits belong to other domains/lifecycle unregister helpers.
+- Target `git diff --check` returned only CRLF warnings.
+- No `dotnet build` launched; compiler-process sample was empty and CPU was 4, but this pass used static source validation by requirement. Audit output went to `NUL`; no JSON report was written to disk.
+14VOX pass 40
+What was wrong: generated scatter geology for arches/canopies/cave bridges/rock packs was driven by VISUAL_SYNC, but the service path could still build Unity topology and arrays on first runtime application.
+What was done: added cold generated-geology shell preparation on `WorldProceduralProxyInstance`; added hot-only `WorldGenerativeGeologyService.TryApplyGeneratedGeologyHot`; changed scatter reconcile to use the hot route only; prevented unconfigured cold-prepared bindings from entering active seam planning until configured.
+Cinematic cheats used: prebuilt primitive-shell impostors remain the presentation contract; runtime only retargets meshes/materials/transforms and LOD arrays instead of simulating or regenerating SDF geometry per frame.
+Exact microseconds saved: not profiler-measured. Static evidence: `geologyHotReachableMethods=34 forbiddenFindings=0`; Roslyn audit `parseFailures=0 nativeTempJobAllocations=0`; delimiter balance zero; `git diff --check` only CRLF warnings.
+
+14VOX pass 41
+What was wrong: pass 40 removed structural mutation, but generated geology visual sync still used host-to-proxy dictionary lookup, primitive runtime dictionary lookup, `GetInstanceID`, LOD child/name traversal, and hot primitive rename.
+What was done: scatter now calls `TryApplyPreparedGeneratedGeologyHot(WorldProceduralProxyInstance, request)`; `GeneratedRuntimeState` stores prepared LOD roots and primitive component arrays; hot configuration uses `ConfigurePrimitiveVisualCachedHot` and no-rename assignment.
+Cinematic cheats used: still uses primitive-shell impostors for arches, canopies, cave bridges, and debris; runtime only retargets cached shell transforms/meshes/materials.
+Exact microseconds saved: not profiler-measured. Static evidence: `preparedGeologyHotReachableMethods=39 forbiddenFindings=0`; Roslyn audit `parseFailures=0 nativeTempJobAllocations=0`; delimiter balance zero; `git diff --check` only CRLF warnings; no `dotnet build` launched.
+
+14VOX pass 42
+What was wrong: cave dressing visual sync still had primitive shell dictionary lookup risk, child traversal cleanup, hot name writes, thermal geyser runtime wiring, and bio-root buffer allocation reachable from cave reveal presentation.
+What was done: added cold primitive caches to wall growth, glowing tissue, service remnants, and sediment shelves; stored them in `CaveVisualRuntimeState`; switched cave visual sync to `BuildPreparedCachedHot`; replaced entrance/geyser cleanup with cached state-array iteration; moved bio-root setup to `ConfigureCold`; moved thermal geyser wiring to `CacheRuntimeWiringCold`.
+Cinematic cheats used: cave dressing remains primitive-shell impostor presentation; runtime only retargets prewarmed transforms, mesh filters, renderers, lights, particles, and current-volume markers.
+Exact microseconds saved: not profiler-measured. Static evidence: `caveVisualReachableMethods=51 caveVisualForbiddenFindings=0`; touched direct hot parser `touchedHotMethods=7 touchedDirectForbiddenHotFindings=0`; Roslyn audit `files=8 parseFailures=0 nativeTempJobAllocations=0`; DataVault touched scan had no write-lock sites; delimiter balance zero; `git diff --check` only CRLF warnings; `dotnet build` was not launched and audit output to `NUL` created no file.

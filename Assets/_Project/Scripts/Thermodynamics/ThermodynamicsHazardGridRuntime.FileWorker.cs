@@ -16,7 +16,7 @@ namespace Hecton8.Thermodynamics
         private const int ConfigWorkerFault = -1;
 
         // SPSC handoff: ConfigWorkerLoop is the only producer; Tick/SlowTick on the main thread is the only consumer/requester.
-        // Volatile/Interlocked barriers publish staged Vault bytes before state flips to ConfigWorkerReady on ARM64.
+        // Volatile/Interlocked barriers publish staged config bytes before state flips to ConfigWorkerReady on ARM64.
         private Thread _configWorkerThread;
         private string _binaryConstantsPath;
         private string _csvOverridePath;
@@ -38,11 +38,6 @@ namespace Hecton8.Thermodynamics
                 !HasHandle(in _constants) ||
                 !HasHandle(in _binaryConstantBytes))
                 return;
-
-#if UNITY_EDITOR
-            if (!HasHandle(in _csvBytes))
-                return;
-#endif
 
             _binaryConstantsPath = Path.Combine(UnityEngine.Application.streamingAssetsPath, "thermodynamic_constants.h8bin");
 #if UNITY_EDITOR

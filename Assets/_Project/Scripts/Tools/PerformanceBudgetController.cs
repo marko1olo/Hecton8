@@ -17,7 +17,7 @@ namespace Hecton8.Tools
     [DefaultExecutionOrder(500)] // After most systems but before rendering
     public sealed class PerformanceBudgetController : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
-        [Header("Budget Settings (Target MX350)")]
+        [Header("Budget Settings (Device-Class Envelope)")]
         [SerializeField, Tooltip("Target frame time budget in milliseconds (16.67ms = 60fps)")]
         private float _targetFrameTimeMs = 16.67f;
 

@@ -166,9 +166,15 @@ namespace Hecton8.Scavenging
                 BaseHealth = math.max(0.1f, baseHealth),
                 ToolResistance = math.max(0.01f, toolResistance),
                 LootStartIndex = math.max(0, lootStartIndex),
-                LootCount = (byte)CountValidLootEntries(byte.MaxValue),
+                LootCount = (byte)CountRuntimeLootEntries(byte.MaxValue),
                 MaterialClassId = (byte)materialClass
             };
+        }
+
+        /// <summary>Counts valid runtime loot entries without allocating caller scratch.</summary>
+        public int CountRuntimeLootEntries(int maxCount)
+        {
+            return CountValidLootEntries(maxCount);
         }
 
         /// <summary>

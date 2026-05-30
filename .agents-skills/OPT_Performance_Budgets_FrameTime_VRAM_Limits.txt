@@ -8,8 +8,8 @@
 [RULE] Burst/Jobs are a throughput tool, not a blanket win. They are accepted only for batched, data-local work whose scheduling, memory movement, and completion are amortized.
 [RULE] Job completion belongs in dispatcher-owned swap/completion windows or annotated cold teardown/init paths.
 [RULE] Simulate only gameplay truth. Water, fog, light, particles, slosh, ambience, debris, cable sag, and pressure feedback default to deterministic visual/audio/haptic fakes.
-[FORBID] Bloom on MX350/MINIMAL. The old MINIMAL post budget entry for Bloom is superseded.
-[FORBID] FSR2/DLSS-class temporal upscalers on MX350/MINIMAL. Use render scale, Unity STP where proven, or FSR1-class spatial upscaling only.
+[FORBID] Bloom on compact/MINIMAL. The old MINIMAL post budget entry for Bloom is superseded.
+[FORBID] FSR2/DLSS-class temporal upscalers on compact/MINIMAL. Use render scale, Unity STP where proven, or FSR1-class spatial upscaling only.
 [FORBID] Per-proton, per-droplet, per-bubble, per-blade, or per-cable-segment simulation as a default production path.
 [FORBID] Tiny noisy job fan-out, same-frame schedule/readback loops, or hidden `.Complete()` calls without profiler proof and route-card justification.
 
@@ -19,7 +19,7 @@
 
 | Tier     | CPU                  | GPU          | VRAM  | RAM   | Target FPS | Frame Budget |
 |----------|----------------------|--------------|-------|-------|------------|--------------|
-| MINIMAL  | i3-10100 (4C/4T)     | MX350        | 2 GB  | 8 GB  | 60         | 16.67ms      |
+| MINIMAL  | 4C/4T compact CPU     | 2GB compact GPU/shared clamp | 2 GB  | 8 GB  | 60         | 16.67ms      |
 | LOW      | i5-10400 (6C/12T)    | GTX 1060 6GB | 6 GB  | 12 GB | 60         | 16.67ms      |
 | MED      | i7-10700 (8C/16T)    | RTX 2060     | 8 GB  | 16 GB | 60-90      | 11.11ms      |
 | HIGH     | Ryzen 7 5800X        | RTX 3070     | 8 GB  | 16 GB | 120        | 8.33ms       |
@@ -81,7 +81,7 @@ TOTAL PHYSICAL                8096 MB [OK]
 
 MANAGED HEAP RULE: 256MB cap is immovable. GC.Collect() in hot path = FORBIDDEN.
 
-### 2.2 VRAM Partitioning (<= 1800MB MX350 Hard Ceiling)
+### 2.2 VRAM Partitioning (<= 1800MB Compact Hard Ceiling)
 
 VRAM BUDGET BREAKDOWN
 
@@ -188,7 +188,7 @@ Runtime authority law:
 
 ### 3.5 Render Resolution & Upscaling
 
-// [FORBID] Heavy temporal upscalers (FSR2/DLSS-class) on MX350/MINIMAL/LOW.
+// [FORBID] Heavy temporal upscalers (FSR2/DLSS-class) on compact/MINIMAL/LOW.
 // Use spatial upscale, Unity STP, or fixed render-scale cheats before temporal upscalers.
 LOW:      Render at 85% native -> spatial upscale / STP only -> output native
 MED:      Render at native     -> STP optional               -> output native
@@ -227,7 +227,7 @@ Step size adaptive formula (fog):
   -> eliminates banding without increasing step count
 
 Transmittance early-exit: if T < 0.01 -> break raymarch loop.
-MX350 constraint: total raymarching contribution <= 1.8ms GPU.
+Compact constraint: total raymarching contribution <= 1.8ms GPU.
 
 ---
 
@@ -589,6 +589,6 @@ OCCLUSION_STALE_DEFAULT   = true      // visible when stale = safe
 | Gate | Requirement | Evidence |
 |---|---|---|
 | Hot path | 0 B GC, no unbounded main-thread work | Profiler/GCMonitor/static scan |
-| MX350 | Within assigned frame, memory, and VRAM budget or explicit load-shed | Player capture / Memory Profiler |
+| Compact minimum lane | Within assigned frame, memory, and VRAM budget or explicit load-shed | Player capture / Memory Profiler |
 | Ownership | Domain owner, interface boundary, and EventBus/GlobalRegistry path defined | Code review |
 | Failure mode | Safe fallback, telemetry flag, and Black Box dump path documented | Test log / dump artifact |

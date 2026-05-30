@@ -19,7 +19,7 @@ namespace Hecton8.EditorTools
     {
         private const string MenuPath = "Hecton/Validation/Asset Pipeline/Log Shader Variant Strip Policy";
         private const string WorldSceneName = "02_HECTON_WORLD";
-        private const string Mx350ShaderStripEnvironmentVariable = "HECTON_MX350_SHADER_STRIP";
+        private const string CompactShaderStripEnvironmentVariable = "HECTON_COMPACT_SHADER_STRIP";
         private static readonly string[] UrpAssetRoots = { "Assets/_Project/Data" };
         private static VariantStripPolicy s_CachedPolicy;
         private static bool s_HasCachedPolicy;
@@ -96,7 +96,7 @@ namespace Hecton8.EditorTools
             bool supportsMixedLighting = false;
             HashSet<string> usedMaterialKeywords = new HashSet<string>(128, StringComparer.Ordinal);
             int materialAssetCount = CollectWorldSceneMaterialKeywords(usedMaterialKeywords, out string materialEvidence);
-            bool stripMx350LightVariants = ShouldStripMx350LightVariants();
+            bool stripCompactLightVariants = ShouldStripCompactLightVariants();
             bool stripQuestAndroidTBDRVariants = EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android;
 
             string[] guids = AssetDatabase.FindAssets("t:UniversalRenderPipelineAsset", UrpAssetRoots);
@@ -143,13 +143,14 @@ namespace Hecton8.EditorTools
                 stripAdditionalLightShadows: !supportsAdditionalLightShadows,
                 stripSoftShadows: !supportsSoftShadows,
                 stripMixedLighting: !supportsMixedLighting,
-                stripPointLights: stripMx350LightVariants,
-                stripSpotLights: stripMx350LightVariants,
+                stripPointLights: stripCompactLightVariants,
+                stripSpotLights: stripCompactLightVariants,
                 stripQuestAndroidTBDRVariants: stripQuestAndroidTBDRVariants,
                 materialAssetCount: materialAssetCount,
                 usedMaterialKeywords: usedMaterialKeywords,
                 evidence: evidence.Append(" | materialScope=").Append(materialEvidence)
-                    .Append(" | mx350StripEnv=").Append(global::System.Environment.GetEnvironmentVariable(Mx350ShaderStripEnvironmentVariable) ?? "<unset>")
+                    .Append(" | compactStripEnv=").Append(
+                        global::System.Environment.GetEnvironmentVariable(CompactShaderStripEnvironmentVariable) ?? "<unset>")
                     .ToString());
             s_HasCachedPolicy = true;
             return s_CachedPolicy;
@@ -289,9 +290,9 @@ namespace Hecton8.EditorTools
                    keywordName.Contains("HECTON");
         }
 
-        private static bool ShouldStripMx350LightVariants()
+        private static bool ShouldStripCompactLightVariants()
         {
-            string value = global::System.Environment.GetEnvironmentVariable(Mx350ShaderStripEnvironmentVariable);
+            string value = global::System.Environment.GetEnvironmentVariable(CompactShaderStripEnvironmentVariable);
             return !string.Equals(value, "0", StringComparison.Ordinal);
         }
 

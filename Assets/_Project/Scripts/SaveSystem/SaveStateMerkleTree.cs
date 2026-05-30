@@ -1239,13 +1239,9 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                HectonPersistentPathPolicy.EnsureParentDirectory(dumpPath);
-                using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough);
                 int bytes = telemetryRing.Length * UnsafeUtility.SizeOf<SaveMerkleTelemetryEntry>();
                 byte* ptr = (byte*)telemetryRing.GetUnsafeReadOnlyPtr();
-                stream.Write(new ReadOnlySpan<byte>(ptr, bytes));
-                stream.Flush(true);
-                return true;
+                return NativeFaultDumpWriter.TryWriteAll(dumpPath, new ReadOnlySpan<byte>(ptr, bytes), bytes);
             }
             catch (Exception exception)
             {

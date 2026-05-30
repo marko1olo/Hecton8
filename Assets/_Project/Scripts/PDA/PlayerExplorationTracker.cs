@@ -168,6 +168,7 @@ namespace Hecton8.PDA
         private uint _cartographyFrameIndex;
         private bool _cartographyVaultReady;
         private bool _cartographyDumpedThisSession;
+        private bool _cartographyBlackBoxDumpStaged;
         private uint _cartographyDeferredDumpFlags;
         private CartographyDispatcherPhaseSystem _cartographyPreSimulationPhase;
         private CartographyDispatcherPhaseSystem _cartographySimulationPhase;
@@ -499,6 +500,8 @@ namespace Hecton8.PDA
         {
             if (_cartographyUploadPending)
                 TryFinalizePendingCartographyUpload(forceComplete: true);
+
+            FlushStagedCartographyBlackBoxDump();
         }
 
         private uint FinalizeCartographySimulationResultPinned(CartographyVaultBuffers buffers)
@@ -2679,18 +2682,31 @@ namespace Hecton8.PDA
                 !TryAcquireCartographyPins(CartographyPinTelemetryRing | CartographyPinTelemetryCursor, out ulong pinnedMask))
                 return;
 
+            bool staged = false;
             try
             {
                 if (!TryResolvePinnedCartographyBuffers(pinnedMask, out CartographyVaultBuffers buffers))
                     return;
 
                 _cartographyDumpedThisSession = true;
-                CartographyVault.TryDumpBlackBox(in buffers, Path.GetFullPath(Path.Combine(Application.dataPath, "..")));
+                staged = CartographyVault.TryStageBlackBoxSnapshot(in buffers);
             }
             finally
             {
                 ReleaseCartographyPins(_cartographyVault, pinnedMask);
             }
+
+            if (staged)
+                _cartographyBlackBoxDumpStaged = true;
+        }
+
+        private void FlushStagedCartographyBlackBoxDump()
+        {
+            if (!_cartographyBlackBoxDumpStaged)
+                return;
+
+            _cartographyBlackBoxDumpStaged = false;
+            CartographyVault.TryQueueStagedBlackBoxDump(Path.GetFullPath(Path.Combine(Application.dataPath, "..")));
         }
 
         private void CacheLatestCartographyTelemetry(in CartographyVaultBuffers buffers)

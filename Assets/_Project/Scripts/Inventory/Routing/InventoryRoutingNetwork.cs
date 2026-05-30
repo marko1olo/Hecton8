@@ -325,6 +325,7 @@ namespace Hecton8.Inventory
         public const uint DumpMagic = 0x494E5652u; // INVR
         public const uint DumpVersion = 1u;
         public const string DumpPath = "Docs/AgentLogs/Dump_INVENTORY_ROUTER.bin";
+        private const int TelemetryDumpHeaderBytes = 32;
 
         public const int InventorySlotDTO_ItemHashID = 0;
         public const int InventorySlotDTO_Quantity = 4;
@@ -1071,26 +1072,53 @@ namespace Hecton8.Inventory
 
             string path = string.IsNullOrWhiteSpace(relativePath) ? DumpPath : relativePath;
             string fullPath = Path.GetFullPath(path);
-            string directory = Path.GetDirectoryName(fullPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
+            int entrySize = UnsafeUtility.SizeOf<InventoryRoutingTelemetryEntry>();
+            if (entrySize <= 0 || telemetry.Length > (int.MaxValue - TelemetryDumpHeaderBytes) / entrySize)
+                return;
 
-            using FileStream stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-            long utcTicks = DateTime.UtcNow.Ticks;
-            Span<uint> header = stackalloc uint[8];
-            header[0] = DumpMagic;
-            header[1] = DumpVersion;
-            header[2] = (uint)telemetry.Length;
-            header[3] = (uint)UnsafeUtility.SizeOf<InventoryRoutingTelemetryEntry>();
-            header[4] = cursor.IsCreated && cursor.Length > 0 ? unchecked((uint)cursor[0]) : 0u;
-            header[5] = (uint)utcTicks;
-            header[6] = (uint)(utcTicks >> 32);
-            header[7] = 0u;
-            stream.Write(MemoryMarshal.AsBytes(header));
+            int telemetryBytes = telemetry.Length * entrySize;
+            int byteCount = TelemetryDumpHeaderBytes + telemetryBytes;
+            NativeArray<byte> payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            try
+            {
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int offset = 0;
+                long utcTicks = DateTime.UtcNow.Ticks;
+                if (!TryWriteUInt32LittleEndian(destination, byteCount, ref offset, DumpMagic) ||
+                    !TryWriteUInt32LittleEndian(destination, byteCount, ref offset, DumpVersion) ||
+                    !TryWriteUInt32LittleEndian(destination, byteCount, ref offset, (uint)telemetry.Length) ||
+                    !TryWriteUInt32LittleEndian(destination, byteCount, ref offset, (uint)entrySize) ||
+                    !TryWriteUInt32LittleEndian(destination, byteCount, ref offset, cursor.IsCreated && cursor.Length > 0 ? unchecked((uint)cursor[0]) : 0u) ||
+                    !TryWriteUInt32LittleEndian(destination, byteCount, ref offset, (uint)utcTicks) ||
+                    !TryWriteUInt32LittleEndian(destination, byteCount, ref offset, (uint)(utcTicks >> 32)) ||
+                    !TryWriteUInt32LittleEndian(destination, byteCount, ref offset, 0u))
+                {
+                    return;
+                }
 
-            void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-            int byteCount = telemetry.Length * UnsafeUtility.SizeOf<InventoryRoutingTelemetryEntry>();
-            stream.Write(new ReadOnlySpan<byte>(source, byteCount));
+                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                UnsafeUtility.MemCpy(destination + offset, source, telemetryBytes);
+                offset += telemetryBytes;
+                if (offset == byteCount)
+                    NativeFaultDumpWriter.TryWriteAll(fullPath, payload, byteCount);
+            }
+            finally
+            {
+                payload.Dispose();
+            }
+        }
+
+        private static bool TryWriteUInt32LittleEndian(byte* destination, int capacity, ref int offset, uint value)
+        {
+            if (offset > capacity - 4)
+                return false;
+
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
+            offset += 4;
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

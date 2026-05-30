@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -13,6 +12,7 @@ using Hecton8.World;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -351,7 +351,7 @@ namespace Hecton8.Gameplay
         /// Scanner-owned archaeology runtime: tuning state, discovery bits, fragment positions, persisted text reads, and hologram draw batches.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class DataArchaeologyRuntime : MonoBehaviour, ISaveable, IRenderable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener, IDisposable
+    public sealed class DataArchaeologyRuntime : MonoBehaviour, ISaveable, IRenderable, IColdTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener, IDisposable
     {
         private int _signalPushDropCount;
         public const int MaxDiscoveryCount = DataArchaeologyDiscoveryBitMask.MaxDiscoveryCount;
@@ -421,8 +421,8 @@ namespace Hecton8.Gameplay
         private readonly Matrix4x4[] _hologramMatrices = new Matrix4x4[HologramInstanceCapacity]; // COLD ALLOC: Matrix4x4[64] - instanced hologram draw buffer - owner: DataArchaeologyRuntime
         private readonly Vector4[] _scannerShaderPoints = new Vector4[ScannerShaderPointCapacity]; // COLD ALLOC: Vector4[4] - scanner emissive mask shader point payload - owner: DataArchaeologyRuntime
 
-        private readonly Dictionary<uint, float3> _fragmentPositions = new Dictionary<uint, float3>(MaxDiscoveryCount);
-        private readonly Dictionary<int, byte> _scanStates = new Dictionary<int, byte>(MaxDiscoveryCount);
+        private readonly int[] _scanStateKeys = new int[MaxDiscoveryCount]; // COLD ALLOC: int[1024] - fixed archaeology scan-state keys - owner: DataArchaeologyRuntime
+        private readonly byte[] _scanStateValues = new byte[MaxDiscoveryCount]; // COLD ALLOC: byte[1024] - fixed archaeology scan-state values - owner: DataArchaeologyRuntime
         private VaultGenerationHandle<ulong> _unlockedLoreWordsHandle;
         private VaultGenerationHandle<DataArchaeologyNotification> _notificationsHandle;
         private VaultGenerationHandle<DataArchaeologyTelemetryEntry> _telemetryRingHandle;
@@ -432,6 +432,7 @@ namespace Hecton8.Gameplay
         private IDataVault _dataVault;
         private int _partialCount;
         private int _fragmentCount;
+        private int _scanStateCount;
         private int _hologramCount;
         private int _notificationRead;
         private int _notificationWrite;
@@ -444,7 +445,7 @@ namespace Hecton8.Gameplay
         private float _lastScannerShaderProgress = -1f;
         private bool _registeredSave;
         private bool _registeredRenderable;
-        private bool _registeredLateFrame;
+        private bool _registeredColdTick;
         private bool _registeredOriginShift;
         private bool _mmfDirty;
         private float _nextMmfFlushTime = float.PositiveInfinity;
@@ -662,7 +663,7 @@ namespace Hecton8.Gameplay
             bool changed = DataArchaeologyDiscoveryBitMask.TrySet(_discoveryWords, bitIndex);
             SetNativeLoreBit(bitIndex);
             SetScanState(hash, ScanStateScanned);
-            bool hasKnownPosition = _fragmentPositions.ContainsKey(hash);
+            bool hasKnownPosition = FindFragmentMirror(hash) >= 0;
             if (!changed && hasKnownPosition)
                 return;
 
@@ -698,7 +699,7 @@ namespace Hecton8.Gameplay
         public bool TryDequeueNotification(out DataArchaeologyNotification notification)
         {
             notification = default;
-            if (!TryOpenOrAcquireNotifications(out NativeArray<DataArchaeologyNotification> notifications) || _notificationCount <= 0)
+            if (!TryOpenNotifications(out NativeArray<DataArchaeologyNotification> notifications) || _notificationCount <= 0)
                 return false;
 
             notification = notifications[_notificationRead];
@@ -770,7 +771,7 @@ namespace Hecton8.Gameplay
             DataArchaeologyDiscoveryBitMask.Clear(_discoveryWords);
             _partialCount = 0;
             ClearNativeLoreWords();
-            _scanStates.Clear();
+            ClearScanStates();
 
             if (data != null)
             {
@@ -833,7 +834,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <inheritdoc />
-        public void LateFrameTick()
+        public void ColdTick()
         {
             if (_mmfDirty && (float)SystemDispatcher.CurrentUnscaledTimeSeconds >= _nextMmfFlushTime)
                 PersistMmfCold();
@@ -852,8 +853,8 @@ namespace Hecton8.Gameplay
             _loreMmf?.Dispose();
             _loreMmf = null;
 
-            _fragmentPositions.Clear();
-            _scanStates.Clear();
+            ClearFragmentPositions();
+            ClearScanStates();
 
             ReleaseVaultHandles(_dataVault);
             _dataVault = null;
@@ -904,10 +905,10 @@ namespace Hecton8.Gameplay
                 _registeredRenderable = false;
             }
 
-            if (_registeredLateFrame)
+            if (_registeredColdTick)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
-                _registeredLateFrame = false;
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.UI);
+                _registeredColdTick = false;
             }
 
             if (_registeredSave)
@@ -941,6 +942,7 @@ namespace Hecton8.Gameplay
             {
                 ReleaseVaultHandles(previousService as IDataVault ?? _dataVault);
                 _dataVault = currentService as IDataVault;
+                EnsureNativeState();
                 return;
             }
 
@@ -992,8 +994,8 @@ namespace Hecton8.Gameplay
             if (!_registeredRenderable)
                 _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
 
-            if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            if (!_registeredColdTick)
+                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.UI);
 
             if (!_registeredSave)
             {
@@ -1074,6 +1076,21 @@ namespace Hecton8.Gameplay
                 TelemetryCapacity,
                 NativeArrayOptions.ClearMemory,
                 out telemetryRing);
+        }
+
+        private bool TryOpenUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords)
+        {
+            return TryOpenVaultView(_dataVault, in _unlockedLoreWordsHandle, DiscoveryWordCount, out unlockedLoreWords);
+        }
+
+        private bool TryOpenNotifications(out NativeArray<DataArchaeologyNotification> notifications)
+        {
+            return TryOpenVaultView(_dataVault, in _notificationsHandle, NotificationCapacity, out notifications);
+        }
+
+        private bool TryOpenTelemetryRing(out NativeArray<DataArchaeologyTelemetryEntry> telemetryRing)
+        {
+            return TryOpenVaultView(_dataVault, in _telemetryRingHandle, TelemetryCapacity, out telemetryRing);
         }
 
         private bool TryOpenOrAcquireVaultView<T>(
@@ -1202,8 +1219,15 @@ namespace Hecton8.Gameplay
         private bool TryGetScanState(uint hash, out byte state)
         {
             state = ScanStateUnscanned;
-            return hash != 0u &&
-                   _scanStates.TryGetValue(unchecked((int)hash), out state);
+            if (hash == 0u)
+                return false;
+
+            int index = FindScanStateIndex(unchecked((int)hash));
+            if (index < 0)
+                return false;
+
+            state = _scanStateValues[index];
+            return true;
         }
 
         private void SetScanState(uint hash, byte state)
@@ -1212,24 +1236,31 @@ namespace Hecton8.Gameplay
                 return;
 
             int key = unchecked((int)hash);
+            int index = FindScanStateIndex(key);
             if (state == ScanStateUnscanned)
             {
-                _scanStates.Remove(key);
+                if (index >= 0)
+                    RemoveScanStateAt(index);
                 return;
             }
 
-            if (_scanStates.ContainsKey(key))
+            if (index >= 0)
             {
-                _scanStates[key] = state;
+                _scanStateValues[index] = state;
                 return;
             }
 
-            _scanStates.TryAdd(key, state);
+            if (_scanStateCount >= MaxDiscoveryCount)
+                return;
+
+            _scanStateKeys[_scanStateCount] = key;
+            _scanStateValues[_scanStateCount] = state;
+            _scanStateCount++;
         }
 
         private void SetNativeLoreBit(int bitIndex)
         {
-            if (!TryOpenOrAcquireUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords) || (uint)bitIndex >= MaxDiscoveryCount)
+            if (!TryOpenUnlockedLoreWords(out NativeArray<ulong> unlockedLoreWords) || (uint)bitIndex >= MaxDiscoveryCount)
                 return;
 
             int word = bitIndex >> 6;
@@ -1406,8 +1437,6 @@ namespace Hecton8.Gameplay
                 Vector3 position = _fragmentPositionsMirror[i];
                 position += new Vector3(runtimeDelta.x, runtimeDelta.y, runtimeDelta.z);
                 _fragmentPositionsMirror[i] = position;
-                if (_fragmentPositions.ContainsKey(hash))
-                    _fragmentPositions[hash] = new float3(position.x, position.y, position.z);
                 persistedPositionsChanged = true;
             }
 
@@ -1432,16 +1461,12 @@ namespace Hecton8.Gameplay
             if (hash == 0u || !math.all(math.isfinite(new float4(position, 1f))))
                 return;
 
-            if (_fragmentPositions.ContainsKey(hash))
+            int mirrorIndex = FindFragmentMirror(hash);
+            if (mirrorIndex >= 0)
             {
-                _fragmentPositions[hash] = position;
-                int mirrorIndex = FindFragmentMirror(hash);
-                if (mirrorIndex >= 0)
-                    _fragmentPositionsMirror[mirrorIndex] = new Vector3(position.x, position.y, position.z);
+                _fragmentPositionsMirror[mirrorIndex] = new Vector3(position.x, position.y, position.z);
                 return;
             }
-
-            _fragmentPositions.Add(hash, position);
 
             if (_fragmentCount < MaxDiscoveryCount)
             {
@@ -1471,15 +1496,12 @@ namespace Hecton8.Gameplay
             if (fragment == null)
                 return null;
 
-            if (fragment.TryGetComponent(out MeshFilter meshFilter))
-                return meshFilter.sharedMesh;
-
-            return null;
+            return fragment.CachedSharedMesh;
         }
 
         private void EnqueueNotification(uint hash, ushort progressPermille, byte kind, byte flags)
         {
-            if (!TryOpenOrAcquireNotifications(out NativeArray<DataArchaeologyNotification> notifications))
+            if (!TryOpenNotifications(out NativeArray<DataArchaeologyNotification> notifications))
                 return;
 
             DataArchaeologyNotification notification = new DataArchaeologyNotification
@@ -1619,9 +1641,55 @@ namespace Hecton8.Gameplay
             return -1;
         }
 
+        private void ClearFragmentPositions()
+        {
+            for (int i = 0; i < _fragmentCount; i++)
+            {
+                _fragmentHashes[i] = 0u;
+                _fragmentPositionsMirror[i] = Vector3.zero;
+            }
+
+            _fragmentCount = 0;
+        }
+
+        private int FindScanStateIndex(int key)
+        {
+            for (int i = 0; i < _scanStateCount; i++)
+            {
+                if (_scanStateKeys[i] == key)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void RemoveScanStateAt(int index)
+        {
+            if ((uint)index >= (uint)_scanStateCount)
+                return;
+
+            int last = _scanStateCount - 1;
+            _scanStateKeys[index] = _scanStateKeys[last];
+            _scanStateValues[index] = _scanStateValues[last];
+            _scanStateKeys[last] = 0;
+            _scanStateValues[last] = ScanStateUnscanned;
+            _scanStateCount = last;
+        }
+
+        private void ClearScanStates()
+        {
+            for (int i = 0; i < _scanStateCount; i++)
+            {
+                _scanStateKeys[i] = 0;
+                _scanStateValues[i] = ScanStateUnscanned;
+            }
+
+            _scanStateCount = 0;
+        }
+
         private void RecordTelemetry(uint hash, byte flags, float3 position, float match01, ushort progressPermille)
         {
-            if (!TryOpenOrAcquireTelemetryRing(out NativeArray<DataArchaeologyTelemetryEntry> telemetryRing))
+            if (!TryOpenTelemetryRing(out NativeArray<DataArchaeologyTelemetryEntry> telemetryRing))
                 return;
 
             if (!math.all(math.isfinite(new float4(position, match01))))
@@ -1722,20 +1790,14 @@ namespace Hecton8.Gameplay
         {
             EnsureScanStateSaveArrays(data);
             data.dataArchaeologyScanStateCount = 0;
-            if (_scanStates.Count == 0)
+            if (_scanStateCount == 0)
                 return;
 
-            int safeCount = 0;
-            Dictionary<int, byte>.Enumerator scanStateEnumerator = _scanStates.GetEnumerator();
-            while (scanStateEnumerator.MoveNext())
+            int safeCount = math.min(_scanStateCount, SaveData.MaxDataArchaeologyScanStates);
+            for (int i = 0; i < safeCount; i++)
             {
-                var pair = scanStateEnumerator.Current;
-                if (safeCount >= SaveData.MaxDataArchaeologyScanStates)
-                    break;
-
-                data.dataArchaeologyScanStateKeys[safeCount] = pair.Key;
-                data.dataArchaeologyScanStateValues[safeCount] = pair.Value;
-                safeCount++;
+                data.dataArchaeologyScanStateKeys[i] = _scanStateKeys[i];
+                data.dataArchaeologyScanStateValues[i] = _scanStateValues[i];
             }
 
             for (int i = safeCount; i < SaveData.MaxDataArchaeologyScanStates; i++)
@@ -1764,10 +1826,7 @@ namespace Hecton8.Gameplay
                 if (state > ScanStateScanned)
                     state = ScanStateUnscanned;
 
-                if (_scanStates.ContainsKey(key))
-                    _scanStates[key] = state;
-                else
-                    _scanStates.TryAdd(key, state);
+                SetScanState(unchecked((uint)key), state);
             }
         }
 
@@ -1799,8 +1858,7 @@ namespace Hecton8.Gameplay
                     int safeFragmentCount = math.clamp(fragmentCount, 0, MaxDiscoveryCount);
                     int safePartialCount = math.clamp(partialCount, 0, MaxPartialScanCount);
 
-                    _fragmentPositions.Clear();
-                    _fragmentCount = 0;
+                    ClearFragmentPositions();
                     for (int i = 0; i < MaxDiscoveryCount; i++)
                     {
                         if (stream.Position + MmfFragmentRecordBytes > stream.Length)
@@ -1935,34 +1993,72 @@ namespace Hecton8.Gameplay
         private void DumpTelemetryCold()
         {
 #if UNITY_EDITOR
-            if (!TryOpenOrAcquireTelemetryRing(out NativeArray<DataArchaeologyTelemetryEntry> telemetryRing))
+            if (!TryOpenTelemetryRing(out NativeArray<DataArchaeologyTelemetryEntry> telemetryRing))
                 return;
 
+            NativeArray<byte> payload = default;
             try
             {
-                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "../../Docs/AgentLogs/Dump_DATA_ARCHAEOLOGY.bin"));
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                const string path = "Docs/AgentLogs/Dump_DATA_ARCHAEOLOGY.bin";
+                const int rowBytes = 28;
+                int byteCount = TelemetryCapacity * rowBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(DataArchaeologyRuntime),
+                    "DataArchaeologyTelemetryDumpPayload");
+
+                unsafe
                 {
+                    byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    int cursor = 0;
                     for (int i = 0; i < TelemetryCapacity; i++)
                     {
                         DataArchaeologyTelemetryEntry entry = telemetryRing[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.Hash);
-                        writer.Write(entry.Position.x);
-                        writer.Write(entry.Position.y);
-                        writer.Write(entry.Position.z);
-                        writer.Write(entry.Match01);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.Reserved0);
-                        writer.Write(entry.ProgressPermille);
+                        WriteUInt(bytes, cursor, entry.Frame);
+                        WriteUInt(bytes, cursor + 4, entry.Hash);
+                        WriteFloat(bytes, cursor + 8, entry.Position.x);
+                        WriteFloat(bytes, cursor + 12, entry.Position.y);
+                        WriteFloat(bytes, cursor + 16, entry.Position.z);
+                        WriteFloat(bytes, cursor + 20, entry.Match01);
+                        bytes[cursor + 24] = entry.Flags;
+                        bytes[cursor + 25] = entry.Reserved0;
+                        WriteUShort(bytes, cursor + 26, entry.ProgressPermille);
+                        cursor += rowBytes;
                     }
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
             }
             catch (Exception)
             {
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(DataArchaeologyRuntime),
+                    "DataArchaeologyTelemetryDumpPayload");
+            }
 #endif
+        }
+
+        private static unsafe void WriteUInt(byte* data, int offset, uint value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+            data[offset + 2] = (byte)(value >> 16);
+            data[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static unsafe void WriteUShort(byte* data, int offset, ushort value)
+        {
+            data[offset] = (byte)value;
+            data[offset + 1] = (byte)(value >> 8);
+        }
+
+        private static unsafe void WriteFloat(byte* data, int offset, float value)
+        {
+            UnsafeUtility.MemCpy(data + offset, &value, sizeof(float));
         }
 
 #if UNITY_EDITOR

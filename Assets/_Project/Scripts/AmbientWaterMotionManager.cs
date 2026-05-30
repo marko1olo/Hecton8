@@ -78,6 +78,7 @@ namespace Hecton8.Physics
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
+        private bool _runtimeWaterMotionCallbacksActive;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IAmbientCurrentReadModel _ambientCurrentReadModel;
         private Vector3 _biomeCurrentVector;
@@ -108,20 +109,23 @@ namespace Hecton8.Physics
 
             RefreshDistanceThresholds();
             CacheRegistryServicesCold();
+            _runtimeWaterMotionCallbacksActive = Application.isPlaying;
         }
 
         private void OnEnable()
         {
+            _runtimeWaterMotionCallbacksActive = Application.isPlaying;
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             TryRegister();
             TryRegisterService();
-            if (Application.isPlaying)
+            if (_runtimeWaterMotionCallbacksActive)
                 BiomeMatrixEvents.Register(this);
         }
 
         private void OnDisable()
         {
+            _runtimeWaterMotionCallbacksActive = false;
             BiomeMatrixEvents.Unregister(this);
             TryUnregisterHotSwapListener();
             TryUnregister();
@@ -130,6 +134,7 @@ namespace Hecton8.Physics
 
         private void OnDestroy()
         {
+            _runtimeWaterMotionCallbacksActive = false;
             BiomeMatrixEvents.Unregister(this);
             TryUnregisterHotSwapListener();
             TryUnregister();
@@ -584,7 +589,7 @@ namespace Hecton8.Physics
 
         private void TryRegister()
         {
-            if (_tickRegistered || !Application.isPlaying)
+            if (_tickRegistered || !_runtimeWaterMotionCallbacksActive)
             {
                 TryRegisterLateFrame();
                 return;
@@ -596,7 +601,7 @@ namespace Hecton8.Physics
 
         private void TryRegisterLateFrame()
         {
-            if (_lateFrameRegistered || !Application.isPlaying)
+            if (_lateFrameRegistered || !_runtimeWaterMotionCallbacksActive)
                 return;
 
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -619,7 +624,7 @@ namespace Hecton8.Physics
 
         private void TryRegisterService()
         {
-            if (_serviceRegistered || !Application.isPlaying)
+            if (_serviceRegistered || !_runtimeWaterMotionCallbacksActive)
                 return;
 
             AmbientWaterMotionManager registered = GlobalRegistry.AmbientWaterMotion;
@@ -654,7 +659,7 @@ namespace Hecton8.Physics
 
         private void TryRegisterHotSwapListener()
         {
-            if (_hotSwapRegistered || !Application.isPlaying)
+            if (_hotSwapRegistered || !_runtimeWaterMotionCallbacksActive)
                 return;
 
             _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);

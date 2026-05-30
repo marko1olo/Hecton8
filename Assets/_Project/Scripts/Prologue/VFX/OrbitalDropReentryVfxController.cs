@@ -7,6 +7,7 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
@@ -995,36 +996,48 @@ namespace Hecton8.Prologue.VFX
                 return;
             }
 
-            _blackBoxDumped = true;
+            NativeArray<byte> payload = default;
             try
             {
                 string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", DumpFileName));
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                const int headerBytes = 24;
+                int length = math.min(TelemetryCapacity, telemetry.Length);
+                int byteCount = headerBytes + length * TelemetryEntrySizeBytes;
+                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+
+                unsafe
                 {
-                    Span<byte> header = stackalloc byte[24];
+                    byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    Span<byte> header = new Span<byte>(bytes, headerBytes);
                     WriteUInt32LittleEndian(header.Slice(0, 4), DumpMagic);
                     WriteInt32LittleEndian(header.Slice(4, 4), DumpVersion);
                     WriteInt32LittleEndian(header.Slice(8, 4), TelemetryEntrySizeBytes);
                     WriteInt32LittleEndian(header.Slice(12, 4), TelemetryCapacity);
                     WriteInt32LittleEndian(header.Slice(16, 4), _telemetryCursor);
                     WriteUInt16LittleEndian(header.Slice(20, 2), _stateSequence);
-                    stream.Write(header);
 
-                    Span<byte> entryBytes = stackalloc byte[TelemetryEntrySizeBytes];
-                    int length = math.min(TelemetryCapacity, telemetry.Length);
+                    int cursor = headerBytes;
                     for (int i = 0; i < length; i++)
                     {
                         ReentryVfxTelemetryEntry entry = telemetry[i];
+                        Span<byte> entryBytes = new Span<byte>(bytes + cursor, TelemetryEntrySizeBytes);
                         WriteTelemetryEntry(entryBytes, in entry);
-                        stream.Write(entryBytes);
+                        cursor += TelemetryEntrySizeBytes;
                     }
                 }
+
+                _blackBoxDumped = NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
             }
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogError("[OrbitalDropReentryVfxController] Black box dump failed: " + exception.Message);
 #endif
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 

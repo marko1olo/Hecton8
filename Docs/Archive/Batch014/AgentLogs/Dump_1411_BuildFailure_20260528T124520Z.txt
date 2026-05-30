@@ -1,0 +1,41 @@
+Agent: 1411
+Domain: Echelon 7 GPU Architecture and PCIe Upload Bandwidth Guard
+Artifact: Final build failure forensic dump
+CreatedUtc: 2026-05-28T12:45:20Z
+
+Command:
+dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1
+
+Compilation Resource Throttling Gate:
+CPU sample before this final build: 11 percent
+Active dotnet/csc/VBCSCompiler processes before this final build: 0
+Build launch count by Agent 1411 in this verification cycle: 3
+
+Result:
+Build FAILED.
+Warnings: 0
+Errors: 58
+Elapsed: 00:13:28.44
+
+Observed failing files:
+1. Assets/_Project/Scripts/ModularEquipmentEngine.cs
+   Lines: 1290-1317 in the captured build output.
+   Error codes: CS8168, CS8350.
+   Pattern: repeated by-ref escape errors around local acquiredCount passed by ref into TryAcquireEquipmentWriteBuffer<T>(..., ref int acquiredCount, out EquipmentVaultView<T>).
+   Ownership note: Gameplay/equipment domain, not Agent 1411 PCIe upload domain.
+
+2. Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs
+   Line: 7363 in the captured build output.
+   Error code: CS0019.
+   Pattern: operator '==' cannot be applied to operands of type 'uint' and 'BufferID'.
+   Ownership note: Audio domain, not Agent 1411 PCIe upload domain.
+
+3. Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs
+   Line: 866 in the captured build output.
+   Error code: CS0103.
+   Pattern: name 'FlushQueuedEntanglementFeedback' does not exist in the current context.
+   Follow-up static observation after build: current file contains private void FlushQueuedEntanglementFeedback() at line 2294, so this specific error may already have been changed by a parallel agent after the captured build.
+   Ownership note: Gameplay transport domain, not Agent 1411 PCIe upload domain.
+
+Agent 1411 action taken:
+No runtime source patch was made outside the assigned PCIe/upload domain after this failure. The failure is recorded as external compile dependency evidence. Active compiler processes were observed later (csc PID 58540, dotnet PID 56680, VBCSCompiler PID 14544), so no further build was launched.

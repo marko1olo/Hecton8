@@ -1036,10 +1036,10 @@ namespace Hecton8.UI
                 return;
 
             if (pdaPanel != null)
-                controlsRebindUI = pdaPanel.GetComponentInChildren<PDAControlsRebindUI>(true);
+                controlsRebindUI = ComponentReferenceUtility.ResolveOwnedComponent<PDAControlsRebindUI>(pdaPanel.transform);
 
             if (controlsRebindUI == null)
-                controlsRebindUI = GetComponentInChildren<PDAControlsRebindUI>(true);
+                controlsRebindUI = ComponentReferenceUtility.ResolveOwnedComponent<PDAControlsRebindUI>(transform);
         }
 
         private static GameObject EnsureRuntimeTab(Transform root, string name, Type tabComponentType)

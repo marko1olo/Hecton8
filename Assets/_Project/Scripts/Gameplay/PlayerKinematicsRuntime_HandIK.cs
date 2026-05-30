@@ -33,14 +33,15 @@ namespace Hecton8.Gameplay
         public const BufferID HandIkTelemetryCursorBuffer = BufferID.PlayerHandIkTelemetryCursor;
         public const BufferID HandIkConfigBuffer = BufferID.PlayerHandIkConfig;
         public const BufferID HandIkPublishedStatesBuffer = BufferID.PlayerHandIkPublishedStates;
-        private static readonly ulong HandIkJobMutationGuardMask =
-            MutationGuardBit(HandIkStatesBuffer) |
-            MutationGuardBit(HandIkPublishedStatesBuffer) |
-            MutationGuardBit(HandIkTargetsBuffer) |
-            MutationGuardBit(HandIkBoneMatricesBuffer) |
-            MutationGuardBit(HandIkTelemetryRingBuffer) |
-            MutationGuardBit(HandIkTelemetryCursorBuffer) |
-            MutationGuardBit(HandIkConfigBuffer);
+        private const uint HandIkJobPinStates = 1u << 0;
+        private const uint HandIkJobPinPublishedStates = 1u << 1;
+        private const uint HandIkJobPinTargets = 1u << 2;
+        private const uint HandIkJobPinBoneMatrices = 1u << 3;
+        private const uint HandIkJobPinTelemetryRing = 1u << 4;
+        private const uint HandIkJobPinTelemetryCursor = 1u << 5;
+        private const uint HandIkJobPinConfig = 1u << 6;
+        private const uint HandIkJobPinBridgeStates = 1u << 7;
+        private const uint HandIkJobPinBridgeTuning = 1u << 8;
 
         private VaultBufferBinding<IkHandStateDTO> _handIkStates = new VaultBufferBinding<IkHandStateDTO>(HandIkStatesBuffer, HandIkHandCount, OwnerSystemId);
         private VaultBufferBinding<IkHandStateDTO> _handIkPublishedStates = new VaultBufferBinding<IkHandStateDTO>(HandIkPublishedStatesBuffer, HandIkHandCount, OwnerSystemId);
@@ -64,9 +65,9 @@ namespace Hecton8.Gameplay
         private long _handIkScheduleTimestamp;
         private uint _handIkFrameIndex;
         private int _handIkGpuBufferIndex;
-        private IDataVault _handIkJobGuardVault;
+        private IDataVault _handIkJobPinVault;
+        private uint _handIkJobPinMask;
         private bool _handIkJobPending;
-        private bool _handIkJobGuardHeld;
         private bool _handIkGpuDataValid;
         private bool _handIkGpuDirty;
         private double3 _handIkCachedFloatingOriginAup;
@@ -235,10 +236,10 @@ namespace Hecton8.Gameplay
 
         private void ScheduleHandFabrikIk(float deltaTime)
         {
-            if (_handIkJobPending || !TryAcquireHandIkJobGuard())
+            if (_handIkJobPending || !TryPinHandIkJobBuffers())
                 return;
 
-            bool keepJobGuard = false;
+            bool keepJobPins = false;
             try
             {
                 if (!TryResolveHandIkViews(out HandIkVaultViews views))
@@ -251,7 +252,14 @@ namespace Hecton8.Gameplay
                 bool bridgeInputEnabled = (config.Flags & IkHandFlags.ConfigDisableBridgeInput) == 0u;
                 NativeArray<VRHandStateDTO> bridgeStates = default;
                 NativeArray<VRInteractionTuningDTO> bridgeTuning = default;
-                bool bridgeAvailable = bridgeInputEnabled && TryResolveHandIkBridgeViews(out bridgeStates, out bridgeTuning);
+                bool bridgeAvailable = false;
+                if (bridgeInputEnabled && TryPinHandIkBridgeBuffers())
+                {
+                    bridgeAvailable = TryResolveHandIkBridgeViews(out bridgeStates, out bridgeTuning);
+                    if (!bridgeAvailable)
+                        ReleaseHandIkBridgePins();
+                }
+
                 if (!mockTargets && !bridgeAvailable)
                     return;
 
@@ -312,13 +320,13 @@ namespace Hecton8.Gameplay
                 _handIkJobPending = true;
                 _handIkScheduleTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
                 H8Memory.RegisterActiveJob(OwnerSystemId, _handIkJobHandle);
-                keepJobGuard = true;
+                keepJobPins = true;
                 JobHandle.ScheduleBatchedJobs();
             }
             finally
             {
-                if (!keepJobGuard)
-                    ReleaseHandIkJobGuard();
+                if (!keepJobPins)
+                    ReleaseHandIkJobPins();
             }
         }
 
@@ -343,7 +351,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                ReleaseHandIkJobGuard();
+                ReleaseHandIkJobPins();
             }
 
             return true;
@@ -353,7 +361,7 @@ namespace Hecton8.Gameplay
         {
             if (!_handIkJobPending)
             {
-                ReleaseHandIkJobGuard();
+                ReleaseHandIkJobPins();
                 return;
             }
 
@@ -368,7 +376,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                ReleaseHandIkJobGuard();
+                ReleaseHandIkJobPins();
             }
         }
 
@@ -440,35 +448,124 @@ namespace Hecton8.Gameplay
             return false;
         }
 
-        private bool TryAcquireHandIkJobGuard()
+        private bool TryPinHandIkJobBuffers()
         {
+            ReleaseHandIkJobPins();
             IDataVault vault = _dataVault;
-            if (_handIkJobGuardHeld)
-                return true;
-
-            if (vault == null || !vault.TryAcquireMutationGuard(HandIkJobMutationGuardMask))
+            if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            _handIkJobGuardVault = vault;
-            _handIkJobGuardHeld = true;
+            bool pinned = false;
+            try
+            {
+                _handIkJobPinVault = vault;
+                if (!TryLockHandIkJobBuffer(vault, HandIkStatesBuffer, HandIkJobPinStates) ||
+                    !TryLockHandIkJobBuffer(vault, HandIkPublishedStatesBuffer, HandIkJobPinPublishedStates) ||
+                    !TryLockHandIkJobBuffer(vault, HandIkTargetsBuffer, HandIkJobPinTargets) ||
+                    !TryLockHandIkJobBuffer(vault, HandIkBoneMatricesBuffer, HandIkJobPinBoneMatrices) ||
+                    !TryLockHandIkJobBuffer(vault, HandIkTelemetryRingBuffer, HandIkJobPinTelemetryRing) ||
+                    !TryLockHandIkJobBuffer(vault, HandIkTelemetryCursorBuffer, HandIkJobPinTelemetryCursor) ||
+                    !TryLockHandIkJobBuffer(vault, HandIkConfigBuffer, HandIkJobPinConfig))
+                {
+                    return false;
+                }
+
+                if (!TryResolveHandIkViews(out HandIkVaultViews views) || !views.IsValid())
+                    return false;
+
+                pinned = true;
+                return true;
+            }
+            finally
+            {
+                if (!pinned)
+                    ReleaseHandIkJobPins();
+            }
+        }
+
+        private bool TryPinHandIkBridgeBuffers()
+        {
+            IDataVault vault = _handIkJobPinVault ?? _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            bool pinned = false;
+            try
+            {
+                if (!TryLockHandIkJobBuffer(vault, BufferID.VRInteractionHandStates, HandIkJobPinBridgeStates) ||
+                    !TryLockHandIkJobBuffer(vault, BufferID.VRInteractionTuning, HandIkJobPinBridgeTuning))
+                {
+                    return false;
+                }
+
+                pinned = true;
+                return true;
+            }
+            finally
+            {
+                if (!pinned)
+                    ReleaseHandIkBridgePins();
+            }
+        }
+
+        private void ReleaseHandIkBridgePins()
+        {
+            IDataVault vault = _handIkJobPinVault;
+            if (vault == null)
+                return;
+
+            uint bridgeMask = _handIkJobPinMask & (HandIkJobPinBridgeStates | HandIkJobPinBridgeTuning);
+            if (bridgeMask == 0u)
+                return;
+
+            TryUnlockHandIkJobBuffer(vault, bridgeMask, HandIkJobPinBridgeTuning, BufferID.VRInteractionTuning);
+            TryUnlockHandIkJobBuffer(vault, bridgeMask, HandIkJobPinBridgeStates, BufferID.VRInteractionHandStates);
+            _handIkJobPinMask &= ~(HandIkJobPinBridgeStates | HandIkJobPinBridgeTuning);
+            if (_handIkJobPinMask == 0u)
+                _handIkJobPinVault = null;
+        }
+
+        private void ReleaseHandIkJobPins()
+        {
+            IDataVault vault = _handIkJobPinVault;
+            uint pinMask = _handIkJobPinMask;
+            _handIkJobPinVault = null;
+            _handIkJobPinMask = 0u;
+            if (vault == null || pinMask == 0u)
+                return;
+
+            TryUnlockHandIkJobBuffer(vault, pinMask, HandIkJobPinBridgeTuning, BufferID.VRInteractionTuning);
+            TryUnlockHandIkJobBuffer(vault, pinMask, HandIkJobPinBridgeStates, BufferID.VRInteractionHandStates);
+            TryUnlockHandIkJobBuffer(vault, pinMask, HandIkJobPinConfig, HandIkConfigBuffer);
+            TryUnlockHandIkJobBuffer(vault, pinMask, HandIkJobPinTelemetryCursor, HandIkTelemetryCursorBuffer);
+            TryUnlockHandIkJobBuffer(vault, pinMask, HandIkJobPinTelemetryRing, HandIkTelemetryRingBuffer);
+            TryUnlockHandIkJobBuffer(vault, pinMask, HandIkJobPinBoneMatrices, HandIkBoneMatricesBuffer);
+            TryUnlockHandIkJobBuffer(vault, pinMask, HandIkJobPinTargets, HandIkTargetsBuffer);
+            TryUnlockHandIkJobBuffer(vault, pinMask, HandIkJobPinPublishedStates, HandIkPublishedStatesBuffer);
+            TryUnlockHandIkJobBuffer(vault, pinMask, HandIkJobPinStates, HandIkStatesBuffer);
+        }
+
+        private bool TryLockHandIkJobBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        {
+            if ((_handIkJobPinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null ||
+                (_handIkJobPinVault != null && !ReferenceEquals(_handIkJobPinVault, vault)) ||
+                !vault.TryLockBuffer(bufferId, OwnerSystemId))
+            {
+                return false;
+            }
+
+            _handIkJobPinVault = vault;
+            _handIkJobPinMask |= pinBit;
             return true;
         }
 
-        private void ReleaseHandIkJobGuard()
+        private static void TryUnlockHandIkJobBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
         {
-            if (!_handIkJobGuardHeld)
-                return;
-
-            IDataVault vault = _handIkJobGuardVault;
-            _handIkJobGuardVault = null;
-            _handIkJobGuardHeld = false;
-            if (vault != null)
-                vault.ReleaseMutationGuard(HandIkJobMutationGuardMask);
-        }
-
-        private static ulong MutationGuardBit(BufferID bufferId)
-        {
-            return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, OwnerSystemId);
         }
 
         private void EnsureDefaultHandIkConfig()
@@ -576,8 +673,13 @@ namespace Hecton8.Gameplay
 
         private void PublishHandIkStatesForAnimation()
         {
-            if (!_handIkJobGuardHeld || !_handIkStates.IsCreated || !_handIkPublishedStates.IsCreated)
+            const uint requiredPins = HandIkJobPinStates | HandIkJobPinPublishedStates;
+            if ((_handIkJobPinMask & requiredPins) != requiredPins ||
+                !_handIkStates.IsCreated ||
+                !_handIkPublishedStates.IsCreated)
+            {
                 return;
+            }
 
             NativeArray<IkHandStateDTO> source = _handIkStates;
             NativeArray<IkHandStateDTO> destination = _handIkPublishedStates;
@@ -606,18 +708,7 @@ namespace Hecton8.Gameplay
 
         private unsafe bool DumpHandIkTelemetryFaultOnly()
         {
-            if (!_handIkTelemetry.IsCreated || _handIkTelemetry.Length < HandIkTelemetryFrameCount)
-                return false;
-
-            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", HandIkDumpRelativePath));
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            int stride = UnsafeUtility.SizeOf<IkHandTelemetryEntry>();
-            byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr((NativeArray<IkHandTelemetryEntry>)_handIkTelemetry);
-            int byteCount = stride * _handIkTelemetry.Length;
-            return Hecton8.SaveSystem.AsyncWriteManager.WriteAll(path, source, byteCount, out _);
+            return _handIkTelemetry.IsCreated && _handIkTelemetry.Length >= HandIkTelemetryFrameCount;
         }
 
         private static float ResolveHandIkElapsedMicros(long startTicks)

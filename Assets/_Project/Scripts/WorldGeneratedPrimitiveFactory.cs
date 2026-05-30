@@ -52,18 +52,62 @@ namespace Hecton8.World
                 return null;
             }
 
-            return ConfigurePrimitiveVisual(primitive, primitiveType, name, localPosition, localRotation, localScale, overrideMaterial, mesh, defaultMaterial, state.Filter, state.Renderer);
+            return ConfigurePrimitiveVisualHotNoRename(primitive, localPosition, localRotation, localScale, overrideMaterial, mesh, defaultMaterial, state.Filter, state.Renderer);
+        }
+
+        public static Renderer ConfigurePrimitiveVisualCachedHot(
+            GameObject primitive,
+            MeshFilter filter,
+            MeshRenderer renderer,
+            PrimitiveType primitiveType,
+            string name,
+            Vector3 localPosition,
+            Quaternion localRotation,
+            Vector3 localScale,
+            Material overrideMaterial = null)
+        {
+            if (primitive == null ||
+                filter == null ||
+                renderer == null ||
+                !TryGetPrimitiveResourcesHot(primitiveType, out Mesh mesh, out Material defaultMaterial))
+            {
+                return null;
+            }
+
+            return ConfigurePrimitiveVisualHotNoRename(primitive, localPosition, localRotation, localScale, overrideMaterial, mesh, defaultMaterial, filter, renderer);
         }
 
         public static GameObject CreateCachedPrimitiveShell(Transform parent, string name)
         {
+            return CreateCachedPrimitiveShell(parent, name, out _, out _);
+        }
+
+        public static GameObject CreateCachedPrimitiveShell(Transform parent, string name, out MeshFilter filter, out MeshRenderer renderer)
+        {
             GameObject primitive = new GameObject(string.IsNullOrEmpty(name) ? "PrimitiveShell" : name);
             primitive.transform.SetParent(parent, false);
-            MeshFilter filter = primitive.AddComponent<MeshFilter>();
-            MeshRenderer renderer = primitive.AddComponent<MeshRenderer>();
+            filter = primitive.AddComponent<MeshFilter>();
+            renderer = primitive.AddComponent<MeshRenderer>();
             RegisterPrimitiveRuntimeState(primitive, filter, renderer);
             primitive.SetActive(false);
             return primitive;
+        }
+
+        public static bool TryResolvePrimitiveComponentsCold(GameObject primitive, out MeshFilter filter, out MeshRenderer renderer)
+        {
+            filter = null;
+            renderer = null;
+            if (primitive == null)
+                return false;
+
+            if (!primitive.TryGetComponent(out filter))
+                filter = primitive.AddComponent<MeshFilter>();
+
+            if (!primitive.TryGetComponent(out renderer))
+                renderer = primitive.AddComponent<MeshRenderer>();
+
+            RegisterPrimitiveRuntimeState(primitive, filter, renderer);
+            return filter != null && renderer != null;
         }
 
         public static Renderer CreatePrimitiveVisual(
@@ -201,6 +245,27 @@ namespace Hecton8.World
         {
             primitive.name = string.IsNullOrEmpty(name) ? GetPrimitiveName(primitiveType) : name;
 
+            Transform primitiveTransform = primitive.transform;
+            primitiveTransform.localPosition = localPosition;
+            primitiveTransform.localRotation = localRotation;
+            primitiveTransform.localScale = localScale;
+
+            filter.sharedMesh = mesh;
+            renderer.sharedMaterial = overrideMaterial != null ? overrideMaterial : defaultMaterial;
+            return renderer;
+        }
+
+        private static Renderer ConfigurePrimitiveVisualHotNoRename(
+            GameObject primitive,
+            Vector3 localPosition,
+            Quaternion localRotation,
+            Vector3 localScale,
+            Material overrideMaterial,
+            Mesh mesh,
+            Material defaultMaterial,
+            MeshFilter filter,
+            MeshRenderer renderer)
+        {
             Transform primitiveTransform = primitive.transform;
             primitiveTransform.localPosition = localPosition;
             primitiveTransform.localRotation = localRotation;

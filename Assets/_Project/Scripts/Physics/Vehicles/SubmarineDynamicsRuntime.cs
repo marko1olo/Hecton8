@@ -60,21 +60,6 @@ namespace Hecton8.Physics.Vehicles
             VaultMutationGuardBit(BufferID.SubmarineKinematicMassProperties);
         private static readonly ulong BootHullProfileMutationGuardMask =
             VaultMutationGuardBit(BufferID.Shinobu251HullProfiles);
-#if UNITY_EDITOR
-        private static readonly ulong CsvOverrideControlMutationGuardMask =
-            VaultMutationGuardBit(BufferID.SubmarineKinematicControls);
-        private static readonly ulong CsvOverrideConfigMutationGuardMask =
-            VaultMutationGuardBit(BufferID.SubmarineKinematicConfig);
-        private static readonly ulong CsvOverrideHullProfileMutationGuardMask =
-            VaultMutationGuardBit(BufferID.Shinobu251HullProfiles);
-        private static readonly ulong HullProfilesConfigCsvMutationGuardMask =
-            VaultMutationGuardBit(BufferID.SubmarineKinematicConfig);
-        private static readonly ulong HullProfilesProfileCsvMutationGuardMask =
-            VaultMutationGuardBit(BufferID.Shinobu251HullProfiles);
-        private static readonly byte[] s_csvImportBytes = new byte[(int)MaxCsvOverrideBytes];
-        private static readonly SubmarineHullProfileDTO[] s_hullProfileCsvScratch = new SubmarineHullProfileDTO[SubmarineDynamicsConstants.MaxVehicles];
-        private static int s_csvImportScratchBusy;
-#endif
         private const uint HashMaxThrustN = 0x6DDC6935u;
         private const uint HashBallastLiftN = 0xDBC90E8Du;
         private const uint HashSloshSpring = 0x3466D6C8u;
@@ -1640,52 +1625,56 @@ namespace Hecton8.Physics.Vehicles
                 hull.FloodVolumeScalar = 1f;
             }
 
-            if (Interlocked.CompareExchange(ref s_csvImportScratchBusy, 1, 0) != 0)
-                return false;
+            Span<byte> byteScratch = stackalloc byte[(int)MaxCsvOverrideBytes];
 
+            int read;
             try
             {
-                int read;
-                try
-                {
-                    using FileStream stream = File.Open(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    if (stream.Length <= 0L || stream.Length > MaxCsvOverrideBytes)
-                        return false;
+                using FileStream stream = File.Open(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                long length = stream.Length;
+                if (length <= 0L || length > MaxCsvOverrideBytes)
+                    return false;
 
-                    read = stream.Read(s_csvImportBytes, 0, (int)stream.Length);
-                    if (read <= 0)
-                        return false;
-                }
-                catch (IOException)
+                int expected = (int)length;
+                int totalRead = 0;
+                while (totalRead < expected)
                 {
-                    return false;
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    return false;
+                    int chunk = stream.Read(byteScratch.Slice(totalRead, expected - totalRead));
+                    if (chunk <= 0)
+                        break;
+
+                    totalRead += chunk;
                 }
 
-                ParseOverrideBytes(s_csvImportBytes.AsSpan(0, read), ref config, ref control, ref hull);
-                config.SourceHash = SubmarineDynamicsConstants.SourceHashCsv;
-                config.Flags |= SubmarineDynamicsConstants.ConfigFlagCsvOverride;
-                hull.BaseMassKg = config.BaseMassKg;
-                hull.HullVolumeM3 = config.HullVolumeM3;
-                hull.ProfileHash = SubmarineDynamicsConstants.SourceHashCsv;
-                if (!TryCommitCsvOverrideControl(in control) ||
-                    !TryCommitCsvOverrideHullProfile(in hull) ||
-                    !TryCommitCsvOverrideConfig(in config))
-                {
+                read = totalRead;
+                if (read != expected)
                     return false;
-                }
-
-                ApplyCsvOverrideSerializedFields(in config, in control);
-                _csvLastWriteTicks = ticks;
-                return true;
             }
-            finally
+            catch (IOException)
             {
-                Volatile.Write(ref s_csvImportScratchBusy, 0);
+                return false;
             }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+
+            ParseOverrideBytes(byteScratch.Slice(0, read), ref config, ref control, ref hull);
+            config.SourceHash = SubmarineDynamicsConstants.SourceHashCsv;
+            config.Flags |= SubmarineDynamicsConstants.ConfigFlagCsvOverride;
+            hull.BaseMassKg = config.BaseMassKg;
+            hull.HullVolumeM3 = config.HullVolumeM3;
+            hull.ProfileHash = SubmarineDynamicsConstants.SourceHashCsv;
+            if (!TryCommitCsvOverrideControl(in control) ||
+                !TryCommitCsvOverrideHullProfile(in hull) ||
+                !TryCommitCsvOverrideConfig(in config))
+            {
+                return false;
+            }
+
+            ApplyCsvOverrideSerializedFields(in config, in control);
+            _csvLastWriteTicks = ticks;
+            return true;
         }
 
         private bool TryApplyHullProfilesCsv()
@@ -1720,172 +1709,156 @@ namespace Hecton8.Physics.Vehicles
                 return false;
             }
 
-            if (Interlocked.CompareExchange(ref s_csvImportScratchBusy, 1, 0) != 0)
-                return false;
+            Span<byte> byteScratch = stackalloc byte[(int)MaxCsvOverrideBytes];
+            Span<SubmarineHullProfileDTO> hullProfileScratch = stackalloc SubmarineHullProfileDTO[SubmarineDynamicsConstants.MaxVehicles];
 
+            SubmarineKinematicConfig config = configRead[0];
+
+            int read;
             try
             {
-                SubmarineKinematicConfig config = configRead[0];
-                System.Array.Clear(s_hullProfileCsvScratch, 0, s_hullProfileCsvScratch.Length);
-
-                int read;
-                try
-                {
-                    using FileStream stream = File.Open(_hullProfilesCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                    long length = stream.Length;
-                    if (length <= 0L || length > MaxCsvOverrideBytes)
-                        return false;
-
-                    read = stream.Read(s_csvImportBytes, 0, (int)length);
-                    if (read <= 0)
-                        return false;
-                }
-                catch (IOException)
-                {
-                    return false;
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    return false;
-                }
-
-                int rows = ParseHullProfilesCsv(
-                    s_csvImportBytes.AsSpan(0, read),
-                    s_hullProfileCsvScratch.AsSpan(),
-                    ref config);
-                if (rows <= 0)
+                using FileStream stream = File.Open(_hullProfilesCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                long length = stream.Length;
+                if (length <= 0L || length > MaxCsvOverrideBytes)
                     return false;
 
-                config.SourceHash = SubmarineDynamicsConstants.SourceHashCsv;
-                config.Flags |= SubmarineDynamicsConstants.ConfigFlagCsvOverride;
-                if (!TryCommitHullProfilesCsv() ||
-                    !TryCommitHullProfilesConfigCsv(in config))
+                int expected = (int)length;
+                int totalRead = 0;
+                while (totalRead < expected)
                 {
-                    return false;
+                    int chunk = stream.Read(byteScratch.Slice(totalRead, expected - totalRead));
+                    if (chunk <= 0)
+                        break;
+
+                    totalRead += chunk;
                 }
 
-                _hullProfilesCsvLastWriteTicks = ticks;
-                return true;
+                read = totalRead;
+                if (read != expected)
+                    return false;
             }
-            finally
+            catch (IOException)
             {
-                Volatile.Write(ref s_csvImportScratchBusy, 0);
+                return false;
             }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+
+            int rows = ParseHullProfilesCsv(
+                byteScratch.Slice(0, read),
+                hullProfileScratch,
+                ref config);
+            if (rows <= 0)
+                return false;
+
+            config.SourceHash = SubmarineDynamicsConstants.SourceHashCsv;
+            config.Flags |= SubmarineDynamicsConstants.ConfigFlagCsvOverride;
+            if (!TryCommitHullProfilesCsv(hullProfileScratch, rows) ||
+                !TryCommitHullProfilesConfigCsv(in config))
+            {
+                return false;
+            }
+
+            _hullProfilesCsvLastWriteTicks = ticks;
+            return true;
         }
 
         private bool TryCommitCsvOverrideControl(in SubmarineKinematicControl control)
         {
-            IDataVault vault = _dataVault;
-            if (vault == null || !vault.TryAcquireMutationGuard(CsvOverrideControlMutationGuardMask))
+            if (!TryAcquireVaultWriteLock(in _controlHandle, out NativeArray<SubmarineKinematicControl> controls))
                 return false;
 
             try
             {
-                if (!TryOpenVaultHandleForOwner(in _controlHandle, out NativeArray<SubmarineKinematicControl> controls) ||
-                    controls.Length == 0)
-                {
+                if (controls.Length == 0)
                     return false;
-                }
 
                 controls[0] = control;
                 return true;
             }
             finally
             {
-                vault.ReleaseMutationGuard(CsvOverrideControlMutationGuardMask);
+                ReleaseVaultWriteLock(in _controlHandle);
             }
         }
 
         private bool TryCommitCsvOverrideConfig(in SubmarineKinematicConfig config)
         {
-            IDataVault vault = _dataVault;
-            if (vault == null || !vault.TryAcquireMutationGuard(CsvOverrideConfigMutationGuardMask))
+            if (!TryAcquireVaultWriteLock(in _configHandle, out NativeArray<SubmarineKinematicConfig> configs))
                 return false;
 
             try
             {
-                if (!TryOpenVaultHandleForOwner(in _configHandle, out NativeArray<SubmarineKinematicConfig> configs) ||
-                    configs.Length == 0)
-                {
+                if (configs.Length == 0)
                     return false;
-                }
 
                 configs[0] = config;
                 return true;
             }
             finally
             {
-                vault.ReleaseMutationGuard(CsvOverrideConfigMutationGuardMask);
+                ReleaseVaultWriteLock(in _configHandle);
             }
         }
 
         private bool TryCommitCsvOverrideHullProfile(in SubmarineHullProfileDTO hull)
         {
-            IDataVault vault = _dataVault;
-            if (vault == null || !vault.TryAcquireMutationGuard(CsvOverrideHullProfileMutationGuardMask))
+            if (!TryAcquireVaultWriteLock(in _hullProfileHandle, out NativeArray<SubmarineHullProfileDTO> hullProfiles))
                 return false;
 
             try
             {
-                if (!TryOpenVaultHandleForOwner(in _hullProfileHandle, out NativeArray<SubmarineHullProfileDTO> hullProfiles) ||
-                    hullProfiles.Length == 0)
-                {
+                if (hullProfiles.Length == 0)
                     return false;
-                }
 
                 hullProfiles[0] = hull;
                 return true;
             }
             finally
             {
-                vault.ReleaseMutationGuard(CsvOverrideHullProfileMutationGuardMask);
+                ReleaseVaultWriteLock(in _hullProfileHandle);
             }
         }
 
-        private bool TryCommitHullProfilesCsv()
+        private bool TryCommitHullProfilesCsv(ReadOnlySpan<SubmarineHullProfileDTO> hullProfileScratch, int count)
         {
-            IDataVault vault = _dataVault;
-            if (vault == null || !vault.TryAcquireMutationGuard(HullProfilesProfileCsvMutationGuardMask))
+            if (!TryAcquireVaultWriteLock(in _hullProfileHandle, out NativeArray<SubmarineHullProfileDTO> hullProfiles))
                 return false;
 
             try
             {
-                if (!TryOpenVaultHandleForOwner(in _hullProfileHandle, out NativeArray<SubmarineHullProfileDTO> hullProfiles) ||
-                    hullProfiles.Length == 0)
-                {
+                if (hullProfiles.Length == 0)
                     return false;
-                }
 
-                int copyLength = math.min(hullProfiles.Length, s_hullProfileCsvScratch.Length);
-                NativeArray<SubmarineHullProfileDTO>.Copy(s_hullProfileCsvScratch, 0, hullProfiles, 0, copyLength);
+                int copyLength = math.min(math.min(hullProfiles.Length, hullProfileScratch.Length), count);
+                for (int i = 0; i < copyLength; i++)
+                    hullProfiles[i] = hullProfileScratch[i];
                 return true;
             }
             finally
             {
-                vault.ReleaseMutationGuard(HullProfilesProfileCsvMutationGuardMask);
+                ReleaseVaultWriteLock(in _hullProfileHandle);
             }
         }
 
         private bool TryCommitHullProfilesConfigCsv(in SubmarineKinematicConfig config)
         {
-            IDataVault vault = _dataVault;
-            if (vault == null || !vault.TryAcquireMutationGuard(HullProfilesConfigCsvMutationGuardMask))
+            if (!TryAcquireVaultWriteLock(in _configHandle, out NativeArray<SubmarineKinematicConfig> configs))
                 return false;
 
             try
             {
-                if (!TryOpenVaultHandleForOwner(in _configHandle, out NativeArray<SubmarineKinematicConfig> configs) ||
-                    configs.Length == 0)
-                {
+                if (configs.Length == 0)
                     return false;
-                }
 
                 configs[0] = config;
                 return true;
             }
             finally
             {
-                vault.ReleaseMutationGuard(HullProfilesConfigCsvMutationGuardMask);
+                ReleaseVaultWriteLock(in _configHandle);
             }
         }
 

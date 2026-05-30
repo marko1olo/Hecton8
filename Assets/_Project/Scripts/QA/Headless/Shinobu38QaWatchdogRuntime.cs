@@ -398,6 +398,7 @@ namespace Hecton8.QA.Headless
         private int _writerLastAnyMicros;
         private int _writerCompletedWrites;
         private int _writerFaultFlags;
+        private int _fileWriterStopRequested;
         private float _targetDistanceMeters = DefaultTargetDistanceMeters;
         private float _nextCsvTime;
         private float _memoryWindowElapsed;
@@ -518,7 +519,11 @@ namespace Hecton8.QA.Headless
             current = vault.CurrentAUP;
             target = state.CurrentTargetAUP;
             double3 localToTarget = current - target;
-            avoidanceNormal = Shinobu38MockTerrainSdf.SampleNormal(new float3((float)localToTarget.x, (float)localToTarget.y, (float)localToTarget.z));
+            float3 localTarget = default;
+            localTarget.x = (float)localToTarget.x;
+            localTarget.y = (float)localToTarget.y;
+            localTarget.z = (float)localToTarget.z;
+            avoidanceNormal = Shinobu38MockTerrainSdf.SampleNormal(localTarget);
             return true;
         }
 
@@ -621,26 +626,24 @@ namespace Hecton8.QA.Headless
             float scaledDelta = safeDelta * math.max(1f, tuning.FastForwardScale);
             _frame++;
 
-            BotNavigationJob job = new BotNavigationJob
-            {
-                State = stateBuffer,
-                Snapshot = snapshotBuffer,
-                InputBuffer = inputBuffer,
-                Waypoints = waypoints,
-                RebaseSignals = rebaseSignals,
-                Tuning = tuningBuffer,
-                MockVault = mockVault,
-                DeltaTime = scaledDelta,
-                WallDeltaTime = safeDelta,
-                Frame = _frame,
-                RouteCount = _routeCount,
-                TargetDistanceMeters = _targetDistanceMeters,
-                BaseGcBytes = _baselineGcUsedBytes,
-                CurrentGcBytes = _lastGcUsedBytes,
-                CurrentVramBytes = _lastGfxUsedBytes,
-                SystemHealthIndex01 = ResolveSystemHealthIndex01(),
-                QualityWeight = forcedQualityWeight
-            };
+            BotNavigationJob job = default;
+            job.State = stateBuffer;
+            job.Snapshot = snapshotBuffer;
+            job.InputBuffer = inputBuffer;
+            job.Waypoints = waypoints;
+            job.RebaseSignals = rebaseSignals;
+            job.Tuning = tuningBuffer;
+            job.MockVault = mockVault;
+            job.DeltaTime = scaledDelta;
+            job.WallDeltaTime = safeDelta;
+            job.Frame = _frame;
+            job.RouteCount = _routeCount;
+            job.TargetDistanceMeters = _targetDistanceMeters;
+            job.BaseGcBytes = _baselineGcUsedBytes;
+            job.CurrentGcBytes = _lastGcUsedBytes;
+            job.CurrentVramBytes = _lastGfxUsedBytes;
+            job.SystemHealthIndex01 = ResolveSystemHealthIndex01();
+            job.QualityWeight = forcedQualityWeight;
             _navigationHandle = job.Schedule();
             H8Memory.RegisterActiveJob(SystemID.External, _navigationHandle);
             _navigationPending = true;
@@ -1153,22 +1156,21 @@ namespace Hecton8.QA.Headless
             int sectorX = ResolveAupSector(vault.CurrentAUP.x);
             int sectorY = ResolveAupSector(vault.CurrentAUP.y);
             int sectorZ = ResolveAupSector(vault.CurrentAUP.z);
-            telemetryRing[index] = new Shinobu38WatchdogTelemetryEntry
-            {
-                Frame = _frame,
-                TargetDistanceRemaining = math.max(0f, _targetDistanceMeters - state.DistanceTraveled),
-                AvoidanceCorrections = _lastAvoidanceCorrections,
-                CsvWriteTimeMs = _lastCsvWriteMs,
-                LocalMillimetersX = localMmX,
-                LocalMillimetersY = localMmY,
-                LocalMillimetersZ = localMmZ,
-                Flags = flags,
-                SectorX = sectorX,
-                SectorY = sectorY,
-                SectorZ = sectorZ,
-                ShiftFrameId = _shiftFrameId,
-                AupHash = HashAupTelemetry(sectorX, sectorY, sectorZ, localMmX, localMmY, localMmZ)
-            };
+            Shinobu38WatchdogTelemetryEntry entry = default;
+            entry.Frame = _frame;
+            entry.TargetDistanceRemaining = math.max(0f, _targetDistanceMeters - state.DistanceTraveled);
+            entry.AvoidanceCorrections = _lastAvoidanceCorrections;
+            entry.CsvWriteTimeMs = _lastCsvWriteMs;
+            entry.LocalMillimetersX = localMmX;
+            entry.LocalMillimetersY = localMmY;
+            entry.LocalMillimetersZ = localMmZ;
+            entry.Flags = flags;
+            entry.SectorX = sectorX;
+            entry.SectorY = sectorY;
+            entry.SectorZ = sectorZ;
+            entry.ShiftFrameId = _shiftFrameId;
+            entry.AupHash = HashAupTelemetry(sectorX, sectorY, sectorZ, localMmX, localMmY, localMmZ);
+            telemetryRing[index] = entry;
             _telemetryCursor++;
             if (_telemetryCount < TelemetryCapacity)
                 _telemetryCount++;
@@ -1184,15 +1186,13 @@ namespace Hecton8.QA.Headless
             Shinobu38MockVaultDTO vault = mockVault[0];
             if (stressActive)
             {
-                SystemHealthIndexSignal signal = new SystemHealthIndexSignal
-                {
-                    Health01 = 0.95f,
-                    Pressure01 = 0.95f,
-                    Frame = _frame,
-                    SourceHash = SourceHash,
-                    State = SystemHealthIndexSignal.StateCritical,
-                    Flags = SystemHealthIndexSignal.FlagAdrenaline
-                };
+                SystemHealthIndexSignal signal = default;
+                signal.Health01 = 0.95f;
+                signal.Pressure01 = 0.95f;
+                signal.Frame = _frame;
+                signal.SourceHash = SourceHash;
+                signal.State = SystemHealthIndexSignal.StateCritical;
+                signal.Flags = SystemHealthIndexSignal.FlagAdrenaline;
                 SignalBus<SystemHealthIndexSignal>.TryPushTracked(in signal, ref s_x001Shinobu38QaWatchdogRuntimeSignalPushDropCount);
                 vault.Flags |= VaultFlagSurvivalPressureEmergency;
                 _healthStressWasActive = true;
@@ -1219,7 +1219,10 @@ namespace Hecton8.QA.Headless
             vault.Flags |= VaultFlagActualAupSampled;
             double3 intendedAup = vault.CurrentAUP;
             double3 localDelta = actualAup - intendedAup;
-            float3 localFloat = new float3((float)localDelta.x, (float)localDelta.y, (float)localDelta.z);
+            float3 localFloat = default;
+            localFloat.x = (float)localDelta.x;
+            localFloat.y = (float)localDelta.y;
+            localFloat.z = (float)localDelta.z;
             if (!math.all(math.isfinite(localFloat)))
             {
                 state.ErrorCount++;
@@ -1231,7 +1234,10 @@ namespace Hecton8.QA.Headless
             float positionErrorMeters = math.length(localFloat);
             double3 reconstructed = intendedAup + (double3)localFloat;
             double3 error = actualAup - reconstructed;
-            float3 errorLocal = new float3((float)error.x, (float)error.y, (float)error.z);
+            float3 errorLocal = default;
+            errorLocal.x = (float)error.x;
+            errorLocal.y = (float)error.y;
+            errorLocal.z = (float)error.z;
             if (!math.all(math.isfinite(errorLocal)))
             {
                 state.ErrorCount++;
@@ -1276,7 +1282,10 @@ namespace Hecton8.QA.Headless
             }
 
             double3 delta = current - _lastAupAuditPosition;
-            float3 localDelta = new float3((float)delta.x, (float)delta.y, (float)delta.z);
+            float3 localDelta = default;
+            localDelta.x = (float)delta.x;
+            localDelta.y = (float)delta.y;
+            localDelta.z = (float)delta.z;
             bool rebaseActive = rebase.Frame == _frame && (rebase.Flags & 1u) != 0u;
             if (!rebaseActive && math.all(math.isfinite(localDelta)) && math.length(localDelta) > CatastrophicAupDeltaMeters)
             {
@@ -1452,14 +1461,13 @@ namespace Hecton8.QA.Headless
 
             int payloadOffset = head * FileWritePayloadBytes;
             CopyNativeBytes(source, payload, payloadOffset, safeLength);
-            commands[head] = new Shinobu38FileWriteCommand
-            {
-                Sequence = ++_fileWriteSequence,
-                PayloadOffset = payloadOffset,
-                PayloadLength = safeLength,
-                Target = target,
-                Flags = 0u
-            };
+            Shinobu38FileWriteCommand command = default;
+            command.Sequence = ++_fileWriteSequence;
+            command.PayloadOffset = payloadOffset;
+            command.PayloadLength = safeLength;
+            command.Target = target;
+            command.Flags = 0u;
+            commands[head] = command;
             Volatile.Write(ref cursor.Head, next);
             _fileWriterEvent?.Set();
             return true;
@@ -1482,6 +1490,7 @@ namespace Hecton8.QA.Headless
             Volatile.Write(ref _writerLastAnyMicros, 0);
             Volatile.Write(ref _writerCompletedWrites, 0);
             Volatile.Write(ref _writerFaultFlags, 0);
+            Volatile.Write(ref _fileWriterStopRequested, 0);
             _fileWriterEvent = new ManualResetEventSlim(false); // COLD ALLOC: SPSC writer wake gate - owner: Shinobu38QaWatchdogRuntime
             _fileWriterThread = new Thread(FileWriterLoop) // COLD ALLOC: background QA file writer - owner: Shinobu38QaWatchdogRuntime
             {
@@ -1497,26 +1506,46 @@ namespace Hecton8.QA.Headless
             if (writer == null)
                 return;
 
-            if (!TryResolveWatchdogVaultBuffer(_dataVault, in _fileWriterCursorHandle, FileWriterCursorBufferId, 1, out NativeArray<Shinobu38FileWriterCursorDTO> cursorBuffer))
-                return;
-
-            ref Shinobu38FileWriterCursorDTO cursor = ref ElementRef(cursorBuffer, 0);
-            if (flushPending)
+            Volatile.Write(ref _fileWriterStopRequested, 1);
+            bool cursorResolved = TryResolveWatchdogVaultBuffer(_dataVault, in _fileWriterCursorHandle, FileWriterCursorBufferId, 1, out NativeArray<Shinobu38FileWriterCursorDTO> cursorBuffer);
+            if (cursorResolved)
             {
-                long start = Stopwatch.GetTimestamp();
-                while (Volatile.Read(ref cursor.Tail) != Volatile.Read(ref cursor.Head))
+                ref Shinobu38FileWriterCursorDTO cursor = ref ElementRef(cursorBuffer, 0);
+                if (flushPending)
                 {
-                    _fileWriterEvent?.Set();
-                    Thread.Sleep(1);
-                    long elapsed = Stopwatch.GetTimestamp() - start;
-                    if (elapsed > Stopwatch.Frequency * 5L)
-                        break;
+                    long start = Stopwatch.GetTimestamp();
+                    while (Volatile.Read(ref cursor.Tail) != Volatile.Read(ref cursor.Head))
+                    {
+                        _fileWriterEvent?.Set();
+                        Thread.Sleep(1);
+                        long elapsed = Stopwatch.GetTimestamp() - start;
+                        if (elapsed > Stopwatch.Frequency * 5L)
+                            break;
+                    }
                 }
+
+                Volatile.Write(ref cursor.Running, 0);
+            }
+            else
+            {
+                Volatile.Write(ref _writerFaultFlags, Volatile.Read(ref _writerFaultFlags) | unchecked((int)FileWriterFlagException));
             }
 
-            Volatile.Write(ref cursor.Running, 0);
             _fileWriterEvent?.Set();
-            writer.Join(2000);
+            if (!writer.Join(2000))
+            {
+                Volatile.Write(ref _writerFaultFlags, Volatile.Read(ref _writerFaultFlags) | unchecked((int)FileWriterFlagException));
+                try
+                {
+                    writer.Interrupt();
+                }
+                catch (Exception)
+                {
+                }
+
+                writer.Join(500);
+            }
+
             _fileWriterThread = null;
             _fileWriterEvent?.Dispose();
             _fileWriterEvent = null;
@@ -1535,7 +1564,7 @@ namespace Hecton8.QA.Headless
                     return;
 
                 ref Shinobu38FileWriterCursorDTO cursor = ref ElementRef(cursorBuffer, 0);
-                while (Volatile.Read(ref cursor.Running) != 0 ||
+                while ((Volatile.Read(ref _fileWriterStopRequested) == 0 && Volatile.Read(ref cursor.Running) != 0) ||
                        Volatile.Read(ref cursor.Tail) != Volatile.Read(ref cursor.Head))
                 {
                     if (!ReferenceEquals(vault, _dataVault))
@@ -2310,32 +2339,48 @@ namespace Hecton8.QA.Headless
                 }
 
                 double3 toTarget = target - current;
-                float3 toTargetFloat = new float3((float)toTarget.x, (float)toTarget.y, (float)toTarget.z);
+                float3 toTargetFloat = default;
+                toTargetFloat.x = (float)toTarget.x;
+                toTargetFloat.y = (float)toTarget.y;
+                toTargetFloat.z = (float)toTarget.z;
                 float remainingSq = math.lengthsq(toTargetFloat);
                 if (remainingSq < 25f && waypointIndex + 1 < routeCount)
                 {
                     waypointIndex++;
                     target = Waypoints[waypointIndex].Aup;
                     toTarget = target - current;
-                    toTargetFloat = new float3((float)toTarget.x, (float)toTarget.y, (float)toTarget.z);
+                    toTargetFloat.x = (float)toTarget.x;
+                    toTargetFloat.y = (float)toTarget.y;
+                    toTargetFloat.z = (float)toTarget.z;
                     remainingSq = math.lengthsq(toTargetFloat);
                 }
 
-                float3 desired = remainingSq > 0.0001f ? toTargetFloat * math.rsqrt(remainingSq) : new float3(0f, 0f, 1f);
+                float3 forwardFallback = default;
+                forwardFallback.z = 1f;
+                float3 upFallback = default;
+                upFallback.y = 1f;
+                float3 desired = remainingSq > 0.0001f ? toTargetFloat * math.rsqrt(remainingSq) : forwardFallback;
                 double3 localToTarget = current - target;
-                float3 localCurrent = new float3((float)localToTarget.x, (float)localToTarget.y, (float)localToTarget.z);
+                float3 localCurrent = default;
+                localCurrent.x = (float)localToTarget.x;
+                localCurrent.y = (float)localToTarget.y;
+                localCurrent.z = (float)localToTarget.z;
                 float3 ahead = localCurrent + desired * 12f;
                 float sdf = Shinobu38MockTerrainSdf.SampleDistance(ahead);
                 if (sdf < 10f)
                 {
                     float quality = math.saturate(QualityWeight);
                     float richNormalGate = Smooth01((quality - RichNormalFadeStart01) * math.rcp(math.max(0.0001f, 1f - RichNormalFadeStart01)));
-                    float3 cheapNormal = math.normalizesafe(new float3(-desired.x * 0.25f, 1f, -desired.z * 0.25f), new float3(0f, 1f, 0f));
+                    float3 cheapSeed = default;
+                    cheapSeed.x = -desired.x * 0.25f;
+                    cheapSeed.y = 1f;
+                    cheapSeed.z = -desired.z * 0.25f;
+                    float3 cheapNormal = math.normalizesafe(cheapSeed, upFallback);
                     float3 richNormal = Shinobu38MockTerrainSdf.SampleNormal(ahead);
                     float normalBlend = richNormalGate * quality * quality * (3f - (2f * quality));
-                    float3 normal = math.normalizesafe(math.lerp(cheapNormal, richNormal, normalBlend), new float3(0f, 1f, 0f));
+                    float3 normal = math.normalizesafe(math.lerp(cheapNormal, richNormal, normalBlend), upFallback);
                     float avoid01 = math.saturate((10f - sdf) * 0.1f);
-                    desired = math.normalizesafe(desired + normal * (tuning.ObstacleAvoidanceStrength * avoid01), new float3(0f, 0f, 1f));
+                    desired = math.normalizesafe(desired + normal * (tuning.ObstacleAvoidanceStrength * avoid01), forwardFallback);
                     frameFlags |= TelemetryFlagAvoidance;
                 }
 
@@ -2359,7 +2404,9 @@ namespace Hecton8.QA.Headless
                 MockRebaseSignal rebase = default;
                 if ((Frame & 2047u) == 1024u)
                 {
-                    rebase.OffsetAUP = new double3(100d, 0d, -100d);
+                    rebase.OffsetAUP.x = 100d;
+                    rebase.OffsetAUP.y = 0d;
+                    rebase.OffsetAUP.z = -100d;
                     rebase.Frame = Frame;
                     rebase.Flags = 1u;
                     vault.CurrentAUP += rebase.OffsetAUP;
@@ -2375,21 +2422,29 @@ namespace Hecton8.QA.Headless
                     }
                 }
 
-                float2 planar = math.normalizesafe(new float2(desired.x, desired.z), new float2(0f, 1f));
+                float2 planarSeed = default;
+                planarSeed.x = desired.x;
+                planarSeed.y = desired.z;
+                float2 planarFallback = default;
+                planarFallback.y = 1f;
+                float2 planar = math.normalizesafe(planarSeed, planarFallback);
                 uint inputMask = InputMaskSprint;
                 float firePhase = state.TestDuration - (math.floor(state.TestDuration / 30f) * 30f);
                 if (firePhase < 0.25f)
                     inputMask |= InputMaskPrimaryFire;
 
-                InputBuffer[0] = new InputStateDTO
-                {
-                    LookDelta = planar * 0.018f,
-                    MoveAxis = planar,
-                    ButtonMask = inputMask | InputMaskAutomation
-                };
+                InputStateDTO inputState = default;
+                inputState.LookDelta = planar * 0.018f;
+                inputState.MoveAxis = planar;
+                inputState.ButtonMask = inputMask | InputMaskAutomation;
+                InputBuffer[0] = inputState;
 
                 double3 localAfterMove = vault.CurrentAUP - state.CurrentTargetAUP;
-                double3 floatDowncast = state.CurrentTargetAUP + (double3)new float3((float)localAfterMove.x, (float)localAfterMove.y, (float)localAfterMove.z);
+                float3 localAfterMoveFloat = default;
+                localAfterMoveFloat.x = (float)localAfterMove.x;
+                localAfterMoveFloat.y = (float)localAfterMove.y;
+                localAfterMoveFloat.z = (float)localAfterMove.z;
+                double3 floatDowncast = state.CurrentTargetAUP + (double3)localAfterMoveFloat;
                 double3 jitter = vault.CurrentAUP - floatDowncast;
                 double jitterMeters = math.all(math.isfinite(jitter)) ? math.sqrt(math.lengthsq(jitter)) : 1d;
                 float jitterMm = (float)(jitterMeters * 1000d);
@@ -2398,13 +2453,12 @@ namespace Hecton8.QA.Headless
 
                 float frameTimeMs = math.max(0f, WallDeltaTime) * 1000f;
                 float gcDelta = math.max(0f, CurrentGcBytes - BaseGcBytes);
-                Snapshot[0] = new TelemetrySnapshotDTO
-                {
-                    FrameTimeMs = frameTimeMs,
-                    GcAllocBytes = gcDelta,
-                    VramUsed = (float)(CurrentVramBytes / (double)BytesPerMegabyte),
-                    AupJitterError = jitterMm
-                };
+                TelemetrySnapshotDTO snapshot = default;
+                snapshot.FrameTimeMs = frameTimeMs;
+                snapshot.GcAllocBytes = gcDelta;
+                snapshot.VramUsed = (float)(CurrentVramBytes / (double)BytesPerMegabyte);
+                snapshot.AupJitterError = jitterMm;
+                Snapshot[0] = snapshot;
 
                 if (SystemHealthIndex01 >= 0.9f)
                     flags |= VaultFlagSurvivalPressureEmergency;
@@ -2432,10 +2486,22 @@ namespace Hecton8.QA.Headless
         public static float3 SampleNormal(float3 point)
         {
             const float eps = 0.75f;
-            float dx = SampleDistance(point + new float3(eps, 0f, 0f)) - SampleDistance(point - new float3(eps, 0f, 0f));
-            float dy = SampleDistance(point + new float3(0f, eps, 0f)) - SampleDistance(point - new float3(0f, eps, 0f));
-            float dz = SampleDistance(point + new float3(0f, 0f, eps)) - SampleDistance(point - new float3(0f, 0f, eps));
-            return math.normalizesafe(new float3(dx, dy, dz), new float3(0f, 1f, 0f));
+            float3 xOffset = default;
+            xOffset.x = eps;
+            float3 yOffset = default;
+            yOffset.y = eps;
+            float3 zOffset = default;
+            zOffset.z = eps;
+            float dx = SampleDistance(point + xOffset) - SampleDistance(point - xOffset);
+            float dy = SampleDistance(point + yOffset) - SampleDistance(point - yOffset);
+            float dz = SampleDistance(point + zOffset) - SampleDistance(point - zOffset);
+            float3 normal = default;
+            normal.x = dx;
+            normal.y = dy;
+            normal.z = dz;
+            float3 fallback = default;
+            fallback.y = 1f;
+            return math.normalizesafe(normal, fallback);
         }
     }
 

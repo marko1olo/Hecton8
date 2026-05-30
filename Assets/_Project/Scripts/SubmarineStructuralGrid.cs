@@ -27,7 +27,7 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Physics/Submarine Structural Grid")]
-    public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, Hecton8.Gameplay.IDamageSignalReceiver, ISubmarineHullBreachReadModel, ISubmarineDamageControlTarget, ISubmarineRepairRoomResolver, IGlobalRegistryHotSwapListener
+    public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, ISlowTickable, Hecton8.Gameplay.IDamageSignalReceiver, ISubmarineHullBreachReadModel, ISubmarineDamageControlTarget, ISubmarineRepairRoomResolver, IGlobalRegistryHotSwapListener
     {
         private static int s_x001DirectSignalPushDropCount_SubmarineStructuralGrid;
 
@@ -527,6 +527,7 @@ namespace Hecton8.Physics
 
         private bool _registered;
         private bool _registeredLateFrame;
+        private bool _registeredSlowTick;
         private bool _damageReceiverRegistered;
         private bool _damageJobRunning;
         private bool _nativeStateReady;
@@ -625,6 +626,7 @@ namespace Hecton8.Physics
         private bool _mappingJobRunning;
         private bool _fatigueJobRunning;
         private bool _leakPlumeVisualDirty;
+        private bool _leakPlumeGpuResourceRepairRequested = true;
         private bool _fakeCrushDepthVisualDirty;
         // COLD ALLOC: float[8] - previous compartment pressures used to detect fatigue cycles - owner: SubmarineStructuralGrid
         private readonly float[] _previousCompartmentPressuresKPa = new float[CompartmentCapacity];
@@ -809,6 +811,11 @@ namespace Hecton8.Physics
             FlushQueuedBreachScreenSpaceFeedback();
             FlushLeakPlumeVisualSync();
             RenderLeakPlumeParticles();
+        }
+
+        public void SlowTick()
+        {
+            FlushLeakPlumeGpuResourceRepairSlow();
         }
 
         /// <summary>
@@ -1051,7 +1058,7 @@ namespace Hecton8.Physics
             GameObject sparkObject = new GameObject("PFX_SubmarineHull_ImpactSparks"); // COLD ALLOC: GameObject[1] - visual-only hull impact particle owner - owner: SubmarineStructuralGrid
             sparkObject.transform.SetParent(cachedTransform, false);
             _hullImpactSparkParticles = sparkObject.AddComponent<ParticleSystem>(); // COLD ALLOC: ParticleSystem[1] - pooled hull impact sparks - owner: SubmarineStructuralGrid
-            _hullImpactSparkRenderer = sparkObject.GetComponent<ParticleSystemRenderer>();
+            sparkObject.TryGetComponent(out _hullImpactSparkRenderer);
 
             ParticleSystem.MainModule main = _hullImpactSparkParticles.main;
             main.loop = false;
@@ -1471,9 +1478,10 @@ namespace Hecton8.Physics
 
                 _breachRepairJobLockMask = lockMask;
                 _breachRepairJobMutationGuardVault = breachRepairGuardVault;
+                bool scheduled = false;
                 try
                 {
-                    new BreachRepairJob
+                    BreachRepairJob repairJob = new BreachRepairJob
                     {
                         Breaches = breaches,
                         SeveritySum = severitySum,
@@ -1481,19 +1489,24 @@ namespace Hecton8.Physics
                         LocalHitPoint = _pendingRepairLocalPoint,
                         RepairDelta = math.max(0f, _pendingRepairSeverityDelta),
                         RepairRadiusSq = BreachRepairRadiusMeters * BreachRepairRadiusMeters
-                    }.Run();
-
-                    _activeBreachSeveritySum = math.max(0f, severitySum[0]);
-                    _breachGpuDirty = true;
+                    };
+                    _breachRepairJobHandle = repairJob.Schedule();
+                    _breachRepairJobRunning = true;
                     _pendingRepairQueued = false;
+                    H8Memory.RegisterActiveJob(VaultOwnerSystemId, _breachRepairJobHandle);
+                    JobHandle.ScheduleBatchedJobs();
+                    scheduled = true;
                 }
                 finally
                 {
-                    UnlockStructuralJobBuffers(_breachRepairJobLockMask, _breachRepairJobMutationGuardVault);
-                    _breachRepairJobLockMask = 0;
-                    _breachRepairJobMutationGuardVault = null;
-                    _breachRepairJobHandle = default;
-                    _breachRepairJobRunning = false;
+                    if (!scheduled)
+                    {
+                        UnlockStructuralJobBuffers(_breachRepairJobLockMask, _breachRepairJobMutationGuardVault);
+                        _breachRepairJobLockMask = 0;
+                        _breachRepairJobMutationGuardVault = null;
+                        _breachRepairJobHandle = default;
+                        _breachRepairJobRunning = false;
+                    }
                 }
             }
         }
@@ -1503,13 +1516,21 @@ namespace Hecton8.Physics
             if (!_breachRepairJobRunning)
                 return;
 
-            _breachRepairJobHandle = default;
-            _breachRepairJobRunning = false;
-            _activeBreachSeveritySum = RecalculateBreachSeveritySum();
-            UnlockStructuralJobBuffers(_breachRepairJobLockMask, _breachRepairJobMutationGuardVault);
-            _breachRepairJobLockMask = 0;
-            _breachRepairJobMutationGuardVault = null;
-            _breachGpuDirty = true;
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _breachRepairJobHandle))
+                return;
+
+            try
+            {
+                _activeBreachSeveritySum = RecalculateBreachSeveritySum();
+                _breachGpuDirty = true;
+            }
+            finally
+            {
+                _breachRepairJobRunning = false;
+                UnlockStructuralJobBuffers(_breachRepairJobLockMask, _breachRepairJobMutationGuardVault);
+                _breachRepairJobLockMask = 0;
+                _breachRepairJobMutationGuardVault = null;
+            }
         }
 
         private void CompactInactiveBreaches()
@@ -1675,8 +1696,11 @@ namespace Hecton8.Physics
             if (!TryResolveBreachBuffer(out var breaches) || leakPlumeCompute == null)
                 return;
 
-            if (!EnsureLeakPlumeGpuResources())
+            if (!HasLeakPlumeGpuResourcesReady())
+            {
+                QueueLeakPlumeGpuResourceRepair();
                 return;
+            }
 
             _visibleBreachCount = ResolveVisibleBreachCount();
             bool uploadedThisFrame = false;
@@ -1843,10 +1867,41 @@ namespace Hecton8.Physics
             if (_leakPlumeParticleBuffer == null)
                 _leakPlumeParticleBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(LeakPlumeParticleCapacity);
 
-            return _leakPlumeKernelIndex >= 0 &&
+            bool ready = _leakPlumeKernelIndex >= 0 &&
+                         _breachGpuBufferA != null &&
+                         _breachGpuBufferB != null &&
+                         _leakPlumeParticleBuffer != null;
+            if (ready)
+                _leakPlumeGpuResourceRepairRequested = false;
+
+            return ready;
+        }
+
+        private bool HasLeakPlumeGpuResourcesReady()
+        {
+            return leakPlumeCompute != null &&
+                   _coldSupportsComputeShaders &&
+                   _leakPlumeKernelIndex >= 0 &&
+                   _leakPlumeThreadGroupSizeX > 0 &&
                    _breachGpuBufferA != null &&
                    _breachGpuBufferB != null &&
                    _leakPlumeParticleBuffer != null;
+        }
+
+        private void QueueLeakPlumeGpuResourceRepair()
+        {
+            if (leakPlumeCompute != null && _coldSupportsComputeShaders)
+                _leakPlumeGpuResourceRepairRequested = true;
+        }
+
+        private void FlushLeakPlumeGpuResourceRepairSlow()
+        {
+            if (!_leakPlumeGpuResourceRepairRequested && HasLeakPlumeGpuResourcesReady())
+                return;
+
+            _leakPlumeGpuResourceRepairRequested = false;
+            if (!EnsureLeakPlumeGpuResources())
+                _leakPlumeGpuResourceRepairRequested = leakPlumeCompute != null && _coldSupportsComputeShaders;
         }
 
         private GraphicsBuffer ResolveWritableBreachGpuBuffer()
@@ -1862,6 +1917,7 @@ namespace Hecton8.Physics
             _leakPlumeKernelIndex = -1;
             _leakPlumeThreadGroupSizeX = 0;
             _activeBreachGpuBufferIndex = 0;
+            QueueLeakPlumeGpuResourceRepair();
         }
 
         private int ResolveKernelThreadGroupSizeX(ComputeShader compute, int kernel)
@@ -1880,6 +1936,7 @@ namespace Hecton8.Physics
         private void CacheGraphicsCapabilitiesCold()
         {
             _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
+            QueueLeakPlumeGpuResourceRepair();
         }
 
         private static int CeilDividePositive(int value, int divisor)
@@ -2885,9 +2942,10 @@ namespace Hecton8.Physics
             _pendingMappedCompartmentCount = compartmentCount;
             _mappingJobLockMask = lockMask;
             _mappingJobMutationGuardVault = mappingGuardVault;
+            bool scheduled = false;
             try
             {
-                new HullCompartmentMappingJob
+                HullCompartmentMappingJob mappingJob = new HullCompartmentMappingJob
                 {
                     CompartmentCentroids = compartmentCentroids,
                     CellCompartmentIndices = cellCompartmentIndices,
@@ -2897,19 +2955,25 @@ namespace Hecton8.Physics
                     GridDepth = math.max(1, gridDepth),
                     GridCenterLocal = localGridCenter,
                     GridSizeLocal = localGridSize
-                }.Run(cellCompartmentIndices.Length);
-
-                _mappedCompartmentCount = _pendingMappedCompartmentCount;
-                _pendingMappedCompartmentCount = 0;
-                return true;
+                };
+                _mappingJobHandle = mappingJob.Schedule(cellCompartmentIndices.Length, 64);
+                _mappingJobRunning = true;
+                H8Memory.RegisterActiveJob(VaultOwnerSystemId, _mappingJobHandle);
+                JobHandle.ScheduleBatchedJobs();
+                scheduled = true;
+                return false;
             }
             finally
             {
-                UnlockStructuralJobBuffers(_mappingJobLockMask, _mappingJobMutationGuardVault);
-                _mappingJobLockMask = 0;
-                _mappingJobMutationGuardVault = null;
-                _mappingJobHandle = default;
-                _mappingJobRunning = false;
+                if (!scheduled)
+                {
+                    UnlockStructuralJobBuffers(_mappingJobLockMask, _mappingJobMutationGuardVault);
+                    _mappingJobLockMask = 0;
+                    _mappingJobMutationGuardVault = null;
+                    _mappingJobHandle = default;
+                    _mappingJobRunning = false;
+                    _pendingMappedCompartmentCount = 0;
+                }
             }
         }
 
@@ -2918,12 +2982,21 @@ namespace Hecton8.Physics
             if (!_mappingJobRunning)
                 return;
 
-            _mappingJobHandle = default;
-            _mappingJobRunning = false;
-            _pendingMappedCompartmentCount = 0;
-            UnlockStructuralJobBuffers(_mappingJobLockMask, _mappingJobMutationGuardVault);
-            _mappingJobLockMask = 0;
-            _mappingJobMutationGuardVault = null;
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _mappingJobHandle))
+                return;
+
+            try
+            {
+                _mappedCompartmentCount = _pendingMappedCompartmentCount;
+            }
+            finally
+            {
+                _mappingJobRunning = false;
+                _pendingMappedCompartmentCount = 0;
+                UnlockStructuralJobBuffers(_mappingJobLockMask, _mappingJobMutationGuardVault);
+                _mappingJobLockMask = 0;
+                _mappingJobMutationGuardVault = null;
+            }
         }
 
         private void ApplyPressureCycleFatigue()
@@ -3029,9 +3102,10 @@ namespace Hecton8.Physics
 
             _fatigueJobLockMask = lockMask;
             _fatigueJobMutationGuardVault = fatigueGuardVault;
+            bool scheduled = false;
             try
             {
-                new HullFatigueCompartmentJob
+                HullFatigueCompartmentJob fatigueJob = new HullFatigueCompartmentJob
                 {
                     CellCompartmentIndices = cellCompartmentIndices,
                     CellIntegrityFront = cellIntegrityFront,
@@ -3041,17 +3115,23 @@ namespace Hecton8.Physics
                     FatigueIntegrityLossPerCycle = fatigueLossPerCycle,
                     PeakNormalized = peakResult,
                     CellCount = cellIntegrityFront.Length
-                }.Run();
-
-                _fatiguePeakNormalized = math.max(_fatiguePeakNormalized, peakResult[0]);
+                };
+                _fatigueJobHandle = fatigueJob.Schedule();
+                _fatigueJobRunning = true;
+                H8Memory.RegisterActiveJob(VaultOwnerSystemId, _fatigueJobHandle);
+                JobHandle.ScheduleBatchedJobs();
+                scheduled = true;
             }
             finally
             {
-                UnlockStructuralJobBuffers(_fatigueJobLockMask, _fatigueJobMutationGuardVault);
-                _fatigueJobLockMask = 0;
-                _fatigueJobMutationGuardVault = null;
-                _fatigueJobHandle = default;
-                _fatigueJobRunning = false;
+                if (!scheduled)
+                {
+                    UnlockStructuralJobBuffers(_fatigueJobLockMask, _fatigueJobMutationGuardVault);
+                    _fatigueJobLockMask = 0;
+                    _fatigueJobMutationGuardVault = null;
+                    _fatigueJobHandle = default;
+                    _fatigueJobRunning = false;
+                }
             }
         }
 
@@ -3060,11 +3140,21 @@ namespace Hecton8.Physics
             if (!_fatigueJobRunning)
                 return;
 
-            _fatigueJobHandle = default;
-            _fatigueJobRunning = false;
-            UnlockStructuralJobBuffers(_fatigueJobLockMask, _fatigueJobMutationGuardVault);
-            _fatigueJobLockMask = 0;
-            _fatigueJobMutationGuardVault = null;
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _fatigueJobHandle))
+                return;
+
+            try
+            {
+                if (TryResolveVaultBuffer(_dataVault, in _fatiguePeakResultHandle, 1, out NativeArray<float> peakResult))
+                    _fatiguePeakNormalized = math.max(_fatiguePeakNormalized, peakResult[0]);
+            }
+            finally
+            {
+                _fatigueJobRunning = false;
+                UnlockStructuralJobBuffers(_fatigueJobLockMask, _fatigueJobMutationGuardVault);
+                _fatigueJobLockMask = 0;
+                _fatigueJobMutationGuardVault = null;
+            }
         }
 
         private void ScheduleDamageJob()
@@ -3129,9 +3219,10 @@ namespace Hecton8.Physics
                 _queuedImpactCount = 0;
                 _damageJobLockMask = lockMask;
                 _damageJobMutationGuardVault = damageGuardVault;
+                bool scheduled = false;
                 try
                 {
-                    new HullDamageDiffusionJob
+                    HullDamageDiffusionJob damageJob = new HullDamageDiffusionJob
                     {
                         InputIntegrity = cellIntegrityFront,
                         CellCompartmentIndices = cellCompartmentIndices,
@@ -3147,30 +3238,25 @@ namespace Hecton8.Physics
                         GridCenterLocal = localGridCenter,
                         GridSizeLocal = localGridSize,
                         CellBreachAreaSquareMeters = _cellBreachAreaSquareMeters
-                    }.Run();
+                    };
+                    _damageJobHandle = damageJob.Schedule();
+                    _damageJobRunning = true;
+                    H8Memory.RegisterActiveJob(VaultOwnerSystemId, _damageJobHandle);
+                    JobHandle.ScheduleBatchedJobs();
+                    scheduled = true;
                 }
                 finally
                 {
-                    UnlockStructuralJobBuffers(_damageJobLockMask, _damageJobMutationGuardVault);
-                    _damageJobLockMask = 0;
-                    _damageJobMutationGuardVault = null;
-                    _damageJobHandle = default;
-                    _damageJobRunning = false;
+                    if (!scheduled)
+                    {
+                        UnlockStructuralJobBuffers(_damageJobLockMask, _damageJobMutationGuardVault);
+                        _damageJobLockMask = 0;
+                        _damageJobMutationGuardVault = null;
+                        _damageJobHandle = default;
+                        _damageJobRunning = false;
+                        _scheduledImpactCount = 0;
+                    }
                 }
-
-                _scheduledImpactCount = 0;
-
-                VaultGenerationHandle<byte> integrityFront = _cellIntegrityFrontHandle;
-                _cellIntegrityFrontHandle = _cellIntegrityBackHandle;
-                _cellIntegrityBackHandle = integrityFront;
-
-                VaultGenerationHandle<ulong> breachMaskFront = _hullBreachMaskFrontHandle;
-                _hullBreachMaskFrontHandle = _hullBreachMaskBackHandle;
-                _hullBreachMaskBackHandle = breachMaskFront;
-
-                VaultGenerationHandle<float> breachAreaFront = _compartmentBreachAreasFrontHandle;
-                _compartmentBreachAreasFrontHandle = _compartmentBreachAreasBackHandle;
-                _compartmentBreachAreasBackHandle = breachAreaFront;
             }
         }
 
@@ -3181,30 +3267,37 @@ namespace Hecton8.Physics
 
             using (_damageConsumeProfilerMarker.Auto())
             {
-                _damageJobHandle = default;
-                _damageJobRunning = false;
-                _scheduledImpactCount = 0;
-                UnlockStructuralJobBuffers(_damageJobLockMask, _damageJobMutationGuardVault);
-                _damageJobLockMask = 0;
-                _damageJobMutationGuardVault = null;
+                if (!DispatcherJobFence.TryFinalizeCompleted(ref _damageJobHandle))
+                    return;
 
-                VaultGenerationHandle<byte> integrityFront = _cellIntegrityFrontHandle;
-                _cellIntegrityFrontHandle = _cellIntegrityBackHandle;
-                _cellIntegrityBackHandle = integrityFront;
+                try
+                {
+                    VaultGenerationHandle<byte> integrityFront = _cellIntegrityFrontHandle;
+                    _cellIntegrityFrontHandle = _cellIntegrityBackHandle;
+                    _cellIntegrityBackHandle = integrityFront;
 
-                VaultGenerationHandle<ulong> breachMaskFront = _hullBreachMaskFrontHandle;
-                _hullBreachMaskFrontHandle = _hullBreachMaskBackHandle;
-                _hullBreachMaskBackHandle = breachMaskFront;
+                    VaultGenerationHandle<ulong> breachMaskFront = _hullBreachMaskFrontHandle;
+                    _hullBreachMaskFrontHandle = _hullBreachMaskBackHandle;
+                    _hullBreachMaskBackHandle = breachMaskFront;
 
-                VaultGenerationHandle<float> breachAreaFront = _compartmentBreachAreasFrontHandle;
-                _compartmentBreachAreasFrontHandle = _compartmentBreachAreasBackHandle;
-                _compartmentBreachAreasBackHandle = breachAreaFront;
+                    VaultGenerationHandle<float> breachAreaFront = _compartmentBreachAreasFrontHandle;
+                    _compartmentBreachAreasFrontHandle = _compartmentBreachAreasBackHandle;
+                    _compartmentBreachAreasBackHandle = breachAreaFront;
+                }
+                finally
+                {
+                    _damageJobRunning = false;
+                    _scheduledImpactCount = 0;
+                    UnlockStructuralJobBuffers(_damageJobLockMask, _damageJobMutationGuardVault);
+                    _damageJobLockMask = 0;
+                    _damageJobMutationGuardVault = null;
+                }
             }
         }
 
         private void TryRegister()
         {
-            if ((_registered && _registeredLateFrame) || !Application.isPlaying)
+            if ((_registered && _registeredLateFrame && _registeredSlowTick) || !Application.isPlaying)
                 return;
             if (GlobalRegistry.Dispatcher == null)
                 return;
@@ -3218,11 +3311,14 @@ namespace Hecton8.Physics
 
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
-            if (!_registered && !_registeredLateFrame)
+            if (!_registered && !_registeredLateFrame && !_registeredSlowTick)
                 return;
 
             if (_registered)
@@ -3236,6 +3332,12 @@ namespace Hecton8.Physics
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrame = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
             }
         }
 
@@ -3260,6 +3362,7 @@ namespace Hecton8.Physics
             {
                 _registered = false;
                 _registeredLateFrame = false;
+                _registeredSlowTick = false;
                 if (currentService != null && isActiveAndEnabled)
                     TryRegister();
             }
@@ -3285,6 +3388,7 @@ namespace Hecton8.Physics
 
         private void DisposeNativeStateDeferred()
         {
+            CompleteStructuralJobsForTeardown();
             UnlockStructuralJobBuffers(_damageJobLockMask, _damageJobMutationGuardVault);
             UnlockStructuralJobBuffers(_mappingJobLockMask, _mappingJobMutationGuardVault);
             UnlockStructuralJobBuffers(_fatigueJobLockMask, _fatigueJobMutationGuardVault);
@@ -3341,6 +3445,33 @@ namespace Hecton8.Physics
             _activeBreachSeveritySum = 0f;
             _pendingRepairQueued = false;
             _breachGpuDirty = true;
+        }
+
+        private void CompleteStructuralJobsForTeardown()
+        {
+            if (_damageJobRunning)
+            {
+                DispatcherJobFence.TryComplete(ref _damageJobHandle, forceComplete: true);
+                _damageJobRunning = false;
+            }
+
+            if (_mappingJobRunning)
+            {
+                DispatcherJobFence.TryComplete(ref _mappingJobHandle, forceComplete: true);
+                _mappingJobRunning = false;
+            }
+
+            if (_fatigueJobRunning)
+            {
+                DispatcherJobFence.TryComplete(ref _fatigueJobHandle, forceComplete: true);
+                _fatigueJobRunning = false;
+            }
+
+            if (_breachRepairJobRunning)
+            {
+                DispatcherJobFence.TryComplete(ref _breachRepairJobHandle, forceComplete: true);
+                _breachRepairJobRunning = false;
+            }
         }
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)

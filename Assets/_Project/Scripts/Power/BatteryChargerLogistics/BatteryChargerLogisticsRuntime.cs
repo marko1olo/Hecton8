@@ -43,9 +43,6 @@ namespace Hecton8.Power
             MutationGuardBit(BatteryChargerLogisticsBufferIds.Tuning);
         private static readonly ulong ProfileImportMutationGuardMask =
             MutationGuardBit(BatteryChargerLogisticsBufferIds.Profiles);
-        private static readonly ulong CsvImportMutationGuardMask =
-            MutationGuardBit(BatteryChargerLogisticsBufferIds.CsvScratch) |
-            MutationGuardBit(BatteryChargerLogisticsBufferIds.Profiles);
         private static readonly ulong LinkMutationGuardMask =
             MutationGuardBit(BatteryChargerLogisticsBufferIds.Links) |
             MutationGuardBit(BatteryChargerLogisticsBufferIds.LinkAup) |
@@ -67,6 +64,11 @@ namespace Hecton8.Power
             MutationGuardBit(PowerGridBufferIds.Nodes) |
             MutationGuardBit(PowerGridBufferIds.NodeAup) |
             MutationGuardBit(BatteryChargerLogisticsBufferIds.Tuning);
+#if UNITY_EDITOR
+        private static readonly byte[] s_profileCsvScratchCold = new byte[BatteryChargerLogisticsConstants.CsvScratchBytes];
+        private static readonly ChargerProfileDTO[] s_profileImportScratch = new ChargerProfileDTO[BatteryChargerLogisticsConstants.DefaultProfileCapacity];
+        private static int s_profileCsvScratchBusy;
+#endif
 
         private readonly string _dumpPath;
         private readonly string _csvPath;
@@ -147,7 +149,7 @@ namespace Hecton8.Power
         private BatteryChargerLogisticsRuntime()
         {
             string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            _dumpPath = Path.GetFullPath(Path.Combine(projectRoot, DumpRelativePath));
+            _dumpPath = DumpRelativePath;
             _csvPath = Path.GetFullPath(Path.Combine(projectRoot, CsvRelativePath));
             _preSimulationPhase = new PreSimulationPhaseSystem(this);
             _simulationPhase = new SimulationPhaseSystem(this);
@@ -529,22 +531,35 @@ namespace Hecton8.Power
             IDataVault vault = runtime.ResolveCachedVault();
             if (vault == null || !runtime.EnsureVaultState(vault, requireDefaults: false) ||
                 runtime._simulationScheduled ||
-                runtime._mockGenerationScheduled ||
-                !vault.TryAcquireMutationGuard(ProfileImportMutationGuardMask))
+                runtime._mockGenerationScheduled)
             {
                 return false;
             }
 
+            if (Interlocked.CompareExchange(ref s_profileCsvScratchBusy, 1, 0) != 0)
+                return false;
+
+            bool guardAcquired = false;
             try
             {
+                if (!BatteryChargerProfileCsvParser.TryParseProfiles(csv, s_profileImportScratch.AsSpan(), out int profileCount))
+                    return false;
+
+                if (!vault.TryAcquireMutationGuard(ProfileImportMutationGuardMask))
+                    return false;
+
+                guardAcquired = true;
                 if (!runtime.Resolve(in runtime._handles.Profiles, out NativeArray<ChargerProfileDTO> profiles))
                     return false;
 
-                return BatteryChargerProfileCsvParser.TryParseProfiles(csv, profiles, out _);
+                CommitProfilesCsv(s_profileImportScratch.AsSpan(), profileCount, profiles);
+                return true;
             }
             finally
             {
-                vault.ReleaseMutationGuard(ProfileImportMutationGuardMask);
+                if (guardAcquired)
+                    vault.ReleaseMutationGuard(ProfileImportMutationGuardMask);
+                Volatile.Write(ref s_profileCsvScratchBusy, 0);
             }
         }
 #endif
@@ -966,6 +981,9 @@ namespace Hecton8.Power
             bool emitHum = false;
             double3 humAup = default;
             ChargerAtomicCountersDTO humAggregate = default;
+            NativeArray<byte> dumpPayload = default;
+            int dumpByteCount = 0;
+            bool dumpPending = false;
             try
             {
                 if (Resolve(in _handles.AtomicCounters, out NativeArray<ChargerAtomicCountersDTO> counters) &&
@@ -987,7 +1005,7 @@ namespace Hecton8.Power
                          (aggregate.FaultFlags & BatteryChargerLogisticsConstants.TelemetryFlagNaN) != 0u) &&
                         !_dumpWrittenThisFault)
                     {
-                        WriteDump(telemetry, cursor);
+                        dumpPending = TryBuildDumpPayload(telemetry, cursor, out dumpPayload, out dumpByteCount);
                     }
 
                     if (_lastFenceElapsedMicroseconds <= BatteryChargerLogisticsConstants.FaultDumpFenceElapsedThresholdMicroseconds &&
@@ -1000,6 +1018,21 @@ namespace Hecton8.Power
             finally
             {
                 UnlockJobBuffers();
+            }
+
+            if (dumpPending)
+            {
+                try
+                {
+                    _dumpWrittenThisFault = NativeFaultDumpWriter.TryWriteAll(_dumpPath, dumpPayload, dumpByteCount);
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref dumpPayload,
+                        nameof(BatteryChargerLogisticsRuntime),
+                        "batteryChargerBlackBoxPayload");
+                }
             }
 
             if (emitHum)
@@ -1668,26 +1701,57 @@ namespace Hecton8.Power
                    math.isfinite(signal.PositionAup.LocalZ);
         }
 
-        private void WriteDump(NativeArray<ChargerTelemetryEntry> telemetry, NativeArray<uint> cursor)
+        private static unsafe bool TryBuildDumpPayload(
+            NativeArray<ChargerTelemetryEntry> telemetry,
+            NativeArray<uint> cursor,
+            out NativeArray<byte> payload,
+            out int byteCount)
         {
-            _dumpWrittenThisFault = true;
-            string directory = Path.GetDirectoryName(_dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
+            payload = default;
+            byteCount = 0;
+            if (!telemetry.IsCreated)
+                return false;
 
-            using FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
             Span<byte> header = stackalloc byte[20];
             WriteUInt64LittleEndian(header, 0, 0x534832333044554DuL); // SH230DUM
             WriteUInt32LittleEndian(header, 8, 1u);
             WriteUInt32LittleEndian(header, 12, (uint)telemetry.Length);
             WriteUInt32LittleEndian(header, 16, cursor.Length > 0 ? cursor[0] : 0u);
-            stream.Write(header);
 
-            if (telemetry.Length > 0)
+            int entrySize = UnsafeUtility.SizeOf<ChargerTelemetryEntry>();
+            long totalBytes = header.Length + ((long)telemetry.Length * entrySize);
+            if (totalBytes < header.Length || totalBytes > int.MaxValue)
+                return false;
+
+            payload = NativeFaultDumpWriter.CreateTransientPayload(
+                (int)totalBytes,
+                nameof(BatteryChargerLogisticsRuntime),
+                "batteryChargerBlackBoxPayload");
+            try
             {
-                void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                int byteLength = telemetry.Length * UnsafeUtility.SizeOf<ChargerTelemetryEntry>();
-                stream.Write(new ReadOnlySpan<byte>(telemetryPtr, byteLength));
+                for (int i = 0; i < header.Length; i++)
+                    payload[i] = header[i];
+
+                if (telemetry.Length > 0)
+                {
+                    void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                    void* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload) + header.Length;
+                    UnsafeUtility.MemCpy(destination, telemetryPtr, telemetry.Length * entrySize);
+                }
+
+                byteCount = (int)totalBytes;
+                return true;
+            }
+            catch
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(BatteryChargerLogisticsRuntime),
+                    "batteryChargerBlackBoxPayload");
+
+                payload = default;
+                byteCount = 0;
+                return false;
             }
         }
 
@@ -1744,46 +1808,79 @@ namespace Hecton8.Power
             if (vault == null)
                 return;
 
-            if (!vault.TryAcquireMutationGuard(CsvImportMutationGuardMask))
-            {
+            if (Interlocked.CompareExchange(ref s_profileCsvScratchBusy, 1, 0) != 0)
                 return;
-            }
 
             try
             {
-                if (!Resolve(in _handles.CsvScratch, out NativeArray<byte> scratch) ||
-                    !Resolve(in _handles.Profiles, out NativeArray<ChargerProfileDTO> profiles) ||
-                    !scratch.IsCreated ||
-                    !profiles.IsCreated ||
-                    scratch.Length <= 0)
+                int totalRead = ReadCsvBytesCold(_csvPath, s_profileCsvScratchCold);
+                if (totalRead <= 0)
+                    return;
+
+                if (!BatteryChargerProfileCsvParser.TryParseProfiles(
+                        s_profileCsvScratchCold.AsSpan(0, totalRead),
+                        s_profileImportScratch.AsSpan(),
+                        out int profileCount))
                 {
                     return;
                 }
 
-                using FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                long fileLength = stream.Length < 0L ? 0L : stream.Length;
-                int safeLength = fileLength > scratch.Length ? scratch.Length : (int)fileLength;
-                if (safeLength <= 0)
+                if (!vault.TryAcquireMutationGuard(ProfileImportMutationGuardMask))
                     return;
 
-                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
-                Span<byte> bytes = new Span<byte>(scratchPtr, safeLength);
-                int totalRead = 0;
-                while (totalRead < safeLength)
+                try
                 {
-                    int read = stream.Read(bytes.Slice(totalRead));
-                    if (read <= 0)
-                        break;
-                    totalRead += read;
-                }
+                    if (!Resolve(in _handles.Profiles, out NativeArray<ChargerProfileDTO> profiles) ||
+                        !profiles.IsCreated)
+                    {
+                        return;
+                    }
 
-                if (totalRead > 0 && BatteryChargerProfileCsvParser.TryParseProfiles(bytes.Slice(0, totalRead), profiles, out _))
+                    CommitProfilesCsv(s_profileImportScratch.AsSpan(), profileCount, profiles);
                     _csvLastWriteUtc = lastWrite;
+                }
+                finally
+                {
+                    vault.ReleaseMutationGuard(ProfileImportMutationGuardMask);
+                }
             }
             finally
             {
-                vault.ReleaseMutationGuard(CsvImportMutationGuardMask);
+                Volatile.Write(ref s_profileCsvScratchBusy, 0);
             }
+        }
+
+        private static int ReadCsvBytesCold(string path, byte[] scratch)
+        {
+            using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            long fileLength = stream.Length < 0L ? 0L : stream.Length;
+            int safeLength = fileLength > scratch.Length ? scratch.Length : (int)fileLength;
+            if (safeLength <= 0)
+                return 0;
+
+            int totalRead = 0;
+            while (totalRead < safeLength)
+            {
+                int read = stream.Read(scratch, totalRead, safeLength - totalRead);
+                if (read <= 0)
+                    break;
+                totalRead += read;
+            }
+
+            return totalRead;
+        }
+
+        private static void CommitProfilesCsv(
+            ReadOnlySpan<ChargerProfileDTO> parsedProfiles,
+            int parsedCount,
+            NativeArray<ChargerProfileDTO> profiles)
+        {
+            int safeCount = math.min(math.min(parsedCount, parsedProfiles.Length), profiles.Length);
+            for (int i = 0; i < safeCount; i++)
+                profiles[i] = parsedProfiles[i];
+
+            for (int i = safeCount; i < profiles.Length; i++)
+                profiles[i] = default;
         }
 #endif
 

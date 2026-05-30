@@ -1,0 +1,646 @@
+﻿{
+    "generatedAt":  "2026-05-28T04:57:39.9514927+04:00",
+    "status":  "WARNING_SUPPRESSION_DEBT_RECORDED_NOT_FIXED_STRICT_AUDIT_AVAILABLE",
+    "scannedCSharpFiles":  2455,
+    "counts":  {
+                   "pragmaWarningDisable":  101,
+                   "noWarn":  3,
+                   "msbuildWarningsAsMessages":  1,
+                   "msb3277":  2
+               },
+    "totalRecords":  105,
+    "strictAuditSwitch":  "Docs/AgentLogs/StrictWarningAudit_1400.json",
+    "strictCompileWrapperArgument":  "/p:HectonStrictWarningAudit=true",
+    "records":  [
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\AcousticZoneController.cs",
+                        "line":  504,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\AcousticZoneController.cs",
+                        "line":  512,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\AcousticZoneController.cs",
+                        "line":  597,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\AutomationSmokeTester.cs",
+                        "line":  16,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\BarterRuntimeSmokeTester.cs",
+                        "line":  34,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\BiomeMatrixDirector.cs",
+                        "line":  685,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\BiomeMatrixDirector.cs",
+                        "line":  688,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\CraftingRuntimeSmokeTester.cs",
+                        "line":  18,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\FieldToolRuntimeSmokeTester.cs",
+                        "line":  47,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\HectonNarrativeDirector.cs",
+                        "line":  29,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414 // slowTickRate reserved for future SlowTick throttling"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\HectonNarrativeDirector.cs",
+                        "line":  78,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
+                        "line":  1080,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\HectonPlayerMovement.cs",
+                        "line":  1095,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\HectonRockManager.cs",
+                        "line":  55,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\HectonUnderwaterVisuals.cs",
+                        "line":  584,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\ItemCatalog.cs",
+                        "line":  52,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0649 // Unity serializes this authoring payload; fields are assigned from catalog assets."
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\ObjectPoolManager.cs",
+                        "line":  68,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0649 // Unity serializes warmup presets from scene/prefab authoring data."
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\OmegaSurvivalKinematicsSmokeTester.cs",
+                        "line":  34,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\SaveRecoverySmokeTester.cs",
+                        "line":  65,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\SaveSystemRuntimeSmokeTester.cs",
+                        "line":  49,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\ScatterBudgetController.cs",
+                        "line":  62,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\SubmarineAtmosphereSystem.cs",
+                        "line":  1147,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0649 // Unity serializes room definitions from submarine authoring data."
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\SubmarineAtmosphereSystem.cs",
+                        "line":  1502,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\SubmarineAtmosphereSystem.cs",
+                        "line":  1507,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\SubmarineAtmosphereSystem.cs",
+                        "line":  1619,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\SubmarineAtmosphereSystem.cs",
+                        "line":  1624,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\SubmarineAtmosphereSystem.cs",
+                        "line":  1629,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\SubmarineAtmosphereSystem.cs",
+                        "line":  1635,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\SubmarineFluidDynamics.cs",
+                        "line":  193,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0649"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\SurvivalKinematicsSmokeTester.cs",
+                        "line":  43,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\TetherManager.cs",
+                        "line":  92,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\ThermalSurvivalSmokeTester.cs",
+                        "line":  35,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\VisualBudgetSmokeTester.cs",
+                        "line":  35,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\VisualCascadeSmokeTester.cs",
+                        "line":  35,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\VisualOmegaSmokeTester.cs",
+                        "line":  28,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\VoxelDeltaPersistenceDTO.cs",
+                        "line":  14,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0649"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\WorldGenerativeGeologyTerrainSeamApplier.cs",
+                        "line":  22,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0649"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\WorldGenerativeGeologyTerrainSeamApplier.cs",
+                        "line":  134,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\WorldInterestDirector.cs",
+                        "line":  39,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\WorldProceduralScatterDirector.cs",
+                        "line":  312,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\WorldProceduralScatterDirector.cs",
+                        "line":  343,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\WorldStreamingDirector.cs",
+                        "line":  96,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\AtlasSignal\\Atlas6DirectiveSystem.cs",
+                        "line":  816,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Audio\\HectonSensoryKernelNativeBridge.cs",
+                        "line":  61,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0169"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Audio\\NativeAudioFrameRingBuffer.cs",
+                        "line":  55,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0169"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Audio\\PlayerCriticalProceduralAudioRenderer.cs",
+                        "line":  2058,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0649 // DSP state fields are intentionally zero-initialized and written by the procedural audio integrator."
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Audio\\Synthesis\\DepthStressGranularSynthesisKernel.cs",
+                        "line":  318,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0169"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Audio\\Synthesis\\DepthStressGranularSynthesisKernel.cs",
+                        "line":  351,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0169"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Audio\\Synthesis\\DepthStressGranularSynthesisKernel.cs",
+                        "line":  643,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0169"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Audio\\Synthesis\\HullStressGranularDspKernel.cs",
+                        "line":  36,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0169"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Audio\\Synthesis\\HullStressGranularDspKernel.cs",
+                        "line":  66,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0169"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Audio\\Synthesis\\HullStressGranularDspKernel.cs",
+                        "line":  87,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0169"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Audio\\Synthesis\\HullStressGranularDspKernel.cs",
+                        "line":  112,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0169"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Bootstrap\\GameBootstrapper.cs",
+                        "line":  532,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Core\\HomeostasisBrain.ScalabilityDictator.cs",
+                        "line":  257,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Core\\NativeArenaArray.cs",
+                        "line":  29,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Core\\Memory\\GlobalDataVault.cs",
+                        "line":  825,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0618"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Core\\Memory\\GlobalDataVault.cs",
+                        "line":  849,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0618"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Core\\Memory\\GlobalDataVault.cs",
+                        "line":  5551,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0649"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Dev\\CelestialCataclysmSmokeTester.cs",
+                        "line":  64,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Dev\\CelestialTimeLapseDebugger.cs",
+                        "line":  20,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Dev\\ShellVerificationRuntimeSmokeTester.cs",
+                        "line":  54,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Economy\\ResourceRecyclerModule.cs",
+                        "line":  56,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Economy\\ResourceScarcityDirector.cs",
+                        "line":  50,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0649 // Unity serializes scarcity directive definitions from authoring data."
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Editor\\OutpostFailSafeHandoffValidator.cs",
+                        "line":  806,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0649"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Editor\\VaultHandleLayoutVerifier.cs",
+                        "line":  38,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0618"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Editor\\DataMonolith\\H8DataMonolithCompiler.cs",
+                        "line":  3944,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0649"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Gameplay\\ContextualPhysicalIkRig.cs",
+                        "line":  970,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0649 // Unity serializes IK authoring chains from character rig data."
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Gameplay\\ContextualPhysicalIkRig.cs",
+                        "line":  1009,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0649 // Unity serializes IK authoring chains from character rig data."
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Gameplay\\ContextualPhysicalIkRig.cs",
+                        "line":  1034,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0649 // Unity serializes IK authoring chains from character rig data."
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Gameplay\\HeavyTowWinch.cs",
+                        "line":  52,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Gameplay\\HeavyTowWinch.cs",
+                        "line":  165,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Gameplay\\ToxinHazard.cs",
+                        "line":  7,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Interaction\\PhysicalHandController.cs",
+                        "line":  176,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Interaction\\PhysicalInteractionHandler.cs",
+                        "line":  160,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\ModdingAPI\\HectonAPI.cs",
+                        "line":  293,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0618"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\ModdingAPI\\ModCommandDispatcher.cs",
+                        "line":  13,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0618"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\ModdingAPI\\ModCommandDispatcher.cs",
+                        "line":  246,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0649"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\ModdingAPI\\ModSpatialContracts.cs",
+                        "line":  5,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0618"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Plugins\\Crest\\CelestialSyncSmokeTester.cs",
+                        "line":  39,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Plugins\\MapMagic\\MapMagicRuntimeBridge.cs",
+                        "line":  153,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Progression\\NarrativeProgressionBridge.cs",
+                        "line":  48,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0649 // Unity serialization assigns marker authoring fields."
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Tools\\ToolDurabilitySystem.cs",
+                        "line":  187,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0649 // Assigned through object initializers before queued drain; compiler does not track array-backed command staging."
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Tools\\ToolDurabilitySystem.cs",
+                        "line":  217,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0649 // Reserved padding keeps native item-state layout stable for future flags."
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\UI\\PDAEncyclopediaStreamer.cs",
+                        "line":  263,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Vehicles\\VFX\\HullDentShaderController.cs",
+                        "line":  40,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\VFX\\CameraJuiceSystem.cs",
+                        "line":  162,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\VFX\\VolumetricFogContracts.cs",
+                        "line":  89,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0618"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\VFX\\Bioluminescence\\BiolumPulseSyncRuntime.cs",
+                        "line":  88,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0169"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\VFX\\Materials\\MaterialDecayRuntime.cs",
+                        "line":  80,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Visor\\DiegeticVisorLensRuntime.cs",
+                        "line":  94,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Visor\\DynamicDecalVaultRuntime.cs",
+                        "line":  293,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\Visor\\SuitHUDScreenCompositor.cs",
+                        "line":  42,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\World\\GPUScatterDirector.cs",
+                        "line":  144,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0649 // GPU buffer layout payload; compute/render code writes these fields outside managed C# assignment."
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\World\\HectonIndirectVegetationRenderer.cs",
+                        "line":  205,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\World\\HectonIndirectVegetationRenderer.cs",
+                        "line":  299,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\World\\HectonMapMagicVegetationBridge.cs",
+                        "line":  340,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\World\\SargassumMicroFaunaBoids.cs",
+                        "line":  1546,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414"
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\World\\WreckMaterialRegistry.cs",
+                        "line":  37,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0649 // Unity serializes module render contracts from authored registry data."
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\World\\Biolum\\HectonBiolumManager.cs",
+                        "line":  23,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable CS0414 // Placeholder serialized tuning kept for future global-light budget wiring."
+                    },
+                    {
+                        "path":  "Assets\\_Project\\Scripts\\World\\Resources\\ProceduralGeologyContracts.cs",
+                        "line":  13,
+                        "kind":  "pragmaWarningDisable",
+                        "text":  "#pragma warning disable 0169"
+                    },
+                    {
+                        "path":  "Directory.Build.targets",
+                        "line":  19,
+                        "kind":  "noWarn",
+                        "text":  "\u003cNoWarn\u003e$(NoWarn);0108;0169;0414;0436;0618;0619;0649;2008;UNT0006\u003c/NoWarn\u003e"
+                    },
+                    {
+                        "path":  "Directory.Build.targets",
+                        "line":  106,
+                        "kind":  "noWarn",
+                        "text":  "\u003cNoWarn Condition=\"\u0027$(HectonStrictWarningAudit)\u0027 != \u0027true\u0027\"\u003e$(NoWarn);0067;0169;0414;0436;0618;0649;2002\u003c/NoWarn\u003e"
+                    },
+                    {
+                        "path":  "Directory.Build.targets",
+                        "line":  112,
+                        "kind":  "noWarn",
+                        "text":  "\u003cNoWarn\u003e$(NoWarn);MSB3277\u003c/NoWarn\u003e"
+                    },
+                    {
+                        "path":  "Directory.Build.targets",
+                        "line":  113,
+                        "kind":  "msbuildWarningsAsMessages",
+                        "text":  "\u003cMSBuildWarningsAsMessages\u003e$(MSBuildWarningsAsMessages);MSB3277\u003c/MSBuildWarningsAsMessages\u003e"
+                    }
+                ]
+}

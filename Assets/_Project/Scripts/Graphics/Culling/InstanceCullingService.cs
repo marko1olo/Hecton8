@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
@@ -36,7 +35,10 @@ namespace Hecton8.Graphics.Culling
         private const uint TelemetryOverloadFlag = 1u << 1;
         private const uint TelemetryAupShiftFlag = 1u << 2;
         private const uint TelemetryDispatchFlag = 1u << 3;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_HLOD_INSTANCE_CULLING.bin";
+        private const uint TelemetryDumpMagic = 0x4943554Cu; // ICUL
+        private const uint TelemetryDumpVersion = 1u;
+        private const int TelemetryDumpHeaderBytes = 32;
+        private const string TelemetryDumpPath = "Docs/AgentLogs/Dump_INSTANCE_CULLING_SERVICE.bin";
         private const SystemID VaultOwnerSystemId = SystemID.GraphicsScalability;
         private const BufferID TelemetryRingBufferId = BufferID.InstanceCullingTelemetryRing;
 
@@ -75,7 +77,7 @@ namespace Hecton8.Graphics.Culling
 
         [SerializeField]
         [Tooltip("Issue delayed AsyncGPUReadback of indirect args for black-box telemetry only.")]
-        private bool _enableTelemetryReadback = true;
+        private bool _enableTelemetryReadback;
 
         private ComputeShader _activeComputeShader;
         private GraphicsBuffer _visibleInstancesBuffer;
@@ -666,31 +668,76 @@ namespace Hecton8.Graphics.Culling
                 return;
 
             _dumpedInvalidState = true;
-            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath));
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
+            WriteBlackBox(telemetryRing, _telemetryWriteIndex);
+        }
 
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+        private static unsafe void WriteBlackBox(NativeArray<InstanceCullingTelemetryEntry>.ReadOnly telemetryRing, int telemetryWriteIndex)
+        {
+            if (!telemetryRing.IsCreated || telemetryRing.Length <= 0)
+                return;
+
+            int entryBytes = UnsafeUtility.SizeOf<InstanceCullingTelemetryEntry>();
+            if (entryBytes != 64)
+                return;
+
+            int count = math.min(telemetryRing.Length, TelemetryCapacity);
+            int byteCount = TelemetryDumpHeaderBytes + (count * entryBytes);
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(InstanceCullingService),
+                "InstanceCullingBlackBoxDumpPayload");
+
+            try
             {
-                writer.Write(TelemetryCapacity);
-                writer.Write(_telemetryWriteIndex);
-                writer.Write(_lastTelemetryFrame);
-                for (int i = 0; i < TelemetryCapacity; i++)
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteUInt32LittleEndian(target, 0, TelemetryDumpMagic);
+                WriteUInt32LittleEndian(target, 4, TelemetryDumpVersion);
+                WriteInt32LittleEndian(target, 8, telemetryWriteIndex);
+                WriteInt32LittleEndian(target, 12, count);
+                WriteInt32LittleEndian(target, 16, entryBytes);
+                WriteUInt32LittleEndian(target, 20, TelemetryInvalidStateFlag);
+                WriteUInt32LittleEndian(target, 24, 0u);
+                WriteUInt32LittleEndian(target, 28, 0u);
+
+                int cursor = TelemetryDumpHeaderBytes;
+                int slot = telemetryWriteIndex - count;
+                while (slot < 0)
+                    slot += telemetryRing.Length;
+                if (slot >= telemetryRing.Length)
+                    slot %= telemetryRing.Length;
+
+                for (int i = 0; i < count; i++)
                 {
-                    InstanceCullingTelemetryEntry entry = telemetryRing[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.SourceInstances);
-                    writer.Write(entry.VisibleInstances);
-                    writer.Write(entry.CulledInstances);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.CullDistanceMeters);
-                    writer.Write(entry.VramUsedMb);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.ShiftFrameId);
+                    InstanceCullingTelemetryEntry entry = telemetryRing[slot];
+                    UnsafeUtility.MemCpy(target + cursor, &entry, entryBytes);
+                    cursor += entryBytes;
+                    slot++;
+                    if (slot >= telemetryRing.Length)
+                        slot = 0;
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(TelemetryDumpPath, payload, cursor);
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(InstanceCullingService),
+                    "InstanceCullingBlackBoxDumpPayload");
+            }
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* target, int offset, int value)
+        {
+            WriteUInt32LittleEndian(target, offset, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* target, int offset, uint value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+            target[offset + 2] = (byte)(value >> 16);
+            target[offset + 3] = (byte)(value >> 24);
         }
 
         private IDataVault CacheDataVaultCold()

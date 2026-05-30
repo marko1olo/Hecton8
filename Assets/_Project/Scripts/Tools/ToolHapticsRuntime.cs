@@ -664,8 +664,6 @@ namespace Hecton8.Tools
             if (PowerSaveMuteActive)
                 return false;
 
-            EnsureBuffers();
-
             float normalizedPower = math.isfinite(powerDelivered) && math.isfinite(ratedPower) && ratedPower > 0.0001f
                 ? ClampFinite01(powerDelivered * math.rcp(ratedPower))
                 : 0f;
@@ -707,7 +705,6 @@ namespace Hecton8.Tools
             if (PowerSaveMuteActive)
                 return false;
 
-            EnsureBuffers();
             byte resolvedMotorMask = (byte)(motorMask & BothMotorMask);
             if (resolvedMotorMask == 0)
                 return false;

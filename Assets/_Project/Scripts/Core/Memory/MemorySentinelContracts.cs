@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading;
 using Hecton8.Core.Contracts.Signals;
 using Unity.Burst;
 using Unity.Collections;
@@ -331,8 +330,6 @@ namespace Hecton8.Core.Memory
         [NoAlias] public NativeArray<ValidationStateDTO> States;
         [ReadOnly, NoAlias] public NativeArray<MemorySentinelTargetDTO> Targets;
         [NoAlias] public NativeArray<MemorySentinelResultDTO> Results;
-        public global::Hecton8.Core.MpscSignalRingBuffer<MemoryDesyncSignal>.ParallelWriter DesyncWriter;
-        [NativeDisableParallelForRestriction] public NativeArray<int> DesyncWriterBudget;
         public uint Frame;
         public float GlobalQualityWeight;
 
@@ -384,7 +381,6 @@ namespace Hecton8.Core.Memory
             {
                 result.Flags |= MemorySentinelConstants.ResultFlagInvalidPointer;
                 Results[index] = result;
-                EnqueueDesync(in target, in state, in result, calculated: 0u, fullHash: 0UL);
                 return;
             }
 
@@ -426,72 +422,8 @@ namespace Hecton8.Core.Memory
 
             result.ExpectedHash = state.ExpectedHash;
             result.StoredHash = state.StoredHash;
-            if ((result.Flags & (
-                    MemorySentinelConstants.ResultFlagMismatch |
-                    MemorySentinelConstants.ResultFlagPointerMismatch |
-                    MemorySentinelConstants.ResultFlagPointerFingerprintMismatch)) != 0u)
-            {
-                EnqueueDesync(in target, in state, in result, calculated, fullHash);
-            }
-
             States[index] = state;
             Results[index] = result;
-        }
-
-        private void EnqueueDesync(
-            in MemorySentinelTargetDTO target,
-            in ValidationStateDTO state,
-            in MemorySentinelResultDTO result,
-            uint calculated,
-            ulong fullHash)
-        {
-            MemoryDesyncSignal signal = default;
-            signal.TargetHash = target.TargetHash;
-            signal.ExpectedHash = state.ExpectedHash;
-            signal.CalculatedHash = calculated;
-            signal.StoredHash = state.StoredHash;
-            signal.Frame = Frame;
-            signal.BufferId = target.BufferId;
-            signal.ByteLength = target.ByteLength;
-            signal.TargetMemoryFingerprint = target.TargetMemoryFingerprint;
-            signal.FullHash64 = fullHash;
-            signal.GlobalQualityWeight = GlobalQualityWeight;
-            signal.Severity01 = math.saturate(target.Criticality01);
-            if ((target.Flags & MemorySentinelConstants.TargetFlagCritical) != 0u)
-                signal.Flags |= MemoryDesyncSignal.FlagCritical;
-            if ((result.Flags & (
-                    MemorySentinelConstants.ResultFlagPointerMismatch |
-                    MemorySentinelConstants.ResultFlagPointerFingerprintMismatch |
-                    MemorySentinelConstants.ResultFlagInvalidPointer)) != 0u)
-            {
-                signal.Flags |= MemoryDesyncSignal.FlagPointerMismatch;
-            }
-
-            TryEnqueueDesyncBounded(DesyncWriter, DesyncWriterBudget, in signal);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static unsafe bool TryEnqueueDesyncBounded(
-            global::Hecton8.Core.MpscSignalRingBuffer<MemoryDesyncSignal>.ParallelWriter writer,
-            NativeArray<int> writerBudget,
-            in MemoryDesyncSignal signal)
-        {
-            if (!writerBudget.IsCreated || writerBudget.Length < 2)
-                return false;
-
-            int* budget = (int*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(writerBudget);
-            int remainingAfterClaim = Interlocked.Decrement(ref budget[0]);
-            if (remainingAfterClaim < 0)
-            {
-                Interlocked.Increment(ref budget[1]);
-                return false;
-            }
-
-            if (writer.TryEnqueue(in signal))
-                return true;
-
-            Interlocked.Increment(ref budget[1]);
-            return false;
         }
     }
 

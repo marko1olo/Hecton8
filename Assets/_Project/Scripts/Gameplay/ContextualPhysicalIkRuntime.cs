@@ -1324,6 +1324,7 @@ namespace Hecton8.Gameplay
         private const int TelemetryCapacity = 300;
         private const int TelemetryEntrySizeBytes = 96;
         private const int MinCommandsPerJob = 32;
+        private const uint TelemetryDumpRetryFrameInterval = 60u;
         private const float CameraResolveRetryInterval = 1.0f;
         internal const float GroundPresenceDistanceMeters = 3.0f;
         internal const float StepTriggerDistanceMeters = 0.22f;
@@ -1399,6 +1400,7 @@ namespace Hecton8.Gameplay
         private uint _lastKccVelocityFrame;
         private uint _frameIndex;
         private int _telemetryCursor;
+        private uint _nextTelemetryDumpRetryFrame;
         private bool _telemetryDumped;
 
         internal NativeArray<ContextualPhysicalIkTargetFrame>.ReadOnly CurrentTargetFrames =>
@@ -2812,26 +2814,75 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void DumpTelemetry(uint reasonFlags)
+        private unsafe void DumpTelemetry(uint reasonFlags)
         {
-            _ = reasonFlags;
-
             if (!_telemetryRing.IsCreated)
                 return;
 
-            _telemetryDumped = true;
+            if (_telemetryDumped)
+                return;
+
+            uint currentFrame = SystemDispatcher.CurrentFrameId;
+            if (_nextTelemetryDumpRetryFrame != 0u &&
+                (int)(currentFrame - _nextTelemetryDumpRetryFrame) < 0)
+            {
+                return;
+            }
+
             int capacity = _telemetryRing.Length;
             if (capacity <= 0)
                 return;
 
-            int head = (uint)_telemetryCursor < (uint)capacity ? _telemetryCursor : 0;
-            for (int i = 0; i < capacity; i++)
-            {
-                int ringIndex = head + i;
-                if (ringIndex >= capacity)
-                    ringIndex -= capacity;
+            int entryBytes = UnsafeUtility.SizeOf<ContextualPhysicalIkTelemetryEntry>();
+            if (entryBytes <= 0 || capacity > (int.MaxValue - 24) / entryBytes)
+                return;
 
-                _ = _telemetryRing[ringIndex].Frame;
+            int head = (uint)_telemetryCursor < (uint)capacity ? _telemetryCursor : 0;
+            int payloadBytes = 24 + capacity * entryBytes;
+            NativeArray<byte> payload = default;
+            bool dumpWritten = false;
+            bool dumpAttempted = false;
+            try
+            {
+                dumpAttempted = true;
+                payload = CreateTransientNativeArray<byte>(
+                    payloadBytes,
+                    Allocator.Temp,
+                    NativeArrayOptions.ClearMemory,
+                    "contextualPhysicalIkTelemetryDumpBytes");
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int writeCursor = 0;
+                WriteUInt64LittleEndian(destination, ref writeCursor, TelemetryDumpMagic);
+                WriteUInt32LittleEndian(destination, ref writeCursor, reasonFlags);
+                WriteUInt32LittleEndian(destination, ref writeCursor, unchecked((uint)capacity));
+                WriteUInt32LittleEndian(destination, ref writeCursor, unchecked((uint)entryBytes));
+                WriteUInt32LittleEndian(destination, ref writeCursor, unchecked((uint)head));
+
+                for (int i = 0; i < capacity; i++)
+                {
+                    int ringIndex = head + i;
+                    if (ringIndex >= capacity)
+                        ringIndex -= capacity;
+
+                    int rowEnd = writeCursor + entryBytes;
+                    ContextualPhysicalIkTelemetryEntry entry = _telemetryRing[ringIndex];
+                    WriteTelemetryEntry(destination, ref writeCursor, in entry);
+                    if (writeCursor > rowEnd)
+                        return;
+
+                    writeCursor = rowEnd;
+                }
+
+                dumpWritten = writeCursor == payloadBytes &&
+                    NativeFaultDumpWriter.TryWriteAll(TelemetryDumpRelativePath, payload, writeCursor);
+            }
+            finally
+            {
+                _telemetryDumped = dumpWritten;
+                _nextTelemetryDumpRetryFrame = dumpWritten || !dumpAttempted
+                    ? 0u
+                    : currentFrame + TelemetryDumpRetryFrameInterval;
+                DisposeTransientNativeArray(ref payload, "contextualPhysicalIkTelemetryDumpBytes");
             }
         }
 

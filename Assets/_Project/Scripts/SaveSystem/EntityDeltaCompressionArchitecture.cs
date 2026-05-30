@@ -1322,10 +1322,6 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
                 int stride = UnsafeUtility.SizeOf<EntityCompressionTelemetryEntry>();
                 int capacity = math.min(TelemetryRingFrames, telemetryRing.Length);
                 int cursor = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? math.max(0, telemetryCursor[0]) % capacity : 0;
@@ -1338,7 +1334,6 @@ namespace Hecton8.SaveSystem
                 EntityCompressionTelemetryEntry first = entryCount > 0 ? telemetryRing[start] : default;
                 EntityCompressionTelemetryEntry last = entryCount > 0 ? telemetryRing[(start + entryCount - 1) % capacity] : default;
                 byte* headerBytesLe = stackalloc byte[64];
-                byte* telemetryBytesLe = stackalloc byte[64];
                 WriteTelemetryDumpHeaderLittleEndian(
                     headerBytesLe,
                     (uint)entryCount,
@@ -1350,18 +1345,28 @@ namespace Hecton8.SaveSystem
                     first,
                     last);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                int byteCount = headerBytes + entryCount * stride;
+                NativeArray<byte> payload = new NativeArray<byte>(
+                    byteCount,
+                    Allocator.Temp,
+                    NativeArrayOptions.UninitializedMemory);
+                try
                 {
-                    stream.Write(new ReadOnlySpan<byte>(headerBytesLe, headerBytes));
+                    byte* payloadPtr = (byte*)payload.GetUnsafePtr();
+                    UnsafeUtility.MemCpy(payloadPtr, headerBytesLe, headerBytes);
                     for (int i = 0; i < entryCount; i++)
                     {
                         int index = (start + i) % capacity;
-                        WriteTelemetryEntryLittleEndian(telemetryBytesLe, telemetryRing[index]);
-                        stream.Write(new ReadOnlySpan<byte>(telemetryBytesLe, stride));
+                        WriteTelemetryEntryLittleEndian(payloadPtr + headerBytes + i * stride, telemetryRing[index]);
                     }
-                }
 
-                return true;
+                    return NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+                }
+                finally
+                {
+                    if (payload.IsCreated)
+                        payload.Dispose();
+                }
             }
             catch (IOException)
             {

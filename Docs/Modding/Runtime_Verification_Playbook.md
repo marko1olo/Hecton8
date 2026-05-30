@@ -523,6 +523,7 @@ Required result:
 - `ExternalStarterKitDiagnoseLocalChecksDependencyGraph = True`
 - `ExternalStarterKitWritesDependenciesTool = True`
 - `ExternalStarterKitDependencyToolMirrorsBothManifests = True`
+- `ExternalStarterKitDependenciesToolWritesStrictUtf8NoBom = True`
 - `ExternalStarterKitWritesDoctorTool = True`
 - `ExternalStarterKitDoctorToolIsReadOnly = True`
 - `ExternalStarterKitDoctorVerifiesSubmissionZipContents = True`
@@ -560,6 +561,7 @@ Required result:
 - `ExternalStarterKitRootLauncherSupportsDependencies = True`
 - `ExternalStarterKitIdentityToolValidatesCanonicalId = True`
 - `ExternalStarterKitIdentityToolRejectsInvalidVersion = True`
+- `ExternalStarterKitIdentityToolRollsBackBothManifestsOnValidationFailure = True`
 - `ExternalStarterKitToolsAvoidNestedPowerShell = True`
 - `ExternalStarterKitToolsUsePortableJoinPath = True`
 - `ExternalStarterKitIdentityToolPasses = True`

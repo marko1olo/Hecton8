@@ -9,7 +9,7 @@ using UnityEngine.Profiling;
 namespace Hecton8.Optimization
 {
     /// <summary>
-    /// Applies graduated VRAM pressure responses against the MX350 hard ceiling.
+    /// Applies graduated VRAM pressure responses against the active runtime graphics budget.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8007)]
@@ -33,7 +33,7 @@ namespace Hecton8.Optimization
         private const uint ResolutionChangeSourceHash = 0x5652414Du; // VRAM
 
         [Header("VRAM Pressure Thresholds")]
-        [Tooltip("Preventive mip downgrade fraction of the active runtime graphics budget. Default matches 1.6 GB against the 1.8 GB MX350 ceiling.")]
+        [Tooltip("Preventive mip downgrade fraction of the active runtime graphics budget. Default is the compact-budget warning fraction.")]
         [SerializeField, Range(0.5f, 1f)] private float warningVramFraction = DefaultWarningVramFraction;
 
         [Tooltip("Emergency eviction fraction of the active runtime graphics budget.")]

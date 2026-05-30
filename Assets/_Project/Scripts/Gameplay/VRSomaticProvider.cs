@@ -1,6 +1,5 @@
 using System;
 using System.Buffers.Binary;
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
@@ -541,7 +540,6 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: VRSomaticBlackBoxEntry[300] - fixed fault snapshot for async dump handoff - owner: VRSomaticProvider
         private readonly VRSomaticBlackBoxEntry[] _blackBoxDumpSnapshot = new VRSomaticBlackBoxEntry[BlackBoxFrameCapacity];
         private string _blackBoxDumpPathCold;
-        private string _blackBoxDumpDirectoryCold;
         private int _blackBoxDumpSnapshotCount;
         private int _blackBoxDumpInFlight;
         private int _blackBoxDumpFaultPending;
@@ -733,7 +731,6 @@ namespace Hecton8.Gameplay
             if (!TryResolveActiveHmd(out Transform activeHmd))
             {
                 ApplyInactiveState(safeDeltaTime);
-                RefreshLateFrameRegistration();
                 return;
             }
 
@@ -744,7 +741,6 @@ namespace Hecton8.Gameplay
             {
                 RecordBlackBoxFrame(headPosition, hasFiniteHeadRotation ? sanitizedHeadRotation : headRotation, BlackBoxFlagNonFinite);
                 ApplyInactiveState(safeDeltaTime);
-                RefreshLateFrameRegistration();
                 return;
             }
 
@@ -754,7 +750,6 @@ namespace Hecton8.Gameplay
             {
                 RecordBlackBoxFrame(headPosition, headRotation, BlackBoxFlagNonFinite);
                 ApplyInactiveState(safeDeltaTime);
-                RefreshLateFrameRegistration();
                 return;
             }
             ResetHeadMotionIfAupShifted(headPosition, headRotation);
@@ -827,6 +822,12 @@ namespace Hecton8.Gameplay
             RefreshRuntimeRegistration(IsVRSomaticRuntimeActive());
         }
 
+        private void Start()
+        {
+            if (Application.isPlaying && IsVRSomaticRuntimeActive())
+                TryRegisterLateFrame();
+        }
+
         private void OnDisable()
         {
             ReleaseRuntimeState();
@@ -881,6 +882,16 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                     _cachedPlayerCamera = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerCamera : null;
+                    break;
+
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregisterUpdate();
+                    TryUnregisterLateFrame();
+                    if (Application.isPlaying && IsVRSomaticRuntimeActive())
+                    {
+                        TryRegisterUpdate();
+                        TryRegisterLateFrame();
+                    }
                     break;
             }
         }
@@ -951,7 +962,7 @@ namespace Hecton8.Gameplay
             EnsureNativeBuffers();
             TryRegisterService();
             TryRegisterUpdate();
-            RefreshLateFrameRegistration();
+            TryRegisterLateFrame();
         }
 
         private void TryRegisterService()
@@ -1031,22 +1042,8 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying)
                 return;
 
-            if (ShouldKeepLateFrameRegistered())
-                TryRegisterLateFrame();
-            else
+            if (!IsVRSomaticRuntimeActive())
                 TryUnregisterLateFrame();
-        }
-
-        private bool ShouldKeepLateFrameRegistered()
-        {
-            return (_stateFlags & StateHeadCollisionReady) != 0u ||
-                   (_stateFlags & StateQueuedPresentationPoseMask) != 0u ||
-                   _somaticShaderStateDirty ||
-                   _comfortVignetteShaderDirty ||
-                   _somaticComfortShaderStateDirty ||
-                   _breathingAudioDirty ||
-                   _pendingVelocityAnchorHapticDirty ||
-                   (_snapshot.IsActive && CanRunHeadCollisionQuery());
         }
 
         private bool HasRuntimeRegistrationOrActiveSnapshot()
@@ -1713,7 +1710,6 @@ namespace Hecton8.Gameplay
             if (pdaChestSocket != null || flareToolChestSocket != null)
             {
                 _stateFlags |= StateChestSocketPoseDirty;
-                TryRegisterLateFrame();
             }
         }
 
@@ -1755,7 +1751,6 @@ namespace Hecton8.Gameplay
                 _pendingVisorHudPosition = headPosition;
                 _pendingVisorHudRotation = laggedRotation;
                 _stateFlags |= StateVisorHudPoseDirty;
-                TryRegisterLateFrame();
             }
 
             return laggedRotation;
@@ -1829,8 +1824,6 @@ namespace Hecton8.Gameplay
                 _breathingAudioDirty = true;
             }
 
-            if (_breathingAudioDirty)
-                TryRegisterLateFrame();
         }
 
         private void UpdateCondensation()
@@ -1944,7 +1937,6 @@ namespace Hecton8.Gameplay
                 _pendingRootSyncPosition = ToVector3(output.RootPosition);
                 _pendingRootSyncRotation = ToQuaternion(output.RootRotation.value);
                 _stateFlags |= StateRootPoseDirty;
-                TryRegisterLateFrame();
             }
 
             PublishComfortVignette(output.ComfortVignette01);
@@ -2479,9 +2471,6 @@ namespace Hecton8.Gameplay
             if (publishShaderState)
                 PublishShaderState();
 
-            if (_breathingAudioDirty)
-                TryRegisterLateFrame();
-
             if (_blackBox.IsCreated)
                 RecordBlackBoxFrame(Vector3.zero, Quaternion.identity, 0);
         }
@@ -2527,7 +2516,6 @@ namespace Hecton8.Gameplay
                 Sanitize01(_kccHorizonLock01, 0f));
             _somaticShaderStateDirty = true;
             PublishSomaticComfortShaderState();
-            TryRegisterLateFrame();
         }
 
         private void PublishComfortVignette(float vignette01)
@@ -2540,7 +2528,6 @@ namespace Hecton8.Gameplay
 
             _pendingComfortVignette01 = sanitized;
             _comfortVignetteShaderDirty = true;
-            TryRegisterLateFrame();
         }
 
         private void FlushQueuedPresentationOutputs()
@@ -2755,7 +2742,6 @@ namespace Hecton8.Gameplay
             _pendingVelocityAnchorHaptic.BlendMode = HapticBlendAdditive;
             _pendingVelocityAnchorHapticDirty = true;
             _velocityHapticCooldownRemaining = SanitizeMinimum(velocityHapticIntervalSeconds, 0.03f);
-            TryRegisterLateFrame();
         }
 
         private void FlushQueuedVelocityAnchorHaptic()
@@ -3028,22 +3014,18 @@ namespace Hecton8.Gameplay
                     "AgentLogs",
                     BlackBoxDumpFileName));
                 _blackBoxDumpPathCold = path;
-                _blackBoxDumpDirectoryCold = System.IO.Path.GetDirectoryName(path);
             }
             catch (System.ArgumentException)
             {
                 _blackBoxDumpPathCold = null;
-                _blackBoxDumpDirectoryCold = null;
             }
             catch (System.NotSupportedException)
             {
                 _blackBoxDumpPathCold = null;
-                _blackBoxDumpDirectoryCold = null;
             }
             catch (System.IO.PathTooLongException)
             {
                 _blackBoxDumpPathCold = null;
-                _blackBoxDumpDirectoryCold = null;
             }
         }
 
@@ -3082,32 +3064,32 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void TryWriteBlackBoxSnapshotCold()
+        private unsafe void TryWriteBlackBoxSnapshotCold()
         {
             string path = _blackBoxDumpPathCold;
             if (string.IsNullOrEmpty(path))
                 return;
 
+            NativeArray<byte> payload = default;
             try
             {
-                string directory = _blackBoxDumpDirectoryCold;
-                if (!string.IsNullOrEmpty(directory))
-                    System.IO.Directory.CreateDirectory(directory);
+                int count = math.clamp(Volatile.Read(ref _blackBoxDumpSnapshotCount), 0, BlackBoxFrameCapacity);
+                int byteCount = BlackBoxDumpHeaderSizeBytes + count * BlackBoxDumpEntrySizeBytes;
+                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                Span<byte> bytes = new Span<byte>(target, byteCount);
+                WriteBlackBoxHeader(bytes.Slice(0, BlackBoxDumpHeaderSizeBytes), count);
+
+                int offset = BlackBoxDumpHeaderSizeBytes;
+                for (int i = 0; i < count; i++)
                 {
-                    int count = math.clamp(Volatile.Read(ref _blackBoxDumpSnapshotCount), 0, BlackBoxFrameCapacity);
-                    Span<byte> header = stackalloc byte[BlackBoxDumpHeaderSizeBytes];
-                    WriteBlackBoxHeader(header, count);
-                    stream.Write(header);
-
-                    Span<byte> row = stackalloc byte[BlackBoxDumpEntrySizeBytes];
-                    for (int i = 0; i < count; i++)
-                    {
-                        WriteBlackBoxEntry(row, in _blackBoxDumpSnapshot[i]);
-                        stream.Write(row);
-                    }
+                    WriteBlackBoxEntry(bytes.Slice(offset, BlackBoxDumpEntrySizeBytes), in _blackBoxDumpSnapshot[i]);
+                    offset += BlackBoxDumpEntrySizeBytes;
                 }
+
+                if (!NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount))
+                    StageBlackBoxDumpFault(unchecked((int)0x80004005));
             }
             catch (System.ObjectDisposedException exception)
             {
@@ -3128,6 +3110,11 @@ namespace Hecton8.Gameplay
             catch (System.NotSupportedException exception)
             {
                 StageBlackBoxDumpFault(exception.HResult);
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 

@@ -14,16 +14,16 @@ namespace Hecton8.Core
         {
             switch (ScalabilityTierProfiles.Normalize(tier))
             {
-                case ScalabilityTierProfiles.LowMx350:
-                    return HectonQualityTier.Mx350;
+                case ScalabilityTierProfiles.LowCompact:
+                    return HectonQualityTier.CompactPc;
                 case ScalabilityTierProfiles.Middle:
                     return HectonQualityTier.Mid;
                 case ScalabilityTierProfiles.Ultra:
                     return HectonQualityTier.Ultra;
-                case ScalabilityTierProfiles.HighRtx:
+                case ScalabilityTierProfiles.HighDiscrete:
                     return HectonQualityTier.High;
                 default:
-                    return HectonQualityTier.Mx350;
+                    return HectonQualityTier.CompactPc;
             }
         }
 
@@ -35,11 +35,11 @@ namespace Hecton8.Core
                 case HectonQualityTier.Mid:
                     return ScalabilityTierProfiles.Middle;
                 case HectonQualityTier.High:
-                    return ScalabilityTierProfiles.HighRtx;
+                    return ScalabilityTierProfiles.HighDiscrete;
                 case HectonQualityTier.Ultra:
                     return ScalabilityTierProfiles.Ultra;
                 default:
-                    return ScalabilityTierProfiles.LowMx350;
+                    return ScalabilityTierProfiles.LowCompact;
             }
         }
 

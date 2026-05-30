@@ -681,16 +681,9 @@ namespace Hecton8.World.ShinobuBiomimetic
 
             try
             {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
-                    int byteLength = UnsafeUtility.SizeOf<PoiPlacementTelemetryEntry>() * telemetryRing.Length;
-                    stream.Write(new ReadOnlySpan<byte>(ptr, byteLength));
-                }
+                void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
+                int byteLength = UnsafeUtility.SizeOf<PoiPlacementTelemetryEntry>() * telemetryRing.Length;
+                return NativeFaultDumpWriter.TryWriteAll(path, new ReadOnlySpan<byte>(ptr, byteLength), byteLength);
             }
             catch (IOException)
             {
@@ -709,7 +702,7 @@ namespace Hecton8.World.ShinobuBiomimetic
                 return false;
             }
 
-            return true;
+            return false;
         }
 
         public static bool TryDumpPromptAlias(NativeArray<PoiPlacementTelemetryEntry> telemetryRing)

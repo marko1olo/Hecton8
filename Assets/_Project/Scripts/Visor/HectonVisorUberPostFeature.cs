@@ -570,26 +570,33 @@ namespace Hecton8.Visor
                 passData.InternalWaterlineParams = SanitizeInternalWaterlineParams(runtimeState.InternalWaterlineParams);
                 passData.InternalWaterlineDistortion = SanitizeInternalWaterlineDistortion(runtimeState.InternalWaterlineDistortion);
                 passData.QualityPressure01 = qualityPressure01;
-                passData.Strengths0 = new Vector4(
-                    math.saturate(settings.chromaticStrength),
-                    math.saturate(settings.hypoxiaDesaturationStrength),
-                    math.clamp(settings.pressureWarpStrength, 0f, 0.18f),
-                    math.saturate(settings.crackStrength));
-                passData.Strengths1 = new Vector4(
-                    math.max(0f, settings.pressureInvRange),
-                    math.max(0f, settings.temperatureScale),
-                    math.clamp(settings.crackUvStrength, 0f, 0.01f),
-                    math.saturate(settings.lensDirtAndBloodStrength));
-                passData.WaveParams = new Vector4(
-                    math.max(1f, settings.heatHazeFrequency),
-                    math.max(0f, settings.heatHazeSpeed),
-                    math.clamp(settings.heatHazeAmplitude, 0f, 0.006f) * (1f - qualityPressure01),
-                    math.saturate(settings.damageVignetteStrength));
-                passData.TextureFlags = new Vector4(
-                    settings.crackTexture != null ? 1f : 0f,
-                    settings.lensDirtTexture != null ? 1f : 0f,
-                    settings.blueNoiseTexture != null ? 1f : 0f,
-                    settings.vrComfortMaskTexture != null ? 1f : 0f);
+                Vector4 strengths0 = default;
+                strengths0.x = math.saturate(settings.chromaticStrength);
+                strengths0.y = math.saturate(settings.hypoxiaDesaturationStrength);
+                strengths0.z = math.clamp(settings.pressureWarpStrength, 0f, 0.18f);
+                strengths0.w = math.saturate(settings.crackStrength);
+                passData.Strengths0 = strengths0;
+
+                Vector4 strengths1 = default;
+                strengths1.x = math.max(0f, settings.pressureInvRange);
+                strengths1.y = math.max(0f, settings.temperatureScale);
+                strengths1.z = math.clamp(settings.crackUvStrength, 0f, 0.01f);
+                strengths1.w = math.saturate(settings.lensDirtAndBloodStrength);
+                passData.Strengths1 = strengths1;
+
+                Vector4 waveParams = default;
+                waveParams.x = math.max(1f, settings.heatHazeFrequency);
+                waveParams.y = math.max(0f, settings.heatHazeSpeed);
+                waveParams.z = math.clamp(settings.heatHazeAmplitude, 0f, 0.006f) * (1f - qualityPressure01);
+                waveParams.w = math.saturate(settings.damageVignetteStrength);
+                passData.WaveParams = waveParams;
+
+                Vector4 textureFlags = default;
+                textureFlags.x = settings.crackTexture != null ? 1f : 0f;
+                textureFlags.y = settings.lensDirtTexture != null ? 1f : 0f;
+                textureFlags.z = settings.blueNoiseTexture != null ? 1f : 0f;
+                textureFlags.w = settings.vrComfortMaskTexture != null ? 1f : 0f;
+                passData.TextureFlags = textureFlags;
             }
 
             private bool TryImportStaticPostTextures(
@@ -1738,32 +1745,35 @@ namespace Hecton8.Visor
                 _reconstructionDumpWritten = TryDumpReconstructionTelemetry();
         }
 
-        private bool TryDumpReconstructionTelemetry()
+        private unsafe bool TryDumpReconstructionTelemetry()
         {
             if (_dataVault == null ||
                 !TryGetReconstructionTelemetryEntryCount(out int entryCount) ||
                 entryCount <= 0)
                 return false;
 
+            NativeArray<byte> payload = default;
             try
             {
                 string directory = Path.Combine(Directory.GetCurrentDirectory(), "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
                 string path = Path.Combine(directory, ReconstructionDumpFileName);
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    Span<byte> rowBytes = stackalloc byte[DrsContractLayout.ReconstructionTelemetryEntryStrideBytes];
-                    for (int i = 0; i < entryCount; i++)
-                    {
-                        if (!TryReadReconstructionTelemetryEntry(i, out ReconstructionTelemetryEntry entry))
-                            return false;
+                int stride = DrsContractLayout.ReconstructionTelemetryEntryStrideBytes;
+                int totalBytes = entryCount * stride;
+                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
 
-                        WriteReconstructionTelemetryEntry(rowBytes, in entry);
-                        stream.Write(rowBytes);
-                    }
+                int offset = 0;
+                for (int i = 0; i < entryCount; i++)
+                {
+                    if (!TryReadReconstructionTelemetryEntry(i, out ReconstructionTelemetryEntry entry))
+                        return false;
+
+                    Span<byte> rowBytes = new Span<byte>(payloadPtr + offset, stride);
+                    WriteReconstructionTelemetryEntry(rowBytes, in entry);
+                    offset += stride;
                 }
 
-                return true;
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes);
             }
             catch (IOException)
             {
@@ -1788,6 +1798,11 @@ namespace Hecton8.Visor
             catch (InvalidOperationException)
             {
                 return false;
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 
@@ -2433,7 +2448,11 @@ namespace Hecton8.Visor
                 return Vector4.zero;
 
             if (active01 <= 0.001f || !math.isfinite(waterlineY))
-                return new Vector4(0f, 0f, 0f, droplets01);
+            {
+                Vector4 inactiveResult = default;
+                inactiveResult.w = droplets01;
+                return inactiveResult;
+            }
 
             Transform cameraTransform = renderCamera.transform;
             float cameraY = cameraTransform.position.y;
@@ -2445,7 +2464,12 @@ namespace Hecton8.Visor
                 splitLine = math.lerp(viewportSplit, InternalWaterlineFullScreenSplit, submerged01);
             }
 
-            return new Vector4(splitLine, active01, submerged01, droplets01);
+            Vector4 result = default;
+            result.x = splitLine;
+            result.y = active01;
+            result.z = submerged01;
+            result.w = droplets01;
+            return result;
         }
 
         private static float ResolveInternalWaterlineSubmergedWeight01(float cameraY, float waterlineY)
@@ -2474,10 +2498,10 @@ namespace Hecton8.Visor
             {
                 float invLength = math.rsqrt(flatForwardLengthSq);
                 float sampleDistance = math.clamp(renderCamera.nearClipPlane + 0.5f, 0.5f, math.max(0.5f, renderCamera.farClipPlane * 0.02f));
-                Vector3 planeSample = new Vector3(
-                    cameraPosition.x + forward.x * invLength * sampleDistance,
-                    waterlineY,
-                    cameraPosition.z + forward.z * invLength * sampleDistance);
+                Vector3 planeSample = default;
+                planeSample.x = cameraPosition.x + forward.x * invLength * sampleDistance;
+                planeSample.y = waterlineY;
+                planeSample.z = cameraPosition.z + forward.z * invLength * sampleDistance;
                 Vector3 viewportPoint = renderCamera.WorldToViewportPoint(planeSample);
                 if (math.isfinite(viewportPoint.y) && viewportPoint.z > 0f)
                     return math.clamp(viewportPoint.y, -0.1f, 1.1f);
@@ -2494,11 +2518,12 @@ namespace Hecton8.Visor
         {
             qualityPressure01 = Sanitize01(qualityPressure01);
             float visualBudget01 = 1f - qualityPressure01;
-            return new Vector4(
-                math.max(0f, SanitizeFinite(distortion.x, 0f)) * visualBudget01,
-                Sanitize01(distortion.y),
-                math.max(0.001f, SanitizeFinite(distortion.z, 0.018f)),
-                math.lerp(Sanitize01(distortion.w), 1f, qualityPressure01));
+            Vector4 result = default;
+            result.x = math.max(0f, SanitizeFinite(distortion.x, 0f)) * visualBudget01;
+            result.y = Sanitize01(distortion.y);
+            result.z = math.max(0.001f, SanitizeFinite(distortion.z, 0.018f));
+            result.w = math.lerp(Sanitize01(distortion.w), 1f, qualityPressure01);
+            return result;
         }
 
         private static float ResolvePressureSurgeVisual01(
@@ -2681,29 +2706,32 @@ namespace Hecton8.Visor
 
         private static Vector4 SanitizeVrComfortJerkState(Vector4 value)
         {
-            return new Vector4(
-                Sanitize01(value.x),
-                Sanitize01(value.y),
-                math.isfinite(value.z) ? math.max(0f, value.z) : 0f,
-                Sanitize01(value.w));
+            Vector4 result = default;
+            result.x = Sanitize01(value.x);
+            result.y = Sanitize01(value.y);
+            result.z = math.isfinite(value.z) ? math.max(0f, value.z) : 0f;
+            result.w = Sanitize01(value.w);
+            return result;
         }
 
         private static Vector4 SanitizeInternalWaterlineParams(Vector4 value)
         {
-            return new Vector4(
-                math.isfinite(value.x) ? math.clamp(value.x, -0.1f, 1.1f) : 0f,
-                Sanitize01(value.y),
-                Sanitize01(value.z),
-                Sanitize01(value.w));
+            Vector4 result = default;
+            result.x = math.isfinite(value.x) ? math.clamp(value.x, -0.1f, 1.1f) : 0f;
+            result.y = Sanitize01(value.y);
+            result.z = Sanitize01(value.z);
+            result.w = Sanitize01(value.w);
+            return result;
         }
 
         private static Vector4 SanitizeInternalWaterlineDistortion(Vector4 value)
         {
-            return new Vector4(
-                math.isfinite(value.x) ? math.clamp(value.x, 0f, 0.006f) : 0f,
-                Sanitize01(value.y),
-                math.isfinite(value.z) ? math.clamp(value.z, 0.001f, 0.1f) : 0.018f,
-                Sanitize01(value.w));
+            Vector4 result = default;
+            result.x = math.isfinite(value.x) ? math.clamp(value.x, 0f, 0.006f) : 0f;
+            result.y = Sanitize01(value.y);
+            result.z = math.isfinite(value.z) ? math.clamp(value.z, 0.001f, 0.1f) : 0.018f;
+            result.w = Sanitize01(value.w);
+            return result;
         }
     }
 }

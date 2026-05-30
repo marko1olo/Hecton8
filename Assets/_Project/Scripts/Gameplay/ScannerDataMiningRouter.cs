@@ -369,7 +369,7 @@ namespace Hecton8.Gameplay
     }
 
     [DisallowMultipleComponent]
-    public sealed class ScannerDataMiningRouter : MonoBehaviour, IFastTickable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class ScannerDataMiningRouter : MonoBehaviour, IFastTickable, ISlowTickable, ILateFrameTickable, IColdTickable, IGlobalRegistryHotSwapListener
     {
         private int _signalPushDropCount;
         public const uint MetadataToolLevelMask = 0x000000FFu;
@@ -461,6 +461,7 @@ namespace Hecton8.Gameplay
         private bool _registeredFast;
         private bool _registeredSlow;
         private bool _registeredLate;
+        private bool _registeredCold;
         private bool _hotSwapListenerRegistered;
         private bool _disableCleanupPending;
         private bool _lateTickDormant;
@@ -634,6 +635,8 @@ namespace Hecton8.Gameplay
                 _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
             if (!_registeredLate)
                 _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+            if (!_registeredCold)
+                _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
 
             return true;
         }
@@ -647,9 +650,12 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Player);
             if (_registeredSlow)
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+            if (_registeredCold)
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
 
             _registeredFast = false;
             _registeredSlow = false;
+            _registeredCold = false;
             TryUnregisterHotSwapListener();
 
             if (_queryScheduled && !TryFinalizeScheduledQuery())
@@ -672,9 +678,12 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Player);
             if (_registeredSlow)
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+            if (_registeredCold)
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
 
             _registeredFast = false;
             _registeredSlow = false;
+            _registeredCold = false;
             TryUnregisterHotSwapListener();
 
             if (_queryScheduled)
@@ -848,6 +857,20 @@ namespace Hecton8.Gameplay
             ReadOnlySpan<SystemHealthIndexSignal> healthSignals = SignalBus<SystemHealthIndexSignal>.GetFrameSnapshot();
             if (healthSignals.Length > 0)
                 _cachedSystemPressure01 = math.saturate(healthSignals[healthSignals.Length - 1].Pressure01);
+        }
+
+        public void ColdTick()
+        {
+            if (!_runtimeStateColdInitRequired ||
+                _disableCleanupPending ||
+                !isActiveAndEnabled ||
+                _queryScheduled ||
+                _queryMutationGuardVault != null)
+            {
+                return;
+            }
+
+            TryInitializeRuntimeState();
         }
 
         private bool TryFinalizeScheduledQuery()
@@ -1693,16 +1716,9 @@ namespace Hecton8.Gameplay
             if (!telemetry.IsCreated || telemetry.Length == 0 || string.IsNullOrEmpty(path))
                 return;
 
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-
             int byteCount = UnsafeUtility.SizeOf<ScannerTelemetryEntry>() * telemetry.Length;
             byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            {
-                stream.Write(new ReadOnlySpan<byte>(source, byteCount));
-            }
+            NativeFaultDumpWriter.TryWriteAll(path, new ReadOnlySpan<byte>(source, byteCount), byteCount);
         }
 
         public static unsafe ref ActiveScanStateDTO GetActiveStateRef(NativeArray<ActiveScanStateDTO> states)

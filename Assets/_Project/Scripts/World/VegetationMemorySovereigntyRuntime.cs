@@ -489,7 +489,7 @@ namespace Hecton8.World
             handle = default;
         }
 
-        private void DumpVegetationMemoryBlackBox()
+        private unsafe void DumpVegetationMemoryBlackBox()
         {
             if (_vegetationMemoryTelemetryDumped ||
                 !TryReadVegetationMemoryTelemetry(out NativeArray<VegetationMemoryTelemetryEntry>.ReadOnly telemetry) ||
@@ -498,33 +498,31 @@ namespace Hecton8.World
                 return;
             }
 
-            _vegetationMemoryTelemetryDumped = true;
+            NativeArray<byte> payload = default;
             try
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string dumpPath = Path.Combine(projectRoot, VegetationMemorySovereigntyConstants.DumpRelativePath);
-                string dumpDirectory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(dumpDirectory))
-                    Directory.CreateDirectory(dumpDirectory);
+                int headerBytes = 24;
+                int rowBytes = VegetationMemorySovereigntyConstants.TelemetryEntryStrideBytes;
+                int rowBytesTotal = telemetry.Length * rowBytes;
+                int totalBytes = headerBytes + rowBytesTotal;
+                payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                byte* destination = (byte*)payload.GetUnsafePtr();
+                Span<byte> header = new Span<byte>(destination, headerBytes);
+                WriteUInt64LittleEndian(header, 0, VegetationMemorySovereigntyConstants.DumpMagic);
+                WriteInt32LittleEndian(header, 8, VegetationMemorySovereigntyConstants.DumpVersion);
+                WriteInt32LittleEndian(header, 12, VegetationMemorySovereigntyConstants.TelemetryFrameCount);
+                WriteInt32LittleEndian(header, 16, rowBytes);
+                WriteInt32LittleEndian(header, 20, cursorBuffer.Length > 0 ? cursorBuffer[0] : 0);
 
-                using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(VegetationMemorySovereigntyConstants.DumpMagic);
-                writer.Write(VegetationMemorySovereigntyConstants.DumpVersion);
-                writer.Write(VegetationMemorySovereigntyConstants.TelemetryFrameCount);
-                writer.Write(VegetationMemorySovereigntyConstants.TelemetryEntryStrideBytes);
-                writer.Write(cursorBuffer[0]);
-                writer.Flush();
-                for (int i = 0; i < telemetry.Length; i++)
+                if (rowBytesTotal > 0)
                 {
-                    VegetationMemoryTelemetryEntry entry = telemetry[i];
-                    unsafe
-                    {
-                        stream.Write(new ReadOnlySpan<byte>(
-                            UnsafeUtility.AddressOf(ref entry),
-                            VegetationMemorySovereigntyConstants.TelemetryEntryStrideBytes));
-                    }
+                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                    UnsafeUtility.MemCpy(destination + headerBytes, source, rowBytesTotal);
                 }
+
+                _vegetationMemoryTelemetryDumped = NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, totalBytes);
             }
             catch (IOException)
             {
@@ -532,6 +530,26 @@ namespace Hecton8.World
             catch (UnauthorizedAccessException)
             {
             }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
+            }
+        }
+
+        private static void WriteInt32LittleEndian(Span<byte> destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(Span<byte> destination, int offset, uint value)
+        {
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(offset, 4), value);
+        }
+
+        private static void WriteUInt64LittleEndian(Span<byte> destination, int offset, ulong value)
+        {
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(destination.Slice(offset, 8), value);
         }
 
         private static bool IsExactVegetationMemoryHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)

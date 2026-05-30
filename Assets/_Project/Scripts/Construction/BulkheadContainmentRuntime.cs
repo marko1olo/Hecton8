@@ -33,24 +33,6 @@ namespace Hecton8.Construction
         private const ulong BulkheadProfileImportMutationGuardMask = 1UL << 58;
         private const ulong BulkheadTelemetryMutationGuardMask = 1UL << 59;
         private const ulong BulkheadRefreshMutationGuardMask = 1UL << 60;
-        private const ulong BulkheadJobMutationGuardMask =
-            (1UL << ((int)BufferID.Shinobu220BulkheadStates & 31)) |
-            (1UL << ((int)BufferID.Shinobu220BulkheadAups & 31)) |
-            (1UL << ((int)BufferID.Shinobu220BulkheadPlanes & 31)) |
-            (1UL << ((int)BufferID.Shinobu220BulkheadCsrEdges & 31)) |
-            (1UL << ((int)BufferID.Shinobu220BulkheadEdgeConductivity & 31)) |
-            (1UL << ((int)BufferID.Shinobu220BulkheadFluidFlow & 31)) |
-            (1UL << ((int)BufferID.Shinobu220BulkheadModuleIntegrity & 31)) |
-            (1UL << ((int)BufferID.Shinobu220BulkheadCollisionResults & 31)) |
-            (1UL << ((int)BufferID.Shinobu220BulkheadTelemetryRing & 31)) |
-            (1UL << ((int)BufferID.Shinobu220BulkheadTelemetryCursor & 31)) |
-            (1UL << ((int)BufferID.Shinobu343HatchStates & 31)) |
-            (1UL << ((int)BufferID.Shinobu343HatchTelemetryRing & 31)) |
-            (1UL << ((int)BufferID.Shinobu343HatchTelemetryCursor & 31)) |
-            (1UL << ((int)BufferID.Shinobu343HatchTuning & 31)) |
-            (1UL << ((int)BufferID.Shinobu343HatchMockFluidCompartments & 31)) |
-            (1UL << ((int)BufferID.ShinobuFluidCompartmentFront & 31)) |
-            (1UL << ((int)BufferID.StructuralIntegrityStates & 31));
         private const uint BulkheadJobPinStates = 1u << 0;
         private const uint BulkheadJobPinAups = 1u << 1;
         private const uint BulkheadJobPinPlanes = 1u << 2;
@@ -158,10 +140,11 @@ namespace Hecton8.Construction
         private bool _shaderGlobalsActive;
         private bool _shaderUploadDirty = true;
         private bool _shutdownStarted;
+        private bool _runtimeActive;
         private uint _lastDumpedTelemetryCursor;
         private uint _lastDumpAttemptTelemetryCursor;
+        private uint _lastBlackBoxDumpHash;
         private uint _nextPlayerStateHandleBindFrame;
-        private string _dumpPath;
 
         public static bool TryReadEditorState(
             out int activeCount,
@@ -296,13 +279,12 @@ namespace Hecton8.Construction
             _simulationPhase = new SimulationPhaseSystem(this);
             _postSimulationPhase = new PostSimulationPhaseSystem(this);
             _visualSyncPhase = new VisualSyncPhaseSystem(this);
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            _dumpPath = Path.GetFullPath(Path.Combine(projectRoot, "Docs/AgentLogs/Dump_1306_Construction_Bulkhead.bin"));
             InitializeHatchLockColdPaths();
         }
 
         private void OnEnable()
         {
+            _runtimeActive = Application.isPlaying;
             _shutdownStarted = false;
             s_active = this;
             RequestDataVaultRebind(GlobalRegistry.DataVault);
@@ -314,6 +296,7 @@ namespace Hecton8.Construction
 
         private void OnDisable()
         {
+            _runtimeActive = false;
             ShutdownRuntime(forceCompletePendingJobs: true);
         }
 
@@ -358,7 +341,7 @@ namespace Hecton8.Construction
 
         private void TryRegisterHotSwapListener()
         {
-            if (_registeredHotSwap || !Application.isPlaying)
+            if (_registeredHotSwap || !_runtimeActive)
                 return;
 
             _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
@@ -395,7 +378,7 @@ namespace Hecton8.Construction
 
         public void ColdTick()
         {
-            if (!Application.isPlaying || !isActiveAndEnabled || _shutdownStarted)
+            if (!_runtimeActive || !isActiveAndEnabled || _shutdownStarted)
                 return;
 
             if (_vaultRebindPending && !TryFlushPendingDataVaultRebind())
@@ -678,12 +661,33 @@ namespace Hecton8.Construction
             if (_bulkheadJobPinVault != null)
                 return ReferenceEquals(_bulkheadJobPinVault, vault);
 
-            if (!vault.TryAcquireMutationGuard(BulkheadJobMutationGuardMask))
-                return false;
-
             _bulkheadJobPinVault = vault;
-            _bulkheadJobPinMask = BulkheadRequiredJobPinMask;
-            return true;
+            try
+            {
+                if (!TryLockBulkheadJobPin(BufferID.Shinobu220BulkheadStates, BulkheadJobPinStates) ||
+                    !TryLockBulkheadJobPin(BufferID.Shinobu220BulkheadAups, BulkheadJobPinAups) ||
+                    !TryLockBulkheadJobPin(BufferID.Shinobu220BulkheadPlanes, BulkheadJobPinPlanes) ||
+                    !TryLockBulkheadJobPin(BufferID.Shinobu220BulkheadCsrEdges, BulkheadJobPinCsrEdges) ||
+                    !TryLockBulkheadJobPin(BufferID.Shinobu220BulkheadEdgeConductivity, BulkheadJobPinEdgeConductivity) ||
+                    !TryLockBulkheadJobPin(BufferID.Shinobu220BulkheadFluidFlow, BulkheadJobPinFluidFlow) ||
+                    !TryLockBulkheadJobPin(BufferID.Shinobu220BulkheadModuleIntegrity, BulkheadJobPinModuleIntegrity) ||
+                    !TryLockBulkheadJobPin(BufferID.Shinobu220BulkheadCollisionResults, BulkheadJobPinCollisionResults) ||
+                    !TryLockBulkheadJobPin(BufferID.Shinobu220BulkheadTelemetryRing, BulkheadJobPinTelemetry) ||
+                    !TryLockBulkheadJobPin(BufferID.Shinobu220BulkheadTelemetryCursor, BulkheadJobPinTelemetryCursor) ||
+                    !TryLockBulkheadJobPin(BufferID.Shinobu343HatchStates, BulkheadJobPinHatchStates) ||
+                    !TryLockBulkheadJobPin(BufferID.Shinobu343HatchTelemetryRing, BulkheadJobPinHatchTelemetry) ||
+                    !TryLockBulkheadJobPin(BufferID.Shinobu343HatchTelemetryCursor, BulkheadJobPinHatchTelemetryCursor) ||
+                    !TryLockBulkheadJobPin(BufferID.Shinobu343HatchTuning, BulkheadJobPinHatchTuning) ||
+                    !TryLockBulkheadJobPin(BufferID.Shinobu343HatchMockFluidCompartments, BulkheadJobPinHatchMockFluid))
+                    return false;
+
+                return (_bulkheadJobPinMask & BulkheadRequiredJobPinMask) == BulkheadRequiredJobPinMask;
+            }
+            finally
+            {
+                if ((_bulkheadJobPinMask & BulkheadRequiredJobPinMask) != BulkheadRequiredJobPinMask)
+                    ReleaseBulkheadJobPins();
+            }
         }
 
         private bool TryLockOptionalBulkheadJobPin(BufferID bufferId, uint bit)
@@ -695,6 +699,9 @@ namespace Hecton8.Construction
             if ((_bulkheadJobPinMask & bit) != 0u)
                 return true;
 
+            if (!vault.TryLockBuffer(bufferId, OwnerSystemId))
+                return false;
+
             _bulkheadJobPinMask |= bit;
             return true;
         }
@@ -705,6 +712,7 @@ namespace Hecton8.Construction
             if (vault == null || (_bulkheadJobPinMask & bit) == 0u)
                 return;
 
+            vault.TryUnlockBuffer(bufferId, OwnerSystemId);
             _bulkheadJobPinMask &= ~bit;
         }
 
@@ -722,7 +730,45 @@ namespace Hecton8.Construction
             if (vault == null || mask == 0u)
                 return;
 
-            vault.ReleaseMutationGuard(BulkheadJobMutationGuardMask);
+            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinHatchStructural, BufferID.StructuralIntegrityStates);
+            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinHatchFluidFront, BufferID.ShinobuFluidCompartmentFront);
+            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinHatchMockFluid, BufferID.Shinobu343HatchMockFluidCompartments);
+            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinHatchTuning, BufferID.Shinobu343HatchTuning);
+            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinHatchTelemetryCursor, BufferID.Shinobu343HatchTelemetryCursor);
+            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinHatchTelemetry, BufferID.Shinobu343HatchTelemetryRing);
+            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinHatchStates, BufferID.Shinobu343HatchStates);
+            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinTelemetryCursor, BufferID.Shinobu220BulkheadTelemetryCursor);
+            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinTelemetry, BufferID.Shinobu220BulkheadTelemetryRing);
+            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinCollisionResults, BufferID.Shinobu220BulkheadCollisionResults);
+            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinModuleIntegrity, BufferID.Shinobu220BulkheadModuleIntegrity);
+            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinFluidFlow, BufferID.Shinobu220BulkheadFluidFlow);
+            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinEdgeConductivity, BufferID.Shinobu220BulkheadEdgeConductivity);
+            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinCsrEdges, BufferID.Shinobu220BulkheadCsrEdges);
+            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinPlanes, BufferID.Shinobu220BulkheadPlanes);
+            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinAups, BufferID.Shinobu220BulkheadAups);
+            TryUnlockBulkheadJobPin(vault, mask, BulkheadJobPinStates, BufferID.Shinobu220BulkheadStates);
+        }
+
+        private bool TryLockBulkheadJobPin(BufferID bufferId, uint bit)
+        {
+            IDataVault vault = _bulkheadJobPinVault;
+            if (vault == null || bufferId == BufferID.Unknown)
+                return false;
+
+            if ((_bulkheadJobPinMask & bit) != 0u)
+                return true;
+
+            if (!vault.TryLockBuffer(bufferId, OwnerSystemId))
+                return false;
+
+            _bulkheadJobPinMask |= bit;
+            return true;
+        }
+
+        private static void TryUnlockBulkheadJobPin(IDataVault vault, uint mask, uint bit, BufferID bufferId)
+        {
+            if ((mask & bit) != 0u)
+                vault.TryUnlockBuffer(bufferId, OwnerSystemId);
         }
 
         private void ReleaseVaultHandles()
@@ -2037,7 +2083,7 @@ namespace Hecton8.Construction
 
         private bool TryDumpBlackBox(NativeArray<BulkheadTelemetryEntry> telemetry, uint cursor)
         {
-            if (!telemetry.IsCreated || telemetry.Length == 0 || string.IsNullOrEmpty(_dumpPath))
+            if (!telemetry.IsCreated || telemetry.Length == 0)
                 return false;
 
             const int telemetryDumpEntryBytes = 64;
@@ -2045,34 +2091,44 @@ namespace Hecton8.Construction
             if (entrySize != telemetryDumpEntryBytes)
                 return false;
 
-            string dumpDirectory = Path.GetDirectoryName(_dumpPath);
-            if (string.IsNullOrEmpty(dumpDirectory))
-                return false;
-
+            const int headerBytes = 32;
+            int byteCount = headerBytes + telemetry.Length * telemetryDumpEntryBytes;
+            NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                byteCount,
+                nameof(BulkheadContainmentRuntime),
+                "BulkheadTelemetryBlackBoxDumpPayload",
+                NativeArrayOptions.ClearMemory);
+            uint hash = 2166136261u ^ cursor ^ (uint)telemetry.Length ^ (uint)entrySize;
             try
             {
-                Directory.CreateDirectory(dumpDirectory);
-                using FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                Span<byte> header = stackalloc byte[16];
-                WriteUInt(header, 0, 0x53483232u);
-                WriteUInt(header, 4, cursor);
-                WriteUInt(header, 8, (uint)telemetry.Length);
-                WriteUInt(header, 12, (uint)entrySize);
-                stream.Write(header);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                Span<byte> header = new Span<byte>(destination, headerBytes);
+                WriteUInt(header, 0, 0x42484C4Bu);
+                WriteUInt(header, 4, 1u);
+                WriteUInt(header, 8, cursor);
+                WriteUInt(header, 12, (uint)telemetry.Length);
+                WriteUInt(header, 16, (uint)entrySize);
 
-                Span<byte> entryBytes = stackalloc byte[telemetryDumpEntryBytes];
                 for (int i = 0; i < telemetry.Length; i++)
                 {
                     BulkheadTelemetryEntry entry = telemetry[i];
-                    WriteTelemetryEntry(entryBytes, in entry);
-                    stream.Write(entryBytes);
+                    byte* entryBytes = (byte*)UnsafeUtility.AddressOf(ref entry);
+                    for (int byteIndex = 0; byteIndex < entrySize; byteIndex++)
+                        hash = (hash ^ entryBytes[byteIndex]) * 16777619u;
+
+                    WriteTelemetryEntry(new Span<byte>(destination + headerBytes + i * telemetryDumpEntryBytes, telemetryDumpEntryBytes), in entry);
                 }
 
-                return true;
+                _lastBlackBoxDumpHash = hash == 0u ? 2166136261u : hash;
+                WriteUInt(header, 20, _lastBlackBoxDumpHash);
+                return NativeFaultDumpWriter.TryWriteAll("Docs/AgentLogs/Dump_1403_BULKHEAD_CONTAINMENT.bin", payload, byteCount);
             }
-            catch (Exception ex) when (IsColdStorageException(ex))
+            finally
             {
-                return false;
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(BulkheadContainmentRuntime),
+                    "BulkheadTelemetryBlackBoxDumpPayload");
             }
         }
 

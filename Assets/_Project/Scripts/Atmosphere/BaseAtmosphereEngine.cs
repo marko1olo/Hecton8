@@ -106,6 +106,7 @@ namespace Hecton8.Atmosphere
         private bool _registeredColdTick;
         private bool _registered;
         private bool _registeredHotSwap;
+        private bool _runtimeActive;
         private bool _pendingVaultRebind;
         private bool _pendingNativeStateRelease;
         private bool _seededDefaultAtmosphere;
@@ -147,6 +148,7 @@ namespace Hecton8.Atmosphere
 
         private void OnEnable()
         {
+            _runtimeActive = Application.isPlaying;
             CacheRegistryServicesCold();
             TryRegisterHotSwap();
             PrepareNativeStateCold();
@@ -156,6 +158,7 @@ namespace Hecton8.Atmosphere
 
         private void OnDisable()
         {
+            _runtimeActive = false;
             TryUnregister();
             TryUnregisterHotSwap();
             DisposeNativeStateDeferred();
@@ -163,6 +166,7 @@ namespace Hecton8.Atmosphere
 
         private void OnDestroy()
         {
+            _runtimeActive = false;
             TryUnregister();
             TryUnregisterHotSwap();
             DisposeNativeStateDeferred();
@@ -170,7 +174,7 @@ namespace Hecton8.Atmosphere
 
         public void ColdTick()
         {
-            if (!Application.isPlaying)
+            if (!_runtimeActive)
                 return;
 
             if (!TryFinalizeDeferredNativeDisposal())
@@ -380,7 +384,7 @@ namespace Hecton8.Atmosphere
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registered || !_runtimeActive || GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_registeredColdTick)
@@ -422,7 +426,7 @@ namespace Hecton8.Atmosphere
 
         private void TryRegisterHotSwap()
         {
-            if (_registeredHotSwap || !Application.isPlaying)
+            if (_registeredHotSwap || !_runtimeActive)
                 return;
 
             _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);

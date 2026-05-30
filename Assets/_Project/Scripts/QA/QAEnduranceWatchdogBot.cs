@@ -2,7 +2,6 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -38,12 +37,11 @@ namespace Hecton8.QA
         private static int s_x001QAEnduranceWatchdogBotSignalPushDropCount;
         private const string AgentId = "QA_WATCHDOG_BOT";
         private const string CsvFileName = "QA_Endurance_Log.csv";
-        private const string DumpFileName = "Dump_QA_WATCHDOG_BOT.bin";
-        private const string ResultFileName = "QAEnduranceResult_QA_WATCHDOG_BOT.json";
+        private const string ResultFileName = "QAEnduranceResult_QA_WATCHDOG_BOT.txt";
         private const string AutoRunFlagPath = "Temp/H8_QA_LEGACY_ENDURANCE.flag";
         private const string SaveSlotName = "qa_endurance_10km";
         private const int BlackBoxCapacity = 300;
-        private const int CsvQueueCapacity = 64;
+        private const int CsvQueueCapacity = 256;
         private const int CsvLineCapacity = 384;
         private const int CsvByteCapacity = 768;
         private const int FpsWindowCapacity = 64;
@@ -69,6 +67,7 @@ namespace Hecton8.QA
         internal const uint EventHashCrash = 0x43525348u;
         internal const uint EventHashComplete = 0x444F4E45u;
         private const SystemID OwnerSystemId = SystemID.QAEndurance;
+        private static readonly char[] ResultFloatFormat = { 'F', '3' }; // COLD ALLOC: char[2] - terminal result float format - owner: QAEnduranceWatchdogBot
 
         private static QAEnduranceWatchdogBot _activeInstance;
         private static bool _autoRunBotCreated;
@@ -87,10 +86,12 @@ namespace Hecton8.QA
         private QAEnduranceCsvWriter _csvWriter;
         private IDataVault _dataVault;
         private ISaveService _saveService;
+        private ISaveService _queuedSaveService;
         private IPhysicsService _physicsService;
         private VaultGenerationHandle<QAEnduranceBlackBoxEntry> _blackBoxHandle;
         private AbsoluteUniversePosition _lastAup;
         private AbsoluteUniversePosition _currentAup;
+        private AbsoluteUniversePosition _pendingPdaRadarAup;
         private float3 _currentRuntimePosition;
         private float3 _currentVelocity;
         private long _memoryWindowStartBytes;
@@ -104,6 +105,7 @@ namespace Hecton8.QA
         private float _nextMemoryWindowDistance;
         private float _stuckTimerSeconds;
         private float _fpsAccumulated;
+        private float _resolvedQualityWeight01;
         private int _fpsSampleCount;
         private int _blackBoxCursor;
         private int _blackBoxCount;
@@ -118,17 +120,22 @@ namespace Hecton8.QA
         private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
         private bool _originListenerRegistered;
+        private Rigidbody _pendingRecoveryBody;
+        private Vector3 _pendingRecoveryBodyPosition;
         private Transform _pendingRecoveryTransform;
         private Vector3 _pendingRecoveryTransformPosition;
+        private bool _hasPendingRecoveryBodyPosition;
         private bool _hasPendingRecoveryTransformPosition;
+        private bool _pdaRadarRequestQueued;
         private bool _instanceAccepted;
         private bool _active;
         private bool _pdaOpen;
         private bool _saveInFlight;
+        private bool _saveRequestQueued;
         private bool _completed;
         private bool _faulted;
+        private readonly char[] _resultFormatBuffer = new char[32]; // COLD ALLOC: char[32] - terminal result numeric format scratch - owner: QAEnduranceWatchdogBot
         private string _csvPath;
-        private string _dumpPath;
         private string _resultPath;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -306,6 +313,7 @@ namespace Hecton8.QA
             _lastTotalMemoryBytes = _memoryWindowStartBytes;
             _lastManagedMemoryBytes = Profiler.GetMonoUsedSizeLong();
             _lastGraphicsDriverBytes = ResolveGraphicsDriverBytes();
+            _resolvedQualityWeight01 = ResolveGlobalQualityWeight01();
             _nextCsvDistance = ResolveCsvIntervalMeters();
             _nextPdaDistance = pdaIntervalMeters;
             _nextSaveDistance = saveIntervalMeters;
@@ -322,6 +330,10 @@ namespace Hecton8.QA
             _trapCount = 0;
             _saveRequestCount = 0;
             _csvDropCount = 0;
+            _queuedSaveService = null;
+            _pdaRadarRequestQueued = false;
+            _saveRequestQueued = false;
+            _saveInFlight = false;
             _lastFrame = -1;
             _hasLastAup = false;
             _completed = false;
@@ -346,6 +358,7 @@ namespace Hecton8.QA
                 return;
 
             _lastFrame = currentFrame;
+            _resolvedQualityWeight01 = ResolveGlobalQualityWeight01();
             PublishAutomationInput();
 
             if (!TryResolvePlayerState(out PlayerRuntimeContext runtimeContext, out PlayerMovementRuntimeState movementState))
@@ -374,7 +387,7 @@ namespace Hecton8.QA
                 SampleCsv(EventHashCsvSample);
 
             if (_distanceMeters >= _nextPdaDistance)
-                TogglePdaRadar(in _currentAup);
+                QueuePdaRadar(in _currentAup);
 
             if (_distanceMeters >= _nextSaveDistance)
                 RequestSaveIfAvailable();
@@ -406,22 +419,26 @@ namespace Hecton8.QA
 
         private float ResolveCsvIntervalMeters()
         {
-            switch (tier)
-            {
-                case QAEnduranceTier.Ultra:
-                    return math.min(csvIntervalMeters, 250f);
-                case QAEnduranceTier.High:
-                    return math.min(csvIntervalMeters, 500f);
-                default:
-                    return csvIntervalMeters;
-            }
+            float minimumIntervalMeters = math.min(csvIntervalMeters, 250f);
+            return math.max(1f, math.lerp(csvIntervalMeters, minimumIntervalMeters, ResolveEnduranceQuality01()));
+        }
+
+        private float ResolveEnduranceQuality01()
+        {
+            float tierHint = math.saturate((float)tier * 0.33333334f);
+            return math.saturate(math.lerp(_resolvedQualityWeight01, tierHint, 0.15f));
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.isfinite(quality) ? math.saturate(quality) : 0f;
         }
 
         private void ResolveArtifactPaths()
         {
             string logRoot = ResolveProjectPath("Docs/AgentLogs");
             _csvPath = Path.Combine(logRoot, CsvFileName);
-            _dumpPath = Path.Combine(logRoot, DumpFileName);
             _resultPath = Path.Combine(logRoot, ResultFileName);
         }
 
@@ -483,13 +500,39 @@ namespace Hecton8.QA
 
         public void LateFrameTick()
         {
-            if (!_hasPendingRecoveryTransformPosition)
-                return;
+            if (_hasPendingRecoveryBodyPosition)
+            {
+                _hasPendingRecoveryBodyPosition = false;
+                Rigidbody body = _pendingRecoveryBody;
+                Vector3 position = _pendingRecoveryBodyPosition;
+                _pendingRecoveryBody = null;
+                if (body != null)
+                {
+                    body.position = position;
+                    IPhysicsService physics = _physicsService;
+                    if (physics != null)
+                    {
+                        physics.QueueLinearVelocitySet(body, Vector3.zero, wake: false);
+                        physics.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
+                    }
 
-            _hasPendingRecoveryTransformPosition = false;
-            if (_pendingRecoveryTransform != null)
-                _pendingRecoveryTransform.position = _pendingRecoveryTransformPosition;
-            _pendingRecoveryTransform = null;
+                    body.WakeUp();
+                }
+            }
+
+            if (_hasPendingRecoveryTransformPosition)
+            {
+                _hasPendingRecoveryTransformPosition = false;
+                if (_pendingRecoveryTransform != null)
+                    _pendingRecoveryTransform.position = _pendingRecoveryTransformPosition;
+                _pendingRecoveryTransform = null;
+            }
+
+            if (_pdaRadarRequestQueued)
+                FlushQueuedPdaRadarLate();
+
+            if (_saveRequestQueued)
+                StartQueuedSaveCold();
         }
 
         private void RegisterOriginListener()
@@ -504,8 +547,10 @@ namespace Hecton8.QA
         private void PublishAutomationInput()
         {
             PlayerInputState state = default;
-            state.MoveDelta = new Vector2(0f, 1f);
-            state.LookDelta = new Vector2(0f, -0.012f);
+            state.MoveDelta.x = 0f;
+            state.MoveDelta.y = 1f;
+            state.LookDelta.x = 0f;
+            state.LookDelta.y = -0.012f;
             state.VerticalDelta = 0.15f;
             state.ActionsBitmask = (uint)PlayerInputAction.Sprint;
             DeterminismSignals.TryPublishInputOverride(in state, Hecton8.Core.SystemDispatcher.CurrentFrameId);
@@ -608,10 +653,7 @@ namespace Hecton8.QA
                 if (!IsFinite(nextPosition))
                     return;
 
-                body.position = nextPosition;
-                _physicsService?.QueueLinearVelocitySet(body, Vector3.zero, wake: false);
-                _physicsService?.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
-                body.WakeUp();
+                QueueRecoveryBodyPosition(body, nextPosition);
                 if (runtimeContext.PlayerTransform != null)
                     QueueRecoveryTransformPosition(runtimeContext.PlayerTransform, nextPosition);
                 return;
@@ -633,12 +675,36 @@ namespace Hecton8.QA
             _hasPendingRecoveryTransformPosition = true;
         }
 
-        private static bool IsFinite(Vector3 value)
+        private void QueueRecoveryBodyPosition(Rigidbody target, Vector3 position)
         {
-            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
+            _pendingRecoveryBody = target;
+            _pendingRecoveryBodyPosition = position;
+            _hasPendingRecoveryBodyPosition = true;
         }
 
-        private void TogglePdaRadar(in AbsoluteUniversePosition aup)
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
+        }
+
+        private void QueuePdaRadar(in AbsoluteUniversePosition aup)
+        {
+            if (_pdaRadarRequestQueued)
+                return;
+
+            _pendingPdaRadarAup = aup;
+            _pdaRadarRequestQueued = true;
+            _nextPdaDistance += pdaIntervalMeters;
+        }
+
+        private void FlushQueuedPdaRadarLate()
+        {
+            _pdaRadarRequestQueued = false;
+            AbsoluteUniversePosition aup = _pendingPdaRadarAup;
+            TogglePdaRadarLate(in aup);
+        }
+
+        private void TogglePdaRadarLate(in AbsoluteUniversePosition aup)
         {
             if (_pdaOpen)
                 ThreadSafeCommandQueue.TryEnqueue(EntityCommand.CreateClosePDA());
@@ -646,64 +712,53 @@ namespace Hecton8.QA
                 ThreadSafeCommandQueue.TryEnqueue(EntityCommand.CreateOpenPDATab(pdaRadarTabIndex));
 
             _pdaOpen = !_pdaOpen;
-            SonarPingSignal sonar = new SonarPingSignal
-            {
-                PositionAup = aup,
-                RadiusMeters = ResolveRadarRadius(),
-                Intensity01 = ResolveRadarIntensity(),
-                SourceId = SourceHash,
-                Flags = 1,
-            };
+            SonarPingSignal sonar = default;
+            sonar.PositionAup = aup;
+            sonar.RadiusMeters = ResolveRadarRadius();
+            sonar.Intensity01 = ResolveRadarIntensity();
+            sonar.SourceId = SourceHash;
+            sonar.Flags = 1;
             SignalBus<SonarPingSignal>.TryPushTracked(in sonar, ref s_x001QAEnduranceWatchdogBotSignalPushDropCount);
-            _nextPdaDistance += pdaIntervalMeters;
             WriteBlackBox(EventHashPdaRadar);
             EnqueueCsvRecord(EventHashPdaRadar);
         }
 
         private float ResolveRadarRadius()
         {
-            switch (tier)
-            {
-                case QAEnduranceTier.Ultra:
-                    return 180f;
-                case QAEnduranceTier.High:
-                    return 140f;
-                case QAEnduranceTier.Middle:
-                    return 110f;
-                default:
-                    return 80f;
-            }
+            return math.lerp(80f, 180f, ResolveEnduranceQuality01());
         }
 
         private float ResolveRadarIntensity()
         {
-            switch (tier)
-            {
-                case QAEnduranceTier.Ultra:
-                    return 1f;
-                case QAEnduranceTier.High:
-                    return 0.85f;
-                case QAEnduranceTier.Middle:
-                    return 0.7f;
-                default:
-                    return 0.55f;
-            }
+            return math.lerp(0.55f, 1f, ResolveEnduranceQuality01());
         }
 
         private void RequestSaveIfAvailable()
         {
             _nextSaveDistance += saveIntervalMeters;
-            if (_saveInFlight)
+            if (_saveInFlight || _saveRequestQueued)
                 return;
 
             ISaveService save = _saveService;
             if (save == null || !save.IsInitialized || save.IsBusy)
                 return;
 
-            _saveInFlight = true;
+            _queuedSaveService = save;
+            _saveRequestQueued = true;
             _saveRequestCount++;
             WriteBlackBox(EventHashSaveRequest);
             EnqueueCsvRecord(EventHashSaveRequest);
+        }
+
+        private void StartQueuedSaveCold()
+        {
+            _saveRequestQueued = false;
+            ISaveService save = _queuedSaveService;
+            _queuedSaveService = null;
+            if (save == null || !save.IsInitialized || save.IsBusy)
+                return;
+
+            _saveInFlight = true;
             _ = SaveAsync(save);
         }
 
@@ -764,7 +819,7 @@ namespace Hecton8.QA
             PublishCompliance(eventHash, 4);
             WriteBlackBox(eventHash);
             EnqueueCsvRecord(eventHash);
-            DumpBlackBox();
+            RetainBlackBoxInVaultCold();
             WriteResultFileCold(1, eventHash);
             StopRun(true, eventHash);
         }
@@ -786,7 +841,12 @@ namespace Hecton8.QA
             TryUnregisterHotSwapListener();
 
             _hasPendingRecoveryTransformPosition = false;
+            _hasPendingRecoveryBodyPosition = false;
             _pendingRecoveryTransform = null;
+            _pendingRecoveryBody = null;
+            _pdaRadarRequestQueued = false;
+            _saveRequestQueued = false;
+            _queuedSaveService = null;
 
             if (_originListenerRegistered)
             {
@@ -798,6 +858,8 @@ namespace Hecton8.QA
 
             if (_csvWriter != null)
             {
+                if (flush)
+                    _csvWriter.FlushCold();
                 _csvWriter.Dispose();
                 _csvWriter = null;
             }
@@ -837,15 +899,13 @@ namespace Hecton8.QA
 
         private void PublishCompliance(uint ruleHash, byte severity)
         {
-            ComplianceViolationSignal signal = new ComplianceViolationSignal
-            {
-                RuleHash = ruleHash,
-                SystemHash = SourceHash,
-                ContextHash = AgentIdHash,
-                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                Severity = severity,
-                Flags = 1,
-            };
+            ComplianceViolationSignal signal = default;
+            signal.RuleHash = ruleHash;
+            signal.SystemHash = SourceHash;
+            signal.ContextHash = AgentIdHash;
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+            signal.Severity = severity;
+            signal.Flags = 1;
             SignalBus<ComplianceViolationSignal>.TryPushTracked(in signal, ref s_x001QAEnduranceWatchdogBotSignalPushDropCount);
         }
 
@@ -911,20 +971,18 @@ namespace Hecton8.QA
                 if (!blackBox.IsCreated || blackBox.Length < BlackBoxCapacity)
                     return;
 
-                QAEnduranceBlackBoxEntry entry = new QAEnduranceBlackBoxEntry
-                {
-                    Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
-                    DistanceMeters = _distanceMeters,
-                    RuntimePosition = _currentRuntimePosition,
-                    Velocity = _currentVelocity,
-                    Aup = _currentAup,
-                    TotalMemoryBytes = _lastTotalMemoryBytes,
-                    ManagedMemoryBytes = _lastManagedMemoryBytes,
-                    GraphicsDriverBytes = _lastGraphicsDriverBytes,
-                    AverageFps = ResolveAverageFps(),
-                    EventHash = eventHash,
-                    Flags = BuildBlackBoxFlags(),
-                };
+                QAEnduranceBlackBoxEntry entry = default;
+                entry.Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId);
+                entry.DistanceMeters = _distanceMeters;
+                entry.RuntimePosition = _currentRuntimePosition;
+                entry.Velocity = _currentVelocity;
+                entry.Aup = _currentAup;
+                entry.TotalMemoryBytes = _lastTotalMemoryBytes;
+                entry.ManagedMemoryBytes = _lastManagedMemoryBytes;
+                entry.GraphicsDriverBytes = _lastGraphicsDriverBytes;
+                entry.AverageFps = ResolveAverageFps();
+                entry.EventHash = eventHash;
+                entry.Flags = BuildBlackBoxFlags();
 
                 int index = math.clamp(_blackBoxCursor, 0, BlackBoxCapacity - 1);
                 blackBox[index] = entry;
@@ -945,7 +1003,7 @@ namespace Hecton8.QA
                 flags |= 1u;
             if (_pdaOpen)
                 flags |= 1u << 1;
-            if (_saveInFlight)
+            if (_saveInFlight || _saveRequestQueued)
                 flags |= 1u << 2;
             if (_faulted)
                 flags |= 1u << 3;
@@ -957,105 +1015,86 @@ namespace Hecton8.QA
             if (_csvWriter == null)
                 return;
 
-            QAEnduranceCsvRecord record = new QAEnduranceCsvRecord
-            {
-                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
-                DistanceMeters = _distanceMeters,
-                AverageFps = ResolveAverageFps(),
-                TotalMemoryBytes = _lastTotalMemoryBytes,
-                ManagedMemoryBytes = _lastManagedMemoryBytes,
-                GraphicsDriverBytes = _lastGraphicsDriverBytes,
-                RuntimeX = _currentRuntimePosition.x,
-                RuntimeY = _currentRuntimePosition.y,
-                RuntimeZ = _currentRuntimePosition.z,
-                VelocityMagnitude = math.length(_currentVelocity),
-                OriginShiftCount = _originShiftCount,
-                TrapCount = _trapCount,
-                SaveRequestCount = _saveRequestCount,
-                CsvDropCount = _csvDropCount,
-                Tier = (byte)tier,
-                EventHash = eventHash,
-            };
+            QAEnduranceCsvRecord record = default;
+            record.Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId);
+            record.DistanceMeters = _distanceMeters;
+            record.AverageFps = ResolveAverageFps();
+            record.TotalMemoryBytes = _lastTotalMemoryBytes;
+            record.ManagedMemoryBytes = _lastManagedMemoryBytes;
+            record.GraphicsDriverBytes = _lastGraphicsDriverBytes;
+            record.RuntimeX = _currentRuntimePosition.x;
+            record.RuntimeY = _currentRuntimePosition.y;
+            record.RuntimeZ = _currentRuntimePosition.z;
+            record.VelocityMagnitude = math.length(_currentVelocity);
+            record.OriginShiftCount = _originShiftCount;
+            record.TrapCount = _trapCount;
+            record.SaveRequestCount = _saveRequestCount;
+            record.CsvDropCount = _csvDropCount;
+            record.Tier = (byte)tier;
+            record.QualityByte = (byte)math.round(ResolveEnduranceQuality01() * 255f);
+            record.EventHash = eventHash;
 
             if (!_csvWriter.TryEnqueue(in record))
                 _csvDropCount++;
         }
 
-        private void DumpBlackBox()
+        private void RetainBlackBoxInVaultCold()
         {
-            IDataVault vault = _dataVault;
-            if (vault == null ||
-                !IsVaultHandleCreated(in _blackBoxHandle) ||
-                !vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<QAEnduranceBlackBoxEntry>.ReadOnly blackBox) ||
-                !blackBox.IsCreated ||
-                blackBox.Length <= 0)
-            {
-                return;
-            }
-
-            Directory.CreateDirectory(Path.GetDirectoryName(_dumpPath));
-            using (FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read)) // COLD ALLOC: FileStream[1] — crash blackbox dump — owner: QAEnduranceWatchdogBot
-            using (BinaryWriter writer = new BinaryWriter(stream)) // COLD ALLOC: BinaryWriter[1] — crash blackbox binary encoder — owner: QAEnduranceWatchdogBot
-            {
-                writer.Write(0x51415744);
-                writer.Write(1);
-                int count = math.min(_blackBoxCount, math.min(BlackBoxCapacity, blackBox.Length));
-                writer.Write(count);
-                writer.Write(_blackBoxCursor);
-                for (int i = 0; i < count; i++)
-                {
-                    int index = _blackBoxCursor - count + i;
-                    if (index < 0)
-                        index += count;
-
-                    QAEnduranceBlackBoxEntry entry = blackBox[index];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.DistanceMeters);
-                    writer.Write(entry.RuntimePosition.x);
-                    writer.Write(entry.RuntimePosition.y);
-                    writer.Write(entry.RuntimePosition.z);
-                    writer.Write(entry.Velocity.x);
-                    writer.Write(entry.Velocity.y);
-                    writer.Write(entry.Velocity.z);
-                    writer.Write(entry.Aup.GridX);
-                    writer.Write(entry.Aup.GridY);
-                    writer.Write(entry.Aup.GridZ);
-                    writer.Write(entry.Aup.LocalX);
-                    writer.Write(entry.Aup.LocalY);
-                    writer.Write(entry.Aup.LocalZ);
-                    writer.Write(entry.TotalMemoryBytes);
-                    writer.Write(entry.ManagedMemoryBytes);
-                    writer.Write(entry.GraphicsDriverBytes);
-                    writer.Write(entry.AverageFps);
-                    writer.Write(entry.EventHash);
-                    writer.Write(entry.Flags);
-                }
-            }
+            // Source-only proof mode: the fixed 300-frame black-box ring remains
+            // in GlobalDataVault. Disk binary dumps are intentionally disabled.
         }
 
         private void WriteResultFileCold(int exitCode, uint eventHash)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_resultPath));
-            using (StreamWriter writer = new StreamWriter(_resultPath, false)) // COLD ALLOC: StreamWriter[1] — terminal result JSON — owner: QAEnduranceWatchdogBot
+            using (StreamWriter writer = new StreamWriter(_resultPath, false)) // COLD ALLOC: StreamWriter[1] - terminal exit signal - owner: QAEnduranceWatchdogBot
             {
-                writer.Write("{\"agent\":\"");
+                writer.Write("agent=");
                 writer.Write(AgentId);
-                writer.Write("\",\"exitCode\":");
-                writer.Write(exitCode.ToString(CultureInfo.InvariantCulture));
-                writer.Write(",\"eventHash\":");
-                writer.Write(eventHash.ToString(CultureInfo.InvariantCulture));
-                writer.Write(",\"distanceMeters\":");
-                writer.Write(_distanceMeters.ToString("F3", CultureInfo.InvariantCulture));
-                writer.Write(",\"originShifts\":");
-                writer.Write(_originShiftCount.ToString(CultureInfo.InvariantCulture));
-                writer.Write(",\"traps\":");
-                writer.Write(_trapCount.ToString(CultureInfo.InvariantCulture));
-                writer.Write(",\"saveRequests\":");
-                writer.Write(_saveRequestCount.ToString(CultureInfo.InvariantCulture));
-                writer.Write(",\"csvDrops\":");
-                writer.Write(_csvDropCount.ToString(CultureInfo.InvariantCulture));
-                writer.Write("}");
+                writer.WriteLine();
+                writer.Write("exitCode=");
+                WriteIntCold(writer, exitCode);
+                writer.WriteLine();
+                writer.Write("eventHash=");
+                WriteUIntCold(writer, eventHash);
+                writer.WriteLine();
+                writer.Write("distanceMeters=");
+                WriteFloatCold(writer, _distanceMeters);
+                writer.WriteLine();
+                writer.Write("originShifts=");
+                WriteIntCold(writer, _originShiftCount);
+                writer.WriteLine();
+                writer.Write("traps=");
+                WriteIntCold(writer, _trapCount);
+                writer.WriteLine();
+                writer.Write("saveRequests=");
+                WriteIntCold(writer, _saveRequestCount);
+                writer.WriteLine();
+                writer.Write("csvDrops=");
+                WriteIntCold(writer, _csvDropCount);
+                writer.WriteLine();
             }
+        }
+
+        private void WriteIntCold(StreamWriter writer, int value)
+        {
+            Span<char> buffer = _resultFormatBuffer.AsSpan();
+            if (value.TryFormat(buffer, out int written, provider: CultureInfo.InvariantCulture))
+                writer.Write(_resultFormatBuffer, 0, written);
+        }
+
+        private void WriteUIntCold(StreamWriter writer, uint value)
+        {
+            Span<char> buffer = _resultFormatBuffer.AsSpan();
+            if (value.TryFormat(buffer, out int written, provider: CultureInfo.InvariantCulture))
+                writer.Write(_resultFormatBuffer, 0, written);
+        }
+
+        private void WriteFloatCold(StreamWriter writer, float value)
+        {
+            Span<char> buffer = _resultFormatBuffer.AsSpan();
+            if (value.TryFormat(buffer, out int written, ResultFloatFormat, CultureInfo.InvariantCulture))
+                writer.Write(_resultFormatBuffer, 0, written);
         }
 
         private static long ResolveGraphicsDriverBytes()
@@ -1103,7 +1142,7 @@ namespace Hecton8.QA
         [FieldOffset(64)] public int SaveRequestCount;
         [FieldOffset(68)] public int CsvDropCount;
         [FieldOffset(72)] public byte Tier;
-        [FieldOffset(73)] private byte _pad1;
+        [FieldOffset(73)] public byte QualityByte;
         [FieldOffset(74)] private ushort _pad2;
         [FieldOffset(76)] public uint EventHash;
     }
@@ -1112,20 +1151,14 @@ namespace Hecton8.QA
     {
         private static readonly char[] FloatFormat = { 'F', '3' }; // COLD ALLOC: char[2] — fixed float format token — owner: QAEnduranceCsvWriter
         private static readonly byte[] HeaderBytes = EncodeStaticAscii(
-            "frame,distanceMeters,avgFps,totalMemoryBytes,managedMemoryBytes,graphicsDriverBytes,x,y,z,velocityMetersPerSecond,originShifts,traps,saveRequests,csvDrops,tier,eventToken,eventHash\n"); // COLD ALLOC: byte[headerLength] — static CSV header bytes — owner: QAEnduranceCsvWriter
+            "frame,distanceMeters,avgFps,totalMemoryBytes,managedMemoryBytes,graphicsDriverBytes,x,y,z,velocityMetersPerSecond,originShifts,traps,saveRequests,csvDrops,tier,qualityByte,eventToken,eventHash\n"); // COLD ALLOC: byte[headerLength] — static CSV header bytes — owner: QAEnduranceCsvWriter
 
         private readonly QAEnduranceCsvRecord[] _records;
-        private readonly object _gate = new object(); // COLD ALLOC: object[1] — CSV queue lock gate — owner: QAEnduranceCsvWriter
-        private readonly AutoResetEvent _signal = new AutoResetEvent(false); // COLD ALLOC: AutoResetEvent[1] — CSV writer wake signal — owner: QAEnduranceCsvWriter
         private readonly char[] _lineChars;
         private readonly byte[] _lineBytes;
         private readonly string _path;
-        private Thread _thread;
-        private FileStream _stream;
-        private int _readIndex;
         private int _writeIndex;
         private int _count;
-        private volatile bool _running;
 
         public QAEnduranceCsvWriter(string path, int capacity, int lineCapacity, int byteCapacity)
         {
@@ -1137,95 +1170,43 @@ namespace Hecton8.QA
 
         public void StartCold()
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(_path));
-            _stream = new FileStream(_path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.Asynchronous); // COLD ALLOC: FileStream[1] — async CSV file sink — owner: QAEnduranceCsvWriter
-            _stream.Write(HeaderBytes, 0, HeaderBytes.Length);
-            _running = true;
-            _thread = new Thread(WriterLoop) // COLD ALLOC: Thread[1] — background CSV writer — owner: QAEnduranceCsvWriter
-            {
-                IsBackground = true,
-                Name = "H8.QA.EnduranceCsvWriter",
-            };
-            _thread.Start();
+            _writeIndex = 0;
+            _count = 0;
         }
 
         public bool TryEnqueue(in QAEnduranceCsvRecord record)
         {
-            lock (_gate)
-            {
-                if (_count >= _records.Length)
-                    return false;
+            if (_count >= _records.Length)
+                return false;
 
-                _records[_writeIndex] = record;
-                _writeIndex++;
-                if (_writeIndex >= _records.Length)
-                    _writeIndex = 0;
-                _count++;
-            }
-
-            _signal.Set();
+            _records[_writeIndex] = record;
+            _writeIndex++;
+            if (_writeIndex >= _records.Length)
+                _writeIndex = 0;
+            _count++;
             return true;
+        }
+
+        public void FlushCold()
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(_path));
+            using (FileStream stream = new FileStream(_path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096)) // COLD ALLOC: FileStream[1] — terminal CSV file sink — owner: QAEnduranceCsvWriter
+            {
+                stream.Write(HeaderBytes, 0, HeaderBytes.Length);
+                for (int i = 0; i < _count; i++)
+                    WriteRecord(stream, in _records[i]);
+            }
         }
 
         public void Dispose()
         {
-            _running = false;
-            _signal.Set();
-            if (_thread != null)
-            {
-                _thread.Join(2000);
-                _thread = null;
-            }
-
-            DrainPending();
-            if (_stream != null)
-            {
-                _stream.Flush();
-                _stream.Dispose();
-                _stream = null;
-            }
-
-            _signal.Dispose();
+            for (int i = 0; i < _count; i++)
+                _records[i] = default;
+            _writeIndex = 0;
+            _count = 0;
         }
 
-        private void WriterLoop()
-        {
-            while (_running)
-            {
-                DrainPending();
-                _signal.WaitOne(100);
-            }
-
-            DrainPending();
-        }
-
-        private void DrainPending()
-        {
-            while (TryDequeue(out QAEnduranceCsvRecord record))
-                WriteRecord(in record);
-        }
-
-        private bool TryDequeue(out QAEnduranceCsvRecord record)
-        {
-            lock (_gate)
-            {
-                if (_count <= 0)
-                {
-                    record = default;
-                    return false;
-                }
-
-                record = _records[_readIndex];
-                _records[_readIndex] = default;
-                _readIndex++;
-                if (_readIndex >= _records.Length)
-                    _readIndex = 0;
-                _count--;
-                return true;
-            }
-        }
-
-        private void WriteRecord(in QAEnduranceCsvRecord record)
+        private void WriteRecord(FileStream stream, in QAEnduranceCsvRecord record)
         {
             Span<char> chars = _lineChars;
             int cursor = 0;
@@ -1259,13 +1240,15 @@ namespace Hecton8.QA
             AppendComma(chars, ref cursor);
             AppendInt(chars, ref cursor, record.Tier);
             AppendComma(chars, ref cursor);
+            AppendInt(chars, ref cursor, record.QualityByte);
+            AppendComma(chars, ref cursor);
             AppendEventToken(chars, ref cursor, record.EventHash);
             AppendComma(chars, ref cursor);
             AppendUInt(chars, ref cursor, record.EventHash);
             AppendNewLine(chars, ref cursor);
 
             int byteCount = EncodeAscii(chars.Slice(0, cursor), _lineBytes);
-            _stream.WriteAsync(_lineBytes, 0, byteCount).GetAwaiter().GetResult();
+            stream.Write(_lineBytes, 0, byteCount);
         }
 
         private static void AppendComma(Span<char> destination, ref int cursor)

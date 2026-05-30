@@ -1195,7 +1195,7 @@ namespace Hecton8.Core
                 initialize.TargetAups = targetAups;
                 initialize.StartTick = startTick;
                 initialize.DefaultFlags = PredictedInputFlags.Local;
-                initialize.Run();
+                initialize.Execute();
             }
             finally
             {
@@ -1221,7 +1221,7 @@ namespace Hecton8.Core
                 mock.StartTick = startTick;
                 mock.Count = math.min(count, (uint)predictedInputs.Length);
                 mock.Seed = seed;
-                mock.Run();
+                mock.Execute();
                 return true;
             }
             finally
@@ -1855,25 +1855,28 @@ namespace Hecton8.Core
             if (!TryResolveInputBuffer(in _inputTelemetryHandle, InputBlackBoxCapacity, out NativeArray<InputTelemetryEntryDTO> telemetry))
                 return;
 
+            NativeArray<byte> payload = default;
+            const string dumpPayloadLabel = "deterministicInputBlackBoxDumpPayload";
             try
             {
-                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-                if (string.IsNullOrEmpty(projectRoot))
-                    return;
-
-                string path = Path.Combine(projectRoot, InputDumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
                 int byteCount = telemetry.Length * UnsafeUtility.SizeOf<InputTelemetryEntryDTO>();
                 void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                    stream.Write(new ReadOnlySpan<byte>(source, byteCount));
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(InputDispatcher),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                void* destination = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                if (UnsafeMemoryCopyGuard.SafeCopy(destination, byteCount, source, byteCount))
+                    NativeFaultDumpWriter.TryWriteAll(InputDumpRelativePath, payload, byteCount);
             }
             catch (Exception)
             {
                 CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(ref payload, nameof(InputDispatcher), dumpPayloadLabel);
             }
         }
 

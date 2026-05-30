@@ -917,12 +917,6 @@ namespace Hecton8.Lighting
 
             try
             {
-                string fullPath = Path.Combine(Application.dataPath, "..", BlackBoxDumpPath);
-                string directory = Path.GetDirectoryName(fullPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using FileStream stream = File.Open(fullPath, FileMode.Create, FileAccess.Write, FileShare.Read);
                 GIRelayDumpHeader header = new GIRelayDumpHeader
                 {
                     Magic = 0x47495245u,
@@ -934,17 +928,36 @@ namespace Hecton8.Lighting
                     Reserved0 = 0u,
                     Reserved1 = 0u
                 };
-                stream.Write(new ReadOnlySpan<byte>(UnsafeUtility.AddressOf(ref header), UnsafeUtility.SizeOf<GIRelayDumpHeader>()));
                 int count = telemetryRing.Length;
+                int headerBytes = UnsafeUtility.SizeOf<GIRelayDumpHeader>();
+                int entryBytes = UnsafeUtility.SizeOf<GIRelayTelemetryEntry>();
+                int byteCount = headerBytes + count * entryBytes;
                 int startIndex = _telemetryCount >= count ? _telemetryCursor : 0;
-                for (int i = 0; i < count; i++)
+                NativeArray<byte> payload = default;
+                try
                 {
-                    int entryIndex = startIndex + i;
-                    if (entryIndex >= count)
-                        entryIndex -= count;
+                    payload = NativeFaultDumpWriter.CreateTransientPayload(
+                        byteCount,
+                        nameof(HectonGIRelaySystem),
+                        "GIRelayBlackBoxDumpPayload");
+                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                    UnsafeUtility.MemCpy(target, UnsafeUtility.AddressOf(ref header), headerBytes);
 
-                    GIRelayTelemetryEntry entry = telemetryRing[entryIndex];
-                    stream.Write(new ReadOnlySpan<byte>(UnsafeUtility.AddressOf(ref entry), UnsafeUtility.SizeOf<GIRelayTelemetryEntry>()));
+                    byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
+                    int firstCount = math.min(count, count - startIndex);
+                    UnsafeUtility.MemCpy(target + headerBytes, source + startIndex * entryBytes, firstCount * entryBytes);
+                    int secondCount = count - firstCount;
+                    if (secondCount > 0)
+                        UnsafeUtility.MemCpy(target + headerBytes + firstCount * entryBytes, source, secondCount * entryBytes);
+
+                    NativeFaultDumpWriter.TryWriteAll(BlackBoxDumpPath, payload, byteCount);
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(HectonGIRelaySystem),
+                        "GIRelayBlackBoxDumpPayload");
                 }
             }
             catch (Exception exception)

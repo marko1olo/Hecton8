@@ -3446,6 +3446,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     static int _shutdownRequested;
     static int _voxelRebuildOverBudgetConsecutive;
     static HectonVoxelEngine s_activeRuntimeInstance;
+    static IPlayerRuntimeContext s_playerRuntimeContext;
     internal static HectonVoxelEngine ActiveRuntimeInstance => s_activeRuntimeInstance;
     private static int _airPocketCount;
     private static FixedList4096Bytes<AirPocketEntry> _airPocketEntries;
@@ -3459,6 +3460,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         _shutdownRequested = 0;
         _voxelRebuildOverBudgetConsecutive = 0;
         s_activeRuntimeInstance = null;
+        s_playerRuntimeContext = null;
         ClearAirPocketRegistry();
         _deferredVoxelPhysicsBakeTeardowns.Clear();
         ClearDeferredVoxelPhysicsBakeEmergencyTeardowns();
@@ -4376,8 +4378,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         EnsureStreamingScratchSlots();
         HectonVoxelVolume.TryEnsurePublishedSonarVaultPayloadCapacity(_streamingScratchVault);
         _ = WarmVoxelMeshPoolsAsync(destroyCancellationToken);
-        _deltaProcessor = GetComponent<VoxelDeltaProcessor>();
-        if (_deltaProcessor == null)
+        if (!TryGetComponent(out _deltaProcessor))
             _deltaProcessor = gameObject.AddComponent<VoxelDeltaProcessor>();
 
         MCTables.Initialize(_streamingScratchVault);
@@ -4442,6 +4443,12 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             return;
         }
 
+        if (serviceSlot == GlobalRegistryServiceSlot.Player)
+        {
+            s_playerRuntimeContext = currentService as IPlayerRuntimeContext;
+            return;
+        }
+
         if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
         {
             IDataVault currentVault = currentService as IDataVault;
@@ -4461,6 +4468,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         _scavengePopulator = GlobalRegistry.ScavengePopulator;
         _vegetationBridge = GlobalRegistry.MapMagicVegetation;
         _resourceDistributionDirector = GlobalRegistry.ResourceDistribution;
+        s_playerRuntimeContext = GlobalRegistry.Player;
         _streamingScratchVault = GlobalRegistry.DataVault;
     }
 
@@ -6283,6 +6291,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         {
             s_activeRuntimeInstance = null;
             s_predictiveVoxelProxyPhysicsService = null;
+            s_playerRuntimeContext = null;
         }
 
         if (ReferenceEquals(GlobalRegistry.VoxelEngine, this))
@@ -6680,9 +6689,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         origin = Vector3.zero;
         velocity = Vector3.zero;
 
-        targetMovement = PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext)
-            ? runtimeContext.PlayerMovement
-            : null;
+        IPlayerRuntimeContext playerRuntimeContext = s_playerRuntimeContext;
+        targetMovement = playerRuntimeContext != null ? playerRuntimeContext.PlayerMovement : null;
         if (targetMovement != null &&
             targetMovement.TryGetActiveTransportPlatform(out ITransportPlatform platform) &&
             platform != null)
@@ -6704,7 +6712,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             }
         }
 
-        Transform playerTransform = runtimeContext != null ? runtimeContext.PlayerTransform : null;
+        Transform playerTransform = playerRuntimeContext != null ? playerRuntimeContext.PlayerTransform : null;
         if (playerTransform == null && targetMovement != null)
             playerTransform = targetMovement.transform;
 
@@ -7870,37 +7878,62 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         NativeArray<VoxelMeshPipelineTelemetryEntry>.ReadOnly blackBox,
         uint reasonFlags)
     {
-        string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", relativePath));
-        string directory = Path.GetDirectoryName(path);
-        if (!string.IsNullOrEmpty(directory))
-            Directory.CreateDirectory(directory);
-
-        using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-        using (BinaryWriter writer = new BinaryWriter(stream))
+        const int HeaderBytes = 20;
+        const int RowBytes = 32;
+        int totalBytes = HeaderBytes + VoxelMeshPipelineBlackBoxCapacity * RowBytes;
+        NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+            totalBytes,
+            nameof(HectonVoxelEngine),
+            "VoxelMeshPipelineBlackBoxDumpPayload");
+        try
         {
-            writer.Write(VoxelMeshPipelineBlackBoxDumpMagic);
-            writer.Write((uint)VoxelMeshPipelineBlackBoxCapacity);
-            writer.Write((uint)UnsafeUtility.SizeOf<VoxelMeshPipelineTelemetryEntry>());
-            writer.Write((uint)_voxelMeshPipelineBlackBoxCursor);
-            writer.Write(reasonFlags);
+            WriteUInt32LittleEndian(payload, 0, VoxelMeshPipelineBlackBoxDumpMagic);
+            WriteUInt32LittleEndian(payload, 4, (uint)VoxelMeshPipelineBlackBoxCapacity);
+            WriteUInt32LittleEndian(payload, 8, (uint)UnsafeUtility.SizeOf<VoxelMeshPipelineTelemetryEntry>());
+            WriteUInt32LittleEndian(payload, 12, (uint)_voxelMeshPipelineBlackBoxCursor);
+            WriteUInt32LittleEndian(payload, 16, reasonFlags);
 
             for (int i = 0; i < VoxelMeshPipelineBlackBoxCapacity; i++)
             {
                 int index = (_voxelMeshPipelineBlackBoxCursor + i) % VoxelMeshPipelineBlackBoxCapacity;
                 VoxelMeshPipelineTelemetryEntry entry = blackBox[index];
-                writer.Write(entry.Frame);
-                writer.Write(entry.Flags);
-                writer.Write(entry.ChunksMeshedThisFrame);
-                writer.Write(entry.BakeQueueLength);
-                writer.Write(entry.ColliderUploadQueueLength);
-                writer.Write(entry.ActiveGenerationOperations);
-                writer.Write(entry.SurfacePoolInUse);
-                writer.Write(entry.PhysicsPoolInUse);
-                writer.Write(entry.StateHash);
-                writer.Write(entry.Padding0);
-                writer.Write(entry.Padding1);
+                int offset = HeaderBytes + i * RowBytes;
+                WriteUInt32LittleEndian(payload, offset, entry.Frame);
+                WriteUInt32LittleEndian(payload, offset + 4, entry.Flags);
+                WriteUInt16LittleEndian(payload, offset + 8, entry.ChunksMeshedThisFrame);
+                WriteUInt16LittleEndian(payload, offset + 10, entry.BakeQueueLength);
+                WriteUInt16LittleEndian(payload, offset + 12, entry.ColliderUploadQueueLength);
+                WriteUInt16LittleEndian(payload, offset + 14, entry.ActiveGenerationOperations);
+                WriteUInt16LittleEndian(payload, offset + 16, entry.SurfacePoolInUse);
+                WriteUInt16LittleEndian(payload, offset + 18, entry.PhysicsPoolInUse);
+                WriteUInt32LittleEndian(payload, offset + 20, entry.StateHash);
+                WriteUInt32LittleEndian(payload, offset + 24, entry.Padding0);
+                WriteUInt32LittleEndian(payload, offset + 28, entry.Padding1);
             }
+
+            NativeFaultDumpWriter.TryWriteAll(relativePath, payload, totalBytes);
         }
+        finally
+        {
+            NativeFaultDumpWriter.DisposeTransientPayload(
+                ref payload,
+                nameof(HectonVoxelEngine),
+                "VoxelMeshPipelineBlackBoxDumpPayload");
+        }
+    }
+
+    private static void WriteUInt16LittleEndian(NativeArray<byte> payload, int offset, ushort value)
+    {
+        payload[offset] = (byte)value;
+        payload[offset + 1] = (byte)(value >> 8);
+    }
+
+    private static void WriteUInt32LittleEndian(NativeArray<byte> payload, int offset, uint value)
+    {
+        payload[offset] = (byte)value;
+        payload[offset + 1] = (byte)(value >> 8);
+        payload[offset + 2] = (byte)(value >> 16);
+        payload[offset + 3] = (byte)(value >> 24);
     }
 #endif
 
@@ -8052,9 +8085,16 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
     {
-        HectonPlayerMovement playerMovement = PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext)
-            ? runtimeContext.PlayerMovement
-            : null;
+        IPlayerRuntimeContext playerRuntimeContext = s_playerRuntimeContext;
+        if (playerRuntimeContext != null &&
+            playerRuntimeContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+            (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+        {
+            playerAup = movementState.PredictedAup;
+            return AbsoluteUniversePosition.IsFinite(in playerAup);
+        }
+
+        HectonPlayerMovement playerMovement = playerRuntimeContext != null ? playerRuntimeContext.PlayerMovement : null;
         if (playerMovement != null)
         {
             playerAup = playerMovement.CurrentAup;
@@ -8641,16 +8681,21 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     static bool ShouldApplyCameraFacingOverhangNoise(VoxelPipelineData data)
     {
-        if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext playerContext))
+        IPlayerRuntimeContext playerContext = s_playerRuntimeContext;
+        if (playerContext == null ||
+            !playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) ||
+            !playerContext.TryGetLookRuntimeState(out PlayerLookState lookState))
+        {
             return true;
+        }
 
         float3 cameraForward = NormalizeFastOrDefault(
-            playerContext.LookState.AimForward,
-            NormalizeFastOrDefault(playerContext.MovementState.CameraForward, playerContext.MovementState.Forward));
+            lookState.AimForward,
+            NormalizeFastOrDefault(movementState.CameraForward, movementState.Forward));
         if (math.lengthsq(cameraForward) <= 0.0001f)
             return true;
 
-        AbsoluteUniversePosition playerAup = playerContext.MovementState.PredictedAup;
+        AbsoluteUniversePosition playerAup = movementState.PredictedAup;
         AbsoluteUniversePosition chunkCenterAup = BuildCapturedAup(data.WorldCenter, data.AbsoluteUniverseOffsetAtStartDouble);
         float3 cameraToChunk = AbsoluteUniversePosition.ToCameraRelativeFloat3(in chunkCenterAup, in playerAup);
         float cameraToChunkSq = math.lengthsq(cameraToChunk);

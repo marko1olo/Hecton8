@@ -198,8 +198,8 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _transform = transform;
-            _collider = GetComponent<Collider>();
-            _ownRigidbody = GetComponent<Rigidbody>();
+            TryGetComponent(out _collider);
+            TryGetComponent(out _ownRigidbody);
 
             // Auto-find renderer if not assigned
             if (visualRenderer == null)
@@ -225,7 +225,6 @@ namespace Hecton8.Gameplay
             LocalizationEvents.RegisterLanguageListener(this);
             RebuildLocalizedTextCache();
             _state = FloaterState.Idle;
-            RegisterToLateFrame();
         }
 
         private void OnDisable()
@@ -411,6 +410,8 @@ namespace Hecton8.Gameplay
                 if (attachSound != null && audio != null)
                     audio.PlayAtPoint(attachSound, _pendingAttachPosition, floaterVolume);
             }
+
+            TryUnregisterLateFrameWhenDormant();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -671,6 +672,7 @@ namespace Hecton8.Gameplay
             {
                 _pendingVisualEnabled = true;
                 _visualEnabledDirty = true;
+                RegisterToLateFrame();
             }
 
             // Unregister from fixed tick
@@ -741,8 +743,14 @@ namespace Hecton8.Gameplay
                     if (currentService != null)
                     {
                         if (_state == FloaterState.Attached)
+                        {
                             RegisterToFixedTick();
-                        RegisterToLateFrame();
+                            RegisterToLateFrame();
+                        }
+                        else if (HasPendingLateFrameWork())
+                        {
+                            RegisterToLateFrame();
+                        }
                     }
                     break;
             }
@@ -767,11 +775,29 @@ namespace Hecton8.Gameplay
             _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
+        private bool HasPendingLateFrameWork()
+        {
+            return _runtimePositionDirty ||
+                   _visualEnabledDirty ||
+                   _pendingPickupAudio ||
+                   _pendingAttachAudio ||
+                   _pendingAttachParticles;
+        }
+
+        private void TryUnregisterLateFrameWhenDormant()
+        {
+            if (_state == FloaterState.Attached || HasPendingLateFrameWork())
+                return;
+
+            UnregisterFromLateFrame();
+        }
+
         private void QueuePickupAudio(Vector3 position)
         {
             _pendingPickupAudioPosition = position;
             _pendingPickupAudio = pickupSound != null;
-            RegisterToLateFrame();
+            if (_pendingPickupAudio)
+                RegisterToLateFrame();
         }
 
         private void QueueAttachPresentation(Vector3 position)

@@ -63,9 +63,6 @@ namespace Hecton8.Gameplay
         public const BufferID Counters = (BufferID)71276;
         public const BufferID Tuning = (BufferID)71277;
         public const BufferID ImpactVfx = (BufferID)71278;
-#if UNITY_EDITOR
-        public const BufferID CsvScratch = (BufferID)71279;
-#endif
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -196,7 +193,7 @@ namespace Hecton8.Gameplay
         public const int TelemetryRingLength = 300;
         public const int PenetrationLutLength = 64;
 #if UNITY_EDITOR
-        public const int CsvScratchBytes = 16384;
+        public const int CsvImportByteCapacity = 16384;
 #endif
         public const float FloraSpikeMassKg = 0.018f;
 
@@ -251,10 +248,6 @@ namespace Hecton8.Gameplay
         private static VaultLane<BallisticsCountersDTO> _counterHandle;
         private static VaultLane<BallisticsTuningDTO> _tuningHandle;
         private static VaultLane<BallisticImpactVfxDTO> _impactVfxHandle;
-#if UNITY_EDITOR
-        private static VaultLane<byte> _csvScratchHandle;
-#endif
-
         private static JobHandle _activeHandle;
         private static IDataVault _activeJobMutationGuardVault;
         private static int _pendingTrajectoryCount;
@@ -345,12 +338,6 @@ namespace Hecton8.Gameplay
                 BallisticsVaultBufferIds.ImpactVfx,
                 MaxImpactVfx,
                 NativeArrayOptions.UninitializedMemory);
-#if UNITY_EDITOR
-            _csvScratchHandle = AcquireVaultLane<byte>(
-                BallisticsVaultBufferIds.CsvScratch,
-                CsvScratchBytes,
-                NativeArrayOptions.UninitializedMemory);
-#endif
             if (!AreVaultLanesBound())
                 return false;
 
@@ -903,44 +890,40 @@ namespace Hecton8.Gameplay
             IDataVault guardVault = null;
             try
             {
+                FileInfo info = new FileInfo(csvPath);
+                if (!info.Exists || info.Length <= 0L || info.Length > CsvImportByteCapacity)
+                    return false;
+
+                int expectedBytes = (int)info.Length;
+                Span<byte> csvScratch = stackalloc byte[CsvImportByteCapacity];
+                int bytesRead = 0;
+                using (FileStream stream = File.Open(csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                {
+                    while (bytesRead < expectedBytes)
+                    {
+                        int chunk = stream.Read(csvScratch.Slice(bytesRead, expectedBytes - bytesRead));
+                        if (chunk <= 0)
+                            break;
+
+                        bytesRead += chunk;
+                    }
+                }
+
+                if (bytesRead != expectedBytes)
+                    return false;
+
                 mutationGuarded = TryAcquireBallisticsMutationGuard(out guardVault);
                 if (!mutationGuarded)
                     return false;
 
-                NativeArray<byte> scratch = OpenVaultLane(in _csvScratchHandle);
                 NativeArray<float> lut = OpenVaultLane(in _penetrationLutHandle);
-                if (!scratch.IsCreated || !lut.IsCreated || scratch.Length <= 0)
-                    return false;
-
-                FileInfo info = new FileInfo(csvPath);
-                if (!info.Exists || info.Length <= 0L || info.Length > scratch.Length)
+                if (!lut.IsCreated)
                     return false;
 
                 if (_vault == null || _vault.IsCompactionFenceActive)
                     return false;
 
-                unsafe
-                {
-                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
-                    if (ptr == null)
-                        return false;
-
-                    int bytesRead = 0;
-                    using (FileStream stream = File.Open(csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
-                    {
-                        while (bytesRead < scratch.Length)
-                        {
-                            int chunk = stream.Read(new Span<byte>(ptr + bytesRead, scratch.Length - bytesRead));
-                            if (chunk <= 0)
-                                break;
-
-                            bytesRead += chunk;
-                        }
-                    }
-
-                    ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>(ptr, bytesRead);
-                    return ApplyPenetrationCsvBytes(bytes, lut);
-                }
+                return ApplyPenetrationCsvBytes(csvScratch.Slice(0, bytesRead), lut);
             }
             catch (IOException)
             {
@@ -1257,42 +1240,58 @@ namespace Hecton8.Gameplay
 
             if (!_telemetryDumped && ((entry.Flags & FaultTelemetryFlag) != 0u || elapsedUs > TelemetryDumpThresholdMicroseconds))
             {
-                DumpTelemetry(telemetry);
-                _telemetryDumped = true;
+                _telemetryDumped = DumpTelemetry(telemetry);
             }
         }
 
-        private static void DumpTelemetry(NativeArray<BallisticsTelemetryEntry> telemetry)
+        private static unsafe bool DumpTelemetry(NativeArray<BallisticsTelemetryEntry> telemetry)
         {
             if (!telemetry.IsCreated)
-                return;
+                return false;
 
+            NativeArray<byte> payload = default;
             try
             {
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string dumpPath = Path.Combine(projectRoot, "Docs", "AgentLogs", "Dump_BALLISTICS_SURGEON.bin");
-                using (FileStream stream = File.Open(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    Span<byte> header = stackalloc byte[8];
-                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), SourceHash);
-                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(4, 4), (uint)TelemetryRingLength);
-                    stream.Write(header);
+                const string dumpPath = "Docs/AgentLogs/Dump_BALLISTICS_SURGEON.bin";
+                int count = math.min(telemetry.Length, TelemetryRingLength);
+                const int HeaderBytes = 8;
+                const int EntryStride = 48;
+                int totalBytes = HeaderBytes + (count * EntryStride);
+                if (count <= 0 || totalBytes <= HeaderBytes)
+                    return false;
 
-                    Span<byte> entryBytes = stackalloc byte[48];
-                    int count = math.min(telemetry.Length, TelemetryRingLength);
-                    for (int i = 0; i < count; i++)
-                    {
-                        BallisticsTelemetryEntry entry = telemetry[i];
-                        WriteBallisticsTelemetryEntry(entryBytes, entry);
-                        stream.Write(entryBytes);
-                    }
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(BallisticsRuntime),
+                    "BallisticsTelemetryDumpPayload");
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                Span<byte> header = new Span<byte>(target, HeaderBytes);
+                header.Clear();
+                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), SourceHash);
+                BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(4, 4), (uint)TelemetryRingLength);
+
+                for (int i = 0; i < count; i++)
+                {
+                    Span<byte> entryBytes = new Span<byte>(target + HeaderBytes + (i * EntryStride), EntryStride);
+                    WriteBallisticsTelemetryEntry(entryBytes, telemetry[i]);
                 }
+
+                return NativeFaultDumpWriter.TryWriteAll(dumpPath, payload, totalBytes);
             }
             catch (IOException)
             {
+                return false;
             }
             catch (UnauthorizedAccessException)
             {
+                return false;
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(BallisticsRuntime),
+                    "BallisticsTelemetryDumpPayload");
             }
         }
 
@@ -1392,9 +1391,6 @@ namespace Hecton8.Gameplay
             ReleaseVaultLane(vault, ref _counterHandle);
             ReleaseVaultLane(vault, ref _tuningHandle);
             ReleaseVaultLane(vault, ref _impactVfxHandle);
-#if UNITY_EDITOR
-            ReleaseVaultLane(vault, ref _csvScratchHandle);
-#endif
         }
 
         private static void ReleaseVaultLane<T>(IDataVault vault, ref VaultLane<T> lane)
@@ -1449,13 +1445,7 @@ namespace Hecton8.Gameplay
                    IsVaultLaneBound(in _telemetryHandle) &&
                    IsVaultLaneBound(in _counterHandle) &&
                    IsVaultLaneBound(in _tuningHandle) &&
-                   IsVaultLaneBound(in _impactVfxHandle)
-#if UNITY_EDITOR
-                   &&
-                   IsVaultLaneBound(in _csvScratchHandle);
-#else
-                   ;
-#endif
+                   IsVaultLaneBound(in _impactVfxHandle);
         }
 
         private static NativeArray<T> OpenVaultLane<T>(in VaultLane<T> lane) where T : struct

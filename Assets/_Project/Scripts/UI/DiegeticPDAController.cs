@@ -18,6 +18,9 @@ namespace Hecton8.UI
         private const float HoverRaycastPixelThresholdSq = 16f;
         private const int PointerTargetCapacity = 256;
         private const int PointerDiscoveryCapacity = 512;
+        private const int TabletRendererDiscoveryCapacity = 32;
+        private const int TabletColliderDiscoveryCapacity = 16;
+        private const int TabletCanvasGroupDiscoveryCapacity = 8;
         private static readonly bool EnableGraphicRaycasterFallback = false;
         private static readonly string[] s_defaultTabNames =
         {
@@ -80,9 +83,12 @@ namespace Hecton8.UI
         private readonly Selectable[] _pointerTargetSelectables = new Selectable[PointerTargetCapacity];
         // COLD ALLOC: Graphic[256] — cached PDA pointer draw-depth hints — owner: DiegeticPDAController
         private readonly Graphic[] _pointerTargetGraphics = new Graphic[PointerTargetCapacity];
-        private Renderer[] _tabletVisibilityRenderers;
-        private Collider[] _tabletVisibilityColliders;
-        private CanvasGroup[] _tabletVisibilityCanvasGroups;
+        // COLD ALLOC: List<Renderer>(32) - reusable PDA tablet visibility cache - owner: DiegeticPDAController
+        private readonly List<Renderer> _tabletVisibilityRenderers = new List<Renderer>(TabletRendererDiscoveryCapacity);
+        // COLD ALLOC: List<Collider>(16) - reusable PDA tablet visibility cache - owner: DiegeticPDAController
+        private readonly List<Collider> _tabletVisibilityColliders = new List<Collider>(TabletColliderDiscoveryCapacity);
+        // COLD ALLOC: List<CanvasGroup>(8) - reusable PDA tablet visibility cache - owner: DiegeticPDAController
+        private readonly List<CanvasGroup> _tabletVisibilityCanvasGroups = new List<CanvasGroup>(TabletCanvasGroupDiscoveryCapacity);
 
         private bool _registeredToTickManager;
         private bool _uiConfigured;
@@ -593,15 +599,18 @@ namespace Hecton8.UI
             _tabletVisibilityInitialized = false;
             if (tabletRoot == null)
             {
-                _tabletVisibilityRenderers = null;
-                _tabletVisibilityColliders = null;
-                _tabletVisibilityCanvasGroups = null;
+                _tabletVisibilityRenderers.Clear();
+                _tabletVisibilityColliders.Clear();
+                _tabletVisibilityCanvasGroups.Clear();
                 return;
             }
 
-            _tabletVisibilityRenderers = tabletRoot.GetComponentsInChildren<Renderer>(true);
-            _tabletVisibilityColliders = tabletRoot.GetComponentsInChildren<Collider>(true);
-            _tabletVisibilityCanvasGroups = tabletRoot.GetComponentsInChildren<CanvasGroup>(true);
+            _tabletVisibilityRenderers.Clear();
+            _tabletVisibilityColliders.Clear();
+            _tabletVisibilityCanvasGroups.Clear();
+            tabletRoot.GetComponentsInChildren(true, _tabletVisibilityRenderers);
+            tabletRoot.GetComponentsInChildren(true, _tabletVisibilityColliders);
+            tabletRoot.GetComponentsInChildren(true, _tabletVisibilityCanvasGroups);
         }
 
         private void SetTabletVisible(bool visible)
@@ -609,10 +618,11 @@ namespace Hecton8.UI
             if (tabletRoot == null || (_tabletVisibilityInitialized && _tabletVisible == visible))
                 return;
 
-            Renderer[] renderers = _tabletVisibilityRenderers;
-            if (renderers != null)
+            List<Renderer> renderers = _tabletVisibilityRenderers;
+            int rendererCount = renderers.Count;
+            if (rendererCount > 0)
             {
-                for (int i = 0; i < renderers.Length; i++)
+                for (int i = 0; i < rendererCount; i++)
                 {
                     Renderer renderer = renderers[i];
                     if (renderer != null)
@@ -620,10 +630,11 @@ namespace Hecton8.UI
                 }
             }
 
-            Collider[] colliders = _tabletVisibilityColliders;
-            if (colliders != null)
+            List<Collider> colliders = _tabletVisibilityColliders;
+            int colliderCount = colliders.Count;
+            if (colliderCount > 0)
             {
-                for (int i = 0; i < colliders.Length; i++)
+                for (int i = 0; i < colliderCount; i++)
                 {
                     Collider collider = colliders[i];
                     if (collider != null)
@@ -631,10 +642,11 @@ namespace Hecton8.UI
                 }
             }
 
-            CanvasGroup[] canvasGroups = _tabletVisibilityCanvasGroups;
-            if (canvasGroups != null)
+            List<CanvasGroup> canvasGroups = _tabletVisibilityCanvasGroups;
+            int canvasGroupCount = canvasGroups.Count;
+            if (canvasGroupCount > 0)
             {
-                for (int i = 0; i < canvasGroups.Length; i++)
+                for (int i = 0; i < canvasGroupCount; i++)
                 {
                     CanvasGroup canvasGroup = canvasGroups[i];
                     if (canvasGroup == null)

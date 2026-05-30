@@ -201,6 +201,23 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void MockLightManifestCommitsScalarCapacityAfterSeedLockRelease()
+        {
+            string path = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs");
+            string source = File.ReadAllText(path);
+            string method = ExtractMethodBlock(source, "public bool GenerateMockLightCullingData()");
+
+            Assert.That(method, Does.Contain("int seededCapacity;"));
+            Assert.That(method, Does.Contain("seededCapacity = math.min(sources.Length, states.Length);"));
+            Assert.That(method, Does.Contain("UnlockMockSeedBuffers();"));
+            Assert.That(method, Does.Contain("CommitSourceManifest("));
+            Assert.That(method, Does.Contain("seededCapacity,"));
+            Assert.That(method, Does.Not.Contain("math.min(sources.Length, states.Length),"));
+        }
+
+        [Test]
         public void RollbackMerkleSourceDoesNotHashDynamicLightPresentationBuffers()
         {
             string path = Path.Combine(Application.dataPath, "_Project/Scripts/Networking/RollbackNetcodeContracts.cs");
@@ -228,6 +245,31 @@ namespace Hecton8.Tests.Editor
             }
 
             return false;
+        }
+
+        private static string ExtractMethodBlock(string source, string signature)
+        {
+            int start = source.IndexOf(signature, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(start, 0, "Missing method: " + signature);
+            int brace = source.IndexOf('{', start);
+            Assert.GreaterOrEqual(brace, 0, "Missing method body: " + signature);
+
+            int depth = 0;
+            for (int i = brace; i < source.Length; i++)
+            {
+                char c = source[i];
+                if (c == '{')
+                    depth++;
+                else if (c == '}')
+                {
+                    depth--;
+                    if (depth == 0)
+                        return source.Substring(start, i - start + 1);
+                }
+            }
+
+            Assert.Fail("Unclosed method body: " + signature);
+            return string.Empty;
         }
 
         private static uint BuildFnv(string text)

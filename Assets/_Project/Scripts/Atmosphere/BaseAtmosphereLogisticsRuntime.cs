@@ -26,11 +26,12 @@ namespace Hecton8.Atmosphere
         private const int CsvPollCadenceFrames = 128;
 #endif
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_221.bin";
+        private const string DumpPayloadLabel = "baseAtmosphereLogisticsTelemetryDumpPayload";
         private const float AuthoritativeQualityWeight = 1f;
         private const int MinQualityDiffusionIterations = 2;
         private const int AuthoritativeDiffusionIterations = 8;
         private const int MaxQualityDiffusionIterations = AuthoritativeDiffusionIterations;
-        private static readonly ulong AtmosphereJobMutationGuardMask =
+        private static readonly ulong AtmosphereFrameMutationGuardMask =
             AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.CellsFront) |
             AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.CellsBack) |
             AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.EdgeOffsets) |
@@ -50,6 +51,30 @@ namespace Hecton8.Atmosphere
             AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.ToxicSources) |
             AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.Vents) |
             AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.Tuning);
+#if UNITY_EDITOR
+        private static readonly ulong ProfileCsvMutationGuardMask =
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.Profiles) |
+            AtmosphereLogisticsMutationGuardBit(AtmosphereLogisticsBufferIds.Tuning);
+#endif
+        private const uint AtmosphereJobPinCellsFront = 1u << 0;
+        private const uint AtmosphereJobPinCellsBack = 1u << 1;
+        private const uint AtmosphereJobPinNodes = 1u << 2;
+        private const uint AtmosphereJobPinEdgeOffsets = 1u << 3;
+        private const uint AtmosphereJobPinEdgeDestinations = 1u << 4;
+        private const uint AtmosphereJobPinEdgeConductance = 1u << 5;
+        private const uint AtmosphereJobPinConsumers = 1u << 6;
+        private const uint AtmosphereJobPinToxicSources = 1u << 7;
+        private const uint AtmosphereJobPinVents = 1u << 8;
+        private const uint AtmosphereJobPinCounters = 1u << 9;
+        private const uint AtmosphereJobPinTuning = 1u << 10;
+        private const uint AtmosphereJobPinTelemetryRing = 1u << 11;
+        private const uint AtmosphereJobPinOxygenDelta = 1u << 12;
+        private const uint AtmosphereJobPinCarbonDioxideDelta = 1u << 13;
+        private const uint AtmosphereJobPinNitrogenDelta = 1u << 14;
+        private const uint AtmosphereJobPinToxinDelta = 1u << 15;
+        private const uint AtmosphereJobPinTemperatureDelta = 1u << 16;
+        private const uint AtmosphereJobPinGasRemainders = 1u << 17;
+        private const uint AtmosphereJobPinShaderPayload = 1u << 18;
 
         private static readonly int _GasScalarsShaderId = Shader.PropertyToID("_H8BaseAtmosphereGasScalars");
         private static readonly int _GasQualityShaderId = Shader.PropertyToID("_H8BaseAtmosphereQualityWeight");
@@ -62,7 +87,6 @@ namespace Hecton8.Atmosphere
 #if UNITY_EDITOR
         private readonly string _csvPath;
 #endif
-        private readonly string _dumpPath;
         private readonly PreSimulationPhaseSystem _preSimulationPhase;
         private readonly SimulationPhaseSystem _simulationPhase;
         private readonly PostSimulationPhaseSystem _postSimulationPhase;
@@ -71,7 +95,7 @@ namespace Hecton8.Atmosphere
 
         private IDataVault _vault;
         private IDataVault _pendingVault;
-        private IDataVault _jobGuardVault;
+        private IDataVault _jobPinVault;
         private bool _shutdown;
         private bool _registeredHotSwap;
         private bool _hasPendingVaultRebind;
@@ -87,8 +111,10 @@ namespace Hecton8.Atmosphere
         private bool _simulationScheduled;
         private bool _vaultRepairRequested;
         private bool _jobBuffersPinned;
+        private uint _jobBufferPinMask;
         private bool _dumpWrittenThisFault;
         private uint _lastDispatcherFrame;
+        private uint _lastTelemetryHash;
         private long _jobScheduleTimestamp;
         private JobHandle _simulationHandle;
         private float _lastAverageOxygen01 = AtmosphereLogisticsConstants.DefaultOxygen01;
@@ -125,7 +151,6 @@ namespace Hecton8.Atmosphere
         private VaultGenerationHandle<AtmosphereGasRemainderDTO> _remainders;
         private VaultGenerationHandle<AtmosphereShaderPayloadDTO> _shaderPayload;
 #if UNITY_EDITOR
-        private VaultGenerationHandle<byte> _csvScratch;
         private VaultGenerationHandle<AtmosphereGasProfileDTO> _profiles;
 #endif
 
@@ -162,7 +187,6 @@ namespace Hecton8.Atmosphere
 #if UNITY_EDITOR
             _csvPath = Path.GetFullPath(Path.Combine(projectRoot, CsvRelativePath));
 #endif
-            _dumpPath = Path.GetFullPath(Path.Combine(projectRoot, DumpRelativePath));
             _preSimulationPhase = new PreSimulationPhaseSystem(this);
             _simulationPhase = new SimulationPhaseSystem(this);
             _postSimulationPhase = new PostSimulationPhaseSystem(this);
@@ -342,7 +366,7 @@ namespace Hecton8.Atmosphere
             ClearVaultHandles();
             _vault = null;
             _pendingVault = null;
-            _jobGuardVault = null;
+            _jobPinVault = null;
             _hasPendingVaultRebind = false;
             _vaultInitialized = false;
             _defaultsInitialized = false;
@@ -514,7 +538,6 @@ namespace Hecton8.Atmosphere
             ReleaseVaultHandle(vault, ref _remainders);
             ReleaseVaultHandle(vault, ref _shaderPayload);
 #if UNITY_EDITOR
-            ReleaseVaultHandle(vault, ref _csvScratch);
             ReleaseVaultHandle(vault, ref _profiles);
 #endif
         }
@@ -566,7 +589,6 @@ namespace Hecton8.Atmosphere
                    bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.TemperatureDeltaMilli) ||
                    bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.GasRemainders) ||
                    bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.ShaderPayload) ||
-                   bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.CsvScratch) ||
                    bufferId == ToHandleBufferId(AtmosphereLogisticsBufferIds.Profiles);
         }
 
@@ -604,7 +626,6 @@ namespace Hecton8.Atmosphere
             _remainders = default;
             _shaderPayload = default;
 #if UNITY_EDITOR
-            _csvScratch = default;
             _profiles = default;
 #endif
         }
@@ -618,7 +639,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            if (!vault.TryAcquireMutationGuard(AtmosphereJobMutationGuardMask))
+            if (!vault.TryAcquireMutationGuard(AtmosphereFrameMutationGuardMask))
                 return;
             try
             {
@@ -628,7 +649,7 @@ namespace Hecton8.Atmosphere
             }
             finally
             {
-                vault.ReleaseMutationGuard(AtmosphereJobMutationGuardMask);
+                vault.ReleaseMutationGuard(AtmosphereFrameMutationGuardMask);
             }
 #if UNITY_EDITOR
             if ((_lastDispatcherFrame & (CsvPollCadenceFrames - 1)) == 0u)
@@ -932,7 +953,6 @@ namespace Hecton8.Atmosphere
                 _remainders = vault.EnsureGenerationHandle<AtmosphereGasRemainderDTO>(AtmosphereLogisticsBufferIds.GasRemainders, AtmosphereLogisticsConstants.MaxMockNodes, OwnerSystemId);
                 _shaderPayload = vault.EnsureGenerationHandle<AtmosphereShaderPayloadDTO>(AtmosphereLogisticsBufferIds.ShaderPayload, 1, OwnerSystemId);
 #if UNITY_EDITOR
-                _csvScratch = vault.EnsureGenerationHandle<byte>(AtmosphereLogisticsBufferIds.CsvScratch, AtmosphereLogisticsConstants.CsvScratchBytes, OwnerSystemId);
                 _profiles = vault.EnsureGenerationHandle<AtmosphereGasProfileDTO>(AtmosphereLogisticsBufferIds.Profiles, AtmosphereLogisticsConstants.MaxProfiles, OwnerSystemId);
 #endif
                 _vaultInitialized = true;
@@ -947,7 +967,7 @@ namespace Hecton8.Atmosphere
 
             if (!_defaultsInitialized || !_layoutValid)
             {
-                if (!vault.TryAcquireMutationGuard(AtmosphereJobMutationGuardMask))
+                if (!vault.TryAcquireMutationGuard(AtmosphereFrameMutationGuardMask))
                     return false;
 
                 try
@@ -956,7 +976,7 @@ namespace Hecton8.Atmosphere
                 }
                 finally
                 {
-                    vault.ReleaseMutationGuard(AtmosphereJobMutationGuardMask);
+                    vault.ReleaseMutationGuard(AtmosphereFrameMutationGuardMask);
                 }
             }
 
@@ -1153,9 +1173,7 @@ namespace Hecton8.Atmosphere
 #if UNITY_EDITOR
         private void MonitorGasProfileCsv(IDataVault vault)
         {
-            if (!File.Exists(_csvPath) ||
-                !Resolve(in _csvScratch, AtmosphereLogisticsBufferIds.CsvScratch, out NativeArray<byte> scratch) ||
-                !Resolve(in _profiles, AtmosphereLogisticsBufferIds.Profiles, out NativeArray<AtmosphereGasProfileDTO> profiles))
+            if (!File.Exists(_csvPath))
             {
                 return;
             }
@@ -1165,19 +1183,42 @@ namespace Hecton8.Atmosphere
                 return;
 
             _csvLastWriteUtc = writeUtc;
-            int bytesRead = ReadCsvFileNoStringAlloc(_csvPath, scratch);
+            Span<byte> csvScratch = stackalloc byte[AtmosphereLogisticsConstants.CsvScratchBytes];
+            int bytesRead = ReadCsvFileNoStringAlloc(_csvPath, csvScratch);
             if (bytesRead <= 0)
                 return;
 
-            ReadOnlySpan<byte> span = new ReadOnlySpan<byte>((byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch), math.min(bytesRead, scratch.Length));
-            if (TryParseGasProfilesCsv(span, profiles, out int parsed) &&
-                Resolve(in _tuning, AtmosphereLogisticsBufferIds.Tuning, out NativeArray<AtmosphereTuningDTO> tuning) &&
-                tuning.Length > 0 && parsed > 0)
+            ReadOnlySpan<byte> span = csvScratch.Slice(0, math.min(bytesRead, csvScratch.Length));
+            Span<AtmosphereGasProfileDTO> stagedProfiles = stackalloc AtmosphereGasProfileDTO[AtmosphereLogisticsConstants.MaxProfiles];
+            if (!TryParseGasProfilesCsv(span, stagedProfiles, out int parsed) || parsed <= 0)
+                return;
+
+            if (vault == null || vault.IsCompactionFenceActive || !vault.TryAcquireMutationGuard(ProfileCsvMutationGuardMask))
+                return;
+
+            try
             {
-                AtmosphereGasProfileDTO profile = profiles[0];
+                if (!Resolve(in _profiles, AtmosphereLogisticsBufferIds.Profiles, out NativeArray<AtmosphereGasProfileDTO> profiles) ||
+                    !Resolve(in _tuning, AtmosphereLogisticsBufferIds.Tuning, out NativeArray<AtmosphereTuningDTO> tuning) ||
+                    profiles.Length == 0 ||
+                    tuning.Length == 0)
+                {
+                    return;
+                }
+
+                int commitCount = math.min(parsed, profiles.Length);
+                for (int i = 0; i < commitCount; i++)
+                    profiles[i] = stagedProfiles[i];
+                for (int i = commitCount; i < profiles.Length; i++)
+                    profiles[i] = default;
+
                 AtmosphereTuningDTO tune = tuning[0];
-                tune.AmbientTemperatureCelsius = profile.Temperature;
+                tune.AmbientTemperatureCelsius = stagedProfiles[0].Temperature;
                 tuning[0] = tune;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(ProfileCsvMutationGuardMask);
             }
         }
 #endif
@@ -1187,6 +1228,18 @@ namespace Hecton8.Atmosphere
         {
             count = 0;
             if (!profiles.IsCreated || profiles.Length == 0)
+                return false;
+
+            Span<AtmosphereGasProfileDTO> profileSpan = new Span<AtmosphereGasProfileDTO>(
+                NativeArrayUnsafeUtility.GetUnsafePtr(profiles),
+                profiles.Length);
+            return TryParseGasProfilesCsv(bytes, profileSpan, out count);
+        }
+
+        public static bool TryParseGasProfilesCsv(ReadOnlySpan<byte> bytes, Span<AtmosphereGasProfileDTO> profiles, out int count)
+        {
+            count = 0;
+            if (profiles.Length == 0)
                 return false;
 
             int cursor = 0;
@@ -1393,25 +1446,44 @@ namespace Hecton8.Atmosphere
             if (vault == null || vault.IsCompactionFenceActive || !TryValidateSimulationBuffers(vault))
                 return false;
 
-            bool acquired = false;
+            bool pinned = false;
             try
             {
-                if (!vault.TryAcquireMutationGuard(AtmosphereJobMutationGuardMask))
+                _jobPinVault = vault;
+                if (!TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.CellsFront, AtmosphereJobPinCellsFront) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.CellsBack, AtmosphereJobPinCellsBack) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.Nodes, AtmosphereJobPinNodes) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.EdgeOffsets, AtmosphereJobPinEdgeOffsets) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.EdgeDestinations, AtmosphereJobPinEdgeDestinations) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.EdgeConductance, AtmosphereJobPinEdgeConductance) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.Consumers, AtmosphereJobPinConsumers) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.ToxicSources, AtmosphereJobPinToxicSources) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.Vents, AtmosphereJobPinVents) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.Counters, AtmosphereJobPinCounters) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.Tuning, AtmosphereJobPinTuning) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.TelemetryRing, AtmosphereJobPinTelemetryRing) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.OxygenDeltaUnits, AtmosphereJobPinOxygenDelta) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.CarbonDioxideDeltaUnits, AtmosphereJobPinCarbonDioxideDelta) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.NitrogenDeltaUnits, AtmosphereJobPinNitrogenDelta) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.ToxinDeltaUnits, AtmosphereJobPinToxinDelta) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.TemperatureDeltaMilli, AtmosphereJobPinTemperatureDelta) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.GasRemainders, AtmosphereJobPinGasRemainders) ||
+                    !TryLockAtmosphereJobBuffer(vault, AtmosphereLogisticsBufferIds.ShaderPayload, AtmosphereJobPinShaderPayload))
+                {
                     return false;
+                }
 
-                acquired = true;
                 if (!TryValidateSimulationBuffers(vault))
                     return false;
 
-                _jobGuardVault = vault;
                 _jobBuffersPinned = true;
-                acquired = false;
+                pinned = true;
                 return true;
             }
             finally
             {
-                if (acquired)
-                    vault.ReleaseMutationGuard(AtmosphereJobMutationGuardMask);
+                if (!pinned)
+                    ReleaseJobBufferPins(applyPendingRebind: false);
             }
         }
 
@@ -1442,22 +1514,54 @@ namespace Hecton8.Atmosphere
 
         private void ReleaseJobBufferPins(bool applyPendingRebind = true)
         {
-            if (!_jobBuffersPinned)
+            IDataVault vault = _jobPinVault;
+            uint pinMask = _jobBufferPinMask;
+            _jobPinVault = null;
+            _jobBufferPinMask = 0u;
+            _jobBuffersPinned = false;
+            if (vault != null && pinMask != 0u)
             {
-                _jobGuardVault = null;
-                if (applyPendingRebind)
-                    ApplyPendingVaultRebindIfSafe();
-                return;
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinShaderPayload, AtmosphereLogisticsBufferIds.ShaderPayload);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinGasRemainders, AtmosphereLogisticsBufferIds.GasRemainders);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinTemperatureDelta, AtmosphereLogisticsBufferIds.TemperatureDeltaMilli);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinToxinDelta, AtmosphereLogisticsBufferIds.ToxinDeltaUnits);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinNitrogenDelta, AtmosphereLogisticsBufferIds.NitrogenDeltaUnits);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinCarbonDioxideDelta, AtmosphereLogisticsBufferIds.CarbonDioxideDeltaUnits);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinOxygenDelta, AtmosphereLogisticsBufferIds.OxygenDeltaUnits);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinTelemetryRing, AtmosphereLogisticsBufferIds.TelemetryRing);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinTuning, AtmosphereLogisticsBufferIds.Tuning);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinCounters, AtmosphereLogisticsBufferIds.Counters);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinVents, AtmosphereLogisticsBufferIds.Vents);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinToxicSources, AtmosphereLogisticsBufferIds.ToxicSources);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinConsumers, AtmosphereLogisticsBufferIds.Consumers);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinEdgeConductance, AtmosphereLogisticsBufferIds.EdgeConductance);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinEdgeDestinations, AtmosphereLogisticsBufferIds.EdgeDestinations);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinEdgeOffsets, AtmosphereLogisticsBufferIds.EdgeOffsets);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinNodes, AtmosphereLogisticsBufferIds.Nodes);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinCellsBack, AtmosphereLogisticsBufferIds.CellsBack);
+                TryUnlockAtmosphereJobBuffer(vault, pinMask, AtmosphereJobPinCellsFront, AtmosphereLogisticsBufferIds.CellsFront);
             }
 
-            IDataVault vault = _jobGuardVault;
-            if (vault != null)
-                vault.ReleaseMutationGuard(AtmosphereJobMutationGuardMask);
-
-            _jobGuardVault = null;
-            _jobBuffersPinned = false;
             if (applyPendingRebind)
                 ApplyPendingVaultRebindIfSafe();
+        }
+
+        private bool TryLockAtmosphereJobBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        {
+            if ((_jobBufferPinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null || !vault.TryLockBuffer(bufferId, OwnerSystemId))
+                return false;
+
+            _jobBufferPinMask |= pinBit;
+            return true;
+        }
+
+        private static void TryUnlockAtmosphereJobBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, OwnerSystemId);
         }
 
         private bool TryStageDumpSnapshot(NativeArray<AtmosphereTelemetryEntry> telemetry)
@@ -1469,7 +1573,6 @@ namespace Hecton8.Atmosphere
             for (int i = 0; i < count; i++)
                 _dumpSnapshot[i] = telemetry[i];
             _dumpSnapshotCount = count;
-            _dumpWrittenThisFault = true;
             return true;
         }
 
@@ -1479,33 +1582,90 @@ namespace Hecton8.Atmosphere
             if (count <= 0)
                 return;
 
-            string directory = Path.GetDirectoryName(_dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-            using FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-            using BinaryWriter writer = new BinaryWriter(stream);
-            writer.Write(0x4847415332323144UL); // HGAS221D
-            writer.Write(1);
-            writer.Write(count);
-            for (int i = 0; i < count; i++)
+            const int HeaderBytes = 16;
+            const int RowBytes = 64;
+            int byteCount = HeaderBytes + count * RowBytes;
+            NativeArray<byte> payload = default;
+            try
             {
-                AtmosphereTelemetryEntry entry = _dumpSnapshot[i];
-                writer.Write(entry.StateHash);
-                writer.Write(entry.AverageOxygen01);
-                writer.Write(entry.MaxCarbonDioxide01);
-                writer.Write(entry.AverageNitrogen01);
-                writer.Write(entry.MaxToxin01);
-                writer.Write(entry.AverageTemperature);
-                writer.Write(entry.FrameIndex);
-                writer.Write(entry.NodeCount);
-                writer.Write(entry.EdgeCount);
-                writer.Write(entry.ConsumerCount);
-                writer.Write(entry.SourceCount);
-                writer.Write(entry.SolverMicros);
-                writer.Write(entry.JacobiIterations);
-                writer.Write(entry.FaultFlags);
-                writer.Write(entry.TotalGasUnits);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(BaseAtmosphereLogisticsRuntime),
+                    DumpPayloadLabel);
+                byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                int cursor = 0;
+                WriteUInt64LittleEndian(target, ref cursor, 0x4847415332323144UL);
+                WriteInt32LittleEndian(target, ref cursor, 1);
+                WriteInt32LittleEndian(target, ref cursor, count);
+
+                uint hash = 2166136261u;
+                for (int i = 0; i < count; i++)
+                {
+                    AtmosphereTelemetryEntry entry = _dumpSnapshot[i];
+                    WriteUInt64LittleEndian(target, ref cursor, entry.StateHash);
+                    WriteFloatLittleEndian(target, ref cursor, entry.AverageOxygen01);
+                    WriteFloatLittleEndian(target, ref cursor, entry.MaxCarbonDioxide01);
+                    WriteFloatLittleEndian(target, ref cursor, entry.AverageNitrogen01);
+                    WriteFloatLittleEndian(target, ref cursor, entry.MaxToxin01);
+                    WriteFloatLittleEndian(target, ref cursor, entry.AverageTemperature);
+                    WriteInt32LittleEndian(target, ref cursor, entry.FrameIndex);
+                    WriteInt32LittleEndian(target, ref cursor, entry.NodeCount);
+                    WriteInt32LittleEndian(target, ref cursor, entry.EdgeCount);
+                    WriteInt32LittleEndian(target, ref cursor, entry.ConsumerCount);
+                    WriteInt32LittleEndian(target, ref cursor, entry.SourceCount);
+                    WriteInt32LittleEndian(target, ref cursor, entry.SolverMicros);
+                    WriteInt32LittleEndian(target, ref cursor, entry.JacobiIterations);
+                    WriteUInt32LittleEndian(target, ref cursor, entry.FaultFlags);
+                    WriteUInt32LittleEndian(target, ref cursor, entry.TotalGasUnits);
+
+                    hash ^= unchecked((uint)entry.StateHash);
+                    hash *= 16777619u;
+                    hash ^= (uint)entry.FrameIndex;
+                    hash *= 16777619u;
+                    hash ^= entry.FaultFlags;
+                    hash *= 16777619u;
+                }
+
+                _lastTelemetryHash = hash;
+                _dumpWrittenThisFault = cursor == byteCount &&
+                                        NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, cursor);
             }
+            catch
+            {
+                _dumpWrittenThisFault = false;
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(BaseAtmosphereLogisticsRuntime),
+                    DumpPayloadLabel);
+            }
+        }
+
+        private static unsafe void WriteFloatLittleEndian(byte* destination, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, math.asuint(value));
+        }
+
+        private static unsafe void WriteInt32LittleEndian(byte* destination, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, unchecked((uint)value));
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, ref int cursor, uint value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
+            cursor += 4;
+        }
+
+        private static unsafe void WriteUInt64LittleEndian(byte* destination, ref int cursor, ulong value)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, unchecked((uint)value));
+            WriteUInt32LittleEndian(destination, ref cursor, unchecked((uint)(value >> 32)));
         }
 
         private static AtmosphereTuningDTO DefaultTuning()
@@ -1524,15 +1684,15 @@ namespace Hecton8.Atmosphere
         }
 
 #if UNITY_EDITOR
-        private static int ReadCsvFileNoStringAlloc(string path, NativeArray<byte> scratch)
+        private static int ReadCsvFileNoStringAlloc(string path, Span<byte> scratch)
         {
-            if (!scratch.IsCreated || scratch.Length == 0)
+            if (scratch.Length == 0)
                 return 0;
 
             using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             long fileLength = stream.Length;
             int readLength = fileLength <= 0L ? 0 : fileLength > scratch.Length ? scratch.Length : (int)fileLength;
-            return stream.Read(new Span<byte>((byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch), readLength));
+            return stream.Read(scratch.Slice(0, readLength));
         }
 #endif
 

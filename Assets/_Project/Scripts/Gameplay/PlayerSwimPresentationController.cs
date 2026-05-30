@@ -14,7 +14,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player Swim Presentation Controller")]
-    public sealed class PlayerSwimPresentationController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class PlayerSwimPresentationController : MonoBehaviour, ILateFrameTickable, IColdTickable, IGlobalRegistryHotSwapListener
     {
         private const float Pi = 3.14159265359f;
         private const float TwoPi = 6.28318530718f;
@@ -555,7 +555,9 @@ namespace Hecton8.Gameplay
 #endif
 
         private bool _registeredLateFrame;
+        private bool _registeredColdReferenceRepair;
         private bool _hotSwapListenerRegistered;
+        private bool _coldReferenceRepairRequested;
         private SwimPresentationProfile _activeProfile;
         private PlayerSwimPresentationMode _currentMode;
         private float _presentationBlend;
@@ -807,12 +809,15 @@ namespace Hecton8.Gameplay
             CacheRegistryServicesCold();
             EnsureKineticMatrixRuntimeCold();
             TryRegister();
+            TryRegisterColdReferenceRepair();
             TryRegisterHotSwapListener();
+            RequestColdReferenceResolve(0);
         }
 
         private void Start()
         {
             TryRegister();
+            TryRegisterColdReferenceRepair();
             ResolveGuideReferences();
             InitializePoseStateFromCurrentTargets();
         }
@@ -840,6 +845,7 @@ namespace Hecton8.Gameplay
             _lastSwimVatSpeedScalarByte = int.MinValue;
             _swimVatSpeedScalar = 0f;
             TryUnregisterHotSwapListener();
+            TryUnregisterColdReferenceRepair();
             TryUnregister();
         }
 
@@ -852,6 +858,7 @@ namespace Hecton8.Gameplay
             _lastSwimVatSpeedScalarByte = int.MinValue;
             _swimVatSpeedScalar = 0f;
             TryUnregisterHotSwapListener();
+            TryUnregisterColdReferenceRepair();
             TryUnregister();
         }
 
@@ -873,6 +880,22 @@ namespace Hecton8.Gameplay
         public void LateFrameTick()
         {
             FlushQueuedSwimShaderFloats();
+        }
+
+        public void ColdTick()
+        {
+            if (!_coldReferenceRepairRequested)
+                return;
+
+            _coldReferenceRepairRequested = false;
+            CacheRegistryServicesCold();
+            AutoResolveReferences();
+            EnsureKineticMatrixRuntimeCold();
+            ResolveGuideReferences();
+            InitializePoseStateFromCurrentTargets();
+
+            if (playerMovement == null || viewModelRoot == null)
+                _coldReferenceRepairRequested = true;
         }
 
         internal void ApplyPhysicalTrauma(Vector3 worldImpulse, float weight)
@@ -917,19 +940,12 @@ namespace Hecton8.Gameplay
 
             if (playerMovement == null)
             {
-                if (frame >= _nextReferenceResolveFrame)
-                {
-                    _nextReferenceResolveFrame = frame + ReferenceResolveRetryFrameInterval;
-                    AutoResolveReferences();
-                    ResolveGuideReferences();
-                }
-
-                if (playerMovement == null)
-                    return;
+                RequestColdReferenceResolve(frame);
+                return;
             }
 
             if (viewModelRoot == null)
-                ResolveGuideReferences();
+                RequestColdReferenceResolve(frame);
 
             SwimPresentationProfile profile = ResolveBoundProfile();
             if (profile == null)
@@ -1008,13 +1024,43 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void TryRegisterColdReferenceRepair()
+        {
+            if (_registeredColdReferenceRepair || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredColdReferenceRepair = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterColdReferenceRepair()
+        {
+            if (!_registeredColdReferenceRepair)
+                return;
+
+            GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
+            _registeredColdReferenceRepair = false;
+            _coldReferenceRepairRequested = false;
+        }
+
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Input)
+            {
                 _inputService = currentService as IInputService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                CachePlayerContextReferencesCold(currentService as IPlayerRuntimeContext);
+                RequestColdReferenceResolve(0);
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -1037,6 +1083,31 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             _inputService = GlobalRegistry.Input;
+            CachePlayerContextReferencesCold(GlobalRegistry.Player);
+        }
+
+        private void CachePlayerContextReferencesCold(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null || !playerContext.IsInitialized)
+                return;
+
+            if (playerMovement == null)
+                playerMovement = playerContext.PlayerMovement;
+
+            if (playerToolManager == null)
+                playerToolManager = playerContext.ToolManager;
+
+            if (playerTransportCoordinator == null)
+                playerTransportCoordinator = playerContext.PlayerTransportCoordinator;
+        }
+
+        private void RequestColdReferenceResolve(int frame)
+        {
+            if (frame > 0 && frame < _nextReferenceResolveFrame)
+                return;
+
+            _nextReferenceResolveFrame = frame + ReferenceResolveRetryFrameInterval;
+            _coldReferenceRepairRequested = true;
         }
 
         private void AutoResolveReferences(bool allowSingletonAccess = true)

@@ -1145,7 +1145,7 @@ namespace Hecton8.Core
             if (Thread.CurrentThread.ManagedThreadId != _mainThreadId)
                 return fallbackFrame;
 
-            return Application.isPlaying ? SystemDispatcher.CurrentFrameIndex : fallbackFrame;
+            return SystemDispatcher.ActiveRuntimeInstance != null ? SystemDispatcher.CurrentFrameIndex : fallbackFrame;
         }
 
         private static float ResolveCurrentUnscaledTime()
@@ -1153,7 +1153,7 @@ namespace Hecton8.Core
             if (Thread.CurrentThread.ManagedThreadId != _mainThreadId)
                 return 0f;
 
-            return Application.isPlaying ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
+            return SystemDispatcher.ActiveRuntimeInstance != null ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
         }
 
         private static void TrackPersistentReallocation(

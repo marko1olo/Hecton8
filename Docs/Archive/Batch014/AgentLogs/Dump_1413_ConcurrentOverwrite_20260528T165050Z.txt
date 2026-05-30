@@ -1,0 +1,20 @@
+﻿Agent 1413 forensic dump: concurrent source overwrite / fail-closed violation remains in current bytes
+GeneratedUtc: 2026-05-28T16:51:35.4013903Z
+File: Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs
+LastWriteTimeUtc: 2026-05-28T16:50:25.3287013Z
+CurrentSourceSha256: 5d3cfe4c916fa9547a313920aba8ce6d7ef4275ed3e26dfc00145a3b5fc2c4f1
+APEXGeneratedUtc: 2026-05-28T16:50:50Z
+APEX_hasNoEnqueueGateBusyFailPath: False
+APEX_hasWriterOnlyFilter: True
+APEX_releaseWriteLockReturnsAcceptedDeferredWriterRelease: True
+Current byte scan:
+541:        private int _deferredReleaseEnqueueGate;
+810:            _deferredReleaseEnqueueGate = 0;
+1935:                return QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID);
+1967:                return QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0);
+2047:            while (Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate, 1, 0) != 0)
+2048:                Thread.SpinWait(8);
+2055:                if (kind == DeferredReleaseKindWriter)
+2100:                Volatile.Write(ref _deferredReleaseEnqueueGate, 0);
+3566:            _deferredReleaseEnqueueGate = 0;
+Conclusion: current bytes still contain private deferred release enqueue gate and Thread.SpinWait(8). Final source is not acceptable as complete.

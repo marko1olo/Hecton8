@@ -925,8 +925,7 @@ namespace Hecton8.UI
             self.sizeDelta = new Vector2(420f, 36f);
 
             _notifRoot = self;
-            _canvasGroup = gameObject.GetComponent<CanvasGroup>();
-            if (_canvasGroup == null)
+            if (!gameObject.TryGetComponent(out _canvasGroup))
                 _canvasGroup = gameObject.AddComponent<CanvasGroup>();
             _canvasGroup.alpha = 0f;
             _canvasGroup.interactable = false;
@@ -934,14 +933,13 @@ namespace Hecton8.UI
             _currentAlpha = 0f;
             _isShowing = false;
 
-            _notifBg = gameObject.GetComponent<Image>();
-            if (_notifBg == null)
+            if (!gameObject.TryGetComponent(out _notifBg))
                 _notifBg = gameObject.AddComponent<Image>();
             _notifBg.color = WarningBg;
             _notifBg.raycastTarget = false;
 
             GameObject txtGo = new GameObject("NotifText", typeof(RectTransform));
-            RectTransform txtR = txtGo.GetComponent<RectTransform>();
+            txtGo.TryGetComponent(out RectTransform txtR);
             txtR.SetParent(self, false);
             txtR.anchorMin = Vector2.zero;
             txtR.anchorMax = Vector2.one;
@@ -962,16 +960,14 @@ namespace Hecton8.UI
 
         private void ApplyPreviewSafeState()
         {
-            CanvasGroup cg = GetComponent<CanvasGroup>();
-            if (cg != null)
+            if (TryGetComponent(out CanvasGroup cg))
             {
                 cg.alpha = 0f;
                 cg.interactable = false;
                 cg.blocksRaycasts = false;
             }
 
-            Image image = GetComponent<Image>();
-            if (image != null)
+            if (TryGetComponent(out Image image))
             {
                 Color c = image.color;
                 c.a = 0f;

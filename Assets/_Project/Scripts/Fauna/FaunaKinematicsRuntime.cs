@@ -26,8 +26,11 @@ namespace Hecton8.AI
         private int _signalPushDropCount;
         private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
         private const string BiteTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
+        private const string TelemetryDumpPayloadLabel = "faunaKinematicsTelemetryDumpPayload";
+        private const string BiteTelemetryDumpPayloadLabel = "faunaKinematicsBiteTelemetryDumpPayload";
         private const ulong TelemetryDumpMagic = 0x4C455649494B3031UL;
         private const ulong BiteTelemetryDumpMagic = 0x4642494B30303031UL;
+        private const int TelemetryDumpHeaderBytes = 20;
         private const int TelemetryEntryPayloadBytes = 96;
         private const int BiteTelemetryEntryPayloadBytes = 128;
         private const float ConstraintIterationHysteresisSeconds = 2.5f;
@@ -2048,14 +2051,11 @@ namespace Hecton8.AI
                 void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
                 void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
                 long copyBytes = (long)UnsafeUtility.SizeOf<LeviathanBoneDTO>() * safeCount;
-                LeviathanGpuBoneUploadJob uploadJob = new LeviathanGpuBoneUploadJob
-                {
-                    Source = sourcePtr,
-                    Destination = destinationPtr,
-                    CopyBytes = copyBytes,
-                    DestinationBytes = (long)UnsafeUtility.SizeOf<LeviathanBoneDTO>() * mapped.Length
-                };
-                uploadJob.Run();
+                long destinationBytes = (long)UnsafeUtility.SizeOf<LeviathanBoneDTO>() * mapped.Length;
+                if (sourcePtr == null || destinationPtr == null || copyBytes <= 0L || destinationBytes < copyBytes)
+                    return false;
+
+                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, copyBytes);
             }
             finally
             {
@@ -2073,23 +2073,6 @@ namespace Hecton8.AI
                 return 0;
 
             return math.min(math.min(requestedCount, sourceLength), destination.count);
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, OptimizeFor = OptimizeFor.Performance)]
-        private unsafe struct LeviathanGpuBoneUploadJob : IJob
-        {
-            [NoAlias, NativeDisableUnsafePtrRestriction] public void* Source;
-            [NoAlias, NativeDisableUnsafePtrRestriction] public void* Destination;
-            public long CopyBytes;
-            public long DestinationBytes;
-
-            public void Execute()
-            {
-                if (Source == null || Destination == null || CopyBytes <= 0L || DestinationBytes < CopyBytes)
-                    return;
-
-                UnsafeUtility.MemCpy(Destination, Source, CopyBytes);
-            }
         }
 
         private void ClearGpuSkinningBinding()
@@ -2449,18 +2432,12 @@ namespace Hecton8.AI
                 return;
             }
 
-            DumpTelemetryBlackBox();
-            _telemetryDumped = true;
+            if (DumpTelemetryBlackBox())
+                _telemetryDumped = true;
         }
 
-        private void DumpTelemetryBlackBox()
+        private bool DumpTelemetryBlackBox()
         {
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string dumpPath = Path.Combine(projectRoot, TelemetryDumpRelativePath);
-            string directory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
             TryResolveSpineVaultBuffers(
                 out _,
                 out _,
@@ -2468,40 +2445,54 @@ namespace Hecton8.AI
                 out NativeArray<LeviathanTerrainIkTelemetryEntry> telemetryRing,
                 out NativeArray<int> telemetryCursor);
             int cursor = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? telemetryCursor[0] : 0;
-            using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-            using BinaryWriter writer = new BinaryWriter(stream);
-            writer.Write(TelemetryDumpMagic);
             int ringLength = telemetryRing.IsCreated ? math.min(LeviathanTerrainIkConstants.TelemetryCapacity, telemetryRing.Length) : 0;
             int entryCount = cursor >= ringLength ? ringLength : math.max(0, cursor);
             int firstEntryIndex = entryCount == ringLength && ringLength > 0 ? cursor % ringLength : 0;
-            writer.Write(entryCount);
-            writer.Write(cursor);
-            writer.Write(TelemetryEntryPayloadBytes);
-            for (int i = 0; i < entryCount; i++)
+            int byteCount = TelemetryDumpHeaderBytes + entryCount * TelemetryEntryPayloadBytes;
+            NativeArray<byte> payload = default;
+            try
             {
-                int sourceIndex = (firstEntryIndex + i) % ringLength;
-                LeviathanTerrainIkTelemetryEntry entry = telemetryRing[sourceIndex];
-                writer.Write(entry.FrameIndex);
-                writer.Write(entry.ActiveSegmentCount);
-                writer.Write(entry.Flags);
-                writer.Write(entry.StateHash);
-                writer.Write(entry.HeadPosition.x);
-                writer.Write(entry.HeadPosition.y);
-                writer.Write(entry.HeadPosition.z);
-                writer.Write(entry.TailPosition.x);
-                writer.Write(entry.TailPosition.y);
-                writer.Write(entry.TailPosition.z);
-                writer.Write(entry.IntendedVelocity.x);
-                writer.Write(entry.IntendedVelocity.y);
-                writer.Write(entry.IntendedVelocity.z);
-                writer.Write(entry.MaxTerrainPushMeters);
-                writer.Write(entry.TailWhipSecondsRemaining);
-                writer.Write(entry.GlobalQualityWeight);
-                writer.Write(entry.RootAup.x);
-                writer.Write(entry.RootAup.y);
-                writer.Write(entry.RootAup.z);
-                writer.Write(entry.AverageFabrikIterations);
-                writer.Write(entry.BurstSolveMicros);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(FaunaKinematicsRuntime),
+                    TelemetryDumpPayloadLabel);
+                int writeCursor = 0;
+                WriteUInt64LittleEndian(payload, ref writeCursor, TelemetryDumpMagic);
+                WriteInt32LittleEndian(payload, ref writeCursor, entryCount);
+                WriteInt32LittleEndian(payload, ref writeCursor, cursor);
+                WriteInt32LittleEndian(payload, ref writeCursor, TelemetryEntryPayloadBytes);
+
+                for (int i = 0; i < entryCount; i++)
+                {
+                    int sourceIndex = (firstEntryIndex + i) % ringLength;
+                    LeviathanTerrainIkTelemetryEntry entry = telemetryRing[sourceIndex];
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.FrameIndex);
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.ActiveSegmentCount);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.Flags);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.StateHash);
+                    WriteFloat3LittleEndian(payload, ref writeCursor, entry.HeadPosition);
+                    WriteFloat3LittleEndian(payload, ref writeCursor, entry.TailPosition);
+                    WriteFloat3LittleEndian(payload, ref writeCursor, entry.IntendedVelocity);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.MaxTerrainPushMeters);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.TailWhipSecondsRemaining);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.GlobalQualityWeight);
+                    WriteDouble3LittleEndian(payload, ref writeCursor, entry.RootAup);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.AverageFabrikIterations);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.BurstSolveMicros);
+                }
+
+                return writeCursor == byteCount && NativeFaultDumpWriter.TryWriteAll(TelemetryDumpRelativePath, payload, byteCount);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(FaunaKinematicsRuntime),
+                    TelemetryDumpPayloadLabel);
             }
         }
 
@@ -2516,68 +2507,121 @@ namespace Hecton8.AI
                 return;
             }
 
-            DumpBiteTelemetryBlackBox();
-            _biteTelemetryDumped = true;
+            if (DumpBiteTelemetryBlackBox())
+                _biteTelemetryDumped = true;
         }
 
-        private void DumpBiteTelemetryBlackBox()
+        private bool DumpBiteTelemetryBlackBox()
         {
             TryResolveBiteTelemetryVaultBuffers(
                 out NativeArray<BiteIkSolveEvent> biteIkSolveEvents,
                 out NativeArray<int> biteIkTelemetryCursor);
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string dumpPath = Path.Combine(projectRoot, BiteTelemetryDumpRelativePath);
-            string directory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
 
             int cursor = biteIkTelemetryCursor.IsCreated && biteIkTelemetryCursor.Length > 0 ? biteIkTelemetryCursor[0] : 0;
-            using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-            using BinaryWriter writer = new BinaryWriter(stream);
-            writer.Write(BiteTelemetryDumpMagic);
             int ringLength = biteIkSolveEvents.IsCreated ? math.min(ProceduralBiteIkConstants.TelemetryCapacity, biteIkSolveEvents.Length) : 0;
             int entryCount = cursor >= ringLength ? ringLength : math.max(0, cursor);
             int firstEntryIndex = entryCount == ringLength && ringLength > 0 ? cursor % ringLength : 0;
-            writer.Write(entryCount);
-            writer.Write(cursor);
-            writer.Write(BiteTelemetryEntryPayloadBytes);
-            for (int i = 0; i < entryCount; i++)
+            int byteCount = TelemetryDumpHeaderBytes + entryCount * BiteTelemetryEntryPayloadBytes;
+            NativeArray<byte> payload = default;
+            try
             {
-                int sourceIndex = (firstEntryIndex + i) % ringLength;
-                BiteIkSolveEvent entry = biteIkSolveEvents[sourceIndex];
-                writer.Write(entry.FrameIndex);
-                writer.Write(entry.Flags);
-                writer.Write(entry.StateHash);
-                writer.Write(entry.TargetHash);
-                writer.Write(entry.JawTipPosition.x);
-                writer.Write(entry.JawTipPosition.y);
-                writer.Write(entry.JawTipPosition.z);
-                writer.Write(entry.DistanceMeters);
-                writer.Write(entry.ClosestPoint.x);
-                writer.Write(entry.ClosestPoint.y);
-                writer.Write(entry.ClosestPoint.z);
-                writer.Write(entry.Reach01);
-                writer.Write(entry.TargetLocalCenter.x);
-                writer.Write(entry.TargetLocalCenter.y);
-                writer.Write(entry.TargetLocalCenter.z);
-                writer.Write(entry.SystemStress01);
-                writer.Write(entry.HeadPosition.x);
-                writer.Write(entry.HeadPosition.y);
-                writer.Write(entry.HeadPosition.z);
-                writer.Write(entry.ContactDistanceMeters);
-                writer.Write(entry.WrapAnchor0.x);
-                writer.Write(entry.WrapAnchor0.y);
-                writer.Write(entry.WrapAnchor0.z);
-                writer.Write(entry.Blend01);
-                writer.Write(entry.WrapAnchor1.x);
-                writer.Write(entry.WrapAnchor1.y);
-                writer.Write(entry.WrapAnchor1.z);
-                writer.Write(entry.VisualOverkillWeight01);
-                writer.Write(entry.Padding1.x);
-                writer.Write(entry.Padding1.y);
-                writer.Write(entry.Padding1.z);
-                writer.Write(entry.Padding1.w);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(FaunaKinematicsRuntime),
+                    BiteTelemetryDumpPayloadLabel);
+                int writeCursor = 0;
+                WriteUInt64LittleEndian(payload, ref writeCursor, BiteTelemetryDumpMagic);
+                WriteInt32LittleEndian(payload, ref writeCursor, entryCount);
+                WriteInt32LittleEndian(payload, ref writeCursor, cursor);
+                WriteInt32LittleEndian(payload, ref writeCursor, BiteTelemetryEntryPayloadBytes);
+
+                for (int i = 0; i < entryCount; i++)
+                {
+                    int sourceIndex = (firstEntryIndex + i) % ringLength;
+                    BiteIkSolveEvent entry = biteIkSolveEvents[sourceIndex];
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.FrameIndex);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.Flags);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.StateHash);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.TargetHash);
+                    WriteFloat3LittleEndian(payload, ref writeCursor, entry.JawTipPosition);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.DistanceMeters);
+                    WriteFloat3LittleEndian(payload, ref writeCursor, entry.ClosestPoint);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.Reach01);
+                    WriteFloat3LittleEndian(payload, ref writeCursor, entry.TargetLocalCenter);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.SystemStress01);
+                    WriteFloat3LittleEndian(payload, ref writeCursor, entry.HeadPosition);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.ContactDistanceMeters);
+                    WriteFloat3LittleEndian(payload, ref writeCursor, entry.WrapAnchor0);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.Blend01);
+                    WriteFloat3LittleEndian(payload, ref writeCursor, entry.WrapAnchor1);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.VisualOverkillWeight01);
+                    WriteFloat4LittleEndian(payload, ref writeCursor, entry.Padding1);
+                }
+
+                return writeCursor == byteCount && NativeFaultDumpWriter.TryWriteAll(BiteTelemetryDumpRelativePath, payload, byteCount);
             }
+            catch (Exception)
+            {
+                return false;
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(FaunaKinematicsRuntime),
+                    BiteTelemetryDumpPayloadLabel);
+            }
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(payload, ref cursor, (uint)value);
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, ref int cursor, uint value)
+        {
+            payload[cursor++] = (byte)value;
+            payload[cursor++] = (byte)(value >> 8);
+            payload[cursor++] = (byte)(value >> 16);
+            payload[cursor++] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> payload, ref int cursor, ulong value)
+        {
+            WriteUInt32LittleEndian(payload, ref cursor, (uint)value);
+            WriteUInt32LittleEndian(payload, ref cursor, (uint)(value >> 32));
+        }
+
+        private static void WriteFloatLittleEndian(NativeArray<byte> payload, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(payload, ref cursor, math.asuint(value));
+        }
+
+        private static void WriteDoubleLittleEndian(NativeArray<byte> payload, ref int cursor, double value)
+        {
+            WriteUInt64LittleEndian(payload, ref cursor, unchecked((ulong)BitConverter.DoubleToInt64Bits(value)));
+        }
+
+        private static void WriteFloat3LittleEndian(NativeArray<byte> payload, ref int cursor, float3 value)
+        {
+            WriteFloatLittleEndian(payload, ref cursor, value.x);
+            WriteFloatLittleEndian(payload, ref cursor, value.y);
+            WriteFloatLittleEndian(payload, ref cursor, value.z);
+        }
+
+        private static void WriteFloat4LittleEndian(NativeArray<byte> payload, ref int cursor, float4 value)
+        {
+            WriteFloatLittleEndian(payload, ref cursor, value.x);
+            WriteFloatLittleEndian(payload, ref cursor, value.y);
+            WriteFloatLittleEndian(payload, ref cursor, value.z);
+            WriteFloatLittleEndian(payload, ref cursor, value.w);
+        }
+
+        private static void WriteDouble3LittleEndian(NativeArray<byte> payload, ref int cursor, double3 value)
+        {
+            WriteDoubleLittleEndian(payload, ref cursor, value.x);
+            WriteDoubleLittleEndian(payload, ref cursor, value.y);
+            WriteDoubleLittleEndian(payload, ref cursor, value.z);
         }
 
         private void ResetConstraintIterationHysteresis()

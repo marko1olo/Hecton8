@@ -29,6 +29,8 @@ namespace Hecton8.Power
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_1319_WfcOutpostPowerBoot.bin";
         private const uint DumpMagic = 0x4F504257u; // OPBW
         private const int DumpVersion = 1;
+        private const int DumpHeaderBytes = 20;
+        private const int DumpTelemetryRowBytes = 56;
         private const SystemID LogisticsGridSystemId = (SystemID)512;
         private const float InitialReactorOutput01 = 0.05f;
         private const float ReactorDecayPerSecond = 0.01f / 60f;
@@ -884,46 +886,48 @@ namespace Hecton8.Power
             if (_faultDumped || !_blackBox.IsCreated)
                 return;
 
-            _faultDumped = true;
             try
             {
-                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath));
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(DumpMagic);
-                writer.Write(DumpVersion);
-                writer.Write(reasonFlags);
                 int length = _blackBox.Length;
                 int startIndex = _blackBoxCursor;
                 if ((uint)startIndex >= (uint)length)
                     startIndex = 0;
 
-                writer.Write(length);
-                writer.Write(startIndex);
-                for (int offset = 0; offset < length; offset++)
-                {
-                    int sourceIndex = startIndex + offset;
-                    if (sourceIndex >= length)
-                        sourceIndex -= length;
+                long totalBytes = DumpHeaderBytes + ((long)length * DumpTelemetryRowBytes);
+                if (totalBytes < DumpHeaderBytes || totalBytes > int.MaxValue)
+                    return;
 
-                    WfcOutpostPowerBootTelemetryEntry entry = _blackBox[sourceIndex];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.GridHandle);
-                    writer.Write(entry.SectorHash);
-                    writer.Write(entry.NodeCount);
-                    writer.Write(entry.DirectedEdgeCount);
-                    writer.Write(entry.DoorCount);
-                    writer.Write(entry.RoomCount);
-                    writer.Write(entry.GeneratorNodeIndex);
-                    writer.Write(entry.ReactorOutput01);
-                    writer.Write(entry.SupplyRatio);
-                    writer.Write(entry.BrownoutSeverity01);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.GraphHash);
+                NativeArray<byte> payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    (int)totalBytes,
+                    nameof(WfcOutpostPowerBootRuntime),
+                    "wfcOutpostPowerBootBlackBoxPayload");
+                try
+                {
+                    WriteUInt32LittleEndian(payload, 0, DumpMagic);
+                    WriteInt32LittleEndian(payload, 4, DumpVersion);
+                    WriteUInt32LittleEndian(payload, 8, reasonFlags);
+                    WriteInt32LittleEndian(payload, 12, length);
+                    WriteInt32LittleEndian(payload, 16, startIndex);
+
+                    int cursor = DumpHeaderBytes;
+                    for (int offset = 0; offset < length; offset++)
+                    {
+                        int sourceIndex = startIndex + offset;
+                        if (sourceIndex >= length)
+                            sourceIndex -= length;
+
+                        WriteBlackBoxEntry(payload, cursor, _blackBox[sourceIndex]);
+                        cursor += DumpTelemetryRowBytes;
+                    }
+
+                    _faultDumped = NativeFaultDumpWriter.TryWriteAll(DumpRelativePath, payload, (int)totalBytes);
+                }
+                finally
+                {
+                    NativeFaultDumpWriter.DisposeTransientPayload(
+                        ref payload,
+                        nameof(WfcOutpostPowerBootRuntime),
+                        "wfcOutpostPowerBootBlackBoxPayload");
                 }
             }
             catch (IOException exception)
@@ -942,6 +946,50 @@ namespace Hecton8.Power
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(FaultTelemetryHash, WfcPowerBootContextHash, exception.HResult);
             }
+        }
+
+        private static void WriteBlackBoxEntry(
+            NativeArray<byte> destination,
+            int offset,
+            WfcOutpostPowerBootTelemetryEntry entry)
+        {
+            WriteUInt32LittleEndian(destination, offset, entry.Frame);
+            WriteUInt32LittleEndian(destination, offset + 4, entry.GridHandle);
+            WriteUInt64LittleEndian(destination, offset + 8, entry.SectorHash);
+            WriteInt32LittleEndian(destination, offset + 16, entry.NodeCount);
+            WriteInt32LittleEndian(destination, offset + 20, entry.DirectedEdgeCount);
+            WriteInt32LittleEndian(destination, offset + 24, entry.DoorCount);
+            WriteInt32LittleEndian(destination, offset + 28, entry.RoomCount);
+            WriteInt32LittleEndian(destination, offset + 32, entry.GeneratorNodeIndex);
+            WriteFloat32LittleEndian(destination, offset + 36, entry.ReactorOutput01);
+            WriteFloat32LittleEndian(destination, offset + 40, entry.SupplyRatio);
+            WriteFloat32LittleEndian(destination, offset + 44, entry.BrownoutSeverity01);
+            WriteUInt32LittleEndian(destination, offset + 48, entry.Flags);
+            WriteUInt32LittleEndian(destination, offset + 52, entry.GraphHash);
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> destination, int offset, float value)
+        {
+            WriteUInt32LittleEndian(destination, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> destination, int offset, int value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> destination, int offset, uint value)
+        {
+            destination[offset] = (byte)value;
+            destination[offset + 1] = (byte)(value >> 8);
+            destination[offset + 2] = (byte)(value >> 16);
+            destination[offset + 3] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt64LittleEndian(NativeArray<byte> destination, int offset, ulong value)
+        {
+            WriteUInt32LittleEndian(destination, offset, unchecked((uint)value));
+            WriteUInt32LittleEndian(destination, offset + 4, unchecked((uint)(value >> 32)));
         }
 
         private int ReadCount(int slot)

@@ -180,7 +180,7 @@ namespace Hecton8.Physics
 
     public unsafe static class HarpoonTensionSolver328
     {
-        private static readonly ulong ScheduledMockMutationGuardMask =
+        private static readonly ulong MockBootstrapMutationGuardMask =
             HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.TetherStates) |
             HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.StressStates) |
             HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.TetherNodes) |
@@ -193,9 +193,22 @@ namespace Hecton8.Physics
             HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.TelemetryHead) |
             HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.Tuning) |
             HarpoonMutationGuardBit(HarpoonTensionSolver328BufferIds.FaultFlags);
+        private const uint ScheduledMockPinTetherStates = 1u << 0;
+        private const uint ScheduledMockPinStressStates = 1u << 1;
+        private const uint ScheduledMockPinTetherNodes = 1u << 2;
+        private const uint ScheduledMockPinTetherPreviousNodes = 1u << 3;
+        private const uint ScheduledMockPinTetherConstraints = 1u << 4;
+        private const uint ScheduledMockPinForcePackets = 1u << 5;
+        private const uint ScheduledMockPinPhysicsEvents = 1u << 6;
+        private const uint ScheduledMockPinSplineVertices = 1u << 7;
+        private const uint ScheduledMockPinTelemetryRing = 1u << 8;
+        private const uint ScheduledMockPinTelemetryHead = 1u << 9;
+        private const uint ScheduledMockPinTuning = 1u << 10;
+        private const uint ScheduledMockPinFaultFlags = 1u << 11;
 
         private static int s_x001DirectSignalPushDropCount_HarpoonTensionSolver328;
-        private static bool _scheduledMockGuardHeld;
+        private static IDataVault _scheduledMockPinVault;
+        private static uint _scheduledMockPinMask;
 
 #if UNITY_EDITOR
         public static bool ValidateLayout()
@@ -356,7 +369,7 @@ namespace Hecton8.Physics
                 return;
             }
 
-            if (!vault.TryAcquireMutationGuard(ScheduledMockMutationGuardMask))
+            if (!vault.TryAcquireMutationGuard(MockBootstrapMutationGuardMask))
                 return;
 
             try
@@ -385,7 +398,7 @@ namespace Hecton8.Physics
             }
             finally
             {
-                vault.ReleaseMutationGuard(ScheduledMockMutationGuardMask);
+                vault.ReleaseMutationGuard(MockBootstrapMutationGuardMask);
             }
         }
 
@@ -463,7 +476,7 @@ namespace Hecton8.Physics
             out HarpoonTensionSchedule328 schedule)
         {
             schedule = default;
-            if (!TryAcquireMockScheduleBufferGuard(vault))
+            if (!TryLockMockScheduleBuffers(vault))
                 return false;
 
             bool scheduled = false;
@@ -536,12 +549,25 @@ namespace Hecton8.Physics
 
         public static void ReleaseMockScheduleBufferPins(IDataVault vault)
         {
-            if (!_scheduledMockGuardHeld)
+            IDataVault pinVault = _scheduledMockPinVault ?? vault;
+            uint pinMask = _scheduledMockPinMask;
+            _scheduledMockPinVault = null;
+            _scheduledMockPinMask = 0u;
+            if (pinVault == null || pinMask == 0u)
                 return;
 
-            _scheduledMockGuardHeld = false;
-            if (vault != null)
-                vault.ReleaseMutationGuard(ScheduledMockMutationGuardMask);
+            TryUnlockMockScheduleBufferPin(pinVault, pinMask, ScheduledMockPinFaultFlags, HarpoonTensionSolver328BufferIds.FaultFlags);
+            TryUnlockMockScheduleBufferPin(pinVault, pinMask, ScheduledMockPinTuning, HarpoonTensionSolver328BufferIds.Tuning);
+            TryUnlockMockScheduleBufferPin(pinVault, pinMask, ScheduledMockPinTelemetryHead, HarpoonTensionSolver328BufferIds.TelemetryHead);
+            TryUnlockMockScheduleBufferPin(pinVault, pinMask, ScheduledMockPinTelemetryRing, HarpoonTensionSolver328BufferIds.TelemetryRing);
+            TryUnlockMockScheduleBufferPin(pinVault, pinMask, ScheduledMockPinSplineVertices, HarpoonTensionSolver328BufferIds.SplineVertices);
+            TryUnlockMockScheduleBufferPin(pinVault, pinMask, ScheduledMockPinPhysicsEvents, HarpoonTensionSolver328BufferIds.PhysicsEvents);
+            TryUnlockMockScheduleBufferPin(pinVault, pinMask, ScheduledMockPinForcePackets, HarpoonTensionSolver328BufferIds.ForcePackets);
+            TryUnlockMockScheduleBufferPin(pinVault, pinMask, ScheduledMockPinTetherConstraints, HarpoonTensionSolver328BufferIds.TetherConstraints);
+            TryUnlockMockScheduleBufferPin(pinVault, pinMask, ScheduledMockPinTetherPreviousNodes, HarpoonTensionSolver328BufferIds.TetherPreviousNodes);
+            TryUnlockMockScheduleBufferPin(pinVault, pinMask, ScheduledMockPinTetherNodes, HarpoonTensionSolver328BufferIds.TetherNodes);
+            TryUnlockMockScheduleBufferPin(pinVault, pinMask, ScheduledMockPinStressStates, HarpoonTensionSolver328BufferIds.StressStates);
+            TryUnlockMockScheduleBufferPin(pinVault, pinMask, ScheduledMockPinTetherStates, HarpoonTensionSolver328BufferIds.TetherStates);
         }
 
         public static bool TryHasMockBuffers(IDataVault vault)
@@ -740,8 +766,7 @@ namespace Hecton8.Physics
 
             string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
             string path = Path.Combine(root, "Docs", "AgentLogs", "Dump_SHINOBU_328.bin");
-            WriteTelemetryDump(path, ring, faultFlags[0] & HarpoonTensionFaultFlags328.DumpTriggerMask);
-            return true;
+            return WriteTelemetryDump(path, ring, faultFlags[0] & HarpoonTensionFaultFlags328.DumpTriggerMask);
 #else
             return false;
 #endif
@@ -1093,16 +1118,62 @@ namespace Hecton8.Physics
                    TryOpenExistingVaultView(vault, HarpoonTensionSolver328BufferIds.FaultFlags, out faultFlags);
         }
 
-        private static bool TryAcquireMockScheduleBufferGuard(IDataVault vault)
+        private static bool TryLockMockScheduleBuffers(IDataVault vault)
         {
-            if (vault == null || _scheduledMockGuardHeld)
+            if (vault == null ||
+                _scheduledMockPinVault != null ||
+                _scheduledMockPinMask != 0u ||
+                vault.IsCompactionFenceActive)
+            {
+                return false;
+            }
+
+            _scheduledMockPinVault = vault;
+            bool locked = false;
+            try
+            {
+                if (!TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherStates, ScheduledMockPinTetherStates) ||
+                    !TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.StressStates, ScheduledMockPinStressStates) ||
+                    !TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherNodes, ScheduledMockPinTetherNodes) ||
+                    !TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherPreviousNodes, ScheduledMockPinTetherPreviousNodes) ||
+                    !TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TetherConstraints, ScheduledMockPinTetherConstraints) ||
+                    !TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.ForcePackets, ScheduledMockPinForcePackets) ||
+                    !TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.PhysicsEvents, ScheduledMockPinPhysicsEvents) ||
+                    !TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.SplineVertices, ScheduledMockPinSplineVertices) ||
+                    !TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TelemetryRing, ScheduledMockPinTelemetryRing) ||
+                    !TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.TelemetryHead, ScheduledMockPinTelemetryHead) ||
+                    !TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.Tuning, ScheduledMockPinTuning) ||
+                    !TryLockMockScheduleBuffer(vault, HarpoonTensionSolver328BufferIds.FaultFlags, ScheduledMockPinFaultFlags))
+                {
+                    return false;
+                }
+
+                locked = true;
+                return true;
+            }
+            finally
+            {
+                if (!locked)
+                    ReleaseMockScheduleBufferPins(vault);
+            }
+        }
+
+        private static bool TryLockMockScheduleBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        {
+            if ((_scheduledMockPinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null || !vault.TryLockBuffer(bufferId, SystemID.Physics))
                 return false;
 
-            if (!vault.TryAcquireMutationGuard(ScheduledMockMutationGuardMask))
-                return false;
-
-            _scheduledMockGuardHeld = true;
+            _scheduledMockPinMask |= pinBit;
             return true;
+        }
+
+        private static void TryUnlockMockScheduleBufferPin(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, SystemID.Physics);
         }
 
         private static ulong HarpoonMutationGuardBit(BufferID bufferId)
@@ -1326,24 +1397,42 @@ namespace Hecton8.Physics
         }
 
 #if UNITY_EDITOR
-        private static void WriteTelemetryDump(string path, NativeArray<TetherTelemetryEntry> ring, uint reasonFlags)
+        private static bool WriteTelemetryDump(string path, NativeArray<TetherTelemetryEntry> ring, uint reasonFlags)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(path) ?? ".");
-            using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            NativeArray<byte> payload = default;
+            try
             {
-                Span<byte> header = stackalloc byte[16];
-                WriteUInt(header, 0, 0x53333238u);
-                WriteUInt(header, 4, reasonFlags);
-                WriteUInt(header, 8, (uint)math.min(ring.IsCreated ? ring.Length : 0, HarpoonTensionSolver328Constants.TelemetryCapacity));
-                WriteUInt(header, 12, (uint)UnsafeUtility.SizeOf<TetherTelemetryEntry>());
-                stream.Write(header);
-                if (ring.IsCreated && ring.Length > 0)
+                const int headerBytes = 16;
+                int entryBytes = UnsafeUtility.SizeOf<TetherTelemetryEntry>();
+                int count = math.min(ring.IsCreated ? ring.Length : 0, HarpoonTensionSolver328Constants.TelemetryCapacity);
+                int byteCount = headerBytes + count * entryBytes;
+                payload = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+
+                unsafe
                 {
-                    int count = math.min(ring.Length, HarpoonTensionSolver328Constants.TelemetryCapacity);
-                    void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
-                    ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>(ptr, count * UnsafeUtility.SizeOf<TetherTelemetryEntry>());
-                    stream.Write(bytes);
+                    byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                    WriteUInt(bytes, 0, 0x53333238u);
+                    WriteUInt(bytes, 4, reasonFlags);
+                    WriteUInt(bytes, 8, (uint)count);
+                    WriteUInt(bytes, 12, (uint)entryBytes);
+
+                    if (count > 0)
+                    {
+                        void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
+                        UnsafeUtility.MemCpy(bytes + headerBytes, ptr, count * entryBytes);
+                    }
                 }
+
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
             }
         }
 #endif
@@ -1526,7 +1615,7 @@ namespace Hecton8.Physics
 #endif
 
 #if UNITY_EDITOR
-        private static void WriteUInt(Span<byte> data, int offset, uint value)
+        private static unsafe void WriteUInt(byte* data, int offset, uint value)
         {
             data[offset] = (byte)value;
             data[offset + 1] = (byte)(value >> 8);

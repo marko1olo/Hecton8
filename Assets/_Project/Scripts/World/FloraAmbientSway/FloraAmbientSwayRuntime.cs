@@ -1121,32 +1121,36 @@ namespace Hecton8.World.FloraAmbientSway
                 return;
             }
 
-            _dumped = true;
+            NativeArray<byte> payload = default;
             try
             {
-                string root = Directory.GetCurrentDirectory();
-                if (!string.Equals(Path.GetFileName(root), "Hecton8", StringComparison.OrdinalIgnoreCase))
-                    root = Path.Combine(root, "Hecton8");
-
-                string directory = Path.Combine(root, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, "Dump_SHINOBU_267.bin");
-                using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+                const string path = "Docs/AgentLogs/Dump_SHINOBU_267.bin";
+                int headerBytes = 24;
+                int entryBytes = (int)SwayTelemetryEntrySizeBytes;
+                int totalBytes = headerBytes + ring.Length * entryBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    totalBytes,
+                    nameof(FloraAmbientSwayRuntime),
+                    "FloraAmbientSwayTelemetryDumpPayload");
+                Span<byte> bytes = new Span<byte>(payload.GetUnsafePtr(), totalBytes);
+                WriteUInt32LittleEndian(bytes, 0, TelemetryDumpMagic);
+                WriteUInt32LittleEndian(bytes, 4, TelemetryDumpVersion);
+                WriteUInt32LittleEndian(bytes, 8, TelemetrySourceHash);
+                WriteUInt32LittleEndian(bytes, 12, SwayTelemetryEntrySizeBytes);
+                WriteUInt32LittleEndian(bytes, 16, unchecked((uint)ring.Length));
+                WriteUInt32LittleEndian(bytes, 20, unchecked((uint)(cursorArray.IsCreated && cursorArray.Length > 0 ? cursorArray[0] : 0)));
+                int writeOffset = headerBytes;
+                for (int i = 0; i < ring.Length; i++)
                 {
-                    WriteUInt32LittleEndian(stream, TelemetryDumpMagic);
-                    WriteUInt32LittleEndian(stream, TelemetryDumpVersion);
-                    WriteUInt32LittleEndian(stream, TelemetrySourceHash);
-                    WriteUInt32LittleEndian(stream, SwayTelemetryEntrySizeBytes);
-                    WriteInt32LittleEndian(stream, ring.Length);
-                    WriteInt32LittleEndian(stream, cursorArray.IsCreated && cursorArray.Length > 0 ? cursorArray[0] : 0);
-                    Span<byte> entryBytes = stackalloc byte[(int)SwayTelemetryEntrySizeBytes];
-                    for (int i = 0; i < ring.Length; i++)
-                    {
-                        SwayTelemetryEntry entry = ring[i];
-                        WriteSwayTelemetryEntry(entryBytes, in entry);
-                        stream.Write(entryBytes);
-                    }
+                    SwayTelemetryEntry entry = ring[i];
+                    WriteSwayTelemetryEntry(bytes.Slice(writeOffset, entryBytes), in entry);
+                    writeOffset += entryBytes;
                 }
+
+                if (NativeFaultDumpWriter.TryWriteAll(path, payload, totalBytes))
+                    _dumped = true;
+                else
+                    CrashTelemetryBuffer.ReportBlackBoxExportFailure();
             }
             catch (IOException)
             {
@@ -1159,6 +1163,13 @@ namespace Hecton8.World.FloraAmbientSway
             catch (UnauthorizedAccessException)
             {
                 CrashTelemetryBuffer.ReportBlackBoxExportFailure();
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(FloraAmbientSwayRuntime),
+                    "FloraAmbientSwayTelemetryDumpPayload");
             }
         }
 

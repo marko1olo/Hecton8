@@ -61,6 +61,57 @@ namespace Hecton8.Equipment.Auxiliary
             return parsed > 0;
         }
 
+        public static bool TryParseProfilesCsv(
+            ReadOnlySpan<byte> bytes,
+            Span<AuxiliaryProfileDTO> profiles,
+            out AuxiliaryCsvParseResult result)
+        {
+            result = default;
+            if (bytes.Length == 0 || profiles.Length == 0)
+            {
+                result.FaultFlags = AuxiliaryEquipmentFlags.Faulted;
+                return false;
+            }
+
+            int parsed = 0;
+            int skipped = 0;
+            int rowStart = 0;
+            for (int i = 0; i <= bytes.Length; i++)
+            {
+                if (i < bytes.Length && bytes[i] != (byte)'\n')
+                    continue;
+
+                int rowEnd = i;
+                if (rowEnd > rowStart && bytes[rowEnd - 1] == (byte)'\r')
+                    rowEnd--;
+
+                if (TryParseLine(bytes, rowStart, rowEnd, out AuxiliaryProfileDTO profile))
+                {
+                    if (parsed < profiles.Length)
+                    {
+                        profiles[parsed] = profile;
+                        result.LastProfileHash = profile.ProfileHash;
+                        parsed++;
+                    }
+                    else
+                    {
+                        skipped++;
+                    }
+                }
+                else
+                {
+                    skipped++;
+                }
+
+                rowStart = i + 1;
+            }
+
+            result.ParsedRows = parsed;
+            result.SkippedRows = math.max(0, skipped - 1);
+            result.FaultFlags = parsed > 0 ? 0u : AuxiliaryEquipmentFlags.Faulted;
+            return parsed > 0;
+        }
+
         private static bool TryParseLine(ReadOnlySpan<byte> bytes, int start, int end, out AuxiliaryProfileDTO profile)
         {
             profile = default;

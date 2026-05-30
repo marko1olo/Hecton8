@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
@@ -212,6 +211,7 @@ namespace Hecton8.Core
         private const float Tier0CombatLockSeconds = 10.0f;
         private const float FoveatedClockMaxSeconds = 16777215f;
         private const int TelemetryCapacity = 300;
+        private const int TelemetryDumpEntryBytes = 56;
         private const uint TelemetryMagic = 0x46384C44u;
         private const float SoundSpeedWaterMetersPerSecond = HectonPhysicsContract.SoundSpeedWaterMetersPerSecondConst;
         private const float MinimumPitch = 0.5f;
@@ -226,7 +226,7 @@ namespace Hecton8.Core
         private const float CulledEcosystemVelocitySmoothingSharpness = 1.0f;
         private const long PersistentNativeBudgetBytes = 393216L;
         private const string MemoryBudgetOwnerName = "FoveatedSimulationManager";
-        private const string BlackBoxDumpFileName = "Dump_FOVEATED_SIMULATION_DIRECTOR.bin";
+        private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_FOVEATED_SIMULATION_DIRECTOR.bin";
         private const SystemID VaultOwnerSystemId = SystemID.SystemDispatcher;
         private const BufferID FoveatedScorePositionsBufferId = (BufferID)73220;
         private const BufferID FoveatedEntityAupsBufferId = (BufferID)73221;
@@ -240,20 +240,13 @@ namespace Hecton8.Core
         private const BufferID FoveatedAlphasBufferId = (BufferID)73229;
         private const BufferID FoveatedTelemetryRingBufferId = (BufferID)73234;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ulong FoveatedMutationGuardBit(BufferID bufferId)
-        {
-            return 1UL << ((int)bufferId & 63);
-        }
-
-        private static readonly ulong ImportanceJobMutationGuardMask =
-            FoveatedMutationGuardBit(FoveatedScorePositionsBufferId) |
-            FoveatedMutationGuardBit(FoveatedEntityAupsBufferId) |
-            FoveatedMutationGuardBit(FoveatedImportanceScoresBufferId) |
-            FoveatedMutationGuardBit(FoveatedTickRateCodesBufferId) |
-            FoveatedMutationGuardBit(FoveatedInsideFrustumFlagsBufferId) |
-            FoveatedMutationGuardBit(FoveatedEntitySimTiersBufferId) |
-            FoveatedMutationGuardBit(FoveatedDistancesMetersBufferId);
+        private const uint ImportanceJobPinScorePositions = 1u << 0;
+        private const uint ImportanceJobPinEntityAups = 1u << 1;
+        private const uint ImportanceJobPinScores = 1u << 2;
+        private const uint ImportanceJobPinTickRates = 1u << 3;
+        private const uint ImportanceJobPinFrustumFlags = 1u << 4;
+        private const uint ImportanceJobPinSimTiers = 1u << 5;
+        private const uint ImportanceJobPinDistances = 1u << 6;
 
         // COLD ALLOC: object[512] — dispatcher-owned opt-in simulation target slots, object-backed to avoid interface arrays — owner: FoveatedSimulationManager
         private readonly object[] _targets = new object[MaxTargets];
@@ -323,8 +316,9 @@ namespace Hecton8.Core
         private bool _nativeMemoryBudgetRegistered;
         private bool _registeredHotSwapListener;
         private bool _voxelTeardownBackpressureActive;
-        private bool _importanceJobBuffersLocked;
-        private IDataVault _importanceJobGuardVault;
+        private bool _importanceJobBuffersPinned;
+        private IDataVault _importanceJobPinVault;
+        private uint _importanceJobPinMask;
         private bool _forceImmediateImportanceRefresh;
         private bool _hasSignalCameraPose;
         private bool _blackBoxDumped;
@@ -715,7 +709,7 @@ namespace Hecton8.Core
                     }
                     finally
                     {
-                        ReleaseImportanceJobBufferLocks();
+                        ReleaseImportanceJobBufferPins();
                         _importanceScheduled = false;
                     }
                 }
@@ -897,7 +891,7 @@ namespace Hecton8.Core
 
             if (!TryOpenImportanceJobBuffersForOwner(out FoveatedImportanceJobBuffers buffers))
             {
-                ReleaseImportanceJobBufferLocks();
+                ReleaseImportanceJobBufferPins();
                 return;
             }
 
@@ -932,7 +926,7 @@ namespace Hecton8.Core
             finally
             {
                 if (!scheduled)
-                    ReleaseImportanceJobBufferLocks();
+                    ReleaseImportanceJobBufferPins();
             }
         }
 
@@ -1233,41 +1227,68 @@ namespace Hecton8.Core
                 return;
 
             _blackBoxDumped = true;
+            NativeArray<byte> payload = default;
+            const string dumpPayloadLabel = "foveatedSimulationBlackBoxDumpPayload";
             try
             {
-                string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string directory = Path.Combine(root, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, BlackBoxDumpFileName);
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                int byteCount = (sizeof(uint) + (sizeof(int) * 2)) + (TelemetryCapacity * TelemetryDumpEntryBytes);
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(FoveatedSimulationManager),
+                    dumpPayloadLabel,
+                    NativeArrayOptions.UninitializedMemory);
+                int writeCursor = 0;
+
+                WriteUInt32LittleEndian(payload, ref writeCursor, TelemetryMagic);
+                WriteInt32LittleEndian(payload, ref writeCursor, TelemetryCapacity);
+                WriteInt32LittleEndian(payload, ref writeCursor, _telemetryCursor);
+
+                for (int i = 0; i < TelemetryCapacity; i++)
                 {
-                    writer.Write(TelemetryMagic);
-                    writer.Write(TelemetryCapacity);
-                    writer.Write(_telemetryCursor);
-                    for (int i = 0; i < TelemetryCapacity; i++)
-                    {
-                        FoveatedSimulationTelemetryEntry entry = telemetryRing[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.TargetCount);
-                        writer.Write(entry.FrozenEntityCount);
-                        writer.Write(entry.Tier0Count);
-                        writer.Write(entry.Tier1Count);
-                        writer.Write(entry.Tier2Count);
-                        writer.Write(entry.CameraPosition.x);
-                        writer.Write(entry.CameraPosition.y);
-                        writer.Write(entry.CameraPosition.z);
-                        writer.Write(entry.CameraForward.x);
-                        writer.Write(entry.CameraForward.y);
-                        writer.Write(entry.CameraForward.z);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.StateHash);
-                    }
+                    FoveatedSimulationTelemetryEntry entry = telemetryRing[i];
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.Frame);
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.TargetCount);
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.FrozenEntityCount);
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.Tier0Count);
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.Tier1Count);
+                    WriteInt32LittleEndian(payload, ref writeCursor, entry.Tier2Count);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.CameraPosition.x);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.CameraPosition.y);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.CameraPosition.z);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.CameraForward.x);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.CameraForward.y);
+                    WriteFloatLittleEndian(payload, ref writeCursor, entry.CameraForward.z);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.Flags);
+                    WriteUInt32LittleEndian(payload, ref writeCursor, entry.StateHash);
                 }
+
+                NativeFaultDumpWriter.TryWriteAll(BlackBoxDumpRelativePath, payload, writeCursor);
             }
             catch (Exception)
             {
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(ref payload, nameof(FoveatedSimulationManager), dumpPayloadLabel);
+            }
+        }
+
+        private static void WriteFloatLittleEndian(NativeArray<byte> target, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(target, ref cursor, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> target, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(target, ref cursor, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> target, ref int cursor, uint value)
+        {
+            target[cursor++] = (byte)value;
+            target[cursor++] = (byte)(value >> 8);
+            target[cursor++] = (byte)(value >> 16);
+            target[cursor++] = (byte)(value >> 24);
         }
 
         private static bool IsFinite(float3 value)
@@ -1494,32 +1515,37 @@ namespace Hecton8.Core
 
         private bool TryPinImportanceJobBuffers()
         {
-            if (_importanceJobBuffersLocked)
+            if (_importanceJobBuffersPinned)
                 return false;
 
             IDataVault vault = _dataVault;
             if (vault == null || !TryValidateImportanceJobBuffers(vault))
                 return false;
 
-            bool acquired = false;
             try
             {
-                if (!vault.TryAcquireMutationGuard(ImportanceJobMutationGuardMask))
+                _importanceJobPinVault = vault;
+                if (!TryPinImportanceJobBuffer(vault, FoveatedScorePositionsBufferId, ImportanceJobPinScorePositions) ||
+                    !TryPinImportanceJobBuffer(vault, FoveatedEntityAupsBufferId, ImportanceJobPinEntityAups) ||
+                    !TryPinImportanceJobBuffer(vault, FoveatedImportanceScoresBufferId, ImportanceJobPinScores) ||
+                    !TryPinImportanceJobBuffer(vault, FoveatedTickRateCodesBufferId, ImportanceJobPinTickRates) ||
+                    !TryPinImportanceJobBuffer(vault, FoveatedInsideFrustumFlagsBufferId, ImportanceJobPinFrustumFlags) ||
+                    !TryPinImportanceJobBuffer(vault, FoveatedEntitySimTiersBufferId, ImportanceJobPinSimTiers) ||
+                    !TryPinImportanceJobBuffer(vault, FoveatedDistancesMetersBufferId, ImportanceJobPinDistances))
+                {
                     return false;
+                }
 
-                acquired = true;
                 if (!TryValidateImportanceJobBuffers(vault))
                     return false;
 
-                _importanceJobGuardVault = vault;
-                _importanceJobBuffersLocked = true;
-                acquired = false;
+                _importanceJobBuffersPinned = true;
                 return true;
             }
             finally
             {
-                if (acquired)
-                    vault.ReleaseMutationGuard(ImportanceJobMutationGuardMask);
+                if (!_importanceJobBuffersPinned)
+                    ReleaseImportanceJobBufferPins();
             }
         }
 
@@ -1534,17 +1560,47 @@ namespace Hecton8.Core
                    TryReadVaultArray(vault, FoveatedDistancesMetersBufferId, in _jobDistancesMetersHandle, MaxTargets, out _);
         }
 
-        private void ReleaseImportanceJobBufferLocks()
+        private void ReleaseImportanceJobBufferPins()
         {
-            if (!_importanceJobBuffersLocked)
+            if (!_importanceJobBuffersPinned && _importanceJobPinMask == 0u)
                 return;
 
-            IDataVault vault = _importanceJobGuardVault;
-            if (vault != null)
-                vault.ReleaseMutationGuard(ImportanceJobMutationGuardMask);
+            IDataVault vault = _importanceJobPinVault;
+            uint pinMask = _importanceJobPinMask;
+            _importanceJobPinVault = null;
+            _importanceJobPinMask = 0u;
+            _importanceJobBuffersPinned = false;
 
-            _importanceJobGuardVault = null;
-            _importanceJobBuffersLocked = false;
+            if (vault == null || pinMask == 0u)
+                return;
+
+            TryUnlockImportanceJobBuffer(vault, pinMask, ImportanceJobPinDistances, FoveatedDistancesMetersBufferId);
+            TryUnlockImportanceJobBuffer(vault, pinMask, ImportanceJobPinSimTiers, FoveatedEntitySimTiersBufferId);
+            TryUnlockImportanceJobBuffer(vault, pinMask, ImportanceJobPinFrustumFlags, FoveatedInsideFrustumFlagsBufferId);
+            TryUnlockImportanceJobBuffer(vault, pinMask, ImportanceJobPinTickRates, FoveatedTickRateCodesBufferId);
+            TryUnlockImportanceJobBuffer(vault, pinMask, ImportanceJobPinScores, FoveatedImportanceScoresBufferId);
+            TryUnlockImportanceJobBuffer(vault, pinMask, ImportanceJobPinEntityAups, FoveatedEntityAupsBufferId);
+            TryUnlockImportanceJobBuffer(vault, pinMask, ImportanceJobPinScorePositions, FoveatedScorePositionsBufferId);
+        }
+
+        private bool TryPinImportanceJobBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        {
+            if ((_importanceJobPinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null || !vault.TryLockBuffer(bufferId, VaultOwnerSystemId))
+                return false;
+
+            _importanceJobPinMask |= pinBit;
+            return true;
+        }
+
+        private static void TryUnlockImportanceJobBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if (vault == null || (pinMask & pinBit) == 0u)
+                return;
+
+            vault.TryUnlockBuffer(bufferId, VaultOwnerSystemId);
         }
 
         private static bool OpenOrAcquireVaultArray<T>(
@@ -1638,7 +1694,7 @@ namespace Hecton8.Core
             {
                 DispatcherJobFence.EndPostSimulationSwapWindow();
             }
-            ReleaseImportanceJobBufferLocks();
+            ReleaseImportanceJobBufferPins();
 
             ReleaseNativeVaultHandles(_dataVault);
             ClearNativeBufferAliases();

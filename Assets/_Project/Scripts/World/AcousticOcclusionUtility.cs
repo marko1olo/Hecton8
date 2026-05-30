@@ -296,13 +296,6 @@ namespace Hecton8.World
             return mask;
         }
 
-        /// <summary>
-        /// Compatibility hook retained for callers. Acoustic occlusion is SDF-only for this batch.
-        /// </summary>
-        public static void LateFrameTick()
-        {
-        }
-
         public static void PrimeOcclusionPath(
             Vector3 sourcePosition,
             Vector3 listenerPosition,

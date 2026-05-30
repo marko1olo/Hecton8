@@ -15,7 +15,7 @@ namespace Hecton8.Tools.ToolKinematics
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9917)]
-    public sealed class ToolKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, IGlobalRegistryHotSwapListener
+    public sealed class ToolKinematicsRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, IColdTickable, IGlobalRegistryHotSwapListener
     {
         private static int _signalPushDropCount;
         public const int MaxToolCapacity = 8;
@@ -85,6 +85,7 @@ namespace Hecton8.Tools.ToolKinematics
         private bool _frameScheduled;
         private bool _fixedRegistered;
         private bool _postFixedRegistered;
+        private bool _coldRegistered;
         private bool _registeredHotSwap;
         private bool _pendingDataVaultRebind;
         private bool _abiValid;
@@ -139,6 +140,7 @@ namespace Hecton8.Tools.ToolKinematics
             StopBlackBoxDumpWorker();
             TryUnregisterFixed();
             TryUnregisterPostFixed();
+            TryUnregisterCold();
             TryUnregisterHotSwap();
             ReleaseVaultHandles();
             ClearHandles();
@@ -148,6 +150,9 @@ namespace Hecton8.Tools.ToolKinematics
         {
             CompletePendingFrameForTeardown();
             StopBlackBoxDumpWorker();
+            TryUnregisterFixed();
+            TryUnregisterPostFixed();
+            TryUnregisterCold();
             TryUnregisterHotSwap();
             ReleaseVaultHandles();
             ClearHandles();
@@ -158,7 +163,6 @@ namespace Hecton8.Tools.ToolKinematics
             if (!_abiValid || _frameScheduled)
                 return;
 
-            ApplyPendingDataVaultRebindIfIdle();
             float safeDeltaTime = math.clamp(ToolKinematicsMath.ClampPositiveFinite(fixedDeltaTime, 0.0166667f), 0.001f, 0.05f);
             if (!TryResolveAllBuffers(false, out ToolKinematicsBufferSet buffers))
                 return;
@@ -221,6 +225,10 @@ namespace Hecton8.Tools.ToolKinematics
         public void PostFixedTick(float fixedDeltaTime)
         {
             TryFinalizePendingFrameNoWait();
+        }
+
+        public void ColdTick()
+        {
             ApplyPendingDataVaultRebindIfIdle();
         }
 
@@ -656,6 +664,7 @@ namespace Hecton8.Tools.ToolKinematics
             EnsureBlackBoxDumpWorkerCold();
             TryRegisterFixed();
             TryRegisterPostFixed();
+            TryRegisterCold();
             return true;
         }
 
@@ -710,10 +719,12 @@ namespace Hecton8.Tools.ToolKinematics
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _fixedRegistered = false;
                     _postFixedRegistered = false;
+                    _coldRegistered = false;
                     if (currentService != null && isActiveAndEnabled)
                     {
                         TryRegisterFixed();
                         TryRegisterPostFixed();
+                        TryRegisterCold();
                     }
 
                     break;
@@ -1143,6 +1154,14 @@ namespace Hecton8.Tools.ToolKinematics
             _postFixedRegistered = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Player);
         }
 
+        private void TryRegisterCold()
+        {
+            if (_coldRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _coldRegistered = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+        }
+
         private void TryRegisterHotSwap()
         {
             if (_registeredHotSwap || !Application.isPlaying)
@@ -1176,6 +1195,15 @@ namespace Hecton8.Tools.ToolKinematics
 
             GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Player);
             _postFixedRegistered = false;
+        }
+
+        private void TryUnregisterCold()
+        {
+            if (!_coldRegistered)
+                return;
+
+            GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
+            _coldRegistered = false;
         }
 
         private static bool ValidateAbiLayout()

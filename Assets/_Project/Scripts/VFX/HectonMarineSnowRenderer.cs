@@ -4726,7 +4726,7 @@ namespace Hecton8.Environment
             _debugHomeostasisPressureLevel = pressureLevel;
             _debugHomeostasisKillSwitchMaskLow32 = unchecked((uint)killSwitchMask);
             _debugBudgetedStepDistanceMeters = pressureBudget.StepDistanceMeters;
-            _debugBudgetedShadowTaps = ResolveEffectiveShadowTaps(pressureBudget, killSwitchMask);
+            _debugBudgetedShadowTaps = ResolveEffectiveShadowTaps(pressureBudget, killSwitchMask, pressureLevel);
 
             DynamicResolutionScaler scaler = _dynamicResolutionScaler;
             float renderScale = scaler != null ? math.saturate(scaler.CurrentRenderScale) : 1f;
@@ -4886,10 +4886,10 @@ namespace Hecton8.Environment
             if (_blackBoxDumped || !TryResolveTelemetryRing(out var telemetryRing))
                 return;
 
-            _blackBoxDumped = true;
             string path = ResolveBlackBoxDumpPath();
-            TryWriteBlackBoxDump(path, telemetryRing);
-            TryWriteBlackBoxDump(ResolveLegacyBlackBoxDumpPath(), telemetryRing);
+            bool wrotePrimary = TryWriteBlackBoxDump(path, telemetryRing);
+            bool wroteLegacy = TryWriteBlackBoxDump(ResolveLegacyBlackBoxDumpPath(), telemetryRing);
+            _blackBoxDumped = wrotePrimary || wroteLegacy;
             if (TryAcquireReadyPropwashTelemetry(out NativeArray<PropwashTelemetryEntry> propwashTelemetry))
             {
                 string root = Application.isPlaying || !string.IsNullOrEmpty(Application.dataPath)
@@ -4903,33 +4903,32 @@ namespace Hecton8.Environment
 
         private unsafe bool TryWriteBlackBoxDump(string path, NativeArray<MarineSnowTelemetryEntry> telemetryRing)
         {
+            NativeArray<byte> payload = default;
             try
             {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                Span<uint> header = stackalloc uint[4];
-                header[0] = MarineSnowTelemetryContextHash;
-                header[1] = TelemetryCapacity;
-                header[2] = TelemetryEntrySizeBytes;
-                header[3] = unchecked((uint)math.max(0, _telemetryWrittenCount));
-                stream.Write(MemoryMarshal.AsBytes(header));
-
                 int count = math.clamp(_telemetryWrittenCount, 0, math.min(telemetryRing.Length, TelemetryCapacity));
+                int byteCount = 16 + count * TelemetryEntrySizeBytes;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(HectonMarineSnowRenderer),
+                    "MarineSnowTelemetryDumpPayload");
+                byte* payloadPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(payload);
+                WriteUInt32LittleEndian(payloadPtr, 0, MarineSnowTelemetryContextHash);
+                WriteUInt32LittleEndian(payloadPtr, 4, unchecked((uint)TelemetryCapacity));
+                WriteUInt32LittleEndian(payloadPtr, 8, unchecked((uint)TelemetryEntrySizeBytes));
+                WriteUInt32LittleEndian(payloadPtr, 12, unchecked((uint)math.max(0, _telemetryWrittenCount)));
                 if (count > 0)
                 {
                     int readIndex = count >= TelemetryCapacity ? WrapTelemetryIndex(_telemetryWriteIndex) : 0;
                     byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
                     int firstCount = math.min(count, TelemetryCapacity - readIndex);
-                    stream.Write(new ReadOnlySpan<byte>(basePtr + readIndex * TelemetryEntrySizeBytes, firstCount * TelemetryEntrySizeBytes));
+                    UnsafeUtility.MemCpy(payloadPtr + 16, basePtr + readIndex * TelemetryEntrySizeBytes, firstCount * TelemetryEntrySizeBytes);
                     int secondCount = count - firstCount;
                     if (secondCount > 0)
-                        stream.Write(new ReadOnlySpan<byte>(basePtr, secondCount * TelemetryEntrySizeBytes));
+                        UnsafeUtility.MemCpy(payloadPtr + 16 + firstCount * TelemetryEntrySizeBytes, basePtr, secondCount * TelemetryEntrySizeBytes);
                 }
 
-                return true;
+                return NativeFaultDumpWriter.TryWriteAll(path, payload, byteCount);
             }
             catch (IOException)
             {
@@ -4939,12 +4938,27 @@ namespace Hecton8.Environment
             {
                 return false;
             }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(HectonMarineSnowRenderer),
+                    "MarineSnowTelemetryDumpPayload");
+            }
         }
 
         private static int WrapTelemetryIndex(int value)
         {
             int wrapped = value % TelemetryCapacity;
             return wrapped < 0 ? wrapped + TelemetryCapacity : wrapped;
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* target, int offset, uint value)
+        {
+            target[offset] = (byte)value;
+            target[offset + 1] = (byte)(value >> 8);
+            target[offset + 2] = (byte)(value >> 16);
+            target[offset + 3] = (byte)(value >> 24);
         }
 
         private static int EstimateGpuExecutionMicroseconds(int dispatchedParticleCount, int dynamicWakeCount, float qualityWeight)
@@ -4960,18 +4974,12 @@ namespace Hecton8.Environment
 
         private static string ResolveBlackBoxDumpPath()
         {
-            string root = Application.isPlaying || !string.IsNullOrEmpty(Application.dataPath)
-                ? Path.GetFullPath(Path.Combine(Application.dataPath, ".."))
-                : Directory.GetCurrentDirectory();
-            return Path.Combine(root, BlackBoxDumpRelativePath);
+            return BlackBoxDumpRelativePath;
         }
 
         private static string ResolveLegacyBlackBoxDumpPath()
         {
-            string root = Application.isPlaying || !string.IsNullOrEmpty(Application.dataPath)
-                ? Path.GetFullPath(Path.Combine(Application.dataPath, ".."))
-                : Directory.GetCurrentDirectory();
-            return Path.Combine(root, LegacyBlackBoxDumpRelativePath);
+            return LegacyBlackBoxDumpRelativePath;
         }
 
         private static float ResolveSystemStress01()
@@ -5044,7 +5052,7 @@ namespace Hecton8.Environment
             _debugHomeostasisPressureLevel = pressureLevel;
             _debugHomeostasisKillSwitchMaskLow32 = unchecked((uint)killSwitchMask);
             _debugBudgetedStepDistanceMeters = pressureBudget.StepDistanceMeters;
-            _debugBudgetedShadowTaps = ResolveEffectiveShadowTaps(pressureBudget, killSwitchMask);
+            _debugBudgetedShadowTaps = ResolveEffectiveShadowTaps(pressureBudget, killSwitchMask, pressureLevel);
             _staticBindingsDirty = _buffersReady;
         }
 
@@ -5056,8 +5064,16 @@ namespace Hecton8.Environment
             float q = math.saturate(globalQualityWeight);
             float pressure01 = math.saturate(pressureLevel * 0.33333334f);
             float stress01 = math.smoothstep(0.65f, 0.95f, ResolveSystemStress01());
-            float policyFlowWeight = (killSwitchMask & VfxComputeParticleBudgetCatalog.ParticleAdvectionMask) != 0UL ? 0f : 1f;
-            float policyCollisionWeight = (killSwitchMask & VfxComputeParticleBudgetCatalog.VolumetricFogHighResMask) != 0UL ? 0f : 1f;
+            float policyFlowWeight = VfxComputeParticleBudgetCatalog.ResolvePolicyQualityWeight(
+                killSwitchMask,
+                VfxComputeParticleBudgetCatalog.ParticleAdvectionMask,
+                pressure01,
+                VfxComputeParticleBudgetCatalog.MaskedParticleAdvectionWeightFloor);
+            float policyCollisionWeight = VfxComputeParticleBudgetCatalog.ResolvePolicyQualityWeight(
+                killSwitchMask,
+                VfxComputeParticleBudgetCatalog.VolumetricFogHighResMask,
+                pressure01,
+                VfxComputeParticleBudgetCatalog.MaskedVolumetricQualityWeightFloor);
             float thermalQuality = q * math.lerp(1f, 0.18f, pressure01) * math.lerp(1f, 0.32f, stress01);
             float flowQuality = math.smoothstep(0.04f, 1f, thermalQuality) * policyFlowWeight;
             float collisionQuality = math.smoothstep(0.18f, 0.78f, thermalQuality) * policyCollisionWeight;
@@ -5142,8 +5158,10 @@ namespace Hecton8.Environment
                 VfxComputeParticleBudgetCatalog.MinimumQualityShadowTaps,
                 emergencyPressure01);
             int shadowTaps = math.clamp((int)(shadowTapFloat + 0.5f), 0, VfxComputeParticleBudgetCatalog.OverkillQualityShadowTaps);
-            if ((killSwitchMask & VfxComputeParticleBudgetCatalog.VolumetricFogHighResMask) != 0UL)
-                shadowTaps = math.min(shadowTaps, VfxComputeParticleBudgetCatalog.MiddleQualityShadowTaps);
+            shadowTaps = VfxComputeParticleBudgetCatalog.ResolvePolicyShadowTaps(
+                shadowTaps,
+                killSwitchMask,
+                pressureLevel);
 
             float flowFramesFloat = ResolveContinuousBudgetFloat(
                 VfxComputeParticleBudgetCatalog.MinimumQualityFlowResampleFrames,
@@ -5155,8 +5173,10 @@ namespace Hecton8.Environment
                 maximumToOverkill);
             flowFramesFloat = math.lerp(flowFramesFloat, VfxComputeParticleBudgetCatalog.MinimumQualityFlowResampleFrames, emergencyPressure01);
             int flowResampleFrames = math.clamp((int)(flowFramesFloat + 0.5f), 0, VfxComputeParticleBudgetCatalog.MiddleQualityFlowResampleFrames);
-            if ((killSwitchMask & VfxComputeParticleBudgetCatalog.ParticleAdvectionMask) != 0UL)
-                flowResampleFrames = 0;
+            flowResampleFrames = VfxComputeParticleBudgetCatalog.ResolvePolicyFlowResampleFrames(
+                flowResampleFrames,
+                killSwitchMask,
+                pressureLevel);
 
             return new VfxComputeParticleBudget(
                 marineSnowCount + bubbleCount + debrisCount,
@@ -5236,16 +5256,13 @@ namespace Hecton8.Environment
 
         private static int ResolveEffectiveShadowTaps(
             VfxComputeParticleBudget budget,
-            ulong killSwitchMask)
+            ulong killSwitchMask,
+            byte pressureLevel)
         {
-            int shadowTaps = budget.ShadowTaps;
-            if ((killSwitchMask & VfxComputeParticleBudgetCatalog.VolumetricFogHighResMask) != 0UL &&
-                shadowTaps > 1)
-            {
-                return 1;
-            }
-
-            return shadowTaps;
+            return VfxComputeParticleBudgetCatalog.ResolvePolicyShadowTaps(
+                budget.ShadowTaps,
+                killSwitchMask,
+                pressureLevel);
         }
 
         private static T ResolveComponentOnTransform<T>(Transform source) where T : Component

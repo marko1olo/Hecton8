@@ -261,9 +261,6 @@ namespace Hecton8.Audio
             public NativeArray<MockTensionSignal> MockTension;
             public NativeArray<AudioStemTelemetryEntry> TelemetryRing;
             public NativeArray<int> TelemetryCursor;
-#if UNITY_EDITOR
-            public NativeArray<byte> CsvScratch;
-#endif
         }
 
         private IDataVault _dataVault;
@@ -276,9 +273,6 @@ namespace Hecton8.Audio
         private VaultGenerationHandle<MockTensionSignal> _mockTensionHandle;
         private VaultGenerationHandle<AudioStemTelemetryEntry> _telemetryRingHandle;
         private VaultGenerationHandle<int> _telemetryCursorHandle;
-#if UNITY_EDITOR
-        private VaultGenerationHandle<byte> _csvScratchHandle;
-#endif
         private VaultGenerationHandle<ScalabilityStateDTO> _scalabilityStateHandle;
 #if UNITY_EDITOR
         private string _resolvedCsvPath;
@@ -452,18 +446,47 @@ namespace Hecton8.Audio
 
         public bool TryWriteEditorRule(in AudioStemRuleDTO rule)
         {
-            if (Volatile.Read(ref _nativeAllocated) == 0)
-                return false;
+            return Volatile.Read(ref _nativeAllocated) != 0 &&
+                   TryWriteRuleForOwnerRoute(in rule);
+        }
 
-            if (!TryResolveStemOwnerViews(out AdaptiveStemVaultViews views))
+        private bool TryReadRuleForOwnerRoute(out AudioStemRuleDTO rule)
+        {
+            rule = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !vault.TryReadOnlyHandle(in _rulesHandle, out NativeArray<AudioStemRuleDTO>.ReadOnly rules) ||
+                !rules.IsCreated ||
+                rules.Length <= 0)
+            {
                 return false;
+            }
 
-            if (views.Rules.Length <= 0)
-                return false;
-
-            AudioStemRuleDTO sanitized = SanitizeRule(rule);
-            views.Rules[0] = sanitized;
+            rule = rules[0];
             return true;
+        }
+
+        private bool TryWriteRuleForOwnerRoute(in AudioStemRuleDTO rule)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in _rulesHandle, VaultOwner, out NativeArray<AudioStemRuleDTO> rules))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!rules.IsCreated || rules.Length <= 0)
+                    return false;
+
+                rules[0] = SanitizeRule(rule);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _rulesHandle, VaultOwner);
+            }
         }
 
         public bool TryGetEditorMixFrame(out StemMixFrameDTO frame)
@@ -628,13 +651,6 @@ namespace Hecton8.Audio
                 1,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-#if UNITY_EDITOR
-            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(
-                BufferID.AudioStemCsvScratch,
-                CsvScratchBytes,
-                VaultOwner,
-                NativeArrayOptions.UninitializedMemory);
-#endif
 
             if (!TryResolveStemOwnerViews(out AdaptiveStemVaultViews views))
             {
@@ -651,9 +667,6 @@ namespace Hecton8.Audio
             MemClearArray(views.MockTension);
             MemClearArray(views.TelemetryRing);
             MemClearArray(views.TelemetryCursor);
-#if UNITY_EDITOR
-            MemClearArray(views.CsvScratch);
-#endif
 
             TryRefreshScalabilityStateHandleCold();
             RefreshGlobalQualitySnapshotCold();
@@ -674,9 +687,6 @@ namespace Hecton8.Audio
             ReleaseVaultBuffer(vault, ref _mockTensionHandle, BufferID.AudioStemMockTension);
             ReleaseVaultBuffer(vault, ref _telemetryRingHandle, BufferID.AudioStemTelemetry);
             ReleaseVaultBuffer(vault, ref _telemetryCursorHandle, BufferID.AudioStemTelemetryCursor);
-#if UNITY_EDITOR
-            ReleaseVaultBuffer(vault, ref _csvScratchHandle, BufferID.AudioStemCsvScratch);
-#endif
             _scalabilityStateHandle = default;
 #if UNITY_EDITOR
             _resolvedCsvPath = null;
@@ -718,11 +728,7 @@ namespace Hecton8.Audio
                    IsAdaptiveStemVaultHandle(in _mockDepthHandle, BufferID.AudioStemMockDepth) &&
                    IsAdaptiveStemVaultHandle(in _mockTensionHandle, BufferID.AudioStemMockTension) &&
                    IsAdaptiveStemVaultHandle(in _telemetryRingHandle, BufferID.AudioStemTelemetry) &&
-                   IsAdaptiveStemVaultHandle(in _telemetryCursorHandle, BufferID.AudioStemTelemetryCursor)
-#if UNITY_EDITOR
-                   && IsAdaptiveStemVaultHandle(in _csvScratchHandle, BufferID.AudioStemCsvScratch)
-#endif
-                   ;
+                   IsAdaptiveStemVaultHandle(in _telemetryCursorHandle, BufferID.AudioStemTelemetryCursor);
         }
 
         private bool AreStemVaultBuffersCreated()
@@ -740,9 +746,6 @@ namespace Hecton8.Audio
                 !vault.TryReadOnlyHandle(in _mockTensionHandle, out NativeArray<MockTensionSignal>.ReadOnly mockTension) ||
                 !vault.TryReadOnlyHandle(in _telemetryRingHandle, out NativeArray<AudioStemTelemetryEntry>.ReadOnly telemetryRing) ||
                 !vault.TryReadOnlyHandle(in _telemetryCursorHandle, out NativeArray<int>.ReadOnly telemetryCursor) ||
-#if UNITY_EDITOR
-                !vault.TryReadOnlyHandle(in _csvScratchHandle, out NativeArray<byte>.ReadOnly csvScratch) ||
-#endif
                 !stemState.IsCreated ||
                 !stemCommands.IsCreated ||
                 !mixFrame.IsCreated ||
@@ -752,9 +755,6 @@ namespace Hecton8.Audio
                 !mockTension.IsCreated ||
                 !telemetryRing.IsCreated ||
                 !telemetryCursor.IsCreated ||
-#if UNITY_EDITOR
-                !csvScratch.IsCreated ||
-#endif
                 stemState.Length <= 0 ||
                 stemCommands.Length < 2 ||
                 mixFrame.Length <= 0 ||
@@ -763,11 +763,7 @@ namespace Hecton8.Audio
                 mockDepth.Length <= 0 ||
                 mockTension.Length <= 0 ||
                 telemetryRing.Length <= 0 ||
-                telemetryCursor.Length <= 0
-#if UNITY_EDITOR
-                || csvScratch.Length <= 0
-#endif
-               )
+                telemetryCursor.Length <= 0)
             {
                 return false;
             }
@@ -790,11 +786,7 @@ namespace Hecton8.Audio
                 !vault.TryResolveHandle(in _mockDepthHandle, out views.MockDepth) ||
                 !vault.TryResolveHandle(in _mockTensionHandle, out views.MockTension) ||
                 !vault.TryResolveHandle(in _telemetryRingHandle, out views.TelemetryRing) ||
-                !vault.TryResolveHandle(in _telemetryCursorHandle, out views.TelemetryCursor)
-#if UNITY_EDITOR
-                || !vault.TryResolveHandle(in _csvScratchHandle, out views.CsvScratch)
-#endif
-               )
+                !vault.TryResolveHandle(in _telemetryCursorHandle, out views.TelemetryCursor))
             {
                 views = default;
                 return false;
@@ -810,9 +802,6 @@ namespace Hecton8.Audio
                 views.MockTension.IsCreated &&
                 views.TelemetryRing.IsCreated &&
                 views.TelemetryCursor.IsCreated &&
-#if UNITY_EDITOR
-                views.CsvScratch.IsCreated &&
-#endif
                 views.StemState.Length > 0 &&
                 views.StemCommands.Length >= 2 &&
                 views.MixFrame.Length > 0 &&
@@ -821,11 +810,7 @@ namespace Hecton8.Audio
                 views.MockDepth.Length > 0 &&
                 views.MockTension.Length > 0 &&
                 views.TelemetryRing.Length > 0 &&
-                views.TelemetryCursor.Length > 0
-#if UNITY_EDITOR
-                && views.CsvScratch.Length > 0
-#endif
-                ;
+                views.TelemetryCursor.Length > 0;
             if (!success)
             {
                 views = default;
@@ -1319,20 +1304,11 @@ namespace Hecton8.Audio
 
                 string repoRoot = ResolveRepoRootPath();
                 string dumpPath = Path.Combine(repoRoot, DumpRelativePath);
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    int count = math.min(TelemetryCapacity, telemetryRing.Length);
-                    int entryBytes = UnsafeUtility.SizeOf<AudioStemTelemetryEntry>();
-                    for (int i = 0; i < count; i++)
-                    {
-                        AudioStemTelemetryEntry entry = telemetryRing[i];
-                        stream.Write(new ReadOnlySpan<byte>(&entry, entryBytes));
-                    }
-                }
+                int count = math.min(TelemetryCapacity, telemetryRing.Length);
+                int entryBytes = UnsafeUtility.SizeOf<AudioStemTelemetryEntry>();
+                int byteCount = count * entryBytes;
+                byte* source = (byte*)telemetryRing.GetUnsafeReadOnlyPtr();
+                NativeFaultDumpWriter.TryWriteAll(dumpPath, new ReadOnlySpan<byte>(source, byteCount), byteCount);
             }
             catch (IOException)
             {
@@ -1347,13 +1323,6 @@ namespace Hecton8.Audio
 #if UNITY_EDITOR
         private void PollCsvRulesCold()
         {
-            if (!TryResolveStemOwnerViews(out AdaptiveStemVaultViews views))
-                return;
-
-            if (!views.CsvScratch.IsCreated ||
-                views.CsvScratch.Length <= 0)
-                return;
-
             if (_csvPollCountdown > 0)
             {
                 _csvPollCountdown--;
@@ -1369,20 +1338,34 @@ namespace Hecton8.Audio
             if (writeTime == _lastCsvWriteUtc)
                 return;
 
-            _lastCsvWriteUtc = writeTime;
             try
             {
                 int bytesRead;
-                NativeArray<byte> csvScratch = views.CsvScratch;
-                byte* scratch = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(csvScratch);
+                int expectedBytes;
+                Span<byte> csvScratch = stackalloc byte[CsvScratchBytes];
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
-                    int safeLength = (int)math.min(stream.Length, math.min(CsvScratchBytes, csvScratch.Length));
-                    Span<byte> scratchSpan = new Span<byte>(scratch, safeLength);
-                    bytesRead = stream.Read(scratchSpan);
+                    long fileLength = stream.Length;
+                    if (fileLength <= 0L || fileLength > CsvScratchBytes)
+                        return;
+
+                    expectedBytes = (int)fileLength;
+                    bytesRead = 0;
+                    while (bytesRead < expectedBytes)
+                    {
+                        int read = stream.Read(csvScratch.Slice(bytesRead, expectedBytes - bytesRead));
+                        if (read <= 0)
+                            break;
+
+                        bytesRead += read;
+                    }
                 }
 
-                ParseCsvRules(bytesRead, ref views);
+                if (bytesRead != expectedBytes)
+                    return;
+
+                if (ParseCsvRules(csvScratch.Slice(0, bytesRead)))
+                    _lastCsvWriteUtc = writeTime;
             }
             catch (IOException)
             {
@@ -1394,54 +1377,55 @@ namespace Hecton8.Audio
             }
         }
 
-        private void ParseCsvRules(int byteCount, ref AdaptiveStemVaultViews views)
+        private bool ParseCsvRules(ReadOnlySpan<byte> csvBytes)
         {
-            if (byteCount <= 0 || views.Rules.Length <= 0 || views.CsvScratch.Length <= 0)
-                return;
+            if (csvBytes.Length <= 0)
+                return false;
 
-            NativeArray<byte> csvScratch = views.CsvScratch;
-            AudioStemRuleDTO rule = views.Rules[0];
-            int safeByteCount = math.min(byteCount, csvScratch.Length);
+            if (!TryReadRuleForOwnerRoute(out AudioStemRuleDTO rule))
+                rule = default;
+
+            int safeByteCount = csvBytes.Length;
             int index = 0;
             while (index < safeByteCount)
             {
-                while (index < safeByteCount && IsLineBreakOrSpace(csvScratch[index]))
+                while (index < safeByteCount && IsLineBreakOrSpace(csvBytes[index]))
                     index++;
                 if (index >= safeByteCount)
                     break;
 
-                if (csvScratch[index] == (byte)'#')
+                if (csvBytes[index] == (byte)'#')
                 {
-                    while (index < safeByteCount && !IsLineBreak(csvScratch[index]))
+                    while (index < safeByteCount && !IsLineBreak(csvBytes[index]))
                         index++;
                     continue;
                 }
 
                 int keyStart = index;
-                while (index < safeByteCount && csvScratch[index] != (byte)',' && !IsLineBreak(csvScratch[index]))
+                while (index < safeByteCount && csvBytes[index] != (byte)',' && !IsLineBreak(csvBytes[index]))
                     index++;
 
                 int keyEnd = index;
-                if (index >= safeByteCount || csvScratch[index] != (byte)',')
+                if (index >= safeByteCount || csvBytes[index] != (byte)',')
                 {
-                    while (index < safeByteCount && !IsLineBreak(csvScratch[index]))
+                    while (index < safeByteCount && !IsLineBreak(csvBytes[index]))
                         index++;
                     continue;
                 }
 
                 index++;
                 int valueStart = index;
-                while (index < safeByteCount && !IsLineBreak(csvScratch[index]))
+                while (index < safeByteCount && !IsLineBreak(csvBytes[index]))
                     index++;
 
-                if (TryParseFloat(csvScratch, valueStart, index, out float value))
+                if (TryParseFloat(csvBytes, valueStart, index, out float value))
                 {
-                    uint hash = HashCsvKey(csvScratch, keyStart, keyEnd);
+                    uint hash = HashCsvKey(csvBytes, keyStart, keyEnd);
                     ApplyCsvRule(ref rule, hash, value);
                 }
             }
 
-            views.Rules[0] = SanitizeRule(rule);
+            return TryWriteRuleForOwnerRoute(in rule);
         }
 
         private static void ApplyCsvRule(ref AudioStemRuleDTO rule, uint hash, float value)
@@ -1474,7 +1458,7 @@ namespace Hecton8.Audio
                 rule.BiomeFadeSeconds = value;
         }
 
-        private static bool TryParseFloat(NativeArray<byte> bytes, int start, int end, out float value)
+        private static bool TryParseFloat(ReadOnlySpan<byte> bytes, int start, int end, out float value)
         {
             value = 0f;
             int index = start;
@@ -1522,7 +1506,7 @@ namespace Hecton8.Audio
             return math.isfinite(value);
         }
 
-        private static uint HashCsvKey(NativeArray<byte> bytes, int start, int end)
+        private static uint HashCsvKey(ReadOnlySpan<byte> bytes, int start, int end)
         {
             uint hash = 2166136261u;
             for (int i = start; i < end; i++)

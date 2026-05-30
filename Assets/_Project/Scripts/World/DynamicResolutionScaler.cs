@@ -137,6 +137,7 @@ namespace Hecton8.World
         private bool _hotSwapRegistered;
         private bool _renderScaleApplyQueued;
         private bool _applyingRenderScaleLateFrame;
+        private bool _runtimeRenderScaleQueueActive;
         private LODQualityPreset _qualityPreset = LODQualityPreset.Medium;
         private float _smoothedFrameTimeMs;
         private float _peakFrameTimeMs;
@@ -251,6 +252,8 @@ namespace Hecton8.World
                 return;
             }
 
+            _runtimeRenderScaleQueueActive = Application.isPlaying;
+
             // Cache URP asset
             _urpAsset = UniversalRenderPipeline.asset;
             if (_urpAsset == null)
@@ -291,6 +294,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            _runtimeRenderScaleQueueActive = Application.isPlaying;
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             TryRegisterService();
@@ -300,6 +304,7 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            _runtimeRenderScaleQueueActive = false;
             TryUnregister();
             TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
@@ -829,7 +834,7 @@ namespace Hecton8.World
             if (_urpAsset == null)
                 return;
 
-            if (Application.isPlaying && !_applyingRenderScaleLateFrame)
+            if (_runtimeRenderScaleQueueActive && !_applyingRenderScaleLateFrame)
             {
                 _renderScaleApplyQueued = true;
                 return;

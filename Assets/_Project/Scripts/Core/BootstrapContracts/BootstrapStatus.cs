@@ -52,6 +52,7 @@ namespace Hecton8.Core
 
         // COLD ALLOC: BootstrapStepToken[10] - safe-halt forensic step ring - owner: BootstrapStatus
         private static readonly BootstrapStepToken[] _recentSteps = new BootstrapStepToken[RecentStepCapacity];
+        private static readonly double StopwatchTicksToSeconds = 1d / System.Diagnostics.Stopwatch.Frequency;
         private static double _bootStartTimeSeconds;
         private static double _stepStartTimeSeconds;
         private static BootstrapStepToken _activeStep;
@@ -150,7 +151,7 @@ namespace Hecton8.Core
             _recentStepWriteIndex = 0;
             _recentStepCount = 0;
             System.Array.Clear(_recentSteps, 0, _recentSteps.Length);
-            _bootStartTimeSeconds = UnityEngine.Time.realtimeSinceStartupAsDouble;
+            _bootStartTimeSeconds = ResolveBootstrapMonotonicTimeSeconds();
             UnityEngine.Time.timeScale = 1f;
             UnityEngine.Physics.simulationMode = SimulationMode.FixedUpdate;
         }
@@ -166,7 +167,7 @@ namespace Hecton8.Core
 
             BeginBoot();
             _activeStep = step;
-            _stepStartTimeSeconds = UnityEngine.Time.realtimeSinceStartupAsDouble;
+            _stepStartTimeSeconds = ResolveBootstrapMonotonicTimeSeconds();
             _stepActive = true;
             RecordRecentStep(step);
         }
@@ -180,7 +181,7 @@ namespace Hecton8.Core
             if (!_stepActive || _activeStep != step || step == BootstrapStepToken.None)
                 return;
 
-            double elapsedMilliseconds = (UnityEngine.Time.realtimeSinceStartupAsDouble - _stepStartTimeSeconds) * 1000.0;
+            double elapsedMilliseconds = (ResolveBootstrapMonotonicTimeSeconds() - _stepStartTimeSeconds) * 1000.0;
             if (elapsedMilliseconds > LongestStepMilliseconds)
             {
                 LongestStepMilliseconds = elapsedMilliseconds;
@@ -236,7 +237,7 @@ namespace Hecton8.Core
             if (!BootStarted || MainMenuReached || SafeHaltTriggered)
                 return false;
 
-            double nowSeconds = UnityEngine.Time.realtimeSinceStartupAsDouble;
+            double nowSeconds = ResolveBootstrapMonotonicTimeSeconds();
             double bootElapsedSeconds = nowSeconds - _bootStartTimeSeconds;
             double watchedElapsedSeconds = _stepActive
                 ? nowSeconds - _stepStartTimeSeconds
@@ -289,6 +290,12 @@ namespace Hecton8.Core
             _recentStepWriteIndex = (_recentStepWriteIndex + 1) % RecentStepCapacity;
             if (_recentStepCount < RecentStepCapacity)
                 _recentStepCount++;
+        }
+
+        private static double ResolveBootstrapMonotonicTimeSeconds()
+        {
+            double now = System.Diagnostics.Stopwatch.GetTimestamp() * StopwatchTicksToSeconds;
+            return double.IsNaN(now) || double.IsInfinity(now) || now < 0d ? 0d : now;
         }
 
         private static void BuildRecentStepMasks(out uint low, out uint high)

@@ -1330,6 +1330,15 @@ namespace Hecton8.Core
             return Profiler.GetTotalReservedMemoryLong() * BytesToMegabytes;
         }
 
+        private static float ResolveDispatcherUnscaledTimeSeconds()
+        {
+            double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (double.IsNaN(now) || double.IsInfinity(now) || now <= 0d)
+                return 0f;
+
+            return now >= float.MaxValue ? float.MaxValue : (float)now;
+        }
+
         private int ReserveTelemetryWriteIndex()
         {
             long cursor = Interlocked.Increment(ref _writeCursor) - 1L;
@@ -1364,7 +1373,7 @@ namespace Hecton8.Core
 
         private void WriteOriginShiftTelemetry(Vector3 shiftOffset, uint shiftSequence)
         {
-            float now = UnityEngine.Time.unscaledTime;
+            float now = ResolveDispatcherUnscaledTimeSeconds();
             if (now < _nextOriginShiftTelemetryTime)
                 return;
 
@@ -1405,7 +1414,7 @@ namespace Hecton8.Core
             entry.SystemMask = (uint)SystemBits.EventBus;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
-            entry.GpuFrameTime = (float)UnityEngine.Time.unscaledTimeAsDouble;
+            entry.GpuFrameTime = ResolveDispatcherUnscaledTimeSeconds();
             entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = unchecked((uint)math.max(0, entityCount));
@@ -1698,7 +1707,7 @@ namespace Hecton8.Core
             entry.SystemMask = (uint)SystemBits.EventBus;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
-            entry.GpuFrameTime = (float)UnityEngine.Time.unscaledTimeAsDouble;
+            entry.GpuFrameTime = ResolveDispatcherUnscaledTimeSeconds();
             entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = SampleActiveChunkCount();
@@ -1981,7 +1990,7 @@ namespace Hecton8.Core
             entry.SystemMask = (uint)SystemBits.Audio;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
-            entry.GpuFrameTime = (float)UnityEngine.Time.unscaledTimeAsDouble;
+            entry.GpuFrameTime = ResolveDispatcherUnscaledTimeSeconds();
             entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = unchecked((uint)math.max(0, bufferedFrames));
@@ -2060,7 +2069,7 @@ namespace Hecton8.Core
             entry.SystemMask = (uint)SystemBits.Bootstrap;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.LatencyMs = _lastLatencyMs;
-            entry.GpuFrameTime = (float)UnityEngine.Time.unscaledTimeAsDouble;
+            entry.GpuFrameTime = ResolveDispatcherUnscaledTimeSeconds();
             entry.MemoryUsedMb = SampleReservedMemoryMegabytes();
             entry.PlayerAup = SamplePlayerPosition(out _);
             entry.ActiveChunkCount = SampleActiveChunkCount();

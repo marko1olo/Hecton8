@@ -80,6 +80,19 @@ function Write-JsonFile([string]$Path, [object]$Value) {
     $json = $Value | ConvertTo-Json -Depth 16
     $utf8NoBom = New-Object System.Text.UTF8Encoding $false
     [System.IO.File]::WriteAllText($Path, $json + [System.Environment]::NewLine, $utf8NoBom)
+    [void](Read-H8JsonFileCapped $Path 'Written identity manifest' $MaxManifestJsonBytes)
+}
+
+function Remove-TempFile([string]$Path) {
+    if (-not [string]::IsNullOrWhiteSpace($Path) -and (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        Remove-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function Restore-FileBackup([string]$BackupPath, [string]$TargetPath) {
+    if (Test-Path -LiteralPath $BackupPath -PathType Leaf) {
+        Copy-Item -LiteralPath $BackupPath -Destination $TargetPath -Force
+    }
 }
 
 function Invoke-RequiredTool([scriptblock]$Invocation, [string]$Step) {
@@ -127,12 +140,36 @@ if (-not [string]::IsNullOrWhiteSpace($Version)) {
     $runtime.Version = $canonicalVersion
 }
 
-Write-JsonFile $authoringPath $authoring
-Write-JsonFile $runtimePath $runtime
+$uniqueSuffix = [System.Guid]::NewGuid().ToString('N')
+$tempRoot = [System.IO.Path]::GetTempPath()
+$authoringName = [System.IO.Path]::GetFileName($authoringPath)
+$runtimeName = [System.IO.Path]::GetFileName($runtimePath)
+$authoringTempPath = Join-Path $tempRoot ('hecton8-' + $authoringName + '.tmp-' + $uniqueSuffix)
+$runtimeTempPath = Join-Path $tempRoot ('hecton8-' + $runtimeName + '.tmp-' + $uniqueSuffix)
+$authoringBackupPath = Join-Path $tempRoot ('hecton8-' + $authoringName + '.previous-' + $uniqueSuffix)
+$runtimeBackupPath = Join-Path $tempRoot ('hecton8-' + $runtimeName + '.previous-' + $uniqueSuffix)
 
-$validator = Join-StarterPath $rootFull 'Tools/validate_structure.ps1'
-if (Test-Path -LiteralPath $validator -PathType Leaf) {
-    Invoke-RequiredTool { & $validator -Root $rootFull } 'starter validation'
+try {
+    Write-JsonFile $authoringTempPath $authoring
+    Write-JsonFile $runtimeTempPath $runtime
+    Copy-Item -LiteralPath $authoringPath -Destination $authoringBackupPath -Force
+    Copy-Item -LiteralPath $runtimePath -Destination $runtimeBackupPath -Force
+    Copy-Item -LiteralPath $authoringTempPath -Destination $authoringPath -Force
+    Copy-Item -LiteralPath $runtimeTempPath -Destination $runtimePath -Force
+
+    $validator = Join-StarterPath $rootFull 'Tools/validate_structure.ps1'
+    if (Test-Path -LiteralPath $validator -PathType Leaf) {
+        Invoke-RequiredTool { & $validator -Root $rootFull } 'starter validation'
+    }
+} catch {
+    Restore-FileBackup $authoringBackupPath $authoringPath
+    Restore-FileBackup $runtimeBackupPath $runtimePath
+    Fail $_.Exception.Message
+} finally {
+    Remove-TempFile $authoringTempPath
+    Remove-TempFile $runtimeTempPath
+    Remove-TempFile $authoringBackupPath
+    Remove-TempFile $runtimeBackupPath
 }
 
 Write-Host ('PASS HECTON-8 starter identity set: ' + $canonicalId)

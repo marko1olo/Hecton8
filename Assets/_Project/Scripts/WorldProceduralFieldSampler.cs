@@ -50,13 +50,12 @@ namespace Hecton8.World
         private const SystemID OwnerSystemId = SystemID.WorldProceduralFieldSampler;
         private const int EmptyNativeArrayCapacity = 1;
         private const float NoiseLookupValueScale = 1f / ushort.MaxValue;
-        private static readonly ulong SamplingJobMutationGuardMask =
-            WorldProceduralFieldMutationGuardBit(BufferID.WorldProceduralFieldZones) |
-            WorldProceduralFieldMutationGuardBit(BufferID.WorldProceduralFieldBiomeMatrices) |
-            WorldProceduralFieldMutationGuardBit(BufferID.WorldProceduralFieldBiomeMatrixIndex) |
-            WorldProceduralFieldMutationGuardBit(BufferID.WorldProceduralFieldBiomeFamilies) |
-            WorldProceduralFieldMutationGuardBit(BufferID.WorldProceduralFieldCaveEntranceHints) |
-            WorldProceduralFieldMutationGuardBit(BufferID.WorldProceduralFieldNoiseLookup);
+        private const uint SamplingJobPinZones = 1u << 0;
+        private const uint SamplingJobPinBiomeMatrices = 1u << 1;
+        private const uint SamplingJobPinBiomeMatrixIndex = 1u << 2;
+        private const uint SamplingJobPinBiomeFamilies = 1u << 3;
+        private const uint SamplingJobPinCaveEntranceHints = 1u << 4;
+        private const uint SamplingJobPinNoiseLookup = 1u << 5;
         private static readonly uint _biomeInfluenceGridCapacityWarningHash =
             unchecked((uint)LocHash.Compute("WorldProceduralFieldSampler.BiomeInfluenceGridCapacity"));
         private static readonly uint _fieldSamplerTelemetryContextHash =
@@ -641,7 +640,8 @@ namespace Hecton8.World
         private readonly byte[] _seafloorHeightCacheOccupied = new byte[MaxSeafloorHeightCacheEntries];
         private int _seafloorHeightCacheCount;
         private IDataVault _dataVault;
-        private IDataVault _samplingJobGuardVault;
+        private IDataVault _samplingJobPinVault;
+        private uint _samplingJobPinMask;
         private VaultGenerationHandle<ZoneData> _burstZoneDataHandle;
         private VaultGenerationHandle<BiomeMatrixData> _burstBiomeMatrixDataHandle;
         private VaultGenerationHandle<int> _burstBiomeMatrixIdToDataIndexHandle;
@@ -5250,7 +5250,7 @@ namespace Hecton8.World
             caveEntranceHints = default;
             noiseLookupTable = default;
 
-            IDataVault vault = _samplingJobGuardVault;
+            IDataVault vault = _samplingJobPinVault;
             if (_samplingJobBuffersPinned)
             {
                 if (vault != null &&
@@ -5286,7 +5286,14 @@ namespace Hecton8.World
             bool acquired = false;
             try
             {
-                if (!vault.TryAcquireMutationGuard(SamplingJobMutationGuardMask))
+                _samplingJobPinVault = vault;
+                acquired = true;
+                if (!TryLockSamplingJobBuffer(vault, BufferID.WorldProceduralFieldZones, SamplingJobPinZones) ||
+                    !TryLockSamplingJobBuffer(vault, BufferID.WorldProceduralFieldBiomeMatrices, SamplingJobPinBiomeMatrices) ||
+                    !TryLockSamplingJobBuffer(vault, BufferID.WorldProceduralFieldBiomeMatrixIndex, SamplingJobPinBiomeMatrixIndex) ||
+                    !TryLockSamplingJobBuffer(vault, BufferID.WorldProceduralFieldBiomeFamilies, SamplingJobPinBiomeFamilies) ||
+                    !TryLockSamplingJobBuffer(vault, BufferID.WorldProceduralFieldCaveEntranceHints, SamplingJobPinCaveEntranceHints) ||
+                    !TryLockSamplingJobBuffer(vault, BufferID.WorldProceduralFieldNoiseLookup, SamplingJobPinNoiseLookup))
                 {
                     zones = default;
                     biomeMatrices = default;
@@ -5297,7 +5304,6 @@ namespace Hecton8.World
                     return false;
                 }
 
-                acquired = true;
                 if (!TryResolveSamplingData(
                         vault,
                         out zones,
@@ -5310,7 +5316,6 @@ namespace Hecton8.World
                     return false;
                 }
 
-                _samplingJobGuardVault = vault;
                 _samplingJobBuffersPinned = true;
                 acquired = false;
                 return true;
@@ -5319,7 +5324,7 @@ namespace Hecton8.World
             {
                 if (acquired)
                 {
-                    vault.ReleaseMutationGuard(SamplingJobMutationGuardMask);
+                    ReleaseSamplingJobBufferPins();
                     zones = default;
                     biomeMatrices = default;
                     biomeMatrixIdToDataIndex = default;
@@ -5332,15 +5337,43 @@ namespace Hecton8.World
 
         private void ReleaseSamplingJobBufferPins()
         {
-            if (!_samplingJobBuffersPinned)
+            IDataVault vault = _samplingJobPinVault;
+            uint pinMask = _samplingJobPinMask;
+            _samplingJobPinVault = null;
+            _samplingJobPinMask = 0u;
+            _samplingJobBuffersPinned = false;
+            if (vault == null || pinMask == 0u)
                 return;
 
-            IDataVault vault = _samplingJobGuardVault;
-            if (vault != null)
-                vault.ReleaseMutationGuard(SamplingJobMutationGuardMask);
+            TryUnlockSamplingJobBuffer(vault, pinMask, SamplingJobPinNoiseLookup, BufferID.WorldProceduralFieldNoiseLookup);
+            TryUnlockSamplingJobBuffer(vault, pinMask, SamplingJobPinCaveEntranceHints, BufferID.WorldProceduralFieldCaveEntranceHints);
+            TryUnlockSamplingJobBuffer(vault, pinMask, SamplingJobPinBiomeFamilies, BufferID.WorldProceduralFieldBiomeFamilies);
+            TryUnlockSamplingJobBuffer(vault, pinMask, SamplingJobPinBiomeMatrixIndex, BufferID.WorldProceduralFieldBiomeMatrixIndex);
+            TryUnlockSamplingJobBuffer(vault, pinMask, SamplingJobPinBiomeMatrices, BufferID.WorldProceduralFieldBiomeMatrices);
+            TryUnlockSamplingJobBuffer(vault, pinMask, SamplingJobPinZones, BufferID.WorldProceduralFieldZones);
+        }
 
-            _samplingJobGuardVault = null;
-            _samplingJobBuffersPinned = false;
+        private bool TryLockSamplingJobBuffer(IDataVault vault, BufferID bufferId, uint pinBit)
+        {
+            if ((_samplingJobPinMask & pinBit) != 0u)
+                return true;
+
+            if (vault == null ||
+                (_samplingJobPinVault != null && !ReferenceEquals(_samplingJobPinVault, vault)) ||
+                !vault.TryLockBuffer(bufferId, OwnerSystemId))
+            {
+                return false;
+            }
+
+            _samplingJobPinVault = vault;
+            _samplingJobPinMask |= pinBit;
+            return true;
+        }
+
+        private static void TryUnlockSamplingJobBuffer(IDataVault vault, uint pinMask, uint pinBit, BufferID bufferId)
+        {
+            if ((pinMask & pinBit) != 0u)
+                vault.TryUnlockBuffer(bufferId, OwnerSystemId);
         }
 
         private static int ResolvePowerOfTwoCapacity(int requiredCapacity)

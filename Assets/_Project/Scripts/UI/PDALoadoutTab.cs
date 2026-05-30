@@ -812,7 +812,7 @@ namespace Hecton8.UI
             for (int i = 0; i < 4; i++)
             {
                 GameObject prefab = toolManager.GetAssignedToolPrefab(i);
-                IPlayerToolDataReadModel tool = ResolvePrefabTool(prefab);
+                IPlayerToolDataReadModel tool = ReadPrefabToolCache(prefab);
                 ItemData item = tool != null ? tool.ToolData : null;
                 ToolMetadata meta = tool != null ? tool.Metadata : null;
                 ResolveSlotDurabilityHashes(i, prefab, tool, meta, out uint itemHash, out uint metadataHash);
@@ -932,7 +932,7 @@ namespace Hecton8.UI
             for (int i = 0; i < toolManager.SlotCount; i++)
             {
                 GameObject prefab = toolManager.GetAssignedToolPrefab(i);
-                IPlayerToolDataReadModel tool = ResolvePrefabTool(prefab);
+                IPlayerToolDataReadModel tool = ReadPrefabToolCache(prefab);
                 if (tool == null)
                     continue;
 
@@ -1110,7 +1110,7 @@ namespace Hecton8.UI
                 return;
 
             GameObject prefab = toolManager.GetAssignedToolPrefab(slotIndex);
-            IPlayerToolDataReadModel tool = ResolvePrefabTool(prefab);
+            IPlayerToolDataReadModel tool = ReadPrefabToolCache(prefab);
             ItemData item = tool != null ? tool.ToolData : null;
 
             if (clearAssignment)
@@ -1462,7 +1462,7 @@ namespace Hecton8.UI
             for (int i = 0; i < preset.slotPrefabs.Length; i++)
             {
                 GameObject prefab = preset.slotPrefabs[i];
-                IPlayerToolDataReadModel tool = ResolvePrefabTool(prefab);
+                IPlayerToolDataReadModel tool = ReadPrefabToolCache(prefab);
                 uint itemHash = ResolveToolItemHash(tool);
                 if (itemHash != 0u && playerInventory.ContainsItem(unchecked((int)itemHash)))
                     count++;
@@ -1560,7 +1560,7 @@ namespace Hecton8.UI
                    durabilitySystem.TryReadDurability(metadataHash, maxDurability, out durability);
         }
 
-        private IPlayerToolDataReadModel ResolvePrefabTool(GameObject prefab)
+        private IPlayerToolDataReadModel ReadPrefabToolCache(GameObject prefab)
         {
             if (prefab == null)
                 return null;

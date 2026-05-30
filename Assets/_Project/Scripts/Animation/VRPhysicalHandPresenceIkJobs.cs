@@ -235,6 +235,7 @@ namespace Hecton8.Animation.IK
         private const int DumpHeaderBytes = 24;
         private const uint DumpMagic = 0x4752494Bu;
         private const uint DumpVersion = 1u;
+        private const string DumpPayloadLabel = "vrPhysicalHandPresenceTelemetryDumpPayload";
 
         /// <summary>
         /// Writes the hand IK telemetry ring after a NaN/crash signal.
@@ -244,9 +245,8 @@ namespace Hecton8.Animation.IK
             NativeArray<VRHandIkTelemetryEntry>.ReadOnly telemetryRing,
             NativeArray<int>.ReadOnly telemetryCursor)
         {
-            _ = path;
-
-            if (!VRPhysicalHandPresenceLayout.Validate() ||
+            if (string.IsNullOrEmpty(path) ||
+                !VRPhysicalHandPresenceLayout.Validate() ||
                 !telemetryRing.IsCreated ||
                 telemetryRing.Length < VRPhysicalHandPresenceConstants.TelemetryCapacity ||
                 !telemetryCursor.IsCreated ||
@@ -262,15 +262,54 @@ namespace Hecton8.Animation.IK
                 ? PositiveModulo(cursor - dumpCount, ringLength)
                 : 0;
 
-            for (int i = 0; i < dumpCount; i++)
+            int entryBytes = UnsafeUtility.SizeOf<VRHandIkTelemetryEntry>();
+            if (entryBytes <= 0 || dumpCount > (int.MaxValue - DumpHeaderBytes) / entryBytes)
+                return false;
+
+            int byteCount = DumpHeaderBytes + dumpCount * entryBytes;
+            NativeArray<byte> payload = default;
+            try
             {
-                int sourceIndex = PositiveModulo(startIndex + i, ringLength);
-                _ = telemetryRing[sourceIndex].FrameIndex;
+                payload = NativeFaultDumpWriter.CreateTransientPayload(
+                    byteCount,
+                    nameof(VRPhysicalHandPresenceBlackBox),
+                    DumpPayloadLabel,
+                    NativeArrayOptions.ClearMemory);
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payload);
+                int writeCursor = 0;
+                WriteUInt32(destination, ref writeCursor, DumpMagic);
+                WriteUInt32(destination, ref writeCursor, DumpVersion);
+                WriteUInt32(destination, ref writeCursor, unchecked((uint)dumpCount));
+                WriteUInt32(destination, ref writeCursor, unchecked((uint)entryBytes));
+                WriteUInt32(destination, ref writeCursor, unchecked((uint)cursor));
+                WriteUInt32(destination, ref writeCursor, unchecked((uint)startIndex));
+
+                for (int i = 0; i < dumpCount; i++)
+                {
+                    int sourceIndex = PositiveModulo(startIndex + i, ringLength);
+                    int rowEnd = writeCursor + entryBytes;
+                    WriteEntry(destination, ref writeCursor, telemetryRing[sourceIndex]);
+                    if (writeCursor > rowEnd)
+                        return false;
+
+                    writeCursor = rowEnd;
+                }
+
+                return writeCursor == byteCount &&
+                       NativeFaultDumpWriter.TryWriteAll(path, payload, writeCursor);
             }
-
-            return true;
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                NativeFaultDumpWriter.DisposeTransientPayload(
+                    ref payload,
+                    nameof(VRPhysicalHandPresenceBlackBox),
+                    DumpPayloadLabel);
+            }
         }
-
         /// <summary>
         /// Writes the telemetry ring only when the latest solved hand output reports a NaN fallback fault.
         /// </summary>

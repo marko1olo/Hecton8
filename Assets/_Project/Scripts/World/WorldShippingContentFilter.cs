@@ -82,17 +82,13 @@ namespace Hecton8.World
                 return false;
 
             Scene scene = target.gameObject.scene;
-            EnsureSuppressionCacheForScene(scene);
-            if (!TryGetSuppressedHierarchyIds(scene, out HashSet<EntityId> suppressedHierarchyIds) ||
-                suppressedHierarchyIds.Count == 0)
-            {
-                return false;
-            }
+            bool hasSuppressionCache = TryGetSuppressedHierarchyIds(scene, out HashSet<EntityId> suppressedHierarchyIds) &&
+                                       suppressedHierarchyIds.Count > 0;
 
             Transform current = target;
             while (current != null)
             {
-                if (suppressedHierarchyIds.Contains(current.GetEntityId()))
+                if (hasSuppressionCache && suppressedHierarchyIds.Contains(current.GetEntityId()))
                     return true;
 
                 if (current != target &&
@@ -181,18 +177,6 @@ namespace Hecton8.World
             return zoneAnchor != null &&
                    (zoneAnchor.Kind == WorldZoneAnchor.ZoneKind.Trial ||
                     IsSuppressedZoneId(zoneAnchor.ZoneId));
-        }
-
-        private static void EnsureSuppressionCacheForScene(Scene scene)
-        {
-            if (!scene.IsValid() || !scene.isLoaded)
-                return;
-
-            ulong sceneHandle = scene.handle.GetRawData();
-            if (_primedSceneHandles.Contains(sceneHandle))
-                return;
-
-            PrimeSuppressionCacheForScene(scene);
         }
 
         private static bool TryGetSuppressedHierarchyIds(Scene scene, out HashSet<EntityId> suppressedHierarchyIds)

@@ -440,7 +440,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(halfTexture, AccessFlags.Write);
 
-                    builder.SetRenderFunc((RaymarchPassData data, ComputeGraphContext context) =>
+                    builder.SetRenderFunc(static (RaymarchPassData data, ComputeGraphContext context) =>
                     {
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceDepthId, data.depth);
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.HalfResultId, data.result);
@@ -490,7 +490,7 @@ namespace Hecton8.Visor
                     builder.UseTexture(halfTexture, AccessFlags.Read);
                     builder.UseTexture(compositeTexture, AccessFlags.Write);
 
-                    builder.SetRenderFunc((CompositePassData data, ComputeGraphContext context) =>
+                    builder.SetRenderFunc(static (CompositePassData data, ComputeGraphContext context) =>
                     {
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceColorId, data.source);
                         context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceDepthId, data.depth);

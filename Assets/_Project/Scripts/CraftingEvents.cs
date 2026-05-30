@@ -1007,9 +1007,7 @@ namespace Hecton8.Crafting
 
         private static uint ComputeRecipeHash(RecipeData recipe)
         {
-            return recipe != null && !string.IsNullOrWhiteSpace(recipe.name)
-                ? unchecked((uint)LocHash.Compute(recipe.name))
-                : 0u;
+            return recipe != null ? recipe.RuntimeRecipeHash : 0u;
         }
 
         private static uint ComputeItemHash(ItemData item)

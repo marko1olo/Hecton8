@@ -846,7 +846,7 @@ namespace Hecton8.World
 
             int2 sector = QuantizeSector(in spawnAup);
             long sectorKey = ComposeSectorKey(sector);
-            SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
+            SectorState sectorState = EnsureRuntimeSectorState(sector, sectorKey);
             if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
                 return false;
             if (!HasActiveNodeCapacity(sectorState))
@@ -909,7 +909,7 @@ namespace Hecton8.World
 
             int2 sector = QuantizeSector(in spawnAup);
             long sectorKey = ComposeSectorKey(sector);
-            SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
+            SectorState sectorState = EnsureRuntimeSectorState(sector, sectorKey);
             if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
                 return false;
             if (!HasActiveNodeCapacity(sectorState))
@@ -1036,7 +1036,7 @@ namespace Hecton8.World
 
             int2 sector = QuantizeSector(in spawnAup);
             long sectorKey = ComposeSectorKey(sector);
-            SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
+            SectorState sectorState = EnsureRuntimeSectorState(sector, sectorKey);
             if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
                 return false;
             if (!HasActiveNodeCapacity(sectorState))
@@ -1143,7 +1143,7 @@ namespace Hecton8.World
 
             int2 sector = QuantizeSector(in spawnAup);
             long sectorKey = ComposeSectorKey(sector);
-            SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
+            SectorState sectorState = EnsureRuntimeSectorState(sector, sectorKey);
             if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
                 return false;
             if (!HasActiveNodeCapacity(sectorState))
@@ -1256,7 +1256,7 @@ namespace Hecton8.World
 
             int2 sector = QuantizeSector(in spawnAup);
             long sectorKey = ComposeSectorKey(sector);
-            SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
+            SectorState sectorState = EnsureRuntimeSectorState(sector, sectorKey);
             if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
                 return false;
 
@@ -2254,7 +2254,7 @@ namespace Hecton8.World
             return -1;
         }
 
-        private SectorState ResolveOrCreateRuntimeSectorState(int2 sector, long sectorKey)
+        private SectorState EnsureRuntimeSectorState(int2 sector, long sectorKey)
         {
             if (_residentSectors == null)
                 return null;
@@ -3059,7 +3059,7 @@ namespace Hecton8.World
         {
             // COLD ALLOC: GameObject[1] — temporary primitive source used to capture the built-in cube mesh — owner: ResourceDistributionDirector
             GameObject temp = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            MeshFilter filter = temp.GetComponent<MeshFilter>();
+            temp.TryGetComponent(out MeshFilter filter);
             Mesh mesh = filter != null ? filter.sharedMesh : null;
             if (Application.isPlaying)
                 Destroy(temp);
@@ -3073,7 +3073,7 @@ namespace Hecton8.World
         {
             // COLD ALLOC: GameObject[1] — temporary primitive source used to capture the built-in cylinder mesh — owner: ResourceDistributionDirector
             GameObject temp = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            MeshFilter filter = temp.GetComponent<MeshFilter>();
+            temp.TryGetComponent(out MeshFilter filter);
             Mesh mesh = filter != null ? filter.sharedMesh : null;
             if (Application.isPlaying)
                 Destroy(temp);

@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
@@ -2288,47 +2287,49 @@ namespace Hecton8.World
                 return;
             }
 
-            _abyssalPathTelemetryDumpedForFault = true;
+            const int HeaderBytes = 20;
+            const int RowBytes = 56;
+            int validEntryCount = math.clamp(_abyssalPathTelemetryWrittenCount, 0, AbyssalPathTelemetryFrameCount);
+            int totalBytes = HeaderBytes + validEntryCount * RowBytes;
+            NativeArray<byte> payload = new NativeArray<byte>(totalBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             try
             {
-                string directory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs"));
-                Directory.CreateDirectory(directory);
-                string dumpPath = Path.Combine(directory, "Dump_AI_FUNNEL_NAV_POLISH.bin");
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                WriteUInt32LittleEndian(payload, 0, reasonHash);
+                WriteInt32LittleEndian(payload, 4, AbyssalPathTelemetryFrameCount);
+                WriteInt32LittleEndian(payload, 8, _abyssalPathTelemetryCursor);
+                WriteUInt32LittleEndian(payload, 12, _abyssalPathTelemetrySequence);
+                WriteInt32LittleEndian(payload, 16, validEntryCount);
+                int firstEntryIndex = validEntryCount < AbyssalPathTelemetryFrameCount
+                    ? 0
+                    : _abyssalPathTelemetryCursor;
+                for (int dumpOffset = 0; dumpOffset < validEntryCount; dumpOffset++)
                 {
-                    writer.Write(reasonHash);
-                    writer.Write(AbyssalPathTelemetryFrameCount);
-                    writer.Write(_abyssalPathTelemetryCursor);
-                    writer.Write(_abyssalPathTelemetrySequence);
-                    int validEntryCount = math.clamp(_abyssalPathTelemetryWrittenCount, 0, AbyssalPathTelemetryFrameCount);
-                    writer.Write(validEntryCount);
-                    int firstEntryIndex = validEntryCount < AbyssalPathTelemetryFrameCount
-                        ? 0
-                        : _abyssalPathTelemetryCursor;
-                    for (int dumpOffset = 0; dumpOffset < validEntryCount; dumpOffset++)
-                    {
-                        int entryIndex = firstEntryIndex + dumpOffset;
-                        if (entryIndex >= AbyssalPathTelemetryFrameCount)
-                            entryIndex -= AbyssalPathTelemetryFrameCount;
+                    int entryIndex = firstEntryIndex + dumpOffset;
+                    if (entryIndex >= AbyssalPathTelemetryFrameCount)
+                        entryIndex -= AbyssalPathTelemetryFrameCount;
 
-                        AbyssalPathTelemetryEntry entry = telemetry[entryIndex];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.RawCount);
-                        writer.Write(entry.OutputCount);
-                        writer.Write(entry.PortalLookAhead);
-                        writer.Write(entry.MaxDdaSamples);
-                        writer.Write(entry.FunnelMs);
-                        writer.Write(entry.StartX);
-                        writer.Write(entry.StartY);
-                        writer.Write(entry.StartZ);
-                        writer.Write(entry.EndX);
-                        writer.Write(entry.EndY);
-                        writer.Write(entry.EndZ);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.Sequence);
-                    }
+                    AbyssalPathTelemetryEntry entry = telemetry[entryIndex];
+                    int offset = HeaderBytes + dumpOffset * RowBytes;
+                    WriteInt32LittleEndian(payload, offset, entry.Frame);
+                    WriteInt32LittleEndian(payload, offset + 4, entry.RawCount);
+                    WriteInt32LittleEndian(payload, offset + 8, entry.OutputCount);
+                    WriteInt32LittleEndian(payload, offset + 12, entry.PortalLookAhead);
+                    WriteInt32LittleEndian(payload, offset + 16, entry.MaxDdaSamples);
+                    WriteFloat32LittleEndian(payload, offset + 20, entry.FunnelMs);
+                    WriteFloat32LittleEndian(payload, offset + 24, entry.StartX);
+                    WriteFloat32LittleEndian(payload, offset + 28, entry.StartY);
+                    WriteFloat32LittleEndian(payload, offset + 32, entry.StartZ);
+                    WriteFloat32LittleEndian(payload, offset + 36, entry.EndX);
+                    WriteFloat32LittleEndian(payload, offset + 40, entry.EndY);
+                    WriteFloat32LittleEndian(payload, offset + 44, entry.EndZ);
+                    WriteUInt32LittleEndian(payload, offset + 48, entry.Flags);
+                    WriteUInt32LittleEndian(payload, offset + 52, entry.Sequence);
                 }
+
+                _abyssalPathTelemetryDumpedForFault = NativeFaultDumpWriter.TryWriteAll(
+                    Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_AI_FUNNEL_NAV_POLISH.bin")),
+                    payload,
+                    totalBytes);
             }
             catch (IOException exception)
             {
@@ -2338,6 +2339,29 @@ namespace Hecton8.World
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(AbyssalPathNanFaultHash, AbyssalPathTelemetryContextHash, exception.HResult);
             }
+            finally
+            {
+                if (payload.IsCreated)
+                    payload.Dispose();
+            }
+        }
+
+        private static void WriteFloat32LittleEndian(NativeArray<byte> payload, int offset, float value)
+        {
+            WriteUInt32LittleEndian(payload, offset, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> payload, int offset, int value)
+        {
+            WriteUInt32LittleEndian(payload, offset, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> payload, int offset, uint value)
+        {
+            payload[offset] = (byte)value;
+            payload[offset + 1] = (byte)(value >> 8);
+            payload[offset + 2] = (byte)(value >> 16);
+            payload[offset + 3] = (byte)(value >> 24);
         }
 
         private void DisposeAbyssalPathState()
