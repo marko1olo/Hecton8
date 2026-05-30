@@ -27,6 +27,9 @@ namespace Hecton8.Editor
         private const string LogPrefix = "[HectonRenderPipelineValidator]";
         private const float CompactShadowDistanceMeters = 30f;
         private const int CompactShadowCascadeCount = 2;
+        private const float QuestShadowDistanceMeters = 18f;
+        private const int QuestShadowCascadeCount = 1;
+        private const int QuestMsaaSampleCount = 2;
         private const float HighShadowDistanceMeters = 42f;
         private const int HighShadowCascadeCount = 4;
         private const string WorldScenePath = "Assets/_Project/Scenes/02_HECTON_WORLD.unity";
@@ -219,6 +222,7 @@ namespace Hecton8.Editor
         private static bool EnsurePipelineRequirements(UniversalRenderPipelineAsset urpAsset)
         {
             bool changed = false;
+            bool isQuestAsset = IsQuestUrpAsset(urpAsset);
 
             if (!urpAsset.supportsCameraDepthTexture)
             {
@@ -226,15 +230,17 @@ namespace Hecton8.Editor
                 changed = true;
             }
 
-            if (!urpAsset.supportsCameraOpaqueTexture)
+            bool targetOpaqueTexture = !isQuestAsset;
+            if (urpAsset.supportsCameraOpaqueTexture != targetOpaqueTexture)
             {
-                urpAsset.supportsCameraOpaqueTexture = true;
+                urpAsset.supportsCameraOpaqueTexture = targetOpaqueTexture;
                 changed = true;
             }
 
-            if (urpAsset.msaaSampleCount != 1)
+            int targetMsaaSampleCount = isQuestAsset ? QuestMsaaSampleCount : 1;
+            if (urpAsset.msaaSampleCount != targetMsaaSampleCount)
             {
-                urpAsset.msaaSampleCount = 1;
+                urpAsset.msaaSampleCount = targetMsaaSampleCount;
                 changed = true;
             }
 
@@ -288,6 +294,13 @@ namespace Hecton8.Editor
             out int shadowCascadeCount)
         {
             string assetName = urpAsset != null ? urpAsset.name : string.Empty;
+            if (assetName.IndexOf("Quest", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                shadowDistanceMeters = QuestShadowDistanceMeters;
+                shadowCascadeCount = QuestShadowCascadeCount;
+                return;
+            }
+
             if (assetName.IndexOf("High", StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 shadowDistanceMeters = HighShadowDistanceMeters;
@@ -297,6 +310,12 @@ namespace Hecton8.Editor
 
             shadowDistanceMeters = CompactShadowDistanceMeters;
             shadowCascadeCount = CompactShadowCascadeCount;
+        }
+
+        private static bool IsQuestUrpAsset(UniversalRenderPipelineAsset urpAsset)
+        {
+            return urpAsset != null &&
+                   urpAsset.name.IndexOf("Quest", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static bool IsPlayModeUnsafeForRepairs()

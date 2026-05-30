@@ -74,7 +74,7 @@ Latest safe pass: Unity process observed at `C:\hades\Hecton8`; Unity-owned comp
   - Alternative rejected: forcing every discrete PC through the compact 1.8 GB ceiling.
   - Estimate: 48000 us.
 - [x] URP high-envelope repair guard
-  - DOD practice: make Crest render-pipeline validator apply per-asset shadow budgets so future repair passes do not collapse high/ultra assets back into compact settings.
+  - DOD practice: make Crest render-pipeline validator apply per-asset render requirements so future repair passes do not collapse high/ultra assets or Quest VR settings back into compact settings.
   - Alternative rejected: one global shadow clamp inside the editor repair hook.
   - Estimate: 41000 us.
 - [x] Profile-aware visual smoke checks
