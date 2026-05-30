@@ -19,7 +19,7 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 namespace Hecton8.Atmosphere
 {
     [DisallowMultipleComponent]
-    public unsafe sealed partial class ToxicOutgassingChemistryRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public unsafe sealed partial class ToxicOutgassingChemistryRuntime : MonoBehaviour, ISlowTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private static int s_x001ToxicOutgassingChemistryRuntimeSignalPushDropCount;
         public const int HighResolution = 32;
@@ -142,6 +142,9 @@ namespace Hecton8.Atmosphere
         private bool _nativeReady;
         private bool _mockChemistry;
         private bool _hotSwapRegistered;
+        private bool _slowTickRegistered;
+        private bool _coldTickRegistered;
+        private bool _lateFrameTickRegistered;
 
         public static ToxicOutgassingChemistryRuntime Instance;
 
@@ -199,8 +202,9 @@ namespace Hecton8.Atmosphere
             Instance = this;
             TryRegisterHotSwapListener();
             EnsureNativeState();
-            GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
-            GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            _coldTickRegistered = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
+            _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             HectonFloatingOrigin.RegisterListener(this);
         }
 
@@ -211,8 +215,24 @@ namespace Hecton8.Atmosphere
                 CompleteScheduledWorkForTeardown();
             }
             HectonFloatingOrigin.UnregisterListener(this);
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            if (_lateFrameTickRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameTickRegistered = false;
+            }
+
+            if (_coldTickRegistered)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _coldTickRegistered = false;
+            }
+
+            if (_slowTickRegistered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _slowTickRegistered = false;
+            }
+
             TryUnregisterHotSwapListener();
             if (Instance == this)
             {
@@ -285,6 +305,11 @@ namespace Hecton8.Atmosphere
             ScheduleSimulation(simulationDelta, qualityWeight);
         }
 
+        public void ColdTick()
+        {
+            EnsureNativeState();
+        }
+
         public void LateFrameTick()
         {
             if (_hasScheduledWork && _scheduledHandle.IsCompleted)
@@ -313,7 +338,7 @@ namespace Hecton8.Atmosphere
 
         public bool TryUpsertSource(uint sourceId, double3 aup, float emissionRate, float density, uint chemicalHash)
         {
-            if (!EnsureNativeState())
+            if (!_nativeReady)
             {
                 return false;
             }
@@ -392,7 +417,7 @@ namespace Hecton8.Atmosphere
 
         public bool TryUpsertEntity(uint entityId, double3 aup)
         {
-            if (!EnsureNativeState())
+            if (!_nativeReady)
             {
                 return false;
             }

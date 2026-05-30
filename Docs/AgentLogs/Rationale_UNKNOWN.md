@@ -4361,3 +4361,63 @@ Rejected Alternatives: Keeping local raw copies was rejected because Core alread
 Scalability potential: Low, middle, high, and ultra devices keep the same visual buffers, shader IDs, and DTO layouts. Weak devices gain one shared upload policy and fewer local unsafe surfaces. High and ultra devices retain single bulk upload where the utility uses the guarded copy route. No gameplay truth owner, save identity, authority route, binary quality switch, or `GlobalQualityWeight` semantics changed.
 
 Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. Proof: hashes `HabitatFluidIncursionDirector=08F84A9E0B15D3E50F069AEA5575152742D54AFCDAFF349F0A8B2D2BB2921B8C`, `AsyncBuoyancyReadbackRuntime=F3CD62692D3335177E845488BBAAC139369D1EE69D48DBFF72609EF0D8741FC0`, `SubmarineDynamicsRuntime_Gyroscopes=184C0C249785CA6F7D65DE94F28E8609BBBEFA4F864DE25680A17AFB9411EF08`, `ArchitectEyeVisualizer=DE14B080E229015668DFA83FACECAD43D0360DFEA65B2FE62A8DE1A579173C82`; evidence `HFI 411`, `Async 1260`, `Gyro 601`, `Architect 1332`; delimiter counts `129/129`, `253/253`, `80/80`, `206/206`; Core/Physics raw `UnsafeUtility.MemCpy` scan now leaves only central guard, intentional Burst/job copies, an editor scanner string, and KCC comment; build was not run because latest CPU sample was `65`, above the project `50` threshold, with no compiler process rows.
+
+## Decision 349 - Cold-Cache Submarine Electrolysis Dispatcher Identity
+
+Problem: `SubmarineElectrolysisModule.SlowTick()` reached `GlobalRegistry.Dispatcher` through `CanUseRuntimeDispatcher()`. This is hot global polling even when the lookup is only an identity check.
+
+Solution: Add `_cachedDispatcher`, populate it during `CacheReferences()`, and refresh it from `OnGlobalRegistryServiceReplaced()` for the dispatcher slot. `CanUseRuntimeDispatcher()` now reads the cached field only.
+
+Rejected Alternatives: Leaving the static helper was rejected because a hot slow-tick route should not read GlobalRegistry. Removing dispatcher gating was rejected because it would change behavior.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical electrolysis behavior. Weak devices avoid avoidable registry traffic in slow tick. High and ultra devices retain dispatcher gating. No gameplay truth owner, DTO layout, save identity, authority route, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. Proof: `SubmarineElectrolysisModule.cs` SHA-256 `F745A451B550FCBCBF9B3F5ADD331B03538CD0F19E5BB3EDB0844D7D5FCD8C7A`; evidence `644/947/976`; hot-method scanner returned no forbidden calls.
+
+## Decision 350 - Remove Flora Slow-Tick Component Fallback
+
+Problem: `FloraInteractionManager.SlowTick()` could call a fallback resolver that used `GetComponent<DestructibleOrganicManager>()`. That creates a scene search route from a high-frequency owner.
+
+Solution: Keep `GetComponent` only in `ResolveDestructibleOrganicManagerCold()` for bootstrap. Hot refresh now uses explicit override or `DestructibleOrganicManager.ActiveRuntimeInstance`.
+
+Rejected Alternatives: Caching after a hot miss was rejected because the hot miss remains a scene query. Adding a registry fallback was rejected because the registry is not a hot polling bus.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical flora/destructible-organic authority. Weak devices avoid scene search in slow tick. High and ultra devices retain full parasite-cut and flora interaction fidelity. No gameplay truth owner, DTO layout, save identity, authority route, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. Proof: `FloraInteractionManager.cs` SHA-256 `F09B57F178B0C1D6AE442919C4315C7129D831E9A23AE3F133961B7A624FAB70`; evidence `1762/2109/2559/2571/6156`; hot-method scanner returned no forbidden calls.
+
+## Decision 351 - Move Profiler Diagnostics Drains To LateFrame
+
+Problem: `RuntimePerformanceProfiler.SlowTick()` could drain renderer ownership audit, which traverses scene renderers and builds diagnostic strings. `Tick()` also drove pending scene snapshot and auto-start routes. `PerformanceMonitor.Tick()` had a pending auto-report flag with no phase owner after the earlier hot-allocation cut.
+
+Solution: `RuntimePerformanceProfiler` now implements `ILateFrameTickable`, registers the late-frame lane, and drains pending scene snapshot, auto-start, and renderer ownership audit from `LateFrameTick()`. `PerformanceMonitor` now implements `ILateFrameTickable`; `Tick()` only flips a bool and `LateFrameTick()` drains a constant debug marker.
+
+Rejected Alternatives: Keeping string/report construction in `Tick` or `SlowTick` was rejected because diagnostics are presentation/dev-output work. Removing the features entirely was rejected because the existing debug tools are still useful when run in the correct phase.
+
+Scalability potential: Low, middle, high, and ultra devices keep the same profiling controls and diagnostics. Weak devices avoid slow-tick scene traversal and managed string assembly. High and ultra devices keep diagnostics while simulation phase stays clean. No gameplay truth owner, DTO layout, save identity, authority route, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. Proof: `RuntimePerformanceProfiler.cs` SHA-256 `CFCBF6458CB6515BFCDEB35B28D48FCE0ED640D5A52B70D22AF13E4B827AD6AB`; evidence `34/217/481/782/788/791/792/842`; `PerformanceMonitor.cs` SHA-256 `0254D5076DF465A971BB1FDD7162B4977922FDBA2FBF2724C3B69DED150A8EB9`; evidence `534/536/733/858`; hot-method scanner returned no forbidden calls.
+
+## Decision 352 - Fail Closed On Vegetation Payload Query False
+
+Problem: Several `HectonMapMagicVegetationBridge` payload getters assigned count or metadata before all native read handles were proven. A failed read could leave caller-visible stale output mixed with a false return.
+
+Solution: Clear all outs at method entry and assign count/metadata only after every required native array read succeeds.
+
+Rejected Alternatives: Relying on callers to ignore outs on false was rejected because stale values still leak into debugger and defensive fallback code. Returning partial data was rejected because these getters represent one payload snapshot, not independent optional lanes.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical vegetation data layout and LOD behavior. Weak devices avoid stale vegetation payload decisions under streaming failure. High and ultra devices retain full payload fidelity. No gameplay truth owner, DTO layout, save identity, authority route, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. Proof: `HectonMapMagicVegetationBridge.cs` SHA-256 `60F69CC7598C318B7CBEE8FD0DFE0DC860C7B6214ED7C887822E98AEA3E48A5C`; evidence `3364/3567/3868` plus sibling getter block; delimiter count `752/752`; hot-method scanner returned no forbidden calls.
+
+## Decision 353 - Repair Compile-Wall Errors Without Broad Ownership Takeover
+
+Problem: A legal gated build exposed compile errors in `HomeostasisBrain.ScalabilityDictator` and `LeviathanTerrainIkJobs`. The first used `Span<byte>` float dump calls while only a pointer writer was available. The second introduced pointer writes inside a non-unsafe public dump method.
+
+Solution: Add `WriteFloatLittleEndian(Span<byte>, float)` using `BinaryPrimitives.WriteUInt32LittleEndian()` plus `math.asuint()`. Mark `LeviathanTerrainIkBlackBox.TryDumpTelemetry()` as `unsafe`, matching its pointer body and private pointer helpers.
+
+Rejected Alternatives: Reverting concurrent dump rewrites was rejected. Replacing the dump format with managed `BinaryWriter` was rejected because the current route intentionally stages native bytes before `NativeFaultDumpWriter.TryWriteAll()`.
+
+Scalability potential: Low, middle, high, and ultra devices keep identical dump layouts. Weak devices avoid compile failure from telemetry dump code. High and ultra devices retain full blackbox payload fidelity. No gameplay truth owner, DTO layout, save identity, authority route, binary quality switch, or `GlobalQualityWeight` semantics changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; compile repair only. Proof: `HomeostasisBrain.ScalabilityDictator.cs` SHA-256 `B743955A38034D362C386F4EA82B8A6452F7A31C4365A8A566D0E847F30DC4A7`; evidence `2325`; `LeviathanTerrainIkJobs.cs` SHA-256 `8DB9B94A667FC3671CDBEFECBA8FA0FDA254A71BD80E089CEA9913FE3F24D0CC`; evidence `147`; scoped `git diff --check` exited `0` with LF/CRLF warnings only. Clean compile proof remains unresolved because later `dotnet` invocations returned `-1` without diagnostics.
