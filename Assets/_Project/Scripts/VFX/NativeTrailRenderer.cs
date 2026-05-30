@@ -13,7 +13,7 @@ namespace Hecton8.VFX
     [AddComponentMenu("Hecton8/VFX/Native Trail Renderer")]
     public sealed class NativeTrailRenderer : MonoBehaviour,
         ILateFrameTickable,
-        ISlowTickable,
+        IColdTickable,
         IRenderable,
         IOriginShiftListener,
         IGlobalRegistryHotSwapListener
@@ -64,7 +64,7 @@ namespace Hecton8.VFX
         private float _sampleTimer;
         private bool _meshDirty;
         private bool _registeredUpdate;
-        private bool _registeredSlowTick;
+        private bool _registeredColdTick;
         private bool _registeredRender;
         private bool _registeredOriginShift;
         private bool _registeredHotSwap;
@@ -138,7 +138,7 @@ namespace Hecton8.VFX
             _sampleTimer = math.max(MinimumSampleIntervalSeconds, sampleIntervalSeconds);
         }
 
-        public void SlowTick()
+        public void ColdTick()
         {
             if (!_bufferRepairRequested && HasBuffersReady())
                 return;
@@ -211,10 +211,10 @@ namespace Hecton8.VFX
                         _registeredUpdate = false;
                     }
 
-                    if (_registeredSlowTick)
+                    if (_registeredColdTick)
                     {
-                        GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-                        _registeredSlowTick = false;
+                        GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                        _registeredColdTick = false;
                     }
 
                     _tickDispatcher = tickDispatcher;
@@ -461,8 +461,8 @@ namespace Hecton8.VFX
 
             if (_dispatcherReady && !_registeredUpdate)
                 _registeredUpdate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
-            if (_dispatcherReady && !_registeredSlowTick)
-                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            if (_dispatcherReady && !_registeredColdTick)
+                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
             if (_renderDispatcherReady && !_registeredRender)
                 _registeredRender = GlobalRegistry.Renderables.TryRegister(this);
             if (_dispatcherReady && !_registeredOriginShift)
@@ -521,10 +521,10 @@ namespace Hecton8.VFX
                 _registeredUpdate = false;
             }
 
-            if (_registeredSlowTick)
+            if (_registeredColdTick)
             {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = false;
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _registeredColdTick = false;
             }
         }
 
