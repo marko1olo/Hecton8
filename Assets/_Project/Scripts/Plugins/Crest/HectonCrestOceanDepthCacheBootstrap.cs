@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using Crest;
 using Hecton8.Celestial;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using System.Diagnostics;
@@ -120,6 +119,7 @@ namespace Hecton8.World
         private bool _registeredToLateFrame;
         private bool _hotSwapRegistered;
         private bool _pendingDepthCacheVisualSync;
+        private bool _pendingDepthCacheForcePopulate;
         private bool _hasConfiguredBounds;
         private int _lastTerrainCount;
         private int _captureLayerMask;
@@ -204,7 +204,7 @@ namespace Hecton8.World
             if (_debugCacheReady && !repopulateOnTerrainChange)
                 return;
 
-            _pendingDepthCacheVisualSync = true;
+            QueueDepthCacheVisualSync(forcePopulate: !_debugCacheReady);
         }
 
         public void LateFrameTick()
@@ -212,8 +212,16 @@ namespace Hecton8.World
             if (!_pendingDepthCacheVisualSync)
                 return;
 
+            bool forcePopulate = _pendingDepthCacheForcePopulate;
             _pendingDepthCacheVisualSync = false;
-            TryConfigureAndPopulate(forcePopulate: !_debugCacheReady);
+            _pendingDepthCacheForcePopulate = false;
+            TryConfigureAndPopulate(forcePopulate);
+        }
+
+        private void QueueDepthCacheVisualSync(bool forcePopulate)
+        {
+            _pendingDepthCacheVisualSync = true;
+            _pendingDepthCacheForcePopulate |= forcePopulate;
         }
 
         /// <inheritdoc />
@@ -226,7 +234,7 @@ namespace Hecton8.World
                 return;
 
             ResetCrestSimulationForOriginShift(shiftData.ShiftOffset);
-            TryConfigureAndPopulate(forcePopulate: true);
+            QueueDepthCacheVisualSync(forcePopulate: true);
         }
 
         private void ResetCrestSimulationForOriginShift(Vector3 shiftOffset)
@@ -309,6 +317,7 @@ namespace Hecton8.World
             _registeredToSlowTickManager = false;
             _registeredToLateFrame = false;
             _pendingDepthCacheVisualSync = false;
+            _pendingDepthCacheForcePopulate = false;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -560,10 +569,9 @@ namespace Hecton8.World
 
         private static Camera ResolveRuntimeMainCamera()
         {
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null &&
-                playerTransform.TryGetComponent(out Camera playerOwnedCamera) &&
-                IsRuntimeMainCamera(playerOwnedCamera))
+            IPlayerRuntimeContext playerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            Camera playerOwnedCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            if (IsRuntimeMainCamera(playerOwnedCamera))
             {
                 return playerOwnedCamera;
             }

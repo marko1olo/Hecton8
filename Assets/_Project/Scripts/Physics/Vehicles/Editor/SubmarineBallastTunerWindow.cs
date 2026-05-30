@@ -132,7 +132,7 @@ namespace Hecton8.Physics.Vehicles.Editor
 
         private void RefreshGraph()
         {
-            if (!TryResolveTelemetry(out NativeArray<SubmarineBallastTelemetryEntry> telemetry) || telemetry.Length == 0)
+            if (!TryResolveTelemetry(out NativeArray<SubmarineBallastTelemetryEntry>.ReadOnly telemetry) || telemetry.Length == 0)
                 return;
 
             int count = math.min(GraphBars, telemetry.Length);
@@ -188,7 +188,7 @@ namespace Hecton8.Physics.Vehicles.Editor
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
                 !vault.TryGetGenerationHandle(SubmarineBallastBufferIds.Tuning, out VaultGenerationHandle<SubmarineBallastTuningDTO> handle) ||
-                !vault.TryResolveHandle(in handle, out NativeArray<SubmarineBallastTuningDTO> rows) ||
+                !vault.TryReadOnlyHandle(in handle, out NativeArray<SubmarineBallastTuningDTO>.ReadOnly rows) ||
                 !rows.IsCreated ||
                 rows.Length == 0)
             {
@@ -199,13 +199,13 @@ namespace Hecton8.Physics.Vehicles.Editor
             return true;
         }
 
-        private static bool TryResolveTelemetry(out NativeArray<SubmarineBallastTelemetryEntry> telemetry)
+        private static bool TryResolveTelemetry(out NativeArray<SubmarineBallastTelemetryEntry>.ReadOnly telemetry)
         {
             telemetry = default;
             IDataVault vault = GlobalRegistry.DataVault;
             return vault != null &&
                    vault.TryGetGenerationHandle(SubmarineBallastBufferIds.TelemetryRing, out VaultGenerationHandle<SubmarineBallastTelemetryEntry> handle) &&
-                   vault.TryResolveHandle(in handle, out telemetry) &&
+                   vault.TryReadOnlyHandle(in handle, out telemetry) &&
                    telemetry.IsCreated;
         }
 
@@ -213,7 +213,7 @@ namespace Hecton8.Physics.Vehicles.Editor
         private static void DrawBallastGizmos(SubmarineAutoLevelBallastController controller, GizmoType gizmoType)
         {
             if (controller == null ||
-                !TryResolveTanks(out NativeArray<BallastTankDTO> tanks) ||
+                !TryResolveTanks(out NativeArray<BallastTankDTO>.ReadOnly tanks) ||
                 tanks.Length == 0)
             {
                 return;
@@ -250,13 +250,13 @@ namespace Hecton8.Physics.Vehicles.Editor
             }
         }
 
-        private static bool TryResolveTanks(out NativeArray<BallastTankDTO> tanks)
+        private static bool TryResolveTanks(out NativeArray<BallastTankDTO>.ReadOnly tanks)
         {
             tanks = default;
             IDataVault vault = GlobalRegistry.DataVault;
             return vault != null &&
                    vault.TryGetGenerationHandle(SubmarineBallastBufferIds.Tanks, out VaultGenerationHandle<BallastTankDTO> handle) &&
-                   vault.TryResolveHandle(in handle, out tanks) &&
+                   vault.TryReadOnlyHandle(in handle, out tanks) &&
                    tanks.IsCreated;
         }
 
@@ -266,7 +266,7 @@ namespace Hecton8.Physics.Vehicles.Editor
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
                 !vault.TryGetGenerationHandle(SubmarineBallastBufferIds.ForcePackets, out VaultGenerationHandle<SubmarineBallastForcePacketDTO> handle) ||
-                !vault.TryResolveHandle(in handle, out NativeArray<SubmarineBallastForcePacketDTO> packets) ||
+                !vault.TryReadOnlyHandle(in handle, out NativeArray<SubmarineBallastForcePacketDTO>.ReadOnly packets) ||
                 !packets.IsCreated ||
                 packets.Length == 0)
             {

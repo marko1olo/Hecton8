@@ -114,6 +114,8 @@ namespace Hecton8.Narrative
         private readonly uint[] _resolvedLogHashes = new uint[ResolvedLogHashCapacity];
         private const string AudioLogFolder = "Assets/_Project/Data/Lore/AudioLogs";
         private IDataVault _dataVault;
+        private IDataVault _playbackQueueGuardVault;
+        private IDataVault _encryptedFragmentStateGuardVault;
         private VaultGenerationHandle<uint> _queuedLogHashesHandle;
         private VaultGenerationHandle<uint> _encryptedFragmentLogHashesHandle;
         private VaultGenerationHandle<uint> _encryptedFragmentRecoveredBitsHandle;
@@ -993,6 +995,7 @@ namespace Hecton8.Narrative
 
         private void ReleaseVaultBuffers(IDataVault vault)
         {
+            ReleaseStoredVaultMutations();
             ReleaseVaultHandle(vault, ref _queuedLogHashesHandle, BufferID.AudioLogPlaybackQueue);
             ReleaseVaultHandle(vault, ref _encryptedFragmentLogHashesHandle, BufferID.AudioLogEncryptedFragmentHashes);
             ReleaseVaultHandle(vault, ref _encryptedFragmentRecoveredBitsHandle, BufferID.AudioLogEncryptedFragmentRecoveredBits);
@@ -1077,6 +1080,7 @@ namespace Hecton8.Narrative
                 }
 
                 _vaultResolutionSuccessCount++;
+                StoreVaultMutation(mutationGuardMask, vault);
                 success = true;
                 return true;
             }
@@ -1096,8 +1100,9 @@ namespace Hecton8.Narrative
 
         private void ReleaseVaultMutation(ulong mutationGuardMask)
         {
-            if (_dataVault != null && mutationGuardMask != 0UL)
-                _dataVault.ReleaseMutationGuard(mutationGuardMask);
+            IDataVault vault = TakeVaultMutation(mutationGuardMask);
+            if (vault != null && mutationGuardMask != 0UL)
+                vault.ReleaseMutationGuard(mutationGuardMask);
         }
 
         private bool TryReadEncryptedFragmentState(
@@ -1268,6 +1273,7 @@ namespace Hecton8.Narrative
                 }
 
                 _vaultResolutionSuccessCount += 2;
+                StoreVaultMutation(EncryptedFragmentStateMutationGuardMask, vault);
                 success = true;
                 return true;
             }
@@ -1343,6 +1349,44 @@ namespace Hecton8.Narrative
         private static ulong AudioLogMutationGuardBit(BufferID bufferId)
         {
             return 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
+
+        private void StoreVaultMutation(ulong mutationGuardMask, IDataVault vault)
+        {
+            if (mutationGuardMask == PlaybackQueueMutationGuardMask)
+                _playbackQueueGuardVault = vault;
+            else if (mutationGuardMask == EncryptedFragmentStateMutationGuardMask)
+                _encryptedFragmentStateGuardVault = vault;
+        }
+
+        private IDataVault TakeVaultMutation(ulong mutationGuardMask)
+        {
+            if (mutationGuardMask == PlaybackQueueMutationGuardMask)
+            {
+                IDataVault vault = _playbackQueueGuardVault;
+                _playbackQueueGuardVault = null;
+                return vault;
+            }
+
+            if (mutationGuardMask == EncryptedFragmentStateMutationGuardMask)
+            {
+                IDataVault vault = _encryptedFragmentStateGuardVault;
+                _encryptedFragmentStateGuardVault = null;
+                return vault;
+            }
+
+            return null;
+        }
+
+        private void ReleaseStoredVaultMutations()
+        {
+            IDataVault playbackVault = TakeVaultMutation(PlaybackQueueMutationGuardMask);
+            if (playbackVault != null)
+                playbackVault.ReleaseMutationGuard(PlaybackQueueMutationGuardMask);
+
+            IDataVault encryptedStateVault = TakeVaultMutation(EncryptedFragmentStateMutationGuardMask);
+            if (encryptedStateVault != null)
+                encryptedStateVault.ReleaseMutationGuard(EncryptedFragmentStateMutationGuardMask);
         }
 
         private uint ResolveExpectedGeneration(BufferID bufferId)

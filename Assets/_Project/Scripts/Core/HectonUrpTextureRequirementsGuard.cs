@@ -94,8 +94,13 @@ namespace Hecton8.Core
             if (camera == null)
                 return;
 
-            if (!TryResolveCameraData(camera, out UniversalAdditionalCameraData cameraData) ||
-                cameraData.renderType != CameraRenderType.Base)
+            if (!TryResolveCameraData(camera, out UniversalAdditionalCameraData cameraData, out bool cacheHit))
+            {
+                if (cacheHit || !TryCacheCameraDataCold(camera, out cameraData))
+                    return;
+            }
+
+            if (cameraData.renderType != CameraRenderType.Base)
             {
                 return;
             }
@@ -130,14 +135,19 @@ namespace Hecton8.Core
                 cameraData.renderPostProcessing = true;
         }
 
-        private static bool TryResolveCameraData(Camera camera, out UniversalAdditionalCameraData cameraData)
+        private static bool TryResolveCameraData(
+            Camera camera,
+            out UniversalAdditionalCameraData cameraData,
+            out bool cacheHit)
         {
+            cacheHit = false;
             int instanceId = unchecked((int)UnityEngine.EntityId.ToULong(camera.GetEntityId()));
             for (int index = 0; index < s_cameraDataCacheCount; index++)
             {
                 if (s_cameraInstanceIdCache[index] != instanceId)
                     continue;
 
+                cacheHit = true;
                 cameraData = s_cameraDataCache[index];
                 return cameraData != null;
             }
@@ -169,20 +179,23 @@ namespace Hecton8.Core
                 s_cameraScratch.Clear();
                 root.GetComponentsInChildren(true, s_cameraScratch);
                 for (int cameraIndex = 0; cameraIndex < s_cameraScratch.Count; cameraIndex++)
-                    TryCacheCameraDataCold(s_cameraScratch[cameraIndex]);
+                    TryCacheCameraDataCold(s_cameraScratch[cameraIndex], out _);
             }
 
             s_cameraScratch.Clear();
             s_sceneRootScratch.Clear();
         }
 
-        private static bool TryCacheCameraDataCold(Camera camera)
+        private static bool TryCacheCameraDataCold(
+            Camera camera,
+            out UniversalAdditionalCameraData cameraData)
         {
+            cameraData = null;
             if (camera == null)
                 return false;
 
             int instanceId = unchecked((int)UnityEngine.EntityId.ToULong(camera.GetEntityId()));
-            if (!camera.TryGetComponent(out UniversalAdditionalCameraData cameraData) || cameraData == null)
+            if (!camera.TryGetComponent(out cameraData) || cameraData == null)
             {
                 StoreCameraDataCacheEntry(instanceId, null);
                 return false;

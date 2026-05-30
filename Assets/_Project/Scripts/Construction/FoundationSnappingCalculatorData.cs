@@ -26,6 +26,7 @@ namespace Hecton8.Construction
         public const uint MockSdfFallback = 1u << 7;
         public const uint RealVoxelSdf = 1u << 8;
         public const uint ApproximateSdf = 1u << 9;
+        public const uint ProfileEditContention = 1u << 10;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -242,7 +243,6 @@ namespace Hecton8.Construction
         public NativeArray<FoundationSdfConfigDTO> SdfConfig;
         public NativeArray<FoundationRayOriginDTO> RayOrigins;
         public NativeArray<FoundationProfileRangeDTO> ProfileRanges;
-        public NativeArray<byte> CsvScratch;
         public NativeArray<FoundationDebugRayDTO> DebugRays;
         public NativeArray<FoundationPylonIndirectArgsDTO> IndirectArgs;
     }
@@ -284,14 +284,12 @@ namespace Hecton8.Construction
         public const BufferID SdfConfigBufferId = BufferID.FoundationSnappingSdfConfig;
         public const BufferID RayOriginBufferId = BufferID.FoundationSnappingRayOrigins;
         public const BufferID ProfileRangeBufferId = BufferID.FoundationSnappingProfileRanges;
-        public const BufferID CsvScratchBufferId = BufferID.FoundationSnappingCsvScratch;
         public const BufferID DebugRayBufferId = BufferID.FoundationSnappingDebugRays;
         public const BufferID IndirectArgsBufferId = BufferID.FoundationSnappingIndirectArgs;
         public const string DumpPath = "Docs/AgentLogs/Dump_1306_Construction_FoundationCalculator.bin";
         private const ulong ProfileEditMutationGuardMask =
             (1UL << ((int)RayOriginBufferId & 31)) |
-            (1UL << ((int)ProfileRangeBufferId & 31)) |
-            (1UL << ((int)CsvScratchBufferId & 31));
+            (1UL << ((int)ProfileRangeBufferId & 31));
 
         private const uint FnvOffset = 2166136261u;
         private const uint FnvPrime = 16777619u;
@@ -299,10 +297,16 @@ namespace Hecton8.Construction
         private static FoundationSdfConfigDTO s_SdfConfig = CreateDefaultMockSdfConfig(double3.zero);
         private static IDataVault s_BoundVault;
         private static bool s_TelemetryDumped;
+        private static readonly FoundationTelemetryEntry[] s_TelemetryDumpSnapshot = new FoundationTelemetryEntry[TelemetryCapacity];
+        private static readonly WaitCallback s_TelemetryDumpWorker = WriteTelemetryDumpWorker;
+        private static string s_TelemetryDumpPath;
+        private static int s_TelemetryDumpLength;
+        private static int s_TelemetryDumpInFlight;
         private static bool s_TelemetryCursorSeeded;
         private static uint s_TelemetryCursorSeedGeneration;
         private static int s_ProfileReadFenceDepth;
         private static int s_ProfileWriteFence;
+        private static int s_ProfileImportFaultFlags;
         private static VaultGenerationHandle<FoundationModuleAupDTO> s_ModuleHandle;
         private static VaultGenerationHandle<PylonMatrixDTO> s_PylonMatrixHandle;
         private static VaultGenerationHandle<FoundationPylonSurfaceDTO> s_PylonSurfaceHandle;
@@ -315,7 +319,6 @@ namespace Hecton8.Construction
         private static VaultGenerationHandle<FoundationSdfConfigDTO> s_SdfConfigHandle;
         private static VaultGenerationHandle<FoundationRayOriginDTO> s_RayOriginHandle;
         private static VaultGenerationHandle<FoundationProfileRangeDTO> s_ProfileRangeHandle;
-        private static VaultGenerationHandle<byte> s_CsvScratchHandle;
         private static VaultGenerationHandle<FoundationDebugRayDTO> s_DebugRayHandle;
         private static VaultGenerationHandle<FoundationPylonIndirectArgsDTO> s_IndirectArgsHandle;
         private static int s_ProfileCount;
@@ -384,7 +387,6 @@ namespace Hecton8.Construction
             s_SdfConfigHandle = EnsureVaultHandle(vault, SdfConfigBufferId, 1, ref s_SdfConfigHandle);
             s_RayOriginHandle = EnsureVaultHandle(vault, RayOriginBufferId, RayProfileCapacity, ref s_RayOriginHandle);
             s_ProfileRangeHandle = EnsureVaultHandle(vault, ProfileRangeBufferId, ProfileCapacity, ref s_ProfileRangeHandle);
-            s_CsvScratchHandle = EnsureVaultHandle(vault, CsvScratchBufferId, CsvScratchCapacity, ref s_CsvScratchHandle);
             s_DebugRayHandle = EnsureVaultHandle(vault, DebugRayBufferId, PylonCapacity, ref s_DebugRayHandle);
             s_IndirectArgsHandle = EnsureVaultHandle(vault, IndirectArgsBufferId, 1, ref s_IndirectArgsHandle);
 
@@ -459,7 +461,6 @@ namespace Hecton8.Construction
             s_SdfConfigHandle = default;
             s_RayOriginHandle = default;
             s_ProfileRangeHandle = default;
-            s_CsvScratchHandle = default;
             s_DebugRayHandle = default;
             s_IndirectArgsHandle = default;
         }
@@ -487,7 +488,6 @@ namespace Hecton8.Construction
                    TryReadFoundationBuffer(vault, in s_SdfConfigHandle, SdfConfigBufferId, out views.SdfConfig) &&
                    TryReadFoundationBuffer(vault, in s_RayOriginHandle, RayOriginBufferId, out views.RayOrigins) &&
                    TryReadFoundationBuffer(vault, in s_ProfileRangeHandle, ProfileRangeBufferId, out views.ProfileRanges) &&
-                   TryReadFoundationBuffer(vault, in s_CsvScratchHandle, CsvScratchBufferId, out views.CsvScratch) &&
                    TryReadFoundationBuffer(vault, in s_DebugRayHandle, DebugRayBufferId, out views.DebugRays) &&
                    TryReadFoundationBuffer(vault, in s_IndirectArgsHandle, IndirectArgsBufferId, out views.IndirectArgs);
         }
@@ -631,21 +631,39 @@ namespace Hecton8.Construction
             out int profileCount,
             out int rayCount)
         {
-            if (!TryBeginProfileWriteFence())
+            profileCount = 0;
+            rayCount = 0;
+            Span<FoundationRayOriginDTO> stagedRayOrigins = stackalloc FoundationRayOriginDTO[RayProfileCapacity];
+            Span<FoundationProfileRangeDTO> stagedProfileRanges = stackalloc FoundationProfileRangeDTO[ProfileCapacity];
+            if (!TryParseProfilesFromCsvBytes(
+                    csv,
+                    stagedRayOrigins,
+                    stagedProfileRanges,
+                    out int parsedProfileCount,
+                    out int parsedRayCount))
             {
-                profileCount = 0;
-                rayCount = 0;
                 return false;
             }
 
+            if (!TryBeginProfileWriteFence())
+                return false;
+
             try
             {
-                return TryLoadProfilesFromCsvBytesUnlocked(
-                    csv,
+                if (!TryCommitProfileStaging(
+                    stagedRayOrigins,
+                    stagedProfileRanges,
+                    parsedProfileCount,
+                    parsedRayCount,
                     rayOrigins,
-                    profileRanges,
-                    out profileCount,
-                    out rayCount);
+                    profileRanges))
+                {
+                    return false;
+                }
+
+                profileCount = parsedProfileCount;
+                rayCount = parsedRayCount;
+                return true;
             }
             finally
             {
@@ -653,17 +671,17 @@ namespace Hecton8.Construction
             }
         }
 
-        private static bool TryLoadProfilesFromCsvBytesUnlocked(
+        private static bool TryParseProfilesFromCsvBytes(
             ReadOnlySpan<byte> csv,
-            NativeArray<FoundationRayOriginDTO> rayOrigins,
-            NativeArray<FoundationProfileRangeDTO> profileRanges,
+            Span<FoundationRayOriginDTO> rayOrigins,
+            Span<FoundationProfileRangeDTO> profileRanges,
             out int profileCount,
             out int rayCount)
         {
             profileCount = 0;
             rayCount = 0;
-            if (!rayOrigins.IsCreated ||
-                !profileRanges.IsCreated ||
+            if (rayOrigins.Length <= 0 ||
+                profileRanges.Length <= 0 ||
                 csv.Length <= 0)
             {
                 return false;
@@ -736,55 +754,66 @@ namespace Hecton8.Construction
                 FoundationRayOriginDTO ray = default;
                 ray.ModuleHash = moduleHash;
                 ray.RayIndex = rayIndex;
-                ray.NormalizedOffset = math.clamp(offset, new float3(-1f), new float3(1f));
+                float3 clampedOffset;
+                clampedOffset.x = math.clamp(offset.x, -1f, 1f);
+                clampedOffset.y = math.clamp(offset.y, -1f, 1f);
+                clampedOffset.z = math.clamp(offset.z, -1f, 1f);
+                ray.NormalizedOffset = clampedOffset;
                 ray.RadiusMultiplier = SanitizePositive(radiusMultiplier, 1f);
                 ray.Flags = FoundationPylonFlags.Active;
                 rayOrigins[writeIndex] = ray;
                 rayCount = math.max(rayCount, writeIndex + 1);
             }
 
-            s_ProfileCount = profileCount;
-            s_RayOriginCount = rayCount;
             return profileCount > 0 && rayCount > 0;
         }
 
-        public static unsafe bool TryLoadProfilesFromCsvFile(string path)
+        private static bool TryCommitProfileStaging(
+            ReadOnlySpan<FoundationRayOriginDTO> stagedRayOrigins,
+            ReadOnlySpan<FoundationProfileRangeDTO> stagedProfileRanges,
+            int stagedProfileCount,
+            int stagedRayCount,
+            NativeArray<FoundationRayOriginDTO> rayOrigins,
+            NativeArray<FoundationProfileRangeDTO> profileRanges)
+        {
+            if (!rayOrigins.IsCreated ||
+                !profileRanges.IsCreated ||
+                stagedProfileCount <= 0 ||
+                stagedRayCount <= 0 ||
+                stagedProfileCount > profileRanges.Length ||
+                stagedRayCount > rayOrigins.Length)
+            {
+                return false;
+            }
+
+            for (int profileIndex = 0; profileIndex < stagedProfileCount; profileIndex++)
+                profileRanges[profileIndex] = stagedProfileRanges[profileIndex];
+
+            for (int rayIndex = 0; rayIndex < stagedRayCount; rayIndex++)
+                rayOrigins[rayIndex] = stagedRayOrigins[rayIndex];
+
+            s_ProfileCount = stagedProfileCount;
+            s_RayOriginCount = stagedRayCount;
+            return true;
+        }
+
+        public static bool TryLoadProfilesFromCsvFile(string path)
         {
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            if (!TryBeginProfileWriteFence())
-                return false;
-
-            IDataVault vault = s_BoundVault;
-            if (vault == null)
-            {
-                EndProfileWriteFence();
-                return false;
-            }
-
-            InitializeVault(vault);
-            int profileEditLockCount = 0;
             try
             {
-                if (!TryBeginProfileEditLocks(vault, out profileEditLockCount))
-                    return false;
+                Span<byte> scratch = stackalloc byte[CsvScratchCapacity];
+                Span<FoundationRayOriginDTO> stagedRayOrigins = stackalloc FoundationRayOriginDTO[RayProfileCapacity];
+                Span<FoundationProfileRangeDTO> stagedProfileRanges = stackalloc FoundationProfileRangeDTO[ProfileCapacity];
 
-                if (!TryReadVaultViews(vault, out FoundationSnappingVaultViews views) ||
-                    !views.CsvScratch.IsCreated ||
-                    views.CsvScratch.Length <= 0)
-                {
-                    return false;
-                }
-
-                // COLD ALLOC: FileStream[1] - designer CSV authoring bridge; bytes land in Vault scratch - owner: SHINOBU_252
+                // COLD ALLOC: FileStream[1] - designer CSV authoring bridge; bytes stay in bounded stack scratch - owner: SHINOBU_252
                 using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                 long length = stream.Length;
-                if (length <= 0L || length > views.CsvScratch.Length)
+                if (length <= 0L || length > CsvScratchCapacity)
                     return false;
 
-                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(views.CsvScratch);
-                Span<byte> scratch = new Span<byte>(scratchPtr, views.CsvScratch.Length);
                 int totalRead = 0;
                 int expected = (int)length;
                 while (totalRead < expected)
@@ -799,21 +828,59 @@ namespace Hecton8.Construction
                 if (totalRead <= 0)
                     return false;
 
-                return TryLoadProfilesFromCsvBytesUnlocked(
-                    scratch.Slice(0, totalRead),
-                    views.RayOrigins,
-                    views.ProfileRanges,
-                    out _,
-                    out _);
+                if (!TryParseProfilesFromCsvBytes(
+                        scratch.Slice(0, totalRead),
+                        stagedRayOrigins,
+                        stagedProfileRanges,
+                        out int stagedProfileCount,
+                        out int stagedRayCount))
+                {
+                    return false;
+                }
+
+                if (!TryBeginProfileWriteFence())
+                    return false;
+
+                try
+                {
+                    IDataVault vault = s_BoundVault;
+                    if (vault == null)
+                        return false;
+
+                    InitializeVault(vault);
+                    int profileEditLockCount = 0;
+                    if (!TryBeginProfileEditLocks(vault, out profileEditLockCount))
+                        return false;
+
+                    try
+                    {
+                        if (!TryReadFoundationBuffer(vault, in s_RayOriginHandle, RayOriginBufferId, out NativeArray<FoundationRayOriginDTO> rayOrigins) ||
+                            !TryReadFoundationBuffer(vault, in s_ProfileRangeHandle, ProfileRangeBufferId, out NativeArray<FoundationProfileRangeDTO> profileRanges))
+                        {
+                            return false;
+                        }
+
+                        return TryCommitProfileStaging(
+                            stagedRayOrigins,
+                            stagedProfileRanges,
+                            stagedProfileCount,
+                            stagedRayCount,
+                            rayOrigins,
+                            profileRanges);
+                    }
+                    finally
+                    {
+                        EndProfileEditLocks(vault, profileEditLockCount);
+                    }
+                }
+                finally
+                {
+                    EndProfileWriteFence();
+                }
             }
             catch
             {
                 return false;
-            }
-            finally
-            {
-                EndProfileEditLocks(vault, profileEditLockCount);
-                EndProfileWriteFence();
             }
         }
 #endif
@@ -903,7 +970,7 @@ namespace Hecton8.Construction
             entry.MaxResolvedLength = counters.MaxResolvedLength;
             entry.SolverMicroseconds = math.max(0f, math.isfinite(solverMicroseconds) ? solverMicroseconds : 0f);
             entry.GlobalQualityWeight = SanitizeQuality(quality);
-            entry.Flags = counters.Flags;
+            entry.Flags = counters.Flags | unchecked((uint)Interlocked.Exchange(ref s_ProfileImportFaultFlags, 0));
             entry.ResultHash = counters.ResultHash;
             telemetry[writeIndex] = entry;
         }
@@ -916,25 +983,86 @@ namespace Hecton8.Construction
             if (s_TelemetryDumped && !force)
                 return true;
 
+            if (Interlocked.CompareExchange(ref s_TelemetryDumpInFlight, 1, 0) != 0)
+                return false;
+
             try
             {
                 string resolvedPath = ResolveDumpPath(path);
                 if (string.IsNullOrEmpty(resolvedPath))
+                {
+                    Volatile.Write(ref s_TelemetryDumpInFlight, 0);
+                    return false;
+                }
+
+                int entryCount = math.min(telemetry.Length, s_TelemetryDumpSnapshot.Length);
+                if (entryCount <= 0)
+                {
+                    Volatile.Write(ref s_TelemetryDumpInFlight, 0);
+                    return false;
+                }
+
+                for (int i = 0; i < entryCount; i++)
+                    s_TelemetryDumpSnapshot[i] = telemetry[i];
+
+                s_TelemetryDumpPath = resolvedPath;
+                Volatile.Write(ref s_TelemetryDumpLength, entryCount);
+                if (!ThreadPool.QueueUserWorkItem(s_TelemetryDumpWorker))
+                {
+                    s_TelemetryDumpPath = null;
+                    Volatile.Write(ref s_TelemetryDumpLength, 0);
+                    Volatile.Write(ref s_TelemetryDumpInFlight, 0);
+                    return false;
+                }
+
+                return true;
+            }
+            catch
+            {
+                s_TelemetryDumpPath = null;
+                Volatile.Write(ref s_TelemetryDumpLength, 0);
+                Volatile.Write(ref s_TelemetryDumpInFlight, 0);
+                return false;
+            }
+        }
+
+        private static void WriteTelemetryDumpWorker(object state)
+        {
+            try
+            {
+                string resolvedPath = s_TelemetryDumpPath;
+                int entryCount = Volatile.Read(ref s_TelemetryDumpLength);
+                if (!string.IsNullOrEmpty(resolvedPath) &&
+                    entryCount > 0 &&
+                    TryWriteTelemetryDumpSnapshotCold(resolvedPath, entryCount))
+                {
+                    s_TelemetryDumped = true;
+                }
+            }
+            finally
+            {
+                s_TelemetryDumpPath = null;
+                Volatile.Write(ref s_TelemetryDumpLength, 0);
+                Volatile.Write(ref s_TelemetryDumpInFlight, 0);
+            }
+        }
+
+        private static bool TryWriteTelemetryDumpSnapshotCold(string resolvedPath, int entryCount)
+        {
+            try
+            {
+                int clampedCount = math.min(math.max(0, entryCount), s_TelemetryDumpSnapshot.Length);
+                if (string.IsNullOrEmpty(resolvedPath) || clampedCount <= 0)
                     return false;
 
                 string directory = Path.GetDirectoryName(resolvedPath);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
+                // COLD ALLOC: FileStream[1] - fault dump persistence worker; never called by profile import guard - owner: SHINOBU_252
                 using FileStream stream = new FileStream(resolvedPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                unsafe
-                {
-                    void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                    int bytes = UnsafeUtility.SizeOf<FoundationTelemetryEntry>() * telemetry.Length;
-                    stream.Write(new ReadOnlySpan<byte>(ptr, bytes));
-                }
-
-                s_TelemetryDumped = true;
+                ReadOnlySpan<FoundationTelemetryEntry> entries = s_TelemetryDumpSnapshot.AsSpan(0, clampedCount);
+                stream.Write(MemoryMarshal.AsBytes(entries));
                 return true;
             }
             catch
@@ -1099,12 +1227,23 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            if (buffer.IsCreated && buffer.Length >= requiredLength)
-                return true;
+            bool releaseOnFailure = true;
+            try
+            {
+                if (buffer.IsCreated && buffer.Length >= requiredLength)
+                {
+                    releaseOnFailure = false;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, SystemID.Construction);
-            buffer = default;
-            return false;
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnFailure)
+                    vault.ReleaseWriteLock(in handle, SystemID.Construction);
+            }
         }
 
         private static bool TryReadFoundationBuffer<T>(
@@ -1164,7 +1303,10 @@ namespace Hecton8.Construction
                 return false;
 
             if (!vault.TryAcquireMutationGuard(ProfileEditMutationGuardMask))
+            {
+                RecordProfileImportFault(FoundationPylonFlags.ProfileEditContention);
                 return false;
+            }
 
             lockedCount = 1;
             return true;
@@ -1176,6 +1318,19 @@ namespace Hecton8.Construction
                 return;
 
             vault.ReleaseMutationGuard(ProfileEditMutationGuardMask);
+        }
+
+        private static void RecordProfileImportFault(uint flag)
+        {
+            int flagBits = unchecked((int)flag);
+            int observed;
+            int updated;
+            do
+            {
+                observed = Volatile.Read(ref s_ProfileImportFaultFlags);
+                updated = observed | flagBits;
+            }
+            while (Interlocked.CompareExchange(ref s_ProfileImportFaultFlags, updated, observed) != observed);
         }
 #endif
 
@@ -1301,9 +1456,9 @@ namespace Hecton8.Construction
             return any && math.isfinite(value);
         }
 
-        private static int FindProfile(NativeArray<FoundationProfileRangeDTO> profileRanges, int count, uint moduleHash)
+        private static int FindProfile(ReadOnlySpan<FoundationProfileRangeDTO> profileRanges, int count, uint moduleHash)
         {
-            int safeCount = math.min(count, profileRanges.IsCreated ? profileRanges.Length : 0);
+            int safeCount = math.min(count, profileRanges.Length);
             for (int i = 0; i < safeCount; i++)
             {
                 if (profileRanges[i].ModuleHash == moduleHash)

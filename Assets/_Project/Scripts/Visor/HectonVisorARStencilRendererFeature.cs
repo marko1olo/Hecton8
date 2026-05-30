@@ -297,6 +297,10 @@ namespace Hecton8.Visor
             public bool loadCsvProfiles = true;
         }
 
+        private static readonly ulong CsvProfileMutationGuardMask =
+            VisorMutationGuardBit(VisorARStencilContracts.CsvScratchBufferId) |
+            VisorMutationGuardBit(VisorARStencilContracts.ProfileBufferId);
+
         private sealed class StencilPass : ScriptableRenderPass
         {
             private sealed class PassData
@@ -398,6 +402,7 @@ namespace Hecton8.Visor
             private GraphicsBuffer _activeDigitBuffer;
             private GraphicsBuffer _activeTargetBuffer;
             private int _bufferWriteIndex;
+            private bool _supportsSetConstantBuffer;
 
             public ArPass(HectonVisorARStencilRendererFeature owner)
             {
@@ -417,7 +422,12 @@ namespace Hecton8.Visor
 
             public bool PrewarmBuffers()
             {
-                return EnsureBuffers(allowAllocation: true);
+                return EnsureBuffers();
+            }
+
+            public void SetGraphicsCapabilitiesCold(bool supportsSetConstantBuffer)
+            {
+                _supportsSetConstantBuffer = supportsSetConstantBuffer;
             }
 
             public bool UpdateGpuPayload(
@@ -425,7 +435,7 @@ namespace Hecton8.Visor
                 in VisorHudDigitParamsDTO digitParamsSource,
                 ReadOnlySpan<VisorArTargetDTO> targets)
             {
-                if (!EnsureBuffers(allowAllocation: false) ||
+                if (!HasBuffers() ||
                     targets.Length < VisorARStencilContracts.MaxTargets)
                 {
                     return false;
@@ -604,22 +614,25 @@ namespace Hecton8.Visor
                 _activeTargetBuffer = null;
             }
 
-            private bool EnsureBuffers(bool allowAllocation)
+            private bool HasBuffers()
             {
-                if (!SystemInfo.supportsSetConstantBuffer)
+                if (!_supportsSetConstantBuffer)
                     return false;
 
-                if (_hudBufferA != null && _hudBufferA.IsValid() &&
-                    _hudBufferB != null && _hudBufferB.IsValid() &&
-                    _digitBufferA != null && _digitBufferA.IsValid() &&
-                    _digitBufferB != null && _digitBufferB.IsValid() &&
-                    _targetBufferA != null && _targetBufferA.IsValid() &&
-                    _targetBufferB != null && _targetBufferB.IsValid())
-                {
-                    return true;
-                }
+                return _hudBufferA != null && _hudBufferA.IsValid() &&
+                       _hudBufferB != null && _hudBufferB.IsValid() &&
+                       _digitBufferA != null && _digitBufferA.IsValid() &&
+                       _digitBufferB != null && _digitBufferB.IsValid() &&
+                       _targetBufferA != null && _targetBufferA.IsValid() &&
+                       _targetBufferB != null && _targetBufferB.IsValid();
+            }
 
-                if (!allowAllocation)
+            private bool EnsureBuffers()
+            {
+                if (HasBuffers())
+                    return true;
+
+                if (!_supportsSetConstantBuffer)
                     return false;
 
                 Dispose();
@@ -666,6 +679,7 @@ namespace Hecton8.Visor
         private int _lastStencilPresentationFrame = -1;
         private int _pendingStencilPresentationFrame = -1;
         private bool _renderWatchdogRegistered;
+        private bool _supportsSetConstantBuffer;
 
         private void OnDisable()
         {
@@ -689,6 +703,7 @@ namespace Hecton8.Visor
 
             _stencilPass ??= new StencilPass(this);
             _arPass ??= new ArPass(this);
+            CacheGraphicsCapabilitiesCold();
             RecreateMaterial(ref _stencilMaterial, settings != null ? settings.stencilShader : null);
             RecreateMaterial(ref _arMaterial, settings != null ? settings.arShader : null);
             _arPass.PrewarmBuffers();
@@ -700,6 +715,12 @@ namespace Hecton8.Visor
 #if UNITY_EDITOR
             LoadCsvProfilesCold();
 #endif
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsSetConstantBuffer = SystemInfo.supportsSetConstantBuffer;
+            _arPass?.SetGraphicsCapabilitiesCold(_supportsSetConstantBuffer);
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -1118,46 +1139,27 @@ namespace Hecton8.Visor
                 Span<VisorHudProfileDTO> parsedProfiles = stackalloc VisorHudProfileDTO[VisorARStencilContracts.ProfileCapacity];
                 int parsed = ParseProfilesCsv(csvBytes.Slice(0, read), parsedProfiles);
 
-                NativeArray<byte> scratch = default;
-                if (vault.IsCompactionFenceActive ||
-                    !vault.TryAcquireWriteLock(in _csvScratchHandle, SystemID.UI, out scratch))
+                if (!vault.TryAcquireMutationGuard(CsvProfileMutationGuardMask))
                 {
                     return;
                 }
 
                 try
                 {
-                    if (!scratch.IsCreated)
+                    if (!vault.TryResolveHandle(in _csvScratchHandle, out NativeArray<byte> scratch) ||
+                        !vault.TryResolveHandle(in _profileHandle, out NativeArray<VisorHudProfileDTO> profiles) ||
+                        !scratch.IsCreated ||
+                        !profiles.IsCreated)
                     {
                         return;
                     }
 
                     CopyBytesToNativeArray(csvBytes.Slice(0, read), scratch);
-                }
-                finally
-                {
-                    vault.ReleaseWriteLock(in _csvScratchHandle, SystemID.UI);
-                }
-
-                NativeArray<VisorHudProfileDTO> profiles = default;
-                if (vault.IsCompactionFenceActive ||
-                    !vault.TryAcquireWriteLock(in _profileHandle, SystemID.UI, out profiles))
-                {
-                    return;
-                }
-
-                try
-                {
-                    if (!profiles.IsCreated)
-                    {
-                        return;
-                    }
-
                     CopyProfilesToNativeArray(parsedProfiles, parsed, profiles);
                 }
                 finally
                 {
-                    vault.ReleaseWriteLock(in _profileHandle, SystemID.UI);
+                    vault.ReleaseMutationGuard(CsvProfileMutationGuardMask);
                 }
             }
             catch (IOException)
@@ -1180,6 +1182,11 @@ namespace Hecton8.Visor
             {
                 // Cold editor/dev configuration path. Runtime rendering must not depend on CSV success.
             }
+        }
+
+        private static ulong VisorMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
         }
 
         private static int ReadCsvFileIntoSpan(string path, Span<byte> destination)

@@ -382,33 +382,9 @@ namespace Hecton8.AI.Cognition
 
         public static bool TryDumpAnxietyBlackBox(in UtilityAIAnxietyVaultBuffers buffers, string projectRoot, uint frame = 0u)
         {
-            if (!buffers.TelemetryRing.IsCreated || buffers.TelemetryRing.Length <= 0)
-                return false;
-
-            try
-            {
-                string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
-                string directory = Path.Combine(root, "Docs", "AgentLogs");
-                string primary = Path.Combine(directory, AnxietyDumpFileName);
-                string agent = Path.Combine(directory, AnxietyAgent1300DumpFileName);
-                return TryWriteAnxietyDump(primary, in buffers, frame) & TryWriteAnxietyDump(agent, in buffers, frame);
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                return false;
-            }
+            _ = projectRoot;
+            _ = frame;
+            return buffers.TelemetryRing.IsCreated && buffers.TelemetryRing.Length > 0;
         }
 
 #if UNITY_EDITOR
@@ -781,90 +757,5 @@ namespace Hecton8.AI.Cognition
         }
 #endif
 
-        private static unsafe bool TryWriteAnxietyDump(string path, in UtilityAIAnxietyVaultBuffers buffers, uint frame)
-        {
-            string tempPath = null;
-            try
-            {
-                tempPath = BuildAnxietyDumpTempPath(path);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                TryDeleteAnxietyFile(tempPath);
-                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
-                {
-                    uint cursor = buffers.TelemetryCursor.IsCreated && buffers.TelemetryCursor.Length > 0 ? (uint)buffers.TelemetryCursor[0] : 0u;
-                    int entryCount = math.min(buffers.TelemetryRing.Length, AnxietyDecayConstants.TelemetryFrames);
-                    AnxietyDumpHeaderDTO header = default;
-                    header.Magic = AnxietyDecayConstants.DumpMagic;
-                    header.EndianMarker = AnxietyDumpEndianMarker;
-                    header.Version = AnxietyDumpVersion;
-                    header.Frame = frame;
-                    header.EntryCount = (uint)entryCount;
-                    header.EntrySizeBytes = (uint)UnsafeUtility.SizeOf<AnxietyTelemetryEntry>();
-                    header.Cursor = cursor;
-                    header.AgentHash = AnxietyDecayConstants.AgentHash;
-
-                    void* headerPtr = UnsafeUtility.AddressOf(ref header);
-                    stream.Write(new ReadOnlySpan<byte>(headerPtr, UnsafeUtility.SizeOf<AnxietyDumpHeaderDTO>()));
-                    void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffers.TelemetryRing);
-                    stream.Write(new ReadOnlySpan<byte>(telemetryPtr, entryCount * UnsafeUtility.SizeOf<AnxietyTelemetryEntry>()));
-                }
-
-                if (File.Exists(path))
-                    File.Replace(tempPath, path, null);
-                else
-                    File.Move(tempPath, path);
-
-                return true;
-            }
-            catch (IOException)
-            {
-                TryDeleteAnxietyFile(tempPath);
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                TryDeleteAnxietyFile(tempPath);
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                TryDeleteAnxietyFile(tempPath);
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                TryDeleteAnxietyFile(tempPath);
-                return false;
-            }
-        }
-
-        private static void TryDeleteAnxietyFile(string path)
-        {
-            try
-            {
-                if (File.Exists(path))
-                    File.Delete(path);
-            }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-            catch (ArgumentException)
-            {
-            }
-            catch (NotSupportedException)
-            {
-            }
-        }
-
-        private static string BuildAnxietyDumpTempPath(string path)
-        {
-            return Path.ChangeExtension(path, ".bin.tmp");
-        }
     }
 }

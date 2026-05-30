@@ -15,7 +15,7 @@ using UnityEngine;
 
 namespace Hecton8.Power
 {
-    public sealed unsafe class BatteryChargerLogisticsRuntime : IBatteryChargerLogisticsService, IGlobalRegistryHotSwapListener
+    public sealed unsafe class BatteryChargerLogisticsRuntime : IBatteryChargerLogisticsService, IColdTickable, IGlobalRegistryHotSwapListener
     {
         private static int s_x001BatteryChargerLogisticsRuntimeSignalPushDropCount;
         private const uint SystemHash = 0x53323330u; // S230
@@ -83,6 +83,7 @@ namespace Hecton8.Power
         private bool _registeredSimulation;
         private bool _registeredPostSimulation;
         private bool _registeredVisualSync;
+        private bool _registeredColdTick;
         private bool _hotSwapRegistered;
         private bool _vaultInitialized;
         private bool _layoutChecked;
@@ -91,6 +92,7 @@ namespace Hecton8.Power
         private bool _simulationScheduled;
         private bool _mockGenerationScheduled;
         private bool _hasPendingVaultRebind;
+        private bool _vaultRepairRequested;
         private bool _usingMockInventorySlots;
         private bool _jobLockedMockInventorySlots;
         private bool _dumpWrittenThisFault;
@@ -678,6 +680,8 @@ namespace Hecton8.Power
                 _registeredPostSimulation = true;
             if (!_registeredVisualSync && GlobalRegistry.TryRegisterDispatcherSystem(_visualSyncPhase))
                 _registeredVisualSync = true;
+            if (!_registeredColdTick && GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment))
+                _registeredColdTick = true;
         }
 
         private void UnregisterDispatcherPhases()
@@ -705,6 +709,12 @@ namespace Hecton8.Power
                 GlobalRegistry.UnregisterDispatcherSystem(_visualSyncPhase);
                 _registeredVisualSync = false;
             }
+
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _registeredColdTick = false;
+            }
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -724,9 +734,27 @@ namespace Hecton8.Power
                 _registeredSimulation = false;
                 _registeredPostSimulation = false;
                 _registeredVisualSync = false;
+                _registeredColdTick = false;
                 if (currentService != null)
                     RegisterDispatcherPhases();
             }
+        }
+
+        public void ColdTick()
+        {
+            if (_shutdown)
+                return;
+
+            ApplyPendingVaultRebindIfIdle();
+
+            IDataVault vault = ResolveCachedVault();
+            if (vault != null)
+                _vaultRepairRequested = !EnsureVaultState(vault);
+            else
+                _vaultRepairRequested = true;
+
+            if (!HasGraphicsBuffersReady())
+                EnsureGraphicsBuffers();
         }
 
         private void TryRegisterHotSwapListener()
@@ -802,8 +830,11 @@ namespace Hecton8.Power
         private void PreSimulationTick(in DispatcherTimingDTO timing)
         {
             IDataVault vault = ResolveCachedVault();
-            if (vault == null || !EnsureVaultState(vault))
+            if (vault == null || !HasVaultStateReady())
+            {
+                _vaultRepairRequested = true;
                 return;
+            }
 
             ApplyTuning(in timing);
 #if UNITY_EDITOR
@@ -818,8 +849,11 @@ namespace Hecton8.Power
                 return dependsOn;
 
             IDataVault vault = ResolveCachedVault();
-            if (vault == null || !EnsureVaultState(vault))
+            if (vault == null || !HasVaultStateReady())
+            {
+                _vaultRepairRequested = true;
                 return dependsOn;
+            }
 
             _lastFrame = context.Frame;
             if (_activeCount <= 0)
@@ -980,7 +1014,7 @@ namespace Hecton8.Power
                 !Resolve(in _handles.VisualStates, out NativeArray<ChargerVisualStateDTO> visuals) ||
                 !Resolve(in _handles.TelemetryRing, out NativeArray<ChargerTelemetryEntry> telemetry) ||
                 !Resolve(in _handles.TelemetryCursor, out NativeArray<uint> cursor) ||
-                !EnsureGraphicsBuffers())
+                !HasGraphicsBuffersReady())
             {
                 DisableVisualGlobals();
                 return;
@@ -1080,6 +1114,31 @@ namespace Hecton8.Power
             }
 
             return _vaultInitialized && (_defaultsInitialized || !requireDefaults || !allowMockFallback);
+        }
+
+        private bool HasVaultStateReady(bool requireDefaults = true)
+        {
+            if (_vault == null ||
+                !_vaultInitialized ||
+                !_layoutChecked ||
+                !_layoutValid)
+            {
+                return false;
+            }
+
+            bool allowMockFallback = AllowEmergencyMockNetwork();
+            if (requireDefaults && allowMockFallback && !_defaultsInitialized)
+                return false;
+
+            return TryResolveSimulationBuffers(
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _);
         }
 
         private static bool InventorySlotRuntimeLayoutValid()
@@ -1350,11 +1409,23 @@ namespace Hecton8.Power
             if (!vault.TryAcquireWriteLock(in handle, SystemID.Power, out slots))
                 return false;
 
-            if (slots.IsCreated)
-                return true;
+            bool ownershipTransferred = false;
+            try
+            {
+                if (slots.IsCreated)
+                {
+                    ownershipTransferred = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, SystemID.Power);
-            return false;
+                slots = default;
+                return false;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                    vault.ReleaseWriteLock(in handle, SystemID.Power);
+            }
         }
 
         private static bool TryBorrowInventorySlotHandle(IDataVault vault, out VaultGenerationHandle<InventorySlotDTO> handle)
@@ -1826,6 +1897,17 @@ namespace Hecton8.Power
             }
 
             return _visualBufferA != null && _visualBufferB != null;
+        }
+
+        private bool HasGraphicsBuffersReady()
+        {
+            int stride = UnsafeUtility.SizeOf<ChargerVisualStateDTO>();
+            return _visualBufferA != null &&
+                   _visualBufferA.count == BatteryChargerLogisticsConstants.DefaultLinkCapacity &&
+                   _visualBufferA.stride == stride &&
+                   _visualBufferB != null &&
+                   _visualBufferB.count == BatteryChargerLogisticsConstants.DefaultLinkCapacity &&
+                   _visualBufferB.stride == stride;
         }
 
         private static bool EnsureBuffer(ref GraphicsBuffer buffer, int count, int stride)

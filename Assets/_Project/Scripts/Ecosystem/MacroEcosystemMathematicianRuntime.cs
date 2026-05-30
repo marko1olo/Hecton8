@@ -48,6 +48,15 @@ namespace Hecton8.Ecosystem
             MutationGuardBit(BufferID.ShinobuMacroEcosystemCounters) |
             MutationGuardBit(BufferID.ShinobuMacroEcosystemFaultFlags) |
             MutationGuardBit(BufferID.ShinobuMacroEcosystemTelemetryRing);
+#if UNITY_EDITOR
+        private static readonly ulong BiomeSpecImportMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuMacroEcosystemBiomeSpecs);
+        private static readonly ulong BiomeSpecImportCounterMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuMacroEcosystemCounters);
+        private static readonly byte[] s_biomeCsvImportScratch = new byte[CsvScratchBytes];
+        private static readonly BiomeEcosystemSpecDTO[] s_biomeSpecImportScratch = new BiomeEcosystemSpecDTO[BiomeSpecCapacity];
+        private static int s_biomeCsvImportScratchBusy;
+#endif
 
         private static MacroEcosystemMathematicianRuntime s_runtime;
 
@@ -678,7 +687,7 @@ namespace Hecton8.Ecosystem
             if (!_jobGuardHeld)
                 return;
 
-            IDataVault vault = _jobGuardVault ?? _vault;
+            IDataVault vault = _jobGuardVault;
             _jobGuardVault = null;
             _jobGuardHeld = false;
             if (vault != null)
@@ -894,31 +903,22 @@ namespace Hecton8.Ecosystem
             if (lastWriteUtc.Ticks == _csvTimestampTicks)
                 return;
 
-            if (!TryOpenVaultBuffer(vault, ref _csvScratchHandle, BufferID.ShinobuMacroEcosystemCsvScratch, CsvScratchBytes, out NativeArray<byte> scratch) ||
-                !TryOpenVaultBuffer(vault, ref _biomeSpecHandle, BufferID.ShinobuMacroEcosystemBiomeSpecs, BiomeSpecCapacity, out NativeArray<BiomeEcosystemSpecDTO> specs) ||
-                !TryOpenVaultBuffer(vault, ref _counterHandle, BufferID.ShinobuMacroEcosystemCounters, CounterCapacity, out NativeArray<MacroEcosystemCounterDTO> counters))
-            {
+            if (System.Threading.Interlocked.CompareExchange(ref s_biomeCsvImportScratchBusy, 1, 0) != 0)
                 return;
-            }
 
             try
             {
-                int bytesRead;
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                {
-                    int maxBytes = math.min(scratch.Length, CsvScratchBytes);
-                    bytesRead = stream.Read(new Span<byte>(NativeArrayUnsafeUtility.GetUnsafePtr(scratch), maxBytes));
-                }
-
+                int bytesRead = ReadCsvBytesCold(path, s_biomeCsvImportScratch, CsvScratchBytes);
                 if (bytesRead <= 0)
                     return;
 
                 int parsed = MacroEcosystemCsvParser.ParseBiomeSpecs(
-                    new ReadOnlySpan<byte>(NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch), bytesRead),
-                    specs);
+                    new ReadOnlySpan<byte>(s_biomeCsvImportScratch, 0, bytesRead),
+                    s_biomeSpecImportScratch);
 
-                if (counters.IsCreated && counters.Length > 6)
-                    counters[6] = MacroEcosystemCounterDTO.FromValue(parsed);
+                if (!TryCommitBiomeSpecs(vault) || !TryCommitBiomeSpecImportCounter(vault, parsed))
+                    return;
+
                 _csvTimestampTicks = lastWriteUtc.Ticks;
             }
             catch (IOException)
@@ -940,6 +940,86 @@ namespace Hecton8.Ecosystem
             catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(0x42494353u, RouteHash, 0f);
+            }
+            finally
+            {
+                System.Threading.Volatile.Write(ref s_biomeCsvImportScratchBusy, 0);
+            }
+        }
+
+        private static int ReadCsvBytesCold(string path, byte[] scratch, int maxBytes)
+        {
+            if (scratch == null || scratch.Length <= 0 || maxBytes <= 0)
+                return 0;
+
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                long boundedLength = stream.Length < maxBytes ? stream.Length : maxBytes;
+                int byteCount = boundedLength > scratch.Length ? scratch.Length : (int)boundedLength;
+                return byteCount > 0 ? stream.Read(scratch, 0, byteCount) : 0;
+            }
+        }
+
+        private bool TryCommitBiomeSpecs(IDataVault vault)
+        {
+            if (vault == null || !vault.TryAcquireMutationGuard(BiomeSpecImportMutationGuardMask))
+                return false;
+
+            try
+            {
+                if (!TryOpenVaultBuffer(
+                        vault,
+                        ref _biomeSpecHandle,
+                        BufferID.ShinobuMacroEcosystemBiomeSpecs,
+                        BiomeSpecCapacity,
+                        out NativeArray<BiomeEcosystemSpecDTO> specs) ||
+                    !specs.IsCreated ||
+                    specs.Length <= 0)
+                {
+                    return false;
+                }
+
+                int copyCount = math.min(s_biomeSpecImportScratch.Length, specs.Length);
+                int byteCount = copyCount * UnsafeUtility.SizeOf<BiomeEcosystemSpecDTO>();
+                void* destination = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(specs);
+                fixed (BiomeEcosystemSpecDTO* source = s_biomeSpecImportScratch)
+                {
+                    UnsafeUtility.MemCpy(destination, source, byteCount);
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(BiomeSpecImportMutationGuardMask);
+            }
+        }
+
+        private bool TryCommitBiomeSpecImportCounter(IDataVault vault, int parsed)
+        {
+            if (vault == null || !vault.TryAcquireMutationGuard(BiomeSpecImportCounterMutationGuardMask))
+                return false;
+
+            try
+            {
+                if (!TryOpenVaultBuffer(
+                        vault,
+                        ref _counterHandle,
+                        BufferID.ShinobuMacroEcosystemCounters,
+                        CounterCapacity,
+                        out NativeArray<MacroEcosystemCounterDTO> counters) ||
+                    !counters.IsCreated ||
+                    counters.Length <= 6)
+                {
+                    return false;
+                }
+
+                counters[6] = MacroEcosystemCounterDTO.FromValue(parsed);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(BiomeSpecImportCounterMutationGuardMask);
             }
         }
 
@@ -2098,11 +2178,23 @@ namespace Hecton8.Ecosystem
     }
 
     #if UNITY_EDITOR
-    internal static class MacroEcosystemCsvParser
+    internal static unsafe class MacroEcosystemCsvParser
     {
         internal static int ParseBiomeSpecs(
             ReadOnlySpan<byte> csv,
             NativeArray<BiomeEcosystemSpecDTO> specs)
+        {
+            if (!specs.IsCreated || specs.Length <= 0)
+                return 0;
+
+            return ParseBiomeSpecs(
+                csv,
+                new Span<BiomeEcosystemSpecDTO>(NativeArrayUnsafeUtility.GetUnsafePtr(specs), specs.Length));
+        }
+
+        internal static int ParseBiomeSpecs(
+            ReadOnlySpan<byte> csv,
+            Span<BiomeEcosystemSpecDTO> specs)
         {
             int parsed = 0;
             int cursor = 0;
@@ -2136,9 +2228,9 @@ namespace Hecton8.Ecosystem
             return parsed;
         }
 
-        private static bool TryInsertBiomeSpec(NativeArray<BiomeEcosystemSpecDTO> specs, BiomeEcosystemSpecDTO spec)
+        private static bool TryInsertBiomeSpec(Span<BiomeEcosystemSpecDTO> specs, BiomeEcosystemSpecDTO spec)
         {
-            if (!specs.IsCreated || specs.Length <= 0 || spec.BiomeHash == 0u)
+            if (specs.Length <= 0 || spec.BiomeHash == 0u)
                 return false;
 
             int slot = MacroEcosystemMath.ResolveOpenAddressSlot(spec.BiomeHash, specs.Length);

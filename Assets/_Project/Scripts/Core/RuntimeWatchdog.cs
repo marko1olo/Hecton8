@@ -15,7 +15,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9490)]
-    public sealed class RuntimeWatchdog : MonoBehaviour, IUpdatable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed class RuntimeWatchdog : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         public interface IEmergencyResetTarget
         {
@@ -131,6 +131,7 @@ namespace Hecton8.Core
         private static long _runtimeMemoryBreachBoundBytes;
 
         private bool _registeredUpdatable;
+        private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
         private bool _registeredHotSwapListener;
         private IRuntimeWatchdogWorldHealthBridge _persistentWorldRegistry;
@@ -154,6 +155,7 @@ namespace Hecton8.Core
         private long _lastMmfSectorHash = InvalidMmfSectorHash;
         private long _lastTotalAllocatedMemoryBytes;
         private long _runtimeMemorySpikeThresholdBytes = RuntimeMemorySpikeThresholdBytes;
+        private bool _runtimeOwnerRejected;
 
         public static int ActiveTargetFPS => HectonXRRuntimeState.IsXRActive ? VrTargetFPS : TargetFPS;
         public ServiceHeartbeatState HeartbeatState => _registeredUpdatable ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.Booting;
@@ -326,6 +328,9 @@ namespace Hecton8.Core
 
         public void InitializeService()
         {
+            if (_runtimeOwnerRejected)
+                return;
+
             GlobalTelemetryBus.Initialize();
             MathGuard.Initialize();
             FrameTimeWatchdog.InitializeCold();
@@ -337,20 +342,14 @@ namespace Hecton8.Core
             ResetRegistryHeartbeatGuard(UnityEngine.Time.realtimeSinceStartupAsDouble);
             TryRegisterHotSwapListener();
             TryRegisterUpdatable();
+            TryRegisterSlowTickable();
             TryRegisterLateFrameTickable();
         }
 
         private void Awake()
         {
-            RuntimeWatchdog registeredWatchdog = GlobalRegistry.RuntimeWatchdog;
-            if (registeredWatchdog != null && registeredWatchdog != this)
-            {
-                if (Application.isPlaying)
-                    Destroy(gameObject);
-                else
-                    DestroyImmediate(gameObject);
+            if (!TryClaimRuntimeOwnership())
                 return;
-            }
 
             _nextSampleFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + SampleIntervalFrames;
             _nextMmfHealthCheckTime = UnityEngine.Time.realtimeSinceStartupAsDouble + MmfHealthCheckIntervalSeconds;
@@ -364,19 +363,33 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            if (_runtimeOwnerRejected)
+                return;
+
             BlackBoxHeartbeatThread.Start();
             TryRegisterUpdatable();
+            TryRegisterSlowTickable();
             TryRegisterLateFrameTickable();
         }
 
         private void Start()
         {
+            if (_runtimeOwnerRejected)
+                return;
+
             TryRegisterUpdatable();
+            TryRegisterSlowTickable();
             TryRegisterLateFrameTickable();
         }
 
         private void OnDisable()
         {
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+                _registeredSlowTick = false;
+            }
+
             if (_registeredLateFrameTick)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
@@ -424,6 +437,31 @@ namespace Hecton8.Core
             ResetMemorySpikeTracker();
         }
 
+        private bool TryClaimRuntimeOwnership()
+        {
+            RuntimeWatchdog registeredWatchdog = GlobalRegistry.RuntimeWatchdog;
+            if (registeredWatchdog != null && !ReferenceEquals(registeredWatchdog, this))
+            {
+                if (Application.isPlaying)
+                {
+                    _runtimeOwnerRejected = true;
+                    Destroy(gameObject);
+                }
+                else
+                {
+                    DestroyImmediate(gameObject);
+                }
+
+                return false;
+            }
+
+            _runtimeOwnerRejected = false;
+            if (Application.isPlaying && registeredWatchdog == null)
+                GlobalRegistry.RegisterRuntimeWatchdogRuntime(this);
+
+            return true;
+        }
+
         public void Tick(float deltaTime)
         {
             BlackBoxHeartbeatThread.Ping();
@@ -435,20 +473,28 @@ namespace Hecton8.Core
             FrameTimeWatchdog.Tick();
             EnforceFrameBudget(deltaTime);
             TickGcCollectionSentinel(deltaTime);
-            TickMemorySpikeTracker(frame);
 
             double now = UnityEngine.Time.realtimeSinceStartupAsDouble;
             EnforceHudHeartbeat(now, frame);
             QueueMmfHealthCheckIfDue(now);
             if (now >= _nextRegistryHeartbeatGuardTime)
                 SampleRegistryHeartbeatsIfDue(now);
+        }
 
+        public void SlowTick()
+        {
+            BlackBoxHeartbeatThread.Ping();
+            if (SimulationSignalRoute.SimulationPaused)
+                return;
+
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            TickMemorySpikeTracker(frame);
             if (frame < _nextSampleFrame)
                 return;
 
             _nextSampleFrame = frame + SampleIntervalFrames;
             NativeMemorySentinel.AuditLongLivedTransientAllocations(frame);
-            SampleRuntimeLanes(now);
+            SampleRuntimeLanes(UnityEngine.Time.realtimeSinceStartupAsDouble);
         }
 
         private void ResetGcCollectionSentinel()
@@ -1124,6 +1170,14 @@ namespace Hecton8.Core
                 return;
 
             _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+        }
+
+        private void TryRegisterSlowTickable()
+        {
+            if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
         }
 
         private void TryRegisterLateFrameTickable()

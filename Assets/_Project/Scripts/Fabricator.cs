@@ -81,6 +81,15 @@ namespace Hecton8.Crafting
         private bool _activeFabricatorRegistered;
         private bool _activeFabricatorRegistryOverflowed;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_x001FabricatorSignalPushDropCount = 0;
+            s_activeFabricatorRegistryOverflowCount = 0;
+            _activeFabricators.Clear();
+            s_emergencyPowerLockActive = false;
+        }
+
         // ----------------------------------------------------------
         //  INSPECTOR
         // ----------------------------------------------------------
@@ -327,8 +336,6 @@ namespace Hecton8.Crafting
         private const string FabricatorMemoryDumpPath = "Docs/AgentLogs/Dump_1329_Fabricator.bin";
         private const uint FabricatorVaultFailureEnsure = 1u << 0;
         private const uint FabricatorVaultFailureAcquire = 1u << 1;
-        private static readonly ulong FabricatorMemoryTelemetryRingMutationGuardMask =
-            FabricatorMutationGuardBit(BufferID.ShinobuFabricatorMemoryTelemetryRing);
         private static readonly ulong FabricatorUnlockedRecipesMutationGuardMask =
             FabricatorMutationGuardBit(BufferID.ShinobuFabricatorUnlockedRecipes);
 
@@ -1898,17 +1905,17 @@ namespace Hecton8.Crafting
             }
 
             bool telemetryLocked = lockedVault.TryAcquireWriteLock(in _fabricatorMemoryTelemetryRingHandle, SystemID.Crafting, out NativeArray<FabricatorMemoryTelemetryEntry> telemetry);
-            if (!telemetryLocked ||
-                !telemetry.IsCreated ||
-                telemetry.Length < FabricatorMemoryTelemetryRingCapacity)
-            {
-                if (telemetryLocked)
-                    lockedVault.ReleaseWriteLock(in _fabricatorMemoryTelemetryRingHandle, SystemID.Crafting);
+            if (!telemetryLocked)
                 return;
-            }
 
             try
             {
+                if (!telemetry.IsCreated ||
+                    telemetry.Length < FabricatorMemoryTelemetryRingCapacity)
+                {
+                    return;
+                }
+
                 int slot = _fabricatorMemoryTelemetryCursor % FabricatorMemoryTelemetryRingCapacity;
                 uint vaultGeneration = lockedVault.VaultGenerationID;
                 telemetry[slot] = new FabricatorMemoryTelemetryEntry
@@ -1952,36 +1959,23 @@ namespace Hecton8.Crafting
                 return;
             }
 
-            if (!vault.TryAcquireMutationGuard(FabricatorMemoryTelemetryRingMutationGuardMask))
-            {
-                ResetFabricatorMemoryDumpQueue();
-                return;
-            }
-
             bool snapshotReady = false;
-            try
+            if (vault.TryReadOnlyHandle(in _fabricatorMemoryTelemetryRingHandle, out NativeArray<FabricatorMemoryTelemetryEntry>.ReadOnly telemetry) &&
+                telemetry.IsCreated)
             {
-                if (vault.TryReadOnlyHandle(in _fabricatorMemoryTelemetryRingHandle, out NativeArray<FabricatorMemoryTelemetryEntry>.ReadOnly telemetry) &&
-                    telemetry.IsCreated)
+                lock (s_fabricatorMemoryDumpLock)
                 {
-                    lock (s_fabricatorMemoryDumpLock)
-                    {
-                        FabricatorMemoryTelemetryEntry[] snapshotEntries = s_fabricatorMemoryDumpSnapshot.Entries;
-                        int safeLength = math.min(telemetry.Length, snapshotEntries.Length);
-                        for (int i = 0; i < safeLength; i++)
-                            snapshotEntries[i] = telemetry[i];
-                        for (int i = safeLength; i < snapshotEntries.Length; i++)
-                            snapshotEntries[i] = default;
+                    FabricatorMemoryTelemetryEntry[] snapshotEntries = s_fabricatorMemoryDumpSnapshot.Entries;
+                    int safeLength = math.min(telemetry.Length, snapshotEntries.Length);
+                    for (int i = 0; i < safeLength; i++)
+                        snapshotEntries[i] = telemetry[i];
+                    for (int i = safeLength; i < snapshotEntries.Length; i++)
+                        snapshotEntries[i] = default;
 
-                        s_fabricatorMemoryDumpSnapshot.Frame = unchecked((uint)Time.frameCount);
-                        s_fabricatorMemoryDumpSnapshot.DumpPath = ResolveFabricatorMemoryDumpPath();
-                        snapshotReady = true;
-                    }
+                    s_fabricatorMemoryDumpSnapshot.Frame = unchecked((uint)Time.frameCount);
+                    s_fabricatorMemoryDumpSnapshot.DumpPath = ResolveFabricatorMemoryDumpPath();
+                    snapshotReady = true;
                 }
-            }
-            finally
-            {
-                vault.ReleaseMutationGuard(FabricatorMemoryTelemetryRingMutationGuardMask);
             }
 
             if (!snapshotReady)
@@ -4059,6 +4053,13 @@ namespace Hecton8.Crafting
 
             fabricator = null;
             return false;
+        }
+
+        internal static int ActiveFabricatorCount => _activeFabricators.Count;
+
+        internal static Fabricator GetActiveFabricatorAt(int index)
+        {
+            return index >= 0 && index < _activeFabricators.Count ? _activeFabricators[index] : null;
         }
 
         private static bool TryResolveRecipeForResultItem(List<RecipeData> recipes, ItemData resultItem, out RecipeData recipe)

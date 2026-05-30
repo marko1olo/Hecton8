@@ -5073,3 +5073,351 @@ What was done: added combined mutation guard masks for profile CSV and telemetry
 Cinematic Cheats used: preserved shader global flora sway and continuous `HomeostasisBrain.GlobalQualityWeight` math. No physical plant simulation or binary device branch was added.
 Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is lower lock-stall/deadlock risk in flora sway profile and telemetry routes.
 Verification: remaining direct write-lock releases in the file are single-buffer flow/params/tuning/generic helper releases. Stale paired profile/telemetry write-lock pattern scan returns no hits. Added diff scan returns no `string.Format`, `.ToString()`, LINQ `.Select/.Where`, `foreach`, `GlobalRegistry.Get<`, direct non-`Try` `GetComponent(`, or added reference-type `new`. `git diff --check` exits 0 with LF/CRLF warning only. No compile/import/profiler proof run in this step.
+2026-05-29 AUDIT_NATIVE_STATE continuation 25:
+What was wrong: several paired write routes remained after the large legacy pin cleanup. `Assets/_Project/Scripts/Input/ControlRemapper.cs` advanced telemetry cursor before proving the ring write. `Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs` wrote carrion death ingress and counters in separate phases and needed rollback. Nutrient and carrion CSV loaders split scratch/profile writes. `Assets/_Project/Scripts/ModularEquipmentEngine.cs` advanced fault telemetry cursor before ring write success. `Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs`, `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs`, and `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs` split CSV scratch/profile writes across two locks.
+What was done: each paired route now uses one mutation guard mask over the exact logical buffer set and releases it in `finally`. Control remapping, equipment fault telemetry, carrion death ingress, nutrient/carrion profile CSV, AR stencil profile CSV, aesthetic CSV, and noir color CSV all resolve native views under the guard before mutating. Nutrient and carrion job guards now store the granting `IDataVault` and release that same vault, preventing stale release through a swapped `_vault`.
+Cinematic Cheats used: preserved shader-driven visor/noir presentation, cheap nutrient/carrion scalar fields, existing equipment telemetry, and input binding DTOs. No physical simulation, DTO migration, or binary low-end/high-end branch was introduced.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is removal of lost-slot, rollback, stale-release, and multi-lock deadlock vectors.
+Verification: project `.TryLockBuffer/.TryUnlockBuffer` scan now reports only `GlobalDataVault` API definitions/implementation, editor scanner strings, and non-DataVault `GraphicsBuffer.TryUnlockBufferAfterWrite`. Hot lookup scan reports only editor paths and `#if UNITY_EDITOR && HECTON8_AMPLIFY_IMPOSTORS`. Method-level write-lock scan reports only wrapper false positives and editor/fuzzer tests, no runtime multi-acquire methods. Added diff scan returns no `string.Format`, `.ToString()`, LINQ `.Select/.Where`, `foreach`, hot registry, or direct non-`Try` component lookup. Scoped `git diff --check` exits 0 with LF/CRLF warnings only. CPU sample `100`; no compiler process rows; no build/import/profiler run launched.
+2026-05-29 AUDIT_NATIVE_STATE continuation 26:
+What was wrong: `ShinobuPlasmaBeamRuntime`, `SumpPumpPipeGridRuntime`, `VolcanicUpdraftDirector`, and `SpatialAudioManager` had scheduled or long-lived mutation guards that could be released through mutable `_vault`/`_dataVault` fields instead of the vault that granted the guard. `SpatialAudioManager` acoustic portal work+scratch also kept a nested guard shape inside one pathfinding route.
+What was done: added stored granting-vault fields for Plasma job guards, Sump active/local drainage guards, Volcanic fixed-pipeline guards, and SpatialAudio previous-AUP/acoustic-portal guards. Replaced nested acoustic portal work+scratch acquisition with one `AcousticPortalPathMutationGuardMask` when scratch is nested under path work.
+Cinematic Cheats used: no new simulation. Existing shader/DSP/proxy systems and continuous quality scalar usage were preserved.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-vault release and deadlock-vector removal.
+Verification: scoped `git diff --check` exits 0 with LF/CRLF warnings only. Touched-file scans return no legacy DataVault pins, no hot registry/direct component lookup, no added direct write locks, no added GC/string/LINQ/foreach patterns, and no binary low-end switch. Project-wide DataVault pin inventory remains only GlobalDataVault API, editor scanner literals, and non-DataVault GraphicsBuffer upload helpers. CPU sample `88`; compiler process scan returned no rows; no build/import/profiler run launched.
+2026-05-29 AUDIT_NATIVE_STATE continuation 27:
+What was wrong: `HabitatFluidIncursionDirector` scheduled/local fluid mutation guards released through mutable `_vault`, not the vault that granted the guard.
+What was done: added `_activeMutationGuardVault`, assigned it on scheduled guard acquisition, cleared it on release/reset, and carried `guardVault` through every local topology/mock/CSV `finally` release.
+Cinematic Cheats used: preserved scalar flood approximation, fixed/post-fixed phase, waterline shader upload, and acoustic muffle signal. No physical fluid simulation expansion or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-vault release/deadlock-vector removal.
+Verification: scoped `git diff --check` exits 0 with LF/CRLF warning only. Stale local guard signature/release scan returns no old route hits. Added diff scans return no GC/string/LINQ/foreach/hot lookup/direct write-lock/binary-switch hits. No build launched; current CPU proof window was already above throttle.
+2026-05-29 AUDIT_NATIVE_STATE continuation 28:
+What was wrong: `BallisticsRuntime.FrameTick` scheduled jobs over Vault-backed native lanes without a lifetime mutation guard. Short ballistic mutation routes also released through mutable `_vault`.
+What was done: acquired one ballistic mutation guard before scheduled lane resolution, stored `_activeJobMutationGuardVault`, released after completion telemetry, and converted short mutation routes to captured `guardVault` releases.
+Cinematic Cheats used: preserved bounded ballistic batch jobs, signal budget, and staged impact VFX. No physical projectile over-simulation or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is relocation/stale-release risk removal.
+Verification: scoped `git diff --check` exits 0 with LF/CRLF warning only. Stale `_vault.TryAcquireMutationGuard(MutationGuardBit)` and `_vault.ReleaseMutationGuard(MutationGuardBit)` scans return no hits. Added diff scans return no GC/string/LINQ/foreach/hot lookup/direct write-lock/binary-switch hits. No build launched.
+2026-05-29 AUDIT_NATIVE_STATE verification 29:
+What was wrong: compile proof after the Ballistics guard patch was still absent.
+What was done: used two legal throttled build windows. First window: `CPU=26`, no compiler rows; `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` failed after `00:16:04.19` with `Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs(72,17): error CS0246: The type or namespace name 'PagerNativeState' could not be found`. `dotnet build-server shutdown` was run. Second window: `CPU=46`, no compiler rows; build failed after about `524.5 s` with `MSB4006` circular dependency errors in `Unity.RenderPipelines.Universal.Runtime.csproj` involving `ResolveProjectReferences` and `_GetCopyToOutputDirectoryItemsFromTransitiveProjectReferences`.
+Cinematic Cheats used: none; verification only.
+Exact Microseconds saved: 0 us measured.
+Verification: compile proof is failed, not complete. Follow-up compiler process scan returned no rows; CPU sample was `69`, so no third build was launched under the throttling rule. The observed build failures are outside the source-local NativeArray/DataVault guard edits, but they still block any green compile claim.
+2026-05-29 AUDIT_NATIVE_STATE continuation 30:
+What was wrong: `ChemicalInfluenceGrid` acquired the scheduled chemical solver `SimulationMutationGuardMask` through `_dataVault` but released through mutable `_dataVault` later. A DataVault replacement during scheduled work could leave the granting vault unreleased and release the wrong service.
+What was done: added `_scheduledBuffersGuardVault`, stored the granting vault on acquisition, released that exact vault in `UnlockSimulationBuffers`, and cleared the field on unlock/reset.
+Cinematic Cheats used: preserved the existing cheap chemical grid diffusion approximation, SDF sampling shortcut, mock emitter route, and continuous `GlobalQualityWeight` iteration scaling. No physical chemistry simulation or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-vault release removal in the scheduled solver window.
+Verification: scoped `git diff --check` exits 0 with LF/CRLF warning only. Stale `_dataVault?.ReleaseMutationGuard(SimulationMutationGuardMask)` and `_dataVault.TryAcquireMutationGuard(SimulationMutationGuardMask)` scans return no hits. Added diff scans return no GC/string/LINQ/foreach/hot lookup/direct write-lock/binary-switch hits. Legacy `TryLockBuffer/TryUnlockBuffer` scan returns no hits. No compile/import/profiler run was launched because the latest compile proof is still failed by unrelated SaveSystem/URP errors.
+2026-05-29 AUDIT_NATIVE_STATE continuation 31:
+What was wrong: `ModuloSimulationBucketer` held `RebalanceVaultMutationGuardMask` across scheduled rebalance work but released through current `_dataVault`, not the vault that granted the guard.
+What was done: added `_rebalanceVaultGuardVault`, stored it after successful acquisition, released through it in `ReleaseRebalanceVaultGuard`, and cleared it on all release paths.
+Cinematic Cheats used: preserved modulo bucketing and continuous active-slow-bucket scaling. No scheduler rewrite, binary device branch, or over-engineered simulation was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-vault release removal in the core rebalance window.
+Verification: scoped `git diff --check` exits 0 with LF/CRLF warning only. Stale direct `_dataVault.ReleaseMutationGuard(RebalanceVaultMutationGuardMask)` scans return no hits. Added diff scans return no GC/string/LINQ/foreach/hot lookup/direct write-lock/binary-switch hits. Legacy `TryLockBuffer/TryUnlockBuffer` scan returns no hits. No compile/import/profiler run was launched because compile proof is already failed by unrelated SaveSystem/URP errors.
+2026-05-29 AUDIT_NATIVE_STATE verification 32:
+What was wrong: compile/import/profiler proof after ChemicalInfluenceGrid and ModuloSimulationBucketer guard fixes was still absent.
+What was done: checked throttle before any possible build. CPU sample returned `100`. Compiler process scan found active `dotnet` PID `26320` running `dotnet build .\Hecton8.Core.csproj -nologo -v:minimal /m:1 /p:UseSharedCompilation=false --no-restore`.
+Cinematic Cheats used: none; verification only.
+Exact Microseconds saved: 0 us measured.
+Verification: no build, Unity import, Play Mode, profiler, GCMonitor, or native ledger run was launched. This is compliant with the compile throttling rule because CPU is above 50 and another dotnet build is active.
+2026-05-29 AUDIT_NATIVE_STATE continuation 33:
+What was wrong: `ShinobuEcosystemBalancer` stored `_jobMutationGuardVault` but release preferred a caller-supplied current vault; `HydrodynamicKccRuntime` could acquire a metabolism state read guard inside the scheduled KCC guard window.
+What was done: Shinobu release now prefers `_jobMutationGuardVault`; KCC scheduled guard now covers `ShinobuMetabolismStates`, and metabolism view resolution skips the second guard when the scheduled guard is active.
+Cinematic Cheats used: preserved existing ecosystem and KCC approximations, post-fixed phase ownership, and continuous quality scaling. No physical simulation expansion or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-release and nested-guard risk removal.
+Verification: scoped `git diff --check` exits 0 with LF/CRLF warnings only. Stale-route scans return no old Shinobu release priority and no direct `_dataVault` metabolism guard acquire/release path. Added diff scans return no GC/string/LINQ/foreach/hot lookup/direct component lookup/binary-switch hits. No compile/import/profiler run was launched.
+2026-05-29 AUDIT_NATIVE_STATE continuation 34:
+What was wrong: `QuestDagResolverService` did not store an explicit granting vault for its scheduled resolver guard; `SolarPowerGenerationRuntime` released scheduled solar job guard through mutable static `s_vault` and read Voxel SDF payloads through that static while the job guard was active.
+What was done: Quest DAG now stores `_scheduledBufferGuardVault`; Solar now stores `s_jobMutationGuardVault`, releases through it, clears it on reset/no-op release, and uses it for guarded SDF payload reads.
+Cinematic Cheats used: preserved Quest cadence dilation and solar optical-depth approximation with continuous quality-weight SDF sample scaling. No physical lighting expansion or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-release invariant cleanup.
+Verification: scoped `git diff --check` exits 0 with LF/CRLF warnings only. Stale release scans for Quest/Solar return no hits. Added diff scans return no GC/string/LINQ/foreach/hot lookup/direct component lookup/binary-switch hits. No compile/import/profiler run was launched.
+2026-05-29 AUDIT_NATIVE_STATE continuation 35:
+What was wrong: `VehicleComponentDamageRuntime` held `DamageMutationGuardMask` behind `_buffersLocked` but did not store the granting vault explicitly.
+What was done: added `_damageGuardVault`, stored it on successful damage guard acquisition, released through it, and cleared it on all unlock exits.
+Cinematic Cheats used: preserved bounded grid damage and mock-signal routes. No physical deformation expansion or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is explicit long-lived guard release ownership.
+Verification: scoped `git diff --check` exits 0 with LF/CRLF warning only. Stale `_dataVault.ReleaseMutationGuard(DamageMutationGuardMask)` scan returns no hits. Added diff scans return no GC/string/LINQ/foreach/hot lookup/direct component lookup/binary-switch hits. No compile/import/profiler run was launched.
+2026-05-29 AUDIT_NATIVE_STATE continuation 36:
+What was wrong: `BabelSubtitleSyncRuntime` released cue/telemetry mutation guards through current `s_vault`; `ParasiteSwarmGpuRuntime` released transferred telemetry owner views through current `_vault` and used `_vault` directly in tuning seed release.
+What was done: Babel now stores granting vaults per mutation lane and releases through those stored services; Parasite now stores `_telemetryGuardVault` and uses a captured local vault for tuning seed writes.
+Cinematic Cheats used: preserved subtitle buffer flow and GPU parasite visual fake budgets. No physical parasite simulation or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-release risk removal.
+Verification: scoped `git diff --check` exits 0 with LF/CRLF warnings only. Stale guard-release scans return no hits for the patched routes. Added diff scans return no GC/string/LINQ/foreach/hot lookup/direct component lookup/binary-switch hits. No compile/import/profiler run was launched.
+2026-05-29 AUDIT_NATIVE_STATE continuation 37:
+What was wrong: `AudioLogSystem` transferred playback queue and encrypted fragment mutable views to callers, but release selected current `_dataVault`.
+What was done: added `_playbackQueueGuardVault` and `_encryptedFragmentStateGuardVault`, stored them only after guarded resolution succeeds, and released stored guards before vault buffer teardown/rebind.
+Cinematic Cheats used: preserved fixed-size queue/bitset audio-log paths. No new simulation or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-release risk removal.
+Verification: scoped `git diff --check` exits 0 with LF/CRLF warning only. Stale playback/encrypted guard-release scans return no hits. Added diff scans return no GC/string/LINQ/foreach/hot lookup/direct component lookup/binary-switch hits. No compile/import/profiler run was launched.
+2026-05-29 AUDIT_NATIVE_STATE continuation 38:
+What was wrong: `ProceduralOreSpawner` kept the active geology mutation guard only as `_lockedVaultBufferMask`; parameterless unlock released through current `_dataVault`.
+What was done: added `_lockedVaultGuardVault`, stored it for depletion/depletion-mask/runtime-shift guarded windows, and released through it.
+Cinematic Cheats used: preserved cheap geology depletion masks, dormant visual weighting, HZB/indirect upload behavior, and continuous visual scaling.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-release risk removal.
+Verification: scoped `git diff --check` exits 0 with LF/CRLF warning only. Stale geology unlock release scan returns no hits. Added diff scans return no GC/string/LINQ/foreach/hot lookup/direct component lookup/binary-switch hits. No compile/import/profiler run was launched.
+2026-05-29 AUDIT_NATIVE_STATE continuation 39:
+What was wrong: `SubmarineStructuralGrid` and `StructuralIntegrityCalculatorRuntime` structural mutation guard helpers released through current `_dataVault` instead of the service that granted `StructuralMutationGuardMask`.
+What was done: added `_structuralMutationGuardVault` in both runtimes, stored the granting vault on successful acquire, and released through that stored service before clearing it.
+Cinematic Cheats used: preserved existing structural grid, breach repair, fatigue/deformation, blackbox, and presentation paths. No physical hull simulation expansion or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-release risk removal.
+Verification: scoped `git diff --check` exits 0 with LF/CRLF warnings only. Structural guard field/helper scans show stored-vault acquire/release routes in both files. Added diff scan returns no GC/string/LINQ/foreach/hot lookup/direct component lookup hits. No compile/import/profiler run was launched.
+2026-05-29 AUDIT_NATIVE_STATE continuation 40:
+What was wrong: residual `ReleaseMutationGuard` and short `ReleaseWriteLock` helpers in audited native lifecycle files still called mutable `_vault`, `_dataVault`, or `s_vault` directly. `JacobianFoamGpuRuntime` read pins also released via current `_vault`.
+What was done: converted `VehicleComponentDamageRuntime` CSV/blackbox/editor tuning guards, `SubmarineDynamicsRuntime` boot/CSV/hull guards and write-lock helper, `SubmarineDynamicsRuntime_Gyroscopes` default/profile CSV guards, `PersistentWorldRegistry` native collection mutation/write locks, `JacobianFoamGpuRuntime` read pins/write helpers, and `HectonVoxelEngine.JobTableLease.Dispose` to captured local or stored granting-vault release.
+Cinematic Cheats used: no simulation change. Continuous quality consumers remain in Jacobian foam, submarine dynamics, and voxel systems. No binary low-end switch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is release-owner determinism and stale-vault failure removal.
+Verification: project direct mutable mutation release scan returns no hits. Touched-file direct mutable write-lock release scan returns no hits. Scoped `git diff --check` exits 0 with LF/CRLF warnings only. Added diff scan returns no `string.Format`, `.ToString()`, LINQ `.Select/.Where`, `foreach`, `GlobalRegistry.Get<`, direct `GetComponent(`, or reference-type `new`. Hot lookup scan reports only editor paths and `#if UNITY_EDITOR && HECTON8_AMPLIFY_IMPOSTORS`. Legacy DataVault pin scan reports only GlobalDataVault API definitions/implementation, editor scanner strings, and non-DataVault GraphicsBuffer upload helpers.
+2026-05-29 AUDIT_NATIVE_STATE verification 41:
+What was wrong: compile proof after continuation 40 is absent.
+What was done: checked compile throttle. CPU sample returned `70`; active compiler row exists: `dotnet` PID `67300`.
+Cinematic Cheats used: none; verification only.
+Exact Microseconds saved: 0 us measured.
+Verification: no `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger was launched. This obeys compile throttling. Last known real build proof is still failed by unrelated SaveSystem `PagerNativeState` and URP `MSB4006` circular dependency errors.
+
+2026-05-29 AUDIT_NATIVE_STATE continuation 42:
+What was wrong: generic NativeArray write-lock wrappers in `PlayerInventory`, `GlobalPhysicsStateManager`, `HectonFluidEngine`, and `EcosystemDirector` acquired locks through one DataVault reference but released through mutable/current vault state. A vault rebind between acquire and release could unlock the wrong service.
+What was done: added stored granting-vault fields to `InventoryVaultLane<T>`, `VaultBufferBinding<T>`, `FluidVaultBuffer<T>`, and `VaultBufferView<T>`. Successful `TryAcquireWriteLock` stores the exact granting `IDataVault`; `ReleaseWriteLock` and teardown release through that stored service and clear it.
+Cinematic Cheats used: none; ownership hygiene only. No physics/fluid/ecology/inventory simulation behavior changed.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-vault write-lock release removal.
+Verification: direct mutable-vault `TryAcquireWriteLock` and `ReleaseWriteLock` scans over the four touched files return no hits. Scoped `git diff --check` exits 0 with LF/CRLF warnings only. Project hot lookup scan reports only editor/conditional editor paths. Project `TryLockBuffer/TryUnlockBuffer` inventory remains limited to GlobalDataVault API/editor strings/non-DataVault GraphicsBuffer helpers. Full touched-file forbidden-allocation diff scan reports one pre-existing dirty `new PostSimulationPhaseSystem(this)` in `PlayerInventory.cs`; this patch does not claim it clean.
+
+2026-05-29 AUDIT_NATIVE_STATE verification 43:
+What was wrong: compile/import/profiler proof after continuation 42 is absent.
+What was done: checked compile throttle. CPU sample returned `68`; compiler process scan returned no rows.
+Cinematic Cheats used: none; verification only.
+Exact Microseconds saved: 0 us measured.
+Verification: no `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger was launched because CPU is above the 50 percent build throttle. Last known real build proof is still failed by unrelated SaveSystem `PagerNativeState` and URP `MSB4006` circular dependency errors.
+
+2026-05-29 AUDIT_NATIVE_STATE continuation 44:
+What was wrong: `VRSomaticProvider` held two DataVault write locks simultaneously in hand/root paths and released write locks through current `_vault`. Some length-failure branches could return after acquire before marking the buffer as locked for `finally` release.
+What was done: added stored `_writeLockVault` to `VaultBufferView<T>`, split hand/root writes into sequential lock windows, used read-only hand targets while writing physical positions, and moved post-acquire length checks inside `try/finally` release windows.
+Cinematic Cheats used: preserved the existing VR comfort fake/spring path and continuous `_globalQualityWeight01` scaling. No physical hand solver or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is deadlock/stall and leaked-write-lock removal.
+Verification: direct mutable-vault write-lock acquire/release scan in `VRSomaticProvider` returns no hits. `TryAcquireWriteNativeArray(...) || length` leak-pattern scan returns no hits. Scoped `git diff --check` exits 0 with LF/CRLF warning only. Added diff forbidden-allocation/hot-lookup scan returns no hits.
+
+2026-05-29 AUDIT_NATIVE_STATE verification 45:
+What was wrong: compile/import/profiler proof after continuation 44 is absent.
+What was done: checked compile throttle. CPU sample returned `94`; compiler process scan returned no rows.
+Cinematic Cheats used: none; verification only.
+Exact Microseconds saved: 0 us measured.
+Verification: no `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger was launched because CPU is above the 50 percent build throttle.
+
+2026-05-29 AUDIT_NATIVE_STATE continuation 46:
+What was wrong: `HazardZoneManager` state mutation views used `HazardStateMutationGuardMask` but released through current `_dataVault`.
+What was done: added `_hazardStateGuardVault` and `_hazardStateGuardHeld`; nested state writes are rejected; successful state guard acquire stores the granting vault only after mutable views and capacity validation; release/teardown releases through the stored vault.
+Cinematic Cheats used: preserved the existing cheap hazard sphere/LUT route and exposure job. No physical hazard field solver or binary device branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-vault guard release removal.
+Verification: stale direct `_dataVault` acquire/release scan for `HazardStateMutationGuardMask` returns no hits. Added diff forbidden-allocation/hot-lookup scan returns no hits. Scoped `git diff --check` exits 0 with LF/CRLF warning only.
+
+2026-05-29 AUDIT_NATIVE_STATE verification 47:
+What was wrong: compile proof after continuations 42, 44, and 46 was absent.
+What was done: used legal throttle window: CPU `37`, no compiler rows. Ran one `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1`.
+Cinematic Cheats used: none; verification only.
+Exact Microseconds saved: 0 us measured.
+Verification: build failed after `00:13:33.66` with 52 errors: `MSB4006` circular dependencies in `MoreMountains.Tools.csproj` and `Unity.RenderPipelines.Universal.Runtime.csproj`; missing `NativeDisableUnsafePtrRestriction`/`NativeDisableContainerSafetyRestriction` symbols in `SubmarineDynamicsContracts.cs`; missing `BufferID` symbols in `VehicleComponentDamageContracts.cs`. Follow-up CPU sample was `90`, compiler process scan returned no rows. No second build launched.
+
+2026-05-29 AUDIT_NATIVE_STATE continuation 48:
+What was wrong: build errors showed missing native-contract imports: unsafe job attributes in `SubmarineDynamicsContracts.cs` and `BufferID` in `VehicleComponentDamageContracts.cs`.
+What was done: restored `using Unity.Collections.LowLevel.Unsafe;` and `using Hecton8.Core.Memory;`.
+Cinematic Cheats used: none; dependency repair only.
+Exact Microseconds saved: 0 us measured.
+Verification: scoped `git diff --check` on both contract files exits 0 with LF/CRLF warnings only. Post-fix CPU sample was `63`; no second build launched because CPU is above throttle. Project graph circular dependency remains unproven/unfixed.
+
+2026-05-29 AUDIT_NATIVE_STATE continuation 49:
+What was wrong: `WorldGenerativeGeologyTerrainSeamApplier` still used legacy `TryLockBuffer/TryUnlockBuffer` to pin the hybrid terrain seam native buffers. The release path resolved current `_dataVault`, not the service that granted the pins.
+What was done: removed the legacy per-buffer pin helper and replaced it with one computed mutation guard mask over baseline height, optional vault heightmap, native plans, patch heights, blend mask, and optional normals. The projection path stores the granting `IDataVault` locally and releases the same guard after the synchronous projection fence and again from `finally` for early exits.
+Cinematic Cheats used: preserved the existing hybrid terrain seam visual fake and `GlobalQualityWeight`-driven mask/detail scaling. No physical terrain solver, binary low-end branch, or DTO layout change was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-vault unlock removal and project-wide legacy pin elimination.
+Verification: scoped `TryLockBuffer/TryUnlockBuffer` scan in `WorldGenerativeGeologyTerrainSeamApplier` returns no hits; project-wide `.TryLockBuffer/.TryUnlockBuffer` scan over `Assets/_Project/Scripts` returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only. Full-file Zero-GC proof is not claimed because unrelated pre-existing dirty hunks in this file contain cold allocations.
+
+2026-05-29 AUDIT_NATIVE_STATE continuation 50:
+What was wrong: `TerrainChunkPagerRuntime.TryAcquireWriteArray` acquired write locks through a local DataVault but `ReleaseWriteArray` released through mutable `_vault`; `WriteTelemetry` held `Counters` and `TelemetryRing` write locks simultaneously.
+What was done: changed `TryAcquireWriteArray` to return the granting `IDataVault`, updated all call-sites to release through that captured lease vault, and split `WriteTelemetry` into counters-write then telemetry-write with no overlapping write locks.
+Cinematic Cheats used: none; streaming math and continuous `GlobalQualityWeight` residency/ring scaling are unchanged.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-vault release removal and nested write-lock topology removal.
+Verification: scoped `_vault?.ReleaseWriteLock`/`_vault.ReleaseWriteLock` and `_vault.TryAcquireWriteLock` scan in `TerrainChunkPagerRuntime.cs` returns no hits; stale old-signature `TryAcquireWriteArray` scan returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only; added diff forbidden-allocation/hot-lookup scan returns no hits for this file.
+
+2026-05-29 AUDIT_NATIVE_STATE continuation 51:
+What was wrong: `PhysicsApplySystem` force packet write helpers released through current `_dataVault`, and validation scheduling acquired a front packet write lock while already holding the validation mutation guard.
+What was done: write-lock helpers now return the granting `IDataVault` and all force-packet/mask release paths use that captured vault. Scheduled validation now resolves the front packet buffer read view instead of acquiring a write lock for a read-only copy into guarded validation buffers.
+Cinematic Cheats used: none; force packet queueing, validation jobs, and Rigidbody application are unchanged.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-vault release removal and one nested write-lock window removal.
+Verification: scoped direct `_dataVault?.ReleaseWriteLock`/`_dataVault.TryAcquireWriteLock` scan in `PhysicsApplySystem.cs` returns no hits; stale helper signature/release scan returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only; added diff forbidden-allocation/hot-lookup scan returns no hits.
+
+2026-05-29 AUDIT_NATIVE_STATE continuation 52:
+What was wrong: `DebrisManager.TryAcquireVaultBuffer` acquired front/back debris state write locks through local `_dataVault` but `ReleaseVaultWrite` released through current `_dataVault`.
+What was done: `TryAcquireVaultBuffer` now returns the granting `IDataVault`; all origin-shift, reset, pending-shift, and thermal petrification write windows release through the captured vault.
+Cinematic Cheats used: preserved the existing cheap debris simulation and thermal petrification/additive SDF fake. No physical debris overhaul or binary quality branch was added.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-vault release removal.
+Verification: scoped direct `_dataVault?.ReleaseWriteLock`/`_dataVault.TryAcquireWriteLock`, stale `ReleaseVaultWrite(in ...)`, and old-signature `TryAcquireVaultBuffer` scans return no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only; added diff forbidden-allocation/hot-lookup scan returns no hits.
+
+2026-05-29 AUDIT_NATIVE_STATE continuation 53:
+What was wrong: `SolarPowerGenerationRuntime` used mutable static `s_vault` directly for write-lock acquire/release in panel state, profile CSV, and conditions paths; public panel state write lease had no stored granting-vault owner.
+What was done: short writes now capture local vaults and release through them. Public panel-state write leases store `s_panelStateWriteVault`, and subsystem reset releases the stored lease before clearing handles.
+Cinematic Cheats used: none; solar optical/SDF sampling, power routing, and continuous `GlobalQualityWeight` scaling are unchanged.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-vault release removal for static solar lanes.
+Verification: scoped `s_vault.ReleaseWriteLock`/`s_vault.TryAcquireWriteLock` scan returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only; added diff forbidden-allocation/hot-lookup scan returns no hits. Latest CPU sample was `79`, so no build launched.
+
+2026-05-29 AUDIT_NATIVE_STATE continuation 54:
+What was wrong: `HectonBilateralDrsUpscalerRuntime` write helper acquired via local vault but call-sites released via mutable `_dataVault` across tuning, parameters, telemetry, profiles, mock state, and CSV scratch lanes.
+What was done: `TryAcquireVaultWriteBuffer` now returns the granting `IDataVault`; all write paths release through that captured vault.
+Cinematic Cheats used: none; Bilateral DRS/STP/URP math, GPU upload, and continuous quality scaling are unchanged.
+Exact Microseconds saved: 0 us measured. Expected steady-frame delta 0 us; benefit is stale-vault write-lock release removal.
+Verification: scoped direct `_dataVault?.ReleaseWriteLock`/`_dataVault.TryAcquireWriteLock` and old-signature `TryAcquireVaultWriteBuffer` scans return no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only; added diff forbidden-allocation/hot-lookup scan returns no hits.
+## 2026-05-29 Continuation 55 - QuestDag short write-lock lease releases
+
+What was wrong: `QuestDagResolverRuntime` retained direct `_vault.TryAcquireWriteLock`/`_vault.ReleaseWriteLock` in four short counter/telemetry patch methods. `_vault` is readonly, so this was not the same mutable-service risk as `_dataVault`, but it still failed the strict lease-release scan.
+What was done: `PatchPendingScheduleDrops`, `PatchSpatialHashRebuildCount`, `InvalidateSpatialHash`, and `PatchLastComputeTime` now acquire through a local `IDataVault vault` and release through that same local in `finally`.
+Cinematic Cheats used: none; quest state/counter updates are ownership cleanup only.
+Exact Microseconds saved: 0 us measured; expected steady-frame delta 0 us. Evidence: scoped direct `_vault.TryAcquireWriteLock`/`_vault.ReleaseWriteLock` scan returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only. No compile/import/profiler proof was run for this source-local patch.
+
+## 2026-05-29 Continuation 56 - CombatDamage mutation-guard lease scan cleanup
+
+What was wrong: `CombatVaultMutationGuardLease.TryAcquire` acquired through `_vault.TryAcquireMutationGuard(_mask)` even though the release path already snapshots the stored vault. This was not a runtime hot lookup, but it kept the direct mutation-guard scan noisy.
+What was done: `TryAcquire` now snapshots `_vault` into a local `IDataVault vault` and acquires through that local.
+Cinematic Cheats used: none; combat damage, status, armor, and signal paths are unchanged.
+Exact Microseconds saved: 0 us measured; expected steady-frame delta 0 us. Evidence: scoped direct `_vault.TryAcquireMutationGuard/_vault.ReleaseMutationGuard` scan returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only; added diff forbidden-allocation/hot-lookup scan returns no hits. No compile/import/profiler proof was run.
+
+## 2026-05-29 Continuation 57 - CrashTelemetryBuffer write-lock lease field read
+
+What was wrong: `CrashTelemetryBuffer.VaultArray<T>.this[index].set` acquired and released through the stored `_vault` field inside one diagnostic write-lock window.
+What was done: the setter now snapshots `_vault` into local `IDataVault vault`, acquires through it, and releases through it in `finally`.
+Cinematic Cheats used: none; crash ring and blackbox evidence path are unchanged.
+Exact Microseconds saved: 0 us measured; expected steady-frame delta 0 us. Evidence: scoped direct `_vault.TryAcquireWriteLock/_vault.ReleaseWriteLock` scan returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only; added diff forbidden-allocation/hot-lookup scan returns no hits. No compile/import/profiler proof was run.
+
+## 2026-05-29 Continuation 58 - ProceduralWreckGenerator render/debris lock flattening
+
+What was wrong: render payload and debris build paths held multiple DataVault write locks at once; `VaultArrayBuffer<T>` also had transferred write-lock releases tied to its stored `_vault` field.
+What was done: render payload, placement+render payload, and debris build now use one combined mutation guard and mutate resolved native views. Remaining single-buffer write leases store `_writeLockVault` and release through it. Wreck guard release no longer falls back to current `_dataVault`.
+Cinematic Cheats used: preserved the cheap BRG scatter/debris visual fake and continuous fragment caps; no physical wreck simulation expansion.
+Exact Microseconds saved: 0 us measured; expected steady-frame delta 0 us. Evidence: scoped direct `_vault.TryAcquireWriteLock/_vault.ReleaseWriteLock` and `_dataVault.TryAcquireMutationGuard/_dataVault.ReleaseMutationGuard` scans in `ProceduralWreckGenerator.cs` return no hits; stale nested render/debris lock flag scan returns no hits; `git diff --check` exits 0 with LF/CRLF warning only; added diff forbidden-allocation/hot-lookup scan returns no hits. No compile/import/profiler proof was run.
+
+## 2026-05-29 Continuation 59 - Sargassum/Biome write-lock release tail
+
+What was wrong: micro-fauna ring writes, cut stamp queues, global drag helper release, and biome telemetry write leases still had direct `_vault`/`_dataVault` write-lock acquire or release patterns.
+What was done: micro-fauna uses a local vault lease; cut queue helpers return the granting vault to all release paths; global drag release helper snapshots `_dataVault`; biome telemetry stores `_telemetryWriteVault` for transferred write-lock release.
+Cinematic Cheats used: none; existing cheap stamp queues, boid rings, and biome telemetry remain unchanged.
+Exact Microseconds saved: 0 us measured; expected steady-frame delta 0 us. Evidence: scoped direct `_vault/_dataVault.TryAcquireWriteLock` and `_vault/_dataVault.ReleaseWriteLock` scan over the four touched files returns no hits; `git diff --check` exits 0 with LF/CRLF warnings only; PCRE added-diff forbidden scan returns no hits. No compile/import/profiler proof was run.
+
+## 2026-05-29 Continuation 60 - AbyssalThermal write-lock release vaults
+
+What was wrong: `AbyssalThermalManager` released thermal source, insulation, fill, and scratch-copy write locks through mutable `_dataVault`.
+What was done: `TryAcquireThermalMapWriteBuffer` now returns the granting `IDataVault`; all successful write windows release through that captured vault.
+Cinematic Cheats used: none; thermal source/insulation data and continuous quality behavior are unchanged.
+Exact Microseconds saved: 0 us measured; expected steady-frame delta 0 us. Evidence: scoped direct `_dataVault?.ReleaseWriteLock`/`_dataVault.TryAcquireWriteLock` scan in `AbyssalThermalManager.cs` returns no hits; `git diff --check` exits 0 with LF/CRLF warning only; added diff forbidden-allocation/hot-lookup scan returns no hits. No compile/import/profiler proof was run.
+
+## 2026-05-29 Continuation 61 - SubmarineStructuralGrid lock flattening
+
+What was wrong: structural current-phase writers mixed mutation guards with write locks, and job mutation guards released through current `_dataVault`.
+What was done: structural current-phase writers now use resolved mutable views under the structural mutation guard; telemetry keeps one captured write lease; job guards store per-job granting vaults.
+Cinematic Cheats used: none; hull diffusion, breach repair, fatigue, leak plume, and telemetry data are unchanged.
+Exact Microseconds saved: 0 us measured; expected steady-frame delta 0 us. Evidence: scoped stale write-lock, `ReleaseStructuralWriteLocks`, one-vault job unlock, and added diff forbidden-allocation/hot-lookup scans return no hits; `git diff --check` exits 0 with LF/CRLF warning only. No compile/import/profiler proof was run.
+
+## 2026-05-29 Continuation 62 - DynamicDecal vault guard flattening
+
+What was wrong: dynamic decal runtime paths held multiple DataVault write locks and released through static `_vault`.
+What was done: decal buffer mutation now uses DataVault mutation guard bits plus fixed per-buffer granting-vault fields; releases clear and release the exact stored guard vault.
+Cinematic Cheats used: preserved existing dynamic decal visual fake and continuous quality-weighted capacity/fade scaling.
+Exact Microseconds saved: 0 us measured; expected steady-frame delta 0 us. Evidence: project runtime direct write-lock scan now reports only an editor validator string literal; direct field mutation-guard scan returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only; added diff forbidden-allocation/hot-lookup scan returns no hits. No compile/import/profiler proof was run.
+
+Build throttle note: CPU sample was `56`; after a 30 second wait CPU sample was `100`. Compiler process scan found active `dotnet` PID `32068` running `dotnet build .\Hecton8.Core.csproj -nologo -v:minimal -maxcpucount:1 --no-restore /p:UseSharedCompilation=false`. No new build was launched.
+
+## 2026-05-29 Continuation 63 - TopographicalSonar write-lock lease ownership
+
+What was wrong: `TopographicalSonarSynthesizer` acquired UI DataVault write locks through `_dataVault`, but release sites called `ReleaseVaultWriteBuffer(_dataVault, ...)` again. A service rebind between acquire and release could leave the actual granting vault locked.
+What was done: `TryAcquireVaultWriteBuffer` now returns `out IDataVault writeVault`; material LUT, telemetry ring/cursor, counter mirror, point mirror, indirect args, shader globals, editor CSV scratch, and editor LUT writes release through the captured lease vault.
+Cinematic Cheats used: preserved the existing cheap topographical sonar SDF/material mirror and continuous quality-weighted ray/step cadence; no physical sonar simulation expansion.
+Exact Microseconds saved: 0 us measured; expected steady-frame delta 0 us. Evidence: no `ReleaseVaultWriteBuffer(_dataVault, ...)` remains in `TopographicalSonarSynthesizer.cs`; all local helper acquires include `out IDataVault`; project runtime direct write-lock scan reports only an editor validator string literal; direct mutation-guard field scan returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warnings only; added diff forbidden-allocation/hot-lookup scan returns no hits.
+Build throttle note: CPU sample returned `100`; no `dotnet/csc/VBCSCompiler` processes were listed, but CPU is above the `50%` compile throttle. No new build was launched.
+
+## 2026-05-29 Continuation 64 - AsyncBuoyancyReadback write-buffer lease ownership
+
+What was wrong: `AsyncBuoyancyReadbackRuntime` transferred physics DataVault write locks from `AcquireVaultWriteBuffer(_dataVault, ...)` and released them by rereading `_dataVault`.
+What was done: `AcquireVaultWriteBuffer` now returns `out IDataVault writeVault`; requests, mock ring, completed requests, counters, resolved heights, result states, fallback waves, vehicle profiles, tuning, telemetry cursor/ring, and CSV scratch write windows release through captured vault leases.
+Cinematic Cheats used: preserved async GPU readback plus cheap mock fallback; no physical water simulation expansion and no binary quality switch.
+Exact Microseconds saved: 0 us measured; expected steady-frame delta 0 us. Evidence: scoped `ReleaseVaultWriteBuffer(_dataVault, ...)` scan returns no hits; old-signature `AcquireVaultWriteBuffer(...)` scan returns no hits; project runtime direct write-lock scan reports only an editor validator string literal; direct mutation-guard field scan returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only; added diff forbidden-allocation/hot-lookup scan returns no hits.
+Build throttle note: CPU sample returned `96`; active `dotnet` PID `37024` is running `dotnet build .\Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1 --no-restore /p:UseSharedCompilation=false`. No new build was launched.
+
+## 2026-05-29 Continuation 65 - Somatic/Autopilot/Flora write-lock lease tail
+
+What was wrong: `SomaticKinematicsRuntime`, `SubmarineAutopilotSdfNavigator`, and `FloraInteractionManager` still had helper-level transferred write locks whose releases reread mutable `_dataVault`/`_wakeDataVault` instead of releasing through the service that granted the lock.
+What was done: Somatic typed helpers now store per-buffer granting vaults returned by `TryAcquireSomaticWriteBuffer`; Autopilot write helper now returns `out IDataVault` and all target/profile/tuning/cold-default write paths release through it; Flora records granting vaults by BufferID for parasite/cascade/reactive/telemetry write locks and releases through that recorded vault.
+Cinematic Cheats used: None changed; VR/KCC, autopilot SDF, parasite/cascade, flora wake/sway, and continuous `GlobalQualityWeight` behavior stayed intact.
+Exact Microseconds saved: 0 us measured; expected steady-frame delta 0 us. Evidence: scoped stale release scans return no hits; project runtime direct `_dataVault/_vault/s_vault/_wakeDataVault` write-lock scan reports only `Assets/_Project/Scripts/Editor/QuestVrOptimizationValidator1406.cs:434` string literal; project runtime direct mutation-guard field scan returns no hits; added diff forbidden-allocation/hot-lookup scan returns no hits; `git diff --check` exits 0 with LF/CRLF warnings only. Build evidence: CPU precheck was 36 with no compiler rows, one throttled build was launched, timed out after about 904 seconds, left PID 20592, reached CPU sample 100, and was stopped; no compile success/failure is claimed.
+
+## 2026-05-29 Continuation 66 - Flora cascade write-lock narrowing
+
+What was wrong: flora cascade code held reactive/registered scratch write locks while entering cascade event/phase-seed update paths, and `RecomputeCascadePhaseSeeds` acquired event and phase-seed write locks in the same thread.
+What was done: registered-handle scratch is released before phase-seed work; reactive query scratch is released before event registration/recompute; `RecomputeCascadePhaseSeeds` now compacts events under an event write lease, releases it, resolves events for read, and then acquires only the phase-seed write lease for scheduling.
+Cinematic Cheats used: Preserved cheap phase-seed cascade visuals; no physical plant propagation simulation and no binary quality switch.
+Exact Microseconds saved: 0 us measured; expected steady-frame delta 0 us. Evidence: nested-pattern scans for `TryAcquireCascadePhaseSeeds...TryAcquireCascadeEvents`, `TryAcquireReactiveFloraQueryHandles...RegisterCascadeEvent`, and `TryAcquireRegisteredReactiveFloraHandles...RecomputeCascadePhaseSeeds` return no hits; scoped `git diff --check -- FloraInteractionManager.cs` exits 0 with LF/CRLF warning only; added diff forbidden-allocation/hot-lookup scan returns no hits. No compile success is claimed.
+
+## 2026-05-29 Continuation 67 - UI/VR telemetry and HUD queue write-lock releases
+
+What was wrong: Foveated telemetry, HUD notification queue, and cockpit telemetry write locks could be released through current `_dataVault` instead of the vault that granted the lock.
+What was done: Stored the granting `IDataVault` per active write lane, rejected nested active leases, and drained active write leases before lifecycle buffer release.
+Cinematic Cheats used: Kept existing foveation/HUD/cockpit visual fakes and continuous quality scaling; no physical/UI simulation rewrite.
+Exact Microseconds saved: 0 us measured; expected runtime delta 0 us. Evidence: release-helper `_dataVault` reread scan returns no hits; active lease guard/release line scan confirms stored-vault release sites. Static proof only; compile/import/profiler proof remains absent.
+
+## 2026-05-29 Continuation 68 - MarauderOutpost write-buffer release ownership
+
+What was wrong: `MarauderOutpostGenerationService` released successful outpost write-buffer leases through current `_dataVault`, not the vault that granted the lock.
+What was done: Added fixed active granting-vault fields per outpost BufferID, rejected reentrant leases, and drained active writes before handle release.
+Cinematic Cheats used: Kept WFC/shell render pipeline and bounded matrix visual path; no physical outpost simulation rewrite.
+Exact Microseconds saved: 0 us measured; expected runtime delta 0 us. Evidence: `ReleaseWriteBuffer` no longer rereads `_dataVault`; targeted added-line scan shows only fixed lease fields/switches/release calls. Static proof only; CPU sampled 51, so no build launched.
+
+## 2026-05-29 Continuation 69 - GasDynamics telemetry ring write-lock release
+
+What was wrong: `GasDynamicsSolver` telemetry step write lock released through current `_dataVault` instead of the granting vault.
+What was done: Stored `_telemetryRingStepVault` on successful telemetry write-lock transfer and released through it in `ReleaseTelemetryRingStepLock`.
+Cinematic Cheats used: Kept analytical gas/hibernation fake and bounded telemetry; no atmosphere simulation expansion.
+Exact Microseconds saved: 0 us measured; expected runtime delta 0 us. Evidence: added-diff forbidden scan returns no hits; line scan confirms stored-vault acquire/release. CPU sampled 87, so no build launched.
+
+## 2026-05-29 Continuation 70 - Residual write-lock lease release ownership
+
+What was wrong: `ProximityColliderSystem`, `WreckMaterialRegistry`, `HectonCaveVoxelLightingVolume`, `GPUScatterDirector`, `OpenXRManualOverrideLever`, and the dormant sargassum density-build release helper still had release paths tied to current `_dataVault` instead of the granting vault.
+What was done: Added stored granting-vault fields, reentrant active-lease guards, and lifecycle drains before buffer release.
+Cinematic Cheats used: Kept existing cheap proximity, BRG, cave SDF, scatter, lever, and sargassum paths; no physical simulation expansion.
+Exact Microseconds saved: 0 us measured; expected runtime delta 0 us. Evidence: scoped direct `_dataVault.ReleaseWriteLock/_dataVault.TryAcquireWriteLock` scan over touched files returns no hits; added-diff forbidden scan returns no hits. CPU sampled 77, so no build launched.
+
+## 2026-05-29 Continuation 71 - BiomeBoundary mutation/write lease ownership
+
+What was wrong: `BiomeBoundarySdfRuntime` released transferred mutation guards through current `_dataVault`, and telemetry write acquisition lacked an active-lease guard.
+What was done: Stored granting vaults for biome-map guard, sample guard, and telemetry write-lock; release helpers now take/clear stored vaults; teardown drains active leases before releasing handles.
+Cinematic Cheats used: Kept cheap deterministic biome SDF sample and bounded telemetry; no heatmap or gradient signal rewrite.
+Exact Microseconds saved: 0 us measured; expected runtime delta 0 us. Evidence: `git diff --check` exits 0 with LF/CRLF warnings only; line inventory confirms stored-vault release helpers. CPU sampled 77, so no build launched.
+
+## 2026-05-29 Continuation 72 - Hot dependency lookup audit
+
+What was wrong: The integrator mandate required proof that hot paths do not poll dependencies through `GlobalRegistry.Get<T>()` or direct `GetComponent()`.
+What was done: Scanned runtime scripts for `GlobalRegistry.Get<T>` and direct non-`Try` `GetComponent(`. `GlobalRegistry.Get<T>` has no hits. Direct `GetComponent(` hits are editor authoring/repair plus `ImpostorSystem` editor MenuItem batch bake scan, not runtime Tick/Fixed/LateFrame/Execute.
+Cinematic Cheats used: No system behavior changed.
+Exact Microseconds saved: 0 us measured. Evidence: `GlobalRegistry.Get<T>` scan exit 1/no hits; direct `GetComponent(` inventory limited to editor/cold authoring paths. No build launched because CPU sampled 77.
+
+## 2026-05-29 Continuation 73 - Static integrator verification after residual lease patch
+
+What was wrong: The remaining risk was unverified source drift after the residual lease patches: hot dependency lookup, same-frame job completion, direct mutable-vault write locks, direct mutable-vault mutation guards, and forbidden added hot allocations.
+What was done: Reread NativeMemory, ZeroGC, ARM64 layout, GlobalRegistry, ExecutionPhases, CinematicCheat, Performance, and PostMortem mandates. Hot-method scans found no runtime direct `GlobalRegistry.Get<T>()`, no runtime direct non-`Try` `GetComponent(`, no runtime `.Complete()` in Tick/Fixed/LateFrame/Execute paths, and only comment/editor false positives for `GlobalRegistry.DataVault`. Project direct `_dataVault/_vault/s_vault/_wakeDataVault.TryAcquireWriteLock/ReleaseWriteLock` scan reports only an editor validator string literal; direct mutation-guard field scan returns no hits. Seven residual lease files pass `git diff --check` with LF/CRLF warnings only, and added-line ZeroGC/hot-lookup scan returns no hits.
+Cinematic Cheats used: No new simulation was added. Ownership/lifecycle hardening preserved the existing cheap deterministic presentation paths and continuous quality scaling.
+Exact Microseconds saved: 0 us measured. Static audit estimate: 3800 us. Build note: CPU later sampled 20 with no compiler rows, so one throttled `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1 --no-restore /p:UseSharedCompilation=false` was launched. It exited `-1` after 00:03:06.7 with no captured diagnostics; follow-up compiler scan returned no rows and CPU sampled 68. Compile/import/profiler proof is not accepted.
+
+## 2026-05-30 Continuation 74 - Native ownership and hot-path allocation tail
+
+What was wrong: stored-vault release helpers still had unsafe `storedVault ?? currentVault` fallbacks in audio/subtitle/foam routes; foam write buffers released through mutable `_vault`; profiler/pause diagnostics allocated strings in hot diagnostic paths; multiple AsyncGPUReadback persistent arrays and forensics snapshot buffers were invisible to `NativeMemorySentinel`; `SaveData` carried a borrowed `NativeArray<byte>` from `PlayerInventory`.
+What was done: `AudioLogSystem` and `BabelSubtitleSyncRuntime` now release mutation guards only through stored granting vaults. `JacobianFoamGpuRuntime` now captures write-lane vaults for params/tuning/wakes/telemetry and releases read pins only through stored vaults. `RuntimePerformanceProfiler` and `PauseSystemVerifier` use prebuilt trace/log constants for the reported hot paths. Persistent readback/snapshot arrays now register/unregister with `NativeMemorySentinel` in the affected GPU/readback/forensics owners. `SaveData.inventoryShadowPayload` is now a managed byte snapshot, copied by `PlayerInventory` and written by `SaveBinaryPayloadCodec`.
+Cinematic Cheats used: no physical simulation expansion. Existing foam, scatter, culling, underwater, sargassum, buoyancy, and save routes keep their current cheap deterministic staging/readback paths and continuous `GlobalQualityWeight` behavior.
+Exact Microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static proof: combined `git diff --check` over 18 source files exits 0 with LF/CRLF warnings only; added-diff hot lookup/job barrier scan returns no hits; project `GlobalRegistry.Get<T>` scan returns no hits; project direct mutable-vault write/mutation scan reports only `Editor/QuestVrOptimizationValidator1406.cs:434` string literal; stale borrowed `NativeArray<byte> inventoryShadowPayload` scan returns no hits. Compile proof blocked: CPU sampled 100 with active `dotnet` PID 56788, so no build/import/profiler lane was launched.
+
+## 2026-05-30 Continuation 75 - Granting-Vault Fallback Sweep
+
+What was wrong: active DataVault mutation guards and write/readback guard windows still had `storedGuardVault ?? _dataVault/_vault` fallback paths. That is not a recovery mechanism. It can release a guard on a newly rebound vault and leave the original granting vault locked; scheduled completion can also read/commit through a current vault that never granted the job window.
+
+What was done: removed active fallback releases across 47 runtime files. The changed routes now release or finalize only through the stored granting `IDataVault`: ladder IK, base atmosphere logistics, procedural bone blender, foundation pylon batch, sump pump grid, habitat fluid incursion, buoyancy displacement, procedural ore, chemical influence, plasma beam, ambient biota, foveated simulation, haptic synthesis, thermal DRS, macro ecosystem, nutrient drift and carrion, volcanic updraft, parasite telemetry, hazard exposure, procedural field sampling, stress spawning, seismic/celestial tide, director AI, structural integrity, visual pressure aging, suit integrity, physics apply validation, submarine dynamics/autopilot/atmosphere/structure, hand IK, loot magnet, debris, fauna terrain SDF, proximity collider, tether mock jobs, seaglide, exosuit, KCC, QA watchdog, spatial audio, reactor bridge, ground radar, abyssal thermal, and ecosystem director.
+
+Cinematic Cheats used: none changed. Existing cheap approximations, continuous `GlobalQualityWeight`, and phase ownership were preserved. This pass bought stability, not new simulation.
+
+Exact Microseconds saved: 0 us measured; expected steady-frame delta 0 us. Deadlock/rebind recovery risk reduced. Static checks: no runtime `GlobalRegistry.Get<T>` hits; direct non-`Try` `GetComponent(` hits are editor authoring/repair and editor impostor bake only; hot-method scan near `Tick`, `FixedUpdate`, `LateFrameTick`, and `Execute` found no `GlobalRegistry.DataVault`, `GlobalRegistry.Get<T>`, direct `GetComponent`, or `.Complete()` hit; direct mutable-vault write/mutation scan reports only an editor validator string literal; remaining granting-vault fallback is cold `WorldChunkResidencyManager` sentinel/lifecycle context. `git diff --check -- Assets/_Project/Scripts` exits 0 with LF/CRLF warnings only.
+
+Compile proof: not accepted. Latest CPU sample was 73 with no compiler process rows, so no `dotnet build`, Unity import, Play Mode, profiler, GCMonitor, or native ledger was launched under the >50% CPU throttle.

@@ -3,6 +3,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -73,6 +74,7 @@ namespace Hecton8.Graphics.VR
         private static bool s_questFamilyClassRuntime;
         private static bool s_telemetryLayoutChecked;
         private static bool s_telemetryLayoutValid;
+        private static readonly WaitCallback s_blackBoxDumpWorker = WriteBlackBoxDumpWorker;
 
         [Header("Policy")]
         [SerializeField, Range(MinSampleIntervalFrames, MaxSampleIntervalFrames)]
@@ -100,14 +102,24 @@ namespace Hecton8.Graphics.VR
         private LayerMask uiLayerMask = 1 << DefaultUiLayerIndex;
 
         private IDataVault _dataVault;
+        private IDataVault _telemetryWriteVault;
         private VaultGenerationHandle<FoveatedRenderTelemetryEntry> _telemetryHandle;
         private IHardwareThermalService _hardwareThermal;
+        private InputDevice _centerEyeDeviceCold;
+        private RenderTextureDescriptor _eyeDescriptorCold;
+        // COLD ALLOC: fixed fault-dump snapshot[300] - copied before async filesystem persistence - owner: FoveatedRenderCommander
+        private readonly FoveatedRenderTelemetryEntry[] _blackBoxDumpSnapshot = new FoveatedRenderTelemetryEntry[TelemetryCapacity];
         private int _telemetryCursor;
+        private int _blackBoxDumpSnapshotCursor;
+        private int _blackBoxDumpSnapshotCount;
+        private int _blackBoxDumpInFlight;
+        private int _blackBoxDumpWorkerFault;
         private int _framesUntilSample;
         private int _lastEyeWidth;
         private int _lastEyeHeight;
         private int _lastDisplayCount;
         private uint _sequence;
+        private uint _blackBoxDumpSnapshotSequence;
         private uint _telemetryVaultGeneration;
         private float _systemStress01;
         private float _gpuUtil01;
@@ -139,6 +151,8 @@ namespace Hecton8.Graphics.VR
         private bool _disposed;
         private bool _coldAndroidRuntime;
         private bool _coldStandaloneLikeRuntime;
+        private bool _detachRequested;
+        private string _blackBoxDumpPathCold;
 
         private enum FoveatedRenderMode : byte
         {
@@ -252,6 +266,7 @@ namespace Hecton8.Graphics.VR
             _disposed = false;
             RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
             CacheRuntimeCapabilitySnapshotCold();
+            TryEnsureBlackBoxDumpPathCold();
             RefreshGlobalQualityWeight01();
             EnsureTelemetry();
             _hardwareThermal = GlobalRegistry.HardwareThermal;
@@ -272,6 +287,7 @@ namespace Hecton8.Graphics.VR
             TryRegisterHotSwap();
             TryRegisterRenderable();
             CacheRuntimeCapabilitySnapshotCold();
+            TryEnsureBlackBoxDumpPathCold();
             ApplyPolicy(force: true);
         }
 
@@ -287,6 +303,8 @@ namespace Hecton8.Graphics.VR
             _hardwareThermal = null;
             ReleaseTelemetryBuffer();
             _telemetryCursor = 0;
+            _centerEyeDeviceCold = default;
+            _eyeDescriptorCold = default;
         }
 
         private void OnDestroy()
@@ -312,11 +330,13 @@ namespace Hecton8.Graphics.VR
             ReleaseTelemetryBuffer();
             _telemetryVaultGeneration = 0u;
             _dataVault = null;
+            _centerEyeDeviceCold = default;
+            _eyeDescriptorCold = default;
         }
 
         public void LateFrameTick()
         {
-            if (TryDetachIfInactiveCommander())
+            if (TryQueueDetachIfInactiveCommander())
                 return;
 
             float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
@@ -338,12 +358,9 @@ namespace Hecton8.Graphics.VR
             if (TryDetachIfInactiveCommander())
                 return;
 
-            CacheRuntimeCapabilitySnapshotCold();
-            if (_dataVault == null)
-                RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
-            if (_hardwareThermal == null)
-                _hardwareThermal = GlobalRegistry.HardwareThermal;
-            EnsureTelemetry();
+            PublishBlackBoxDumpWorkerFaultIfNeeded();
+            if (!HasBlackBoxDumpPathCold() || !HasTelemetryReady())
+                return;
         }
 
         public void Render(float deltaTime)
@@ -517,7 +534,7 @@ namespace Hecton8.Graphics.VR
 
         private void ApplyPolicy(bool force)
         {
-            RenderTextureDescriptor eyeDescriptor = HectonXRManager.RefreshEyeDescriptor();
+            RenderTextureDescriptor eyeDescriptor = _eyeDescriptorCold;
             bool xrActive = HectonXRRuntimeState.IsXRActive;
             FoveatedRenderingCaps caps = _coldFoveatedCaps;
             bool capsSupported = caps != FoveatedRenderingCaps.None;
@@ -808,7 +825,7 @@ namespace Hecton8.Graphics.VR
 
         private bool TryDetachIfInactiveCommander()
         {
-            if (ReferenceEquals(s_activeCommander, this) && !_disposed)
+            if (!IsInactiveCommander())
                 return false;
 
             TryUnregisterRenderable();
@@ -816,7 +833,22 @@ namespace Hecton8.Graphics.VR
             TryUnregisterTick();
             TryUnregisterSlowTick();
             _hardwareThermal = null;
+            _detachRequested = false;
             return true;
+        }
+
+        private bool TryQueueDetachIfInactiveCommander()
+        {
+            if (!IsInactiveCommander())
+                return false;
+
+            _detachRequested = true;
+            return true;
+        }
+
+        private bool IsInactiveCommander()
+        {
+            return !ReferenceEquals(s_activeCommander, this) || _disposed || _detachRequested;
         }
 
         private void TryRegisterTick()
@@ -921,10 +953,12 @@ namespace Hecton8.Graphics.VR
             if (ReferenceEquals(_dataVault, currentVault))
                 return;
 
+            ReleaseTelemetryWriteBuffer();
             ReleaseVaultBuffer(_dataVault ?? releaseVaultOverride, ref _telemetryHandle);
             _dataVault = currentVault;
             _telemetryCursor = 0;
             _telemetryVaultGeneration = 0u;
+            _telemetryWriteVault = null;
         }
 
         private bool EnsureTelemetry()
@@ -992,6 +1026,21 @@ namespace Hecton8.Graphics.VR
             _telemetryHandle = acquired;
             _telemetryVaultGeneration = acquired.Generation;
             return true;
+        }
+
+        private bool HasTelemetryReady()
+        {
+            if (!s_telemetryLayoutChecked || !s_telemetryLayoutValid)
+                return false;
+
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   IsVaultHandleCreated(in _telemetryHandle) &&
+                   _telemetryVaultGeneration == _telemetryHandle.Generation &&
+                   vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<FoveatedRenderTelemetryEntry>.ReadOnly telemetry) &&
+                   telemetry.IsCreated &&
+                   telemetry.Length >= TelemetryCapacity;
         }
 
         private static bool VerifyTelemetryLayout()
@@ -1074,66 +1123,142 @@ namespace Hecton8.Graphics.VR
 
         private void DumpBlackBoxOnce()
         {
-            if (_blackBoxDumped || !EnsureTelemetry())
+            if (_blackBoxDumped || !HasTelemetryReady())
             {
                 return;
             }
 
+            if (Interlocked.CompareExchange(ref _blackBoxDumpInFlight, 1, 0) != 0)
+                return;
+
             int telemetryCursor = _telemetryCursor;
             uint sequence = _sequence;
             _blackBoxDumped = true;
+            if (string.IsNullOrEmpty(_blackBoxDumpPathCold) ||
+                !TryStageBlackBoxDumpSnapshot(telemetryCursor, sequence))
+            {
+                Interlocked.Exchange(ref _blackBoxDumpInFlight, 0);
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
+                return;
+            }
+
+            if (!ThreadPool.QueueUserWorkItem(s_blackBoxDumpWorker, this))
+            {
+                Interlocked.Exchange(ref _blackBoxDumpInFlight, 0);
+                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
+            }
+        }
+
+        private bool TryStageBlackBoxDumpSnapshot(int telemetryCursor, uint sequence)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || !IsVaultHandleCreated(in _telemetryHandle))
+                return false;
+
+            if (!vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<FoveatedRenderTelemetryEntry>.ReadOnly telemetry) ||
+                vault.IsCompactionFenceActive ||
+                !telemetry.IsCreated ||
+                telemetry.Length < TelemetryCapacity)
+            {
+                return false;
+            }
+
+            if ((uint)telemetryCursor >= TelemetryCapacity)
+                telemetryCursor = 0;
+
+            for (int i = 0; i < TelemetryCapacity; i++)
+            {
+                int index = telemetryCursor + i;
+                if (index >= TelemetryCapacity)
+                    index -= TelemetryCapacity;
+
+                _blackBoxDumpSnapshot[i] = telemetry[index];
+            }
+
+            _blackBoxDumpSnapshotCursor = telemetryCursor;
+            _blackBoxDumpSnapshotSequence = sequence;
+            _blackBoxDumpSnapshotCount = TelemetryCapacity;
+            return !vault.IsCompactionFenceActive;
+        }
+
+        private static void WriteBlackBoxDumpWorker(object state)
+        {
+            FoveatedRenderCommander commander = state as FoveatedRenderCommander;
+            if (commander == null)
+                return;
+
             try
             {
-                if (!TryOpenDumpStream(out FileStream stream))
-                {
-                    GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
-                    return;
-                }
+                if (!commander.TryWriteBlackBoxSnapshotCold())
+                    Interlocked.Exchange(ref commander._blackBoxDumpWorkerFault, 1);
+            }
+            finally
+            {
+                Interlocked.Exchange(ref commander._blackBoxDumpInFlight, 0);
+            }
+        }
+
+        private void PublishBlackBoxDumpWorkerFaultIfNeeded()
+        {
+            if (Interlocked.Exchange(ref _blackBoxDumpWorkerFault, 0) == 0)
+                return;
+
+            GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
+        }
+
+        private bool TryWriteBlackBoxSnapshotCold()
+        {
+            string path = _blackBoxDumpPathCold;
+            int count = _blackBoxDumpSnapshotCount;
+            if (string.IsNullOrEmpty(path) || count <= 0)
+                return false;
+            if (count > TelemetryCapacity)
+                count = TelemetryCapacity;
+
+            try
+            {
+                if (!TryOpenDumpPath(path, out FileStream stream))
+                    return false;
 
                 using (stream)
                 {
                     Span<byte> header = stackalloc byte[24];
-                    WriteTelemetryDumpHeader(header, telemetryCursor, sequence);
+                    WriteTelemetryDumpHeader(header, _blackBoxDumpSnapshotCursor, _blackBoxDumpSnapshotSequence);
                     stream.Write(header);
 
                     Span<byte> entryBytes = stackalloc byte[TelemetryRecordSizeBytes];
-                    for (int i = 0; i < TelemetryCapacity; i++)
+                    for (int i = 0; i < count; i++)
                     {
-                        int index = telemetryCursor + i;
-                        if (index >= TelemetryCapacity)
-                            index -= TelemetryCapacity;
-
-                        if (!TryReadTelemetryEntry(index, out FoveatedRenderTelemetryEntry entry))
-                            return;
-
-                        WriteTelemetryEntry(entryBytes, in entry);
+                        WriteTelemetryEntry(entryBytes, in _blackBoxDumpSnapshot[i]);
                         stream.Write(entryBytes);
                     }
                 }
+
+                return true;
             }
             catch (IOException)
             {
-                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
+                return false;
             }
             catch (UnauthorizedAccessException)
             {
-                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
+                return false;
             }
             catch (ObjectDisposedException)
             {
-                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
+                return false;
             }
             catch (InvalidOperationException)
             {
-                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
+                return false;
             }
             catch (ArgumentException)
             {
-                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
+                return false;
             }
             catch (NotSupportedException)
             {
-                GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)SourceHash));
+                return false;
             }
         }
 
@@ -1176,23 +1301,6 @@ namespace Hecton8.Graphics.VR
             BinaryPrimitives.WriteInt32LittleEndian(destination, BitConverter.SingleToInt32Bits(value));
         }
 
-        private static bool TryOpenDumpStream(out FileStream stream)
-        {
-            stream = null;
-            if (TryGetProjectDumpPath(out string projectPath) &&
-                TryOpenDumpPath(projectPath, out stream))
-            {
-                return true;
-            }
-
-            string persistentRoot = Application.persistentDataPath;
-            if (string.IsNullOrEmpty(persistentRoot))
-                return false;
-
-            string persistentPath = Path.Combine(persistentRoot, "AgentLogs", DumpFileName);
-            return TryOpenDumpPath(persistentPath, out stream);
-        }
-
         private static bool TryGetProjectDumpPath(out string path)
         {
             path = null;
@@ -1226,6 +1334,30 @@ namespace Hecton8.Graphics.VR
                 path = null;
                 return false;
             }
+        }
+
+        private bool TryEnsureBlackBoxDumpPathCold()
+        {
+            if (!string.IsNullOrEmpty(_blackBoxDumpPathCold))
+                return true;
+
+            if (TryGetProjectDumpPath(out string projectPath))
+            {
+                _blackBoxDumpPathCold = projectPath;
+                return true;
+            }
+
+            string persistentRoot = Application.persistentDataPath;
+            if (string.IsNullOrEmpty(persistentRoot))
+                return false;
+
+            _blackBoxDumpPathCold = Path.Combine(persistentRoot, "AgentLogs", DumpFileName);
+            return true;
+        }
+
+        private bool HasBlackBoxDumpPathCold()
+        {
+            return !string.IsNullOrEmpty(_blackBoxDumpPathCold);
         }
 
         private static bool TryOpenDumpPath(string path, out FileStream stream)
@@ -1269,7 +1401,9 @@ namespace Hecton8.Graphics.VR
         private bool TryAcquireTelemetryWriteBuffer(out NativeArray<FoveatedRenderTelemetryEntry> telemetry)
         {
             telemetry = default;
-            if (!EnsureTelemetry())
+            if (!HasTelemetryReady())
+                return false;
+            if (_telemetryWriteVault != null)
                 return false;
 
             IDataVault vault = _dataVault;
@@ -1287,6 +1421,7 @@ namespace Hecton8.Graphics.VR
                 if (!vault.IsCompactionFenceActive && telemetry.IsCreated && telemetry.Length >= TelemetryCapacity)
                 {
                     _telemetryVaultGeneration = _telemetryHandle.Generation;
+                    _telemetryWriteVault = vault;
                     releaseOnExit = false;
                     return true;
                 }
@@ -1303,47 +1438,26 @@ namespace Hecton8.Graphics.VR
 
         private void ReleaseTelemetryWriteBuffer()
         {
-            IDataVault vault = _dataVault;
+            IDataVault vault = _telemetryWriteVault;
+            _telemetryWriteVault = null;
             if (vault != null && IsVaultHandleCreated(in _telemetryHandle))
                 vault.ReleaseWriteLock(in _telemetryHandle, SystemID.GraphicsScalability);
         }
 
-        private bool TryReadTelemetryEntry(int index, out FoveatedRenderTelemetryEntry entry)
-        {
-            entry = default;
-            if ((uint)index >= TelemetryCapacity)
-                return false;
-
-            IDataVault vault = _dataVault;
-            if (vault == null || vault.IsCompactionFenceActive || !IsVaultHandleCreated(in _telemetryHandle))
-                return false;
-
-            if (!vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<FoveatedRenderTelemetryEntry>.ReadOnly telemetry) ||
-                vault.IsCompactionFenceActive ||
-                !telemetry.IsCreated ||
-                telemetry.Length <= index)
-            {
-                return false;
-            }
-
-            entry = telemetry[index];
-            if (!vault.IsCompactionFenceActive)
-                return true;
-
-            entry = default;
-            return false;
-        }
-
         private void ClearTelemetryDescriptor()
         {
+            ReleaseTelemetryWriteBuffer();
             _telemetryHandle = default;
             _telemetryVaultGeneration = 0u;
+            _telemetryWriteVault = null;
         }
 
         private void ReleaseTelemetryBuffer()
         {
+            ReleaseTelemetryWriteBuffer();
             ReleaseVaultBuffer(_dataVault, ref _telemetryHandle);
             _telemetryVaultGeneration = 0u;
+            _telemetryWriteVault = null;
         }
 
         private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
@@ -1430,8 +1544,12 @@ namespace Hecton8.Graphics.VR
         private void CacheRuntimeCapabilitySnapshotCold()
         {
             _coldFoveatedCaps = SystemInfo.foveatedRenderingCaps;
+            _eyeDescriptorCold = HectonXRManager.RefreshEyeDescriptor();
             _coldAndroidRuntime = Application.platform == RuntimePlatform.Android;
             _coldStandaloneLikeRuntime = ResolveStandaloneLikeRuntimeCold(Application.platform);
+            _centerEyeDeviceCold = _coldStandaloneLikeRuntime
+                ? InputDevices.GetDeviceAtXRNode(XRNode.CenterEye)
+                : default;
             if (_coldAndroidRuntime)
                 EnsureQuestRuntimeClassification();
         }
@@ -1474,7 +1592,12 @@ namespace Hecton8.Graphics.VR
             return t * t * (3f - 2f * t);
         }
 
-        private static bool HasEyeTrackedGaze(bool xrActive, FoveatedRenderingCaps caps, bool questRuntime, bool standaloneLikeRuntime)
+        private static bool HasEyeTrackedGaze(
+            bool xrActive,
+            FoveatedRenderingCaps caps,
+            bool questRuntime,
+            bool standaloneLikeRuntime,
+            InputDevice centerEyeDevice)
         {
             if (!xrActive || questRuntime || !standaloneLikeRuntime)
                 return false;
@@ -1485,8 +1608,7 @@ namespace Hecton8.Graphics.VR
                 return false;
             }
 
-            InputDevice centerEye = InputDevices.GetDeviceAtXRNode(XRNode.CenterEye);
-            if (!centerEye.isValid || !centerEye.TryGetFeatureValue(CommonUsages.eyesData, out Eyes eyes))
+            if (!centerEyeDevice.isValid || !centerEyeDevice.TryGetFeatureValue(CommonUsages.eyesData, out Eyes eyes))
                 return false;
 
             return eyes.TryGetFixationPoint(out Vector3 fixationPoint) && IsFiniteVector(fixationPoint);
@@ -1506,7 +1628,7 @@ namespace Hecton8.Graphics.VR
                 return false;
             }
 
-            if (HasEyeTrackedGaze(xrActive, caps, questRuntime, _coldStandaloneLikeRuntime))
+            if (HasEyeTrackedGaze(xrActive, caps, questRuntime, _coldStandaloneLikeRuntime, _centerEyeDeviceCold))
             {
                 _gazeLossHoldSecondsRemaining = GazeLossHoldSeconds;
                 return true;

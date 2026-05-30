@@ -109,7 +109,7 @@ namespace Hecton8.World.ProceduralWreckage
         private const string DumpFileName = "Dump_WRECKAGE_ASSEMBLER.bin";
         private const string AgentDumpFileName = "Dump_SHINOBU_121.bin";
 
-        public static bool TryResolve(IDataVault vault, out ProceduralWreckageVaultHandles handles)
+        public static bool TryEnsure(IDataVault vault, out ProceduralWreckageVaultHandles handles)
         {
             handles = default;
             if (vault == null)

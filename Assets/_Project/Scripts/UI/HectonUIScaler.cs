@@ -49,6 +49,8 @@ namespace Hecton8.UI
         private bool _registeredToSlowTickManager;
         private bool _hotSwapRegistered;
         private bool _pendingContentRootBootstrap = true;
+        private int _cachedRenderWidth = 1;
+        private int _cachedRenderHeight = 1;
         private int _lastScreenWidth = -1;
         private int _lastScreenHeight = -1;
         private float _lastAppliedScale = -1f;
@@ -62,11 +64,12 @@ namespace Hecton8.UI
         public Vector2 ReferenceResolution => referenceResolution;
 
         /// <summary>Scaled content parent used by first-party HUD overlays.</summary>
-        public RectTransform ContentRoot => ResolveContentRootInternal(createIfMissing: false);
+        public RectTransform ContentRoot => TryGetCachedContentRoot();
 
         private void OnEnable()
         {
             ResolveCanvas();
+            RefreshRenderDimensionsCold(force: true);
             RectTransform contentRoot = EnsureContentRoot();
             if (contentRoot == null)
             {
@@ -123,7 +126,16 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             if (_pendingContentRootBootstrap)
+            {
+                RectTransform bootstrappedRoot = TryGetCachedContentRoot();
+                if (bootstrappedRoot == null)
+                    return;
+
+                ApplyManualLinearLayout();
+                ApplyScaleToCachedRoot(bootstrappedRoot, force: true);
+                _pendingContentRootBootstrap = false;
                 return;
+            }
 
             RectTransform contentRoot = TryGetCachedContentRoot();
             if (contentRoot == null)
@@ -140,9 +152,17 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
+            RefreshRenderDimensionsCold(force: false);
+
             RectTransform contentRoot = TryGetCachedContentRoot();
             if (_pendingContentRootBootstrap)
             {
+                if (contentRoot == null && TryResolveExistingContentRootCold())
+                    contentRoot = _contentRoot;
+
+                if (contentRoot == null)
+                    contentRoot = EnsureContentRoot();
+
                 if (contentRoot == null)
                 {
                     _pendingContentRootBootstrap = true;
@@ -224,6 +244,7 @@ namespace Hecton8.UI
             matchWidthOrHeight = sanitizedMatch;
             if (Application.isPlaying)
             {
+                RefreshRenderDimensionsCold(force: true);
                 _pendingContentRootBootstrap = _pendingContentRootBootstrap || TryGetCachedContentRoot() == null;
                 if (!_pendingContentRootBootstrap)
                     ApplyScale(force: true);
@@ -242,14 +263,12 @@ namespace Hecton8.UI
             if (canvas == null)
                 return null;
 
-            if (canvas.TryGetComponent(out HectonUIScaler scaler))
-            {
-                RectTransform contentRoot = scaler.ResolveContentRootInternal(createIfMissing: false);
-                if (contentRoot != null)
-                    return contentRoot;
-            }
+            RectTransform canvasRoot = canvas.transform as RectTransform;
+            RectTransform contentRoot = FindExistingChild(canvasRoot, ContentRootName);
+            if (contentRoot != null)
+                return contentRoot;
 
-            return canvas.transform as RectTransform;
+            return canvasRoot;
         }
 
         private RectTransform ResolveContentRootInternal(bool createIfMissing)
@@ -291,6 +310,30 @@ namespace Hecton8.UI
         private RectTransform TryGetCachedContentRoot()
         {
             return _contentRoot != null ? _contentRoot : null;
+        }
+
+        private bool TryResolveExistingContentRootCold()
+        {
+            if (_targetCanvas == null)
+                ResolveCanvas();
+
+            if (_targetCanvas == null)
+                return false;
+
+            RectTransform contentRoot = TryGetCachedContentRoot();
+            if (contentRoot != null)
+                return true;
+
+            RectTransform canvasRoot = _targetCanvas.transform as RectTransform;
+            if (canvasRoot == null)
+                return false;
+
+            _contentRoot = FindExistingChild(canvasRoot, ContentRootName);
+            if (_contentRoot == null)
+                return false;
+
+            _contentRoot = SanitizeContentRoot(_contentRoot);
+            return _contentRoot != null;
         }
 
         private RectTransform EnsureContentRoot()
@@ -339,7 +382,15 @@ namespace Hecton8.UI
 
         private void ApplyScale(bool force)
         {
-            RectTransform contentRoot = ResolveContentRootInternal(createIfMissing: false);
+            RectTransform contentRoot = TryGetCachedContentRoot();
+            if (contentRoot == null)
+            {
+                if (Application.isPlaying)
+                    _pendingContentRootBootstrap = true;
+                else
+                    contentRoot = ResolveContentRootInternal(createIfMissing: false);
+            }
+
             if (contentRoot == null)
                 return;
 
@@ -395,20 +446,30 @@ namespace Hecton8.UI
 
         private void ResolveRenderDimensions(out int width, out int height)
         {
-            width = Mathf.Max(1, Screen.width);
-            height = Mathf.Max(1, Screen.height);
+            width = Mathf.Max(1, _cachedRenderWidth);
+            height = Mathf.Max(1, _cachedRenderHeight);
+        }
 
-            if (_targetCanvas == null ||
-                _targetCanvas.renderMode != RenderMode.WorldSpace ||
-                _targetCanvas.worldCamera == null)
+        private void RefreshRenderDimensionsCold(bool force)
+        {
+            int width = Mathf.Max(1, Screen.width);
+            int height = Mathf.Max(1, Screen.height);
+
+            if (_targetCanvas != null &&
+                _targetCanvas.renderMode == RenderMode.WorldSpace &&
+                _targetCanvas.worldCamera != null)
             {
-                return;
+                // World-space HUD layout is already projected onto the visor frustum by the canvas rect itself.
+                // Scaling again from RT resolution collapses the authored layout toward the center as the RT downsamples.
+                width = Mathf.RoundToInt(Mathf.Max(1f, referenceResolution.x));
+                height = Mathf.RoundToInt(Mathf.Max(1f, referenceResolution.y));
             }
 
-            // World-space HUD layout is already projected onto the visor frustum by the canvas rect itself.
-            // Scaling again from RT resolution collapses the authored layout toward the center as the RT downsamples.
-            width = Mathf.RoundToInt(Mathf.Max(1f, referenceResolution.x));
-            height = Mathf.RoundToInt(Mathf.Max(1f, referenceResolution.y));
+            if (!force && width == _cachedRenderWidth && height == _cachedRenderHeight)
+                return;
+
+            _cachedRenderWidth = width;
+            _cachedRenderHeight = height;
         }
 
         private float ComputeScale(int screenWidth, int screenHeight)

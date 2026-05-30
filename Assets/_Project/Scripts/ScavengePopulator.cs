@@ -72,6 +72,9 @@ namespace Hecton8.Core
     public sealed class ScavengePopulator : MonoBehaviour, ISlowTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const int SpawnQueueCapacity = 512;
+        private const int PendingPresentationOperationCapacity = 8192;
+        private const uint ScavengePopulatorTelemetryContextHash = 0x53435050u; // SCPP
+        private const uint PresentationQueueOverflowWarningHash = 0x53435051u; // SCPQ
 
         // ══════════════════════════════════════════════════════════
         //  REGISTRY SERVICE
@@ -95,6 +98,21 @@ namespace Hecton8.Core
             public Vector2Int   chunkCoord;
             public int          localIndex;
             public SpawnContext  context;
+        }
+
+        private enum PendingPresentationOperationKind : byte
+        {
+            None = 0,
+            ApplyScale = 1,
+            DespawnOrDeactivate = 2
+        }
+
+        private struct PendingPresentationOperation
+        {
+            public PendingPresentationOperationKind kind;
+            public GameObject gameObject;
+            public Transform transform;
+            public Vector3 scale;
         }
         /// <summary>
         /// Maps a SpawnContext to an array of resource prefabs.
@@ -206,6 +224,8 @@ namespace Hecton8.Core
         /// Pre-allocated. Enqueue/Dequeue — zero GC.
         /// </summary>
         private Queue<SpawnRequest> _spawnQueue;
+        private readonly PendingPresentationOperation[] _pendingPresentationOperations = new PendingPresentationOperation[PendingPresentationOperationCapacity];
+        private int _pendingPresentationOperationCount;
 
         /// <summary>
         /// Keshirovannyy StringBuilder dlya generatsii unique ID.
@@ -336,7 +356,9 @@ namespace Hecton8.Core
                 _serviceRegistered = false;
             }
 
-            DespawnAllChunks();
+            DespawnAllChunks(flushPresentationImmediately: true);
+            FlushPendingPresentationOperations();
+            ClearPendingPresentationOperations();
             TryUnregisterHotSwapListener();
             ClearCachedRegistryServices();
         }
@@ -362,7 +384,9 @@ namespace Hecton8.Core
                 _serviceRegistered = false;
             }
 
-            DespawnAllChunks();
+            DespawnAllChunks(flushPresentationImmediately: true);
+            FlushPendingPresentationOperations();
+            ClearPendingPresentationOperations();
             TryUnregisterHotSwapListener();
             ClearCachedRegistryServices();
             _chunks?.Clear();
@@ -527,10 +551,11 @@ namespace Hecton8.Core
 
         public void LateFrameTick()
         {
-            if (!_pendingScavengeVisualSync)
+            if (!_pendingScavengeVisualSync && _pendingPresentationOperationCount == 0)
                 return;
 
             _pendingScavengeVisualSync = false;
+            FlushPendingPresentationOperations();
             UpdateDiagnostics();
         }
 
@@ -588,10 +613,11 @@ namespace Hecton8.Core
                 if (instance == null) continue;
 
                 // ── Apply scale from scatter data ──
-                instance.transform.localScale = request.scale;
+                Transform instanceTransform = instance.transform;
+                EnqueuePresentationScale(instanceTransform, request.scale);
 
                 // ── Configure ResourceNode ──
-                ConfigureResourceNode(instance, uniqueId);
+                ConfigureResourceNode(pool, instance, uniqueId);
 
                 // ── Register in chunk ──
                 if (_chunks.TryGetValue(request.chunkCoord, out ChunkData chunk))
@@ -599,7 +625,7 @@ namespace Hecton8.Core
                     ActiveNode node = new ActiveNode
                     {
                         gameObject = instance,
-                        transform  = instance.transform,
+                        transform  = instanceTransform,
                         uniqueId   = uniqueId
                     };
 
@@ -614,12 +640,114 @@ namespace Hecton8.Core
         /// Nastraivaet komponent ResourceNode na zaspavnennom obekte.
         /// Ustanavlivaet uniqueId cherez publichnyy metod SetUniqueId().
         /// </summary>
-        private static void ConfigureResourceNode(GameObject instance, string uniqueId)
+        private static void ConfigureResourceNode(IObjectPoolService pool, GameObject instance, string uniqueId)
         {
-            if (instance.TryGetComponent(out ResourceNode node))
+            if (pool != null && pool.TryGetPooledComponent(instance, out ResourceNode node))
             {
                 node.SetUniqueId(uniqueId);
             }
+        }
+
+        private bool EnqueuePresentationScale(Transform target, Vector3 scale)
+        {
+            if (target == null)
+                return true;
+
+            if (!TryReservePendingPresentationOperation(out int index))
+                return false;
+
+            _pendingPresentationOperations[index] = new PendingPresentationOperation
+            {
+                kind = PendingPresentationOperationKind.ApplyScale,
+                transform = target,
+                scale = scale
+            };
+
+            return true;
+        }
+
+        private bool EnqueuePresentationDespawn(GameObject instance, Transform instanceTransform)
+        {
+            if (instance == null)
+                return true;
+
+            if (!TryReservePendingPresentationOperation(out int index))
+                return false;
+
+            _pendingPresentationOperations[index] = new PendingPresentationOperation
+            {
+                kind = PendingPresentationOperationKind.DespawnOrDeactivate,
+                gameObject = instance,
+                transform = instanceTransform
+            };
+
+            return true;
+        }
+
+        private bool TryReservePendingPresentationOperation(out int index)
+        {
+            index = _pendingPresentationOperationCount;
+            if ((uint)index >= (uint)_pendingPresentationOperations.Length)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    PresentationQueueOverflowWarningHash,
+                    ScavengePopulatorTelemetryContextHash,
+                    _pendingPresentationOperations.Length);
+                return false;
+            }
+
+            _pendingPresentationOperationCount = index + 1;
+            _pendingScavengeVisualSync = true;
+            return true;
+        }
+
+        private void FlushPendingPresentationOperations()
+        {
+            int count = _pendingPresentationOperationCount;
+            if (count <= 0)
+                return;
+
+            _pendingPresentationOperationCount = 0;
+            IObjectPoolService pool = _objectPool;
+
+            for (int i = 0; i < count; i++)
+            {
+                PendingPresentationOperation operation = _pendingPresentationOperations[i];
+                _pendingPresentationOperations[i] = default;
+
+                switch (operation.kind)
+                {
+                    case PendingPresentationOperationKind.ApplyScale:
+                        if (operation.transform != null)
+                            operation.transform.localScale = operation.scale;
+                        break;
+
+                    case PendingPresentationOperationKind.DespawnOrDeactivate:
+                        GameObject instance = operation.gameObject;
+                        if (instance == null || !instance.activeInHierarchy)
+                            break;
+
+                        Transform instanceTransform = operation.transform;
+                        if (instanceTransform != null)
+                            instanceTransform.localScale = Vector3.one;
+
+                        if (pool != null)
+                            pool.Despawn(instance);
+                        else
+                            instance.SetActive(false);
+                        break;
+                }
+            }
+        }
+
+        private void ClearPendingPresentationOperations()
+        {
+            int count = _pendingPresentationOperationCount;
+            for (int i = 0; i < count; i++)
+                _pendingPresentationOperations[i] = default;
+
+            _pendingPresentationOperationCount = 0;
+            _pendingScavengeVisualSync = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -712,8 +840,6 @@ namespace Hecton8.Core
             if (!_chunks.TryGetValue(coord, out ChunkData chunk))
                 return;
 
-            IObjectPoolService pool = _objectPool;
-
             List<ActiveNode> nodes = chunk.activeNodes;
             int count = nodes.Count;
 
@@ -721,37 +847,33 @@ namespace Hecton8.Core
             {
                 ActiveNode node = nodes[i];
 
-                if (node.gameObject != null)
+                if (node.gameObject == null)
                 {
                     // Zaschita ot Double Despawn:
                     // Esli obekt uzhe vyklyuchen, znachit on uzhe v pule
                     // (unichtozhen igrokom cherez ResourceNode → pool.Despawn).
                     // Povtornyy Despawn propuskaetsya.
-                    if (node.gameObject.activeInHierarchy)
-                    {
-                        // Sbrasyvaem masshtab pered vozvratom v pul
-                        node.gameObject.transform.localScale = Vector3.one;
-
-                        if (pool != null)
-                        {
-                            pool.Despawn(node.gameObject);
-                        }
-                        else
-                        {
-                            node.gameObject.SetActive(false);
-                        }
-                    }
+                    nodes.RemoveAt(i);
+                    continue;
                 }
+
+                if (!node.gameObject.activeInHierarchy)
+                {
+                    nodes.RemoveAt(i);
+                    continue;
+                }
+
+                if (EnqueuePresentationDespawn(node.gameObject, node.transform))
+                    nodes.RemoveAt(i);
             }
 
-            nodes.Clear();
-            chunk.isLoaded = false;
+            chunk.isLoaded = nodes.Count > 0;
         }
 
         /// <summary>
         /// Despavnit VSE chanki. Vyzyvaetsya pri OnDisable / smene stseny.
         /// </summary>
-        private void DespawnAllChunks()
+        private void DespawnAllChunks(bool flushPresentationImmediately = false)
         {
             if (_spawnQueue == null || _chunksToUnload == null || _chunks == null)
                 return;
@@ -770,6 +892,8 @@ namespace Hecton8.Core
             for (int i = 0; i < count; i++)
             {
                 DespawnChunk(_chunksToUnload[i]);
+                if (flushPresentationImmediately)
+                    FlushPendingPresentationOperations();
             }
 
             _chunks.Clear();

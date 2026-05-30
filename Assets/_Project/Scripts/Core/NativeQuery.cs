@@ -76,10 +76,13 @@ namespace Hecton8.Core
             if (!output.IsCreated)
                 return false;
 
-            output.Clear();
             if (!source.IsCreated || !predicate.IsCreated || source.Length <= 0)
+            {
+                output.Clear();
                 return true;
+            }
 
+            output.Clear();
             if (output.Capacity < source.Length)
                 return false;
 
@@ -103,10 +106,13 @@ namespace Hecton8.Core
             if (!output.IsCreated)
                 return false;
 
-            output.Clear();
             if (!source.IsCreated || !selector.IsCreated || source.Length <= 0)
+            {
+                output.Clear();
                 return true;
+            }
 
+            output.Clear();
             if (output.Capacity < source.Length)
                 return false;
 
@@ -148,6 +154,7 @@ namespace Hecton8.Core
             if (!Source.IsCreated || !Predicate.IsCreated || !Output.IsCreated)
                 return;
 
+            Output.Clear();
             for (int i = 0; i < Source.Length; i++)
             {
                 T value = Source[i];

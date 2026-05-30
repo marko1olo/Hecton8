@@ -136,7 +136,9 @@ namespace Hecton8.Rendering.Scatter
         private const int TelemetryCapacity = 300;
         private const int BurstAuditBatchSize = 64;
         private const int VisibleCountReadbackFrameStride = 60;
+        private const int IndirectArgsElementCount = 5;
         private const int IndirectArgsInstanceCountIndex = 1;
+        private const int IndirectArgsReadbackByteCount = sizeof(uint) * IndirectArgsElementCount;
         private const int MissingRegistryRefreshStrideFrames = 120;
         private const uint PortableMaxThreadsPerThreadGroup = 256u;
         private const int MaxDispatchGroupsPerDimension = 65535;
@@ -383,9 +385,16 @@ namespace Hecton8.Rendering.Scatter
         private float _pendingQualityWeight01 = 1f;
         private float _cachedQualityWeight01 = 1f;
         private AsyncGPUReadbackRequest _visibleCountReadbackRequest;
+        private VisibleCountReadbackOwner _visibleCountReadback;
         private bool _visibleCountReadbackPending;
+        private bool _visibleCountReadbackRepairRequested;
         private Mesh _boundMesh;
         private int _cachedMaterialVariantInstanceId;
+
+        private struct VisibleCountReadbackOwner
+        {
+            public NativeArray<uint> Data;
+        }
         private uint _boundIndexCount;
         private uint _boundStartIndex;
         private uint _boundBaseVertex;
@@ -544,16 +553,21 @@ namespace Hecton8.Rendering.Scatter
 
         public void SlowTick()
         {
-            if (!_registryRefreshRequested && _registryDataVault != null)
-                return;
+            if (_registryRefreshRequested || _registryDataVault == null)
+            {
+                RefreshCachedRegistryServices();
+                _registryRefreshRequested = _registryDataVault == null;
+            }
 
-            RefreshCachedRegistryServices();
-            _registryRefreshRequested = _registryDataVault == null;
+            if (!_gpuReady || !IsGpuStateValid())
+                TryEnsureGpuState();
+
+            FlushVisibleCountReadbackRepairSlow();
         }
 
         private void RunScatterVisualTick(float deltaTime)
         {
-            if (!TryEnsureGpuState())
+            if (!HasGpuStateReady())
                 return;
 
             ConsumeCameraFrustumSignals();
@@ -790,8 +804,33 @@ namespace Hecton8.Rendering.Scatter
 
             EnsureGpuBuffers();
             InitializeIndirectArgs(floraMesh);
+            EnsureVisibleCountReadbackData();
             _gpuReady = IsGpuStateValid();
             return _gpuReady;
+        }
+
+        private bool HasGpuStateReady()
+        {
+            if (!_abiLayoutValid ||
+                !_gpuReady ||
+                !IsGpuStateValid() ||
+                scatterCullCompute == null ||
+                !_coldSupportsComputeShaders ||
+                floraMesh == null ||
+                !HasAnyConfiguredMaterial())
+            {
+                _gpuReady = false;
+                return false;
+            }
+
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+            {
+                _gpuReady = false;
+                return false;
+            }
+
+            return true;
         }
 
         private bool IsGpuStateValid()
@@ -1077,6 +1116,9 @@ namespace Hecton8.Rendering.Scatter
 
         private void ReleaseGpuBuffers()
         {
+            CompletePendingVisibleCountReadbackForRelease();
+            DisposeVisibleCountReadbackData();
+
             if (_matrixBuffers != null)
             {
                 for (int i = 0; i < _matrixBuffers.Length; i++)
@@ -1120,7 +1162,6 @@ namespace Hecton8.Rendering.Scatter
             _activeFrameConstantsBuffer = null;
             InvalidateIndirectArgsCache();
             _dispatchThreadGroupSizeX = 0;
-            _visibleCountReadbackPending = false;
             _visibleStateDirty = false;
             _gpuReady = false;
         }
@@ -1178,7 +1219,12 @@ namespace Hecton8.Rendering.Scatter
         private void ClearVisibleState()
         {
             _lastVisibleFloraCount = 0;
-            _visibleCountReadbackPending = false;
+            if (_visibleCountReadbackPending && _visibleCountReadbackRequest.done)
+            {
+                _visibleCountReadbackPending = false;
+                _visibleCountReadbackRequest = default;
+            }
+
             if (!_visibleStateDirty)
                 return;
 
@@ -1574,22 +1620,101 @@ namespace Hecton8.Rendering.Scatter
                     return;
 
                 _visibleCountReadbackPending = false;
-                if (!_visibleCountReadbackRequest.hasError)
+                if (!_visibleCountReadbackRequest.hasError && _visibleCountReadback.Data.IsCreated)
                 {
-                    var argsData = _visibleCountReadbackRequest.GetData<uint>();
-                    _lastVisibleFloraCount = argsData.Length > IndirectArgsInstanceCountIndex
-                        ? (int)math.min(argsData[IndirectArgsInstanceCountIndex], (uint)int.MaxValue)
+                    _lastVisibleFloraCount = _visibleCountReadback.Data.Length > IndirectArgsInstanceCountIndex
+                        ? (int)math.min(_visibleCountReadback.Data[IndirectArgsInstanceCountIndex], (uint)int.MaxValue)
                         : 0;
                 }
 
                 return;
             }
 
-            if (_argsBuffer == null || (frameIndex % VisibleCountReadbackFrameStride) != 0)
+            if (_argsBuffer == null ||
+                (frameIndex % VisibleCountReadbackFrameStride) != 0)
+            {
+                return;
+            }
+
+            if (!HasVisibleCountReadbackData())
+            {
+                QueueVisibleCountReadbackRepair();
+                return;
+            }
+
+            _visibleCountReadbackRequest = AsyncGPUReadback.RequestIntoNativeArray(
+                ref _visibleCountReadback.Data,
+                _argsBuffer,
+                IndirectArgsReadbackByteCount,
+                0,
+                null);
+            _visibleCountReadbackPending = !_visibleCountReadbackRequest.hasError;
+            if (!_visibleCountReadbackPending)
+                _visibleCountReadbackRequest = default;
+        }
+
+        private bool EnsureVisibleCountReadbackData()
+        {
+            if (HasVisibleCountReadbackData())
+                return true;
+
+            if (_visibleCountReadbackPending)
+                return false;
+
+            DisposeVisibleCountReadbackData();
+            _visibleCountReadback.Data = new NativeArray<uint>(
+                IndirectArgsElementCount,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(_visibleCountReadback.Data, nameof(GpuScatterLodManager), "_visibleCountReadbackData", NativeAllocationLifetime.Scene);
+            _visibleCountReadbackRepairRequested = false;
+            return true;
+        }
+
+        private bool HasVisibleCountReadbackData()
+        {
+            return _visibleCountReadback.Data.IsCreated &&
+                   _visibleCountReadback.Data.Length >= IndirectArgsElementCount;
+        }
+
+        private void QueueVisibleCountReadbackRepair()
+        {
+            _visibleCountReadbackRepairRequested = true;
+        }
+
+        private void FlushVisibleCountReadbackRepairSlow()
+        {
+            if (!_visibleCountReadbackRepairRequested && HasVisibleCountReadbackData())
                 return;
 
-            _visibleCountReadbackRequest = AsyncGPUReadback.Request(_argsBuffer);
-            _visibleCountReadbackPending = true;
+            if (_argsBuffer == null || _visibleCountReadbackPending)
+                return;
+
+            EnsureVisibleCountReadbackData();
+        }
+
+        private void CompletePendingVisibleCountReadbackForRelease()
+        {
+            if (!_visibleCountReadbackPending)
+                return;
+
+            if (!_visibleCountReadbackRequest.done)
+                _visibleCountReadbackRequest.WaitForCompletion();
+
+            _visibleCountReadbackPending = false;
+            _visibleCountReadbackRequest = default;
+        }
+
+        private void DisposeVisibleCountReadbackData()
+        {
+            if (_visibleCountReadback.Data.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_visibleCountReadback.Data);
+                _visibleCountReadback.Data.Dispose();
+                _visibleCountReadback.Data = default;
+            }
+
+            _visibleCountReadbackRepairRequested = false;
         }
 
         private bool TryBuildFrustumPlanes()

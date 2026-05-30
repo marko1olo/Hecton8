@@ -1,7 +1,9 @@
 using System;
 #if UNITY_EDITOR
 using System.IO;
+using System.Threading;
 #endif
+using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Collections;
@@ -29,15 +31,19 @@ namespace Hecton8.Physics.Vehicles
             VaultMutationGuardBit(BufferID.Shinobu332GyroTelemetry) |
             VaultMutationGuardBit(BufferID.Shinobu332GyroVisualStates) |
             VaultMutationGuardBit(BufferID.Shinobu332GyroCounters);
-        private static readonly ulong GyroDefaultMutationGuardMask =
-            VaultMutationGuardBit(BufferID.Shinobu332SubmarineGyros) |
-            VaultMutationGuardBit(BufferID.Shinobu332GyroProfiles) |
+        private static readonly ulong GyroDefaultGyroMutationGuardMask =
+            VaultMutationGuardBit(BufferID.Shinobu332SubmarineGyros);
+        private static readonly ulong GyroDefaultProfileMutationGuardMask =
+            VaultMutationGuardBit(BufferID.Shinobu332GyroProfiles);
+        private static readonly ulong GyroDefaultCounterMutationGuardMask =
             VaultMutationGuardBit(BufferID.Shinobu332GyroCounters);
 #if UNITY_EDITOR
-        private static readonly ulong GyroProfilesCsvMutationGuardMask =
-            VaultMutationGuardBit(BufferID.Shinobu332SubmarineGyros) |
-            VaultMutationGuardBit(BufferID.Shinobu332GyroProfiles) |
-            VaultMutationGuardBit(BufferID.Shinobu332GyroCsvScratch);
+        private static readonly ulong GyroProfilesCsvGyroMutationGuardMask =
+            VaultMutationGuardBit(BufferID.Shinobu332SubmarineGyros);
+        private static readonly ulong GyroProfilesCsvProfileMutationGuardMask =
+            VaultMutationGuardBit(BufferID.Shinobu332GyroProfiles);
+        private static readonly SubmarineGyroDTO[] s_gyroCsvScratch = new SubmarineGyroDTO[SubmarineDynamicsConstants.MaxVehicles];
+        private static readonly SubmarineGyroProfileDTO[] s_gyroProfileCsvScratch = new SubmarineGyroProfileDTO[SubmarineDynamicsConstants.MaxVehicles];
 #endif
 
         [Header("Auto-Level Gyro")]
@@ -149,50 +155,120 @@ namespace Hecton8.Physics.Vehicles
 
         private bool TryInitializeGyroDefaults(int capacity)
         {
-            if (_dataVault == null || !_dataVault.TryAcquireMutationGuard(GyroDefaultMutationGuardMask))
+            if (!TryReadOnlyVaultHandle(in _gyroHandle, out NativeArray<SubmarineGyroDTO>.ReadOnly gyroRead) ||
+                !TryReadOnlyVaultHandle(in _gyroProfileHandle, out NativeArray<SubmarineGyroProfileDTO>.ReadOnly profileRead) ||
+                !TryReadOnlyVaultHandle(in _gyroCounterHandle, out NativeArray<SubmarineGyroCounterDTO>.ReadOnly counterRead))
+            {
+                return false;
+            }
+
+            int count = math.min(math.max(0, capacity), math.min(gyroRead.Length, profileRead.Length));
+            count = math.min(count, SubmarineDynamicsConstants.MaxVehicles);
+            Span<SubmarineGyroDTO> gyroScratch = stackalloc SubmarineGyroDTO[SubmarineDynamicsConstants.MaxVehicles];
+            Span<SubmarineGyroProfileDTO> profileScratch = stackalloc SubmarineGyroProfileDTO[SubmarineDynamicsConstants.MaxVehicles];
+            for (int i = 0; i < count; i++)
+            {
+                SubmarineGyroDTO gyro = gyroRead[i];
+                if (gyro.MaxCorrectionTorque <= 0f || !math.isfinite(gyro.MaxCorrectionTorque))
+                {
+                    gyro = BuildSerializedGyro();
+                }
+                gyroScratch[i] = gyro;
+
+                SubmarineGyroProfileDTO profile = profileRead[i];
+                if (profile.ProfileHash == 0u)
+                {
+                    profile.ProfileHash = SubmarineDynamicsConstants.SourceHashGyro ^ (uint)i;
+                    profile.ProportionalGainPitch = gyro.ProportionalGainPitch;
+                    profile.DerivativeGainPitch = gyro.DerivativeGainPitch;
+                    profile.ProportionalGainRoll = gyro.ProportionalGainRoll;
+                    profile.DerivativeGainRoll = gyro.DerivativeGainRoll;
+                    profile.MaxCorrectionTorque = gyro.MaxCorrectionTorque;
+                    profile.Flags = gyro.AutoLevelEnabledFlag;
+                }
+                profileScratch[i] = profile;
+            }
+
+            bool clearCounter = counterRead.Length > 0 && counterRead[0].Frame == 0u;
+            if (!TryCommitGyroDefaultGyros(gyroScratch, count) ||
+                !TryCommitGyroDefaultProfiles(profileScratch, count))
+            {
+                return false;
+            }
+
+            return !clearCounter || TryCommitGyroDefaultCounter();
+        }
+
+        private bool TryCommitGyroDefaultGyros(ReadOnlySpan<SubmarineGyroDTO> gyroScratch, int count)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(GyroDefaultGyroMutationGuardMask))
                 return false;
 
             try
             {
-                if (!TryResolveVaultHandle(in _gyroHandle, out NativeArray<SubmarineGyroDTO> gyros) ||
-                    !TryResolveVaultHandle(in _gyroProfileHandle, out NativeArray<SubmarineGyroProfileDTO> profiles) ||
-                    !TryResolveVaultHandle(in _gyroCounterHandle, out NativeArray<SubmarineGyroCounterDTO> counters))
+                if (!TryOpenVaultHandleForOwner(in _gyroHandle, out NativeArray<SubmarineGyroDTO> gyros) ||
+                    gyros.Length == 0)
                 {
                     return false;
                 }
 
-                int count = math.min(math.max(0, capacity), math.min(gyros.Length, profiles.Length));
-                for (int i = 0; i < count; i++)
-                {
-                    SubmarineGyroDTO gyro = gyros[i];
-                    if (gyro.MaxCorrectionTorque <= 0f || !math.isfinite(gyro.MaxCorrectionTorque))
-                    {
-                        gyro = BuildSerializedGyro();
-                        gyros[i] = gyro;
-                    }
-
-                    SubmarineGyroProfileDTO profile = profiles[i];
-                    if (profile.ProfileHash == 0u)
-                    {
-                        profile.ProfileHash = SubmarineDynamicsConstants.SourceHashGyro ^ (uint)i;
-                        profile.ProportionalGainPitch = gyro.ProportionalGainPitch;
-                        profile.DerivativeGainPitch = gyro.DerivativeGainPitch;
-                        profile.ProportionalGainRoll = gyro.ProportionalGainRoll;
-                        profile.DerivativeGainRoll = gyro.DerivativeGainRoll;
-                        profile.MaxCorrectionTorque = gyro.MaxCorrectionTorque;
-                        profile.Flags = gyro.AutoLevelEnabledFlag;
-                        profiles[i] = profile;
-                    }
-                }
-
-                if (counters.Length > 0 && counters[0].Frame == 0u)
-                    counters[0] = default;
-
+                int copyLength = math.min(math.min(gyros.Length, gyroScratch.Length), count);
+                for (int i = 0; i < copyLength; i++)
+                    gyros[i] = gyroScratch[i];
                 return true;
             }
             finally
             {
-                _dataVault.ReleaseMutationGuard(GyroDefaultMutationGuardMask);
+                vault.ReleaseMutationGuard(GyroDefaultGyroMutationGuardMask);
+            }
+        }
+
+        private bool TryCommitGyroDefaultProfiles(ReadOnlySpan<SubmarineGyroProfileDTO> profileScratch, int count)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(GyroDefaultProfileMutationGuardMask))
+                return false;
+
+            try
+            {
+                if (!TryOpenVaultHandleForOwner(in _gyroProfileHandle, out NativeArray<SubmarineGyroProfileDTO> profiles) ||
+                    profiles.Length == 0)
+                {
+                    return false;
+                }
+
+                int copyLength = math.min(math.min(profiles.Length, profileScratch.Length), count);
+                for (int i = 0; i < copyLength; i++)
+                    profiles[i] = profileScratch[i];
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(GyroDefaultProfileMutationGuardMask);
+            }
+        }
+
+        private bool TryCommitGyroDefaultCounter()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(GyroDefaultCounterMutationGuardMask))
+                return false;
+
+            try
+            {
+                if (!TryOpenVaultHandleForOwner(in _gyroCounterHandle, out NativeArray<SubmarineGyroCounterDTO> counters) ||
+                    counters.Length == 0)
+                {
+                    return false;
+                }
+
+                counters[0] = default;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(GyroDefaultCounterMutationGuardMask);
             }
         }
 
@@ -223,12 +299,12 @@ namespace Hecton8.Physics.Vehicles
             visuals = default;
             counters = default;
 
-            return TryResolveVaultHandle(in _gyroHandle, out gyros) &&
-                   TryResolveVaultHandle(in _gyroErrorHandle, out errors) &&
-                   TryResolveVaultHandle(in _gyroForcePacketHandle, out packets) &&
-                   TryResolveVaultHandle(in _gyroTelemetryHandle, out telemetry) &&
-                   TryResolveVaultHandle(in _gyroVisualHandle, out visuals) &&
-                   TryResolveVaultHandle(in _gyroCounterHandle, out counters);
+            return TryOpenVaultHandleForOwner(in _gyroHandle, out gyros) &&
+                   TryOpenVaultHandleForOwner(in _gyroErrorHandle, out errors) &&
+                   TryOpenVaultHandleForOwner(in _gyroForcePacketHandle, out packets) &&
+                   TryOpenVaultHandleForOwner(in _gyroTelemetryHandle, out telemetry) &&
+                   TryOpenVaultHandleForOwner(in _gyroVisualHandle, out visuals) &&
+                   TryOpenVaultHandleForOwner(in _gyroCounterHandle, out counters);
         }
 
         private bool ValidateGyroScheduleBuffers(int capacity)
@@ -338,7 +414,7 @@ namespace Hecton8.Physics.Vehicles
             if (elapsedMicros <= 0f || !math.isfinite(elapsedMicros))
                 return;
 
-            if (!TryResolveVaultHandle(in _gyroTelemetryHandle, out NativeArray<GyroTelemetryEntry> telemetry) || telemetry.Length == 0)
+            if (!TryOpenVaultHandleForOwner(in _gyroTelemetryHandle, out NativeArray<GyroTelemetryEntry> telemetry) || telemetry.Length == 0)
                 return;
 
             int index = (int)(_frameCounter % (uint)telemetry.Length);
@@ -522,20 +598,7 @@ namespace Hecton8.Physics.Vehicles
                 return;
             }
 
-            NativeArray<SubmarineGyroVisualStateDTO> mapped = writeBuffer.LockBufferForWrite<SubmarineGyroVisualStateDTO>(0, count);
-            try
-            {
-                unsafe
-                {
-                    void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(visuals);
-                    void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                    UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)SubmarineDynamicsConstants.GyroVisualStateBytes * count);
-                }
-            }
-            finally
-            {
-                writeBuffer.UnlockBufferAfterWrite<SubmarineGyroVisualStateDTO>(count);
-            }
+            GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, visuals, count);
             Shader.SetGlobalBuffer(s_GyroVisualBufferId, writeBuffer);
             Shader.SetGlobalInt(s_GyroVisualCountId, count);
             _gyroVisualBufferWriteIndex ^= 1;
@@ -592,16 +655,17 @@ namespace Hecton8.Physics.Vehicles
 #if UNITY_EDITOR
         private bool TryApplyGyroProfilesCsv()
         {
-            if (!_buffersReady || _dataVault == null || _integratorPending || _buffersLocked)
+            IDataVault vault = _dataVault;
+            if (!_buffersReady || vault == null || _integratorPending || _buffersLocked)
                 return false;
 
             if (string.IsNullOrEmpty(_gyroProfilesCsvPath) || !File.Exists(_gyroProfilesCsvPath))
                 return false;
 
-            FileInfo info;
+            long ticks;
             try
             {
-                info = new FileInfo(_gyroProfilesCsvPath);
+                ticks = File.GetLastWriteTimeUtc(_gyroProfilesCsvPath).Ticks;
             }
             catch (IOException)
             {
@@ -612,55 +676,105 @@ namespace Hecton8.Physics.Vehicles
                 return false;
             }
 
-            if (info.Length <= 0L || info.Length > MaxGyroProfileCsvBytes || info.LastWriteTimeUtc.Ticks == _gyroProfilesCsvLastWriteTicks)
+            if (ticks == _gyroProfilesCsvLastWriteTicks)
                 return false;
 
-            if (!_dataVault.TryAcquireMutationGuard(GyroProfilesCsvMutationGuardMask))
+            if (Interlocked.CompareExchange(ref s_csvImportScratchBusy, 1, 0) != 0)
                 return false;
 
             try
             {
-                if (!TryResolveVaultHandle(in _gyroHandle, out NativeArray<SubmarineGyroDTO> gyros) ||
-                    !TryResolveVaultHandle(in _gyroProfileHandle, out NativeArray<SubmarineGyroProfileDTO> profiles) ||
-                    !TryResolveVaultHandle(in _gyroCsvScratchHandle, out NativeArray<byte> scratchBytes))
+                System.Array.Clear(s_gyroCsvScratch, 0, s_gyroCsvScratch.Length);
+                System.Array.Clear(s_gyroProfileCsvScratch, 0, s_gyroProfileCsvScratch.Length);
+
+                int read;
+                try
+                {
+                    using FileStream stream = File.Open(_gyroProfilesCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    long length = stream.Length;
+                    if (length <= 0L || length > MaxGyroProfileCsvBytes)
+                        return false;
+
+                    read = stream.Read(s_csvImportBytes, 0, (int)length);
+                    if (read <= 0)
+                        return false;
+                }
+                catch (IOException)
+                {
+                    return false;
+                }
+                catch (UnauthorizedAccessException)
                 {
                     return false;
                 }
 
-                int length = (int)info.Length;
-                if (scratchBytes.Length < length)
+                int parsed = ParseGyroProfilesCsv(
+                    s_csvImportBytes.AsSpan(0, read),
+                    s_gyroCsvScratch.AsSpan(),
+                    s_gyroProfileCsvScratch.AsSpan());
+                if (parsed <= 0)
                     return false;
 
-                unsafe
+                if (!TryCommitGyroProfilesCsvGyros() ||
+                    !TryCommitGyroProfilesCsvProfiles())
                 {
-                    byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratchBytes);
-                    Span<byte> scratch = new Span<byte>(scratchPtr, length);
-                    using (FileStream stream = new FileStream(_gyroProfilesCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))
-                    {
-                        int read = stream.Read(scratch);
-                        if (read <= 0)
-                            return false;
-
-                        int parsed = ParseGyroProfilesCsv(new ReadOnlySpan<byte>(scratchPtr, read), gyros, profiles);
-                        if (parsed <= 0)
-                            return false;
-                    }
+                    return false;
                 }
 
-                _gyroProfilesCsvLastWriteTicks = info.LastWriteTimeUtc.Ticks;
+                _gyroProfilesCsvLastWriteTicks = ticks;
                 return true;
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
             }
             finally
             {
-                _dataVault.ReleaseMutationGuard(GyroProfilesCsvMutationGuardMask);
+                Volatile.Write(ref s_csvImportScratchBusy, 0);
+            }
+        }
+
+        private bool TryCommitGyroProfilesCsvGyros()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(GyroProfilesCsvGyroMutationGuardMask))
+                return false;
+
+            try
+            {
+                if (!TryOpenVaultHandleForOwner(in _gyroHandle, out NativeArray<SubmarineGyroDTO> gyros) ||
+                    gyros.Length == 0)
+                {
+                    return false;
+                }
+
+                int copyLength = math.min(gyros.Length, s_gyroCsvScratch.Length);
+                NativeArray<SubmarineGyroDTO>.Copy(s_gyroCsvScratch, 0, gyros, 0, copyLength);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(GyroProfilesCsvGyroMutationGuardMask);
+            }
+        }
+
+        private bool TryCommitGyroProfilesCsvProfiles()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(GyroProfilesCsvProfileMutationGuardMask))
+                return false;
+
+            try
+            {
+                if (!TryOpenVaultHandleForOwner(in _gyroProfileHandle, out NativeArray<SubmarineGyroProfileDTO> profiles) ||
+                    profiles.Length == 0)
+                {
+                    return false;
+                }
+
+                int copyLength = math.min(profiles.Length, s_gyroProfileCsvScratch.Length);
+                NativeArray<SubmarineGyroProfileDTO>.Copy(s_gyroProfileCsvScratch, 0, profiles, 0, copyLength);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(GyroProfilesCsvProfileMutationGuardMask);
             }
         }
 #endif
@@ -668,8 +782,8 @@ namespace Hecton8.Physics.Vehicles
 #if UNITY_EDITOR
         private static int ParseGyroProfilesCsv(
             ReadOnlySpan<byte> bytes,
-            NativeArray<SubmarineGyroDTO> gyros,
-            NativeArray<SubmarineGyroProfileDTO> profiles)
+            Span<SubmarineGyroDTO> gyros,
+            Span<SubmarineGyroProfileDTO> profiles)
         {
             int cursor = 0;
             int count = 0;

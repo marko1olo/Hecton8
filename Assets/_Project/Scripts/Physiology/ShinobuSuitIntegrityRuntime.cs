@@ -1230,7 +1230,7 @@ namespace Hecton8.Physiology
             if (!_jobGuardHeld)
                 return;
 
-            IDataVault vault = _jobGuardVault ?? _dataVault;
+            IDataVault vault = _jobGuardVault;
             _jobGuardVault = null;
             _jobGuardHeld = false;
             if (vault != null)

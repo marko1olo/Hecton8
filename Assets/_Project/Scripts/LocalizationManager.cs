@@ -118,6 +118,10 @@ namespace Hecton.Localization
 
         private PlayerToolManager _cachedPlayerToolManager;
         private HectonPlayerMovement _cachedPlayerMovement;
+        private IPlayerRuntimeContext _cachedPlayerRuntimeContext;
+        private IDepthZoneReadModel _cachedDepthZoneReadModel;
+        private HectonMapMagicVegetationBridge _cachedVegetationBridge;
+        private IAcousticZoneMadnessCueSink _cachedAcousticMadnessCueSink;
         private uint _cachedAnalyzerFrame;
         private bool _cachedAnalyzerInstalled;
         private uint _cachedHullStressFrame;
@@ -198,6 +202,7 @@ namespace Hecton.Localization
 
             LocRegistry.BindBabelVaultCold(GlobalRegistry.DataVault);
             TryRegisterHotSwapListener();
+            CacheColdRuntimeServices();
             LoadLegacyCompatibilityTables();
             RestoreSavedLanguage();
             RefreshRuntimeRegistry();
@@ -771,11 +776,25 @@ namespace Hecton.Localization
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
-                return;
-
-            LocRegistry.BindBabelVaultCold(currentService as IDataVault);
-            RefreshRuntimeRegistry();
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    LocRegistry.BindBabelVaultCold(currentService as IDataVault);
+                    RefreshRuntimeRegistry();
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                    break;
+                case GlobalRegistryServiceSlot.DepthZoneRuntime:
+                    _cachedDepthZoneReadModel = currentService as IDepthZoneReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
+                    _cachedVegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    break;
+                case GlobalRegistryServiceSlot.AcousticZoneRuntime:
+                    _cachedAcousticMadnessCueSink = currentService as IAcousticZoneMadnessCueSink;
+                    break;
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -1615,13 +1634,10 @@ namespace Hecton.Localization
             if (_cachedPlayerToolManager != null)
                 return _cachedPlayerToolManager;
 
-            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
-                return null;
+            IPlayerRuntimeContext playerContext = _cachedPlayerRuntimeContext;
+            if (playerContext != null)
+                _cachedPlayerToolManager = playerContext.ToolManager;
 
-            _cachedPlayerToolManager =
-                Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null
-                    ? Hecton8.Core.GlobalRegistry.Player.ToolManager
-                    : ResolvePlayerToolManager(playerTransform);
             return _cachedPlayerToolManager;
         }
 
@@ -1825,7 +1841,7 @@ namespace Hecton.Localization
 
             _madnessLastRollBucket = rollBucket;
 
-            IDepthZoneReadModel depthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
+            IDepthZoneReadModel depthZoneReadModel = _cachedDepthZoneReadModel;
             DepthZoneProfile currentZone = depthZoneReadModel != null
                 ? depthZoneReadModel.CurrentZone
                 : null;
@@ -1848,7 +1864,7 @@ namespace Hecton.Localization
             if (IsInDeadZoneContext())
                 return true;
 
-            IDepthZoneReadModel depthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
+            IDepthZoneReadModel depthZoneReadModel = _cachedDepthZoneReadModel;
             DepthZoneProfile currentZone = depthZoneReadModel != null ? depthZoneReadModel.CurrentZone : null;
             return currentZone != null &&
                    string.Equals(currentZone.zoneId, DeepAbyssZoneId, StringComparison.Ordinal);
@@ -1856,7 +1872,7 @@ namespace Hecton.Localization
 
         private bool IsInDeadZoneContext()
         {
-            HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge bridge = _cachedVegetationBridge;
             if (bridge == null)
                 return false;
 
@@ -1866,9 +1882,11 @@ namespace Hecton.Localization
             {
                 playerTransform = playerMovement.transform;
             }
-            else if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform resolvedTransform))
+            else
             {
-                playerTransform = resolvedTransform;
+                IPlayerRuntimeContext playerContext = _cachedPlayerRuntimeContext;
+                if (playerContext != null)
+                    playerTransform = playerContext.PlayerTransform;
             }
 
             if (playerTransform == null)
@@ -1974,7 +1992,7 @@ namespace Hecton.Localization
             if (_madnessActiveWindowId < 0 || _lastMadnessAudioWindowId == _madnessActiveWindowId)
                 return;
 
-            IAcousticZoneMadnessCueSink controller = GlobalRegistry.AcousticZoneMadnessCueSink;
+            IAcousticZoneMadnessCueSink controller = _cachedAcousticMadnessCueSink;
             if (controller == null)
                 return;
 
@@ -2113,19 +2131,26 @@ namespace Hecton.Localization
             if (_cachedPlayerMovement != null)
                 return _cachedPlayerMovement;
 
-            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
-                return null;
+            IPlayerRuntimeContext playerContext = _cachedPlayerRuntimeContext;
+            if (playerContext != null)
+                _cachedPlayerMovement = playerContext.PlayerMovement;
 
-            playerTransform.TryGetComponent(out _cachedPlayerMovement);
             return _cachedPlayerMovement;
         }
 
-        private static PlayerToolManager ResolvePlayerToolManager(Transform playerTransform)
+        private void CacheColdRuntimeServices()
         {
-            if (playerTransform == null)
-                return null;
+            CachePlayerRuntimeContext(GlobalRegistry.Player);
+            _cachedDepthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
+            _cachedVegetationBridge = GlobalRegistry.MapMagicVegetation;
+            _cachedAcousticMadnessCueSink = GlobalRegistry.AcousticZoneMadnessCueSink;
+        }
 
-            return playerTransform.TryGetComponent(out PlayerToolManager toolManager) ? toolManager : null;
+        private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            _cachedPlayerRuntimeContext = playerContext;
+            _cachedPlayerToolManager = playerContext != null ? playerContext.ToolManager : null;
+            _cachedPlayerMovement = playerContext != null ? playerContext.PlayerMovement : null;
         }
 
         private static string CorruptVisibleText(string text, float intensity, GameLanguage language)

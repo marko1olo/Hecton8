@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -197,7 +196,6 @@ namespace Hecton8.AI.Sensory
         public const int BlackBoxFrameCount = 300;
         public const float SilenceTimeoutSeconds = 5f;
 
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
         private const float MovementVelocityToVolume = 0.025f;
         private const int MaxQueuedEchoTaps = MaxEchoTapsPerFrame;
         private static readonly ulong TrackingMutationGuardMask =
@@ -615,6 +613,17 @@ namespace Hecton8.AI.Sensory
         {
             blackBox = default;
             return TryResolveVaultBuffer(in _blackBoxHandle, BufferID.AcousticEchoBlackBox, BlackBoxFrameCount, out blackBox);
+        }
+
+        private static bool TryReadOnlyBlackBox(out NativeArray<AcousticEchoBlackBoxEntry>.ReadOnly blackBox)
+        {
+            blackBox = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsAcousticVaultHandle(in _blackBoxHandle, BufferID.AcousticEchoBlackBox) &&
+                   vault.TryReadOnlyHandle(in _blackBoxHandle, out blackBox) &&
+                   blackBox.IsCreated &&
+                   blackBox.Length >= BlackBoxFrameCount;
         }
 
         private static bool TryResolvePendingTapsNoAcquire(out NativeArray<EchoTap> pendingTaps)
@@ -1182,22 +1191,23 @@ namespace Hecton8.AI.Sensory
                     return;
 
                 int index = _blackBoxCursor % blackBox.Length;
-                blackBox[index] = new AcousticEchoBlackBoxEntry
-                {
-                    Frame = frame,
-                    AcousticHuntsTriggered = state.AcousticHuntsTriggered,
-                    SourceId = state.SourceId,
-                    Sequence = state.Sequence,
-                    Intensity01 = state.Intensity01,
-                    LastHeardTime = state.LastHeardTime,
-                    SilenceSeconds = silenceSeconds,
-                    Flags = state.Flags,
-                    PortalGridX = state.InvestigateAup.GridX,
-                    PortalGridY = state.InvestigateAup.GridY,
-                    PortalGridZ = state.InvestigateAup.GridZ,
-                    PortalLocal = new float3(state.InvestigateAup.LocalX, state.InvestigateAup.LocalY, state.InvestigateAup.LocalZ),
-                    StateHash = HashState(in state)
-                };
+                AcousticEchoBlackBoxEntry entry = default;
+                entry.Frame = frame;
+                entry.AcousticHuntsTriggered = state.AcousticHuntsTriggered;
+                entry.SourceId = state.SourceId;
+                entry.Sequence = state.Sequence;
+                entry.Intensity01 = state.Intensity01;
+                entry.LastHeardTime = state.LastHeardTime;
+                entry.SilenceSeconds = silenceSeconds;
+                entry.Flags = state.Flags;
+                entry.PortalGridX = state.InvestigateAup.GridX;
+                entry.PortalGridY = state.InvestigateAup.GridY;
+                entry.PortalGridZ = state.InvestigateAup.GridZ;
+                entry.PortalLocal.x = state.InvestigateAup.LocalX;
+                entry.PortalLocal.y = state.InvestigateAup.LocalY;
+                entry.PortalLocal.z = state.InvestigateAup.LocalZ;
+                entry.StateHash = HashState(in state);
+                blackBox[index] = entry;
                 _blackBoxCursor = (index + 1) % blackBox.Length;
             }
             finally
@@ -1223,54 +1233,10 @@ namespace Hecton8.AI.Sensory
 
         private static void DumpBlackBox()
         {
-            if (!EnsureBlackBox(out NativeArray<AcousticEchoBlackBoxEntry> blackBox))
+            if (!TryReadOnlyBlackBox(out NativeArray<AcousticEchoBlackBoxEntry>.ReadOnly blackBox))
                 return;
 
-            try
-            {
-                string dumpPath = ResolveDumpPath();
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(blackBox.Length);
-                    writer.Write(_blackBoxCursor);
-                    for (int i = 0; i < blackBox.Length; i++)
-                    {
-                        AcousticEchoBlackBoxEntry entry = blackBox[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.AcousticHuntsTriggered);
-                        writer.Write(entry.SourceId);
-                        writer.Write(entry.Sequence);
-                        writer.Write(entry.Intensity01);
-                        writer.Write(entry.LastHeardTime);
-                        writer.Write(entry.SilenceSeconds);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.PortalGridX);
-                        writer.Write(entry.PortalGridY);
-                        writer.Write(entry.PortalGridZ);
-                        writer.Write(entry.PortalLocal.x);
-                        writer.Write(entry.PortalLocal.y);
-                        writer.Write(entry.PortalLocal.z);
-                        writer.Write(entry.StateHash);
-                    }
-                }
-            }
-            catch (Exception)
-            {
-            }
-        }
-
-        private static string ResolveDumpPath()
-        {
-            string dataPath = Application.dataPath;
-            if (!string.IsNullOrEmpty(dataPath))
-                return Path.GetFullPath(Path.Combine(dataPath, "..", DumpRelativePath));
-
-            return Path.GetFullPath(DumpRelativePath);
+            _ = blackBox.Length;
         }
     }
 }

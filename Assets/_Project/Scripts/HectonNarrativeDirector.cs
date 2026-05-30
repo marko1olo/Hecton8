@@ -44,6 +44,7 @@ namespace Hecton8.Gameplay
         private const byte SaveStateOperationSnapshot = 0;
         private const byte SaveStateOperationTriggered = 1;
         private const string NarrativeWaypointLabel = "Objective";
+        private static readonly uint NarrativeWaypointLabelHash = unchecked((uint)Hecton.Localization.LocHash.Compute(NarrativeWaypointLabel));
         private static readonly Color NarrativeWaypointColor = new Color(0.28f, 0.86f, 1f, 1f);
         private static readonly uint _blackBoxFaultWarningHash = NarrativeEvents.ComputeDiscoveryHash("NarrativeTrigger.BlackBoxFault");
         private static readonly uint _blackBoxFaultContextHash = NarrativeEvents.ComputeDiscoveryHash("NARRATIVE_TRIGGER_SYS");
@@ -64,6 +65,11 @@ namespace Hecton8.Gameplay
         private bool _registeredHotSwapListener;
         private bool _saveRegistered;
         private ISaveService _saveService;
+        private ILoreUnlockSink _loreUnlockSink;
+        private IARWaypointService _arWaypointService;
+        private IQuestSystem _questSystem;
+        private IFirstHourReadModel _firstHourReadModel;
+        private IAtlasSignalReadModel _atlasSignalReadModel;
         private float _aupScanAccumulator = SurvivalAupScanIntervalSeconds;
         private bool _aupScannerDisabledForCurrentPoiSet;
         private int _poiCount;
@@ -152,6 +158,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            CacheRegistryReadModelsCold();
             InitializeAupNarrativePoiVaultStorage();
             RebuildDiscoveryLookup();
         }
@@ -161,6 +168,7 @@ namespace Hecton8.Gameplay
             TryRegister();
             TryRegisterHotSwapListener();
             _saveService = GlobalRegistry.Save;
+            CacheRegistryReadModelsCold();
             TryRegisterSaveParticipant();
 
             NarrativeEvents.Register(this);
@@ -277,7 +285,31 @@ namespace Hecton8.Gameplay
                         RebuildNativePoiRegistry();
                     }
                     break;
+                case GlobalRegistryServiceSlot.LoreDatabaseRuntime:
+                    _loreUnlockSink = currentService as ILoreUnlockSink;
+                    break;
+                case GlobalRegistryServiceSlot.ARWaypointRuntime:
+                    _arWaypointService = currentService as IARWaypointService;
+                    break;
+                case GlobalRegistryServiceSlot.QuestSystem:
+                    _questSystem = currentService as IQuestSystem;
+                    break;
+                case GlobalRegistryServiceSlot.FirstHourRuntime:
+                    _firstHourReadModel = currentService as IFirstHourReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.AtlasSignalRuntime:
+                    _atlasSignalReadModel = currentService as IAtlasSignalReadModel;
+                    break;
             }
+        }
+
+        private void CacheRegistryReadModelsCold()
+        {
+            _loreUnlockSink = GlobalRegistry.LoreUnlockSink;
+            _arWaypointService = GlobalRegistry.ARWaypoints;
+            _questSystem = GlobalRegistry.QuestSystem;
+            _firstHourReadModel = GlobalRegistry.FirstHourReadModel;
+            _atlasSignalReadModel = GlobalRegistry.AtlasSignalReadModel;
         }
 
         private void TryRegisterHotSwapListener()
@@ -520,14 +552,15 @@ namespace Hecton8.Gameplay
             };
             SignalBus<NarrativeHudWaypointSignal>.TryPushTracked(in signal, ref s_x001HectonNarrativeDirectorSignalPushDropCount);
 
-            IARWaypointService waypoints = GlobalRegistry.ARWaypoints;
+            IARWaypointService waypoints = _arWaypointService;
             if (waypoints != null && waypoints.IsInitialized)
             {
                 float3 runtime = poiAup.ToRuntimeFloat3();
                 waypoints.SetWaypoint(
                     NarrativeWaypointIdBase ^ unchecked((int)poiHash),
                     new Vector3(runtime.x, runtime.y, runtime.z),
-                    NarrativeWaypointLabel,
+                    NarrativeWaypointLabelHash,
+                    NarrativeWaypointLabel.AsSpan(),
                     NarrativeWaypointColor);
             }
         }
@@ -537,7 +570,7 @@ namespace Hecton8.Gameplay
             if (questHash == 0u)
                 return true;
 
-            IQuestSystem questSystem = GlobalRegistry.QuestSystem;
+            IQuestSystem questSystem = _questSystem;
             if (questSystem == null || !questSystem.IsInitialized)
                 return false;
 
@@ -745,14 +778,14 @@ namespace Hecton8.Gameplay
         {
             _rareDiscoveryRequested = true;
 
-            IFirstHourReadModel firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHourReadModel;
+            IFirstHourReadModel firstHourDirector = _firstHourReadModel;
             if (firstHourDirector != null &&
                 !firstHourDirector.IsFirstHourMilestoneComplete((int)FirstHourMilestone.FirstModule))
             {
                 return;
             }
 
-            IAtlasSignalReadModel atlasSignalSystem = Hecton8.Core.GlobalRegistry.AtlasSignalReadModel;
+            IAtlasSignalReadModel atlasSignalSystem = _atlasSignalReadModel;
             bool rebroadcastedPulse = CanRebroadcastAtlasRareDiscoveryPulse(atlasSignalSystem);
             if (rebroadcastedPulse)
                 AtlasSignalEvents.TryRaisePulse(atlasSignalSystem.CurrentAtlasSignalStrength01);

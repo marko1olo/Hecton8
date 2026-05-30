@@ -681,38 +681,12 @@ namespace Hecton8.AI.Cognition
 #endif
 
         /// <summary>
-        /// Writes a binary black-box dump for the last 300 frames.
+        /// Confirms the in-memory telemetry ring is available on fault; disk dumps are forbidden in runtime.
         /// </summary>
         public static bool TryDumpBlackBox(in ApexBrainVaultBuffers buffers, string projectRoot)
         {
-            if (!buffers.TelemetryRing.IsCreated || buffers.TelemetryRing.Length <= 0)
-                return false;
-
-            try
-            {
-                string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
-                string directory = Path.Combine(root, "Docs", "AgentLogs");
-                string primary = Path.Combine(directory, DumpFileName);
-                string legacy = Path.Combine(directory, LegacyDumpFileName);
-                string agent = Path.Combine(directory, Agent1300DumpFileName);
-                return TryWriteDump(primary, in buffers) & TryWriteDump(legacy, in buffers) & TryWriteDump(agent, in buffers);
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                return false;
-            }
+            _ = projectRoot;
+            return buffers.TelemetryRing.IsCreated && buffers.TelemetryRing.Length > 0;
         }
 
         /// <summary>
@@ -730,7 +704,7 @@ namespace Hecton8.AI.Cognition
             {
                 ApexTelemetryEntry entry = buffers.TelemetryRing[i];
                 if (entry.Frame == frame && (entry.Flags & ApexBrainFlags.Fault) != 0)
-                    return TryDumpBlackBox(in buffers, projectRoot);
+                    return true;
             }
 
             return false;
@@ -1216,119 +1190,6 @@ namespace Hecton8.AI.Cognition
         {
             float selected = math.select(fallback, value, math.isfinite(value));
             return math.clamp(selected, min, math.max(min, max));
-        }
-
-        private static bool TryWriteDump(string path, in ApexBrainVaultBuffers buffers)
-        {
-            string tempPath = null;
-            try
-            {
-                tempPath = BuildApexDumpTempPath(path);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                TryDeleteFile(tempPath);
-                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(DumpMagic);
-                    writer.Write(ToLittleEndianMarker(DumpEndianMarker));
-                    writer.Write(DumpVersion);
-                    writer.Write(ApexBrainConstants.TelemetryFrames);
-                    writer.Write(ApexBrainConstants.MaxLeviathans);
-                    writer.Write(buffers.TelemetryRing.Length);
-                    int cursor = buffers.TelemetryCursor.IsCreated && buffers.TelemetryCursor.Length > 0 ? buffers.TelemetryCursor[0] : 0;
-                    writer.Write(cursor);
-                    for (int i = 0; i < buffers.TelemetryRing.Length; i++)
-                    {
-                        ApexTelemetryEntry entry = buffers.TelemetryRing[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.SpatialHash);
-                        writer.Write(entry.AcousticMemoryHash);
-                        writer.Write(entry.InterceptLocal.x);
-                        writer.Write(entry.InterceptLocal.y);
-                        writer.Write(entry.InterceptLocal.z);
-                        writer.Write(entry.AggressionLevel);
-                        writer.Write(entry.DesiredVelocity.x);
-                        writer.Write(entry.DesiredVelocity.y);
-                        writer.Write(entry.DesiredVelocity.z);
-                        writer.Write(entry.SweetLieLos01);
-                        writer.Write(entry.WallRepulsion.x);
-                        writer.Write(entry.WallRepulsion.y);
-                        writer.Write(entry.WallRepulsion.z);
-                        writer.Write(entry.StrikeUtility);
-                        writer.Write(entry.UtilityScores.x);
-                        writer.Write(entry.UtilityScores.y);
-                        writer.Write(entry.UtilityScores.z);
-                        writer.Write(entry.UtilityScores.w);
-                        writer.Write(entry.TargetHash);
-                        writer.Write(entry.BiomeHash);
-                        writer.Write(entry.EvaluatedNodeCount);
-                        writer.Write(entry.GlobalQualityWeight);
-                        writer.Write(entry.ActiveLeviathans);
-                        writer.Write(entry.InterceptComputeTimeMs);
-                        writer.Write(entry.Slot);
-                        writer.Write(entry.Phase);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.FaultCode);
-                    }
-                }
-
-                if (File.Exists(path))
-                    File.Replace(tempPath, path, null);
-                else
-                    File.Move(tempPath, path);
-
-                return true;
-            }
-            catch (IOException)
-            {
-                TryDeleteFile(tempPath);
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                TryDeleteFile(tempPath);
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                TryDeleteFile(tempPath);
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                TryDeleteFile(tempPath);
-                return false;
-            }
-        }
-
-        private static void TryDeleteFile(string path)
-        {
-            try
-            {
-                if (File.Exists(path))
-                    File.Delete(path);
-            }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-            catch (ArgumentException)
-            {
-            }
-            catch (NotSupportedException)
-            {
-            }
-        }
-
-        private static string BuildApexDumpTempPath(string path)
-        {
-            return Path.ChangeExtension(path, ".bin.tmp");
         }
 
         private static uint ToLittleEndianMarker(uint value)

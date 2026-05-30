@@ -23,6 +23,7 @@ namespace Hecton8.Core
         private int _lastMemoryPressureDispatchFrame = -MemoryPressureSampleIntervalFrames;
         private int _nextNativeLeakAuditFrame;
         private long _physicalMemoryBytesCold;
+        private bool _runtimeOwnerRejected;
 
         public ServiceHeartbeatState HeartbeatState => _registeredPostFixed ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.Booting;
         public bool IsServiceReady => _registeredPostFixed;
@@ -45,6 +46,9 @@ namespace Hecton8.Core
 
         public void InitializeService()
         {
+            if (_runtimeOwnerRejected)
+                return;
+
             RefreshPhysicalMemorySnapshotCold();
             PrimeSamplingFrames();
             TryRegisterPostFixed();
@@ -55,10 +59,12 @@ namespace Hecton8.Core
             GCMonitor runtime = GlobalRegistry.GCMonitorRuntime;
             if (runtime != null && runtime != this)
             {
+                _runtimeOwnerRejected = true;
                 Destroy(gameObject);
                 return;
             }
 
+            _runtimeOwnerRejected = false;
             GlobalRegistry.RegisterGCMonitorRuntime(this);
             RefreshPhysicalMemorySnapshotCold();
             PrimeSamplingFrames();
@@ -66,6 +72,9 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            if (_runtimeOwnerRejected)
+                return;
+
             if (_physicalMemoryBytesCold <= 0L)
                 RefreshPhysicalMemorySnapshotCold();
 
@@ -75,6 +84,9 @@ namespace Hecton8.Core
 
         private void Start()
         {
+            if (_runtimeOwnerRejected)
+                return;
+
             TryRegisterPostFixed();
         }
 

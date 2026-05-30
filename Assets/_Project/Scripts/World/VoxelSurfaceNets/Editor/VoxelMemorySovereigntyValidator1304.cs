@@ -92,25 +92,32 @@ namespace Hecton8.World.VoxelSurfaceNets.Editor
             {
                 for (int pass = 0; pass < 16; pass++)
                 {
-                    bool carvesLocked = false;
-                    bool densityLocked = false;
+                    if (!vault.TryAcquireWriteLock(in carveHandle, SystemID.TerrainSeams, out NativeArray<VoxelCarveEvent> carves))
+                    {
+                        failureFlags |= FailureLock;
+                        return false;
+                    }
+
                     try
                     {
-                        if (!vault.TryAcquireWriteLock(in carveHandle, SystemID.TerrainSeams, out NativeArray<VoxelCarveEvent> carves))
-                        {
-                            failureFlags |= FailureLock;
-                            return false;
-                        }
-
-                        carvesLocked = true;
-                        if (!vault.TryAcquireWriteLock(in densityHandle, SystemID.TerrainSeams, out NativeArray<sbyte> density))
-                        {
-                            failureFlags |= FailureLock;
-                            return false;
-                        }
-
-                        densityLocked = true;
                         WriteStressCarves(carves, pass);
+
+                        vault.RequestEditorForceDefragmentation();
+                        vault.FrostTickDefrag(1f / 60f, pass * (1f / 15f), MemoryDefragPhase.PreSimulation, vault.ActiveBurstLockMask);
+                    }
+                    finally
+                    {
+                        vault.ReleaseWriteLock(in carveHandle, SystemID.TerrainSeams);
+                    }
+
+                    if (!vault.TryAcquireWriteLock(in densityHandle, SystemID.TerrainSeams, out NativeArray<sbyte> density))
+                    {
+                        failureFlags |= FailureLock;
+                        return false;
+                    }
+
+                    try
+                    {
                         WriteStressDensity(density, pass);
 
                         vault.RequestEditorForceDefragmentation();
@@ -118,10 +125,7 @@ namespace Hecton8.World.VoxelSurfaceNets.Editor
                     }
                     finally
                     {
-                        if (densityLocked)
-                            vault.ReleaseWriteLock(in densityHandle, SystemID.TerrainSeams);
-                        if (carvesLocked)
-                            vault.ReleaseWriteLock(in carveHandle, SystemID.TerrainSeams);
+                        vault.ReleaseWriteLock(in densityHandle, SystemID.TerrainSeams);
                     }
 
                     vault.RequestEditorForceDefragmentation();

@@ -4,6 +4,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'strict_json_io.ps1')
+
+$MaxAllowedOpcodesCsvBytes = 262144
 
 function Fail([string]$Message) {
     Write-Error ('[H8MOD_OPCODE_LIST] ' + $Message)
@@ -34,7 +37,12 @@ function Read-AllowedOpcodeRows() {
     $seenHex = @{}
     $seenAlias = @{}
 
-    foreach ($line in (Get-Content -LiteralPath $path)) {
+    try {
+        $allowedOpcodeText = Read-H8TextFileCapped $path 'Reference/allowed_opcodes.csv' $MaxAllowedOpcodesCsvBytes
+    } catch {
+        Fail $_.Exception.Message
+    }
+    foreach ($line in ($allowedOpcodeText -split "\r?\n")) {
         $text = [string]$line
         $comment = ''
         $commentIndex = $text.IndexOf('#')

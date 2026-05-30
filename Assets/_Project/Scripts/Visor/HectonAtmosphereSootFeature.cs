@@ -77,6 +77,7 @@ namespace Hecton8.Visor
             private SootGlobalsDTO _lastSootGlobals;
             private int _sootGlobalsWriteIndex;
             private bool _hasSootGlobals;
+            private bool _supportsSetConstantBuffer;
 
             public SootPass()
             {
@@ -97,6 +98,13 @@ namespace Hecton8.Visor
             public bool PrepareResources()
             {
                 return EnsureSootGlobalsBuffer();
+            }
+
+            public void SetGraphicsCapabilitiesCold(bool supportsSetConstantBuffer)
+            {
+                _supportsSetConstantBuffer = supportsSetConstantBuffer;
+                if (!_supportsSetConstantBuffer)
+                    Dispose();
             }
 
             public bool HasPreparedResources()
@@ -193,7 +201,7 @@ namespace Hecton8.Visor
 
             private bool EnsureSootGlobalsBuffer()
             {
-                if (!SystemInfo.supportsSetConstantBuffer)
+                if (!_supportsSetConstantBuffer)
                 {
                     Dispose();
                     return false;
@@ -292,7 +300,7 @@ namespace Hecton8.Visor
 
             private bool HasSootGlobalsBuffer()
             {
-                if (!SystemInfo.supportsSetConstantBuffer)
+                if (!_supportsSetConstantBuffer)
                     return false;
 
                 if (_sootGlobalsBufferA == null || !_sootGlobalsBufferA.IsValid() ||
@@ -347,6 +355,7 @@ namespace Hecton8.Visor
         private Material _material;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _hotSwapRegistered;
+        private bool _supportsSetConstantBuffer;
 
         public static void PublishRuntimeState(bool active, in Vector4 sootParams, in Vector4 sootCenter)
         {
@@ -399,6 +408,7 @@ namespace Hecton8.Visor
 #endif
 
             _pass ??= new SootPass(); // COLD ALLOC: SootPass[1] - reusable soot overlay render pass - owner: HectonAtmosphereSootFeature
+            CacheGraphicsCapabilitiesCold();
             Shader shader = settings != null ? settings.shader : null;
             if (shader == null)
             {
@@ -457,6 +467,12 @@ namespace Hecton8.Visor
         private void OnDisable()
         {
             TryUnregisterHotSwapListener();
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsSetConstantBuffer = SystemInfo.supportsSetConstantBuffer;
+            _pass?.SetGraphicsCapabilitiesCold(_supportsSetConstantBuffer);
         }
 
         private bool TryBuildRuntimeState(Camera renderCamera, FeatureSettings settings, out RuntimeState runtimeState)

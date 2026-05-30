@@ -521,6 +521,7 @@ namespace Hecton8.Visor
 
         private BiolumSsgiPass _pass;
         private Material _compositeMaterial;
+        private bool _supportsComputeShaders;
 
         /// <inheritdoc />
         public override void Create()
@@ -541,6 +542,7 @@ namespace Hecton8.Visor
             if (_pass == null)
                 _pass = new BiolumSsgiPass();
 
+            CacheGraphicsCapabilitiesCold();
             RecreateMaterial(ref _compositeMaterial, compositeShader);
         }
 
@@ -558,7 +560,7 @@ namespace Hecton8.Visor
             if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection)
                 return;
 
-            bool forceProxyOnly = settings.computeShader == null || !SystemInfo.supportsComputeShaders;
+            bool forceProxyOnly = settings.computeShader == null || !_supportsComputeShaders;
             _pass.Setup(settings, settings.computeShader, _compositeMaterial, forceProxyOnly);
             renderer.EnqueuePass(_pass);
         }
@@ -569,6 +571,11 @@ namespace Hecton8.Visor
             _pass?.Dispose();
             CoreUtils.Destroy(_compositeMaterial);
             _compositeMaterial = null;
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsComputeShaders = SystemInfo.supportsComputeShaders;
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

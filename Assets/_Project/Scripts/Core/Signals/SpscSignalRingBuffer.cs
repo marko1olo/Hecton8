@@ -45,7 +45,7 @@ namespace Hecton8.Core
 
         public SpscSignalRingBuffer(int requestedCapacity, Allocator allocator, Hecton8.Core.Memory.SystemID owner)
         {
-            int capacity = CeilPowerOfTwo(math.max(2, requestedCapacity + 1));
+            int capacity = CeilPowerOfTwo(ResolveCapacityWithSentinel(requestedCapacity));
             if (owner == Hecton8.Core.Memory.SystemID.Unknown)
                 owner = Hecton8.Core.Memory.SystemID.Audio;
 
@@ -69,8 +69,8 @@ namespace Hecton8.Core
 
                 long head = Volatile.Read(ref cursor->Head);
                 long tail = Volatile.Read(ref cursor->Tail);
-                long count = tail - head;
                 int capacity = Capacity;
+                long count = ResolveCursorDistance(head, tail, capacity);
                 if (count <= 0L)
                     return 0;
                 return count >= capacity ? capacity : (int)count;
@@ -107,7 +107,7 @@ namespace Hecton8.Core
             long tail = Volatile.Read(ref cursor->Tail);
             long head = Volatile.Read(ref cursor->Head);
             int capacity = Capacity;
-            if (tail - head >= capacity)
+            if (!HasWritableCapacity(head, tail, capacity))
                 return false;
 
             int slot = (int)tail & _mask;
@@ -126,7 +126,7 @@ namespace Hecton8.Core
 
             long head = Volatile.Read(ref cursor->Head);
             long tail = Volatile.Read(ref cursor->Tail);
-            if (head == tail)
+            if (!HasReadableCursor(head, tail) || head == long.MaxValue)
             {
                 signal = default;
                 return false;
@@ -162,6 +162,44 @@ namespace Hecton8.Core
             value |= value >> 8;
             value |= value >> 16;
             return value + 1;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int ResolveCapacityWithSentinel(int requestedCapacity)
+        {
+            const int MaxPowerOfTwoCapacity = 1 << 30;
+            const int MaxRequestBeforeSentinel = MaxPowerOfTwoCapacity - 1;
+
+            if (requestedCapacity >= MaxRequestBeforeSentinel)
+                return MaxPowerOfTwoCapacity;
+
+            return math.max(2, requestedCapacity + 1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static long ResolveCursorDistance(long head, long tail, int capacity)
+        {
+            if (capacity <= 0 || tail <= head)
+                return 0L;
+
+            long count = tail - head;
+            return count < 0L ? capacity : count;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static bool HasReadableCursor(long head, long tail)
+        {
+            return tail > head;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static bool HasWritableCapacity(long head, long tail, int capacity)
+        {
+            if (capacity <= 0 || tail < head || tail == long.MaxValue)
+                return false;
+
+            long count = tail - head;
+            return count >= 0L && count < capacity;
         }
     }
 
@@ -210,7 +248,7 @@ namespace Hecton8.Core
 
                 long head = Volatile.Read(ref cursor->Head);
                 long tail = Volatile.Read(ref cursor->Tail);
-                long count = tail - head;
+                long count = SpscSignalRingBuffer<T>.ResolveCursorDistance(head, tail, _capacity);
                 if (count <= 0L)
                     return 0;
                 return count >= _capacity ? _capacity : (int)count;
@@ -235,7 +273,7 @@ namespace Hecton8.Core
 
             long head = Volatile.Read(ref cursor->Head);
             long tail = Volatile.Read(ref cursor->Tail);
-            if (head == tail)
+            if (!SpscSignalRingBuffer<T>.HasReadableCursor(head, tail) || head == long.MaxValue)
                 return false;
 
             int slot = (int)head & _mask;
@@ -324,7 +362,7 @@ namespace Hecton8.Core
                 {
                     long head = Volatile.Read(ref cursor->Head);
                     long tail = Volatile.Read(ref cursor->Tail);
-                    if (tail - head >= _capacity)
+                    if (!SpscSignalRingBuffer<T>.HasWritableCapacity(head, tail, _capacity))
                         return false;
 
                     long nextTail = tail + 1L;

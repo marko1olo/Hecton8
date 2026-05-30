@@ -1,9 +1,7 @@
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
 using System.Threading;
-using Hecton8.Bootstrap;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Systems.AI;
@@ -53,13 +51,6 @@ namespace Hecton8.Core
         private const uint LiveTelemetryMagic = 0x4D4C4554u; // "TELM"
         private const uint LiveTelemetryVersion = 2u;
         private const ulong BinaryMagic = 0x00384E4F54434548ul; // "HECTON8\0" in little-endian byte order.
-        private const string ExportFilePrefix = "crash_";
-        private const string ExportFileExtension = ".h8dump";
-        private const string ExportTimestampFormat = "yyyyMMdd_HHmmss_fff";
-        private const string LiveTelemetryFileName = "runtime_telemetry.bin";
-        private const string CrashTelemetryFileName = "BLACKBOX_CRASH.h8dump";
-        private const string BlackBoxExportThreadName = "H8.BlackBoxExport";
-        private const int BlackBoxExportThreadJoinMilliseconds = 250;
         private const int ProfilerRecorderHandleScratchCapacity = 256;
         private const int BlackBoxExportFailureCounterMax = 1024;
         private const int BlackBoxExportDroppedCounterMax = 1024;
@@ -69,12 +60,6 @@ namespace Hecton8.Core
         private const BufferID RingBufferId = BufferID.CrashTelemetryRing;
         private const BufferID ExportSnapshotBufferId = BufferID.CrashTelemetryExportSnapshot;
         private const BufferID ExportScratchBufferId = BufferID.CrashTelemetryExportScratch;
-        private const ulong ExportSnapshotMutationGuardMask =
-            (1UL << ((int)RingBufferId & 31)) |
-            (1UL << ((int)ExportSnapshotBufferId & 31));
-        private const ulong ExportScratchMutationGuardMask =
-            (1UL << ((int)ExportSnapshotBufferId & 31)) |
-            (1UL << ((int)ExportScratchBufferId & 31));
         private static readonly string[] _FrameTimeCandidates =
         {
             "CPU Total Frame Time",
@@ -83,7 +68,6 @@ namespace Hecton8.Core
 
         private static readonly string[] _GcAllocCandidates = { "GC Allocated In Frame" };
 
-        private static readonly WaitCallback _backgroundLiveTelemetryCallback = ExecuteBackgroundLiveTelemetryWrite;
         private static readonly uint _audioOverflowDropWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("CrashTelemetry.AudioOverflowDrop"));
         private static readonly uint _audioOverflowBufferContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("CrashTelemetry.NativeAudioFrameRingBuffer"));
         private static readonly uint _bootPerfWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("BOOT_PERF_WARNING"));
@@ -314,29 +298,30 @@ namespace Hecton8.Core
             public VaultGenerationHandle<T> Handle => _handle;
             public bool HasHandle => _handle.BufferID != 0u && _handle.Generation != 0u;
 
-            public bool IsCreated => TryResolve(out NativeArray<T> buffer) && buffer.IsCreated;
+            public bool IsCreated => TryReadOnly(out NativeArray<T>.ReadOnly buffer) && buffer.IsCreated;
 
-            public int Length => TryResolve(out NativeArray<T> buffer) && buffer.IsCreated ? buffer.Length : 0;
+            public int Length => TryReadOnly(out NativeArray<T>.ReadOnly buffer) && buffer.IsCreated ? buffer.Length : 0;
 
             public T this[int index]
             {
                 get
                 {
-                    if (!TryResolve(out NativeArray<T> buffer) || !buffer.IsCreated || index < 0 || index >= buffer.Length)
+                    if (!TryReadOnly(out NativeArray<T>.ReadOnly buffer) || !buffer.IsCreated || index < 0 || index >= buffer.Length)
                         return default;
 
                     return buffer[index];
                 }
                 set
                 {
-                    if (_vault == null || !HasHandle || index < 0)
+                    IDataVault vault = _vault;
+                    if (vault == null || !HasHandle || index < 0)
                         return;
 
                     bool locked = false;
                     NativeArray<T> buffer = default;
                     try
                     {
-                        locked = _vault.TryAcquireWriteLock(in _handle, SystemID.CoreDiagnostics, out buffer);
+                        locked = vault.TryAcquireWriteLock(in _handle, SystemID.CoreDiagnostics, out buffer);
                         if (!locked || !buffer.IsCreated || index >= buffer.Length)
                             return;
 
@@ -345,17 +330,17 @@ namespace Hecton8.Core
                     finally
                     {
                         if (locked)
-                            _vault.ReleaseWriteLock(in _handle, SystemID.CoreDiagnostics);
+                            vault.ReleaseWriteLock(in _handle, SystemID.CoreDiagnostics);
                     }
                 }
             }
 
-            public bool TryResolve(out NativeArray<T> buffer)
+            private bool TryReadOnly(out NativeArray<T>.ReadOnly buffer)
             {
                 buffer = default;
                 return _vault != null &&
                        HasHandle &&
-                       _vault.TryResolveHandle(in _handle, out buffer) &&
+                       _vault.TryReadOnlyHandle(in _handle, out buffer) &&
                        buffer.IsCreated;
             }
 
@@ -390,25 +375,8 @@ namespace Hecton8.Core
         private int _pendingBlackBoxExportFailureCount;
         private int _pendingBlackBoxExportDroppedCount;
         private int _pendingBlackBoxExportSuppressedCount;
-        private string _liveTelemetryPath;
-        private string _crashTelemetryPath;
-        private FileStream _liveTelemetryStream;
-        private FileStream _crashTelemetryStream;
         private VaultArray<byte> _exportScratch;
         private LiveTelemetryRecord _pendingLiveTelemetryRecord;
-        // COLD ALLOC: object[1] - live telemetry file write/dispose gate - owner: CrashTelemetryBuffer
-        private readonly object _liveTelemetryFileGate = new object();
-        // COLD ALLOC: object[1] - crash export file write/dispose gate - owner: CrashTelemetryBuffer
-        private readonly object _crashTelemetryFileGate = new object();
-        // COLD ALLOC: byte[64] - portable live telemetry file scratch - owner: CrashTelemetryBuffer
-        private readonly byte[] _liveTelemetryFileScratch = new byte[LiveTelemetryRecordSizeBytes];
-        // COLD ALLOC: byte[64016] - portable crash export file scratch - owner: CrashTelemetryBuffer
-        private readonly byte[] _crashExportFileScratch = new byte[ExportScratchSizeBytes];
-        // COLD ALLOC: object[1] - BLACKBOX export thread lifecycle gate - owner: CrashTelemetryBuffer
-        private readonly object _blackBoxExportThreadGate = new object();
-        private Thread _blackBoxExportThread;
-        private AutoResetEvent _blackBoxExportSignal;
-        private int _blackBoxExportStopRequested;
         private ProfilerRecorder _frameTimeRecorder;
         private ProfilerRecorder _gcAllocRecorder;
         private int _lastLiveTelemetryWriteFrame = int.MinValue;
@@ -2412,10 +2380,6 @@ namespace Hecton8.Core
                 return;
             }
 
-            _liveTelemetryPath = HectonPersistentPathPolicy.CombineFile(LiveTelemetryFileName);
-            _crashTelemetryPath = HectonPersistentPathPolicy.CombineFile(CrashTelemetryFileName);
-            InitializeLiveTelemetryFile();
-            InitializeCrashTelemetryFile();
             MemoryBudgetTracker.Register(
                 MemoryBudgetOwnerName,
                 ((long)_ringBuffer.Length * CrashTelemetryEntrySizeBytes) +
@@ -2427,131 +2391,15 @@ namespace Hecton8.Core
 
         private void DisposeBuffers()
         {
-            if (!StopBlackBoxExportThread())
-                return;
-
             FlushQueuedCrashExportBeforeDispose();
-            DisposeCrashTelemetryFile();
-            DisposeLiveTelemetryFile();
 
             ReleaseCrashVaultArray(ref _ringBuffer);
             ReleaseCrashVaultArray(ref _exportSnapshot);
             ReleaseCrashVaultArray(ref _exportScratch);
-            _liveTelemetryPath = null;
-            _crashTelemetryPath = null;
             Volatile.Write(ref _liveTelemetryWriteState, LiveTelemetryStateIdle);
             DisposeRecorder(ref _frameTimeRecorder);
             DisposeRecorder(ref _gcAllocRecorder);
             MemoryBudgetTracker.Unregister(MemoryBudgetOwnerName);
-        }
-
-        private bool StartBlackBoxExportThread()
-        {
-            lock (_blackBoxExportThreadGate)
-            {
-                if (_blackBoxExportThread != null)
-                {
-                    if (_blackBoxExportThread.IsAlive)
-                        return true;
-
-                    _blackBoxExportSignal?.Dispose();
-                    _blackBoxExportSignal = null;
-                    _blackBoxExportThread = null;
-                }
-
-                try
-                {
-                    Volatile.Write(ref _blackBoxExportStopRequested, 0);
-                    // COLD ALLOC: AutoResetEvent[1] - persistent BLACKBOX export wake signal - owner: CrashTelemetryBuffer
-                    _blackBoxExportSignal = new AutoResetEvent(false);
-                    // COLD ALLOC: Thread[1] - dedicated BLACKBOX file export worker - owner: CrashTelemetryBuffer
-                    _blackBoxExportThread = new Thread(RunBlackBoxExportThread)
-                    {
-                        IsBackground = true,
-                        Name = BlackBoxExportThreadName,
-                        Priority = HectonThreadPriorityPolicy.Resolve(HectonThreadRole.BackgroundIo)
-                    };
-                    _blackBoxExportThread.Start();
-                    return true;
-                }
-                catch (Exception)
-                {
-                    _blackBoxExportSignal?.Dispose();
-                    _blackBoxExportSignal = null;
-                    _blackBoxExportThread = null;
-                    RecordBlackBoxExportFailure();
-                    return false;
-                }
-            }
-        }
-
-        private bool StopBlackBoxExportThread()
-        {
-            Thread exportThread;
-            AutoResetEvent exportSignal;
-            lock (_blackBoxExportThreadGate)
-            {
-                exportThread = _blackBoxExportThread;
-                exportSignal = _blackBoxExportSignal;
-                if (exportThread == null)
-                {
-                    exportSignal?.Dispose();
-                    _blackBoxExportSignal = null;
-                    Volatile.Write(ref _blackBoxExportStopRequested, 0);
-                    return true;
-                }
-
-                Volatile.Write(ref _blackBoxExportStopRequested, 1);
-                exportSignal?.Set();
-            }
-
-            if (!exportThread.Join(BlackBoxExportThreadJoinMilliseconds))
-            {
-                RecordBlackBoxExportFailure();
-                return false;
-            }
-
-            lock (_blackBoxExportThreadGate)
-            {
-                if (ReferenceEquals(_blackBoxExportThread, exportThread))
-                    _blackBoxExportThread = null;
-
-                if (ReferenceEquals(_blackBoxExportSignal, exportSignal))
-                    _blackBoxExportSignal = null;
-
-                exportSignal?.Dispose();
-                Volatile.Write(ref _blackBoxExportStopRequested, 0);
-            }
-
-            return true;
-        }
-
-        private void RunBlackBoxExportThread()
-        {
-            while (true)
-            {
-                AutoResetEvent exportSignal = Volatile.Read(ref _blackBoxExportSignal);
-                if (exportSignal == null)
-                    return;
-
-                try
-                {
-                    exportSignal.WaitOne();
-                }
-                catch (ObjectDisposedException)
-                {
-                    return;
-                }
-
-                if (Volatile.Read(ref _pendingExportSnapshotCount) > 0 ||
-                    Volatile.Read(ref _pendingExportBytes) > 0)
-                {
-                    WritePreparedExportToDisk();
-                }
-
-                if (Volatile.Read(ref _blackBoxExportStopRequested) != 0)
-                    return;
-            }
         }
 
         private void FlushQueuedCrashExportBeforeDispose()
@@ -2755,16 +2603,17 @@ namespace Hecton8.Core
                 return;
 
             _playerResolveCooldown = PlayerResolveCooldownSeconds;
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext != null && runtimeContext.PlayerTransform != null)
             {
-                _playerTransform = playerTransform;
-                if (_survivalSystem == null && _playerTransform != null)
-                    _playerTransform.TryGetComponent(out _survivalSystem);
-
-                _playerMovement = null;
-                if (_playerTransform != null)
-                    _playerTransform.TryGetComponent(out _playerMovement);
+                _playerTransform = runtimeContext.PlayerTransform;
+                _survivalSystem = runtimeContext.SurvivalSystem;
+                _playerMovement = runtimeContext.PlayerMovement;
+                return;
             }
+
+            _playerMovement = null;
+            _survivalSystem = null;
         }
 
         private uint SampleSystemMask()
@@ -3122,119 +2971,6 @@ namespace Hecton8.Core
             return default;
         }
 
-        private void InitializeLiveTelemetryFile()
-        {
-            DisposeLiveTelemetryFile();
-            if (string.IsNullOrEmpty(_liveTelemetryPath))
-                return;
-
-            lock (_liveTelemetryFileGate)
-            {
-                try
-                {
-                    string directory = Path.GetDirectoryName(_liveTelemetryPath);
-                    if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                        Directory.CreateDirectory(directory);
-
-                    _liveTelemetryStream = new FileStream(_liveTelemetryPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
-                    EnsureTelemetryBackingFileSize(_liveTelemetryStream, _liveTelemetryPath, LiveTelemetryRecordSizeBytes);
-
-                    Volatile.Write(ref _liveTelemetryWriteState, LiveTelemetryStateIdle);
-                }
-                catch (Exception exception)
-                {
-                    DisposeLiveTelemetryFile();
-                    _liveTelemetryPath = null;
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    H8Debug.LogException(exception);
-#endif
-                }
-            }
-        }
-
-        private void DisposeLiveTelemetryFile()
-        {
-            lock (_liveTelemetryFileGate)
-            {
-                Volatile.Write(ref _liveTelemetryWriteState, LiveTelemetryStateIdle);
-                _liveTelemetryStream?.Dispose();
-                _liveTelemetryStream = null;
-            }
-        }
-
-        private void InitializeCrashTelemetryFile()
-        {
-            DisposeCrashTelemetryFile();
-            if (string.IsNullOrEmpty(_crashTelemetryPath))
-                return;
-
-            try
-            {
-                string directory = Path.GetDirectoryName(_crashTelemetryPath);
-                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                    Directory.CreateDirectory(directory);
-
-                _crashTelemetryStream = new FileStream(_crashTelemetryPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
-                EnsureTelemetryBackingFileSize(_crashTelemetryStream, _crashTelemetryPath, ExportScratchSizeBytes);
-            }
-            catch (Exception exception)
-            {
-                DisposeCrashTelemetryFile();
-                _crashTelemetryPath = null;
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                H8Debug.LogException(exception);
-#endif
-            }
-        }
-
-        private void DisposeCrashTelemetryFile()
-        {
-            if (!StopBlackBoxExportThread())
-                return;
-
-            FlushQueuedCrashExportBeforeDispose();
-            lock (_crashTelemetryFileGate)
-            {
-                ClearPendingExportState();
-                Volatile.Write(ref _exportState, ExportStateIdle);
-                _crashTelemetryStream?.Dispose();
-                _crashTelemetryStream = null;
-            }
-        }
-
-        private static void EnsureTelemetryBackingFileSize(FileStream stream, string path, long expectedBytes)
-        {
-            if (!TryGetTelemetryBackingFileLength(path, out long currentBytes) || currentBytes != expectedBytes)
-                stream.SetLength(expectedBytes);
-        }
-
-        private static bool TryGetTelemetryBackingFileLength(string path, out long fileLength)
-        {
-            fileLength = 0L;
-            if (string.IsNullOrEmpty(path))
-                return false;
-
-            try
-            {
-                FileInfo info = new FileInfo(path);
-                if (!info.Exists)
-                    return false;
-
-                fileLength = info.Length;
-                return true;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-        }
-
         private void TryWriteLiveTelemetry(
             uint frameIndex,
             float dt,
@@ -3249,9 +2985,6 @@ namespace Hecton8.Core
             uint aupShiftSequence,
             uint lastOriginShiftFrame)
         {
-            if (string.IsNullOrEmpty(_liveTelemetryPath))
-                return;
-
             int frameNumber = unchecked((int)frameIndex);
             int writeIntervalFrames = ResolveLiveTelemetryWriteIntervalFrames();
             if (frameNumber <= 0 || frameNumber - _lastLiveTelemetryWriteFrame < writeIntervalFrames)
@@ -3275,25 +3008,9 @@ namespace Hecton8.Core
             record.AupShiftSequence = aupShiftSequence;
             record.LastOriginShiftFrame = lastOriginShiftFrame;
 
-            if (Interlocked.CompareExchange(ref _liveTelemetryWriteState, LiveTelemetryStateQueued, LiveTelemetryStateIdle) != LiveTelemetryStateIdle)
-                return;
-
             _pendingLiveTelemetryRecord = record;
-            bool queued = false;
-            try
-            {
-                queued = ThreadPool.UnsafeQueueUserWorkItem(_backgroundLiveTelemetryCallback, this);
-                if (queued)
-                    _lastLiveTelemetryWriteFrame = frameNumber;
-            }
-            catch (Exception)
-            {
-            }
-            finally
-            {
-                if (!queued)
-                    Volatile.Write(ref _liveTelemetryWriteState, LiveTelemetryStateIdle);
-            }
+            _lastLiveTelemetryWriteFrame = frameNumber;
+            Volatile.Write(ref _liveTelemetryWriteState, LiveTelemetryStateIdle);
         }
 
         private static int ResolveLiveTelemetryWriteIntervalFrames()
@@ -3307,58 +3024,6 @@ namespace Hecton8.Core
                     quality)),
                 LiveTelemetryWriteIntervalMinFrames,
                 LiveTelemetryWriteIntervalMaxFrames);
-        }
-
-        private static void ExecuteBackgroundLiveTelemetryWrite(object state)
-        {
-            if (state is CrashTelemetryBuffer crashTelemetryBuffer)
-                crashTelemetryBuffer.WritePendingLiveTelemetryToFile();
-        }
-
-        private void WritePendingLiveTelemetryToFile()
-        {
-            try
-            {
-                lock (_liveTelemetryFileGate)
-                {
-                    if (_liveTelemetryStream == null)
-                        return;
-
-                    LiveTelemetryRecord record = _pendingLiveTelemetryRecord;
-                    unsafe
-                    {
-                        fixed (byte* scratch = _liveTelemetryFileScratch)
-                        {
-                            UnsafeUtility.MemClear(scratch, LiveTelemetryRecordSizeBytes);
-                            UnsafeUtility.CopyStructureToPtr(ref record, scratch);
-                        }
-                    }
-
-                    _liveTelemetryStream.Position = 0L;
-                    _liveTelemetryStream.Write(_liveTelemetryFileScratch, 0, LiveTelemetryRecordSizeBytes);
-                    _liveTelemetryStream.SetLength(LiveTelemetryRecordSizeBytes);
-                    _liveTelemetryStream.Flush(true);
-                }
-            }
-            catch (UnauthorizedAccessException exception)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                H8Debug.LogException(exception);
-#endif
-            }
-            catch (IOException exception)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                H8Debug.LogException(exception);
-#endif
-            }
-            catch (Exception)
-            {
-            }
-            finally
-            {
-                Volatile.Write(ref _liveTelemetryWriteState, LiveTelemetryStateIdle);
-            }
         }
 
         private void TryExportSnapshot(ExportReason exportReason, uint exportFlags, bool bypassCooldown)
@@ -3399,7 +3064,7 @@ namespace Hecton8.Core
                         return;
 
                     Volatile.Write(ref _pendingExportBytes, exportBytes);
-                    exportQueued = QueueBackgroundExport();
+                    exportQueued = CommitPreparedExportInMemory();
                     if (!exportQueued)
                         ClearPendingExportState();
                 }
@@ -3437,7 +3102,7 @@ namespace Hecton8.Core
 
                 Volatile.Write(ref _pendingExportBytes, exportBytes);
                 GlobalTelemetryBus.RequestEmergencyFlushAsync();
-                exportQueued = QueueBackgroundExport();
+                exportQueued = CommitPreparedExportInMemory();
             }
             catch (Exception)
             {
@@ -3471,13 +3136,12 @@ namespace Hecton8.Core
 
             VaultGenerationHandle<CrashTelemetryEntry> ringHandle = _ringBuffer.Handle;
             VaultGenerationHandle<CrashTelemetryEntry> snapshotHandle = _exportSnapshot.Handle;
-            if (!vault.TryAcquireMutationGuard(ExportSnapshotMutationGuardMask))
+            if (!vault.TryAcquireWriteLock(in snapshotHandle, SystemID.CoreDiagnostics, out NativeArray<CrashTelemetryEntry> exportSnapshot))
                 return 0;
 
             try
             {
                 if (!vault.TryReadOnlyHandle(in ringHandle, out NativeArray<CrashTelemetryEntry>.ReadOnly ringBuffer) ||
-                    !vault.TryResolveHandle(in snapshotHandle, out NativeArray<CrashTelemetryEntry> exportSnapshot) ||
                     !ringBuffer.IsCreated ||
                     !exportSnapshot.IsCreated ||
                     ringBuffer.Length < RingCapacity)
@@ -3496,7 +3160,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                vault.ReleaseMutationGuard(ExportSnapshotMutationGuardMask);
+                vault.ReleaseWriteLock(in snapshotHandle, SystemID.CoreDiagnostics);
             }
         }
 
@@ -3508,13 +3172,12 @@ namespace Hecton8.Core
 
             VaultGenerationHandle<byte> scratchHandle = _exportScratch.Handle;
             VaultGenerationHandle<CrashTelemetryEntry> snapshotHandle = _exportSnapshot.Handle;
-            if (!vault.TryAcquireMutationGuard(ExportScratchMutationGuardMask))
+            if (!vault.TryAcquireWriteLock(in scratchHandle, SystemID.CoreDiagnostics, out NativeArray<byte> exportScratch))
                 return 0;
 
             try
             {
                 if (!vault.TryReadOnlyHandle(in snapshotHandle, out NativeArray<CrashTelemetryEntry>.ReadOnly exportSnapshot) ||
-                    !vault.TryResolveHandle(in scratchHandle, out NativeArray<byte> exportScratch) ||
                     !exportSnapshot.IsCreated ||
                     !exportScratch.IsCreated)
                 {
@@ -3543,108 +3206,31 @@ namespace Hecton8.Core
                         UnsafeUtility.CopyStructureToPtr(ref entry, entryDestination + (i * CrashTelemetryEntrySizeBytes));
                     }
 
-                    fixed (byte* managedDestination = _crashExportFileScratch)
-                    {
-                        UnsafeUtility.MemClear(managedDestination, ExportScratchSizeBytes);
-                        if (!UnsafeMemoryCopyGuard.TryMemCpy(
-                                managedDestination,
-                                ExportScratchSizeBytes,
-                                destination,
-                                totalBytes))
-                        {
-                            UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
-                            return 0;
-                        }
-                    }
-
                     return totalBytes;
                 }
             }
             finally
             {
-                vault.ReleaseMutationGuard(ExportScratchMutationGuardMask);
+                vault.ReleaseWriteLock(in scratchHandle, SystemID.CoreDiagnostics);
             }
         }
 
-        private bool QueueBackgroundExport()
+        private bool CommitPreparedExportInMemory()
         {
-            try
-            {
-                if (!StartBlackBoxExportThread())
-                    return false;
-
-                AutoResetEvent exportSignal = Volatile.Read(ref _blackBoxExportSignal);
-                if (exportSignal == null)
-                {
-                    RecordBlackBoxExportFailure();
-                    return false;
-                }
-
-                exportSignal.Set();
-                return true;
-            }
-            catch (ObjectDisposedException)
-            {
-                RecordBlackBoxExportFailure();
-                return false;
-            }
-            catch (Exception)
-            {
-                RecordBlackBoxExportFailure();
-                return false;
-            }
-        }
-
-        private bool WritePreparedExportToDisk()
-        {
-            bool wroteExport = false;
             bool hadPendingExport =
                 Volatile.Read(ref _pendingExportBytes) > 0 ||
                 Volatile.Read(ref _pendingExportSnapshotCount) > 0;
+            int exportBytes = Volatile.Read(ref _pendingExportBytes);
+            if (!hadPendingExport || exportBytes <= 0)
+                return false;
 
-            try
-            {
-                lock (_crashTelemetryFileGate)
-                {
-                    int exportBytes = Volatile.Read(ref _pendingExportBytes);
-                    if (_crashTelemetryStream == null || exportBytes <= 0)
-                        return false;
+            int exportFrame = Volatile.Read(ref _pendingExportFrame);
+            if (exportFrame >= 0)
+                Volatile.Write(ref _lastExportFrame, exportFrame);
 
-                    _crashTelemetryStream.Position = 0L;
-                    _crashTelemetryStream.Write(_crashExportFileScratch, 0, ExportScratchSizeBytes);
-                    _crashTelemetryStream.SetLength(ExportScratchSizeBytes);
-                    _crashTelemetryStream.Flush(true);
-                    wroteExport = true;
-                    int exportFrame = Volatile.Read(ref _pendingExportFrame);
-                    if (exportFrame >= 0)
-                        Volatile.Write(ref _lastExportFrame, exportFrame);
-                }
-            }
-            catch (UnauthorizedAccessException exception)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                H8Debug.LogException(exception);
-#endif
-            }
-            catch (IOException exception)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                H8Debug.LogException(exception);
-#endif
-            }
-            catch (Exception)
-            {
-            }
-            finally
-            {
-                if (!wroteExport && hadPendingExport)
-                    RecordBlackBoxExportFailure();
-
-                ClearPendingExportState();
-                Volatile.Write(ref _exportState, ExportStateIdle);
-            }
-
-            return wroteExport;
+            ClearPendingExportState();
+            Volatile.Write(ref _exportState, ExportStateIdle);
+            return true;
         }
 
         private int GetCrashSafeExportFrame()

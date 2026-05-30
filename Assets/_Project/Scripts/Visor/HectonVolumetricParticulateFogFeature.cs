@@ -24,7 +24,7 @@ namespace Hecton8.Visor
     /// <summary>
     /// RenderGraph volumetric fog facade: low-tier dithered proxy through high-tier 64-step particulate raymarch.
     /// </summary>
-    public sealed class HectonVolumetricParticulateFogFeature : ScriptableRendererFeature
+    public sealed class HectonVolumetricParticulateFogFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable, ISlowTickable
     {
         private const string ComputeShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VolumetricFog.compute";
         private const string DearLieProxyShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VolumetricFog_DearLie.shader";
@@ -263,6 +263,7 @@ namespace Hecton8.Visor
             private GraphicsBuffer _frameParamsBufferB;
             private GraphicsBuffer _pointLightBufferA;
             private GraphicsBuffer _pointLightBufferB;
+            private readonly PointLightDTO[] _pointLightUploadScratch = new PointLightDTO[VolumetricFogConstants.MaxPointLights]; // COLD ALLOC: PointLightDTO[8] - GPU upload scratch after DataVault point-light lock release - owner: HectonVolumetricParticulateFogFeature
             private FogConstantsDTO _lastUploadedParams;
             private FogConstantsDTO _lastAuthoredParams;
             private FogConstantsDTO _externalOverrideParams;
@@ -606,12 +607,14 @@ namespace Hecton8.Visor
                     return false;
 
                 if (allowAllocation)
-                    RefreshExternalBridgeState(allowExternalTextureHandleAllocation: true);
+                {
+                    PrepareExternalBridgeHandlesCold();
+                }
 
                 return true;
             }
 
-            public void RefreshExternalBridgeState(bool allowExternalTextureHandleAllocation)
+            public void CachePresentationGlobalsLate()
             {
                 _bridgeMarineFogTexelSize = Shader.GetGlobalVector(ShaderConstants.MarineSnowDensityTexelSizeId);
                 _bridgeMarineFogParams = Shader.GetGlobalVector(ShaderConstants.MarineSnowDensityParamsId);
@@ -624,7 +627,10 @@ namespace Hecton8.Visor
                 _bridgeBiomeTransitionFogColor = Shader.GetGlobalVector(ShaderConstants.BiomeTransitionFogColorId);
                 _bridgeBiomeTransitionAbsorption = Shader.GetGlobalVector(ShaderConstants.BiomeTransitionAbsorptionId);
                 _bridgeBiomeTransitionWeights = Shader.GetGlobalVector(ShaderConstants.BiomeTransitionWeightsId);
+            }
 
+            public void PrepareExternalBridgeHandlesCold()
+            {
                 if (IsUsableMarineFogTexture(_bridgeMarineFogTexture, in _bridgeMarineFogParams) &&
                     !ReferenceEquals(_bridgeMarineFogTexture, _emptyFogDensityTexture))
                 {
@@ -634,7 +640,7 @@ namespace Hecton8.Visor
                         ref _externalMarineFogDensityTextureHandleSource,
                         ref _externalMarineFogDensityTextureHandleB,
                         ref _externalMarineFogDensityTextureHandleSourceB,
-                        allowExternalTextureHandleAllocation);
+                        allowAllocation: true);
                 }
 
                 if (IsUsableAbyssalFlowTexture(_bridgeAbyssalFlowTexture) &&
@@ -646,7 +652,7 @@ namespace Hecton8.Visor
                         ref _externalAbyssalFlowTextureHandleSource,
                         ref _externalAbyssalFlowTextureHandleB,
                         ref _externalAbyssalFlowTextureHandleSourceB,
-                        allowExternalTextureHandleAllocation);
+                        allowAllocation: true);
                 }
             }
 
@@ -1163,39 +1169,12 @@ namespace Hecton8.Visor
                     return false;
                 }
 
-                bool paramsLocked = false;
-                bool pointLightsLocked = false;
-                bool telemetryLocked = false;
-                if (!TryAcquireFogWriteBuffer(vault, in _paramsHandle, BufferID.ShinobuVolumetricFogParams, 1, out NativeArray<FogConstantsDTO> fogParams))
-                    return false;
-                paramsLocked = true;
-
-                try
+                if (!TryReadFogBuffer(vault, in _paramsHandle, BufferID.ShinobuVolumetricFogParams, 1, out NativeArray<FogConstantsDTO>.ReadOnly fogParams) ||
+                    !fogParams.IsCreated ||
+                    fogParams.Length <= 0)
                 {
-                    if (vault.IsCompactionFenceActive ||
-                        !TryAcquireFogWriteBuffer(vault, in _pointLightsHandle, BufferID.ShinobuVolumetricFogPointLights, VolumetricFogConstants.MaxPointLights, out NativeArray<PointLightDTO> pointLights))
-                    {
-                        return false;
-                    }
-                    pointLightsLocked = true;
-
-                    if (vault.IsCompactionFenceActive ||
-                        !TryAcquireFogWriteBuffer(vault, in _telemetryHandle, BufferID.ShinobuVolumetricFogTelemetryRing, VolumetricFogConstants.TelemetryCapacity, out NativeArray<VolumetricFogTelemetryEntry> telemetry))
-                    {
-                        return false;
-                    }
-                    telemetryLocked = true;
-
-                    if (vault.IsCompactionFenceActive ||
-                        !fogParams.IsCreated ||
-                        fogParams.Length <= 0 ||
-                        !pointLights.IsCreated ||
-                        pointLights.Length < VolumetricFogConstants.MaxPointLights)
-                    {
-                        return false;
-                    }
-
-                    RefreshCompletedLightJobAndUpload(pointLights);
+                    return false;
+                }
 
                 Color linearColor = _settings.fogColor.linear;
                 float3 settingsColor = new float3(
@@ -1208,8 +1187,7 @@ namespace Hecton8.Visor
                 float3 cameraPosition = ResolveCameraAupLocalPosition(camera, _runtimeOriginAup);
                 float3 cameraForward = ResolveCameraForward(camera);
                 float3 wrappedNoiseOffset = ResolveWrappedNoiseOffset(cameraPosition);
-                ref FogConstantsDTO fogState = ref VolumetricFogParamsAccess.ElementAt(fogParams, 0);
-                FogConstantsDTO existing = fogState;
+                FogConstantsDTO existing = fogParams[0];
                 UpdateExternalOverrideState(in existing);
                 bool useVaultOverride = _hasExternalOverrideParams;
                 FogConstantsDTO overrideParams = _externalOverrideParams;
@@ -1248,27 +1226,156 @@ namespace Hecton8.Visor
                         ResolveFiniteClamped(_settings.maxRayDistanceMeters, 0.25f, 140f, 70f),
                         ResolveFiniteSaturated(proxyBlend))
                 };
-                fogState = dto;
-                _lastAuthoredParams = dto;
-                _hasAuthoredParams = true;
+
+                if (!TryWriteFogParams(vault, in dto))
+                    return false;
 
                 UploadConstantBufferIfDirty(in dto);
                 if (allowMockLightSchedule)
-                    ScheduleMockLightsIfIdle(pointLights, cameraPosition, cameraForward, pointLightCount, visualPhaseSeconds);
+                {
+                    if (!TryWriteAndUploadMockLights(
+                            vault,
+                            cameraPosition,
+                            cameraForward,
+                            pointLightCount,
+                            visualPhaseSeconds,
+                            out activePointLightCount))
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    activePointLightCount = 0;
+                }
+
                 activePointLightBuffer = GetActivePointLightBuffer();
-                activePointLightCount = allowMockLightSchedule ? _lastUploadedPointLightCount : 0;
-                if (telemetry.IsCreated && telemetry.Length >= VolumetricFogConstants.TelemetryCapacity)
-                    RecordTelemetry(telemetry, in dto, cameraPosition, raySteps, renderScale, estimatedGpuMicroseconds, activePointLightCount, hasMarineFogTexture, hasAbyssalFlowTexture);
-                return true;
+                return TryRecordTelemetry(
+                    vault,
+                    in dto,
+                    cameraPosition,
+                    raySteps,
+                    renderScale,
+                    estimatedGpuMicroseconds,
+                    activePointLightCount,
+                    hasMarineFogTexture,
+                    hasAbyssalFlowTexture);
+            }
+
+            private bool TryWriteFogParams(IDataVault vault, in FogConstantsDTO dto)
+            {
+                if (!TryAcquireFogWriteBuffer(vault, in _paramsHandle, BufferID.ShinobuVolumetricFogParams, 1, out NativeArray<FogConstantsDTO> fogParams))
+                    return false;
+
+                try
+                {
+                    if (vault.IsCompactionFenceActive ||
+                        !fogParams.IsCreated ||
+                        fogParams.Length <= 0)
+                    {
+                        return false;
+                    }
+
+                    fogParams[0] = dto;
+                    _lastAuthoredParams = dto;
+                    _hasAuthoredParams = true;
+                    return true;
                 }
                 finally
                 {
-                    if (telemetryLocked)
-                        vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
-                    if (pointLightsLocked)
-                        vault.ReleaseWriteLock(in _pointLightsHandle, OwnerSystemId);
-                    if (paramsLocked)
-                        vault.ReleaseWriteLock(in _paramsHandle, OwnerSystemId);
+                    vault.ReleaseWriteLock(in _paramsHandle, OwnerSystemId);
+                }
+            }
+
+            private bool TryWriteAndUploadMockLights(
+                IDataVault vault,
+                float3 cameraPosition,
+                float3 cameraForward,
+                int desiredPointLightCount,
+                float visualPhaseSeconds,
+                out int activePointLightCount)
+            {
+                activePointLightCount = _lastUploadedPointLightCount;
+                if (_mockLightsJobPending && !_mockLightsJobHandle.IsCompleted)
+                    return true;
+
+                if (!TryAcquireFogWriteBuffer(vault, in _pointLightsHandle, BufferID.ShinobuVolumetricFogPointLights, VolumetricFogConstants.MaxPointLights, out NativeArray<PointLightDTO> pointLights))
+                    return false;
+
+                bool success = false;
+                bool uploadAfterLock = false;
+                int uploadPointLightCount = activePointLightCount;
+                try
+                {
+                    if (vault.IsCompactionFenceActive ||
+                        !pointLights.IsCreated ||
+                        pointLights.Length < VolumetricFogConstants.MaxPointLights)
+                    {
+                        return false;
+                    }
+
+                    if (RefreshCompletedLightJob(pointLights, out int completedPointLightCount))
+                    {
+                        CopyPointLightsToUploadScratch(pointLights, completedPointLightCount);
+                        uploadPointLightCount = completedPointLightCount;
+                        uploadAfterLock = true;
+                    }
+
+                    if (WriteMockLightsInline(pointLights, cameraPosition, cameraForward, desiredPointLightCount, visualPhaseSeconds, out int authoredPointLightCount))
+                    {
+                        CopyPointLightsToUploadScratch(pointLights, authoredPointLightCount);
+                        uploadPointLightCount = authoredPointLightCount;
+                        uploadAfterLock = true;
+                    }
+
+                    success = true;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _pointLightsHandle, OwnerSystemId);
+                }
+
+                if (!success)
+                    return false;
+
+                if (uploadAfterLock)
+                {
+                    UploadPointLightsIfDirty(_pointLightUploadScratch, uploadPointLightCount);
+                    activePointLightCount = _lastUploadedPointLightCount;
+                }
+
+                return true;
+            }
+
+            private bool TryRecordTelemetry(
+                IDataVault vault,
+                in FogConstantsDTO dto,
+                float3 cameraPosition,
+                int raySteps,
+                float renderScale,
+                float estimatedGpuMicroseconds,
+                int pointLightCount,
+                bool hasMarineFogTexture,
+                bool hasAbyssalFlowTexture)
+            {
+                if (!TryAcquireFogWriteBuffer(vault, in _telemetryHandle, BufferID.ShinobuVolumetricFogTelemetryRing, VolumetricFogConstants.TelemetryCapacity, out NativeArray<VolumetricFogTelemetryEntry> telemetry))
+                    return false;
+
+                try
+                {
+                    if (vault.IsCompactionFenceActive ||
+                        !telemetry.IsCreated ||
+                        telemetry.Length < VolumetricFogConstants.TelemetryCapacity)
+                    {
+                        return false;
+                    }
+
+                    RecordTelemetry(telemetry, in dto, cameraPosition, raySteps, renderScale, estimatedGpuMicroseconds, pointLightCount, hasMarineFogTexture, hasAbyssalFlowTexture);
+                    return true;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
                 }
             }
 
@@ -1516,15 +1623,17 @@ namespace Hecton8.Visor
                        math.all(left.QualityAndLimits == right.QualityAndLimits);
             }
 
-            private void ScheduleMockLightsIfIdle(
+            private bool WriteMockLightsInline(
                 NativeArray<PointLightDTO> pointLights,
                 float3 cameraPosition,
                 float3 cameraForward,
                 int desiredPointLightCount,
-                float visualPhaseSeconds)
+                float visualPhaseSeconds,
+                out int authoredPointLightCount)
             {
-                if (_mockLightsJobPending || !pointLights.IsCreated)
-                    return;
+                authoredPointLightCount = 0;
+                if (!pointLights.IsCreated)
+                    return false;
 
                 int safeDesiredPointLightCount = math.clamp(desiredPointLightCount, 1, VolumetricFogConstants.MaxPointLights);
                 uint scheduleHash = math.hash(new uint4(
@@ -1536,7 +1645,7 @@ namespace Hecton8.Visor
                     safeDesiredPointLightCount == _lastScheduledPointLightCount &&
                     scheduleHash == _lastScheduledPointLightHash)
                 {
-                    return;
+                    return false;
                 }
 
                 _pendingPointLightCount = safeDesiredPointLightCount;
@@ -1548,34 +1657,55 @@ namespace Hecton8.Visor
                     FramePhaseSeconds = visualPhaseSeconds,
                     QualityWeight = _qualityWeight
                 };
-                _mockLightsJobHandle = lightJob.Schedule();
-                _mockLightsJobPending = true;
+                lightJob.Execute();
                 _lastScheduledPointLightCount = safeDesiredPointLightCount;
                 _lastScheduledPointLightHash = scheduleHash;
                 _hasScheduledPointLightJob = true;
+                _pendingPointLightCount = 0;
+                authoredPointLightCount = safeDesiredPointLightCount;
+                return true;
             }
 
-            private void RefreshCompletedLightJobAndUpload(NativeArray<PointLightDTO> pointLights)
+            private bool RefreshCompletedLightJob(NativeArray<PointLightDTO> pointLights, out int completedPointLightCount)
             {
+                completedPointLightCount = 0;
                 if (!_mockLightsJobPending || !_mockLightsJobHandle.IsCompleted)
-                    return;
+                    return false;
 
                 if (!DispatcherJobFence.TryFinalizeCompleted(ref _mockLightsJobHandle))
-                    return;
+                    return false;
 
                 _mockLightsJobPending = false;
+                completedPointLightCount = math.clamp(_pendingPointLightCount, 0, VolumetricFogConstants.MaxPointLights);
+                _pendingPointLightCount = 0;
+                return pointLights.IsCreated && completedPointLightCount > 0;
+            }
 
+            private void CopyPointLightsToUploadScratch(NativeArray<PointLightDTO> pointLights, int pointLightCount)
+            {
+                int safeCount = pointLights.IsCreated
+                    ? math.clamp(pointLightCount, 0, math.min(pointLights.Length, VolumetricFogConstants.MaxPointLights))
+                    : 0;
+
+                for (int i = 0; i < safeCount; i++)
+                    _pointLightUploadScratch[i] = pointLights[i];
+
+                for (int i = safeCount; i < VolumetricFogConstants.MaxPointLights; i++)
+                    _pointLightUploadScratch[i] = default;
+            }
+
+            private void UploadPointLightsIfDirty(PointLightDTO[] pointLights, int completedPointLightCount)
+            {
                 GraphicsBuffer target = GetInactivePointLightBuffer();
-                if (target == null || !target.IsValid())
+                if (pointLights == null || target == null || !target.IsValid())
                     return;
 
-                int completedPointLightCount = math.clamp(_pendingPointLightCount, 0, VolumetricFogConstants.MaxPointLights);
+                completedPointLightCount = math.clamp(completedPointLightCount, 0, VolumetricFogConstants.MaxPointLights);
                 uint pointLightsHash = HashPointLights(pointLights, completedPointLightCount);
                 if (_hasUploadedPointLights &&
                     completedPointLightCount == _lastUploadedPointLightCount &&
                     pointLightsHash == _lastUploadedPointLightsHash)
                 {
-                    _pendingPointLightCount = 0;
                     return;
                 }
 
@@ -1584,12 +1714,11 @@ namespace Hecton8.Visor
                 _lastUploadedPointLightCount = completedPointLightCount;
                 _lastUploadedPointLightsHash = pointLightsHash;
                 _hasUploadedPointLights = true;
-                _pendingPointLightCount = 0;
             }
 
-            private static uint HashPointLights(NativeArray<PointLightDTO> pointLights, int count)
+            private static uint HashPointLights(PointLightDTO[] pointLights, int count)
             {
-                if (!pointLights.IsCreated)
+                if (pointLights == null)
                     return 0u;
 
                 int safeCount = math.clamp(count, 0, math.min(pointLights.Length, VolumetricFogConstants.MaxPointLights));
@@ -1608,18 +1737,17 @@ namespace Hecton8.Visor
                 return hash;
             }
 
-            private unsafe void UploadPointLights(GraphicsBuffer target, NativeArray<PointLightDTO> pointLights)
+            private static void UploadPointLights(GraphicsBuffer target, PointLightDTO[] pointLights)
             {
-                int count = math.min(target.count, pointLights.Length);
+                int count = pointLights == null ? 0 : math.min(target.count, pointLights.Length);
                 if (count <= 0)
                     return;
 
                 NativeArray<PointLightDTO> mapped = target.LockBufferForWrite<PointLightDTO>(0, count);
                 try
                 {
-                    void* destination = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(pointLights);
-                    UnsafeUtility.MemCpy(destination, source, count * UnsafeUtility.SizeOf<PointLightDTO>());
+                    for (int i = 0; i < count; i++)
+                        mapped[i] = pointLights[i];
                 }
                 finally
                 {
@@ -2438,6 +2566,19 @@ namespace Hecton8.Visor
         private VolumetricFogPass _pass;
         private int _nextPerformanceWarningFrame;
         private int _nextColdStateRepairFrame;
+        private bool _supportsComputeShaders;
+        private bool _hotSwapRegistered;
+        private bool _lateFrameRegistered;
+        private bool _slowTickRegistered;
+
+        private void OnEnable()
+        {
+            CacheGraphicsCapabilitiesCold();
+            TryRegisterSlowTickable();
+            TryRegisterLateFrameTickable();
+            TryRegisterHotSwapListener();
+            _pass?.PrepareExternalBridgeHandlesCold();
+        }
 
         public override void Create()
         {
@@ -2450,9 +2591,14 @@ namespace Hecton8.Visor
 
             _pass ??= new VolumetricFogPass();
             _nextColdStateRepairFrame = 0;
+            CacheGraphicsCapabilitiesCold();
             _pass.PrepareComputeKernels(settings, settings != null ? settings.computeShader : null);
             _pass.TryPrepareNativeState(GlobalRegistry.DataVault, allowAllocation: true);
             _pass.TryPrepareGpuState(allowAllocation: true);
+            TryRegisterSlowTickable();
+            TryRegisterLateFrameTickable();
+            TryRegisterHotSwapListener();
+            _pass.PrepareExternalBridgeHandlesCold();
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -2473,7 +2619,7 @@ namespace Hecton8.Visor
             long setupStartTimestamp = sampleSetupCost ? Stopwatch.GetTimestamp() : 0L;
             float qualityWeight = ResolveFiniteSaturated(HomeostasisBrain.GlobalQualityWeight);
             bool allowVolumetricCompute = settings.computeShader != null &&
-                                          SystemInfo.supportsComputeShaders;
+                                          _supportsComputeShaders;
             if (!_pass.HasNativeState || !_pass.HasGpuState)
             {
                 return;
@@ -2496,7 +2642,6 @@ namespace Hecton8.Visor
                 }
             }
 
-            _pass.RefreshExternalBridgeState(allowExternalTextureHandleAllocation: false);
             renderer.EnqueuePass(_pass);
             PublishSetupWarningIfNeeded(setupStartTimestamp, currentFrame, sampleSetupCost);
         }
@@ -2505,6 +2650,108 @@ namespace Hecton8.Visor
         {
             _pass?.Dispose();
             _pass = null;
+            TryUnregisterSlowTickable();
+            TryUnregisterLateFrameTickable();
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                _pass?.TryPrepareNativeState(currentService as IDataVault, allowAllocation: true);
+                return;
+            }
+
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            TryUnregisterSlowTickable();
+            TryUnregisterLateFrameTickable();
+            if (currentService != null)
+            {
+                TryRegisterSlowTickable();
+                TryRegisterLateFrameTickable();
+            }
+        }
+
+        public void SlowTick()
+        {
+            if (_pass == null)
+                return;
+
+            _pass.TryPrepareGpuState(allowAllocation: false);
+        }
+
+        public void LateFrameTick()
+        {
+            _pass?.CachePresentationGlobalsLate();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterSlowTickable();
+            TryUnregisterLateFrameTickable();
+            TryUnregisterHotSwapListener();
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsComputeShaders = SystemInfo.supportsComputeShaders;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void TryRegisterSlowTickable()
+        {
+            if (_slowTickRegistered)
+                return;
+
+            _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterSlowTickable()
+        {
+            if (!_slowTickRegistered)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            _slowTickRegistered = false;
+        }
+
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_lateFrameRegistered)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _lateFrameRegistered = false;
         }
 
         private void RunDiagnosticMaintenanceIfDue(int currentFrame)

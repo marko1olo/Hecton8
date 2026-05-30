@@ -15,6 +15,7 @@ namespace Hecton8.Core
         private NativeArray<T> _buffer;
         private int _capacity;
         private int _indexMask;
+        private int _writeGate;
         private long _writeCursor;
 
         /// <summary>
@@ -33,6 +34,7 @@ namespace Hecton8.Core
             _buffer = new NativeArray<T>(capacity, allocator, (NativeArrayOptions)options);
             _capacity = capacity;
             _indexMask = capacity - 1;
+            _writeGate = 0;
             _writeCursor = 0L;
         }
 
@@ -49,7 +51,7 @@ namespace Hecton8.Core
         /// <summary>
         /// Number of committed writes since allocation.
         /// </summary>
-        public long TotalWrites => Volatile.Read(ref _writeCursor);
+        public long TotalWrites => ResolveCommittedWrites(Volatile.Read(ref _writeCursor));
 
         /// <summary>
         /// Current retained entry count.
@@ -61,7 +63,7 @@ namespace Hecton8.Core
                 if (!_buffer.IsCreated)
                     return 0;
 
-                long writes = Volatile.Read(ref _writeCursor);
+                long writes = ResolveCommittedWrites(Volatile.Read(ref _writeCursor));
                 if (writes <= 0L)
                     return 0;
 
@@ -87,10 +89,22 @@ namespace Hecton8.Core
         /// <param name="value">Entry payload.</param>
         public int Write(in T value)
         {
-            long writeIndex = Interlocked.Increment(ref _writeCursor) - 1L;
-            int slot = NormalizeIndex(writeIndex);
-            _buffer[slot] = value;
-            return slot;
+            EnterWriteGate();
+            try
+            {
+                if (!_buffer.IsCreated || _capacity <= 0 || _writeCursor == long.MaxValue)
+                    return -1;
+
+                long writeIndex = ResolveCommittedWrites(_writeCursor);
+                int slot = NormalizeIndex(writeIndex);
+                _buffer[slot] = value;
+                Volatile.Write(ref _writeCursor, writeIndex + 1L);
+                return slot;
+            }
+            finally
+            {
+                Volatile.Write(ref _writeGate, 0);
+            }
         }
 
         /// <summary>
@@ -101,7 +115,7 @@ namespace Hecton8.Core
         /// <param name="destination">Caller-owned destination buffer.</param>
         public void CopyRange(long startWriteIndex, int totalCount, NativeArray<T> destination)
         {
-            CopyRange(startWriteIndex, totalCount, destination, 0);
+            TryCopyRange(startWriteIndex, totalCount, destination, 0);
         }
 
         /// <summary>
@@ -113,6 +127,32 @@ namespace Hecton8.Core
         /// <param name="destinationStartIndex">Destination start slot.</param>
         public void CopyRange(long startWriteIndex, int totalCount, NativeArray<T> destination, int destinationStartIndex)
         {
+            TryCopyRange(startWriteIndex, totalCount, destination, destinationStartIndex);
+        }
+
+        /// <summary>
+        /// Tries to copy a chronological range into a caller-owned destination slice.
+        /// </summary>
+        /// <param name="startWriteIndex">First absolute write index to copy.</param>
+        /// <param name="totalCount">Number of entries to copy.</param>
+        /// <param name="destination">Caller-owned destination buffer.</param>
+        /// <param name="destinationStartIndex">Destination start slot.</param>
+        /// <returns>True when the whole requested range was present and copied.</returns>
+        public bool TryCopyRange(long startWriteIndex, int totalCount, NativeArray<T> destination, int destinationStartIndex = 0)
+        {
+            EnterWriteGate();
+            try
+            {
+                return TryCopyRangeUnsafe(startWriteIndex, totalCount, destination, destinationStartIndex);
+            }
+            finally
+            {
+                Volatile.Write(ref _writeGate, 0);
+            }
+        }
+
+        private bool TryCopyRangeUnsafe(long startWriteIndex, int totalCount, NativeArray<T> destination, int destinationStartIndex)
+        {
             int safeCount = totalCount;
             if (!_buffer.IsCreated ||
                 !destination.IsCreated ||
@@ -120,7 +160,7 @@ namespace Hecton8.Core
                 destinationStartIndex < 0 ||
                 destinationStartIndex >= destination.Length)
             {
-                return;
+                return false;
             }
 
             int destinationCapacity = destination.Length - destinationStartIndex;
@@ -128,6 +168,28 @@ namespace Hecton8.Core
                 safeCount = destinationCapacity;
             if (safeCount > _capacity)
                 safeCount = _capacity;
+            if (safeCount <= 0)
+                return false;
+
+            long committedWrites = ResolveCommittedWrites(_writeCursor);
+            long oldestRetained = committedWrites > _capacity ? committedWrites - _capacity : 0L;
+            if (committedWrites <= 0L || startWriteIndex < oldestRetained || startWriteIndex >= committedWrites)
+            {
+                ClearDestinationRange(destination, destinationStartIndex, safeCount);
+                return false;
+            }
+
+            bool completeRangeCopied = true;
+            long availableCount = committedWrites - startWriteIndex;
+            if (availableCount < safeCount)
+            {
+                int validCount = availableCount > 0L ? (int)availableCount : 0;
+                ClearDestinationRange(destination, destinationStartIndex + validCount, safeCount - validCount);
+                safeCount = validCount;
+                completeRangeCopied = false;
+                if (safeCount <= 0)
+                    return false;
+            }
 
             int sourceIndex = NormalizeIndex(startWriteIndex);
             int firstCopyCount = _capacity - sourceIndex;
@@ -139,6 +201,8 @@ namespace Hecton8.Core
             int remainingCount = safeCount - firstCopyCount;
             if (remainingCount > 0)
                 NativeArray<T>.Copy(_buffer, 0, destination, destinationStartIndex + firstCopyCount, remainingCount);
+
+            return completeRangeCopied;
         }
 
         public void RegisterBackingArray(string owner, string label, NativeAllocationLifetime lifetime)
@@ -165,17 +229,53 @@ namespace Hecton8.Core
             if (!_buffer.IsCreated)
                 return;
 
-            _buffer.Dispose();
-            _buffer = default;
-            _capacity = 0;
-            _indexMask = -1;
-            _writeCursor = 0L;
+            EnterWriteGate();
+            try
+            {
+                if (_buffer.IsCreated)
+                    _buffer.Dispose();
+
+                _buffer = default;
+                _capacity = 0;
+                _indexMask = -1;
+                _writeCursor = 0L;
+            }
+            finally
+            {
+                Volatile.Write(ref _writeGate, 0);
+            }
+        }
+
+        private void EnterWriteGate()
+        {
+            SpinWait spin = default;
+            while (Interlocked.CompareExchange(ref _writeGate, 1, 0) != 0)
+                spin.SpinOnce();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int NormalizeIndex(long index)
         {
             return (int)index & _indexMask;
+        }
+
+        private static void ClearDestinationRange(NativeArray<T> destination, int startIndex, int count)
+        {
+            if (!destination.IsCreated || count <= 0 || startIndex < 0 || startIndex >= destination.Length)
+                return;
+
+            int end = startIndex + count;
+            if (end > destination.Length || end < startIndex)
+                end = destination.Length;
+
+            for (int i = startIndex; i < end; i++)
+                destination[i] = default;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static long ResolveCommittedWrites(long writes)
+        {
+            return writes > 0L ? writes : 0L;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

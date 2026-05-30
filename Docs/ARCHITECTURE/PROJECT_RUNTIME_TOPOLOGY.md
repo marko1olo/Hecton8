@@ -26,7 +26,7 @@ This is not compile, Unity import, Play Mode, profiler, GC, save/load, player-bu
 | Input package | `com.unity.inputsystem` `1.19.0` | `Packages/manifest.json` |
 | Memory Profiler package | `com.unity.memoryprofiler` `1.1.12` | `Packages/manifest.json` |
 | XR packages | OpenXR `1.17.0`, Meta OpenXR `2.5.0`, XR Management `4.6.0` | `Packages/manifest.json` |
-| First-party asmdefs | `167` under `Assets/_Project` | static filesystem count |
+| First-party asmdefs | `168` under `Assets/_Project` | 2026-05-29 static filesystem count |
 | Data Monolith payload | `1,064,384` bytes | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
 
 Package presence is not platform readiness. XR/package fields do not prove provider setup, device launch, comfort, thermal, or frame pacing.

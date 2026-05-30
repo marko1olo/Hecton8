@@ -198,6 +198,7 @@ namespace Hecton8.Gameplay
         private INativeInputManagerRuntime _cycleInputManager;
         private Transform _cachedInteractorTransform;
         private Rigidbody _cachedInteractorBody;
+        private HectonPlayerMotor _cachedInteractorMotor;
         private bool _cachedInteractorComponentCacheValid;
         private bool _playerDockingSnapActive;
         private Transform _snapInteractor;
@@ -779,6 +780,7 @@ namespace Hecton8.Gameplay
             _pendingDestinationPosition = destinationPosition;
             _pendingDestinationRotation = destinationRotation;
             _hasPendingDestination = true;
+            CacheInteractorComponentsCold(player);
             CaptureCycleInputLock();
 
             // Update status light to red
@@ -877,10 +879,10 @@ namespace Hecton8.Gameplay
 
             try
             {
-                if (TryResolveHydroPlayerMotor(player, playerBody, out HectonPlayerMotor hydroMotor))
+                if (TryResolveHydroPlayerMotor(player, _cachedInteractorMotor, out HectonPlayerMotor hydroMotor))
                     TeleportHydroPlayer(player, hydroMotor, destinationPosition, destinationRotation);
                 else if (playerBody != null)
-                    TeleportBody(playerBody, destinationPosition, destinationRotation, _cachedPhysicsService);
+                    TeleportBody(playerBody, _cachedInteractorMotor, destinationPosition, destinationRotation, _cachedPhysicsService);
                 else
                     player.SetPositionAndRotation(destinationPosition, destinationRotation);
             }
@@ -915,7 +917,7 @@ namespace Hecton8.Gameplay
             _snapTargetLocalRotation = inverseFrameRotation * destinationRotation;
             _snapInteractor = player;
             _snapBody = playerBody;
-            _snapMotor = TryResolveHydroPlayerMotor(player, playerBody, out HectonPlayerMotor hydroMotor)
+            _snapMotor = TryResolveHydroPlayerMotor(player, _cachedInteractorMotor, out HectonPlayerMotor hydroMotor)
                 ? hydroMotor
                 : null;
             _snapElapsedSeconds = 0f;
@@ -1047,17 +1049,29 @@ namespace Hecton8.Gameplay
         private void ResolveInteractorBody(Transform player, out Rigidbody body)
         {
             body = null;
+            if (player == null ||
+                !_cachedInteractorComponentCacheValid ||
+                !ReferenceEquals(_cachedInteractorTransform, player))
+                return;
+
+            body = _cachedInteractorBody;
+        }
+
+        private void CacheInteractorComponentsCold(Transform player)
+        {
+            _cachedInteractorTransform = player;
+            _cachedInteractorBody = null;
+            _cachedInteractorMotor = null;
+            _cachedInteractorComponentCacheValid = false;
             if (player == null)
                 return;
 
-            if (!ReferenceEquals(_cachedInteractorTransform, player) || !_cachedInteractorComponentCacheValid)
-            {
-                _cachedInteractorTransform = player;
-                player.TryGetComponent(out _cachedInteractorBody);
-                _cachedInteractorComponentCacheValid = true;
-            }
+            player.TryGetComponent(out _cachedInteractorBody);
+            player.TryGetComponent(out _cachedInteractorMotor);
+            if (_cachedInteractorMotor == null && _cachedInteractorBody != null)
+                _cachedInteractorBody.TryGetComponent(out _cachedInteractorMotor);
 
-            body = _cachedInteractorBody;
+            _cachedInteractorComponentCacheValid = true;
         }
 
         private void ClearInteractorComponentCache()
@@ -1065,13 +1079,18 @@ namespace Hecton8.Gameplay
             _cycleInteractor = null;
             _cachedInteractorTransform = null;
             _cachedInteractorBody = null;
+            _cachedInteractorMotor = null;
             _cachedInteractorComponentCacheValid = false;
         }
 
-        private static void TeleportBody(Rigidbody body, Vector3 position, Quaternion rotation, IPhysicsService physicsService)
+        private static void TeleportBody(
+            Rigidbody body,
+            HectonPlayerMotor playerMotor,
+            Vector3 position,
+            Quaternion rotation,
+            IPhysicsService physicsService)
         {
-            if (body.TryGetComponent(out HectonPlayerMotor playerMotor) &&
-                playerMotor.HydrodynamicKccOwnsCollisionAuthority)
+            if (playerMotor != null && playerMotor.HydrodynamicKccOwnsCollisionAuthority)
             {
                 TeleportHydroPlayer(body.transform, playerMotor, position, rotation);
                 return;
@@ -1111,15 +1130,16 @@ namespace Hecton8.Gameplay
 
         private static bool TryResolveHydroPlayerMotor(
             Transform player,
-            Rigidbody playerBody,
+            HectonPlayerMotor cachedPlayerMotor,
             out HectonPlayerMotor playerMotor)
         {
-            playerMotor = null;
-            if (playerBody != null && playerBody.TryGetComponent(out playerMotor) && playerMotor.HydrodynamicKccOwnsCollisionAuthority)
+            playerMotor = cachedPlayerMotor;
+            if (player != null &&
+                playerMotor != null &&
+                playerMotor.HydrodynamicKccOwnsCollisionAuthority)
+            {
                 return true;
-
-            if (player != null && player.TryGetComponent(out playerMotor) && playerMotor.HydrodynamicKccOwnsCollisionAuthority)
-                return true;
+            }
 
             playerMotor = null;
             return false;

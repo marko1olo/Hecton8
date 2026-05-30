@@ -252,6 +252,9 @@ namespace Hecton8.Visor
             private uint _resolveExposureThreadGroupSizeX;
             private HectonUnderwaterVisuals _underwaterVisuals;
             private IPlayerRuntimeContext _playerContext;
+            private float _cachedLowVramPressure01;
+            private bool _supportsSetConstantBuffer;
+            private bool _supportsComputeShaders;
 
             public ShaftsPass()
             {
@@ -293,6 +296,20 @@ namespace Hecton8.Visor
                     TryInitializeAutoExposureKernels();
                 EnsureAutoExposureResources();
                 return EnsureShaftGlobalsBuffer();
+            }
+
+            public void SetGraphicsCapabilitiesCold(
+                bool supportsSetConstantBuffer,
+                bool supportsComputeShaders,
+                float lowVramPressure01)
+            {
+                _supportsSetConstantBuffer = supportsSetConstantBuffer;
+                _supportsComputeShaders = supportsComputeShaders;
+                _cachedLowVramPressure01 = math.saturate(lowVramPressure01);
+                if (!_supportsSetConstantBuffer)
+                    Dispose();
+                if (!_supportsComputeShaders)
+                    DisableAutoExposure();
             }
 
             public void Dispose()
@@ -742,7 +759,7 @@ namespace Hecton8.Visor
 
             private void TryInitializeAutoExposureKernels()
             {
-                if (_autoExposureComputeShader == null || !SystemInfo.supportsComputeShaders)
+                if (_autoExposureComputeShader == null || !_supportsComputeShaders)
                 {
                     DisableAutoExposure();
                     return;
@@ -881,7 +898,7 @@ namespace Hecton8.Visor
 
             private bool EnsureShaftGlobalsBuffer()
             {
-                if (!SystemInfo.supportsSetConstantBuffer)
+                if (!_supportsSetConstantBuffer)
                     return false;
 
                 if (_shaftGlobalsBufferA != null && _shaftGlobalsBufferA.IsValid() &&
@@ -989,7 +1006,7 @@ namespace Hecton8.Visor
 
             private bool HasShaftGlobalsBuffer()
             {
-                if (!SystemInfo.supportsSetConstantBuffer)
+                if (!_supportsSetConstantBuffer)
                     return false;
 
                 if (_shaftGlobalsBufferA == null || !_shaftGlobalsBufferA.IsValid() ||
@@ -1084,13 +1101,9 @@ namespace Hecton8.Visor
                 return math.saturate(math.isfinite(quality) ? quality : 1f);
             }
 
-            private static float ResolveLowVramPressure01()
+            private float ResolveLowVramPressure01()
             {
-                int graphicsMemoryMb = SystemInfo.graphicsMemorySize;
-                if (graphicsMemoryMb <= 0)
-                    return 0.35f;
-
-                return Smooth01(math.saturate((2048f - graphicsMemoryMb) * (1f / 1536f)));
+                return _cachedLowVramPressure01;
             }
 
             private static float CombineVisualBudgetPressure(float lowVramPressure01, float drsSurvivalPressure01)
@@ -1379,6 +1392,9 @@ namespace Hecton8.Visor
         private HectonUnderwaterVisuals _cachedUnderwaterVisuals;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _hotSwapRegistered;
+        private bool _supportsSetConstantBuffer;
+        private bool _supportsComputeShaders;
+        private float _cachedLowVramPressure01;
 
         /// <inheritdoc />
         public override void Create()
@@ -1399,6 +1415,7 @@ namespace Hecton8.Visor
 #endif
 
             _pass ??= new ShaftsPass();
+            CacheGraphicsCapabilitiesCold();
             RecreateMaterial(ref _raymarchMaterial, shader);
             RecreateMaterial(ref _blurHorizontalMaterial, shader);
             RecreateMaterial(ref _blurVerticalMaterial, shader);
@@ -1476,6 +1493,26 @@ namespace Hecton8.Visor
         private void OnDisable()
         {
             TryUnregisterHotSwapListener();
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsSetConstantBuffer = SystemInfo.supportsSetConstantBuffer;
+            _supportsComputeShaders = SystemInfo.supportsComputeShaders;
+            _cachedLowVramPressure01 = ResolveLowVramPressure01(SystemInfo.graphicsMemorySize);
+            _pass?.SetGraphicsCapabilitiesCold(
+                _supportsSetConstantBuffer,
+                _supportsComputeShaders,
+                _cachedLowVramPressure01);
+        }
+
+        private static float ResolveLowVramPressure01(int graphicsMemoryMb)
+        {
+            if (graphicsMemoryMb <= 0)
+                return 0.35f;
+
+            float t = math.saturate((2048f - graphicsMemoryMb) * (1f / 1536f));
+            return t * t * (3f - 2f * t);
         }
 
         private void TryRegisterHotSwapListener()

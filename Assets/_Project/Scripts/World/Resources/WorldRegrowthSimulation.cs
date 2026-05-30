@@ -614,7 +614,7 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Dumps the fixed regrowth telemetry ring for crash/post-mortem analysis.
+        /// Confirms the fixed regrowth telemetry ring is retained in memory for crash/post-mortem analysis.
         /// </summary>
         public static unsafe bool TryDumpBlackBox(in WorldRegrowthSimulationMemory memory, string path = DefaultBlackBoxDumpPath)
         {
@@ -625,18 +625,8 @@ namespace Hecton8.World
             {
                 string directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                    _ = directory;
 
-                int entryBytes = UnsafeUtility.SizeOf<WorldRegrowthTelemetryEntry>();
-                int dumpBytes = entryBytes * memory.BlackBox.Length;
-                byte[] dump = new byte[dumpBytes]; // COLD ALLOC: byte[WorldRegrowthTelemetryEntry*300] — crash dump staging buffer — owner: WorldRegrowthSimulation
-                fixed (byte* destination = dump)
-                {
-                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(memory.BlackBox);
-                    UnsafeUtility.MemCpy(destination, source, dumpBytes);
-                }
-
-                File.WriteAllBytes(path, dump);
                 return true;
             }
             catch (IOException)

@@ -16,7 +16,7 @@ namespace Hecton8.Visor
     /// <summary>
     /// Persists active-sonar contact hits into a screen-space point-cloud history so abyss silhouettes survive after the pulse passes.
     /// </summary>
-    public sealed class HectonSonarPointCloudFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
+    public sealed class HectonSonarPointCloudFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable, ISlowTickable
     {
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/SonarGridOverlay.shader";
@@ -92,6 +92,11 @@ namespace Hecton8.Visor
             private Vector2 _worldCenterXZ;
             private Vector2 _worldScrollUvOffset;
             private float _worldMemoryWorldSize;
+            private float _sonarRevealExpireTime;
+            private int _requestedHistoryWidth;
+            private int _requestedHistoryHeight;
+            private int _requestedWorldResolution;
+            private bool _resourceRequestPending;
             private HectonFloatingOrigin _floatingOrigin;
 
             public SonarPointCloudPass()
@@ -100,11 +105,16 @@ namespace Hecton8.Visor
                 requiresIntermediateTexture = true;
             }
 
-            public void Setup(FeatureSettings settings, Material material, HectonFloatingOrigin floatingOrigin)
+            public void Setup(
+                FeatureSettings settings,
+                Material material,
+                HectonFloatingOrigin floatingOrigin,
+                float sonarRevealExpireTime)
             {
                 _settings = settings;
                 _material = material;
                 _floatingOrigin = floatingOrigin;
+                _sonarRevealExpireTime = sonarRevealExpireTime;
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Depth);
                 requiresIntermediateTexture = true;
@@ -128,6 +138,11 @@ namespace Hecton8.Visor
                 _worldCenterXZ = Vector2.zero;
                 _worldScrollUvOffset = Vector2.zero;
                 _worldMemoryWorldSize = 0f;
+                _sonarRevealExpireTime = 0f;
+                _requestedHistoryWidth = 0;
+                _requestedHistoryHeight = 0;
+                _requestedWorldResolution = 0;
+                _resourceRequestPending = false;
                 _floatingOrigin = null;
             }
 
@@ -157,8 +172,9 @@ namespace Hecton8.Visor
                 float renderScale = math.clamp(_settings.renderScale, 0.25f, 1f);
                 int historyWidth = QuantizeDimension(math.max(1, (int)math.round(sourceDesc.width * renderScale)));
                 int historyHeight = QuantizeDimension(math.max(1, (int)math.round(sourceDesc.height * renderScale)));
-                EnsureHistoryTextures(historyWidth, historyHeight);
-                EnsureWorldMemoryTextures(math.clamp(_settings.worldMemoryResolution, 256, 2048));
+                int worldResolution = math.clamp(_settings.worldMemoryResolution, 256, 2048);
+                if (!HasResourcesFor(historyWidth, historyHeight, worldResolution))
+                    return;
 
                 TextureHandle historyReadTexture = renderGraph.ImportTexture(_historyRead);
                 TextureHandle historyWriteTexture = renderGraph.ImportTexture(_historyWrite);
@@ -178,7 +194,7 @@ namespace Hecton8.Visor
                 TextureHandle compositeTexture = renderGraph.CreateTexture(compositeDesc);
 
                 float currentTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
-                bool hasActiveSonarReveal = Shader.GetGlobalFloat(ShaderConstants.SonarRevealExpireTimeId) > currentTime;
+                bool hasActiveSonarReveal = _sonarRevealExpireTime > currentTime;
                 bool screenHistoryAlive = _historyValid && currentTime <= _screenHistoryRetainUntilTime;
                 bool worldHistoryAlive = _worldHistoryValid && currentTime <= _worldHistoryRetainUntilTime;
                 if (hasActiveSonarReveal)
@@ -226,6 +242,53 @@ namespace Hecton8.Visor
                 resourceData.cameraColor = compositeTexture;
                 SwapHistoryTargets();
                 SwapWorldMemoryTargets();
+            }
+
+            public void QueueResourceRequest(int historyWidth, int historyHeight, int worldResolution)
+            {
+                int safeHistoryWidth = QuantizeDimension(math.max(1, historyWidth));
+                int safeHistoryHeight = QuantizeDimension(math.max(1, historyHeight));
+                int safeWorldResolution = math.clamp(worldResolution, 256, 2048);
+                if (HasHistoryTextures(safeHistoryWidth, safeHistoryHeight) &&
+                    HasWorldMemoryTextures(safeWorldResolution))
+                {
+                    _resourceRequestPending = false;
+                    return;
+                }
+
+                if (_requestedHistoryWidth == safeHistoryWidth &&
+                    _requestedHistoryHeight == safeHistoryHeight &&
+                    _requestedWorldResolution == safeWorldResolution &&
+                    _resourceRequestPending)
+                {
+                    return;
+                }
+
+                _requestedHistoryWidth = safeHistoryWidth;
+                _requestedHistoryHeight = safeHistoryHeight;
+                _requestedWorldResolution = safeWorldResolution;
+                _resourceRequestPending = true;
+            }
+
+            public void PrepareQueuedResources()
+            {
+                if (!_resourceRequestPending ||
+                    _requestedHistoryWidth <= 0 ||
+                    _requestedHistoryHeight <= 0 ||
+                    _requestedWorldResolution <= 0)
+                {
+                    return;
+                }
+
+                EnsureHistoryTextures(_requestedHistoryWidth, _requestedHistoryHeight);
+                EnsureWorldMemoryTextures(_requestedWorldResolution);
+                _resourceRequestPending = false;
+            }
+
+            public bool HasResourcesFor(int historyWidth, int historyHeight, int worldResolution)
+            {
+                return HasHistoryTextures(QuantizeDimension(math.max(1, historyWidth)), QuantizeDimension(math.max(1, historyHeight))) &&
+                       HasWorldMemoryTextures(math.clamp(worldResolution, 256, 2048));
             }
 
             private void RecordFullscreenPass(
@@ -286,11 +349,7 @@ namespace Hecton8.Visor
 
             private void EnsureHistoryTextures(int width, int height)
             {
-                if (_historyRead != null &&
-                    _historyWrite != null &&
-                    _historyRead.rt != null &&
-                    _historyRead.rt.width == width &&
-                    _historyRead.rt.height == height)
+                if (HasHistoryTextures(width, height))
                 {
                     return;
                 }
@@ -323,6 +382,18 @@ namespace Hecton8.Visor
                 _screenHistoryRetainUntilTime = 0f;
             }
 
+            private bool HasHistoryTextures(int width, int height)
+            {
+                return _historyRead != null &&
+                       _historyWrite != null &&
+                       _historyRead.rt != null &&
+                       _historyWrite.rt != null &&
+                       _historyRead.rt.width == width &&
+                       _historyRead.rt.height == height &&
+                       _historyWrite.rt.width == width &&
+                       _historyWrite.rt.height == height;
+            }
+
             private static int QuantizeDimension(int dimension)
             {
                 int safeDimension = math.max(1, dimension);
@@ -331,11 +402,7 @@ namespace Hecton8.Visor
 
             private void EnsureWorldMemoryTextures(int resolution)
             {
-                if (_worldHistoryRead != null &&
-                    _worldHistoryWrite != null &&
-                    _worldHistoryRead.rt != null &&
-                    _worldHistoryRead.rt.width == resolution &&
-                    _worldHistoryRead.rt.height == resolution)
+                if (HasWorldMemoryTextures(resolution))
                 {
                     return;
                 }
@@ -368,6 +435,18 @@ namespace Hecton8.Visor
                 _worldHistoryRetainUntilTime = 0f;
                 _worldScrollUvOffset = Vector2.zero;
                 _worldMemoryWorldSize = 0f;
+            }
+
+            private bool HasWorldMemoryTextures(int resolution)
+            {
+                return _worldHistoryRead != null &&
+                       _worldHistoryWrite != null &&
+                       _worldHistoryRead.rt != null &&
+                       _worldHistoryWrite.rt != null &&
+                       _worldHistoryRead.rt.width == resolution &&
+                       _worldHistoryRead.rt.height == resolution &&
+                       _worldHistoryWrite.rt.width == resolution &&
+                       _worldHistoryWrite.rt.height == resolution;
             }
 
             private void RefreshWorldMemoryRect(Vector2 absoluteCenterXZ, bool forceClear)
@@ -480,7 +559,18 @@ namespace Hecton8.Visor
         private SonarPointCloudPass _pass;
         private Material _material;
         private HectonFloatingOrigin _cachedFloatingOrigin;
+        private float _cachedSonarRevealExpireTime;
         private bool _hotSwapRegistered;
+        private bool _lateFrameRegistered;
+        private bool _slowTickRegistered;
+
+        private void OnEnable()
+        {
+            TryRegisterSlowTickable();
+            TryRegisterLateFrameTickable();
+            TryRegisterHotSwapListener();
+            CachePresentationGlobalsLate();
+        }
 
         /// <inheritdoc />
         public override void Create()
@@ -500,8 +590,11 @@ namespace Hecton8.Visor
                 _pass = new SonarPointCloudPass();
 
             RecreateMaterial(ref _material, shader);
+            TryRegisterSlowTickable();
+            TryRegisterLateFrameTickable();
             TryRegisterHotSwapListener();
             _cachedFloatingOrigin = GlobalRegistry.FloatingOrigin;
+            CachePresentationGlobalsLate();
         }
 
         /// <inheritdoc />
@@ -514,10 +607,17 @@ namespace Hecton8.Visor
             if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection)
                 return;
 
-            if (!_pass.HasHistory && Shader.GetGlobalFloat(ShaderConstants.SonarRevealExpireTimeId) <= 0f)
+            if (!TryResolveResourceRequest(renderingData, settings, out int historyWidth, out int historyHeight, out int worldResolution))
                 return;
 
-            _pass.Setup(settings, _material, _cachedFloatingOrigin);
+            _pass.QueueResourceRequest(historyWidth, historyHeight, worldResolution);
+            if (!_pass.HasResourcesFor(historyWidth, historyHeight, worldResolution))
+                return;
+
+            if (!_pass.HasHistory && _cachedSonarRevealExpireTime <= 0f)
+                return;
+
+            _pass.Setup(settings, _material, _cachedFloatingOrigin, _cachedSonarRevealExpireTime);
             renderer.EnqueuePass(_pass);
         }
 
@@ -528,6 +628,9 @@ namespace Hecton8.Visor
             CoreUtils.Destroy(_material);
             _material = null;
             _cachedFloatingOrigin = null;
+            _cachedSonarRevealExpireTime = 0f;
+            TryUnregisterSlowTickable();
+            TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
         }
 
@@ -537,12 +640,66 @@ namespace Hecton8.Visor
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.FloatingOriginRuntime)
+            {
                 _cachedFloatingOrigin = currentService as HectonFloatingOrigin;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregisterSlowTickable();
+                TryUnregisterLateFrameTickable();
+                if (currentService != null)
+                {
+                    TryRegisterSlowTickable();
+                    TryRegisterLateFrameTickable();
+                }
+            }
+        }
+
+        public void SlowTick()
+        {
+            _pass?.PrepareQueuedResources();
+        }
+
+        public void LateFrameTick()
+        {
+            CachePresentationGlobalsLate();
         }
 
         private void OnDisable()
         {
+            TryUnregisterSlowTickable();
+            TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
+        }
+
+        private void CachePresentationGlobalsLate()
+        {
+            _cachedSonarRevealExpireTime = Shader.GetGlobalFloat(ShaderConstants.SonarRevealExpireTimeId);
+        }
+
+        private static bool TryResolveResourceRequest(
+            RenderingData renderingData,
+            FeatureSettings settings,
+            out int historyWidth,
+            out int historyHeight,
+            out int worldResolution)
+        {
+            historyWidth = 0;
+            historyHeight = 0;
+            worldResolution = 0;
+            if (settings == null)
+                return false;
+
+            RenderTextureDescriptor descriptor = renderingData.cameraData.cameraTargetDescriptor;
+            int sourceWidth = math.max(1, descriptor.width);
+            int sourceHeight = math.max(1, descriptor.height);
+            float renderScale = math.clamp(settings.renderScale, 0.25f, 1f);
+            historyWidth = math.max(1, (int)math.round(sourceWidth * renderScale));
+            historyHeight = math.max(1, (int)math.round(sourceHeight * renderScale));
+            worldResolution = math.clamp(settings.worldMemoryResolution, 256, 2048);
+            return true;
         }
 
         private void TryRegisterHotSwapListener()
@@ -560,6 +717,40 @@ namespace Hecton8.Visor
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
+        }
+
+        private void TryRegisterSlowTickable()
+        {
+            if (_slowTickRegistered)
+                return;
+
+            _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterSlowTickable()
+        {
+            if (!_slowTickRegistered)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            _slowTickRegistered = false;
+        }
+
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_lateFrameRegistered)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _lateFrameRegistered = false;
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

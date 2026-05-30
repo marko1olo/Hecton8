@@ -441,7 +441,7 @@ namespace Hecton8.World
             if (clampedStrength <= 0f)
                 return false;
 
-            ResolveDependencies();
+            ResolveDependencies(allowComponentLookup: false);
             RefreshMaskWorldRect();
 
             bool wroteMask = false;
@@ -591,8 +591,9 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
-            ResolveDependencies();
-            _qualityResourceRefreshRequested = true;
+            ResolveDependencies(allowComponentLookup: false);
+            _qualityResourceRefreshRequested = false;
+            RefreshQualityDependentResourcesIfNeeded();
             RefreshMaskWorldRect();
             QueueDamageVolumeVisualSync(0f);
             QueueGlobalPublish(forceHeatRefresh: true);
@@ -610,17 +611,10 @@ namespace Hecton8.World
                 _queuedDamageVolumeStampCount > 0 ||
                 _pendingDamageVolumeDeltaTime > 0f ||
                 _pendingDebrisBurstCount > 0 ||
-                _globalsDirty ||
-                _qualityResourceRefreshRequested;
+                _globalsDirty;
 
             if (!hasVisualWork)
                 return;
-
-            if (_qualityResourceRefreshRequested)
-            {
-                _qualityResourceRefreshRequested = false;
-                RefreshQualityDependentResourcesIfNeeded();
-            }
 
             FlushPendingTextureClears();
             ProcessQueuedMaskUpdate();
@@ -636,7 +630,7 @@ namespace Hecton8.World
             }
         }
 
-        private void ResolveDependencies()
+        private void ResolveDependencies(bool allowComponentLookup = false)
         {
             if (mapMagicVegetationBridge == null)
                 mapMagicVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
@@ -652,8 +646,13 @@ namespace Hecton8.World
                 if (_playerToolManager == null && _playerContext != null)
                     _playerToolManager = _playerContext.ToolManager;
 
-                if (_playerToolManager == null && _playerTransform != null && !_playerTransform.TryGetComponent(out _playerToolManager))
+                if (allowComponentLookup &&
+                    _playerToolManager == null &&
+                    _playerTransform != null &&
+                    !_playerTransform.TryGetComponent(out _playerToolManager))
+                {
                     _playerToolManager = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<PlayerToolManager>(_playerTransform);
+                }
             }
 
         }
@@ -669,7 +668,7 @@ namespace Hecton8.World
             _playerContext = GlobalRegistry.Player;
             _inputService = GlobalRegistry.Input;
             CacheDataVaultCold();
-            ResolveDependencies();
+            ResolveDependencies(allowComponentLookup: true);
             ResolveVisualDependencies();
         }
 
@@ -692,7 +691,7 @@ namespace Hecton8.World
                     _playerToolManager = null;
 
                 _playerContext = currentService as IPlayerRuntimeContext;
-                ResolveDependencies();
+                ResolveDependencies(allowComponentLookup: true);
                 return;
             }
 
@@ -988,9 +987,11 @@ namespace Hecton8.World
         private bool TryAcquireVaultBuffer<T>(
             in VaultGenerationHandle<T> handle,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer,
+            out IDataVault writeVault) where T : struct
         {
             buffer = default;
+            writeVault = null;
             IDataVault vault = _dataVault;
             if (vault == null ||
                 !IsVaultHandleCreated(in handle) ||
@@ -999,17 +1000,29 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (buffer.IsCreated && buffer.Length >= requiredLength)
-                return true;
+            bool releaseOnFailure = true;
+            try
+            {
+                if (buffer.IsCreated && buffer.Length >= requiredLength)
+                {
+                    writeVault = vault;
+                    releaseOnFailure = false;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
-            buffer = default;
-            return false;
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnFailure)
+                    vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+            }
         }
 
-        private void ReleaseVaultWrite<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static void ReleaseVaultWrite<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
         {
-            _dataVault?.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+            vault?.ReleaseWriteLock(in handle, VaultOwnerSystemId);
         }
 
         private void ReleaseVaultBuffer<T>(ref VaultGenerationHandle<T> handle) where T : struct
@@ -1262,7 +1275,11 @@ namespace Hecton8.World
                 return;
             }
 
-            if (!TryAcquireVaultBuffer(in _queuedStampCommandsHandle, StampCommandCapacity, out NativeArray<StampCommand> queuedStampCommands))
+            if (!TryAcquireVaultBuffer(
+                    in _queuedStampCommandsHandle,
+                    StampCommandCapacity,
+                    out NativeArray<StampCommand> queuedStampCommands,
+                    out IDataVault queuedStampCommandsVault))
             {
                 return;
             }
@@ -1278,14 +1295,18 @@ namespace Hecton8.World
             }
             finally
             {
-                ReleaseVaultWrite(in _queuedStampCommandsHandle);
+                ReleaseVaultWrite(queuedStampCommandsVault, in _queuedStampCommandsHandle);
             }
         }
 
         private bool TryCoalesceOverflowStamp(Vector2 uvCenter, float uvRadius, float strength, Vector3 positionWS)
         {
             if (_queuedStampCount <= 0 ||
-                !TryAcquireVaultBuffer(in _queuedStampCommandsHandle, StampCommandCapacity, out NativeArray<StampCommand> queuedStampCommands))
+                !TryAcquireVaultBuffer(
+                    in _queuedStampCommandsHandle,
+                    StampCommandCapacity,
+                    out NativeArray<StampCommand> queuedStampCommands,
+                    out IDataVault queuedStampCommandsVault))
             {
                 return false;
             }
@@ -1309,7 +1330,7 @@ namespace Hecton8.World
             }
             finally
             {
-                ReleaseVaultWrite(in _queuedStampCommandsHandle);
+                ReleaseVaultWrite(queuedStampCommandsVault, in _queuedStampCommandsHandle);
             }
         }
 
@@ -1650,7 +1671,11 @@ namespace Hecton8.World
             int uploadedStampCount = 0;
             if (_queuedStampCount > 0)
             {
-                if (!TryAcquireVaultBuffer(in _queuedStampCommandsHandle, StampCommandCapacity, out NativeArray<StampCommand> queuedStampCommands))
+                if (!TryAcquireVaultBuffer(
+                        in _queuedStampCommandsHandle,
+                        StampCommandCapacity,
+                        out NativeArray<StampCommand> queuedStampCommands,
+                        out IDataVault queuedStampCommandsVault))
                     return;
 
                 try
@@ -1673,7 +1698,7 @@ namespace Hecton8.World
                 }
                 finally
                 {
-                    ReleaseVaultWrite(in _queuedStampCommandsHandle);
+                    ReleaseVaultWrite(queuedStampCommandsVault, in _queuedStampCommandsHandle);
                 }
             }
 
@@ -1750,7 +1775,8 @@ namespace Hecton8.World
             if (!TryAcquireVaultBuffer(
                     in _queuedDamageVolumeStampCommandsHandle,
                     DamageVolumeStampCapacity,
-                    out NativeArray<DamageVolumeStampCommand> queuedDamageVolumeStampCommands))
+                    out NativeArray<DamageVolumeStampCommand> queuedDamageVolumeStampCommands,
+                    out IDataVault queuedDamageVolumeStampCommandsVault))
             {
                 return;
             }
@@ -1767,7 +1793,7 @@ namespace Hecton8.World
             }
             finally
             {
-                ReleaseVaultWrite(in _queuedDamageVolumeStampCommandsHandle);
+                ReleaseVaultWrite(queuedDamageVolumeStampCommandsVault, in _queuedDamageVolumeStampCommandsHandle);
             }
         }
 
@@ -1777,7 +1803,8 @@ namespace Hecton8.World
                 !TryAcquireVaultBuffer(
                     in _queuedDamageVolumeStampCommandsHandle,
                     DamageVolumeStampCapacity,
-                    out NativeArray<DamageVolumeStampCommand> queuedDamageVolumeStampCommands))
+                    out NativeArray<DamageVolumeStampCommand> queuedDamageVolumeStampCommands,
+                    out IDataVault queuedDamageVolumeStampCommandsVault))
             {
                 return false;
             }
@@ -1804,7 +1831,7 @@ namespace Hecton8.World
             }
             finally
             {
-                ReleaseVaultWrite(in _queuedDamageVolumeStampCommandsHandle);
+                ReleaseVaultWrite(queuedDamageVolumeStampCommandsVault, in _queuedDamageVolumeStampCommandsHandle);
             }
         }
 
@@ -1835,7 +1862,8 @@ namespace Hecton8.World
                 if (!TryAcquireVaultBuffer(
                         in _queuedDamageVolumeStampCommandsHandle,
                         DamageVolumeStampCapacity,
-                        out NativeArray<DamageVolumeStampCommand> queuedDamageVolumeStampCommands))
+                        out NativeArray<DamageVolumeStampCommand> queuedDamageVolumeStampCommands,
+                        out IDataVault queuedDamageVolumeStampCommandsVault))
                 {
                     return;
                 }
@@ -1865,7 +1893,7 @@ namespace Hecton8.World
                 }
                 finally
                 {
-                    ReleaseVaultWrite(in _queuedDamageVolumeStampCommandsHandle);
+                    ReleaseVaultWrite(queuedDamageVolumeStampCommandsVault, in _queuedDamageVolumeStampCommandsHandle);
                 }
             }
 

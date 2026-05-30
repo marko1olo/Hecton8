@@ -34,6 +34,15 @@ namespace Hecton8.Construction
         private const BufferID DroneFleetTransactionTelemetryBufferId = (BufferID)72051;
         private const BufferID DroneFleetTransactionCommandsBufferId = (BufferID)72052;
         private const BufferID DroneFleetTransactionAupSnapshotsBufferId = (BufferID)72053;
+        private static readonly ulong DroneTransactionMutationGuardMask =
+            DroneMutationGuardBit(DroneFleetTransactionTasksBufferId) |
+            DroneMutationGuardBit(DroneFleetTransactionCommandsBufferId) |
+            DroneMutationGuardBit(DroneFleetTransactionAupSnapshotsBufferId) |
+            DroneMutationGuardBit(DroneFleetTransactionIntegrityBufferId) |
+            DroneMutationGuardBit(DroneFleetTransactionResultsBufferId) |
+            DroneMutationGuardBit(DroneFleetTransactionCountersBufferId) |
+            DroneMutationGuardBit(DroneFleetTransactionCommandConsumedBufferId) |
+            DroneMutationGuardBit(DroneFleetTransactionTelemetryBufferId);
 
         private static VaultGenerationHandle<DroneTaskDTO> s_DroneTransactionTasksHandle;
         private static VaultGenerationHandle<DroneTransactionCommandDTO> s_DroneTransactionCommandsHandle;
@@ -278,37 +287,6 @@ namespace Hecton8.Construction
             handle = default;
         }
 
-        private static bool TryAcquireDroneTransactionWriteBuffer<T>(
-            IDataVault vault,
-            in VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredLength,
-            out NativeArray<T> buffer)
-            where T : struct
-        {
-            buffer = default;
-            if (vault == null ||
-                requiredLength <= 0 ||
-                !DroneTransactionHandleValid(in handle, bufferId))
-            {
-                return false;
-            }
-
-            bool locked = vault.TryAcquireWriteLock(in handle, SystemID.Construction, out buffer);
-            if (locked &&
-                buffer.IsCreated &&
-                buffer.Length >= requiredLength)
-            {
-                return true;
-            }
-
-            if (locked)
-                vault.ReleaseWriteLock(in handle, SystemID.Construction);
-
-            buffer = default;
-            return false;
-        }
-
         private static bool TryReadDroneTransactionBuffer<T>(
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -325,24 +303,7 @@ namespace Hecton8.Construction
                    buffer.Length >= requiredLength;
         }
 
-        private static bool TryReadDroneTransactionMutableBuffer<T>(
-            in VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredLength,
-            out NativeArray<T> buffer)
-            where T : struct
-        {
-            buffer = default;
-            IDataVault vault = s_CachedDataVault;
-            return vault != null &&
-                   requiredLength > 0 &&
-                   DroneTransactionHandleValid(in handle, bufferId) &&
-                   vault.TryReadHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredLength;
-        }
-
-        private static bool TryAcquireDroneTransactionWriteBuffers(
+        private static bool TryOpenDroneTransactionMutationBuffers(
             out IDataVault vault,
             out NativeArray<DroneTaskDTO> tasks,
             out NativeArray<DroneTransactionCommandDTO> commands,
@@ -362,28 +323,132 @@ namespace Hecton8.Construction
             counters = default;
             commandConsumed = default;
             telemetry = default;
-            if (vault == null || !DroneTransactionHandlesValid())
-                return false;
-
-            if (!TryAcquireDroneTransactionWriteBuffer(vault, in s_DroneTransactionTasksHandle, DroneFleetTransactionTasksBufferId, DroneServiceCommandCapacity, out tasks) ||
-                !TryAcquireDroneTransactionWriteBuffer(vault, in s_DroneTransactionCommandsHandle, DroneFleetTransactionCommandsBufferId, DroneServiceCommandCapacity, out commands) ||
-                !TryAcquireDroneTransactionWriteBuffer(vault, in s_DroneTransactionAupSnapshotsHandle, DroneFleetTransactionAupSnapshotsBufferId, DroneServiceCommandCapacity, out aupSnapshots) ||
-                !TryAcquireDroneTransactionWriteBuffer(vault, in s_DroneTransactionIntegrityHandle, DroneFleetTransactionIntegrityBufferId, DroneServiceCommandCapacity, out integrity) ||
-                !TryAcquireDroneTransactionWriteBuffer(vault, in s_DroneTransactionResultsHandle, DroneFleetTransactionResultsBufferId, DroneServiceCommandCapacity, out results) ||
-                !TryAcquireDroneTransactionWriteBuffer(vault, in s_DroneTransactionCountersHandle, DroneFleetTransactionCountersBufferId, (int)DroneTransactionCounterSlot.Count, out counters) ||
-                !TryAcquireDroneTransactionWriteBuffer(vault, in s_DroneTransactionCommandConsumedHandle, DroneFleetTransactionCommandConsumedBufferId, DroneServiceCommandCapacity, out commandConsumed) ||
-                !TryAcquireDroneTransactionWriteBuffer(vault, in s_DroneTransactionTelemetryHandle, DroneFleetTransactionTelemetryBufferId, DroneTransactionTelemetryCapacity, out telemetry))
+            if (vault == null ||
+                !DroneTransactionHandlesValid() ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(DroneTransactionMutationGuardMask))
             {
-                ReleaseDroneTransactionWriteBuffers(
+                return false;
+            }
+
+            bool releaseOnExit = true;
+            try
+            {
+                if (!TryResolveDroneTransactionMutationBuffers(
+                        vault,
+                        out tasks,
+                        out commands,
+                        out aupSnapshots,
+                        out integrity,
+                        out results,
+                        out counters,
+                        out commandConsumed,
+                        out telemetry))
+                {
+                    return false;
+                }
+
+                releaseOnExit = false;
+                return true;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    ReleaseDroneTransactionMutationGuard(vault);
+            }
+        }
+
+        private static bool TryOpenDroneTransactionMutationBuffersForCurrentGuard(
+            out IDataVault vault,
+            out NativeArray<DroneTaskDTO> tasks,
+            out NativeArray<DroneTransactionCommandDTO> commands,
+            out NativeArray<DroneTransactionAupSnapshotDTO> aupSnapshots,
+            out NativeArray<DroneTransactionIntegrityDTO> integrity,
+            out NativeArray<DroneTransactionResultDTO> results,
+            out NativeArray<DroneTransactionCounterDTO> counters,
+            out NativeArray<byte> commandConsumed,
+            out NativeArray<DroneTransactionTelemetryEntry> telemetry,
+            out bool releaseGuard)
+        {
+            releaseGuard = false;
+            if (s_DroneHeadlessJobMutationGuardHeld)
+            {
+                vault = s_DroneHeadlessJobMutationGuardVault ?? s_CachedDataVault;
+                return TryResolveDroneTransactionMutationBuffers(
                     vault,
-                    tasks,
-                    commands,
-                    aupSnapshots,
-                    integrity,
-                    results,
-                    counters,
-                    commandConsumed,
-                    telemetry);
+                    out tasks,
+                    out commands,
+                    out aupSnapshots,
+                    out integrity,
+                    out results,
+                    out counters,
+                    out commandConsumed,
+                    out telemetry);
+            }
+
+            bool opened = TryOpenDroneTransactionMutationBuffers(
+                out vault,
+                out tasks,
+                out commands,
+                out aupSnapshots,
+                out integrity,
+                out results,
+                out counters,
+                out commandConsumed,
+                out telemetry);
+            releaseGuard = opened;
+            return opened;
+        }
+
+        private static bool TryResolveDroneTransactionMutationBuffers(
+            IDataVault vault,
+            out NativeArray<DroneTaskDTO> tasks,
+            out NativeArray<DroneTransactionCommandDTO> commands,
+            out NativeArray<DroneTransactionAupSnapshotDTO> aupSnapshots,
+            out NativeArray<DroneTransactionIntegrityDTO> integrity,
+            out NativeArray<DroneTransactionResultDTO> results,
+            out NativeArray<DroneTransactionCounterDTO> counters,
+            out NativeArray<byte> commandConsumed,
+            out NativeArray<DroneTransactionTelemetryEntry> telemetry)
+        {
+            tasks = default;
+            commands = default;
+            aupSnapshots = default;
+            integrity = default;
+            results = default;
+            counters = default;
+            commandConsumed = default;
+            telemetry = default;
+
+            if (vault == null ||
+                !DroneTransactionHandlesValid() ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryResolveHandle(in s_DroneTransactionTasksHandle, out tasks) ||
+                !vault.TryResolveHandle(in s_DroneTransactionCommandsHandle, out commands) ||
+                !vault.TryResolveHandle(in s_DroneTransactionAupSnapshotsHandle, out aupSnapshots) ||
+                !vault.TryResolveHandle(in s_DroneTransactionIntegrityHandle, out integrity) ||
+                !vault.TryResolveHandle(in s_DroneTransactionResultsHandle, out results) ||
+                !vault.TryResolveHandle(in s_DroneTransactionCountersHandle, out counters) ||
+                !vault.TryResolveHandle(in s_DroneTransactionCommandConsumedHandle, out commandConsumed) ||
+                !vault.TryResolveHandle(in s_DroneTransactionTelemetryHandle, out telemetry) ||
+                vault.IsCompactionFenceActive ||
+                !tasks.IsCreated ||
+                tasks.Length < DroneServiceCommandCapacity ||
+                !commands.IsCreated ||
+                commands.Length < DroneServiceCommandCapacity ||
+                !aupSnapshots.IsCreated ||
+                aupSnapshots.Length < DroneServiceCommandCapacity ||
+                !integrity.IsCreated ||
+                integrity.Length < DroneServiceCommandCapacity ||
+                !results.IsCreated ||
+                results.Length < DroneServiceCommandCapacity ||
+                !counters.IsCreated ||
+                counters.Length < (int)DroneTransactionCounterSlot.Count ||
+                !commandConsumed.IsCreated ||
+                commandConsumed.Length < DroneServiceCommandCapacity ||
+                !telemetry.IsCreated ||
+                telemetry.Length < DroneTransactionTelemetryCapacity)
+            {
                 tasks = default;
                 commands = default;
                 aupSnapshots = default;
@@ -398,41 +463,19 @@ namespace Hecton8.Construction
             return true;
         }
 
-        private static void ReleaseDroneTransactionWriteBuffers(
-            IDataVault vault,
-            NativeArray<DroneTaskDTO> tasks,
-            NativeArray<DroneTransactionCommandDTO> commands,
-            NativeArray<DroneTransactionAupSnapshotDTO> aupSnapshots,
-            NativeArray<DroneTransactionIntegrityDTO> integrity,
-            NativeArray<DroneTransactionResultDTO> results,
-            NativeArray<DroneTransactionCounterDTO> counters,
-            NativeArray<byte> commandConsumed,
-            NativeArray<DroneTransactionTelemetryEntry> telemetry)
+        private static void ReleaseDroneTransactionMutationGuard(IDataVault vault)
         {
-            if (vault == null)
-                return;
-
-            if (telemetry.IsCreated)
-                vault.ReleaseWriteLock(in s_DroneTransactionTelemetryHandle, SystemID.Construction);
-            if (commandConsumed.IsCreated)
-                vault.ReleaseWriteLock(in s_DroneTransactionCommandConsumedHandle, SystemID.Construction);
-            if (counters.IsCreated)
-                vault.ReleaseWriteLock(in s_DroneTransactionCountersHandle, SystemID.Construction);
-            if (results.IsCreated)
-                vault.ReleaseWriteLock(in s_DroneTransactionResultsHandle, SystemID.Construction);
-            if (integrity.IsCreated)
-                vault.ReleaseWriteLock(in s_DroneTransactionIntegrityHandle, SystemID.Construction);
-            if (aupSnapshots.IsCreated)
-                vault.ReleaseWriteLock(in s_DroneTransactionAupSnapshotsHandle, SystemID.Construction);
-            if (commands.IsCreated)
-                vault.ReleaseWriteLock(in s_DroneTransactionCommandsHandle, SystemID.Construction);
-            if (tasks.IsCreated)
-                vault.ReleaseWriteLock(in s_DroneTransactionTasksHandle, SystemID.Construction);
+            ReleaseDroneMutationGuard(vault, DroneTransactionMutationGuardMask);
         }
 
         private static void ExecuteDroneServiceTransactionBatch(
             int commandCount,
-            NativeArray<DroneServiceCommand> serviceCommands)
+            NativeArray<DroneServiceCommand> serviceCommands,
+            NativeArray<HeadlessDroneState> droneStates,
+            NativeArray<float3> positionsSoA,
+            NativeArray<byte> stateBytes,
+            NativeArray<DroneStateDTO> stateDtos,
+            NativeArray<DroneTargetDTO> targetDtos)
         {
             if (commandCount <= 0 ||
                 !serviceCommands.IsCreated ||
@@ -441,7 +484,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            if (!TryAcquireDroneTransactionWriteBuffers(
+            if (!TryOpenDroneTransactionMutationBuffersForCurrentGuard(
                     out IDataVault vault,
                     out NativeArray<DroneTaskDTO> tasks,
                     out NativeArray<DroneTransactionCommandDTO> commands,
@@ -450,13 +493,15 @@ namespace Hecton8.Construction
                     out NativeArray<DroneTransactionResultDTO> results,
                     out NativeArray<DroneTransactionCounterDTO> counters,
                     out NativeArray<byte> commandConsumed,
-                    out NativeArray<DroneTransactionTelemetryEntry> telemetry))
+                    out NativeArray<DroneTransactionTelemetryEntry> telemetry,
+                    out bool releaseGuard))
             {
                 return;
             }
 
             int safeCount = math.min(commandCount, math.min(DroneServiceCommandCapacity, serviceCommands.Length));
             int transactionCount = 0;
+            NativeArray<int>.ReadOnly activeSlotCount = default;
             try
             {
                 transactionCount = PrepareDroneServiceTransactions(
@@ -472,40 +517,74 @@ namespace Hecton8.Construction
                     return;
 
                 ClearDroneTransactionCounters(counters);
-                EvaluateDroneTransactionsJob job = default;
-                job.Commands = commands;
-                job.AupSnapshots = aupSnapshots;
-                job.Tasks = tasks;
-                job.Integrity = integrity;
-                job.Results = results;
-                job.Counters = counters;
-                job.TransactionCount = safeCount;
-                job.RepairTaskHash = DroneRepairTaskTypeHash;
-                job.MiningTaskHash = DroneMiningTaskTypeHash;
-                job.GlobalQualityWeight = ResolveGlobalQualityWeight();
-                s_DroneTransactionJobHandle = job.Schedule(safeCount, DroneJobBatchSize);
-                s_DroneTransactionJobScheduled = true;
+                EvaluateDroneTransactionsDirect(
+                    safeCount,
+                    commands,
+                    aupSnapshots,
+                    tasks,
+                    integrity,
+                    results,
+                    counters);
                 s_DroneTransactionConsumedMaskCurrent = true;
                 s_DroneTransactionScheduledCommandCount = safeCount;
                 s_DroneTransactionScheduledTransactionCount = transactionCount;
                 s_DroneTransactionScheduledFrame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+                TryResolveDroneInventoryActiveSlotCount(out activeSlotCount);
+                RecordDroneTransactionTelemetry(
+                    safeCount,
+                    transactionCount,
+                    activeSlotCount,
+                    results,
+                    counters,
+                    telemetry);
             }
             finally
             {
-                ReleaseDroneTransactionWriteBuffers(
-                    vault,
-                    tasks,
-                    commands,
-                    aupSnapshots,
-                    integrity,
-                    results,
-                    counters,
-                    commandConsumed,
-                    telemetry);
+                if (releaseGuard)
+                    ReleaseDroneTransactionMutationGuard(vault);
             }
+
+            if (TryReadDroneTransactionBuffer(
+                    in s_DroneTransactionResultsHandle,
+                    DroneFleetTransactionResultsBufferId,
+                    DroneServiceCommandCapacity,
+                    out NativeArray<DroneTransactionResultDTO>.ReadOnly readOnlyResults))
+            {
+                ApplyDroneTransactionResults(
+                    safeCount,
+                    readOnlyResults,
+                    droneStates,
+                    positionsSoA,
+                    stateBytes,
+                    stateDtos,
+                    targetDtos);
+            }
+
+            s_DroneTransactionJobHandle = default;
+            s_DroneTransactionJobScheduled = false;
+            s_DroneTransactionScheduledCommandCount = 0;
+            s_DroneTransactionScheduledTransactionCount = 0;
+            s_DroneTransactionScheduledFrame = 0u;
         }
 
         private static bool CompleteScheduledDroneServiceTransactionBatch(bool force)
+        {
+            return CompleteScheduledDroneServiceTransactionBatch(
+                force,
+                default,
+                default,
+                default,
+                default,
+                default);
+        }
+
+        private static bool CompleteScheduledDroneServiceTransactionBatch(
+            bool force,
+            NativeArray<HeadlessDroneState> droneStates,
+            NativeArray<float3> positionsSoA,
+            NativeArray<byte> stateBytes,
+            NativeArray<DroneStateDTO> stateDtos,
+            NativeArray<DroneTargetDTO> targetDtos)
         {
             if (!s_DroneTransactionJobScheduled)
                 return true;
@@ -514,7 +593,7 @@ namespace Hecton8.Construction
                 return false;
 
             s_DroneTransactionJobScheduled = false;
-            if (!TryAcquireDroneTransactionWriteBuffers(
+            if (!TryOpenDroneTransactionMutationBuffersForCurrentGuard(
                     out IDataVault vault,
                     out NativeArray<DroneTaskDTO> tasks,
                     out NativeArray<DroneTransactionCommandDTO> commands,
@@ -523,7 +602,8 @@ namespace Hecton8.Construction
                     out NativeArray<DroneTransactionResultDTO> results,
                     out NativeArray<DroneTransactionCounterDTO> counters,
                     out NativeArray<byte> commandConsumed,
-                    out NativeArray<DroneTransactionTelemetryEntry> telemetry))
+                    out NativeArray<DroneTransactionTelemetryEntry> telemetry,
+                    out bool releaseGuard))
             {
                 s_DroneTransactionScheduledCommandCount = 0;
                 s_DroneTransactionScheduledTransactionCount = 0;
@@ -531,32 +611,48 @@ namespace Hecton8.Construction
                 return true;
             }
 
-            TryResolveDroneInventoryTransactionBuffers(
-                out InventorySoaVaultBuffers inventoryBuffers,
-                out _);
+            TryResolveDroneInventoryActiveSlotCount(out NativeArray<int>.ReadOnly activeSlotCount);
             try
             {
-                ApplyDroneTransactionResults(s_DroneTransactionScheduledCommandCount, results);
                 RecordDroneTransactionTelemetry(
                     s_DroneTransactionScheduledCommandCount,
                     s_DroneTransactionScheduledTransactionCount,
-                    inventoryBuffers.ActiveSlotCount,
+                    activeSlotCount,
                     results,
                     counters,
                     telemetry);
             }
             finally
             {
-                ReleaseDroneTransactionWriteBuffers(
-                    vault,
-                    tasks,
-                    commands,
-                    aupSnapshots,
-                    integrity,
-                    results,
-                    counters,
-                    commandConsumed,
-                    telemetry);
+                if (releaseGuard)
+                    ReleaseDroneTransactionMutationGuard(vault);
+            }
+
+            if (TryReadDroneTransactionBuffer(
+                    in s_DroneTransactionResultsHandle,
+                    DroneFleetTransactionResultsBufferId,
+                    DroneServiceCommandCapacity,
+                    out NativeArray<DroneTransactionResultDTO>.ReadOnly readOnlyResults))
+            {
+                if (droneStates.IsCreated &&
+                    positionsSoA.IsCreated &&
+                    stateBytes.IsCreated &&
+                    stateDtos.IsCreated &&
+                    targetDtos.IsCreated)
+                {
+                    ApplyDroneTransactionResults(
+                        s_DroneTransactionScheduledCommandCount,
+                        readOnlyResults,
+                        droneStates,
+                        positionsSoA,
+                        stateBytes,
+                        stateDtos,
+                        targetDtos);
+                }
+                else
+                {
+                    ApplyDroneTransactionResults(s_DroneTransactionScheduledCommandCount, readOnlyResults);
+                }
             }
 
             s_DroneTransactionScheduledCommandCount = 0;
@@ -576,7 +672,7 @@ namespace Hecton8.Construction
             if (s_DroneTransactionLastTelemetryFrame == frame)
                 return;
 
-            if (!TryAcquireDroneTransactionWriteBuffers(
+            if (!TryOpenDroneTransactionMutationBuffersForCurrentGuard(
                     out IDataVault vault,
                     out NativeArray<DroneTaskDTO> tasks,
                     out NativeArray<DroneTransactionCommandDTO> commands,
@@ -585,21 +681,17 @@ namespace Hecton8.Construction
                     out NativeArray<DroneTransactionResultDTO> results,
                     out NativeArray<DroneTransactionCounterDTO> counters,
                     out NativeArray<byte> commandConsumed,
-                    out NativeArray<DroneTransactionTelemetryEntry> telemetry))
+                    out NativeArray<DroneTransactionTelemetryEntry> telemetry,
+                    out bool releaseGuard))
             {
                 return;
             }
 
-            NativeArray<int> activeSlotCount = default;
+            NativeArray<int>.ReadOnly activeSlotCount = default;
             try
             {
                 ClearDroneTransactionCounters(counters);
-                if (TryResolveDroneInventoryTransactionBuffers(
-                        out InventorySoaVaultBuffers inventoryBuffers,
-                        out _))
-                {
-                    activeSlotCount = inventoryBuffers.ActiveSlotCount;
-                }
+                TryResolveDroneInventoryActiveSlotCount(out activeSlotCount);
 
                 RecordDroneTransactionTelemetry(
                     Mathf.Max(0, commandCount),
@@ -611,17 +703,34 @@ namespace Hecton8.Construction
             }
             finally
             {
-                ReleaseDroneTransactionWriteBuffers(
-                    vault,
-                    tasks,
-                    commands,
-                    aupSnapshots,
-                    integrity,
-                    results,
-                    counters,
-                    commandConsumed,
-                    telemetry);
+                if (releaseGuard)
+                    ReleaseDroneTransactionMutationGuard(vault);
             }
+        }
+
+        private static void EvaluateDroneTransactionsDirect(
+            int safeCount,
+            NativeArray<DroneTransactionCommandDTO> commands,
+            NativeArray<DroneTransactionAupSnapshotDTO> aupSnapshots,
+            NativeArray<DroneTaskDTO> tasks,
+            NativeArray<DroneTransactionIntegrityDTO> integrity,
+            NativeArray<DroneTransactionResultDTO> results,
+            NativeArray<DroneTransactionCounterDTO> counters)
+        {
+            EvaluateDroneTransactionsJob job = default;
+            job.Commands = commands;
+            job.AupSnapshots = aupSnapshots;
+            job.Tasks = tasks;
+            job.Integrity = integrity;
+            job.Results = results;
+            job.Counters = counters;
+            job.TransactionCount = safeCount;
+            job.RepairTaskHash = DroneRepairTaskTypeHash;
+            job.MiningTaskHash = DroneMiningTaskTypeHash;
+            job.GlobalQualityWeight = ResolveGlobalQualityWeight();
+
+            for (int i = 0; i < safeCount; i++)
+                job.Execute(i);
         }
 
         private static int PrepareDroneServiceTransactions(
@@ -917,7 +1026,7 @@ namespace Hecton8.Construction
 
         private static void ApplyDroneTransactionResults(
             int commandCount,
-            NativeArray<DroneTransactionResultDTO> results)
+            NativeArray<DroneTransactionResultDTO>.ReadOnly results)
         {
             if (!TryAcquireDroneCoreMirrorMutationViews(
                     out NativeArray<HeadlessDroneState> droneStates,
@@ -935,51 +1044,80 @@ namespace Hecton8.Construction
 
             try
             {
-                for (int commandIndex = 0; commandIndex < commandCount; commandIndex++)
-                {
-                    DroneTransactionResultDTO result = results[commandIndex];
-                    if (result.TaskTypeHash == 0u)
-                        continue;
-
-                    int slot = result.Slot;
-                    if ((uint)slot >= (uint)HeadlessDroneCapacity ||
-                        s_DroneSlotDroneIds == null ||
-                        s_DroneSlotDroneIds[slot] != result.DroneId ||
-                        (uint)slot >= (uint)droneStates.Length)
-                    {
-                        continue;
-                    }
-
-                    HeadlessDroneState drone = droneStates[slot];
-                    if (drone.State != (byte)HeadlessDroneRuntimeState.Repair ||
-                        s_DroneTaskKindsBySlot == null)
-                    {
-                        continue;
-                    }
-
-                    DroneFleetTaskKind currentKind = s_DroneTaskKindsBySlot[slot];
-                    if (result.TaskTypeHash == DroneRepairTaskTypeHash &&
-                        currentKind == DroneFleetTaskKind.RepairModule)
-                    {
-                        ApplyRepairTransactionResult(slot, ref drone, in result);
-                    }
-                    else if (result.TaskTypeHash == DroneMiningTaskTypeHash &&
-                             currentKind == DroneFleetTaskKind.MineNode)
-                    {
-                        ApplyMiningTransactionResult(slot, ref drone, in result);
-                    }
-                    else
-                    {
-                        continue;
-                    }
-
-                    droneStates[slot] = drone;
-                    MirrorDroneSoA(slot, in drone, positionsSoA, stateBytes, stateDtos, targetDtos);
-                }
+                ApplyDroneTransactionResults(
+                    commandCount,
+                    results,
+                    droneStates,
+                    positionsSoA,
+                    stateBytes,
+                    stateDtos,
+                    targetDtos);
             }
             finally
             {
                 ReleaseDroneMutationGuard(coreMirrorVault, DroneCoreMirrorMutationGuardMask);
+            }
+        }
+
+        private static void ApplyDroneTransactionResults(
+            int commandCount,
+            NativeArray<DroneTransactionResultDTO>.ReadOnly results,
+            NativeArray<HeadlessDroneState> droneStates,
+            NativeArray<float3> positionsSoA,
+            NativeArray<byte> stateBytes,
+            NativeArray<DroneStateDTO> stateDtos,
+            NativeArray<DroneTargetDTO> targetDtos)
+        {
+            if (!droneStates.IsCreated ||
+                !positionsSoA.IsCreated ||
+                !stateBytes.IsCreated ||
+                !stateDtos.IsCreated ||
+                !targetDtos.IsCreated)
+            {
+                return;
+            }
+
+            int safeCount = math.min(math.max(0, commandCount), results.Length);
+            for (int commandIndex = 0; commandIndex < safeCount; commandIndex++)
+            {
+                DroneTransactionResultDTO result = results[commandIndex];
+                if (result.TaskTypeHash == 0u)
+                    continue;
+
+                int slot = result.Slot;
+                if ((uint)slot >= (uint)HeadlessDroneCapacity ||
+                    s_DroneSlotDroneIds == null ||
+                    s_DroneSlotDroneIds[slot] != result.DroneId ||
+                    (uint)slot >= (uint)droneStates.Length)
+                {
+                    continue;
+                }
+
+                HeadlessDroneState drone = droneStates[slot];
+                if (drone.State != (byte)HeadlessDroneRuntimeState.Repair ||
+                    s_DroneTaskKindsBySlot == null)
+                {
+                    continue;
+                }
+
+                DroneFleetTaskKind currentKind = s_DroneTaskKindsBySlot[slot];
+                if (result.TaskTypeHash == DroneRepairTaskTypeHash &&
+                    currentKind == DroneFleetTaskKind.RepairModule)
+                {
+                    ApplyRepairTransactionResult(slot, ref drone, in result);
+                }
+                else if (result.TaskTypeHash == DroneMiningTaskTypeHash &&
+                         currentKind == DroneFleetTaskKind.MineNode)
+                {
+                    ApplyMiningTransactionResult(slot, ref drone, in result);
+                }
+                else
+                {
+                    continue;
+                }
+
+                droneStates[slot] = drone;
+                MirrorDroneSoA(slot, in drone, positionsSoA, stateBytes, stateDtos, targetDtos);
             }
         }
 
@@ -1140,9 +1278,9 @@ namespace Hecton8.Construction
             SignalBus<ItemAcquiredSignal>.TryPushTracked(in signal, ref s_x001DroneFleetManagerTransactionsSignalPushDropCount);
         }
 
-        private static int ResolveInventoryActiveSlotCount(NativeArray<int> activeSlotCount)
+        private static int ResolveInventoryActiveSlotCount(NativeArray<int>.ReadOnly activeSlotCount)
         {
-            if (!activeSlotCount.IsCreated || activeSlotCount.Length <= 0)
+            if (activeSlotCount.Length <= 0)
                 return 0;
 
             return Mathf.Max(0, activeSlotCount[0]);
@@ -1202,12 +1340,10 @@ namespace Hecton8.Construction
             return true;
         }
 
-        private static bool TryResolveDroneInventoryTransactionBuffers(
-            out InventorySoaVaultBuffers buffers,
-            out NativeArray<uint> quantities)
+        private static bool TryResolveDroneInventoryActiveSlotCount(
+            out NativeArray<int>.ReadOnly activeSlotCount)
         {
-            buffers = default;
-            quantities = default;
+            activeSlotCount = default;
             if (!s_DroneInventoryVaultHandlesBound ||
                 s_DroneInventoryVault == null ||
                 !SoaInventoryQueryEngine.RuntimeLayoutValid())
@@ -1216,14 +1352,8 @@ namespace Hecton8.Construction
             }
 
             VaultGenerationHandle<int> activeSlotCountHandle = s_DroneInventoryVaultHandles.ActiveSlotCount.ToHandle<int>();
-            if (!s_DroneInventoryVault.TryReadHandle(in activeSlotCountHandle, out NativeArray<int> activeSlotCount) ||
-                !activeSlotCount.IsCreated)
-            {
-                return false;
-            }
-
-            buffers.ActiveSlotCount = activeSlotCount;
-            return true;
+            return s_DroneInventoryVault.TryReadOnlyHandle(in activeSlotCountHandle, out activeSlotCount) &&
+                   activeSlotCount.Length > 0;
         }
 
         private static int ToIntegrityMilli(float value)
@@ -1237,7 +1367,7 @@ namespace Hecton8.Construction
         private static void RecordDroneTransactionTelemetry(
             int commandCount,
             int transactionCount,
-            NativeArray<int> activeSlotCount,
+            NativeArray<int>.ReadOnly activeSlotCount,
             NativeArray<DroneTransactionResultDTO> results,
             NativeArray<DroneTransactionCounterDTO> counters,
             NativeArray<DroneTransactionTelemetryEntry> telemetry)
@@ -1508,11 +1638,11 @@ namespace Hecton8.Construction
 
         private static void TryWriteDroneTransactionBlackBoxFile()
         {
-            if (!TryReadDroneTransactionMutableBuffer(
+            if (!TryReadDroneTransactionBuffer(
                     in s_DroneTransactionTelemetryHandle,
                     DroneFleetTransactionTelemetryBufferId,
                     DroneTransactionTelemetryCapacity,
-                    out NativeArray<DroneTransactionTelemetryEntry> telemetry))
+                    out NativeArray<DroneTransactionTelemetryEntry>.ReadOnly telemetry))
             {
                 return;
             }

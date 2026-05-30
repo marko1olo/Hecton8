@@ -1323,14 +1323,23 @@ namespace Hecton8.World.FloraAmbientSway
             if (!vault.TryAcquireWriteLock(in handle, SystemID.FloraGenomics, out buffer))
                 return false;
 
-            if (!buffer.IsCreated || vault.IsCompactionFenceActive)
+            bool releaseOnFailure = true;
+            try
             {
-                vault.ReleaseWriteLock(in handle, SystemID.FloraGenomics);
+                if (buffer.IsCreated && !vault.IsCompactionFenceActive)
+                {
+                    releaseOnFailure = false;
+                    return true;
+                }
+
                 buffer = default;
                 return false;
             }
-
-            return true;
+            finally
+            {
+                if (releaseOnFailure)
+                    vault.ReleaseWriteLock(in handle, SystemID.FloraGenomics);
+            }
         }
 
         private static bool TryAcquireFloraAmbientSwayMutationGuard(IDataVault vault, ulong guardMask)

@@ -792,7 +792,7 @@ namespace Hecton8.AI
             if (!DispatcherJobFence.TryComplete(ref _activeHandle, forceComplete: false))
                 return;
 
-            IDataVault lockedVault = _jobGuardVault ?? _vault;
+            IDataVault lockedVault = _jobGuardVault;
             bool canCommit = lockedVault != null && ReferenceEquals(lockedVault, _vault);
             try
             {
@@ -1495,7 +1495,7 @@ namespace Hecton8.AI
                 return;
             }
 
-            IDataVault vault = _jobGuardVault ?? _vault;
+            IDataVault vault = _jobGuardVault;
             if (vault != null)
                 vault.ReleaseMutationGuard(JobMutationGuardMask);
 

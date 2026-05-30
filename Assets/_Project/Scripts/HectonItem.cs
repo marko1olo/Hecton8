@@ -98,6 +98,7 @@ namespace Hecton8.Items
         private int _cachedItemHashId;
         private PersistentWorldRegistry _persistentWorldRegistry;
         private int _persistentWorldRecordIndex = -1;
+        private bool _isPooledRuntimeInstance;
         private ulong _geneticsMask;
         private ushort _qualityMilli = DefaultQualityMilli;
 
@@ -121,6 +122,7 @@ namespace Hecton8.Items
             TryGetComponent(out _rb);
             TryGetComponent(out _collider);
             TryGetComponent(out _buoyancy);
+            RefreshPoolMarkerCacheCold();
             _defaultColliderMaterial = _collider != null ? _collider.sharedMaterial : null;
             ApplyPhysicalMetadata();
             ConfigureWaterDynamicsFromData();
@@ -132,6 +134,7 @@ namespace Hecton8.Items
         private void OnEnable()
         {
             CacheColdRegistryReferences();
+            RefreshPoolMarkerCacheCold();
             InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
             RebuildInteractTextCache();
@@ -639,13 +642,18 @@ namespace Hecton8.Items
                 _highlighter.SetHighlight(false);
 
             IObjectPoolService pool = s_objectPool;
-            if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
+            if (pool != null && _isPooledRuntimeInstance)
             {
                 pool.Despawn(gameObject);
                 return;
             }
 
             gameObject.SetActive(false);
+        }
+
+        private void RefreshPoolMarkerCacheCold()
+        {
+            _isPooledRuntimeInstance = TryGetComponent(out ObjectPoolManager.PoolItemMarker _);
         }
 
         private void DropOverflow(Transform interactor)

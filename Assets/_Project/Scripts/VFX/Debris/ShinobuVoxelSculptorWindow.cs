@@ -404,24 +404,19 @@ namespace Hecton8.VFX.Debris
                 return false;
             }
 
-            bool locked = vault.TryAcquireWriteLock(in jobStateHandle, SystemID.CoreDiagnostics, out NativeArray<int> jobState);
-            if (!locked)
+            if (!vault.TryAcquireWriteLock(in jobStateHandle, SystemID.Vfx, out NativeArray<int> jobState))
                 return false;
-
-            if (!jobState.IsCreated || jobState.Length < ShinobuDeltaCrusher.CarveDebrisJobStateLength)
-            {
-                vault.ReleaseWriteLock(in jobStateHandle, SystemID.CoreDiagnostics);
-                return false;
-            }
 
             try
             {
+                if (!jobState.IsCreated || jobState.Length < ShinobuDeltaCrusher.CarveDebrisJobStateLength)
+                    return false;
+
                 return ShinobuDeltaCrusher.TryWriteCarveDebrisTuning(jobState, in tuning);
             }
             finally
             {
-                if (locked)
-                    vault.ReleaseWriteLock(in jobStateHandle, SystemID.CoreDiagnostics);
+                vault.ReleaseWriteLock(in jobStateHandle, SystemID.Vfx);
             }
         }
 

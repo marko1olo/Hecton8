@@ -13,7 +13,7 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 namespace Hecton8.Physiology
 {
     [DisallowMultipleComponent]
-    public sealed unsafe class ShinobuSensoryImpairmentRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed unsafe class ShinobuSensoryImpairmentRuntime : MonoBehaviour, IColdTickable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const SystemID OwnerSystem = SystemID.GameplayPlayer;
 #if UNITY_EDITOR
@@ -80,11 +80,13 @@ namespace Hecton8.Physiology
         private int _telemetryCursor;
         private bool _registeredSlow;
         private bool _registeredLateFrame;
+        private bool _registeredColdTick;
         private bool _registeredPreSimulation;
         private bool _registeredVisualSync;
         private bool _registeredHotSwap;
         private bool _defaultsInitialized;
         private bool _autopsyDumped;
+        private bool _vaultRepairRequested;
 
         private void Awake()
         {
@@ -101,7 +103,8 @@ namespace Hecton8.Physiology
 
             TryRegisterHotSwapListener();
             RebindColdServices();
-            if (EnsureVaultState())
+            PrepareRuntimeStateCold();
+            if (HasVaultStateReady())
                 TryRegisterRuntimeRoutes();
         }
 
@@ -111,7 +114,8 @@ namespace Hecton8.Physiology
                 return;
 
             RebindColdServices();
-            if (EnsureVaultState())
+            PrepareRuntimeStateCold();
+            if (HasVaultStateReady())
                 TryRegisterRuntimeRoutes();
         }
 
@@ -130,7 +134,9 @@ namespace Hecton8.Physiology
                 ClearCachedHandles();
                 _defaultsInitialized = false;
                 _autopsyDumped = false;
-                if (_dataVault != null && EnsureVaultState())
+                _vaultRepairRequested = true;
+                PrepareRuntimeStateCold();
+                if (HasVaultStateReady())
                     TryRegisterRuntimeRoutes();
                 return;
             }
@@ -142,14 +148,38 @@ namespace Hecton8.Physiology
         public void SlowTick()
         {
             IDataVault vault = _dataVault;
-            if (vault == null || !EnsureVaultState())
+            if (vault == null || !HasVaultStateReady())
+            {
+                _vaultRepairRequested = true;
                 return;
+            }
+
+            if (!HasEmergencyMockBuffersReady())
+            {
+                _vaultRepairRequested = true;
+                return;
+            }
 
             if (RunEvaluation(vault, ResolveGlobalQualityWeight()))
                 PatchLatestTelemetryGas(vault, -1f);
+        }
+
+        public void ColdTick()
+        {
+            if (!Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            if (!_vaultRepairRequested && HasVaultStateReady() && HasEmergencyMockBuffersReady())
+                return;
+
+            PrepareRuntimeStateCold();
+            if (HasVaultStateReady())
+                TryRegisterRuntimeRoutes();
 
 #if UNITY_EDITOR
-            TryLoadCsvProfilesCold(vault);
+            IDataVault vault = _dataVault;
+            if (vault != null && HasVaultStateReady())
+                TryLoadCsvProfilesCold(vault);
 #endif
         }
 
@@ -171,8 +201,11 @@ namespace Hecton8.Physiology
         private void RunInputFrame(float deltaTime, uint frame)
         {
             IDataVault vault = _dataVault;
-            if (vault == null || !_defaultsInitialized)
+            if (vault == null || !HasVaultStateReady())
+            {
+                _vaultRepairRequested = true;
                 return;
+            }
 
             if (RunInputCorruption(vault, deltaTime, frame, ResolveGlobalQualityWeight(), out float corruptionMicroseconds))
                 PatchLatestTelemetryGas(vault, corruptionMicroseconds);
@@ -181,8 +214,11 @@ namespace Hecton8.Physiology
         private void RunVisualSyncFrame()
         {
             IDataVault vault = _dataVault;
-            if (vault == null || !_defaultsInitialized)
+            if (vault == null || !HasVaultStateReady())
+            {
+                _vaultRepairRequested = true;
                 return;
+            }
 
             PublishVisualScalars(vault);
             TryDumpAutopsyIfFaulted(vault);
@@ -330,6 +366,46 @@ namespace Hecton8.Physiology
             _playerContext = GlobalRegistry.Player;
         }
 
+        private void PrepareRuntimeStateCold()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+            {
+                _vaultRepairRequested = true;
+                return;
+            }
+
+            bool ready = EnsureVaultState();
+            if (ready && enableEmergencyMockToxicity)
+                ready = EnsureEmergencyMockBuffersCold();
+
+            _vaultRepairRequested = !ready;
+        }
+
+        private bool HasVaultStateReady()
+        {
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   _defaultsInitialized &&
+                   HandlesReady();
+        }
+
+        private bool HasEmergencyMockBuffersReady()
+        {
+            if (!enableEmergencyMockToxicity)
+                return true;
+
+            return TryResolveExistingBuffer(ref _gasStateHandle, ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, 1, out _) &&
+                   TryResolveExistingBuffer(ref _environmentHandle, BufferID.ShinobuEnvironmentVitals, 1, out _);
+        }
+
+        private bool EnsureEmergencyMockBuffersCold()
+        {
+            return OpenOrAcquireSharedBuffer(ref _gasStateHandle, ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, 1, NativeArrayOptions.UninitializedMemory, out _) &&
+                   OpenOrAcquireSharedBuffer(ref _environmentHandle, BufferID.ShinobuEnvironmentVitals, 1, NativeArrayOptions.UninitializedMemory, out _);
+        }
+
         private bool EnsureVaultState()
         {
             IDataVault vault = _dataVault;
@@ -424,7 +500,7 @@ namespace Hecton8.Physiology
 
             bool hasGas = TryResolveExistingBuffer(ref _gasStateHandle, ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, 1, out NativeArray<GasPhysiologyStateDTO> gasStates);
             if (!hasGas && enableEmergencyMockToxicity)
-                hasGas = OpenOrAcquireSharedBuffer(ref _gasStateHandle, ShinobuPhysiologyConstants.GasPhysiologyStatesBuffer, 1, NativeArrayOptions.UninitializedMemory, out gasStates);
+                _vaultRepairRequested = true;
             if (!hasGas)
                 return false;
 
@@ -433,8 +509,9 @@ namespace Hecton8.Physiology
             if (enableEmergencyMockToxicity)
             {
                 hasEnvironment =
-                    TryResolveExistingBuffer(ref _environmentHandle, BufferID.ShinobuEnvironmentVitals, 1, out environment) ||
-                    OpenOrAcquireSharedBuffer(ref _environmentHandle, BufferID.ShinobuEnvironmentVitals, 1, NativeArrayOptions.UninitializedMemory, out environment);
+                    TryResolveExistingBuffer(ref _environmentHandle, BufferID.ShinobuEnvironmentVitals, 1, out environment);
+                if (!hasEnvironment)
+                    _vaultRepairRequested = true;
             }
 
             if (!vault.TryAcquireMutationGuard(EvaluationMutationGuardMask))
@@ -1073,6 +1150,8 @@ namespace Hecton8.Physiology
                 _registeredPreSimulation = GlobalRegistry.TryRegisterDispatcherSystem(_preSimulationPhase);
             if (!_registeredVisualSync && _visualSyncPhase != null)
                 _registeredVisualSync = GlobalRegistry.TryRegisterDispatcherSystem(_visualSyncPhase);
+            if (!_registeredColdTick)
+                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
             if (!_registeredSlow)
                 _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
 
@@ -1105,6 +1184,12 @@ namespace Hecton8.Physiology
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
                 _registeredSlow = false;
+            }
+
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
+                _registeredColdTick = false;
             }
 
             if (_registeredLateFrame)

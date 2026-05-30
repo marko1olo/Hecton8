@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -381,6 +382,9 @@ namespace Hecton8.World
             EcosystemVaultMutationGuardBit(BufferID.EcosystemBiomassMacroCellCoords) |
             EcosystemVaultMutationGuardBit(BufferID.EcosystemBiomassIndexEntries) |
             EcosystemVaultMutationGuardBit(BufferID.EcosystemBiomassCellFlags);
+        private static readonly ulong BiomassImpactDrainMutationGuardMask =
+            MacroSwarmTravelMutationGuardMask |
+            EcosystemVaultMutationGuardBit(BufferID.EcosystemPendingBiomassImpacts);
         private static readonly ulong ApexTerritoryOverlapMutationGuardMask =
             EcosystemVaultMutationGuardBit(BufferID.EcosystemApexTerritorySamples) |
             EcosystemVaultMutationGuardBit(BufferID.EcosystemApexTerritoryOverlapResults);
@@ -411,6 +415,11 @@ namespace Hecton8.World
         private static readonly SpatialQueryHit[] _apexThreatProbeHits = new SpatialQueryHit[ApexThreatProbeHitCapacity];
         // COLD ALLOC: SpatialQueryHit[64] - non-alloc flora predator AUP upload query scratch - owner: EcosystemDirector
         private static readonly SpatialQueryHit[] _floraPredatorAupHits = new SpatialQueryHit[FloraPredatorAupHitCapacity];
+#if UNITY_EDITOR
+        // COLD ALLOC: CSV import scratch keeps editor disk IO outside DataVault write ownership.
+        private static readonly byte[] _faunaGeneticsCsvImportScratch = new byte[FaunaGeneticsCsvScratchBytes];
+        private static int _faunaGeneticsCsvImportScratchBusy;
+#endif
         private static readonly int _PredatorAUPBufferId = Shader.PropertyToID("_PredatorAUPBuffer");
         private static readonly int _PredatorAUPCountId = Shader.PropertyToID("_PredatorAUPCount");
         private static readonly int _PredatorAUPParamsId = Shader.PropertyToID("_PredatorAUPParams");
@@ -444,6 +453,7 @@ namespace Hecton8.World
         private struct VaultBufferView<T> where T : struct
         {
             private IDataVault _vault;
+            private IDataVault _writeLockVault;
             private VaultGenerationHandle<T> _handle;
 
             public static VaultBufferView<T> Create(IDataVault vault, VaultGenerationHandle<T> handle)
@@ -456,6 +466,7 @@ namespace Hecton8.World
                 return new VaultBufferView<T>
                 {
                     _vault = vault,
+                    _writeLockVault = null,
                     _handle = handle
                 };
             }
@@ -514,7 +525,9 @@ namespace Hecton8.World
 
             public bool TryAcquireWriteLock(SystemID systemID, out NativeArray<T> array)
             {
-                if (_vault == null ||
+                IDataVault vault = _vault;
+                if (vault == null ||
+                    _writeLockVault != null ||
                     _handle.BufferID == 0u ||
                     _handle.Generation == 0u ||
                     _handle.SystemID != (uint)systemID)
@@ -523,7 +536,7 @@ namespace Hecton8.World
                     return false;
                 }
 
-                if (!_vault.TryAcquireWriteLock(in _handle, systemID, out array))
+                if (!vault.TryAcquireWriteLock(in _handle, systemID, out array))
                 {
                     array = default;
                     return false;
@@ -534,6 +547,7 @@ namespace Hecton8.World
                 {
                     if (array.IsCreated)
                     {
+                        _writeLockVault = vault;
                         ownershipTransferred = true;
                         return true;
                     }
@@ -544,17 +558,22 @@ namespace Hecton8.World
                 finally
                 {
                     if (!ownershipTransferred)
-                        _vault.ReleaseWriteLock(in _handle, systemID);
+                        vault.ReleaseWriteLock(in _handle, systemID);
                 }
             }
 
             public bool ReleaseWriteLock(SystemID systemID)
             {
-                return _vault != null &&
+                IDataVault vault = _writeLockVault;
+                if (vault == null)
+                    return false;
+
+                _writeLockVault = null;
+                return vault != null &&
                        _handle.BufferID != 0u &&
                        _handle.Generation != 0u &&
                        _handle.SystemID == (uint)systemID &&
-                       _vault.ReleaseWriteLock(in _handle, systemID);
+                       vault.ReleaseWriteLock(in _handle, systemID);
             }
 
             private bool TryResolve(out NativeArray<T> array)
@@ -1374,6 +1393,7 @@ namespace Hecton8.World
         private int _saveSnapshotSectorCount;
         private int _saveSnapshotBiomassRunCount;
         private IFaunaPredationTarget[] _apexTerritoryTargets;
+        private float4[] _floraPredatorAupUploadSnapshot;
         private GraphicsBuffer _floraPredatorAupBufferA;
         private GraphicsBuffer _floraPredatorAupBufferB;
         private GraphicsBuffer _activeFloraPredatorAupBuffer;
@@ -1476,11 +1496,14 @@ namespace Hecton8.World
         private float _pendingBiomassOvergrowth01;
         private float _lastPublishedBiomassOvergrowth01 = -1f;
         private int _nextHibernationPopulationSyncIndex;
+        private MapMagicBridge _cachedMapMagicBridge;
         private HectonMapMagicVegetationBridge _cachedVegetationBridge;
         private PersistentWorldRegistry _cachedPersistentWorldRegistry;
         private SargassumMicroFaunaBoids _cachedSargassumMicroFauna;
         private IAmbientBiotaService _cachedAmbientBiota;
         private IPlayerRuntimeContext _cachedPlayerContext;
+        private HazardZoneManager _cachedHazardZones;
+        private ResourceDistributionDirector _cachedResourceDistribution;
         private float _eclipsePredatorMigrationTimer;
         private float _eclipsePredatorMigrationIntensity01;
         private float _eclipsePredatorMigrationAccumulator;
@@ -1562,7 +1585,7 @@ namespace Hecton8.World
                 return;
             }
 
-            IDataVault vault = ResolveDataVault();
+            IDataVault vault = ResolveDataVaultCold();
             if (vault == null)
             {
                 _sectorFoodHeatmapR8 = default;
@@ -1575,25 +1598,32 @@ namespace Hecton8.World
                 (int)requiredLength,
                 SystemID.AIEcology,
                 NativeArrayOptions.UninitializedMemory);
-            if (!vault.TryResolveHandle(in heatmapHandle, out NativeArray<byte> vaultHeatmap))
+            if (!vault.TryAcquireWriteLock(in heatmapHandle, SystemID.AIEcology, out NativeArray<byte> vaultHeatmap))
             {
                 _sectorFoodHeatmapR8 = default;
                 _sectorFoodHeatmapSize = default;
                 return;
             }
 
-            if (!vaultHeatmap.IsCreated || vaultHeatmap.Length < requiredLength)
+            try
             {
-                _sectorFoodHeatmapR8 = default;
-                _sectorFoodHeatmapSize = default;
-                return;
+                if (!vaultHeatmap.IsCreated || vaultHeatmap.Length < requiredLength)
+                {
+                    _sectorFoodHeatmapR8 = default;
+                    _sectorFoodHeatmapSize = default;
+                    return;
+                }
+
+                for (int i = 0; i < requiredLength; i++)
+                    vaultHeatmap[i] = heatmapR8[i];
+
+                _sectorFoodHeatmapR8 = VaultBufferView<byte>.Create(vault, heatmapHandle);
+                _sectorFoodHeatmapSize = new int2(width, height);
             }
-
-            for (int i = 0; i < requiredLength; i++)
-                vaultHeatmap[i] = heatmapR8[i];
-
-            _sectorFoodHeatmapR8 = VaultBufferView<byte>.Create(vault, heatmapHandle);
-            _sectorFoodHeatmapSize = new int2(width, height);
+            finally
+            {
+                vault.ReleaseWriteLock(in heatmapHandle, SystemID.AIEcology);
+            }
         }
 
         public FaunaLogicalLodTier ResolveLogicalLodTier(Vector3 observerPosition, Vector3 faunaPosition)
@@ -1625,11 +1655,9 @@ namespace Hecton8.World
         internal bool TryBuildEnvelope(Vector3 worldPosition, out EcosystemEnvelope envelope)
         {
             float depthMeters = 0f;
-            MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
+            MapMagicBridge mapMagicBridge = _cachedMapMagicBridge;
             if (mapMagicBridge != null)
                 depthMeters = math.max(0f, mapMagicBridge.WaterSurfaceLevel - worldPosition.y);
-
-            RefreshRuntimeReferences();
 
             float temperatureCelsius = _cachedVegetationBridge != null
                 ? _cachedVegetationBridge.GetWaterTemperature(worldPosition)
@@ -1896,7 +1924,7 @@ namespace Hecton8.World
             return blocked == 0;
         }
 
-        private static bool IsApexSpawnTerrainBlocked(Vector3 worldPosition)
+        private bool IsApexSpawnTerrainBlocked(Vector3 worldPosition)
         {
             if (!math.isfinite(worldPosition.x) ||
                 !math.isfinite(worldPosition.y) ||
@@ -1905,7 +1933,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            MapMagicBridge bridge = MapMagicBridge.Instance;
+            MapMagicBridge bridge = _cachedMapMagicBridge;
             if (bridge == null ||
                 !bridge.TryGetHeight(worldPosition.x, worldPosition.z, out float terrainHeight) ||
                 !math.isfinite(terrainHeight))
@@ -2187,13 +2215,11 @@ namespace Hecton8.World
 
         public bool IsApexTombstoned(uint uniqueInstanceUid)
         {
-            RefreshRuntimeReferences();
             return _cachedPersistentWorldRegistry != null && _cachedPersistentWorldRegistry.IsTombstoned(uniqueInstanceUid);
         }
 
         public void RegisterApexPredatorKill(uint uniqueInstanceUid, Vector3 worldPosition, float hostilityDelta)
         {
-            RefreshRuntimeReferences();
             float nowSeconds = ReadDispatcherTimeSeconds();
             _cachedPersistentWorldRegistry?.TryRegisterFaunaTombstone(uniqueInstanceUid);
             if (_cachedPersistentWorldRegistry != null)
@@ -2436,6 +2462,7 @@ namespace Hecton8.World
         {
             ActiveRuntimeInstance = this;
             SanitizeSettings();
+            CacheColdRegistryReferences();
             AllocateRuntimeState();
         }
 
@@ -2443,9 +2470,9 @@ namespace Hecton8.World
         {
             ActiveRuntimeInstance = this;
             SanitizeSettings();
+            CacheColdRegistryReferences();
             AllocateRuntimeState();
             RefreshMacroSwarmScalabilityCache();
-            CacheColdRegistryReferences();
             TryRegisterService();
             TryRegisterSlowTickable();
             TryRegisterFrostTickable();
@@ -2490,9 +2517,9 @@ namespace Hecton8.World
         {
             ActiveRuntimeInstance = this;
             SanitizeSettings();
+            CacheColdRegistryReferences();
             AllocateRuntimeState();
             RefreshMacroSwarmScalabilityCache();
-            CacheColdRegistryReferences();
             TryRegisterService();
             TryRegisterSlowTickable();
             TryRegisterFrostTickable();
@@ -3080,7 +3107,7 @@ namespace Hecton8.World
                 radiationRads = SanitizeMutationScalar01(radiation01);
             }
 
-            HazardZoneManager hazardZoneManager = GlobalRegistry.HazardZones;
+            HazardZoneManager hazardZoneManager = _cachedHazardZones;
             if (hazardZoneManager != null)
             {
                 float hazardToxicity01 = hazardZoneManager.GetHazardIntensity(runtimePosition, HazardType.Toxicity);
@@ -3088,7 +3115,7 @@ namespace Hecton8.World
                 toxicity01 = math.max(toxicity01, SanitizeMutationScalar01(hazardToxicity01));
             }
 
-            ResourceDistributionDirector resourceDistribution = ResourceDistributionDirector.ActiveRuntimeInstance;
+            ResourceDistributionDirector resourceDistribution = _cachedResourceDistribution;
             if (resourceDistribution == null || !resourceDistribution.TrySampleBrineLayer(runtimePosition, out BrineLayerSample brineSample))
             {
                 if (invalidScalar)
@@ -3522,10 +3549,14 @@ namespace Hecton8.World
 
         private IDataVault ResolveDataVault()
         {
+            return _dataVault;
+        }
+
+        private IDataVault ResolveDataVaultCold()
+        {
             IDataVault vault = _dataVault;
             if (vault != null)
                 return vault;
-
             vault = GlobalRegistry.DataVault;
             _dataVault = vault;
             return vault;
@@ -3838,18 +3869,24 @@ namespace Hecton8.World
 
         private void RefreshRuntimeReferences()
         {
+            _cachedMapMagicBridge = GlobalRegistry.MapMagic;
             _cachedVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (_cachedPersistentWorldRegistry == null)
                 _cachedPersistentWorldRegistry = PersistentWorldRegistry.Instance;
             if (_cachedSargassumMicroFauna == null)
                 _cachedSargassumMicroFauna = SargassumMicroFaunaBoids.ActiveRuntimeInstance;
-            if (_cachedPlayerContext == null)
-                _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private void CacheColdRegistryReferences()
         {
+            _dataVault = GlobalRegistry.DataVault;
             RefreshRuntimeReferences();
+            if (_cachedPlayerContext == null)
+                _cachedPlayerContext = GlobalRegistry.Player;
+            if (_cachedHazardZones == null)
+                _cachedHazardZones = GlobalRegistry.HazardZones;
+            if (_cachedResourceDistribution == null)
+                _cachedResourceDistribution = GlobalRegistry.ResourceDistribution;
             IAmbientBiotaService ambientBiota = GlobalRegistry.AmbientBiota;
             if (ambientBiota != null)
                 _cachedAmbientBiota = ambientBiota;
@@ -3914,10 +3951,10 @@ namespace Hecton8.World
                 : 0f;
         }
 
-        private static float ResolveCombinedCorpseSpawnInfluence01(Vector3 worldPosition, float radiusMeters)
+        private float ResolveCombinedCorpseSpawnInfluence01(Vector3 worldPosition, float radiusMeters)
         {
             float liveCorpseInfluence01 = ResolveCorpseSpawnInfluence01(worldPosition, radiusMeters);
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = _cachedPersistentWorldRegistry;
             float persistentWhaleFallInfluence01 = registry != null
                 ? registry.ResolveWhaleFallSpawnInfluence01(worldPosition, ReadDispatcherTimeSeconds(), radiusMeters)
                 : 0f;
@@ -4053,7 +4090,7 @@ namespace Hecton8.World
             if (_sectorFrontStates.IsCreated)
                 return;
 
-            IDataVault vault = ResolveDataVault();
+            IDataVault vault = ResolveDataVaultCold();
             if (vault == null)
                 return;
 
@@ -4122,6 +4159,8 @@ namespace Hecton8.World
                 NativeArrayOptions.ClearMemory));
             // COLD ALLOC: IFaunaPredationTarget[16] - managed Apex retreat lookup paired with Burst overlap result indices - owner: EcosystemDirector
             _apexTerritoryTargets = new IFaunaPredationTarget[ApexTerritoryOverlapCandidateCapacity];
+            // COLD ALLOC: float4[32] - flora predator AUP GPU upload snapshot copied under DataVault lock and consumed after release - owner: EcosystemDirector
+            _floraPredatorAupUploadSnapshot = new float4[FloraPredatorAupBufferCapacity];
             _floraPredatorAupBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(FloraPredatorAupBufferCapacity); // COLD ALLOC: GraphicsBuffer[32] - global flora predator AUP StructuredBuffer A - owner: EcosystemDirector
             _floraPredatorAupBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(FloraPredatorAupBufferCapacity); // COLD ALLOC: GraphicsBuffer[32] - global flora predator AUP StructuredBuffer B - owner: EcosystemDirector
             _activeFloraPredatorAupBuffer = _floraPredatorAupBufferA;
@@ -4244,7 +4283,7 @@ namespace Hecton8.World
             if (writeTicks == _faunaGeneticsCsvLastWriteTicks)
                 return false;
 
-            if (!TryReadFaunaGeneticsCsvScratchOneLock(path, fileInfo.Length, out int byteCount))
+            if (!TryLoadFaunaGeneticsCsvScratchOneLock(path, fileInfo.Length, out int byteCount))
                 return false;
 
             if (byteCount <= 0)
@@ -4264,26 +4303,41 @@ namespace Hecton8.World
             return TryCommitFaunaGeneticsTuningOneLock(tuning, updatedCount, writeTicks);
         }
 
-        private bool TryReadFaunaGeneticsCsvScratchOneLock(string path, long fileLength, out int byteCount)
+        private bool TryLoadFaunaGeneticsCsvScratchOneLock(string path, long fileLength, out int byteCount)
         {
             byteCount = 0;
-            bool scratchLocked = false;
-            if (!_faunaGeneticsCsvScratch.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<byte> csvScratch))
+            if (fileLength <= 0L || fileLength > FaunaGeneticsCsvScratchBytes)
                 return false;
 
-            scratchLocked = true;
+            if (Interlocked.CompareExchange(ref _faunaGeneticsCsvImportScratchBusy, 1, 0) != 0)
+                return false;
+
             try
             {
-                if (fileLength > csvScratch.Length)
+                int readLength = TryReadFileIntoScratch(path, _faunaGeneticsCsvImportScratch);
+                if (readLength <= 0)
                     return false;
 
-                byteCount = TryReadFileIntoScratch(path, csvScratch);
-                return byteCount > 0;
+                if (!_faunaGeneticsCsvScratch.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<byte> csvScratch))
+                    return false;
+
+                try
+                {
+                    if (readLength > csvScratch.Length)
+                        return false;
+
+                    CopyFaunaGeneticsCsvScratchToVault(_faunaGeneticsCsvImportScratch, csvScratch, readLength);
+                    byteCount = readLength;
+                    return true;
+                }
+                finally
+                {
+                    _faunaGeneticsCsvScratch.ReleaseWriteLock(SystemID.AIEcology);
+                }
             }
             finally
             {
-                if (scratchLocked)
-                    _faunaGeneticsCsvScratch.ReleaseWriteLock(SystemID.AIEcology);
+                Volatile.Write(ref _faunaGeneticsCsvImportScratchBusy, 0);
             }
         }
 
@@ -4364,9 +4418,9 @@ namespace Hecton8.World
             return File.Exists(fallback) ? fallback : string.Empty;
         }
 
-        private static unsafe int TryReadFileIntoScratch(string path, NativeArray<byte> bytes)
+        private static int TryReadFileIntoScratch(string path, byte[] bytes)
         {
-            if (string.IsNullOrEmpty(path) || !bytes.IsCreated || bytes.Length <= 0)
+            if (string.IsNullOrEmpty(path) || bytes == null || bytes.Length <= 0)
                 return 0;
 
             try
@@ -4382,8 +4436,7 @@ namespace Hecton8.World
                 if (stream.Length <= 0L || stream.Length > bytes.Length)
                     return 0;
 
-                byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr<byte>(bytes);
-                Span<byte> span = new Span<byte>(ptr, (int)stream.Length);
+                Span<byte> span = new Span<byte>(bytes, 0, (int)stream.Length);
                 int totalRead = 0;
                 while (totalRead < span.Length)
                 {
@@ -4406,6 +4459,18 @@ namespace Hecton8.World
             }
         }
 
+        private static unsafe void CopyFaunaGeneticsCsvScratchToVault(byte[] source, NativeArray<byte> target, int byteCount)
+        {
+            if (source == null || !target.IsCreated || byteCount <= 0 || source.Length < byteCount || target.Length < byteCount)
+                return;
+
+            fixed (byte* sourcePtr = source)
+            {
+                byte* targetPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr<byte>(target);
+                UnsafeUtility.MemCpy(targetPtr, sourcePtr, byteCount);
+            }
+        }
+
         private void DisposeRuntimeState()
         {
             JobHandle disposeDependency = _solveScheduled ? _scheduledSolveHandle : default;
@@ -4417,6 +4482,7 @@ namespace Hecton8.World
                 disposeDependency = JobHandle.CombineDependencies(disposeDependency, _scheduledApexTerritoryOverlapHandle);
             ReleaseBuffer(ref _floraPredatorAupBufferA);
             ReleaseBuffer(ref _floraPredatorAupBufferB);
+            _floraPredatorAupUploadSnapshot = null;
             _activeFloraPredatorAupBuffer = null;
             _floraPredatorAupUploadIndex = 0;
             Shader.SetGlobalInt(_PredatorAUPCountId, 0);
@@ -4643,6 +4709,12 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.AmbientBiotaRuntime:
                     _cachedAmbientBiota = currentService as IAmbientBiotaService;
                     break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    _dataVault = currentService as IDataVault;
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicRuntime:
+                    _cachedMapMagicBridge = currentService as MapMagicBridge;
+                    break;
                 case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
                     _cachedVegetationBridge = currentService as HectonMapMagicVegetationBridge;
                     break;
@@ -4654,6 +4726,12 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.HazardZoneRuntime:
+                    _cachedHazardZones = currentService as HazardZoneManager;
+                    break;
+                case GlobalRegistryServiceSlot.ResourceDistributionRuntime:
+                    _cachedResourceDistribution = currentService as ResourceDistributionDirector;
                     break;
             }
         }
@@ -4753,9 +4831,7 @@ namespace Hecton8.World
             if (!TryResolveEclipseTier0Attractor(out Vector3 attractorPosition))
                 return;
 
-            PersistentWorldRegistry registry = _cachedPersistentWorldRegistry != null
-                ? _cachedPersistentWorldRegistry
-                : PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = _cachedPersistentWorldRegistry;
             if (registry == null)
                 return;
 
@@ -4814,14 +4890,14 @@ namespace Hecton8.World
             return selectionBoost > 1f;
         }
 
-        private static float ResolveDepthMeters(Vector3 worldPosition)
+        private float ResolveDepthMeters(Vector3 worldPosition)
         {
             return math.max(0f, ResolveWaterSurfaceLevel(worldPosition) - worldPosition.y);
         }
 
-        private static float ResolveWaterSurfaceLevel(Vector3 worldPosition)
+        private float ResolveWaterSurfaceLevel(Vector3 worldPosition)
         {
-            MapMagicBridge bridge = MapMagicBridge.Instance;
+            MapMagicBridge bridge = _cachedMapMagicBridge;
             if (bridge != null)
                 return bridge.WaterSurfaceLevel;
 
@@ -4955,7 +5031,7 @@ namespace Hecton8.World
             if (!_solveJobLocksHeld)
                 return;
 
-            IDataVault vault = _solveJobGuardVault ?? _dataVault;
+            IDataVault vault = _solveJobGuardVault;
             if (vault != null)
                 vault.ReleaseMutationGuard(SectorSolveMutationGuardMask);
             _solveJobLocksHeld = false;
@@ -5023,7 +5099,7 @@ namespace Hecton8.World
             if (!_genomeMutationJobLocksHeld)
                 return;
 
-            IDataVault vault = _genomeMutationJobGuardVault ?? _dataVault;
+            IDataVault vault = _genomeMutationJobGuardVault;
             if (vault != null)
                 vault.ReleaseMutationGuard(GenomeMutationGuardMask);
             _genomeMutationJobLocksHeld = false;
@@ -5077,11 +5153,53 @@ namespace Hecton8.World
             if (!_macroSwarmTravelJobLocksHeld)
                 return;
 
-            IDataVault vault = _macroSwarmTravelJobGuardVault ?? _dataVault;
+            IDataVault vault = _macroSwarmTravelJobGuardVault;
             if (vault != null)
                 vault.ReleaseMutationGuard(MacroSwarmTravelMutationGuardMask);
             _macroSwarmTravelJobLocksHeld = false;
             _macroSwarmTravelJobGuardVault = null;
+        }
+
+        private bool TryAcquireBiomassImpactDrainGuard(out IDataVault guardVault)
+        {
+            guardVault = _dataVault;
+            if (guardVault == null)
+            {
+                return false;
+            }
+
+            if (!guardVault.TryAcquireMutationGuard(BiomassImpactDrainMutationGuardMask))
+            {
+                guardVault = null;
+                return false;
+            }
+
+            bool keepGuard = false;
+            try
+            {
+                if (!HasMacroSwarmTravelJobViews() ||
+                    !IsAIEcologyBuffer(_pendingBiomassImpacts, BufferID.EcosystemPendingBiomassImpacts))
+                {
+                    return false;
+                }
+
+                keepGuard = true;
+                return true;
+            }
+            finally
+            {
+                if (!keepGuard)
+                {
+                    guardVault.ReleaseMutationGuard(BiomassImpactDrainMutationGuardMask);
+                    guardVault = null;
+                }
+            }
+        }
+
+        private static void ReleaseBiomassImpactDrainGuard(IDataVault guardVault)
+        {
+            if (guardVault != null)
+                guardVault.ReleaseMutationGuard(BiomassImpactDrainMutationGuardMask);
         }
 
         private bool HasMacroSwarmTravelJobViews()
@@ -5136,7 +5254,7 @@ namespace Hecton8.World
             if (!_apexTerritoryOverlapJobLocksHeld)
                 return;
 
-            IDataVault vault = _apexTerritoryOverlapJobGuardVault ?? _dataVault;
+            IDataVault vault = _apexTerritoryOverlapJobGuardVault;
             if (vault != null)
                 vault.ReleaseMutationGuard(ApexTerritoryOverlapMutationGuardMask);
             _apexTerritoryOverlapJobLocksHeld = false;
@@ -5168,6 +5286,7 @@ namespace Hecton8.World
             if (!DispatcherJobSwap.TryComplete(ref _scheduledSolveHandle, forceComplete))
                 return;
 
+            bool applyPendingImpacts = false;
             try
             {
                 VaultBufferView<SectorPopulationState> stateSwap = _sectorFrontStates;
@@ -5189,17 +5308,22 @@ namespace Hecton8.World
                     _predatorBiomassBack = predatorBiomassSwap;
                 }
                 _solveScheduled = false;
-                ApplyPendingBiomassImpacts();
-                PublishBiomassTelemetryAndEvents();
-                RefreshStarvationPressure();
-                _populationSolvePendingHibernationSync = true;
-                _debugHeadlessSectorCount = _activeSectorCount;
-                _debugBiomassCellCount = _activeBiomassCellCount;
+                applyPendingImpacts = true;
             }
             finally
             {
                 UnlockSectorSolveJobBuffers();
             }
+
+            if (!applyPendingImpacts)
+                return;
+
+            ApplyPendingBiomassImpacts();
+            PublishBiomassTelemetryAndEvents();
+            RefreshStarvationPressure();
+            _populationSolvePendingHibernationSync = true;
+            _debugHeadlessSectorCount = _activeSectorCount;
+            _debugBiomassCellCount = _activeBiomassCellCount;
         }
 
         private void DrainSectorResidencySignalSnapshots()
@@ -6558,6 +6682,14 @@ namespace Hecton8.World
             int uploadCount = 0;
             bool uploadLocked = false;
             NativeArray<float4> upload = default;
+            float4[] uploadSnapshot = _floraPredatorAupUploadSnapshot;
+            if (uploadSnapshot == null || uploadSnapshot.Length < FloraPredatorAupBufferCapacity)
+            {
+                PublishFloraPredatorAupGlobalsImmediate(0);
+                PublishApexPresenceFakeImmediate(IsApexInSector(queryOrigin));
+                return;
+            }
+
             try
             {
                 uploadLocked = _floraPredatorAupUpload.TryAcquireWriteLock(SystemID.AIEcology, out upload);
@@ -6578,31 +6710,33 @@ namespace Hecton8.World
 
                     if (uploadCount < uploadCapacity)
                     {
-                        upload[uploadCount] = new float4(
+                        float4 packedAup = new float4(
                             hit.Position.x,
                             hit.Position.y,
                             hit.Position.z,
                             FloraPredatorStealthRadiusMeters);
+                        upload[uploadCount] = packedAup;
+                        uploadSnapshot[uploadCount] = packedAup;
                         uploadCount++;
                     }
-                }
-
-                if (uploadCount > 0)
-                {
-                    GraphicsBuffer writeBuffer = ResolveFloraPredatorAupWriteBuffer();
-                    if (writeBuffer == null)
-                        return;
-
-                    GraphicsBufferUploadUtility.UploadNativeArray<float4>(writeBuffer, upload, uploadCount);
-                    _activeFloraPredatorAupBuffer = writeBuffer;
-                    _floraPredatorAupUploadIndex ^= 1;
-                    _floraPredatorAupGlobalsDirty = true;
                 }
             }
             finally
             {
                 if (uploadLocked)
                     _floraPredatorAupUpload.ReleaseWriteLock(SystemID.AIEcology);
+            }
+
+            if (uploadCount > 0)
+            {
+                GraphicsBuffer writeBuffer = ResolveFloraPredatorAupWriteBuffer();
+                if (writeBuffer == null)
+                    return;
+
+                GraphicsBufferUploadUtility.UploadArray<float4>(writeBuffer, uploadSnapshot, uploadCount);
+                _activeFloraPredatorAupBuffer = writeBuffer;
+                _floraPredatorAupUploadIndex ^= 1;
+                _floraPredatorAupGlobalsDirty = true;
             }
 
             bool saturated = hitCount >= FloraPredatorAupHitCapacity || uploadCount >= FloraPredatorAupBufferCapacity;
@@ -6814,9 +6948,6 @@ namespace Hecton8.World
 
             if (!_sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates))
                 return;
-
-            if (_cachedPersistentWorldRegistry == null)
-                _cachedPersistentWorldRegistry = PersistentWorldRegistry.Instance;
 
             if (_cachedPersistentWorldRegistry == null)
                 return;
@@ -7109,24 +7240,15 @@ namespace Hecton8.World
 
         private void ApplyPendingBiomassImpacts()
         {
-            bool releaseMacroLock = false;
-            if (!_solveJobLocksHeld && !_macroSwarmTravelJobLocksHeld)
-            {
-                if (!TryLockMacroSwarmTravelJobBuffers())
-                    return;
-
-                releaseMacroLock = true;
-            }
-
-            if (!_pendingBiomassImpacts.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<BiomassImpactEvent> pendingImpacts))
-            {
-                if (releaseMacroLock)
-                    UnlockMacroSwarmTravelJobBuffers();
+            if (!TryAcquireBiomassImpactDrainGuard(out IDataVault drainGuardVault))
                 return;
-            }
 
             try
             {
+                NativeArray<BiomassImpactEvent> pendingImpacts = _pendingBiomassImpacts.Resolve();
+                if (!pendingImpacts.IsCreated)
+                    return;
+
                 int count = math.min(_pendingBiomassImpactCount, pendingImpacts.Length);
                 _pendingBiomassImpactCount = 0;
                 for (int i = 0; i < count; i++)
@@ -7138,9 +7260,7 @@ namespace Hecton8.World
             }
             finally
             {
-                _pendingBiomassImpacts.ReleaseWriteLock(SystemID.AIEcology);
-                if (releaseMacroLock)
-                    UnlockMacroSwarmTravelJobBuffers();
+                ReleaseBiomassImpactDrainGuard(drainGuardVault);
             }
         }
 
@@ -7701,10 +7821,10 @@ namespace Hecton8.World
 
         private void ClearBiomassRuntimeState()
         {
-            if (!TryLockMacroSwarmTravelJobBuffers())
+            if (!TryAcquireBiomassImpactDrainGuard(out IDataVault drainGuardVault))
                 return;
 
-            bool pendingLocked = _pendingBiomassImpacts.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<BiomassImpactEvent> pendingImpacts);
+            NativeArray<BiomassImpactEvent> pendingImpacts = _pendingBiomassImpacts.Resolve();
             try
             {
                 NativeArray<EcosystemIndexEntry> biomassIndexEntries = _biomassIndexEntries.Resolve();
@@ -7731,7 +7851,7 @@ namespace Hecton8.World
                         _biomassCellFlags[i] = 0;
                 }
 
-                if (pendingLocked)
+                if (pendingImpacts.IsCreated)
                 {
                     for (int i = 0; i < pendingImpacts.Length; i++)
                         pendingImpacts[i] = default;
@@ -7739,9 +7859,7 @@ namespace Hecton8.World
             }
             finally
             {
-                if (pendingLocked)
-                    _pendingBiomassImpacts.ReleaseWriteLock(SystemID.AIEcology);
-                UnlockMacroSwarmTravelJobBuffers();
+                ReleaseBiomassImpactDrainGuard(drainGuardVault);
             }
 
             _activeBiomassCellCount = 0;

@@ -946,7 +946,7 @@ namespace Hecton8.Power
             anchors = default;
             visualState = default;
             nodeCount = 0;
-            if (!EnsureInitialized() || _solvePending)
+            if (!_initialized || _solvePending)
                 return false;
 
             if (!TryResolveVaultViews(out VaultViews views))
@@ -965,7 +965,7 @@ namespace Hecton8.Power
         {
             state = default;
             latestTelemetry = default;
-            if (!EnsureInitialized() || _solvePending)
+            if (!_initialized || _solvePending)
                 return false;
             if (!TryResolveVaultViews(out VaultViews views) || !views.ConvergenceState.IsCreated || !views.Telemetry.IsCreated)
                 return false;
@@ -980,13 +980,13 @@ namespace Hecton8.Power
         public bool TryReadTuning(out SubmarineThermalGridTuningDTO tuning)
         {
             tuning = default;
-            if (!EnsureInitialized())
+            if (!_initialized)
                 return false;
 
             IDataVault vault = _vault;
             if (vault == null ||
                 !IsHandleValid(in _tuningHandle) ||
-                !vault.TryReadHandle(in _tuningHandle, out NativeArray<SubmarineThermalGridTuningDTO> tuningBuffer) ||
+                !vault.TryReadOnlyHandle(in _tuningHandle, out NativeArray<SubmarineThermalGridTuningDTO>.ReadOnly tuningBuffer) ||
                 !tuningBuffer.IsCreated ||
                 tuningBuffer.Length <= 0)
             {

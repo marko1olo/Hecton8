@@ -7,6 +7,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'strict_json_io.ps1')
+
+$MaxManifestJsonBytes = 65536
 
 function Fail([string]$Message) {
     Write-Error ('[H8MOD_SET_IDENTITY] ' + $Message)
@@ -65,17 +68,31 @@ function Validate-Version([string]$Value, [string]$Label) {
     return $trimmed
 }
 
-function Read-JsonFile([string]$Path) {
-    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-        Fail ('Missing file: ' + $Path)
+function Read-JsonFile([string]$Path, [string]$Label, [long]$MaxBytes) {
+    try {
+        return Read-H8JsonFileCapped $Path $Label $MaxBytes
+    } catch {
+        Fail $_.Exception.Message
     }
-    return Get-Content -Raw -LiteralPath $Path | ConvertFrom-Json
 }
 
 function Write-JsonFile([string]$Path, [object]$Value) {
     $json = $Value | ConvertTo-Json -Depth 16
     $utf8NoBom = New-Object System.Text.UTF8Encoding $false
     [System.IO.File]::WriteAllText($Path, $json + [System.Environment]::NewLine, $utf8NoBom)
+}
+
+function Invoke-RequiredTool([scriptblock]$Invocation, [string]$Step) {
+    $global:LASTEXITCODE = 0
+    & $Invocation | Out-Host
+    $toolSucceeded = $?
+    $toolExitCode = $global:LASTEXITCODE
+    if ($toolExitCode -ne 0) {
+        exit $toolExitCode
+    }
+    if (-not $toolSucceeded) {
+        Fail ($Step + ' failed.')
+    }
 }
 
 if ([string]::IsNullOrWhiteSpace($Id)) {
@@ -85,8 +102,8 @@ if ([string]::IsNullOrWhiteSpace($Id)) {
 $rootFull = (Resolve-Path -LiteralPath $Root).Path
 $authoringPath = Join-StarterPath $rootFull 'mod.h8manifest.json'
 $runtimePath = Join-StarterPath $rootFull 'mod.json'
-$authoring = Read-JsonFile $authoringPath
-$runtime = Read-JsonFile $runtimePath
+$authoring = Read-JsonFile $authoringPath 'mod.h8manifest.json' $MaxManifestJsonBytes
+$runtime = Read-JsonFile $runtimePath 'mod.json' $MaxManifestJsonBytes
 $canonicalId = Validate-ModId $Id 'Id'
 
 $authoring.Id = $canonicalId
@@ -115,7 +132,7 @@ Write-JsonFile $runtimePath $runtime
 
 $validator = Join-StarterPath $rootFull 'Tools/validate_structure.ps1'
 if (Test-Path -LiteralPath $validator -PathType Leaf) {
-    & $validator -Root $rootFull | Out-Host
+    Invoke-RequiredTool { & $validator -Root $rootFull } 'starter validation'
 }
 
 Write-Host ('PASS HECTON-8 starter identity set: ' + $canonicalId)

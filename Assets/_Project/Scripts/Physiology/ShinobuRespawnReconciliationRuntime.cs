@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Physiology;
@@ -55,6 +56,18 @@ namespace Hecton8.Physiology
         private static readonly ulong TelemetryMutationGuardMask =
             MutationGuardBit(ShinobuRespawnConstants.RespawnTelemetryRingBuffer) |
             MutationGuardBit(ShinobuRespawnConstants.RespawnTelemetryCursorBuffer);
+#if UNITY_EDITOR
+        private static readonly ulong MedicalBayCsvMutationGuardMask =
+            MutationGuardBit(ShinobuRespawnConstants.MedicalBayRespawnPointsBuffer);
+        private static readonly ulong PenaltyRuleCsvMutationGuardMask =
+            MutationGuardBit(ShinobuRespawnConstants.RespawnPenaltyRulesBuffer);
+        private static readonly ulong PenaltyRuleCountCsvMutationGuardMask =
+            MutationGuardBit(ShinobuRespawnConstants.RespawnPenaltyRuleCountBuffer);
+        private static readonly byte[] s_csvImportScratch = new byte[ShinobuRespawnConstants.CsvScratchBytes];
+        private static readonly MedicalBayDTO[] s_medicalBayImportScratch = new MedicalBayDTO[ShinobuRespawnConstants.MockMedicalBayCapacity];
+        private static readonly InventoryDeathPenaltyRuleDTO[] s_penaltyRuleImportScratch = new InventoryDeathPenaltyRuleDTO[ShinobuRespawnConstants.PenaltyRuleCapacity];
+        private static int s_csvImportScratchBusy;
+#endif
         private static ShinobuRespawnReconciliationRuntime s_active;
 
         private VaultGenerationHandle<RespawnStateDTO> _stateHandle;
@@ -997,7 +1010,6 @@ namespace Hecton8.Physiology
         {
             IDataVault vault = _dataVault;
             if (vault == null ||
-                !IsVaultDescriptorCreated(in _csvScratchHandle) ||
                 !IsVaultDescriptorCreated(in _medicalBayHandle))
             {
                 return false;
@@ -1007,22 +1019,37 @@ namespace Hecton8.Physiology
             if (!File.Exists(medicalBayPath))
                 return true;
 
-            NativeArray<byte> scratch = ResolveVaultBuffer(vault, in _csvScratchHandle);
-            NativeArray<MedicalBayDTO> bays = ResolveVaultBuffer(vault, in _medicalBayHandle);
-            if (!HasRequiredLength(scratch, ShinobuRespawnConstants.CsvScratchBytes) ||
-                !HasRequiredLength(bays, ShinobuRespawnConstants.MockMedicalBayCapacity))
-            {
+            if (Interlocked.CompareExchange(ref s_csvImportScratchBusy, 1, 0) != 0)
                 return false;
-            }
 
-            using FileStream stream = new FileStream(medicalBayPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-            Span<byte> scratchSpan = new Span<byte>(scratchPtr, scratch.Length);
-            int read = stream.Read(scratchSpan);
-            return ParseMedicalBayCsv(scratchSpan.Slice(0, read), bays) > 0;
+            try
+            {
+                int bytesRead = ReadCsvBytesCold(medicalBayPath, s_csvImportScratch, ShinobuRespawnConstants.CsvScratchBytes);
+                if (bytesRead <= 0)
+                    return false;
+
+                int parsed = ParseMedicalBayCsv(
+                    new ReadOnlySpan<byte>(s_csvImportScratch, 0, bytesRead),
+                    s_medicalBayImportScratch);
+                return parsed > 0 && TryCommitMedicalBayCsv(vault, parsed);
+            }
+            finally
+            {
+                Volatile.Write(ref s_csvImportScratchBusy, 0);
+            }
         }
 
         private static int ParseMedicalBayCsv(ReadOnlySpan<byte> bytes, NativeArray<MedicalBayDTO> bays)
+        {
+            if (!bays.IsCreated || bays.Length <= 0)
+                return 0;
+
+            return ParseMedicalBayCsv(
+                bytes,
+                new Span<MedicalBayDTO>(NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(bays), bays.Length));
+        }
+
+        private static int ParseMedicalBayCsv(ReadOnlySpan<byte> bytes, Span<MedicalBayDTO> bays)
         {
             int cursor = 0;
             int written = 0;
@@ -1089,6 +1116,37 @@ namespace Hecton8.Physiology
             }
 
             return written;
+        }
+
+        private bool TryCommitMedicalBayCsv(IDataVault vault, int parsed)
+        {
+            if (vault == null ||
+                parsed <= 0 ||
+                !vault.TryAcquireMutationGuard(MedicalBayCsvMutationGuardMask))
+            {
+                return false;
+            }
+
+            try
+            {
+                NativeArray<MedicalBayDTO> bays = ResolveVaultBuffer(vault, in _medicalBayHandle);
+                if (!HasRequiredLength(bays, parsed))
+                    return false;
+
+                fixed (MedicalBayDTO* source = s_medicalBayImportScratch)
+                {
+                    UnsafeUtility.MemCpy(
+                        NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(bays),
+                        source,
+                        parsed * UnsafeUtility.SizeOf<MedicalBayDTO>());
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(MedicalBayCsvMutationGuardMask);
+            }
         }
 #endif
 
@@ -1164,35 +1222,52 @@ namespace Hecton8.Physiology
         {
             IDataVault vault = _dataVault;
             if (vault == null ||
-                !IsVaultDescriptorCreated(in _csvScratchHandle) ||
                 !IsVaultDescriptorCreated(in _penaltyRulesHandle) ||
                 !IsVaultDescriptorCreated(in _penaltyRuleCountHandle))
                 return false;
 
-            NativeArray<byte> scratch = ResolveVaultBuffer(vault, in _csvScratchHandle);
-            NativeArray<InventoryDeathPenaltyRuleDTO> rules = ResolveVaultBuffer(vault, in _penaltyRulesHandle);
-            NativeArray<int> count = ResolveVaultBuffer(vault, in _penaltyRuleCountHandle);
-            if (!HasRequiredLength(scratch, ShinobuRespawnConstants.CsvScratchBytes) ||
-                !HasRequiredLength(rules, ShinobuRespawnConstants.PenaltyRuleCapacity) ||
-                !HasRequiredLength(count, 1))
+            if (!File.Exists(_csvPath))
             {
+                TryCommitPenaltyRuleCount(vault, 0);
                 return false;
             }
 
-            count[0] = 0;
-            if (!File.Exists(_csvPath))
+            if (Interlocked.CompareExchange(ref s_csvImportScratchBusy, 1, 0) != 0)
                 return false;
 
-            using FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-            Span<byte> scratchSpan = new Span<byte>(scratchPtr, scratch.Length);
-            int read = stream.Read(scratchSpan);
-            int parsed = ParsePenaltyCsv(scratchSpan.Slice(0, read), rules);
-            count[0] = parsed;
-            return parsed > 0;
+            try
+            {
+                int bytesRead = ReadCsvBytesCold(_csvPath, s_csvImportScratch, ShinobuRespawnConstants.CsvScratchBytes);
+                int parsed = bytesRead > 0
+                    ? ParsePenaltyCsv(new ReadOnlySpan<byte>(s_csvImportScratch, 0, bytesRead), s_penaltyRuleImportScratch)
+                    : 0;
+                if (parsed <= 0)
+                {
+                    TryCommitPenaltyRuleCount(vault, 0);
+                    return false;
+                }
+
+                return TryCommitPenaltyRuleCount(vault, 0) &&
+                       TryCommitPenaltyRules(vault, parsed) &&
+                       TryCommitPenaltyRuleCount(vault, parsed);
+            }
+            finally
+            {
+                Volatile.Write(ref s_csvImportScratchBusy, 0);
+            }
         }
 
         private static int ParsePenaltyCsv(ReadOnlySpan<byte> bytes, NativeArray<InventoryDeathPenaltyRuleDTO> rules)
+        {
+            if (!rules.IsCreated || rules.Length <= 0)
+                return 0;
+
+            return ParsePenaltyCsv(
+                bytes,
+                new Span<InventoryDeathPenaltyRuleDTO>(NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rules), rules.Length));
+        }
+
+        private static int ParsePenaltyCsv(ReadOnlySpan<byte> bytes, Span<InventoryDeathPenaltyRuleDTO> rules)
         {
             int cursor = 0;
             int written = 0;
@@ -1240,6 +1315,70 @@ namespace Hecton8.Physiology
             }
 
             return written;
+        }
+
+        private static int ReadCsvBytesCold(string path, byte[] scratch, int maxBytes)
+        {
+            if (scratch == null || scratch.Length <= 0 || maxBytes <= 0)
+                return 0;
+
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                long boundedLength = stream.Length < maxBytes ? stream.Length : maxBytes;
+                int byteCount = boundedLength > scratch.Length ? scratch.Length : (int)boundedLength;
+                return byteCount > 0 ? stream.Read(scratch, 0, byteCount) : 0;
+            }
+        }
+
+        private bool TryCommitPenaltyRules(IDataVault vault, int parsed)
+        {
+            if (vault == null ||
+                parsed <= 0 ||
+                !vault.TryAcquireMutationGuard(PenaltyRuleCsvMutationGuardMask))
+            {
+                return false;
+            }
+
+            try
+            {
+                NativeArray<InventoryDeathPenaltyRuleDTO> rules = ResolveVaultBuffer(vault, in _penaltyRulesHandle);
+                if (!HasRequiredLength(rules, parsed))
+                    return false;
+
+                fixed (InventoryDeathPenaltyRuleDTO* source = s_penaltyRuleImportScratch)
+                {
+                    UnsafeUtility.MemCpy(
+                        NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rules),
+                        source,
+                        parsed * UnsafeUtility.SizeOf<InventoryDeathPenaltyRuleDTO>());
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(PenaltyRuleCsvMutationGuardMask);
+            }
+        }
+
+        private bool TryCommitPenaltyRuleCount(IDataVault vault, int parsed)
+        {
+            if (vault == null || !vault.TryAcquireMutationGuard(PenaltyRuleCountCsvMutationGuardMask))
+                return false;
+
+            try
+            {
+                NativeArray<int> count = ResolveVaultBuffer(vault, in _penaltyRuleCountHandle);
+                if (!HasRequiredLength(count, 1))
+                    return false;
+
+                count[0] = math.max(0, parsed);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(PenaltyRuleCountCsvMutationGuardMask);
+            }
         }
 #endif
 

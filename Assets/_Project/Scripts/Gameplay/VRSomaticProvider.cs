@@ -2,6 +2,7 @@ using System;
 using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -202,10 +203,12 @@ namespace Hecton8.Gameplay
         private static readonly int VrComfortKccStateId = Shader.PropertyToID("_HectonVRComfortKccState");
         private static readonly int VrSomaticComfortStateId = Shader.PropertyToID("_HectonVRSomaticComfortState");
         private static readonly int VrComfortVignetteId = Shader.PropertyToID("_VRComfortVignette");
+        private static readonly WaitCallback BlackBoxDumpWorker = WriteBlackBoxDumpWorker;
 
         private struct VaultBufferView<T> where T : struct
         {
             private IDataVault _vault;
+            private IDataVault _writeLockVault;
             private VaultGenerationHandle<T> _handle;
             private BufferID _bufferId;
             private int _requiredLength;
@@ -228,6 +231,7 @@ namespace Hecton8.Gameplay
                 return new VaultBufferView<T>
                 {
                     _vault = vault,
+                    _writeLockVault = null,
                     _handle = handle,
                     _bufferId = bufferId,
                     _requiredLength = requiredLength
@@ -259,34 +263,58 @@ namespace Hecton8.Gameplay
             public bool TryAcquireWriteNativeArray(out NativeArray<T> array)
             {
                 array = default;
+                IDataVault vault = _vault;
                 if (!IsHandleValid() ||
-                    _vault == null ||
-                    _vault.IsCompactionFenceActive ||
-                    !_vault.TryAcquireWriteLock(in _handle, VaultOwnerSystem, out array))
+                    vault == null ||
+                    _writeLockVault != null ||
+                    vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _handle, VaultOwnerSystem, out array))
                 {
                     return false;
                 }
 
-                if (_vault.IsCompactionFenceActive ||
-                    !array.IsCreated ||
-                    array.Length < _requiredLength)
+                bool keepLock = false;
+                try
                 {
-                    _vault.ReleaseWriteLock(in _handle, VaultOwnerSystem);
-                    array = default;
-                    return false;
-                }
+                    if (vault.IsCompactionFenceActive ||
+                        !array.IsCreated ||
+                        array.Length < _requiredLength)
+                    {
+                        return false;
+                    }
 
-                return true;
+                    _writeLockVault = vault;
+                    keepLock = true;
+                    return true;
+                }
+                finally
+                {
+                    if (!keepLock)
+                    {
+                        vault.ReleaseWriteLock(in _handle, VaultOwnerSystem);
+                        array = default;
+                    }
+                }
             }
 
             public void ReleaseWriteNativeArray()
             {
-                if (IsHandleValid() && _vault != null)
-                    _vault.ReleaseWriteLock(in _handle, VaultOwnerSystem);
+                IDataVault vault = _writeLockVault;
+                if (vault == null)
+                    return;
+
+                _writeLockVault = null;
+                if (IsHandleValid())
+                    vault.ReleaseWriteLock(in _handle, VaultOwnerSystem);
             }
 
             public void Release()
             {
+                IDataVault writeLockVault = _writeLockVault;
+                if (writeLockVault != null && IsHandleValid())
+                    writeLockVault.ReleaseWriteLock(in _handle, VaultOwnerSystem);
+
+                _writeLockVault = null;
                 if (IsHandleValid() && _vault != null)
                     _vault.ReleaseBuffer(in _handle);
 
@@ -510,6 +538,14 @@ namespace Hecton8.Gameplay
         private int _blackBoxCursor;
         private int _blackBoxLastRecordedFrame = -1;
         private bool _blackBoxDumped;
+        // COLD ALLOC: VRSomaticBlackBoxEntry[300] - fixed fault snapshot for async dump handoff - owner: VRSomaticProvider
+        private readonly VRSomaticBlackBoxEntry[] _blackBoxDumpSnapshot = new VRSomaticBlackBoxEntry[BlackBoxFrameCapacity];
+        private string _blackBoxDumpPathCold;
+        private string _blackBoxDumpDirectoryCold;
+        private int _blackBoxDumpSnapshotCount;
+        private int _blackBoxDumpInFlight;
+        private int _blackBoxDumpFaultPending;
+        private int _blackBoxDumpFaultHResult;
         private bool _comfortFramePressureActive;
         private float _comfortPressureFallbackWeight01;
         private VRSomaticChestSocketPose _pdaSocketPose;
@@ -662,33 +698,34 @@ namespace Hecton8.Gameplay
                 return;
 
             float3 shift = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
-            bool handTargetsLocked = false;
-            bool handPhysicalLocked = false;
-            try
+            if (HandTargets.TryAcquireWriteNativeArray(out NativeArray<float3> handTargets))
             {
-                if (HandTargets.TryAcquireWriteNativeArray(out NativeArray<float3> handTargets))
+                try
                 {
-                    handTargetsLocked = true;
                     RebaseHandArray(handTargets, shift);
                 }
-
-                if (HandPhysicalPositions.TryAcquireWriteNativeArray(out NativeArray<float3> handPhysicalPositions))
+                finally
                 {
-                    handPhysicalLocked = true;
-                    RebaseHandArray(handPhysicalPositions, shift);
+                    HandTargets.ReleaseWriteNativeArray();
                 }
+            }
+
+            if (!HandPhysicalPositions.TryAcquireWriteNativeArray(out NativeArray<float3> handPhysicalPositions))
+                return;
+
+            try
+            {
+                RebaseHandArray(handPhysicalPositions, shift);
             }
             finally
             {
-                if (handPhysicalLocked)
-                    HandPhysicalPositions.ReleaseWriteNativeArray();
-                if (handTargetsLocked)
-                    HandTargets.ReleaseWriteNativeArray();
+                HandPhysicalPositions.ReleaseWriteNativeArray();
             }
         }
 
         public void Tick(float deltaTime)
         {
+            FlushPendingBlackBoxDumpFault();
             float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
             _lastTickDeltaTime = safeDeltaTime;
             AdvanceSomaticTimers(safeDeltaTime);
@@ -775,6 +812,7 @@ namespace Hecton8.Gameplay
             ValidateNativeLayouts();
             CacheSocketRotations();
             RefreshCachedGlobalState();
+            CacheBlackBoxDumpPathCold();
         }
 
         private void OnEnable()
@@ -784,6 +822,7 @@ namespace Hecton8.Gameplay
             TrySubscribeXRRuntime();
             HectonFloatingOrigin.RegisterListener(this);
             CacheDataVaultCold();
+            CacheBlackBoxDumpPathCold();
             TryRegisterHotSwap();
             RefreshRuntimeRegistration(IsVRSomaticRuntimeActive());
         }
@@ -1853,33 +1892,38 @@ namespace Hecton8.Gameplay
             };
 
             VRSomaticRootSyncOutput output = ResolveRootSyncOutput(in input);
-            bool rootInputLocked = false;
-            bool rootOutputLocked = false;
+            if (!_rootSyncInput.TryAcquireWriteNativeArray(out NativeArray<VRSomaticRootSyncInput> rootSyncInput))
+            {
+                return;
+            }
+
             try
             {
-                if (!_rootSyncInput.TryAcquireWriteNativeArray(out NativeArray<VRSomaticRootSyncInput> rootSyncInput) ||
-                    rootSyncInput.Length == 0)
-                {
+                if (rootSyncInput.Length == 0)
                     return;
-                }
 
-                rootInputLocked = true;
-                if (!_rootSyncOutput.TryAcquireWriteNativeArray(out NativeArray<VRSomaticRootSyncOutput> rootSyncOutput) ||
-                    rootSyncOutput.Length == 0)
-                {
-                    return;
-                }
-
-                rootOutputLocked = true;
                 rootSyncInput[0] = input;
+            }
+            finally
+            {
+                _rootSyncInput.ReleaseWriteNativeArray();
+            }
+
+            if (!_rootSyncOutput.TryAcquireWriteNativeArray(out NativeArray<VRSomaticRootSyncOutput> rootSyncOutput))
+            {
+                return;
+            }
+
+            try
+            {
+                if (rootSyncOutput.Length == 0)
+                    return;
+
                 rootSyncOutput[0] = output;
             }
             finally
             {
-                if (rootOutputLocked)
-                    _rootSyncOutput.ReleaseWriteNativeArray();
-                if (rootInputLocked)
-                    _rootSyncInput.ReleaseWriteNativeArray();
+                _rootSyncOutput.ReleaseWriteNativeArray();
             }
 
             ApplyRootSyncOutput(in output);
@@ -1912,30 +1956,38 @@ namespace Hecton8.Gameplay
                 EnsureNativeBuffers();
             if (!HandTargets.IsCreated || !HandPhysicalPositions.IsCreated)
                 return;
-            bool handTargetsLocked = false;
-            bool handPhysicalLocked = false;
+
+            if (!HandTargets.TryAcquireWriteNativeArray(out NativeArray<float3> handTargets))
+                return;
+
             try
             {
-                if (!HandTargets.TryAcquireWriteNativeArray(out NativeArray<float3> handTargets))
+                if (handTargets.Length < HandCount)
                     return;
-
-                handTargetsLocked = true;
-                if (!HandPhysicalPositions.TryAcquireWriteNativeArray(out NativeArray<float3> handPhysicalPositions))
-                    return;
-
-                handPhysicalLocked = true;
-                if (
-                    handTargets.Length < HandCount ||
-                    handPhysicalPositions.Length < HandCount)
-                {
-                    return;
-                }
 
                 CaptureHandTargets(handTargets, headPosition, headRotation);
+            }
+            finally
+            {
+                HandTargets.ReleaseWriteNativeArray();
+            }
+
+            if (!HandTargets.TryReadOnlyNativeArray(out NativeArray<float3>.ReadOnly handTargetsReadOnly) ||
+                handTargetsReadOnly.Length < HandCount ||
+                !HandPhysicalPositions.TryAcquireWriteNativeArray(out NativeArray<float3> handPhysicalPositions))
+            {
+                return;
+            }
+
+            try
+            {
+                if (handPhysicalPositions.Length < HandCount)
+                    return;
+
                 if ((_stateFlags & StateHandsInitialized) == 0u)
                 {
                     for (int i = 0; i < HandCount; i++)
-                        handPhysicalPositions[i] = handTargets[i];
+                        handPhysicalPositions[i] = handTargetsReadOnly[i];
 
                     _stateFlags |= StateHandsInitialized;
                 }
@@ -1943,16 +1995,13 @@ namespace Hecton8.Gameplay
                 float safeDeltaTime = math.max(deltaTime, MinimumDeltaTime);
                 float springForce = SanitizeMinimum(handSpringForce, 1f);
                 for (int i = 0; i < HandCount; i++)
-                    handPhysicalPositions[i] = ResolveHandPhysicalPosition(handTargets[i], handPhysicalPositions[i], safeDeltaTime, springForce);
+                    handPhysicalPositions[i] = ResolveHandPhysicalPosition(handTargetsReadOnly[i], handPhysicalPositions[i], safeDeltaTime, springForce);
 
-                _handGhostMask = ResolveHandGhostMask(handTargets, handPhysicalPositions);
+                _handGhostMask = ResolveHandGhostMask(handTargetsReadOnly, handPhysicalPositions);
             }
             finally
             {
-                if (handPhysicalLocked)
-                    HandPhysicalPositions.ReleaseWriteNativeArray();
-                if (handTargetsLocked)
-                    HandTargets.ReleaseWriteNativeArray();
+                HandPhysicalPositions.ReleaseWriteNativeArray();
             }
         }
 
@@ -2016,6 +2065,33 @@ namespace Hecton8.Gameplay
             return mask;
         }
 
+        private uint ResolveHandGhostMask(NativeArray<float3>.ReadOnly handTargets, NativeArray<float3> handPhysicalPositions)
+        {
+            if (!handTargets.IsCreated || !handPhysicalPositions.IsCreated ||
+                handTargets.Length < HandCount ||
+                handPhysicalPositions.Length < HandCount)
+            {
+                return 0u;
+            }
+
+            float baseThreshold = SanitizeMinimum(ghostHandDistanceMeters, 0.01f);
+            float qualityCurve = Smoothstep01(_globalQualityWeight01);
+            float threshold = scaleGhostHandToleranceByQuality
+                ? baseThreshold * math.lerp(2.5f, 1f, qualityCurve)
+                : baseThreshold;
+            float thresholdSq = threshold * threshold;
+            uint mask = 0u;
+            for (int i = 0; i < HandCount; i++)
+            {
+                float3 delta = handTargets[i] - handPhysicalPositions[i];
+                float distanceSq = math.lengthsq(delta);
+                if (math.isfinite(distanceSq) && distanceSq > thresholdSq)
+                    mask |= 1u << i;
+            }
+
+            return mask;
+        }
+
         private static float3 ResolveFallbackHandTarget(Vector3 headPosition, Quaternion headRotation, float lateralOffset)
         {
             float3 offset = new float3(lateralOffset, -0.32f, 0.42f);
@@ -2044,14 +2120,19 @@ namespace Hecton8.Gameplay
             bool samplesLocked = false;
             try
             {
-                if (!_headCollisionSamples.TryAcquireWriteNativeArray(out NativeArray<HeadCastSample> headCollisionSamples) ||
-                    headCollisionSamples.Length < HeadCollisionCommandCount)
+                if (!_headCollisionSamples.TryAcquireWriteNativeArray(out NativeArray<HeadCastSample> headCollisionSamples))
                 {
                     FadeNearFieldCollisionToZero(_lastTickDeltaTime);
                     return;
                 }
 
                 samplesLocked = true;
+                if (headCollisionSamples.Length < HeadCollisionCommandCount)
+                {
+                    FadeNearFieldCollisionToZero(_lastTickDeltaTime);
+                    return;
+                }
+
                 float3 origin = new float3(headPosition.x, headPosition.y, headPosition.z);
                 quaternion rotation = TrySanitizeQuaternion(headRotation, out Quaternion sanitizedHeadRotation)
                     ? new quaternion(sanitizedHeadRotation.x, sanitizedHeadRotation.y, sanitizedHeadRotation.z, sanitizedHeadRotation.w)
@@ -2141,13 +2222,15 @@ namespace Hecton8.Gameplay
             bool samplesLocked = false;
             try
             {
-                if (!_headCollisionSamples.TryAcquireWriteNativeArray(out NativeArray<HeadCastSample> headCollisionSamples) ||
-                    headCollisionSamples.Length < HeadCollisionCommandCount)
+                if (!_headCollisionSamples.TryAcquireWriteNativeArray(out NativeArray<HeadCastSample> headCollisionSamples))
                 {
                     return;
                 }
 
                 samplesLocked = true;
+                if (headCollisionSamples.Length < HeadCollisionCommandCount)
+                    return;
+
                 for (int i = 0; i < HeadCollisionCommandCount; i++)
                     headCollisionSamples[i] = default;
             }
@@ -2715,7 +2798,6 @@ namespace Hecton8.Gameplay
         {
             if (!_blackBox.IsCreated)
             {
-                DispatcherJobSwap.TryFinalizeCompleted(ref _headCollisionDisposeHandle);
                 if (!_headCollisionDisposeHandle.IsCompleted || !Application.isPlaying)
                     return;
 
@@ -2783,13 +2865,15 @@ namespace Hecton8.Gameplay
             bool blackBoxLocked = false;
             try
             {
-                if (!_blackBox.TryAcquireWriteNativeArray(out NativeArray<VRSomaticBlackBoxEntry> blackBox) ||
-                    blackBox.Length < BlackBoxFrameCapacity)
+                if (!_blackBox.TryAcquireWriteNativeArray(out NativeArray<VRSomaticBlackBoxEntry> blackBox))
                 {
                     return;
                 }
 
                 blackBoxLocked = true;
+                if (blackBox.Length < BlackBoxFrameCapacity)
+                    return;
+
                 if (mergePreviousFlags)
                 {
                     entry.Flags = (ushort)(entry.Flags | blackBox[index].Flags);
@@ -2904,14 +2988,37 @@ namespace Hecton8.Gameplay
 
         private void DumpBlackBoxOnce()
         {
-            if (_blackBoxDumped || !_blackBox.IsCreated)
-                return;
-            if (_blackBox.Length < BlackBoxFrameCapacity)
+            if (_blackBoxDumped ||
+                !_blackBox.IsCreated ||
+                _blackBox.Length < BlackBoxFrameCapacity ||
+                string.IsNullOrEmpty(_blackBoxDumpPathCold) ||
+                Interlocked.CompareExchange(ref _blackBoxDumpInFlight, 1, 0) != 0)
             {
                 return;
             }
 
+            int count = math.min(_blackBoxCursor, BlackBoxFrameCapacity);
+            int start = _blackBoxCursor - count;
+            if (count <= 0 || !TryStageBlackBoxDumpSnapshot(start, count))
+            {
+                Interlocked.Exchange(ref _blackBoxDumpInFlight, 0);
+                return;
+            }
+
             _blackBoxDumped = true;
+            if (!ThreadPool.QueueUserWorkItem(BlackBoxDumpWorker, this))
+            {
+                _blackBoxDumped = false;
+                Interlocked.Exchange(ref _blackBoxDumpInFlight, 0);
+                PublishBlackBoxDumpFault(unchecked((int)0xD00D1335u));
+            }
+        }
+
+        private void CacheBlackBoxDumpPathCold()
+        {
+            if (!string.IsNullOrEmpty(_blackBoxDumpPathCold))
+                return;
+
             try
             {
                 string path = System.IO.Path.GetFullPath(System.IO.Path.Combine(
@@ -2920,14 +3027,76 @@ namespace Hecton8.Gameplay
                     "Docs",
                     "AgentLogs",
                     BlackBoxDumpFileName));
-                string directory = System.IO.Path.GetDirectoryName(path);
+                _blackBoxDumpPathCold = path;
+                _blackBoxDumpDirectoryCold = System.IO.Path.GetDirectoryName(path);
+            }
+            catch (System.ArgumentException)
+            {
+                _blackBoxDumpPathCold = null;
+                _blackBoxDumpDirectoryCold = null;
+            }
+            catch (System.NotSupportedException)
+            {
+                _blackBoxDumpPathCold = null;
+                _blackBoxDumpDirectoryCold = null;
+            }
+            catch (System.IO.PathTooLongException)
+            {
+                _blackBoxDumpPathCold = null;
+                _blackBoxDumpDirectoryCold = null;
+            }
+        }
+
+        private bool TryStageBlackBoxDumpSnapshot(int start, int count)
+        {
+            if (count <= 0 ||
+                count > BlackBoxFrameCapacity ||
+                !_blackBox.TryReadOnlyNativeArray(out NativeArray<VRSomaticBlackBoxEntry>.ReadOnly blackBox) ||
+                blackBox.Length < BlackBoxFrameCapacity)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                _blackBoxDumpSnapshot[i] = blackBox[(start + i) % BlackBoxFrameCapacity];
+            }
+
+            Volatile.Write(ref _blackBoxDumpSnapshotCount, count);
+            return true;
+        }
+
+        private static void WriteBlackBoxDumpWorker(object state)
+        {
+            VRSomaticProvider provider = state as VRSomaticProvider;
+            if (provider == null)
+                return;
+
+            try
+            {
+                provider.TryWriteBlackBoxSnapshotCold();
+            }
+            finally
+            {
+                Interlocked.Exchange(ref provider._blackBoxDumpInFlight, 0);
+            }
+        }
+
+        private void TryWriteBlackBoxSnapshotCold()
+        {
+            string path = _blackBoxDumpPathCold;
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            try
+            {
+                string directory = _blackBoxDumpDirectoryCold;
                 if (!string.IsNullOrEmpty(directory))
                     System.IO.Directory.CreateDirectory(directory);
 
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    int count = math.min(_blackBoxCursor, BlackBoxFrameCapacity);
-                    int start = _blackBoxCursor - count;
+                    int count = math.clamp(Volatile.Read(ref _blackBoxDumpSnapshotCount), 0, BlackBoxFrameCapacity);
                     Span<byte> header = stackalloc byte[BlackBoxDumpHeaderSizeBytes];
                     WriteBlackBoxHeader(header, count);
                     stream.Write(header);
@@ -2935,49 +3104,48 @@ namespace Hecton8.Gameplay
                     Span<byte> row = stackalloc byte[BlackBoxDumpEntrySizeBytes];
                     for (int i = 0; i < count; i++)
                     {
-                        if (!TryReadBlackBoxEntry((start + i) % BlackBoxFrameCapacity, out VRSomaticBlackBoxEntry entry))
-                            return;
-
-                        WriteBlackBoxEntry(row, in entry);
+                        WriteBlackBoxEntry(row, in _blackBoxDumpSnapshot[i]);
                         stream.Write(row);
                     }
                 }
             }
             catch (System.ObjectDisposedException exception)
             {
-                PublishBlackBoxDumpFault(exception.HResult);
+                StageBlackBoxDumpFault(exception.HResult);
             }
             catch (System.IO.IOException exception)
             {
-                PublishBlackBoxDumpFault(exception.HResult);
+                StageBlackBoxDumpFault(exception.HResult);
             }
             catch (System.UnauthorizedAccessException exception)
             {
-                PublishBlackBoxDumpFault(exception.HResult);
+                StageBlackBoxDumpFault(exception.HResult);
             }
             catch (System.ArgumentException exception)
             {
-                PublishBlackBoxDumpFault(exception.HResult);
+                StageBlackBoxDumpFault(exception.HResult);
             }
             catch (System.NotSupportedException exception)
             {
-                PublishBlackBoxDumpFault(exception.HResult);
+                StageBlackBoxDumpFault(exception.HResult);
             }
         }
 
-        private bool TryReadBlackBoxEntry(int index, out VRSomaticBlackBoxEntry entry)
+        private void StageBlackBoxDumpFault(int hResult)
         {
-            entry = default;
-            if (index < 0 ||
-                !_blackBox.TryReadOnlyNativeArray(out NativeArray<VRSomaticBlackBoxEntry>.ReadOnly blackBox) ||
-                blackBox.Length < BlackBoxFrameCapacity ||
-                index >= blackBox.Length)
-            {
-                return false;
-            }
+            Interlocked.Exchange(ref _blackBoxDumpFaultHResult, hResult);
+            Interlocked.Exchange(ref _blackBoxDumpFaultPending, 1);
+        }
 
-            entry = blackBox[index];
-            return true;
+        private void FlushPendingBlackBoxDumpFault()
+        {
+            if (Volatile.Read(ref _blackBoxDumpFaultPending) == 0)
+                return;
+
+            if (Interlocked.Exchange(ref _blackBoxDumpFaultPending, 0) == 0)
+                return;
+
+            PublishBlackBoxDumpFault(Interlocked.Exchange(ref _blackBoxDumpFaultHResult, 0));
         }
 
         private static void WriteBlackBoxHeader(Span<byte> destination, int entryCount)

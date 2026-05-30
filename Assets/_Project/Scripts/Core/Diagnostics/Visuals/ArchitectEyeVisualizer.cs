@@ -531,6 +531,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
             stateBuffer[0] = state;
 
             QueueVisualUpload(count, quadCapacity);
+            PrepareQueuedVisualUploadResourcesCold();
             if (nonFiniteCount > 0 && !_dumpWrittenThisFault)
             {
                 DumpBlackBox(blackBox);
@@ -1284,6 +1285,15 @@ namespace Hecton8.Core.Diagnostics.Visuals
             _pendingGpuUpload = true;
         }
 
+        private void PrepareQueuedVisualUploadResourcesCold()
+        {
+            if (!_pendingGpuUpload)
+                return;
+
+            EnsureResources();
+            EnsureBufferCapacity(_pendingUploadCapacity);
+        }
+
         private void FlushQueuedVisualUpload()
         {
             if (!_pendingGpuUpload)
@@ -1291,6 +1301,7 @@ namespace Hecton8.Core.Diagnostics.Visuals
 
             IDataVault vault = _dataVault;
             if (vault == null ||
+                !HasResourcesReady(_pendingUploadCapacity) ||
                 !TryOpenVaultBuffer(
                     vault,
                     in _quadInstancesHandle,
@@ -1301,39 +1312,24 @@ namespace Hecton8.Core.Diagnostics.Visuals
                 return;
             }
 
-            EnsureResources();
-            EnsureBufferCapacity(_pendingUploadCapacity);
             Upload(quads, _pendingUploadCount);
             _pendingGpuUpload = false;
         }
 
         private unsafe void UploadInternal(NativeArray<ArchitectEyeQuadInstance> quads, int count)
         {
-            if (_instanceBuffer == null || _argsBuffer == null || _quadMesh == null || !quads.IsCreated)
+            if (!IsValidBuffer(_instanceBuffer) || !IsValidBuffer(_argsBuffer) || _quadMesh == null || !quads.IsCreated)
                 return;
 
             int uploadCount = math.min(count, math.min(quads.Length, _bufferQuadCapacity));
             _gpuWriteBufferIndex ^= 1;
             GraphicsBuffer instanceWriteBuffer = _gpuWriteBufferIndex == 0 ? _instanceBufferA : _instanceBufferB;
             GraphicsBuffer argsWriteBuffer = _gpuWriteBufferIndex == 0 ? _argsBufferA : _argsBufferB;
-            if (instanceWriteBuffer == null || argsWriteBuffer == null)
+            if (!IsValidBuffer(instanceWriteBuffer) || !IsValidBuffer(argsWriteBuffer))
                 return;
 
             if (uploadCount > 0)
-            {
-                NativeArray<ArchitectEyeQuadInstance> mappedInstances = instanceWriteBuffer.LockBufferForWrite<ArchitectEyeQuadInstance>(0, uploadCount);
-                try
-                {
-                    UnsafeUtility.MemCpy(
-                        NativeArrayUnsafeUtility.GetUnsafePtr(mappedInstances),
-                        NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(quads),
-                        uploadCount * UnsafeUtility.SizeOf<ArchitectEyeQuadInstance>());
-                }
-                finally
-                {
-                    instanceWriteBuffer.UnlockBufferAfterWrite<ArchitectEyeQuadInstance>(uploadCount);
-                }
-            }
+                GraphicsBufferUploadUtility.UploadNativeArray(instanceWriteBuffer, quads, uploadCount);
 
             NativeArray<uint> mappedArgs = argsWriteBuffer.LockBufferForWrite<uint>(0, 5);
             try
@@ -1758,16 +1754,26 @@ namespace Hecton8.Core.Diagnostics.Visuals
         private void EnsureBufferCapacity(int requiredCapacity)
         {
             int safeRequired = math.clamp(requiredCapacity, 512, 32768);
-            if (_instanceBufferA != null &&
-                _instanceBufferB != null &&
-                _argsBufferA != null &&
-                _argsBufferB != null &&
-                _bufferQuadCapacity >= safeRequired)
+            if (HasResourcesReady(safeRequired))
             {
                 return;
             }
 
             CreateBuffers(safeRequired);
+        }
+
+        private bool HasResourcesReady(int requiredCapacity)
+        {
+            int safeRequired = math.clamp(requiredCapacity, 512, 32768);
+            return _quadMesh != null &&
+                   _material != null &&
+                   IsValidBuffer(_instanceBufferA) &&
+                   IsValidBuffer(_instanceBufferB) &&
+                   IsValidBuffer(_argsBufferA) &&
+                   IsValidBuffer(_argsBufferB) &&
+                   IsValidBuffer(_instanceBuffer) &&
+                   IsValidBuffer(_argsBuffer) &&
+                   _bufferQuadCapacity >= safeRequired;
         }
 
         private void CreateBuffers(int capacity)
@@ -1866,6 +1872,11 @@ namespace Hecton8.Core.Diagnostics.Visuals
             _bufferQuadCapacity = 0;
             _gpuWriteBufferIndex = 0;
             _frontCount = 0;
+        }
+
+        private static bool IsValidBuffer(GraphicsBuffer buffer)
+        {
+            return buffer != null && buffer.IsValid();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

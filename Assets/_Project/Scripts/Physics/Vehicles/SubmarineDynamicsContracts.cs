@@ -2,9 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Core.Memory;
 using Unity.Burst;
-using Unity.Burst.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -498,30 +496,6 @@ namespace Hecton8.Physics.Vehicles
         [FieldOffset(40)] private ulong _pad4;
         [FieldOffset(48)] private ulong _pad5;
         [FieldOffset(56)] private ulong _pad6;
-    }
-
-    public static unsafe class SubmarineKinematicAccess
-    {
-        public static ref SubmarineKinematicState GetStateRef(
-            IDataVault vault,
-            in VaultGenerationHandle<SubmarineKinematicState> handle,
-            int index)
-        {
-            NativeArray<SubmarineKinematicState> states = default;
-            if (vault == null ||
-                !vault.TryResolveHandle(in handle, out states) ||
-                !states.IsCreated ||
-                (uint)index >= (uint)states.Length)
-            {
-                FatalMemoryException.ThrowStaleVaultHandle();
-            }
-
-            void* pointer = NativeArrayUnsafeUtility.GetUnsafePtr(states);
-            Hint.Assume(pointer != null);
-            Hint.Assume(index >= 0);
-            Hint.Assume(index < states.Length);
-            return ref UnsafeUtility.ArrayElementAsRef<SubmarineKinematicState>(pointer, index);
-        }
     }
 
     internal static class SubmarineDynamicsSimdMath

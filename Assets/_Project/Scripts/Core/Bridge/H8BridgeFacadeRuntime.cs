@@ -51,10 +51,30 @@ namespace Hecton8.Core.Bridge
             ushort extraFlags,
             IMacroDatabaseService macroDatabase)
         {
+            return SyncDesignData(
+                facade,
+                vault,
+                extraFlags,
+                macroDatabase,
+                allowAuthoringRepair: true,
+                allowBufferGrowth: true);
+        }
+
+        internal static bool SyncDesignData(
+            H8DesignDataFacade facade,
+            IDataVault vault,
+            ushort extraFlags,
+            IMacroDatabaseService macroDatabase,
+            bool allowAuthoringRepair,
+            bool allowBufferGrowth)
+        {
             if (facade == null || vault == null)
                 return false;
 
-            int runtimeCount = facade.RefreshRuntimeBindingStateForSync();
+            int runtimeCount = facade.RefreshRuntimeBindingStateForSync(allowAuthoringRepair);
+            if (runtimeCount < 0)
+                return false;
+
             if (facade.ValidationDuplicateFieldHashCount > 0)
                 return false;
 
@@ -62,13 +82,9 @@ namespace Hecton8.Core.Bridge
             long estimatedVramBytes = facade.EstimateVramBytes();
             if (runtimeCount <= 0)
             {
-                if (!ClearDesignValueBuffer(vault))
+                if (!SyncEmptyDesignData(facade, vault, extraFlags, macroDatabase, estimatedVramBytes, allowBufferGrowth))
                     return false;
 
-                if (!PersistFacadeHeader(facade, vault, macroDatabase))
-                    return false;
-
-                RecordHeartbeat(vault, facade.FacadeHash, runtimeCount, estimatedVramBytes, extraFlags);
                 PublishDesignClearSignal(facade.FacadeHash, extraFlags);
                 return true;
             }
@@ -83,7 +99,8 @@ namespace Hecton8.Core.Bridge
                 macroDatabase,
                 rawCount,
                 requiredLength,
-                estimatedVramBytes);
+                estimatedVramBytes,
+                allowBufferGrowth);
         }
 
         private static bool TryComputeDesignValueBufferLength(
@@ -132,7 +149,8 @@ namespace Hecton8.Core.Bridge
             IMacroDatabaseService macroDatabase,
             int rawCount,
             int requiredLength,
-            long estimatedVramBytes)
+            long estimatedVramBytes,
+            bool allowBufferGrowth)
         {
             if (facade == null ||
                 vault == null ||
@@ -147,25 +165,28 @@ namespace Hecton8.Core.Bridge
             bool bulkWritten = false;
             try
             {
-                if (!TryResolveGuardedBuffer(
+                if (!TryAcquireGuardedBuffer(
                         vault,
                         BufferID.BridgeDesignFacadeValues,
                         requiredLength,
                         NativeArrayOptions.ClearMemory,
+                        allowBufferGrowth,
                         out VaultGenerationHandle<byte> _,
                         out NativeArray<byte> valueBuffer) ||
-                    !TryResolveGuardedBuffer(
+                    !TryAcquireGuardedBuffer(
                         vault,
                         BufferID.BridgeDesignFacadeTelemetryRing,
                         BlackBoxFrameCount,
                         NativeArrayOptions.ClearMemory,
+                        allowBufferGrowth,
                         out VaultGenerationHandle<H8FacadeTelemetryEntry> _,
                         out NativeArray<H8FacadeTelemetryEntry> telemetryRing) ||
-                    !TryResolveGuardedBuffer(
+                    !TryAcquireGuardedBuffer(
                         vault,
                         BufferID.BridgeFacadeMacroHeader,
                         1,
                         NativeArrayOptions.ClearMemory,
+                        allowBufferGrowth,
                         out VaultGenerationHandle<H8FacadeMacroHeader> _,
                         out NativeArray<H8FacadeMacroHeader> headerBuffer))
                 {
@@ -213,11 +234,96 @@ namespace Hecton8.Core.Bridge
             return bulkWritten && MarkFacadeHeaderDirty(macroDatabase, in header);
         }
 
-        private static bool TryResolveGuardedBuffer<T>(
+        private static bool SyncEmptyDesignData(
+            H8DesignDataFacade facade,
+            IDataVault vault,
+            ushort extraFlags,
+            IMacroDatabaseService macroDatabase,
+            long estimatedVramBytes,
+            bool allowBufferGrowth)
+        {
+            if (facade == null ||
+                vault == null ||
+                vault.IsAllocationLocked ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(DesignSyncMutationGuardMask))
+            {
+                return false;
+            }
+
+            H8FacadeMacroHeader header = BuildFacadeHeader(facade, estimatedVramBytes);
+            bool written = false;
+            try
+            {
+                if (!TryReadExistingGuardedBuffer(
+                        vault,
+                        BufferID.BridgeDesignFacadeValues,
+                        out NativeArray<byte> valueBuffer,
+                        out bool hasValueBuffer) ||
+                    !TryAcquireGuardedBuffer(
+                        vault,
+                        BufferID.BridgeDesignFacadeTelemetryRing,
+                        BlackBoxFrameCount,
+                        NativeArrayOptions.ClearMemory,
+                        allowBufferGrowth,
+                        out VaultGenerationHandle<H8FacadeTelemetryEntry> _,
+                        out NativeArray<H8FacadeTelemetryEntry> telemetryRing) ||
+                    !TryAcquireGuardedBuffer(
+                        vault,
+                        BufferID.BridgeFacadeMacroHeader,
+                        1,
+                        NativeArrayOptions.ClearMemory,
+                        allowBufferGrowth,
+                        out VaultGenerationHandle<H8FacadeMacroHeader> _,
+                        out NativeArray<H8FacadeMacroHeader> headerBuffer))
+                {
+                    return false;
+                }
+
+                if (hasValueBuffer)
+                    ClearBuffer(valueBuffer);
+
+                RecordHeartbeatLocked(telemetryRing, facade.FacadeHash, 0, estimatedVramBytes, extraFlags);
+                headerBuffer[0] = header;
+                Thread.MemoryBarrier();
+                written = true;
+            }
+            catch (Exception)
+            {
+                written = false;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(DesignSyncMutationGuardMask);
+            }
+
+            return written && MarkFacadeHeaderDirty(macroDatabase, in header);
+        }
+
+        private static bool TryAcquireGuardedBuffer<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
+            out VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer) where T : struct
+        {
+            return TryAcquireGuardedBuffer(
+                vault,
+                bufferId,
+                requiredLength,
+                options,
+                allowBufferGrowth: true,
+                out handle,
+                out buffer);
+        }
+
+        private static bool TryAcquireGuardedBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            bool allowBufferGrowth,
             out VaultGenerationHandle<T> handle,
             out NativeArray<T> buffer) where T : struct
         {
@@ -226,16 +332,60 @@ namespace Hecton8.Core.Bridge
             if (vault == null || requiredLength <= 0 || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
-            handle = vault.EnsureGenerationHandle<T>(
-                bufferId,
-                requiredLength,
-                SystemID.CoreBridge,
-                options);
+            if (allowBufferGrowth)
+            {
+                handle = vault.EnsureGenerationHandle<T>(
+                    bufferId,
+                    requiredLength,
+                    SystemID.CoreBridge,
+                    options);
+            }
+            else if (!vault.TryGetGenerationHandle<T>(bufferId, out handle))
+            {
+                return false;
+            }
 
             return handle.BufferID != 0u &&
                    vault.TryReadHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
+        }
+
+        private static bool TryReadExistingGuardedBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            out NativeArray<T> buffer,
+            out bool exists) where T : struct
+        {
+            buffer = default;
+            exists = false;
+            if (vault == null ||
+                !vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+                handle.BufferID == 0u)
+            {
+                return true;
+            }
+
+            if (!vault.TryReadHandle(in handle, out buffer))
+                return false;
+
+            if (!buffer.IsCreated)
+                return false;
+
+            exists = true;
+            return true;
+        }
+
+        private static void ClearBuffer<T>(NativeArray<T> buffer)
+            where T : unmanaged
+        {
+            if (!buffer.IsCreated || buffer.Length <= 0)
+                return;
+
+            long byteCount = (long)buffer.Length * UnsafeUtility.SizeOf<T>();
+            Thread.MemoryBarrier();
+            UnsafeUtility.MemClear(buffer.GetUnsafePtr(), byteCount);
+            Thread.MemoryBarrier();
         }
 
         private static bool TryPrepareDesignEntry(
@@ -289,41 +439,6 @@ namespace Hecton8.Core.Bridge
             GlobalTelemetryBus.PublishModTelemetry(facadeHash, entry.FieldHash, entry.Value);
         }
 
-        private static bool ClearDesignValueBuffer(IDataVault vault)
-        {
-            if (vault == null)
-                return false;
-
-            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
-                return false;
-
-            if (!vault.TryGetGenerationHandle<byte>(BufferID.BridgeDesignFacadeValues, out VaultGenerationHandle<byte> bytes) ||
-                bytes.BufferID == 0u)
-                return true;
-
-            if (!vault.TryAcquireWriteLock(in bytes, SystemID.CoreBridge, out NativeArray<byte> buffer))
-                return false;
-
-            try
-            {
-                if (!buffer.IsCreated || buffer.Length <= 0)
-                    return true;
-
-                byte* ptr = (byte*)buffer.GetUnsafePtr();
-                if (ptr == null)
-                    return false;
-
-                Thread.MemoryBarrier();
-                UnsafeUtility.MemClear(ptr, buffer.Length);
-                Thread.MemoryBarrier();
-                return true;
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in bytes, SystemID.CoreBridge);
-            }
-        }
-
         private static void PublishDesignClearSignal(uint facadeHash, ushort extraFlags)
         {
             if (!Application.isPlaying)
@@ -369,14 +484,7 @@ namespace Hecton8.Core.Bridge
             if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
-            VaultGenerationHandle<byte> bytes = vault.EnsureGenerationHandle<byte>(
-                BufferID.BridgeDesignFacadeValues,
-                requiredLength,
-                SystemID.CoreBridge,
-                NativeArrayOptions.ClearMemory);
-
-            if (bytes.BufferID == 0u ||
-                !vault.TryAcquireWriteLock(in bytes, SystemID.CoreBridge, out NativeArray<byte> buffer))
+            if (!vault.TryAcquireMutationGuard(DesignSyncMutationGuardMask))
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(PointerFenceFaultHash, entry.FieldHash, requiredLength);
                 return false;
@@ -385,7 +493,20 @@ namespace Hecton8.Core.Bridge
             bool valueWriteSucceeded = false;
             try
             {
-                if (buffer.IsCreated && buffer.Length >= requiredLength)
+                if (TryAcquireGuardedBuffer(
+                        vault,
+                        BufferID.BridgeDesignFacadeValues,
+                        requiredLength,
+                        NativeArrayOptions.ClearMemory,
+                        out VaultGenerationHandle<byte> _,
+                        out NativeArray<byte> buffer) &&
+                    TryAcquireGuardedBuffer(
+                        vault,
+                        BufferID.BridgeDesignFacadeTelemetryRing,
+                        BlackBoxFrameCount,
+                        NativeArrayOptions.ClearMemory,
+                        out VaultGenerationHandle<H8FacadeTelemetryEntry> _,
+                        out NativeArray<H8FacadeTelemetryEntry> telemetryRing))
                 {
                     Thread.MemoryBarrier();
                     byte* basePtr = (byte*)buffer.GetUnsafePtr();
@@ -396,6 +517,7 @@ namespace Hecton8.Core.Bridge
                         Thread.MemoryBarrier();
                         *valuePtr = value;
                         Thread.MemoryBarrier();
+                        RecordDeltaLocked(telemetryRing, facadeHash, entry, oldValue, extraFlags);
                         valueWriteSucceeded = true;
                     }
                 }
@@ -406,7 +528,7 @@ namespace Hecton8.Core.Bridge
             }
             finally
             {
-                vault.ReleaseWriteLock(in bytes, SystemID.CoreBridge);
+                vault.ReleaseMutationGuard(DesignSyncMutationGuardMask);
             }
 
             if (!valueWriteSucceeded)
@@ -414,8 +536,6 @@ namespace Hecton8.Core.Bridge
                 GlobalTelemetryBus.PublishPerformanceWarning(PointerFenceFaultHash, entry.FieldHash, requiredLength);
                 return false;
             }
-
-            RecordDelta(vault, facadeHash, entry, oldValue, extraFlags);
 
             if (!Application.isPlaying)
             {

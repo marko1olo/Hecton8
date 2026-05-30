@@ -117,7 +117,7 @@ namespace Hecton8.World.ProceduralCoral
         private const string DumpFileName = "Dump_CORAL_ARCHITECT.bin";
         private const string AgentDumpFileName = "Dump_SHINOBU_139.bin";
 
-        public static bool TryResolve(IDataVault vault, out ProceduralCoralVaultHandles handles)
+        public static bool TryEnsure(IDataVault vault, out ProceduralCoralVaultHandles handles)
         {
             handles = default;
             if (vault == null)

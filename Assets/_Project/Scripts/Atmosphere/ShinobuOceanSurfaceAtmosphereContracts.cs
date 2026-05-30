@@ -829,6 +829,58 @@ namespace Hecton8.Atmosphere
             return changed;
         }
 
+        public static bool TryApply(
+            ReadOnlySpan<byte> csvBytes,
+            NativeArray<WaveParametersDTO> waves,
+            NativeArray<WeatherStateDTO> weather,
+            NativeArray<AtmosphereDTO> atmosphere)
+        {
+            if (csvBytes.Length <= 0)
+                return false;
+
+            bool changed = false;
+            int rowStart = 0;
+            while (rowStart < csvBytes.Length)
+            {
+                int rowEnd = rowStart;
+                while (rowEnd < csvBytes.Length && csvBytes[rowEnd] != LineFeed && csvBytes[rowEnd] != CarriageReturn)
+                    rowEnd++;
+
+                int firstComma = FindByte(csvBytes, rowStart, rowEnd, Comma);
+                if (firstComma > rowStart)
+                {
+                    int keyStart = TrimStart(csvBytes, rowStart, firstComma);
+                    int keyEnd = TrimEnd(csvBytes, keyStart, firstComma);
+                    uint keyHash = HashKey(csvBytes, keyStart, keyEnd);
+
+                    int secondComma = FindByte(csvBytes, firstComma + 1, rowEnd, Comma);
+                    int index = -1;
+                    int valueStart;
+                    int valueEnd;
+                    if (secondComma > firstComma)
+                    {
+                        TryParseInt(csvBytes, firstComma + 1, secondComma, out index);
+                        valueStart = secondComma + 1;
+                        valueEnd = rowEnd;
+                    }
+                    else
+                    {
+                        valueStart = firstComma + 1;
+                        valueEnd = rowEnd;
+                    }
+
+                    if (TryParseFloat(csvBytes, valueStart, valueEnd, out float value))
+                        changed |= ApplyValue(keyHash, index, value, waves, weather, atmosphere);
+                }
+
+                rowStart = rowEnd + 1;
+                while (rowStart < csvBytes.Length && (csvBytes[rowStart] == LineFeed || csvBytes[rowStart] == CarriageReturn))
+                    rowStart++;
+            }
+
+            return changed;
+        }
+
         public static bool TryApplyBeaufort(
             NativeArray<byte> csvBytes,
             int length,
@@ -1267,6 +1319,37 @@ namespace Hecton8.Atmosphere
         }
 
         private static bool TryParseInt(NativeArray<byte> bytes, int start, int end, out int value)
+        {
+            value = 0;
+            start = TrimStart(bytes, start, end);
+            end = TrimEnd(bytes, start, end);
+            if (start >= end)
+                return false;
+
+            int sign = 1;
+            if (bytes[start] == (byte)'-')
+            {
+                sign = -1;
+                start++;
+            }
+
+            int parsed = 0;
+            bool any = false;
+            for (int i = start; i < end; i++)
+            {
+                byte c = bytes[i];
+                if (c < (byte)'0' || c > (byte)'9')
+                    return false;
+
+                parsed = (parsed * 10) + (c - (byte)'0');
+                any = true;
+            }
+
+            value = parsed * sign;
+            return any;
+        }
+
+        private static bool TryParseInt(ReadOnlySpan<byte> bytes, int start, int end, out int value)
         {
             value = 0;
             start = TrimStart(bytes, start, end);

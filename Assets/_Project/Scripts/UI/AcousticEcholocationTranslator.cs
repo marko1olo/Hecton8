@@ -2,7 +2,6 @@ using System;
 using Hecton.Localization;
 using Hecton8.Atmosphere;
 using Hecton8.Audio;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -1845,11 +1844,9 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
-            {
-                _viewCamera = null;
-                _viewTransform = playerTransform;
-            }
+            Transform playerTransform = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerTransform : null;
+            _viewCamera = null;
+            _viewTransform = playerTransform;
         }
 
         private int AcquireSlotIndex()

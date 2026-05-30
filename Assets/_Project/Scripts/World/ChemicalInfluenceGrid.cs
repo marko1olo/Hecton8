@@ -297,6 +297,7 @@ namespace Hecton8.World
         private bool _pendingDuplicateDestroy;
         private bool _scheduledSwapAfterFinalize;
         private bool _scheduledBuffersLocked;
+        private IDataVault _scheduledBuffersGuardVault;
         private JobHandle _scheduledHandle;
         private long _scheduledStartTicks;
         private uint _simulationFrameCounter;
@@ -2085,12 +2086,14 @@ namespace Hecton8.World
             if (_scheduledBuffersLocked)
                 return true;
 
-            if (_dataVault == null ||
-                !_dataVault.TryAcquireMutationGuard(SimulationMutationGuardMask))
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !vault.TryAcquireMutationGuard(SimulationMutationGuardMask))
             {
                 return false;
             }
 
+            _scheduledBuffersGuardVault = vault;
             _scheduledBuffersLocked = true;
             return true;
         }
@@ -2100,8 +2103,10 @@ namespace Hecton8.World
             if (!_scheduledBuffersLocked)
                 return;
 
+            IDataVault vault = _scheduledBuffersGuardVault;
+            _scheduledBuffersGuardVault = null;
             _scheduledBuffersLocked = false;
-            _dataVault?.ReleaseMutationGuard(SimulationMutationGuardMask);
+            vault?.ReleaseMutationGuard(SimulationMutationGuardMask);
         }
 
         private static ulong MutationGuardBit(BufferID bufferId)
@@ -2331,6 +2336,7 @@ namespace Hecton8.World
             _runtimeInitialized = false;
             _buffersReady = false;
             _gridHasOrigin = false;
+            _scheduledBuffersGuardVault = null;
             _scheduledBuffersLocked = false;
             _hasScheduledWork = false;
             _scheduledSwapAfterFinalize = false;

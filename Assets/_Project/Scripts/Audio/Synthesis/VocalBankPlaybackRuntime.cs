@@ -33,7 +33,7 @@ namespace Hecton8.Audio.Synthesis
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-3890)]
     [AddComponentMenu("Hecton8/Audio/Vocal Bank Playback Runtime")]
-    public sealed unsafe class VocalBankPlaybackRuntime : MonoBehaviour, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed unsafe class VocalBankPlaybackRuntime : MonoBehaviour, IColdTickable, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const SystemID VaultOwner = SystemID.AudioVocalSynthesis;
         private const int TelemetryCapacity = 300;
@@ -103,7 +103,7 @@ namespace Hecton8.Audio.Synthesis
 
         private int _nativeAllocated;
         private int _registeredUpdate;
-        private int _registeredSlowTick;
+        private int _registeredColdTick;
         private int _registeredHotSwap;
         private int _usingMockBank;
         private int _dumpRequested;
@@ -278,8 +278,8 @@ namespace Hecton8.Audio.Synthesis
 
             if (GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core))
                 _registeredUpdate = 1;
-            if (GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core))
-                _registeredSlowTick = 1;
+            if (GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Core))
+                _registeredColdTick = 1;
             if (GlobalRegistry.TryRegisterHotSwapListener(this))
                 _registeredHotSwap = 1;
         }
@@ -299,11 +299,7 @@ namespace Hecton8.Audio.Synthesis
         public void Tick(float deltaTime)
         {
             if (Volatile.Read(ref _nativeAllocated) == 0)
-            {
-                EnsureVaultStorage();
-                if (Volatile.Read(ref _nativeAllocated) == 0)
-                    return;
-            }
+                return;
 
             unchecked
             {
@@ -320,6 +316,10 @@ namespace Hecton8.Audio.Synthesis
         }
 
         public void SlowTick()
+        {
+        }
+
+        public void ColdTick()
         {
             if (Volatile.Read(ref _nativeAllocated) == 0)
                 EnsureVaultStorage();
@@ -1170,8 +1170,7 @@ namespace Hecton8.Audio.Synthesis
                 job.PhraseHashID = DefaultMockPhraseHash;
                 job.SampleRate = sampleRate;
                 job.TotalSamples = DefaultMockSamples;
-                JobHandle handle = job.Schedule();
-                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+                job.Execute();
                 _bankByteLength = views.MockBankBytes.Length;
                 Volatile.Write(ref _usingMockBank, 1);
             }
@@ -1438,8 +1437,8 @@ namespace Hecton8.Audio.Synthesis
                 _activeInstance = null;
             if (Interlocked.Exchange(ref _registeredHotSwap, 0) != 0)
                 GlobalRegistry.UnregisterHotSwapListener(this);
-            if (Interlocked.Exchange(ref _registeredSlowTick, 0) != 0)
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+            if (Interlocked.Exchange(ref _registeredColdTick, 0) != 0)
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Core);
             if (Interlocked.Exchange(ref _registeredUpdate, 0) != 0)
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
         }

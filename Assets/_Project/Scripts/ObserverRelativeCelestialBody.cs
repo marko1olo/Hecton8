@@ -1,5 +1,4 @@
 using Hecton8.Atmosphere;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using UnityEngine;
 
@@ -155,6 +154,7 @@ namespace Hecton8.Celestial
 
             if (Application.isPlaying)
             {
+                HectonFloatingOrigin.RegisterListener(this);
                 TryRegisterHotSwapListener();
                 TryRegister();
             }
@@ -173,6 +173,7 @@ namespace Hecton8.Celestial
         {
             if (Application.isPlaying)
             {
+                HectonFloatingOrigin.UnregisterListener(this);
                 TryUnregister();
                 TryUnregisterHotSwapListener();
             }
@@ -190,6 +191,7 @@ namespace Hecton8.Celestial
                 return;
 
             TryUnregister();
+            HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterHotSwapListener();
         }
 
@@ -535,9 +537,6 @@ namespace Hecton8.Celestial
             if (parentBodyTransform == null)
                 return Vector3.zero;
 
-            if (allowReferenceCaching && _parentObserverRelativeBody == null)
-                parentBodyTransform.TryGetComponent(out _parentObserverRelativeBody);
-
             if (_parentObserverRelativeBody != null && _parentObserverRelativeBody != this)
             {
                 Vector3 parentSkyDirection = _parentObserverRelativeBody.CurrentDirection;
@@ -693,18 +692,17 @@ namespace Hecton8.Celestial
             }
 #endif
 
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
-            {
-                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-                Camera playerCamera = playerContext != null && playerContext.PlayerCamera != null
-                    ? playerContext.PlayerCamera
-                    : ResolveComponentOnTransform<Camera>(playerTransform);
-                if (allowReferenceCaching && playerCamera != null)
-                    observerTransform = playerCamera.transform;
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            if (allowReferenceCaching && playerCamera != null)
+                observerTransform = playerCamera.transform;
 
-                if (playerCamera != null)
-                    return playerCamera.transform.position;
-            }
+            if (playerCamera != null)
+                return playerCamera.transform.position;
+
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerTransform != null)
+                return playerTransform.position;
 
             return observerTransform != null
                 ? observerTransform.position
@@ -733,14 +731,6 @@ namespace Hecton8.Celestial
 
             if (_meshRadius < MinMeshRadius)
                 _meshRadius = 0.5f;
-        }
-
-        private static T ResolveComponentOnTransform<T>(Transform source) where T : Component
-        {
-            if (source == null)
-                return null;
-
-            return source.TryGetComponent(out T component) ? component : null;
         }
 
         private float ResolveTimeSeconds()

@@ -30,20 +30,16 @@ namespace Hecton8.Core
         private static readonly int _mathLodModePropertyId = Shader.PropertyToID(MathLodModeProperty);
         private static readonly int _mathLodWeightPropertyId = Shader.PropertyToID(MathLodWeightProperty);
         private static readonly int _mathLodDistanceSqPropertyId = Shader.PropertyToID(MathLodDistanceSqProperty);
-        private static MathLodMode _lastPushedShaderMode;
         private static float _lastPushedShaderWeight;
         private static bool _hasPushedShaderMode;
-        private static MathLodMode _pendingShaderMode;
         private static float _pendingShaderWeight;
         private static bool _hasPendingShaderState;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetShaderCache()
         {
-            _lastPushedShaderMode = MathLodMode.Low;
             _lastPushedShaderWeight = -1f;
             _hasPushedShaderMode = false;
-            _pendingShaderMode = MathLodMode.Low;
             _pendingShaderWeight = -1f;
             _hasPendingShaderState = false;
         }
@@ -191,7 +187,7 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void PushShaderMathLod(MathLodMode mode)
         {
-            PushShaderMathLod(mode == MathLodMode.High ? 1f : 0f, mode);
+            QueueShaderMathLod(mode == MathLodMode.High ? 1f : 0f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -200,14 +196,14 @@ namespace Hecton8.Core
             float safeBudget = math.max(0.0001f, highQualityBudgetMilliseconds);
             float safeFrame = math.select(safeBudget, math.max(0f, frameTimeMilliseconds), math.isfinite(frameTimeMilliseconds));
             float pressure = math.saturate((safeFrame - safeBudget) * math.rcp(safeBudget));
-            PushShaderMathLod(1f - pressure);
+            QueueShaderMathLod(1f - pressure);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void PushShaderMathLod(float globalQualityWeight)
         {
             float quality = SanitizeQualityWeight01(globalQualityWeight);
-            PushShaderMathLod(quality, ResolveMathLodMode(quality));
+            QueueShaderMathLod(quality);
         }
 
         public static void FlushVisualSyncShaderState()
@@ -215,12 +211,10 @@ namespace Hecton8.Core
             if (!_hasPendingShaderState)
                 return;
 
-            MathLodMode mode = _pendingShaderMode;
             float quality = _pendingShaderWeight;
             _hasPendingShaderState = false;
 
             if (_hasPushedShaderMode &&
-                _lastPushedShaderMode == mode &&
                 math.abs(_lastPushedShaderWeight - quality) < ShaderQualityEpsilon)
             {
                 return;
@@ -229,7 +223,6 @@ namespace Hecton8.Core
             Shader.SetGlobalFloat(_mathLodModePropertyId, quality);
             Shader.SetGlobalFloat(_mathLodWeightPropertyId, quality);
             Shader.SetGlobalFloat(_mathLodDistanceSqPropertyId, HighQualityDistanceSq);
-            _lastPushedShaderMode = mode;
             _lastPushedShaderWeight = quality;
             _hasPushedShaderMode = true;
         }
@@ -244,11 +237,10 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void PushShaderMathLod(float globalQualityWeight, MathLodMode legacyMode)
+        private static void QueueShaderMathLod(float globalQualityWeight)
         {
             float quality = SanitizeQualityWeight01(globalQualityWeight);
             if (_hasPendingShaderState &&
-                _pendingShaderMode == legacyMode &&
                 math.abs(_pendingShaderWeight - quality) < ShaderQualityEpsilon)
             {
                 return;
@@ -256,13 +248,11 @@ namespace Hecton8.Core
 
             if (!_hasPendingShaderState &&
                 _hasPushedShaderMode &&
-                _lastPushedShaderMode == legacyMode &&
                 math.abs(_lastPushedShaderWeight - quality) < ShaderQualityEpsilon)
             {
                 return;
             }
 
-            _pendingShaderMode = legacyMode;
             _pendingShaderWeight = quality;
             _hasPendingShaderState = true;
         }

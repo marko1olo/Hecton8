@@ -248,12 +248,19 @@ namespace Hecton8.Physics.KCC.Editor
             if (!vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer))
                 return false;
 
-            if (buffer.IsCreated && buffer.Length >= requiredLength)
-                return true;
+            try
+            {
+                if (buffer.IsCreated && buffer.Length >= requiredLength)
+                    return true;
 
-            vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
-            buffer = default;
-            return false;
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (!buffer.IsCreated)
+                    vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            }
         }
 
         private static KccEnvironmentProfileDTO DefaultEnvironmentProfile()

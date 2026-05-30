@@ -188,6 +188,9 @@ namespace Hecton8.Core
         public static SceneRuntimeService EnsureRuntimeInstance()
         {
             SceneRuntimeService sceneRuntime = GlobalRegistry.SceneRuntime;
+            if (sceneRuntime == null)
+                sceneRuntime = GlobalRegistry.Scene as SceneRuntimeService;
+
             if (sceneRuntime != null)
                 return sceneRuntime;
 
@@ -209,6 +212,9 @@ namespace Hecton8.Core
         /// </summary>
         public void InitializeService()
         {
+            if (!EnsureRuntimeOwnership())
+                return;
+
             GlobalRegistry.RegisterSceneRuntime(this);
             H8Memory.Initialize();
             _dataVault = GlobalRegistry.DataVault;
@@ -346,13 +352,7 @@ namespace Hecton8.Core
 
         private void Awake()
         {
-            SceneRuntimeService activeRuntime = GlobalRegistry.SceneRuntime;
-            if (activeRuntime != null && activeRuntime != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
+            RejectDuplicateRuntimeOwner();
         }
 
         private void OnEnable()
@@ -1264,8 +1264,34 @@ namespace Hecton8.Core
             if (_registeredSceneService)
                 return;
 
+            ISceneService registeredScene = GlobalRegistry.Scene;
+            if (registeredScene != null && !ReferenceEquals(registeredScene, this))
+                return;
+
             GlobalRegistry.RegisterSceneService(this);
             _registeredSceneService = ReferenceEquals(GlobalRegistry.Scene, this);
+        }
+
+        private bool EnsureRuntimeOwnership()
+        {
+            if (RejectDuplicateRuntimeOwner())
+                return false;
+
+            GlobalRegistry.RegisterSceneRuntime(this);
+            return ReferenceEquals(GlobalRegistry.SceneRuntime, this);
+        }
+
+        private bool RejectDuplicateRuntimeOwner()
+        {
+            SceneRuntimeService activeRuntime = GlobalRegistry.SceneRuntime;
+            if (activeRuntime == null)
+                activeRuntime = GlobalRegistry.Scene as SceneRuntimeService;
+
+            if (activeRuntime == null || activeRuntime == this)
+                return false;
+
+            Destroy(gameObject);
+            return true;
         }
 
         private void TryUnregisterSceneService()

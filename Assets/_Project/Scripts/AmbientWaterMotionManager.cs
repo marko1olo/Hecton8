@@ -3,8 +3,7 @@
 // Centralized visual bob/sway updater. One tick for many decorative props.
 //
 // v1.1 OPTIMIZATIONS:
-//   [FIX] TryResolveObserver: throttles player resolve until observer exists.
-//         GameBootstrapper/player resolve is skipped each frame while unresolved.
+//   [FIX] Player AUP is consumed through cached IPlayerRuntimeContext only.
 //   [FIX] Register: replaced Contains (O(n)) with HashSet-backed O(1) dedupe.
 //   [FIX] ApplyMotion: caches worldPos from CachedTransform.position once,
 //         then passes it to ShouldUpdate to avoid a second bridge position read.
@@ -12,7 +11,6 @@
 // ============================================================================
 
 using System.Collections.Generic;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.World;
@@ -89,11 +87,13 @@ namespace Hecton8.Physics
         private bool _hasBiomeCurrentTarget;
         private float _pendingVisualDeltaTime;
 
-        // Observer resolve cooldown.
-        // If no observer is assigned or found, avoid hitting bootstrap every frame.
-        private float _observerResolveTimer;
-        private const float ObserverResolveCooldown = 2f;
         private static AmbientWaterMotionManager s_activeRuntime;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeForSubsystemRegistration()
+        {
+            s_activeRuntime = null;
+        }
 
         //  LIFECYCLE
 
@@ -108,8 +108,6 @@ namespace Hecton8.Physics
 
             RefreshDistanceThresholds();
             CacheRegistryServicesCold();
-            // Resolve once during startup; later retries are throttled.
-            TryResolveObserver(force: true);
         }
 
         private void OnEnable()
@@ -221,13 +219,6 @@ namespace Hecton8.Physics
             _frameCounter++;
             _time += deltaTime;
             if (_time > 100000f) _time -= 100000f;
-
-            // Observer lookup is cooled down; this does not run every frame.
-            _observerResolveTimer -= deltaTime;
-            if (_observerResolveTimer <= 0f)
-            {
-                TryResolveObserver(force: false);
-            }
 
             _debugNearCount   = 0;
             _debugMediumCount = 0;
@@ -419,6 +410,13 @@ namespace Hecton8.Physics
                 }
             }
 
+            Transform observer = lodObserver;
+            if (observer != null)
+            {
+                observerAup = AbsoluteUniversePosition.FromRuntimePosition(observer.position);
+                return observerAup.IsFinite();
+            }
+
             observerAup = default;
             return false;
         }
@@ -555,24 +553,6 @@ namespace Hecton8.Physics
 
         void IBiomeMatrixEventListener.OnDepthTierChanged(int depthTier, float depthMeters)
         {
-        }
-
-        //  OBSERVER RESOLVE - cooled down, not every frame
-
-        /// <param name="force">true ignores cooldown during startup.</param>
-        private void TryResolveObserver(bool force = false)
-        {
-            // Existing observer: no lookup.
-            if (lodObserver != null) return;
-
-            // Cooldown still active and not forced: skip.
-            if (!force && _observerResolveTimer > 0f) return;
-
-            // Observer not found now; wait ObserverResolveCooldown seconds.
-            _observerResolveTimer = ObserverResolveCooldown;
-
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
-                lodObserver = playerTransform;
         }
 
         private void RefreshDistanceThresholds()

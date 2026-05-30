@@ -116,6 +116,7 @@ namespace Hecton8.Meta
         private readonly HashSet<uint> _globalUnlockedAchievementHashes = new HashSet<uint>(GlobalProfileData.MaxUnlockedAchievements);
         private HectonSurvivalSystem _survivalSystem;
         private HectonDiscoveryManager _discoveryManager;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private GlobalProfileData _profile = new GlobalProfileData();
         private bool _registeredToTick;
         private bool _registeredToUpdate;
@@ -248,6 +249,7 @@ namespace Hecton8.Meta
         {
             TryRegisterProfileService();
             TryRegisterHotSwapListener();
+            CacheRegistryOwnersCold();
             ResolveOwnersCold();
             TryRegisterWithTickManager();
             TryRegisterWithUpdateDispatcher();
@@ -258,6 +260,7 @@ namespace Hecton8.Meta
         private void Start()
         {
             TryRegisterHotSwapListener();
+            CacheRegistryOwnersCold();
             ResolveOwnersCold();
             TryRegisterWithTickManager();
             TryRegisterWithUpdateDispatcher();
@@ -505,9 +508,9 @@ namespace Hecton8.Meta
 
         private bool ResolveOwnersCold()
         {
-            GameObject playerObject = GameBootstrapper.CurrentPlayerObject;
-            if (_survivalSystem == null && playerObject != null)
-                playerObject.TryGetComponent(out _survivalSystem);
+            IPlayerRuntimeContext playerRuntime = _playerRuntimeContext;
+            if (_survivalSystem == null && playerRuntime != null)
+                _survivalSystem = playerRuntime.SurvivalSystem;
 
             if (_discoveryManager == null)
                 _discoveryManager = GlobalRegistry.Discovery;
@@ -517,6 +520,16 @@ namespace Hecton8.Meta
 
             RefreshSurvivalSignalBinding();
             return ResolveOwnersHot();
+        }
+
+        private void CacheRegistryOwnersCold()
+        {
+            _playerRuntimeContext = GlobalRegistry.Player;
+            if (_discoveryManager == null)
+                _discoveryManager = GlobalRegistry.Discovery;
+
+            if (_saveService == null)
+                _saveService = GlobalRegistry.Save;
         }
 
         private void RefreshSurvivalSignalBinding()
@@ -950,6 +963,11 @@ namespace Hecton8.Meta
                     break;
                 case GlobalRegistryServiceSlot.Save:
                     _saveService = currentService as ISaveService;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    _survivalSystem = _playerRuntimeContext != null ? _playerRuntimeContext.SurvivalSystem : null;
+                    RefreshSurvivalSignalBinding();
                     break;
             }
         }

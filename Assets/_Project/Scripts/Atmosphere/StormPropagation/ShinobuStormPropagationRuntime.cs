@@ -49,7 +49,6 @@ namespace Hecton8.Atmosphere
         private VaultGenerationHandle<MockHurricaneStateDTO> _mockWeatherHandle;
         private VaultGenerationHandle<StormDepthImpactProfileDTO> _profilesHandle;
 #if UNITY_EDITOR
-        private VaultGenerationHandle<byte> _csvScratchHandle;
         private byte[] _impactCsvManagedScratch;
 #endif
         private VaultGenerationHandle<float4> _flowScalarHandle;
@@ -497,10 +496,6 @@ namespace Hecton8.Atmosphere
                 _mockWeatherHandle = vault.EnsureGenerationHandle<MockHurricaneStateDTO>(BufferID.ShinobuStormPropagationMockWeather, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
             if (!IsHabitatAtmosphereHandle(in _profilesHandle, BufferID.ShinobuStormPropagationImpactProfiles))
                 _profilesHandle = vault.EnsureGenerationHandle<StormDepthImpactProfileDTO>(BufferID.ShinobuStormPropagationImpactProfiles, ShinobuStormPropagationConstants.ImpactProfileCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
-#if UNITY_EDITOR
-            if (!IsHabitatAtmosphereHandle(in _csvScratchHandle, BufferID.ShinobuStormPropagationCsvScratch))
-                _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.ShinobuStormPropagationCsvScratch, ShinobuStormPropagationConstants.CsvScratchBytes, OwnerSystem, NativeArrayOptions.ClearMemory);
-#endif
             EnsureDumpManagedScratchCold();
             EnsureJobStagingCold();
             if (!IsHabitatAtmosphereHandle(in _flowScalarHandle, BufferID.ShinobuStormPropagationFlowScalar))
@@ -556,9 +551,6 @@ namespace Hecton8.Atmosphere
             _telemetryCursorHandle = default;
             _mockWeatherHandle = default;
             _profilesHandle = default;
-#if UNITY_EDITOR
-            _csvScratchHandle = default;
-#endif
             _flowScalarHandle = default;
             _audioScalarHandle = default;
             _biolumScalarHandle = default;
@@ -576,9 +568,6 @@ namespace Hecton8.Atmosphere
             ReleaseOwnedVaultHandle(vault, ref _telemetryCursorHandle, BufferID.ShinobuStormPropagationTelemetryCursor);
             ReleaseOwnedVaultHandle(vault, ref _mockWeatherHandle, BufferID.ShinobuStormPropagationMockWeather);
             ReleaseOwnedVaultHandle(vault, ref _profilesHandle, BufferID.ShinobuStormPropagationImpactProfiles);
-#if UNITY_EDITOR
-            ReleaseOwnedVaultHandle(vault, ref _csvScratchHandle, BufferID.ShinobuStormPropagationCsvScratch);
-#endif
             ReleaseOwnedVaultHandle(vault, ref _flowScalarHandle, BufferID.ShinobuStormPropagationFlowScalar);
             ReleaseOwnedVaultHandle(vault, ref _audioScalarHandle, BufferID.ShinobuStormPropagationAudioScalar);
             ReleaseOwnedVaultHandle(vault, ref _biolumScalarHandle, BufferID.ShinobuStormPropagationBiolumScalar);
@@ -1212,80 +1201,52 @@ namespace Hecton8.Atmosphere
         private bool TryCopyTelemetryDumpSnapshot(uint reasonFlags, uint stateHash, byte[] scratch, out int byteCount)
         {
             byteCount = 0;
-            bool cursorLocked = false;
-            try
+            IDataVault vault = _vault;
+            if (vault == null ||
+                scratch == null ||
+                scratch.Length < ShinobuStormPropagationConstants.DumpScratchBytes ||
+                !vault.TryReadOnlyHandle(in _telemetryCursorHandle, out NativeArray<int>.ReadOnly cursor) ||
+                cursor.Length <= 0 ||
+                !vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<StormPropagationTelemetryEntry>.ReadOnly telemetry) ||
+                telemetry.Length <= 0)
             {
-                if (!TryAcquireStormBufferGuard(BufferID.ShinobuStormPropagationTelemetryCursor))
-                    return false;
+                return false;
+            }
 
-                cursorLocked = true;
-                if (!Resolve(in _telemetryCursorHandle, BufferID.ShinobuStormPropagationTelemetryCursor, out NativeArray<int> cursor) ||
-                    cursor.Length <= 0 ||
-                    scratch.Length < ShinobuStormPropagationConstants.DumpScratchBytes)
+            StormPropagationDumpHeader header = default;
+            header.Magic = ShinobuStormPropagationConstants.DumpMagic;
+            header.ReasonFlags = reasonFlags;
+            header.WriteCursor = cursor[0];
+            header.EntryCount = math.min(telemetry.Length, ShinobuStormPropagationConstants.TelemetryFrameCount);
+            header.EntryStrideBytes = ShinobuStormPropagationConstants.TelemetryEntryStrideBytes;
+            header.SourceHash = ShinobuStormPropagationConstants.SourceHash;
+            header.StateHash = stateHash;
+            header.Reserved = 0u;
+
+            if (header.EntryCount <= 0)
+                return false;
+
+            fixed (byte* scratchPtr = scratch)
+            {
+                void* headerPtr = UnsafeUtility.AddressOf(ref header);
+                UnsafeUtility.MemCpy(scratchPtr, headerPtr, UnsafeUtility.SizeOf<StormPropagationDumpHeader>());
+                byte* telemetryPtr = (byte*)telemetry.GetUnsafeReadOnlyPtr();
+                int safeWriteCursor = ((header.WriteCursor % header.EntryCount) + header.EntryCount) % header.EntryCount;
+                StormPropagationTelemetryEntry newestCandidate = telemetry[safeWriteCursor];
+                int oldestIndex = newestCandidate.Frame != 0u ? safeWriteCursor : 0;
+                byte* dumpEntryPtr = scratchPtr + UnsafeUtility.SizeOf<StormPropagationDumpHeader>();
+                for (int i = 0; i < header.EntryCount; i++)
                 {
-                    return false;
-                }
-
-                int writeCursor = ShinobuStormPropagationNative.ReadElement(cursor, 0);
-                cursorLocked = false;
-                ReleaseStormBufferGuard(BufferID.ShinobuStormPropagationTelemetryCursor);
-
-                bool telemetryLocked = false;
-                try
-                {
-                    if (!TryAcquireStormBufferGuard(BufferID.ShinobuStormPropagationTelemetryRing))
-                        return false;
-
-                    telemetryLocked = true;
-                    if (!Resolve(in _telemetryHandle, BufferID.ShinobuStormPropagationTelemetryRing, out NativeArray<StormPropagationTelemetryEntry> telemetry) ||
-                        telemetry.Length <= 0 ||
-                        scratch.Length < ShinobuStormPropagationConstants.DumpScratchBytes)
-                    {
-                        return false;
-                    }
-
-                    StormPropagationDumpHeader header = default;
-                    header.Magic = ShinobuStormPropagationConstants.DumpMagic;
-                    header.ReasonFlags = reasonFlags;
-                    header.WriteCursor = writeCursor;
-                    header.EntryCount = math.min(telemetry.Length, ShinobuStormPropagationConstants.TelemetryFrameCount);
-                    header.EntryStrideBytes = ShinobuStormPropagationConstants.TelemetryEntryStrideBytes;
-                    header.SourceHash = ShinobuStormPropagationConstants.SourceHash;
-                    header.StateHash = stateHash;
-                    header.Reserved = 0u;
-
-                    fixed (byte* scratchPtr = scratch)
-                    {
-                        void* headerPtr = UnsafeUtility.AddressOf(ref header);
-                        UnsafeUtility.MemCpy(scratchPtr, headerPtr, UnsafeUtility.SizeOf<StormPropagationDumpHeader>());
-                        void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                        int safeWriteCursor = ((header.WriteCursor % header.EntryCount) + header.EntryCount) % header.EntryCount;
-                        StormPropagationTelemetryEntry newestCandidate = ShinobuStormPropagationNative.ReadElement(telemetry, safeWriteCursor);
-                        int oldestIndex = newestCandidate.Frame != 0u ? safeWriteCursor : 0;
-                        byte* dumpEntryPtr = scratchPtr + UnsafeUtility.SizeOf<StormPropagationDumpHeader>();
-                        for (int i = 0; i < header.EntryCount; i++)
-                        {
-                            int sourceIndex = (oldestIndex + i) % header.EntryCount;
-                            UnsafeUtility.MemCpy(
-                                dumpEntryPtr + (i * ShinobuStormPropagationConstants.TelemetryEntryStrideBytes),
-                                (byte*)telemetryPtr + (sourceIndex * ShinobuStormPropagationConstants.TelemetryEntryStrideBytes),
-                                ShinobuStormPropagationConstants.TelemetryEntryStrideBytes);
-                        }
-                    }
-
-                    byteCount = UnsafeUtility.SizeOf<StormPropagationDumpHeader>() + header.EntryCount * ShinobuStormPropagationConstants.TelemetryEntryStrideBytes;
-                    return true;
-                }
-                finally
-                {
-                    if (telemetryLocked)
-                        ReleaseStormBufferGuard(BufferID.ShinobuStormPropagationTelemetryRing);
+                    int sourceIndex = (oldestIndex + i) % header.EntryCount;
+                    UnsafeUtility.MemCpy(
+                        dumpEntryPtr + (i * ShinobuStormPropagationConstants.TelemetryEntryStrideBytes),
+                        telemetryPtr + (sourceIndex * ShinobuStormPropagationConstants.TelemetryEntryStrideBytes),
+                        ShinobuStormPropagationConstants.TelemetryEntryStrideBytes);
                 }
             }
-            finally
-            {
-                if (cursorLocked) ReleaseStormBufferGuard(BufferID.ShinobuStormPropagationTelemetryCursor);
-            }
+
+            byteCount = UnsafeUtility.SizeOf<StormPropagationDumpHeader>() + header.EntryCount * ShinobuStormPropagationConstants.TelemetryEntryStrideBytes;
+            return true;
         }
 
         private static bool TryWriteTelemetryDumpSnapshotCold(byte[] scratch, int byteCount)

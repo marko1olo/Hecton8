@@ -25,7 +25,6 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory.Layout;
 using Hecton8.Narrative;
 using Hecton8.World;
-using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.SaveSystem
@@ -78,7 +77,7 @@ namespace Hecton8.SaveSystem
         public PlayerKinematicStateDTO playerKinematicState;
         public InventoryDTO inventory;
         public InventoryShadowDTO inventoryShadow;
-        [NonSerialized] internal NativeArray<byte> inventoryShadowPayload;
+        [NonSerialized] internal byte[] inventoryShadowPayload;
         [NonSerialized] internal int inventoryShadowPayloadLength;
         [NonSerialized] internal uint inventoryShadowPayloadHash;
         [NonSerialized] internal bool hasInventoryShadowPayload;

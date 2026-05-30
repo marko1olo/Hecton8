@@ -81,6 +81,38 @@ namespace Hecton8.Tools
         private static readonly int FlashlightConeDataShaderId = Shader.PropertyToID("_HectonFlashlightConeData");
         private static readonly int FlashlightVoxelWorldToLocalShaderId = Shader.PropertyToID("_HectonFlashlightVoxelWorldToLocal");
         private static readonly int FlashlightVoxelHalfExtentsShaderId = Shader.PropertyToID("_HectonFlashlightVoxelHalfExtents");
+        private static readonly ulong EquipmentFaultTelemetryMutationGuardMask =
+            EquipmentMutationGuardBit(BufferID.ShinobuActiveEquipmentTelemetryRing) |
+            EquipmentMutationGuardBit(BufferID.ShinobuActiveEquipmentTelemetryCursor);
+        private static readonly ulong EquipmentViewsMutationGuardMask =
+            EquipmentMutationGuardBit(BufferID.ShinobuActiveEquipmentToolStates) |
+            EquipmentMutationGuardBit(BufferID.ShinobuActiveEquipmentToolStats) |
+            EquipmentMutationGuardBit(BufferID.ShinobuActiveEquipmentToolTypes) |
+            EquipmentMutationGuardBit(BufferID.ToolRuntimeHeat01) |
+            EquipmentMutationGuardBit(BufferID.ToolRuntimeBatteryCharge) |
+            EquipmentMutationGuardBit(BufferID.ShinobuActiveEquipmentStatusMasks) |
+            EquipmentMutationGuardBit(BufferID.ShinobuActiveEquipmentEnvironmentHeat01) |
+            EquipmentMutationGuardBit(BufferID.ShinobuActiveEquipmentState) |
+            EquipmentMutationGuardBit(BufferID.ShinobuActiveEquipmentPublishedState) |
+            EquipmentMutationGuardBit(BufferID.ShinobuActiveEquipmentAupSamples) |
+            EquipmentMutationGuardBit(BufferID.ShinobuActiveEquipmentGridLoadRequests) |
+            EquipmentMutationGuardBit(BufferID.ShinobuActiveEquipmentWearDrainRates) |
+            EquipmentMutationGuardBit(BufferID.ShinobuActiveEquipmentTelemetryRing) |
+            EquipmentMutationGuardBit(BufferID.ShinobuActiveEquipmentTelemetryCursor) |
+            EquipmentMutationGuardBit(FlashlightTelemetryRingBufferId) |
+            EquipmentMutationGuardBit(FlashlightTelemetryCursorBufferId) |
+            EquipmentMutationGuardBit(BufferID.ShinobuActiveEquipmentIntegrationCounters) |
+            EquipmentMutationGuardBit(BufferID.ShinobuActiveEquipmentTuning) |
+            EquipmentMutationGuardBit(BufferID.ShinobuActiveEquipmentHardwareSpecs) |
+            EquipmentMutationGuardBit(UpgradeMatrixConstants.UpgradeMasksBuffer) |
+            EquipmentMutationGuardBit(UpgradeMatrixConstants.UpgradeBaseStatsBuffer) |
+            EquipmentMutationGuardBit(UpgradeMatrixConstants.UpgradeCompiledStatsBuffer) |
+            EquipmentMutationGuardBit(UpgradeMatrixConstants.UpgradeLutBuffer) |
+            EquipmentMutationGuardBit(UpgradeMatrixConstants.UpgradeToolModuleRulesBuffer) |
+            EquipmentMutationGuardBit(UpgradeMatrixConstants.UpgradeToolProfilesBuffer) |
+            EquipmentMutationGuardBit(UpgradeMatrixConstants.UpgradeTelemetryRingBuffer) |
+            EquipmentMutationGuardBit(UpgradeMatrixConstants.UpgradeTelemetryCursorBuffer) |
+            EquipmentMutationGuardBit(UpgradeMatrixConstants.UpgradeVisualStateBuffer);
 
         // COLD ALLOC: PlayerTool[16] — managed owner mirror for native tool slots — owner: ModularEquipmentEngine
         private readonly PlayerTool[] _toolOwners = new PlayerTool[MaxTrackedTools];
@@ -160,8 +192,7 @@ namespace Hecton8.Tools
         private JobHandle _equipmentIntegrationHandle;
         private IDataVault _equipmentIntegrationWriteLockVault;
         private int _equipmentIntegrationWriteLockCount;
-        private IDataVault _equipmentPendingReleaseVault;
-        private uint _equipmentPendingReleaseMask;
+        private ulong _equipmentIntegrationWriteGuardMask;
 
         private ref struct EquipmentVaultViews
         {
@@ -195,6 +226,7 @@ namespace Hecton8.Tools
             public EquipmentVaultView<int> UpgradeTelemetryCursor;
             public EquipmentVaultView<UpgradeVisualStateDTO> UpgradeVisualStates;
             public int WriteLockCount;
+            public ulong MutationGuardMask;
         }
 
         public bool IsInitialized => _isInitialized;
@@ -1274,14 +1306,15 @@ namespace Hecton8.Tools
             if (vault == null)
                 return false;
 
-            if (!TryFlushPendingEquipmentWriteLockReleases())
+            if (createIfMissing && !EnsureEquipmentViews(vault, out _, createIfMissing: true))
+                return false;
+
+            ulong guardMask = EquipmentViewsMutationGuardMask;
+            if (!vault.TryAcquireMutationGuard(guardMask))
             {
                 TryRecordEquipmentWriteLockContention();
                 return false;
             }
-
-            if (createIfMissing && !EnsureEquipmentViews(vault, out _, createIfMissing: true))
-                return false;
 
             int acquiredCount = 0;
             bool acquiredAll = false;
@@ -1349,6 +1382,7 @@ namespace Hecton8.Tools
 
                 views.Vault = vault;
                 views.WriteLockCount = acquiredCount;
+                views.MutationGuardMask = guardMask;
                 acquiredAll = true;
                 return true;
             }
@@ -1356,7 +1390,7 @@ namespace Hecton8.Tools
             {
                 if (!acquiredAll)
                 {
-                    ReleaseEquipmentWriteLocks(vault, acquiredCount);
+                    vault.ReleaseMutationGuard(guardMask);
                     views = default;
                     TryRecordEquipmentWriteLockContention();
                 }
@@ -1371,49 +1405,32 @@ namespace Hecton8.Tools
             where T : unmanaged
         {
             view = default;
-            if (vault == null ||
-                requiredLength <= 0 ||
-                !IsVaultGenerationHandleCreated(in handle))
-            {
+            if (!TryResolveEquipmentBuffer(vault, in handle, requiredLength, out NativeArray<T> buffer))
                 return false;
-            }
 
-            bool acquired = false;
-            try
-            {
-                if (!vault.TryAcquireWriteLock(in handle, EquipmentVaultOwnerSystemId, out NativeArray<T> buffer))
-                    return false;
-
-                acquired = true;
-                if (!buffer.IsCreated || buffer.Length < requiredLength)
-                    return false;
-
-                view = new EquipmentVaultView<T>(buffer);
-                acquired = false;
-                return true;
-            }
-            finally
-            {
-                if (acquired)
-                    vault.ReleaseWriteLock(in handle, EquipmentVaultOwnerSystemId);
-            }
+            view = new EquipmentVaultView<T>(buffer);
+            return true;
         }
 
         private void ReleaseEquipmentWriteLocks(ref EquipmentVaultViews views)
         {
             IDataVault vault = views.Vault;
             int acquiredCount = views.WriteLockCount;
+            ulong guardMask = views.MutationGuardMask;
             views.Vault = null;
             views.WriteLockCount = 0;
-            ReleaseEquipmentWriteLocks(vault, acquiredCount);
+            views.MutationGuardMask = 0UL;
+            ReleaseEquipmentWriteLocks(vault, acquiredCount, guardMask);
         }
 
         private void CaptureEquipmentIntegrationWriteLocks(ref EquipmentVaultViews views)
         {
             _equipmentIntegrationWriteLockVault = views.Vault;
             _equipmentIntegrationWriteLockCount = views.WriteLockCount;
+            _equipmentIntegrationWriteGuardMask = views.MutationGuardMask;
             views.Vault = null;
             views.WriteLockCount = 0;
+            views.MutationGuardMask = 0UL;
         }
 
         private bool TryResolveCapturedEquipmentIntegrationViews(out EquipmentVaultViews views)
@@ -1425,98 +1442,31 @@ namespace Hecton8.Tools
                 return false;
             }
 
-            return EnsureEquipmentViews(_equipmentIntegrationWriteLockVault, out views);
+            if (!EnsureEquipmentViews(_equipmentIntegrationWriteLockVault, out views))
+                return false;
+
+            views.WriteLockCount = _equipmentIntegrationWriteLockCount;
+            views.MutationGuardMask = _equipmentIntegrationWriteGuardMask;
+            return true;
         }
 
         private void ReleaseEquipmentIntegrationWriteLocks()
         {
             IDataVault vault = _equipmentIntegrationWriteLockVault;
             int acquiredCount = _equipmentIntegrationWriteLockCount;
+            ulong guardMask = _equipmentIntegrationWriteGuardMask;
             _equipmentIntegrationWriteLockVault = null;
             _equipmentIntegrationWriteLockCount = 0;
-            ReleaseEquipmentWriteLocks(vault, acquiredCount);
+            _equipmentIntegrationWriteGuardMask = 0UL;
+            ReleaseEquipmentWriteLocks(vault, acquiredCount, guardMask);
         }
 
-        private void ReleaseEquipmentWriteLocks(IDataVault vault, int acquiredCount)
+        private void ReleaseEquipmentWriteLocks(IDataVault vault, int acquiredCount, ulong guardMask)
         {
-            uint lockMask = CreateEquipmentWriteLockMask(acquiredCount);
-            if (lockMask == 0u)
+            if (vault == null || acquiredCount <= 0 || guardMask == 0UL)
                 return;
 
-            uint failedMask = ReleaseEquipmentWriteLockMask(vault, lockMask);
-            if (failedMask == 0u)
-                return;
-
-            _equipmentPendingReleaseVault = vault;
-            _equipmentPendingReleaseMask |= failedMask;
-            TryRecordEquipmentWriteLockContention(EquipmentFaultWriteLockReleaseFailure);
-        }
-
-        private static uint CreateEquipmentWriteLockMask(int acquiredCount)
-        {
-            if (acquiredCount <= 0)
-                return 0u;
-
-            if (acquiredCount >= EquipmentWriteLockBufferCount)
-                return (1u << EquipmentWriteLockBufferCount) - 1u;
-
-            return (1u << acquiredCount) - 1u;
-        }
-
-        private bool TryFlushPendingEquipmentWriteLockReleases()
-        {
-            uint pendingMask = _equipmentPendingReleaseMask;
-            if (pendingMask == 0u)
-                return true;
-
-            IDataVault vault = _equipmentPendingReleaseVault;
-            uint failedMask = ReleaseEquipmentWriteLockMask(vault, pendingMask);
-            if (failedMask == 0u)
-            {
-                _equipmentPendingReleaseVault = null;
-                _equipmentPendingReleaseMask = 0u;
-                return true;
-            }
-
-            _equipmentPendingReleaseMask = failedMask;
-            return false;
-        }
-
-        private uint ReleaseEquipmentWriteLockMask(IDataVault vault, uint lockMask)
-        {
-            if (vault == null)
-                return lockMask;
-
-            uint failedMask = 0u;
-            if ((lockMask & (1u << 27)) != 0u && !vault.ReleaseWriteLock(in _upgradeMatrixVisualStatesHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 27;
-            if ((lockMask & (1u << 26)) != 0u && !vault.ReleaseWriteLock(in _upgradeMatrixTelemetryCursorHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 26;
-            if ((lockMask & (1u << 25)) != 0u && !vault.ReleaseWriteLock(in _upgradeMatrixTelemetryRingHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 25;
-            if ((lockMask & (1u << 24)) != 0u && !vault.ReleaseWriteLock(in _upgradeMatrixToolProfilesHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 24;
-            if ((lockMask & (1u << 23)) != 0u && !vault.ReleaseWriteLock(in _upgradeMatrixToolRulesHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 23;
-            if ((lockMask & (1u << 22)) != 0u && !vault.ReleaseWriteLock(in _upgradeMatrixToolLutHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 22;
-            if ((lockMask & (1u << 21)) != 0u && !vault.ReleaseWriteLock(in _upgradeMatrixCompiledStatsHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 21;
-            if ((lockMask & (1u << 20)) != 0u && !vault.ReleaseWriteLock(in _upgradeMatrixBaseStatsHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 20;
-            if ((lockMask & (1u << 19)) != 0u && !vault.ReleaseWriteLock(in _upgradeMatrixMasksHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 19;
-            if ((lockMask & (1u << 18)) != 0u && !vault.ReleaseWriteLock(in _equipmentHardwareSpecsHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 18;
-            if ((lockMask & (1u << 17)) != 0u && !vault.ReleaseWriteLock(in _equipmentTuningHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 17;
-            if ((lockMask & (1u << 16)) != 0u && !vault.ReleaseWriteLock(in _equipmentIntegrationCountersHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 16;
-            if ((lockMask & (1u << 15)) != 0u && !vault.ReleaseWriteLock(in _flashlightTelemetryCursorHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 15;
-            if ((lockMask & (1u << 14)) != 0u && !vault.ReleaseWriteLock(in _flashlightTelemetryRingHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 14;
-            if ((lockMask & (1u << 13)) != 0u && !vault.ReleaseWriteLock(in _equipmentTelemetryCursorHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 13;
-            if ((lockMask & (1u << 12)) != 0u && !vault.ReleaseWriteLock(in _equipmentTelemetryRingHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 12;
-            if ((lockMask & (1u << 11)) != 0u && !vault.ReleaseWriteLock(in _activeEquipmentWearDrainRatesHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 11;
-            if ((lockMask & (1u << 10)) != 0u && !vault.ReleaseWriteLock(in _activeEquipmentGridLoadRequestsHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 10;
-            if ((lockMask & (1u << 9)) != 0u && !vault.ReleaseWriteLock(in _activeEquipmentAupSamplesHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 9;
-            if ((lockMask & (1u << 8)) != 0u && !vault.ReleaseWriteLock(in _publishedActiveEquipmentStatesHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 8;
-            if ((lockMask & (1u << 7)) != 0u && !vault.ReleaseWriteLock(in _activeEquipmentStatesHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 7;
-            if ((lockMask & (1u << 6)) != 0u && !vault.ReleaseWriteLock(in _environmentHeat01Handle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 6;
-            if ((lockMask & (1u << 5)) != 0u && !vault.ReleaseWriteLock(in _statusMasksHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 5;
-            if ((lockMask & (1u << 4)) != 0u && !vault.ReleaseWriteLock(in _batteryChargeHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 4;
-            if ((lockMask & (1u << 3)) != 0u && !vault.ReleaseWriteLock(in _currentHeatHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 3;
-            if ((lockMask & (1u << 2)) != 0u && !vault.ReleaseWriteLock(in _toolTypesHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 2;
-            if ((lockMask & (1u << 1)) != 0u && !vault.ReleaseWriteLock(in _toolStatsHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u << 1;
-            if ((lockMask & 1u) != 0u && !vault.ReleaseWriteLock(in _toolStatesHandle, EquipmentVaultOwnerSystemId)) failedMask |= 1u;
-            return failedMask;
+            vault.ReleaseMutationGuard(guardMask);
         }
 
         private void TryRecordEquipmentWriteLockContention(uint faultFlags = EquipmentFaultWriteLockContention)
@@ -1529,47 +1479,26 @@ namespace Hecton8.Tools
                 return;
             }
 
-            int index = 0;
-            int nextIndex = 0;
-            bool cursorReleaseDeferred = false;
-            if (!vault.TryAcquireWriteLock(in _equipmentTelemetryCursorHandle, EquipmentVaultOwnerSystemId, out NativeArray<int> cursor))
+            if (!vault.TryAcquireMutationGuard(EquipmentFaultTelemetryMutationGuardMask))
                 return;
 
             try
             {
-                if (!cursor.IsCreated || cursor.Length <= 0)
-                    return;
-
-                index = math.clamp(cursor[0], 0, EquipmentTelemetryRingLength - 1);
-                nextIndex = index + 1;
-                if (nextIndex >= EquipmentTelemetryRingLength)
-                    nextIndex = 0;
-
-                cursor[0] = nextIndex;
-            }
-            finally
-            {
-                if (!vault.ReleaseWriteLock(in _equipmentTelemetryCursorHandle, EquipmentVaultOwnerSystemId))
+                if (!vault.TryResolveHandle(in _equipmentTelemetryCursorHandle, out NativeArray<int> cursor) ||
+                    !vault.TryResolveHandle(in _equipmentTelemetryRingHandle, out NativeArray<EquipmentTelemetryEntry> ring) ||
+                    !cursor.IsCreated ||
+                    cursor.Length <= 0 ||
+                    !ring.IsCreated ||
+                    ring.Length <= 0)
                 {
-                    _equipmentPendingReleaseVault = vault;
-                    _equipmentPendingReleaseMask |= 1u << 13;
-                    cursorReleaseDeferred = true;
-                }
-            }
-
-            if (cursorReleaseDeferred)
-                return;
-
-            if (!vault.TryAcquireWriteLock(in _equipmentTelemetryRingHandle, EquipmentVaultOwnerSystemId, out NativeArray<EquipmentTelemetryEntry> ring))
-                return;
-
-            try
-            {
-                if (!ring.IsCreated || ring.Length <= 0)
                     return;
+                }
 
-                if (index >= ring.Length)
-                    index = 0;
+                int ringLength = math.min(ring.Length, EquipmentTelemetryRingLength);
+                int index = math.clamp(cursor[0], 0, ringLength - 1);
+                int nextIndex = index + 1;
+                if (nextIndex >= ringLength)
+                    nextIndex = 0;
 
                 ring[index] = new EquipmentTelemetryEntry
                 {
@@ -1587,16 +1516,18 @@ namespace Hecton8.Tools
                     SnapshotHash = 0u,
                     WearDrainNormalized = 0f
                 };
+                cursor[0] = nextIndex;
                 _equipmentFaultDumpPending = true;
             }
             finally
             {
-                if (!vault.ReleaseWriteLock(in _equipmentTelemetryRingHandle, EquipmentVaultOwnerSystemId))
-                {
-                    _equipmentPendingReleaseVault = vault;
-                    _equipmentPendingReleaseMask |= 1u << 12;
-                }
+                vault.ReleaseMutationGuard(EquipmentFaultTelemetryMutationGuardMask);
             }
+        }
+
+        private static ulong EquipmentMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)bufferId) & 31);
         }
 
         private static bool TryResolveEquipmentBuffer<T>(
@@ -3645,14 +3576,13 @@ namespace Hecton8.Tools
             else
                 ReleaseEquipmentIntegrationWriteLocks();
 
-            return TryFlushPendingEquipmentWriteLockReleases();
+            return true;
         }
 
         private bool TryReleaseEquipmentVaultHandlesForLifecycle(IDataVault vault)
         {
-            bool pendingReleasesFlushed = TryFlushPendingEquipmentWriteLockReleases();
             bool buffersReleased = ReleaseEquipmentVaultHandles(vault);
-            if (pendingReleasesFlushed && buffersReleased)
+            if (buffersReleased)
             {
                 ClearEquipmentVaultHandles();
                 return true;

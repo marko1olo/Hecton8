@@ -406,6 +406,12 @@ namespace Hecton8.Construction
         private static bool s_HolographyTelemetryDumped;
         private static int s_ModuleReadFenceDepth;
         private static int s_ModuleWriteFence;
+        private static ConstructionSocketModuleDTO[] s_MockModules;
+        private static SocketStateDTO[] s_MockSockets;
+        private static double3[] s_MockSocketAups;
+        private static int[] s_MockCounters;
+        private static int2[] s_MockCsrRanges;
+        private static int[] s_MockCsrTargetIndices;
 
         public static bool ValidateStructLayout()
         {
@@ -687,98 +693,100 @@ namespace Hecton8.Construction
             try
             {
                 InitializeVault(vault);
-                bool modulesLocked = false;
-                bool socketsLocked = false;
-                bool socketAupsLocked = false;
-                bool countersLocked = false;
-                bool csrRangesLocked = false;
-                bool csrTargetIndicesLocked = false;
-                try
+                if (!EnsureMockGenerationScratchCold())
+                    return false;
+
+                int moduleCount = math.min(MockModuleCount, s_MockModules.Length);
+                int socketCapacity = math.min(MockSocketCount, math.min(s_MockSockets.Length, s_MockSocketAups.Length));
+                int csrTargetCapacity = math.min(SocketCsrTargetIndexCapacity, s_MockCsrTargetIndices.Length);
+                const float spacing = 6f;
+
+                ClearCounterLane(s_MockCounters);
+
+                for (int i = 0; i < moduleCount; i++)
                 {
-                    if (!TryAcquireWriteLane(vault, in s_ModuleHandle, BufferID.ConstructionSocketModules, out NativeArray<ConstructionSocketModuleDTO> modules))
-                        return false;
-                    modulesLocked = true;
-                    if (!TryAcquireWriteLane(vault, in s_SocketStatesHandle, BufferID.ConstructionSocketStates, out NativeArray<SocketStateDTO> sockets))
-                        return false;
-                    socketsLocked = true;
-                    if (!TryAcquireWriteLane(vault, in s_SocketAupHandle, BufferID.ConstructionSocketAup, out NativeArray<double3> socketAups))
-                        return false;
-                    socketAupsLocked = true;
-                    if (!TryAcquireWriteLane(vault, in s_CountersHandle, BufferID.ConstructionSocketCounters, out NativeArray<int> counters))
-                        return false;
-                    countersLocked = true;
-                    if (!TryAcquireWriteLane(vault, in s_SocketCsrRangesHandle, SocketCsrRangesBufferId, out NativeArray<int2> csrRanges))
-                        return false;
-                    csrRangesLocked = true;
-                    if (!TryAcquireWriteLane(vault, in s_SocketCsrTargetIndicesHandle, SocketCsrTargetIndicesBufferId, out NativeArray<int> csrTargetIndices))
-                        return false;
-                    csrTargetIndicesLocked = true;
+                    int gridX = i % 25;
+                    int gridZ = i / 25;
+                    double3 root = new double3(gridX * spacing, -40.0, gridZ * spacing);
+                    int socketStart = i * MockSocketsPerModule;
+                    ConstructionSocketModuleDTO module;
+                    module.RootAup = root;
+                    module.Rotation = quaternion.identity;
+                    module.BoundsCenter = float3.zero;
+                    module.BoundsExtents = new float3(2f, 1.5f, 2f);
+                    module.ModuleHash = 0x53484E00u + (uint)i;
+                    module.SocketStart = socketStart;
+                    module.SocketCount = socketStart + MockSocketsPerModule <= socketCapacity ? MockSocketsPerModule : 0;
+                    module.Flags = 0u;
+                    module.TopologyVersion = 1u;
+                    module.DearLieDampen = 0f;
+                    module.ConnectedMask = 0u;
+                    module.SceneModuleListIndex = -1;
+                    s_MockModules[i] = module;
 
-                    int moduleCount = math.min(MockModuleCount, modules.Length);
-                    int socketCapacity = math.min(MockSocketCount, math.min(sockets.Length, socketAups.Length));
-                    const float spacing = 6f;
-
-                    ClearCounterLane(counters);
-
-                    for (int i = 0; i < moduleCount; i++)
+                    for (int s = 0; s < module.SocketCount; s++)
                     {
-                        int gridX = i % 25;
-                        int gridZ = i / 25;
-                        double3 root = new double3(gridX * spacing, -40.0, gridZ * spacing);
-                        int socketStart = i * MockSocketsPerModule;
-                        ConstructionSocketModuleDTO module;
-                        module.RootAup = root;
-                        module.Rotation = quaternion.identity;
-                        module.BoundsCenter = float3.zero;
-                        module.BoundsExtents = new float3(2f, 1.5f, 2f);
-                        module.ModuleHash = 0x53484E00u + (uint)i;
-                        module.SocketStart = socketStart;
-                        module.SocketCount = socketStart + MockSocketsPerModule <= socketCapacity ? MockSocketsPerModule : 0;
-                        module.Flags = 0u;
-                        module.TopologyVersion = 1u;
-                        module.DearLieDampen = 0f;
-                        module.ConnectedMask = 0u;
-                        module.SceneModuleListIndex = -1;
-                        modules[i] = module;
-
-                        for (int s = 0; s < module.SocketCount; s++)
-                        {
-                            int socketIndex = socketStart + s;
-                            byte direction = (byte)s;
-                            float3 normal = DirectionToNormal(direction);
-                            double3 local = new double3(normal.x * 2.0, normal.y * 1.5, normal.z * 2.0);
-                            SocketStateDTO socket = default;
-                            socket.LocalOffset = local;
-                            socket.NormalDirection = normal;
-                            socket.AllowedConnectionBitmask = PackAllowedConnectionBitmask(direction, UniversalCompatibilityHash24);
-                            socket.ParentModuleHash = module.ModuleHash;
-                            socket.ConnectionStatus = 0u;
-                            sockets[socketIndex] = socket;
-                            socketAups[socketIndex] = root + local;
-                        }
+                        int socketIndex = socketStart + s;
+                        byte direction = (byte)s;
+                        float3 normal = DirectionToNormal(direction);
+                        double3 local = new double3(normal.x * 2.0, normal.y * 1.5, normal.z * 2.0);
+                        SocketStateDTO socket = default;
+                        socket.LocalOffset = local;
+                        socket.NormalDirection = normal;
+                        socket.AllowedConnectionBitmask = PackAllowedConnectionBitmask(direction, UniversalCompatibilityHash24);
+                        socket.ParentModuleHash = module.ModuleHash;
+                        socket.ConnectionStatus = 0u;
+                        s_MockSockets[socketIndex] = socket;
+                        s_MockSocketAups[socketIndex] = root + local;
                     }
-
-                    if (counters.Length >= 4)
-                    {
-                        counters[0] = moduleCount;
-                        counters[1] = math.min(moduleCount * MockSocketsPerModule, socketCapacity);
-                        counters[2] = 1;
-                        counters[3] = 0;
-                        if (counters.Length > CounterMagicIndex)
-                            counters[CounterMagicIndex] = CounterMagic;
-                    }
-
-                    return BuildSocketDirectionCsr(sockets, math.min(moduleCount * MockSocketsPerModule, socketCapacity), csrRanges, csrTargetIndices);
                 }
-                finally
+
+                int activeSocketCount = math.min(moduleCount * MockSocketsPerModule, socketCapacity);
+                if (s_MockCounters.Length >= 4)
                 {
-                    ReleaseGenerateMockWriteLocks(vault, csrTargetIndicesLocked, csrRangesLocked, countersLocked, socketAupsLocked, socketsLocked, modulesLocked);
+                    s_MockCounters[0] = moduleCount;
+                    s_MockCounters[1] = activeSocketCount;
+                    s_MockCounters[2] = 1;
+                    s_MockCounters[3] = 0;
+                    if (s_MockCounters.Length > CounterMagicIndex)
+                        s_MockCounters[CounterMagicIndex] = CounterMagic;
                 }
+
+                if (!BuildSocketDirectionCsrStaged(s_MockSockets, activeSocketCount, s_MockCsrRanges, s_MockCsrTargetIndices))
+                    return false;
+
+                if (!TryInvalidateCounterLane(vault))
+                    return false;
+
+                return TryPublishWriteLane(vault, in s_ModuleHandle, BufferID.ConstructionSocketModules, s_MockModules, moduleCount) &&
+                       TryPublishWriteLane(vault, in s_SocketStatesHandle, BufferID.ConstructionSocketStates, s_MockSockets, socketCapacity) &&
+                       TryPublishWriteLane(vault, in s_SocketAupHandle, BufferID.ConstructionSocketAup, s_MockSocketAups, socketCapacity) &&
+                       TryPublishWriteLane(vault, in s_SocketCsrRangesHandle, SocketCsrRangesBufferId, s_MockCsrRanges, SocketDirectionCount) &&
+                       TryPublishWriteLane(vault, in s_SocketCsrTargetIndicesHandle, SocketCsrTargetIndicesBufferId, s_MockCsrTargetIndices, math.min(activeSocketCount, csrTargetCapacity)) &&
+                       TryPublishWriteLane(vault, in s_CountersHandle, BufferID.ConstructionSocketCounters, s_MockCounters, math.min(s_MockCounters.Length, CounterMagicIndex + 1));
             }
             finally
             {
                 EndModuleWriteFence();
             }
+        }
+
+        private static bool EnsureMockGenerationScratchCold()
+        {
+            if (s_MockModules == null || s_MockModules.Length < MockModuleCount)
+                s_MockModules = new ConstructionSocketModuleDTO[MockModuleCount];
+            if (s_MockSockets == null || s_MockSockets.Length < MockSocketCount)
+                s_MockSockets = new SocketStateDTO[MockSocketCount];
+            if (s_MockSocketAups == null || s_MockSocketAups.Length < MockSocketCount)
+                s_MockSocketAups = new double3[MockSocketCount];
+            if (s_MockCounters == null || s_MockCounters.Length < CounterMagicIndex + 1)
+                s_MockCounters = new int[CounterMagicIndex + 1];
+            if (s_MockCsrRanges == null || s_MockCsrRanges.Length < SocketDirectionCount)
+                s_MockCsrRanges = new int2[SocketDirectionCount];
+            if (s_MockCsrTargetIndices == null || s_MockCsrTargetIndices.Length < SocketCsrTargetIndexCapacity)
+                s_MockCsrTargetIndices = new int[SocketCsrTargetIndexCapacity];
+
+            return true;
         }
 
         public static bool BuildSocketDirectionCsr(
@@ -855,6 +863,132 @@ namespace Hecton8.Construction
             return true;
         }
 
+        private static bool BuildSocketDirectionCsrStaged(
+            SocketStateDTO[] sockets,
+            int targetSocketCount,
+            int2[] csrRanges,
+            int[] csrTargetIndices)
+        {
+            if (sockets == null ||
+                csrRanges == null ||
+                csrTargetIndices == null ||
+                csrRanges.Length < SocketDirectionCount)
+            {
+                return false;
+            }
+
+            int safeCount = math.clamp(targetSocketCount, 0, math.min(sockets.Length, csrTargetIndices.Length));
+            int count0 = 0;
+            int count1 = 0;
+            int count2 = 0;
+            int count3 = 0;
+            int count4 = 0;
+            int count5 = 0;
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (!IsOpenFiniteSocket(sockets[i]))
+                    continue;
+
+                switch (ExtractDirection(sockets[i]))
+                {
+                    case 0: count0++; break;
+                    case 1: count1++; break;
+                    case 2: count2++; break;
+                    case 3: count3++; break;
+                    case 4: count4++; break;
+                    case 5: count5++; break;
+                }
+            }
+
+            int start0 = 0;
+            int start1 = start0 + count0;
+            int start2 = start1 + count1;
+            int start3 = start2 + count2;
+            int start4 = start3 + count3;
+            int start5 = start4 + count4;
+            int cursor0 = start0;
+            int cursor1 = start1;
+            int cursor2 = start2;
+            int cursor3 = start3;
+            int cursor4 = start4;
+            int cursor5 = start5;
+            for (int i = 0; i < safeCount; i++)
+            {
+                if (!IsOpenFiniteSocket(sockets[i]))
+                    continue;
+
+                switch (ExtractDirection(sockets[i]))
+                {
+                    case 0: csrTargetIndices[cursor0++] = i; break;
+                    case 1: csrTargetIndices[cursor1++] = i; break;
+                    case 2: csrTargetIndices[cursor2++] = i; break;
+                    case 3: csrTargetIndices[cursor3++] = i; break;
+                    case 4: csrTargetIndices[cursor4++] = i; break;
+                    case 5: csrTargetIndices[cursor5++] = i; break;
+                }
+            }
+
+            csrRanges[0] = new int2(start0, count0);
+            csrRanges[1] = new int2(start1, count1);
+            csrRanges[2] = new int2(start2, count2);
+            csrRanges[3] = new int2(start3, count3);
+            csrRanges[4] = new int2(start4, count4);
+            csrRanges[5] = new int2(start5, count5);
+            return true;
+        }
+
+        private static bool TryInvalidateCounterLane(IDataVault vault)
+        {
+            if (!TryAcquireWriteLane(vault, in s_CountersHandle, BufferID.ConstructionSocketCounters, out NativeArray<int> counters))
+                return false;
+
+            try
+            {
+                if (!counters.IsCreated)
+                    return false;
+
+                for (int i = 0; i < counters.Length; i++)
+                    counters[i] = 0;
+
+                return true;
+            }
+            finally
+            {
+                ReleaseSocketWrite(vault, in s_CountersHandle, BufferID.ConstructionSocketCounters);
+            }
+        }
+
+        private static bool TryPublishWriteLane<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            T[] source,
+            int count)
+            where T : struct
+        {
+            if (source == null || count < 0)
+                return false;
+
+            if (!TryAcquireWriteLane(vault, in handle, bufferId, out NativeArray<T> buffer))
+                return false;
+
+            try
+            {
+                if (!buffer.IsCreated)
+                    return false;
+
+                int safeCount = math.min(count, math.min(source.Length, buffer.Length));
+                for (int i = 0; i < safeCount; i++)
+                    buffer[i] = source[i];
+
+                return safeCount == count;
+            }
+            finally
+            {
+                ReleaseSocketWrite(vault, in handle, bufferId);
+            }
+        }
+
         private static bool ShouldResetCounterLane(IDataVault vault)
         {
             if (!vault.TryGetGenerationHandle<int>(BufferID.ConstructionSocketCounters, out VaultGenerationHandle<int> existingHandle) ||
@@ -890,6 +1024,18 @@ namespace Hecton8.Construction
                 counters[CounterMagicIndex] = CounterMagic;
         }
 
+        private static void ClearCounterLane(int[] counters)
+        {
+            if (counters == null)
+                return;
+
+            for (int i = 0; i < counters.Length; i++)
+                counters[i] = 0;
+
+            if (counters.Length > CounterMagicIndex)
+                counters[CounterMagicIndex] = CounterMagic;
+        }
+
         private static bool TryAcquireWriteLane<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
@@ -904,38 +1050,23 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            if (buffer.IsCreated)
-                return true;
+            bool releaseOnFailure = true;
+            try
+            {
+                if (buffer.IsCreated)
+                {
+                    releaseOnFailure = false;
+                    return true;
+                }
 
-            ReleaseSocketWrite(vault, in handle, bufferId);
-            buffer = default;
-            return false;
-        }
-
-        private static void ReleaseGenerateMockWriteLocks(
-            IDataVault vault,
-            bool csrTargetIndicesLocked,
-            bool csrRangesLocked,
-            bool countersLocked,
-            bool socketAupsLocked,
-            bool socketsLocked,
-            bool modulesLocked)
-        {
-            if (vault == null)
-                return;
-
-            if (csrTargetIndicesLocked)
-                ReleaseSocketWrite(vault, in s_SocketCsrTargetIndicesHandle, SocketCsrTargetIndicesBufferId);
-            if (csrRangesLocked)
-                ReleaseSocketWrite(vault, in s_SocketCsrRangesHandle, SocketCsrRangesBufferId);
-            if (countersLocked)
-                ReleaseSocketWrite(vault, in s_CountersHandle, BufferID.ConstructionSocketCounters);
-            if (socketAupsLocked)
-                ReleaseSocketWrite(vault, in s_SocketAupHandle, BufferID.ConstructionSocketAup);
-            if (socketsLocked)
-                ReleaseSocketWrite(vault, in s_SocketStatesHandle, BufferID.ConstructionSocketStates);
-            if (modulesLocked)
-                ReleaseSocketWrite(vault, in s_ModuleHandle, BufferID.ConstructionSocketModules);
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnFailure)
+                    ReleaseSocketWrite(vault, in handle, bufferId);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1042,23 +1173,8 @@ namespace Hecton8.Construction
         private static void DumpNativeRingToFile<T>(NativeArray<T> telemetryRing, string absolutePath)
             where T : unmanaged
         {
-            if (!telemetryRing.IsCreated || telemetryRing.Length <= 0 || string.IsNullOrWhiteSpace(absolutePath))
-                return;
-
-            void* ptr = telemetryRing.GetUnsafeReadOnlyPtr();
-            int byteLength = telemetryRing.Length * UnsafeUtility.SizeOf<T>();
-            string resolvedPath = ResolveDumpPath(absolutePath);
-            if (string.IsNullOrEmpty(resolvedPath))
-                return;
-
-            string directory = Path.GetDirectoryName(resolvedPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(resolvedPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            {
-                stream.Write(new ReadOnlySpan<byte>(ptr, byteLength));
-            }
+            _ = telemetryRing;
+            _ = absolutePath;
         }
 
         private static string ResolveDumpPath(string path)

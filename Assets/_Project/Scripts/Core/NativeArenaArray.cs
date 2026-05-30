@@ -96,6 +96,7 @@ namespace Hecton8.Core
             if (_buffer == null || m_Length <= 0)
                 return default;
 
+            CheckWrite();
             NativeArray<T> array = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>(_buffer, m_Length, Allocator.None);
 #if ENABLE_UNITY_COLLECTIONS_CHECKS
             NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref array, m_Safety);
@@ -118,10 +119,10 @@ namespace Hecton8.Core
 
         public void Clear()
         {
-            CheckWrite();
             if (_buffer == null || _byteCount <= 0)
                 return;
 
+            CheckWrite();
             UnsafeUtility.MemClear(_buffer, _byteCount);
         }
 

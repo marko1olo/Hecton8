@@ -90,7 +90,7 @@ namespace Hecton8.AI
         [Tooltip("Meters added above SDF or heightmap contact to prevent visual z-fighting.")]
         [SerializeField, Range(0f, 2f)] private float _terrainClearance = 0.35f;
 
-        [Tooltip("Enable SDF terrain pushout once continuous quality clears the authored minimum threshold.")]
+        [Tooltip("Enable SDF terrain pushout; continuous quality scales the influence weight.")]
         [SerializeField] private bool _enableSdfHugging = true;
 
         [Tooltip("Use cached MapMagic height samples when no SDF contact exists.")]
@@ -527,6 +527,7 @@ namespace Hecton8.AI
                     JawReachMeters = _biteJawReachMeters,
                     JawOpenMeters = _biteJawOpenMeters,
                     SystemStress01 = 0f,
+                    VisualOverkillWeight01 = ResolveBiteVisualOverkillWeight(_globalQualityWeight),
                     TargetIndex = 0,
                     FrameIndex = _frameIndex,
                     HeadBoneIndex = ProceduralBiteIkConstants.DefaultHeadBoneIndex,
@@ -940,7 +941,7 @@ namespace Hecton8.AI
             if (!_terrainSdfSnapshotGuardHeld)
                 return;
 
-            IDataVault vault = _terrainSdfSnapshotGuardVault ?? _dataVault;
+            IDataVault vault = _terrainSdfSnapshotGuardVault;
             if (vault != null)
                 vault.ReleaseMutationGuard(TerrainSdfSnapshotMutationGuardMask);
 
@@ -1540,8 +1541,6 @@ namespace Hecton8.AI
             uint flags = 0u;
             if (_strikeActive || _strikeSignalActive)
                 flags |= ProceduralBiteIkConstants.RuntimeFlagStrikeActive;
-            flags |= ProceduralBiteIkConstants.RuntimeFlagMaximumQuality;
-            flags |= ProceduralBiteIkConstants.RuntimeFlagVisualOverkill;
             return flags;
         }
 
@@ -1583,12 +1582,9 @@ namespace Hecton8.AI
                 debris.SourceEntityId = pose.TargetHash;
                 debris.Intensity01 = math.saturate(1f - pose.ContactDistanceMeters);
                 debris.DebrisKind = DebrisSpawnSignal.DebrisKindSparks;
-                debris.Flags = ResolveBiteDebrisFlags(pose.Flags);
-                debris.Quantity = ResolveBiteDebrisQuantity(_globalQualityWeight, pose.Flags);
-                if ((debris.Flags & DebrisSpawnSignal.FlagComputeShard) != 0)
-                    SignalBus<DebrisSpawnSignal>.TryPushTracked(in debris, ref _signalPushDropCount);
-                else
-                    SignalBus<DebrisSpawnSignal>.TryPushTracked(in debris, ref _signalPushDropCount);
+                debris.Flags = ResolveBiteDebrisFlags();
+                debris.Quantity = ResolveBiteDebrisQuantity(_globalQualityWeight);
+                SignalBus<DebrisSpawnSignal>.TryPushTracked(in debris, ref _signalPushDropCount);
                 PublishBiteHullDent(in pose, frame, debris.Intensity01);
 
                 HapticRequest haptic = default;
@@ -1626,12 +1622,12 @@ namespace Hecton8.AI
 
         private void PublishBiteHullDent(in CurrentJawPos pose, int frame, float intensity01)
         {
-            bool overkill = (pose.Flags & ProceduralBiteIkConstants.ResultFlagVisualOverkill) != 0u;
-            float radius = math.lerp(BiteHullDentMinimumRadiusMeters, BiteHullDentMaximumRadiusMeters, overkill ? intensity01 : intensity01 * 0.35f);
-            float depth = math.lerp(BiteHullDentMinimumDepthMeters, BiteHullDentMaximumDepthMeters, overkill ? intensity01 : intensity01 * 0.25f);
+            float visualOverkillWeight = ProceduralBiteIkConstants.DecodeVisualOverkillWeight01(pose.Flags);
+            float radiusWeight = intensity01 * math.lerp(0.35f, 1f, visualOverkillWeight);
+            float depthWeight = intensity01 * math.lerp(0.25f, 1f, visualOverkillWeight);
+            float radius = math.lerp(BiteHullDentMinimumRadiusMeters, BiteHullDentMaximumRadiusMeters, radiusWeight);
+            float depth = math.lerp(BiteHullDentMinimumDepthMeters, BiteHullDentMaximumDepthMeters, depthWeight);
             byte flags = HullDeformedSignal.LegacyLocalPointFlag;
-            if (SmoothQualityCurve(_globalQualityWeight) <= 0.0001f)
-                flags |= HullDeformedSignal.LowTierVisualOnlyFlag;
 
             HullDeformedSignal dent = default;
             dent.LocalPoint = SanitizeFiniteInputFloat3(pose.JawTipPosition, ResolveOwnerRuntimePosition());
@@ -1651,29 +1647,28 @@ namespace Hecton8.AI
             SignalBus<HullDeformedSignal>.TryPushTracked(in dent, ref _signalPushDropCount);
         }
 
-        private static byte ResolveBiteDebrisFlags(uint poseFlags)
+        private static byte ResolveBiteDebrisFlags()
         {
-            byte flags = DebrisSpawnSignal.FlagToolSparks;
-            if ((poseFlags & ProceduralBiteIkConstants.ResultFlagVisualOverkill) != 0u)
-                flags |= DebrisSpawnSignal.FlagComputeShard;
-            return flags;
+            return DebrisSpawnSignal.FlagToolSparks | DebrisSpawnSignal.FlagComputeShard;
         }
 
-        private static ushort ResolveBiteDebrisQuantity(float qualityWeight, uint poseFlags)
+        private static ushort ResolveBiteDebrisQuantity(float qualityWeight)
         {
             float quality = SmoothQualityCurve(qualityWeight);
-            if ((poseFlags & ProceduralBiteIkConstants.ResultFlagVisualOverkill) != 0u)
-            {
-                return (ushort)math.clamp(
-                    (int)math.round(math.lerp(BiteMaximumQualityDebrisQuantity, BiteOverkillQualityDebrisQuantity, quality)),
-                    BiteMaximumQualityDebrisQuantity,
-                    BiteOverkillQualityDebrisQuantity);
-            }
-
+            float overkillWeight = ResolveBiteVisualOverkillWeight(qualityWeight);
+            float standardQuantity = math.lerp(BiteMinimumQualityDebrisQuantity, BiteMiddleQualityDebrisQuantity, quality);
+            float highFidelityQuantity = math.lerp(BiteMiddleQualityDebrisQuantity, BiteMaximumQualityDebrisQuantity, quality);
+            float overkillQuantity = math.lerp(BiteMaximumQualityDebrisQuantity, BiteOverkillQualityDebrisQuantity, quality);
+            float visualQuantity = math.lerp(standardQuantity, highFidelityQuantity, quality);
             return (ushort)math.clamp(
-                (int)math.round(math.lerp(BiteMinimumQualityDebrisQuantity, BiteMiddleQualityDebrisQuantity, quality)),
+                (int)math.round(math.lerp(visualQuantity, overkillQuantity, overkillWeight)),
                 BiteMinimumQualityDebrisQuantity,
-                BiteMiddleQualityDebrisQuantity);
+                BiteOverkillQualityDebrisQuantity);
+        }
+
+        private static float ResolveBiteVisualOverkillWeight(float qualityWeight)
+        {
+            return SmoothQualityCurve(qualityWeight);
         }
 
         private static ushort ClampHashToUShort(uint value)
@@ -1801,7 +1796,8 @@ namespace Hecton8.AI
             sdfRange = 0f;
             snapshotLocked = false;
 
-            if (!_enableSdfHugging || SmoothQualityCurve(qualityWeight) <= 0.0001f)
+            float sdfHuggingWeight = ResolveSdfHuggingWeight(qualityWeight);
+            if (!_enableSdfHugging || sdfHuggingWeight <= 0f)
                 return;
 
             if (!HectonVoxelVolume.TryAcquireClosestPublishedSonarSdfPayloadReadLease(
@@ -1837,7 +1833,7 @@ namespace Hecton8.AI
                 sdfDimensions = resolvedDimensions;
                 sdfOrigin = (float3)origin;
                 sdfCellSize = (float3)cellSize;
-                sdfRange = math.max(0f, range);
+                sdfRange = math.max(0f, range) * sdfHuggingWeight;
                 accepted = true;
             }
             finally
@@ -1907,12 +1903,17 @@ namespace Hecton8.AI
             }
         }
 
+        private static float ResolveSdfHuggingWeight(float qualityWeight)
+        {
+            return SmoothQualityCurve(SanitizeQualityWeight01(qualityWeight));
+        }
+
         private void UnlockTerrainSdfSnapshot(ref bool locked)
         {
             if (!locked)
                 return;
 
-            IDataVault vault = _terrainSdfSnapshotGuardVault ?? _dataVault;
+            IDataVault vault = _terrainSdfSnapshotGuardVault;
             if (vault != null)
                 vault.ReleaseMutationGuard(TerrainSdfSnapshotMutationGuardMask);
 
@@ -2571,7 +2572,7 @@ namespace Hecton8.AI
                 writer.Write(entry.WrapAnchor1.x);
                 writer.Write(entry.WrapAnchor1.y);
                 writer.Write(entry.WrapAnchor1.z);
-                writer.Write(entry.Padding0);
+                writer.Write(entry.VisualOverkillWeight01);
                 writer.Write(entry.Padding1.x);
                 writer.Write(entry.Padding1.y);
                 writer.Write(entry.Padding1.z);

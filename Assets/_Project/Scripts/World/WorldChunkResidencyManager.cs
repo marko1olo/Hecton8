@@ -628,7 +628,6 @@ namespace Hecton8.World
             double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
             return IsFiniteDouble(now) ? now : 0d;
         }
-        private const float ChunkImpostorSurvivalSnapQualityThreshold = 0.15f;
         private const float MacroDatabaseMiddleQualityThreshold = 0.22f;
         private const float MacroDatabaseHighQualityThreshold = 0.58f;
         private const float MacroDatabaseUltraQualityThreshold = 0.86f;
@@ -2441,7 +2440,7 @@ namespace Hecton8.World
             _macroDatabaseService = GlobalRegistry.MacroDatabase;
             _assetLifecycleGovernor = GlobalRegistry.AssetLifecycle;
             _vramMonitor = GlobalRegistry.VRAMBudgetReadModel;
-            _predictiveVramCeilingBytes = ResolvePredictiveVramCeilingBytesCold();
+            _predictiveVramCeilingBytes = ComputePredictiveVramCeilingBytesCold();
 
             _objectPoolManager = GlobalRegistry.ObjectPoolService;
 
@@ -5097,7 +5096,7 @@ namespace Hecton8.World
             return Math.Max(PredictiveVramMinimumThresholdBytes, abortBytes - hysteresisBytes);
         }
 
-        private static long ResolvePredictiveVramCeilingBytesCold()
+        private static long ComputePredictiveVramCeilingBytesCold()
         {
             HardwareTierDetector.EnsureInitialized();
             if (HardwareTierDetector.SharedMemoryModeActive)
@@ -5645,10 +5644,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (ResolveSmoothGlobalQualityWeight01() <= ChunkImpostorSurvivalSnapQualityThreshold)
-                flags |= HectonChunkImpostorResidency.FlagSurvivalSnap;
-            else
-                flags |= HectonChunkImpostorResidency.FlagDitherBlend;
+            flags |= HectonChunkImpostorResidency.FlagDitherBlend;
             return true;
         }
 

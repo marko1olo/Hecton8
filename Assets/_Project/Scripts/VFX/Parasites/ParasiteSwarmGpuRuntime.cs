@@ -31,14 +31,7 @@ namespace Hecton8.VFX.Parasites
         private static readonly ulong TelemetryMutationGuardMask =
             MutationGuardBit(BufferID.ShinobuParasiteTelemetryRing) |
             MutationGuardBit(BufferID.ShinobuParasiteTelemetryCursor);
-        private static readonly ulong TuningMutationGuardMask =
-            MutationGuardBit(BufferID.ShinobuParasiteTuning);
-#if UNITY_EDITOR
-        private static readonly ulong CsvImportMutationGuardMask =
-            MutationGuardBit(BufferID.ShinobuParasiteCsvScratch) |
-            MutationGuardBit(BufferID.ShinobuParasiteProfiles) |
-            MutationGuardBit(BufferID.ShinobuParasiteProfileCount);
-#endif
+        private static readonly System.Threading.WaitCallback TelemetryDumpWorkerCallback = RunTelemetryDumpWorker;
         [Header("GPU")]
         [SerializeField] private ComputeShader parasiteCompute;
         [SerializeField] private Material parasiteMaterial;
@@ -51,6 +44,7 @@ namespace Hecton8.VFX.Parasites
         [SerializeField] private bool forceMockTargets;
 
         private IDataVault _vault;
+        private IDataVault _telemetryGuardVault;
         private bool _registered;
         private bool _hotSwapRegistered;
         private bool _initialized;
@@ -66,9 +60,16 @@ namespace Hecton8.VFX.Parasites
         private uint _visualFrameCounter;
         private float3 _pendingAupShift;
         private string _dumpRootPath;
+        private string _telemetryDumpRootSnapshot;
         private int _lastResolvedTargetCount;
+        private int _telemetryDumpSnapshotCount;
+        private int _telemetryDumpCursorSnapshot;
+        private int _telemetryDumpInFlight;
         private IPlayerRuntimeContext _playerContext;
         private bool _renderCameraRuntimeResolved;
+        private readonly SwarmTelemetryEntry[] _telemetryDumpSnapshot = new SwarmTelemetryEntry[ParasiteSwarmContracts.TelemetryCapacity];
+        private readonly ParasiteTargetCandidateDTO[] _targetCandidateScratch = new ParasiteTargetCandidateDTO[ParasiteSwarmContracts.CandidateCapacity];
+        private readonly ParasiteTargetDTO[] _targetSelectionScratch = new ParasiteTargetDTO[ParasiteSwarmContracts.MaxTargetCount];
 
         private int _initKernel = -1;
         private int _clearArgsKernel = -1;
@@ -236,21 +237,16 @@ namespace Hecton8.VFX.Parasites
             if (_lastCandidateOverflowCount > 0)
                 flags |= ParasiteSwarmContracts.TelemetryFlagTargetOverflow;
 
-            NativeArray<SwarmTelemetryEntry> dumpTelemetry = default;
-            int dumpCursor = 0;
-            bool shouldWriteDump = false;
-            if (TryResolveTelemetryOwnerViews(out NativeArray<SwarmTelemetryEntry> telemetry, out NativeArray<int> telemetryCursor))
+            bool shouldQueueDump = false;
+            if (TryAcquireTelemetryOwnerViews(out NativeArray<SwarmTelemetryEntry> telemetry, out NativeArray<int> telemetryCursor))
             {
                 try
                 {
                     if (RecordTelemetry(telemetry, telemetryCursor, targets, true, visualFrame, resolvedTargetCount, dispatchedParticleBudget, estimatedGpuUs, globalQuality, in tuning, ref flags) &&
                         ((flags & (ParasiteSwarmContracts.TelemetryFlagTargetOverflow | ParasiteSwarmContracts.TelemetryFlagGpuBudgetSpike | ParasiteSwarmContracts.TelemetryFlagInvalidMath)) != 0u) &&
-                        !_blackBoxDumped)
+                        !System.Threading.Volatile.Read(ref _blackBoxDumped))
                     {
-                        _dumpSequence++;
-                        dumpCursor = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? telemetryCursor[0] : _telemetryCursor;
-                        dumpTelemetry = telemetry;
-                        shouldWriteDump = true;
+                        shouldQueueDump = TryStageTelemetryDump(telemetry, telemetryCursor);
                     }
                 }
                 finally
@@ -259,8 +255,8 @@ namespace Hecton8.VFX.Parasites
                 }
             }
 
-            if (shouldWriteDump)
-                _blackBoxDumped = ParasiteSwarmContracts.TryWriteTelemetryDump(_dumpRootPath, dumpTelemetry, dumpCursor);
+            if (shouldQueueDump)
+                QueueTelemetryDumpWorker();
         }
 
         private void BindVaultDescriptors(IDataVault vault)
@@ -317,7 +313,6 @@ namespace Hecton8.VFX.Parasites
             ReleaseVaultHandle<SwarmTelemetryEntry>(vault, BufferID.ShinobuParasiteTelemetryRing);
             ReleaseVaultHandle<int>(vault, BufferID.ShinobuParasiteTelemetryCursor);
             ReleaseVaultHandle<ParasiteBehaviorProfileDTO>(vault, BufferID.ShinobuParasiteProfiles);
-            ReleaseVaultHandle<byte>(vault, BufferID.ShinobuParasiteCsvScratch);
             ReleaseVaultHandle<ParasiteScannerSummaryDTO>(vault, BufferID.ShinobuParasiteScannerSummary);
             ReleaseVaultHandle<int>(vault, BufferID.ShinobuParasiteProfileCount);
         }
@@ -365,50 +360,29 @@ namespace Hecton8.VFX.Parasites
             if (!File.Exists(path))
                 return;
 
-            if (!vault.TryGetGenerationHandle(BufferID.ShinobuParasiteCsvScratch, out VaultGenerationHandle<byte> scratchHandle))
+            Span<byte> scratch = stackalloc byte[ParasiteSwarmContracts.CsvScratchBytes];
+            int bytesRead = ReadCsvFileIntoScratch(path, scratch);
+            if (bytesRead <= 0)
                 return;
 
-            if (!IsOwnedHandle(in scratchHandle, BufferID.ShinobuParasiteCsvScratch))
-                return;
-
-            if (!vault.TryAcquireMutationGuard(CsvImportMutationGuardMask))
-                return;
-
-            try
-            {
-                if (!vault.TryResolveHandle(in scratchHandle, out NativeArray<byte> scratch) || !scratch.IsCreated)
-                    return;
-
-                int maxBytes = math.min(scratch.IsCreated ? scratch.Length : 0, ParasiteSwarmContracts.CsvScratchBytes);
-                int bytesRead = ReadCsvFileIntoScratch(path, scratch, maxBytes);
-                if (bytesRead <= 0)
-                    return;
-
-                byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
-                ParasiteSwarmContracts.LoadProfilesFromCsvWithMutationGuardHeld(vault, new ReadOnlySpan<byte>(ptr, bytesRead));
-            }
-            finally
-            {
-                vault.ReleaseMutationGuard(CsvImportMutationGuardMask);
-            }
+            ParasiteSwarmContracts.LoadProfilesFromCsv(vault, scratch.Slice(0, bytesRead));
         }
 
-        private static int ReadCsvFileIntoScratch(string path, NativeArray<byte> scratch, int maxBytes)
+        private static int ReadCsvFileIntoScratch(string path, Span<byte> scratch)
         {
-            if (!scratch.IsCreated || maxBytes <= 0)
+            if (scratch.Length <= 0)
                 return 0;
 
-            byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
-            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, math.max(1, maxBytes), FileOptions.SequentialScan))
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, math.max(1, scratch.Length), FileOptions.SequentialScan))
             {
-                if (stream.Length > maxBytes)
+                if (stream.Length > scratch.Length)
                     return 0;
 
                 int limit = (int)stream.Length;
                 int total = 0;
                 while (total < limit)
                 {
-                    int read = stream.Read(new Span<byte>(ptr + total, limit - total));
+                    int read = stream.Read(scratch.Slice(total, limit - total));
                     if (read <= 0)
                         break;
 
@@ -422,15 +396,16 @@ namespace Hecton8.VFX.Parasites
 
         private void SeedTuningIfEmpty()
         {
-            if (_vault == null || !IsOwnedHandle(in _tuningHandle, BufferID.ShinobuParasiteTuning))
+            IDataVault vault = _vault;
+            if (vault == null || !IsOwnedHandle(in _tuningHandle, BufferID.ShinobuParasiteTuning))
                 return;
 
-            if (!_vault.TryAcquireMutationGuard(TuningMutationGuardMask))
+            if (!vault.TryAcquireWriteLock(in _tuningHandle, SystemID.Vfx, out NativeArray<ParasiteSwarmTuningDTO> tuning))
                 return;
 
             try
             {
-                if (!_vault.TryResolveHandle(in _tuningHandle, out NativeArray<ParasiteSwarmTuningDTO> tuning) || !tuning.IsCreated)
+                if (!tuning.IsCreated)
                     return;
 
                 if (tuning.Length > 0 && tuning[0].Version == 0u)
@@ -438,7 +413,7 @@ namespace Hecton8.VFX.Parasites
             }
             finally
             {
-                _vault.ReleaseMutationGuard(TuningMutationGuardMask);
+                vault.ReleaseWriteLock(in _tuningHandle, SystemID.Vfx);
             }
         }
 
@@ -619,6 +594,50 @@ namespace Hecton8.VFX.Parasites
             float visualPhaseRadians,
             in ParasiteSwarmTuningDTO tuning)
         {
+            if (_vault == null)
+                return _lastResolvedTargetCount;
+
+            int stagedTargetCount = StageTargetSelectionScratch(
+                cameraAup,
+                quality,
+                visualPhaseRadians,
+                in tuning,
+                out int stagedCandidateCount,
+                out int stagedCandidateOverflowCount);
+
+            return CommitTargetSelectionScratch(stagedCandidateCount, stagedTargetCount, stagedCandidateOverflowCount);
+        }
+
+        private int StageTargetSelectionScratch(
+            double3 cameraAup,
+            float quality,
+            float visualPhaseRadians,
+            in ParasiteSwarmTuningDTO tuning,
+            out int stagedCandidateCount,
+            out int stagedCandidateOverflowCount)
+        {
+            bool useMock = forceMockTargets || (tuning.Flags & ParasiteSwarmContracts.TuningFlagMockTargets) != 0u;
+            if (useMock)
+            {
+                stagedCandidateOverflowCount = 0;
+                stagedCandidateCount = StageMockThermalTargetsScratch(cameraAup, quality, visualPhaseRadians, in tuning);
+                return SelectTopTargetsFromScratch(stagedCandidateCount, cameraAup, in tuning);
+            }
+
+            int candidateCount = StageThermalSourceSignals(cameraAup, in tuning, _targetCandidateScratch, out int eligibleSignalCount);
+            stagedCandidateOverflowCount = math.max(0, eligibleSignalCount - ParasiteSwarmContracts.MaxTargetCount);
+            stagedCandidateCount = candidateCount;
+            if (candidateCount <= 0)
+                return 0;
+
+            for (int i = 0; i < candidateCount; i++)
+                _targetCandidateScratch[i] = ScoreStagedCandidate(_targetCandidateScratch[i], cameraAup, in tuning);
+
+            return SelectTopTargetsFromScratch(candidateCount, cameraAup, in tuning);
+        }
+
+        private int CommitTargetSelectionScratch(int stagedCandidateCount, int stagedTargetCount, int stagedCandidateOverflowCount)
+        {
             IDataVault vault = _vault;
             if (vault == null || !vault.TryAcquireMutationGuard(TargetSelectionMutationGuardMask))
                 return _lastResolvedTargetCount;
@@ -631,69 +650,22 @@ namespace Hecton8.VFX.Parasites
                         out NativeArray<int> targetCount))
                     return _lastResolvedTargetCount;
 
-                bool useMock = forceMockTargets || (tuning.Flags & ParasiteSwarmContracts.TuningFlagMockTargets) != 0u;
-                if (useMock)
-                {
-                    _lastCandidateOverflowCount = 0;
-                    int mockCount = math.min(ParasiteSwarmContracts.MaxTargetCount, targets.Length);
-                    GenerateMockThermalTargetsJob mock = new GenerateMockThermalTargetsJob
-                    {
-                        Targets = targets,
-                        Candidates = candidates,
-                        TargetCount = targetCount,
-                        CameraAup = cameraAup,
-                        PhaseRadians = visualPhaseRadians,
-                        GlobalQualityWeight = quality,
-                        Tuning = tuning
-                    };
-                    for (int i = 0; i < mockCount; i++)
-                        mock.Execute(i);
+                int candidateLimit = math.min(
+                    math.clamp(stagedCandidateCount, 0, _targetCandidateScratch.Length),
+                    candidates.IsCreated ? candidates.Length : 0);
+                for (int i = 0; i < candidateLimit; i++)
+                    candidates[i] = _targetCandidateScratch[i];
 
-                    SelectTopParasiteTargetsJob select = new SelectTopParasiteTargetsJob
-                    {
-                        Candidates = candidates,
-                        CandidateCount = mockCount,
-                        Targets = targets,
-                        TargetCount = targetCount,
-                        CameraAup = cameraAup,
-                        Tuning = tuning
-                    };
-                    select.Execute();
-                    _lastResolvedTargetCount = ReadTargetCount(targetCount);
-                    return _lastResolvedTargetCount;
-                }
+                int targetLimit = math.min(ParasiteSwarmContracts.MaxTargetCount, targets.IsCreated ? targets.Length : 0);
+                int selectedTargetCount = math.clamp(stagedTargetCount, 0, targetLimit);
+                for (int i = 0; i < targetLimit; i++)
+                    targets[i] = i < selectedTargetCount ? _targetSelectionScratch[i] : default;
 
-                int candidateCount = StageThermalSourceSignals(cameraAup, in tuning, candidates, out int eligibleSignalCount);
-                _lastCandidateOverflowCount = math.max(0, eligibleSignalCount - ParasiteSwarmContracts.MaxTargetCount);
-                if (candidateCount <= 0)
-                {
-                    ClearTargets(targets, targetCount);
-                    _lastResolvedTargetCount = 0;
-                    return _lastResolvedTargetCount;
-                }
+                if (targetCount.IsCreated && targetCount.Length > 0)
+                    targetCount[0] = selectedTargetCount;
 
-                ExtractParasiteTargetsJob extraction = new ExtractParasiteTargetsJob
-                {
-                    Candidates = candidates,
-                    CandidateCount = targetCount,
-                    StagedCount = candidateCount,
-                    CameraAup = cameraAup,
-                    Tuning = tuning
-                };
-                for (int i = 0; i < candidateCount; i++)
-                    extraction.Execute(i);
-
-                SelectTopParasiteTargetsJob topTargets = new SelectTopParasiteTargetsJob
-                {
-                    Candidates = candidates,
-                    CandidateCount = candidateCount,
-                    Targets = targets,
-                    TargetCount = targetCount,
-                    CameraAup = cameraAup,
-                    Tuning = tuning
-                };
-                topTargets.Execute();
-                _lastResolvedTargetCount = ReadTargetCount(targetCount);
+                _lastCandidateOverflowCount = stagedCandidateOverflowCount;
+                _lastResolvedTargetCount = selectedTargetCount;
                 return _lastResolvedTargetCount;
             }
             finally
@@ -714,13 +686,6 @@ namespace Hecton8.VFX.Parasites
 
             renderCamera = playerCamera;
             _renderCameraRuntimeResolved = true;
-        }
-
-        private static int ReadTargetCount(NativeArray<int> targetCount)
-        {
-            return targetCount.IsCreated && targetCount.Length > 0
-                ? math.clamp(targetCount[0], 0, ParasiteSwarmContracts.MaxTargetCount)
-                : 0;
         }
 
         private bool TryResolveTargetOwnerViews(
@@ -749,7 +714,7 @@ namespace Hecton8.VFX.Parasites
                        out targetCount);
         }
 
-        private bool TryResolveTelemetryOwnerViews(
+        private bool TryAcquireTelemetryOwnerViews(
             out NativeArray<SwarmTelemetryEntry> telemetry,
             out NativeArray<int> telemetryCursor)
         {
@@ -780,6 +745,7 @@ namespace Hecton8.VFX.Parasites
                 }
 
                 guardTransferred = true;
+                _telemetryGuardVault = vault;
                 return true;
             }
             finally
@@ -791,17 +757,116 @@ namespace Hecton8.VFX.Parasites
 
         private void ReleaseTelemetryOwnerViews()
         {
-            _vault?.ReleaseMutationGuard(TelemetryMutationGuardMask);
+            IDataVault vault = _telemetryGuardVault;
+            _telemetryGuardVault = null;
+            vault?.ReleaseMutationGuard(TelemetryMutationGuardMask);
+        }
+
+        private bool TryStageTelemetryDump(NativeArray<SwarmTelemetryEntry> telemetry, NativeArray<int> telemetryCursor)
+        {
+            if (!telemetry.IsCreated || telemetry.Length <= 0)
+                return false;
+
+            if (System.Threading.Interlocked.CompareExchange(ref _telemetryDumpInFlight, 1, 0) != 0)
+                return false;
+
+            _dumpSequence++;
+            int cursor = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? telemetryCursor[0] : _telemetryCursor;
+            int count = math.min(telemetry.Length, _telemetryDumpSnapshot.Length);
+            for (int i = 0; i < count; i++)
+                _telemetryDumpSnapshot[i] = telemetry[i];
+
+            _telemetryDumpSnapshotCount = count;
+            _telemetryDumpCursorSnapshot = cursor;
+            _telemetryDumpRootSnapshot = _dumpRootPath;
+            return true;
+        }
+
+        private void QueueTelemetryDumpWorker()
+        {
+            if (!System.Threading.ThreadPool.QueueUserWorkItem(TelemetryDumpWorkerCallback, this))
+                System.Threading.Volatile.Write(ref _telemetryDumpInFlight, 0);
+        }
+
+        private static void RunTelemetryDumpWorker(object state)
+        {
+            if (state is ParasiteSwarmGpuRuntime runtime)
+                runtime.WriteTelemetryDumpWorker();
+        }
+
+        private void WriteTelemetryDumpWorker()
+        {
+            try
+            {
+                if (ParasiteSwarmContracts.TryWriteTelemetryDump(
+                        _telemetryDumpRootSnapshot,
+                        _telemetryDumpSnapshot,
+                        _telemetryDumpSnapshotCount,
+                        _telemetryDumpCursorSnapshot))
+                {
+                    System.Threading.Volatile.Write(ref _blackBoxDumped, true);
+                }
+            }
+            finally
+            {
+                System.Threading.Volatile.Write(ref _telemetryDumpInFlight, 0);
+            }
+        }
+
+        private int StageMockThermalTargetsScratch(
+            double3 cameraAup,
+            float quality,
+            float visualPhaseRadians,
+            in ParasiteSwarmTuningDTO tuning)
+        {
+            int limit = math.min(
+                ParasiteSwarmContracts.MaxTargetCount,
+                math.min(_targetSelectionScratch.Length, _targetCandidateScratch.Length));
+            float q = ParasiteSwarmContracts.SmoothQuality01(quality);
+            for (int index = 0; index < limit; index++)
+            {
+                float angle = visualPhaseRadians * (0.73f + (index * 0.037f));
+                float radius = math.lerp(3.5f, 18f, q) + (index * 0.17f);
+                float3 local;
+                local.x = ParasiteSwarmContracts.FastSinApprox(angle + index * 2.31f) * radius;
+                local.y = ParasiteSwarmContracts.FastSinApprox((angle * 0.61f) + index) * 2.2f;
+                local.z = ParasiteSwarmContracts.FastCosApprox(angle + index * 1.73f) * radius;
+                float thermal = tuning.ParasiteAttractionThreshold + 8f + ParasiteSwarmContracts.FastSinApprox(angle * 2.7f) * 3f + (index * 0.35f);
+                float3 velocity;
+                velocity.x = ParasiteSwarmContracts.FastCosApprox(angle);
+                velocity.y = ParasiteSwarmContracts.FastSinApprox(angle * 0.5f) * 0.35f;
+                velocity.z = -ParasiteSwarmContracts.FastSinApprox(angle);
+                velocity *= 2f + q * 6f;
+                float attractionRadius = math.max(0.25f, (2.1f + q * 3.4f) * tuning.AttractionRadiusScale);
+
+                double3 local64;
+                local64.x = local.x;
+                local64.y = local.y;
+                local64.z = local.z;
+
+                ParasiteTargetCandidateDTO candidate = default;
+                candidate.Aup = cameraAup + local64;
+                candidate.ThermalSignature = thermal;
+                candidate.AttractionRadius = attractionRadius;
+                candidate.Velocity = velocity;
+                candidate.Score = thermal + attractionRadius;
+                candidate.SourceHash = 0xFACA313u ^ (uint)index;
+                candidate.SourceIndex = (uint)index;
+                candidate.Flags = 1u | ParasiteSwarmContracts.TelemetryFlagMockTargets;
+                _targetCandidateScratch[index] = candidate;
+            }
+
+            return limit;
         }
 
         private static int StageThermalSourceSignals(
             double3 cameraAup,
             in ParasiteSwarmTuningDTO tuning,
-            NativeArray<ParasiteTargetCandidateDTO> candidates,
+            ParasiteTargetCandidateDTO[] candidates,
             out int eligibleSignalCount)
         {
             eligibleSignalCount = 0;
-            if (!candidates.IsCreated || candidates.Length <= 0)
+            if (candidates == null || candidates.Length <= 0)
                 return 0;
 
             ReadOnlySpan<ThermalSourceSignal> signals = SignalBus<ThermalSourceSignal>.GetFrameSnapshot();
@@ -827,34 +892,120 @@ namespace Hecton8.VFX.Parasites
                     continue;
 
                 float phase = ((signal.Frame & 1023u) + (signal.SourceId * 0.073f) + (uint)i) * 0.017453292f;
-                candidates[written] = new ParasiteTargetCandidateDTO
-                {
-                    Aup = aup,
-                    ThermalSignature = signal.IntensityCelsiusPerSecond,
-                    AttractionRadius = math.max(0.25f, signal.RadiusMeters),
-                    Velocity = new float3(
-                        ParasiteSwarmContracts.FastSinApprox(phase),
-                        0f,
-                        ParasiteSwarmContracts.FastCosApprox(phase)) * 0.25f,
-                    Score = 0f,
-                    SourceHash = signal.SourceId == 0u ? (0xA7131300u ^ (uint)i) : signal.SourceId,
-                    SourceIndex = (uint)i,
-                    Flags = 1u
-                };
+                float3 velocity;
+                velocity.x = ParasiteSwarmContracts.FastSinApprox(phase) * 0.25f;
+                velocity.y = 0f;
+                velocity.z = ParasiteSwarmContracts.FastCosApprox(phase) * 0.25f;
+
+                ParasiteTargetCandidateDTO candidate = default;
+                candidate.Aup = aup;
+                candidate.ThermalSignature = signal.IntensityCelsiusPerSecond;
+                candidate.AttractionRadius = math.max(0.25f, signal.RadiusMeters);
+                candidate.Velocity = velocity;
+                candidate.Score = 0f;
+                candidate.SourceHash = signal.SourceId == 0u ? (0xA7131300u ^ (uint)i) : signal.SourceId;
+                candidate.SourceIndex = (uint)i;
+                candidate.Flags = 1u;
+                candidates[written] = candidate;
                 written++;
             }
 
             return written;
         }
 
-        private static void ClearTargets(NativeArray<ParasiteTargetDTO> targets, NativeArray<int> targetCount)
+        private ParasiteTargetCandidateDTO ScoreStagedCandidate(
+            ParasiteTargetCandidateDTO staged,
+            double3 cameraAup,
+            in ParasiteSwarmTuningDTO tuning)
         {
-            int targetLimit = math.min(ParasiteSwarmContracts.MaxTargetCount, targets.IsCreated ? targets.Length : 0);
-            for (int i = 0; i < targetLimit; i++)
-                targets[i] = default;
+            if ((staged.Flags & 1u) == 0u ||
+                !math.all(math.isfinite(staged.Aup)) ||
+                !math.isfinite(staged.ThermalSignature) ||
+                staged.ThermalSignature < tuning.ParasiteAttractionThreshold)
+            {
+                return default;
+            }
 
-            if (targetCount.IsCreated && targetCount.Length > 0)
-                targetCount[0] = 0;
+            double3 delta = staged.Aup - cameraAup;
+            double distanceSq64 = math.lengthsq(delta);
+            if (!math.all(math.isfinite(delta)) || distanceSq64 > 25000000.0)
+                return default;
+
+            float radius = math.max(0.25f, staged.AttractionRadius * tuning.AttractionRadiusScale);
+            float distanceSq = (float)math.max(0.0001, distanceSq64);
+            float distance = distanceSq * math.rsqrt(distanceSq);
+            staged.AttractionRadius = radius;
+            staged.Score = (staged.ThermalSignature * 3f) + radius - distance * 0.015f;
+            staged.Flags |= 1u;
+            if (!math.all(math.isfinite(staged.Velocity)))
+                staged.Velocity = default;
+            return staged;
+        }
+
+        private int SelectTopTargetsFromScratch(
+            int candidateCount,
+            double3 cameraAup,
+            in ParasiteSwarmTuningDTO tuning)
+        {
+            int targetLimit = math.min(ParasiteSwarmContracts.MaxTargetCount, _targetSelectionScratch.Length);
+            for (int i = 0; i < targetLimit; i++)
+                _targetSelectionScratch[i] = default;
+
+            int selected = 0;
+            int scanCount = math.clamp(candidateCount, 0, _targetCandidateScratch.Length);
+            float* selectedScores = stackalloc float[ParasiteSwarmContracts.MaxTargetCount];
+            for (int i = 0; i < ParasiteSwarmContracts.MaxTargetCount; i++)
+                selectedScores[i] = -3.402823e+38f;
+
+            for (int i = 0; i < scanCount; i++)
+            {
+                ParasiteTargetCandidateDTO candidate = _targetCandidateScratch[i];
+                if ((candidate.Flags & 1u) == 0u ||
+                    !math.isfinite(candidate.Score) ||
+                    candidate.ThermalSignature < tuning.ParasiteAttractionThreshold)
+                {
+                    continue;
+                }
+
+                double3 local64 = candidate.Aup - cameraAup;
+                float3 local;
+                local.x = (float)local64.x;
+                local.y = (float)local64.y;
+                local.z = (float)local64.z;
+
+                ParasiteTargetDTO target = default;
+                target.LocalPosition = local;
+                target.ThermalSignature = candidate.ThermalSignature;
+                target.Velocity = candidate.Velocity;
+                target.AttractionRadius = math.max(0.25f, candidate.AttractionRadius);
+
+                int slot = selected;
+                int compareLimit = math.min(selected, targetLimit);
+                for (int j = 0; j < compareLimit; j++)
+                {
+                    if (candidate.Score > selectedScores[j])
+                    {
+                        slot = j;
+                        break;
+                    }
+                }
+
+                if (slot >= targetLimit)
+                    continue;
+
+                int shiftStart = math.min(selected, targetLimit - 1);
+                for (int j = shiftStart; j > slot; j--)
+                {
+                    _targetSelectionScratch[j] = _targetSelectionScratch[j - 1];
+                    selectedScores[j] = selectedScores[j - 1];
+                }
+
+                _targetSelectionScratch[slot] = target;
+                selectedScores[slot] = candidate.Score;
+                selected = math.min(selected + 1, targetLimit);
+            }
+
+            return selected;
         }
 
         private uint DispatchAndRender(Vector3 cameraPosition, int particleBudget, int targetCount, float quality, float visualPhaseRadians, in ParasiteSwarmTuningDTO tuning)

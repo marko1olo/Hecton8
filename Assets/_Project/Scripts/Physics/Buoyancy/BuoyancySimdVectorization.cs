@@ -1312,6 +1312,38 @@ namespace Hecton8.Physics
             return rowsWritten > 0;
         }
 
+        public static bool TryApply(ReadOnlySpan<byte> csv, Span<SimdMathToleranceDTO> output, out int rowsWritten)
+        {
+            rowsWritten = 0;
+            if (csv.Length <= 0 || output.Length <= 0)
+                return false;
+
+            for (int i = 0; i < output.Length; i++)
+                output[i] = default;
+
+            int cursor = 0;
+            while (cursor < csv.Length)
+            {
+                int lineStart = cursor;
+                while (cursor < csv.Length && csv[cursor] != (byte)'\n')
+                    cursor++;
+
+                int lineEnd = cursor;
+                if (cursor < csv.Length)
+                    cursor++;
+                if (lineEnd > lineStart && csv[lineEnd - 1] == (byte)'\r')
+                    lineEnd--;
+
+                if (TryParseLine(csv.Slice(lineStart, lineEnd - lineStart), out SimdMathToleranceDTO row) &&
+                    rowsWritten < output.Length)
+                {
+                    output[rowsWritten++] = row;
+                }
+            }
+
+            return rowsWritten > 0;
+        }
+
         private static bool TryParseLine(ReadOnlySpan<byte> line, out SimdMathToleranceDTO row)
         {
             row = default;

@@ -6,13 +6,28 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'strict_json_io.ps1')
 
 $MaxManifestBytes = 32768
+$MaxReviewManifestBytes = 1048576
 $MaxDiscoveredManifestCount = 64
 $MaxTopLevelManagedAssemblyCount = 32
 $MaxTopLevelBundleCount = 4
 $MaxLocalizationFileCount = 16
 $CurrentApiVersion = 2
+$ReservedTopLevelFolders = @(
+    'Content',
+    'Docs',
+    'Generated',
+    'Graphs',
+    'Locales',
+    'Reference',
+    'Reports',
+    'Schemas',
+    'Tables',
+    'Tools',
+    '.vscode'
+)
 
 function Fail([string]$Message) {
     Write-Error ('[H8MOD_DIAGNOSE_LOCAL] ' + $Message)
@@ -70,6 +85,26 @@ function Resolve-ModsRootPath() {
     }
 
     return [System.IO.Path]::GetFullPath((Join-StarterPath $rootFull '..' '..' 'Mods'))
+}
+
+function Test-Sha256Hex([string]$Value) {
+    return (-not [string]::IsNullOrWhiteSpace($Value)) -and ($Value -cmatch '^[0-9a-f]{64}$')
+}
+
+function Test-ReservedTopLevelCaseVariant([string]$RelativePath) {
+    if ([string]::IsNullOrWhiteSpace($RelativePath)) { return $false }
+
+    $normalized = $RelativePath.Replace('\','/')
+    $slash = $normalized.IndexOf('/')
+    $topLevel = if ($slash -lt 0) { $normalized } else { $normalized.Substring(0, $slash) }
+
+    foreach ($reserved in $ReservedTopLevelFolders) {
+        if ($topLevel.Equals($reserved, [System.StringComparison]::OrdinalIgnoreCase) -and -not $topLevel.Equals($reserved, [System.StringComparison]::Ordinal)) {
+            return $true
+        }
+    }
+
+    return $false
 }
 
 function Test-ReservedModIdSegment([string]$Segment) {
@@ -150,8 +185,9 @@ function Test-SafeRelativePath([string]$RelativePath) {
     $normalized = $RelativePath.Replace('\','/')
     if ([System.IO.Path]::IsPathRooted($normalized)) { return $false }
     if ($normalized.StartsWith('../') -or $normalized.Contains('/../') -or $normalized.Contains('..')) { return $false }
-    if ($normalized.StartsWith('Generated/', [System.StringComparison]::OrdinalIgnoreCase)) { return $false }
-    if ($normalized.StartsWith('Reports/', [System.StringComparison]::OrdinalIgnoreCase)) { return $false }
+    if ($normalized.StartsWith('Generated/', [System.StringComparison]::Ordinal)) { return $false }
+    if ($normalized.StartsWith('Reports/', [System.StringComparison]::Ordinal)) { return $false }
+    if (Test-ReservedTopLevelCaseVariant $normalized) { return $false }
     return $true
 }
 
@@ -209,6 +245,15 @@ function Add-Issue([System.Collections.ArrayList]$Issues, [string]$Message) {
     }
 }
 
+function Read-JsonIssueFile([string]$Path, [string]$Label, [System.Collections.ArrayList]$Issues, [long]$MaxBytes) {
+    try {
+        return Read-H8JsonFileCapped $Path $Label $MaxBytes
+    } catch {
+        Add-Issue $Issues $_.Exception.Message
+        return $null
+    }
+}
+
 function Diagnose-ReviewManifest([string]$PackagePath, [string]$RuntimeId, [System.Collections.ArrayList]$Issues) {
     $reviewPath = Join-Path $PackagePath 'Reports/review_manifest.json'
     if (-not (Test-Path -LiteralPath $reviewPath -PathType Leaf)) {
@@ -216,10 +261,8 @@ function Diagnose-ReviewManifest([string]$PackagePath, [string]$RuntimeId, [Syst
         return 'missing'
     }
 
-    try {
-        $review = Get-Content -Raw -LiteralPath $reviewPath | ConvertFrom-Json
-    } catch {
-        Add-Issue $Issues ('Reports/review_manifest.json parse failed: ' + $_.Exception.Message)
+    $review = Read-JsonIssueFile $reviewPath 'Reports/review_manifest.json' $Issues $MaxReviewManifestBytes
+    if ($null -eq $review) {
         return 'invalid'
     }
 
@@ -247,10 +290,25 @@ function Diagnose-ReviewManifest([string]$PackagePath, [string]$RuntimeId, [Syst
         return 'invalid'
     }
 
+    $reviewPaths = [System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::Ordinal)
+    $reviewCaseFoldPaths = [System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::OrdinalIgnoreCase)
     foreach ($file in @($review.Files)) {
-        $relative = [string]$file.Path
+        $relative = ([string]$file.Path).Replace('\','/')
         if (-not (Test-SafeRelativePath $relative)) {
             Add-Issue $Issues ('Review file path is unsafe or not a source path: ' + $relative)
+            $reviewStatus = 'invalid'
+            continue
+        }
+        if ($reviewPaths.ContainsKey($relative) -or $reviewCaseFoldPaths.ContainsKey($relative)) {
+            Add-Issue $Issues ('Review manifest contains duplicate or case-fold duplicate source path: ' + $relative)
+            $reviewStatus = 'invalid'
+            continue
+        }
+        [void]$reviewPaths.Add($relative, $true)
+        [void]$reviewCaseFoldPaths.Add($relative, $true)
+
+        if (-not (Test-Sha256Hex ([string]$file.Sha256))) {
+            Add-Issue $Issues ('Review manifest contains invalid lowercase SHA-256 for: ' + $relative)
             $reviewStatus = 'invalid'
             continue
         }
@@ -262,15 +320,29 @@ function Diagnose-ReviewManifest([string]$PackagePath, [string]$RuntimeId, [Syst
             continue
         }
 
+        $expectedBytes = 0L
+        try {
+            $expectedBytes = [long]$file.Bytes
+        } catch {
+            Add-Issue $Issues ('Review manifest contains invalid byte count: ' + $relative)
+            $reviewStatus = 'invalid'
+            continue
+        }
+        if ($expectedBytes -lt 0) {
+            Add-Issue $Issues ('Review manifest contains invalid byte count: ' + $relative)
+            $reviewStatus = 'invalid'
+            continue
+        }
+
         $info = Get-Item -LiteralPath $fullPath
-        if ([long]$file.Bytes -ne [long]$info.Length) {
+        if ($expectedBytes -ne [long]$info.Length) {
             Add-Issue $Issues ('Reviewed file byte mismatch: ' + $relative)
             $reviewStatus = 'invalid'
             continue
         }
 
         $actualSha = Get-Sha256Hex $fullPath
-        if ($actualSha -ne ([string]$file.Sha256).ToLowerInvariant()) {
+        if ($actualSha -cne [string]$file.Sha256) {
             Add-Issue $Issues ('Reviewed file SHA-256 mismatch: ' + $relative)
             $reviewStatus = 'invalid'
         }
@@ -313,8 +385,10 @@ function Diagnose-Package([System.IO.FileInfo]$ManifestFile, [int]$DiscoveryInde
             Add-Issue $issues ('mod.json exceeds ' + $MaxManifestBytes + ' bytes.')
             $manifestStatus = 'invalid'
         } else {
-            try {
-                $manifest = Get-Content -Raw -LiteralPath $manifestPath | ConvertFrom-Json
+            $manifest = Read-JsonIssueFile $manifestPath 'mod.json' $issues $MaxManifestBytes
+            if ($null -eq $manifest) {
+                $manifestStatus = 'invalid'
+            } else {
                 $runtimeId = [string]$manifest.Id
                 $displayName = [string]$manifest.Name
                 $version = [string]$manifest.Version
@@ -369,9 +443,6 @@ function Diagnose-Package([System.IO.FileInfo]$ManifestFile, [int]$DiscoveryInde
                         $manifestStatus = 'invalid'
                     }
                 }
-            } catch {
-                Add-Issue $issues ('mod.json parse failed: ' + $_.Exception.Message)
-                $manifestStatus = 'invalid'
             }
         }
     }
@@ -401,6 +472,9 @@ function Diagnose-Package([System.IO.FileInfo]$ManifestFile, [int]$DiscoveryInde
     if ($manifestStatus -ne 'ok') {
         $status = 'INVALID'
         $reason = 'ModLoader will skip or disable this package before activation.'
+    } elseif ($reviewStatus -ne 'ok') {
+        $status = 'INVALID'
+        $reason = 'Local reviewed install proof is missing or invalid. Re-run h8mod.ps1 -Action install-local from the starter kit before testing discovery.'
     } elseif ($hasManagedEntry) {
         $status = 'DISABLED_BY_RUNTIME_BOUNDARY'
         $reason = 'Managed mod entry disabled. UGC commands must use 64-byte FutureCommandEnvelope packets.'

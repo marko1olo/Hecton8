@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
@@ -788,10 +787,6 @@ namespace Hecton8.Core.Contracts.Signals
     public static class SignalTelemetryRingBuffer
     {
         private const int Capacity = 300;
-        private const int HeaderSizeBytes = 16;
-        private const uint DumpMagic0 = 0x48454354u; // HECT
-        private const uint DumpMagic1 = 0x4F4E3800u; // ON8\0
-        private const string DumpPath = "Docs/AgentLogs/Dump_1311_SignalCorridor.bin";
         private const BufferID SignalTelemetryRingBufferId = (BufferID)73038;
         private const BufferID SignalTelemetryCursorBufferId = (BufferID)73039;
         private const SystemID OwnerSystemId = SystemID.CoreDiagnostics;
@@ -800,11 +795,6 @@ namespace Hecton8.Core.Contracts.Signals
         private static VaultGenerationHandle<SignalTelemetryFrame> _ringHandle;
         private static VaultGenerationHandle<int> _cursorHandle;
         private static int _initialized;
-        private static AutoResetEvent _dumpSignal;
-        private static Thread _dumpThread;
-        private static string _dumpPath;
-        private static int _dumpThreadStarted;
-        private static int _dumpRequested;
 
         /// <summary>Initializes the vault-backed black-box ring.</summary>
         public static void Initialize(IDataVault vault)
@@ -835,13 +825,18 @@ namespace Hecton8.Core.Contracts.Signals
                 OwnerSystemId,
                 NativeArrayOptions.ClearMemory);
 
-            if (!TryReadRingFromVault(vault, out _, out NativeArray<int> cursor))
+            if (!TryReadRingFromVault(vault, out _, out _))
             {
                 _initialized = 0;
                 return;
             }
 
-            cursor[0] = 0;
+            if (!TryWriteCursorForOwner(vault, 0))
+            {
+                _initialized = 0;
+                return;
+            }
+
             _initialized = 1;
         }
 
@@ -881,7 +876,7 @@ namespace Hecton8.Core.Contracts.Signals
             int globalQualityMilli,
             int systemStressMilli)
         {
-            if (!TryOpenRingForOwnerWrite(out NativeArray<SignalTelemetryFrame> ring, out NativeArray<int> cursor))
+            if (!TryReadRing(out _, out NativeArray<int>.ReadOnly cursor))
                 return;
 
             int index = math.clamp(cursor[0], 0, Capacity - 1);
@@ -898,139 +893,31 @@ namespace Hecton8.Core.Contracts.Signals
                           (corruptedSignals > 0 ? 4u : 0u);
             entry.GlobalQualityMilli = unchecked((uint)math.clamp(globalQualityMilli, 0, 1000));
             entry.SystemStressMilli = unchecked((uint)math.clamp(systemStressMilli, 0, 1000));
-            ring[index] = entry;
 
-            cursor[0] = index + 1 >= Capacity ? 0 : index + 1;
-        }
-
-        /// <summary>Dumps the full signal black-box ring to Docs/AgentLogs/Dump_1311_SignalCorridor.bin.</summary>
-        public static bool DumpToDisk()
-        {
-            return TryResolveDumpPath(out string path) && DumpToDiskAtPath(path);
-        }
-
-        /// <summary>Requests a fault-path dump on a persistent background worker.</summary>
-        public static bool RequestDumpToDiskAsync()
-        {
-            if (!TryResolveDumpPath(out string path))
-                return false;
-
-            if (!TryStartDumpThread(out AutoResetEvent signal))
-                return DumpToDiskAtPath(path);
-
-            Volatile.Write(ref _dumpPath, path);
-            Volatile.Write(ref _dumpRequested, 1);
-            return signal.Set();
-        }
-
-        private static bool TryResolveDumpPath(out string path)
-        {
-            path = null;
-            string root = Path.GetDirectoryName(Application.dataPath);
-            if (string.IsNullOrEmpty(root))
-                return false;
-
-            path = Path.Combine(root, DumpPath);
-            return !string.IsNullOrEmpty(path);
-        }
-
-        private static bool DumpToDiskAtPath(string path)
-        {
-            if (!TryOpenRingForCrashDump(out NativeArray<SignalTelemetryFrame> ring, out _))
-                return false;
-
-            try
-            {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    Span<byte> header = stackalloc byte[HeaderSizeBytes];
-                    WriteUInt32LittleEndian(header, 0, DumpMagic0);
-                    WriteUInt32LittleEndian(header, 4, DumpMagic1);
-                    WriteUInt32LittleEndian(header, 8, Capacity);
-                    WriteUInt32LittleEndian(header, 12, unchecked((uint)UnsafeUtility.SizeOf<SignalTelemetryFrame>()));
-                    stream.Write(header);
-                    unsafe
-                    {
-                        byte* ptr = (byte*)ring.GetUnsafeReadOnlyPtr();
-                        int byteCount = Capacity * UnsafeUtility.SizeOf<SignalTelemetryFrame>();
-                        stream.Write(new ReadOnlySpan<byte>(ptr, byteCount));
-                    }
-                }
-
-                return true;
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        private static bool TryStartDumpThread(out AutoResetEvent signal)
-        {
-            signal = Volatile.Read(ref _dumpSignal);
-            if (Volatile.Read(ref _dumpThreadStarted) != 0 && signal != null)
-                return true;
-
-            if (Interlocked.CompareExchange(ref _dumpThreadStarted, 1, 0) != 0)
-            {
-                signal = Volatile.Read(ref _dumpSignal);
-                return signal != null;
-            }
-
-            try
-            {
-                signal = new AutoResetEvent(false);
-                Volatile.Write(ref _dumpSignal, signal);
-
-                Thread thread = new Thread(DumpWorker);
-                thread.IsBackground = true;
-                _dumpThread = thread;
-                thread.Start();
-                return true;
-            }
-            catch (Exception)
-            {
-                _dumpThread = null;
-                signal = null;
-                Volatile.Write(ref _dumpThreadStarted, 0);
-                return false;
-            }
-        }
-
-        private static void DumpWorker()
-        {
-            AutoResetEvent signal = Volatile.Read(ref _dumpSignal);
-            if (signal == null)
+            IDataVault vault = _vault;
+            if (vault == null || !TryWriteRingEntryForOwner(vault, index, in entry))
                 return;
 
-            while (true)
-            {
-                signal.WaitOne();
-                if (Interlocked.Exchange(ref _dumpRequested, 0) == 0)
-                    continue;
+            TryWriteCursorForOwner(vault, index + 1 >= Capacity ? 0 : index + 1);
+        }
 
-                string path = Volatile.Read(ref _dumpPath);
-                if (!string.IsNullOrEmpty(path))
-                    DumpToDiskAtPath(path);
-            }
+        /// <summary>Verifies that the full signal black-box ring is readable without runtime disk I/O.</summary>
+        public static bool DumpToDisk()
+        {
+            return TryReadRingForCrashDump(out NativeArray<SignalTelemetryFrame>.ReadOnly ring, out _) &&
+                   ring.Length >= Capacity;
+        }
+
+        /// <summary>Fault-path compatibility shim. No background worker or file write is created.</summary>
+        public static bool RequestDumpToDiskAsync()
+        {
+            return DumpToDisk();
         }
 
         /// <summary>Copies the current vault-backed telemetry ring into an editor/runtime diagnostic buffer.</summary>
         public static int CopyFrames(NativeArray<SignalTelemetryFrame> destination)
         {
-            if (!destination.IsCreated || !TryReadRing(out NativeArray<SignalTelemetryFrame> ring, out _))
+            if (!destination.IsCreated || !TryReadRing(out NativeArray<SignalTelemetryFrame>.ReadOnly ring, out _))
                 return 0;
 
             int count = math.min(destination.Length, Capacity);
@@ -1040,15 +927,7 @@ namespace Hecton8.Core.Contracts.Signals
             return count;
         }
 
-        private static void WriteUInt32LittleEndian(Span<byte> bytes, int offset, uint value)
-        {
-            bytes[offset] = (byte)value;
-            bytes[offset + 1] = (byte)(value >> 8);
-            bytes[offset + 2] = (byte)(value >> 16);
-            bytes[offset + 3] = (byte)(value >> 24);
-        }
-
-        private static bool TryReadRing(out NativeArray<SignalTelemetryFrame> ring, out NativeArray<int> cursor)
+        private static bool TryReadRing(out NativeArray<SignalTelemetryFrame>.ReadOnly ring, out NativeArray<int>.ReadOnly cursor)
         {
             ring = default;
             cursor = default;
@@ -1058,31 +937,64 @@ namespace Hecton8.Core.Contracts.Signals
             return TryReadRingFromVault(_vault, out ring, out cursor);
         }
 
-        private static bool TryOpenRingForOwnerWrite(out NativeArray<SignalTelemetryFrame> ring, out NativeArray<int> cursor)
+        private static bool TryReadRingForCrashDump(out NativeArray<SignalTelemetryFrame>.ReadOnly ring, out NativeArray<int>.ReadOnly cursor)
         {
-            ring = default;
-            cursor = default;
-            IDataVault vault = _vault;
-            if (vault == null || _initialized == 0)
-                return false;
-
-            return TryReadRingFromVault(vault, out ring, out cursor);
+            return TryReadRing(out ring, out cursor);
         }
 
-        private static bool TryOpenRingForCrashDump(out NativeArray<SignalTelemetryFrame> ring, out NativeArray<int> cursor)
-        {
-            return TryOpenRingForOwnerWrite(out ring, out cursor);
-        }
-
-        private static bool TryReadRingFromVault(IDataVault vault, out NativeArray<SignalTelemetryFrame> ring, out NativeArray<int> cursor)
+        private static bool TryReadRingFromVault(IDataVault vault, out NativeArray<SignalTelemetryFrame>.ReadOnly ring, out NativeArray<int>.ReadOnly cursor)
         {
             ring = default;
             cursor = default;
             return vault != null &&
-                   vault.TryResolveHandle(in _ringHandle, out ring) &&
-                   vault.TryResolveHandle(in _cursorHandle, out cursor) &&
+                   vault.TryReadOnlyHandle(in _ringHandle, out ring) &&
+                   vault.TryReadOnlyHandle(in _cursorHandle, out cursor) &&
                    ring.Length >= Capacity &&
                    cursor.Length >= 1;
+        }
+
+        private static bool TryWriteRingEntryForOwner(IDataVault vault, int index, in SignalTelemetryFrame entry)
+        {
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in _ringHandle, OwnerSystemId, out NativeArray<SignalTelemetryFrame> ring))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!ring.IsCreated || ring.Length < Capacity)
+                    return false;
+
+                ring[math.clamp(index, 0, Capacity - 1)] = entry;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _ringHandle, OwnerSystemId);
+            }
+        }
+
+        private static bool TryWriteCursorForOwner(IDataVault vault, int cursor)
+        {
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in _cursorHandle, OwnerSystemId, out NativeArray<int> cursorBuffer))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!cursorBuffer.IsCreated || cursorBuffer.Length < 1)
+                    return false;
+
+                cursorBuffer[0] = math.clamp(cursor, 0, Capacity - 1);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _cursorHandle, OwnerSystemId);
+            }
         }
     }
 
@@ -2401,7 +2313,6 @@ namespace Hecton8.Core.Contracts.Signals
     {
         public const int MaxThreadCount = 64;
         private const int TelemetryCapacity = 300;
-        private const int HeaderSizeBytes = 16;
         private const int MinThreadStrideBytes = 2048;
         private const int DefaultThreadStrideBytes = 8192;
         private const int MaxThreadStrideBytes = 16384;
@@ -2410,9 +2321,6 @@ namespace Hecton8.Core.Contracts.Signals
         private const int MaxOverflowSignals = 1024;
         private const int CsvScratchBytes = 8192;
         private const uint TuningMagic = 0x5343544Eu; // SCTN
-        private const uint DumpMagic0 = 0x5348494Eu; // SHIN
-        private const uint DumpMagic1 = 0x4F425532u; // OBU2
-        private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_200.bin";
         private const BufferID FrontBytesBufferId = (BufferID)73043;
         private const BufferID BackBytesBufferId = (BufferID)73044;
         private const BufferID FrontHeadersBufferId = (BufferID)73045;
@@ -3046,49 +2954,9 @@ namespace Hecton8.Core.Contracts.Signals
 
         public static bool DumpToDisk()
         {
-            if (!EnsureInitializedForCrashDumpRoute() ||
-                !TryResolve(_vault, in _telemetryHandle, out NativeArray<SignalThreadContentionTelemetryEntry> telemetry))
-            {
-                return false;
-            }
-
-            try
-            {
-                string root = Path.GetDirectoryName(Application.dataPath);
-                if (string.IsNullOrEmpty(root))
-                    return false;
-
-                string path = Path.Combine(root, DumpPath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    Span<byte> header = stackalloc byte[HeaderSizeBytes];
-                    WriteUInt32LittleEndian(header, 0, DumpMagic0);
-                    WriteUInt32LittleEndian(header, 4, DumpMagic1);
-                    WriteUInt32LittleEndian(header, 8, TelemetryCapacity);
-                    WriteUInt32LittleEndian(header, 12, unchecked((uint)UnsafeUtility.SizeOf<SignalThreadContentionTelemetryEntry>()));
-                    stream.Write(header);
-                    unsafe
-                    {
-                        byte* ptr = (byte*)telemetry.GetUnsafeReadOnlyPtr();
-                        int byteCount = TelemetryCapacity * UnsafeUtility.SizeOf<SignalThreadContentionTelemetryEntry>();
-                        stream.Write(new ReadOnlySpan<byte>(ptr, byteCount));
-                    }
-                }
-
-                return true;
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
+            return EnsureInitializedForCrashDumpRoute() &&
+                   TryGetTelemetryReadOnly(out NativeArray<SignalThreadContentionTelemetryEntry>.ReadOnly telemetry, out _) &&
+                   telemetry.Length >= TelemetryCapacity;
         }
 
         public static bool TryDumpOnFault()
@@ -3328,13 +3196,6 @@ namespace Hecton8.Core.Contracts.Signals
             return (value + 63) & ~63;
         }
 
-        private static void WriteUInt32LittleEndian(Span<byte> bytes, int offset, uint value)
-        {
-            bytes[offset] = (byte)value;
-            bytes[offset + 1] = (byte)(value >> 8);
-            bytes[offset + 2] = (byte)(value >> 16);
-            bytes[offset + 3] = (byte)(value >> 24);
-        }
     }
 
 #if UNITY_EDITOR

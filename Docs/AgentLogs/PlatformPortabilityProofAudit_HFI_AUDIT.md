@@ -69,7 +69,7 @@ Evidence class: STATIC_SOURCE / PACKAGE_LOCK / FILESYSTEM. No Unity import, play
 - `#pragma target >= 4.5`: `96`
 - `#pragma target >= 5.0`: `5`
 - Compute files: `71`
-- Compute reference files scanned: `9605`
+- Compute reference files scanned: `9606`
 - Compute reference files skipped over `2000000` bytes: `39` / bytes `346161212`
 - `numthreads` declarations: `156`
 - Risky numeric thread groups > `64`: `4`

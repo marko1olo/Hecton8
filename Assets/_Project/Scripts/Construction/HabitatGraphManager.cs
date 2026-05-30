@@ -22,6 +22,26 @@ using UnityEngine;
 
 namespace Hecton8.Construction
 {
+    internal readonly struct HabitatGraphModuleRegistration
+    {
+        internal readonly GameObject ModuleObject;
+        internal readonly ModuleMarker Marker;
+        internal readonly BaseModule BaseModule;
+        internal readonly TransitionHatchMeshState HatchMeshState;
+
+        internal HabitatGraphModuleRegistration(
+            GameObject moduleObject,
+            ModuleMarker marker,
+            BaseModule baseModule,
+            TransitionHatchMeshState hatchMeshState)
+        {
+            ModuleObject = moduleObject;
+            Marker = marker;
+            BaseModule = baseModule;
+            HatchMeshState = hatchMeshState;
+        }
+    }
+
     [Flags]
     internal enum HabitatSiegeTargetFlags : byte
     {
@@ -672,7 +692,7 @@ namespace Hecton8.Construction
 
         internal int TemporaryBypassCount => _temporaryBypassBuffer.Count;
 
-        internal void Rebuild(IReadOnlyList<GameObject> modules)
+        internal void Rebuild(IReadOnlyList<HabitatGraphModuleRegistration> modules)
         {
             ClearVisualLinks();
             _moduleBuffer.Clear();
@@ -1251,7 +1271,7 @@ namespace Hecton8.Construction
                 float safeDeltaTime = math.max(0.0001f, deltaTime);
                 float peakStress01 = 0f;
                 float qualityWeight = SanitizeQualityWeight(globalQualityWeight);
-                byte moduleStressQualityProfile = ResolveModuleStressQualityProfileByte(qualityWeight);
+                byte moduleStressQualityWeightQ8 = ResolveModuleStressQualityWeightQ8(qualityWeight);
                 float lowTierBlend = ResolveModuleStressLowBlend(qualityWeight);
                 bool changed = orderChanged ||
                                stressCount != _lastUploadedModuleStressCount ||
@@ -1309,7 +1329,7 @@ namespace Hecton8.Construction
                     peakStress01 = math.max(peakStress01, stress01);
 
                     if (baseModule != null && stress01 >= ModuleStressCompromisedThreshold01)
-                        TryPublishBaseModuleCompromisedSignal(nodeIndex, baseModule, module, hasGraphRecord, modulePosition, stress01, peakStress01, depthMeters, qualityWeight, moduleStressQualityProfile, moduleCompromisedFlags);
+                        TryPublishBaseModuleCompromisedSignal(nodeIndex, baseModule, module, hasGraphRecord, modulePosition, stress01, peakStress01, depthMeters, moduleStressQualityWeightQ8, moduleCompromisedFlags);
                     else if (nodeIndex < moduleCompromisedFlags.Length && stress01 < ModuleStressCompromisedThreshold01 * 0.82f)
                         moduleCompromisedFlags[nodeIndex] = 0;
                 }
@@ -1808,8 +1828,7 @@ namespace Hecton8.Construction
             float stress01,
             float peakStress01,
             float depthMeters,
-            float globalQualityWeight,
-            byte tierProfile,
+            byte qualityWeightQ8,
             NativeArray<byte> moduleCompromisedFlags)
         {
             if (!moduleCompromisedFlags.IsCreated || (uint)moduleIndex >= (uint)moduleCompromisedFlags.Length)
@@ -1830,11 +1849,9 @@ namespace Hecton8.Construction
                 Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = ++_moduleStressSequence,
                 SourceId = DamageSourceIds.HabitatIntegrity,
-                Flags = ResolveModuleStressDisplacementMaxMeters(globalQualityWeight) <= 0f
-                    ? BaseModuleCompromisedSignal.LowTierVisualOnlyFlag
-                    : BaseModuleCompromisedSignal.MaxDeformationFlag,
+                Flags = BaseModuleCompromisedSignal.MaxDeformationFlag,
                 StressIndex = (byte)math.min(byte.MaxValue, moduleIndex),
-                QualityTier = tierProfile
+                QualityWeightQ8 = qualityWeightQ8
             };
             SignalBus<BaseModuleCompromisedSignal>.TryPushTracked(in signal, ref s_x001HabitatGraphManagerSignalPushDropCount);
         }
@@ -1986,7 +2003,7 @@ namespace Hecton8.Construction
             return math.lerp(0f, ModuleStressUltraDisplacementMaxMeters, curve);
         }
 
-        private static byte ResolveModuleStressQualityProfileByte(float globalQualityWeight)
+        private static byte ResolveModuleStressQualityWeightQ8(float globalQualityWeight)
         {
             float q = SanitizeQualityWeight(globalQualityWeight);
             return (byte)math.clamp((int)math.round(q * byte.MaxValue), 0, byte.MaxValue);
@@ -3981,7 +3998,7 @@ namespace Hecton8.Construction
             }
         }
 
-        private void PopulateModuleBuffer(IReadOnlyList<GameObject> modules)
+        private void PopulateModuleBuffer(IReadOnlyList<HabitatGraphModuleRegistration> modules)
         {
             int count = modules.Count;
             if (count > _moduleBuffer.Capacity)
@@ -3989,13 +4006,14 @@ namespace Hecton8.Construction
 
             for (int i = 0; i < count && _moduleBuffer.Count < _moduleBuffer.Capacity; i++)
             {
-                GameObject moduleObject = modules[i];
+                HabitatGraphModuleRegistration registration = modules[i];
+                GameObject moduleObject = registration.ModuleObject;
                 if (moduleObject == null)
                     continue;
 
-                ModuleMarker marker = moduleObject.TryGetComponent(out ModuleMarker resolvedMarker) ? resolvedMarker : null;
-                BaseModule baseModule = moduleObject.TryGetComponent(out BaseModule resolvedBaseModule) ? resolvedBaseModule : null;
-                TransitionHatchMeshState hatchMeshState = moduleObject.TryGetComponent(out TransitionHatchMeshState resolvedHatchMeshState) ? resolvedHatchMeshState : null;
+                ModuleMarker marker = registration.Marker;
+                BaseModule baseModule = registration.BaseModule;
+                TransitionHatchMeshState hatchMeshState = registration.HatchMeshState;
                 if (baseModule != null && baseModule.IsDetachedDebris)
                     continue;
 
@@ -5284,7 +5302,7 @@ namespace Hecton8.Construction
                     continue;
 
                 BaseDegradationSystem.SynchronizeNode(
-                    module.ModuleObject,
+                    module.BaseModule,
                     module.NodeId,
                     graph.Nodes[nodeIndex].Flags,
                     ResolveNodeRuptureWorldPoint(nodeIndex));

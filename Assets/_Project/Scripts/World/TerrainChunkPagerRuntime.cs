@@ -217,7 +217,7 @@ namespace Hecton8.World
             TerrainChunkPagerRuntime active = s_active;
             if (active == null ||
                 active._initialized == 0 ||
-                !active.TryAcquireWriteArray(in active._tuningHandle, 1, out NativeArray<TerrainChunkPagerTuningDTO> tuningBuffer))
+                !active.TryAcquireWriteArray(in active._tuningHandle, 1, out NativeArray<TerrainChunkPagerTuningDTO> tuningBuffer, out IDataVault tuningVault))
             {
                 return false;
             }
@@ -235,7 +235,7 @@ namespace Hecton8.World
             }
             finally
             {
-                active.ReleaseWriteArray(in active._tuningHandle);
+                ReleaseWriteArray(tuningVault, in active._tuningHandle);
             }
         }
 
@@ -661,7 +661,7 @@ namespace Hecton8.World
                 return;
 
             _validatedVaultBuffers = 1;
-            if (TryAcquireWriteArray(in _tuningHandle, 1, out NativeArray<TerrainChunkPagerTuningDTO> tuningBuffer))
+            if (TryAcquireWriteArray(in _tuningHandle, 1, out NativeArray<TerrainChunkPagerTuningDTO> tuningBuffer, out IDataVault tuningVault))
             {
                 try
                 {
@@ -672,7 +672,7 @@ namespace Hecton8.World
                 }
                 finally
                 {
-                    ReleaseWriteArray(in _tuningHandle);
+                    ReleaseWriteArray(tuningVault, in _tuningHandle);
                 }
             }
 
@@ -859,9 +859,10 @@ namespace Hecton8.World
                    buffer.Length >= math.max(1, minLength);
         }
 
-        private bool TryAcquireWriteArray<T>(in VaultGenerationHandle<T> handle, int minLength, out NativeArray<T> buffer) where T : struct
+        private bool TryAcquireWriteArray<T>(in VaultGenerationHandle<T> handle, int minLength, out NativeArray<T> buffer, out IDataVault writeVault) where T : struct
         {
             buffer = default;
+            writeVault = null;
             IDataVault vault = _vault;
             if (vault == null || !HasVaultHandle(in handle))
                 return false;
@@ -870,21 +871,24 @@ namespace Hecton8.World
                 return false;
 
             if (buffer.IsCreated && buffer.Length >= math.max(1, minLength))
+            {
+                writeVault = vault;
                 return true;
+            }
 
             vault.ReleaseWriteLock(in handle, SystemID.WorldStreaming);
             buffer = default;
             return false;
         }
 
-        private void ReleaseWriteArray<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static void ReleaseWriteArray<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
         {
-            _vault?.ReleaseWriteLock(in handle, SystemID.WorldStreaming);
+            vault?.ReleaseWriteLock(in handle, SystemID.WorldStreaming);
         }
 
         private void ClearFirstValue<T>(in VaultGenerationHandle<T> handle) where T : struct
         {
-            if (!TryAcquireWriteArray(in handle, 1, out NativeArray<T> buffer))
+            if (!TryAcquireWriteArray(in handle, 1, out NativeArray<T> buffer, out IDataVault writeVault))
                 return;
 
             try
@@ -893,7 +897,7 @@ namespace Hecton8.World
             }
             finally
             {
-                ReleaseWriteArray(in handle);
+                ReleaseWriteArray(writeVault, in handle);
             }
         }
 
@@ -1165,7 +1169,7 @@ namespace Hecton8.World
             tuning.CommitByteBudgetPerFrame = math.min(
                 tuning.CommitByteBudgetPerFrame,
                 ResolveCommitByteBudget(_allocatedChunkByteCapacity, tuning.MaxCommitsPerVisualSync));
-            if (TryAcquireWriteArray(in _tuningHandle, 1, out NativeArray<TerrainChunkPagerTuningDTO> tuningWrite))
+            if (TryAcquireWriteArray(in _tuningHandle, 1, out NativeArray<TerrainChunkPagerTuningDTO> tuningWrite, out IDataVault tuningVault))
             {
                 try
                 {
@@ -1173,7 +1177,7 @@ namespace Hecton8.World
                 }
                 finally
                 {
-                    ReleaseWriteArray(in _tuningHandle);
+                    ReleaseWriteArray(tuningVault, in _tuningHandle);
                 }
             }
 
@@ -1307,7 +1311,7 @@ namespace Hecton8.World
                 metadata[result.SlotIndex] = meta;
             }
 
-            if (tuningDirty && TryAcquireWriteArray(in _tuningHandle, 1, out NativeArray<TerrainChunkPagerTuningDTO> tuningWrite))
+            if (tuningDirty && TryAcquireWriteArray(in _tuningHandle, 1, out NativeArray<TerrainChunkPagerTuningDTO> tuningWrite, out IDataVault tuningVault))
             {
                 try
                 {
@@ -1315,7 +1319,7 @@ namespace Hecton8.World
                 }
                 finally
                 {
-                    ReleaseWriteArray(in _tuningHandle);
+                    ReleaseWriteArray(tuningVault, in _tuningHandle);
                 }
             }
         }
@@ -1961,8 +1965,36 @@ namespace Hecton8.World
         private void WriteTelemetry()
         {
             if (!TryResolveArray(in _metadataHandle, _metadataLength, out NativeArray<ChunkMetadataDTO> metadata) ||
-                !TryReadOnlyArray(in _tuningHandle, 1, out NativeArray<TerrainChunkPagerTuningDTO>.ReadOnly tuningRead) ||
-                !TryAcquireWriteArray(in _countersHandle, 1, out NativeArray<TerrainChunkPagerCountersDTO> countersWrite))
+                !TryReadOnlyArray(in _tuningHandle, 1, out NativeArray<TerrainChunkPagerTuningDTO>.ReadOnly tuningRead))
+            {
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultVaultUnavailable;
+                return;
+            }
+
+            int metadataCount = math.min(_metadataLength, metadata.Length);
+            int active = 0;
+            int loading = 0;
+            int stale = 0;
+            for (int i = 0; i < metadataCount; i++)
+            {
+                uint flags = metadata[i].StateFlags;
+                if ((flags & TerrainChunkStateFlags.Active) != 0u) active++;
+                if ((flags & TerrainChunkStateFlags.Loading) != 0u) loading++;
+                if ((flags & TerrainChunkStateFlags.Stale) != 0u) stale++;
+            }
+
+            int pendingLoads = CountRing(ref _requestHead, ref _requestTail);
+            int pendingResults = CountRing(ref _resultHead, ref _resultTail);
+            TerrainChunkPagerTuningDTO tuning = tuningRead[0];
+            if (Volatile.Read(ref _workerRunning) != 0 &&
+                (Volatile.Read(ref _workerThreadActive) == 0 ||
+                 IsWorkerHeartbeatStale(Volatile.Read(ref _workerHeartbeatTimestamp), tuning.CriticalLatencyMs, pendingLoads, loading)))
+            {
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultIo;
+            }
+
+            uint missingFileCount;
+            if (!TryAcquireWriteArray(in _countersHandle, 1, out NativeArray<TerrainChunkPagerCountersDTO> countersWrite, out IDataVault countersVault))
             {
                 _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultVaultUnavailable;
                 return;
@@ -1970,79 +2002,58 @@ namespace Hecton8.World
 
             try
             {
-                if (!TryAcquireWriteArray(in _telemetryRingHandle, _telemetryLength, out NativeArray<PagerTelemetryEntry> telemetryWrite))
-                {
-                    _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultVaultUnavailable;
-                    return;
-                }
-
-                try
-                {
-                    int metadataCount = math.min(_metadataLength, metadata.Length);
-                    int active = 0;
-                    int loading = 0;
-                    int stale = 0;
-                    for (int i = 0; i < metadataCount; i++)
-                    {
-                        uint flags = metadata[i].StateFlags;
-                        if ((flags & TerrainChunkStateFlags.Active) != 0u) active++;
-                        if ((flags & TerrainChunkStateFlags.Loading) != 0u) loading++;
-                        if ((flags & TerrainChunkStateFlags.Stale) != 0u) stale++;
-                    }
-
-                    int pendingLoads = CountRing(ref _requestHead, ref _requestTail);
-                    int pendingResults = CountRing(ref _resultHead, ref _resultTail);
-                    TerrainChunkPagerTuningDTO tuning = tuningRead[0];
-                    if (Volatile.Read(ref _workerRunning) != 0 &&
-                        (Volatile.Read(ref _workerThreadActive) == 0 ||
-                         IsWorkerHeartbeatStale(Volatile.Read(ref _workerHeartbeatTimestamp), tuning.CriticalLatencyMs, pendingLoads, loading)))
-                    {
-                        _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultIo;
-                    }
-
-                    TerrainChunkPagerCountersDTO counters = countersWrite[0];
-                    counters.Frame = _frameId;
-                    counters.ActiveChunks = active;
-                    counters.LoadingChunks = loading;
-                    counters.StaleChunks = stale;
-                    counters.PendingRequests = pendingLoads;
-                    counters.PendingResults = pendingResults;
-                    counters.LatencyEwmaMs = tuning.LatencyEwmaMs;
-                    counters.EffectiveRingRadius = tuning.EffectiveRingRadius;
-                    counters.LastFaultFlags = _faultFlags;
-                    counters.WorkerSequence = _workerSequence;
-                    counters.LayoutValid = _layoutValid;
-                    countersWrite[0] = counters;
-
-                    int cursor = _telemetryCursor;
-                    PagerTelemetryEntry entry = default;
-                    entry.CameraAup = _lastCameraAup;
-                    entry.Frame = _frameId;
-                    entry.StateHash = TerrainChunkPagerMath.HashMetadata(metadata, metadataCount);
-                    entry.ActiveChunks = (ushort)math.min(ushort.MaxValue, active);
-                    entry.LoadingChunks = (ushort)math.min(ushort.MaxValue, loading);
-                    entry.StaleChunks = (ushort)math.min(ushort.MaxValue, stale);
-                    entry.PendingLoads = (ushort)math.min(ushort.MaxValue, pendingLoads);
-                    entry.LatencyEwmaMs = tuning.LatencyEwmaMs;
-                    entry.ResidencyEvalMicros = _lastEvalMicros;
-                    entry.EffectiveRingRadius = tuning.EffectiveRingRadius;
-                    entry.Flags = _faultFlags;
-                    entry.MissingFileCount = counters.MissingFileCount;
-                    entry.WorkerSequence = _workerSequence;
-                    telemetryWrite[cursor] = entry;
-                    _telemetryCursor = (cursor + 1) % _telemetryLength;
-
-                    if (_faultFlags != 0u)
-                        RequestTelemetryDumpOnce();
-                }
-                finally
-                {
-                    ReleaseWriteArray(in _telemetryRingHandle);
-                }
+                TerrainChunkPagerCountersDTO counters = countersWrite[0];
+                counters.Frame = _frameId;
+                counters.ActiveChunks = active;
+                counters.LoadingChunks = loading;
+                counters.StaleChunks = stale;
+                counters.PendingRequests = pendingLoads;
+                counters.PendingResults = pendingResults;
+                counters.LatencyEwmaMs = tuning.LatencyEwmaMs;
+                counters.EffectiveRingRadius = tuning.EffectiveRingRadius;
+                counters.LastFaultFlags = _faultFlags;
+                counters.WorkerSequence = _workerSequence;
+                counters.LayoutValid = _layoutValid;
+                missingFileCount = counters.MissingFileCount;
+                countersWrite[0] = counters;
             }
             finally
             {
-                ReleaseWriteArray(in _countersHandle);
+                ReleaseWriteArray(countersVault, in _countersHandle);
+            }
+
+            if (!TryAcquireWriteArray(in _telemetryRingHandle, _telemetryLength, out NativeArray<PagerTelemetryEntry> telemetryWrite, out IDataVault telemetryVault))
+            {
+                _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultVaultUnavailable;
+                return;
+            }
+
+            try
+            {
+                int cursor = _telemetryCursor;
+                PagerTelemetryEntry entry = default;
+                entry.CameraAup = _lastCameraAup;
+                entry.Frame = _frameId;
+                entry.StateHash = TerrainChunkPagerMath.HashMetadata(metadata, metadataCount);
+                entry.ActiveChunks = (ushort)math.min(ushort.MaxValue, active);
+                entry.LoadingChunks = (ushort)math.min(ushort.MaxValue, loading);
+                entry.StaleChunks = (ushort)math.min(ushort.MaxValue, stale);
+                entry.PendingLoads = (ushort)math.min(ushort.MaxValue, pendingLoads);
+                entry.LatencyEwmaMs = tuning.LatencyEwmaMs;
+                entry.ResidencyEvalMicros = _lastEvalMicros;
+                entry.EffectiveRingRadius = tuning.EffectiveRingRadius;
+                entry.Flags = _faultFlags;
+                entry.MissingFileCount = missingFileCount;
+                entry.WorkerSequence = _workerSequence;
+                telemetryWrite[cursor] = entry;
+                _telemetryCursor = (cursor + 1) % _telemetryLength;
+
+                if (_faultFlags != 0u)
+                    RequestTelemetryDumpOnce();
+            }
+            finally
+            {
+                ReleaseWriteArray(telemetryVault, in _telemetryRingHandle);
             }
         }
 
@@ -2066,7 +2077,7 @@ namespace Hecton8.World
 
         private void IncrementMissingFile()
         {
-            if (!TryAcquireWriteArray(in _countersHandle, 1, out NativeArray<TerrainChunkPagerCountersDTO> countersBuffer))
+            if (!TryAcquireWriteArray(in _countersHandle, 1, out NativeArray<TerrainChunkPagerCountersDTO> countersBuffer, out IDataVault countersVault))
             {
                 _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultMissingFile;
                 return;
@@ -2082,13 +2093,13 @@ namespace Hecton8.World
             }
             finally
             {
-                ReleaseWriteArray(in _countersHandle);
+                ReleaseWriteArray(countersVault, in _countersHandle);
             }
         }
 
         private void IncrementIoError()
         {
-            if (!TryAcquireWriteArray(in _countersHandle, 1, out NativeArray<TerrainChunkPagerCountersDTO> countersBuffer))
+            if (!TryAcquireWriteArray(in _countersHandle, 1, out NativeArray<TerrainChunkPagerCountersDTO> countersBuffer, out IDataVault countersVault))
             {
                 _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultIo;
                 return;
@@ -2104,13 +2115,13 @@ namespace Hecton8.World
             }
             finally
             {
-                ReleaseWriteArray(in _countersHandle);
+                ReleaseWriteArray(countersVault, in _countersHandle);
             }
         }
 
         private void IncrementLz4Error()
         {
-            if (!TryAcquireWriteArray(in _countersHandle, 1, out NativeArray<TerrainChunkPagerCountersDTO> countersBuffer))
+            if (!TryAcquireWriteArray(in _countersHandle, 1, out NativeArray<TerrainChunkPagerCountersDTO> countersBuffer, out IDataVault countersVault))
             {
                 _faultFlags |= TerrainChunkPagerConstants.TelemetryFaultLz4;
                 return;
@@ -2126,13 +2137,13 @@ namespace Hecton8.World
             }
             finally
             {
-                ReleaseWriteArray(in _countersHandle);
+                ReleaseWriteArray(countersVault, in _countersHandle);
             }
         }
 
         private void IncrementQueueOverflow()
         {
-            if (!TryAcquireWriteArray(in _countersHandle, 1, out NativeArray<TerrainChunkPagerCountersDTO> countersBuffer))
+            if (!TryAcquireWriteArray(in _countersHandle, 1, out NativeArray<TerrainChunkPagerCountersDTO> countersBuffer, out IDataVault countersVault))
                 return;
 
             try
@@ -2144,7 +2155,7 @@ namespace Hecton8.World
             }
             finally
             {
-                ReleaseWriteArray(in _countersHandle);
+                ReleaseWriteArray(countersVault, in _countersHandle);
             }
         }
 
@@ -2233,7 +2244,7 @@ namespace Hecton8.World
                         tuning.CommitByteBudgetPerFrame = math.min(
                             tuning.CommitByteBudgetPerFrame,
                             ResolveCommitByteBudget(_allocatedChunkByteCapacity, tuning.MaxCommitsPerVisualSync));
-                        if (TryAcquireWriteArray(in _tuningHandle, 1, out NativeArray<TerrainChunkPagerTuningDTO> tuningWrite))
+                        if (TryAcquireWriteArray(in _tuningHandle, 1, out NativeArray<TerrainChunkPagerTuningDTO> tuningWrite, out IDataVault tuningVault))
                         {
                             try
                             {
@@ -2241,7 +2252,7 @@ namespace Hecton8.World
                             }
                             finally
                             {
-                                ReleaseWriteArray(in _tuningHandle);
+                                ReleaseWriteArray(tuningVault, in _tuningHandle);
                             }
                         }
                     }

@@ -27,19 +27,26 @@ namespace Hecton8.Physics
             float gravityMetersPerSecondSquared,
             float epsilon)
         {
-            float safeMaxVolume = math.max(0f, maxVolume);
-            float safeCurrentVolume = math.clamp(currentVolume, 0f, safeMaxVolume);
+            float safeMaxVolume = SanitizeNonNegative(maxVolume);
+            float safeCurrentVolume = math.isfinite(currentVolume) ? math.clamp(currentVolume, 0f, safeMaxVolume) : 0f;
             float remainingCapacity = safeMaxVolume - safeCurrentVolume;
-            if (breachAreaSquareMeters <= epsilon || remainingCapacity <= epsilon)
+            float safeBreachArea = SanitizeNonNegative(breachAreaSquareMeters);
+            if (safeBreachArea <= epsilon || remainingCapacity <= epsilon)
                 return safeCurrentVolume;
 
             float ingressVelocity = ResolveTorricelliIngressVelocity(depthMeters, gravityMetersPerSecondSquared);
-            float cd = math.clamp(dischargeCoefficient, HectonPhysicsContract.FluidDischargeCoefficientMin, 1f);
-            float deltaVolume = ingressVelocity * breachAreaSquareMeters * cd * math.max(0f, fixedDeltaTime);
+            float cd = math.isfinite(dischargeCoefficient)
+                ? math.clamp(dischargeCoefficient, HectonPhysicsContract.FluidDischargeCoefficientMin, 1f)
+                : HectonPhysicsContract.FluidDischargeCoefficientMin;
+            float safeDeltaTime = SanitizeNonNegative(fixedDeltaTime);
+            float deltaVolume = ingressVelocity * safeBreachArea * cd * safeDeltaTime;
             if (!math.isfinite(deltaVolume))
                 deltaVolume = 0f;
 
-            float maxIngressScale = math.max(HectonPhysicsContract.FluidMaximumIngressScaleMin, maximumIngressPerSecondNormalized) * math.max(0f, fixedDeltaTime);
+            float safeMaxIngressNormalized = SanitizeNonNegative(
+                maximumIngressPerSecondNormalized,
+                HectonPhysicsContract.FluidMaximumIngressScaleMin);
+            float maxIngressScale = math.max(HectonPhysicsContract.FluidMaximumIngressScaleMin, safeMaxIngressNormalized) * safeDeltaTime;
             float maxIngressThisStep = safeMaxVolume * maxIngressScale;
             deltaVolume = math.clamp(deltaVolume, 0f, math.min(remainingCapacity, maxIngressThisStep));
             return safeCurrentVolume + deltaVolume;
@@ -48,7 +55,7 @@ namespace Hecton8.Physics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float SafeCubeRoot(float value)
         {
-            float safeValue = math.max(0f, value);
+            float safeValue = SanitizeNonNegative(value);
             if (safeValue <= 0f)
                 return 0f;
 
@@ -61,8 +68,8 @@ namespace Hecton8.Physics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float ResolveTorricelliIngressVelocity(float depthMeters, float gravityMetersPerSecondSquared)
         {
-            float safeDepth = math.max(0f, depthMeters);
-            float safeGravity = math.max(0f, gravityMetersPerSecondSquared);
+            float safeDepth = SanitizeNonNegative(depthMeters);
+            float safeGravity = SanitizeNonNegative(gravityMetersPerSecondSquared);
             float velocity = ApproximateSqrtPositive(2f * safeGravity * safeDepth);
             return math.isfinite(velocity) ? velocity : 0f;
         }
@@ -70,12 +77,21 @@ namespace Hecton8.Physics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ApproximateSqrtPositive(float value)
         {
-            float safeValue = math.max(0f, value);
+            float safeValue = SanitizeNonNegative(value);
             if (safeValue <= 0f)
                 return 0f;
 
             float magnitude = safeValue * math.rsqrt(math.max(safeValue, HectonPhysicsContract.FluidSqrtEpsilon));
             return math.isfinite(magnitude) ? magnitude : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SanitizeNonNegative(float value, float fallback = 0f)
+        {
+            if (!math.isfinite(value))
+                return math.isfinite(fallback) ? math.max(0f, fallback) : 0f;
+
+            return math.max(0f, value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -184,8 +200,9 @@ namespace Hecton8.Physics
 
             IntegrityStateDTO integrity = Integrity[index];
             integrity.Flags |= IntegrityStateDTO.FlagBreached | IntegrityStateDTO.FlagMockSource;
-            integrity.Integrity01 = math.min(integrity.Integrity01, 0.35f);
-            integrity.BreachAreaM2 = math.max(0.0001f, BreachAreaM2);
+            float safeIntegrity = math.isfinite(integrity.Integrity01) ? math.saturate(integrity.Integrity01) : 1f;
+            integrity.Integrity01 = math.min(safeIntegrity, 0.35f);
+            integrity.BreachAreaM2 = math.max(0.0001f, HabitatFluidIncursionMath.SanitizeNonNegative(BreachAreaM2, 0.0001f));
             Integrity[index] = integrity;
         }
     }
@@ -205,9 +222,11 @@ namespace Hecton8.Physics
 
             int index = math.clamp(TargetNodeIndex, 0, CompartmentCount - 1);
             ref FluidCompartmentDTO dto = ref FluidCompartmentPointerUtility.ElementRef(Compartments, index);
-            float maxVolume = math.max(HabitatFluidIncursionConstants.WaterEpsilonM3, dto.MaxWaterVolume);
+            float maxVolume = math.max(
+                HabitatFluidIncursionConstants.WaterEpsilonM3,
+                HabitatFluidIncursionMath.SanitizeNonNegative(dto.MaxWaterVolume, HabitatFluidIncursionConstants.WaterEpsilonM3));
             float current = math.isfinite(dto.CurrentWaterVolume) ? math.clamp(dto.CurrentWaterVolume, 0f, maxVolume) : 0f;
-            float next = math.min(maxVolume, current + math.max(0f, AddedWaterM3));
+            float next = math.min(maxVolume, current + HabitatFluidIncursionMath.SanitizeNonNegative(AddedWaterM3));
             dto.CurrentWaterVolume = next;
             dto.WaterLevelHeight01 = math.saturate(next * math.rcp(maxVolume));
             dto.Flags |= FluidCompartmentFlags.MockBreach;
@@ -271,11 +290,13 @@ namespace Hecton8.Physics
                 (integrity.Flags & IntegrityStateDTO.FlagBreached) != 0u;
             bool isSealed = (dto.Flags & FluidCompartmentFlags.Isolated) != 0u ||
                             (integrity.Flags & IntegrityStateDTO.FlagSealed) != 0u;
-            float breachArea = math.max(0f, integrity.BreachAreaM2);
+            float breachArea = HabitatFluidIncursionMath.SanitizeNonNegative(integrity.BreachAreaM2);
             if (breached && !isSealed && breachArea > HabitatFluidIncursionConstants.WaterEpsilonM3)
             {
-                float depthMeters = math.max(0f, ResolveWaterlineDepthMeters(in dto));
-                float maxIngress = math.max(0.08f, MaxIngressPerSecondNormalized);
+                float depthMeters = HabitatFluidIncursionMath.SanitizeNonNegative(ResolveWaterlineDepthMeters(in dto));
+                float maxIngress = math.max(
+                    0.08f,
+                    HabitatFluidIncursionMath.SanitizeNonNegative(MaxIngressPerSecondNormalized, 0.08f));
                 float nextWater = FluidMathCore.ResolveIngressVolume(
                     currentWater,
                     dto.MaxWaterVolume,
@@ -340,7 +361,7 @@ namespace Hecton8.Physics
         {
             double externalY = HabitatFluidIncursionMath.ResolveAupYMeters(in ExternalWaterlineAup);
             double depth = externalY - dto.LocalCenterOfMass.y;
-            return (float)math.clamp(depth, -100000d, 100000d);
+            return math.isfinite(depth) ? (float)math.clamp(depth, -100000d, 100000d) : 0f;
         }
 
         private static float ResolveFill01(float volume, float maxVolume)
@@ -513,7 +534,8 @@ namespace Hecton8.Physics
                     ref FluidCompartmentDTO destinationDto = ref FluidCompartmentPointerUtility.ElementRef(Compartments, destination);
                     float maxTransfer = math.max(
                         HabitatFluidIncursionConstants.WaterEpsilonM3,
-                        MaxTransferPerNodeM3 * math.max(0f, DeltaTime));
+                        HabitatFluidIncursionMath.SanitizeNonNegative(MaxTransferPerNodeM3) *
+                        HabitatFluidIncursionMath.SanitizeNonNegative(DeltaTime));
                     float headDifferenceMeters = ResolveSurfaceHeadDifferenceMeters(
                         in source,
                         in destinationDto);
@@ -565,7 +587,7 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                float maxVolume = math.max(0f, dto.MaxWaterVolume);
+                float maxVolume = HabitatFluidIncursionMath.SanitizeNonNegative(dto.MaxWaterVolume);
                 dto.CurrentWaterVolume = math.clamp(nextWater, 0f, maxVolume);
                 dto.WaterLevelHeight01 = ResolveFill01(dto.CurrentWaterVolume, maxVolume);
                 if (dto.CurrentWaterVolume >= maxVolume - HabitatFluidIncursionConstants.WaterEpsilonM3)
@@ -663,23 +685,32 @@ namespace Hecton8.Physics
                 return 0f;
 
             float absHeadDifferenceMeters = math.abs(headDifferenceMeters);
-            float dampingFactor = math.smoothstep(0f, math.max(epsilon, nearZeroHeadDampingMeters), absHeadDifferenceMeters);
+            float dampingHeadMeters = math.max(
+                epsilon,
+                HabitatFluidIncursionMath.SanitizeNonNegative(nearZeroHeadDampingMeters, epsilon));
+            float dampingFactor = math.smoothstep(0f, dampingHeadMeters, absHeadDifferenceMeters);
             if (dampingFactor <= epsilon)
                 return 0f;
 
             float velocityMetersPerSecond = HabitatFluidIncursionMath.ApproximateSqrtPositive(
-                2f * math.max(0f, gravityMetersPerSecondSquared) * absHeadDifferenceMeters);
+                2f * HabitatFluidIncursionMath.SanitizeNonNegative(gravityMetersPerSecondSquared) * absHeadDifferenceMeters);
             if (!math.isfinite(velocityMetersPerSecond))
                 return 0f;
 
+            float safeDischargeCoefficient = math.max(
+                epsilon,
+                HabitatFluidIncursionMath.SanitizeNonNegative(dischargeCoefficient, epsilon));
+            float safeBulkheadFlowCoefficient = HabitatFluidIncursionMath.SanitizeNonNegative(bulkheadFlowCoefficient);
+            float safeDeltaTime = HabitatFluidIncursionMath.SanitizeNonNegative(fixedDeltaTime);
+            float safeTransferCap = math.max(0.01f, HabitatFluidIncursionMath.SanitizeNonNegative(maxTransferPerTick, 0.01f));
             float signedDeltaVolume =
                 math.sign(headDifferenceMeters) *
-                math.max(epsilon, dischargeCoefficient) *
+                safeDischargeCoefficient *
                 velocityMetersPerSecond *
-                math.max(0f, bulkheadFlowCoefficient) *
-                math.max(0f, fixedDeltaTime) *
+                safeBulkheadFlowCoefficient *
+                safeDeltaTime *
                 dampingFactor;
-            float deltaVolume = math.clamp(signedDeltaVolume, -math.max(0.01f, maxTransferPerTick), math.max(0.01f, maxTransferPerTick));
+            float deltaVolume = math.clamp(signedDeltaVolume, -safeTransferCap, safeTransferCap);
 
             if (deltaVolume > 0f)
                 deltaVolume = math.min(deltaVolume, math.min(math.max(0f, sourceVolume), math.max(0f, destinationMaxVolume - destinationVolume)));
@@ -740,11 +771,15 @@ namespace Hecton8.Physics
             ushort invalidCount = 0;
             uint signalOverflowCount = 0u;
             uint stateHash = 2166136261u;
+            float safeQuality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : HabitatFluidIncursionMath.AuthoritativeQualityWeight);
+            float safeVisualWobbleScalar = HabitatFluidIncursionMath.SanitizeNonNegative(VisualWobbleScalar);
 
             for (int index = 0; index < safeCount; index++)
             {
                 FluidCompartmentDTO dto = FluidCompartmentPointerUtility.ElementRef(Compartments, index);
-                float maxVolume = math.max(HabitatFluidIncursionConstants.WaterEpsilonM3, dto.MaxWaterVolume);
+                float maxVolume = math.max(
+                    HabitatFluidIncursionConstants.WaterEpsilonM3,
+                    HabitatFluidIncursionMath.SanitizeNonNegative(dto.MaxWaterVolume, HabitatFluidIncursionConstants.WaterEpsilonM3));
                 float water = dto.CurrentWaterVolume;
                 if (!math.isfinite(water) || !math.isfinite(maxVolume))
                 {
@@ -755,7 +790,7 @@ namespace Hecton8.Physics
                 water = math.clamp(water, 0f, maxVolume);
                 float fill01 = ResolveFill01(water, maxVolume);
                 float height = math.max(0.25f, FluidMathCore.SafeCubeRoot(maxVolume));
-                float wobble = math.saturate(fill01 * VisualWobbleScalar * math.saturate(GlobalQualityWeight));
+                float wobble = math.saturate(fill01 * safeVisualWobbleScalar * safeQuality);
 
                 Waterlines[index] = new FluidWaterlineShaderDTO
                 {
@@ -799,7 +834,7 @@ namespace Hecton8.Physics
             float3 center = totalWaterM3 > HabitatFluidIncursionConstants.WaterEpsilonM3
                 ? weightedWaterCenter * math.rcp(totalWaterM3)
                 : float3.zero;
-            float waterMassKg = totalWaterM3 * math.max(1f, WaterDensityKgPerM3);
+            float waterMassKg = totalWaterM3 * math.max(1f, HabitatFluidIncursionMath.SanitizeNonNegative(WaterDensityKgPerM3, 1f));
             float fillRatio = totalCapacityM3 > HabitatFluidIncursionConstants.WaterEpsilonM3
                 ? math.saturate(totalWaterM3 * math.rcp(totalCapacityM3))
                 : 0f;
@@ -812,7 +847,7 @@ namespace Hecton8.Physics
                     DynamicCenterOfMassLocal = center,
                     DynamicCenterOfMassOffsetLocal = center,
                     TotalWaterMassKg = waterMassKg,
-                    BaseMassKg = math.max(0f, BaseMassKg),
+                    BaseMassKg = HabitatFluidIncursionMath.SanitizeNonNegative(BaseMassKg),
                     FillRatio01 = fillRatio,
                     AngularDragMultiplier = angularDragMultiplier,
                     SourceBodyId = SourceBodyId,

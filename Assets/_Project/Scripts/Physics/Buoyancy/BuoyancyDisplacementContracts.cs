@@ -883,7 +883,43 @@ namespace Hecton8.Physics
             return rowsWritten > 0;
         }
 
+        public static bool TryApply(ReadOnlySpan<byte> csv, Span<BuoyancyMaterialVolumeDTO> table, out int rowsWritten)
+        {
+            rowsWritten = 0;
+            if (csv.Length <= 0 || table.Length <= 0)
+                return false;
+
+            ClearTable(table);
+            int cursor = 0;
+            while (cursor < csv.Length)
+            {
+                int lineStart = cursor;
+                while (cursor < csv.Length && csv[cursor] != LineFeed)
+                    cursor++;
+
+                int lineEnd = cursor;
+                if (cursor < csv.Length && csv[cursor] == LineFeed)
+                    cursor++;
+                if (lineEnd > lineStart && csv[lineEnd - 1] == CarriageReturn)
+                    lineEnd--;
+
+                if (TryParseLine(csv.Slice(lineStart, lineEnd - lineStart), out BuoyancyMaterialVolumeDTO row) &&
+                    Insert(table, row))
+                {
+                    rowsWritten++;
+                }
+            }
+
+            return rowsWritten > 0;
+        }
+
         private static void ClearTable(NativeArray<BuoyancyMaterialVolumeDTO> table)
+        {
+            for (int i = 0; i < table.Length; i++)
+                table[i] = default;
+        }
+
+        private static void ClearTable(Span<BuoyancyMaterialVolumeDTO> table)
         {
             for (int i = 0; i < table.Length; i++)
                 table[i] = default;
@@ -937,6 +973,24 @@ namespace Hecton8.Physics
         }
 
         private static bool Insert(NativeArray<BuoyancyMaterialVolumeDTO> table, BuoyancyMaterialVolumeDTO row)
+        {
+            int length = table.Length;
+            int slot = (int)(row.ItemHash % (uint)length);
+            for (int probe = 0; probe < length; probe++)
+            {
+                int index = (slot + probe) % length;
+                BuoyancyMaterialVolumeDTO current = table[index];
+                if (current.ItemHash == 0u || current.ItemHash == row.ItemHash)
+                {
+                    table[index] = row;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool Insert(Span<BuoyancyMaterialVolumeDTO> table, BuoyancyMaterialVolumeDTO row)
         {
             int length = table.Length;
             int slot = (int)(row.ItemHash % (uint)length);
@@ -1106,7 +1160,43 @@ namespace Hecton8.Physics
             return rowsWritten > 0;
         }
 
+        public static bool TryApply(ReadOnlySpan<byte> csv, Span<BuoyancyMaterialSettlingProfileDTO> table, out int rowsWritten)
+        {
+            rowsWritten = 0;
+            if (csv.Length <= 0 || table.Length <= 0)
+                return false;
+
+            ClearTable(table);
+            int cursor = 0;
+            while (cursor < csv.Length)
+            {
+                int lineStart = cursor;
+                while (cursor < csv.Length && csv[cursor] != LineFeed)
+                    cursor++;
+
+                int lineEnd = cursor;
+                if (cursor < csv.Length && csv[cursor] == LineFeed)
+                    cursor++;
+                if (lineEnd > lineStart && csv[lineEnd - 1] == CarriageReturn)
+                    lineEnd--;
+
+                if (TryParseLine(csv.Slice(lineStart, lineEnd - lineStart), out BuoyancyMaterialSettlingProfileDTO row) &&
+                    Insert(table, row))
+                {
+                    rowsWritten++;
+                }
+            }
+
+            return rowsWritten > 0;
+        }
+
         private static void ClearTable(NativeArray<BuoyancyMaterialSettlingProfileDTO> table)
+        {
+            for (int i = 0; i < table.Length; i++)
+                table[i] = default;
+        }
+
+        private static void ClearTable(Span<BuoyancyMaterialSettlingProfileDTO> table)
         {
             for (int i = 0; i < table.Length; i++)
                 table[i] = default;
@@ -1173,6 +1263,24 @@ namespace Hecton8.Physics
         }
 
         private static bool Insert(NativeArray<BuoyancyMaterialSettlingProfileDTO> table, BuoyancyMaterialSettlingProfileDTO row)
+        {
+            int length = table.Length;
+            int slot = (int)(row.MaterialHash % (uint)length);
+            for (int probe = 0; probe < length; probe++)
+            {
+                int index = (slot + probe) % length;
+                BuoyancyMaterialSettlingProfileDTO current = table[index];
+                if (current.MaterialHash == 0u || current.MaterialHash == row.MaterialHash)
+                {
+                    table[index] = row;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool Insert(Span<BuoyancyMaterialSettlingProfileDTO> table, BuoyancyMaterialSettlingProfileDTO row)
         {
             int length = table.Length;
             int slot = (int)(row.MaterialHash % (uint)length);

@@ -394,7 +394,7 @@ namespace Hecton8.Power
             if (_translationBufferLockMask != 0UL || _translationGridLeaseBufferId != BufferID.Unknown)
                 return false;
 
-            if (!WfcOutpostGridRegistry.TryGetGrid(signal.GridHandle, out WfcOutpostGridLease lease))
+            if (!WfcOutpostGridRegistry.TryAcquireGridLease(signal.GridHandle, out WfcOutpostGridLease lease))
                 return false;
 
             if (!TryLockTranslationBuffers(out ulong lockMask))

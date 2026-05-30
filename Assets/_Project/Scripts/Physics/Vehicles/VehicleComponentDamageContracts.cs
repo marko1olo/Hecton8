@@ -217,30 +217,6 @@ namespace Hecton8.Physics.Vehicles
         [FieldOffset(56)] public ulong Reserved3;
     }
 
-    public static unsafe class VehicleDamageAccess
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ref VehicleGridCellDTO GetCellRef(
-            IDataVault vault,
-            in VaultGenerationHandle<VehicleGridCellDTO> handle,
-            int index)
-        {
-            NativeArray<VehicleGridCellDTO> cells = default;
-            if (vault == null ||
-                handle.BufferID == 0u ||
-                !vault.TryResolveHandle(in handle, out cells) ||
-                !cells.IsCreated ||
-                (uint)index >= (uint)cells.Length)
-            {
-                FatalMemoryException.ThrowStaleVaultHandle();
-            }
-
-            return ref UnsafeUtility.ArrayElementAsRef<VehicleGridCellDTO>(
-                NativeArrayUnsafeUtility.GetUnsafePtr(cells),
-                index);
-        }
-    }
-
 #if UNITY_EDITOR
     public static class VehicleDamageLayoutValidator
     {
@@ -275,11 +251,20 @@ namespace Hecton8.Physics.Vehicles
 #endif
 
     #if UNITY_EDITOR
-    public static class VehicleComponentLayoutCsvParser
+    public static unsafe class VehicleComponentLayoutCsvParser
     {
         public static int Apply(ReadOnlySpan<byte> csv, NativeArray<VehicleGridCellDTO> cells, int width, int height, int depth)
         {
             if (!cells.IsCreated || width <= 0 || height <= 0 || depth <= 0)
+                return 0;
+
+            VehicleGridCellDTO* cellsPtr = (VehicleGridCellDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(cells);
+            return Apply(csv, new Span<VehicleGridCellDTO>(cellsPtr, cells.Length), width, height, depth);
+        }
+
+        public static int Apply(ReadOnlySpan<byte> csv, Span<VehicleGridCellDTO> cells, int width, int height, int depth)
+        {
+            if (cells.Length <= 0 || width <= 0 || height <= 0 || depth <= 0)
                 return 0;
 
             int applied = 0;

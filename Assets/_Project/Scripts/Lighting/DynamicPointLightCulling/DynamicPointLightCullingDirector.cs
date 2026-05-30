@@ -184,7 +184,7 @@ namespace Hecton8.Lighting
             TryRegisterHotSwapListener();
             EnsureNativeStorage();
             if (_nativeStorageReady)
-                EnsureGpuBuffers(DynamicPointLightCullingMath.MaximumActiveLights);
+                EnsureGpuBuffersCold(DynamicPointLightCullingMath.MaximumActiveLights);
             TryRegisterDispatch();
         }
 
@@ -1371,7 +1371,12 @@ namespace Hecton8.Lighting
                 return;
 
             int submitted = math.clamp(counters.SubmittedLights, 0, math.min(payload.Length, DynamicPointLightCullingMath.MaximumActiveLights));
-            EnsureGpuBuffers(DynamicPointLightCullingMath.MaximumActiveLights);
+            if (!HasGpuBuffersReady(DynamicPointLightCullingMath.MaximumActiveLights))
+            {
+                _lastGpuUploadBytes = 0UL;
+                return;
+            }
+
             GraphicsBuffer target = _gpuUploadWriteIndex == 0 ? _gpuBufferA : _gpuBufferB;
             if (target == null)
                 return;
@@ -1411,7 +1416,14 @@ namespace Hecton8.Lighting
             _payloadWriteIndex = 1 - _payloadWriteIndex;
         }
 
-        private void EnsureGpuBuffers(int capacity)
+        private bool HasGpuBuffersReady(int capacity)
+        {
+            int stride = UnsafeUtility.SizeOf<DynamicPointLightGpuDTO>();
+            return _gpuBufferA != null && _gpuBufferA.count >= capacity && _gpuBufferA.stride == stride &&
+                   _gpuBufferB != null && _gpuBufferB.count >= capacity && _gpuBufferB.stride == stride;
+        }
+
+        private void EnsureGpuBuffersCold(int capacity)
         {
             int stride = UnsafeUtility.SizeOf<DynamicPointLightGpuDTO>();
             if (_gpuBufferA == null || _gpuBufferA.count < capacity || _gpuBufferA.stride != stride)

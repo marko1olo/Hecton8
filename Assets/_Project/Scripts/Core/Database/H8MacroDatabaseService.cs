@@ -428,11 +428,11 @@ namespace Hecton8.Core.Database
 
             try
             {
-                if (!TryResolveSectorWindowScratch(out NativeArray<ulong> sectorWindow))
+                if (!TryOpenSectorWindowScratchForOwner(out NativeArray<ulong> sectorWindow))
                     return 0;
 
                 int hydratedThisCall = 0;
-                TryResolveSectorCoordWindowScratch(out NativeArray<SectorCoord64> sectorCoordWindow);
+                TryOpenSectorCoordWindowScratchForOwner(out NativeArray<SectorCoord64> sectorCoordWindow);
                 int hashCount = BuildSectorHashWindowLocked(in playerAup, tier, sectorWindow, sectorCoordWindow);
                 for (int i = 0; i < hashCount; i++)
                 {
@@ -558,8 +558,8 @@ namespace Hecton8.Core.Database
 
                 try
                 {
-                    if (!TryResolveDirtyPayloadSlots(out NativeArray<MacroDatabaseDirtyPayloadSlot> dirtySlots) ||
-                        !TryResolveDirtyPayloadKeys(out NativeArray<ulong> dirtyKeys))
+                    if (!TryOpenDirtyPayloadSlotsForOwner(out NativeArray<MacroDatabaseDirtyPayloadSlot> dirtySlots) ||
+                        !TryOpenDirtyPayloadKeysForOwner(out NativeArray<ulong> dirtyKeys))
                     {
                         return false;
                     }
@@ -621,7 +621,7 @@ namespace Hecton8.Core.Database
 
                 try
                 {
-                    if (!TryResolveSectorWindowScratch(out NativeArray<ulong> sectorWindow))
+                    if (!TryOpenSectorWindowScratchForOwner(out NativeArray<ulong> sectorWindow))
                         return 0;
 
                     int cachedCount = _cacheOwner.CopyMacroDatabasePayloadKeys(sectorWindow);
@@ -983,7 +983,7 @@ namespace Hecton8.Core.Database
 
             lock (_fileGate)
             {
-                if (!TryResolveBlackBox(out NativeArray<MacroDatabaseTelemetryEntry> blackBox))
+                if (!TryReadBlackBox(out NativeArray<MacroDatabaseTelemetryEntry>.ReadOnly blackBox))
                     return;
 
                 try
@@ -992,11 +992,15 @@ namespace Hecton8.Core.Database
                     if (!string.IsNullOrEmpty(directory))
                         Directory.CreateDirectory(directory);
 
-                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox);
-                    int bytes = blackBox.Length * UnsafeUtility.SizeOf<MacroDatabaseTelemetryEntry>();
                     using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                     {
-                        stream.Write(new ReadOnlySpan<byte>(source, bytes));
+                        int entryBytes = UnsafeUtility.SizeOf<MacroDatabaseTelemetryEntry>();
+                        for (int i = 0; i < blackBox.Length; i++)
+                        {
+                            MacroDatabaseTelemetryEntry entry = blackBox[i];
+                            void* source = UnsafeUtility.AddressOf(ref entry);
+                            stream.Write(new ReadOnlySpan<byte>(source, entryBytes));
+                        }
                     }
                 }
                 catch
@@ -1234,7 +1238,7 @@ namespace Hecton8.Core.Database
 
             int dirtyCount = _dirtyPayloadCount;
             if (dirtyCount <= 0 ||
-                !TryResolveDirtyPayloadKeys(out NativeArray<ulong> dirtyKeys))
+                !TryOpenDirtyPayloadKeysForOwner(out NativeArray<ulong> dirtyKeys))
             {
                 return true;
             }
@@ -1273,7 +1277,7 @@ namespace Hecton8.Core.Database
         {
             if (_cacheOwner == null ||
                 _dirtyPayloadCount == 0 ||
-                !TryResolveDirtyPayloadKeys(out NativeArray<ulong> dirtyKeys))
+                !TryOpenDirtyPayloadKeysForOwner(out NativeArray<ulong> dirtyKeys))
             {
                 return;
             }
@@ -1338,7 +1342,7 @@ namespace Hecton8.Core.Database
             scratch = default;
             payloadPointer = null;
             if (_cacheOwner == null ||
-                !TryResolvePayloadCopyScratch(out scratch) ||
+                !TryOpenPayloadCopyScratchForOwner(out scratch) ||
                 !scratch.IsCreated)
             {
                 return false;
@@ -1368,13 +1372,13 @@ namespace Hecton8.Core.Database
 
         private void ClearDirtyPayloadQueueLocked()
         {
-            if (TryResolveDirtyPayloadSlots(out NativeArray<MacroDatabaseDirtyPayloadSlot> dirtySlots))
+            if (TryOpenDirtyPayloadSlotsForOwner(out NativeArray<MacroDatabaseDirtyPayloadSlot> dirtySlots))
             {
                 for (int i = 0; i < dirtySlots.Length; i++)
                     dirtySlots[i] = default;
             }
 
-            if (TryResolveDirtyPayloadKeys(out NativeArray<ulong> dirtyKeys))
+            if (TryOpenDirtyPayloadKeysForOwner(out NativeArray<ulong> dirtyKeys))
             {
                 int count = _dirtyPayloadCount < dirtyKeys.Length ? _dirtyPayloadCount : dirtyKeys.Length;
                 for (int i = 0; i < count; i++)
@@ -1623,7 +1627,7 @@ namespace Hecton8.Core.Database
 
                 try
                 {
-                    if (!TryResolveAsyncHydrateScratch(out _))
+                    if (!TryOpenAsyncHydrateScratchForOwner(out _))
                     {
                         firstHash = 0UL;
                         return 0;
@@ -1651,7 +1655,7 @@ namespace Hecton8.Core.Database
 
                 try
                 {
-                    if (!TryResolveAsyncHydrateScratch(out NativeArray<HydrationCandidate> asyncHydrateScratch))
+                    if (!TryOpenAsyncHydrateScratchForOwner(out NativeArray<HydrationCandidate> asyncHydrateScratch))
                         return 0;
 
                     int limit = candidateCount < asyncHydrateScratch.Length
@@ -1680,13 +1684,13 @@ namespace Hecton8.Core.Database
         {
             firstHash = 0UL;
             if (!IsOpen ||
-                !TryResolveSectorWindowScratch(out NativeArray<ulong> sectorWindow) ||
-                !TryResolveAsyncHydrateScratch(out NativeArray<HydrationCandidate> asyncHydrateScratch))
+                !TryOpenSectorWindowScratchForOwner(out NativeArray<ulong> sectorWindow) ||
+                !TryOpenAsyncHydrateScratchForOwner(out NativeArray<HydrationCandidate> asyncHydrateScratch))
             {
                 return 0;
             }
 
-            TryResolveSectorCoordWindowScratch(out NativeArray<SectorCoord64> sectorCoordWindow);
+            TryOpenSectorCoordWindowScratchForOwner(out NativeArray<SectorCoord64> sectorCoordWindow);
             int hashCount = BuildSectorHashWindowLocked(in playerAup, tier, sectorWindow, sectorCoordWindow);
             if (hashCount > 0)
                 firstHash = sectorWindow[0];
@@ -1787,8 +1791,20 @@ namespace Hecton8.Core.Database
             H8MacroDatabaseFileFormat.WriteByte(header, H8MacroDatabaseFileFormat.PayloadFlagsOffset, (byte)(flags & ~MacroDatabasePayloadFlags.Dirty));
 
             byte* destination = _basePointer + appendOffset;
-            UnsafeUtility.MemCpy(destination, header, H8MacroDatabaseFileFormat.PayloadHeaderSizeBytes);
-            UnsafeUtility.MemCpy(destination + H8MacroDatabaseFileFormat.PayloadHeaderSizeBytes, payloadPointer, payloadBytes);
+            if (!Hecton8.Core.UnsafeMemoryCopyGuard.SafeCopy(
+                    destination,
+                    H8MacroDatabaseFileFormat.PayloadHeaderSizeBytes,
+                    header,
+                    H8MacroDatabaseFileFormat.PayloadHeaderSizeBytes) ||
+                !Hecton8.Core.UnsafeMemoryCopyGuard.SafeCopy(
+                    destination + H8MacroDatabaseFileFormat.PayloadHeaderSizeBytes,
+                    payloadBytes,
+                    payloadPointer,
+                    payloadBytes))
+            {
+                return false;
+            }
+
             payloadOffset = appendOffset;
             WriteAppendOffset(H8MacroDatabaseFileFormat.AlignUp(
                 endOffset,
@@ -2387,22 +2403,35 @@ namespace Hecton8.Core.Database
 
         private void CacheSectorCoord(ulong sectorHash, SectorCoord64 sector)
         {
-            if (sectorHash == 0UL ||
-                !TryResolveSectorCoordSlots(out NativeArray<MacroDatabaseSectorCoordSlot> slots))
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                sectorHash == 0UL ||
+                _sectorCoordSlotsHandle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in _sectorCoordSlotsHandle, SystemID.SavePersistence, out NativeArray<MacroDatabaseSectorCoordSlot> slots))
             {
                 return;
             }
 
-            if (TryFindSectorCoordSlot(slots, sectorHash, out int existingIndex))
+            try
             {
-                MacroDatabaseSectorCoordSlot slot = slots[existingIndex];
-                slot.Sector = sector;
-                slot.Version++;
-                slots[existingIndex] = slot;
-                return;
-            }
+                if (!slots.IsCreated || slots.Length == 0)
+                    return;
 
-            TryAddSectorCoordSlot(slots, sectorHash, sector);
+                if (TryFindSectorCoordSlot(slots, sectorHash, out int existingIndex))
+                {
+                    MacroDatabaseSectorCoordSlot slot = slots[existingIndex];
+                    slot.Sector = sector;
+                    slot.Version++;
+                    slots[existingIndex] = slot;
+                    return;
+                }
+
+                TryAddSectorCoordSlot(slots, sectorHash, sector);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _sectorCoordSlotsHandle, SystemID.SavePersistence);
+            }
         }
 
         private static ulong ComputeSectorHash(SectorCoord64 sector, int sectorSize)
@@ -2478,7 +2507,7 @@ namespace Hecton8.Core.Database
         {
             if (!IsOpen ||
                 _dirtyPayloadCount == 0 ||
-                !TryResolveDirtyPayloadKeys(out NativeArray<ulong> dirtyKeys))
+                !TryOpenDirtyPayloadKeysForOwner(out NativeArray<ulong> dirtyKeys))
             {
                 return 0;
             }
@@ -2506,7 +2535,7 @@ namespace Hecton8.Core.Database
         private void RemoveDirtyPayloadKey(ulong sectorHash)
         {
             if (_dirtyPayloadCount <= 0 ||
-                !TryResolveDirtyPayloadKeys(out NativeArray<ulong> dirtyKeys))
+                !TryOpenDirtyPayloadKeysForOwner(out NativeArray<ulong> dirtyKeys))
             {
                 return;
             }
@@ -2683,7 +2712,7 @@ namespace Hecton8.Core.Database
             }
         }
 
-        private bool TryResolveDirtyPayloadSlots(out NativeArray<MacroDatabaseDirtyPayloadSlot> slots)
+        private bool TryOpenDirtyPayloadSlotsForOwner(out NativeArray<MacroDatabaseDirtyPayloadSlot> slots)
         {
             slots = default;
             IDataVault vault = _dataVault;
@@ -2693,7 +2722,7 @@ namespace Hecton8.Core.Database
                    slots.IsCreated;
         }
 
-        private bool TryResolveSectorWindowScratch(out NativeArray<ulong> scratch)
+        private bool TryOpenSectorWindowScratchForOwner(out NativeArray<ulong> scratch)
         {
             scratch = default;
             IDataVault vault = _dataVault;
@@ -2703,7 +2732,7 @@ namespace Hecton8.Core.Database
                    scratch.IsCreated;
         }
 
-        private bool TryResolveSectorCoordWindowScratch(out NativeArray<SectorCoord64> scratch)
+        private bool TryOpenSectorCoordWindowScratchForOwner(out NativeArray<SectorCoord64> scratch)
         {
             scratch = default;
             IDataVault vault = _dataVault;
@@ -2713,7 +2742,7 @@ namespace Hecton8.Core.Database
                    scratch.IsCreated;
         }
 
-        private bool TryResolveAsyncHydrateScratch(out NativeArray<HydrationCandidate> scratch)
+        private bool TryOpenAsyncHydrateScratchForOwner(out NativeArray<HydrationCandidate> scratch)
         {
             scratch = default;
             IDataVault vault = _dataVault;
@@ -2723,17 +2752,17 @@ namespace Hecton8.Core.Database
                    scratch.IsCreated;
         }
 
-        private bool TryResolveBlackBox(out NativeArray<MacroDatabaseTelemetryEntry> blackBox)
+        private bool TryReadBlackBox(out NativeArray<MacroDatabaseTelemetryEntry>.ReadOnly blackBox)
         {
             blackBox = default;
             IDataVault vault = _dataVault;
             return vault != null &&
                    _blackBoxHandle.BufferID != 0u &&
-                   vault.TryResolveHandle(in _blackBoxHandle, out blackBox) &&
+                   vault.TryReadOnlyHandle(in _blackBoxHandle, out blackBox) &&
                    blackBox.IsCreated;
         }
 
-        private bool TryResolveDirtyPayloadKeys(out NativeArray<ulong> keys)
+        private bool TryOpenDirtyPayloadKeysForOwner(out NativeArray<ulong> keys)
         {
             keys = default;
             IDataVault vault = _dataVault;
@@ -2743,7 +2772,7 @@ namespace Hecton8.Core.Database
                    keys.IsCreated;
         }
 
-        private bool TryResolvePayloadCopyScratch(out NativeArray<byte> scratch)
+        private bool TryOpenPayloadCopyScratchForOwner(out NativeArray<byte> scratch)
         {
             scratch = default;
             IDataVault vault = _dataVault;
@@ -2753,13 +2782,23 @@ namespace Hecton8.Core.Database
                    scratch.IsCreated;
         }
 
-        private bool TryResolveSectorCoordSlots(out NativeArray<MacroDatabaseSectorCoordSlot> slots)
+        private bool TryReadDirtyPayloadSlots(out NativeArray<MacroDatabaseDirtyPayloadSlot>.ReadOnly slots)
+        {
+            slots = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   _dirtyPayloadSlotsHandle.BufferID != 0u &&
+                   vault.TryReadOnlyHandle(in _dirtyPayloadSlotsHandle, out slots) &&
+                   slots.IsCreated;
+        }
+
+        private bool TryReadSectorCoordSlots(out NativeArray<MacroDatabaseSectorCoordSlot>.ReadOnly slots)
         {
             slots = default;
             IDataVault vault = _dataVault;
             return vault != null &&
                    _sectorCoordSlotsHandle.BufferID != 0u &&
-                   vault.TryResolveHandle(in _sectorCoordSlotsHandle, out slots) &&
+                   vault.TryReadOnlyHandle(in _sectorCoordSlotsHandle, out slots) &&
                    slots.IsCreated;
         }
 
@@ -2773,6 +2812,36 @@ namespace Hecton8.Core.Database
 
         private static bool TryFindDirtyPayloadSlot(
             NativeArray<MacroDatabaseDirtyPayloadSlot> slots,
+            ulong sectorHash,
+            out int slotIndex)
+        {
+            slotIndex = -1;
+            if (!slots.IsCreated || slots.Length == 0 || sectorHash == 0UL)
+                return false;
+
+            int start = ResolveVaultSlotIndex(sectorHash, slots.Length);
+            for (int probe = 0; probe < slots.Length; probe++)
+            {
+                int index = start + probe;
+                if (index >= slots.Length)
+                    index -= slots.Length;
+
+                MacroDatabaseDirtyPayloadSlot slot = slots[index];
+                if (slot.State == VaultSlotFree)
+                    return false;
+
+                if (slot.State == VaultSlotOccupied && slot.SectorHash == sectorHash)
+                {
+                    slotIndex = index;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool TryFindDirtyPayloadSlot(
+            NativeArray<MacroDatabaseDirtyPayloadSlot>.ReadOnly slots,
             ulong sectorHash,
             out int slotIndex)
         {
@@ -2875,14 +2944,14 @@ namespace Hecton8.Core.Database
 
         private bool DirtyPayloadExists(ulong sectorHash)
         {
-            return TryResolveDirtyPayloadSlots(out NativeArray<MacroDatabaseDirtyPayloadSlot> slots) &&
+            return TryReadDirtyPayloadSlots(out NativeArray<MacroDatabaseDirtyPayloadSlot>.ReadOnly slots) &&
                    TryFindDirtyPayloadSlot(slots, sectorHash, out _);
         }
 
         private bool TryGetDirtyPayload(ulong sectorHash, out MacroDatabasePayloadHandle handle)
         {
             handle = default;
-            if (!TryResolveDirtyPayloadSlots(out NativeArray<MacroDatabaseDirtyPayloadSlot> slots) ||
+            if (!TryReadDirtyPayloadSlots(out NativeArray<MacroDatabaseDirtyPayloadSlot>.ReadOnly slots) ||
                 !TryFindDirtyPayloadSlot(slots, sectorHash, out int slotIndex))
             {
                 return false;
@@ -2894,7 +2963,7 @@ namespace Hecton8.Core.Database
 
         private void RemoveDirtyPayloadSlot(ulong sectorHash)
         {
-            if (!TryResolveDirtyPayloadSlots(out NativeArray<MacroDatabaseDirtyPayloadSlot> slots) ||
+            if (!TryOpenDirtyPayloadSlotsForOwner(out NativeArray<MacroDatabaseDirtyPayloadSlot> slots) ||
                 !TryFindDirtyPayloadSlot(slots, sectorHash, out int slotIndex))
             {
                 return;
@@ -2938,10 +3007,40 @@ namespace Hecton8.Core.Database
             return false;
         }
 
+        private static bool TryFindSectorCoordSlot(
+            NativeArray<MacroDatabaseSectorCoordSlot>.ReadOnly slots,
+            ulong sectorHash,
+            out int slotIndex)
+        {
+            slotIndex = -1;
+            if (!slots.IsCreated || slots.Length == 0 || sectorHash == 0UL)
+                return false;
+
+            int start = ResolveVaultSlotIndex(sectorHash, slots.Length);
+            for (int probe = 0; probe < slots.Length; probe++)
+            {
+                int index = start + probe;
+                if (index >= slots.Length)
+                    index -= slots.Length;
+
+                MacroDatabaseSectorCoordSlot slot = slots[index];
+                if (slot.State == VaultSlotFree)
+                    return false;
+
+                if (slot.State == VaultSlotOccupied && slot.SectorHash == sectorHash)
+                {
+                    slotIndex = index;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private bool TryGetSectorCoord(ulong sectorHash, out SectorCoord64 sector)
         {
             sector = default;
-            if (!TryResolveSectorCoordSlots(out NativeArray<MacroDatabaseSectorCoordSlot> slots) ||
+            if (!TryReadSectorCoordSlots(out NativeArray<MacroDatabaseSectorCoordSlot>.ReadOnly slots) ||
                 !TryFindSectorCoordSlot(slots, sectorHash, out int slotIndex))
             {
                 return false;
@@ -3014,27 +3113,51 @@ namespace Hecton8.Core.Database
 
         private void RemoveSectorCoordSlot(ulong sectorHash)
         {
-            if (!TryResolveSectorCoordSlots(out NativeArray<MacroDatabaseSectorCoordSlot> slots) ||
-                !TryFindSectorCoordSlot(slots, sectorHash, out int slotIndex))
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                _sectorCoordSlotsHandle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in _sectorCoordSlotsHandle, SystemID.SavePersistence, out NativeArray<MacroDatabaseSectorCoordSlot> slots))
             {
                 return;
             }
 
-            MacroDatabaseSectorCoordSlot slot = slots[slotIndex];
-            slot.SectorHash = 0UL;
-            slot.Sector = default;
-            slot.Version++;
-            slot.State = VaultSlotDeleted;
-            slots[slotIndex] = slot;
+            try
+            {
+                if (!TryFindSectorCoordSlot(slots, sectorHash, out int slotIndex))
+                    return;
+
+                MacroDatabaseSectorCoordSlot slot = slots[slotIndex];
+                slot.SectorHash = 0UL;
+                slot.Sector = default;
+                slot.Version++;
+                slot.State = VaultSlotDeleted;
+                slots[slotIndex] = slot;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _sectorCoordSlotsHandle, SystemID.SavePersistence);
+            }
         }
 
         private void ClearSectorCoordCacheLocked()
         {
-            if (!TryResolveSectorCoordSlots(out NativeArray<MacroDatabaseSectorCoordSlot> slots))
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                _sectorCoordSlotsHandle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in _sectorCoordSlotsHandle, SystemID.SavePersistence, out NativeArray<MacroDatabaseSectorCoordSlot> slots))
+            {
                 return;
+            }
 
-            for (int i = 0; i < slots.Length; i++)
-                slots[i] = default;
+            try
+            {
+                for (int i = 0; i < slots.Length; i++)
+                    slots[i] = default;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _sectorCoordSlotsHandle, SystemID.SavePersistence);
+            }
         }
 
         private void ClearBlackBoxLocked()

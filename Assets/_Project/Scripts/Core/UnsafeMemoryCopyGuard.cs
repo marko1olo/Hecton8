@@ -56,14 +56,18 @@ namespace Hecton8.Core
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 throw new FatalMemoryCorruptionException(RejectedCopyMessage);
 #else
-                copySizeBytes = destinationSizeBytes;
+                return false;
 #endif
             }
 
             if (copySizeBytes <= 0L)
                 return false;
 
-            UnsafeUtility.MemCpy(destination, source, copySizeBytes);
+            if (RangesOverlap(destination, source, copySizeBytes))
+                UnsafeUtility.MemMove(destination, source, copySizeBytes);
+            else
+                UnsafeUtility.MemCpy(destination, source, copySizeBytes);
+
             GlobalTelemetryBus.RecordNativeCopy(copySizeBytes);
             return copySizeBytes == sourceSizeBytes;
         }
@@ -116,6 +120,24 @@ namespace Hecton8.Core
 #else
             return false;
 #endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool RangesOverlap(void* destination, void* source, long byteCount)
+        {
+            if (byteCount <= 0L || destination == source)
+                return destination == source && byteCount > 0L;
+
+            ulong destinationStart = (ulong)destination;
+            ulong sourceStart = (ulong)source;
+            ulong size = (ulong)byteCount;
+            ulong destinationEnd = destinationStart + size;
+            ulong sourceEnd = sourceStart + size;
+
+            if (destinationEnd < destinationStart || sourceEnd < sourceStart)
+                return true;
+
+            return destinationStart < sourceEnd && sourceStart < destinationEnd;
         }
     }
 }

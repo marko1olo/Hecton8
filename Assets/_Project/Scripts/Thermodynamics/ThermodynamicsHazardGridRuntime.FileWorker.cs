@@ -2,8 +2,6 @@ using System;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Threading;
-using Hecton8.Core.Memory;
-using Unity.Collections;
 using Unity.Mathematics;
 
 namespace Hecton8.Thermodynamics
@@ -36,7 +34,9 @@ namespace Hecton8.Thermodynamics
 
         private void StartConfigWorkerIfNeeded()
         {
-            if (_configWorkerThread != null || !HasHandle(in _binaryConstantBytes))
+            if (_configWorkerThread != null ||
+                !HasHandle(in _constants) ||
+                !HasHandle(in _binaryConstantBytes))
                 return;
 
 #if UNITY_EDITOR
@@ -50,9 +50,9 @@ namespace Hecton8.Thermodynamics
 #else
             _csvOverridePath = null;
 #endif
-            _binaryConstantsWorkerBytes ??= new byte[BinaryConstantsBytes]; // COLD ALLOC: byte[16] - config worker staging, copied into Vault lane on main thread - owner: ThermodynamicsHazardGridRuntime
+            _binaryConstantsWorkerBytes ??= new byte[BinaryConstantsBytes]; // COLD ALLOC: byte[16] - config worker staging, parsed before constants commit - owner: ThermodynamicsHazardGridRuntime
 #if UNITY_EDITOR
-            _csvWorkerBytes ??= new byte[CsvBufferBytes]; // COLD ALLOC: byte[4096] - CSV worker staging, copied into Vault lane on main thread - owner: ThermodynamicsHazardGridRuntime
+            _csvWorkerBytes ??= new byte[CsvBufferBytes]; // COLD ALLOC: byte[4096] - CSV worker staging, parsed before constants commit - owner: ThermodynamicsHazardGridRuntime
 #endif
             Volatile.Write(ref _configWorkerRun, 1);
 
@@ -101,36 +101,12 @@ namespace Hecton8.Thermodynamics
             if (HasHandle(in _constants) && Volatile.Read(ref _binaryRequestState) == ConfigWorkerReady)
             {
                 int read = Volatile.Read(ref _binaryWorkerReadCount);
-                if (read >= BinaryConstantsBytes)
+                if (read >= BinaryConstantsBytes &&
+                    _binaryConstantsWorkerBytes != null &&
+                    TryBuildBinaryConstants(_binaryConstantsWorkerBytes, read, out ThermodynamicsHazardConstants parsed))
                 {
-                    NativeArray<byte> bytes;
-                    if (TryCopyWorkerBytesToVault(in _binaryConstantBytes, _binaryConstantsWorkerBytes, read, BinaryConstantsBytes, out bytes))
-                    {
-                        try
-                        {
-                            float waterConductivity = ReadFloatLe(bytes, 0);
-                            float heatDiffusion = ReadFloatLe(bytes, 4);
-                            float radiationDiffusion = ReadFloatLe(bytes, 8);
-                            float decay = ReadFloatLe(bytes, 12);
-                            ThermodynamicsHazardConstants parsed = SanitizeConstants(new ThermodynamicsHazardConstants
-                            {
-                                BaseWaterTempCelsius = waterConductivity,
-                                HeatDiffusionRate = heatDiffusion,
-                                RadiationDiffusionRate = radiationDiffusion,
-                                RadiationDecayCoefficient = decay,
-                                RockShieldingFactor = 0.05f,
-                                VerticalHeatBias = 1.25f,
-                                HeatDamageThresholdCelsius = 100f,
-                                RadiationDamageThreshold = 0.35f
-                            });
-                            if (TryWriteConstantsWithOwner(in parsed, MemoryOwner))
-                                Volatile.Write(ref _binaryAppliedWriteTicks, Volatile.Read(ref _binaryWorkerWriteTicks));
-                        }
-                        finally
-                        {
-                            EnsureVault().ReleaseWriteLock(in _binaryConstantBytes, MemoryOwner);
-                        }
-                    }
+                    if (TryWriteConstantsWithOwner(in parsed, MemoryOwner))
+                        Volatile.Write(ref _binaryAppliedWriteTicks, Volatile.Read(ref _binaryWorkerWriteTicks));
                 }
 
                 Volatile.Write(ref _binaryRequestState, ConfigWorkerIdle);
@@ -143,25 +119,18 @@ namespace Hecton8.Thermodynamics
                 long ticks = Volatile.Read(ref _csvWorkerWriteTicks);
                 if (read > 0 && ticks != Volatile.Read(ref _csvAppliedWriteTicks))
                 {
-                    NativeArray<byte> bytes;
-                    if (TryCopyWorkerBytesToVault(in _csvBytes, _csvWorkerBytes, read, CsvBufferBytes, out bytes))
+                    int safeRead = _csvWorkerBytes == null ? 0 : Math.Min(read, _csvWorkerBytes.Length);
+                    if (safeRead > 0)
                     {
-                        try
+                        ThermodynamicsHazardConstants parsed = TryReadConstants(out ThermodynamicsHazardConstants existing)
+                            ? existing
+                            : GenerateEmergencyMockConstants();
+                        ParseCsvConstants(_csvWorkerBytes, safeRead, ref parsed);
+                        parsed = SanitizeConstants(parsed);
+                        if (TryWriteConstantsWithOwner(in parsed, MemoryOwner))
                         {
-                            ThermodynamicsHazardConstants parsed = TryReadConstants(out ThermodynamicsHazardConstants existing)
-                                ? existing
-                                : GenerateEmergencyMockConstants();
-                            ParseCsvConstants(bytes, read, ref parsed);
-                            parsed = SanitizeConstants(parsed);
-                            if (TryWriteConstantsWithOwner(in parsed, MemoryOwner))
-                            {
-                                Volatile.Write(ref _csvAppliedWriteTicks, ticks);
-                                _csvLastWriteUtc = new DateTime(ticks, DateTimeKind.Utc);
-                            }
-                        }
-                        finally
-                        {
-                            EnsureVault().ReleaseWriteLock(in _csvBytes, MemoryOwner);
+                            Volatile.Write(ref _csvAppliedWriteTicks, ticks);
+                            _csvLastWriteUtc = new DateTime(ticks, DateTimeKind.Utc);
                         }
                     }
                 }
@@ -243,50 +212,106 @@ namespace Hecton8.Thermodynamics
         }
 #endif
 
-        private bool TryCopyWorkerBytesToVault(
-            in VaultGenerationHandle<byte> handle,
-            byte[] source,
-            int sourceCount,
-            int requiredCapacity,
-            out NativeArray<byte> bytes)
+        private static bool TryBuildBinaryConstants(byte[] bytes, int length, out ThermodynamicsHazardConstants constants)
         {
-            bytes = default;
-            if (!HasHandle(in handle) ||
-                source == null ||
-                sourceCount <= 0 ||
-                requiredCapacity <= 0)
+            constants = default;
+            if (bytes == null || length < BinaryConstantsBytes || bytes.Length < BinaryConstantsBytes)
             {
                 return false;
             }
 
-            IDataVault vault = EnsureVault();
-            if (!vault.TryAcquireWriteLock(in handle, MemoryOwner, out bytes))
-                return false;
+            constants.BaseWaterTempCelsius = ReadFloatLe(bytes, 0);
+            constants.HeatDiffusionRate = ReadFloatLe(bytes, 4);
+            constants.RadiationDiffusionRate = ReadFloatLe(bytes, 8);
+            constants.RadiationDecayCoefficient = ReadFloatLe(bytes, 12);
+            constants.RockShieldingFactor = 0.05f;
+            constants.VerticalHeatBias = 1.25f;
+            constants.HeatDamageThresholdCelsius = 100f;
+            constants.RadiationDamageThreshold = 0.35f;
+            constants = SanitizeConstants(constants);
+            return true;
+        }
 
-            bool handedOff = false;
-            try
+#if UNITY_EDITOR
+        private static void ParseCsvConstants(byte[] bytes, int length, ref ThermodynamicsHazardConstants constants)
+        {
+            if (bytes == null || length <= 0)
+                return;
+
+            int safeLength = Math.Min(length, bytes.Length);
+            int cursor = 0;
+            while (cursor < safeLength)
             {
-                if (!bytes.IsCreated || bytes.Length < requiredCapacity)
-                    return false;
-
-                int copyCount = math.min(math.min(sourceCount, requiredCapacity), math.min(source.Length, bytes.Length));
-                if (copyCount <= 0)
-                    return false;
-
-                for (int i = 0; i < copyCount; i++)
-                    bytes[i] = source[i];
-
-                handedOff = true;
-                return true;
-            }
-            finally
-            {
-                if (!handedOff)
+                uint keyHash = 2166136261u;
+                while (cursor < safeLength)
                 {
-                    vault.ReleaseWriteLock(in handle, MemoryOwner);
-                    bytes = default;
+                    byte c = bytes[cursor++];
+                    if (c == (byte)',' || c == (byte)'=' || c == (byte)';')
+                        break;
+                    if (c == (byte)'\r' || c == (byte)'\n')
+                        goto NextLine;
+                    keyHash = (keyHash ^ ToLowerAscii(c)) * 16777619u;
+                }
+
+                float value = ParseFloat(bytes, ref cursor, safeLength);
+                ApplyCsvValue(keyHash, value, ref constants);
+
+            NextLine:
+                while (cursor < safeLength && bytes[cursor] != (byte)'\n')
+                    cursor++;
+                if (cursor < safeLength)
+                    cursor++;
+            }
+        }
+
+        private static float ParseFloat(byte[] bytes, ref int cursor, int length)
+        {
+            while (cursor < length && (bytes[cursor] == (byte)' ' || bytes[cursor] == (byte)'\t'))
+                cursor++;
+
+            float sign = 1f;
+            if (cursor < length && bytes[cursor] == (byte)'-')
+            {
+                sign = -1f;
+                cursor++;
+            }
+
+            float value = 0f;
+            while (cursor < length)
+            {
+                byte c = bytes[cursor];
+                if (c < (byte)'0' || c > (byte)'9')
+                    break;
+                value = value * 10f + (c - (byte)'0');
+                cursor++;
+            }
+
+            if (cursor < length && bytes[cursor] == (byte)'.')
+            {
+                cursor++;
+                float scale = 0.1f;
+                while (cursor < length)
+                {
+                    byte c = bytes[cursor];
+                    if (c < (byte)'0' || c > (byte)'9')
+                        break;
+                    value += (c - (byte)'0') * scale;
+                    scale *= 0.1f;
+                    cursor++;
                 }
             }
+
+            return value * sign;
+        }
+#endif
+
+        private static float ReadFloatLe(byte[] bytes, int offset)
+        {
+            int raw = bytes[offset] |
+                      (bytes[offset + 1] << 8) |
+                      (bytes[offset + 2] << 16) |
+                      (bytes[offset + 3] << 24);
+            return math.asfloat(raw);
         }
 
         private static int ReadConfigFile(string path, byte[] destination, int capacity, long skipWriteTicks, out long writeTicks)

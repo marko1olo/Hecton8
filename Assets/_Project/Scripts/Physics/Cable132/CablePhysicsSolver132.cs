@@ -574,7 +574,7 @@ namespace Hecton8.Physics
         public static bool TrySampleTuning(IDataVault vault, out VerletCableTuningDTO tuning)
         {
             tuning = default;
-            if (!TryOpenOrAcquireTuningView(vault, out NativeArray<VerletCableTuningDTO> tuningView) ||
+            if (!TryReadExistingVaultView(vault, CablePhysics132BufferIds.Tuning, out NativeArray<VerletCableTuningDTO> tuningView) ||
                 !tuningView.IsCreated ||
                 tuningView.Length <= 0)
             {
@@ -582,21 +582,33 @@ namespace Hecton8.Physics
             }
 
             tuning = SanitizeEditorTuning(tuningView[0]);
-            tuningView[0] = tuning;
             return true;
         }
 
         public static bool TryWriteTuning(IDataVault vault, in VerletCableTuningDTO tuning)
         {
-            if (!TryOpenOrAcquireTuningView(vault, out NativeArray<VerletCableTuningDTO> tuningView) ||
+            if (!TryOpenOrAcquireWritableVaultView(
+                    vault,
+                    CablePhysics132BufferIds.Tuning,
+                    1,
+                    NativeArrayOptions.ClearMemory,
+                    out VaultGenerationHandle<VerletCableTuningDTO> handle,
+                    out NativeArray<VerletCableTuningDTO> tuningView) ||
                 !tuningView.IsCreated ||
                 tuningView.Length <= 0)
             {
                 return false;
             }
 
-            tuningView[0] = SanitizeEditorTuning(in tuning);
-            return true;
+            try
+            {
+                tuningView[0] = SanitizeEditorTuning(in tuning);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.Physics);
+            }
         }
 
 #if UNITY_EDITOR
@@ -604,36 +616,95 @@ namespace Hecton8.Physics
         {
             parsed = 0;
             if (csvBytes.Length <= 0 ||
-                !TryOpenOrAcquireMaterialView(vault, out NativeArray<CableMaterialDTO> materials) ||
+                !TryOpenOrAcquireWritableVaultView(
+                    vault,
+                    CablePhysics132BufferIds.CableMaterials,
+                    CablePhysics132Constants.MaterialCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out VaultGenerationHandle<CableMaterialDTO> handle,
+                    out NativeArray<CableMaterialDTO> materials) ||
                 !materials.IsCreated ||
                 materials.Length <= 0)
             {
                 return false;
             }
 
-            parsed = CableMaterialCsvParser.ParseHashTable(csvBytes, materials);
-            return true;
+            try
+            {
+                parsed = CableMaterialCsvParser.ParseHashTable(csvBytes, materials);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.Physics);
+            }
         }
 #endif
 
-        private static bool TryOpenOrAcquireTuningView(IDataVault vault, out NativeArray<VerletCableTuningDTO> tuning)
+        private static bool TryOpenOrAcquireWritableVaultView<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer) where T : struct
         {
-            return TryOpenOrAcquireVaultView(
-                vault,
-                CablePhysics132BufferIds.Tuning,
-                1,
-                NativeArrayOptions.ClearMemory,
-                out tuning);
+            handle = default;
+            buffer = default;
+            int required = math.max(1, requiredLength);
+            if (vault == null)
+                return false;
+
+            if (vault.TryGetGenerationHandle<T>(bufferId, out handle))
+                return TryAcquireWritableVaultView(vault, bufferId, required, in handle, out buffer);
+
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
+            handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                required,
+                SystemID.Physics,
+                options);
+            return TryAcquireWritableVaultView(vault, bufferId, required, in handle, out buffer);
         }
 
-        private static bool TryOpenOrAcquireMaterialView(IDataVault vault, out NativeArray<CableMaterialDTO> materials)
+        private static bool TryAcquireWritableVaultView<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            in VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer) where T : struct
         {
-            return TryOpenOrAcquireVaultView(
-                vault,
-                CablePhysics132BufferIds.CableMaterials,
-                CablePhysics132Constants.MaterialCapacity,
-                NativeArrayOptions.ClearMemory,
-                out materials);
+            buffer = default;
+            if (vault == null ||
+                handle.BufferID != unchecked((uint)(int)bufferId) ||
+                handle.SystemID != (uint)SystemID.Physics ||
+                handle.Generation == 0u)
+            {
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in handle, SystemID.Physics, out buffer))
+                return false;
+
+            bool releaseOnFailure = true;
+            try
+            {
+                if (buffer.IsCreated && buffer.Length >= requiredLength)
+                {
+                    releaseOnFailure = false;
+                    return true;
+                }
+
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnFailure)
+                    vault.ReleaseWriteLock(in handle, SystemID.Physics);
+            }
         }
 
         private static VerletCableTuningDTO SanitizeEditorTuning(in VerletCableTuningDTO tuning)
@@ -1606,10 +1677,19 @@ namespace Hecton8.Physics
             if (count <= 0 || Destination == null)
                 return;
 
-            void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Source);
-            long requestedBytes = (long)count * VerletCableLayout.TetherSplineVertexStrideBytes;
+            int elementBytes = VerletCableLayout.TetherSplineVertexStrideBytes;
+            if (elementBytes <= 0)
+                return;
+
             long destinationBytes = DestinationBytes > 0L ? DestinationBytes : 0L;
-            long copyBytes = requestedBytes < destinationBytes ? requestedBytes : destinationBytes;
+            long destinationCountLong = destinationBytes / elementBytes;
+            int destinationCount = destinationCountLong > int.MaxValue ? int.MaxValue : (int)destinationCountLong;
+            int copyCount = math.min(count, destinationCount);
+            if (copyCount <= 0)
+                return;
+
+            void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Source);
+            long copyBytes = (long)copyCount * elementBytes;
             if (copyBytes <= 0L)
                 return;
 

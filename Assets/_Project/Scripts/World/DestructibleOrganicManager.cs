@@ -169,6 +169,7 @@ namespace Hecton8.World
         private const double OrganicClockMaxSeconds = 16777215d;
         private const uint DearLieSignalHashFlora = 0x464C4F52u; // FLOR
         private const uint DearLieSignalHashOrganic = 0x4F524741u; // ORGA
+        private const uint DearLiePostSimulationSystemHash = 0x444F5053u; // DOPS
         private const byte DearLieFloraDamageFlag = 1 << 6;
         private const BufferID DearLieSurfaceClaimsBufferId = (BufferID)72980;
         private const BufferID DearLieUnderwaterClaimsBufferId = (BufferID)72981;
@@ -1493,6 +1494,7 @@ namespace Hecton8.World
         private VaultArray<EntropyYieldMaterialLutEntry> _yieldMaterialLut;
         private VaultArray<Vector3> _dropDebugScratch;
         private JobHandle _dearLieJobHandle;
+        private PostSimulationPhaseSystem _postSimulationPhase;
         private int _dearLieScheduledDamageCount;
         private int _dearLieJobScheduleFrame = -1;
         private double _dearLieJobStartTimeSeconds;
@@ -1515,6 +1517,7 @@ namespace Hecton8.World
         private bool _tickRegistered;
         private bool _slowTickRegistered;
         private bool _lateFrameTickRegistered;
+        private bool _registeredPostSimulationDispatcher;
         private bool _originShiftListenerRegistered;
         private bool _dearLieJobScheduled;
         private bool _dearLieVaultReady;
@@ -1937,20 +1940,11 @@ namespace Hecton8.World
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_tickRegistered)
-            {
-                _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-            }
+            TryRegisterDispatcherPhases();
+            if (!_registeredPostSimulationDispatcher)
+                return;
 
-            if (!_slowTickRegistered)
-            {
-                _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
-            }
-
-            if (!_lateFrameTickRegistered)
-            {
-                _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
-            }
+            TryRegisterTickLanes();
 
             SyncDestroyedFloraFromPersistence();
             SyncFloraStateOverridesFromPersistence();
@@ -1960,25 +1954,10 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
-            if (_tickRegistered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _tickRegistered = false;
-            }
+            TryUnregisterTickLanes();
+            TryUnregisterDispatcherPhases();
 
-            if (_slowTickRegistered)
-            {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-                _slowTickRegistered = false;
-            }
-
-            if (_lateFrameTickRegistered)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameTickRegistered = false;
-            }
-
-            CompleteDearLieJobIfNeeded(ResolveOrganicClockSeconds());
+            CompleteDearLieJobForLifecycleBarrier();
             UnregisterOriginShiftListener();
             TryUnregisterHotSwapListener();
             TryUnregisterOrganicToolHitService();
@@ -1992,7 +1971,9 @@ namespace Hecton8.World
             if (_activeRuntimeInstance == this)
                 _activeRuntimeInstance = null;
 
-            CompleteDearLieJobIfNeeded(ResolveOrganicClockSeconds());
+            TryUnregisterTickLanes();
+            TryUnregisterDispatcherPhases();
+            CompleteDearLieJobForLifecycleBarrier();
             UnregisterOriginShiftListener();
             TryUnregisterHotSwapListener();
             TryUnregisterOrganicToolHitService();
@@ -2021,6 +2002,62 @@ namespace Hecton8.World
                 float3 runtimePosition = AUPMath.ToRuntimeFloat3(in record.PositionAup, committedOriginOffset);
                 record.Position = ToRuntimeVector3(runtimePosition);
                 _corpseResourceNodes[i] = record;
+            }
+        }
+
+        private void TryRegisterDispatcherPhases()
+        {
+            if (_registeredPostSimulationDispatcher)
+                return;
+
+            if (_postSimulationPhase == null)
+                _postSimulationPhase = new PostSimulationPhaseSystem(this); // COLD ALLOC: IDispatcherSystem[1] - organic truth post-simulation fence bridge - owner: DestructibleOrganicManager
+
+            _registeredPostSimulationDispatcher = GlobalRegistry.TryRegisterDispatcherSystem(_postSimulationPhase);
+        }
+
+        private void TryUnregisterDispatcherPhases()
+        {
+            if (!_registeredPostSimulationDispatcher)
+                return;
+
+            GlobalRegistry.UnregisterDispatcherSystem(_postSimulationPhase);
+            _registeredPostSimulationDispatcher = false;
+        }
+
+        private void TryRegisterTickLanes()
+        {
+            if (!_registeredPostSimulationDispatcher)
+                return;
+
+            if (!_tickRegistered)
+                _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+
+            if (!_slowTickRegistered)
+                _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+
+            if (!_lateFrameTickRegistered)
+                _lateFrameTickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterTickLanes()
+        {
+            if (_tickRegistered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _tickRegistered = false;
+            }
+
+            if (_slowTickRegistered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _slowTickRegistered = false;
+            }
+
+            if (_lateFrameTickRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameTickRegistered = false;
             }
         }
 
@@ -2057,6 +2094,13 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.Audio:
                     CacheAudioService(currentService as IAudioService);
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregisterTickLanes();
+                    TryUnregisterDispatcherPhases();
+                    TryRegisterDispatcherPhases();
+                    if (_registeredPostSimulationDispatcher)
+                        TryRegisterTickLanes();
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     IDataVault currentVault = currentService as IDataVault;
@@ -3128,7 +3172,7 @@ namespace Hecton8.World
         private void ReleaseDearLieVaultBuffers(IDataVault vault)
         {
             if (_dearLieJobScheduled)
-                CompleteDearLieJobIfNeeded(ResolveOrganicClockSeconds(), force: true);
+                CompleteDearLieJobForLifecycleBarrier();
 
             if (_dearLieVaultJobGuardHeld)
                 ReleaseDearLieVaultJobGuard();
@@ -3149,6 +3193,22 @@ namespace Hecton8.World
             _dearLieVaultJobGuardHeld = false;
             _dearLieVaultJobGuardMask = 0UL;
             _dearLieVaultJobGuardVault = null;
+        }
+
+        private void CompleteDearLieJobForLifecycleBarrier()
+        {
+            if (!_dearLieJobScheduled)
+                return;
+
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                CompleteDearLieJobIfNeeded(ResolveOrganicClockSeconds(), force: true);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
         }
 
         private void CacheDearLieFallbackQualityWeightCold()
@@ -3199,11 +3259,59 @@ namespace Hecton8.World
         public void Tick(float deltaTime)
         {
             AdvanceOrganicClock(deltaTime);
-            float currentTime = ResolveOrganicClockSeconds();
             if (_dearLieJobScheduled)
                 return;
 
-            if (!RefreshActiveCachesIfNeeded(force: false, allowMutation: false))
+            RefreshActiveCachesIfNeeded(force: false, allowMutation: false);
+        }
+
+        public void LateFrameTick()
+        {
+            float currentTime = ResolveOrganicClockSeconds();
+            UpdateOrganicPresentationState(currentTime);
+            FlushPendingDearLieDebrisSignals();
+            FlushPendingHarvestAudioEvents();
+            FlushPendingSporeAcousticEvents();
+        }
+
+        private void PostSimulationTick(in DispatcherTimingDTO timing)
+        {
+            float currentTime = ResolveOrganicClockSeconds();
+            DispatcherJobSwap.BeginPostSimulationSwapWindow();
+            try
+            {
+                ProcessDearLieDestructionSignals(currentTime);
+                CompleteDearLieJobIfNeeded(currentTime, force: true);
+                ProcessDearLieRegeneration(currentTime);
+            }
+            finally
+            {
+                DispatcherJobSwap.EndPostSimulationSwapWindow();
+            }
+
+            bool dropBufferDrained = DrainDropBuffer();
+            if (dropBufferDrained &&
+                (_deferredYieldScheduleFrame < 0 ||
+                 Hecton8.Core.SystemDispatcher.CurrentFrameIndex >= _deferredYieldScheduleFrame))
+            {
+                _deferredYieldScheduleFrame = -1;
+                DispatcherJobSwap.BeginPostSimulationSwapWindow();
+                try
+                {
+                    ProcessYieldBatchIfNeeded();
+                }
+                finally
+                {
+                    DispatcherJobSwap.EndPostSimulationSwapWindow();
+                }
+
+                VoxelDynamicNavGridRuntime.SchedulePendingDynamicObstacleUpdates();
+            }
+        }
+
+        private void UpdateOrganicPresentationState(float currentTime)
+        {
+            if (_dearLieJobScheduled || !RefreshActiveCachesIfNeeded(force: false, allowMutation: false))
                 return;
 
             IDataVault vault = _dearLieVault;
@@ -3224,46 +3332,6 @@ namespace Hecton8.World
             finally
             {
                 ReleaseOrganicLifecycleMutationGuard(vault, lockedMask);
-            }
-
-            VoxelDynamicNavGridRuntime.SchedulePendingDynamicObstacleUpdates();
-        }
-
-        public void LateFrameTick()
-        {
-            float currentTime = ResolveOrganicClockSeconds();
-            DispatcherJobSwap.BeginLateFrameSwapWindow();
-            try
-            {
-                ProcessDearLieDestructionSignals(currentTime);
-                CompleteDearLieJobIfNeeded(currentTime, force: true);
-                ProcessDearLieRegeneration(currentTime);
-            }
-            finally
-            {
-                DispatcherJobSwap.EndLateFrameSwapWindow();
-            }
-
-            FlushPendingHarvestAudioEvents();
-            FlushPendingSporeAcousticEvents();
-
-            bool dropBufferDrained = DrainDropBuffer();
-            if (dropBufferDrained &&
-                (_deferredYieldScheduleFrame < 0 ||
-                 Hecton8.Core.SystemDispatcher.CurrentFrameIndex >= _deferredYieldScheduleFrame))
-            {
-                _deferredYieldScheduleFrame = -1;
-                DispatcherJobSwap.BeginLateFrameSwapWindow();
-                try
-                {
-                    ProcessYieldBatchIfNeeded();
-                }
-                finally
-                {
-                    DispatcherJobSwap.EndLateFrameSwapWindow();
-                }
-
-                VoxelDynamicNavGridRuntime.SchedulePendingDynamicObstacleUpdates();
             }
         }
 
@@ -3432,7 +3500,6 @@ namespace Hecton8.World
             _dearLieJobStartTimeSeconds = 0d;
             int damageCount = math.max(0, _dearLieScheduledDamageCount);
             _dearLieScheduledDamageCount = 0;
-            bool flushDearLieDebrisSignals = false;
             bool recordCompletionTelemetry = false;
             bool dumpCompletionTelemetry = false;
             int telemetryDamageCount = damageCount;
@@ -3447,7 +3514,6 @@ namespace Hecton8.World
             {
                 int destroyedCount = ApplyDearLieDestructionResults(currentTime, out uint lastInstanceUid, out int vfxCount);
                 int stagedDebrisOverflowCount = math.max(0, _pendingDearLieDebrisOverflowCount);
-                flushDearLieDebrisSignals = _pendingDearLieDebrisSignalCount > 0;
                 _dearLieLastDamageFrame = currentFrame;
                 _dearLieLastDestroyedCount = destroyedCount;
                 _dearLieLastVfxCount = vfxCount;
@@ -3494,9 +3560,6 @@ namespace Hecton8.World
                 if (dumpCompletionTelemetry)
                     DumpDearLieTelemetry();
             }
-
-            if (flushDearLieDebrisSignals)
-                FlushPendingDearLieDebrisSignals();
 
             return true;
         }
@@ -6224,7 +6287,7 @@ namespace Hecton8.World
             if (!dropOutput.IsCreated || dropOutput.Length <= 0)
                 return true;
 
-            return TryReadDropBudgetGuarded(dropOutput.Length, out producedCount, out droppedCount);
+            return TryCaptureDropBudgetGuarded(dropOutput.Length, out producedCount, out droppedCount);
         }
 
         private bool TryReturnDropToOutput(ItemDropData drop)
@@ -6236,7 +6299,7 @@ namespace Hecton8.World
             if (!dropOutput.IsCreated || dropOutput.Length <= 0)
                 return false;
 
-            if (!TryReadDropBudgetGuarded(dropOutput.Length, out int producedCount, out _))
+            if (!TryCaptureDropBudgetGuarded(dropOutput.Length, out int producedCount, out _))
                 return false;
 
             if (producedCount < 0 || producedCount >= dropOutput.Length)
@@ -6265,7 +6328,7 @@ namespace Hecton8.World
             if (!dropOutput.IsCreated || dropOutput.Length <= 0)
                 return true;
 
-            if (!TryReadDropBudgetGuarded(dropOutput.Length, out int producedCount, out droppedCount))
+            if (!TryCaptureDropBudgetGuarded(dropOutput.Length, out int producedCount, out droppedCount))
                 return false;
 
             drainCount = math.min(producedCount, math.min(maxDrainCount, destination.Length));
@@ -6292,7 +6355,7 @@ namespace Hecton8.World
             return math.max(0, dropBudget[DropBudgetDroppedIndex]);
         }
 
-        private bool TryReadDropBudgetGuarded(int capacity, out int producedCount, out int droppedCount)
+        private bool TryCaptureDropBudgetGuarded(int capacity, out int producedCount, out int droppedCount)
         {
             producedCount = 0;
             droppedCount = 0;
@@ -10339,6 +10402,47 @@ namespace Hecton8.World
 
             IDataVault vault = _dearLieVault;
             return vault != null && array.Ensure(vault, bufferId, requiredCount, OrganicVaultSystemId, options);
+        }
+
+        private sealed class PostSimulationPhaseSystem : IDispatcherSystem
+        {
+            private readonly DestructibleOrganicManager _owner;
+
+            public PostSimulationPhaseSystem(DestructibleOrganicManager owner)
+            {
+                _owner = owner;
+            }
+
+            public uint GetSystemIdHash() => DearLiePostSimulationSystemHash;
+
+            public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.PostSimulation;
+
+            public byte GetBucketId() => byte.MaxValue;
+
+            public int GetDependencyCount() => 0;
+
+            public uint GetDependencyHash(int dependencyIndex) => 0u;
+
+            public void PreSimulationTick(in DispatcherTimingDTO timing)
+            {
+            }
+
+            public JobHandle ScheduleSimulation(
+                in DispatcherTimingDTO timing,
+                in DispatcherJobContext context,
+                JobHandle dependsOn)
+            {
+                return dependsOn;
+            }
+
+            public void PostSimulationTick(in DispatcherTimingDTO timing)
+            {
+                _owner?.PostSimulationTick(in timing);
+            }
+
+            public void VisualSyncTick(in DispatcherTimingDTO timing)
+            {
+            }
         }
 
 #if UNITY_EDITOR

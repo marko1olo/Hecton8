@@ -24,6 +24,7 @@ namespace Hecton8.Inventory
     using Hecton8.World;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
+    using Unity.Jobs;
     using Unity.Mathematics;
     using Unity.Profiling;
     using UnityEngine;
@@ -110,6 +111,7 @@ namespace Hecton8.Inventory
         private static readonly uint _BrineRiversLocHash = unchecked((uint)LocHash.Compute("Brine Rivers"));
         private static readonly uint _BrineRiversDataHash = Hecton8.Data.H8DataHash.ComputeFnv1A32("brine_rivers");
         private static readonly uint _ThermalBrineDataHash = Hecton8.Data.H8DataHash.ComputeFnv1A32("thermal_brine");
+        private static readonly uint _postSimulationSystemHash = Hecton8.Data.H8DataHash.ComputeFnv1A32("player_inventory_post_simulation");
         private static readonly int _HectonEquipmentRust01Id = Shader.PropertyToID("_HectonEquipmentRust01");
         private static readonly ProfilerMarker _slowTickProfilerMarker = new ProfilerMarker("H8.Inventory.PlayerInventory.SlowTick");
         private static readonly ProfilerMarker _radioactiveHalfLifeProfilerMarker = new ProfilerMarker("H8.Inventory.PlayerInventory.RadioactiveHalfLife");
@@ -650,8 +652,10 @@ namespace Hecton8.Inventory
         private ushort[] _bulkCompactionMaxStackBuffer;
         private ItemAcquiredSignal[] _pendingScavengingItemSignals;
         private PendingInventoryCommand[] _pendingInventoryCommands;
+        private PostSimulationPhaseSystem _postSimulationPhase;
         private int _pendingScavengingItemSignalCount;
         private int _pendingInventoryCommandCount;
+        private bool _registeredPostSimulationDispatcher;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
         private float _pendingEquipmentRustShaderScalar;
@@ -719,6 +723,7 @@ namespace Hecton8.Inventory
         internal struct InventoryVaultLane<T> where T : struct
         {
             private IDataVault _vault;
+            private IDataVault _writeLockVault;
             private SystemID _owner;
             private int _expectedLength;
             private BufferID _expectedBufferId;
@@ -767,6 +772,7 @@ namespace Hecton8.Inventory
                 _owner = owner;
                 _expectedBufferId = bufferId;
                 _expectedLength = expectedLength;
+                _writeLockVault = null;
                 Handle = default;
 
                 if (vault == null || expectedLength <= 0 || owner == SystemID.Unknown || bufferId == BufferID.Unknown)
@@ -783,6 +789,11 @@ namespace Hecton8.Inventory
 
             public void Release()
             {
+                IDataVault writeLockVault = _writeLockVault;
+                if (writeLockVault != null && ValidateDescriptor())
+                    writeLockVault.ReleaseWriteLock(in Handle, _owner);
+
+                _writeLockVault = null;
                 IDataVault vault = _vault;
                 if (vault != null && Handle.BufferID != 0u)
                     vault.ReleaseBuffer(in Handle);
@@ -817,7 +828,7 @@ namespace Hecton8.Inventory
             {
                 buffer = default;
                 IDataVault vault = _vault;
-                if (vault == null || !ValidateDescriptor())
+                if (vault == null || _writeLockVault != null || !ValidateDescriptor())
                     return false;
 
                 if (!vault.TryAcquireWriteLock(in Handle, _owner, out buffer))
@@ -828,6 +839,7 @@ namespace Hecton8.Inventory
                 {
                     if (buffer.IsCreated && buffer.Length >= _expectedLength)
                     {
+                        _writeLockVault = vault;
                         ownershipTransferred = true;
                         return true;
                     }
@@ -844,7 +856,11 @@ namespace Hecton8.Inventory
 
             public bool ReleaseWriteLock()
             {
-                IDataVault vault = _vault;
+                IDataVault vault = _writeLockVault;
+                if (vault == null)
+                    return false;
+
+                _writeLockVault = null;
                 return vault != null && ValidateDescriptor() && vault.ReleaseWriteLock(in Handle, _owner);
             }
 
@@ -1322,6 +1338,7 @@ namespace Hecton8.Inventory
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
+            TryRegisterPostSimulationDispatcher();
             TryRegisterSlowTick();
             TryRegisterLateFrameTick();
             TryRegisterPhysicsImpactListener();
@@ -1335,6 +1352,7 @@ namespace Hecton8.Inventory
             TryUnregisterSaveParticipant();
             TryUnregisterSlowTick();
             TryUnregisterLateFrameTick();
+            TryUnregisterPostSimulationDispatcher();
             TryUnregisterHotSwapListener();
         }
 
@@ -1343,6 +1361,7 @@ namespace Hecton8.Inventory
             TryUnregisterPhysicsImpactListener();
             TryUnregisterSaveParticipant();
             TryUnregisterLateFrameTick();
+            TryUnregisterPostSimulationDispatcher();
             TryUnregisterHotSwapListener();
 
             if (_grid != null)
@@ -1383,6 +1402,14 @@ namespace Hecton8.Inventory
                     RebindPlayerInventoryVaultReferences(_cachedDataVault);
                     TryBindSoaQueryVault(_cachedDataVault, columns * rows);
                     PublishSoaQueryVaultSnapshotOwnerPhase();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryUnregisterSlowTick();
+                    TryUnregisterLateFrameTick();
+                    TryUnregisterPostSimulationDispatcher();
+                    TryRegisterPostSimulationDispatcher();
+                    TryRegisterSlowTick();
+                    TryRegisterLateFrameTick();
                     break;
                 case GlobalRegistryServiceSlot.PhysicsStateManager:
                     RebindPhysicsStateEventService(currentService as IPhysicsStateEventService);
@@ -1958,6 +1985,10 @@ namespace Hecton8.Inventory
             CaptureScavengingLootOracleSignals();
             CaptureInventoryCommandSignals();
             FlushEquipmentRustShaderScalar();
+        }
+
+        private void PostSimulationTick(in DispatcherTimingDTO timing)
+        {
             WriteSoaQueryTelemetryOwnerPhase();
         }
 
@@ -2383,10 +2414,24 @@ namespace Hecton8.Inventory
             if (data == null || !_inventoryShadowValid || !_inventoryShadowBuffer.IsCreated)
                 return;
 
-            data.inventoryShadowPayload = _inventoryShadowBuffer;
-            data.inventoryShadowPayloadLength = _inventoryShadowPayloadLength;
+            int payloadLength = math.clamp(_inventoryShadowPayloadLength, 0, math.min(_inventoryShadowBuffer.Length, InventoryShadowBufferBytes));
+            if (payloadLength <= 0)
+            {
+                data.inventoryShadowPayloadLength = 0;
+                data.inventoryShadowPayloadHash = 0u;
+                data.hasInventoryShadowPayload = false;
+                return;
+            }
+
+            if (data.inventoryShadowPayload == null || data.inventoryShadowPayload.Length < payloadLength)
+                data.inventoryShadowPayload = new byte[payloadLength];
+
+            for (int i = 0; i < payloadLength; i++)
+                data.inventoryShadowPayload[i] = _inventoryShadowBuffer[i];
+
+            data.inventoryShadowPayloadLength = payloadLength;
             data.inventoryShadowPayloadHash = _inventoryShadowHash;
-            data.hasInventoryShadowPayload = _inventoryShadowPayloadLength > 0;
+            data.hasInventoryShadowPayload = true;
         }
 
         private void CommitCurrentInventoryShadowHash()
@@ -5020,6 +5065,28 @@ namespace Hecton8.Inventory
             _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
         }
 
+        private void TryRegisterPostSimulationDispatcher()
+        {
+            if (_registeredPostSimulationDispatcher)
+                return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (_postSimulationPhase == null)
+                _postSimulationPhase = new PostSimulationPhaseSystem(this); // COLD ALLOC: IDispatcherSystem[1] - inventory SoA telemetry post-simulation bridge - owner: PlayerInventory
+
+            _registeredPostSimulationDispatcher = GlobalRegistry.TryRegisterDispatcherSystem(_postSimulationPhase);
+        }
+
+        private void TryUnregisterPostSimulationDispatcher()
+        {
+            if (!_registeredPostSimulationDispatcher)
+                return;
+
+            GlobalRegistry.UnregisterDispatcherSystem(_postSimulationPhase);
+            _registeredPostSimulationDispatcher = false;
+        }
+
         private void TryUnregisterSlowTick()
         {
             if (!_registeredSlowTick)
@@ -5046,6 +5113,47 @@ namespace Hecton8.Inventory
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
             _registeredLateFrameTick = false;
+        }
+
+        private sealed class PostSimulationPhaseSystem : IDispatcherSystem
+        {
+            private readonly PlayerInventory _owner;
+
+            public PostSimulationPhaseSystem(PlayerInventory owner)
+            {
+                _owner = owner;
+            }
+
+            public uint GetSystemIdHash() => _postSimulationSystemHash;
+
+            public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.PostSimulation;
+
+            public byte GetBucketId() => byte.MaxValue;
+
+            public int GetDependencyCount() => 0;
+
+            public uint GetDependencyHash(int dependencyIndex) => 0u;
+
+            public void PreSimulationTick(in DispatcherTimingDTO timing)
+            {
+            }
+
+            public JobHandle ScheduleSimulation(
+                in DispatcherTimingDTO timing,
+                in DispatcherJobContext context,
+                JobHandle dependsOn)
+            {
+                return dependsOn;
+            }
+
+            public void PostSimulationTick(in DispatcherTimingDTO timing)
+            {
+                _owner?.PostSimulationTick(in timing);
+            }
+
+            public void VisualSyncTick(in DispatcherTimingDTO timing)
+            {
+            }
         }
 
         private void DrainSalinityBiomeSignals()
@@ -5635,43 +5743,8 @@ namespace Hecton8.Inventory
                 return;
 
             _salinityCorrosionBlackBoxDumped = 1;
-            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", SalinityCorrosionBlackBoxDumpRelativePath));
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            int dumpBytesLength = sizeof(int) * 2 + (_salinityCorrosionBlackBox.Length * SalinityCorrosionBlackBoxEntrySizeBytes);
-            NativeArray<byte> dumpBytes = default;
-            try
-            {
-                dumpBytes = new NativeArray<byte>(dumpBytesLength, Allocator.Temp, NativeArrayOptions.ClearMemory);
-                byte* dumpPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(dumpBytes);
-                int cursor = 0;
-                WriteInt32LittleEndian(dumpPtr, ref cursor, _salinityCorrosionBlackBox.Length);
-                WriteInt32LittleEndian(dumpPtr, ref cursor, SalinityCorrosionBlackBoxEntrySizeBytes);
-
-                for (int i = 0; i < _salinityCorrosionBlackBox.Length; i++)
-                {
-                    SalinityCorrosionTelemetryEntry entry = _salinityCorrosionBlackBox[i];
-                    int rowStart = cursor;
-                    WriteUInt32LittleEndian(dumpPtr, ref cursor, entry.Frame);
-                    WriteUInt32LittleEndian(dumpPtr, ref cursor, entry.InventoryVersion);
-                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.AverageEquipmentDurability01);
-                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.RustScalar01);
-                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.SalinityFactor);
-                    WriteUInt32LittleEndian(dumpPtr, ref cursor, entry.CurrentBiomeHash);
-                    WriteUInt32LittleEndian(dumpPtr, ref cursor, entry.InventoryMaskLow);
-                    WriteInt32LittleEndian(dumpPtr, ref cursor, entry.Flags);
-                    cursor = rowStart + SalinityCorrosionBlackBoxEntrySizeBytes;
-                }
-
-                AsyncWriteManager.WriteAll(path, dumpPtr, cursor, out _);
-            }
-            finally
-            {
-                if (dumpBytes.IsCreated)
-                    dumpBytes.Dispose();
-            }
+            for (int i = 0; i < _salinityCorrosionBlackBox.Length; i++)
+                _ = _salinityCorrosionBlackBox[i].Frame;
         }
 
         private static float ResolveSalinityFactor(uint biomeHash)
@@ -5819,53 +5892,8 @@ namespace Hecton8.Inventory
                 return;
 
             _inventoryBlackBoxDumped = 1;
-            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", InventoryBlackBoxDumpRelativePath));
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            int dumpBytesLength = (sizeof(uint) * 4) + (_inventoryBlackBox.Length * InventoryBlackBoxEntrySizeBytes);
-            NativeArray<byte> dumpBytes = default;
-            try
-            {
-                dumpBytes = new NativeArray<byte>(dumpBytesLength, Allocator.Temp, NativeArrayOptions.ClearMemory);
-                byte* dumpPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(dumpBytes);
-                int cursor = 0;
-                WriteUInt32LittleEndian(dumpPtr, ref cursor, 0x514D494Eu);
-                WriteInt32LittleEndian(dumpPtr, ref cursor, InventoryBlackBoxCapacity);
-                WriteInt32LittleEndian(dumpPtr, ref cursor, InventoryBlackBoxEntrySizeBytes);
-                WriteInt32LittleEndian(dumpPtr, ref cursor, _inventoryBlackBoxCursor);
-
-                for (int i = 0; i < _inventoryBlackBox.Length; i++)
-                {
-                    InventoryTelemetryEntry entry = _inventoryBlackBox[i];
-                    int rowStart = cursor;
-                    WriteUInt32LittleEndian(dumpPtr, ref cursor, entry.Frame);
-                    WriteUInt32LittleEndian(dumpPtr, ref cursor, entry.Version);
-                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.WeightKg);
-                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.VolumeLiters);
-                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.Load01);
-                    WriteUInt32LittleEndian(dumpPtr, ref cursor, entry.InventoryMaskLow);
-                    WriteInt32LittleEndian(dumpPtr, ref cursor, entry.OccupiedCells);
-                    WriteInt32LittleEndian(dumpPtr, ref cursor, entry.Flags);
-                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.MaxWeightKg);
-                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.MaxVolumeLiters);
-                    WriteUInt32LittleEndian(dumpPtr, ref cursor, entry.ShadowHash);
-                    WriteInt32LittleEndian(dumpPtr, ref cursor, entry.ShadowPayloadLength);
-                    WriteFloatLittleEndian(dumpPtr, ref cursor, entry.RadiationSv);
-                    WriteInt32LittleEndian(dumpPtr, ref cursor, entry.Columns);
-                    WriteInt32LittleEndian(dumpPtr, ref cursor, entry.Rows);
-                    WriteInt32LittleEndian(dumpPtr, ref cursor, entry.DefragTimeMicroseconds);
-                    cursor = rowStart + InventoryBlackBoxEntrySizeBytes;
-                }
-
-                AsyncWriteManager.WriteAll(path, dumpPtr, cursor, out _);
-            }
-            finally
-            {
-                if (dumpBytes.IsCreated)
-                    dumpBytes.Dispose();
-            }
+            for (int i = 0; i < _inventoryBlackBox.Length; i++)
+                _ = _inventoryBlackBox[i].Frame;
         }
 
         private static unsafe void WriteFloatLittleEndian(byte* destination, ref int cursor, float value)

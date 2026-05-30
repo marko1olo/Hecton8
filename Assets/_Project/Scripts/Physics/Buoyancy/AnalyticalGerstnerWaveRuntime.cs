@@ -1,6 +1,7 @@
 using System;
 #if UNITY_EDITOR
 using System.IO;
+using System.Threading;
 #endif
 using Hecton8.Core;
 using Hecton8.Core.Memory;
@@ -25,17 +26,19 @@ namespace Hecton8.Physics
             VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Results) |
             VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.MacroGrid) |
             VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Counters);
-        private static readonly ulong TelemetryMutationGuardMask =
-            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Tuning) |
-            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Results) |
-            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Counters) |
-            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.TelemetryRing) |
+        private static readonly ulong TelemetryRingMutationGuardMask =
+            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.TelemetryRing);
+        private static readonly ulong TelemetryCursorMutationGuardMask =
             VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.TelemetryCursor);
-        private static readonly ulong ColdBootMutationGuardMask =
-            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Spectrum) |
-            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Tuning) |
-            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.TelemetryCursor) |
-            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Profiles) |
+        private static readonly ulong ColdBootSpectrumMutationGuardMask =
+            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Spectrum);
+        private static readonly ulong ColdBootTuningMutationGuardMask =
+            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Tuning);
+        private static readonly ulong ColdBootTelemetryCursorMutationGuardMask =
+            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.TelemetryCursor);
+        private static readonly ulong ColdBootProfileMutationGuardMask =
+            VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Profiles);
+        private static readonly ulong ColdBootCounterMutationGuardMask =
             VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.Counters);
 
         [Header("Vault Capacity")]
@@ -95,6 +98,8 @@ namespace Hecton8.Physics
 
 #if UNITY_EDITOR
         private static AnalyticalGerstnerWaveRuntime _activeRuntimeInstance;
+        private static readonly byte[] s_waveCsvImportScratch = new byte[AnalyticalGerstnerWaveConstants.CsvScratchBytes];
+        private static int s_waveCsvImportScratchBusy;
 
         public static bool TryGetActiveRuntimeInstance(out AnalyticalGerstnerWaveRuntime runtime)
         {
@@ -203,6 +208,9 @@ namespace Hecton8.Physics
             if (!_runtimeActive || _jobScheduled || !math.isfinite(fixedDeltaTime) || fixedDeltaTime <= 0f)
                 return;
 
+            if (!_coldBootCompleted)
+                return;
+
             if (!TryPrepareRuntimeVault(out IDataVault vault))
                 return;
 
@@ -235,14 +243,12 @@ namespace Hecton8.Physics
 
                 if (_seedMockRequestsWhenEmpty && ConsumeMockRequestSeedGate(requests, sampleCount, _simulationFrame))
                 {
-                    GenerateMockWaveRequestsJob requestJob = new GenerateMockWaveRequestsJob
-                    {
-                        Requests = requests,
-                        Count = sampleCount,
-                        OriginAUP = tuningDto.LocalOriginAUP,
-                        FrameIndex = _simulationFrame,
-                        OriginShiftSequence = tuningDto.OriginShiftSequence
-                    };
+                    GenerateMockWaveRequestsJob requestJob = default;
+                    requestJob.Requests = requests;
+                    requestJob.Count = sampleCount;
+                    requestJob.OriginAUP = tuningDto.LocalOriginAUP;
+                    requestJob.FrameIndex = _simulationFrame;
+                    requestJob.OriginShiftSequence = tuningDto.OriginShiftSequence;
                     handle = requestJob.Schedule(sampleCount, 128, handle);
                 }
 
@@ -250,25 +256,21 @@ namespace Hecton8.Physics
                 int gridCells = math.min(gridResolution * gridResolution, macroGrid.Length);
                 if (gridCells > 0)
                 {
-                    BuildMacroSwellGridJob gridJob = new BuildMacroSwellGridJob
-                    {
-                        Spectrum = spectrum,
-                        MacroGrid = macroGrid,
-                        Tuning = tuningDto
-                    };
+                    BuildMacroSwellGridJob gridJob = default;
+                    gridJob.Spectrum = spectrum;
+                    gridJob.MacroGrid = macroGrid;
+                    gridJob.Tuning = tuningDto;
                     handle = gridJob.Schedule(gridCells, 64, handle);
                 }
 
-                EvaluateAnalyticalWavesJob evaluateJob = new EvaluateAnalyticalWavesJob
-                {
-                    Requests = requests,
-                    Spectrum = spectrum,
-                    MacroGrid = macroGrid,
-                    Results = results,
-                    Counters = counters,
-                    Tuning = tuningDto,
-                    SampleCount = sampleCount
-                };
+                EvaluateAnalyticalWavesJob evaluateJob = default;
+                evaluateJob.Requests = requests;
+                evaluateJob.Spectrum = spectrum;
+                evaluateJob.MacroGrid = macroGrid;
+                evaluateJob.Results = results;
+                evaluateJob.Counters = counters;
+                evaluateJob.Tuning = tuningDto;
+                evaluateJob.SampleCount = sampleCount;
 
                 int groupCount = (sampleCount + 3) >> 2;
                 _scheduleTimestamp = Stopwatch.GetTimestamp();
@@ -310,46 +312,21 @@ namespace Hecton8.Physics
                 ReleaseJobBufferGuard();
 
                 IDataVault vault = _dataVault;
-                if (vault != null && TryAcquireGerstnerMutationGuard(vault, TelemetryMutationGuardMask))
+                if (vault != null &&
+                    TryBuildWaveTelemetryEntry(
+                        vault,
+                        elapsedMicros,
+                        out WaveMathTelemetryEntry telemetryEntry,
+                        out int telemetryCursorValue,
+                        out int telemetryNextCursorValue,
+                        out int telemetryRingLength,
+                        out bool shouldDumpBlackbox) &&
+                    TryCommitWaveTelemetry(vault, in telemetryEntry, telemetryCursorValue, telemetryNextCursorValue, telemetryRingLength))
                 {
-                    try
+                    if (shouldDumpBlackbox)
                     {
-                        if (TryResolveRuntimeBuffers(
-                                vault,
-                                out _,
-                                out NativeArray<GerstnerWaveTuningDTO> tuning,
-                                out _,
-                                out NativeArray<OceanSampleResultDTO> results,
-                                out _,
-                                out NativeArray<WaveMathCounterLane> counters) &&
-                            ResolveTelemetryBuffers(
-                                vault,
-                                out NativeArray<WaveMathTelemetryEntry> telemetry,
-                                out NativeArray<int> telemetryCursor))
-                        {
-                            GerstnerWaveTuningDTO tuningDto = tuning[0];
-                            RecordWaveMathTelemetryJob telemetryJob = default;
-                            telemetryJob.Results = results;
-                            telemetryJob.Counters = counters;
-                            telemetryJob.TelemetryRing = telemetry;
-                            telemetryJob.TelemetryCursor = telemetryCursor;
-                            telemetryJob.Tuning = tuningDto;
-                            telemetryJob.SampleCount = _scheduledSampleCount;
-                            telemetryJob.BurstMicros = elapsedMicros;
-                            telemetryJob.Execute();
-
-                            float dumpThreshold = math.max(1f, math.select(AnalyticalGerstnerWaveConstants.DefaultDumpThresholdMicros, tuningDto.MaxSolverMicrosBeforeDump, math.isfinite(tuningDto.MaxSolverMicrosBeforeDump)));
-                            int nonFinite = counters.IsCreated && counters.Length > 2 ? counters[2].Value : 0;
-                            if (!_dumpedFault && (elapsedMicros > dumpThreshold || nonFinite > 0))
-                            {
-                                DumpBlackBoxOnce(telemetry, telemetryCursor);
-                                _dumpedFault = true;
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        vault.ReleaseMutationGuard(TelemetryMutationGuardMask);
+                        PushBlackBoxEvent(in telemetryEntry);
+                        _dumpedFault = true;
                     }
                 }
             }
@@ -430,74 +407,46 @@ namespace Hecton8.Physics
             if (!OpenOrAcquireVaultHandlesForOwnerRoute(vault))
                 return;
 
-            ulong mutationGuardMask = ColdBootMutationGuardMask;
 #if UNITY_EDITOR
-            mutationGuardMask |= VaultMutationGuardBit(AnalyticalGerstnerWaveBufferIds.CsvScratch);
+            int stagedProfileRows = 0;
+            Span<WaveSpectrumProfileDTO> stagedProfiles = stackalloc WaveSpectrumProfileDTO[AnalyticalGerstnerWaveConstants.ProfileCapacity];
+            if (_loadCsvOnEnable)
+                TryStageWaveProfilesCsv(stagedProfiles, out stagedProfileRows);
 #endif
-            if (!TryAcquireGerstnerMutationGuard(vault, mutationGuardMask))
+
+            if (!TryReadOrInitializeColdBootTuning(vault, out GerstnerWaveTuningDTO stagedTuning))
                 return;
 
-            try
-            {
-                NativeArray<GerstnerWaveTuningDTO> tuning = ResolveVaultBuffer(vault, in _tuningHandle);
-                NativeArray<GerstnerWaveParamsDTO> spectrum = ResolveVaultBuffer(vault, in _spectrumHandle);
-                NativeArray<WaveSpectrumProfileDTO> profiles = ResolveVaultBuffer(vault, in _profilesHandle);
+            bool hasSpectrum = false;
+            Span<GerstnerWaveParamsDTO> stagedSpectrum = stackalloc GerstnerWaveParamsDTO[AnalyticalGerstnerWaveConstants.SpectrumRows];
+
 #if UNITY_EDITOR
-                NativeArray<byte> csvScratch = ResolveVaultBuffer(vault, in _csvScratchHandle);
-#endif
-                NativeArray<int> telemetryCursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
-                NativeArray<WaveMathCounterLane> counters = ResolveVaultBuffer(vault, in _countersHandle);
-                if (!tuning.IsCreated || tuning.Length <= 0 || !spectrum.IsCreated || spectrum.Length <= 0)
+            if (stagedProfileRows > 0)
+            {
+                ApplyProfileToScratch(stagedProfiles[0], ref stagedTuning, stagedSpectrum);
+                hasSpectrum = true;
+
+                if (!TryCommitColdBootProfiles(vault, stagedProfiles))
                     return;
-
-                if (tuning[0].Flags == 0u)
-                    tuning[0] = GerstnerWaveTuningDTO.Default();
-
-                if (telemetryCursor.IsCreated && telemetryCursor.Length > 0)
-                    telemetryCursor[0] = 0;
-                if (counters.IsCreated)
-                {
-                    for (int i = 0; i < counters.Length; i++)
-                        counters[i] = default;
-                }
-
-                int profileRows = 0;
-#if UNITY_EDITOR
-                if (_loadCsvOnEnable && profiles.IsCreated && csvScratch.IsCreated)
-                {
-                    string csvPath = ResolveProjectPath(_csvRelativePath);
-                    int csvBytes = ReadFileIntoNativeScratch(csvPath, csvScratch);
-                    if (csvBytes > 0)
-                    {
-                        ReadOnlySpan<byte> csvBytesView = System.Runtime.InteropServices.MemoryMarshal.CreateReadOnlySpan(
-                            ref UnsafeUtility.AsRef<byte>(csvScratch.GetUnsafeReadOnlyPtr()),
-                            csvBytes);
-                        WaveSpectrumProfileCsvParser.TryApply(csvBytesView, profiles, out profileRows);
-                    }
-                }
+            }
 #endif
 
-                if (profileRows > 0)
-                    ApplyProfile(profiles[0], spectrum, tuning);
-                else if (_seedMockSpectrumOnEnable)
-                {
-                    GenerateMockWaveSpectrumJob mockSpectrumJob = default;
-                    mockSpectrumJob.Spectrum = spectrum;
-                    mockSpectrumJob.Tuning = tuning;
-                    mockSpectrumJob.WindDirectionRadians = tuning[0].WindDirectionRadians;
-                    mockSpectrumJob.WindSpeedMetersPerSecond = tuning[0].WindSpeedMetersPerSecond;
-                    mockSpectrumJob.GlobalQualityWeight = tuning[0].GlobalQualityWeight;
-                    mockSpectrumJob.FrameIndex = _simulationFrame;
-                    for (int i = 0; i < spectrum.Length; i++)
-                        mockSpectrumJob.Execute(i);
-                }
-
-                _coldBootCompleted = true;
-            }
-            finally
+            if (!hasSpectrum && _seedMockSpectrumOnEnable)
             {
-                vault.ReleaseMutationGuard(mutationGuardMask);
+                BuildMockWaveSpectrumScratch(ref stagedTuning, stagedSpectrum, _simulationFrame);
+                hasSpectrum = true;
             }
+
+            if (hasSpectrum && !TryCommitColdBootSpectrum(vault, stagedSpectrum))
+                return;
+            if (!TryCommitColdBootTuning(vault, in stagedTuning))
+                return;
+            if (!TryResetColdBootTelemetryCursor(vault))
+                return;
+            if (!TryClearColdBootCounters(vault))
+                return;
+
+            _coldBootCompleted = true;
         }
 
         private bool ConsumeMockRequestSeedGate(NativeArray<OceanSampleRequestDTO> requests, int sampleCount, uint frameIndex)
@@ -632,13 +581,6 @@ namespace Hecton8.Physics
                    results.IsCreated &&
                    macroGrid.IsCreated &&
                    counters.IsCreated;
-        }
-
-        private bool ResolveTelemetryBuffers(IDataVault vault, out NativeArray<WaveMathTelemetryEntry> telemetry, out NativeArray<int> cursor)
-        {
-            telemetry = ResolveVaultBuffer(vault, in _telemetryHandle);
-            cursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
-            return telemetry.IsCreated && telemetry.Length > 0 && cursor.IsCreated && cursor.Length > 0;
         }
 
         private static NativeArray<T> ResolveVaultBuffer<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
@@ -844,22 +786,263 @@ namespace Hecton8.Physics
             _cachedOriginShiftFlags = shiftEvent.IsSafeTeleport != 0 ? 1u : 0u;
         }
 
-        private static void ApplyProfile(
-            WaveSpectrumProfileDTO profile,
-            NativeArray<GerstnerWaveParamsDTO> spectrum,
-            NativeArray<GerstnerWaveTuningDTO> tuning)
+        private bool TryBuildWaveTelemetryEntry(
+            IDataVault vault,
+            float elapsedMicros,
+            out WaveMathTelemetryEntry entry,
+            out int cursorValue,
+            out int nextCursorValue,
+            out int ringLength,
+            out bool shouldDumpBlackbox)
         {
-            if (!spectrum.IsCreated || spectrum.Length <= 0 || !tuning.IsCreated || tuning.Length <= 0)
-                return;
+            entry = default;
+            cursorValue = 0;
+            nextCursorValue = 0;
+            ringLength = 0;
+            shouldDumpBlackbox = false;
 
-            GerstnerWaveTuningDTO tuningDto = tuning[0].Flags == 0u ? GerstnerWaveTuningDTO.Default() : tuning[0];
-            tuningDto.ProfileHash = profile.StateHash;
-            tuningDto.WindDirectionRadians = profile.WindDirectionRadians;
-            tuningDto.StormWeight01 = profile.StormWeight01;
-            tuningDto.WaveAmplitudeMultiplier = math.lerp(profile.MinAmplitudeMultiplier, profile.MaxAmplitudeMultiplier, 0.5f);
-            tuningDto.LargestWavelengthMeters = math.max(profile.MaxWavelength, tuningDto.LargestWavelengthMeters);
-            tuningDto.Flags |= AnalyticalGerstnerWaveConstants.FlagActive;
-            tuning[0] = tuningDto;
+            if (vault == null ||
+                !vault.TryReadOnlyHandle(in _tuningHandle, out NativeArray<GerstnerWaveTuningDTO>.ReadOnly tuning) ||
+                !vault.TryReadOnlyHandle(in _resultsHandle, out NativeArray<OceanSampleResultDTO>.ReadOnly results) ||
+                !vault.TryReadOnlyHandle(in _countersHandle, out NativeArray<WaveMathCounterLane>.ReadOnly counters) ||
+                !vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<WaveMathTelemetryEntry>.ReadOnly telemetryRing) ||
+                !vault.TryReadOnlyHandle(in _telemetryCursorHandle, out NativeArray<int>.ReadOnly telemetryCursor) ||
+                tuning.Length <= 0 ||
+                telemetryRing.Length <= 0 ||
+                telemetryCursor.Length <= 0)
+            {
+                return false;
+            }
+
+            GerstnerWaveTuningDTO tuningDto = tuning[0];
+            int count = math.min(math.max(0, _scheduledSampleCount), results.Length);
+            uint lastHash = 0u;
+            float maxAbsHeight = 0f;
+            uint flags = 0u;
+            int resultWindow = math.min(count, 1024);
+            for (int i = 0; i < resultWindow; i++)
+            {
+                OceanSampleResultDTO result = results[i];
+                lastHash = math.select(lastHash, result.EntityHashID, result.EntityHashID != 0u);
+                maxAbsHeight = math.max(maxAbsHeight, math.abs(math.select(0f, result.WaterHeight, math.isfinite(result.WaterHeight))));
+                flags |= result.Flags & AnalyticalGerstnerWaveConstants.FlagNonFinite;
+            }
+
+            int evaluated = counters.Length > 0 ? counters[0].Value : count;
+            int coarse = counters.Length > 1 ? counters[1].Value : 0;
+            int nonFinite = counters.Length > 2 ? counters[2].Value : 0;
+            int staleOrigin = counters.Length > 3 ? counters[3].Value : 0;
+            cursorValue = math.max(0, telemetryCursor[0]);
+            ringLength = telemetryRing.Length;
+            nextCursorValue = cursorValue >= int.MaxValue - 1 ? ringLength : cursorValue + 1;
+
+            entry.FrameIndex = tuningDto.FrameIndex;
+            entry.EvaluatedCoordinates = math.max(0, evaluated);
+            entry.ActiveOctaves = AnalyticalGerstnerWaveMath.ResolveActiveOctaves(in tuningDto);
+            entry.CoarseGridSamples = math.max(0, coarse);
+            entry.BurstMicros = math.max(0f, math.select(0f, elapsedMicros, math.isfinite(elapsedMicros)));
+            entry.GlobalQualityWeight = math.saturate(math.select(1f, tuningDto.GlobalQualityWeight, math.isfinite(tuningDto.GlobalQualityWeight)));
+            entry.Flags = flags |
+                          math.select(0u, AnalyticalGerstnerWaveConstants.FlagNonFinite, nonFinite > 0) |
+                          math.select(0u, AnalyticalGerstnerWaveConstants.FlagStaleOrigin, staleOrigin > 0);
+            entry.NonFiniteCount = math.max(0, nonFinite);
+            entry.LastEntityHashID = lastHash;
+            entry.MaxAbsHeight = maxAbsHeight;
+            entry.MacroGridResolution = math.max(0, tuningDto.MacroGridResolution);
+            entry.RequestCount = count;
+            entry.KernelHash = AnalyticalGerstnerWaveConstants.KernelHash;
+            entry.ProfileHash = tuningDto.ProfileHash;
+            entry.OriginShiftSequence = tuningDto.OriginShiftSequence;
+
+            float dumpThreshold = math.max(1f, math.select(AnalyticalGerstnerWaveConstants.DefaultDumpThresholdMicros, tuningDto.MaxSolverMicrosBeforeDump, math.isfinite(tuningDto.MaxSolverMicrosBeforeDump)));
+            shouldDumpBlackbox = !_dumpedFault && (entry.BurstMicros > dumpThreshold || entry.NonFiniteCount > 0);
+            return true;
+        }
+
+        private bool TryCommitWaveTelemetry(
+            IDataVault vault,
+            in WaveMathTelemetryEntry entry,
+            int cursorValue,
+            int nextCursorValue,
+            int expectedRingLength)
+        {
+            if (!TryCommitWaveTelemetryEntry(vault, in entry, cursorValue, expectedRingLength))
+                return false;
+
+            return TryCommitWaveTelemetryCursor(vault, nextCursorValue);
+        }
+
+        private bool TryCommitWaveTelemetryEntry(
+            IDataVault vault,
+            in WaveMathTelemetryEntry entry,
+            int cursorValue,
+            int expectedRingLength)
+        {
+            if (!TryAcquireGerstnerMutationGuard(vault, TelemetryRingMutationGuardMask))
+                return false;
+
+            try
+            {
+                NativeArray<WaveMathTelemetryEntry> telemetry = ResolveVaultBuffer(vault, in _telemetryHandle);
+                if (!telemetry.IsCreated || telemetry.Length <= 0 || telemetry.Length != expectedRingLength)
+                    return false;
+
+                int slot = math.max(0, cursorValue) % telemetry.Length;
+                telemetry[slot] = entry;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(TelemetryRingMutationGuardMask);
+            }
+        }
+
+        private bool TryCommitWaveTelemetryCursor(IDataVault vault, int nextCursorValue)
+        {
+            if (!TryAcquireGerstnerMutationGuard(vault, TelemetryCursorMutationGuardMask))
+                return false;
+
+            try
+            {
+                NativeArray<int> telemetryCursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
+                if (!telemetryCursor.IsCreated || telemetryCursor.Length <= 0)
+                    return false;
+
+                telemetryCursor[0] = math.max(0, nextCursorValue);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(TelemetryCursorMutationGuardMask);
+            }
+        }
+
+        private bool TryReadOrInitializeColdBootTuning(IDataVault vault, out GerstnerWaveTuningDTO tuningDto)
+        {
+            tuningDto = default;
+            if (!TryAcquireGerstnerMutationGuard(vault, ColdBootTuningMutationGuardMask))
+                return false;
+
+            try
+            {
+                NativeArray<GerstnerWaveTuningDTO> tuning = ResolveVaultBuffer(vault, in _tuningHandle);
+                if (!tuning.IsCreated || tuning.Length <= 0)
+                    return false;
+
+                tuningDto = tuning[0];
+                if (tuningDto.Flags == 0u)
+                {
+                    tuningDto = GerstnerWaveTuningDTO.Default();
+                    tuning[0] = tuningDto;
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(ColdBootTuningMutationGuardMask);
+            }
+        }
+
+        private bool TryCommitColdBootTuning(IDataVault vault, in GerstnerWaveTuningDTO tuningDto)
+        {
+            if (!TryAcquireGerstnerMutationGuard(vault, ColdBootTuningMutationGuardMask))
+                return false;
+
+            try
+            {
+                NativeArray<GerstnerWaveTuningDTO> tuning = ResolveVaultBuffer(vault, in _tuningHandle);
+                if (!tuning.IsCreated || tuning.Length <= 0)
+                    return false;
+
+                tuning[0] = tuningDto;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(ColdBootTuningMutationGuardMask);
+            }
+        }
+
+        private bool TryCommitColdBootSpectrum(IDataVault vault, ReadOnlySpan<GerstnerWaveParamsDTO> staged)
+        {
+            if (staged.Length <= 0 || !TryAcquireGerstnerMutationGuard(vault, ColdBootSpectrumMutationGuardMask))
+                return false;
+
+            try
+            {
+                NativeArray<GerstnerWaveParamsDTO> spectrum = ResolveVaultBuffer(vault, in _spectrumHandle);
+                if (!spectrum.IsCreated || spectrum.Length != staged.Length)
+                    return false;
+
+                fixed (GerstnerWaveParamsDTO* source = staged)
+                {
+                    void* target = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(spectrum);
+                    long byteCount = (long)staged.Length * UnsafeUtility.SizeOf<GerstnerWaveParamsDTO>();
+                    if (!UnsafeMemoryCopyGuard.SafeCopy(target, byteCount, source, byteCount))
+                        return false;
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(ColdBootSpectrumMutationGuardMask);
+            }
+        }
+
+        private bool TryResetColdBootTelemetryCursor(IDataVault vault)
+        {
+            if (!TryAcquireGerstnerMutationGuard(vault, ColdBootTelemetryCursorMutationGuardMask))
+                return false;
+
+            try
+            {
+                NativeArray<int> telemetryCursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
+                if (!telemetryCursor.IsCreated || telemetryCursor.Length <= 0)
+                    return false;
+
+                telemetryCursor[0] = 0;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(ColdBootTelemetryCursorMutationGuardMask);
+            }
+        }
+
+        private bool TryClearColdBootCounters(IDataVault vault)
+        {
+            if (!TryAcquireGerstnerMutationGuard(vault, ColdBootCounterMutationGuardMask))
+                return false;
+
+            try
+            {
+                NativeArray<WaveMathCounterLane> counters = ResolveVaultBuffer(vault, in _countersHandle);
+                if (!counters.IsCreated || counters.Length <= 0)
+                    return false;
+
+                void* target = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(counters);
+                UnsafeUtility.MemClear(target, (long)counters.Length * UnsafeUtility.SizeOf<WaveMathCounterLane>());
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(ColdBootCounterMutationGuardMask);
+            }
+        }
+
+        private static void ApplyProfileToScratch(
+            WaveSpectrumProfileDTO profile,
+            ref GerstnerWaveTuningDTO tuning,
+            Span<GerstnerWaveParamsDTO> spectrum)
+        {
+            tuning.ProfileHash = profile.StateHash;
+            tuning.WindDirectionRadians = profile.WindDirectionRadians;
+            tuning.StormWeight01 = profile.StormWeight01;
+            tuning.WaveAmplitudeMultiplier = math.lerp(profile.MinAmplitudeMultiplier, profile.MaxAmplitudeMultiplier, 0.5f);
+            tuning.LargestWavelengthMeters = math.max(profile.MaxWavelength, tuning.LargestWavelengthMeters);
+            tuning.Flags |= AnalyticalGerstnerWaveConstants.FlagActive;
 
             for (int row = 0; row < spectrum.Length; row++)
             {
@@ -872,6 +1055,35 @@ namespace Hecton8.Physics
             }
         }
 
+        private static void BuildMockWaveSpectrumScratch(
+            ref GerstnerWaveTuningDTO tuning,
+            Span<GerstnerWaveParamsDTO> spectrum,
+            uint frameIndex)
+        {
+            float q = math.saturate(math.select(1f, tuning.GlobalQualityWeight, math.isfinite(tuning.GlobalQualityWeight)));
+            float wind = math.max(0.01f, math.select(10f, tuning.WindSpeedMetersPerSecond, math.isfinite(tuning.WindSpeedMetersPerSecond)));
+            float windDirection = math.select(0.35f, tuning.WindDirectionRadians, math.isfinite(tuning.WindDirectionRadians));
+
+            for (int row = 0; row < spectrum.Length; row++)
+            {
+                GerstnerWaveParamsDTO packed = default;
+                packed.Wave1 = BuildMockWave(row * 4 + 0, windDirection, wind, frameIndex);
+                packed.Wave2 = BuildMockWave(row * 4 + 1, windDirection, wind, frameIndex);
+                packed.Wave3 = BuildMockWave(row * 4 + 2, windDirection, wind, frameIndex);
+                packed.Wave4 = BuildMockWave(row * 4 + 3, windDirection, wind, frameIndex);
+                spectrum[row] = packed;
+            }
+
+            tuning.GlobalQualityWeight = q;
+            tuning.WindDirectionRadians = windDirection;
+            tuning.WindSpeedMetersPerSecond = wind;
+            tuning.StormWeight01 = math.saturate((wind - 2f) * math.rcp(30f));
+            tuning.TotalOctaves = AnalyticalGerstnerWaveConstants.MaxOctaves;
+            tuning.MaxOctaveLimit = math.clamp(tuning.MaxOctaveLimit <= 0 ? AnalyticalGerstnerWaveConstants.MaxOctaves : tuning.MaxOctaveLimit, 1, AnalyticalGerstnerWaveConstants.MaxOctaves);
+            tuning.LargestWavelengthMeters = math.max(16f, tuning.LargestWavelengthMeters);
+            tuning.FrameIndex = frameIndex;
+        }
+
         private static float4 BuildProfileWave(WaveSpectrumProfileDTO profile, int octave)
         {
             float t = math.saturate(octave * (1f / math.max(1f, AnalyticalGerstnerWaveConstants.MaxOctaves - 1f)));
@@ -879,10 +1091,107 @@ namespace Hecton8.Physics
             float steepness = math.lerp(profile.MaxSteepness, profile.MinSteepness, t);
             float wavelength = math.lerp(profile.MaxWavelength, profile.MinWavelength, t);
             float speed = math.lerp(profile.MinSpeed, profile.MaxSpeed, t);
-            return new float4(angle, steepness, wavelength, speed);
+            float4 wave;
+            wave.x = angle;
+            wave.y = steepness;
+            wave.z = wavelength;
+            wave.w = speed;
+            return wave;
+        }
+
+        private static float4 BuildMockWave(int octave, float windDirection, float windSpeed, uint frame)
+        {
+            float octave01 = math.saturate(octave * (1f / math.max(1f, AnalyticalGerstnerWaveConstants.MaxOctaves - 1f)));
+            float angleJitter = HashToSigned01((uint)(octave + 1) * 0x9E3779B9u + frame) * 0.28f;
+            float wavelength = math.lerp(128f, 6f, octave01);
+            float steepness = 0.11f * math.lerp(1f, 0.42f, octave01);
+            float speed = math.lerp(0.18f, 1.45f, octave01) * math.lerp(0.65f, 1.55f, math.saturate(windSpeed * (1f / 28f)));
+            float4 wave;
+            wave.x = windDirection + angleJitter + octave * 0.37f;
+            wave.y = steepness;
+            wave.z = wavelength;
+            wave.w = speed;
+            return wave;
+        }
+
+        private static uint Hash32(uint value)
+        {
+            value ^= value >> 16;
+            value *= 2246822519u;
+            value ^= value >> 13;
+            value *= 3266489917u;
+            value ^= value >> 16;
+            return math.select(1u, value, value != 0u);
+        }
+
+        private static float HashToSigned01(uint value)
+        {
+            return ((Hash32(value) & 0x00FFFFFFu) * (1f / 16777215f)) * 2f - 1f;
         }
 
 #if UNITY_EDITOR
+        private bool TryCommitColdBootProfiles(IDataVault vault, ReadOnlySpan<WaveSpectrumProfileDTO> staged)
+        {
+            if (staged.Length <= 0 || !TryAcquireGerstnerMutationGuard(vault, ColdBootProfileMutationGuardMask))
+                return false;
+
+            try
+            {
+                NativeArray<WaveSpectrumProfileDTO> profiles = ResolveVaultBuffer(vault, in _profilesHandle);
+                if (!profiles.IsCreated || profiles.Length != staged.Length)
+                    return false;
+
+                return CopyWaveProfilesToVault(staged, profiles);
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(ColdBootProfileMutationGuardMask);
+            }
+        }
+
+        private bool TryStageWaveProfilesCsv(Span<WaveSpectrumProfileDTO> profileScratch, out int profileRows)
+        {
+            profileRows = 0;
+            if (profileScratch.Length <= 0)
+                return false;
+
+            if (Interlocked.CompareExchange(ref s_waveCsvImportScratchBusy, 1, 0) != 0)
+                return false;
+
+            try
+            {
+                string path = ResolveProjectPath(_csvRelativePath);
+                if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                    return false;
+
+                int bytesRead = ReadFileIntoColdScratch(path, s_waveCsvImportScratch);
+                if (bytesRead <= 0)
+                    return false;
+
+                ReadOnlySpan<byte> csvBytes = s_waveCsvImportScratch.AsSpan(0, math.min(bytesRead, s_waveCsvImportScratch.Length));
+                return WaveSpectrumProfileCsvParser.TryApply(csvBytes, profileScratch, out profileRows);
+            }
+            finally
+            {
+                Volatile.Write(ref s_waveCsvImportScratchBusy, 0);
+            }
+        }
+
+        private static bool CopyWaveProfilesToVault(
+            ReadOnlySpan<WaveSpectrumProfileDTO> staged,
+            NativeArray<WaveSpectrumProfileDTO> profiles)
+        {
+            if (staged.Length <= 0 || !profiles.IsCreated || profiles.Length != staged.Length)
+                return false;
+
+            fixed (WaveSpectrumProfileDTO* source = staged)
+            {
+                void* target = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(profiles);
+                long byteCount = (long)staged.Length * UnsafeUtility.SizeOf<WaveSpectrumProfileDTO>();
+                return UnsafeMemoryCopyGuard.SafeCopy(target, byteCount, source, byteCount);
+            }
+        }
+
         private static string ResolveProjectPath(string relativePath)
         {
             if (string.IsNullOrEmpty(relativePath))
@@ -892,9 +1201,9 @@ namespace Hecton8.Physics
             return Path.GetFullPath(Path.Combine(projectRoot, relativePath));
         }
 
-        private static int ReadFileIntoNativeScratch(string path, NativeArray<byte> scratch)
+        private static int ReadFileIntoColdScratch(string path, byte[] scratch)
         {
-            if (string.IsNullOrEmpty(path) || !scratch.IsCreated || scratch.Length <= 0)
+            if (string.IsNullOrEmpty(path) || scratch == null || scratch.Length <= 0)
                 return 0;
 
             try
@@ -905,8 +1214,7 @@ namespace Hecton8.Physics
                     if (limit <= 0)
                         return 0;
 
-                    void* ptr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                    Span<byte> destination = new Span<byte>(ptr, limit);
+                    Span<byte> destination = scratch.AsSpan(0, limit);
                     return stream.Read(destination);
                 }
             }
@@ -935,14 +1243,11 @@ namespace Hecton8.Physics
             return math.max(0f, math.select(0f, value, math.isfinite(value)));
         }
 
-        private void DumpBlackBoxOnce(NativeArray<WaveMathTelemetryEntry> telemetry, NativeArray<int> telemetryCursor)
+        private void PushBlackBoxEvent(in WaveMathTelemetryEntry latest)
         {
-            if (!telemetry.IsCreated || telemetry.Length <= 0 || !_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
+            if (!_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
                 return;
 
-            int cursorValue = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? math.max(0, telemetryCursor[0]) : 0;
-            int latestIndex = cursorValue > 0 ? (cursorValue - 1) % telemetry.Length : 0;
-            WaveMathTelemetryEntry latest = telemetry[latestIndex];
             float scalar = math.max(latest.BurstMicros, latest.MaxAbsHeight);
             GlobalTelemetryBus.PushEvent(GerstnerFaultEventHash, scalar, latest.LastEntityHashID);
             _ = GlobalTelemetryBus.TryDumpBlackboxNow(GerstnerFaultDumpHash);

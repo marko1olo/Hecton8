@@ -73,6 +73,7 @@ namespace Hecton8.Physics
         private int _waterlineBufferCapacity;
         private int _waterlineWriteBufferIndex;
         private ulong _activeMutationGuardMask;
+        private IDataVault _activeMutationGuardVault;
         private int _droppedSignalCount;
         private int _frame;
         private long _simulationScheduleTimestamp;
@@ -402,23 +403,12 @@ namespace Hecton8.Physics
                 return;
 
             GraphicsBuffer targetBuffer = AdvanceNextWaterlineWriteBuffer();
-            if (targetBuffer == null || !targetBuffer.IsValid())
+            if (targetBuffer == null ||
+                !targetBuffer.IsValid() ||
+                targetBuffer.stride != UnsafeUtility.SizeOf<FluidWaterlineShaderDTO>())
                 return;
 
-            NativeArray<FluidWaterlineShaderDTO> mapped = targetBuffer.LockBufferForWrite<FluidWaterlineShaderDTO>(0, safeCount);
-            try
-            {
-                unsafe
-                {
-                    void* dst = NativeArrayUnsafeUtility.GetUnsafePtr(mapped);
-                    void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(waterlines);
-                    UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<FluidWaterlineShaderDTO>());
-                }
-            }
-            finally
-            {
-                targetBuffer.UnlockBufferAfterWrite<FluidWaterlineShaderDTO>(safeCount);
-            }
+            GraphicsBufferUploadUtility.UploadNativeArray(targetBuffer, waterlines, safeCount);
             Shader.SetGlobalBuffer(s_WaterlineBufferId, targetBuffer);
             Shader.SetGlobalInt(s_WaterlineCountId, safeCount);
             _waterlineUploadDirty = false;
@@ -471,7 +461,7 @@ namespace Hecton8.Physics
             if (!_buffersReady && !EnsureBuffersInitialized())
                 return false;
 
-            if (!TryAcquireLocalFluidMutationGuard(out ulong guardMask))
+            if (!TryAcquireLocalFluidMutationGuard(out ulong guardMask, out IDataVault guardVault))
                 return false;
 
             try
@@ -518,7 +508,7 @@ namespace Hecton8.Physics
             }
             finally
             {
-                ReleaseLocalFluidMutationGuard(guardMask);
+                ReleaseLocalFluidMutationGuard(guardVault, guardMask);
             }
         }
 
@@ -530,7 +520,7 @@ namespace Hecton8.Physics
             if (!_buffersReady && !EnsureBuffersInitialized())
                 return 0;
 
-            if (!TryAcquireLocalFluidMutationGuard(out ulong guardMask))
+            if (!TryAcquireLocalFluidMutationGuard(out ulong guardMask, out IDataVault guardVault))
                 return 0;
 
             try
@@ -546,7 +536,7 @@ namespace Hecton8.Physics
             }
             finally
             {
-                ReleaseLocalFluidMutationGuard(guardMask);
+                ReleaseLocalFluidMutationGuard(guardVault, guardMask);
             }
         }
 #endif
@@ -558,7 +548,7 @@ namespace Hecton8.Physics
             if (!_buffersReady && !EnsureBuffersInitialized())
                 return false;
 
-            if (!TryAcquireLocalFluidMutationGuard(out ulong guardMask))
+            if (!TryAcquireLocalFluidMutationGuard(out ulong guardMask, out IDataVault guardVault))
                 return false;
 
             try
@@ -582,21 +572,19 @@ namespace Hecton8.Physics
                     BreachAreaM2 = math.max(0.0001f, breachAreaM2),
                     IngressRateM3PerSecond = math.max(0f, ingressRateM3PerSecond)
                 };
-                // COLD SYNC JOB: explicit damage-control/profiling breach injection outside fixed solver cadence.
-                JobHandle breachFrontHandle = breachFront.Schedule();
-                DispatcherJobFence.TryComplete(ref breachFrontHandle, forceComplete: true);
+                // COLD DIRECT SEED: explicit damage-control/profiling breach injection outside fixed solver cadence.
+                breachFront.Execute();
 
                 MockHullBreachJob breachBack = breachFront;
                 breachBack.Compartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(back);
-                // COLD SYNC JOB: mirror seed preserves deterministic double-buffer state.
-                JobHandle breachBackHandle = breachBack.Schedule();
-                DispatcherJobFence.TryComplete(ref breachBackHandle, forceComplete: true);
+                // COLD DIRECT SEED: mirror seed preserves deterministic double-buffer state.
+                breachBack.Execute();
                 _waterlineUploadDirty = true;
                 return true;
             }
             finally
             {
-                ReleaseLocalFluidMutationGuard(guardMask);
+                ReleaseLocalFluidMutationGuard(guardVault, guardMask);
             }
         }
 
@@ -607,7 +595,7 @@ namespace Hecton8.Physics
             if (!_buffersReady && !EnsureBuffersInitialized())
                 return false;
 
-            if (!TryAcquireLocalFluidMutationGuard(out ulong guardMask))
+            if (!TryAcquireLocalFluidMutationGuard(out ulong guardMask, out IDataVault guardVault))
                 return false;
 
             try
@@ -628,19 +616,17 @@ namespace Hecton8.Physics
                     TargetNodeIndex = targetNodeIndex,
                     AddedWaterM3 = math.max(0f, addedWaterM3)
                 };
-                JobHandle frontHandle = frontJob.Schedule();
-                DispatcherJobFence.TryComplete(ref frontHandle, forceComplete: true);
+                frontJob.Execute();
 
                 GenerateMockFloodIncursionJob backJob = frontJob;
                 backJob.Compartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(back);
-                JobHandle backHandle = backJob.Schedule();
-                DispatcherJobFence.TryComplete(ref backHandle, forceComplete: true);
+                backJob.Execute();
                 _waterlineUploadDirty = true;
                 return true;
             }
             finally
             {
-                ReleaseLocalFluidMutationGuard(guardMask);
+                ReleaseLocalFluidMutationGuard(guardVault, guardMask);
             }
         }
 
@@ -808,6 +794,7 @@ namespace Hecton8.Physics
             _summaryHandle = default;
             _edgeCount = 0;
             _activeMutationGuardMask = 0UL;
+            _activeMutationGuardVault = null;
             _buffersReady = false;
         }
 
@@ -973,15 +960,15 @@ namespace Hecton8.Physics
                 DefaultFloorHeightLocal = defaultFloorHeightLocal,
                 ActiveCount = safeCount
             };
-            // COLD SYNC JOB: boot-only explicit initialization of uninitialized Vault memory.
-            JobHandle clearFrontHandle = clearFront.Schedule(safeCount, 32);
-            DispatcherJobFence.TryComplete(ref clearFrontHandle, forceComplete: true);
+            // COLD DIRECT CLEAR: boot-only explicit initialization of uninitialized Vault memory.
+            for (int i = 0; i < safeCount; i++)
+                clearFront.Execute(i);
 
             FluidCompartmentClearJob clearBack = clearFront;
             clearBack.Compartments = backPtr;
-            // COLD SYNC JOB: boot-only mirror clear for deterministic double-buffer start state.
-            JobHandle clearBackHandle = clearBack.Schedule(safeCount, 32);
-            DispatcherJobFence.TryComplete(ref clearBackHandle, forceComplete: true);
+            // COLD DIRECT CLEAR: boot-only mirror clear for deterministic double-buffer start state.
+            for (int i = 0; i < safeCount; i++)
+                clearBack.Execute(i);
 
             BuildDefaultLineTopology(safeCount);
             InitializeTuningBuffer(safeCount);
@@ -1019,14 +1006,12 @@ namespace Hecton8.Physics
                     BreachAreaM2 = mockBreachAreaM2,
                     IngressRateM3PerSecond = HabitatFluidIncursionConstants.DefaultIngressRateM3PerSecond
                 };
-                // COLD SYNC JOB: isolated profile breach seed before runtime ticks start.
-                JobHandle breachFrontHandle = breachFront.Schedule();
-                DispatcherJobFence.TryComplete(ref breachFrontHandle, forceComplete: true);
+                // COLD DIRECT SEED: isolated profile breach seed before runtime ticks start.
+                breachFront.Execute();
                 MockHullBreachJob breachBack = breachFront;
                 breachBack.Compartments = backPtr;
-                // COLD SYNC JOB: mirror seed keeps both buffers identical at frame zero.
-                JobHandle breachBackHandle = breachBack.Schedule();
-                DispatcherJobFence.TryComplete(ref breachBackHandle, forceComplete: true);
+                // COLD DIRECT SEED: mirror seed keeps both buffers identical at frame zero.
+                breachBack.Execute();
             }
         }
 
@@ -1293,38 +1278,45 @@ namespace Hecton8.Physics
             if (_activeMutationGuardMask != 0UL)
                 return true;
 
-            if (_vault == null || !_vault.TryAcquireMutationGuard(FluidSimulationMutationGuardMask))
+            IDataVault vault = _vault;
+            if (vault == null || !vault.TryAcquireMutationGuard(FluidSimulationMutationGuardMask))
                 return false;
 
             _activeMutationGuardMask = FluidSimulationMutationGuardMask;
+            _activeMutationGuardVault = vault;
             return true;
         }
 
-        private bool TryAcquireLocalFluidMutationGuard(out ulong guardMask)
+        private bool TryAcquireLocalFluidMutationGuard(out ulong guardMask, out IDataVault guardVault)
         {
             guardMask = 0UL;
-            if (_vault == null || _activeMutationGuardMask != 0UL)
+            guardVault = null;
+            IDataVault vault = _vault;
+            if (vault == null || _activeMutationGuardMask != 0UL)
                 return false;
 
-            if (!_vault.TryAcquireMutationGuard(FluidSimulationMutationGuardMask))
+            if (!vault.TryAcquireMutationGuard(FluidSimulationMutationGuardMask))
                 return false;
 
             guardMask = FluidSimulationMutationGuardMask;
+            guardVault = vault;
             return true;
         }
 
         private void ReleaseFluidSimulationMutationGuard()
         {
             ulong guardMask = _activeMutationGuardMask;
+            IDataVault vault = _activeMutationGuardVault;
             if (guardMask != 0UL)
-                _vault?.ReleaseMutationGuard(guardMask);
+                vault?.ReleaseMutationGuard(guardMask);
             _activeMutationGuardMask = 0UL;
+            _activeMutationGuardVault = null;
         }
 
-        private void ReleaseLocalFluidMutationGuard(ulong guardMask)
+        private static void ReleaseLocalFluidMutationGuard(IDataVault guardVault, ulong guardMask)
         {
             if (guardMask != 0UL)
-                _vault?.ReleaseMutationGuard(guardMask);
+                guardVault?.ReleaseMutationGuard(guardMask);
         }
 
         private bool EnsureWaterlineGraphicsBuffers(int safeCount)

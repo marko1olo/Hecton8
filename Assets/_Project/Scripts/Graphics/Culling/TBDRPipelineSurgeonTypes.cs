@@ -1062,6 +1062,8 @@ namespace Hecton8.Graphics.Culling
         public static int LastDispatchGroupsY;
         public static int LastDispatchGroupsZ;
         public static uint LastRejectCode;
+        public static bool SupportsComputeShaders;
+        private static bool s_booted;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -1073,18 +1075,23 @@ namespace Hecton8.Graphics.Culling
             LastDispatchGroupsY = 0;
             LastDispatchGroupsZ = 0;
             LastRejectCode = 0u;
+            SupportsComputeShaders = false;
+            s_booted = false;
         }
 
         public static void Boot()
         {
+            s_booted = true;
             if (!SystemInfo.supportsComputeShaders)
             {
+                SupportsComputeShaders = false;
                 HardwareMaxThreadsPerGroup = 0;
                 ActiveMaxThreadsPerGroup = 0;
                 LastRejectCode = 4u;
                 return;
             }
 
+            SupportsComputeShaders = true;
             int hardwareLimit = SystemInfo.maxComputeWorkGroupSize;
             HardwareMaxThreadsPerGroup = hardwareLimit > 0 ? hardwareLimit : 0;
             ActiveMaxThreadsPerGroup = HardwareMaxThreadsPerGroup > 0
@@ -1099,16 +1106,13 @@ namespace Hecton8.Graphics.Culling
 
         public static bool TryDispatch(ComputeShader shader, int kernel, int workItemsX, int workItemsY, int workItemsZ)
         {
-            if (!SystemInfo.supportsComputeShaders || shader == null || kernel < 0)
+            if (!s_booted || !SupportsComputeShaders || shader == null || kernel < 0)
             {
                 LastKernelThreadsPerGroup = 0;
                 ResetDispatchGroups();
                 LastRejectCode = 1u;
                 return false;
             }
-
-            if (ActiveMaxThreadsPerGroup <= 0)
-                Boot();
 
             if (ActiveMaxThreadsPerGroup <= 0 || !shader.IsSupported(kernel))
             {

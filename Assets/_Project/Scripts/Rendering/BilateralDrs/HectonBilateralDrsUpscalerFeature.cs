@@ -51,6 +51,29 @@ namespace Hecton8.Rendering
             [Range(0.25f, 1f)] public float activationScale = 0.995f;
         }
 
+        private struct GraphicsCapabilities
+        {
+            public bool SupportsComputeShaders;
+            public bool Supports2DArrayTextures;
+            public GraphicsFormat EdgeMaskLoadStoreFormat;
+            public GraphicsFormat EdgeMaskRenderFormat;
+            public GraphicsFormat OutputLoadStoreFallbackFormat;
+            public GraphicsFormat OutputLoadStoreFormat0;
+            public GraphicsFormat OutputLoadStoreFormat1;
+
+            public bool HasEdgeMaskLoadStoreFormat => EdgeMaskLoadStoreFormat != GraphicsFormat.None;
+            public bool HasEdgeMaskRenderFormat => EdgeMaskRenderFormat != GraphicsFormat.None;
+            public bool HasOutputLoadStoreFallbackFormat => OutputLoadStoreFallbackFormat != GraphicsFormat.None;
+
+            public bool SupportsOutputLoadStoreFormat(GraphicsFormat format)
+            {
+                return format != GraphicsFormat.None &&
+                       (format == OutputLoadStoreFormat0 ||
+                        format == OutputLoadStoreFormat1 ||
+                        format == OutputLoadStoreFallbackFormat);
+            }
+        }
+
         private sealed class BilateralDrsPass : ScriptableRenderPass
         {
             private const string ClearKernelName = "ClearEdgeMask";
@@ -157,6 +180,7 @@ namespace Hecton8.Rendering
             private uint _debugArrayThreadGroupSizeY;
             private bool _reportedMissingKernels;
             private bool _clearOnly;
+            private GraphicsCapabilities _graphicsCapabilities;
             private const uint MaxKernelThreadProduct = 256u;
             private const int MaxDispatchGroupsPerDimension = 65535;
 
@@ -166,10 +190,15 @@ namespace Hecton8.Rendering
                 requiresIntermediateTexture = true;
             }
 
-            public void Setup(FeatureSettings settings, ComputeShader computeShader, bool clearOnly)
+            public void Setup(
+                FeatureSettings settings,
+                ComputeShader computeShader,
+                bool clearOnly,
+                in GraphicsCapabilities graphicsCapabilities)
             {
                 _settings = settings;
                 _clearOnly = clearOnly;
+                _graphicsCapabilities = graphicsCapabilities;
                 if (!ReferenceEquals(_computeShader, computeShader))
                 {
                     _computeShader = computeShader;
@@ -351,7 +380,7 @@ namespace Hecton8.Rendering
                 }
 
                 if (_computeShader == null ||
-                    !SystemInfo.supportsComputeShaders ||
+                    !_graphicsCapabilities.SupportsComputeShaders ||
                     _clearKernel < 0)
                 {
                     TryPublishClearedEdgeMask(renderGraph);
@@ -391,7 +420,12 @@ namespace Hecton8.Rendering
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
                 TextureDesc depthDesc = renderGraph.GetTextureDesc(depthTexture);
-                if (!TryResolveTextureMode(sourceDesc, depthDesc, out bool useTextureArray, out int sliceCount))
+                if (!TryResolveTextureMode(
+                        sourceDesc,
+                        depthDesc,
+                        _graphicsCapabilities.Supports2DArrayTextures,
+                        out bool useTextureArray,
+                        out int sliceCount))
                 {
                     TryPublishClearedEdgeMask(renderGraph);
                     return;
@@ -615,6 +649,7 @@ namespace Hecton8.Rendering
             private static bool TryResolveTextureMode(
                 TextureDesc sourceDesc,
                 TextureDesc depthDesc,
+                bool supports2DArrayTextures,
                 out bool useTextureArray,
                 out int sliceCount)
             {
@@ -640,7 +675,7 @@ namespace Hecton8.Rendering
                     return false;
                 }
 
-                if (!SystemInfo.supports2DArrayTextures)
+                if (!supports2DArrayTextures)
                     return false;
 
                 int sourceSlices = sourceDesc.slices;
@@ -669,7 +704,7 @@ namespace Hecton8.Rendering
 
             private bool TryPublishClearedEdgeMask(RenderGraph renderGraph)
             {
-                if (SystemInfo.supportsComputeShaders &&
+                if (_graphicsCapabilities.SupportsComputeShaders &&
                     _computeShader != null &&
                     _clearKernel >= 0 &&
                     TryResolveEdgeMaskFormat(out GraphicsFormat edgeMaskFormat))
@@ -891,44 +926,33 @@ namespace Hecton8.Rendering
                     : sourceFormat;
             }
 
-            private static bool TryResolveOutputColorFormat(GraphicsFormat sourceFormat, out GraphicsFormat colorFormat)
+            private bool TryResolveOutputColorFormat(GraphicsFormat sourceFormat, out GraphicsFormat colorFormat)
             {
                 colorFormat = ResolveColorFormat(sourceFormat);
-                if (SystemInfo.IsFormatSupported(colorFormat, GraphicsFormatUsage.LoadStore))
+                if (_graphicsCapabilities.SupportsOutputLoadStoreFormat(colorFormat))
                     return true;
 
-                colorFormat = GraphicsFormat.R16G16B16A16_SFloat;
-                return SystemInfo.IsFormatSupported(colorFormat, GraphicsFormatUsage.LoadStore);
+                colorFormat = _graphicsCapabilities.OutputLoadStoreFallbackFormat;
+                return _graphicsCapabilities.HasOutputLoadStoreFallbackFormat;
             }
 
-            private static bool TryResolveEdgeMaskFormat(out GraphicsFormat edgeMaskFormat)
+            private bool TryResolveEdgeMaskFormat(out GraphicsFormat edgeMaskFormat)
             {
-                edgeMaskFormat = GraphicsFormat.R8_UNorm;
-                if (SystemInfo.IsFormatSupported(edgeMaskFormat, GraphicsFormatUsage.LoadStore))
-                    return true;
-
-                edgeMaskFormat = GraphicsFormat.R16_SFloat;
-                return SystemInfo.IsFormatSupported(edgeMaskFormat, GraphicsFormatUsage.LoadStore);
+                edgeMaskFormat = _graphicsCapabilities.EdgeMaskLoadStoreFormat;
+                return _graphicsCapabilities.HasEdgeMaskLoadStoreFormat;
             }
 
-            private static bool TryResolveRasterEdgeMaskFormat(out GraphicsFormat edgeMaskFormat)
+            private bool TryResolveRasterEdgeMaskFormat(out GraphicsFormat edgeMaskFormat)
             {
-                edgeMaskFormat = GraphicsFormat.R8_UNorm;
-                if (SystemInfo.IsFormatSupported(edgeMaskFormat, GraphicsFormatUsage.Render))
-                    return true;
-
-                edgeMaskFormat = GraphicsFormat.R16_SFloat;
-                if (SystemInfo.IsFormatSupported(edgeMaskFormat, GraphicsFormatUsage.Render))
-                    return true;
-
-                edgeMaskFormat = GraphicsFormat.R8G8B8A8_UNorm;
-                return SystemInfo.IsFormatSupported(edgeMaskFormat, GraphicsFormatUsage.Render);
+                edgeMaskFormat = _graphicsCapabilities.EdgeMaskRenderFormat;
+                return _graphicsCapabilities.HasEdgeMaskRenderFormat;
             }
 
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
         private BilateralDrsPass _pass;
+        private GraphicsCapabilities _graphicsCapabilities;
 
         public override void Create()
         {
@@ -936,6 +960,7 @@ namespace Hecton8.Rendering
             if (settings != null && settings.computeShader == null)
                 settings.computeShader = AssetDatabase.LoadAssetAtPath<ComputeShader>(ComputeShaderAssetPath);
 #endif
+            CacheGraphicsCapabilitiesCold();
             _pass ??= new BilateralDrsPass();
         }
 
@@ -953,25 +978,25 @@ namespace Hecton8.Rendering
                 return;
 
             if (settings.computeShader == null ||
-                !SystemInfo.supportsComputeShaders)
+                !_graphicsCapabilities.SupportsComputeShaders)
             {
-                _pass.Setup(settings, settings.computeShader, true);
+                _pass.Setup(settings, settings.computeShader, true, in _graphicsCapabilities);
                 renderer.EnqueuePass(_pass);
                 return;
             }
 
             if (!HectonBilateralDrsUpscalerRuntime.TryGetRuntimeInstance(out _))
             {
-                _pass.Setup(settings, settings.computeShader, true);
+                _pass.Setup(settings, settings.computeShader, true, in _graphicsCapabilities);
                 renderer.EnqueuePass(_pass);
                 return;
             }
 
             Camera renderCamera = renderingData.cameraData.camera;
             RenderTextureDescriptor descriptor = renderingData.cameraData.cameraTargetDescriptor;
-            if (IsUnsupportedRenderTargetDescriptor(descriptor))
+            if (IsUnsupportedRenderTargetDescriptor(descriptor, _graphicsCapabilities.Supports2DArrayTextures))
             {
-                _pass.Setup(settings, settings.computeShader, true);
+                _pass.Setup(settings, settings.computeShader, true, in _graphicsCapabilities);
                 renderer.EnqueuePass(_pass);
                 return;
             }
@@ -992,15 +1017,77 @@ namespace Hecton8.Rendering
                 jitterPixels.x,
                 jitterPixels.y);
 
-            _pass.Setup(settings, settings.computeShader, false);
+            _pass.Setup(settings, settings.computeShader, false, in _graphicsCapabilities);
             renderer.EnqueuePass(_pass);
         }
 
-        private static bool IsUnsupportedRenderTargetDescriptor(RenderTextureDescriptor descriptor)
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _graphicsCapabilities = BuildGraphicsCapabilitiesCold();
+        }
+
+        private static GraphicsCapabilities BuildGraphicsCapabilitiesCold()
+        {
+            GraphicsCapabilities capabilities = default;
+            capabilities.SupportsComputeShaders = SystemInfo.supportsComputeShaders;
+            capabilities.Supports2DArrayTextures = SystemInfo.supports2DArrayTextures;
+            capabilities.EdgeMaskLoadStoreFormat = ResolveFirstSupportedFormatCold(
+                GraphicsFormat.R8_UNorm,
+                GraphicsFormat.R16_SFloat,
+                GraphicsFormatUsage.LoadStore);
+            capabilities.EdgeMaskRenderFormat = ResolveFirstSupportedFormatCold(
+                GraphicsFormat.R8_UNorm,
+                GraphicsFormat.R16_SFloat,
+                GraphicsFormat.R8G8B8A8_UNorm,
+                GraphicsFormatUsage.Render);
+            capabilities.OutputLoadStoreFormat0 = ResolveSupportedFormatCold(
+                GraphicsFormat.R16G16B16A16_SFloat,
+                GraphicsFormatUsage.LoadStore);
+            capabilities.OutputLoadStoreFormat1 = ResolveSupportedFormatCold(
+                GraphicsFormat.R8G8B8A8_UNorm,
+                GraphicsFormatUsage.LoadStore);
+            capabilities.OutputLoadStoreFallbackFormat =
+                capabilities.OutputLoadStoreFormat0 != GraphicsFormat.None
+                    ? capabilities.OutputLoadStoreFormat0
+                    : capabilities.OutputLoadStoreFormat1;
+            return capabilities;
+        }
+
+        private static GraphicsFormat ResolveFirstSupportedFormatCold(
+            GraphicsFormat first,
+            GraphicsFormat second,
+            GraphicsFormatUsage usage)
+        {
+            GraphicsFormat resolved = ResolveSupportedFormatCold(first, usage);
+            return resolved != GraphicsFormat.None
+                ? resolved
+                : ResolveSupportedFormatCold(second, usage);
+        }
+
+        private static GraphicsFormat ResolveFirstSupportedFormatCold(
+            GraphicsFormat first,
+            GraphicsFormat second,
+            GraphicsFormat third,
+            GraphicsFormatUsage usage)
+        {
+            GraphicsFormat resolved = ResolveFirstSupportedFormatCold(first, second, usage);
+            return resolved != GraphicsFormat.None
+                ? resolved
+                : ResolveSupportedFormatCold(third, usage);
+        }
+
+        private static GraphicsFormat ResolveSupportedFormatCold(GraphicsFormat format, GraphicsFormatUsage usage)
+        {
+            return format != GraphicsFormat.None && SystemInfo.IsFormatSupported(format, usage)
+                ? format
+                : GraphicsFormat.None;
+        }
+
+        private static bool IsUnsupportedRenderTargetDescriptor(RenderTextureDescriptor descriptor, bool supports2DArrayTextures)
         {
             bool supportedDimension = descriptor.dimension == TextureDimension.Tex2D ||
                                       (descriptor.dimension == TextureDimension.Tex2DArray &&
-                                       SystemInfo.supports2DArrayTextures &&
+                                       supports2DArrayTextures &&
                                        descriptor.volumeDepth > 0 &&
                                        descriptor.volumeDepth <= 2);
             return !supportedDimension ||

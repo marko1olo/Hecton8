@@ -211,7 +211,7 @@ namespace Hecton8.Physics.KCC
                           math.all(math.isfinite(state.Velocity)) &
                           math.all(math.isfinite(state.AngularVelocity)) &
                           math.isfinite(state.Mass);
-            state.Flags &= ~(groundedBit | nonFiniteBit);
+            state.Flags &= ~(groundedBit | sleepingBit | deepSleepingBit | nonFiniteBit);
             state.Flags |= math.select(0u, nonFiniteBit, !finite);
             state.Velocity = math.select(float3.zero, state.Velocity, math.isfinite(state.Velocity));
             state.AngularVelocity = math.select(float3.zero, state.AngularVelocity, math.isfinite(state.AngularVelocity));
@@ -226,9 +226,12 @@ namespace Hecton8.Physics.KCC
 
             float velocitySq = math.lengthsq(state.Velocity);
             float angularSq = math.lengthsq(state.AngularVelocity);
+            bool finiteKineticSq = math.isfinite(velocitySq) & math.isfinite(angularSq);
             float energy = 0.5f * math.max(1f, state.Mass) * (velocitySq + angularSq);
+            bool finiteEnergy = math.isfinite(energy);
+            state.Flags |= math.select(0u, nonFiniteBit, !(finiteKineticSq & finiteEnergy));
             bool grounded = SampleGroundingSdf(state.AUP_Position, SectorAUP, SleepSdfConfig, out _);
-            bool canSleep = finite & grounded & (velocitySq <= linearThresholdSq) & (angularSq <= angularThresholdSq) &
+            bool canSleep = finite & finiteKineticSq & finiteEnergy & grounded & (velocitySq <= linearThresholdSq) & (angularSq <= angularThresholdSq) &
                             (energy <= math.max(linearThresholdSq, angularThresholdSq) * math.max(1f, state.Mass));
 
             state.RestingFrameCount = canSleep ? IncrementByteSaturated(state.RestingFrameCount) : (byte)0;
@@ -274,14 +277,14 @@ namespace Hecton8.Physics.KCC
                 return false;
             }
 
-            int strideY = math.select(config.Width, config.StrideY, config.StrideY > 0);
-            int strideZ = math.select(config.Width * config.Height, config.StrideZ, config.StrideZ > 0);
-            int densityIndex = ix + iy * strideY + iz * strideZ;
-            if ((uint)densityIndex >= (uint)SleepSdfDensity.Length)
+            long strideY = math.select(config.Width, config.StrideY, config.StrideY > 0);
+            long strideZ = config.StrideZ > 0 ? config.StrideZ : (long)config.Width * config.Height;
+            long densityIndex = ix + ((long)iy * strideY) + ((long)iz * strideZ);
+            if (densityIndex < 0L || densityIndex >= SleepSdfDensity.Length)
                 return false;
 
             float decodeScale = math.max(0.0001f, math.select(0.05f, config.DensityDecodeScale, math.isfinite(config.DensityDecodeScale)));
-            signedDistance = SleepSdfDensity[densityIndex] * decodeScale;
+            signedDistance = SleepSdfDensity[(int)densityIndex] * decodeScale;
             float contactEpsilon = math.max(0.001f, math.select(0.2f, config.ContactEpsilonMeters, math.isfinite(config.ContactEpsilonMeters)));
             return math.abs(signedDistance) <= contactEpsilon;
         }

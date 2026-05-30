@@ -83,7 +83,10 @@ namespace Hecton8.Core
             T local = value;
             void* sourcePtr = UnsafeUtility.AddressOf(ref local);
             byte* destinationPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(destination) + destinationByteOffset;
-            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, byteCount);
+            int destinationBytes = destination.Length - destinationByteOffset;
+            if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, destinationBytes, sourcePtr, byteCount))
+                return false;
+
             bytesWritten = byteCount;
             return true;
         }
@@ -123,8 +126,7 @@ namespace Hecton8.Core
 
             byte* sourcePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source) + sourceByteOffset;
             void* destinationPtr = UnsafeUtility.AddressOf(ref value);
-            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, byteCount);
-            return true;
+            return UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, byteCount, sourcePtr, byteCount);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -173,7 +175,9 @@ namespace Hecton8.Core
             byte* dst = (byte*)destination;
             for (int i = 0; i < elementCount; i++)
             {
-                UnsafeUtility.MemCpy(dst, src, elementSizeBytes);
+                if (!UnsafeMemoryCopyGuard.SafeCopy(dst, elementSizeBytes, src, elementSizeBytes))
+                    return false;
+
                 src += sourceStrideBytes;
                 dst += destinationStrideBytes;
             }
@@ -239,5 +243,6 @@ namespace Hecton8.Core
                    byteOffset <= bufferLength &&
                    byteCount <= bufferLength - byteOffset;
         }
+
     }
 }

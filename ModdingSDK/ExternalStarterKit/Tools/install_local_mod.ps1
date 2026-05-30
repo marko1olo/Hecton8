@@ -8,6 +8,22 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'strict_json_io.ps1')
+
+$MaxReviewManifestBytes = 1048576
+$ReservedTopLevelFolders = @(
+    'Content',
+    'Docs',
+    'Generated',
+    'Graphs',
+    'Locales',
+    'Reference',
+    'Reports',
+    'Schemas',
+    'Tables',
+    'Tools',
+    '.vscode'
+)
 
 function Fail([string]$Message) {
     Write-Error ('[H8MOD_INSTALL_LOCAL] ' + $Message)
@@ -46,6 +62,26 @@ function Resolve-FullPath([string]$Path, [string]$BasePath) {
 
 function Normalize-PathForCompare([string]$Path) {
     return [System.IO.Path]::GetFullPath($Path).TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar)
+}
+
+function Test-Sha256Hex([string]$Value) {
+    return (-not [string]::IsNullOrWhiteSpace($Value)) -and ($Value -cmatch '^[0-9a-f]{64}$')
+}
+
+function Test-ReservedTopLevelCaseVariant([string]$RelativePath) {
+    if ([string]::IsNullOrWhiteSpace($RelativePath)) { return $false }
+
+    $normalized = $RelativePath.Replace('\','/')
+    $slash = $normalized.IndexOf('/')
+    $topLevel = if ($slash -lt 0) { $normalized } else { $normalized.Substring(0, $slash) }
+
+    foreach ($reserved in $ReservedTopLevelFolders) {
+        if ($topLevel.Equals($reserved, [System.StringComparison]::OrdinalIgnoreCase) -and -not $topLevel.Equals($reserved, [System.StringComparison]::Ordinal)) {
+            return $true
+        }
+    }
+
+    return $false
 }
 
 function Assert-UnderPath([string]$RootPath, [string]$CandidatePath, [string]$Label) {
@@ -91,12 +127,12 @@ function Resolve-Tool([string]$RelativePath) {
     return $tool
 }
 
-function Complete-Tool([string]$Step) {
-    if (-not $?) {
-        Fail ($Step + ' failed.')
+function Complete-Tool([bool]$ToolSucceeded, [int]$ToolExitCode, [string]$Step) {
+    if ($ToolExitCode -ne 0) {
+        exit $ToolExitCode
     }
-    if ($global:LASTEXITCODE -ne 0) {
-        exit $global:LASTEXITCODE
+    if (-not $ToolSucceeded) {
+        Fail ($Step + ' failed.')
     }
 }
 
@@ -107,14 +143,21 @@ function Invoke-Tool([scriptblock]$Invocation, [string]$Step) {
     } else {
         & $Invocation | Out-Host
     }
-    Complete-Tool $Step
+    $toolSucceeded = $?
+    $toolExitCode = $global:LASTEXITCODE
+    Complete-Tool $toolSucceeded $toolExitCode $Step
+}
+
+function Assert-StandardReviewOutput() {
+    $normalized = ([string]$ReviewOutput).Replace('\','/')
+    if ([System.IO.Path]::IsPathRooted($normalized) -or $normalized -cne 'Reports/review_manifest.json') {
+        Fail 'ReviewOutput path must be exactly Reports/review_manifest.json.'
+    }
 }
 
 function Resolve-ReviewPath() {
-    if ([System.IO.Path]::IsPathRooted($ReviewOutput)) {
-        return [System.IO.Path]::GetFullPath($ReviewOutput)
-    }
-    return [System.IO.Path]::GetFullPath((Join-StarterPath $Root $ReviewOutput))
+    Assert-StandardReviewOutput
+    return [System.IO.Path]::GetFullPath((Join-StarterPath $Root 'Reports/review_manifest.json'))
 }
 
 function Resolve-ProjectRootPath() {
@@ -156,8 +199,9 @@ function Test-SafeRelativePath([string]$RelativePath) {
     if ($normalized -ne $RelativePath.Replace('\','/')) { return $false }
     if ([System.IO.Path]::IsPathRooted($normalized)) { return $false }
     if ($normalized.StartsWith('../') -or $normalized.Contains('/../') -or $normalized.Contains('..')) { return $false }
-    if ($normalized.StartsWith('Generated/', [System.StringComparison]::OrdinalIgnoreCase)) { return $false }
-    if ($normalized.StartsWith('Reports/', [System.StringComparison]::OrdinalIgnoreCase)) { return $false }
+    if ($normalized.StartsWith('Generated/', [System.StringComparison]::Ordinal)) { return $false }
+    if ($normalized.StartsWith('Reports/', [System.StringComparison]::Ordinal)) { return $false }
+    if (Test-ReservedTopLevelCaseVariant $normalized) { return $false }
     return $true
 }
 
@@ -166,22 +210,45 @@ function Assert-FileMatchesReview([string]$Path, [object]$Entry) {
         Fail ('Review manifest references missing file: ' + [string]$Entry.Path)
     }
 
+    $expectedBytes = 0L
+    try {
+        $expectedBytes = [long]$Entry.Bytes
+    } catch {
+        Fail ('Review manifest contains invalid byte count: ' + [string]$Entry.Path)
+    }
+    if ($expectedBytes -lt 0) {
+        Fail ('Review manifest contains invalid byte count: ' + [string]$Entry.Path)
+    }
+
     $fileInfo = Get-Item -LiteralPath $Path
-    if ([long]$fileInfo.Length -ne [long]$Entry.Bytes) {
+    if ([long]$fileInfo.Length -ne $expectedBytes) {
         Fail ('Review manifest byte count mismatch: ' + [string]$Entry.Path)
     }
 
     $hash = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
-    if ($hash -ne ([string]$Entry.Sha256).ToLowerInvariant()) {
+    if ($hash -cne [string]$Entry.Sha256) {
         Fail ('Review manifest SHA-256 mismatch: ' + [string]$Entry.Path)
     }
 }
 
 function Copy-ReviewedFiles([object[]]$Entries, [string]$TargetRoot) {
+    $reviewPaths = [System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::Ordinal)
+    $reviewCaseFoldPaths = [System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::OrdinalIgnoreCase)
+
     foreach ($entry in $Entries) {
-        $relativePath = [string]$entry.Path
+        $relativePath = ([string]$entry.Path).Replace('\','/')
         if (-not (Test-SafeRelativePath $relativePath)) {
             Fail ('Review manifest contains unsafe source path: ' + $relativePath)
+        }
+        if ($reviewPaths.ContainsKey($relativePath) -or $reviewCaseFoldPaths.ContainsKey($relativePath)) {
+            Fail ('Review manifest contains duplicate or case-fold duplicate source path: ' + $relativePath)
+        }
+
+        [void]$reviewPaths.Add($relativePath, $true)
+        [void]$reviewCaseFoldPaths.Add($relativePath, $true)
+
+        if (-not (Test-Sha256Hex ([string]$entry.Sha256))) {
+            Fail ('Review manifest contains invalid lowercase SHA-256 for: ' + $relativePath)
         }
 
         $sourcePath = Join-StarterPath $Root $relativePath
@@ -206,7 +273,16 @@ function Copy-ReviewManifest([string]$ReviewPath, [string]$TargetRoot) {
     Copy-Item -LiteralPath $ReviewPath -Destination $targetPath -Force
 }
 
+function Read-JsonFile([string]$Path, [string]$Label, [long]$MaxBytes) {
+    try {
+        return Read-H8JsonFileCapped $Path $Label $MaxBytes
+    } catch {
+        Fail $_.Exception.Message
+    }
+}
+
 $Root = (Resolve-Path -LiteralPath $Root).Path
+Assert-StandardReviewOutput
 $prepareTool = Resolve-Tool 'Tools/prepare_mod.ps1'
 Invoke-Tool { & $prepareTool -Root $Root } 'prepare/review manifest'
 
@@ -215,7 +291,7 @@ if (-not (Test-Path -LiteralPath $reviewPath -PathType Leaf)) {
     Fail ('Missing review manifest: ' + $ReviewOutput)
 }
 
-$review = Get-Content -Raw -LiteralPath $reviewPath | ConvertFrom-Json
+$review = Read-JsonFile $reviewPath 'Reports/review_manifest.json' $MaxReviewManifestBytes
 if ([string]$review.Schema -ne 'hecton8.external_review_manifest.v1') {
     Fail 'Review manifest schema must be hecton8.external_review_manifest.v1.'
 }

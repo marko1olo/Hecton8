@@ -73,7 +73,9 @@ namespace Hecton8.World
         [FieldOffset(52)] public ushort DebrisLifted;
         [FieldOffset(54)] public ushort LeviathansLifted;
         [FieldOffset(56)] public uint Flags;
-        [FieldOffset(60)] public uint _pad0;
+        [FieldOffset(60)] public byte DebrisLiftWeightQ8;
+        [FieldOffset(61)] public byte _pad0;
+        [FieldOffset(62)] public ushort _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -175,7 +177,6 @@ namespace Hecton8.World
         public const uint SourceHash = 0x564F4C43u; // VOLC
         public const uint TelemetryFlagNaN = 1u << 0;
         public const uint TelemetryFlagEmergencyVents = 1u << 1;
-        public const uint TelemetryFlagDebrisCulled = 1u << 2;
         public const uint FloatStateKindThermalRide = 64;
         public const uint ForceFlagVolcanicUpdraft = 1u << 2;
         private static JobHandle _pendingVentReadHandle;
@@ -389,6 +390,13 @@ namespace Hecton8.World
         {
             float t = math.saturate((value - edge0) * math.rcp(math.max(0.0001f, edge1 - edge0)));
             return t * t * (3f - (2f * t));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static byte EncodeUnitQ8(float value)
+        {
+            float q = math.saturate(math.isfinite(value) ? value : 0f);
+            return (byte)math.min(255, (int)math.round(q * 255f));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -639,11 +647,6 @@ namespace Hecton8.World
                     debris.Flags |= 1u;
                     counter.DebrisLifted += 1;
                 }
-                else if (debrisLiftWeight <= 0.0001f)
-                {
-                    debris.Flags |= VolcanicUpdraftVault.TelemetryFlagDebrisCulled;
-                }
-
                 MockDebris[index] = debris;
             }
 
@@ -904,9 +907,7 @@ namespace Hecton8.World
 
             uint flags = Settings.Flags;
             flags |= nan != 0 ? VolcanicUpdraftVault.TelemetryFlagNaN : 0u;
-            flags |= VolcanicUpdraftVault.ResolveDebrisLiftWeight(Settings.GlobalQualityWeight) <= 0.0001f
-                ? VolcanicUpdraftVault.TelemetryFlagDebrisCulled
-                : 0u;
+            float debrisLiftWeight = VolcanicUpdraftVault.ResolveDebrisLiftWeight(Settings.GlobalQualityWeight);
 
             int slot = (int)(Frame % VolcanicUpdraftVault.TelemetryFrames);
             if ((uint)slot >= (uint)Telemetry.Length)
@@ -923,12 +924,13 @@ namespace Hecton8.World
                 EntitiesLifted = (ushort)math.min(lifted, ushort.MaxValue),
                 DebrisLifted = (ushort)math.min(debris, ushort.MaxValue),
                 LeviathansLifted = (ushort)math.min(leviathans, ushort.MaxValue),
-                Flags = flags
+                Flags = flags,
+                DebrisLiftWeightQ8 = VolcanicUpdraftVault.EncodeUnitQ8(debrisLiftWeight)
             };
         }
     }
 
-    public sealed class VolcanicUpdraftDirector : MonoBehaviour, IDispatcherFixedSystem, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed class VolcanicUpdraftDirector : MonoBehaviour, IDispatcherFixedSystem, IColdTickable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private int _signalPushDropCount;
         private const SystemID OwnerSystem = SystemID.Fluid;
@@ -975,6 +977,7 @@ namespace Hecton8.World
         [SerializeField] private bool drawGizmos = true;
 
         private IDataVault _dataVault;
+        private IDataVault _ownBuffersLockVault;
         private VaultGenerationHandle<VentStateDTO> _ventHandle;
         private VaultGenerationHandle<VolcanicUpdraftSettingsDTO> _settingsHandle;
         private VaultGenerationHandle<VolcanicUpdraftTelemetryEntry> _telemetryHandle;
@@ -999,6 +1002,7 @@ namespace Hecton8.World
         private bool _playerLocked;
         private bool _leviathanLocked;
         private bool _registeredFixedDispatcher;
+        private bool _registeredCold;
         private bool _registeredSlow;
         private bool _registeredLate;
         private bool _registeredHotSwap;
@@ -1008,6 +1012,12 @@ namespace Hecton8.World
         private string _csvPath;
 
         public static VolcanicUpdraftDirector ActiveRuntimeInstance;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeForSubsystemRegistration()
+        {
+            ActiveRuntimeInstance = null;
+        }
 
         private void OnEnable()
         {
@@ -1021,6 +1031,7 @@ namespace Hecton8.World
             if (Application.isPlaying)
             {
                 _registeredFixedDispatcher = GlobalRegistry.TryRegisterDispatcherFixedSystem(this);
+                _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
                 _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             }
@@ -1033,11 +1044,25 @@ namespace Hecton8.World
             UnlockExternalBuffers();
             UnlockOwnBuffers();
             if (_registeredFixedDispatcher)
+            {
                 GlobalRegistry.UnregisterDispatcherFixedSystem(this);
+                _registeredFixedDispatcher = false;
+            }
+            if (_registeredCold)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _registeredCold = false;
+            }
             if (_registeredSlow)
+            {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlow = false;
+            }
             if (_registeredLate)
+            {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLate = false;
+            }
             if (_registeredHotSwap)
                 GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwap = false;
@@ -1224,6 +1249,15 @@ namespace Hecton8.World
 
         public void SlowTick()
         {
+            if (!_buffersReady)
+                return;
+        }
+
+        public void ColdTick()
+        {
+            if (!Application.isPlaying || !isActiveAndEnabled)
+                return;
+
             ResolveDataVault();
             if (!_fixedPipelineScheduled && !_ownBuffersLocked)
                 EnsureVaultBuffers();
@@ -1435,6 +1469,7 @@ namespace Hecton8.World
             _leviathanOutputHandle = default;
             _buffersReady = false;
             _ownBuffersLocked = false;
+            _ownBuffersLockVault = null;
             _playerLocked = false;
             _leviathanLocked = false;
         }
@@ -1548,11 +1583,13 @@ namespace Hecton8.World
             if (_ownBuffersLocked)
                 return true;
 
-            if (_dataVault == null ||
-                !_dataVault.TryAcquireMutationGuard(FixedPipelineMutationGuardMask))
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !vault.TryAcquireMutationGuard(FixedPipelineMutationGuardMask))
                 return false;
 
             _ownBuffersLocked = true;
+            _ownBuffersLockVault = vault;
             return true;
         }
 
@@ -1562,7 +1599,9 @@ namespace Hecton8.World
                 return;
 
             _ownBuffersLocked = false;
-            _dataVault?.ReleaseMutationGuard(FixedPipelineMutationGuardMask);
+            IDataVault vault = _ownBuffersLockVault;
+            vault?.ReleaseMutationGuard(FixedPipelineMutationGuardMask);
+            _ownBuffersLockVault = null;
         }
 
         private void RefreshExternalHandles()
@@ -2203,6 +2242,7 @@ namespace Hecton8.World
                     writer.Write(value.DebrisLifted);
                     writer.Write(value.LeviathansLifted);
                     writer.Write(value.Flags);
+                    writer.Write(value.DebrisLiftWeightQ8);
                 }
 
                 _faultDumped = true;

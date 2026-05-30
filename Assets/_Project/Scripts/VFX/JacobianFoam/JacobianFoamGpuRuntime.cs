@@ -10,7 +10,7 @@ using UnityEngine.Rendering;
 
 namespace Hecton8.VFX
 {
-    public sealed class JacobianFoamGpuRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class JacobianFoamGpuRuntime : MonoBehaviour, ILateFrameTickable, IColdTickable, IGlobalRegistryHotSwapListener
     {
         private const uint PortableMaxThreadsPerThreadGroup = 256u;
         private const float GpuDumpThresholdMicroseconds = 1500f;
@@ -65,6 +65,13 @@ namespace Hecton8.VFX
         [SerializeField] private Camera _primaryCamera;
 
         private IDataVault _vault;
+        private IDataVault _tuningReadPinVault;
+        private IDataVault _wakeReadPinVault;
+        private IDataVault _telemetryReadPinVault;
+        private IDataVault _paramsWriteVault;
+        private IDataVault _tuningWriteVault;
+        private IDataVault _wakeWriteVault;
+        private IDataVault _telemetryWriteVault;
         private VaultGenerationHandle<FoamComputeParamsDTO> _paramsHandle;
         private VaultGenerationHandle<FoamTuningDTO> _tuningHandle;
         private VaultGenerationHandle<FoamWakeImpactDTO> _wakeHandle;
@@ -106,6 +113,7 @@ namespace Hecton8.VFX
         private uint _lastVisualClockFrameId = uint.MaxValue;
         private bool _clearHistoryNextDispatch;
         private bool _registeredLateFrame;
+        private bool _registeredColdTick;
         private bool _registeredHotSwap;
         private bool _vaultReady;
         private bool _hasPreparedPayload;
@@ -117,6 +125,9 @@ namespace Hecton8.VFX
         private bool _deferredTelemetryDumpRequested;
         private int _deferredTelemetryDumpCursor;
         private int _deferredTelemetryDumpWritten;
+        private int _pendingGpuResolution;
+        private bool _gpuStateRebuildRequested;
+        private readonly FoamWakeImpactDTO[] _wakeUploadSnapshot = new FoamWakeImpactDTO[JacobianFoamContracts.WakeImpactCapacity];
 
         private static FoamRenderGraphPayload s_publishedPayload;
         private static bool s_hasPublishedPayload;
@@ -140,10 +151,12 @@ namespace Hecton8.VFX
             CacheGraphicsCapabilitySnapshotCold();
             ResolveKernels();
             EnsureVaultState(true);
-            EnsureGpuState(JacobianFoamContracts.ResolveFoamResolution(0.5f, _minResolution, _maxResolution));
+            if (!EnsureGpuStateCold(JacobianFoamContracts.ResolveFoamResolution(0.5f, _minResolution, _maxResolution)))
+                RequestGpuStateRebuild(JacobianFoamContracts.ResolveFoamResolution(0.5f, _minResolution, _maxResolution));
             _visualClockSeconds = 0f;
             _lastVisualClockFrameId = uint.MaxValue;
             TryRegisterHotSwapListener();
+            TryRegisterColdTickable();
             TryRegisterLateFrameTickable();
         }
 
@@ -151,6 +164,7 @@ namespace Hecton8.VFX
         {
             FlushDeferredTelemetryDump();
             TryUnregisterLateFrameTickable();
+            TryUnregisterColdTickable();
             TryUnregisterHotSwapListener();
             ReleaseVaultHandles(_vault);
             ClearVaultDescriptors();
@@ -171,6 +185,8 @@ namespace Hecton8.VFX
                     return;
 
                 TryUnregisterLateFrameTickable();
+                TryUnregisterColdTickable();
+                TryRegisterColdTickable();
                 TryRegisterLateFrameTickable();
                 return;
             }
@@ -184,6 +200,21 @@ namespace Hecton8.VFX
                 EnsureVaultState(true);
         }
 
+        public void ColdTick()
+        {
+            if (!_gpuStateRebuildRequested)
+                return;
+
+            if (_computeShader == null || !_coldSupportsComputeShaders)
+            {
+                ClearPreparedPayload();
+                return;
+            }
+
+            if (EnsureGpuStateCold(_pendingGpuResolution))
+                _gpuStateRebuildRequested = false;
+        }
+
         public void LateFrameTick()
         {
             ConsumeRenderGraphAcknowledgement();
@@ -194,7 +225,7 @@ namespace Hecton8.VFX
                 return;
             }
 
-            if (!EnsureVaultState(false))
+            if (!HasVaultStateReady())
             {
                 ClearPreparedPayload();
                 return;
@@ -211,8 +242,9 @@ namespace Hecton8.VFX
             int minResolution = tuning.MinResolution > 0f ? (int)tuning.MinResolution : _minResolution;
             int maxResolution = tuning.MaxResolution > 0f ? (int)tuning.MaxResolution : _maxResolution;
             int targetResolution = ResolveRuntimeResolution(JacobianFoamContracts.ResolveFoamResolution(_qualityWeight, minResolution, maxResolution));
-            if (!EnsureGpuState(targetResolution))
+            if (!HasGpuStateReady(targetResolution))
             {
+                RequestGpuStateRebuild(targetResolution);
                 ClearPreparedPayload();
                 return;
             }
@@ -344,6 +376,14 @@ namespace Hecton8.VFX
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
+        private void TryRegisterColdTickable()
+        {
+            if (_registeredColdTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
+        }
+
         private void TryUnregisterLateFrameTickable()
         {
             if (!_registeredLateFrame)
@@ -351,6 +391,15 @@ namespace Hecton8.VFX
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             _registeredLateFrame = false;
+        }
+
+        private void TryUnregisterColdTickable()
+        {
+            if (!_registeredColdTick)
+                return;
+
+            GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+            _registeredColdTick = false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -626,7 +675,43 @@ namespace Hecton8.VFX
             return _vaultReady;
         }
 
-        private bool EnsureGpuState(int targetResolution)
+        private bool HasVaultStateReady()
+        {
+            return _vault != null &&
+                !_vault.IsCompactionFenceActive &&
+                _vaultReady &&
+                IsOwnedHandle(in _paramsHandle, BufferID.JacobianFoamParams) &&
+                IsOwnedHandle(in _tuningHandle, BufferID.JacobianFoamTuning) &&
+                IsOwnedHandle(in _wakeHandle, BufferID.JacobianFoamWakeImpacts) &&
+                IsOwnedHandle(in _telemetryHandle, BufferID.JacobianFoamTelemetryRing);
+        }
+
+        private bool HasGpuStateReady(int targetResolution)
+        {
+            targetResolution = ClampSingleDispatchResolution(targetResolution);
+            GraphicsFormat targetFormat = _coldFoamTextureFormat;
+            return targetFormat != GraphicsFormat.None &&
+                _paramsBufferA != null &&
+                _paramsBufferA.IsValid() &&
+                _paramsBufferB != null &&
+                _paramsBufferB.IsValid() &&
+                _wakeBufferA != null &&
+                _wakeBufferA.IsValid() &&
+                _wakeBufferB != null &&
+                _wakeBufferB.IsValid() &&
+                _resolution == targetResolution &&
+                _foamTextureFormat == targetFormat &&
+                _foamHistoryA != null &&
+                _foamHistoryB != null;
+        }
+
+        private void RequestGpuStateRebuild(int targetResolution)
+        {
+            _pendingGpuResolution = ClampSingleDispatchResolution(targetResolution);
+            _gpuStateRebuildRequested = true;
+        }
+
+        private bool EnsureGpuStateCold(int targetResolution)
         {
             targetResolution = ClampSingleDispatchResolution(targetResolution);
 
@@ -785,6 +870,7 @@ namespace Hecton8.VFX
                     in _tuningHandle,
                     BufferID.JacobianFoamTuning,
                     1,
+                    out IDataVault tuningWriteVault,
                     out NativeArray<FoamTuningDTO> tuningArray))
             {
                 return false;
@@ -800,16 +886,18 @@ namespace Hecton8.VFX
             }
             finally
             {
-                ReleaseWriteBuffer(in _tuningHandle, BufferID.JacobianFoamTuning);
+                ReleaseWriteBuffer(tuningWriteVault, in _tuningHandle, BufferID.JacobianFoamTuning);
             }
         }
 
         private bool TryWriteAndUploadParams(in FoamComputeParamsDTO parameters)
         {
+            bool wroteParams = false;
             if (!TryAcquireWriteBuffer(
                     in _paramsHandle,
                     BufferID.JacobianFoamParams,
                     1,
+                    out IDataVault paramsWriteVault,
                     out NativeArray<FoamComputeParamsDTO> paramsArray))
             {
                 return false;
@@ -821,21 +909,25 @@ namespace Hecton8.VFX
                     return false;
 
                 paramsArray[0] = parameters;
-                UploadParams(paramsArray);
-                return true;
+                wroteParams = true;
             }
             finally
             {
-                ReleaseWriteBuffer(in _paramsHandle, BufferID.JacobianFoamParams);
+                ReleaseWriteBuffer(paramsWriteVault, in _paramsHandle, BufferID.JacobianFoamParams);
             }
+
+            return wroteParams && UploadParams(in parameters);
         }
 
         private bool TryWriteAndUploadMockWakes(in FoamTuningDTO tuning, float phaseTime)
         {
+            int wakeCount = 0;
+            bool capturedSnapshot = false;
             if (!TryAcquireWriteBuffer(
                     in _wakeHandle,
                     BufferID.JacobianFoamWakeImpacts,
                     JacobianFoamContracts.WakeImpactCapacity,
+                    out IDataVault wakeWriteVault,
                     out NativeArray<FoamWakeImpactDTO> wakeArray))
             {
                 return false;
@@ -857,18 +949,26 @@ namespace Hecton8.VFX
                         in tuning);
                 }
 
-                _lastWakeCount = ResolveWakeCount(wakeArray, _qualityWeight);
-                UploadWakes(wakeArray, _lastWakeCount);
-                return true;
+                wakeCount = ResolveWakeCount(wakeArray, _qualityWeight);
+                wakeCount = CopyWakesToUploadSnapshot(wakeArray, wakeCount);
+                capturedSnapshot = true;
             }
             finally
             {
-                ReleaseWriteBuffer(in _wakeHandle, BufferID.JacobianFoamWakeImpacts);
+                ReleaseWriteBuffer(wakeWriteVault, in _wakeHandle, BufferID.JacobianFoamWakeImpacts);
             }
+
+            if (!capturedSnapshot)
+                return false;
+
+            _lastWakeCount = wakeCount;
+            return UploadWakesFromSnapshot(wakeCount);
         }
 
         private bool TryUploadReadOnlyWakes()
         {
+            int wakeCount = 0;
+            bool capturedSnapshot = false;
             if (!TryAcquireReadPin(
                     in _wakeHandle,
                     BufferID.JacobianFoamWakeImpacts,
@@ -880,70 +980,90 @@ namespace Hecton8.VFX
 
             try
             {
-                _lastWakeCount = ResolveWakeCount(wakeArray, _qualityWeight);
-                UploadWakes(wakeArray, _lastWakeCount);
-                return true;
+                wakeCount = ResolveWakeCount(wakeArray, _qualityWeight);
+                wakeCount = CopyWakesToUploadSnapshot(wakeArray, wakeCount);
+                capturedSnapshot = true;
             }
             finally
             {
                 ReleaseReadPin(BufferID.JacobianFoamWakeImpacts);
             }
+
+            if (!capturedSnapshot)
+                return false;
+
+            _lastWakeCount = wakeCount;
+            return UploadWakesFromSnapshot(wakeCount);
         }
 
-        private void UploadParams(NativeArray<FoamComputeParamsDTO> paramsArray)
+        private bool UploadParams(in FoamComputeParamsDTO parameters)
         {
-            if (!paramsArray.IsCreated || paramsArray.Length <= 0)
-                return;
-
             GraphicsBuffer writeBuffer = _activeParamsBuffer == _paramsBufferA ? _paramsBufferB : _paramsBufferA;
             if (writeBuffer == null || !writeBuffer.IsValid())
             {
                 _activeParamsBuffer = null;
-                return;
+                return false;
             }
 
             NativeArray<FoamComputeParamsDTO> mapped = writeBuffer.LockBufferForWrite<FoamComputeParamsDTO>(0, 1);
-            CopyFoamParamsToMappedBufferJob copyJob = new CopyFoamParamsToMappedBufferJob
-            {
-                Source = paramsArray,
-                Destination = mapped
-            };
             try
             {
-                copyJob.Run();
+                if (mapped.IsCreated && mapped.Length > 0)
+                    mapped[0] = parameters;
             }
             finally
             {
                 writeBuffer.UnlockBufferAfterWrite<FoamComputeParamsDTO>(1);
             }
+
             _activeParamsBuffer = writeBuffer;
+            return true;
         }
 
-        private void UploadWakes(NativeArray<FoamWakeImpactDTO> wakeArray, int wakeCount)
+        private int CopyWakesToUploadSnapshot(NativeArray<FoamWakeImpactDTO> wakeArray, int wakeCount)
+        {
+            int capacity = _wakeUploadSnapshot.Length;
+            int sourceCount = wakeArray.IsCreated ? math.min(wakeArray.Length, capacity) : 0;
+            int copyCount = math.clamp(wakeCount, 0, sourceCount);
+            for (int i = 0; i < copyCount; i++)
+                _wakeUploadSnapshot[i] = wakeArray[i];
+
+            for (int i = copyCount; i < capacity; i++)
+                _wakeUploadSnapshot[i] = default;
+
+            return copyCount;
+        }
+
+        private bool UploadWakesFromSnapshot(int wakeCount)
         {
             GraphicsBuffer writeBuffer = _activeWakeBuffer == _wakeBufferA ? _wakeBufferB : _wakeBufferA;
             if (writeBuffer == null || !writeBuffer.IsValid())
             {
                 _activeWakeBuffer = null;
-                return;
+                return false;
             }
 
             NativeArray<FoamWakeImpactDTO> mapped = writeBuffer.LockBufferForWrite<FoamWakeImpactDTO>(0, JacobianFoamContracts.WakeImpactCapacity);
-            CopyFoamWakesToMappedBufferJob copyJob = new CopyFoamWakesToMappedBufferJob
-            {
-                Source = wakeArray,
-                Destination = mapped,
-                Count = wakeCount
-            };
             try
             {
-                copyJob.Run();
+                if (mapped.IsCreated && mapped.Length > 0)
+                {
+                    int destinationCount = math.min(mapped.Length, JacobianFoamContracts.WakeImpactCapacity);
+                    int copyCount = math.clamp(wakeCount, 0, math.min(destinationCount, _wakeUploadSnapshot.Length));
+                    for (int i = 0; i < copyCount; i++)
+                        mapped[i] = _wakeUploadSnapshot[i];
+
+                    for (int i = copyCount; i < destinationCount; i++)
+                        mapped[i] = default;
+                }
             }
             finally
             {
                 writeBuffer.UnlockBufferAfterWrite<FoamWakeImpactDTO>(JacobianFoamContracts.WakeImpactCapacity);
             }
+
             _activeWakeBuffer = writeBuffer;
+            return true;
         }
 
         private int ResolveWakeCount(NativeArray<FoamWakeImpactDTO> wakeArray, float quality)
@@ -966,6 +1086,7 @@ namespace Hecton8.VFX
                     in _telemetryHandle,
                     BufferID.JacobianFoamTelemetryRing,
                     JacobianFoamContracts.TelemetryCapacity,
+                    out IDataVault telemetryWriteVault,
                     out NativeArray<FoamRenderTelemetryEntry> telemetry))
                 return;
 
@@ -1011,7 +1132,7 @@ namespace Hecton8.VFX
             }
             finally
             {
-                ReleaseWriteBuffer(in _telemetryHandle, BufferID.JacobianFoamTelemetryRing);
+                ReleaseWriteBuffer(telemetryWriteVault, in _telemetryHandle, BufferID.JacobianFoamTelemetryRing);
             }
         }
 
@@ -1178,29 +1299,48 @@ namespace Hecton8.VFX
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
+            out IDataVault writeVault,
             out NativeArray<T> buffer) where T : struct
         {
+            writeVault = null;
             buffer = default;
-            if (_vault == null ||
+            IDataVault vault = _vault;
+            if (vault == null ||
                 requiredLength <= 0 ||
                 !IsOwnedHandle(in handle, bufferId) ||
-                !_vault.TryAcquireWriteLock(in handle, OwnerSystemId, out buffer))
+                HasWriteBufferVault(bufferId) ||
+                !vault.TryAcquireWriteLock(in handle, OwnerSystemId, out buffer))
             {
                 return false;
             }
 
-            if (buffer.IsCreated && buffer.Length >= requiredLength)
-                return true;
+            bool releaseOnFailure = true;
+            try
+            {
+                if (buffer.IsCreated && buffer.Length >= requiredLength)
+                {
+                    StoreWriteBufferVault(bufferId, vault);
+                    writeVault = vault;
+                    releaseOnFailure = false;
+                    return true;
+                }
 
-            _vault.ReleaseWriteLock(in handle, OwnerSystemId);
-            buffer = default;
-            return false;
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnFailure)
+                    vault.ReleaseWriteLock(in handle, OwnerSystemId);
+            }
         }
 
-        private void ReleaseWriteBuffer<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        private void ReleaseWriteBuffer<T>(IDataVault writeVault, in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
         {
-            if (_vault != null && IsOwnedHandle(in handle, bufferId))
-                _vault.ReleaseWriteLock(in handle, OwnerSystemId);
+            IDataVault storedVault = TakeWriteBufferVault(bufferId);
+            IDataVault vault = storedVault ?? writeVault;
+            if (vault != null && IsOwnedHandle(in handle, bufferId))
+                vault.ReleaseWriteLock(in handle, OwnerSystemId);
         }
 
         private bool TryAcquireReadPin<T>(
@@ -1210,27 +1350,127 @@ namespace Hecton8.VFX
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
+            IDataVault vault = _vault;
             ulong guardMask = VaultMutationGuardBit(bufferId);
-            if (_vault == null ||
+            if (vault == null ||
                 requiredLength <= 0 ||
                 !IsOwnedHandle(in handle, bufferId) ||
-                !_vault.TryAcquireMutationGuard(guardMask))
+                !vault.TryAcquireMutationGuard(guardMask))
             {
                 return false;
             }
 
-            if (TryResolveHandle(in handle, bufferId, requiredLength, out buffer))
+            if (vault.TryResolveHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                StoreReadPinVault(bufferId, vault);
                 return true;
+            }
 
-            _vault.ReleaseMutationGuard(guardMask);
+            vault.ReleaseMutationGuard(guardMask);
             buffer = default;
             return false;
         }
 
         private void ReleaseReadPin(BufferID bufferId)
         {
-            if (_vault != null)
-                _vault.ReleaseMutationGuard(VaultMutationGuardBit(bufferId));
+            IDataVault vault = TakeReadPinVault(bufferId);
+            vault?.ReleaseMutationGuard(VaultMutationGuardBit(bufferId));
+        }
+
+        private void StoreWriteBufferVault(BufferID bufferId, IDataVault vault)
+        {
+            if (bufferId == BufferID.JacobianFoamParams)
+                _paramsWriteVault = vault;
+            else if (bufferId == BufferID.JacobianFoamTuning)
+                _tuningWriteVault = vault;
+            else if (bufferId == BufferID.JacobianFoamWakeImpacts)
+                _wakeWriteVault = vault;
+            else if (bufferId == BufferID.JacobianFoamTelemetryRing)
+                _telemetryWriteVault = vault;
+        }
+
+        private IDataVault TakeWriteBufferVault(BufferID bufferId)
+        {
+            if (bufferId == BufferID.JacobianFoamParams)
+            {
+                IDataVault vault = _paramsWriteVault;
+                _paramsWriteVault = null;
+                return vault;
+            }
+
+            if (bufferId == BufferID.JacobianFoamTuning)
+            {
+                IDataVault vault = _tuningWriteVault;
+                _tuningWriteVault = null;
+                return vault;
+            }
+
+            if (bufferId == BufferID.JacobianFoamWakeImpacts)
+            {
+                IDataVault vault = _wakeWriteVault;
+                _wakeWriteVault = null;
+                return vault;
+            }
+
+            if (bufferId == BufferID.JacobianFoamTelemetryRing)
+            {
+                IDataVault vault = _telemetryWriteVault;
+                _telemetryWriteVault = null;
+                return vault;
+            }
+
+            return null;
+        }
+
+        private bool HasWriteBufferVault(BufferID bufferId)
+        {
+            if (bufferId == BufferID.JacobianFoamParams)
+                return _paramsWriteVault != null;
+            if (bufferId == BufferID.JacobianFoamTuning)
+                return _tuningWriteVault != null;
+            if (bufferId == BufferID.JacobianFoamWakeImpacts)
+                return _wakeWriteVault != null;
+            if (bufferId == BufferID.JacobianFoamTelemetryRing)
+                return _telemetryWriteVault != null;
+            return false;
+        }
+
+        private void StoreReadPinVault(BufferID bufferId, IDataVault vault)
+        {
+            if (bufferId == BufferID.JacobianFoamTuning)
+                _tuningReadPinVault = vault;
+            else if (bufferId == BufferID.JacobianFoamWakeImpacts)
+                _wakeReadPinVault = vault;
+            else if (bufferId == BufferID.JacobianFoamTelemetryRing)
+                _telemetryReadPinVault = vault;
+        }
+
+        private IDataVault TakeReadPinVault(BufferID bufferId)
+        {
+            if (bufferId == BufferID.JacobianFoamTuning)
+            {
+                IDataVault vault = _tuningReadPinVault;
+                _tuningReadPinVault = null;
+                return vault;
+            }
+
+            if (bufferId == BufferID.JacobianFoamWakeImpacts)
+            {
+                IDataVault vault = _wakeReadPinVault;
+                _wakeReadPinVault = null;
+                return vault;
+            }
+
+            if (bufferId == BufferID.JacobianFoamTelemetryRing)
+            {
+                IDataVault vault = _telemetryReadPinVault;
+                _telemetryReadPinVault = null;
+                return vault;
+            }
+
+            return null;
         }
 
         private bool TrySeedDefaultTuning()
@@ -1239,6 +1479,7 @@ namespace Hecton8.VFX
                     in _tuningHandle,
                     BufferID.JacobianFoamTuning,
                     1,
+                    out IDataVault tuningWriteVault,
                     out NativeArray<FoamTuningDTO> tuning))
             {
                 return false;
@@ -1252,7 +1493,7 @@ namespace Hecton8.VFX
             }
             finally
             {
-                ReleaseWriteBuffer(in _tuningHandle, BufferID.JacobianFoamTuning);
+                ReleaseWriteBuffer(tuningWriteVault, in _tuningHandle, BufferID.JacobianFoamTuning);
             }
         }
 

@@ -611,3 +611,435 @@ Solution: Re-extract prompt, run targeted residue `rg`, method-body hot lookup s
 Rejected Alternatives: Running a project build for syntax-local edits; accepting a naive write-lock count that flags sequential locks as nested; leaving source gates unchanged.
 Scalability potential: Source gates now reject regression to outpost tier ladders and binary survival-band descriptor bits.
 Hardware Impact: Compile CPU avoided; 0 B/frame runtime change.
+
+## Decision 76 - Apex Brain Survival Node Budget Q8
+
+Problem: `ApexBrainJob` still wrote survival node-budget pressure as a binary `ApexBrainFlags.SurvivalNodeBudgetPressure` bit derived from `quality >= ApexBrainConstants.MinimumQualityNodeHold`.
+Solution: Reuse explicit-layout padding in `ApexBrainOutputDTO` and `ApexInfluenceNode` for `SurvivalNodeBudgetPressureQ8`. Encode the existing continuous quality curve with `EncodeSurvivalNodeBudgetPressureQ8`; keep old flag names as aliases only, with no active writer.
+Rejected Alternatives: Growing DTO stride; deleting public aliases; keeping the binary helper because the node count already scaled continuously.
+Scalability potential: Weak devices publish high pressure while evaluating fewer nodes; middle devices interpolate; high/ultra publish low pressure and spend scalar budget on full ambush nodes without a route fork.
+Hardware Impact: 0 B/frame. One byte in existing padding reused for output and influence nodes; no registry lookup, allocation, or DataVault lock added.
+
+## Decision 77 - Q8 Telemetry Instead Of Quality Flags
+
+Problem: Carve debris, splashdown fluid impulse, and dispatcher blackbox telemetry converted continuous quality/pressure into hard flags (`>= 0.75`, `> 0.001`, `<= 0.25`). Those flags duplicated scalar state and preserved binary quality semantics in proof surfaces.
+Solution: Carve debris blackbox now stores `QualityPressureQ8` in existing padding and hashes it. Splashdown fluid telemetry stores `_splashdownImpulseQualityPressureQ8` and folds it into the telemetry context. Dispatcher blackbox packs `GlobalQualityWeight` Q8 into the upper byte of its existing `Flags` ushort while lower bits remain factual state flags.
+Rejected Alternatives: Keeping threshold flags; expanding telemetry structs; moving the data through managed reports; changing runtime gameplay truth from telemetry code.
+Scalability potential: Weak devices report high pressure as a scalar, middle devices report partial pressure, and high/ultra report low pressure without binary cuts or new data lanes.
+Hardware Impact: 0 B/frame. Existing fields/context bits reused; no managed allocation, no new buffer, no material or shader route.
+
+## Decision 78 - Q8 Pass Verification Throttle
+
+Problem: The pass touched Burst/job-facing structs and core telemetry, but compile throttling forbids reflexive build validation.
+Solution: Re-extract prompt, run targeted runtime residue scans, touched-method hot lookup parsing, diff-based write-lock scan, string/comment-aware brace scan, restricted `git diff --check`, and process check. Do not launch build, MSBuild, Unity tests, JSON reports, or binary dumps.
+Rejected Alternatives: Running `dotnet build`; accepting test-only grep hits as runtime residue; adding DataVault telemetry just to prove the change.
+Scalability potential: Source gates now reject regression to threshold flags across Apex, debris, splashdown, and dispatcher blackbox paths.
+Hardware Impact: Compile CPU avoided; 0 B/frame runtime change.
+
+## Decision 79 - Thermodynamics Hazard Q8 Telemetry
+
+Problem: `ThermodynamicsHazardGridRuntime.ScanTelemetryJob` converted existing `QualityPressureQ8` and `HealthPressureQ8` values into two binary flags. That collapsed continuous pressure into bits inside a 300-frame blackbox row.
+Solution: Remove `TelemetryFlagQualityPressure` and `TelemetryFlagHealthPressureSurvival` active writers. Store `QualityPressureQ8` and `HealthPressureQ8` directly in `ThermodynamicsHazardTelemetryEntry` padding at offsets 56 and 57.
+Rejected Alternatives: Keeping threshold bits; increasing the 64-byte telemetry stride; moving pressure proof into managed logs.
+Scalability potential: Weak devices publish high pressure as byte values; middle devices keep partial pressure; high and ultra publish low pressure without changing the telemetry route.
+Hardware Impact: 0 B/frame. Existing padding reused; no new lock, buffer, allocation, or job dependency.
+
+## Decision 80 - World Sampler Result Flag Purge
+
+Problem: `GlobalWorldSampler` still reported survival sampling pressure as a result flag derived from `ResolveExpensiveSamplingWeight <= 0.0001f`. No runtime consumer used the bit; it was active binary quality telemetry in the hot sampling result.
+Solution: Remove `ResolveSurvivalSamplingPressureFlag` and stop OR-ing `SurvivalSamplingPressure` in `SampleDistanceOnly` and `EstimateNormal`. Keep enum aliases as ABI compatibility only.
+Rejected Alternatives: Changing the 64-byte `TerrainSampleResult` layout; adding a separate result Q8 byte; deleting public enum aliases during a batch run.
+Scalability potential: Sampling cost still scales through continuous `ResolveExpensiveSamplingWeight`; low, middle, high, and ultra paths no longer expose a binary result route.
+Hardware Impact: 0 B/frame. Removes one helper call/branch in the distance sample path and preserves DTO size.
+
+## Decision 81 - Visor Fluid Blackbox Scalar Bytes
+
+Problem: Visor fluid refraction blackbox flags converted four scalar states into threshold bits: quality pressure, homeostasis fallback, thermal motion cull, and visual overkill.
+Solution: Remove those active flag constants and writers. Reuse blackbox bytes 48-51 for `QualityPressureQ8`, `HomeostasisFallbackQ8`, `ThermalMotionCullQ8`, and `VisualOverkillQ8`, serialize them into the dump row, and hash fallback/cull scalar inputs directly.
+Rejected Alternatives: Keeping `> 0.001f` / `> 0.5f` flag thresholds; growing `VisorRefractionTelemetryEntry`; moving proof to docs instead of blackbox data.
+Scalability potential: Low hardware reports pressure/fallback/cull as continuous bytes; middle hardware reports partial values; high/ultra reports overkill pressure without a binary route.
+Hardware Impact: 0 B/frame. Existing 64-byte row reused; no material instance, no new buffer, no extra DataVault lock.
+
+## Decision 82 - Telemetry Scalar Verification Without Build
+
+Problem: The pass changed explicit-layout telemetry rows and hot sampling/presentation paths while an external `dotnet` process was active.
+Solution: Use prompt extraction, runtime residue scans, touched-method hot lookup scan, diff write-lock scan, string/comment-aware brace scan, restricted `git diff --check`, and process checks. Do not launch build, MSBuild, Unity tests, JSON reports, or binary dumps.
+Rejected Alternatives: Running `dotnet build`; claiming source proof without source gates; changing unrelated dirty visor code owned by another agent.
+Scalability potential: Source gates now reject regression to binary quality bits in thermodynamics, world sampler, and visor fluid blackbox telemetry.
+Hardware Impact: Compile CPU avoided; runtime change remains 0 B/frame.
+
+## Decision 83 - Volcanic Debris Lift Q8 Telemetry
+
+Problem: `VolcanicTelemetryFinalizeJob` and mock debris rows converted continuous debris lift weight into `TelemetryFlagDebrisCulled` when quality collapsed to zero. That made the blackbox report a quality bit instead of the scalar that actually drives debris lift cost.
+Solution: Remove the debris-cull flag writer and constant. Store `DebrisLiftWeightQ8` at offset 60 of the existing 64-byte `VolcanicUpdraftTelemetryEntry`, encode it with `VolcanicUpdraftVault.EncodeUnitQ8`, and include the byte in the fault dump stream.
+Rejected Alternatives: Keeping an epsilon flag; growing the telemetry row; removing debris lift entirely at low quality; writing a managed report.
+Scalability potential: Weak devices show near-zero debris lift weight without a binary route; middle devices publish partial lift; high and ultra devices publish full lift while preserving the same signal and telemetry path.
+Hardware Impact: 0 B/frame. Existing padding reused; no allocation, no new DataVault lock, no gameplay truth change.
+
+## Decision 84 - Procedural Bite IK Visual-Overkill Weight
+
+Problem: `ResolveBiteRuntimeFlags()` forced maximum-quality and visual-overkill flags every bite solve. The Burst job then ran the wrap-anchor/tentacle path as a binary branch, while hull dents and debris spawned through active `ResultFlagVisualOverkill` checks.
+Solution: Add `VisualOverkillWeight01` to `ProceduralBiteJob`, pack its Q8 value into the result flags, write the same scalar into `BiteIkSolveEvent.VisualOverkillWeight01`, and scale wrap bone count, tentacle radius/length, hull dent radius/depth, and debris quantity continuously from `GlobalQualityWeight`.
+Rejected Alternatives: Keeping always-on overkill; deleting tentacle wrap visuals; adding a new DTO; using a low-tier hull flag; changing the public signal contract mid-batch.
+Scalability potential: Weak devices retain mandible contact and small debris while wrap bones fall to zero by scalar capacity; middle devices get partial wrap/debris; high and ultra spend the same path on more wrap bones, stronger dents, and denser shards.
+Hardware Impact: 0 B/frame managed allocation. Existing job/value fields and BiteIk telemetry padding are used; low-quality solves avoid forced tentacle bone writes formerly caused by unconditional overkill flags.
+
+## Decision 85 - Volcanic/Fauna Verification Without Build
+
+Problem: The pass touched Burst job source, explicit-layout telemetry, and LateFrame presentation signal writers, but the host had an external `dotnet` process and compile throttling forbids build spam.
+Solution: Re-extract prompt, run active-source residue scans, touched hot-method lookup parsing, lock scan, string/comment-aware brace scan, restricted `git diff --check`, process check, and editor source gates. Do not launch build, MSBuild, Unity runner, JSON reports, or binary dumps.
+Rejected Alternatives: Running `dotnet build`; treating compatibility constants as active writers; leaving source gates unchanged.
+Scalability potential: Source gates now reject regression to volcanic debris cull flags and bite visual-overkill flag routing.
+Hardware Impact: Compile CPU avoided; 0 B/frame runtime allocation change.
+
+## Decision 86 - Repair Tool Continuous VFX Route
+
+Problem: `RepairTool.PublishRepairSparkSignal` used `ResolveRepairQualityCurve(quality01) > 0.0001f` to decide whether the spark signal entered the compute debris renderer. `PublishHullRepairedSignal` also converted the same scalar into `LowTierVisualOnlyFlag`.
+Solution: Always publish `DebrisSpawnSignal.FlagComputeShard` for repair sparks and let `ResolveRepairSparkQuantity` scale quantity from survival to visual-overkill. Add `HullRepairedSignal.QualityWeightQ8` as an offset-62 alias and write only `CompletedFlag` from the repair tool.
+Rejected Alternatives: Keeping compute shards as a binary quality switch; growing `HullRepairedSignal`; removing the legacy `QualityTier`/`LowTierVisualOnlyFlag` names during a multi-agent batch.
+Scalability potential: Weak devices still get low spark counts through Q-scaled quantity; middle devices interpolate; high and ultra devices spend the same route on denser GPU shards without changing signal authority.
+Hardware Impact: 0 B/frame. Existing signal bytes and scalar quantity math are reused; no managed allocation, no DataVault lock, and no new dependency lookup.
+
+## Decision 87 - Repair Verification Without Build
+
+Problem: Repair signal source and an explicit-layout contract changed while an external `dotnet` process was active.
+Solution: Run targeted runtime residue scans, hot-method lookup parsing, direct DataVault write-lock scan, string/comment-aware brace scan, restricted `git diff --check`, and process check. Do not launch build, MSBuild, Unity tests, JSON reports, or binary dumps.
+Rejected Alternatives: Running `dotnet build`; relying on a broad grep that includes negative test strings; claiming whole-project lock proof beyond touched files.
+Scalability potential: Source gates now reject regression to repair spark compute quality thresholds and hull repaired low-tier visual flags.
+Hardware Impact: Compile CPU avoided; runtime allocation delta remains 0 B/frame.
+
+## Decision 88 - Tool Diegetic Display Fallback Is Not Quality Authority
+
+Problem: `ToolDiegeticDisplayController` turned continuous quality into two binary UI decisions: disabling the render-texture camera at `_qualityFallback01 >= 0.75f` and collapsing scanner titles at `_qualityFallback01 >= 0.66f`.
+Solution: Keep `_qualityFallback01` and `_visualOverkill01` as shader/material scalars, but make render fallback depend only on actual pool/renderability failure. Scanner title compaction now follows only factual fallback state.
+Rejected Alternatives: Keeping the low-quality camera-disable branch; adding a second render path; allocating tier-specific UI text buffers; deleting the fallback texture path needed for pool failure.
+Scalability potential: Weak devices retain the same UI route with scalar shader pressure; middle/high/ultra increase visual overkill through the same material properties instead of switching identity.
+Hardware Impact: 0 B/frame. No new allocation, no new material instance, no DataVault lock, no registry lookup. One branch no longer converts quality into route authority.
+
+## Decision 89 - Tool Display Verification Without Build
+
+Problem: The UI pass touched presentation phase logic while an external compiler process was already active.
+Solution: Run targeted threshold residue scan, high-frequency method lookup scan, direct DataVault write-lock scan, string/comment-aware brace scan, restricted `git diff --check`, and source gate update. Do not launch build, MSBuild, Unity tests, JSON reports, or binary dumps.
+Rejected Alternatives: Running a build for syntax-local UI edits; claiming the negative test strings as runtime residue; changing render texture pooling ownership.
+Scalability potential: Source gate now rejects fallback thresholds returning to the diegetic tool screen.
+Hardware Impact: Compile CPU avoided; runtime allocation delta remains 0 B/frame.
+
+## Decision 90 - Habitat Compromise Signal Quality Weight
+
+Problem: `HabitatGraphManager.TryPublishBaseModuleCompromisedSignal` used `ResolveModuleStressDisplacementMaxMeters(globalQualityWeight) <= 0f` to choose `BaseModuleCompromisedSignal.LowTierVisualOnlyFlag`. That made a visual displacement scalar decide the signal flag route for a factual module compromise.
+Solution: Always publish `BaseModuleCompromisedSignal.MaxDeformationFlag` for the compromise event and carry the continuous quality as `QualityWeightQ8` at the existing offset-45 byte. Keep `QualityTier` and `LowTierVisualOnlyFlag` as compatibility aliases only.
+Rejected Alternatives: Keeping the displacement-threshold flag, deleting the legacy field/flag names during a multi-agent batch, or adding a new byte outside the 64-byte signal lane.
+Scalability potential: Weak devices still reduce shader displacement through `ResolveModuleStressDisplacementMaxMeters`; middle/high/ultra raise the same scalar visual stress without changing event identity or authority.
+Hardware Impact: 0 B/frame. Existing signal byte reused; no allocation, no new DataVault lock, no registry lookup.
+
+## Decision 91 - Habitat Signal Verification Without Build
+
+Problem: The habitat pass changed an explicit-layout signal and a module-stress hot owner path while an external `dotnet` process was active.
+Solution: Run targeted residue scan, touched-method hot lookup scan, direct DataVault write-lock scan, string/comment-aware brace scan, restricted `git diff --check`, process check, and editor source gate. Do not launch build, MSBuild, Unity tests, JSON reports, or binary dumps.
+Rejected Alternatives: Running `dotnet build`; claiming lock safety without checking `FlushModuleStressShader`; treating legacy alias constants as active writers.
+Scalability potential: Source gate now rejects regression to a low-tier compromised-signal flag and enforces the Q8 lane alias.
+Hardware Impact: Compile CPU avoided; runtime allocation delta remains 0 B/frame.
+
+## Decision 92 - Tether Quality Scalar Is Manager-Owned
+
+Problem: `TetherManager` passed legacy `HectonQualityTier` into `TetherInstance.Simulate` and `UpdateVisuals`, while `TetherInstance.ResolveTetherQualityWeight` read `HomeostasisBrain.GlobalQualityWeight` from helper code. That left the hot tether path with a hidden global scalar lookup and a compatibility tier argument.
+Solution: Add `CachedQualityWeight01` to `TetherManager`, pass `_cachedQualityWeight01` through fixed and late-frame calls, store it in `TetherInstance._qualityWeight01`, and make Verlet point count, iteration count, damping, and taut-line visual fake consume the float directly.
+Rejected Alternatives: Keeping `HectonQualityTier` as the hot API, calling `HomeostasisBrain.GlobalQualityWeight` from each tether, or deleting tier-compatible configure overloads used by older call sites.
+Scalability potential: Weak, middle, high, and ultra devices all run one scalar solver/visual route; quality changes capacity and damping continuously without changing simulation identity.
+Hardware Impact: 0 B/frame. Removes repeated hot scalar reads and keeps all state in value fields; no allocation and no registry lookup.
+
+## Decision 93 - Tether Indirect Route Is Capability-Based
+
+Problem: `ShouldUseIndirectTetherRendering(float qualityWeight01)` switched render identity at `Smooth01(qualityWeight01) >= 0.62f`. That is a binary quality route; direct and indirect drawing should not be selected by a quality cliff.
+Solution: Replace the method with `HasIndirectTetherRenderResources()`, gated by cold `SystemInfo.supportsInstancing && SystemInfo.supportsComputeShaders` plus mesh/args buffer presence. Visual density still scales through continuous `visualTier`, crystal density, and silt intensity.
+Rejected Alternatives: Leaving the threshold; forcing indirect on unsupported hardware; allocating a second tier-specific renderer.
+Scalability potential: Weak devices without GPU capability use direct draw by factual support state; capable devices use the same indirect route while scalar visuals determine richness.
+Hardware Impact: 0 B/frame. Existing cold resources reused; no per-frame allocation and no new DataVault lock.
+
+## Decision 94 - Tether Verification Without Build
+
+Problem: The tether pass touched fixed-step simulation and late-frame presentation paths while an external compiler process was active.
+Solution: Run residue scan, hot-method scanner over fixed/late/schedule/sim/visual helpers, direct DataVault write-lock scanner, string/comment-aware brace scan, restricted `git diff --check`, process check, and editor source gates. Do not launch build, MSBuild, Unity tests, JSON reports, or binary dumps.
+Rejected Alternatives: Running `dotnet build`; treating the cold quality cache owner as a hot poll; asserting route safety without checking `UpdateVerletVisualUpload` lock release.
+Scalability potential: Source gates now reject tier-fed tether visuals, direct instance quality polling, and indirect-render quality thresholds.
+Hardware Impact: Compile CPU avoided; runtime allocation delta remains 0 B/frame.
+
+## Decision 95 - World HLOD Impostor Snap Is Not Quality Authority
+
+Problem: `TryBuildChunkImpostorPayload` selected `FlagSurvivalSnap` when `ResolveSmoothGlobalQualityWeight01() <= 0.15f`. That made a presentation route change at one quality cutoff while the HLOD shader already consumes continuous `_HectonGlobalQualityWeight`.
+Solution: Remove the threshold constant and always emit `FlagDitherBlend` for active chunk impostors. Keep the existing 32-byte `OctahedralImpostorInstance` payload and existing shader scalar path; do not grow DTO stride for a visual-only cleanup.
+Rejected Alternatives: Packing a new per-instance scalar into `SizeFlags.w`, toggling both flags, or preserving survival snap for weak devices. The renderer/shader ignore `FlagSurvivalSnap`, and stride changes would risk cross-domain GPU ABI drift.
+Scalability potential: Weak devices still receive impostors and cheap dither; middle, high, and ultra devices get richer continuous view interpolation from `_HectonGlobalQualityWeight` without switching identity at one cutoff.
+Hardware Impact: 0 B/frame and no added buffer upload. Removes one branch from payload assembly; compile CPU avoided because external `dotnet` PID 40836 was active.
+
+## Decision 96 - Fauna SDF Hugging Is Weighted, Not Tier-Gated
+
+Problem: `ResolveSdfPayload` skipped SDF terrain hugging when `SmoothQualityCurve(qualityWeight) <= 0.0001f`. The terrain IK job already consumes `GlobalQualityWeight` continuously for sample mode and iteration budgets; the runtime payload should not add an arbitrary epsilon route cliff.
+Solution: Add `ResolveSdfHuggingWeight(float qualityWeight)` and multiply the published `sdfRange` by that weight. The job keeps the same DTO layout, same SDF snapshot buffer, and same nearest/trilinear adaptive sampling.
+Rejected Alternatives: Adding a new `SdfWeight` field to the job DTO, copying SDF at zero weight, or keeping the epsilon cutoff. A new field would widen the hot job contract; copying at zero weight wastes memory bandwidth; the old cutoff made quality a binary authority.
+Scalability potential: Weak devices retain MapMagic fallback and near-zero SDF influence; middle, high, and ultra devices spend the same path on stronger terrain hugging and trilinear SDF detail.
+Hardware Impact: 0 B/frame and no new NativeArray/GraphicsBuffer. Static effect is a branch threshold removal plus one scalar multiply during payload assembly; build CPU avoided because external `dotnet` PID 40836 was active.
+
+## Decision 97 - Prologue Forced Memory Is Pressure-Owned
+
+Problem: `ReadSurvivalProxyPressurePolicy` calculated continuous survival pressure from `GlobalQualityWeight`, then also set `forcedLowMemory` from `qualityWeight01 <= ForcedMemoryQualityThreshold01`. That created two owners for the same policy and let a direct quality cutoff drive proxy forcing.
+Solution: Remove `ForcedMemoryQualityThreshold01`; keep `survivalPressure01 = 1 - SmoothStep01(qualityWeight01)` as the continuous quality contribution and set `forcedLowMemory` only from the resolved `pressure01 >= ForcedMemoryPressureThreshold01`.
+Rejected Alternatives: Keeping the threshold for readability, or lowering it to zero. Both preserve a separate quality route that is redundant with the pressure scalar.
+Scalability potential: Weak devices still reach high proxy pressure smoothly as quality approaches survival; middle/high/ultra recover continuously through the same pressure curve instead of crossing a hidden boolean cliff.
+Hardware Impact: 0 B/frame. Removes one branch and one constant; no allocation, no DataVault lock, no new dependency lookup.
+
+## Decision 98 - Homeostasis Visual Overkill Flag Has One Owner
+
+Problem: `BuildFlags` stamped `VisualOverkillBudgetOpen` from `GlobalQualityWeight >= VisualOverkillFlagQualityThreshold01` while `ApplyVisualOverkillPolicy` separately owned the actual `SystemBit.VisualOverkill` state with system-health hysteresis. That was state drift.
+Solution: Delete `VisualOverkillFlagQualityThreshold01`; stamp `VisualOverkillBudgetOpen` only after `ApplyDictatorPressurePolicy` resolves the actual target mask and `SystemBit.VisualOverkill` is present.
+Rejected Alternatives: Keeping both routes, or adding a second scalar to the signal. The signal already has a kill-mask route; adding another surface would expand authority without a consumer.
+Scalability potential: Weak devices do not receive a misleading overkill flag from raw quality; high/ultra receive it only when the dictator's hysteresis admits the visual-overkill state.
+Hardware Impact: 0 B/frame. One bit test after existing mask resolution; no managed allocation, no new signal lane, no DataVault lock.
+
+## Decision 99 - Prologue Low-Tier API Is Compatibility Only
+
+Problem: `IPrologueSequenceRuntime` still exposed `IsLowTier`, even though the active director route already consumes `SurvivalProxyPressure01`. The stale name invites future binary-quality coupling.
+Solution: Add `IsSurvivalProxySurfaceActive` and implement legacy `IsLowTier` as an `[Obsolete]` alias to that property. Keep the interface member to avoid a public contract break during a multi-agent batch.
+Rejected Alternatives: Deleting `IsLowTier` immediately, or leaving it undocumented. Deletion risks compile walls in unseen branches; leaving it active preserves the wrong mental model.
+Scalability potential: Weak, middle, high, and ultra devices all consume pressure semantics; the compatibility alias no longer names the preferred route.
+Hardware Impact: 0 B/frame. No caller changed; no allocation, no lock, no build launched.
+
+## Decision 100 - Core Verification Without Build
+
+Problem: Core/prologue policy changed, but the user forbids build spam and source-local checks were sufficient for the touched edits.
+Solution: Run restricted residue scan, hot-method lookup scan, method-level DataVault write-lock scan, restricted `git diff --check`, and compiler process check. Do not launch `dotnet build`, MSBuild, Unity tests, JSON reports, or binary dumps.
+Rejected Alternatives: Running a full build for scalar/bit-route edits; whole-repo heavy AST scan after the earlier broad scan timeout; claiming project-wide lock proof beyond touched methods.
+Scalability potential: Source gates now reject regression to the removed quality thresholds and `_runtime.IsLowTier` active route.
+Hardware Impact: Compile CPU avoided. Process check found no compiler processes after verification; this agent still launched zero builds.
+
+## Decision 101 - Vehicle SubOS RT Format Is Capability-Owned
+
+Problem: `VehicleSubOsCockpitRuntime.ResolveUiRenderTextureFormat(float qualityWeight01)` selected `ARGB32` or `RGB565` from `ResolveCheapVisualWeight`, turning GlobalQualityWeight into render target identity. That is a binary quality fork and can trigger resource churn at a visual scalar boundary.
+Solution: Replace the resolver with `ResolvePanelRenderTextureFormat()`, fed only by `_supportsRgb565RenderTextureCold` cached in `CacheGraphicsCapabilitiesCold`. GlobalQualityWeight now affects RT width/height through `ResolveQualityDimension` only.
+Rejected Alternatives: Always forcing `ARGB32` because it is simple; preserving the old quality cutoff; adding a tier enum. Always-ARGB32 violates low-end VRAM pressure, the cutoff violates scalar quality, and a tier enum reintroduces binary policy.
+Scalability potential: Weak devices use RGB565 when the GPU supports it and smaller continuous RT dimensions; middle/high/ultra increase resolution through the same scalar without changing route ownership.
+Hardware Impact: 0 B/frame. No new allocation or registry lookup; low-end VRAM can stay at 2 bytes/pixel for panel RTs instead of 4 bytes/pixel.
+
+## Decision 102 - Vehicle SubOS External Feed Is Continuous
+
+Problem: External feed release/status/texture selection used `_externalFeedWeight01 <= 0.0001f`, and the weight itself was zero below `ExternalFeedEnableThreshold`. A requested user-facing camera could degrade to static noise solely because quality crossed a threshold, and active external RT dimensions were not revalidated when quality changed.
+Solution: Replace the threshold with `MinExternalFeedBlendWeight` and a smooth lerp to 1.0. Requested external feed now acquires the camera RT independent of quality, while `EnsureExternalRenderTextureCurrent` verifies width, height, format, and target binding after quality changes.
+Rejected Alternatives: Keeping static-only external feed below the threshold; always rendering full external resolution; leaving external RT resize to lever toggles. The first preserves a binary quality route, the second wastes weak hardware, and the third leaves stale resource state.
+Scalability potential: Weak devices render the external feed at minimum dimensions and RGB565 capability with low blend; middle/high/ultra scale resolution and blend continuously without a route cliff.
+Hardware Impact: 0 B/frame managed allocation. Resource mutation is restricted to the existing late-frame/presentation resource path; no new DataVault lock and no hot registry lookup.
+
+## Decision 103 - Vehicle SubOS Verification Without Build
+
+Problem: The SubOS patch touched diegetic UI resource policy while an external `dotnet` process was active and build spam is forbidden.
+Solution: Run targeted method-body scans for format and external-feed bodies, hot lookup scan for registry/component violations, restricted `git diff --check`, and process check. Add source gates to reject regression.
+Rejected Alternatives: Running `dotnet build`; relying on chat proof; scanning the whole repo with a CPU-heavy parser while another compiler process was active.
+Scalability potential: Source gates now lock the SubOS resource policy to capability/factual state plus continuous quality dimensions.
+Hardware Impact: Compile CPU avoided. External `dotnet` PID 4592 was active; this agent launched no build, MSBuild, Unity runner, JSON report, or binary dump.
+
+## Decision 104 - Diegetic Panel Format Is Hardware Policy
+
+Problem: `DiegeticPanelController.ResolveColorGraphicsFormat` used `_isMx350Tier && _qualityWeight01 < 0.72f` to switch between `B5G6R5` and `R8G8B8A8`. That made GlobalQualityWeight change render target identity and contradicted the serialized MX350 policy tooltip.
+Solution: Make `_isMx350Tier` the sole format owner: MX350 policy uses `GraphicsFormat.B5G6R5_UNormPack16`, non-MX350 uses `GraphicsFormat.R8G8B8A8_UNorm`. RT resolution remains the continuous quality/distance route.
+Rejected Alternatives: Keeping the 0.72 threshold; forcing RGB565 on all hardware; adding a new tier enum. The first is a binary quality fork, the second suppresses high-end panel fidelity, and the third adds policy surface without a new fact owner.
+Scalability potential: Weak devices keep stable low-VRAM panel format while middle/high/ultra retain RGBA8 and scale visual richness through resolution and phosphor effect.
+Hardware Impact: 0 B/frame. Prevents format churn at quality changes; no allocation, no new lock, no registry lookup.
+
+## Decision 105 - Diegetic Panel Verification Without Build
+
+Problem: Panel format policy changed, but only a single resolver and source gate were touched while external compiler load existed.
+Solution: Run method-body gate for `ResolveColorGraphicsFormat`, check `TryGetComponent` matches are confined to cold serialized-reference resolution, run direct lock scan and restricted `git diff --check`. Do not build.
+Rejected Alternatives: Running `dotnet build`; claiming all `TryGetComponent` matches are hot violations without method context; sweeping unrelated UI refactors.
+Scalability potential: Source gate rejects reintroducing `_qualityWeight01 < 0.72f` in the format resolver.
+Hardware Impact: Compile CPU avoided; runtime allocation delta remains 0 B/frame.
+
+## Decision 106 - Light Shaft Quality Pressure Is Q8 Telemetry, Not A Flag
+
+Problem: `ScreenSpaceLightShaftRuntime.LateFrameTick` encoded `_qualityPressure01 > 0.001f` into `TelemetryFlagQualityPressure`. That converted a continuous quality pressure scalar into a binary blackbox bit and mixed resource/quality pressure with factual fault flags.
+Solution: Remove `TelemetryFlagQualityPressure`; reuse the explicit-layout padding byte at offset 33 as `QualityPressureQ8`; write it from `RecordTelemetry` through `EncodeQualityPressureQ8`. Keep `TelemetryFlagLoadShed`, `TelemetryFlagNoCamera`, and `TelemetryFlagNaN` as factual runtime flags.
+Rejected Alternatives: Keeping bit 0 reserved as a quality marker; growing the 64-byte telemetry struct; writing a managed diagnostic sidecar. Bit 0 was a quality cliff, stride growth risks native ABI drift, and sidecars violate the no-report mandate.
+Scalability potential: Weak devices still report high pressure as a scalar; middle, high, and ultra report lower pressure without changing telemetry schema or fault semantics. Shader quality already consumes `_qualityPressure01` continuously.
+Hardware Impact: 0 B/frame. One existing byte is reused; no allocation, no new DataVault lock, no registry lookup, no build launched.
+
+## Decision 107 - Light Shaft Verification Without Build
+
+Problem: The light-shaft patch touched late-frame presentation and blackbox serialization while compilation throttling remains active.
+Solution: Run source method-body gates for `LateFrameTick`, `RecordTelemetry`, `DumpBlackbox`, and `EncodeQualityPressureQ8`; scan touched hot methods for registry/component lookups; inspect mutation guard release paths; run restricted `git diff --check`; check compiler processes. Do not launch build, tests, JSON reports, or binary dumps.
+Rejected Alternatives: Running `dotnet build`; dumping sample telemetry; asserting lock safety without checking the handed-off guard release.
+Scalability potential: Source gate now rejects regression to a binary light-shaft quality pressure flag and requires continuous Q8 blackbox state.
+Hardware Impact: Compile CPU avoided. Process check found no compiler process, but source-local verification was sufficient for the padding-byte telemetry change.
+
+## Decision 108 - Wrist HUD Math LOD Pressure Is State Scalar
+
+Problem: `WristHologramHudRuntime.WristHudBuildJob.Execute` set `StateFlagSurvivalMath` when `mathLodPressure01 >= 0.75f`. That made continuous math-LOD pressure a binary state/telemetry flag inside a high-frequency UI job.
+Solution: Remove `StateFlagSurvivalMath`; reuse the explicit-layout padding at offset 236 as `MathLodPressureQ8`; encode pressure through `EncodeUnitWeightQ8` in both `SeedInitialState` and Burst `Execute`. Keep factual flags for culling, PDA, NaN, CSV, legacy, and GPU faults.
+Rejected Alternatives: Leaving the flag for blackbox readability; adding a new DTO field beyond the 248-byte state stride; pushing a tier enum. The flag is a quality cliff, stride growth risks GPU/native contract drift, and a tier enum violates scalar quality policy.
+Scalability potential: Weak devices publish high math pressure as a scalar while reducing visual budget continuously; middle, high, and ultra devices report lower pressure and buy richer glyph/radar presentation without changing state identity.
+Hardware Impact: 0 B/frame. One existing int-sized padding slot is reused; no allocation, no registry lookup, no DataVault lock in `Execute`.
+
+## Decision 109 - Wrist HUD Verification Without Build
+
+Problem: The Wrist patch touched a Burst job and an explicit-layout UI state DTO; a full build is still not justified under compilation throttling.
+Solution: Run method-body gates for `Execute`, `SeedInitialState`, and `EncodeUnitWeightQ8`; run explicit-layout string gate for `Size = 248` and offset 236; scan touched hot methods for registry/component lookups; prove `SeedInitialState` releases its single write lock in `finally`; run restricted `git diff --check` and compiler process check.
+Rejected Alternatives: Launching `dotnet build`; attempting runtime marshal reflection from PowerShell against Unity C# types; changing telemetry entry stride.
+Scalability potential: Source gate now rejects reintroducing the `0.75` survival-math threshold and requires the scalar route.
+Hardware Impact: Compile CPU avoided. One incorrect PowerShell marshal probe failed without disk mutation; the corrected static layout gate passed.
+
+## Decision 110 - Biomass Impact Drain Uses One Short Mutation Guard
+
+Problem: `EcosystemDirector.ApplyPendingBiomassImpacts()` and `ClearBiomassRuntimeState()` could hold a biomass sector/macro mutation guard and then acquire `_pendingBiomassImpacts` as a separate DataVault write lock. That violates the lock-flattening rule and creates fail-closed behavior on the second ownership attempt.
+Solution: Add `BiomassImpactDrainMutationGuardMask`, composed from the existing macro/biomass guard plus `EcosystemPendingBiomassImpacts`. The pending drain and biomass clear paths now acquire that one short guard, resolve the pending queue directly under the guard, and release in `finally`.
+Rejected Alternatives: Adding `EcosystemPendingBiomassImpacts` to long-lived `SectorSolveMutationGuardMask` or `MacroSwarmTravelMutationGuardMask` was rejected because queued biomass events must remain writable while solve/travel jobs are scheduled. Keeping a pending write lock under the macro guard was rejected because `GlobalDataVault` intentionally fails closed on nested writer ownership.
+Scalability potential: Weak devices keep the queued/deferred biomass fake stable under heavy jobs; middle/high/ultra devices keep the same queue semantics while avoiding lock-order drift. Low/Middle/High/Ultra route: queue during active jobs, drain through one owner guard after jobs settle, no fidelity fork.
+Hardware Impact: 0 B/frame. No new allocation, no new job, no registry lookup. Static value is removal of one nested DataVault ownership attempt in the drain/clear paths.
+
+## Decision 111 - Pending Biomass Drain Runs After Sector Guard Release
+
+Problem: `CompleteScheduledSolve()` drained pending biomass impacts before releasing `SectorSolveMutationGuardMask`. If the pending queue were folded into the sector guard, runtime event queue writes would be blocked during scheduled jobs; if left separate, the drain stacked ownership.
+Solution: Split completion into two phases: swap sector/biomass front/back views and mark `_solveScheduled = false` inside the sector guard, release the sector guard in `finally`, then call `ApplyPendingBiomassImpacts()` and publish biomass telemetry/starvation state.
+Rejected Alternatives: Draining before unlock; delaying drain to another frame; broad DataVault changes. Before-unlock stacks/widens locks, delayed drain changes gameplay/event timing, and DataVault core edits are unnecessary for a local route bug.
+Scalability potential: Weak devices can queue biomass impacts while long solves are active and drain deterministically once the job has settled. Middle/high/ultra devices keep the same ordering with no extra route or DTO changes.
+Hardware Impact: 0 B/frame. The phase split is scalar state only; `git diff --check` passed and an external `dotnet build .\Hecton8.slnx` was already running, so no build was launched by this agent.
+
+## Decision 112 - UberNoir Stress Shed Is A Scalar, Not A Latch Bit
+
+Problem: `HectonUberNoirRuntimeBridge` used a latched `bool stressShed` and `if (stressShed)` to clamp high-cost presentation. That made a continuous stress/quality route depend on a binary phase latch in LateFrame.
+Solution: Replace the latch with `_stressShedWeight01`, a smooth target with bounded per-frame release. High-cost and visual-overkill weights now damp through `math.lerp` using that scalar. The feature mask now represents route availability; telemetry floats carry actual intensity.
+Rejected Alternatives: Keeping the latch for hysteresis, or encoding stress shed as a feature bit. The latch was the branch route being removed; the bit was redundant with `SystemStress01` and `HighCostAllowed01`.
+Scalability potential: Weak devices shed presentation gradually under stress; middle/high/ultra keep the same shader route and scale extra detail through floats rather than feature-bit cliffs.
+Hardware Impact: 0 B/frame. No allocation, no registry lookup, no new DataVault lock; one LateFrame branch route removed.
+
+## Decision 113 - Shader Dispatcher Fallback Overkill Has No 0.78 Gate
+
+Problem: `GlobalShaderDispatcher.ResolveResolutionState()` generated fallback visual overkill with `(quality - 0.78)`, producing zero overkill across most of the scalar range when no DRS state was available.
+Solution: Add `ResolveVisualOverkillWeight01(float)` with cubic-biased continuous scaling from 0 to 1 and use it for both resolution-scaler fallback and no-scaler fallback.
+Rejected Alternatives: Keeping the high threshold or copying DRS state code into the dispatcher. The first is a quality cliff; the second duplicates policy ownership.
+Scalability potential: Weak devices receive near-zero extra detail without a branch; middle tiers can receive small visual enrichment; high/ultra devices reach visual overkill smoothly.
+Hardware Impact: 0 B/frame. Scalar math only; no CBuffer, DTO, or lock change.
+
+## Decision 114 - Content Feature Mask Is Route Availability
+
+Problem: `ContentTieredGroupPolicy.ResolveVisualFeatureMaskForWeight` set five feature bits through `visualWeight01 >=` thresholds. That made public content budget metadata jump at fixed quality values.
+Solution: Keep the mask as stable route availability and use the previously reserved bytes in `ContentVisualFeatureBudget` for Q8 weights: visual feature, POM, silt wake, hull dents, and salt crystals. Existing capacity fields remain continuous.
+Rejected Alternatives: Growing the DTO, keeping threshold bits, or removing `FeatureMask`. DTO growth risks native layout drift; threshold bits preserve cliffs; removing the mask breaks public API callers.
+Scalability potential: Weak devices see routes present but weights/capacities near minimum; middle/high/ultra scale feature intensity and capacity continuously.
+Hardware Impact: 0 B/frame. The 16-byte layout is preserved; no managed allocation, no new asset load, no hot registry lookup.
+
+## Decision 115 - Rendering/Content Verification Without Build
+
+Problem: The patch touched rendering/content policy while an external `dotnet` process was active, and compilation throttling forbids build spam.
+Solution: Run targeted residue scans, method-body hot lookup scans, and restricted `git diff --check`; add editor source gates for the removed overkill/feature thresholds and stress latch route. Do not run build or tests.
+Rejected Alternatives: Launching `dotnet build`; running broad CPU-heavy parsers; claiming correctness without source gates.
+Scalability potential: Regression gates now reject reintroducing the 0.78 overkill cliff, `if (stressShed)`, and content `visualWeight01 >=` feature thresholds.
+Hardware Impact: Compile CPU avoided. Process check observed external `dotnet` PID 53404; this agent launched no build, MSBuild, Unity runner, JSON report, or binary dump.
+
+## Decision 116 - UberNoir Layout Gate Follows Runtime Owner
+
+Problem: `DrsContractsEditTests` still asserted a 48-byte `UberNoirShaderTelemetryEntry`, while the runtime source declares and uses a 64-byte explicit-layout entry with fields through offset 44 plus padding through 63.
+Solution: Update the editor proof artifact to assert 64 bytes. Runtime source and offsets are unchanged.
+Rejected Alternatives: Shrinking the runtime telemetry entry; ignoring a known stale layout gate. Shrinking would remove existing telemetry fields/padding and risk ABI drift; ignoring it leaves a deterministic editor-test failure.
+Scalability potential: Stable 64-byte telemetry keeps scalar quality/high-cost/overkill proof data available across weak, middle, high, and ultra devices without changing runtime behavior.
+Hardware Impact: Editor-only proof fix. Runtime allocation delta is 0 B/frame; no build, MSBuild, Unity runner, JSON report, or binary dump was launched.
+
+## Decision 117 - DRS Feature Flags Are Route Availability
+
+Problem: `ThermalDynamicResolutionAdapter.ResolveVisualFeatureFlags` still converted six continuous visual feature weights into binary bits through `weights > VisualFeatureFlagEpsilon`. The shader already receives `_H8VisualFeatureWeights0/1`, so the flags were redundant cliff state.
+Solution: Replace per-weight bit assembly with a stable `VisualFeatureRouteMask`. `_H8VisualFeatureFlags` now means the shader route exists; `_H8VisualFeatureWeights0/1` remain the only authority for visual intensity.
+Rejected Alternatives: Keeping epsilon presence bits, removing the mask entirely, or widening shader payload. Presence bits preserve binary quality identity; removing the mask can break shader/API route checks; widening payload has no value because the weight vectors already exist.
+Scalability potential: Weak devices keep all routes available at near-zero weight; middle, high, and ultra devices ramp salt, silt, dents, POM, subsurface, and raymarched fog continuously.
+Hardware Impact: 0 B/frame. Removes six threshold compares and no allocation, DataVault lock, registry lookup, or DTO stride change.
+
+## Decision 118 - UberPost Visual Overkill Uses A Response Curve
+
+Problem: Reconstruction overkill used `Smooth01((quality01 - threshold) / (1 - threshold))`, leaving the visual-overkill contribution at zero until quality crossed a serialized threshold.
+Solution: Rename the serialized scalar to `visualOverkillResponse` with `FormerlySerializedAs("visualOverkillThreshold")` and resolve compatibility overkill through `ResolveCompatibilityVisualOverkillWeight01`, a cubic quality response scaled by a continuous response factor.
+Rejected Alternatives: Keeping the threshold for inspector familiarity, deleting the serialized field, or changing shader CBuffer layout. The first preserves the cliff, the second loses existing project tuning, and the third is unnecessary.
+Scalability potential: Weak devices get a low but nonzero smooth response; middle devices can buy light reconstruction polish; high/ultra devices reach overkill without a route flip.
+Hardware Impact: 0 B/frame. Scalar math only; no allocation, no new lock, no hot lookup, and old serialized data migrates.
+
+## Decision 119 - Active Sonar Quality Is Q8 Telemetry
+
+Problem: `WriteActiveSonarGeoTelemetry` stamped `Flags = 1` when `ResolveActiveSonarGeoQualityWeight() <= 0.15f`. That made the blackbox encode a binary hardware-quality state instead of the actual scalar that drove shader globals.
+Solution: Reuse explicit-layout byte offset 28 as `QualityWeightQ8`, serialize it at byte 28 in dumps, and keep `Flags` as factual status with `0u` for the current healthy path.
+Rejected Alternatives: Growing `ActiveSonarGeoTelemetryEntry`, retaining the flag as compatibility, or writing an external report. Growing risks native layout drift; the flag is the violation; external reports are forbidden and unnecessary.
+Scalability potential: Weak devices report low active-sonar quality as a byte, middle/high/ultra report higher fidelity continuously, and analysis can reconstruct the gradient instead of one cutoff.
+Hardware Impact: 0 B/frame. The 64-byte ring entry remains unchanged; write lock remains a single DataVault lock released in `finally`.
+
+## Decision 120 - DRS/Visor Verification Without Build
+
+Problem: The patch touched presentation and telemetry code, but the user forbids build spam and the changes are source-local scalar/offset edits.
+Solution: Run targeted residue scans for removed threshold patterns, hot lookup scan with method context, active-sonar lock-scope inspection, restricted `git diff --check`, and compiler-process check. Add source gates to prevent regression.
+Rejected Alternatives: Launching `dotnet build`; generating JSON/binary proof dumps; relying on verbal proof without source gates.
+Scalability potential: Regression gates now enforce route-availability masks, continuous overkill response, and Q8 active-sonar quality across weak, middle, high, and ultra device policy.
+Hardware Impact: Compile CPU avoided. Process check found no compiler process; this agent still launched no build, MSBuild, Unity runner, JSON report, or binary dump.
+
+## Decision 121 - Compass Visual Overkill Cannot Mutate Navigation Truth
+
+Problem: `DiegeticGyroCompassRuntime.ScheduleDrift` converted visual-overkill readiness into `FlagIndirectDial`, and `GyroDriftJob.ResolveNoiseValue` used that flag to add another triangle-noise octave to `CurrentHeadingDegrees`. That made global quality/presentation capability affect the compass authority path and exported snapshot flags.
+Solution: Remove `FlagIndirectDial` entirely from state writes and job noise. Keep authority drift deterministic from power, anomaly, calibration, and cadence only. Reintroduce the extra richness as `ResolveVisualDialHeading`, a triangle-wave presentation wobble computed inside `ApplyPresentation` after the job completes.
+Rejected Alternatives: Passing `VisualOverkillWeight01` into `GyroDriftJob`, keeping the old bool flag as telemetry, or expanding `CompassStateDTO`. The first still changes gameplay truth by quality, the second preserves the violation, and the third breaks native layout without need.
+Scalability potential: Weak devices retain cheap deterministic heading; middle/high/ultra get extra dial motion as a visual fake in LateFrame only, scaled by one continuous weight.
+Hardware Impact: 0 B/frame. Authority job loses one flag branch and one optional triangle octave; LateFrame adds scalar triangle math only when presentation runs.
+
+## Decision 122 - Compass Indirect Dial Is A Route, Not A Quality Fork
+
+Problem: `ShouldDrawIndirectDial` and `EnsureIndirectBuffersCold` gated indirect rendering and GPU buffer lifetime on `_visualOverkillWeight01 > 0.001f` and a stress threshold, while the serialized field was named `enableIndirectHighTier`.
+Solution: Rename the field to `enableIndirectVisualRoute` with `FormerlySerializedAs("enableIndirectHighTier")`; make `ShouldDrawIndirectDial` depend only on authored enable, buffer readiness, mesh/material, and cold graphics capability. Visual amount comes from `ResolveVisualOverkillWeight01` and continuous stress headroom.
+Rejected Alternatives: Keeping high-tier names, retaining quality/stress gates, or forcing direct mesh presentation for all tiers. Names encode the wrong policy, gates create binary route churn, and forcing direct presentation throws away a valid capability route.
+Scalability potential: Weak devices without capability stay on direct transform rotation; capable low/middle devices can still render the dial route while overkill effects are near-minimal; high/ultra devices spend the scalar budget on wobble, chromatic and particle density.
+Hardware Impact: 0 B/frame. No new allocation in hot paths; buffer allocation remains cold and guarded by existing resource checks.
+
+## Decision 123 - Compass Regression Proof Is Source-Gated
+
+Problem: The compass violation crossed simulation, presentation, and tests, so a verbal proof would not prevent the old flag from returning.
+Solution: Add `DiegeticGyroCompass_VisualOverkillStaysPresentationOnlyAndContinuous` to the 1427 editor source gates. The gate checks migration, scalar response, LateFrame visual path, capability route body, and absence of the old bool flag/methods in schedule and noise bodies.
+Rejected Alternatives: Running `dotnet build` while an external `dotnet` process was active, generating JSON reports, or widening native DTO tests. Build spam violates throttling, JSON reports are rejected, and DTO layout did not change.
+Scalability potential: The source gate protects the weak/middle/high/ultra scalar contract from later binary quality patches.
+Hardware Impact: Editor-only. Runtime cost is 0 B/frame; verification CPU avoided by static scans and restricted diff checks.
+
+## Decision 124 - DRS Upscaler Identity Is Not Quality Authority
+
+Problem: `ThermalDynamicResolutionAdapter.ResolveUpscalerHash(float qualityWeight01, float renderScale)` selected the upscaler route through `ResolveFsrUpscalerEligibility01(qualityWeight01)`. That made upscaler identity a binary quality fork, while render scale and continuous visual weights already carry the fidelity budget.
+Solution: Change `ResolveUpscalerHash` to accept only `renderScale`. Native scale returns `UpscalerNativeHash`; scaled rendering uses the capability-cached bilateral DRS route or BilateralTAA fallback. Quality still controls scale, visual budget, sharpening, and overkill continuously, but not route identity.
+Rejected Alternatives: Keeping the FSR eligibility curve, converting it to another continuous threshold, or forcing BilateralTAA on all devices. The first two still encode a route fork; the third wastes first-party compute capability on capable desktop GPUs.
+Scalability potential: Weak/mobile devices stay on cheap BilateralTAA when compute route is unavailable; middle/high/ultra devices use the first-party BDRS route whenever cold capability proves it is valid, with intensity governed by continuous scale and visual weights.
+Hardware Impact: 0 B/frame. Removes a quality eligibility branch family from hash resolution; no allocation, no DTO/CBuffer layout change, no DataVault access, and no hot registry lookup.
+
+## Decision 125 - Misleading FSR Symbols Removed
+
+Problem: The adapter used FSR-named symbols (`UpscalerFsrTaaHash`, `_coldFsrCapabilityAllowed`, `_fsrUpscalerAllowed`) for a local route hash that maps to the project's bilateral DRS path. That naming invited future integration of a vendor dependency and hid the actual ownership route.
+Solution: Rename the route to `UpscalerBilateralDrsHash`, `_coldBilateralDrsRouteAllowed`, and `_bilateralDrsRouteAllowed`. Keep the hash value aligned with the first-party BDRS route and keep capability probing cold through `CacheGraphicsCapabilitySnapshotCold`.
+Rejected Alternatives: Adding a direct dependency on the BDRS constants assembly, keeping FSR names for compatibility, or adding a new DTO field. Direct dependency risks assembly cycles, FSR names are false architecture, and DTO growth is unnecessary.
+Scalability potential: Low-tier fallback remains predictable; middle/high/ultra devices can use the stronger route without introducing a vendor-specific route contract.
+Hardware Impact: 0 B/frame. Route flag is cached; no new allocation, no new process, and no build was launched.
+
+## Decision 126 - DRS Upscaler Verification Stayed Static
+
+Problem: The change touches render policy, but compilation throttling forbids build spam and external compiler state may change independently.
+Solution: Add a source gate that rejects the old FSR eligibility symbols and requires render-scale-only hash selection. Run runtime residue scans, phase scans, hot lookup scans, DataVault lock scans, restricted `git diff --check`, and compiler-process inspection.
+Rejected Alternatives: Running `dotnet build`, generating a JSON report, or trusting chat-level claims. Build spam violates the batch protocol; JSON reports are rejected; claims without source gates do not survive later agent edits.
+Scalability potential: The regression gate protects the weak/middle/high/ultra route split: capability decides route, continuous weights decide fidelity.
+Hardware Impact: Compile CPU avoided. Static verification found no runtime residue of the old FSR quality fork; this agent launched no build, MSBuild, Unity runner, JSON report, or binary dump.
+
+## Decision 127 - Bilateral DRS Telemetry Belongs To PostSimulation
+
+Problem: `HectonBilateralDrsUpscalerRuntime.ScheduleOwnerSimulation` calculated pending upscaler params and then immediately wrote the telemetry ring/cursor from the Simulation bridge. It held no nested write lock, but the phase contract says blackbox telemetry belongs after simulation fences, not inside simulation work.
+Solution: Store the produced `UpscalerTelemetryEntry` in a private value-type `_pendingTelemetryEntry` and set `_pendingTelemetryEntryValid`. `RunOwnerPostSimulation` now records telemetry first and then publishes pending params. `RunOwnerVisualSync` remains the only GPU upload phase.
+Rejected Alternatives: Keeping telemetry writes in Simulation, pushing telemetry to VisualSync, or writing an external report. Simulation write blurs phase ownership; VisualSync is presentation upload, not blackbox ownership; external reports are rejected.
+Scalability potential: Weak devices avoid mixed-phase stalls and keep telemetry as a sequential PostSimulation write; middle/high/ultra devices keep the same parameter quality while preserving clean simulation-to-presentation handoff.
+Hardware Impact: 0 B/frame. The transfer is one unmanaged struct field copy. No allocation, no new DataVault lock, no registry lookup, and no GPU upload change.
+
+## Decision 128 - Bilateral DRS Fail-Closed Clears Pending Telemetry
+
+Problem: Deferring telemetry creates a one-frame field that could become stale if the runtime fails closed or the vault is replaced before PostSimulation drains it.
+Solution: `FailClosedRuntimeRoute` and `ResetVaultSeedState` clear `_pendingTelemetryEntryValid` and reset `_pendingTelemetryEntry` to default. Existing shutdown calls `ResetVaultSeedState`, so the cleanup path remains centralized.
+Rejected Alternatives: Clearing only `_simulationPendingPublish`, clearing in `ShutdownServiceState` only, or leaving the field live until overwritten. Those options let stale telemetry survive route failure, vault replacement, or partial shutdown.
+Scalability potential: All tiers keep deterministic blackbox ownership with no stale frame bleed across route resets.
+Hardware Impact: 0 B/frame. Two scalar assignments on rare fail/reset paths.
+
+## Decision 129 - Bilateral DRS Phase Proof Is Source-Gated
+
+Problem: Phase hygiene can regress by moving `RecordUpscalerTelemetryOneLock` back into `ScheduleOwnerSimulation`, and chat-level claims are not proof.
+Solution: Add `BilateralDrsUpscaler_TelemetryWritesAfterSimulation` to the 1427 source gates. The gate checks pending telemetry fields, Simulation method absence of the writer, PostSimulation record-before-publish ordering, VisualSync GPU upload, and fail/reset cleanup.
+Rejected Alternatives: Running `dotnet build`, generating JSON proof, or relying on diff review only. Build is throttled; JSON proof is rejected; diff review is not persistent.
+Scalability potential: The gate protects low/middle/high/ultra phase split: Simulation calculates, PostSimulation records/publishes, VisualSync uploads.
+Hardware Impact: Editor-only. Static verification passed; no build, MSBuild, Unity runner, JSON report, or binary dump was launched.

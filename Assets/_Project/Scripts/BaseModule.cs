@@ -717,6 +717,7 @@ namespace Hecton8.Gameplay
         private IObjectPoolService _cachedObjectPool;
         private IPlayerRuntimeContext _cachedPlayerRuntime;
         private IPhysicsService _cachedPhysicsService;
+        private ConstructionManager _constructionManager;
         private bool _empListenerRegistered;
         private PowerNode _powerNode;
         private HectonVoxelVolume _voxelVolume;
@@ -853,6 +854,35 @@ namespace Hecton8.Gameplay
         public int RemainingRepairCycles => _integrityComponent.ResolveRemainingRepairCycles();
         /// <summary>Optional immutable template that owns abandoned-module integrity authoring and VFX sockets.</summary>
         public BaseModuleTemplate ModuleTemplate => moduleTemplate;
+
+        internal int CachedModuleHashId
+        {
+            get
+            {
+                if (_moduleMarker != null && _moduleMarker.Data != null)
+                    return _moduleMarker.Data.ModuleHashId;
+
+                return moduleTemplate != null
+                    ? Hecton.Localization.LocHash.Compute(moduleTemplate.PersistentId)
+                    : 0;
+            }
+        }
+
+        internal string CachedModuleDisplayName
+        {
+            get
+            {
+                if (_moduleMarker != null &&
+                    _moduleMarker.Data != null &&
+                    !string.IsNullOrWhiteSpace(_moduleMarker.Data.moduleName))
+                {
+                    return _moduleMarker.Data.moduleName;
+                }
+
+                return null;
+            }
+        }
+
         /// <summary>Discrete integrity state derived from flood, breach, and abandonment thresholds.</summary>
         public BaseModuleIntegrityState IntegrityState
         {
@@ -901,13 +931,7 @@ namespace Hecton8.Gameplay
                 if (!HasOperationalPower)
                     return 0f;
 
-                if (_powerNode == null)
-                    TryGetComponent(out _powerNode);
-
-                if (_powerNode != null && _powerNode.Grid != null)
-                    return Mathf.Clamp01(_powerNode.Grid.SupplyRatio);
-
-                return _hasPower ? 1f : 0f;
+                return CachedPowerSupplyRatio;
             }
         }
         /// <summary>True when CO2 saturation has reached the life-support lockout threshold.</summary>
@@ -1259,7 +1283,7 @@ namespace Hecton8.Gameplay
             if (!_isUnmoored || fixedDeltaTime <= 0f)
                 return;
 
-            if (!EnsureUnmooredRigidbody())
+            if (_moduleRigidbody == null)
                 return;
 
             ApplyQueuedHydroStructuralLoad(fixedDeltaTime);
@@ -1471,15 +1495,10 @@ namespace Hecton8.Gameplay
 
             HectonSurvivalSystem survival = playerRuntime.SurvivalSystem;
             if (survival == null)
-            {
-                playerTransform ??= playerRuntime.PlayerTransform;
-                if (playerTransform != null)
-                    TryTrackPlayer(playerTransform, true);
                 return;
-            }
 
             playerTransform ??= playerRuntime.PlayerTransform;
-            TrackPlayer(survival, playerTransform, playerRuntime.PlayerCollider, true);
+            TrackPlayerFromRuntime(playerRuntime, survival, playerTransform, true);
         }
 
         private void HandleInteriorTriggerEnterLegacyDisabled(Collider other)
@@ -2861,7 +2880,7 @@ namespace Hecton8.Gameplay
                 dt,
                 !_integrityComponent.IsFlooded && _integrityComponent.FailureMode != BaseModuleFailureMode.Fire,
                 scrubberOperational,
-                PowerSupplyRatio,
+                CachedPowerSupplyRatio,
                 _trackedPlayerSurvival);
 
             HandleLifeSupportSignals(signals);
@@ -2881,7 +2900,7 @@ namespace Hecton8.Gameplay
                 0f,
                 !_integrityComponent.IsFlooded && _integrityComponent.FailureMode != BaseModuleFailureMode.Fire,
                 scrubberOperational,
-                PowerSupplyRatio,
+                CachedPowerSupplyRatio,
                 _trackedPlayerSurvival));
         }
 
@@ -3483,8 +3502,6 @@ namespace Hecton8.Gameplay
                 return false;
 
             TriggerCascadeFailure(BaseModuleFailureMode.ShortCircuit);
-            if (_powerNode == null)
-                TryGetComponent(out _powerNode);
 
             if (_powerNode != null)
                 _powerNode.SetShortCircuited(true);
@@ -3899,13 +3916,16 @@ namespace Hecton8.Gameplay
             if (leakVfx == null)
                 ResolveLeakVfxReference();
 
+            if (parasiteSporeVfx == null)
+                ResolveParasiteSporeVfxReference();
+
             if (_habitatIntegrityManager == null)
             {
                 if (!TryGetComponent(out _habitatIntegrityManager))
                     _habitatIntegrityManager = gameObject.AddComponent<HabitatIntegrityManager>();
             }
 
-            if (_submarineAtmosphereSystem == null)
+            if (_submarineAtmosphereSystem == null || !_submarineAtmosphereSystem.IsAtmosphereRuntimeActive)
                 _submarineAtmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomMutationSink>(this);
 
             if (_powerNode == null)
@@ -3944,7 +3964,7 @@ namespace Hecton8.Gameplay
 
         private bool EnsureUnmooredRigidbody()
         {
-            if (_moduleRigidbody == null && !TryGetComponent(out _moduleRigidbody))
+            if (_moduleRigidbody == null)
                 _moduleRigidbody = gameObject.AddComponent<Rigidbody>();
 
             CaptureModuleRigidbodyDefaults();
@@ -3956,7 +3976,7 @@ namespace Hecton8.Gameplay
             if (_moduleBodyDefaultsCaptured)
                 return;
 
-            if (_moduleRigidbody == null && !TryGetComponent(out _moduleRigidbody))
+            if (_moduleRigidbody == null)
                 return;
 
             _defaultBodyMass = _moduleRigidbody.mass;
@@ -4383,7 +4403,7 @@ namespace Hecton8.Gameplay
 
         private void NotifyEmergencyLockdownStateChanged()
         {
-            ConstructionManager manager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
+            ConstructionManager manager = _constructionManager;
             if (manager != null)
                 manager.NotifyModuleEmergencyStateChanged(this);
         }
@@ -4424,6 +4444,23 @@ namespace Hecton8.Gameplay
             _trackedPlayerSurvival = resolvedSurvival;
             _trackedPlayerMovement = ResolvePlayerMovementEnvironmentSink(playerCollider, playerTransform);
             _trackedPlayerHypoxiaPresentation = ResolvePlayerHypoxiaPresentationSink(playerCollider, playerTransform);
+            if (notifyEnter)
+            {
+                ModuleStatusEvents.TryNotifyEnter(this);
+                PublishPlayerBaseTransitionSignal(true);
+            }
+        }
+
+        private void TrackPlayerFromRuntime(
+            IPlayerRuntimeContext playerRuntime,
+            HectonSurvivalSystem resolvedSurvival,
+            Transform playerTransform,
+            bool notifyEnter)
+        {
+            _trackedPlayerSurvival = resolvedSurvival;
+            HectonPlayerMovement movement = playerRuntime != null ? playerRuntime.PlayerMovement : null;
+            _trackedPlayerMovement = movement;
+            _trackedPlayerHypoxiaPresentation = movement;
             if (notifyEnter)
             {
                 ModuleStatusEvents.TryNotifyEnter(this);
@@ -4652,7 +4689,7 @@ namespace Hecton8.Gameplay
             }
 
             TryRegisterFixedTick();
-            ConstructionManager manager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
+            ConstructionManager manager = _constructionManager;
             if (manager != null)
                 manager.NotifyModuleDetachedAsDebris(this);
             BaseDegradationSystem.SynchronizeIntegrityState(this);
@@ -4899,6 +4936,7 @@ namespace Hecton8.Gameplay
             _cachedObjectPool = Hecton8.Core.GlobalRegistry.ObjectPoolService;
             _cachedPlayerRuntime = Hecton8.Core.GlobalRegistry.Player;
             _cachedPhysicsService = Hecton8.Core.GlobalRegistry.Physics;
+            _constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
         }
 
         private void ClearCachedRegistryServices()
@@ -4910,6 +4948,7 @@ namespace Hecton8.Gameplay
             _cachedObjectPool = null;
             _cachedPlayerRuntime = null;
             _cachedPhysicsService = null;
+            _constructionManager = null;
         }
 
         private void TryRegisterHotSwapListener()
@@ -4984,6 +5023,10 @@ namespace Hecton8.Gameplay
                 _cachedPhysicsService = currentService as IPhysicsService;
                 if (isActiveAndEnabled)
                     TryRegisterElectromagneticPulseListener();
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.Logistics)
+            {
+                _constructionManager = currentService as ConstructionManager;
             }
         }
 
@@ -5153,9 +5196,6 @@ namespace Hecton8.Gameplay
         private void FlushParasiteSporeVfxState()
         {
             if (parasiteSporeVfx == null)
-                ResolveParasiteSporeVfxReference();
-
-            if (parasiteSporeVfx == null)
                 return;
 
             if (!_pendingParasiteSporeVfxDirty)
@@ -5240,9 +5280,6 @@ namespace Hecton8.Gameplay
 
         private void TryMarkPowerGridDirty()
         {
-            if (_powerNode == null)
-                TryGetComponent(out _powerNode);
-
             if (_powerNode == null || _powerNode.Grid == null)
                 return;
 
@@ -5627,7 +5664,7 @@ namespace Hecton8.Gameplay
             if (floraInteractionManager != null)
                 floraInteractionManager.KillAttachedParasites(this);
 
-            ConstructionManager manager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
+            ConstructionManager manager = _constructionManager;
             if (manager != null)
                 manager.NotifyModuleImploded(this);
         }
@@ -5690,9 +5727,6 @@ namespace Hecton8.Gameplay
 
         private bool TryResolveSubmarineAtmosphereSystem(out ISubmarineAtmosphereRoomMutationSink atmosphereSystem)
         {
-            if (_submarineAtmosphereSystem == null || !_submarineAtmosphereSystem.IsAtmosphereRuntimeActive)
-                _submarineAtmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomMutationSink>(this);
-
             atmosphereSystem = _submarineAtmosphereSystem;
             return atmosphereSystem != null && atmosphereSystem.IsAtmosphereRuntimeActive;
         }

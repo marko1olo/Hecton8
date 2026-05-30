@@ -4,6 +4,17 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'strict_json_io.ps1')
+
+$MaxManifestJsonBytes = 65536
+$MaxGraphJsonBytes = 262144
+$MaxAssetManifestJsonBytes = 262144
+$MaxSettingsTableJsonBytes = 262144
+$MaxLocaleJsonBytes = 2097152
+$MaxVsCodeJsonBytes = 262144
+$MaxSchemaJsonBytes = 262144
+$MaxCapabilityGuideBytes = 262144
+$MaxAllowedOpcodesCsvBytes = 262144
 
 function Fail([string]$Message) {
     if ($ThrowInsteadOfExit) {
@@ -24,9 +35,54 @@ function Join-StarterPath([string]$BasePath, [string]$RelativePath) {
     return $current
 }
 
+function Test-StarterPathExactCase([string]$BasePath, [string]$RelativePath, [bool]$RequireLeaf) {
+    $current = (Resolve-Path -LiteralPath $BasePath).Path
+    foreach ($segment in ($RelativePath.Replace('\','/') -split '/')) {
+        if ([string]::IsNullOrWhiteSpace($segment)) {
+            continue
+        }
+
+        if (-not (Test-Path -LiteralPath $current -PathType Container)) {
+            return $false
+        }
+
+        $exactChild = $null
+        foreach ($child in (Get-ChildItem -LiteralPath $current -Force)) {
+            if ([string]::Equals($child.Name, $segment, [System.StringComparison]::Ordinal)) {
+                $exactChild = $child
+                break
+            }
+        }
+
+        if ($null -eq $exactChild) {
+            return $false
+        }
+
+        $current = $exactChild.FullName
+    }
+
+    if ($RequireLeaf) {
+        return Test-Path -LiteralPath $current -PathType Leaf
+    }
+
+    return Test-Path -LiteralPath $current -PathType Container
+}
+
+function Assert-NoReservedTopLevelCaseVariants {
+    $reserved = @('Content','Docs','Generated','Graphs','Locales','Reference','Reports','Schemas','Tables','Tools','.vscode')
+    foreach ($child in (Get-ChildItem -LiteralPath $Root -Force -Directory)) {
+        foreach ($reservedName in $reserved) {
+            if ([string]::Equals($child.Name, $reservedName, [System.StringComparison]::OrdinalIgnoreCase) -and
+                -not [string]::Equals($child.Name, $reservedName, [System.StringComparison]::Ordinal)) {
+                Fail ('Reserved starter top-level folder casing mismatch: ' + $child.Name + ' must be ' + $reservedName)
+            }
+        }
+    }
+}
+
 function Require-File([string]$RelativePath) {
     $path = Join-StarterPath $Root $RelativePath
-    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+    if (-not (Test-StarterPathExactCase $Root $RelativePath $true)) {
         Fail ('Missing required file: ' + $RelativePath)
     }
     return $path
@@ -34,17 +90,26 @@ function Require-File([string]$RelativePath) {
 
 function Require-Directory([string]$RelativePath) {
     $path = Join-StarterPath $Root $RelativePath
-    if (-not (Test-Path -LiteralPath $path -PathType Container)) {
+    if (-not (Test-StarterPathExactCase $Root $RelativePath $false)) {
         Fail ('Missing required directory: ' + $RelativePath)
     }
 }
 
-function Read-Json([string]$RelativePath) {
+function Read-Json([string]$RelativePath, [long]$MaxBytes) {
     $path = Require-File $RelativePath
     try {
-        return Get-Content -Raw -LiteralPath $path | ConvertFrom-Json
+        return Read-H8JsonFileCapped $path $RelativePath $MaxBytes
     } catch {
-        Fail ('Invalid JSON in ' + $RelativePath + ': ' + $_.Exception.Message)
+        Fail $_.Exception.Message
+    }
+}
+
+function Read-TextFile([string]$RelativePath, [long]$MaxBytes) {
+    $path = Require-File $RelativePath
+    try {
+        return Read-H8TextFileCapped $path $RelativePath $MaxBytes
+    } catch {
+        Fail $_.Exception.Message
     }
 }
 
@@ -93,7 +158,12 @@ function Validate-Version([string]$Value, [string]$Label) {
 function Read-AllowedGraphOpcodeTokens() {
     $path = Require-File 'Reference/allowed_opcodes.csv'
     $tokens = @{}
-    foreach ($line in (Get-Content -LiteralPath $path)) {
+    try {
+        $allowedOpcodeText = Read-H8TextFileCapped $path 'Reference/allowed_opcodes.csv' $MaxAllowedOpcodesCsvBytes
+    } catch {
+        Fail $_.Exception.Message
+    }
+    foreach ($line in ($allowedOpcodeText -split "\r?\n")) {
         $text = [string]$line
         $comment = ''
         $commentIndex = $text.IndexOf('#')
@@ -262,10 +332,15 @@ function Get-AssetAllowedExtensions([string]$Kind) {
 
 function Resolve-AssetRelativePath([string]$RelativePath, [string]$Kind, [string]$Label) {
     if ([string]::IsNullOrWhiteSpace($RelativePath)) { Fail ($Label + ' Path is required.') }
-    $normalized = $RelativePath.Replace('\','/').Trim()
-    if ($normalized -ne $RelativePath.Replace('\','/')) { Fail ($Label + ' Path must not contain leading or trailing whitespace.') }
-    if ([System.IO.Path]::IsPathRooted($normalized)) { Fail ($Label + ' Path must be starter-relative.') }
-    if ($normalized.StartsWith('../') -or $normalized.Contains('/../') -or $normalized.Contains('..')) { Fail ($Label + ' Path must not contain .. segments.') }
+    $normalized = $RelativePath.Replace('\','/')
+    if ($normalized.Trim() -ne $normalized) { Fail ($Label + ' Path must not contain leading or trailing whitespace.') }
+    if ($normalized.StartsWith('/') -or [System.IO.Path]::IsPathRooted($normalized)) { Fail ($Label + ' Path must be starter-relative.') }
+    if ($normalized.Contains(':')) { Fail ($Label + ' Path must not contain colon or stream syntax.') }
+    foreach ($segment in ($normalized -split '/')) {
+        if ([string]::IsNullOrWhiteSpace($segment) -or $segment -eq '.' -or $segment -eq '..') {
+            Fail ($Label + ' Path must not contain empty, dot, or dot-dot path segments.')
+        }
+    }
     if (-not $normalized.StartsWith('Content/Assets/', [System.StringComparison]::Ordinal)) { Fail ($Label + ' Path must stay under Content/Assets/.') }
     $extension = [System.IO.Path]::GetExtension($normalized).ToLowerInvariant()
     if ((Get-AssetAllowedExtensions $Kind) -notcontains $extension) {
@@ -398,6 +473,7 @@ function Validate-VsCodeTasks([object]$TasksJson) {
         'HECTON-8: build submission zip',
         'HECTON-8: install local discovery copy',
         'HECTON-8: diagnose local Mods folder',
+        'HECTON-8: doctor package readiness',
         'HECTON-8: list dependencies',
         'HECTON-8: add dependency',
         'HECTON-8: remove dependency',
@@ -483,6 +559,12 @@ function Validate-VsCodeTasks([object]$TasksJson) {
         Fail '.vscode/tasks.json local diagnose task must pass -ProjectRoot so copied starter folders inspect an explicit Mods root.'
     }
 
+    $doctorTask = $taskByLabel['HECTON-8: doctor package readiness']
+    $doctorArgs = @($doctorTask.args | ForEach-Object { [string]$_ })
+    if ($doctorArgs -notcontains 'doctor') {
+        Fail '.vscode/tasks.json doctor task must pass -Action doctor.'
+    }
+
     foreach ($dependencyTaskLabel in @('HECTON-8: list dependencies','HECTON-8: add dependency','HECTON-8: remove dependency','HECTON-8: clear dependencies')) {
         $dependencyTask = $taskByLabel[$dependencyTaskLabel]
         $dependencyArgs = @($dependencyTask.args | ForEach-Object { [string]$_ })
@@ -514,6 +596,8 @@ function Validate-VsCodeTasks([object]$TasksJson) {
     }
 }
 
+Assert-NoReservedTopLevelCaseVariants
+
 @('Content','Content/Assets','Docs','Graphs','Tables','Locales','Generated','Reports','Reference','Schemas','Tools','.vscode') | ForEach-Object { Require-Directory $_ }
 @(
     'README.md',
@@ -539,6 +623,7 @@ function Validate-VsCodeTasks([object]$TasksJson) {
     'Schemas/runtime.mod.schema.json',
     'Schemas/settings_table.schema.json',
     'Tools/README.md',
+    'Tools/strict_json_io.ps1',
     'Tools/apply_asset_entry_snippet.ps1',
     'Tools/build_review_manifest.ps1',
     'Tools/build_submission_package.ps1',
@@ -546,6 +631,7 @@ function Validate-VsCodeTasks([object]$TasksJson) {
     'Tools/create_first_mod.ps1',
     'Tools/install_local_mod.ps1',
     'Tools/diagnose_local_mods.ps1',
+    'Tools/run_doctor.ps1',
     'Tools/apply_graph_node_snippet.ps1',
     'Tools/apply_locale_entry_snippet.ps1',
     'Tools/apply_settings_row_snippet.ps1',
@@ -562,21 +648,21 @@ function Validate-VsCodeTasks([object]$TasksJson) {
     '.vscode/tasks.json'
 ) | ForEach-Object { [void](Require-File $_) }
 
-$capabilitiesText = Get-Content -Raw -LiteralPath (Require-File 'Docs/capabilities.md')
-foreach ($requiredCapabilityText in @('Supported now','Not public rights','envelope-only','FutureCommandEnvelope','Harmony','BepInEx','h8mod.ps1 -Action capabilities','h8mod.ps1 -Action manifest-contract','configure_manifest_contract.ps1','h8mod.ps1 -Action dependencies','configure_dependencies.ps1','h8mod.ps1 -Action install-local','install_local_mod.ps1','h8mod.ps1 -Action diagnose-local','diagnose_local_mods.ps1','recursive manifest discovery','dependency cycles','load order','h8mod.ps1 -Action node-snippet','h8mod.ps1 -Action apply-node-snippet','h8mod.ps1 -Action setting-snippet','h8mod.ps1 -Action locale-snippet','h8mod.ps1 -Action apply-setting-snippet','h8mod.ps1 -Action apply-locale-snippet','h8mod.ps1 -Action asset-snippet','h8mod.ps1 -Action apply-asset-snippet')) {
+$capabilitiesText = Read-TextFile 'Docs/capabilities.md' $MaxCapabilityGuideBytes
+foreach ($requiredCapabilityText in @('Supported now','Not public rights','envelope-only','FutureCommandEnvelope','Harmony','BepInEx','h8mod.ps1 -Action capabilities','h8mod.ps1 -Action manifest-contract','configure_manifest_contract.ps1','h8mod.ps1 -Action dependencies','configure_dependencies.ps1','h8mod.ps1 -Action install-local','install_local_mod.ps1','h8mod.ps1 -Action diagnose-local','diagnose_local_mods.ps1','h8mod.ps1 -Action doctor','run_doctor.ps1','recursive manifest discovery','dependency cycles','load order','review manifest freshness','submission zip freshness','case-exact zip path integrity','h8mod.ps1 -Action node-snippet','h8mod.ps1 -Action apply-node-snippet','h8mod.ps1 -Action setting-snippet','h8mod.ps1 -Action locale-snippet','h8mod.ps1 -Action apply-setting-snippet','h8mod.ps1 -Action apply-locale-snippet','h8mod.ps1 -Action asset-snippet','h8mod.ps1 -Action apply-asset-snippet')) {
     if (-not $capabilitiesText.Contains($requiredCapabilityText)) {
         Fail ('Docs/capabilities.md missing required capability text: ' + $requiredCapabilityText)
     }
 }
 
-$authoring = Read-Json 'mod.h8manifest.json'
-$runtime = Read-Json 'mod.json'
-$graph = Read-Json 'Graphs/main.h8graph.json'
-$assets = Read-Json 'Content/assets.h8manifest.json'
-$settings = Read-Json 'Tables/settings.h8table.json'
-$locale = Read-Json 'Locales/en.h8loc.json'
-$vscodeSettings = Read-Json '.vscode/settings.json'
-$vscodeTasks = Read-Json '.vscode/tasks.json'
+$authoring = Read-Json 'mod.h8manifest.json' $MaxManifestJsonBytes
+$runtime = Read-Json 'mod.json' $MaxManifestJsonBytes
+$graph = Read-Json 'Graphs/main.h8graph.json' $MaxGraphJsonBytes
+$assets = Read-Json 'Content/assets.h8manifest.json' $MaxAssetManifestJsonBytes
+$settings = Read-Json 'Tables/settings.h8table.json' $MaxSettingsTableJsonBytes
+$locale = Read-Json 'Locales/en.h8loc.json' $MaxLocaleJsonBytes
+$vscodeSettings = Read-Json '.vscode/settings.json' $MaxVsCodeJsonBytes
+$vscodeTasks = Read-Json '.vscode/tasks.json' $MaxVsCodeJsonBytes
 $schemaFiles = @(
     'Schemas/assets.schema.json',
     'Schemas/h8graph.schema.json',
@@ -586,7 +672,7 @@ $schemaFiles = @(
     'Schemas/settings_table.schema.json'
 )
 foreach ($schemaFile in $schemaFiles) {
-    $schema = Read-Json $schemaFile
+    $schema = Read-Json $schemaFile $MaxSchemaJsonBytes
     if ($null -eq $schema.PSObject.Properties['$schema']) { Fail ($schemaFile + ' requires $schema.') }
     if ([string]::IsNullOrWhiteSpace([string]$schema.title)) { Fail ($schemaFile + ' requires title.') }
     if ([string]$schema.type -ne 'object') { Fail ($schemaFile + ' must describe a JSON object.') }

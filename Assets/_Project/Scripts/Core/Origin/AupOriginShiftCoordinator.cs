@@ -521,6 +521,23 @@ namespace Hecton8.Core
             return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
         }
 
+        private static bool TryReadExistingVaultBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength < 0)
+                return false;
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
+                return false;
+
+            return TryReadVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
         private static bool TryOpenVaultBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
@@ -534,6 +551,27 @@ namespace Hecton8.Core
                 return false;
 
             if (!vault.TryResolveHandle(in handle, out buffer) || !buffer.IsCreated || buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryReadVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength < 0 || !IsMatchingVaultHandle(in handle, bufferId))
+                return false;
+
+            if (!vault.TryReadOnlyHandle(in handle, out buffer) || !buffer.IsCreated || buffer.Length < requiredLength)
             {
                 buffer = default;
                 return false;
@@ -613,7 +651,7 @@ namespace Hecton8.Core
         private static bool TryReadRuntimeState(IDataVault vault, out AupOriginShiftRuntimeState runtime)
         {
             runtime = default;
-            if (!TryOpenVaultBuffer(vault, in _runtimeStateHandle, RuntimeStateBuffer, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
+            if (!TryReadVaultBuffer(vault, in _runtimeStateHandle, RuntimeStateBuffer, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState>.ReadOnly runtimeState))
                 return false;
 
             runtime = runtimeState[0];
@@ -623,10 +661,20 @@ namespace Hecton8.Core
         private static bool TryReadMockCamera(IDataVault vault, out MockCameraAUP cameraState)
         {
             cameraState = default;
-            if (!TryOpenVaultBuffer(vault, in _mockCameraHandle, MockCameraBuffer, MockCameraCount, out NativeArray<MockCameraAUP> camera))
+            if (!TryReadVaultBuffer(vault, in _mockCameraHandle, MockCameraBuffer, MockCameraCount, out NativeArray<MockCameraAUP>.ReadOnly camera))
                 return false;
 
             cameraState = camera[0];
+            return true;
+        }
+
+        private static bool TryReadCounter(IDataVault vault, out AupPaddedAtomicCounter counter)
+        {
+            counter = default;
+            if (!TryReadVaultBuffer(vault, in _counterHandle, CounterBuffer, CounterCount, out NativeArray<AupPaddedAtomicCounter>.ReadOnly counters))
+                return false;
+
+            counter = counters[0];
             return true;
         }
 
@@ -903,9 +951,6 @@ namespace Hecton8.Core
             if (!TryResolveRuntimeState(vault, out MockEntityArrays arrays))
                 return dependency;
 
-            if (!TryResolveCounter(vault, out NativeArray<AupPaddedAtomicCounter> counters))
-                return dependency;
-
             if (!TryAcquireWriteView(vault, in _counterHandle, CounterCount, out NativeArray<AupPaddedAtomicCounter> counterWrite))
                 return dependency;
 
@@ -976,7 +1021,7 @@ namespace Hecton8.Core
                     }
 
                     if (!TryOpenVaultBuffer(vault, in _statesHandle, MockStatesBuffer, MockEntityCapacity, out NativeArray<AUP_StateDTO> stateJobView) ||
-                        !TryOpenVaultBuffer(vault, in _counterHandle, CounterBuffer, CounterCount, out counters))
+                        !TryOpenVaultBuffer(vault, in _counterHandle, CounterBuffer, CounterCount, out NativeArray<AupPaddedAtomicCounter> counters))
                     {
                         ReleaseScheduledRebaseLocks(vault, in info);
                         scheduleGuardHeld = false;
@@ -1040,11 +1085,10 @@ namespace Hecton8.Core
             double elapsedMilliseconds,
             double3 totalUniverseOffset)
         {
-            if (!TryResolveRuntimeState(vault, out _) ||
-                !TryReadRuntimeState(vault, out AupOriginShiftRuntimeState runtime))
+            if (!TryReadRuntimeState(vault, out AupOriginShiftRuntimeState runtime))
                 return;
 
-            int nonFiniteCount = TryResolveCounter(vault, out NativeArray<AupPaddedAtomicCounter> counters) ? counters[0].NonFiniteCount : 0;
+            int nonFiniteCount = TryReadCounter(vault, out AupPaddedAtomicCounter counter) ? counter.NonFiniteCount : 0;
             runtime.RebaseCount++;
             runtime.LastShiftSequence = info.ShiftSequence;
             runtime.LastComputeTimeMs = math.isfinite((float)elapsedMilliseconds) ? (float)elapsedMilliseconds : float.MaxValue;
@@ -1157,14 +1201,12 @@ namespace Hecton8.Core
         public static bool TryGetEditorSnapshot(IDataVault vault, uint shiftSequence, out AupUniverseTunerSnapshot snapshot)
         {
             snapshot = default;
-            if (!TryResolveRuntimeState(vault, out MockEntityArrays arrays))
+            if (!TryReadRuntimeState(vault, out AupOriginShiftRuntimeState runtime))
                 return false;
 
-            if (!TryResolveMockCamera(vault, out NativeArray<MockCameraAUP> camera))
+            if (!TryReadMockCamera(vault, out MockCameraAUP cameraState))
                 return false;
 
-            AupOriginShiftRuntimeState runtime = arrays.RuntimeState[0];
-            MockCameraAUP cameraState = camera[0];
             snapshot.GlobalPosition = cameraState.GlobalPosition;
             snapshot.LocalPosition = cameraState.LocalPosition;
             snapshot.RebaseThresholdMeters = runtime.RebaseLimitMeters;
@@ -1742,7 +1784,7 @@ namespace Hecton8.Core
 
         private static int ResolveFloat3BufferLength(IDataVault vault, BufferID bufferId)
         {
-            return TryOpenExistingVaultBuffer(vault, bufferId, 1, out NativeArray<float3> points)
+            return TryReadExistingVaultBuffer(vault, bufferId, 1, out NativeArray<float3>.ReadOnly points)
                 ? points.Length
                 : 0;
         }

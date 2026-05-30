@@ -18,6 +18,14 @@ namespace Hecton8.World
         private const float MinimumBudgetRefreshQualityDelta = 0.025f;
 
         internal static ScatterBudgetController ActiveRuntimeInstance { get; private set; }
+        internal static event System.Action<ScatterBudgetController> ActiveRuntimeInstanceChanged;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeForSubsystemRegistration()
+        {
+            ActiveRuntimeInstance = null;
+            ActiveRuntimeInstanceChanged = null;
+        }
 
         private enum BudgetBand
         {
@@ -103,6 +111,7 @@ namespace Hecton8.World
         private float _lastAppliedDepth = float.NaN;
         private float _lastAppliedQualityWeight = -1f;
         private float _cachedGlobalQualityWeight = 1f;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private HectonPlayerMovement _playerMovement;
 
         private void Reset()
@@ -140,7 +149,8 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            ActiveRuntimeInstance = this;
+            PublishActiveRuntimeInstance();
+            _playerRuntimeContext = GlobalRegistry.Player;
             ResolveReferences();
             ApplyChunkProfileDefaults();
             ClampProfiles();
@@ -174,7 +184,22 @@ namespace Hecton8.World
             GlobalRegistry.TryUnregisterHotSwapListener(this);
 
             if (ActiveRuntimeInstance == this)
-                ActiveRuntimeInstance = null;
+                ClearActiveRuntimeInstance();
+        }
+
+        private void PublishActiveRuntimeInstance()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                return;
+
+            ActiveRuntimeInstance = this;
+            ActiveRuntimeInstanceChanged?.Invoke(this);
+        }
+
+        private void ClearActiveRuntimeInstance()
+        {
+            ActiveRuntimeInstance = null;
+            ActiveRuntimeInstanceChanged?.Invoke(null);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -187,6 +212,16 @@ namespace Hecton8.World
                 _registeredToTickManager = false;
                 if (currentService != null && isActiveAndEnabled)
                     TryRegister();
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                if (_playerRuntimeContext == null)
+                {
+                    playerTransform = null;
+                    _playerMovement = null;
+                }
             }
         }
 
@@ -471,9 +506,20 @@ namespace Hecton8.World
 
             _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
 
-            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
-            if (_playerMovement == null && playerTransform != null)
-                playerTransform.TryGetComponent(out _playerMovement);
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext ?? PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (playerContext != null)
+            {
+                _playerRuntimeContext = playerContext;
+                if (playerTransform == null)
+                    playerTransform = playerContext.PlayerTransform;
+                if (_playerMovement == null)
+                    _playerMovement = playerContext.PlayerMovement;
+            }
+
+#if UNITY_EDITOR
+            if (playerTransform == null && !Application.isPlaying)
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+#endif
             if (playerTransform == null)
                 _playerMovement = null;
 

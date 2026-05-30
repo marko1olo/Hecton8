@@ -1704,12 +1704,6 @@ namespace Hecton8.Gameplay
 
         private void ResolveVehicleUpgradeModule()
         {
-            if (_vehicleUpgradeModuleResolved)
-                return;
-
-            if (_vehicleUpgradeModule == null)
-                TryGetComponent(out _vehicleUpgradeModule);
-
             _vehicleUpgradeModuleResolved = true;
         }
 

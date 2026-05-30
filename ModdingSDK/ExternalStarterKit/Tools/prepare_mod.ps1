@@ -8,6 +8,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'strict_json_io.ps1')
+
+$MaxReviewManifestBytes = 1048576
 
 function Fail([string]$Message) {
     Write-Error ('[H8MOD_PREPARE] ' + $Message)
@@ -22,6 +25,27 @@ function Join-StarterPath([string]$BasePath, [string]$RelativePath) {
         }
     }
     return $current
+}
+
+function Read-JsonFile([string]$Path, [string]$Label, [long]$MaxBytes) {
+    try {
+        return Read-H8JsonFileCapped $Path $Label $MaxBytes
+    } catch {
+        Fail $_.Exception.Message
+    }
+}
+
+function Invoke-RequiredTool([scriptblock]$Invocation, [string]$Step) {
+    $global:LASTEXITCODE = 0
+    & $Invocation | Out-Host
+    $toolSucceeded = $?
+    $toolExitCode = $global:LASTEXITCODE
+    if ($toolExitCode -ne 0) {
+        exit $toolExitCode
+    }
+    if (-not $toolSucceeded) {
+        Fail ($Step + ' failed.')
+    }
 }
 
 $rootFull = (Resolve-Path -LiteralPath $Root).Path
@@ -45,10 +69,10 @@ if ($hasIdentityEdits) {
         Fail 'Missing Tools/set_mod_identity.ps1.'
     }
 
-    & $identityTool -Root $rootFull -Id $Id -DisplayName $DisplayName -Author $Author -Version $Version | Out-Host
+    Invoke-RequiredTool { & $identityTool -Root $rootFull -Id $Id -DisplayName $DisplayName -Author $Author -Version $Version } 'identity setup'
 }
 
-& $reviewTool -Root $rootFull -Output $ReviewOutput | Out-Host
+Invoke-RequiredTool { & $reviewTool -Root $rootFull -Output $ReviewOutput } 'review manifest build'
 
 $reviewOutputPath = if ([System.IO.Path]::IsPathRooted($ReviewOutput)) {
     $ReviewOutput
@@ -60,7 +84,7 @@ if (-not (Test-Path -LiteralPath $reviewOutputPath -PathType Leaf)) {
     Fail 'Review manifest was not written.'
 }
 
-$review = Get-Content -Raw -LiteralPath $reviewOutputPath | ConvertFrom-Json
+$review = Read-JsonFile $reviewOutputPath 'Reports/review_manifest.json' $MaxReviewManifestBytes
 $preparedId = [string]$review.Identity.Id
 if ([string]::IsNullOrWhiteSpace($preparedId)) {
     $preparedId = [string]$review.RootId

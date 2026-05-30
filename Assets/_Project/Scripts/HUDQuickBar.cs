@@ -59,7 +59,6 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         private const int SlotCount = 4;
-        private const float FieldAdviceRefreshInterval = 0.35f;
         private const float AutoResolveRetryInterval = 0.5f;
         private const float FadeSharpness = 8f;
         private const float FadeBlendDenominatorFloor = 0.0001f;
@@ -90,7 +89,6 @@ namespace Hecton8.UI
         private int _lastDirectiveLength = -1;
         private bool _cachedDirectiveHasAdvice;
         private string _cachedDirectiveAdvicePreset;
-        private float _nextFieldAdviceRefreshAt;
         private bool _registeredToTickManager;
         private bool _registeredToLateFrame;
         private bool _slotVisualsDirty;
@@ -114,8 +112,6 @@ namespace Hecton8.UI
         private readonly uint[] _slotMetadataHashCache = new uint[SlotCount]; // COLD ALLOC: uint[4] - quickbar resolved tool metadata hash cache - owner: HUDQuickBar
         private readonly bool[] _slotMetadataHashResolved = new bool[SlotCount]; // COLD ALLOC: bool[4] - quickbar metadata hash cache validity flags - owner: HUDQuickBar
         private int _lastInventoryVersion = -1;
-        [SerializeField] private float fieldAdviceRange = 18f;
-        [SerializeField] private LayerMask fieldAdviceMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -351,7 +347,6 @@ namespace Hecton8.UI
             _slotVisualsDirty = true;
             _statusDirty = true;
             _nextStatusRefreshAt = 0f;
-            _nextFieldAdviceRefreshAt = 0f;
             InvalidateSlotBindingCache();
         }
 
@@ -604,15 +599,15 @@ namespace Hecton8.UI
             if (_slotKeys[slotIndex].color != desiredKeyColor)
                 _slotKeys[slotIndex].color = desiredKeyColor;
 
-            GameObject prefab = toolManager.GetAssignedToolPrefab(slotIndex);
-            int itemHashId = ResolveSlotItemHash(slotIndex, prefab);
-            Sprite desiredSprite = ResolveSlotIconSprite(prefab);
+            IPlayerToolDataReadModel slotTool = ResolveAssignedToolDataReadModel(slotIndex);
+            int itemHashId = ResolveSlotItemHash(slotIndex, slotTool);
+            Sprite desiredSprite = ResolveSlotIconSprite(slotTool);
             bool hasRuntimeDescriptor = TryResolveRuntimeDescriptor(itemHashId, out _);
             bool available = itemHashId != 0 && IsInventoryHashAvailable(itemHashId);
             if (!available)
                 available = toolManager.IsToolAvailableInSlot(slotIndex);
 
-            if (prefab != null && desiredSprite != null && hasRuntimeDescriptor)
+            if (slotTool != null && desiredSprite != null && hasRuntimeDescriptor)
             {
                 if (!ReferenceEquals(_slotIconSprites[slotIndex], desiredSprite))
                 {
@@ -636,10 +631,10 @@ namespace Hecton8.UI
                 _slotIconAvailable[slotIndex] = false;
             }
 
-            RefreshDurabilityVisual(slotIndex, prefab, itemHashId);
+            RefreshDurabilityVisual(slotIndex, slotTool, itemHashId);
         }
 
-        private void RefreshDurabilityVisual(int slotIndex, GameObject prefab, int itemHashId)
+        private void RefreshDurabilityVisual(int slotIndex, IPlayerToolDataReadModel tool, int itemHashId)
         {
             if (_durBars == null || slotIndex >= _durBars.Length || _durBars[slotIndex] == null)
                 return;
@@ -648,7 +643,7 @@ namespace Hecton8.UI
             float desiredWidth = 0f;
             Color desiredColor = DurHidden;
 
-            if (prefab != null && prefab.TryGetComponent(out IPlayerToolDataReadModel tool) && tool.Metadata != null)
+            if (tool != null && tool.Metadata != null)
             {
                 IToolDurabilityService durabilitySystem = _toolDurabilitySystem;
                 if (durabilitySystem != null)
@@ -657,7 +652,7 @@ namespace Hecton8.UI
                     if (maxDurability > 0f)
                     {
                         uint itemHash = itemHashId != 0 ? unchecked((uint)itemHashId) : 0u;
-                        uint metadataHash = ResolveSlotMetadataHash(slotIndex, prefab);
+                        uint metadataHash = ResolveSlotMetadataHash(slotIndex, tool);
                         float currentDurability = TryReadDurabilityByHashes(durabilitySystem, itemHash, metadataHash, maxDurability, out float resolvedDurability)
                             ? resolvedDurability
                             : maxDurability;
@@ -698,7 +693,18 @@ namespace Hecton8.UI
             }
         }
 
-        private int ResolveSlotItemHash(int slotIndex, GameObject prefab)
+        private IPlayerToolDataReadModel ResolveAssignedToolDataReadModel(int slotIndex)
+        {
+            if (toolManager != null &&
+                toolManager.TryGetAssignedToolDataReadModel(slotIndex, out IPlayerToolDataReadModel tool))
+            {
+                return tool;
+            }
+
+            return null;
+        }
+
+        private int ResolveSlotItemHash(int slotIndex, IPlayerToolDataReadModel tool)
         {
             if ((uint)slotIndex >= (uint)SlotCount)
                 return 0;
@@ -707,9 +713,7 @@ namespace Hecton8.UI
                 return _slotItemHashCache[slotIndex];
 
             int itemHashId = 0;
-            if (prefab != null &&
-                prefab.TryGetComponent(out IPlayerToolDataReadModel tool) &&
-                tool.ToolData != null)
+            if (tool != null && tool.ToolData != null)
             {
                 string persistentId = tool.ToolData.PersistentId;
                 if (!string.IsNullOrWhiteSpace(persistentId))
@@ -721,7 +725,7 @@ namespace Hecton8.UI
             return itemHashId;
         }
 
-        private uint ResolveSlotMetadataHash(int slotIndex, GameObject prefab)
+        private uint ResolveSlotMetadataHash(int slotIndex, IPlayerToolDataReadModel tool)
         {
             if ((uint)slotIndex >= (uint)SlotCount)
                 return 0u;
@@ -730,8 +734,7 @@ namespace Hecton8.UI
                 return _slotMetadataHashCache[slotIndex];
 
             uint metadataHash = 0u;
-            if (prefab != null &&
-                prefab.TryGetComponent(out IPlayerToolDataReadModel tool) &&
+            if (tool != null &&
                 tool.Metadata != null &&
                 !string.IsNullOrEmpty(tool.Metadata.toolID))
             {
@@ -762,9 +765,9 @@ namespace Hecton8.UI
                    durabilitySystem.TryReadDurability(metadataHash, maxDurability, out durability);
         }
 
-        private Sprite ResolveSlotIconSprite(GameObject prefab)
+        private Sprite ResolveSlotIconSprite(IPlayerToolDataReadModel tool)
         {
-            if (prefab == null || !prefab.TryGetComponent(out IPlayerToolDataReadModel tool) || tool.ToolData == null)
+            if (tool == null || tool.ToolData == null)
                 return null;
 
             return tool.ToolData.icon;
@@ -994,19 +997,11 @@ namespace Hecton8.UI
 
         private bool TryGetCachedAdvicePreset(out string advicePreset)
         {
-            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
-            if (now >= _nextFieldAdviceRefreshAt)
-            {
-                _nextFieldAdviceRefreshAt = now + FieldAdviceRefreshInterval;
-                Transform origin = toolManager != null ? toolManager.transform : null;
-                _cachedDirectiveHasAdvice = FieldLoadoutAdvisor.TryBuildForwardPresetName(
-                    origin,
-                    fieldAdviceRange,
-                    fieldAdviceMask,
-                    out _cachedDirectiveAdvicePreset);
-                if (!_cachedDirectiveHasAdvice)
-                    _cachedDirectiveAdvicePreset = null;
-            }
+            PlayerToolManager manager = toolManager;
+            _cachedDirectiveHasAdvice = manager != null &&
+                                        manager.TryGetCachedFieldLoadoutPresetName(out _cachedDirectiveAdvicePreset);
+            if (!_cachedDirectiveHasAdvice)
+                _cachedDirectiveAdvicePreset = null;
 
             advicePreset = _cachedDirectiveAdvicePreset;
             return _cachedDirectiveHasAdvice && !string.IsNullOrEmpty(advicePreset);

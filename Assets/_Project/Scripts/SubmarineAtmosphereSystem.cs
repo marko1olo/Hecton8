@@ -222,7 +222,7 @@ namespace Hecton8.Atmosphere
             if (listener == null)
                 return;
 
-            EnsureInitialized();
+            PrepareCold();
             RegisterImmediate(listener);
         }
 
@@ -238,6 +238,11 @@ namespace Hecton8.Atmosphere
         internal static void Shutdown()
         {
             ResetStaticState();
+        }
+
+        internal static void PrepareCold()
+        {
+            EnsureInitialized();
         }
 
         /// <summary>Flushes queued high-pressure warnings.</summary>
@@ -302,7 +307,7 @@ namespace Hecton8.Atmosphere
 
         private static bool EnsureInitialized()
         {
-            IDataVault vault = ResolveDataVault();
+            IDataVault vault = ResolveDataVaultCold();
             if (vault == null)
                 return false;
 
@@ -327,7 +332,7 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            if (!EnsureInitialized())
+            if (!IsInitialized())
                 return false;
 
             VaultGenerationHandle<HighPressureEventPayload> handle = _isDispatching
@@ -443,7 +448,14 @@ namespace Hecton8.Atmosphere
             _nextFrameEventCount = 0;
         }
 
-        private static IDataVault ResolveDataVault()
+        private static bool IsInitialized()
+        {
+            return _dataVault != null &&
+                   HasValidHandle(in _pendingEventsHandle) &&
+                   HasValidHandle(in _nextFrameEventsHandle);
+        }
+
+        private static IDataVault ResolveDataVaultCold()
         {
             if (_dataVault != null)
                 return _dataVault;
@@ -479,7 +491,7 @@ namespace Hecton8.Atmosphere
             out NativeArray<HighPressureEventPayload>.ReadOnly buffer)
         {
             buffer = default;
-            IDataVault vault = ResolveDataVault();
+            IDataVault vault = _dataVault;
             return vault != null &&
                 HasValidHandle(in handle) &&
                 vault.TryReadOnlyHandle(in handle, out buffer) &&
@@ -495,7 +507,7 @@ namespace Hecton8.Atmosphere
             if ((uint)index >= (uint)PendingEventCapacity)
                 return false;
 
-            IDataVault vault = ResolveDataVault();
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
@@ -519,7 +531,7 @@ namespace Hecton8.Atmosphere
         private static bool TryDequeuePending(out HighPressureEventPayload payload)
         {
             payload = default;
-            IDataVault vault = ResolveDataVault();
+            IDataVault vault = _dataVault;
             if (vault == null ||
                 _pendingEventCount <= 0)
             {
@@ -684,7 +696,7 @@ namespace Hecton8.Atmosphere
             if (listener == null)
                 return;
 
-            EnsureInitialized();
+            PrepareCold();
             RegisterImmediate(listener);
         }
 
@@ -700,6 +712,11 @@ namespace Hecton8.Atmosphere
         internal static void Shutdown()
         {
             ResetStaticState();
+        }
+
+        internal static void PrepareCold()
+        {
+            EnsureInitialized();
         }
 
         /// <summary>Flushes queued fatal pressure implosion payloads.</summary>
@@ -761,7 +778,7 @@ namespace Hecton8.Atmosphere
 
         private static bool EnsureInitialized()
         {
-            IDataVault vault = ResolveDataVault();
+            IDataVault vault = ResolveDataVaultCold();
             if (vault == null)
                 return false;
 
@@ -786,7 +803,7 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            if (!EnsureInitialized())
+            if (!IsInitialized())
                 return false;
 
             VaultGenerationHandle<FatalPressureImplosionEventPayload> handle = _isDispatching
@@ -900,7 +917,14 @@ namespace Hecton8.Atmosphere
             _nextFrameEventCount = 0;
         }
 
-        private static IDataVault ResolveDataVault()
+        private static bool IsInitialized()
+        {
+            return _dataVault != null &&
+                   HasValidHandle(in _pendingEventsHandle) &&
+                   HasValidHandle(in _nextFrameEventsHandle);
+        }
+
+        private static IDataVault ResolveDataVaultCold()
         {
             if (_dataVault != null)
                 return _dataVault;
@@ -936,7 +960,7 @@ namespace Hecton8.Atmosphere
             out NativeArray<FatalPressureImplosionEventPayload>.ReadOnly buffer)
         {
             buffer = default;
-            IDataVault vault = ResolveDataVault();
+            IDataVault vault = _dataVault;
             return vault != null &&
                 HasValidHandle(in handle) &&
                 vault.TryReadOnlyHandle(in handle, out buffer) &&
@@ -952,7 +976,7 @@ namespace Hecton8.Atmosphere
             if ((uint)index >= (uint)PendingEventCapacity)
                 return false;
 
-            IDataVault vault = ResolveDataVault();
+            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
@@ -976,7 +1000,7 @@ namespace Hecton8.Atmosphere
         private static bool TryDequeuePending(out FatalPressureImplosionEventPayload payload)
         {
             payload = default;
-            IDataVault vault = ResolveDataVault();
+            IDataVault vault = _dataVault;
             if (vault == null ||
                 _pendingEventCount <= 0)
             {
@@ -1027,7 +1051,7 @@ namespace Hecton8.Atmosphere
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SubmarineFluidDynamics))]
     [AddComponentMenu("Hecton/Atmosphere/Submarine Atmosphere System")]
-    public sealed class SubmarineAtmosphereSystem : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IInteractionSignalConsumer, IGlobalRegistryHotSwapListener, ISubmarineAtmosphereRoomMutationSink
+    public sealed class SubmarineAtmosphereSystem : MonoBehaviour, IColdTickable, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IInteractionSignalConsumer, IGlobalRegistryHotSwapListener, ISubmarineAtmosphereRoomMutationSink
     {
         private const int RoomCapacity = 8;
         private const int DoorCapacity = 7;
@@ -1850,6 +1874,7 @@ namespace Hecton8.Atmosphere
         private IPlayerSensoryService _playerSensoryService;
         private IAudioService _audioService;
         private IPhysicsService _physicsService;
+        private bool _coldTickRegistered;
         private bool _registered;
         private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
@@ -1967,18 +1992,10 @@ namespace Hecton8.Atmosphere
         // COLD ALLOC: ReactorHeatEmitter[24] - cached reactor heat sources mapped to rooms - owner: SubmarineAtmosphereSystem
         private readonly ReactorHeatEmitter[] _reactorHeatEmitters = new ReactorHeatEmitter[HeatEmitterCapacity];
         private uint _reactorMeltdownTriggeredMask;
-        // COLD ALLOC: List<Fabricator>[8] - cold-path fabricator scan scratch for thermal emitter cache - owner: SubmarineAtmosphereSystem
-        private readonly System.Collections.Generic.List<Fabricator> _fabricatorScanBuffer = new System.Collections.Generic.List<Fabricator>(8);
-        // COLD ALLOC: List<DeepDrillModule>[8] - cold-path drill scan scratch for thermal emitter cache - owner: SubmarineAtmosphereSystem
-        private readonly System.Collections.Generic.List<DeepDrillModule> _drillScanBuffer = new System.Collections.Generic.List<DeepDrillModule>(8);
-        // COLD ALLOC: List<BioReactor>[8] - cold-path reactor scan scratch for thermal emitter cache - owner: SubmarineAtmosphereSystem
-        private readonly System.Collections.Generic.List<BioReactor> _reactorScanBuffer = new System.Collections.Generic.List<BioReactor>(8);
         // COLD ALLOC: PendingAtmosphereMutation[8] - deferred authoritative room writes while Burst atmosphere job owns BackBuffer - owner: SubmarineAtmosphereSystem
         private readonly PendingAtmosphereMutation[] _pendingAtmosphereMutations = new PendingAtmosphereMutation[RoomCapacity];
         // COLD ALLOC: LogisticsPipeNode[8] - room-indexed emergency vent cache, avoids component scans in pressure path - owner: SubmarineAtmosphereSystem
         private readonly LogisticsPipeNode[] _emergencyVentPipesByRoom = new LogisticsPipeNode[RoomCapacity];
-        // COLD ALLOC: List<LogisticsPipeNode>[16] - cold scan scratch for emergency vent cache seeding - owner: SubmarineAtmosphereSystem
-        private readonly System.Collections.Generic.List<LogisticsPipeNode> _ventPipeScanBuffer = new System.Collections.Generic.List<LogisticsPipeNode>(16);
         private uint _emergencyVentRoomMask;
         private int _fabricatorHeatEmitterCount;
         private int _drillHeatEmitterCount;
@@ -2844,7 +2861,7 @@ namespace Hecton8.Atmosphere
         {
             _droppedSignalCount = 0;
             CacheReferencesCold();
-            EnsureNativeState();
+            PrepareNativeStateCold();
             if (IsAtmosphereVaultStateReady())
                 PrewarmAtmosphereAuthoringCaches();
 
@@ -2867,12 +2884,24 @@ namespace Hecton8.Atmosphere
             DisposeNativeStateDeferred();
         }
 
+        public void ColdTick()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            PrepareNativeStateCold();
+            HighPressureEvents.PrepareCold();
+            FatalPressureImplosionEvents.PrepareCold();
+            if (IsAtmosphereVaultStateReady())
+                PrewarmAtmosphereAuthoringCaches();
+        }
+
         public void FixedTick(float fixedDeltaTime)
         {
             if (fixedDeltaTime <= 0f)
                 return;
 
-            CacheReferencesFromCache();
+            RefreshRuntimeContextFromCache();
             TryFinalizeDeferredNativeDisposal();
             if (fluidDynamics == null)
             {
@@ -2883,7 +2912,6 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            EnsureNativeState();
             if (!IsAtmosphereVaultStateReady())
             {
                 RefreshDebugState();
@@ -3457,13 +3485,11 @@ namespace Hecton8.Atmosphere
             for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
                 _emergencyVentPipesByRoom[roomIndex] = null;
 
-            _ventPipeScanBuffer.Clear();
-            GetComponentsInChildren(true, _ventPipeScanBuffer);
-            int pipeCount = _ventPipeScanBuffer.Count;
+            int pipeCount = LogisticsPipeTransportScheduler.ActiveNodeCount;
             for (int pipeIndex = 0; pipeIndex < pipeCount; pipeIndex++)
             {
-                LogisticsPipeNode pipe = _ventPipeScanBuffer[pipeIndex];
-                if (pipe == null || !pipe.CanEmergencyVent)
+                LogisticsPipeNode pipe = LogisticsPipeTransportScheduler.GetActiveNodeAt(pipeIndex);
+                if (pipe == null || !pipe.CanEmergencyVent || !IsComponentOwnedByThisSubmarine(pipe))
                     continue;
 
                 int roomIndex = pipe.ResolveAmbientRoomIndex();
@@ -3478,7 +3504,6 @@ namespace Hecton8.Atmosphere
                 _emergencyVentRoomMask |= roomBit;
             }
 
-            _ventPipeScanBuffer.Clear();
             _emergencyVentPipesSeeded = true;
         }
 
@@ -3492,10 +3517,11 @@ namespace Hecton8.Atmosphere
             _audioService = GlobalRegistry.Audio;
             _physicsService = GlobalRegistry.Physics;
             _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
-            CacheReferencesFromCache();
+            CacheComponentReferencesCold();
+            RefreshRuntimeContextFromCache();
         }
 
-        private void CacheReferencesFromCache()
+        private void CacheComponentReferencesCold()
         {
             if (_cachedTransform == null)
                 _cachedTransform = transform;
@@ -3505,7 +3531,10 @@ namespace Hecton8.Atmosphere
 
             if (_submarineBody == null && fluidDynamics != null)
                 fluidDynamics.TryGetComponent(out _submarineBody);
+        }
 
+        private void RefreshRuntimeContextFromCache()
+        {
             if (_playerTransform == null)
             {
                 IPlayerRuntimeContext playerContext = _playerRuntimeContext;
@@ -4173,6 +4202,9 @@ namespace Hecton8.Atmosphere
             if (!Application.isPlaying)
                 return;
 
+            if (!_coldTickRegistered)
+                _coldTickRegistered = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
+
             bool fixedRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             bool postFixedRegistered = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
             bool lateRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -4193,17 +4225,23 @@ namespace Hecton8.Atmosphere
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
-
-            GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
-            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
-            if (_lateFrameRegistered)
+            if (_registered)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = false;
+                GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+                if (_lateFrameRegistered)
+                {
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                    _lateFrameRegistered = false;
+                }
+                _registered = false;
             }
-            _registered = false;
+
+            if (_coldTickRegistered)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _coldTickRegistered = false;
+            }
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -4242,7 +4280,7 @@ namespace Hecton8.Atmosphere
                     if (_atmosphereJobLockMask != 0ul)
                     {
                         ulong lockMask = _atmosphereJobLockMask;
-                        IDataVault guardVault = _atmosphereJobMutationGuardVault ?? previousVault;
+                        IDataVault guardVault = _atmosphereJobMutationGuardVault;
                         _atmosphereJobLockMask = 0ul;
                         _atmosphereJobMutationGuardVault = null;
                         ReleaseAtmosphereJobBufferLocks(guardVault, lockMask);
@@ -4251,9 +4289,10 @@ namespace Hecton8.Atmosphere
                     if (_atmospherePhaseMutationGuardMask != 0ul)
                     {
                         ulong phaseMask = _atmospherePhaseMutationGuardMask;
+                        IDataVault phaseVault = _atmospherePhaseMutationGuardVault;
                         _atmospherePhaseMutationGuardMask = 0ul;
                         _atmospherePhaseMutationGuardVault = null;
-                        ReleaseAtmospherePhaseWriteLocks(previousVault, phaseMask);
+                        ReleaseAtmospherePhaseWriteLocks(phaseVault, phaseMask);
                     }
 
                     _atmosphereJobRunning = false;
@@ -4315,7 +4354,7 @@ namespace Hecton8.Atmosphere
             _hotSwapRegistered = false;
         }
 
-        private void EnsureNativeState()
+        private void PrepareNativeStateCold()
         {
             if (!TryFinalizeDeferredNativeDisposal())
                 return;
@@ -4767,12 +4806,11 @@ namespace Hecton8.Atmosphere
             _drillHeatEmitterCount = 0;
             _reactorHeatEmitterCount = 0;
 
-            _fabricatorScanBuffer.Clear();
-            GetComponentsInChildren(true, _fabricatorScanBuffer);
-            for (int i = 0; i < _fabricatorScanBuffer.Count && _fabricatorHeatEmitterCount < HeatEmitterCapacity; i++)
+            int fabricatorCount = Fabricator.ActiveFabricatorCount;
+            for (int i = 0; i < fabricatorCount && _fabricatorHeatEmitterCount < HeatEmitterCapacity; i++)
             {
-                Fabricator fabricator = _fabricatorScanBuffer[i];
-                if (fabricator == null)
+                Fabricator fabricator = Fabricator.GetActiveFabricatorAt(i);
+                if (fabricator == null || !IsComponentOwnedByThisSubmarine(fabricator))
                     continue;
 
                 _fabricatorHeatEmitters[_fabricatorHeatEmitterCount++] = new FabricatorHeatEmitter
@@ -4782,12 +4820,11 @@ namespace Hecton8.Atmosphere
                 };
             }
 
-            _drillScanBuffer.Clear();
-            GetComponentsInChildren(true, _drillScanBuffer);
-            for (int i = 0; i < _drillScanBuffer.Count && _drillHeatEmitterCount < HeatEmitterCapacity; i++)
+            int drillCount = DeepDrillModule.ActiveModuleCount;
+            for (int i = 0; i < drillCount && _drillHeatEmitterCount < HeatEmitterCapacity; i++)
             {
-                DeepDrillModule drill = _drillScanBuffer[i];
-                if (drill == null)
+                DeepDrillModule drill = DeepDrillModule.GetActiveModuleAt(i);
+                if (drill == null || !IsComponentOwnedByThisSubmarine(drill))
                     continue;
 
                 _drillHeatEmitters[_drillHeatEmitterCount++] = new DrillHeatEmitter
@@ -4797,12 +4834,11 @@ namespace Hecton8.Atmosphere
                 };
             }
 
-            _reactorScanBuffer.Clear();
-            GetComponentsInChildren(true, _reactorScanBuffer);
-            for (int i = 0; i < _reactorScanBuffer.Count && _reactorHeatEmitterCount < HeatEmitterCapacity; i++)
+            int reactorCount = BioReactor.ActiveReactorCount;
+            for (int i = 0; i < reactorCount && _reactorHeatEmitterCount < HeatEmitterCapacity; i++)
             {
-                BioReactor reactor = _reactorScanBuffer[i];
-                if (reactor == null)
+                BioReactor reactor = BioReactor.GetActiveReactorAt(i);
+                if (reactor == null || !IsComponentOwnedByThisSubmarine(reactor))
                     continue;
 
                 _reactorHeatEmitters[_reactorHeatEmitterCount++] = new ReactorHeatEmitter
@@ -4823,8 +4859,7 @@ namespace Hecton8.Atmosphere
             if (emitter == null)
                 return -1;
 
-            if (!emitter.TryGetComponent(out BaseModule hostModule))
-                hostModule = emitter.GetComponentInParent<BaseModule>();
+            BaseModule hostModule = ResolveHostModuleForEmitter(emitter);
             if (hostModule != null)
             {
                 int roomCount = math.min(RoomCount, RoomCapacity);
@@ -4855,6 +4890,45 @@ namespace Hecton8.Atmosphere
                 return -1;
 
             return ResolveNearestRoomIndex(in submarineCenterAup);
+        }
+
+        private bool IsComponentOwnedByThisSubmarine(Component component)
+        {
+            if (component == null)
+                return false;
+
+            Transform root = _cachedTransform;
+            Transform componentTransform = component.transform;
+            return root != null &&
+                   componentTransform != null &&
+                   (ReferenceEquals(componentTransform, root) || componentTransform.IsChildOf(root));
+        }
+
+        private static BaseModule ResolveHostModuleForEmitter(Component emitter)
+        {
+            if (emitter == null)
+                return null;
+
+            Transform emitterTransform = emitter.transform;
+            if (emitterTransform == null)
+                return null;
+
+            int moduleCount = BaseModule.ActiveModuleCount;
+            for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
+            {
+                BaseModule module = BaseModule.GetActiveModuleAt(moduleIndex);
+                if (module == null)
+                    continue;
+
+                Transform moduleTransform = module.transform;
+                if (moduleTransform != null &&
+                    (ReferenceEquals(emitterTransform, moduleTransform) || emitterTransform.IsChildOf(moduleTransform)))
+                {
+                    return module;
+                }
+            }
+
+            return null;
         }
 
         private void SyncFluidSnapshot()
@@ -5685,7 +5759,7 @@ namespace Hecton8.Atmosphere
             if (mask == 0ul)
                 return;
 
-            IDataVault vault = _atmosphereJobMutationGuardVault ?? _dataVault;
+            IDataVault vault = _atmosphereJobMutationGuardVault;
             _atmosphereJobLockMask = 0ul;
             _atmosphereJobMutationGuardVault = null;
             ReleaseAtmosphereJobBufferLocks(vault, mask);
@@ -5760,16 +5834,7 @@ namespace Hecton8.Atmosphere
             };
 
             _scheduledAtmosphereDeltaTime = FiniteNonNegativeOrZero(fixedDeltaTime);
-            try
-            {
-                job.Run();
-            }
-            finally
-            {
-                ReleaseAtmosphereJobBufferLocks();
-            }
-
-            _atmosphereJobHandle = default;
+            _atmosphereJobHandle = job.Schedule();
             _atmosphereJobRunning = true;
         }
 

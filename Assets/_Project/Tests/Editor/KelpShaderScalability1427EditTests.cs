@@ -112,10 +112,33 @@ namespace Hecton8.Tests.Editor
         public void TetherVisuals_BlendDearLieLineContinuously()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "TetherInstance.cs");
+            string manager = ReadProjectFile("Assets", "_Project", "Scripts", "TetherManager.cs");
+            string visualBody = ExtractMethodBody(source, "internal void UpdateVisuals(");
+            string uploadBody = ExtractMethodBody(source, "private void UpdateVerletVisualUpload(");
+            string curveBody = ExtractMethodBody(source, "private float ResolveTautLineVisualCurveWeight(");
+            string iterationBody = ExtractMethodBody(source, "private static int ResolveVerletIterationCount(");
+            string dampingBody = ExtractMethodBody(source, "private static float ResolveVerletVelocityDamping(");
+            string fixedTickBody = ExtractMethodBody(manager, "public void FixedTick(");
+            string lateFrameBody = ExtractMethodBody(manager, "public void LateFrameTick()");
 
             Assert.That(source, Does.Contain("ResolveTautLineVisualCurveWeight"));
             Assert.That(source, Does.Contain("math.lerp(straightPoint, _verletPositions[i], curveWeight01)"));
-            Assert.That(source, Does.Contain("const float qualityTierRange"));
+            Assert.That(source, Does.Contain("private float _qualityWeight01 = 1f;"));
+            Assert.That(manager, Does.Contain("internal float CachedQualityWeight01 => _cachedQualityWeight01;"));
+            Assert.That(fixedTickBody, Does.Contain("float qualityWeight01 = _cachedQualityWeight01;"));
+            Assert.That(fixedTickBody, Does.Contain("instance.Simulate(fixedDeltaTime, _fixedStepClockSeconds, fixedFrameIndex, activeCount, maxVisualizedTethers, qualityWeight01)"));
+            Assert.That(fixedTickBody, Does.Not.Contain("_cachedQualityTier"));
+            Assert.That(manager, Does.Contain("_supportsIndirectTetherRenderingCold = SystemInfo.supportsInstancing && SystemInfo.supportsComputeShaders;"));
+            Assert.That(lateFrameBody, Does.Contain("instance.UpdateVisuals(deltaTime, qualityWeight01"));
+            Assert.That(lateFrameBody, Does.Contain("HasIndirectTetherRenderResources()"));
+            Assert.That(lateFrameBody, Does.Not.Contain("ShouldUseIndirectTetherRendering(qualityWeight01)"));
+            Assert.That(manager, Does.Not.Contain("Smooth01(qualityWeight01) >= 0.62f"));
+            Assert.That(visualBody, Does.Contain("float qualityWeight01"));
+            Assert.That(uploadBody, Does.Contain("float qualityWeight01"));
+            Assert.That(curveBody, Does.Contain("SanitizeQualityWeight(qualityWeight01)"));
+            Assert.That(iterationBody, Does.Contain("SanitizeQualityWeight(qualityWeight01)"));
+            Assert.That(dampingBody, Does.Contain("SanitizeQualityWeight(qualityWeight01)"));
+            Assert.That(source, Does.Not.Contain("HomeostasisBrain.GlobalQualityWeight"));
             Assert.That(source, Does.Not.Contain("ShouldUseLowTierTautLineVisualFake"));
             Assert.That(source, Does.Not.Contain("return collapseWeight > 0f"));
             Assert.That(source, Does.Not.Contain("switch (TetherManager.SanitizeQualityTier"));
@@ -229,9 +252,10 @@ namespace Hecton8.Tests.Editor
 
             Assert.That(source, Does.Contain("ResolvePolicyScale(float qualityWeight01"));
             Assert.That(source, Does.Contain("ResolveMinScaleLimit(float qualityWeight01"));
-            Assert.That(source, Does.Contain("ResolveUpscalerHash(float qualityWeight01"));
+            Assert.That(source, Does.Contain("ResolveUpscalerHash(float renderScale"));
             Assert.That(source, Does.Contain("UpdateVisualBudget(float qualityWeight01"));
-            Assert.That(source, Does.Contain("ResolveFsrUpscalerAllowed(float qualityWeight01)"));
+            Assert.That(source, Does.Contain("ResolveBilateralDrsRouteAllowed()"));
+            Assert.That(source, Does.Contain("UpscalerBilateralDrsHash"));
             Assert.That(source, Does.Contain("ResolveSurvivalPressureWeight01(float qualityWeight01)"));
             Assert.That(source, Does.Contain("ResolveTierEnvelope(float qualityWeight01"));
             Assert.That(source, Does.Contain("ResolveCompatibilityQualityTierOrdinal(float qualityWeight01)"));
@@ -250,6 +274,10 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Not.Contain("ApplyMinScaleLimitForTier"));
             Assert.That(source, Does.Not.Contain("ResolveMinScaleLimit(HectonQualityTier"));
             Assert.That(source, Does.Not.Contain("ResolveUpscalerHash(HectonQualityTier"));
+            Assert.That(source, Does.Not.Contain("ResolveFsrUpscalerAllowed"));
+            Assert.That(source, Does.Not.Contain("ResolveFsrUpscalerEligibility01"));
+            Assert.That(source, Does.Not.Contain("FsrEligibilityEpsilon"));
+            Assert.That(source, Does.Not.Contain("UpscalerFsrTaaHash"));
             Assert.That(source, Does.Not.Contain("UpdateVisualBudget(HectonQualityTier"));
             Assert.That(source, Does.Not.Contain("quality >= 0.86f"));
             Assert.That(source, Does.Not.Contain("quality < 0.18f"));
@@ -257,6 +285,100 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Not.Contain("quality < 0.62f"));
             Assert.That(source, Does.Not.Contain("quality < 0.86f"));
             Assert.That(source, Does.Not.Contain("graphicsMemoryMb >= 3000"));
+        }
+
+        [Test]
+        public void ThermalDynamicResolution_UpscalerRouteDoesNotForkOnQuality()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Graphics", "Scalability", "ThermalDynamicResolutionAdapter.cs");
+            string hashBody = ExtractMethodBody(source, "private uint ResolveUpscalerHash(");
+            string refreshBody = ExtractMethodBody(source, "private void RefreshQualityTierPolicyFromContinuousWeight(");
+
+            Assert.That(source, Does.Contain("UpscalerBilateralDrsHash"));
+            Assert.That(source, Does.Contain("_coldBilateralDrsRouteAllowed = !Application.isMobilePlatform && SystemInfo.supportsComputeShaders;"));
+            Assert.That(hashBody, Does.Contain("_bilateralDrsRouteAllowed ? UpscalerBilateralDrsHash : UpscalerBilateralTaaHash"));
+            Assert.That(hashBody, Does.Not.Contain("qualityWeight01"));
+            Assert.That(refreshBody, Does.Contain("_bilateralDrsRouteAllowed = ResolveBilateralDrsRouteAllowed();"));
+            Assert.That(source, Does.Not.Contain("ResolveFsrUpscalerAllowed"));
+            Assert.That(source, Does.Not.Contain("ResolveFsrUpscalerEligibility01"));
+            Assert.That(source, Does.Not.Contain("FsrEligibilityEpsilon"));
+            Assert.That(source, Does.Not.Contain("UpscalerFsrTaaHash"));
+        }
+
+        [Test]
+        public void ThermalDynamicResolution_VisualFeatureRoutesStayContinuous()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Graphics", "Scalability", "ThermalDynamicResolutionAdapter.cs");
+            string updateBody = ExtractMethodBody(source, "private void UpdateVisualBudget(");
+            string routeMaskBody = ExtractMethodBody(source, "private static uint ResolveVisualFeatureRouteMask(");
+
+            Assert.That(source, Does.Contain("VisualFeatureRouteMask"));
+            Assert.That(updateBody, Does.Contain("_visualFeatureFlags = ResolveVisualFeatureRouteMask();"));
+            Assert.That(routeMaskBody, Does.Contain("return VisualFeatureRouteMask;"));
+            Assert.That(source, Does.Not.Contain("VisualFeatureFlagEpsilon"));
+            Assert.That(source, Does.Not.Contain("ResolveVisualFeatureFlags("));
+        }
+
+        [Test]
+        public void VisorUberPost_ReconstructionOverkillUsesContinuousResponse()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "HectonVisorUberPostFeature.cs");
+            string constantsBody = ExtractMethodBody(source, "private static UberNoirReconstructionConstantsDTO BuildReconstructionConstants(");
+            string responseBody = ExtractMethodBody(source, "private static float ResolveCompatibilityVisualOverkillWeight01(");
+
+            Assert.That(source, Does.Contain("[FormerlySerializedAs(\"visualOverkillThreshold\")]"));
+            Assert.That(source, Does.Contain("public float visualOverkillResponse"));
+            Assert.That(constantsBody, Does.Contain("ResolveCompatibilityVisualOverkillWeight01(quality01, overkillResponseSetting)"));
+            Assert.That(responseBody, Does.Contain("quality * quality * math.lerp(0.5f, 1f, quality)"));
+            Assert.That(responseBody, Does.Contain("math.lerp(0.65f, 1.35f, response)"));
+            Assert.That(constantsBody, Does.Not.Contain("quality01 - threshold"));
+            Assert.That(constantsBody, Does.Not.Contain("math.rcp(1f - threshold)"));
+            Assert.That(source, Does.Not.Contain("s_editorVisualOverkillThreshold01"));
+        }
+
+        [Test]
+        public void ActiveSonarGeoTelemetry_StoresQualityWeightWithoutBinaryFlag()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "SpectrumSystem.cs");
+            string entryBody = ExtractTypeBody(source, "private struct ActiveSonarGeoTelemetryEntry");
+            string writeBody = ExtractMethodBody(source, "private void WriteActiveSonarGeoTelemetry(");
+            string serializeBody = ExtractMethodBody(source, "private static void WriteActiveSonarGeoTelemetryEntry(");
+            string encodeBody = ExtractMethodBody(source, "private static byte EncodeActiveSonarGeoQualityWeightQ8(");
+
+            Assert.That(entryBody, Does.Contain("[System.Runtime.InteropServices.FieldOffset(28)]"));
+            Assert.That(entryBody, Does.Contain("public byte QualityWeightQ8;"));
+            Assert.That(writeBody, Does.Contain("entry.Flags = 0u;"));
+            Assert.That(writeBody, Does.Contain("entry.QualityWeightQ8 = EncodeActiveSonarGeoQualityWeightQ8"));
+            Assert.That(serializeBody, Does.Contain("destination[28] = entry.QualityWeightQ8;"));
+            Assert.That(encodeBody, Does.Contain("quality * byte.MaxValue"));
+            Assert.That(writeBody, Does.Not.Contain("<= 0.15f"));
+            Assert.That(source, Does.Not.Contain("ResolveActiveSonarGeoQualityWeight() <= 0.15f"));
+        }
+
+        [Test]
+        public void DiegeticGyroCompass_VisualOverkillStaysPresentationOnlyAndContinuous()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "Navigation", "DiegeticGyroCompassRuntime.cs");
+            string scheduleBody = ExtractMethodBody(source, "private void ScheduleDrift(");
+            string presentationBody = ExtractMethodBody(source, "private void ApplyPresentation(");
+            string drawBody = ExtractMethodBody(source, "private bool ShouldDrawIndirectDial(");
+            string qualityBody = ExtractMethodBody(source, "private static float ResolveVisualOverkillWeight01(");
+            string noiseBody = ExtractMethodBody(source, "private static float ResolveNoiseValue(");
+
+            Assert.That(source, Does.Contain("[FormerlySerializedAs(\"enableIndirectHighTier\")]"));
+            Assert.That(source, Does.Contain("private bool enableIndirectVisualRoute = true;"));
+            Assert.That(qualityBody, Does.Contain("quality * quality * math.lerp(0.5f, 1f, quality)"));
+            Assert.That(presentationBody, Does.Contain("ResolvePresentationVisualOverkillWeight01(in state)"));
+            Assert.That(presentationBody, Does.Contain("ResolveVisualDialHeading(heading, anomaly, visualOverkillWeight, state.NoiseClockSeconds)"));
+            Assert.That(presentationBody, Does.Contain("EmitVisualOverkillFailureParticles(powered, anomaly, visualOverkillWeight"));
+            Assert.That(drawBody, Does.Contain("enableIndirectVisualRoute"));
+            Assert.That(drawBody, Does.Not.Contain("_visualOverkillWeight01 >"));
+            Assert.That(drawBody, Does.Not.Contain("state.SystemStress01 <="));
+            Assert.That(scheduleBody, Does.Not.Contain("FlagIndirectDial"));
+            Assert.That(noiseBody, Does.Not.Contain("FlagIndirectDial"));
+            Assert.That(source, Does.Not.Contain("private bool enableIndirectHighTier"));
+            Assert.That(source, Does.Not.Contain("ShouldUseVisualOverkill"));
+            Assert.That(source, Does.Not.Contain("EmitHighTierFailureParticles"));
         }
 
         [Test]
@@ -385,10 +507,17 @@ namespace Hecton8.Tests.Editor
             string contracts = ReadProjectFile("Assets", "_Project", "Scripts", "Core", "HomeostasisBrain.cs");
             string dictator = ReadProjectFile("Assets", "_Project", "Scripts", "Core", "HomeostasisBrain.ScalabilityDictator.cs");
             string watchdog = ReadProjectFile("Assets", "_Project", "Scripts", "QA", "Headless", "Shinobu38QaWatchdogRuntime.cs");
+            string buildFlagsBody = ExtractMethodBody(contracts, "private static ushort BuildFlags(");
+            string pressureBody = ExtractMethodBody(contracts, "private static ushort ApplyPressurePolicy(");
 
             Assert.That(contracts, Does.Contain("SurvivalPressureEmergency = 1UL << 24"));
             Assert.That(contracts, Does.Contain("LowTierEmergency = SurvivalPressureEmergency"));
             Assert.That(dictator, Does.Contain("SystemBit.SurvivalPressureEmergency"));
+            Assert.That(dictator, Does.Not.Contain("VisualOverkillFlagQualityThreshold01"));
+            Assert.That(buildFlagsBody, Does.Not.Contain("GlobalQualityWeight >="));
+            Assert.That(buildFlagsBody, Does.Not.Contain("VisualOverkillBudgetOpen"));
+            Assert.That(pressureBody, Does.Contain("if ((targetMask & (ulong)SystemBit.VisualOverkill) != 0UL)"));
+            Assert.That(pressureBody, Does.Contain("HomeostasisSignalFlags.VisualOverkillBudgetOpen"));
             Assert.That(dictator, Does.Not.Contain("SystemBit.LowTierEmergency"));
             Assert.That(watchdog, Does.Contain("VaultFlagSurvivalPressureEmergency"));
             Assert.That(watchdog, Does.Contain("RichNormalFadeStart01"));
@@ -422,6 +551,31 @@ namespace Hecton8.Tests.Editor
             Assert.That(noirBridge, Does.Not.Contain("ResolveLowTierWeight01"));
             Assert.That(noirBridge, Does.Not.Contain("ResolveLowTierFloor01"));
             Assert.That(noirBridge, Does.Not.Contain("lowTierWeight01"));
+        }
+
+        [Test]
+        public void RenderingShaderBridges_UseContinuousOverkillAndRouteMasks()
+        {
+            string dispatcher = ReadProjectFile("Assets", "_Project", "Scripts", "Rendering", "GlobalShaderDispatcher.cs");
+            string noirBridge = ReadProjectFile("Assets", "_Project", "Scripts", "Rendering", "HectonUberNoirRuntimeBridge.cs");
+            string dispatcherOverkillBody = ExtractMethodBody(dispatcher, "private static float ResolveVisualOverkillWeight01(");
+            string noirLateFrameBody = ExtractMethodBody(noirBridge, "public void LateFrameTick()");
+            string stressWeightBody = ExtractMethodBody(noirBridge, "private float ResolveStressShedWeight01(");
+            string featureMaskBody = ExtractMethodBody(noirBridge, "private static uint BuildFeatureMask()");
+
+            Assert.That(dispatcherOverkillBody, Does.Contain("quality * quality * math.lerp(0.5f, 1f, quality)"));
+            Assert.That(noirLateFrameBody, Does.Contain("ResolveStressShedWeight01(stress01)"));
+            Assert.That(noirLateFrameBody, Does.Contain("ResolveVisualOverkillWeight01(quality01)"));
+            Assert.That(stressWeightBody, Does.Contain("_stressShedWeight01"));
+            Assert.That(featureMaskBody, Does.Contain("ContinuousUberNoirFeatureMask"));
+
+            Assert.That(dispatcher, Does.Not.Contain("(quality01 - 0.78f) * 4.5454545f"));
+            Assert.That(dispatcher, Does.Not.Contain("(quality - 0.78f) * 4.5454545f"));
+            Assert.That(noirLateFrameBody, Does.Not.Contain("bool stressShed"));
+            Assert.That(noirLateFrameBody, Does.Not.Contain("if (stressShed)"));
+            Assert.That(noirBridge, Does.Not.Contain("private bool ResolveStressShed("));
+            Assert.That(featureMaskBody, Does.Not.Contain("if ("));
+            Assert.That(featureMaskBody, Does.Not.Contain("FeatureMaskEpsilon"));
         }
 
         [Test]
@@ -467,20 +621,23 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void WorldSampler_SurvivalSamplingPressureReplacesActiveMathLodLowFlag()
+        public void WorldSampler_DoesNotPublishBinarySurvivalSamplingPressureFlag()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "GlobalWorldSampler.cs");
             string sampleBody = ExtractMethodBody(source, "public static void SampleDistanceOnly(");
             string normalBody = ExtractMethodBody(source, "public static void EstimateNormal(");
-            string flagBody = ExtractMethodBody(source, "private static byte ResolveSurvivalSamplingPressureFlag(");
 
             Assert.That(source, Does.Contain("ForceSurvivalSamplingPressure = 1 << 0"));
             Assert.That(source, Does.Contain("ForceMathLodLow = ForceSurvivalSamplingPressure"));
             Assert.That(source, Does.Contain("SurvivalSamplingPressure = 1 << 3"));
             Assert.That(source, Does.Contain("MathLodLow = SurvivalSamplingPressure"));
-            Assert.That(sampleBody, Does.Contain("ResolveSurvivalSamplingPressureFlag(qualityWeight)"));
-            Assert.That(normalBody, Does.Contain("GlobalWorldSamplerResultFlags.SurvivalSamplingPressure"));
-            Assert.That(flagBody, Does.Contain("ResolveExpensiveSamplingWeight(qualityWeight) <= 0.0001f"));
+            Assert.That(sampleBody, Does.Contain("byte resultFlags = 0;"));
+            Assert.That(normalBody, Does.Contain("GlobalWorldSamplerResultFlags.NormalEstimated"));
+            Assert.That(sampleBody, Does.Not.Contain("ResolveSurvivalSamplingPressureFlag"));
+            Assert.That(sampleBody, Does.Not.Contain("GlobalWorldSamplerResultFlags.SurvivalSamplingPressure"));
+            Assert.That(normalBody, Does.Not.Contain("GlobalWorldSamplerResultFlags.SurvivalSamplingPressure"));
+            Assert.That(source, Does.Not.Contain("private static byte ResolveSurvivalSamplingPressureFlag"));
+            Assert.That(source, Does.Not.Contain("ResolveExpensiveSamplingWeight(qualityWeight) <= 0.0001f"));
             Assert.That(sampleBody, Does.Not.Contain("GlobalWorldSamplerResultFlags.MathLodLow"));
             Assert.That(normalBody, Does.Not.Contain("GlobalWorldSamplerResultFlags.MathLodLow"));
             Assert.That(source, Does.Not.Contain("qualityWeight <= 0.05f ?"));
@@ -874,18 +1031,104 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void ShinobuApexBrain_UsesSurvivalNodeBudgetPressureFlag()
+        public void ShinobuApexBrain_PublishesContinuousSurvivalNodeBudgetPressure()
         {
             string contracts = ReadProjectFile("Assets", "_Project", "Scripts", "AI", "Cognition", "ShinobuApexBrainContracts.cs");
             string jobs = ReadProjectFile("Assets", "_Project", "Scripts", "AI", "Cognition", "ShinobuApexBrainJobs.cs");
+            string layout = ReadProjectFile("Assets", "_Project", "Scripts", "AI", "Cognition", "Editor", "AICognitionLayoutGuard1300.cs");
             string jobBody = ExtractTypeBody(jobs, "public struct ApexBrainJob");
+            string outputType = ExtractTypeBody(contracts, "public struct ApexBrainOutputDTO");
+            string influenceType = ExtractTypeBody(contracts, "public struct ApexInfluenceNode");
 
-            Assert.That(contracts, Does.Contain("public const byte SurvivalNodeBudgetPressure = 1 << 4;"));
+            Assert.That(contracts, Does.Contain("public const byte SurvivalNodeBudgetPressureCompatibility = 1 << 4;"));
+            Assert.That(contracts, Does.Contain("public const byte SurvivalNodeBudgetPressure = SurvivalNodeBudgetPressureCompatibility;"));
             Assert.That(contracts, Does.Contain("public const byte ReducedQualityNodeBudget = SurvivalNodeBudgetPressure;"));
-            Assert.That(jobBody, Does.Contain("ResolveSurvivalNodeBudgetPressureFlag(quality)"));
-            Assert.That(jobBody, Does.Contain("ApexBrainFlags.SurvivalNodeBudgetPressure"));
+            Assert.That(outputType, Does.Contain("[FieldOffset(156)] public byte SurvivalNodeBudgetPressureQ8;"));
+            Assert.That(influenceType, Does.Contain("[FieldOffset(52)] public byte SurvivalNodeBudgetPressureQ8;"));
+            Assert.That(layout, Does.Contain("AssertOffset<ApexBrainOutputDTO>(nameof(ApexBrainOutputDTO.SurvivalNodeBudgetPressureQ8), 156);"));
+            Assert.That(layout, Does.Contain("AssertOffset<ApexInfluenceNode>(nameof(ApexInfluenceNode.SurvivalNodeBudgetPressureQ8), 52);"));
+            Assert.That(jobBody, Does.Contain("EncodeSurvivalNodeBudgetPressureQ8(quality)"));
+            Assert.That(jobBody, Does.Contain("output.SurvivalNodeBudgetPressureQ8 = survivalNodeBudgetPressureQ8;"));
+            Assert.That(jobBody, Does.Contain("SurvivalNodeBudgetPressureQ8 = survivalNodeBudgetPressureQ8"));
+            Assert.That(jobBody, Does.Not.Contain("ResolveSurvivalNodeBudgetPressureFlag"));
+            Assert.That(jobBody, Does.Not.Contain("ApexBrainFlags.SurvivalNodeBudgetPressure"));
             Assert.That(jobBody, Does.Not.Contain("ResolveReducedQualityNodeBudgetFlag"));
             Assert.That(jobBody, Does.Not.Contain("ApexBrainFlags.ReducedQualityNodeBudget"));
+            Assert.That(jobBody, Does.Not.Contain("quality >= ApexBrainConstants.MinimumQualityNodeHold"));
+        }
+
+        [Test]
+        public void CarveDebrisBlackBox_PublishesContinuousQualityPressure()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "VFX", "Debris", "CarveDebrisComputeRenderer.cs");
+            string blackBoxBody = ExtractMethodBody(source, "private void WriteBlackBox");
+            string entryBody = ExtractTypeBody(source, "private struct CarveDebrisTelemetryEntry");
+
+            Assert.That(source, Does.Not.Contain("QualityPressureTelemetryFlag"));
+            Assert.That(source, Does.Contain("private static byte EncodeQualityPressureQ8(float qualityPressure01)"));
+            Assert.That(entryBody, Does.Contain("public byte QualityPressureQ8;"));
+            Assert.That(blackBoxBody, Does.Contain("byte qualityPressureQ8 = EncodeQualityPressureQ8(qualityPressure01);"));
+            Assert.That(blackBoxBody, Does.Contain("QualityPressureQ8 = qualityPressureQ8"));
+            Assert.That(blackBoxBody, Does.Not.Contain("qualityPressure01 >= 0.75f"));
+        }
+
+        [Test]
+        public void SplashdownFluidImpulseTelemetry_EncodesContinuousQualityPressure()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "HectonFluidEngine.cs");
+            string queueBody = ExtractMethodBody(source, "private bool QueueSplashdownFluidImpulse");
+            string publishBody = ExtractMethodBody(source, "private void PublishSplashdownFluidImpulseTelemetry");
+
+            Assert.That(source, Does.Not.Contain("SplashdownImpulseQualityPressureFlag"));
+            Assert.That(source, Does.Not.Contain("qualityPressure01 > 0.001f"));
+            Assert.That(source, Does.Contain("private byte _splashdownImpulseQualityPressureQ8;"));
+            Assert.That(source, Does.Contain("private static byte EncodeSplashdownImpulseQualityPressureQ8(float qualityPressure01)"));
+            Assert.That(queueBody, Does.Contain("_splashdownImpulseQualityPressureQ8 = EncodeSplashdownImpulseQualityPressureQ8(qualityPressure01);"));
+            Assert.That(publishBody, Does.Contain("uint qualityPressureContext = (uint)_splashdownImpulseQualityPressureQ8 << 16;"));
+            Assert.That(publishBody, Does.Contain("SplashdownFluidImpulseContextHash ^ flags ^ qualityPressureContext"));
+        }
+
+        [Test]
+        public void DispatcherBlackBox_PacksContinuousQualityWeight()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Core", "SystemDispatcher.cs");
+            string writeBody = ExtractMethodBody(source, "private void RecordDispatcherBlackBoxHeartbeat");
+
+            Assert.That(source, Does.Not.Contain("DispatcherBlackBoxFlagSurvivalQuality"));
+            Assert.That(source, Does.Not.Contain("_globalQualityWeight01 <= 0.25f"));
+            Assert.That(source, Does.Contain("private const int DispatcherBlackBoxQualityWeightQ8Shift = 8;"));
+            Assert.That(source, Does.Contain("private static ushort EncodeDispatcherQualityWeightQ8(float qualityWeight01)"));
+            Assert.That(writeBody, Does.Contain("ushort flags = EncodeDispatcherQualityWeightQ8(_globalQualityWeight01);"));
+        }
+
+        [Test]
+        public void VisorFluidBlackBox_PublishesScalarQualityTelemetry()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "HectonVisorFluidDistortionFeature.cs");
+            string entryBody = ExtractTypeBody(source, "private struct VisorRefractionTelemetryEntry");
+            string writeBody = ExtractMethodBody(source, "private void WriteBlackBoxFrame");
+            string hashBody = ExtractMethodBody(source, "private static uint BuildBlackBoxHash");
+            string serializeBody = ExtractMethodBody(source, "private static void WriteTelemetryEntry");
+
+            Assert.That(source, Does.Not.Contain("BlackBoxFlagQualityPressure"));
+            Assert.That(source, Does.Not.Contain("BlackBoxFlagHomeostasisFallback"));
+            Assert.That(source, Does.Not.Contain("BlackBoxFlagThermalMotionCull"));
+            Assert.That(source, Does.Not.Contain("BlackBoxFlagVisualOverkill"));
+            Assert.That(writeBody, Does.Not.Contain("runtimeState.QualityPressure01 > 0.001f"));
+            Assert.That(writeBody, Does.Not.Contain("runtimeState.HomeostasisFallback01 > 0.5f"));
+            Assert.That(writeBody, Does.Not.Contain("runtimeState.ThermalMotionCull01 > 0.5f"));
+            Assert.That(writeBody, Does.Not.Contain("runtimeState.VisualOverkill01 > 0.001f"));
+            Assert.That(entryBody, Does.Contain("[System.Runtime.InteropServices.FieldOffset(48)]"));
+            Assert.That(entryBody, Does.Contain("public byte QualityPressureQ8;"));
+            Assert.That(entryBody, Does.Contain("public byte HomeostasisFallbackQ8;"));
+            Assert.That(entryBody, Does.Contain("public byte ThermalMotionCullQ8;"));
+            Assert.That(entryBody, Does.Contain("public byte VisualOverkillQ8;"));
+            Assert.That(writeBody, Does.Contain("entry.QualityPressureQ8 = EncodeUnitQ8(runtimeState.QualityPressure01);"));
+            Assert.That(writeBody, Does.Contain("entry.VisualOverkillQ8 = EncodeUnitQ8(runtimeState.VisualOverkill01);"));
+            Assert.That(hashBody, Does.Contain("Sanitize01(runtimeState.HomeostasisFallback01)"));
+            Assert.That(hashBody, Does.Contain("Sanitize01(runtimeState.ThermalMotionCull01)"));
+            Assert.That(serializeBody, Does.Contain("destination[48] = entry.QualityPressureQ8;"));
+            Assert.That(serializeBody, Does.Contain("destination[51] = entry.VisualOverkillQ8;"));
         }
 
         [Test]
@@ -997,13 +1240,21 @@ namespace Hecton8.Tests.Editor
             string director = ReadProjectFile("Assets", "_Project", "Scripts", "Narrative", "Prologue", "AwaitableDropSequenceDirector.cs");
 
             Assert.That(contracts, Does.Contain("float SurvivalProxyPressure01 { get; }"));
+            Assert.That(contracts, Does.Contain("bool IsSurvivalProxySurfaceActive { get; }"));
+            Assert.That(contracts, Does.Contain("This member is a compatibility alias."));
             Assert.That(contracts, Does.Contain("SurvivalProxySurface = 1"));
             Assert.That(bridge, Does.Contain("ResolveSurvivalProxyPressureWithHysteresis"));
             Assert.That(bridge, Does.Contain("ReadSurvivalProxyPressurePolicy"));
+            Assert.That(bridge, Does.Contain("public bool IsSurvivalProxySurfaceActive"));
+            Assert.That(bridge, Does.Contain("public bool IsLowTier => IsSurvivalProxySurfaceActive;"));
+            Assert.That(bridge, Does.Contain("float survivalPressure01 = 1.0f - SmoothStep01(qualityWeight01);"));
+            Assert.That(bridge, Does.Contain("forcedLowMemory = pressure01 >= ForcedMemoryPressureThreshold01;"));
             Assert.That(director, Does.Contain("_runtime.SurvivalProxyPressure01"));
             Assert.That(director, Does.Contain("PrologueSequenceQualityPolicy.SurvivalProxyActivationThreshold01"));
             Assert.That(director, Does.Not.Contain("_runtime.IsLowTier"));
             Assert.That(director, Does.Not.Contain("LowTierProxySurface"));
+            Assert.That(bridge, Does.Not.Contain("ForcedMemoryQualityThreshold01"));
+            Assert.That(bridge, Does.Not.Contain("qualityWeight01 <= ForcedMemory"));
             Assert.That(bridge, Does.Not.Contain("ResolveLowTierWithHysteresis"));
             Assert.That(bridge, Does.Not.Contain("ReadLowTierPolicy"));
         }
@@ -1127,8 +1378,8 @@ namespace Hecton8.Tests.Editor
                 thermal.Contains("if (_stressEwmaScheduled)\n                return;") ||
                 thermal.Contains("if (_stressEwmaScheduled)\r\n                return;"),
                 Is.True);
-            Assert.That(thermal, Does.Contain("_coldFsrCapabilityAllowed = !Application.isMobilePlatform && SystemInfo.supportsComputeShaders;"));
-            Assert.That(thermal, Does.Not.Contain("private static bool ResolveFsrUpscalerAllowed"));
+            Assert.That(thermal, Does.Contain("_coldBilateralDrsRouteAllowed = !Application.isMobilePlatform && SystemInfo.supportsComputeShaders;"));
+            Assert.That(thermal, Does.Not.Contain("ResolveFsrUpscalerAllowed"));
             Assert.That(thermal, Does.Not.Contain("int graphicsMemoryMb = SystemInfo.graphicsMemorySize;"));
             Assert.That(thermal, Does.Not.Contain("_coldGraphicsMemoryMb"));
             Assert.That(thermal, Does.Not.Contain("Application.isMobilePlatform || !SystemInfo.supportsComputeShaders"));
@@ -1461,6 +1712,70 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void TerminalOsRuntime_ResourceAndCsvWorkAreSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "TerminalOS", "TerminalOsRuntime.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string refreshBody = ExtractMethodBody(source, "private void RefreshScalabilityPolicy()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string flushBody = ExtractMethodBody(source, "private void FlushPendingGraphicsResourceRebuild()");
+            string blackBoxFlushBody = ExtractMethodBody(source, "private void FlushQueuedBlackBoxDumps()");
+            string decryptionFinalizeBody = ExtractMethodBody(source, "private void TryFinalizeDecryptionJob()");
+
+            Assert.That(source, Does.Contain("MonoBehaviour, ISlowTickable, ILateFrameTickable"));
+            Assert.That(lateFrameBody, Does.Not.Contain("TryMonitorLayoutCsv"));
+            Assert.That(lateFrameBody, Does.Not.Contain("TryMonitorDecryptionCsv"));
+            Assert.That(lateFrameBody, Does.Not.Contain("TryDumpBlackBox("));
+            Assert.That(lateFrameBody, Does.Not.Contain("TryDumpDecryptionBlackBox("));
+            Assert.That(lateFrameBody, Does.Contain("QueueTerminalBlackBoxDump(faultFlags);"));
+            Assert.That(lateFrameBody, Does.Not.Contain("ReleaseRenderTexture"));
+            Assert.That(lateFrameBody, Does.Not.Contain("EnsureGraphicsResources"));
+            Assert.That(lateFrameBody, Does.Not.Contain("EnsureTextureArray"));
+            Assert.That(lateFrameBody, Does.Not.Contain("new RenderTexture"));
+            Assert.That(lateFrameBody, Does.Not.Contain("Destroy("));
+            Assert.That(lateFrameBody, Does.Not.Contain("File."));
+            Assert.That(lateFrameBody, Does.Not.Contain("new FileStream"));
+            Assert.That(refreshBody, Does.Contain("QueueGraphicsResourceRebuild();"));
+            Assert.That(refreshBody, Does.Not.Contain("ReleaseRenderTexture();"));
+            Assert.That(slowBody, Does.Contain("TryMonitorLayoutCsv(ownerFrame);"));
+            Assert.That(slowBody, Does.Contain("TryMonitorDecryptionCsv(ownerFrame);"));
+            Assert.That(slowBody, Does.Contain("FlushPendingGraphicsResourceRebuild();"));
+            Assert.That(slowBody, Does.Contain("FlushQueuedBlackBoxDumps();"));
+            Assert.That(flushBody, Does.Contain("ReleaseRenderTexture();"));
+            Assert.That(flushBody, Does.Contain("EnsureGraphicsResources();"));
+            Assert.That(flushBody, Does.Contain("ForceAllDirty();"));
+            Assert.That(blackBoxFlushBody, Does.Contain("TryDumpBlackBox(faultFlags);"));
+            Assert.That(blackBoxFlushBody, Does.Contain("TryDumpDecryptionBlackBox(decryptionFaultFlags);"));
+            Assert.That(decryptionFinalizeBody, Does.Contain("QueueDecryptionBlackBoxDump(faultFlags);"));
+            Assert.That(decryptionFinalizeBody, Does.Not.Contain("TryDumpDecryptionBlackBox("));
+        }
+
+        [Test]
+        public void BilateralDrsUpscaler_TelemetryWritesAfterSimulation()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Rendering", "BilateralDrs", "HectonBilateralDrsUpscalerRuntime.cs");
+            string simulationBody = ExtractMethodBody(source, "private JobHandle ScheduleOwnerSimulation(");
+            string postBody = ExtractMethodBody(source, "private void RunOwnerPostSimulation()");
+            string visualSyncBody = ExtractMethodBody(source, "private void RunOwnerVisualSync()");
+            string failClosedBody = ExtractMethodBody(source, "private void FailClosedRuntimeRoute(");
+            string resetBody = ExtractMethodBody(source, "private void ResetVaultSeedState()");
+
+            Assert.That(source, Does.Contain("private UpscalerTelemetryEntry _pendingTelemetryEntry;"));
+            Assert.That(source, Does.Contain("private bool _pendingTelemetryEntryValid;"));
+            Assert.That(simulationBody, Does.Contain("_pendingTelemetryEntry = telemetryEntry;"));
+            Assert.That(simulationBody, Does.Contain("_pendingTelemetryEntryValid = true;"));
+            Assert.That(simulationBody, Does.Not.Contain("RecordUpscalerTelemetryOneLock"));
+            Assert.That(postBody, Does.Contain("RecordUpscalerTelemetryOneLock(in telemetryEntry);"));
+            Assert.That(postBody, Does.Contain("PublishPendingParameters();"));
+            Assert.That(postBody.IndexOf("RecordUpscalerTelemetryOneLock", System.StringComparison.Ordinal), Is.LessThan(postBody.IndexOf("PublishPendingParameters", System.StringComparison.Ordinal)));
+            Assert.That(visualSyncBody, Does.Contain("UploadParametersToGpu()"));
+            Assert.That(failClosedBody, Does.Contain("_pendingTelemetryEntryValid = false;"));
+            Assert.That(failClosedBody, Does.Contain("_pendingTelemetryEntry = default;"));
+            Assert.That(resetBody, Does.Contain("_pendingTelemetryEntryValid = false;"));
+            Assert.That(resetBody, Does.Contain("_pendingTelemetryEntry = default;"));
+        }
+
+        [Test]
         public void RemainingComputeAdmission_UsesCapabilityNotHighResourceBucket()
         {
             string scriptsRoot = ResolveProjectPath("Assets", "_Project", "Scripts");
@@ -1526,8 +1841,16 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("ResolveHardwareVisualCapacity01"));
             Assert.That(source, Does.Contain("HomeostasisBrain.GlobalQualityWeight"));
             Assert.That(source, Does.Contain("SmoothRange01(0.28f, 1f, weight)"));
+            Assert.That(source, Does.Contain("ContinuousVisualFeatureMask"));
+            Assert.That(source, Does.Contain("VisualFeatureWeightQ8"));
+            Assert.That(source, Does.Contain("PomWeightQ8"));
             Assert.That(source, Does.Not.Contain("SystemInfo.graphicsMemorySize <= 2048"));
             Assert.That(source, Does.Not.Contain("SystemInfo.graphicsMemorySize > 4096 ?"));
+            Assert.That(source, Does.Not.Contain("visualWeight01 >= 0.18f"));
+            Assert.That(source, Does.Not.Contain("visualWeight01 >= 0.34f"));
+            Assert.That(source, Does.Not.Contain("visualWeight01 >= 0.52f"));
+            Assert.That(source, Does.Not.Contain("visualWeight01 >= 0.64f"));
+            Assert.That(source, Does.Not.Contain("visualWeight01 >= 0.78f"));
         }
 
         [Test]
@@ -1549,6 +1872,17 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Not.Contain("UltraTierUnloadRadiusMeters"));
             Assert.That(source, Does.Not.Contain("SystemInfo.graphicsMemorySize > 2048)\r\n                return false"));
             Assert.That(source, Does.Not.Contain("SystemInfo.graphicsMemorySize > 2048)\n                return false"));
+        }
+
+        [Test]
+        public void WorldChunkResidency_HlodImpostorFlagsAvoidQualitySnapThreshold()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "WorldChunkResidencyManager.cs");
+
+            Assert.That(source, Does.Not.Contain("ChunkImpostorSurvivalSnapQualityThreshold"));
+            Assert.That(source, Does.Not.Contain("ResolveSmoothGlobalQualityWeight01() <= ChunkImpostor"));
+            Assert.That(source, Does.Not.Contain("flags |= HectonChunkImpostorResidency.FlagSurvivalSnap;"));
+            Assert.That(source, Does.Contain("flags |= HectonChunkImpostorResidency.FlagDitherBlend;"));
         }
 
         [Test]
@@ -1686,6 +2020,7 @@ namespace Hecton8.Tests.Editor
         public void ThermodynamicsHazardGrid_VisualUploadCadenceUsesContinuousQuality()
         {
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "Thermodynamics", "ThermodynamicsHazardGridRuntime.cs");
+            string typesSource = ReadProjectFile("Assets", "_Project", "Scripts", "Thermodynamics", "ThermodynamicsHazardTypes.cs");
 
             string strideBody = ExtractMethodBody(source, "private static int ResolveVisualUploadStride(");
             Assert.That(strideBody, Does.Contain("qualityWeight01"));
@@ -1703,6 +2038,714 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Not.Contain("TelemetryFlagLowTier"));
             Assert.That(source, Does.Not.Contain("TelemetryFlagHealthPressureLowTier"));
             Assert.That(source, Does.Not.Contain("_healthPressureLowTierFrames"));
+
+            string telemetryEntry = ExtractTypeBody(typesSource, "public struct ThermodynamicsHazardTelemetryEntry");
+            string scanJob = ExtractTypeBody(source, "private struct ScanTelemetryJob");
+            Assert.That(source, Does.Not.Contain("TelemetryFlagQualityPressure"));
+            Assert.That(source, Does.Not.Contain("TelemetryFlagHealthPressureSurvival"));
+            Assert.That(scanJob, Does.Not.Contain("QualityPressureQ8 >= 128u"));
+            Assert.That(scanJob, Does.Not.Contain("HealthPressureQ8 > 0u"));
+            Assert.That(scanJob, Does.Contain("QualityPressureQ8 = (byte)math.min(QualityPressureQ8, 255u)"));
+            Assert.That(scanJob, Does.Contain("HealthPressureQ8 = (byte)math.min(HealthPressureQ8, 255u)"));
+            Assert.That(telemetryEntry, Does.Contain("[FieldOffset(56)] public byte QualityPressureQ8;"));
+            Assert.That(telemetryEntry, Does.Contain("[FieldOffset(57)] public byte HealthPressureQ8;"));
+        }
+
+        [Test]
+        public void VolcanicUpdraftTelemetry_StoresDebrisLiftAsContinuousQ8()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "VolcanicUpdraftDirector.cs");
+            string entryBody = ExtractTypeBody(source, "public struct VolcanicUpdraftTelemetryEntry");
+            string finalizeJob = ExtractTypeBody(source, "internal struct VolcanicTelemetryFinalizeJob");
+
+            Assert.That(source, Does.Not.Contain("TelemetryFlagDebrisCulled"));
+            Assert.That(source, Does.Not.Contain("debris.Flags |= VolcanicUpdraftVault.TelemetryFlagDebrisCulled"));
+            Assert.That(finalizeJob, Does.Not.Contain("ResolveDebrisLiftWeight(Settings.GlobalQualityWeight) <= 0.0001f"));
+            Assert.That(entryBody, Does.Contain("[FieldOffset(60)] public byte DebrisLiftWeightQ8;"));
+            Assert.That(source, Does.Contain("internal static byte EncodeUnitQ8(float value)"));
+            Assert.That(finalizeJob, Does.Contain("DebrisLiftWeightQ8 = VolcanicUpdraftVault.EncodeUnitQ8(debrisLiftWeight)"));
+        }
+
+        [Test]
+        public void ProceduralBiteIk_UsesPackedVisualOverkillWeightInsteadOfBinaryFlag()
+        {
+            string jobs = ReadProjectFile("Assets", "_Project", "Scripts", "Animation", "Fauna", "ProceduralBiteIkJobs.cs");
+            string runtime = ReadProjectFile("Assets", "_Project", "Scripts", "Fauna", "FaunaKinematicsRuntime.cs");
+            string constants = ExtractTypeBody(jobs, "public static class ProceduralBiteIkConstants");
+            string jobBody = ExtractTypeBody(jobs, "public struct ProceduralBiteJob");
+            string eventBody = ExtractTypeBody(jobs, "public struct BiteIkSolveEvent");
+            string flagsBody = ExtractMethodBody(runtime, "private uint ResolveBiteRuntimeFlags()");
+            string hullDentBody = ExtractMethodBody(runtime, "private void PublishBiteHullDent(");
+            string debrisQuantityBody = ExtractMethodBody(runtime, "private static ushort ResolveBiteDebrisQuantity(");
+
+            Assert.That(constants, Does.Contain("ResultVisualOverkillWeightMask = 0x00FF0000u"));
+            Assert.That(constants, Does.Contain("PackVisualOverkillWeight(float weight01)"));
+            Assert.That(constants, Does.Contain("DecodeVisualOverkillWeight01(uint flags)"));
+            Assert.That(jobBody, Does.Contain("public float VisualOverkillWeight01;"));
+            Assert.That(jobBody, Does.Contain("PackVisualOverkillWeight(visualOverkillWeight)"));
+            Assert.That(jobBody, Does.Contain("wrapBoneCount"));
+            Assert.That(eventBody, Does.Contain("[FieldOffset(108)] public float VisualOverkillWeight01;"));
+            Assert.That(jobBody, Does.Contain("VisualOverkillWeight01 = ProceduralBiteIkConstants.DecodeVisualOverkillWeight01(pose.Flags)"));
+            Assert.That(jobBody, Does.Not.Contain("RuntimeFlagMaximumQuality"));
+            Assert.That(jobBody, Does.Not.Contain("RuntimeFlagVisualOverkill"));
+            Assert.That(jobBody, Does.Not.Contain("ResultFlagVisualOverkill"));
+            Assert.That(runtime, Does.Contain("VisualOverkillWeight01 = ResolveBiteVisualOverkillWeight(_globalQualityWeight)"));
+            Assert.That(flagsBody, Does.Not.Contain("RuntimeFlagMaximumQuality"));
+            Assert.That(flagsBody, Does.Not.Contain("RuntimeFlagVisualOverkill"));
+            Assert.That(hullDentBody, Does.Contain("DecodeVisualOverkillWeight01(pose.Flags)"));
+            Assert.That(hullDentBody, Does.Not.Contain("LowTierVisualOnlyFlag"));
+            Assert.That(hullDentBody, Does.Not.Contain("overkill ?"));
+            Assert.That(debrisQuantityBody, Does.Not.Contain("poseFlags"));
+            Assert.That(runtime, Does.Not.Contain("ResultFlagVisualOverkill) != 0u"));
+        }
+
+        [Test]
+        public void FaunaSdfHugging_UsesContinuousInfluenceWeight()
+        {
+            string runtime = ReadProjectFile("Assets", "_Project", "Scripts", "Fauna", "FaunaKinematicsRuntime.cs");
+            string resolveSdfBody = ExtractMethodBody(runtime, "private void ResolveSdfPayload(");
+
+            Assert.That(runtime, Does.Contain("private static float ResolveSdfHuggingWeight(float qualityWeight)"));
+            Assert.That(resolveSdfBody, Does.Contain("float sdfHuggingWeight = ResolveSdfHuggingWeight(qualityWeight);"));
+            Assert.That(resolveSdfBody, Does.Contain("sdfRange = math.max(0f, range) * sdfHuggingWeight;"));
+            Assert.That(resolveSdfBody, Does.Not.Contain("SmoothQualityCurve(qualityWeight) <= 0.0001f"));
+        }
+
+        [Test]
+        public void RepairTool_UsesContinuousSparkQuantityAndQ8RepairQuality()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "RepairTool.cs");
+            string signals = ReadProjectFile("Assets", "_Project", "Scripts", "Core", "Signals", "GlobalSignalPayloads.DomainRemainder.cs");
+            string sparkBody = ExtractMethodBody(source, "private void PublishRepairSparkSignal(");
+            string quantityBody = ExtractMethodBody(source, "private static ushort ResolveRepairSparkQuantity(");
+            string repairedBody = ExtractMethodBody(source, "private void PublishHullRepairedSignal(");
+            string repairedSignalType = ExtractTypeBody(signals, "public struct HullRepairedSignal");
+
+            Assert.That(sparkBody, Does.Contain("DebrisSpawnSignal.FlagToolSparks | DebrisSpawnSignal.FlagComputeShard"));
+            Assert.That(sparkBody, Does.Contain("ResolveRepairSparkQuantity(safeIntensity01, quality01)"));
+            Assert.That(sparkBody, Does.Not.Contain("FlagComputeShard *"));
+            Assert.That(sparkBody, Does.Not.Contain("ResolveRepairQualityCurve(quality01) > 0.0001f"));
+            Assert.That(quantityBody, Does.Contain("math.lerp(2f, 8f, qualityCurve)"));
+            Assert.That(quantityBody, Does.Contain("math.lerp(6f, 32f, qualityCurve)"));
+            Assert.That(repairedBody, Does.Contain("byte qualityWeightQ8 = ResolveRepairQualityWeightByte();"));
+            Assert.That(repairedBody, Does.Contain("QualityWeightQ8 = qualityWeightQ8"));
+            Assert.That(repairedBody, Does.Contain("byte flags = HullRepairedSignal.CompletedFlag;"));
+            Assert.That(repairedBody, Does.Not.Contain("lowVisualProxy"));
+            Assert.That(repairedBody, Does.Not.Contain("LowTierVisualOnlyFlag"));
+            Assert.That(repairedSignalType, Does.Contain("SurvivalPressureVisualOnlyFlag = 1 << 1"));
+            Assert.That(repairedSignalType, Does.Contain("LowTierVisualOnlyFlag = SurvivalPressureVisualOnlyFlag"));
+            Assert.That(repairedSignalType, Does.Contain("[FieldOffset(62)] public byte QualityWeightQ8;"));
+            Assert.That(repairedSignalType, Does.Contain("[FieldOffset(62)] public byte QualityTier;"));
+        }
+
+        [Test]
+        public void ToolDiegeticDisplay_UsesScalarQualityWithoutFallbackThresholds()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "Tools", "ToolDiegeticDisplayController.cs");
+            string policyBody = ExtractMethodBody(source, "private void ApplyQualityPolicy(");
+            string fallbackBody = ExtractMethodBody(source, "private bool ResolveRequestedFallback()");
+            string scannerTitleBody = ExtractMethodBody(source, "private void WriteScannerPrimaryLine(");
+
+            Assert.That(policyBody, Does.Contain("_qualityFallback01 = 1f - qualityCurve;"));
+            Assert.That(policyBody, Does.Contain("_visualOverkill01 = SmoothStep01"));
+            Assert.That(fallbackBody, Does.Contain("return _poolUnavailableFallback;"));
+            Assert.That(fallbackBody, Does.Not.Contain("_qualityFallback01 >= 0.75f"));
+            Assert.That(scannerTitleBody, Does.Contain("bool compactTitle = _fallbackActive;"));
+            Assert.That(scannerTitleBody, Does.Not.Contain("_qualityFallback01 >= 0.66f"));
+            Assert.That(source, Does.Not.Contain("Texture used when quality pressure disables the render-texture camera."));
+        }
+
+        [Test]
+        public void ToolDiegeticDisplay_RenderTextureResourceWorkIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "Tools", "ToolDiegeticDisplayController.cs");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string ensureBody = ExtractMethodBody(source, "private void EnsureRenderTexture()");
+            string flushBody = ExtractMethodBody(source, "private void FlushPendingRenderTextureResourceState()");
+
+            Assert.That(slowBody, Does.Contain("FlushPendingRenderTextureResourceState();"));
+            Assert.That(flushBody, Does.Contain("ReleaseRenderTexture();"));
+            Assert.That(flushBody, Does.Contain("EnsureRenderTexture();"));
+            Assert.That(lateFrameBody, Does.Not.Contain("EnsureRenderTexture("));
+            Assert.That(lateFrameBody, Does.Not.Contain("ReleaseRenderTexture("));
+            Assert.That(ensureBody, Does.Contain("IRenderTexturePoolService pool = _cachedRenderTexturePool;"));
+            Assert.That(ensureBody, Does.Not.Contain("CacheRenderTexturePoolCold()"));
+            Assert.That(ensureBody, Does.Not.Contain("GlobalRegistry."));
+        }
+
+        [Test]
+        public void MapMagicVegetation_TerrainTextureCacheAllocationIsColdOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "HectonMapMagicVegetationBridge.cs");
+            string cacheBody = ExtractMethodBody(source, "private bool CacheTileMasks(");
+            string coldBody = ExtractMethodBody(source, "private static void RefreshTerrainTextureCachesCold(");
+            string hotBody = ExtractMethodBody(source, "private static bool TryRefreshTerrainTextureCachesHot(");
+
+            Assert.That(cacheBody, Does.Contain("TryRefreshTerrainTextureCachesHot(state, terrainData)"));
+            Assert.That(cacheBody, Does.Not.Contain("RefreshTerrainTextureCachesCold("));
+            Assert.That(coldBody, Does.Contain("new Texture2D[textureCount]"));
+            Assert.That(hotBody, Does.Not.Contain("new Texture2D["));
+        }
+
+        [Test]
+        public void SargassumDrag_VisualResourceRepairIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "SargassumGlobalDragManager.cs");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string repairBody = ExtractMethodBody(source, "private void EnsureVisualResourcesForSlowTick()");
+
+            Assert.That(slowBody, Does.Contain("EnsureVisualResourcesForSlowTick();"));
+            Assert.That(lateFrameBody, Does.Not.Contain("EnsureVisualResourcesForSlowTick("));
+            Assert.That(lateFrameBody, Does.Not.Contain("CreateDensityTexture("));
+            Assert.That(lateFrameBody, Does.Not.Contain("EnsureNestedAttachmentStorage("));
+            Assert.That(lateFrameBody, Does.Not.Contain("EnsureScavengerRenderResources("));
+            Assert.That(lateFrameBody, Does.Contain("_visualResourceRepairRequested = true;"));
+            Assert.That(repairBody, Does.Contain("EnsureNestedAttachmentStorage();"));
+            Assert.That(repairBody, Does.Contain("CreateDensityTexture();"));
+            Assert.That(repairBody, Does.Contain("EnsureScavengerRenderResources();"));
+        }
+
+        [Test]
+        public void VisorHud_ScissorCommandBuffersAreColdPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Visor", "VisorHUDController.cs");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string configureBody = ExtractMethodBody(source, "private void ConfigureHudScissorCommandBuffers()");
+            string repairBody = ExtractMethodBody(source, "private void FlushHudScissorCommandBufferRepairSlow()");
+            string coldBody = ExtractMethodBody(source, "private void EnsureHudScissorCommandBuffersCold()");
+            string capabilityBody = ExtractMethodBody(source, "private void CacheGraphicsCapabilitiesCold()");
+
+            Assert.That(slowBody, Does.Contain("FlushHudScissorCommandBufferRepairSlow();"));
+            Assert.That(configureBody, Does.Contain("HasHudScissorCommandBuffersReady()"));
+            Assert.That(configureBody, Does.Not.Contain("EnsureHudScissorCommandBuffersCold("));
+            Assert.That(configureBody, Does.Not.Contain("new CommandBuffer"));
+            Assert.That(repairBody, Does.Contain("EnsureHudScissorCommandBuffersCold();"));
+            Assert.That(coldBody, Does.Contain("new CommandBuffer"));
+            Assert.That(capabilityBody, Does.Contain("SampleScriptableRenderPipelineActiveCold()"));
+        }
+
+        [Test]
+        public void CelestialEngine_AtmosphereLutResourceRepairIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "HectonCelestialEngine.cs");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string visualBody = ExtractMethodBody(source, "private void FlushCelestialVisualSync()");
+            string visualUpdateBody = ExtractMethodBody(source, "private void TryUpdateDynamicCelestialAtmosphereVisualSync(");
+            string slowRepairBody = ExtractMethodBody(source, "private void FlushCelestialAtmosphereLutRepairSlow()");
+            string textureBody = ExtractMethodBody(source, "private void EnsureCelestialAtmosphereTexture()");
+
+            Assert.That(slowBody, Does.Contain("FlushCelestialAtmosphereLutRepairSlow();"));
+            Assert.That(visualBody, Does.Contain("TryUpdateDynamicCelestialAtmosphereVisualSync(sunElevation);"));
+            Assert.That(visualBody, Does.Not.Contain("EnsureCelestialAtmosphereLutReady("));
+            Assert.That(visualBody, Does.Not.Contain("EnsureCelestialAtmosphereTexture("));
+            Assert.That(visualUpdateBody, Does.Contain("QueueCelestialAtmosphereLutRepair();"));
+            Assert.That(visualUpdateBody, Does.Not.Contain("EnsureCelestialAtmosphereTexture("));
+            Assert.That(visualUpdateBody, Does.Not.Contain("EnsureCelestialAtmosphereAuthoring("));
+            Assert.That(slowRepairBody, Does.Contain("EnsureCelestialAtmosphereLutReady(publishOnRebuild: false);"));
+            Assert.That(textureBody, Does.Contain("new Texture2D("));
+            Assert.That(source, Does.Not.Contain("allowResourceRepair"));
+        }
+
+        [Test]
+        public void GlobalWeatherDirector_NoirFogLutResourceRepairIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Environment", "GlobalWeatherDirector.cs");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string flushBody = ExtractMethodBody(source, "private void FlushNoirFogLutTexture()");
+            string slowRepairBody = ExtractMethodBody(source, "private void FlushNoirFogLutRepairSlow()");
+            string ensureBody = ExtractMethodBody(source, "private void EnsureNoirFogLutResources()");
+
+            Assert.That(slowBody, Does.Contain("FlushNoirFogLutRepairSlow();"));
+            Assert.That(lateFrameBody, Does.Not.Contain("EnsureNoirFogLutResources("));
+            Assert.That(flushBody, Does.Contain("QueueNoirFogLutRepair();"));
+            Assert.That(flushBody, Does.Not.Contain("EnsureNoirFogLutResources("));
+            Assert.That(slowRepairBody, Does.Contain("EnsureNoirFogLutResources();"));
+            Assert.That(slowRepairBody, Does.Contain("_weatherShaderDirty = true;"));
+            Assert.That(ensureBody, Does.Contain("new Texture2D("));
+            Assert.That(ensureBody, Does.Contain("new Color[resolution * NoirFogLutRowCount]"));
+        }
+
+        [Test]
+        public void NativeTrailRenderer_BufferRepairIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "VFX", "NativeTrailRenderer.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string ensureBody = ExtractMethodBody(source, "private void EnsureBuffers()");
+
+            Assert.That(source, Does.Contain("ISlowTickable"));
+            Assert.That(lateFrameBody, Does.Contain("QueueBufferRepair();"));
+            Assert.That(lateFrameBody, Does.Not.Contain("EnsureBuffers("));
+            Assert.That(slowBody, Does.Contain("EnsureBuffers();"));
+            Assert.That(ensureBody, Does.Contain("new TrailSample[_resolvedCapacity]"));
+            Assert.That(ensureBody, Does.Contain("new Mesh"));
+        }
+
+        [Test]
+        public void GpuScatterLod_VisibleCountReadbackRepairIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Rendering", "Scatter", "GpuScatterLodManager.cs");
+            string visualBody = ExtractMethodBody(source, "private void RunScatterVisualTick(");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string readbackBody = ExtractMethodBody(source, "private void UpdateVisibleCountReadback(");
+            string repairBody = ExtractMethodBody(source, "private void FlushVisibleCountReadbackRepairSlow()");
+            string ensureBody = ExtractMethodBody(source, "private bool EnsureVisibleCountReadbackData()");
+
+            Assert.That(visualBody, Does.Contain("HasGpuStateReady()"));
+            Assert.That(visualBody, Does.Not.Contain("TryEnsureGpuState("));
+            Assert.That(slowBody, Does.Contain("FlushVisibleCountReadbackRepairSlow();"));
+            Assert.That(readbackBody, Does.Contain("QueueVisibleCountReadbackRepair();"));
+            Assert.That(readbackBody, Does.Not.Contain("EnsureVisibleCountReadbackData("));
+            Assert.That(repairBody, Does.Contain("EnsureVisibleCountReadbackData();"));
+            Assert.That(ensureBody, Does.Contain("new NativeArray<uint>"));
+        }
+
+        [Test]
+        public void CarveDebris_FallbackRenderResourcesAreSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "VFX", "Debris", "CarveDebrisComputeRenderer.cs");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string renderBody = ExtractMethodBody(source, "private void RenderDebris()");
+            string materialBody = ExtractMethodBody(source, "private Material ResolveMaterial()");
+            string meshBody = ExtractMethodBody(source, "private Mesh ResolveMesh()");
+            string repairBody = ExtractMethodBody(source, "private void FlushFallbackRenderResourceRepairSlow()");
+            string ensureBody = ExtractMethodBody(source, "private void EnsureOwnedMaterial()");
+
+            Assert.That(slowBody, Does.Contain("FlushFallbackRenderResourceRepairSlow();"));
+            Assert.That(renderBody, Does.Contain("ResolveMaterial();"));
+            Assert.That(materialBody, Does.Contain("QueueFallbackRenderResourceRepair();"));
+            Assert.That(materialBody, Does.Not.Contain("EnsureFallbackRenderResources("));
+            Assert.That(meshBody, Does.Contain("QueueFallbackRenderResourceRepair();"));
+            Assert.That(meshBody, Does.Not.Contain("BuildOctahedronMesh("));
+            Assert.That(repairBody, Does.Contain("EnsureFallbackRenderResources();"));
+            Assert.That(ensureBody, Does.Contain("new Material("));
+        }
+
+        [Test]
+        public void GPUScatterDirector_VisibleCountReadbackRepairIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "GPUScatterDirector.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string readbackBody = ExtractMethodBody(source, "private void UpdateVisibleCountReadback(");
+            string repairBody = ExtractMethodBody(source, "private void FlushVisibleCountReadbackRepairSlow()");
+            string ensureBody = ExtractMethodBody(source, "private bool EnsureVisibleCountReadbackData()");
+
+            Assert.That(lateFrameBody, Does.Contain("UpdateVisibleCountReadback(frameIndex);"));
+            Assert.That(slowBody, Does.Contain("FlushVisibleCountReadbackRepairSlow();"));
+            Assert.That(readbackBody, Does.Contain("QueueVisibleCountReadbackRepair();"));
+            Assert.That(readbackBody, Does.Not.Contain("EnsureVisibleCountReadbackData("));
+            Assert.That(repairBody, Does.Contain("EnsureVisibleCountReadbackData();"));
+            Assert.That(ensureBody, Does.Contain("new NativeArray<uint>"));
+        }
+
+        [Test]
+        public void IndirectVegetation_CullTelemetryReadbackRepairIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "HectonIndirectVegetationRenderer.cs");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string requestBody = ExtractMethodBody(source, "private void RequestCullTelemetryReadback(");
+            string repairBody = ExtractMethodBody(source, "private void FlushCullTelemetryReadbackRepairSlow()");
+            string ensureBody = ExtractMethodBody(source, "private void EnsureCullTelemetryReadbackData()");
+
+            Assert.That(slowBody, Does.Contain("FlushCullTelemetryReadbackRepairSlow();"));
+            Assert.That(requestBody, Does.Contain("QueueCullTelemetryReadbackRepair();"));
+            Assert.That(requestBody, Does.Not.Contain("EnsureCullTelemetryReadbackData("));
+            Assert.That(repairBody, Does.Contain("EnsureCullTelemetryReadbackData();"));
+            Assert.That(ensureBody, Does.Contain("new NativeArray<uint>"));
+        }
+
+        [Test]
+        public void MicroFauna_ParasiteLatchReadbackRepairIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "SargassumMicroFaunaBoids.cs");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string requestBody = ExtractMethodBody(source, "private void TryRequestParasiteLatchReadback(");
+            string repairBody = ExtractMethodBody(source, "private void FlushParasiteLatchReadbackRepairSlow()");
+            string ensureBody = ExtractMethodBody(source, "private bool EnsureParasiteLatchReadbackData()");
+
+            Assert.That(slowBody, Does.Contain("FlushParasiteLatchReadbackRepairSlow();"));
+            Assert.That(requestBody, Does.Contain("QueueParasiteLatchReadbackRepair();"));
+            Assert.That(requestBody, Does.Not.Contain("EnsureParasiteLatchReadbackData("));
+            Assert.That(repairBody, Does.Contain("EnsureParasiteLatchReadbackData();"));
+            Assert.That(ensureBody, Does.Contain("new NativeArray<int>"));
+        }
+
+        [Test]
+        public void MapMagic_TileHeightReadbackRepairIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "HectonMapMagicVegetationBridge.cs");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string refreshBody = ExtractMethodBody(source, "private bool CacheTileMasks(");
+            string repairBody = ExtractMethodBody(source, "private void FlushTileHeightReadbackRepairsSlow()");
+            string ensureBody = ExtractMethodBody(source, "private static void EnsureTileHeightReadbackData(");
+
+            Assert.That(slowBody, Does.Contain("FlushTileHeightReadbackRepairsSlow();"));
+            Assert.That(refreshBody, Does.Contain("QueueTileHeightReadbackRepair(state, heightSampleCount);"));
+            Assert.That(refreshBody, Does.Not.Contain("EnsureTileHeightReadbackData("));
+            Assert.That(repairBody, Does.Contain("EnsureTileHeightReadbackData(state, state.HeightReadbackRepairSampleCount);"));
+            Assert.That(ensureBody, Does.Contain("new NativeArray<ushort>"));
+        }
+
+        [Test]
+        public void LODSystemManager_QualitySettingsMutationIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "LODSystemManager.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string policyBody = ExtractMethodBody(source, "private void FlushQualityPolicySlow()");
+            string shaderBody = ExtractMethodBody(source, "private void FlushQualityShaderVisualSync()");
+            string registerBody = ExtractMethodBody(source, "private void TryRegister()");
+
+            Assert.That(source, Does.Contain("ITickable, ISlowTickable, ILateFrameTickable"));
+            Assert.That(lateFrameBody, Does.Contain("FlushQualityShaderVisualSync();"));
+            Assert.That(lateFrameBody, Does.Not.Contain("QualitySettings."));
+            Assert.That(lateFrameBody, Does.Not.Contain("FlushQualityPolicySlow();"));
+            Assert.That(slowBody, Does.Contain("FlushQualityPolicySlow();"));
+            Assert.That(policyBody, Does.Contain("QualitySettings.lodBias = targetBias;"));
+            Assert.That(policyBody, Does.Not.Contain("DistanceMath.PushShaderMathLod"));
+            Assert.That(shaderBody, Does.Contain("DistanceMath.PushShaderMathLod(qualityWeight01);"));
+            Assert.That(registerBody, Does.Contain("GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);"));
+        }
+
+        [Test]
+        public void IndirectArgsUploads_DoNotAllocateGraphicsBuffersInHotWriters()
+        {
+            string boids = ReadProjectFile("Assets", "_Project", "Scripts", "World", "SargassumMicroFaunaBoids.cs");
+            string outpost = ReadProjectFile("Assets", "_Project", "Scripts", "World", "Outposts", "MarauderOutpostGenerationService.cs");
+            string boidUploadBody = ExtractMethodBody(boids, "private bool UploadBoidIndirectArgs(");
+            string outpostArgsBody = ExtractMethodBody(outpost, "private void UpdateIndirectArgsBuffer(");
+            string boidColdBody = ExtractMethodBody(boids, "private bool TryEnsureBoidIndirectArgsBufferCold()");
+
+            Assert.That(boidUploadBody, Does.Contain("new GraphicsBuffer.IndirectDrawIndexedArgs"));
+            Assert.That(outpostArgsBody, Does.Contain("new GraphicsBuffer.IndirectDrawIndexedArgs"));
+            Assert.That(boidUploadBody, Does.Not.Contain("new GraphicsBuffer("));
+            Assert.That(outpostArgsBody, Does.Not.Contain("new GraphicsBuffer("));
+            Assert.That(boidColdBody, Does.Contain("new GraphicsBuffer("));
+        }
+
+        [Test]
+        public void VehicleSubOs_RenderTextureFormatIsNotQualityForked()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "VehicleSubOsCockpitRuntime.cs");
+            string formatBody = ExtractMethodBody(source, "private RenderTextureFormat ResolvePanelRenderTextureFormat()");
+
+            Assert.That(formatBody, Does.Contain("_supportsRgb565RenderTextureCold"));
+            Assert.That(formatBody, Does.Contain("RenderTextureFormat.RGB565"));
+            Assert.That(source, Does.Contain("SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RGB565)"));
+            Assert.That(source, Does.Contain("RenderTextureFormat format = ResolvePanelRenderTextureFormat();"));
+            Assert.That(source, Does.Not.Contain("ResolvePanelRenderTextureFormat(quality)"));
+            Assert.That(formatBody, Does.Not.Contain("ResolveCheapVisualWeight"));
+            Assert.That(formatBody, Does.Not.Contain("qualityWeight01"));
+            Assert.That(source, Does.Contain("float curve = SmoothQuality(_qualityWeight01);"));
+            Assert.That(source, Does.Contain("ResolveQualityDimension"));
+        }
+
+        [Test]
+        public void VehicleSubOs_ExternalFeedIsContinuousAndResizesWithQuality()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "VehicleSubOsCockpitRuntime.cs");
+            string weightBody = ExtractMethodBody(source, "private static float ResolveExternalFeedWeight(");
+            string stateBody = ExtractMethodBody(source, "private void UpdateExternalFeedState()");
+            string currentBody = ExtractMethodBody(source, "private bool IsExternalRenderTargetCurrent()");
+            string ensureBody = ExtractMethodBody(source, "private void EnsureExternalRenderTextureCurrent()");
+            string acquireBody = ExtractMethodBody(source, "private void AcquireExternalRenderTexture()");
+            string visibilityBody = ExtractMethodBody(source, "private bool IsOffscreenUiVisible()");
+            string modeBody = ExtractMethodBody(source, "private int ResolveStatusDisplayMode()");
+            string textureBody = ExtractMethodBody(source, "private Texture ResolveActiveScreenTexture()");
+
+            Assert.That(source, Does.Not.Contain("ExternalFeedEnableThreshold"));
+            Assert.That(source, Does.Contain("private const float MinExternalFeedBlendWeight = 0.125f;"));
+            Assert.That(weightBody, Does.Contain("float curve = SmoothQuality(qualityWeight01);"));
+            Assert.That(weightBody, Does.Contain("math.lerp(MinExternalFeedBlendWeight, 1f, curve)"));
+            Assert.That(stateBody, Does.Not.Contain("_externalFeedWeight01 <= 0.0001f"));
+            Assert.That(visibilityBody, Does.Not.Contain("_externalFeedWeight01 <= 0.0001f"));
+            Assert.That(modeBody, Does.Not.Contain("_externalFeedWeight01 <= 0.0001f"));
+            Assert.That(textureBody, Does.Not.Contain("_externalFeedWeight01 <= 0.0001f"));
+            Assert.That(currentBody, Does.Contain("_externalRenderTexture.width == ResolveExternalWidth()"));
+            Assert.That(currentBody, Does.Contain("_externalRenderTexture.format == ResolvePanelRenderTextureFormat()"));
+            Assert.That(ensureBody, Does.Contain("ReleaseExternalRenderTexture();"));
+            Assert.That(ensureBody, Does.Contain("AcquireExternalRenderTexture();"));
+            Assert.That(acquireBody, Does.Contain("RenderTextureFormat format = ResolvePanelRenderTextureFormat();"));
+            Assert.That(acquireBody, Does.Contain("bool shouldEnableCamera = _externalRenderTexture != null;"));
+        }
+
+        [Test]
+        public void DiegeticPanelController_ColorFormatIsHardwareRouteNotQualityFork()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "DiegeticPanelController.cs");
+            string formatBody = ExtractMethodBody(source, "private GraphicsFormat ResolveColorGraphicsFormat()");
+
+            Assert.That(formatBody, Does.Contain("return _isMx350Tier"));
+            Assert.That(formatBody, Does.Contain("GraphicsFormat.B5G6R5_UNormPack16"));
+            Assert.That(formatBody, Does.Contain("GraphicsFormat.R8G8B8A8_UNorm"));
+            Assert.That(formatBody, Does.Not.Contain("_qualityWeight01 <"));
+            Assert.That(formatBody, Does.Not.Contain("0.72f"));
+        }
+
+        [Test]
+        public void WristHologramHudRuntime_CsvOverridePollingIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "WristHologramHudRuntime.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string buildTextBody = ExtractMethodBody(source, "private void BuildTextQuadsOwnerPhase(");
+            string flushDumpBody = ExtractMethodBody(source, "private void FlushQueuedBlackBoxDump()");
+            string registerBody = ExtractMethodBody(source, "private void TryRegisterTickLanes()");
+            string unregisterBody = ExtractMethodBody(source, "private void TryUnregisterTickLanes()");
+
+            Assert.That(source, Does.Contain("MonoBehaviour, ISlowTickable, ILateFrameTickable"));
+            Assert.That(lateFrameBody, Does.Not.Contain("PollCsvOverride"));
+            Assert.That(lateFrameBody, Does.Not.Contain("TryReloadFontMetricsOverride"));
+            Assert.That(lateFrameBody, Does.Not.Contain("File."));
+            Assert.That(lateFrameBody, Does.Not.Contain("new FileStream"));
+            Assert.That(slowBody, Does.Contain("PollCsvOverride(_lastHudDeltaTime);"));
+            Assert.That(slowBody, Does.Contain("FlushQueuedBlackBoxDump();"));
+            Assert.That(buildTextBody, Does.Contain("QueueBlackBoxDump();"));
+            Assert.That(buildTextBody, Does.Not.Contain("DumpBlackBoxOnce();"));
+            Assert.That(flushDumpBody, Does.Contain("DumpBlackBoxOnce();"));
+            Assert.That(registerBody, Does.Contain("GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI)"));
+            Assert.That(unregisterBody, Does.Contain("GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI)"));
+        }
+
+        [Test]
+        public void PDADecryptionSpectrogramPanel_TelemetryDumpIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "PDADecryptionSpectrogramPanel.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string commitBody = ExtractMethodBody(source, "private void CommitWaveResult(");
+            string recordBody = ExtractMethodBody(source, "private void RecordTelemetry()");
+            string flushDumpBody = ExtractMethodBody(source, "private void FlushQueuedTelemetryDump()");
+            string registerBody = ExtractMethodBody(source, "private void TryRegisterTickHandlers()");
+            string unregisterBody = ExtractMethodBody(source, "private void TryUnregisterTickHandlers()");
+
+            Assert.That(source, Does.Contain("MonoBehaviour, ISlowTickable, ILateFrameTickable"));
+            Assert.That(lateFrameBody, Does.Not.Contain("DumpTelemetryCold"));
+            Assert.That(lateFrameBody, Does.Not.Contain("FileStream"));
+            Assert.That(commitBody, Does.Contain("QueueTelemetryDump();"));
+            Assert.That(commitBody, Does.Not.Contain("DumpTelemetryCold();"));
+            Assert.That(recordBody, Does.Contain("QueueTelemetryDump();"));
+            Assert.That(recordBody, Does.Not.Contain("DumpTelemetryCold();"));
+            Assert.That(slowBody, Does.Contain("FlushQueuedTelemetryDump();"));
+            Assert.That(flushDumpBody, Does.Contain("DumpTelemetryCold();"));
+            Assert.That(registerBody, Does.Contain("GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI)"));
+            Assert.That(unregisterBody, Does.Contain("GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI)"));
+        }
+
+        [Test]
+        public void PDAEncyclopediaStreamer_BlackBoxDumpIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "PDAEncyclopediaStreamer.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string flushDumpBody = ExtractMethodBody(source, "private void FlushQueuedBlackBoxDump()");
+            string registerBody = ExtractMethodBody(source, "private void TryRegisterDispatcherLanes()");
+            string unregisterBody = ExtractMethodBody(source, "private void UnregisterDispatcherLanes()");
+
+            Assert.That(source, Does.Contain("ISlowTickable"));
+            Assert.That(source, Does.Contain("ILateFrameTickable"));
+            Assert.That(lateFrameBody, Does.Contain("QueueBlackBoxDump();"));
+            Assert.That(lateFrameBody, Does.Not.Contain("DumpBlackBox();"));
+            Assert.That(lateFrameBody, Does.Not.Contain("FileStream"));
+            Assert.That(slowBody, Does.Contain("FlushQueuedBlackBoxDump();"));
+            Assert.That(flushDumpBody, Does.Contain("DumpBlackBox();"));
+            Assert.That(registerBody, Does.Contain("GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI)"));
+            Assert.That(unregisterBody, Does.Contain("GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI)"));
+        }
+
+        [Test]
+        public void DiegeticGyroCompass_BlackBoxDumpIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "Navigation", "DiegeticGyroCompassRuntime.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string scheduleBody = ExtractMethodBody(source, "private void ScheduleDrift(");
+            string commitCompletedBody = ExtractMethodBody(source, "private void CommitCompletedState()");
+            string flushDumpBody = ExtractMethodBody(source, "private void FlushQueuedBlackBoxDump()");
+
+            Assert.That(source, Does.Contain("ISlowTickable, ILateFrameTickable"));
+            Assert.That(lateFrameBody, Does.Not.Contain("DumpBlackBoxOnce"));
+            Assert.That(lateFrameBody, Does.Not.Contain("FileStream"));
+            Assert.That(scheduleBody, Does.Contain("QueueBlackBoxDump(state.BlackBoxCursor);"));
+            Assert.That(scheduleBody, Does.Not.Contain("DumpBlackBoxOnce("));
+            Assert.That(commitCompletedBody, Does.Contain("QueueBlackBoxDump(state.BlackBoxCursor);"));
+            Assert.That(commitCompletedBody, Does.Not.Contain("DumpBlackBoxOnce("));
+            Assert.That(slowBody, Does.Contain("FlushQueuedBlackBoxDump();"));
+            Assert.That(flushDumpBody, Does.Contain("DumpBlackBoxOnce(_queuedBlackBoxCursor);"));
+        }
+
+        [Test]
+        public void OpenXRManualOverrideLever_BlackBoxDumpIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "VR", "OpenXRManualOverrideLever.cs");
+            string tickBody = ExtractMethodBody(source, "public void Tick(");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string integrateBody = ExtractMethodBody(source, "private void IntegrateSpring(");
+            string blackBoxFrameBody = ExtractMethodBody(source, "private void WriteBlackBoxFrame(");
+            string flushDumpBody = ExtractMethodBody(source, "private void FlushQueuedBlackBoxDump()");
+            string registerBody = ExtractMethodBody(source, "private void TryRegisterTick()");
+            string unregisterBody = ExtractMethodBody(source, "private void TryUnregisterTick()");
+
+            Assert.That(source, Does.Contain("IUpdatable, ISlowTickable, ILateFrameTickable"));
+            Assert.That(tickBody, Does.Not.Contain("DumpBlackBox();"));
+            Assert.That(tickBody, Does.Not.Contain("FileStream"));
+            Assert.That(integrateBody, Does.Contain("QueueBlackBoxDump();"));
+            Assert.That(integrateBody, Does.Not.Contain("DumpBlackBox();"));
+            Assert.That(blackBoxFrameBody, Does.Contain("QueueBlackBoxDump();"));
+            Assert.That(blackBoxFrameBody, Does.Not.Contain("DumpBlackBox();"));
+            Assert.That(slowBody, Does.Contain("FlushQueuedBlackBoxDump();"));
+            Assert.That(flushDumpBody, Does.Contain("DumpBlackBox();"));
+            Assert.That(registerBody, Does.Contain("GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player)"));
+            Assert.That(unregisterBody, Does.Contain("GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player)"));
+        }
+
+        [Test]
+        public void SuitHud_AcousticRadarTextureRefreshIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "SuitHUDV4CanvasOverlay.cs");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string radarBody = ExtractMethodBody(source, "private void RefreshAcousticRadarPayload()");
+            string flushBody = ExtractMethodBody(source, "private void FlushPendingAcousticRadarTextureRefresh()");
+            string ensureBody = ExtractMethodBody(source, "private bool EnsureAcousticRadarTexture(");
+
+            Assert.That(radarBody, Does.Contain("IsAcousticRadarTextureReady(radarResolution)"));
+            Assert.That(radarBody, Does.Contain("QueueAcousticRadarTextureRefresh(radarResolution);"));
+            Assert.That(radarBody, Does.Not.Contain("EnsureAcousticRadarTexture("));
+            Assert.That(radarBody, Does.Not.Contain("new Texture2D"));
+            Assert.That(radarBody, Does.Not.Contain("Destroy("));
+            Assert.That(slowBody, Does.Contain("FlushPendingAcousticRadarTextureRefresh();"));
+            Assert.That(flushBody, Does.Contain("EnsureAcousticRadarTexture(resolution);"));
+            Assert.That(ensureBody, Does.Contain("new Texture2D"));
+            Assert.That(ensureBody, Does.Contain("Destroy(_acousticRadarTexture);"));
+        }
+
+        [Test]
+        public void TopographicalSonar_BlackBoxDumpIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "TopographicalSonar", "TopographicalSonarSynthesizer.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string commitBody = ExtractMethodBody(source, "private void CommitCompletedScan()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string flushDumpBody = ExtractMethodBody(source, "private void FlushQueuedBlackBoxDump()");
+            string registerBody = ExtractMethodBody(source, "private void TryRegisterSlowTickable()");
+            string unregisterBody = ExtractMethodBody(source, "private void TryUnregisterSlowTickable()");
+
+            Assert.That(source, Does.Contain("ILateFrameTickable, ISlowTickable, IRenderable"));
+            Assert.That(lateFrameBody, Does.Not.Contain("DumpBlackBox();"));
+            Assert.That(commitBody, Does.Contain("QueueBlackBoxDump();"));
+            Assert.That(commitBody, Does.Not.Contain("DumpBlackBox();"));
+            Assert.That(slowBody, Does.Contain("FlushQueuedBlackBoxDump();"));
+            Assert.That(flushDumpBody, Does.Contain("DumpBlackBox();"));
+            Assert.That(registerBody, Does.Contain("GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI)"));
+            Assert.That(unregisterBody, Does.Contain("GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI)"));
+        }
+
+        [Test]
+        public void DiegeticGlitchSurgeon_BlackBoxDumpIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "DiegeticGlitchSurgeonRuntime.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string inspectBody = ExtractMethodBody(source, "private void InspectAndDumpIfNeeded()");
+            string flushDumpBody = ExtractMethodBody(source, "private void FlushQueuedBlackBoxDump()");
+
+            Assert.That(source, Does.Contain("ISlowTickable, ILateFrameTickable"));
+            Assert.That(lateFrameBody, Does.Not.Contain("DumpBlackBox("));
+            Assert.That(lateFrameBody, Does.Not.Contain("FileStream"));
+            Assert.That(inspectBody, Does.Contain("QueueBlackBoxDump(faultFlags);"));
+            Assert.That(inspectBody, Does.Not.Contain("DumpBlackBox(faultFlags);"));
+            Assert.That(slowBody, Does.Contain("FlushQueuedBlackBoxDump();"));
+            Assert.That(flushDumpBody, Does.Contain("DumpBlackBox(faultFlags);"));
+        }
+
+        [Test]
+        public void DiegeticTooltipSystem_BlackBoxDumpIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "DiegeticTooltipSystem.cs");
+            string renderBody = ExtractMethodBody(source, "public void Render(");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string flushDumpBody = ExtractMethodBody(source, "private void FlushQueuedBlackBoxDump()");
+            string registerBody = ExtractMethodBody(source, "private void TryRegisterRuntime()");
+            string unregisterBody = ExtractMethodBody(source, "private void UnregisterRuntime()");
+
+            Assert.That(source, Does.Contain("ISlowTickable, ILateFrameTickable"));
+            Assert.That(renderBody, Does.Contain("QueueBlackBoxDump();"));
+            Assert.That(renderBody, Does.Not.Contain("DumpBlackBox();"));
+            Assert.That(renderBody, Does.Not.Contain("FileStream"));
+            Assert.That(slowBody, Does.Contain("FlushQueuedBlackBoxDump();"));
+            Assert.That(flushDumpBody, Does.Contain("DumpBlackBox();"));
+            Assert.That(registerBody, Does.Contain("GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI)"));
+            Assert.That(unregisterBody, Does.Contain("GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI)"));
+        }
+
+        [Test]
+        public void DiegeticVisorHudMesh_BlackBoxDumpIsSlowPhaseOnly()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "DiegeticVisorHudMesh.cs");
+            string lateFrameBody = ExtractMethodBody(source, "public void LateFrameTick()");
+            string slowBody = ExtractMethodBody(source, "public void SlowTick()");
+            string materialBody = ExtractMethodBody(source, "private void ApplyMaterialState()");
+            string telemetryBody = ExtractMethodBody(source, "private void RecordTelemetry()");
+            string flushDumpBody = ExtractMethodBody(source, "private void FlushQueuedBlackBoxDump()");
+            string registerBody = ExtractMethodBody(source, "private void TryRegisterTick()");
+            string unregisterBody = ExtractMethodBody(source, "private void TryUnregisterTick()");
+
+            Assert.That(source, Does.Contain("ISlowTickable, ILateFrameTickable"));
+            Assert.That(lateFrameBody, Does.Not.Contain("DumpBlackBox();"));
+            Assert.That(lateFrameBody, Does.Not.Contain("FileStream"));
+            Assert.That(materialBody, Does.Contain("QueueBlackBoxDump();"));
+            Assert.That(materialBody, Does.Not.Contain("DumpBlackBox();"));
+            Assert.That(telemetryBody, Does.Contain("QueueBlackBoxDump();"));
+            Assert.That(telemetryBody, Does.Not.Contain("DumpBlackBox();"));
+            Assert.That(slowBody, Does.Contain("FlushQueuedBlackBoxDump();"));
+            Assert.That(flushDumpBody, Does.Contain("DumpBlackBox();"));
+            Assert.That(registerBody, Does.Contain("GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI)"));
+            Assert.That(unregisterBody, Does.Contain("GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI)"));
+        }
+
+        [Test]
+        public void WristHudState_StoresMathLodPressureAsQ8InsteadOfSurvivalMathFlag()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "WristHologramHudRuntime.cs");
+            string stateType = ExtractTypeBody(source, "public struct WristHudStateDTO");
+            string executeBody = ExtractMethodBody(source, "public void Execute()");
+            string seedBody = ExtractMethodBody(source, "private void SeedInitialState()");
+            string encodeBody = ExtractMethodBody(source, "private static int EncodeUnitWeightQ8(");
+
+            Assert.That(source, Does.Not.Contain("StateFlagSurvivalMath"));
+            Assert.That(stateType, Does.Contain("[FieldOffset(236)]"));
+            Assert.That(stateType, Does.Contain("public int MathLodPressureQ8;"));
+            Assert.That(executeBody, Does.Contain("state.MathLodPressureQ8 = EncodeUnitWeightQ8(mathLodPressure01, 0f);"));
+            Assert.That(executeBody, Does.Not.Contain("mathLodPressure01 >= 0.75f"));
+            Assert.That(executeBody, Does.Not.Contain("state.Flags |= StateFlagSurvivalMath"));
+            Assert.That(seedBody, Does.Contain("state.MathLodPressureQ8 = EncodeUnitWeightQ8(ResolveMathLodPressure01(), 0f);"));
+            Assert.That(encodeBody, Does.Contain("math.select(fallback01, value01, math.isfinite(value01))"));
+            Assert.That(encodeBody, Does.Contain("* 255f"));
+        }
+
+        [Test]
+        public void HabitatModuleStress_PublishesContinuousQ8WithoutLowTierFlag()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "Construction", "HabitatGraphManager.cs");
+            string signals = ReadProjectFile("Assets", "_Project", "Scripts", "Core", "Signals", "GlobalSignalPayloads.DomainRemainder.cs");
+            string publishBody = ExtractMethodBody(source, "private void TryPublishBaseModuleCompromisedSignal(");
+            string signalType = ExtractTypeBody(signals, "public struct BaseModuleCompromisedSignal");
+
+            Assert.That(source, Does.Contain("byte moduleStressQualityWeightQ8 = ResolveModuleStressQualityWeightQ8(qualityWeight);"));
+            Assert.That(source, Does.Contain("private static byte ResolveModuleStressQualityWeightQ8(float globalQualityWeight)"));
+            Assert.That(source, Does.Not.Contain("ResolveModuleStressQualityProfileByte"));
+            Assert.That(publishBody, Does.Contain("Flags = BaseModuleCompromisedSignal.MaxDeformationFlag"));
+            Assert.That(publishBody, Does.Contain("QualityWeightQ8 = qualityWeightQ8"));
+            Assert.That(publishBody, Does.Not.Contain("LowTierVisualOnlyFlag"));
+            Assert.That(publishBody, Does.Not.Contain("ResolveModuleStressDisplacementMaxMeters(globalQualityWeight) <= 0f"));
+            Assert.That(signalType, Does.Contain("SurvivalPressureVisualOnlyFlag = 1 << 1"));
+            Assert.That(signalType, Does.Contain("LowTierVisualOnlyFlag = SurvivalPressureVisualOnlyFlag"));
+            Assert.That(signalType, Does.Contain("[FieldOffset(45)] public byte QualityWeightQ8;"));
+            Assert.That(signalType, Does.Contain("[FieldOffset(45)] public byte QualityTier;"));
         }
 
         [Test]
@@ -1868,6 +2911,34 @@ namespace Hecton8.Tests.Editor
                 previousSway = sway;
                 previousParallax = parallax;
             }
+        }
+
+        [Test]
+        public void EcosystemDirector_BiomassPendingDrainUsesSingleMutationGuard()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "EcosystemDirector.cs");
+            string drainBody = ExtractMethodBody(source, "private void ApplyPendingBiomassImpacts()");
+            string clearBody = ExtractMethodBody(source, "private void ClearBiomassRuntimeState()");
+            string completeSolveBody = ExtractMethodBody(source, "private void CompleteScheduledSolve(");
+
+            Assert.That(source, Does.Contain("private static readonly ulong BiomassImpactDrainMutationGuardMask"));
+            Assert.That(source, Does.Contain("MacroSwarmTravelMutationGuardMask |"));
+            Assert.That(source, Does.Contain("EcosystemVaultMutationGuardBit(BufferID.EcosystemPendingBiomassImpacts);"));
+            Assert.That(drainBody, Does.Contain("TryAcquireBiomassImpactDrainGuard(out IDataVault drainGuardVault)"));
+            Assert.That(drainBody, Does.Contain("_pendingBiomassImpacts.Resolve()"));
+            Assert.That(drainBody, Does.Contain("finally"));
+            Assert.That(drainBody, Does.Contain("ReleaseBiomassImpactDrainGuard(drainGuardVault)"));
+            Assert.That(drainBody, Does.Not.Contain("_pendingBiomassImpacts.TryAcquireWriteLock"));
+            Assert.That(drainBody, Does.Not.Contain("_pendingBiomassImpacts.ReleaseWriteLock"));
+            Assert.That(clearBody, Does.Contain("TryAcquireBiomassImpactDrainGuard(out IDataVault drainGuardVault)"));
+            Assert.That(clearBody, Does.Contain("finally"));
+            Assert.That(clearBody, Does.Not.Contain("_pendingBiomassImpacts.TryAcquireWriteLock"));
+            Assert.That(clearBody, Does.Not.Contain("_pendingBiomassImpacts.ReleaseWriteLock"));
+
+            int sectorUnlock = completeSolveBody.IndexOf("UnlockSectorSolveJobBuffers();", System.StringComparison.Ordinal);
+            int pendingDrain = completeSolveBody.IndexOf("ApplyPendingBiomassImpacts();", System.StringComparison.Ordinal);
+            Assert.That(sectorUnlock, Is.GreaterThanOrEqualTo(0));
+            Assert.That(pendingDrain, Is.GreaterThan(sectorUnlock));
         }
 
         private static string ReadShader(string shaderFile)

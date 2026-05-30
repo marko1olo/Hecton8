@@ -109,19 +109,36 @@ function Convert-DefaultValue([string]$Value, [string]$KindValue) {
     }
 }
 
-function Resolve-GeneratedOutputPath([string]$RelativePath) {
+function Test-StrictJsonRelativePath([string]$RelativePath, [string]$RequiredPrefix, [string]$Label) {
     if ([string]::IsNullOrWhiteSpace($RelativePath)) {
-        Fail 'Output is required.'
+        Fail ($Label + ' is required.')
     }
 
-    $normalized = $RelativePath.Replace('\','/').Trim()
-    if ([System.IO.Path]::IsPathRooted($normalized)) {
-        Fail 'Output must be a starter-relative path under Generated/.'
+    $normalized = $RelativePath.Replace('\','/')
+    if ($normalized.Trim() -cne $normalized) {
+        Fail ($Label + ' must not contain leading or trailing whitespace.')
+    }
+    if ([System.IO.Path]::IsPathRooted($normalized) -or $normalized.StartsWith('/') -or $normalized.Contains(':')) {
+        Fail ($Label + ' must be a starter-relative path.')
+    }
+    if (-not $normalized.StartsWith($RequiredPrefix, [System.StringComparison]::Ordinal)) {
+        Fail ($Label + ' must stay under ' + $RequiredPrefix)
+    }
+    if (-not $normalized.EndsWith('.json', [System.StringComparison]::Ordinal)) {
+        Fail ($Label + ' must end with .json.')
     }
 
-    if ($normalized.Contains('..') -or -not $normalized.StartsWith('Generated/', [System.StringComparison]::Ordinal)) {
-        Fail 'Output must stay under Generated/ and must not contain .. segments.'
+    foreach ($segment in ($normalized -split '/')) {
+        if ([string]::IsNullOrWhiteSpace($segment) -or $segment -eq '.' -or $segment -eq '..') {
+            Fail ($Label + ' must not contain empty, dot, or dot-dot path segments.')
+        }
     }
+
+    return $normalized
+}
+
+function Resolve-GeneratedOutputPath([string]$RelativePath) {
+    $normalized = Test-StrictJsonRelativePath $RelativePath 'Generated/' 'Output'
 
     $directory = Join-StarterPath $Root 'Generated'
     if (-not (Test-Path -LiteralPath $directory -PathType Container)) {

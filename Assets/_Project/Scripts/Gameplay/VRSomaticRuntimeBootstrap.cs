@@ -19,6 +19,7 @@ namespace Hecton8.Gameplay
         private Transform _vrRootTransform;
         private Transform _pdaSocketTransform;
         private Transform _flareSocketTransform;
+        private VRSomaticProvider _provider;
         private bool _createdVrRootTransform;
         private bool _createdPdaSocketTransform;
         private bool _createdFlareSocketTransform;
@@ -49,7 +50,7 @@ namespace Hecton8.Gameplay
 
             if (isActive)
             {
-                if (!TryResolveAndBindProvider(true))
+                if (!TryResolveAndBindProviderCold())
                     runtime.TryRegisterSlowTick();
                 return;
             }
@@ -86,7 +87,7 @@ namespace Hecton8.Gameplay
             if (runtime == null)
                 return;
 
-            if (!TryResolveAndBindProvider(true))
+            if (!TryResolveAndBindProviderCold())
                 runtime.TryRegisterSlowTick();
         }
 
@@ -104,7 +105,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (!TryResolveAndBindProvider(true))
+            if (!TryResolveAndBindProviderCold())
                 TryRegisterSlowTick();
         }
 
@@ -147,7 +148,7 @@ namespace Hecton8.Gameplay
 
             if (serviceSlot == GlobalRegistryServiceSlot.Player && HectonXRRuntimeState.IsXRActive)
             {
-                if (TryResolveAndBindProvider(true))
+                if (TryResolveAndBindProviderCold())
                     TryUnregisterSlowTick();
                 else
                     TryRegisterSlowTick();
@@ -165,7 +166,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (TryResolveAndBindProvider(false))
+            if (TryResolveAndBindProviderHot())
                 TryUnregisterSlowTick();
         }
 
@@ -180,7 +181,7 @@ namespace Hecton8.Gameplay
             if (!HectonXRRuntimeState.IsXRActive)
                 return;
 
-            if (!TryResolveAndBindProvider(true))
+            if (!TryResolveAndBindProviderCold())
                 TryRegisterSlowTick();
         }
 
@@ -236,7 +237,12 @@ namespace Hecton8.Gameplay
             _registeredBootstrap = false;
         }
 
-        private static bool TryResolveAndBindProvider(bool allowSocketHierarchyLookup)
+        private static bool TryResolveAndBindProviderCold()
+        {
+            return TryResolveAndBindProviderColdProvisioned();
+        }
+
+        private static bool TryResolveAndBindProviderHot()
         {
             if (!HectonXRRuntimeState.IsXRActive)
                 return false;
@@ -248,8 +254,58 @@ namespace Hecton8.Gameplay
             if (!TryResolvePlayerContext(out PlayerRuntimeContext runtimeContext, out GameObject playerObject))
                 return false;
 
-            if (!playerObject.TryGetComponent(out VRSomaticProvider provider))
-                provider = playerObject.AddComponent<VRSomaticProvider>(); // COLD ALLOC: VRSomaticProvider[1] - XR-only somatic suit provider attached to player root - owner: VRSomaticRuntimeBootstrap
+            Transform playerTransform = playerObject.transform;
+            VRSomaticProvider provider = runtime._provider;
+            if (provider == null ||
+                !ReferenceEquals(provider.transform, playerTransform) ||
+                !ReferenceEquals(runtime._boundPlayerTransform, playerTransform) ||
+                runtime._pdaSocketTransform == null ||
+                runtime._flareSocketTransform == null ||
+                runtime._vrRootTransform == null)
+            {
+                return false;
+            }
+
+            Transform hmdTransform = ResolveHmdTransform(runtimeContext, playerTransform);
+            if (hmdTransform == null)
+                return false;
+
+            Transform visorRoot = runtimeContext != null && runtimeContext.VisorController != null
+                ? runtimeContext.VisorController.transform
+                : null;
+
+            provider.BindRig(
+                hmdTransform,
+                visorRoot,
+                runtime._pdaSocketTransform,
+                runtime._flareSocketTransform,
+                null,
+                null);
+            provider.BindDecoupledRoot(runtime._vrRootTransform);
+            return true;
+        }
+
+        private static bool TryResolveAndBindProviderColdProvisioned()
+        {
+            if (!HectonXRRuntimeState.IsXRActive)
+                return false;
+
+            VRSomaticRuntimeBootstrap runtime = _runtime;
+            if (runtime == null)
+                return false;
+
+            if (!TryResolvePlayerContext(out PlayerRuntimeContext runtimeContext, out GameObject playerObject))
+                return false;
+
+            Transform playerTransform = playerObject.transform;
+            VRSomaticProvider provider = runtime._provider;
+            if (provider == null || !ReferenceEquals(provider.transform, playerTransform))
+            {
+                if (!playerObject.TryGetComponent(out provider))
+                    provider = playerObject.AddComponent<VRSomaticProvider>(); // COLD ALLOC: VRSomaticProvider[1] - XR-only somatic suit provider attached to player root - owner: VRSomaticRuntimeBootstrap
+
+                runtime._provider = provider;
+            }
 
             SomaticKinematicsRuntime.EnsureOnPlayerRoot(playerObject);
 
@@ -260,17 +316,16 @@ namespace Hecton8.Gameplay
             Transform visorRoot = runtimeContext != null && runtimeContext.VisorController != null
                 ? runtimeContext.VisorController.transform
                 : null;
-            Transform playerTransform = playerObject.transform;
             Transform pdaSocket = runtime.EnsureSocketTransformCached(
                 playerTransform,
                 PdaSocketName,
-                allowSocketHierarchyLookup,
+                true,
                 ref runtime._pdaSocketTransform,
                 ref runtime._createdPdaSocketTransform);
             Transform flareSocket = runtime.EnsureSocketTransformCached(
                 playerTransform,
                 FlareToolSocketName,
-                allowSocketHierarchyLookup,
+                true,
                 ref runtime._flareSocketTransform,
                 ref runtime._createdFlareSocketTransform);
             Transform vrRoot = runtime.EnsureDecoupledRootTransform();
@@ -401,6 +456,7 @@ namespace Hecton8.Gameplay
         {
             TryUnregisterSlowTick();
             ClearBoundSocketState();
+            _provider = null;
         }
 
         private static void DestroyCreatedSocket(ref Transform socketTransform, ref bool createdSocket)

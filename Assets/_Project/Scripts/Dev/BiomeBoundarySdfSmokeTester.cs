@@ -104,8 +104,8 @@ namespace Hecton8.Dev
             result[0] = default;
             var job = new BiomeBoundarySdfJobs.BiomeBoundarySdfSampleJob
             {
-                GlobalBiomeMap = map,
-                BiomeHashMap = hashes,
+                GlobalBiomeMap = map.AsReadOnly(),
+                BiomeHashMap = hashes.AsReadOnly(),
                 Result = result,
                 Settings = new BiomeBoundarySdfSettings
                 {

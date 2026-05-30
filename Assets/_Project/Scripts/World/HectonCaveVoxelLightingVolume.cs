@@ -117,6 +117,8 @@ namespace Hecton8.World
         private VaultGenerationHandle<byte> _occupancyVolumeHandle;
         private VaultGenerationHandle<byte> _sdfVolumeHandle;
         private IDataVault _dataVault;
+        private IDataVault _occupancyVolumeWriteVault;
+        private IDataVault _sdfVolumeWriteVault;
         private SpatialQueryHit[] _overlapHits;
         private Matrix4x4 _scanLocalToWorld = Matrix4x4.identity;
         private int _voxelVolumeCapacity;
@@ -155,6 +157,7 @@ namespace Hecton8.World
             CacheGraphicsCapabilitiesCold();
             PredatorCognitionDomain.BindCaveVoxelLightingSource(this);
             ResolveFollowTarget();
+            EnsureResources();
             _resourceRefreshRequested = !HasRequiredResources();
             TryRegisterHotSwapListener();
             TryRegister();
@@ -247,8 +250,6 @@ namespace Hecton8.World
         /// </summary>
         public void LateFrameTick()
         {
-            AdvanceLightingVolumeState();
-
             if (_textureUploadDirty)
             {
                 if (_voxelDensityTexture != null && TryAcquireSdfUploadBuffer(out NativeArray<byte> sdfVolume))
@@ -278,11 +279,20 @@ namespace Hecton8.World
 
         public void SlowTick()
         {
-            if (!_resourceRefreshRequested && HasRequiredResources())
-                return;
+            if (_resourceRefreshRequested || !HasRequiredResources())
+            {
+                EnsureResources();
+                _resourceRefreshRequested = !HasRequiredResources();
+            }
 
-            EnsureResources();
-            _resourceRefreshRequested = false;
+            if (_resourceRefreshRequested)
+            {
+                QueueGlobals(hasVolume: false);
+                PublishPlayerLightLevelSignal();
+                return;
+            }
+
+            AdvanceLightingVolumeState();
         }
 
         internal bool TryGetPublishedSignedDistanceVoxelPayload(
@@ -497,6 +507,8 @@ namespace Hecton8.World
 
         private void ReleaseResources(IDataVault vault)
         {
+            ReleaseOccupancyWriteBuffer();
+            ReleaseSdfWriteBuffer();
             ReleaseVaultHandle(vault, ref _occupancyVolumeHandle);
             ReleaseVaultHandle(vault, ref _sdfVolumeHandle);
             if (_voxelDensityTexture != null)
@@ -915,18 +927,31 @@ namespace Hecton8.World
             volume = default;
             IDataVault vault = _dataVault;
             if (vault == null ||
+                GetVolumeWriteVault(expectedBufferId) != null ||
                 !IsExactVaultHandle(in handle, expectedBufferId) ||
                 !vault.TryAcquireWriteLock(in handle, VaultOwnerSystemId, out volume))
             {
                 return false;
             }
 
-            if (volume.IsCreated && volume.Length >= _voxelVolumeCapacity)
-                return true;
+            bool ownershipTransferred = false;
+            try
+            {
+                if (volume.IsCreated && volume.Length >= _voxelVolumeCapacity)
+                {
+                    SetVolumeWriteVault(expectedBufferId, vault);
+                    ownershipTransferred = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
-            volume = default;
-            return false;
+                volume = default;
+                return false;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                    vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+            }
         }
 
         private void ReleaseOccupancyWriteBuffer()
@@ -941,9 +966,45 @@ namespace Hecton8.World
 
         private void ReleaseVolumeWriteBuffer(in VaultGenerationHandle<byte> handle, BufferID expectedBufferId)
         {
-            IDataVault vault = _dataVault;
+            IDataVault vault = TakeVolumeWriteVault(expectedBufferId);
             if (vault != null && IsExactVaultHandle(in handle, expectedBufferId))
                 vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+        }
+
+        private IDataVault GetVolumeWriteVault(BufferID bufferId)
+        {
+            if (bufferId == OccupancyVolumeBufferId)
+                return _occupancyVolumeWriteVault;
+            if (bufferId == SdfVolumeBufferId)
+                return _sdfVolumeWriteVault;
+            return null;
+        }
+
+        private void SetVolumeWriteVault(BufferID bufferId, IDataVault vault)
+        {
+            if (bufferId == OccupancyVolumeBufferId)
+                _occupancyVolumeWriteVault = vault;
+            else if (bufferId == SdfVolumeBufferId)
+                _sdfVolumeWriteVault = vault;
+        }
+
+        private IDataVault TakeVolumeWriteVault(BufferID bufferId)
+        {
+            if (bufferId == OccupancyVolumeBufferId)
+            {
+                IDataVault vault = _occupancyVolumeWriteVault;
+                _occupancyVolumeWriteVault = null;
+                return vault;
+            }
+
+            if (bufferId == SdfVolumeBufferId)
+            {
+                IDataVault vault = _sdfVolumeWriteVault;
+                _sdfVolumeWriteVault = null;
+                return vault;
+            }
+
+            return null;
         }
 
         private static void ReleaseVaultHandle(IDataVault vault, ref VaultGenerationHandle<byte> handle)

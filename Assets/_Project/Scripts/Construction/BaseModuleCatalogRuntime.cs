@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton.Localization;
 using Hecton8.Building;
 using Hecton8.Core.Memory;
@@ -213,6 +214,8 @@ namespace Hecton8.Construction
             (1UL << (unchecked((int)(uint)(int)BufferID.BaseModuleCatalogState) & 31)) |
             (1UL << (unchecked((int)(uint)(int)BufferID.BaseModuleCatalogTelemetryRing) & 31));
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_1306_Construction_ModuleCatalog.bin";
+        private static readonly byte[] s_catalogHydrationScratch = new byte[DefaultHydrationByteCapacity];
+        private static int s_catalogHydrationScratchBusy;
 
         public static bool TryEnsureVaultBuffers(
             IDataVault vault,
@@ -287,12 +290,23 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            if (buffer.IsCreated && buffer.Length >= requiredLength)
-                return true;
+            bool releaseOnFailure = true;
+            try
+            {
+                if (buffer.IsCreated && buffer.Length >= requiredLength)
+                {
+                    releaseOnFailure = false;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, SystemID.Construction);
-            buffer = default;
-            return false;
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnFailure)
+                    vault.ReleaseWriteLock(in handle, SystemID.Construction);
+            }
         }
 
         private static bool TryResolveOwnedLane<T>(
@@ -519,26 +533,46 @@ namespace Hecton8.Construction
             if (length <= 0L || length > DefaultHydrationByteCapacity)
                 return false;
 
-            if (!TryAcquireOwnedLane(
-                    vault,
-                    BufferID.BaseModuleCatalogHydrationBytes,
-                    (int)length,
-                    NativeArrayOptions.UninitializedMemory,
-                    out VaultGenerationHandle<byte> hydrationHandle,
-                    out NativeArray<byte> targetBytes) ||
-                targetBytes.Length < length)
+            int expectedLength = (int)length;
+            if (Interlocked.CompareExchange(ref s_catalogHydrationScratchBusy, 1, 0) != 0)
                 return false;
 
             try
             {
-                int readLength = ReadCatalogBytesIntoNativeArray(path, targetBytes, (int)length);
-                byteLength = math.max(0, readLength);
-                bytes = targetBytes.AsReadOnly();
-                return readLength == (int)length;
+                int readLength = ReadCatalogBytesIntoScratch(path, s_catalogHydrationScratch, expectedLength);
+                if (readLength != expectedLength)
+                {
+                    byteLength = math.max(0, readLength);
+                    return false;
+                }
+
+                if (!TryAcquireOwnedLane(
+                        vault,
+                        BufferID.BaseModuleCatalogHydrationBytes,
+                        expectedLength,
+                        NativeArrayOptions.UninitializedMemory,
+                        out VaultGenerationHandle<byte> hydrationHandle,
+                        out NativeArray<byte> targetBytes))
+                    return false;
+
+                try
+                {
+                    if (targetBytes.Length < expectedLength)
+                        return false;
+
+                    CopyCatalogScratchIntoNativeArray(s_catalogHydrationScratch, targetBytes, expectedLength);
+                    byteLength = expectedLength;
+                    bytes = targetBytes.AsReadOnly();
+                    return true;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in hydrationHandle, SystemID.Construction);
+                }
             }
             finally
             {
-                vault.ReleaseWriteLock(in hydrationHandle, SystemID.Construction);
+                Volatile.Write(ref s_catalogHydrationScratchBusy, 0);
             }
         }
 
@@ -553,9 +587,9 @@ namespace Hecton8.Construction
             return false;
         }
 
-        private static unsafe int ReadCatalogBytesIntoNativeArray(string path, NativeArray<byte> bytes, int expectedLength)
+        private static int ReadCatalogBytesIntoScratch(string path, byte[] bytes, int expectedLength)
         {
-            if (!bytes.IsCreated || expectedLength <= 0 || bytes.Length < expectedLength)
+            if (bytes == null || expectedLength <= 0 || bytes.Length < expectedLength)
                 return CatalogByteLoadInvalidTarget;
 
             try
@@ -568,11 +602,10 @@ namespace Hecton8.Construction
                            64 * 1024,
                            FileOptions.Asynchronous | FileOptions.SequentialScan))
                 {
-                    byte* target = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(bytes);
                     int offset = 0;
                     while (offset < expectedLength)
                     {
-                        var destination = new Span<byte>(target + offset, expectedLength - offset);
+                        var destination = new Span<byte>(bytes, offset, expectedLength - offset);
                         int read = stream.Read(destination);
                         if (read <= 0)
                             return CatalogByteLoadShortRead;
@@ -590,6 +623,18 @@ namespace Hecton8.Construction
             catch (UnauthorizedAccessException)
             {
                 return CatalogByteLoadIoFailure;
+            }
+        }
+
+        private static unsafe void CopyCatalogScratchIntoNativeArray(byte[] source, NativeArray<byte> target, int byteLength)
+        {
+            if (source == null || !target.IsCreated || byteLength <= 0 || source.Length < byteLength || target.Length < byteLength)
+                return;
+
+            fixed (byte* sourcePtr = source)
+            {
+                byte* targetPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(target);
+                UnsafeUtility.MemCpy(targetPtr, sourcePtr, byteLength);
             }
         }
 
@@ -1048,23 +1093,10 @@ namespace Hecton8.Construction
 
         public static unsafe bool TryDumpTelemetry(IDataVault vault, string projectRoot)
         {
-            if (!TryResolveViews(vault, out ModuleCatalogViews views) || !views.Telemetry.IsCreated)
-                return false;
-
-            string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
-            string path = Path.Combine(root, DumpRelativePath);
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(views.Telemetry);
-            int byteLength = views.Telemetry.Length * UnsafeUtility.SizeOf<ModuleCatalogTelemetryEntry>();
-            using (FileStream stream = File.Create(path))
-            {
-                stream.Write(new ReadOnlySpan<byte>(ptr, byteLength));
-            }
-
-            return true;
+            _ = projectRoot;
+            return TryResolveViews(vault, out ModuleCatalogViews views) &&
+                   views.Telemetry.IsCreated &&
+                   views.Telemetry.Length > 0;
         }
 
 #if UNITY_EDITOR

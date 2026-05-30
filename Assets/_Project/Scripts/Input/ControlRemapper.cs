@@ -25,6 +25,9 @@ namespace Hecton8.Input
         private const ulong Fnv64Prime = 1099511628211UL;
         private const uint Fnv32Offset = 2166136261u;
         private const uint Fnv32Prime = 16777619u;
+        private static readonly ulong TelemetryMutationGuardMask =
+            MutationGuardBit(InputBindingContractLayout.InputBindingTelemetryRingBufferId) |
+            MutationGuardBit(InputBindingContractLayout.InputBindingTelemetryCursorBufferId);
         private static readonly OverrideRollbackRecord[] LoadRollbackRecords = new OverrideRollbackRecord[MaxBindingRecords]; // COLD ALLOC: OverrideRollbackRecord[128] - controls.json load rollback snapshot - owner: ControlRemapper
         private static int LoadRollbackLease;
 
@@ -64,18 +67,31 @@ namespace Hecton8.Input
                 return;
             }
 
-            const int telemetryCapacity = InputBindingContractLayout.InputBindingTelemetryCapacity;
-
-            int index = 0;
-            if (!vault.TryAcquireWriteLock(in cursorHandle, SystemID.UI, out NativeArray<int> cursor))
+            if (ringHandle.BufferID != unchecked((uint)(int)InputBindingContractLayout.InputBindingTelemetryRingBufferId) ||
+                cursorHandle.BufferID != unchecked((uint)(int)InputBindingContractLayout.InputBindingTelemetryCursorBufferId) ||
+                !vault.TryAcquireMutationGuard(TelemetryMutationGuardMask))
+            {
                 return;
+            }
 
             try
             {
-                if (!cursor.IsCreated || cursor.Length <= 0)
+                if (!vault.TryResolveHandle(in cursorHandle, out NativeArray<int> cursor) ||
+                    !vault.TryResolveHandle(in ringHandle, out NativeArray<InputBindingTelemetryEntry> ring) ||
+                    !cursor.IsCreated ||
+                    cursor.Length <= 0 ||
+                    !ring.IsCreated)
+                {
+                    return;
+                }
+
+                int telemetryCapacity = InputBindingContractLayout.InputBindingTelemetryCapacity < ring.Length
+                    ? InputBindingContractLayout.InputBindingTelemetryCapacity
+                    : ring.Length;
+                if (telemetryCapacity <= 0)
                     return;
 
-                index = cursor[0];
+                int index = cursor[0];
                 if (index < 0 || index >= telemetryCapacity)
                     index = 0;
 
@@ -84,26 +100,17 @@ namespace Hecton8.Input
                     nextIndex = 0;
 
                 cursor[0] = nextIndex;
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in cursorHandle, SystemID.UI);
-            }
-
-            if (!vault.TryAcquireWriteLock(in ringHandle, SystemID.UI, out NativeArray<InputBindingTelemetryEntry> ring))
-                return;
-
-            try
-            {
-                if (!ring.IsCreated || index >= ring.Length)
-                    return;
-
                 ring[index] = entry;
             }
             finally
             {
-                vault.ReleaseWriteLock(in ringHandle, SystemID.UI);
+                vault.ReleaseMutationGuard(TelemetryMutationGuardMask);
             }
+        }
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)bufferId) & 63);
         }
 
         public static bool TryDumpTelemetry(

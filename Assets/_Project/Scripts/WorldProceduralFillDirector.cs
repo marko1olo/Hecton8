@@ -48,6 +48,12 @@ namespace Hecton8.World
 
         internal static WorldProceduralFillDirector ActiveRuntimeInstance { get; private set; }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeForSubsystemRegistration()
+        {
+            ActiveRuntimeInstance = null;
+        }
+
         public IReadOnlyList<WorldProceduralPlacementRule> Rules => rules;
         public IReadOnlyList<WorldPrefabFamilyProfile> Families => families;
 

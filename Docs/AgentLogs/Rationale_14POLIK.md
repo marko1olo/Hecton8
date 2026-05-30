@@ -1,6 +1,6 @@
 # Rationale_14POLIK
 
-Status: COMPLETE_TARGETED_BUILD_VERIFIED_SIXTH_PASS
+Status: TENTH_PASS_STATIC_VERIFIED_BUILD_THROTTLED
 
 Problem: Runtime resource spawn work was committed from `LateFrameTick`, including pooled node activation, template application, spatial registration, and active-node list insertion.
 Solution: Move pending node deactivation and spawn processing into `SlowTick`; keep `LateFrameTick` reserved for visual-only work.
@@ -127,3 +127,63 @@ Solution: Remove unregister calls from hot callbacks. Fabricator stays registere
 Rejected Alternatives: Unregister from inside the same lane that may be iterating.
 Scalability potential: Stable dispatcher iteration on all tiers; low tier pays only one cheap branch on idle registered objects.
 Hardware Impact: Eliminates hot registry mutation hazard; idle branch cost is accepted over iterator mutation risk.
+
+Problem: `DestructibleOrganicManager.LateFrameTick` still owned Dear Lie truth work: signal drain, forced job completion, regeneration, drop buffer drain, yield execution, and nav scheduling.
+Solution: Add a cold `PostSimulationPhaseSystem` bridge and move those truth routes into `DispatcherPhase.PostSimulation` with `BeginPostSimulationSwapWindow`/`EndPostSimulationSwapWindow` around job/yield completion windows.
+Rejected Alternatives: Keep forced job completion inside `LateFrameTick`; it mutates vault-backed organic truth after simulation settle and can stall the visual phase.
+Scalability potential: Low tier keeps late frame for bounded presentation DTO flushes; middle/high/ultra can spend continuous `GlobalQualityWeight` on richer organic debris/audio without changing truth ownership.
+Hardware Impact: Removes 20-180 us estimated late-phase burst jitter during organic destruction/yield spikes. Exact gain is destruction-density dependent.
+
+Problem: Organic presentation metadata updates were executed from `Tick` under a lifecycle mutation guard.
+Solution: Move decomposition, regrowth, mature-spore acoustic, damage, and wilt presentation updates into `LateFrameTick`; keep `Tick` to clock advance plus non-mutating cache freshness check.
+Rejected Alternatives: Keep visual metadata mutation in simulation tick; that blurs presentation timing and makes phase proof depend on naming.
+Scalability potential: Low tier gets cheaper deterministic tick cadence; high/ultra can raise visual scan budgets through `GlobalQualityWeight` without moving truth across phases.
+Hardware Impact: Phase drift removed. Throughput claim intentionally not made because the same bounded scan work still exists.
+
+Problem: Organic tick lanes could register without a guaranteed post-simulation bridge.
+Solution: Register `PostSimulationPhaseSystem` before updatable/slow/late lanes and re-register tick lanes only after bridge registration succeeds during dispatcher hot-swap.
+Rejected Alternatives: Let organic truth scheduling survive with no completion fence.
+Scalability potential: Stable under dispatcher replacement and parallel agents; all device tiers keep one truth route.
+Hardware Impact: Prevents orphaned scheduled jobs and late-frame fallback completion.
+
+Problem: Verification had to prove DataVault lock flattening without adding heavy telemetry.
+Solution: Static method-body scan found `DOM_MULTI_ACQUIRE_METHODS=0`; direct guard acquire sites are single-mask acquires released by existing `finally` paths.
+Rejected Alternatives: Add disk telemetry or runtime lock tracing for a source-level invariant.
+Scalability potential: No runtime cost on low tier; high/ultra keep the same guard route.
+Hardware Impact: Deadlock surface reduced; 0 B/frame instrumentation cost.
+
+Problem: Compile proof had to respect strict throttling.
+Solution: Waited through CPU readings of 94-100%, then 65-76%; launched one targeted `Assembly-CSharp.csproj` build only after CPU dropped to 31% and no compiler process was active.
+Rejected Alternatives: Full solution build, repeated build for warning detail, or compile during high CPU.
+Scalability potential: Shared workstation remains stable for 20+ agents.
+Hardware Impact: Final targeted compile: 1 warning, 0 errors, 35.90s. Warning detail was intentionally not expanded by a second build.
+
+Problem: `PlayerInventory.LateFrameTick` still wrote SoA query telemetry into a DataVault ring through `WriteSoaQueryTelemetryOwnerPhase()`.
+Solution: Add a cold `PostSimulationPhaseSystem : IDispatcherSystem` bridge and move the telemetry write into `DispatcherPhase.PostSimulation`. Keep late frame limited to fixed-array signal capture and rust shader scalar presentation.
+Rejected Alternatives: Keep telemetry in `LateFrameTick` because the write is small; the phase contract says blackbox telemetry belongs after simulation fences, not in visual sync. Move signal capture into PostSimulation; that risks missing same-frame SignalBus publishers without explicit dependencies.
+Scalability potential: Low tier avoids visual-phase DataVault ring writes; middle/high/ultra can keep richer SoA telemetry estimates driven by continuous `GlobalQualityWeight` without changing gameplay truth or DTO layout.
+Hardware Impact: Removes an estimated 2-12 us render-adjacent write/cursor jitter from inventory telemetry frames; exact cost depends on ring/cache state. One cold bridge object is created only at lifecycle registration.
+
+Problem: Eighth-pass verification needed syntax proof without compiler spam under active parallel agents.
+Solution: Used C# Interactive/Roslyn AST parsing in memory for `PlayerInventory.cs`, method-body static scans for hot lookup/lock invariants, and `git diff --check`. No `dotnet build` was launched while CPU remained above 50% and external `dotnet build .\Assembly-CSharp.csproj`, `dotnet build .\Hecton8.Core.csproj`, and `csc.exe` lanes were active.
+Rejected Alternatives: Launch a second targeted build during CPU 61-90% or while another compiler lane was active; repeat full solution build.
+Scalability potential: Shared workstation remains stable for other agents; low-end developer machines do not get unnecessary compiler contention.
+Hardware Impact: `PLAYER_INVENTORY_CSI_AST_SYNTAX_ERRORS=0`; no compiler process was orphaned by this pass. Targeted build remains throttled, not failed.
+
+Problem: The eighth-pass code patch needed real compile proof after the compiler lane was previously blocked by CPU and other agents.
+Solution: Rechecked the throttle gate, waited until CPU dropped to 44% and no `dotnet/csc/VBCSCompiler` process existed, then ran exactly one targeted `Assembly-CSharp.csproj` build with `-maxcpucount:1`, shared compilation disabled, and no restore.
+Rejected Alternatives: Full solution build, repeated builds after success, build during CPU 85-100%, or build while another compiler lane was active.
+Scalability potential: Shared workstation remains predictable under parallel agents; low-end machines avoid compiler contention while still getting a real C# compile once safe.
+Hardware Impact: Targeted build completed in 36.06s with 0 warnings and 0 errors. Post-build parser/build commands exited; a later `dotnet build .\Hecton8.Editor.csproj` process was external to this pass and was not touched.
+
+Problem: `DestructibleOrganicManager.TryReadDropBudgetGuarded` was a private read-looking accessor that acquired an organic DataVault guard. The implementation was safe, but the name violated the accessor-purity contract and made future audits classify a guarded route as a pure read.
+Solution: Rename the route and three private call sites to `TryCaptureDropBudgetGuarded`, preserving the existing single-guard acquisition and `finally` release unchanged.
+Rejected Alternatives: Remove the guard from the drop-budget snapshot; that would weaken the DataVault relocation/compaction fence. Keep the `TryRead*` name; that preserves contract drift and hides global-authority guard semantics.
+Scalability potential: Low tier keeps the same bounded drop-buffer drain; middle/high/ultra keep the same PostSimulation organic yield capacity. The improvement is architectural proof clarity, not a fake throughput claim.
+Hardware Impact: 0 B/frame change, no extra branch, no extra allocation. Static proof after patch: `DOM_ACCESSOR_SIDE_EFFECT_HITS=0`; `DOM_HOT_FORBIDDEN_CASESENSITIVE_HITS=0`.
+
+Problem: Tenth-pass compile proof was requested while the workstation was already saturated by external compiler work.
+Solution: Refused to launch build or Roslyn parser while CPU reported 74-100% and external `dotnet build .\Hecton8.Core.csproj`, `dotnet build .\Hecton8.Editor.csproj`, and `csc.exe` lanes were active. Used edited-file source scans and `git diff --check` only.
+Rejected Alternatives: Compete with another agent's build, run full solution build, or assert compile success without running a compiler.
+Scalability potential: Shared 20+ agent workstation remains predictable; weak developer hardware is not forced into compiler contention.
+Hardware Impact: No compiler process created by this pass. Latest real targeted compile remains the ninth-pass `Assembly-CSharp.csproj` build: 0 warnings, 0 errors, 36.06s before this rename-only patch.

@@ -27,6 +27,14 @@ namespace Hecton8.World
         private const int MaxZoneAnchorSnapshotCount = 64;
 
         internal static WorldZoneDirector ActiveRuntimeInstance { get; private set; }
+        internal static event System.Action<WorldZoneDirector> ActiveRuntimeInstanceChanged;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeForSubsystemRegistration()
+        {
+            ActiveRuntimeInstance = null;
+            ActiveRuntimeInstanceChanged = null;
+        }
 
         [Header("References")]
         [SerializeField] private Transform playerTransform;
@@ -147,6 +155,8 @@ namespace Hecton8.World
         private float _currentBlendFactor;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
         private IPlayerRuntimeContext _cachedPlayerContext;
+        private bool _scatterBudgetListenerRegistered;
+        private bool _worldSliceListenerRegistered;
 
         public WorldZoneAnchor CurrentZone => _currentZone;
         public WorldZoneAnchor SecondaryZone => _secondaryZone;
@@ -154,16 +164,18 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            ActiveRuntimeInstance = this;
+            PublishActiveRuntimeInstance();
             CachePlayerContextCold();
-            ResolvePlayer(force: true);
+            RefreshColdReferences(force: true);
             RefreshAnchors();
             UpdateDiagnostics();
         }
 
         private void OnEnable()
         {
+            RegisterRuntimeDependencyListeners();
             CachePlayerContextCold();
+            RefreshColdReferences(force: true);
             if (Application.isPlaying)
                 GlobalRegistry.TryRegisterHotSwapListener(this);
 
@@ -172,6 +184,7 @@ namespace Hecton8.World
 
         private void Start()
         {
+            RefreshColdReferences(force: true);
             TryRegister();
 
             EvaluateZones(forceRefresh: true);
@@ -179,17 +192,34 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            UnregisterRuntimeDependencyListeners();
             TryUnregister();
             GlobalRegistry.TryUnregisterHotSwapListener(this);
         }
 
         private void OnDestroy()
         {
+            UnregisterRuntimeDependencyListeners();
             TryUnregister();
             GlobalRegistry.TryUnregisterHotSwapListener(this);
 
             if (ActiveRuntimeInstance == this)
-                ActiveRuntimeInstance = null;
+                ClearActiveRuntimeInstance();
+        }
+
+        private void PublishActiveRuntimeInstance()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                return;
+
+            ActiveRuntimeInstance = this;
+            ActiveRuntimeInstanceChanged?.Invoke(this);
+        }
+
+        private void ClearActiveRuntimeInstance()
+        {
+            ActiveRuntimeInstance = null;
+            ActiveRuntimeInstanceChanged?.Invoke(null);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -246,7 +276,7 @@ namespace Hecton8.World
         /// </summary>
         public void ForceRefresh()
         {
-            ResolvePlayer(force: true);
+            RefreshColdReferences(force: true);
             RefreshAnchors();
             EvaluateZones(forceRefresh: true);
         }
@@ -260,7 +290,7 @@ namespace Hecton8.World
 
         private void EvaluateZones(bool forceRefresh)
         {
-            ResolvePlayer();
+            RefreshPlayerFromCachedContext();
             int activeAnchorVersion = WorldZoneAnchor.ActiveAnchorVersion;
             if (forceRefresh || _anchorCount == 0 || activeAnchorVersion != _lastAnchorVersion)
                 RefreshAnchors();
@@ -367,7 +397,57 @@ namespace Hecton8.World
                    worldSliceDirector == null;
         }
 
-        private void ResolvePlayer(bool force = false)
+        private void RegisterRuntimeDependencyListeners()
+        {
+            if (!_scatterBudgetListenerRegistered)
+            {
+                ScatterBudgetController.ActiveRuntimeInstanceChanged += HandleScatterBudgetControllerChanged;
+                _scatterBudgetListenerRegistered = true;
+            }
+
+            if (!_worldSliceListenerRegistered)
+            {
+                WorldSliceDirector.ActiveRuntimeInstanceChanged += HandleWorldSliceDirectorChanged;
+                _worldSliceListenerRegistered = true;
+            }
+        }
+
+        private void UnregisterRuntimeDependencyListeners()
+        {
+            if (_scatterBudgetListenerRegistered)
+            {
+                ScatterBudgetController.ActiveRuntimeInstanceChanged -= HandleScatterBudgetControllerChanged;
+                _scatterBudgetListenerRegistered = false;
+            }
+
+            if (_worldSliceListenerRegistered)
+            {
+                WorldSliceDirector.ActiveRuntimeInstanceChanged -= HandleWorldSliceDirectorChanged;
+                _worldSliceListenerRegistered = false;
+            }
+        }
+
+        private void HandleScatterBudgetControllerChanged(ScatterBudgetController controller)
+        {
+            scatterBudgetController = controller;
+        }
+
+        private void HandleWorldSliceDirectorChanged(WorldSliceDirector director)
+        {
+            worldSliceDirector = director;
+        }
+
+        private void RefreshPlayerFromCachedContext()
+        {
+            if (playerTransform != null)
+                return;
+
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null)
+                playerTransform = playerContext.PlayerTransform;
+        }
+
+        private void RefreshColdReferences(bool force = false)
         {
             if (!force && !NeedsAutoResolve())
                 return;
@@ -379,11 +459,7 @@ namespace Hecton8.World
             _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
 
             if (playerTransform == null)
-            {
-                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-                if (playerContext != null)
-                    playerTransform = playerContext.PlayerTransform;
-            }
+                RefreshPlayerFromCachedContext();
 
             WorldRuntimeReferenceUtility.TryResolveScatterBudgetController(ref scatterBudgetController);
             WorldRuntimeReferenceUtility.TryResolveWorldSliceDirector(ref worldSliceDirector);

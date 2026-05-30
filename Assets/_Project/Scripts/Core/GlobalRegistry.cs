@@ -2512,7 +2512,11 @@ namespace Hecton8.Core
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             GuardGenericGetDuringRegistration<T>();
 #endif
-            if (TryGet<T>(out T service))
+            GlobalRegistryServiceSlot serviceSlot = ResolveServiceSlot<T>();
+            if (Volatile.Read(ref _registryPhase) != (int)RegistryPhase.Ready)
+                MarkServiceRequested(serviceSlot);
+
+            if (TryReadRegisteredService(serviceSlot, out T service))
                 return service;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -2531,6 +2535,12 @@ namespace Hecton8.Core
         [Preserve]
         public static bool TryGet<T>(out T service) where T : class
         {
+            GlobalRegistryServiceSlot serviceSlot = ResolveServiceSlot<T>();
+            return TryReadRegisteredService(serviceSlot, out service);
+        }
+
+        private static bool TryReadRegisteredService<T>(GlobalRegistryServiceSlot serviceSlot, out T service) where T : class
+        {
             if (typeof(T) == typeof(IBabelLocalization))
             {
                 service = (_babelLocalizationRuntime ?? _localizationRuntime) as T;
@@ -2538,9 +2548,6 @@ namespace Hecton8.Core
                     return true;
             }
 
-            GlobalRegistryServiceSlot serviceSlot = ResolveServiceSlot<T>();
-            if (Volatile.Read(ref _registryPhase) != (int)RegistryPhase.Ready)
-                MarkServiceRequested(serviceSlot);
             service = ResolveRegisteredServiceObject(serviceSlot) as T;
             return service != null;
         }

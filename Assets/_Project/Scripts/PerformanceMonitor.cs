@@ -531,9 +531,12 @@ namespace Hecton8.Core
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9000)]
-    public sealed class PerformanceMonitor : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+    public sealed class PerformanceMonitor : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
+        private const string AutoReportTraceMessage = "[PERF] Auto report sample ready. Use PerformanceMonitor.DescribeStatus() from a cold debug route for full text.";
+
         private const float MillisecondsPerSecond = 1000f;
+        private static PerformanceMonitor s_currentRuntime;
         // ════════════════════════════════════════════════════════════
         //  SINGLETON
         // ════════════════════════════════════════════════════════════
@@ -541,6 +544,7 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            s_currentRuntime = null;
         }
 
         // ════════════════════════════════════════════════════════════
@@ -554,7 +558,7 @@ namespace Hecton8.Core
         {
             get
             {
-                PerformanceMonitor runtime = GlobalRegistry.PerformanceMonitor;
+                PerformanceMonitor runtime = s_currentRuntime;
                 return runtime != null && runtime._sampleCountTotal > 0;
             }
         }
@@ -607,6 +611,7 @@ namespace Hecton8.Core
         private int _sampleCounter;
         private int _sampleCountTotal;
         private float _autoReportTimer;
+        private bool _autoReportPending;
 
         private float[] _frameTimeHistory;
         private int _frameTimeHistoryIndex;
@@ -617,6 +622,7 @@ namespace Hecton8.Core
         private long _lastGCTotalMemory;
         private int _lastGCCollectionCount;
         private bool _isRegisteredToTickManager;
+        private bool _isRegisteredToLateFrame;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private IPhysicsQueryTelemetryReadModel _physicsQueryTelemetry;
@@ -686,6 +692,7 @@ namespace Hecton8.Core
             _lastGCTotalMemory = GC.GetTotalMemory(false);
             _lastGCCollectionCount = GC.CollectionCount(0);
             _physicsQueryTelemetry = GlobalRegistry.PhysicsQueryTelemetry;
+            s_currentRuntime = this;
         }
 
         private void OnEnable()
@@ -714,22 +721,34 @@ namespace Hecton8.Core
             TryUnregisterFromDispatcher();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
+            if (ReferenceEquals(s_currentRuntime, this))
+                s_currentRuntime = null;
         }
 
         private void TryRegisterToDispatcher()
         {
-            if (_isRegisteredToTickManager || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
             PerformanceEvents.EnsureInitialized();
-            _isRegisteredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+            if (!_isRegisteredToTickManager)
+                _isRegisteredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+
+            if (!_isRegisteredToLateFrame)
+                _isRegisteredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
         }
 
         private void TryUnregisterFromDispatcher()
         {
+            if (_isRegisteredToLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                _isRegisteredToLateFrame = false;
+            }
+
             if (!_isRegisteredToTickManager)
                 return;
 
@@ -824,16 +843,27 @@ namespace Hecton8.Core
                 if (_autoReportTimer <= 0f)
                 {
                     _autoReportTimer = autoReportInterval;
-                    LogAutoReport();
+                    _autoReportPending = true;
                 }
 #endif
             }
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
-        private static void LogAutoReport()
+        private void LogAutoReportLateFrame()
         {
-            Hecton8.Core.H8Debug.Log(GetReport());
+            Hecton8.Core.H8Debug.Log(AutoReportTraceMessage);
+        }
+
+        public void LateFrameTick()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!_autoReportPending)
+                return;
+
+            _autoReportPending = false;
+            LogAutoReportLateFrame();
+#endif
         }
 
         // ════════════════════════════════════════════════════════════
@@ -921,9 +951,9 @@ namespace Hecton8.Core
         {
             get
             {
-                PerformanceMonitor runtime = GlobalRegistry.PerformanceMonitor;
-                if (runtime == null)
-                    return default;
+            PerformanceMonitor runtime = s_currentRuntime;
+            if (runtime == null)
+                return default;
 
                 int targetFps = RuntimeWatchdog.ActiveTargetFPS;
 
@@ -947,7 +977,7 @@ namespace Hecton8.Core
         public static string DescribeStatus()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            PerformanceMonitor runtime = GlobalRegistry.PerformanceMonitor;
+            PerformanceMonitor runtime = s_currentRuntime;
             if (runtime == null)
                 return "PerformanceMonitor: Not initialized";
 

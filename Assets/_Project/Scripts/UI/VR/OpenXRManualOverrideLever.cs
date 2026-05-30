@@ -23,7 +23,7 @@ namespace Hecton8.UI.VR
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider))]
     [AddComponentMenu("Hecton8/UI/VR/OpenXR Manual Override Lever")]
-    public sealed class OpenXRManualOverrideLever : MonoBehaviour, IUpdatable, ILateFrameTickable, IPhysicalPanelButtonReceiver, IManualOverrideLeverReadModel, IGlobalRegistryHotSwapListener
+    public sealed class OpenXRManualOverrideLever : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IPhysicalPanelButtonReceiver, IManualOverrideLeverReadModel, IGlobalRegistryHotSwapListener
     {
         private static int s_x001OpenXRManualOverrideLeverSignalPushDropCount;
         private const int LeverCount = 1;
@@ -74,6 +74,7 @@ namespace Hecton8.UI.VR
 
         private VaultGenerationHandle<ManualOverrideLeverTelemetryEntry> _blackBoxHandle;
         private IDataVault _dataVault;
+        private IDataVault _blackBoxWriteVault;
 
         private Transform _cachedTransform;
         private Transform _resolvedVisual;
@@ -100,6 +101,7 @@ namespace Hecton8.UI.VR
         private uint _inputSequence;
         private ushort _signalSequence;
         private bool _registeredTick;
+        private bool _registeredSlowTick;
         private bool _registeredLateFrame;
         private bool _registeredHotSwapListener;
         private bool _receiverRegistered;
@@ -111,6 +113,7 @@ namespace Hecton8.UI.VR
         private bool _nativeAllocated;
         private bool _projectionSingular;
         private bool _xrActiveThisFrame;
+        private bool _blackBoxDumpQueued;
         private bool _blackBoxDumped;
         private bool _leverVisualDirty;
         private bool _ratchetHapticDirty;
@@ -171,6 +174,7 @@ namespace Hecton8.UI.VR
         {
             _grabbed = false;
             _dispatcherAvailable = false;
+            FlushQueuedBlackBoxDump();
             TryUnregisterTick();
             TryUnregisterReceiver();
             TryUnregisterHotSwapListener();
@@ -179,6 +183,7 @@ namespace Hecton8.UI.VR
         private void OnDestroy()
         {
             _dispatcherAvailable = false;
+            FlushQueuedBlackBoxDump();
             TryUnregisterTick();
             TryUnregisterReceiver();
             TryUnregisterHotSwapListener();
@@ -252,6 +257,11 @@ namespace Hecton8.UI.VR
             {
                 _pendingLatchShutdown = false;
             }
+        }
+
+        public void SlowTick()
+        {
+            FlushQueuedBlackBoxDump();
         }
 
         /// <summary>
@@ -368,7 +378,7 @@ namespace Hecton8.UI.VR
 
             if (!math.isfinite(current) || !math.isfinite(velocity))
             {
-                DumpBlackBox();
+                QueueBlackBoxDump();
                 current = minAngleDegrees;
                 velocity = 0f;
                 target = minAngleDegrees;
@@ -596,7 +606,7 @@ namespace Hecton8.UI.VR
             float3 pivotLocal = _leverPivot;
             if (!math.isfinite(angleDegrees) || !math.isfinite(velocity) || !math.isfinite(target) || !IsFiniteFloat3(handLocal) || !IsFiniteFloat3(pivotLocal))
             {
-                DumpBlackBox();
+                QueueBlackBoxDump();
                 return;
             }
 
@@ -644,12 +654,25 @@ namespace Hecton8.UI.VR
             return flags;
         }
 
+        private void QueueBlackBoxDump()
+        {
+            if (!_blackBoxDumped)
+                _blackBoxDumpQueued = true;
+        }
+
+        private void FlushQueuedBlackBoxDump()
+        {
+            if (!_blackBoxDumpQueued)
+                return;
+
+            _blackBoxDumpQueued = false;
+            DumpBlackBox();
+        }
+
         private void DumpBlackBox()
         {
             if (_blackBoxDumped)
                 return;
-
-            _blackBoxDumped = true;
 
             try
             {
@@ -670,12 +693,17 @@ namespace Hecton8.UI.VR
                     for (int i = 0; i < BlackBoxFrameCount; i++)
                     {
                         if (!TryReadBlackBoxEntry(i, out ManualOverrideLeverTelemetryEntry entry))
+                        {
+                            _blackBoxDumpQueued = true;
                             return;
+                        }
 
                         WriteBlackBoxEntry(entryBytes, in entry);
                         stream.Write(entryBytes);
                     }
                 }
+
+                _blackBoxDumped = true;
             }
             catch (IOException)
             {
@@ -828,6 +856,7 @@ namespace Hecton8.UI.VR
         private void ResetBlackBoxNativeEpochState()
         {
             _blackBoxHandle = default;
+            _blackBoxWriteVault = null;
             _blackBoxWriteIndex = 0;
             _blackBoxDumped = false;
         }
@@ -854,6 +883,7 @@ namespace Hecton8.UI.VR
 
         private void ReleaseBlackBoxHandle(IDataVault vault)
         {
+            ReleaseBlackBoxWriteBuffer();
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
                 !IsExactBlackBoxHandle() ||
@@ -923,6 +953,7 @@ namespace Hecton8.UI.VR
             IDataVault vault = _dataVault;
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
+                _blackBoxWriteVault != null ||
                 !IsExactBlackBoxHandle() ||
                 !vault.TryAcquireWriteLock(in _blackBoxHandle, VaultOwnerSystemId, out blackBox))
             {
@@ -934,6 +965,7 @@ namespace Hecton8.UI.VR
             {
                 if (!vault.IsCompactionFenceActive && blackBox.IsCreated && blackBox.Length >= BlackBoxFrameCount)
                 {
+                    _blackBoxWriteVault = vault;
                     releaseOnExit = false;
                     return true;
                 }
@@ -952,7 +984,8 @@ namespace Hecton8.UI.VR
 
         private void ReleaseBlackBoxWriteBuffer()
         {
-            IDataVault vault = _dataVault;
+            IDataVault vault = _blackBoxWriteVault;
+            _blackBoxWriteVault = null;
             if (vault != null && IsExactBlackBoxHandle())
                 vault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
         }
@@ -1032,11 +1065,13 @@ namespace Hecton8.UI.VR
 
         private void TryRegisterTick()
         {
-            if ((_registeredTick && _registeredLateFrame) || _latched || !_nativeAllocated || !Application.isPlaying || !_dispatcherAvailable)
+            if ((_registeredTick && _registeredSlowTick && _registeredLateFrame) || _latched || !_nativeAllocated || !Application.isPlaying || !_dispatcherAvailable)
                 return;
 
             if (!_registeredTick)
                 _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
@@ -1047,6 +1082,12 @@ namespace Hecton8.UI.VR
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
                 _registeredTick = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+                _registeredSlowTick = false;
             }
 
             if (_registeredLateFrame)

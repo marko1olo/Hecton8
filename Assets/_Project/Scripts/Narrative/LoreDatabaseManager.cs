@@ -194,9 +194,11 @@ namespace Hecton8.Narrative
         private readonly Dictionary<uint, int> _recordIndexByHash = new Dictionary<uint, int>(64);
 
         private VaultGenerationHandle<uint> _unlockedWordsHandle;
+        private IDataVault _unlockedWordsVault;
         private IDataVault _dataVault;
         private ISaveService _saveService;
         private ISaveService _registeredSaveService;
+        private ILocalizationTextReadModel _localizationText;
         private bool _serviceRegistered;
         private bool _hotSwapListenerRegistered;
         private bool _recordLookupBuilt;
@@ -243,6 +245,7 @@ namespace Hecton8.Narrative
         private void OnEnable()
         {
             CacheRegistryServicesCold();
+            BuildRecordLookupCold();
             TryRegisterService();
             TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
@@ -308,6 +311,12 @@ namespace Hecton8.Narrative
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+            {
+                _localizationText = GlobalRegistry.LocalizationText;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Save)
                 return;
 
@@ -347,6 +356,7 @@ namespace Hecton8.Narrative
         private void CacheRegistryServicesCold()
         {
             _saveService = GlobalRegistry.Save;
+            _localizationText = GlobalRegistry.LocalizationText;
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
         }
@@ -703,7 +713,7 @@ namespace Hecton8.Narrative
             return value >= 'a' && value <= 'z' ? (char)(value - 32) : value;
         }
 
-        private static bool TryResolveLocalizedOrFallback(
+        private bool TryResolveLocalizedOrFallback(
             int keyHash,
             char[] fallbackBuffer,
             int fallbackLength,
@@ -711,7 +721,7 @@ namespace Hecton8.Narrative
             out int length,
             out bool rtl)
         {
-            ILocalizationTextReadModel manager = Hecton8.Core.GlobalRegistry.LocalizationText;
+            ILocalizationTextReadModel manager = _localizationText;
             GameLanguage language = manager != null ? (GameLanguage)manager.ActiveLanguageId : GameLanguage.English;
             rtl = manager != null && LocalizedMeasurementFormatter.IsRightToLeft(language);
 
@@ -775,9 +785,7 @@ namespace Hecton8.Narrative
 
         private bool UnlockByHashInternal(uint logHash)
         {
-            BuildRecordLookupCold();
-
-            if (!_recordIndexByHash.TryGetValue(logHash, out int index))
+            if (!_recordLookupBuilt || !_recordIndexByHash.TryGetValue(logHash, out int index))
                 return false;
 
             if (!TryAcquireUnlockWordsWrite(out NativeArray<uint> unlockedWords, out IDataVault lockedVault))
@@ -881,25 +889,42 @@ namespace Hecton8.Narrative
             Hecton8.Core.H8Debug.LogError("[LoreDatabaseManager] Duplicate lore hash.");
         }
 
-        private void EnsureUnlockStorage()
+        private bool EnsureUnlockStorage()
         {
-            IDataVault vault = CacheDataVaultCold();
-            if (vault == null)
-                return;
-
-            if (IsVaultHandleCreated(in _unlockedWordsHandle) &&
-                vault.TryResolveHandle(in _unlockedWordsHandle, out NativeArray<uint> unlockedWords) &&
-                unlockedWords.IsCreated &&
-                unlockedWords.Length >= IndustrialLoreBitMask.RuntimeWordCount)
+            IDataVault vault = _dataVault;
+            if (TryReadUnlockWordsFromVault(vault, out NativeArray<uint>.ReadOnly existing) &&
+                existing.Length >= IndustrialLoreBitMask.RuntimeWordCount)
             {
-                return;
+                return true;
             }
+
+            if (vault == null)
+                return false;
+
+            if (_unlockedWordsVault != null && !ReferenceEquals(_unlockedWordsVault, vault))
+            {
+                if (!ReleaseUnlockStorage(_unlockedWordsVault))
+                    return false;
+            }
+
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
 
             _unlockedWordsHandle = vault.EnsureGenerationHandle<uint>(
                 UnlockWordsBufferId,
                 IndustrialLoreBitMask.RuntimeWordCount,
                 VaultOwnerSystemId,
                 NativeArrayOptions.ClearMemory);
+
+            if (!IsVaultHandleCreated(in _unlockedWordsHandle))
+            {
+                _unlockedWordsVault = null;
+                return false;
+            }
+
+            _unlockedWordsVault = vault;
+            return TryReadUnlockWordsFromVault(vault, out existing) &&
+                   existing.Length >= IndustrialLoreBitMask.RuntimeWordCount;
         }
 
         private IDataVault CacheDataVaultCold()
@@ -913,38 +938,54 @@ namespace Hecton8.Narrative
         private bool TryReadUnlockWords(out NativeArray<uint>.ReadOnly words)
         {
             words = default;
-            IDataVault vault = _dataVault;
-            if (vault == null || !IsVaultHandleCreated(in _unlockedWordsHandle))
-                return false;
-
-            return vault.TryReadOnlyHandle(in _unlockedWordsHandle, out words) &&
-                   words.IsCreated &&
+            return TryReadUnlockWordsFromVault(_dataVault, out words) &&
                    words.Length >= IndustrialLoreBitMask.RuntimeWordCount;
+        }
+
+        private bool TryReadUnlockWordsFromVault(IDataVault vault, out NativeArray<uint>.ReadOnly words)
+        {
+            words = default;
+            return vault != null &&
+                   ReferenceEquals(_unlockedWordsVault, vault) &&
+                   IsVaultHandleCreated(in _unlockedWordsHandle) &&
+                   vault.TryReadOnlyHandle(in _unlockedWordsHandle, out words) &&
+                   words.IsCreated;
         }
 
         private bool TryAcquireUnlockWordsWrite(out NativeArray<uint> words, out IDataVault lockedVault)
         {
             words = default;
             lockedVault = null;
-            EnsureUnlockStorage();
+            if (!EnsureUnlockStorage())
+                return false;
 
             IDataVault vault = _dataVault;
             if (vault == null ||
+                !ReferenceEquals(_unlockedWordsVault, vault) ||
                 !IsVaultHandleCreated(in _unlockedWordsHandle) ||
                 !vault.TryAcquireWriteLock(in _unlockedWordsHandle, VaultOwnerSystemId, out words))
             {
                 return false;
             }
 
-            if (words.IsCreated && words.Length >= IndustrialLoreBitMask.RuntimeWordCount)
+            bool ownershipTransferred = false;
+            try
             {
-                lockedVault = vault;
-                return true;
-            }
+                if (words.IsCreated && words.Length >= IndustrialLoreBitMask.RuntimeWordCount)
+                {
+                    lockedVault = vault;
+                    ownershipTransferred = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in _unlockedWordsHandle, VaultOwnerSystemId);
-            words = default;
-            return false;
+                words = default;
+                return false;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                    vault.ReleaseWriteLock(in _unlockedWordsHandle, VaultOwnerSystemId);
+            }
         }
 
         private void ReleaseUnlockWordsWrite(IDataVault lockedVault)
@@ -953,14 +994,36 @@ namespace Hecton8.Narrative
                 lockedVault.ReleaseWriteLock(in _unlockedWordsHandle, VaultOwnerSystemId);
         }
 
-        private void ReleaseUnlockStorage(IDataVault vault)
+        private bool ReleaseUnlockStorage(IDataVault vault)
         {
-            if (vault != null && IsVaultHandleCreated(in _unlockedWordsHandle))
-                vault.ReleaseBuffer(in _unlockedWordsHandle);
+            if (vault == null)
+                return false;
 
+            if (!ReferenceEquals(_unlockedWordsVault, vault) ||
+                !IsVaultHandleCreated(in _unlockedWordsHandle))
+            {
+                if (ReferenceEquals(_dataVault, vault))
+                    _dataVault = null;
+
+                return true;
+            }
+
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!vault.ReleaseBuffer(in _unlockedWordsHandle) &&
+                vault.TryReadOnlyHandle(in _unlockedWordsHandle, out NativeArray<uint>.ReadOnly existing) &&
+                existing.IsCreated)
+            {
+                return false;
+            }
+
+            _unlockedWordsVault = null;
             _unlockedWordsHandle = default;
             if (ReferenceEquals(_dataVault, vault))
                 _dataVault = null;
+
+            return true;
         }
 
         private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct

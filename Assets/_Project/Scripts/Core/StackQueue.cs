@@ -18,7 +18,7 @@ namespace Hecton8.Core
         private ushort _count;
         private ushort _capacity;
         private ushort _mask;
-        private ushort _pad0;
+        private ushort _dataOffset;
         private uint _pad1;
 
         public int Count => _count;
@@ -30,6 +30,9 @@ namespace Hecton8.Core
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
+                if (_capacity != 0)
+                    return _capacity;
+
                 int elementSize = UnsafeUtility.SizeOf<T>();
                 if (elementSize <= 0 || elementSize > BufferBytes)
                     return 0;
@@ -44,6 +47,9 @@ namespace Hecton8.Core
             _head = 0;
             _tail = 0;
             _count = 0;
+            _capacity = 0;
+            _mask = 0;
+            _dataOffset = 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -55,7 +61,7 @@ namespace Hecton8.Core
 
             fixed (byte* raw = Buffer)
             {
-                T* data = (T*)Align(raw);
+                T* data = (T*)ResolveDataStart(raw);
                 data[_tail] = value;
             }
 
@@ -76,7 +82,7 @@ namespace Hecton8.Core
 
             fixed (byte* raw = Buffer)
             {
-                T* data = (T*)Align(raw);
+                T* data = (T*)ResolveDataStart(raw);
                 value = data[_head];
             }
 
@@ -97,7 +103,7 @@ namespace Hecton8.Core
 
             fixed (byte* raw = Buffer)
             {
-                T* data = (T*)Align(raw);
+                T* data = (T*)ResolveDataStart(raw);
                 value = data[_head];
             }
 
@@ -114,22 +120,37 @@ namespace Hecton8.Core
             if (elementSize <= 0 || elementSize > BufferBytes)
                 return 0;
 
-            int capacity = ComputeCapacityPowerOfTwo(elementSize);
+            int capacity = ComputeCapacityPowerOfTwo(elementSize, out ushort dataOffset);
             _capacity = (ushort)capacity;
             _mask = capacity > 0 ? (ushort)(capacity - 1) : (ushort)0;
+            _dataOffset = dataOffset;
             return capacity;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int ComputeCapacityPowerOfTwo(int elementSize)
         {
+            return ComputeCapacityPowerOfTwo(elementSize, out _);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int ComputeCapacityPowerOfTwo(int elementSize, out ushort dataOffset)
+        {
             fixed (byte* raw = Buffer)
             {
                 byte* aligned = Align(raw);
-                int usableBytes = BufferBytes - (int)(aligned - raw);
+                int offset = (int)(aligned - raw);
+                dataOffset = (ushort)offset;
+                int usableBytes = BufferBytes - offset;
                 int rawCapacity = usableBytes > 0 ? usableBytes / elementSize : 0;
                 return FloorPowerOfTwo(rawCapacity);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private byte* ResolveDataStart(byte* raw)
+        {
+            return raw + _dataOffset;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

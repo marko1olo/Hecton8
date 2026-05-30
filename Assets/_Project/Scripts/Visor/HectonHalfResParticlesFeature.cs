@@ -114,6 +114,7 @@ namespace Hecton8.Visor
             private HalfResParticlesGlobalsDTO _lastHalfResParticlesGlobals;
             private int _halfResParticlesGlobalsWriteIndex;
             private bool _hasHalfResParticlesGlobals;
+            private bool _supportsSetConstantBuffer;
 
             public HalfResParticlesPass()
             {
@@ -133,6 +134,13 @@ namespace Hecton8.Visor
             public bool PrepareResources()
             {
                 return EnsureHalfResParticlesGlobalsBuffer();
+            }
+
+            public void SetGraphicsCapabilitiesCold(bool supportsSetConstantBuffer)
+            {
+                _supportsSetConstantBuffer = supportsSetConstantBuffer;
+                if (!_supportsSetConstantBuffer)
+                    Dispose();
             }
 
             public void Dispose()
@@ -308,7 +316,7 @@ namespace Hecton8.Visor
 
             private bool EnsureHalfResParticlesGlobalsBuffer()
             {
-                if (!SystemInfo.supportsSetConstantBuffer)
+                if (!_supportsSetConstantBuffer)
                     return false;
 
                 if (_halfResParticlesGlobalsBufferA == null || !_halfResParticlesGlobalsBufferA.IsValid() ||
@@ -392,7 +400,7 @@ namespace Hecton8.Visor
 
             private bool HasHalfResParticlesGlobalsBuffer()
             {
-                if (!SystemInfo.supportsSetConstantBuffer)
+                if (!_supportsSetConstantBuffer)
                     return false;
 
                 if (_halfResParticlesGlobalsBufferA == null || !_halfResParticlesGlobalsBufferA.IsValid() ||
@@ -442,6 +450,7 @@ namespace Hecton8.Visor
 
         private HalfResParticlesPass _pass;
         private Material _compositeMaterial;
+        private bool _supportsSetConstantBuffer;
 
         public override void Create()
         {
@@ -459,6 +468,7 @@ namespace Hecton8.Visor
 #endif
             RecreateMaterial(ref _compositeMaterial, shader);
             _pass ??= new HalfResParticlesPass();
+            CacheGraphicsCapabilitiesCold();
             _pass.PrepareResources();
         }
 
@@ -491,6 +501,12 @@ namespace Hecton8.Visor
             _pass?.Dispose();
             DisposeMaterial(ref _compositeMaterial);
             SetGlobalActive(0f);
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsSetConstantBuffer = SystemInfo.supportsSetConstantBuffer;
+            _pass?.SetGraphicsCapabilitiesCold(_supportsSetConstantBuffer);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

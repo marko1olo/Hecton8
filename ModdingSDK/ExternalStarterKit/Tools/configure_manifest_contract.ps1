@@ -9,9 +9,13 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'strict_json_io.ps1')
 
 $MaxEnvelopeBudgetCap = 256
 $MaxAssetBudgetCap = 33554432
+$MaxManifestJsonBytes = 65536
+$MaxGraphJsonBytes = 262144
+$MaxAssetManifestJsonBytes = 262144
 
 function Fail([string]$Message) {
     Write-Error ('[H8MOD_MANIFEST_CONTRACT] ' + $Message)
@@ -86,15 +90,11 @@ function Validate-CapabilityId([string]$Value) {
     return $capabilityId
 }
 
-function Read-JsonFile([string]$Path, [string]$Label) {
-    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-        Fail ($Label + ' is missing: ' + $Path)
-    }
-
+function Read-JsonFile([string]$Path, [string]$Label, [long]$MaxBytes) {
     try {
-        return Get-Content -Raw -LiteralPath $Path | ConvertFrom-Json
+        return Read-H8JsonFileCapped $Path $Label $MaxBytes
     } catch {
-        Fail ($Label + ' is invalid JSON: ' + $_.Exception.Message)
+        Fail $_.Exception.Message
     }
 }
 
@@ -102,7 +102,7 @@ function Write-JsonFile([string]$Path, [object]$Value) {
     $utf8NoBom = New-Object System.Text.UTF8Encoding $false
     $jsonText = ($Value | ConvertTo-Json -Depth 32)
     [System.IO.File]::WriteAllText($Path, ($jsonText + [System.Environment]::NewLine), $utf8NoBom)
-    [void](Get-Content -Raw -LiteralPath $Path | ConvertFrom-Json)
+    [void](Read-H8JsonFileCapped $Path 'Written JSON' 4194304)
 }
 
 function Remove-TempFile([string]$Path) {
@@ -149,7 +149,7 @@ function Get-CleanCapabilities([object[]]$SourceCapabilities) {
 
 function Get-GraphRequiredEnvelopeBudget([string]$RootPath) {
     $graphPath = Join-StarterPath $RootPath 'Graphs/main.h8graph.json'
-    $graph = Read-JsonFile $graphPath 'Graph'
+    $graph = Read-JsonFile $graphPath 'Graph' $MaxGraphJsonBytes
     try {
         return [math]::Max(0, [int]$graph.MaxEnvelopesPerFrame)
     } catch {
@@ -159,7 +159,7 @@ function Get-GraphRequiredEnvelopeBudget([string]$RootPath) {
 
 function Get-AssetManifestByteTotal([string]$RootPath) {
     $assetManifestPath = Join-StarterPath $RootPath 'Content/assets.h8manifest.json'
-    $assets = Read-JsonFile $assetManifestPath 'Asset manifest'
+    $assets = Read-JsonFile $assetManifestPath 'Asset manifest' $MaxAssetManifestJsonBytes
     if ($null -eq $assets.PSObject.Properties['Assets'] -or $null -eq $assets.Assets -or -not $assets.Assets.GetType().IsArray) {
         Fail 'Content/assets.h8manifest.json Assets must be a JSON array.'
     }
@@ -230,7 +230,7 @@ function Invoke-StarterValidator([string]$RootPath) {
 
 $Root = (Resolve-Path -LiteralPath $Root).Path
 $manifestPath = Join-StarterPath $Root 'mod.h8manifest.json'
-$manifest = Read-JsonFile $manifestPath 'Authoring manifest'
+$manifest = Read-JsonFile $manifestPath 'Authoring manifest' $MaxManifestJsonBytes
 Validate-AuthoringManifest $manifest
 
 $requiredEnvelopeBudget = Get-GraphRequiredEnvelopeBudget $Root

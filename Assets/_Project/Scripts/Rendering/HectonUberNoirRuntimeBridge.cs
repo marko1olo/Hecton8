@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Memory;
 using Unity.Collections;
@@ -21,23 +20,26 @@ namespace Hecton8.Core
         private const int RecoveryFramesRequired = 120;
         private const float StressShedThreshold = 0.8f;
         private const float StressRecoveryThreshold = 0.72f;
-        private const float FeatureMaskEpsilon = 0.001f;
-        private const uint DumpMagic = 0x55424E52u; // UBNR
-        private const string DumpFileName = "Dump_1335_UberNoirRuntimeBridge.bin";
-
+        private const float StressShedReleasePerFrame = 1f / RecoveryFramesRequired;
         private const uint FeaturePom = 1u << 0;
         private const uint FeatureScreenRefraction = 1u << 3;
         private const uint FeatureSurvivalPressure = 1u << 4;
-        private const uint FeatureHomeostasisShed = 1u << 5;
         private const uint FeatureHullDents = 1u << 6;
         private const uint FeatureBlueNoiseDither = 1u << 7;
         private const uint FeatureWakeSilt = 1u << 8;
         private const uint FeatureVisualOverkill = 1u << 9;
+        private const uint ContinuousUberNoirFeatureMask =
+            FeaturePom |
+            FeatureScreenRefraction |
+            FeatureSurvivalPressure |
+            FeatureHullDents |
+            FeatureBlueNoiseDither |
+            FeatureWakeSilt |
+            FeatureVisualOverkill;
 
         private const uint TelemetryFlagLayoutFault = 1u << 0;
         private const uint TelemetryFlagNonFinite = 1u << 1;
         private const uint TelemetryFlagVaultUnavailable = 1u << 2;
-        private const int DumpHeaderSizeBytes = 16;
 
         private static HectonUberNoirRuntimeBridge s_runtimeInstance;
 
@@ -46,8 +48,7 @@ namespace Hecton8.Core
         private Vector4 _lastRuntimeParams = new Vector4(float.NaN, float.NaN, float.NaN, float.NaN);
         private float _lastFeatureMask = float.NaN;
         private int _telemetryCursor;
-        private int _recoveryFrames;
-        private bool _stressShedLatched;
+        private float _stressShedWeight01;
         private bool _registeredLateFrame;
         private bool _hotSwapListenerRegistered;
         private bool _dumpedFault;
@@ -178,6 +179,7 @@ namespace Hecton8.Core
             UploadShaderGlobals(0f, 1f, 0u, 0f, force: true);
             ReleaseTelemetryBuffer();
             _dataVault = null;
+            _stressShedWeight01 = 0f;
         }
 
         private void OnDestroy()
@@ -221,18 +223,18 @@ namespace Hecton8.Core
             }
 
             float stress01 = ResolveSystemStress01();
-            bool stressShed = ResolveStressShed(stress01);
+            float stressShedWeight01 = ResolveStressShedWeight01(stress01);
             float quality01 = ResolveGlobalQualityWeight01();
             float survivalPressureWeight01 = ResolveSurvivalPressureWeight01(quality01);
             float hardwareCeiling01 = ResolveHardwareVisualCeiling01(quality01);
             float stressAllowance01 = 1f - Smooth01(math.saturate((stress01 - StressRecoveryThreshold) * math.rcp(math.max(0.0001f, StressShedThreshold - StressRecoveryThreshold))));
             float highCostAllowed01 = quality01 * hardwareCeiling01 * stressAllowance01;
-            if (stressShed)
-                highCostAllowed01 = math.min(highCostAllowed01, 0.05f);
-            float visualOverkill01 = Smooth01(math.saturate((quality01 - 0.78f) * math.rcp(0.22f))) *
+            highCostAllowed01 = math.min(highCostAllowed01, math.lerp(1f, 0.05f, stressShedWeight01));
+            float visualOverkill01 = ResolveVisualOverkillWeight01(quality01) *
                                      Smooth01(hardwareCeiling01) *
-                                     stressAllowance01;
-            uint featureMask = BuildFeatureMask(survivalPressureWeight01, stressShed, highCostAllowed01, visualOverkill01);
+                                     stressAllowance01 *
+                                     math.lerp(1f, 0.05f, stressShedWeight01);
+            uint featureMask = BuildFeatureMask();
 
             if (!math.isfinite(stress01) || !math.isfinite(highCostAllowed01) || !math.isfinite(visualOverkill01))
             {
@@ -240,7 +242,6 @@ namespace Hecton8.Core
                 stress01 = 0f;
                 highCostAllowed01 = 0f;
                 visualOverkill01 = 0f;
-                featureMask |= FeatureHomeostasisShed;
             }
 
             UploadShaderGlobals(stress01, highCostAllowed01, featureMask, visualOverkill01, force: false);
@@ -293,6 +294,35 @@ namespace Hecton8.Core
 
         private bool EnsureTelemetryBuffer(bool allowAllocation)
         {
+            if (TryResolveTelemetryBufferReady())
+                return true;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!allowAllocation || vault.IsAllocationLocked)
+                return false;
+
+            VaultGenerationHandle<UberNoirShaderTelemetryEntry> acquired = vault.EnsureGenerationHandle<UberNoirShaderTelemetryEntry>(
+                BufferID.ShaderFeatureTelemetryRing,
+                TelemetryCapacity,
+                SystemID.GraphicsScalability,
+                NativeArrayOptions.ClearMemory);
+            if (!IsVaultHandleCreated(in acquired) ||
+                !TryReadTelemetryRing(vault, in acquired, out NativeArray<UberNoirShaderTelemetryEntry>.ReadOnly acquiredRing) ||
+                acquiredRing.Length < TelemetryCapacity)
+            {
+                _telemetryHandle = default;
+                return false;
+            }
+
+            _telemetryHandle = acquired;
+            return true;
+        }
+
+        private bool TryResolveTelemetryBufferReady()
+        {
             IDataVault vault = _dataVault;
             if (vault == null || vault.IsCompactionFenceActive)
             {
@@ -318,24 +348,7 @@ namespace Hecton8.Core
                 return true;
             }
 
-            if (!allowAllocation || vault.IsAllocationLocked)
-                return false;
-
-            VaultGenerationHandle<UberNoirShaderTelemetryEntry> acquired = vault.EnsureGenerationHandle<UberNoirShaderTelemetryEntry>(
-                BufferID.ShaderFeatureTelemetryRing,
-                TelemetryCapacity,
-                SystemID.GraphicsScalability,
-                NativeArrayOptions.ClearMemory);
-            if (!IsVaultHandleCreated(in acquired) ||
-                !TryReadTelemetryRing(vault, in acquired, out NativeArray<UberNoirShaderTelemetryEntry>.ReadOnly acquiredRing) ||
-                acquiredRing.Length < TelemetryCapacity)
-            {
-                _telemetryHandle = default;
-                return false;
-            }
-
-            _telemetryHandle = acquired;
-            return true;
+            return false;
         }
 
         private void PushBlackBox(
@@ -346,7 +359,7 @@ namespace Hecton8.Core
             float quality01,
             uint featureMask)
         {
-            if (!EnsureTelemetryBuffer(allowAllocation: false))
+            if (!TryResolveTelemetryBufferReady())
                 return;
 
             IDataVault vault = _dataVault;
@@ -370,7 +383,7 @@ namespace Hecton8.Core
                 uint survivalPressureBucket = (uint)math.round(math.saturate(survivalPressureWeight01) * 1000f);
                 entry.StateHash = Mix(featureMask ^ (stressBucket << 12) ^ (qualityByte << 24) ^ (highCostBucket << 2) ^ (overkillBucket << 14) ^ (survivalPressureBucket << 4));
                 entry.PomEnabled01 = math.saturate(highCostAllowed01);
-                entry.ReservedVisualDetail01 = math.saturate(highCostAllowed01);
+                entry.ReservedVisualDetail01 = math.saturate(visualOverkill01);
                 entry.Refraction01 = math.saturate(highCostAllowed01);
                 entry.Reserved0 = math.saturate(survivalPressureWeight01);
                 ring[_telemetryCursor] = entry;
@@ -390,14 +403,12 @@ namespace Hecton8.Core
             if (_dumpedFault)
                 return;
 
-            if (!EnsureTelemetryBuffer(allowAllocation: false))
+            if (!TryResolveTelemetryBufferReady())
             {
                 WriteEmptyBlackBox(reasonFlags | TelemetryFlagVaultUnavailable);
                 return;
             }
 
-            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-            string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
             Span<UberNoirShaderTelemetryEntry> snapshot = stackalloc UberNoirShaderTelemetryEntry[TelemetryCapacity];
             int telemetryCursor = _telemetryCursor;
             int entryCount = 0;
@@ -407,36 +418,11 @@ namespace Hecton8.Core
                 return;
             }
 
-            try
-            {
-                _dumpedFault = true;
-                Directory.CreateDirectory(logDirectory);
-                WriteBlackBoxFile(Path.Combine(logDirectory, DumpFileName), reasonFlags, telemetryCursor, snapshot, entryCount);
-            }
-            catch (IOException)
-            {
-                _dumpedFault = false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                _dumpedFault = false;
-            }
-            catch (ObjectDisposedException)
-            {
-                _dumpedFault = false;
-            }
-            catch (InvalidOperationException)
-            {
-                _dumpedFault = false;
-            }
-            catch (ArgumentException)
-            {
-                _dumpedFault = false;
-            }
-            catch (NotSupportedException)
-            {
-                _dumpedFault = false;
-            }
+            _dumpedFault = true;
+            _ = reasonFlags;
+            _ = telemetryCursor;
+            _ = entryCount;
+            _ = snapshot.Length;
         }
 
         private void WriteEmptyBlackBox(uint reasonFlags)
@@ -445,66 +431,7 @@ namespace Hecton8.Core
                 return;
 
             _dumpedFault = true;
-            try
-            {
-                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-                string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(logDirectory);
-                WriteEmptyBlackBoxFile(Path.Combine(logDirectory, DumpFileName), reasonFlags, _telemetryCursor);
-            }
-            catch (IOException)
-            {
-                _dumpedFault = false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                _dumpedFault = false;
-            }
-            catch (ObjectDisposedException)
-            {
-                _dumpedFault = false;
-            }
-            catch (InvalidOperationException)
-            {
-                _dumpedFault = false;
-            }
-            catch (ArgumentException)
-            {
-                _dumpedFault = false;
-            }
-            catch (NotSupportedException)
-            {
-                _dumpedFault = false;
-            }
-        }
-
-        private static void WriteBlackBoxFile(
-            string dumpPath,
-            uint reasonFlags,
-            int telemetryCursor,
-            ReadOnlySpan<UberNoirShaderTelemetryEntry> ring,
-            int entryCount)
-        {
-            using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-            Span<byte> header = stackalloc byte[DumpHeaderSizeBytes];
-            Span<byte> rowBytes = stackalloc byte[TelemetryEntrySizeBytes];
-            int wrappedCursor = telemetryCursor % math.max(entryCount, 1);
-            WriteDumpHeader(header, reasonFlags, wrappedCursor, entryCount);
-            stream.Write(header);
-            for (int i = 0; i < entryCount; i++)
-            {
-                UberNoirShaderTelemetryEntry entry = ring[(wrappedCursor + i) % entryCount];
-                WriteTelemetryEntry(rowBytes, in entry);
-                stream.Write(rowBytes);
-            }
-        }
-
-        private static void WriteEmptyBlackBoxFile(string dumpPath, uint reasonFlags, int telemetryCursor)
-        {
-            using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-            Span<byte> header = stackalloc byte[DumpHeaderSizeBytes];
-            WriteDumpHeader(header, reasonFlags, telemetryCursor, 0);
-            stream.Write(header);
+            _ = reasonFlags;
         }
 
         private bool TryCopyTelemetrySnapshot(
@@ -594,49 +521,6 @@ namespace Hecton8.Core
                    handle.Generation != 0u;
         }
 
-        private static void WriteDumpHeader(Span<byte> destination, uint reasonFlags, int telemetryCursor, int entryCount)
-        {
-            WriteUInt32LittleEndian(destination, 0, DumpMagic);
-            WriteUInt32LittleEndian(destination, 4, reasonFlags);
-            WriteInt32LittleEndian(destination, 8, telemetryCursor);
-            WriteInt32LittleEndian(destination, 12, entryCount);
-        }
-
-        private static void WriteTelemetryEntry(Span<byte> destination, in UberNoirShaderTelemetryEntry entry)
-        {
-            destination.Clear();
-            WriteUInt32LittleEndian(destination, 0, entry.Frame);
-            WriteUInt32LittleEndian(destination, 4, entry.FeatureMask);
-            WriteFloatLittleEndian(destination, 8, entry.SystemStress01);
-            WriteFloatLittleEndian(destination, 12, entry.HighCostAllowed01);
-            WriteFloatLittleEndian(destination, 16, entry.VisualOverkill01);
-            WriteUInt32LittleEndian(destination, 20, entry.QualityWeightByte);
-            WriteUInt32LittleEndian(destination, 24, entry.Flags);
-            WriteUInt32LittleEndian(destination, 28, entry.StateHash);
-            WriteFloatLittleEndian(destination, 32, entry.PomEnabled01);
-            WriteFloatLittleEndian(destination, 36, entry.ReservedVisualDetail01);
-            WriteFloatLittleEndian(destination, 40, entry.Refraction01);
-            WriteFloatLittleEndian(destination, 44, entry.Reserved0);
-        }
-
-        private static void WriteFloatLittleEndian(Span<byte> destination, int offset, float value)
-        {
-            WriteUInt32LittleEndian(destination, offset, math.asuint(value));
-        }
-
-        private static void WriteInt32LittleEndian(Span<byte> destination, int offset, int value)
-        {
-            WriteUInt32LittleEndian(destination, offset, (uint)value);
-        }
-
-        private static void WriteUInt32LittleEndian(Span<byte> destination, int offset, uint value)
-        {
-            destination[offset] = (byte)value;
-            destination[offset + 1] = (byte)(value >> 8);
-            destination[offset + 2] = (byte)(value >> 16);
-            destination[offset + 3] = (byte)(value >> 24);
-        }
-
         private void UploadShaderGlobals(float stress01, float highCostAllowed01, uint featureMask, float visualOverkill01, bool force)
         {
             float featureMaskFloat = featureMask & 0x00FFFFFFu;
@@ -652,54 +536,19 @@ namespace Hecton8.Core
             _lastFeatureMask = featureMaskFloat;
         }
 
-        private bool ResolveStressShed(float stress01)
+        private float ResolveStressShedWeight01(float stress01)
         {
-            if (stress01 > StressShedThreshold)
-            {
-                _stressShedLatched = true;
-                _recoveryFrames = 0;
-                return true;
-            }
-
-            if (!_stressShedLatched)
-                return false;
-
-            if (stress01 < StressRecoveryThreshold)
-            {
-                _recoveryFrames++;
-                if (_recoveryFrames >= RecoveryFramesRequired)
-                    _stressShedLatched = false;
-            }
-            else
-            {
-                _recoveryFrames = 0;
-            }
-
-            return _stressShedLatched;
+            float safeStress = math.saturate(math.isfinite(stress01) ? stress01 : 1f);
+            float target = Smooth01(math.saturate((safeStress - StressRecoveryThreshold) * math.rcp(math.max(0.0001f, StressShedThreshold - StressRecoveryThreshold))));
+            _stressShedWeight01 = target >= _stressShedWeight01
+                ? target
+                : math.max(target, _stressShedWeight01 - StressShedReleasePerFrame);
+            return _stressShedWeight01;
         }
 
-        private static uint BuildFeatureMask(float survivalPressureWeight01, bool stressShed, float highCostAllowed01, float visualOverkill01)
+        private static uint BuildFeatureMask()
         {
-            survivalPressureWeight01 = math.saturate(survivalPressureWeight01);
-            uint mask = FeatureHullDents | FeatureWakeSilt;
-            if (survivalPressureWeight01 > FeatureMaskEpsilon)
-                mask |= FeatureSurvivalPressure;
-
-            if (stressShed)
-                mask |= FeatureHomeostasisShed;
-
-            if (highCostAllowed01 > FeatureMaskEpsilon)
-            {
-                mask |= FeaturePom | FeatureScreenRefraction;
-                float ditherAllowance01 = highCostAllowed01 * Smooth01(1f - survivalPressureWeight01);
-                if (ditherAllowance01 > FeatureMaskEpsilon)
-                    mask |= FeatureBlueNoiseDither;
-            }
-
-            if (visualOverkill01 > FeatureMaskEpsilon)
-                mask |= FeatureVisualOverkill;
-
-            return mask;
+            return ContinuousUberNoirFeatureMask;
         }
 
         private static float ResolveSystemStress01()
@@ -719,6 +568,13 @@ namespace Hecton8.Core
             float quality = math.saturate(math.isfinite(quality01) ? quality01 : 0f);
             float visualCurve01 = Smooth01(math.saturate((quality - 0.18f) * 1.2195122f));
             return math.lerp(0.24f, 1f, visualCurve01);
+        }
+
+        private static float ResolveVisualOverkillWeight01(float quality01)
+        {
+            float quality = math.saturate(math.isfinite(quality01) ? quality01 : 0f);
+            float cubicBias = quality * quality * math.lerp(0.5f, 1f, quality);
+            return Smooth01(cubicBias);
         }
 
         private static float Smooth01(float value)

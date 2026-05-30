@@ -12,10 +12,9 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7998)]
-    public sealed class RenderTexturePool : MonoBehaviour, IRenderTexturePoolService, IGlobalRegistryHotSwapListener
+    public sealed class RenderTexturePool : MonoBehaviour, IRenderTexturePoolService, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const string PooledRenderTextureName = "Pooled_RT";
-        private const int DynamicBucketCapacity = 4;
 
         // ── REGISTRY CACHE ─────────────────────────────────────────────────────────
         
@@ -52,6 +51,7 @@ namespace Hecton8.Optimization
         private int _lastScreenWidth;
         private int _lastScreenHeight;
         private bool _registeredService;
+        private bool _registeredSlowTick;
         private bool _hotSwapRegistered;
         private IRenderTextureLifecycleService _lifecycleTracker;
         
@@ -89,21 +89,31 @@ namespace Hecton8.Optimization
             TryRegisterHotSwapListener();
             PrewarmCurrentScreenQueues();
             if (TryRegisterService())
+            {
+                TryRegisterSlowTickable();
                 SceneManager.sceneUnloaded += HandleSceneUnloaded;
+            }
         }
         
         private void OnDisable()
         {
             SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+            TryUnregisterSlowTickable();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
         
         private void OnDestroy()
         {
+            TryUnregisterSlowTickable();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
             ClearAllPools(preserveScreenBuckets: false);
+        }
+
+        public void SlowTick()
+        {
+            DefragForCurrentScreenIfNeeded();
         }
         
         // ── PUBLIC API ─────────────────────────────────────────────────────────────
@@ -126,7 +136,6 @@ namespace Hecton8.Optimization
         /// </summary>
         public RenderTexture Rent(int width, int height, RenderTextureFormat format, Component owner, int depthBits)
         {
-            DefragForCurrentScreenIfNeeded();
             int safeWidth = Mathf.Max(1, width);
             int safeHeight = Mathf.Max(1, height);
             int safeDepthBits = Mathf.Clamp(depthBits, 0, 255);
@@ -193,14 +202,18 @@ namespace Hecton8.Optimization
                 return;
             }
 
-            DefragForCurrentScreenIfNeeded();
             ulong key = CalculateRTKey(rt.width, rt.height, rt.format, rt.depth);
             Dictionary<ulong, Queue<RenderTexture>> pool = GetPoolForFormat(rt.format);
             
             if (!pool.TryGetValue(key, out Queue<RenderTexture> queue))
             {
-                queue = new Queue<RenderTexture>(DynamicBucketCapacity);
-                pool.Add(key, queue);
+                IRenderTextureLifecycleService lifecycle = _lifecycleTracker;
+                if (lifecycle != null)
+                    lifecycle.RegisterDisposal(rt);
+
+                rt.Release();
+                Destroy(rt);
+                return;
             }
             
             if (queue.Count >= 16)
@@ -374,6 +387,23 @@ namespace Hecton8.Optimization
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
+        }
+
+        private void TryRegisterSlowTickable()
+        {
+            if (_registeredSlowTick || !Application.isPlaying)
+                return;
+
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
+        }
+
+        private void TryUnregisterSlowTickable()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+            _registeredSlowTick = false;
         }
         
         private void ClearPool(Dictionary<ulong, Queue<RenderTexture>> pool)

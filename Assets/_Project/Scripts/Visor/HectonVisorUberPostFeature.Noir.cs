@@ -44,6 +44,9 @@ namespace Hecton8.Visor
         private const BufferID NoirTuningVaultId = BufferID.Shinobu235NoirTuning;
         private const BufferID NoirColorProfilesVaultId = BufferID.Shinobu235NoirColorProfiles;
         private const BufferID NoirCsvScratchVaultId = BufferID.Shinobu235NoirCsvScratch;
+        private static readonly ulong NoirColorCsvMutationGuardMask =
+            UberVisorMutationGuardBit(NoirCsvScratchVaultId) |
+            UberVisorMutationGuardBit(NoirColorProfilesVaultId);
         private static readonly bool s_noirLayoutValid = ComputeNoirLayoutValid();
         private static readonly bool s_noirSupportsSetConstantBufferCold = SystemInfo.supportsSetConstantBuffer;
 
@@ -225,6 +228,7 @@ namespace Hecton8.Visor
         private bool _noirColorCsvLoadAttempted;
         private bool _noirPlayerSnapshotsAvailable;
         private bool _registeredLateFrameTick;
+        private bool _registeredSlowTick;
         private IPlayerRuntimeContext _noirPlayerContext;
         private IResolutionScalerService _noirResolutionScaler;
         private bool _hotSwapRegistered;
@@ -442,11 +446,13 @@ namespace Hecton8.Visor
                     _noirResolutionScaler = currentService as IResolutionScalerService;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    if (currentService == null)
-                        break;
-
+                    TryUnregisterSlowTickable();
                     TryUnregisterLateFrameTickable();
-                    TryRegisterLateFrameTickable();
+                    if (currentService != null)
+                    {
+                        TryRegisterSlowTickable();
+                        TryRegisterLateFrameTickable();
+                    }
                     break;
             }
         }
@@ -454,6 +460,7 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            CachePresentationGlobalsLate();
             if (settings == null)
             {
                 return;
@@ -473,6 +480,23 @@ namespace Hecton8.Visor
             }
 
             TryUpdateReconstructionConstantsLate();
+        }
+
+        /// <inheritdoc />
+        public void SlowTick()
+        {
+            if (settings == null)
+                return;
+
+            if (settings.deepSeaNoirUnifiedPass)
+            {
+                if (!NoirConstantsBuffersReady() || !NoirVaultHandlesReady())
+                    ClearPendingReconstructionInput();
+                return;
+            }
+
+            if (!IsReconstructionConstantsBufferReady() || !ReconstructionVaultHandlesReady())
+                ClearRawColorHistoryRequest();
         }
 
         private void EnsureNoirPassCold()
@@ -499,6 +523,27 @@ namespace Hecton8.Visor
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registeredLateFrameTick = false;
+        }
+
+        private void TryRegisterSlowTickable()
+        {
+            if (_registeredSlowTick ||
+                !Application.isPlaying ||
+                GlobalRegistry.Dispatcher == null)
+            {
+                return;
+            }
+
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterSlowTickable()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            _registeredSlowTick = false;
         }
 
         private void RefreshNoirCachedDependenciesCold()
@@ -1197,9 +1242,7 @@ namespace Hecton8.Visor
                 Span<NoirColorProfileDTO> parsedProfiles = stackalloc NoirColorProfileDTO[NoirColorProfileCapacity];
                 int parsed = ParseNoirColorCsv(csvBytes.Slice(0, read), parsedProfiles);
 
-                NativeArray<byte> scratch = default;
-                if (vault.IsCompactionFenceActive ||
-                    !vault.TryAcquireWriteLock(in _noirCsvScratchHandle, SystemID.GraphicsScalability, out scratch))
+                if (!vault.TryAcquireMutationGuard(NoirColorCsvMutationGuardMask))
                 {
                     _noirColorCsvLoadAttempted = false;
                     return false;
@@ -1207,34 +1250,22 @@ namespace Hecton8.Visor
 
                 try
                 {
-                    if (!scratch.IsCreated || scratch.Length <= 0)
+                    if (!vault.TryResolveHandle(in _noirCsvScratchHandle, out NativeArray<byte> scratch) ||
+                        !vault.TryResolveHandle(in _noirColorProfileHandle, out NativeArray<NoirColorProfileDTO> profiles) ||
+                        !scratch.IsCreated ||
+                        scratch.Length <= 0 ||
+                        !profiles.IsCreated ||
+                        profiles.Length <= 0)
+                    {
                         return false;
+                    }
 
                     CopyBytesToNativeArray(csvBytes.Slice(0, read), scratch);
-                }
-                finally
-                {
-                    vault.ReleaseWriteLock(in _noirCsvScratchHandle, SystemID.GraphicsScalability);
-                }
-
-                NativeArray<NoirColorProfileDTO> profiles = default;
-                if (vault.IsCompactionFenceActive ||
-                    !vault.TryAcquireWriteLock(in _noirColorProfileHandle, SystemID.GraphicsScalability, out profiles))
-                {
-                    _noirColorCsvLoadAttempted = false;
-                    return false;
-                }
-
-                try
-                {
-                    if (!profiles.IsCreated || profiles.Length <= 0)
-                        return false;
-
                     CopyNoirColorProfilesToNativeArray(parsedProfiles, parsed, profiles);
                 }
                 finally
                 {
-                    vault.ReleaseWriteLock(in _noirColorProfileHandle, SystemID.GraphicsScalability);
+                    vault.ReleaseMutationGuard(NoirColorCsvMutationGuardMask);
                 }
 
                 _noirColorCsvLoaded = parsed > 0;

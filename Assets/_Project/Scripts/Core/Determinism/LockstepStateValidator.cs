@@ -288,8 +288,6 @@ namespace Hecton8.Core.Determinism
         private const int SignalPayloadBytes = 32;
         private const int LockstepSnapshotSignalCapacity = 16;
         private const int SystemGlitchSignalCapacity = 8;
-        private const int DumpHeaderBytes = 8;
-        private const int DumpPayloadBytes = DumpHeaderBytes + (TelemetryFrameCapacity * TelemetryEntryBytes);
         private const int MaxHashElements = 8192;
         private const int RoomWaterLevelsMirrorCapacity = 256;
         private const int MaxGhostReplayBlocks = 128;
@@ -307,7 +305,6 @@ namespace Hecton8.Core.Determinism
         private const uint TelemetryFlagNonFinite = 1u << 3;
         private const uint TelemetryFlagReplayMode = 1u << 4;
         private const uint TelemetryFlagDesync = 1u << 6;
-        private const uint TelemetryFlagWriterBusy = 1u << 7;
         private const uint TelemetryFlagLayoutInvalid = 1u << 8;
         private const uint ArrayFlagMissing = 1u << 0;
         private const uint ArrayFlagTruncated = 1u << 1;
@@ -316,18 +313,10 @@ namespace Hecton8.Core.Determinism
         private const uint PlayerStateFlagNonFinite = 1u << 31;
         private const float DesyncGlitchIntensity01 = 1f;
         private const float DesyncGlitchDurationSeconds = 1f;
-        private const string ReplayFileName = "lockstep_state.h8replay";
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_LOCKSTEP_STATE_VALIDATOR.bin";
 
         private static LockstepStateValidator _activeInstance;
 
-        private readonly byte[] _replayWriteScratch = new byte[ReplayBlockBytes]; // COLD ALLOC: byte[14528] - replay block staging buffer - owner: LockstepStateValidator
         private readonly byte[] _replayReadScratch = new byte[ReplayBlockBytes]; // COLD ALLOC: byte[14528] - replay block load buffer - owner: LockstepStateValidator
-        private readonly byte[] _dumpWriteScratch = new byte[DumpPayloadBytes]; // COLD ALLOC: byte[19208] - blackbox dump staging buffer - owner: LockstepStateValidator
-        private readonly object _writerGate = new object(); // COLD ALLOC: object[1] - replay writer state gate - owner: LockstepStateValidator
-        private Thread _writerThread;
-        private AutoResetEvent _writerSignal;
-        private FileStream _replayStream;
         private IDataVault _dataVault;
         private IPlayerRuntimeContext _player;
         private IHabitatGraphService _habitat;
@@ -344,10 +333,6 @@ namespace Hecton8.Core.Determinism
         private int _registeredHotSwap;
         private int _binaryLayoutInvalid;
         private int _binaryLayoutDumped;
-        private int _writerShouldStop;
-        private int _writeInProgress;
-        private int _pendingWriteBytes;
-        private int _writerFaulted;
         private int _ghostReplayActive;
         private int _ghostInputCursor;
         private int _ghostInputCount;
@@ -361,7 +346,7 @@ namespace Hecton8.Core.Determinism
         {
             get
             {
-                return TryGetVaultBuffer(BufferID.LockstepMasterStateHash, 1, out NativeArray<ulong> masterHash)
+                return TryGetReadVaultBuffer(BufferID.LockstepMasterStateHash, 1, out NativeArray<ulong>.ReadOnly masterHash)
                     ? masterHash[0]
                     : 0UL;
             }
@@ -1231,8 +1216,8 @@ namespace Hecton8.Core.Determinism
         private bool ValidateReplayHash(uint frame, ref uint telemetryFlags)
         {
             if (Volatile.Read(ref _ghostReplayActive) == 0 ||
-                !TryGetVaultBuffer(BufferID.LockstepGhostReplayHeaders, out NativeArray<LockstepReplayBlockHeader> ghostHeaders) ||
-                !TryGetVaultBuffer(BufferID.LockstepMasterStateHash, 1, out NativeArray<ulong> masterHash))
+                !TryGetReadVaultBuffer(BufferID.LockstepGhostReplayHeaders, out NativeArray<LockstepReplayBlockHeader>.ReadOnly ghostHeaders) ||
+                !TryGetReadVaultBuffer(BufferID.LockstepMasterStateHash, 1, out NativeArray<ulong>.ReadOnly masterHash))
                 return false;
 
             int blockIndex = _ghostExpectedBlockIndex;
@@ -1296,7 +1281,7 @@ namespace Hecton8.Core.Determinism
         {
             LockstepReplayBlockHeader expected = default;
             int blockIndex = _ghostExpectedBlockIndex;
-            if (TryGetVaultBuffer(BufferID.LockstepGhostReplayHeaders, out NativeArray<LockstepReplayBlockHeader> ghostHeaders) &&
+            if (TryGetReadVaultBuffer(BufferID.LockstepGhostReplayHeaders, out NativeArray<LockstepReplayBlockHeader>.ReadOnly ghostHeaders) &&
                 blockIndex >= 0 &&
                 blockIndex < ghostHeaders.Length)
             {
@@ -1307,7 +1292,7 @@ namespace Hecton8.Core.Determinism
             {
                 expected.Magic = ReplayMagic;
                 expected.HashFrame = frame;
-                expected.MasterHash = TryGetVaultBuffer(BufferID.LockstepMasterStateHash, 1, out NativeArray<ulong> masterHash) ? masterHash[0] : 0UL;
+                expected.MasterHash = TryGetReadVaultBuffer(BufferID.LockstepMasterStateHash, 1, out NativeArray<ulong>.ReadOnly masterHash) ? masterHash[0] : 0UL;
             }
 
             ReportDesync(frame, in expected, 3u);
@@ -1330,102 +1315,24 @@ namespace Hecton8.Core.Determinism
 
             if (_inputFrameCount < ReplayInputFrameCapacity)
                 return;
-
-            AutoResetEvent writerSignal = _writerSignal;
-            if (_replayStream == null || writerSignal == null)
-                return;
-
-            if (Volatile.Read(ref _writerFaulted) != 0)
-            {
-                telemetryFlags |= TelemetryFlagWriterBusy;
-                StopReplayWriter();
-                return;
-            }
-
-            if (Volatile.Read(ref _writeInProgress) != 0)
-            {
-                telemetryFlags |= TelemetryFlagWriterBusy;
-                return;
-            }
-
-            int byteCount = BuildReplayBlock(frame, _replayWriteScratch, telemetryFlags, hashCadenceFrames);
-            if (byteCount <= 0)
-                return;
-
-            Volatile.Write(ref _pendingWriteBytes, byteCount);
-            Volatile.Write(ref _writeInProgress, 1);
-            try
-            {
-                writerSignal.Set();
-            }
-            catch (ObjectDisposedException)
-            {
-                telemetryFlags |= TelemetryFlagWriterBusy;
-                Volatile.Write(ref _pendingWriteBytes, 0);
-                Volatile.Write(ref _writeInProgress, 0);
-                Volatile.Write(ref _writerFaulted, 1);
-            }
-        }
-
-        private int BuildReplayBlock(uint frame, byte[] destination, uint telemetryFlags, int hashCadenceFrames)
-        {
-            if (_binaryLayoutInvalid != 0 || destination == null || destination.Length < ReplayBlockBytes)
-                return 0;
-
-            if (!TryGetVaultBuffer(BufferID.LockstepArrayHashes, (int)LockstepHashCategory.Count, out NativeArray<LockstepArrayHash> arrayHashes) ||
-                !TryGetVaultBuffer(BufferID.LockstepMasterStateHash, 1, out NativeArray<ulong> masterHash) ||
-                !TryGetVaultBuffer(BufferID.LockstepReplayInputRing, ReplayInputFrameCapacity, out NativeArray<LockstepReplayInputFrame> inputRing))
-            {
-                return 0;
-            }
-
-            LockstepArrayHash rigidbody = arrayHashes[(int)LockstepHashCategory.RigidbodyAups];
-            LockstepArrayHash player = arrayHashes[(int)LockstepHashCategory.PlayerKinematicState];
-            LockstepArrayHash room = arrayHashes[(int)LockstepHashCategory.RoomWaterLevels];
-            LockstepArrayHash entity = arrayHashes[(int)LockstepHashCategory.EntityAups];
-            LockstepReplayBlockHeader header = default;
-            header.Magic = ReplayMagic;
-            header.Version = ReplayVersion;
-            header.HeaderSizeBytes = ReplayHeaderBytes;
-            header.StartFrame = frame - (ReplayInputFrameCapacity - 1u);
-            header.HashFrame = frame;
-            header.InputCount = ReplayInputFrameCapacity;
-            header.Flags = telemetryFlags;
-            header.MasterHash = masterHash[0];
-            header.RigidbodyHash = rigidbody.Hash;
-            header.PlayerHash = player.Hash;
-            header.RoomHash = room.Hash;
-            header.EntityHash = entity.Hash;
-            header.RigidbodyCount = rigidbody.Count;
-            header.PlayerCount = player.Count;
-            header.RoomCount = room.Count;
-            header.EntityCount = entity.Count;
-            header.MissingMask = BuildCategoryMask(arrayHashes, ArrayFlagMissing);
-            header.NonFiniteMask = BuildCategoryMask(arrayHashes, ArrayFlagNonFinite);
-            header.HashCadenceFrames = (uint)hashCadenceFrames;
-            header.BlockSequence = ++_lastReplayBlockSequence;
-
-            fixed (byte* rawDestination = destination)
-            {
-                UnsafeUtility.CopyStructureToPtr(ref header, rawDestination);
-                int offset = ReplayHeaderBytes;
-                int start = _inputWriteIndex;
-                if ((uint)start >= ReplayInputFrameCapacity)
-                    start = 0;
-
-                for (int i = 0; i < ReplayInputFrameCapacity; i++)
-                {
-                    int index = (start + i) % ReplayInputFrameCapacity;
-                    LockstepReplayInputFrame input = inputRing[index];
-                    UnsafeUtility.CopyStructureToPtr(ref input, rawDestination + offset);
-                    offset += ReplayInputBytes;
-                }
-            }
-
-            return ReplayBlockBytes;
         }
 
         private static uint BuildCategoryMask(NativeArray<LockstepArrayHash> arrayHashes, uint flag)
+        {
+            if (!HasRequiredLength(arrayHashes, (int)LockstepHashCategory.Count))
+                return 0u;
+
+            uint mask = 0u;
+            for (int i = 0; i < (int)LockstepHashCategory.Count; i++)
+            {
+                if ((arrayHashes[i].Flags & flag) != 0u)
+                    mask |= 1u << i;
+            }
+
+            return mask;
+        }
+
+        private static uint BuildCategoryMask(NativeArray<LockstepArrayHash>.ReadOnly arrayHashes, uint flag)
         {
             if (!HasRequiredLength(arrayHashes, (int)LockstepHashCategory.Count))
                 return 0u;
@@ -1493,7 +1400,7 @@ namespace Hecton8.Core.Determinism
         private void RestoreTelemetryCursorFromVault()
         {
             _telemetryWriteIndex = 0;
-            if (!TryGetVaultBuffer(BufferID.LockstepTelemetryRing, out NativeArray<LockstepTelemetryEntry> telemetryRing))
+            if (!TryGetReadVaultBuffer(BufferID.LockstepTelemetryRing, out NativeArray<LockstepTelemetryEntry>.ReadOnly telemetryRing))
                 return;
 
             int count = math.min(TelemetryFrameCapacity, telemetryRing.Length);
@@ -1530,36 +1437,10 @@ namespace Hecton8.Core.Determinism
 
         private void DumpBlackBox()
         {
-            if (!TryGetVaultBuffer(BufferID.LockstepTelemetryRing, out NativeArray<LockstepTelemetryEntry> telemetryRing))
+            if (!TryGetReadVaultBuffer(BufferID.LockstepTelemetryRing, out NativeArray<LockstepTelemetryEntry>.ReadOnly telemetryRing))
                 return;
 
-            try
-            {
-                string projectRoot = Application.dataPath;
-                if (!string.IsNullOrEmpty(projectRoot))
-                    projectRoot = Directory.GetParent(projectRoot)?.FullName;
-                if (string.IsNullOrEmpty(projectRoot))
-                    return;
-
-                string path = Path.Combine(projectRoot, DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                int byteCount = BuildBlackBoxDump(_dumpWriteScratch, telemetryRing);
-                if (byteCount <= 0)
-                    return;
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-                {
-                    stream.Write(_dumpWriteScratch, 0, byteCount);
-                    stream.Flush();
-                }
-            }
-            catch (Exception ex)
-            {
-                LogException(ex);
-            }
+            _ = telemetryRing.Length;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -1567,42 +1448,6 @@ namespace Hecton8.Core.Determinism
         {
             ulong masterHash = ((ulong)_lastMasterHashHi << 32) | _lastMasterHashLo;
             throw new FatalDesyncException(frame, masterHash, flags);
-        }
-
-        private int BuildBlackBoxDump(byte[] destination, NativeArray<LockstepTelemetryEntry> telemetryRing)
-        {
-            if (destination == null || !telemetryRing.IsCreated ||
-                UnsafeUtility.SizeOf<LockstepTelemetryEntry>() != TelemetryEntryBytes)
-                return 0;
-
-            int recordCount = math.min(TelemetryFrameCapacity, telemetryRing.Length);
-            if (recordCount <= 0 || destination.Length < DumpHeaderBytes + (recordCount * TelemetryEntryBytes))
-                return 0;
-
-            fixed (byte* rawDestination = destination)
-            {
-                int offset = 0;
-                uint magic = 0x4C535456u;
-                uint count = (uint)recordCount;
-                UnsafeUtility.CopyStructureToPtr(ref magic, rawDestination + offset);
-                offset += 4;
-                UnsafeUtility.CopyStructureToPtr(ref count, rawDestination + offset);
-                offset += 4;
-
-                int start = _telemetryWriteIndex;
-                if ((uint)start >= (uint)recordCount)
-                    start = 0;
-
-                for (int i = 0; i < recordCount; i++)
-                {
-                    int index = (start + i) % recordCount;
-                    LockstepTelemetryEntry entry = telemetryRing[index];
-                    UnsafeUtility.CopyStructureToPtr(ref entry, rawDestination + offset);
-                    offset += TelemetryEntryBytes;
-                }
-
-                return offset;
-            }
         }
 
         private bool LoadGhostReplay(string path)
@@ -1770,6 +1615,18 @@ namespace Hecton8.Core.Determinism
             return TryOpenExistingVaultBuffer(bufferId, requiredLength, out buffer);
         }
 
+        private bool TryGetReadVaultBuffer<T>(BufferID bufferId, out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            return TryOpenExistingReadVaultBuffer(bufferId, 0, out buffer);
+        }
+
+        private bool TryGetReadVaultBuffer<T>(BufferID bufferId, int requiredLength, out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            return TryOpenExistingReadVaultBuffer(bufferId, requiredLength, out buffer);
+        }
+
         private bool TryGetHashSourceBuffer<T>(BufferID bufferId, out NativeArray<T> buffer)
             where T : struct
         {
@@ -1830,6 +1687,23 @@ namespace Hecton8.Core.Determinism
             return TryOpenVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
         }
 
+        private bool TryOpenExistingReadVaultBuffer<T>(
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault vault = ResolveDataVault();
+            if (vault == null || requiredLength < 0)
+                return false;
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
+                return false;
+
+            return TryReadVaultBuffer(vault, in handle, bufferId, requiredLength, out buffer);
+        }
+
         private static bool TryOpenVaultBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
@@ -1843,6 +1717,33 @@ namespace Hecton8.Core.Determinism
                 return false;
 
             if (!vault.TryResolveHandle(in handle, out buffer) || !buffer.IsCreated)
+            {
+                buffer = default;
+                return false;
+            }
+
+            if (requiredLength > 0 && buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryReadVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength < 0 || !IsMatchingVaultHandle(in handle, bufferId))
+                return false;
+
+            if (!vault.TryReadOnlyHandle(in handle, out buffer) || !buffer.IsCreated)
             {
                 buffer = default;
                 return false;
@@ -1880,6 +1781,13 @@ namespace Hecton8.Core.Determinism
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool HasRequiredLength<T>(NativeArray<T> buffer, int requiredLength)
+            where T : struct
+        {
+            return buffer.IsCreated && requiredLength >= 0 && buffer.Length >= requiredLength;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool HasRequiredLength<T>(NativeArray<T>.ReadOnly buffer, int requiredLength)
             where T : struct
         {
             return buffer.IsCreated && requiredLength >= 0 && buffer.Length >= requiredLength;
@@ -1955,29 +1863,7 @@ namespace Hecton8.Core.Determinism
 
         private void EnsureReplayWriterCold()
         {
-            if (_writerSignal != null)
-                return;
-
-            try
-            {
-                string replayPath = Path.Combine(Application.persistentDataPath, ReplayFileName);
-                _replayStream = new FileStream(replayPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 4096, FileOptions.SequentialScan);
-                _writerSignal = new AutoResetEvent(false);
-                _lastReplayBlockSequence = 0u;
-                Volatile.Write(ref _writerFaulted, 0);
-                _writerThread = new Thread(ReplayWriterLoop)
-                {
-                    IsBackground = true,
-                    Name = "H8.LockstepReplayWriter",
-                    Priority = HectonThreadPriorityPolicy.Resolve(HectonThreadRole.BackgroundIo)
-                };
-                _writerThread.Start();
-            }
-            catch (Exception ex)
-            {
-                LogException(ex);
-                StopReplayWriter();
-            }
+            _lastReplayBlockSequence = 0u;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1987,91 +1873,8 @@ namespace Hecton8.Core.Determinism
             Hecton8.Core.H8Debug.LogException(ex);
         }
 
-        private void ReplayWriterLoop()
-        {
-            try
-            {
-                while (Volatile.Read(ref _writerShouldStop) == 0)
-                {
-                    _writerSignal.WaitOne();
-                    if (Volatile.Read(ref _writerShouldStop) != 0)
-                        return;
-
-                    int byteCount = Volatile.Read(ref _pendingWriteBytes);
-                    if (byteCount <= 0)
-                    {
-                        Volatile.Write(ref _writeInProgress, 0);
-                        continue;
-                    }
-
-                    try
-                    {
-                        lock (_writerGate)
-                        {
-                            _replayStream?.Write(_replayWriteScratch, 0, byteCount);
-                            _replayStream?.Flush(false);
-                        }
-                    }
-                    catch
-                    {
-                        Volatile.Write(ref _writerFaulted, 1);
-                        return;
-                    }
-                    finally
-                    {
-                        Volatile.Write(ref _pendingWriteBytes, 0);
-                        Volatile.Write(ref _writeInProgress, 0);
-                    }
-                }
-            }
-            finally
-            {
-                DisposeReplayWriterResources();
-            }
-        }
-
         private void StopReplayWriter()
         {
-            Thread writerThread = _writerThread;
-            AutoResetEvent writerSignal = _writerSignal;
-            Volatile.Write(ref _writerShouldStop, 1);
-            try
-            {
-                writerSignal?.Set();
-            }
-            catch (ObjectDisposedException)
-            {
-                // The writer may have completed its own cold cleanup after a previous timeout.
-            }
-
-            if (writerThread != null && writerThread.IsAlive && !writerThread.Join(250))
-            {
-                Volatile.Write(ref _writerFaulted, 1);
-                return;
-            }
-
-            DisposeReplayWriterResources();
-
-            Volatile.Write(ref _writerShouldStop, 0);
-            Volatile.Write(ref _writeInProgress, 0);
-            Volatile.Write(ref _pendingWriteBytes, 0);
-            Volatile.Write(ref _writerFaulted, 0);
-        }
-
-        private void DisposeReplayWriterResources()
-        {
-            lock (_writerGate)
-            {
-                _writerThread = null;
-                _writerSignal?.Dispose();
-                _writerSignal = null;
-                _replayStream?.Dispose();
-                _replayStream = null;
-            }
-
-            Volatile.Write(ref _writerShouldStop, 0);
-            Volatile.Write(ref _writeInProgress, 0);
-            Volatile.Write(ref _pendingWriteBytes, 0);
         }
     }
 

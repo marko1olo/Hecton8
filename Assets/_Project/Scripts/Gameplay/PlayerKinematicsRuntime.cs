@@ -1875,7 +1875,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _nextColdRebindFrame = frame + 64;
-            RebindRegistryServices();
+            RefreshCameraTransformFromPlayerContext();
         }
 
         private void SnapshotInputs()

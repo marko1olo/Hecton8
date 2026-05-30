@@ -26,8 +26,13 @@ internal static class Program
     private static readonly Regex StructLayoutAttributeRegex = new(@"\[\s*(?:[A-Za-z_][A-Za-z0-9_]*\.)*StructLayout\b", RegexOptions.Compiled);
     private static readonly Regex HotPathEnumerationRegex = new(@"\bforeach\s*\(|\.Where\s*\(|\.Select\s*\(|\.OrderBy\s*\(|\.ToList\s*\(|\.ToArray\s*\(|Enumerable\.", RegexOptions.Compiled);
     private static readonly Regex HotPathAllocationRegex = new(@"\bnew\s+(?:List\s*<|Dictionary\s*<|HashSet\s*<|Queue\s*<|Stack\s*<|StringBuilder\b|string\b|Regex\b|FileStream\b|MemoryStream\b|StringWriter\b|Action\b|Func\b|WaitForSeconds\b|GameObject\b|Material\b|Texture2D\b|RenderTexture\b|Mesh\b|[A-Za-z_][A-Za-z0-9_<>,\.\s]*\s*\[)", RegexOptions.Compiled);
-    private static readonly Regex UnityLookupRegex = new(@"GetComponent\s*<|FindObjectOfType|FindObjectsOfType|GameObject\.Find|Object\.Find", RegexOptions.Compiled);
+    private static readonly Regex UnityLookupRegex = new(@"(?:Try)?GetComponent\s*(?:<|\()|FindObjectOfType|FindObjectsOfType|GameObject\.Find|Object\.Find", RegexOptions.Compiled);
+    private static readonly Regex GlobalRegistryHotLookupRegex = new(@"\bGlobalRegistry\s*\.\s*(?:Get|TryGet|Resolve)\s*(?:<|\()", RegexOptions.Compiled);
     private static readonly Regex MaterialMutationRegex = new(@"\.material\b|Material\.Set(Float|Int|Color|Vector|Texture)|\.Set(Float|Int|Color|Vector|Texture)\s*\(", RegexOptions.Compiled);
+    private static readonly Regex JobCompleteRegex = new(@"\.\s*Complete\s*\(|\bCompleteAll\s*\(", RegexOptions.Compiled);
+    private static readonly Regex SetDataRegex = new(@"\.\s*SetData\s*(?:<[^>]+>)?\s*\(", RegexOptions.Compiled);
+    private static readonly Regex GetDataRegex = new(@"\.\s*GetData\s*(?:<[^>]+>)?\s*\(", RegexOptions.Compiled);
+    private static readonly Regex GlobalSignalsDirectUseRegex = new(@"\bGlobalSignals\s*\.\s*(?<member>[A-Za-z_][A-Za-z0-9_]*)\b", RegexOptions.Compiled);
 
     private static int Main(string[] args)
     {
@@ -37,27 +42,32 @@ internal static class Program
             var scanner = new AuditScanner(options);
             var result = scanner.Run();
 
-            Directory.CreateDirectory(Path.GetDirectoryName(options.OutputJson)!);
-            Directory.CreateDirectory(Path.GetDirectoryName(options.OutputMarkdown)!);
-
-            var jsonOptions = new JsonSerializerOptions
+            if (!options.NoOutput)
             {
-                WriteIndented = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-            };
-            File.WriteAllText(options.OutputJson, JsonSerializer.Serialize(result, jsonOptions), new UTF8Encoding(false));
-            File.WriteAllText(options.OutputMarkdown, MarkdownWriter.Write(result), new UTF8Encoding(false));
+                Directory.CreateDirectory(Path.GetDirectoryName(options.OutputJson)!);
+                Directory.CreateDirectory(Path.GetDirectoryName(options.OutputMarkdown)!);
 
-            Console.WriteLine("SignalBusContractAuditCli: files={0} shaders={1} errors={2} warnings={3} infos={4} confirmedErrors={5} json={6} markdown={7}",
+                var jsonOptions = new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                };
+                File.WriteAllText(options.OutputJson, JsonSerializer.Serialize(result, jsonOptions), new UTF8Encoding(false));
+                File.WriteAllText(options.OutputMarkdown, MarkdownWriter.Write(result), new UTF8Encoding(false));
+            }
+
+            Console.WriteLine("SignalBusContractAuditCli: files={0} shaders={1} errors={2} warnings={3} infos={4} confirmedErrors={5} output={6}",
                 result.ScannedFiles,
                 result.ShaderFilesScanned,
                 result.Errors,
                 result.Warnings,
                 result.Infos,
                 result.ConfirmedErrors,
-                options.OutputJson,
-                options.OutputMarkdown);
+                options.NoOutput ? "disabled" : options.OutputJson + " | " + options.OutputMarkdown);
+
+            if (options.PrintFindings)
+                PrintFindingsToConsole(result, options.MaxConsoleFindings);
 
             return options.FailOnError && result.Errors > 0 ? 2 : 0;
         }
@@ -66,6 +76,34 @@ internal static class Program
             Console.Error.WriteLine("SignalBusContractAuditCli failed: " + ex.Message);
             return 1;
         }
+    }
+
+    private static void PrintFindingsToConsole(AuditResult result, int maxFindings)
+    {
+        int printed = 0;
+        foreach (var finding in result.Findings
+            .OrderBy(item => item.Severity == "ERROR" ? 0 : item.Severity == "WARN" ? 1 : 2)
+            .ThenByDescending(item => item.Confidence)
+            .ThenBy(item => item.Path, StringComparer.Ordinal)
+            .ThenBy(item => item.Line))
+        {
+            if (printed >= maxFindings)
+                break;
+
+            Console.WriteLine(
+                "{0} {1}% {2} {3}:{4} {5}",
+                finding.Severity,
+                finding.Confidence,
+                finding.Rule,
+                finding.Path,
+                finding.Line,
+                finding.Symbol);
+            Console.WriteLine("  " + finding.Evidence);
+            printed++;
+        }
+
+        if (result.Findings.Length > printed)
+            Console.WriteLine("... " + (result.Findings.Length - printed) + " findings omitted; raise --max-findings for console triage.");
     }
 
     private sealed class AuditScanner
@@ -387,6 +425,7 @@ internal static class Program
                 ScanTransitivePack1Field(relativePath, rawLine, code, lineNumber, currentStruct, currentStructIsStrictRuntimeContract);
                 ScanTelemetryRing(relativePath, rawText, rawLine, code, lineNumber, effectiveIsEditor, currentStruct);
                 ScanLocalSignalQueue(relativePath, rawText, rawLine, code, lineNumber, effectiveIsEditor);
+                ScanGlobalSignalsDirectUse(relativePath, rawLine, code, lineNumber, effectiveIsEditor, currentMethodName);
                 ScanSyncRuntimeIo(relativePath, rawLine, code, lineNumber, effectiveIsEditor, currentMethodName);
                 if (_options.IncludeHotPathHeuristics)
                 {
@@ -914,6 +953,11 @@ internal static class Program
                     AddFinding("INFO", "LOCAL_NATIVE_TELEMETRY_STAGING_BUFFER_OWNER_LOCAL", 82, "CONFIRMED_OWNER_LOCAL_TELEMETRY_STAGING", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "This NativeArray is an owner-local telemetry export staging buffer, not persistent blackbox authority. Keep sentinel registration and do not migrate it unless another domain consumes the buffer directly.",
                         ownership.ToTags(isEditor));
                 }
+                else if (IsModApiOwnerLocalTelemetryRing(relativePath, rawText, fieldName))
+                {
+                    AddFinding("INFO", "MOD_API_NATIVE_TELEMETRY_RING_OWNER_LOCAL", 82, "CONFIRMED_MOD_API_OWNER_LOCAL_TELEMETRY", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "This NativeArray is an owner-local mod/API bridge telemetry ring with sentinel ownership and bounded lifetime. Keep it isolated from gameplay authority and do not migrate it to GlobalDataVault unless another runtime domain consumes it.",
+                        ownership.ToTags(isEditor));
+                }
                 else if (IsOwnerLocalTelemetryRing(relativePath, rawText, fieldName))
                 {
                     AddFinding("INFO", "LOCAL_NATIVE_TELEMETRY_RING_OWNER_LOCAL", 80, "CONFIRMED_OWNER_LOCAL_TELEMETRY", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "This telemetry/blackbox ring has sentinel ownership, bounded lifetime, and owner-local dump usage. Do not migrate it to GlobalDataVault unless another domain consumes the buffer or the state becomes persistent authority.",
@@ -960,21 +1004,69 @@ internal static class Program
             _localNativeQueueCount++;
             var fieldName = match.Groups[2].Value;
             var ownership = GetOwnership(relativePath, rawText, rawLine, fieldName, "Queue");
+            var bridgeContract = ClassifySignalQueueBridgeContract(rawText, rawLine, fieldName);
+            var tags = ownership.ToTags(isEditor);
+            bridgeContract.ApplyTo(tags);
             if (ownership.IsOwned)
             {
-                AddFinding("INFO", "LOCAL_SIGNAL_QUEUE_REGISTERED_NON_BUS_REVIEW", 70, "REGISTERED_LOCAL_QUEUE_REVIEW", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "This local signal queue has sentinel ownership, but confirm it intentionally bypasses SignalBus<T> and does not fragment the global signal corridor.",
-                    ownership.ToTags(isEditor));
+                if (bridgeContract.IsComplete)
+                {
+                    AddFinding("INFO", "LOCAL_SIGNAL_QUEUE_REGISTERED_BRIDGE_REVIEW", 70, "REGISTERED_LOCAL_QUEUE_REVIEW", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "This local signal queue has native ownership and bridge-lane contract tokens. Keep it out of first-party gameplay fan-out unless a current route card requires it.",
+                        tags);
+                }
+                else
+                {
+                    AddFinding("WARN", "DIRECT_SIGNAL_QUEUE_BRIDGE_CONTRACT_INCOMPLETE", 84, "NATIVEQUEUE_SIGNAL_BRIDGE_CONTRACT_DEBT", "FIELD_DECLARATION_PLUS_CONTRACT_SCAN", relativePath, lineNumber, fieldName, rawLine, "Retained direct NativeQueue signal lanes need owner, drain phase, max frame budget/capacity, deterministic overflow/coalescing, and telemetry counter. New gameplay fan-out must use SignalBus<T>.",
+                        tags);
+                }
             }
             else if (!ownership.HasAllocation)
             {
-                AddFinding("INFO", "LOCAL_SIGNAL_QUEUE_DECLARED_ONLY_REVIEW", 61, "STATIC_DECLARATION_REVIEW", "FIELD_DECLARATION_WITHOUT_ALLOCATION", relativePath, lineNumber, fieldName, rawLine, "This NativeQueue field has no allocation in the same source file. Keep the external owner visible, but do not classify it as a live orphaned lane until allocation exists.",
-                    ownership.ToTags(isEditor));
+                AddFinding(bridgeContract.IsComplete ? "INFO" : "WARN", "LOCAL_SIGNAL_QUEUE_DECLARED_ONLY_REVIEW", bridgeContract.IsComplete ? 61 : 78, bridgeContract.IsComplete ? "STATIC_DECLARATION_REVIEW" : "NATIVEQUEUE_SIGNAL_BRIDGE_CONTRACT_DEBT", "FIELD_DECLARATION_WITHOUT_ALLOCATION", relativePath, lineNumber, fieldName, rawLine, "This NativeQueue field has no allocation in the same source file. If it is retained as a bridge lane, keep owner/drain/budget/overflow/telemetry visible beside the declaration or allocator.",
+                    tags);
             }
             else
             {
-                AddFinding("WARN", "POSSIBLE_ORPHANED_SIGNAL_QUEUE", 82, "PROBABLE_SIGNAL_CORRIDOR_BYPASS", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "Confirm this queue is registered as a typed lane or migrate producers to SignalBus<T>.",
-                    ownership.ToTags(isEditor));
+                AddFinding("ERROR", "DIRECT_SIGNAL_QUEUE_UNOWNED_OR_CONTRACTLESS", 90, "PROBABLE_SIGNAL_CORRIDOR_BYPASS", "FIELD_DECLARATION_PLUS_SENTINEL_SCAN", relativePath, lineNumber, fieldName, rawLine, "Direct runtime NativeQueue signal lanes must not bypass SignalBus<T> without sentinel ownership and a bridge contract. Register ownership or migrate producers to SignalBus<T>.",
+                    tags);
             }
+        }
+
+        private void ScanGlobalSignalsDirectUse(string relativePath, string rawLine, string code, int lineNumber, bool isEditor, string methodName)
+        {
+            if (isEditor || code.IndexOf("GlobalSignals.", StringComparison.Ordinal) < 0)
+            {
+                return;
+            }
+
+            if (Regex.IsMatch(relativePath, @"Core/GlobalSignals\.cs$|Core/Signals/"))
+            {
+                return;
+            }
+
+            var match = GlobalSignalsDirectUseRegex.Match(code);
+            if (!match.Success)
+            {
+                return;
+            }
+
+            var member = match.Groups["member"].Value;
+            if (string.Equals(member, "Publish", StringComparison.Ordinal))
+            {
+                AddFinding("ERROR", "DIRECT_GLOBALSIGNALS_PUBLISH_RUNTIME", 92, "CONFIRMED_SIGNAL_CORRIDOR_BYPASS", "GLOBALSIGNALS_MEMBER_SCAN", relativePath, lineNumber, member, rawLine, "First-party runtime publishes must use typed SignalBus<T> lanes or documented bridge queues. Do not publish gameplay traffic directly through GlobalSignals.",
+                    new Dictionary<string, object?> { ["isEditor"] = false, ["member"] = member, ["method"] = methodName });
+                return;
+            }
+
+            if (IsHotMethodName(methodName))
+            {
+                AddFinding("WARN", "HOT_GLOBALSIGNALS_RUNTIME_LOOKUP_REVIEW", 82, "HOT_PATH_GLOBAL_SIGNAL_BRIDGE", "GLOBALSIGNALS_MEMBER_SCAN", relativePath, lineNumber, member, rawLine, "Hot paths must not poll GlobalSignals as a runtime context source. Cache owner snapshots during bootstrap/owner phase or consume SignalBus<T> frame snapshots.",
+                    new Dictionary<string, object?> { ["isEditor"] = false, ["member"] = member, ["method"] = methodName });
+                return;
+            }
+
+            AddFinding("INFO", "GLOBALSIGNALS_BRIDGE_REVIEW", 58, "LEGACY_SIGNAL_BRIDGE_REVIEW", "GLOBALSIGNALS_MEMBER_SCAN", relativePath, lineNumber, member, rawLine, "GlobalSignals direct access is legacy/bridge infrastructure only. Keep the owner, phase, and migration path explicit.",
+                new Dictionary<string, object?> { ["isEditor"] = false, ["member"] = member, ["method"] = methodName });
         }
 
         private static bool IsGlobalDataVaultRoot(string relativePath)
@@ -1008,6 +1100,21 @@ internal static class Program
             return (hasBoundedLifetimeRegistration || hasHelperBoundedLifetimeRegistration) &&
                 hasOwnerDumpRoute &&
                 !exposesReadOnlyAccessor;
+        }
+
+        private static bool IsModApiOwnerLocalTelemetryRing(string relativePath, string rawText, string fieldName)
+        {
+            if (!relativePath.EndsWith("Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs", StringComparison.Ordinal) ||
+                !string.Equals(fieldName, "_cullTelemetry", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var escaped = BuildNativeFieldAliasPattern(rawText, fieldName, "Array");
+            return rawText.Contains("IHectonEventChannel", StringComparison.Ordinal) &&
+                rawText.Contains("local bridge-owned memory to avoid DataVault hot writes", StringComparison.Ordinal) &&
+                Regex.IsMatch(rawText, @"RegisterNativeArray\s*\([^;]*" + escaped + @"[^;]*NativeAllocationLifetime\.Session", RegexOptions.Singleline) &&
+                Regex.IsMatch(rawText, @"UnregisterNativeArray\s*\([^;]*" + escaped + @"[^;]*\).*?Dispose\s*\(\s*\)", RegexOptions.Singleline);
         }
 
         private static bool IsTelemetryExportStagingBuffer(string relativePath, string rawText, string fieldName)
@@ -1099,6 +1206,43 @@ internal static class Program
                     new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName });
             }
 
+            if (code.Contains("GlobalRegistry", StringComparison.Ordinal) &&
+                GlobalRegistryHotLookupRegex.IsMatch(code))
+            {
+                _hotPathRiskCount++;
+                AddFinding("ERROR", "HOT_PATH_GLOBALREGISTRY_LOOKUP_FORBIDDEN", 94, "HOT_PATH_DEPENDENCY_POLLING", "HOT_METHOD_REGEX", relativePath, lineNumber, methodName, rawLine, "GlobalRegistry is cold dependency injection only. Cache interfaces during bootstrap/owner phases and consume immutable snapshots in Tick/Update/Execute paths.",
+                    new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName });
+            }
+
+            if (ContainsAny(code, ".Complete(", "CompleteAll(") && JobCompleteRegex.IsMatch(code))
+            {
+                _hotPathRiskCount++;
+                AddFinding("ERROR", "HOT_PATH_JOB_COMPLETE_FORBIDDEN", 94, "HOT_PATH_SYNC_STALL", "HOT_METHOD_REGEX", relativePath, lineNumber, methodName, rawLine, "Do not complete jobs inside Tick/Update/Execute-style methods. Route completion through dispatcher-owned PostSimulation/VisualSync swap windows or a documented blocking sync point.",
+                    new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName });
+            }
+
+            if (code.Contains(".GetData", StringComparison.Ordinal) && GetDataRegex.IsMatch(code))
+            {
+                _hotPathRiskCount++;
+                AddFinding("ERROR", "HOT_PATH_GPU_GETDATA_FORBIDDEN", 94, "HOT_PATH_GPU_CPU_STALL", "HOT_METHOD_REGEX", relativePath, lineNumber, methodName, rawLine, "Synchronous runtime readback blocks CPU/GPU overlap. Use delayed AsyncGPUReadback with a ring-buffered telemetry/query lane.",
+                    new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName });
+            }
+
+            if (code.Contains(".SetData", StringComparison.Ordinal) && SetDataRegex.IsMatch(code))
+            {
+                if (IsNonGpuBurstJobSetupSetData(relativePath, methodName, code))
+                {
+                    AddFinding("INFO", "BURST_JOB_SETUP_SETDATA_REVIEW", 58, "NON_GPU_JOB_SETUP_SETDATA", "HOT_METHOD_REGEX", relativePath, lineNumber, methodName, rawLine, "This SetData call initializes a local Burst job struct from native aliases/scalars before scheduling. It is not a GPU upload; keep it allocation-free and do not suppress real buffer SetData warnings globally.",
+                        new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName });
+                }
+                else
+                {
+                    _hotPathRiskCount++;
+                    AddFinding("WARN", "HOT_PATH_SETDATA_REVIEW", 82, "HOT_PATH_UPLOAD_STALL_RISK", "HOT_METHOD_REGEX", relativePath, lineNumber, methodName, rawLine, "Review SetData inside a hot method. GPU uploads must use frame-start budgeted dirty ranges or LockBufferForWrite+MemCpy; non-GPU SetData APIs need an explicit cold-path or non-alloc proof.",
+                        new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName });
+                }
+            }
+
             if (ContainsAny(code, ".material", "Material.Set", ".SetFloat", ".SetColor", ".SetVector", ".SetTexture") &&
                 TryClassifyMaterialHotPathMutation(code, out var usesPropertyBlock, out var usesComputeShader))
             {
@@ -1119,6 +1263,13 @@ internal static class Program
                         new Dictionary<string, object?> { ["isEditor"] = false, ["method"] = methodName, ["propertyBlockLike"] = false });
                 }
             }
+        }
+
+        private static bool IsNonGpuBurstJobSetupSetData(string relativePath, string methodName, string code)
+        {
+            return relativePath.EndsWith("Assets/_Project/Scripts/World/GlobalWorldSampler.cs", StringComparison.Ordinal) &&
+                methodName.StartsWith("Schedule", StringComparison.Ordinal) &&
+                Regex.IsMatch(code, @"\bjob\s*\.\s*SetData\s*\(\s*in\s+data\s*\)");
         }
 
         private void ScanComputeFile(string path)
@@ -1347,7 +1498,36 @@ internal static class Program
 
     private static bool HasRelevantText(string rawText)
     {
-        return ContainsAny(rawText, "struct", "StructLayout", "NativeArray", "NativeQueue", "NativeList", "SignalBus", "UnityEvent", "Action", "Func", "SendMessage", "BroadcastMessage", "File.", "Directory.", "FileStream");
+        return ContainsAny(rawText,
+            "struct",
+            "StructLayout",
+            "NativeArray",
+            "NativeQueue",
+            "NativeList",
+            "SignalBus",
+            "GlobalSignals.",
+            "UnityEvent",
+            "Action",
+            "Func",
+            "SendMessage",
+            "BroadcastMessage",
+            "File.",
+            "Directory.",
+            "FileStream",
+            "GetComponent",
+            "FindObject",
+            "GameObject.Find",
+            "Object.Find",
+            ".Complete(",
+            "CompleteAll(",
+            ".GetData",
+            ".SetData",
+            ".material",
+            "Material.Set",
+            ".SetFloat",
+            ".SetColor",
+            ".SetVector",
+            ".SetTexture");
     }
 
     private static string RemoveCodeTrivia(string line)
@@ -1497,6 +1677,11 @@ internal static class Program
 
     private static bool IsHotMethodName(string methodName)
     {
+        if (Regex.IsMatch(methodName, "(Cold|Benchmark|Bootstrap|Initialize|Initialise|Resolve|Cache|Bind|Rebind|Awake|OnEnable|Start)", RegexOptions.IgnoreCase))
+        {
+            return false;
+        }
+
         return Regex.IsMatch(methodName, @"^(Tick|Update|LateUpdate|FixedUpdate|Execute|OnUpdate|Run|Schedule|Simulate|Step|Process|Dispatch|Flush|Render|Sync)");
     }
 
@@ -1855,6 +2040,18 @@ internal static class Program
         return false;
     }
 
+    private static SignalBridgeContractInfo ClassifySignalQueueBridgeContract(string rawText, string declarationLine, string fieldName)
+    {
+        var hasOwner = ContainsAnyIgnoreCase(declarationLine, "owner:") ||
+            ContainsAnyIgnoreCase(rawText, "owner:");
+        var hasDrainPhase = ContainsAnyIgnoreCase(rawText, "drain phase", "drained", "flush", "flushed", "SystemDispatcher", "LateUpdate", "POST_SIMULATION", "VISUAL_SYNC");
+        var hasFrameBudget = ContainsAnyIgnoreCase(rawText, "max frame budget", "max events", "capacity", "budget", "frame limit") ||
+            Regex.IsMatch(rawText, @"\b" + Regex.Escape(fieldName) + @"\b[^\r\n]*(\[[0-9]+\]|capacity|budget)", RegexOptions.IgnoreCase);
+        var hasOverflowPolicy = ContainsAnyIgnoreCase(rawText, "overflow", "drop newest", "drop oldest", "coalesce", "fail-fast", "next-frame", "prevents same-frame");
+        var hasTelemetryCounter = ContainsAnyIgnoreCase(rawText, "telemetry", "counter", "dropped count", "dropped", "backpressure");
+        return new SignalBridgeContractInfo(hasOwner, hasDrainPhase, hasFrameBudget, hasOverflowPolicy, hasTelemetryCounter);
+    }
+
     private static OwnershipInfo GetOwnership(string relativePath, string rawText, string declarationLine, string fieldName, string collectionKind)
     {
         var escaped = BuildNativeFieldAliasPattern(rawText, fieldName, collectionKind);
@@ -2069,9 +2266,22 @@ internal static class Program
 
         return false;
     }
+
+    private static bool ContainsAnyIgnoreCase(string text, params string[] values)
+    {
+        foreach (var value in values)
+        {
+            if (text.Contains(value, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
 
-internal sealed record CliOptions(string ProjectRoot, string OutputJson, string OutputMarkdown, string Scope, bool FailOnError, bool IncludeHotPathHeuristics)
+internal sealed record CliOptions(string ProjectRoot, string OutputJson, string OutputMarkdown, string Scope, bool FailOnError, bool IncludeHotPathHeuristics, bool NoOutput, bool PrintFindings, int MaxConsoleFindings)
 {
     public static CliOptions Parse(string[] args)
     {
@@ -2081,6 +2291,9 @@ internal sealed record CliOptions(string ProjectRoot, string OutputJson, string 
         var scope = "Full";
         var failOnError = false;
         var includeHotPathHeuristics = false;
+        var noOutput = false;
+        var printFindings = false;
+        var maxConsoleFindings = 64;
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -2107,9 +2320,20 @@ internal sealed record CliOptions(string ProjectRoot, string OutputJson, string 
                 case "--include-hot-path-heuristics":
                     includeHotPathHeuristics = true;
                     break;
+                case "--no-output":
+                case "--stdout-only":
+                    noOutput = true;
+                    break;
+                case "--print-findings":
+                    printFindings = true;
+                    break;
+                case "--max-findings":
+                    if (!int.TryParse(RequireValue(args, ref i, arg), out maxConsoleFindings) || maxConsoleFindings < 1)
+                        throw new InvalidOperationException("--max-findings must be a positive integer.");
+                    break;
                 case "--help":
                 case "-h":
-                    throw new InvalidOperationException("Usage: --project-root <path> --json <path> --markdown <path> [--scope Full|SignalCritical] [--include-hot-path-heuristics] [--fail-on-error]");
+                    throw new InvalidOperationException("Usage: --project-root <path> --json <path> --markdown <path> [--scope Full|SignalCritical] [--include-hot-path-heuristics] [--fail-on-error] [--no-output] [--print-findings] [--max-findings <n>]");
                 default:
                     throw new InvalidOperationException("Unknown argument: " + arg);
             }
@@ -2127,7 +2351,7 @@ internal sealed record CliOptions(string ProjectRoot, string OutputJson, string 
         outputJson = Path.GetFullPath(Path.IsPathRooted(outputJson) ? outputJson : Path.Combine(projectRoot, outputJson));
         outputMarkdown = Path.GetFullPath(Path.IsPathRooted(outputMarkdown) ? outputMarkdown : Path.Combine(projectRoot, outputMarkdown));
 
-        return new CliOptions(projectRoot, outputJson, outputMarkdown, scope, failOnError, includeHotPathHeuristics);
+        return new CliOptions(projectRoot, outputJson, outputMarkdown, scope, failOnError, includeHotPathHeuristics, noOutput, printFindings, maxConsoleFindings);
     }
 
     private static string RequireValue(string[] args, ref int index, string name)
@@ -2249,6 +2473,26 @@ internal sealed record Pack1StructInfo(string Name, string Path, int Line, bool 
 internal sealed record StructLayoutInfo(string Name, string Path, int Line, bool HasStructLayout, int LayoutSize, bool IsEditor, bool IsCoreSignalFile);
 
 internal sealed record AsmdefInfo(string Path, string RelativePath, string Name, HashSet<string> References, string Directory, int ReferenceLine);
+
+internal sealed record SignalBridgeContractInfo(
+    bool HasOwner,
+    bool HasDrainPhase,
+    bool HasFrameBudget,
+    bool HasOverflowPolicy,
+    bool HasTelemetryCounter)
+{
+    public bool IsComplete => HasOwner && HasDrainPhase && HasFrameBudget && HasOverflowPolicy && HasTelemetryCounter;
+
+    public void ApplyTo(Dictionary<string, object?> tags)
+    {
+        tags["hasBridgeOwner"] = HasOwner;
+        tags["hasBridgeDrainPhase"] = HasDrainPhase;
+        tags["hasBridgeFrameBudget"] = HasFrameBudget;
+        tags["hasBridgeOverflowPolicy"] = HasOverflowPolicy;
+        tags["hasBridgeTelemetryCounter"] = HasTelemetryCounter;
+        tags["hasCompleteBridgeContract"] = IsComplete;
+    }
+}
 
 internal sealed record OwnershipInfo(
     bool HasRegister,

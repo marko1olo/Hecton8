@@ -87,6 +87,7 @@ namespace Hecton8.World
             HectonFloatingOrigin.RegisterListener(this);
             InvalidateMaterialCaches();
             CacheInstanceCullingServiceCold();
+            EnsureIndirectArgsBufferCold(ResolveQuadMesh());
             TryRegisterHotSwapListener();
             RegisterTick();
         }
@@ -135,8 +136,8 @@ namespace Hecton8.World
             if (!useMatrixStream && _activeInstanceBuffer == null)
                 return;
 
-            if (!useMatrixStream)
-                EnsureIndirectArgsBuffer(mesh);
+            if (!useMatrixStream && !HasIndirectArgsBufferReady(mesh))
+                return;
 
             GraphicsBuffer drawInstanceBuffer = useMatrixStream
                 ? _instanceCullingService.VisibleInstancesBuffer
@@ -200,7 +201,7 @@ namespace Hecton8.World
             _drawBounds = hasCombinedBounds ? combinedBounds : new Bounds(transform.position + _fallbackBoundsCenterOffset, _fallbackBoundsSize);
             _hasBoundsOverride = hasCombinedBounds;
             _lastArgsInstanceCount = -1;
-            EnsureIndirectArgsBuffer(ResolveQuadMesh());
+            EnsureIndirectArgsBufferCold(ResolveQuadMesh());
         }
 
         public void BindNativeMatrices(NativeArray<float4x4> matrices, int instanceCount, float boundsRadius)
@@ -248,7 +249,7 @@ namespace Hecton8.World
                 if (needsUpload || wasUsingVisibleMatrixStream || _activeInstanceBuffer == null || _instanceCount != instanceCount)
                     BindMatricesAsOctahedralFallback(matrices, instanceCount);
                 else
-                    EnsureIndirectArgsBuffer(mesh);
+                    EnsureIndirectArgsBufferCold(mesh);
                 return;
             }
 
@@ -278,7 +279,7 @@ namespace Hecton8.World
                 if (needsUpload || wasUsingVisibleMatrixStream || _activeInstanceBuffer == null || _instanceCount != instanceCount)
                     BindMatricesAsOctahedralFallback(matrices, instanceCount);
                 else
-                    EnsureIndirectArgsBuffer(mesh);
+                    EnsureIndirectArgsBufferCold(mesh);
             }
         }
 
@@ -342,7 +343,7 @@ namespace Hecton8.World
             _drawBounds = hasCombinedBounds ? combinedBounds : new Bounds(transform.position + _fallbackBoundsCenterOffset, _fallbackBoundsSize);
             _hasBoundsOverride = hasCombinedBounds;
             _lastArgsInstanceCount = -1;
-            EnsureIndirectArgsBuffer(ResolveQuadMesh());
+            EnsureIndirectArgsBufferCold(ResolveQuadMesh());
         }
 
         private void BindMatricesAsOctahedralFallback(NativeArray<float4x4> matrices, int instanceCount)
@@ -402,7 +403,7 @@ namespace Hecton8.World
             _drawBounds = hasCombinedBounds ? combinedBounds : new Bounds(transform.position + _fallbackBoundsCenterOffset, _fallbackBoundsSize);
             _hasBoundsOverride = hasCombinedBounds;
             _lastArgsInstanceCount = -1;
-            EnsureIndirectArgsBuffer(ResolveQuadMesh());
+            EnsureIndirectArgsBufferCold(ResolveQuadMesh());
         }
 
         private void ResolveMatrixBounds(NativeArray<float4x4> matrices, int instanceCount)
@@ -594,7 +595,16 @@ namespace Hecton8.World
             return fallback != null && fallback.IsValid() ? fallback : null;
         }
 
-        private void EnsureIndirectArgsBuffer(Mesh mesh)
+        private bool HasIndirectArgsBufferReady(Mesh mesh)
+        {
+            return _argsBuffer != null &&
+                   _argsBuffer.IsValid() &&
+                   mesh != null &&
+                   ReferenceEquals(_argsMesh, mesh) &&
+                   _lastArgsInstanceCount == _instanceCount;
+        }
+
+        private void EnsureIndirectArgsBufferCold(Mesh mesh)
         {
             if (_argsBuffer == null)
             {

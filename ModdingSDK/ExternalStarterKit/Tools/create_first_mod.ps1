@@ -50,12 +50,12 @@ function Resolve-Tool([string]$RelativePath) {
     return $tool
 }
 
-function Complete-Tool([string]$Step) {
-    if (-not $?) {
-        Fail ($Step + ' failed.')
+function Complete-Tool([bool]$ToolSucceeded, [int]$ToolExitCode, [string]$Step) {
+    if ($ToolExitCode -ne 0) {
+        exit $ToolExitCode
     }
-    if ($global:LASTEXITCODE -ne 0) {
-        exit $global:LASTEXITCODE
+    if (-not $ToolSucceeded) {
+        Fail ($Step + ' failed.')
     }
 }
 
@@ -66,7 +66,9 @@ function Invoke-Tool([scriptblock]$Invocation, [string]$Step) {
     } else {
         & $Invocation | Out-Host
     }
-    Complete-Tool $Step
+    $toolSucceeded = $?
+    $toolExitCode = $global:LASTEXITCODE
+    Complete-Tool $toolSucceeded $toolExitCode $Step
 }
 
 function Select-TextOrDefault([string]$Value, [string]$DefaultValue) {

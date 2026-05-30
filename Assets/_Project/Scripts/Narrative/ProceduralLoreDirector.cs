@@ -33,6 +33,11 @@ namespace Hecton8.Narrative
             new Vector2Int(0, -1)
         };
 
+        private const int InstalledDirectorCapacity = 8;
+        private static readonly GameObject[] s_installedOwners = new GameObject[InstalledDirectorCapacity];
+        private static readonly ProceduralLoreDirector[] s_installedInstances = new ProceduralLoreDirector[InstalledDirectorCapacity];
+        private static int s_installedCount;
+
         [Header("Spawn Cadence")]
         [Tooltip("Seconds between frontier spawn evaluations. Heavy catalog and chunk scans stay on a cold cadence.")]
         [SerializeField, Min(30f)] private float spawnCheckIntervalSeconds = 180f;
@@ -81,6 +86,7 @@ namespace Hecton8.Narrative
 
         private void OnEnable()
         {
+            RegisterInstalledOwner();
             TryRegisterHotSwapListener();
             RefreshCachedOwners();
             TryRegisterWithTickManager();
@@ -90,6 +96,7 @@ namespace Hecton8.Narrative
 
         private void Start()
         {
+            RegisterInstalledOwner();
             TryRegisterHotSwapListener();
             RefreshCachedOwners();
             TryRegisterWithTickManager();
@@ -99,6 +106,7 @@ namespace Hecton8.Narrative
 
         private void OnDisable()
         {
+            UnregisterInstalledOwner();
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
             TryUnregisterHotSwapListener();
@@ -107,10 +115,70 @@ namespace Hecton8.Narrative
 
         private void OnDestroy()
         {
+            UnregisterInstalledOwner();
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
             TryUnregisterHotSwapListener();
             DespawnAllInstances();
+        }
+
+        internal static bool IsInstalledOn(GameObject owner)
+        {
+            if (owner == null)
+                return false;
+
+            for (int i = 0; i < s_installedCount; i++)
+            {
+                if (ReferenceEquals(s_installedOwners[i], owner))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void RegisterInstalledOwner()
+        {
+            GameObject owner = gameObject;
+            for (int i = 0; i < s_installedCount; i++)
+            {
+                if (ReferenceEquals(s_installedInstances[i], this))
+                {
+                    s_installedOwners[i] = owner;
+                    return;
+                }
+
+                if (ReferenceEquals(s_installedOwners[i], owner))
+                {
+                    s_installedInstances[i] = this;
+                    return;
+                }
+            }
+
+            if (s_installedCount >= InstalledDirectorCapacity)
+            {
+                H8Debug.LogWarning("[ProceduralLoreDirector] Installed director registry capacity exceeded; cold installer cannot prove duplicate state without component lookup.", this);
+                return;
+            }
+
+            s_installedOwners[s_installedCount] = owner;
+            s_installedInstances[s_installedCount] = this;
+            s_installedCount++;
+        }
+
+        private void UnregisterInstalledOwner()
+        {
+            for (int i = 0; i < s_installedCount; i++)
+            {
+                if (!ReferenceEquals(s_installedInstances[i], this))
+                    continue;
+
+                s_installedCount--;
+                s_installedOwners[i] = s_installedOwners[s_installedCount];
+                s_installedInstances[i] = s_installedInstances[s_installedCount];
+                s_installedOwners[s_installedCount] = null;
+                s_installedInstances[s_installedCount] = null;
+                return;
+            }
         }
 
         /// <inheritdoc />
@@ -294,7 +362,7 @@ namespace Hecton8.Narrative
             if (spawnedObject == null)
                 return false;
 
-            if (!spawnedObject.TryGetComponent(out AudioLogPickup pickup))
+            if (!TryResolvePooledAudioLogPickup(pool, spawnedObject, out AudioLogPickup pickup))
             {
                 pool.Despawn(spawnedObject);
                 return false;
@@ -304,6 +372,17 @@ namespace Hecton8.Narrative
             placement.instance = spawnedObject;
             placement.owningPool = pool;
             return true;
+        }
+
+        private static bool TryResolvePooledAudioLogPickup(
+            IObjectPoolService pool,
+            GameObject instance,
+            out AudioLogPickup pickup)
+        {
+            pickup = null;
+            return pool != null &&
+                   instance != null &&
+                   pool.TryGetPooledComponent(instance, out pickup);
         }
 
         private void DespawnAllInstances()
@@ -338,17 +417,16 @@ namespace Hecton8.Narrative
 
         private void RefreshCachedOwners()
         {
-            if (_explorationTracker == null)
-                _explorationTracker = GlobalRegistry.PlayerExplorationReadModel;
+            _explorationTracker = GlobalRegistry.PlayerExplorationReadModel;
+            _audioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogs;
+            IObjectPoolService currentPool = GlobalRegistry.ObjectPoolService;
+            if (!ReferenceEquals(_objectPool, currentPool))
+            {
+                _objectPool = currentPool;
+                _poolWarmed = false;
+            }
 
-            if (_audioLogSystem == null)
-                _audioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogs;
-
-            if (_objectPool == null)
-                _objectPool = GlobalRegistry.ObjectPoolService;
-
-            if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+            _saveService = GlobalRegistry.Save;
         }
 
         private bool ResolveCatalog()

@@ -107,7 +107,7 @@ namespace Hecton8.World.ProceduralWreckage.Editor
                 return;
             }
 
-            _hasHandles = ProceduralWreckageVault.TryResolve(vault, out _handles);
+            _hasHandles = ProceduralWreckageVault.TryEnsure(vault, out _handles);
             if (_hasHandles && ProceduralWreckageVault.TryGetTuning(vault, ref _handles, out WreckageTuningDTO tuning))
                 SetFieldsWithoutNotify(tuning);
 

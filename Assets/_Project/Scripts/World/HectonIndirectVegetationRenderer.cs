@@ -368,6 +368,8 @@ namespace Hecton8.World
         private VaultGenerationHandle<byte> _uploadedDataDirtyPagesAHandle;
         private VaultGenerationHandle<byte> _uploadedDataDirtyPagesBHandle;
         private int _uploadedDirtyPageCapacity;
+        private byte[] _uploadedDirtyPageSnapshot;
+        private int _uploadedDirtyPageSnapshotCapacity;
         private int _uploadedInstanceWriteBufferIndex;
         private int _lastNativeUploadBufferIndex = int.MinValue;
         private int _lastNativeUploadInstanceCount = -1;
@@ -530,9 +532,16 @@ namespace Hecton8.World
         private float _cachedQualityWeight01 = 1f;
         private float _cachedSystemStress01;
         private AsyncGPUReadbackRequest _cullTelemetryReadbackRequest;
+        private CullTelemetryReadbackOwner _cullTelemetryReadback;
         private bool _floraGrowthTelemetryDumped;
         private bool _scatterCullTelemetryReadbackPending;
+        private bool _scatterCullTelemetryReadbackRepairRequested;
         private bool _scatterCullTelemetryDumped;
+
+        private struct CullTelemetryReadbackOwner
+        {
+            public NativeArray<uint> Data;
+        }
         private bool _lastCullOverdrawWarning;
         private bool _supportsComputeShadersCold;
         private bool _usesReversedZBufferCold;
@@ -2282,10 +2291,6 @@ namespace Hecton8.World
 
         public void SlowTick()
         {
-            CacheGraphicsCapabilitiesCold();
-            CachePlayerContextCold();
-            CacheRuntimeServicesCold();
-            RefreshCullCameraCacheCold();
             SyncSourceBinding();
             ConsumeScatterRuntimeSignals();
 
@@ -2293,6 +2298,7 @@ namespace Hecton8.World
             RefreshExternalShaderGlobalsCold(cullCamera);
             CreateAuxiliaryMaterials();
             PrepareGpuIndirectResourcesCold(cullCamera);
+            FlushCullTelemetryReadbackRepairSlow();
         }
 
         private void RunVisualTick()
@@ -2355,6 +2361,8 @@ namespace Hecton8.World
                 return;
 
             EnsureGpuIndirectResources(_instanceCount, nearMesh, farMesh);
+            EnsureFloraGrowthTelemetry();
+            EnsureScatterCullTelemetry();
             _ = ResolveFloraAgeBuffer();
             EnsureDepthPyramidResourcesForCameraCold(cullCamera);
         }
@@ -3388,6 +3396,7 @@ namespace Hecton8.World
                 return;
             }
 
+            CompletePendingScatterCullTelemetryReadbackForRelease();
             ReleaseGraphicsBuffer(ref _cullTelemetryCountersBuffer);
             ReleaseGraphicsBuffer(ref _cullTelemetryCountersUploadBuffer);
             _cullTelemetryCountersBuffer = GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<uint>(ScatterCullTelemetryCounterCount); // COLD ALLOC: GraphicsBuffer[4] - GPU cull telemetry counters for SHINOBU_09 scatter diagnostics - owner: HectonIndirectVegetationRenderer
@@ -3575,8 +3584,8 @@ namespace Hecton8.World
 
         private bool TryAcquireFloraGrowthTelemetry(out IDataVault vault, out NativeArray<FloraGrowthTelemetryEntry> floraGrowthTelemetry)
         {
-            return TryAcquireTelemetryBuffer(
-                ref _floraGrowthTelemetryHandle,
+            return TryAcquireExistingTelemetryBuffer(
+                in _floraGrowthTelemetryHandle,
                 FloraGrowthTelemetryBufferId,
                 FloraGrowthTelemetryFrameCount,
                 out vault,
@@ -3821,7 +3830,13 @@ namespace Hecton8.World
             if (!sampleCullTelemetry || _cullTelemetryCountersBuffer == null || _scatterCullTelemetryReadbackPending)
                 return;
 
-            _cullTelemetryReadbackRequest = AsyncGPUReadback.Request(_cullTelemetryCountersBuffer);
+            if (!HasCullTelemetryReadbackData())
+            {
+                QueueCullTelemetryReadbackRepair();
+                return;
+            }
+
+            _cullTelemetryReadbackRequest = AsyncGPUReadback.RequestIntoNativeArray(ref _cullTelemetryReadback.Data, _cullTelemetryCountersBuffer);
             _scatterCullTelemetryReadbackPending = true;
         }
 
@@ -3834,7 +3849,7 @@ namespace Hecton8.World
             if (_cullTelemetryReadbackRequest.hasError)
                 return;
 
-            NativeArray<uint> counters = _cullTelemetryReadbackRequest.GetData<uint>();
+            NativeArray<uint> counters = _cullTelemetryReadback.Data;
             if (!counters.IsCreated || counters.Length < ScatterCullTelemetryCounterCount)
                 return;
 
@@ -3855,8 +3870,8 @@ namespace Hecton8.World
 
         private bool TryAcquireScatterCullTelemetry(out IDataVault vault, out NativeArray<ScatterCullTelemetryEntry> scatterCullTelemetry)
         {
-            return TryAcquireTelemetryBuffer(
-                ref _scatterCullTelemetryHandle,
+            return TryAcquireExistingTelemetryBuffer(
+                in _scatterCullTelemetryHandle,
                 ScatterCullTelemetryBufferId,
                 ScatterCullTelemetryFrameCount,
                 out vault,
@@ -3927,6 +3942,7 @@ namespace Hecton8.World
             _lastScatterCullTelemetryFrame = -1;
             _lastScatterCullTelemetrySampleFrame = -1;
             _scatterCullTelemetryReadbackPending = false;
+            _scatterCullTelemetryReadbackRepairRequested = false;
         }
 
         private void DumpScatterCullTelemetry()
@@ -4255,6 +4271,52 @@ namespace Hecton8.World
             }
         }
 
+        private bool TryAcquireExistingTelemetryBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int length,
+            out IDataVault vault,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            vault = null;
+            buffer = default;
+            vault = _dataVault;
+            bool lockAcquired = false;
+            bool success = false;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsExactVaultHandle(in handle, bufferId))
+            {
+                vault = null;
+                return false;
+            }
+
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in handle, VaultOwnerSystemId, out buffer))
+                    return false;
+
+                lockAcquired = true;
+                success =
+                    !vault.IsCompactionFenceActive &&
+                    buffer.IsCreated &&
+                    buffer.Length >= length;
+                return success;
+            }
+            finally
+            {
+                if (!success && lockAcquired && vault != null)
+                    vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+
+                if (!success)
+                {
+                    buffer = default;
+                    vault = null;
+                }
+            }
+        }
+
         private bool TryReadTelemetryBuffer<T>(
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -4370,6 +4432,8 @@ namespace Hecton8.World
 
         private void ReleaseGpuIndirectResources()
         {
+            CompletePendingScatterCullTelemetryReadbackForRelease();
+            DisposeCullTelemetryReadbackData();
             ReleaseVisibleIndexBuffer(ref _visibleIndicesLod0Buffer);
             ReleaseVisibleIndexBuffer(ref _visibleIndicesLod1Buffer);
             ReleaseVisibleIndexBuffer(ref _visibleIndicesShadowBuffer);
@@ -4389,6 +4453,63 @@ namespace Hecton8.World
             _depthPyramidMipCount = 0;
             ResetCullComputeBindingStates();
             ResetSnapComputeBindingStates();
+        }
+
+        private void EnsureCullTelemetryReadbackData()
+        {
+            if (HasCullTelemetryReadbackData())
+                return;
+
+            DisposeCullTelemetryReadbackData();
+            _cullTelemetryReadback.Data = new NativeArray<uint>(
+                ScatterCullTelemetryCounterCount,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[4] - async GPU cull telemetry readback target - owner: HectonIndirectVegetationRenderer
+            NativeMemorySentinel.RegisterNativeArray(_cullTelemetryReadback.Data, nameof(HectonIndirectVegetationRenderer), "_cullTelemetryReadbackData", NativeAllocationLifetime.Scene);
+            _scatterCullTelemetryReadbackRepairRequested = false;
+        }
+
+        private bool HasCullTelemetryReadbackData()
+        {
+            return _cullTelemetryReadback.Data.IsCreated &&
+                   _cullTelemetryReadback.Data.Length >= ScatterCullTelemetryCounterCount;
+        }
+
+        private void QueueCullTelemetryReadbackRepair()
+        {
+            _scatterCullTelemetryReadbackRepairRequested = true;
+        }
+
+        private void FlushCullTelemetryReadbackRepairSlow()
+        {
+            if (!_scatterCullTelemetryReadbackRepairRequested && HasCullTelemetryReadbackData())
+                return;
+
+            if (_cullTelemetryCountersBuffer == null || _scatterCullTelemetryReadbackPending)
+                return;
+
+            EnsureCullTelemetryReadbackData();
+        }
+
+        private void CompletePendingScatterCullTelemetryReadbackForRelease()
+        {
+            if (!_scatterCullTelemetryReadbackPending)
+                return;
+
+            // BLOCKING_SYNC_POINT: teardown/configuration must not release cull telemetry buffers while AsyncGPUReadback owns them.
+            AsyncGPUReadback.WaitAllRequests();
+            _scatterCullTelemetryReadbackPending = false;
+        }
+
+        private void DisposeCullTelemetryReadbackData()
+        {
+            _scatterCullTelemetryReadbackRepairRequested = false;
+            if (_cullTelemetryReadback.Data.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_cullTelemetryReadback.Data);
+                _cullTelemetryReadback.Data.Dispose();
+                _cullTelemetryReadback.Data = default;
+            }
         }
 
         private void ResetCullComputeBindingStates()
@@ -5731,7 +5852,7 @@ namespace Hecton8.World
                 return false;
 
             if (HasUploadedDirtyPageStorage(requiredPages))
-                return true;
+                return EnsureUploadedDirtyPageSnapshotCapacity(requiredPages);
 
             ReleaseUploadedDirtyPages();
             int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(1, requiredPages));
@@ -5739,7 +5860,8 @@ namespace Hecton8.World
                 EnsureVaultStorage(ref _uploadedMatrixDirtyPagesAHandle, NativeUploadMatrixDirtyPagesAId, nextCapacity, NativeArrayOptions.ClearMemory) &&
                 EnsureVaultStorage(ref _uploadedMatrixDirtyPagesBHandle, NativeUploadMatrixDirtyPagesBId, nextCapacity, NativeArrayOptions.ClearMemory) &&
                 EnsureVaultStorage(ref _uploadedDataDirtyPagesAHandle, NativeUploadDataDirtyPagesAId, nextCapacity, NativeArrayOptions.ClearMemory) &&
-                EnsureVaultStorage(ref _uploadedDataDirtyPagesBHandle, NativeUploadDataDirtyPagesBId, nextCapacity, NativeArrayOptions.ClearMemory);
+                EnsureVaultStorage(ref _uploadedDataDirtyPagesBHandle, NativeUploadDataDirtyPagesBId, nextCapacity, NativeArrayOptions.ClearMemory) &&
+                EnsureUploadedDirtyPageSnapshotCapacity(nextCapacity);
             if (!ready)
             {
                 ReleaseUploadedDirtyPages();
@@ -5747,6 +5869,21 @@ namespace Hecton8.World
             }
 
             _uploadedDirtyPageCapacity = nextCapacity;
+            return true;
+        }
+
+        private bool EnsureUploadedDirtyPageSnapshotCapacity(int requiredPages)
+        {
+            if (requiredPages <= 0)
+                return false;
+
+            if (_uploadedDirtyPageSnapshot != null && _uploadedDirtyPageSnapshotCapacity >= requiredPages)
+                return true;
+
+            int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(1, requiredPages));
+            // COLD ALLOC: byte[nextCapacity] - dirty-page upload snapshot copied under DataVault lock and consumed after release - owner: HectonIndirectVegetationRenderer
+            _uploadedDirtyPageSnapshot = new byte[nextCapacity];
+            _uploadedDirtyPageSnapshotCapacity = nextCapacity;
             return true;
         }
 
@@ -5803,6 +5940,8 @@ namespace Hecton8.World
             ReleaseVaultHandle(vault, ref _uploadedDataDirtyPagesAHandle);
             ReleaseVaultHandle(vault, ref _uploadedDataDirtyPagesBHandle);
             _uploadedDirtyPageCapacity = 0;
+            _uploadedDirtyPageSnapshot = null;
+            _uploadedDirtyPageSnapshotCapacity = 0;
         }
 
         private GraphicsBuffer ResolveUploadedMatrixWriteBuffer()
@@ -6035,23 +6174,92 @@ namespace Hecton8.World
         {
             dirty = false;
             stats = default;
+            int requiredPages = GraphicsBufferUploadUtility.ResolveDirtyPageCount(instanceCount, NativeUploadDirtyPageSize);
+            if (!EnsureUploadedDirtyPageSnapshotCapacity(requiredPages))
+                return false;
+
+            if (!TryAcquireUploadedDirtyPageForWrite(ref dirtyHandle, dirtyBufferId, out IDataVault vault, out NativeArray<byte> dirtyPages))
+                return false;
+
+            int copiedPageCount;
+            try
+            {
+                copiedPageCount = CopyUploadedDirtyPagesToSnapshot(dirtyPages, requiredPages);
+                dirty = HasAnyUploadedDirtyPageSnapshot(copiedPageCount);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in dirtyHandle, VaultOwnerSystemId);
+            }
+
+            if (!dirty)
+                return true;
+
+            stats = GraphicsBufferUploadUtility.UploadNativeArrayDirtyPagesFromSnapshot(
+                targetBuffer,
+                sourceData,
+                _uploadedDirtyPageSnapshot,
+                instanceCount,
+                NativeUploadDirtyPageSize,
+                uploadBudgetBytes,
+                markUploadedPages: true);
+
+            if (stats.UploadedPages > 0 && !TryClearUploadedDirtyPagesFromSnapshot(ref dirtyHandle, dirtyBufferId, copiedPageCount))
+                return false;
+
+            return true;
+        }
+
+        private int CopyUploadedDirtyPagesToSnapshot(NativeArray<byte> dirtyPages, int requiredPages)
+        {
+            if (!dirtyPages.IsCreated || _uploadedDirtyPageSnapshot == null || requiredPages <= 0)
+                return 0;
+
+            int pageCount = math.min(requiredPages, math.min(dirtyPages.Length, _uploadedDirtyPageSnapshot.Length));
+            for (int i = 0; i < pageCount; i++)
+                _uploadedDirtyPageSnapshot[i] = dirtyPages[i] != 0 ? (byte)1 : (byte)0;
+
+            return pageCount;
+        }
+
+        private bool HasAnyUploadedDirtyPageSnapshot(int pageCount)
+        {
+            if (_uploadedDirtyPageSnapshot == null || pageCount <= 0)
+                return false;
+
+            int limit = math.min(pageCount, _uploadedDirtyPageSnapshot.Length);
+            for (int i = 0; i < limit; i++)
+            {
+                if (_uploadedDirtyPageSnapshot[i] != 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool TryClearUploadedDirtyPagesFromSnapshot(
+            ref VaultGenerationHandle<byte> dirtyHandle,
+            BufferID dirtyBufferId,
+            int pageCount)
+        {
+            if (_uploadedDirtyPageSnapshot == null || pageCount <= 0)
+                return true;
+
             if (!TryAcquireUploadedDirtyPageForWrite(ref dirtyHandle, dirtyBufferId, out IDataVault vault, out NativeArray<byte> dirtyPages))
                 return false;
 
             try
             {
-                dirty = GraphicsBufferUploadUtility.HasAnyDirtyPage(dirtyPages, instanceCount, NativeUploadDirtyPageSize);
-                if (!dirty)
-                    return true;
+                int limit = math.min(pageCount, math.min(dirtyPages.Length, _uploadedDirtyPageSnapshot.Length));
+                for (int i = 0; i < limit; i++)
+                {
+                    if (_uploadedDirtyPageSnapshot[i] != GraphicsBufferUploadUtility.UploadedDirtyPageSnapshotMarker)
+                        continue;
 
-                stats = GraphicsBufferUploadUtility.UploadNativeArrayDirtyPages(
-                    targetBuffer,
-                    sourceData,
-                    dirtyPages,
-                    instanceCount,
-                    NativeUploadDirtyPageSize,
-                    uploadBudgetBytes,
-                    clearUploadedPages: true);
+                    dirtyPages[i] = 0;
+                    _uploadedDirtyPageSnapshot[i] = 0;
+                }
+
                 return true;
             }
             finally

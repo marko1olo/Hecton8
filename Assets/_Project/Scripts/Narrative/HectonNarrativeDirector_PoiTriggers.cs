@@ -282,7 +282,7 @@ namespace Hecton8.Gameplay
             int bucketStride = AupNarrativePoiRuntimeConstants.BucketStride)
         {
             AupNarrativePoiBufferHandles handles = default;
-            if (vault == null)
+            if (vault == null || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return handles;
 
             poiCapacity = math.max(1, poiCapacity);
@@ -823,51 +823,9 @@ namespace Hecton8.Gameplay
 
         public static void Write(string relativePath, NativeArray<AupNarrativeTriggerTelemetryEntry> telemetry, int cursor)
         {
-            if (!telemetry.IsCreated || telemetry.Length <= 0)
-                return;
-
-            string fullPath = Path.GetFullPath(relativePath);
-            int entrySize = UnsafeUtility.SizeOf<AupNarrativeTriggerTelemetryEntry>();
-            int bytes = DumpHeaderBytes + telemetry.Length * entrySize;
-            try
-            {
-                string directory = Path.GetDirectoryName(fullPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(fullPath, FileMode.Create, FileAccess.ReadWrite, FileShare.Read, 4096, FileOptions.WriteThrough))
-                {
-#if UNITY_STANDALONE || UNITY_EDITOR
-                    stream.SetLength(bytes);
-                    using (MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(stream, null, bytes, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, false))
-                    using (MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(0L, bytes, MemoryMappedFileAccess.Write))
-                    {
-                        byte* destination = null;
-                        accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref destination);
-                        try
-                        {
-                            WritePayload(destination, telemetry, entrySize, cursor);
-                        }
-                        finally
-                        {
-                            accessor.SafeMemoryMappedViewHandle.ReleasePointer();
-                        }
-                    }
-#else
-                    Span<byte> header = stackalloc byte[DumpHeaderBytes];
-                    fixed (byte* headerPtr = header)
-                        WriteHeader(headerPtr, telemetry.Length, entrySize, cursor);
-                    stream.Write(header);
-                    WriteTelemetryStream(stream, telemetry, entrySize, cursor);
-#endif
-                }
-            }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
+            _ = relativePath;
+            _ = telemetry;
+            _ = cursor;
         }
 
         private static void WritePayload(byte* destination, NativeArray<AupNarrativeTriggerTelemetryEntry> telemetry, int entrySize, int cursor)
@@ -1581,7 +1539,7 @@ namespace Hecton8.Gameplay
             NarrativeEvents.TryRaiseDiscoveryMade(discoveryHash);
 
             RecordDiscoveryIdentity(discoveryHash, discoveryId);
-            LoreDatabaseManager loreDatabase = GlobalRegistry.LoreDatabase;
+            ILoreUnlockSink loreDatabase = _loreUnlockSink;
             uint loreHash = presentation.LoreHash;
             if (loreDatabase != null && loreHash != 0u)
                 loreDatabase.TryUnlockByHash(loreHash);

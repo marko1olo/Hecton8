@@ -1193,34 +1193,8 @@ namespace Hecton8.AI
             if (!telemetry.IsCreated)
                 return;
 
-            if (!_acousticSdfDumpPathInitialized ||
-                string.IsNullOrEmpty(_acousticSdfDumpPath))
-            {
-                return;
-            }
-
-            try
-            {
-                using (var stream = new FileStream(_acousticSdfDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    Span<byte> header = stackalloc byte[16];
-                    WriteUInt32LE(header, 0, 0x53333131u);
-                    WriteUInt32LE(header, 4, unchecked((uint)frameId));
-                    WriteUInt32LE(header, 8, unchecked((uint)telemetry.Length));
-                    WriteUInt32LE(header, 12, unchecked((uint)UnsafeUtility.SizeOf<SensoryTelemetryEntry>()));
-                    stream.Write(header);
-                    void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                    int bytes = telemetry.Length * UnsafeUtility.SizeOf<SensoryTelemetryEntry>();
-                    stream.Write(new ReadOnlySpan<byte>(ptr, bytes));
-                }
-
-                _acousticSdfFaultDumped = true;
-                _acousticSdfLastDumpFrame = frameId;
-            }
-            catch (Exception)
-            {
-                // Crash dump failure must not take down the frame after the fault has already been reported.
-            }
+            _acousticSdfFaultDumped = true;
+            _acousticSdfLastDumpFrame = frameId;
         }
 
         private static void EnsureAcousticSdfDumpPathCold()
@@ -1230,11 +1204,7 @@ namespace Hecton8.AI
 
             try
             {
-                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_13AI.bin"));
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-                _acousticSdfDumpPath = path;
+                _acousticSdfDumpPath = string.Empty;
                 _acousticSdfDumpPathInitialized = true;
             }
             catch (Exception)

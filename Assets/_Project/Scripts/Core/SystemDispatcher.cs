@@ -85,8 +85,6 @@ namespace Hecton8.Core
         private const int MaxQueuedDispatcherSurfaceProbes = 1024;
         private const int DispatcherBlackBoxFrameCount = 300;
         private const int DispatcherBlackBoxEntrySizeBytes = 64;
-        private const string DispatcherBlackBoxDumpPath = "Docs/AgentLogs/Dump_CORE_TICK_DILATION.bin";
-        private const string DispatcherBlackBoxMirrorDumpPath = "Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR_Dispatcher.bin";
         private const int MasterDispatcherMaxSystems = 85;
         private const int MasterDispatcherBucketCount = 64;
         private const int MasterDispatcherBucketMask = MasterDispatcherBucketCount - 1;
@@ -102,16 +100,11 @@ namespace Hecton8.Core
         private const uint MasterRollbackRequiredFlag = 1u << 3;
         private const uint MasterRollbackResimulatingFlag = 1u << 4;
         private const uint MasterRollbackHardResyncRequiredFlag = 1u << 14;
-        private const float MasterDispatcherStallDumpThresholdMs = 8f;
-        private const string MasterDispatcherDumpPath = "Docs/AgentLogs/Dump_SYSTEM_DISPATCHER.bin";
+        private const float MasterDispatcherStallViolationThresholdMs = 8f;
 #if UNITY_EDITOR
         private const string MasterDispatcherPriorityCsvPath = "Docs/Tasks/execution_priorities.csv";
         private const string VaultMemoryProfileCsvPath = "memory_overrides.csv";
 #endif
-        private const ulong DispatcherBlackBoxDumpMagic = 0x00384E4F54434548ul; // HECTON8\0
-        private const uint DispatcherBlackBoxDumpVersion = 1u;
-        private const uint MasterDispatcherDumpVersion = 1u;
-        private const string ShinobuFenceDumpPath = "Docs/AgentLogs/Dump_SHINOBU_206.bin";
         private const int DispatcherDependencyRetryFrames = 8;
         private static readonly ulong DispatcherSurfaceProbeHitsGuardMask =
             1UL << (unchecked((int)(uint)(int)BufferID.DispatcherRaycastHits) & 31);
@@ -201,6 +194,7 @@ namespace Hecton8.Core
         private const uint _DataVaultMassiveMoveHash = 0xDADA7051u;
         private const uint _DataVaultVramPressureHash = 0xDADA7052u;
         private const uint _SystemDispatcherHash = 0x51D15A7Cu;
+        private const uint _MasterDispatcherHash = 0x4D445350u; // MDSP
         private const uint _PlayerLoopInstallFailureHash = 0x51D10001u;
         private const uint _HeapLockGuardHash = 0x51D10002u;
         private const uint _AupNanInquisitorHash = 0x51D10003u;
@@ -215,8 +209,8 @@ namespace Hecton8.Core
         private const ushort DispatcherBlackBoxFlagNonFinite = 1 << 3;
         private const ushort DispatcherBlackBoxFlagCoreDilation = 1 << 4;
         private const ushort DispatcherBlackBoxFlagTemporalCompression = 1 << 5;
-        private const ushort DispatcherBlackBoxFlagSurvivalQuality = 1 << 6;
         private const ushort DispatcherBlackBoxFlagAdrenalineDilation = 1 << 7;
+        private const int DispatcherBlackBoxQualityWeightQ8Shift = 8;
         private const byte AdrenalineDilationPhaseNone = 0;
         private const byte AdrenalineDilationPhaseRampDown = 1;
         private const byte AdrenalineDilationPhaseHold = 2;
@@ -499,11 +493,11 @@ namespace Hecton8.Core
         private int _masterCsvPollFrame = -1;
         private DateTime _masterPriorityCsvLastWriteUtc;
         private long _vaultMemoryProfileCsvLastWriteTicks;
-        private bool _dispatcherBlackBoxDumped;
+        private bool _dispatcherBlackBoxViolationPublished;
         private bool _masterSimulationJobsPending;
         private bool _masterFixedJobsPending;
-        private bool _masterPipelineTelemetryDumped;
-        private bool _masterFenceTelemetryDumped;
+        private bool _masterPipelineTelemetryViolationPublished;
+        private bool _masterFenceTelemetryViolationPublished;
         private bool _masterVisualSyncShedThisFrame;
         private bool _masterRollbackFenceThisFrame;
         private bool _masterHealthPressureShedThisFrame;
@@ -1946,7 +1940,7 @@ namespace Hecton8.Core
             _thermalCriticalSlowTickActive = false;
             _timeSnapshot = default;
             _dispatcherBlackBoxSequence = 0u;
-            _dispatcherBlackBoxDumped = false;
+            _dispatcherBlackBoxViolationPublished = false;
             CurrentFixedInterpolationAlpha = 0f;
         }
 
@@ -2041,13 +2035,13 @@ namespace Hecton8.Core
             _masterLastAudioHandleBits = 0ul;
             _masterLastNetcodeHandleBits = 0ul;
             _masterDisabledSystemCount = 0;
-            _masterPipelineTelemetryDumped = false;
-            _masterFenceTelemetryDumped = false;
+            _masterPipelineTelemetryViolationPublished = false;
+            _masterFenceTelemetryViolationPublished = false;
             _masterVisualSyncShedThisFrame = false;
             _masterRollbackFenceThisFrame = false;
             _masterHealthPressureShedThisFrame = false;
             _masterRollbackFenceFlagsThisFrame = 0u;
-            _dispatcherBlackBoxDumped = false;
+            _dispatcherBlackBoxViolationPublished = false;
             CurrentFrameDeltaTime = 0f;
             CurrentFrameUnscaledDeltaTime = 0f;
             CurrentFixedInterpolationAlpha = 0f;
@@ -2085,6 +2079,8 @@ namespace Hecton8.Core
             InitializeMasterDispatcherRuntime();
             HomeostasisBrain.InitializeRuntime();
             RefreshScalabilityQualityWeight();
+            HectonXRRuntimeState.RefreshPlatformStateCold(CurrentFrameIndex);
+            HomeostasisBrain.RefreshCadenceSnapshotCold();
             GlobalRegistry.TryRegisterHotSwapListener(this);
             GlobalRegistry.RegisterSystemDispatcher(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Dispatcher, this);
@@ -2719,6 +2715,7 @@ namespace Hecton8.Core
             _masterHealthPressureShedThisFrame = false;
             _masterRollbackFenceFlagsThisFrame = 0u;
             TimeSliceScheduler.BeginFrame(HomeostasisBrain.GlobalQualityWeight, timing.FrameId);
+            GraphicsBufferUploadUtility.BeginUploadBudgetFrame(HomeostasisBrain.GlobalQualityWeight, timing.FrameId);
             SetMasterDispatcherPhase(DispatcherPhase.PreSimulation, in timing);
             TryReloadMasterExecutionPriorityCsv();
             EnsureMasterDispatcherTopology();
@@ -3350,10 +3347,10 @@ namespace Hecton8.Core
             telemetryCursor[0] = cursor;
             _masterFrameTelemetrySequence++;
 
-            if (entry.SimWaitMs > MasterDispatcherStallDumpThresholdMs && !_masterPipelineTelemetryDumped)
+            if (entry.SimWaitMs > MasterDispatcherStallViolationThresholdMs && !_masterPipelineTelemetryViolationPublished)
             {
-                _masterPipelineTelemetryDumped = true;
-                DumpMasterPipelineTelemetry(telemetryRing, cursor);
+                _masterPipelineTelemetryViolationPublished = true;
+                PublishDispatcherComplianceViolation(_MasterDispatcherHash, _SystemDispatcherHash, 5, 1);
             }
 
             RecordMasterFenceTelemetry(frame);
@@ -3393,131 +3390,20 @@ namespace Hecton8.Core
                 cursor = 0;
             telemetryCursor[0] = cursor;
 
-            if (ShouldDumpMasterFenceTelemetry(in entry) && !_masterFenceTelemetryDumped)
+            if (ShouldFlagMasterFenceTelemetry(in entry) && !_masterFenceTelemetryViolationPublished)
             {
-                _masterFenceTelemetryDumped = true;
-                DumpMasterFenceTelemetry(telemetryRing, cursor);
+                _masterFenceTelemetryViolationPublished = true;
+                PublishDispatcherComplianceViolation(_MasterDispatcherHash, _SystemDispatcherHash, 6, 1);
             }
 
             _masterLastAupHardFenceMs = 0f;
         }
 
-        private static bool ShouldDumpMasterFenceTelemetry(in DispatcherFenceTelemetryEntry entry)
+        private static bool ShouldFlagMasterFenceTelemetry(in DispatcherFenceTelemetryEntry entry)
         {
-            return entry.SimulationWaitMs > MasterDispatcherStallDumpThresholdMs ||
-                   entry.FixedWaitMs > MasterDispatcherStallDumpThresholdMs ||
-                   entry.AupHardFenceMs > MasterDispatcherStallDumpThresholdMs;
-        }
-
-        private static unsafe void DumpMasterFenceTelemetry(NativeArray<DispatcherFenceTelemetryEntry> ring, int cursor)
-        {
-            if (!ring.IsCreated || ring.Length < MasterDispatcherBlackBoxFrameCount)
-                return;
-            if (!DispatcherFenceTelemetryLayoutGuard.ValidateLayout())
-                return;
-
-            try
-            {
-                void* ringPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
-                System.IO.Directory.CreateDirectory("Docs/AgentLogs");
-                using (System.IO.FileStream stream = System.IO.File.Open(
-                    ShinobuFenceDumpPath,
-                    System.IO.FileMode.Create,
-                    System.IO.FileAccess.Write,
-                    System.IO.FileShare.Read))
-                using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(stream))
-                {
-                    writer.Write(DispatcherBlackBoxDumpMagic);
-                    writer.Write(MasterDispatcherDumpVersion);
-                    writer.Write(MasterDispatcherBlackBoxFrameCount);
-                    writer.Write(DispatcherFenceTelemetryLayoutGuard.SizeBytes);
-                    writer.Write(cursor);
-                    for (int i = 0; i < MasterDispatcherBlackBoxFrameCount; i++)
-                    {
-                        int index = cursor + i;
-                        if (index >= MasterDispatcherBlackBoxFrameCount)
-                            index -= MasterDispatcherBlackBoxFrameCount;
-
-                        DispatcherFenceTelemetryEntry entry = UnsafeUtility.ReadArrayElement<DispatcherFenceTelemetryEntry>(ringPtr, index);
-                        writer.Write(entry.FrameId);
-                        writer.Write(entry.ScheduledJobCount);
-                        writer.Write(entry.SafetyBypassCount);
-                        writer.Write(entry.DomainMask);
-                        writer.Write(entry.SimulationWaitMs);
-                        writer.Write(entry.FixedWaitMs);
-                        writer.Write(entry.AupHardFenceMs);
-                        writer.Write(entry.GlobalQualityWeight);
-                        writer.Write(entry.MasterSimulationHandleBits);
-                        writer.Write(entry.PhysicsHandleBits);
-                        writer.Write(entry.AudioHandleBits);
-                        writer.Write(entry.NetcodeHandleBits);
-                    }
-                }
-            }
-            catch (System.IO.IOException)
-            {
-            }
-            catch (System.UnauthorizedAccessException)
-            {
-            }
-        }
-
-        private static unsafe void DumpMasterPipelineTelemetry(NativeArray<DispatcherTimingDTO> ring, int cursor)
-        {
-            if (!ring.IsCreated || ring.Length < MasterDispatcherBlackBoxFrameCount)
-                return;
-            if (!DispatcherTimingLayoutGuard.ValidateLayout())
-                return;
-
-            try
-            {
-                void* ringPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
-                System.IO.Directory.CreateDirectory("Docs/AgentLogs");
-                using (System.IO.FileStream stream = System.IO.File.Open(
-                    MasterDispatcherDumpPath,
-                    System.IO.FileMode.Create,
-                    System.IO.FileAccess.Write,
-                    System.IO.FileShare.Read))
-                using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(stream))
-                {
-                    writer.Write(DispatcherBlackBoxDumpMagic);
-                    writer.Write(MasterDispatcherDumpVersion);
-                    writer.Write(MasterDispatcherBlackBoxFrameCount);
-                    writer.Write(DispatcherTimingLayoutGuard.SizeBytes);
-                    writer.Write(cursor);
-                    for (int i = 0; i < MasterDispatcherBlackBoxFrameCount; i++)
-                    {
-                        int index = cursor + i;
-                        if (index >= MasterDispatcherBlackBoxFrameCount)
-                            index -= MasterDispatcherBlackBoxFrameCount;
-
-                        DispatcherTimingDTO entry = UnsafeUtility.ReadArrayElement<DispatcherTimingDTO>(ringPtr, index);
-                        writer.Write(entry.PreSimMs);
-                        writer.Write(entry.SimWaitMs);
-                        writer.Write(entry.PostSimMs);
-                        writer.Write(entry.VisualSyncMs);
-                        writer.Write(entry.FrameId);
-                        writer.Write(entry._pad0);
-                        writer.Write(entry._pad1);
-                        writer.Write(entry._pad2);
-                        writer.Write(entry._pad3);
-                        writer.Write(entry._pad4);
-                        writer.Write(entry._pad5);
-                        writer.Write(entry._pad6);
-                        writer.Write(entry._pad7);
-                        writer.Write(entry._pad8);
-                        writer.Write(entry._pad9);
-                        writer.Write(entry._pad10);
-                        writer.Write(entry._pad11);
-                    }
-                }
-            }
-            catch (System.IO.IOException)
-            {
-            }
-            catch (System.UnauthorizedAccessException)
-            {
-            }
+            return entry.SimulationWaitMs > MasterDispatcherStallViolationThresholdMs ||
+                   entry.FixedWaitMs > MasterDispatcherStallViolationThresholdMs ||
+                   entry.AupHardFenceMs > MasterDispatcherStallViolationThresholdMs;
         }
 
         private void TryReloadMasterExecutionPriorityCsv()
@@ -4545,7 +4431,7 @@ namespace Hecton8.Core
                 !math.isfinite(CurrentFixedInterpolationAlpha) ||
                 !IsFiniteDouble(_timeSnapshot.Time) ||
                 !IsFiniteDouble(_timeSnapshot.UnscaledTime);
-            ushort flags = 0;
+            ushort flags = EncodeDispatcherQualityWeightQ8(_globalQualityWeight01);
             if (SimulationPaused)
                 flags |= DispatcherBlackBoxFlagPaused;
             if (_aupPreShiftPauseFrameId == dispatcherFrameId)
@@ -4558,8 +4444,6 @@ namespace Hecton8.Core
                 flags |= DispatcherBlackBoxFlagCoreDilation;
             if (_temporalCompressionActive)
                 flags |= DispatcherBlackBoxFlagTemporalCompression;
-            if (_globalQualityWeight01 <= 0.25f)
-                flags |= DispatcherBlackBoxFlagSurvivalQuality;
             if (_adrenalineDilationPhase != AdrenalineDilationPhaseNone)
                 flags |= DispatcherBlackBoxFlagAdrenalineDilation;
 
@@ -4589,10 +4473,9 @@ namespace Hecton8.Core
                 cursor = 0;
             cursorBuffer[0] = cursor;
 
-            if (nonFinite && !_dispatcherBlackBoxDumped)
+            if (nonFinite && !_dispatcherBlackBoxViolationPublished)
             {
-                _dispatcherBlackBoxDumped = true;
-                DumpDispatcherBlackBox(ring, cursor);
+                _dispatcherBlackBoxViolationPublished = true;
                 PublishDispatcherComplianceViolation(_DispatcherBlackBoxFaultHash, _SystemDispatcherHash, 4, 1);
                 GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)_DispatcherBlackBoxFaultHash));
             }
@@ -4610,72 +4493,15 @@ namespace Hecton8.Core
             return hash;
         }
 
+        private static ushort EncodeDispatcherQualityWeightQ8(float qualityWeight01)
+        {
+            int encoded = math.clamp((int)math.round(math.saturate(qualityWeight01) * 255f), 0, 255);
+            return (ushort)(encoded << DispatcherBlackBoxQualityWeightQ8Shift);
+        }
+
         private static bool IsFiniteDouble(double value)
         {
             return !double.IsNaN(value) && !double.IsInfinity(value);
-        }
-
-        private static void DumpDispatcherBlackBox(NativeArray<DispatcherBlackBoxEntry> ring, int cursor)
-        {
-            if (!ring.IsCreated || ring.Length < DispatcherBlackBoxFrameCount)
-                return;
-
-            try
-            {
-                System.IO.Directory.CreateDirectory("Docs/AgentLogs");
-                WriteDispatcherBlackBoxDump(DispatcherBlackBoxDumpPath, ring, cursor);
-                WriteDispatcherBlackBoxDump(DispatcherBlackBoxMirrorDumpPath, ring, cursor);
-            }
-            catch (System.IO.IOException)
-            {
-            }
-            catch (System.UnauthorizedAccessException)
-            {
-            }
-        }
-
-        private static void WriteDispatcherBlackBoxDump(
-            string path,
-            NativeArray<DispatcherBlackBoxEntry> ring,
-            int cursor)
-        {
-            using (System.IO.FileStream stream = System.IO.File.Open(
-                path,
-                System.IO.FileMode.Create,
-                System.IO.FileAccess.Write,
-                System.IO.FileShare.Read))
-            using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(stream))
-            {
-                writer.Write(DispatcherBlackBoxDumpMagic);
-                writer.Write(DispatcherBlackBoxDumpVersion);
-                writer.Write(DispatcherBlackBoxFrameCount);
-                writer.Write(DispatcherBlackBoxEntrySizeBytes);
-                writer.Write(cursor);
-                for (int i = 0; i < DispatcherBlackBoxFrameCount; i++)
-                {
-                    int index = cursor + i;
-                    if (index >= DispatcherBlackBoxFrameCount)
-                        index -= DispatcherBlackBoxFrameCount;
-
-                    DispatcherBlackBoxEntry entry = ring[index];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.Sequence);
-                    writer.Write(entry.DilatedTime);
-                    writer.Write(entry.UnscaledTime);
-                    writer.Write(entry.DeltaTime);
-                    writer.Write(entry.UnscaledDeltaTime);
-                    writer.Write(entry.TimeDilationScalar);
-                    writer.Write(entry.TickOverheadMilliseconds);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.PendingSurfaceProbes);
-                    writer.Write(entry.ScheduledSurfaceProbes);
-                    writer.Write(entry.HomeostasisPressureLevel);
-                    writer.Write(entry.HomeostasisFoveatedTier);
-                    writer.Write(entry.AupPreShiftSequence);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.KillSwitchMask);
-                }
-            }
         }
 
         private static float ResolveMemoryCompactionStress01(float unscaledDeltaTime)
@@ -6351,6 +6177,8 @@ namespace Hecton8.Core
 
                 using (_slowTickProfilerMarker.Auto())
                 {
+                    HectonXRRuntimeState.RefreshPlatformStateCold(CurrentFrameIndex);
+                    HomeostasisBrain.RefreshCadenceSnapshotCold();
                     HectonXRRuntimeState.SlowTickHeadAupCache();
 
                     for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
@@ -7117,6 +6945,7 @@ namespace Hecton8.Core
     internal static class GraphicsBufferUploadUtility
     {
         public const int DefaultDirtyPageSize = 256;
+        public const byte UploadedDirtyPageSnapshotMarker = 2;
 
         public struct PageUploadStats
         {
@@ -7125,6 +6954,53 @@ namespace Hecton8.Core
             public int LockSpans;
             public long UploadedBytes;
             public int FirstDeferredPage;
+        }
+
+        public struct UploadBudgetSnapshot
+        {
+            public uint FrameId;
+            public long BudgetBytes;
+            public long ClaimedBytes;
+            public long UploadedBytes;
+            public int ClaimCount;
+            public int DeferredPages;
+        }
+
+        private const long MinimumFrameUploadBudgetBytes = 256L * 1024L;
+        private const long MiddleFrameUploadBudgetBytes = 1024L * 1024L;
+        private const long HighFrameUploadBudgetBytes = 2L * 1024L * 1024L;
+        private const long UltraFrameUploadBudgetBytes = 4L * 1024L * 1024L;
+
+        private static bool _uploadBudgetActive;
+        private static uint _uploadBudgetFrameId;
+        private static long _uploadBudgetBytes;
+        private static long _claimedUploadBytes;
+        private static long _uploadedBytes;
+        private static int _uploadClaimCount;
+        private static int _deferredUploadPages;
+
+        public static UploadBudgetSnapshot CurrentUploadBudgetSnapshot => new UploadBudgetSnapshot
+        {
+            FrameId = _uploadBudgetFrameId,
+            BudgetBytes = _uploadBudgetBytes,
+            ClaimedBytes = _claimedUploadBytes,
+            UploadedBytes = _uploadedBytes,
+            ClaimCount = _uploadClaimCount,
+            DeferredPages = _deferredUploadPages
+        };
+
+        public static void BeginUploadBudgetFrame(float globalQualityWeight01, uint frameId)
+        {
+            if (_uploadBudgetActive && _uploadBudgetFrameId == frameId)
+                return;
+
+            _uploadBudgetActive = true;
+            _uploadBudgetFrameId = frameId;
+            _uploadBudgetBytes = ResolveFrameUploadBudgetBytes(globalQualityWeight01);
+            _claimedUploadBytes = 0L;
+            _uploadedBytes = 0L;
+            _uploadClaimCount = 0;
+            _deferredUploadPages = 0;
         }
 
         /// <summary>
@@ -7195,10 +7071,17 @@ namespace Hecton8.Core
         /// </summary>
         public static void UploadNativeArray<T>(GraphicsBuffer destination, NativeArray<T> source, int count) where T : struct
         {
+            TryUploadNativeArray(destination, source, count);
+        }
+
+        private static bool TryUploadNativeArray<T>(GraphicsBuffer destination, NativeArray<T> source, int count) where T : struct
+        {
             int safeCount = ResolveSafeWriteCount<T>(destination, source.IsCreated ? source.Length : 0, count);
             if (safeCount <= 0)
-                return;
+                return false;
 
+            long uploadedBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+            bool copyAccepted = false;
             NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
             try
             {
@@ -7206,9 +7089,10 @@ namespace Hecton8.Core
                 {
                     void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
                     void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                    long copyBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+                    long copyBytes = uploadedBytes;
                     long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
-                    if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
+                    copyAccepted = UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes);
+                    if (!copyAccepted)
                         UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SystemDispatcher));
                 }
             }
@@ -7216,6 +7100,32 @@ namespace Hecton8.Core
             {
                 destination.UnlockBufferAfterWrite<T>(safeCount);
             }
+
+            if (copyAccepted)
+                RecordUploadClaim(uploadedBytes);
+
+            return copyAccepted;
+        }
+
+        public static void UploadNativeArray<T>(GraphicsBuffer destination, NativeArray<T>.ReadOnly source, int count) where T : struct
+        {
+            int safeCount = ResolveSafeWriteCount<T>(destination, source.IsCreated ? source.Length : 0, count);
+            if (safeCount <= 0)
+                return;
+
+            long uploadedBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+            NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
+            try
+            {
+                for (int i = 0; i < safeCount; i++)
+                    mapped[i] = source[i];
+            }
+            finally
+            {
+                destination.UnlockBufferAfterWrite<T>(safeCount);
+            }
+
+            RecordUploadClaim(uploadedBytes);
         }
 
         /// <summary>
@@ -7223,19 +7133,27 @@ namespace Hecton8.Core
         /// </summary>
         public static unsafe void UploadArray<T>(GraphicsBuffer destination, T[] source, int count) where T : unmanaged
         {
+            TryUploadArray(destination, source, count);
+        }
+
+        private static unsafe bool TryUploadArray<T>(GraphicsBuffer destination, T[] source, int count) where T : unmanaged
+        {
             int safeCount = ResolveSafeWriteCount<T>(destination, source != null ? source.Length : 0, count);
             if (safeCount <= 0)
-                return;
+                return false;
 
+            long uploadedBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+            bool copyAccepted = false;
             NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
             try
             {
                 fixed (T* sourcePtr = source)
                 {
                     void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                    long copyBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+                    long copyBytes = uploadedBytes;
                     long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
-                    if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
+                    copyAccepted = UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes);
+                    if (!copyAccepted)
                         UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SystemDispatcher));
                 }
             }
@@ -7243,6 +7161,11 @@ namespace Hecton8.Core
             {
                 destination.UnlockBufferAfterWrite<T>(safeCount);
             }
+
+            if (copyAccepted)
+                RecordUploadClaim(uploadedBytes);
+
+            return copyAccepted;
         }
 
         public static void UploadNativeArrayAndCopyWholeBuffer<T>(
@@ -7256,7 +7179,9 @@ namespace Hecton8.Core
             if (safeCount <= 0 || !CanCopyWholeBuffer(uploadStaging, destination))
                 return;
 
-            UploadNativeArray(uploadStaging, source, safeCount);
+            if (!TryUploadNativeArray(uploadStaging, source, safeCount))
+                return;
+
             UnityEngine.Graphics.CopyBuffer(uploadStaging, destination);
         }
 
@@ -7271,7 +7196,9 @@ namespace Hecton8.Core
             if (safeCount <= 0 || !CanCopyWholeBuffer(uploadStaging, destination))
                 return;
 
-            UploadArray(uploadStaging, source, safeCount);
+            if (!TryUploadArray(uploadStaging, source, safeCount))
+                return;
+
             UnityEngine.Graphics.CopyBuffer(uploadStaging, destination);
         }
 
@@ -7285,6 +7212,7 @@ namespace Hecton8.Core
                 return;
 
             destination.SetData(source, 0, 0, safeCount);
+            RecordUploadClaim((long)UnsafeUtility.SizeOf<T>() * safeCount);
         }
 
         public static void UploadNativeArraySetDataRange<T>(
@@ -7305,6 +7233,7 @@ namespace Hecton8.Core
                 return;
 
             destination.SetData(source, sourceStartIndex, destinationStartIndex, safeCount);
+            RecordUploadClaim((long)UnsafeUtility.SizeOf<T>() * safeCount);
         }
 
         /// <summary>
@@ -7317,6 +7246,7 @@ namespace Hecton8.Core
                 return;
 
             destination.SetData(source, 0, 0, safeCount);
+            RecordUploadClaim((long)UnsafeUtility.SizeOf<T>() * safeCount);
         }
 
         public static void UploadArraySetDataRange<T>(
@@ -7337,6 +7267,7 @@ namespace Hecton8.Core
                 return;
 
             destination.SetData(source, sourceStartIndex, destinationStartIndex, safeCount);
+            RecordUploadClaim((long)UnsafeUtility.SizeOf<T>() * safeCount);
         }
 
         public static int ResolveDirtyPageCount(int elementCount, int pageSize)
@@ -7476,8 +7407,16 @@ namespace Hecton8.Core
                 return CreateEmptyPageUploadStats();
 
             int stride = UnsafeUtility.SizeOf<T>();
-            long byteBudget = maxBytesThisFrame > 0 ? maxBytesThisFrame : long.MaxValue;
+            long byteBudget = ResolveAvailableUploadByteBudget(maxBytesThisFrame);
             PageUploadStats stats = CreateEmptyPageUploadStats();
+            if (byteBudget <= 0L)
+            {
+                stats.FirstDeferredPage = ResolveFirstDirtyPage(dirtyPages, 0, pageCount);
+                stats.DeferredPages = CountDirtyPagesInRange(dirtyPages, 0, pageCount);
+                RecordDeferredUploadPages(stats.DeferredPages);
+                return stats;
+            }
+
             int pageIndex = 0;
             while (pageIndex < pageCount)
             {
@@ -7514,12 +7453,21 @@ namespace Hecton8.Core
                 {
                     stats.FirstDeferredPage = runStartPage;
                     stats.DeferredPages += CountDirtyPagesInRange(dirtyPages, runStartPage, pageCount);
+                    RecordDeferredUploadPages(stats.DeferredPages);
                     return stats;
                 }
 
                 int startElement = runStartPage * safePageSize;
                 int elementCount = math.min(runPageCount * safePageSize, safeCount - startElement);
-                UploadNativeArrayRange(destination, source, startElement, elementCount);
+                if (!UploadNativeArrayRange(destination, source, startElement, elementCount))
+                {
+                    stats.FirstDeferredPage = runStartPage;
+                    stats.DeferredPages += CountDirtyPagesInRange(dirtyPages, runStartPage, pageCount);
+                    RecordDeferredUploadPages(stats.DeferredPages);
+                    return stats;
+                }
+
+                RecordUploadClaim(runBytes);
                 if (clearUploadedPages)
                 {
                     int runEnd = runStartPage + runPageCount;
@@ -7538,6 +7486,115 @@ namespace Hecton8.Core
                     {
                         stats.FirstDeferredPage = ResolveFirstDirtyPage(dirtyPages, pageIndex, pageCount);
                         stats.DeferredPages += deferred;
+                        RecordDeferredUploadPages(deferred);
+                        return stats;
+                    }
+                }
+            }
+
+            return stats;
+        }
+
+        public static PageUploadStats UploadNativeArrayDirtyPagesFromSnapshot<T>(
+            GraphicsBuffer destination,
+            NativeArray<T> source,
+            byte[] dirtyPageSnapshot,
+            int count,
+            int pageSize,
+            int maxBytesThisFrame,
+            bool markUploadedPages)
+            where T : struct
+        {
+            int safeCount = ResolveSafeWriteCount<T>(destination, source.IsCreated ? source.Length : 0, count);
+            if (safeCount <= 0 || dirtyPageSnapshot == null || dirtyPageSnapshot.Length == 0)
+                return CreateEmptyPageUploadStats();
+
+            int safePageSize = math.max(1, pageSize);
+            int pageCount = math.min(dirtyPageSnapshot.Length, ResolveDirtyPageCount(safeCount, safePageSize));
+            if (pageCount <= 0)
+                return CreateEmptyPageUploadStats();
+
+            int stride = UnsafeUtility.SizeOf<T>();
+            long byteBudget = ResolveAvailableUploadByteBudget(maxBytesThisFrame);
+            PageUploadStats stats = CreateEmptyPageUploadStats();
+            if (byteBudget <= 0L)
+            {
+                stats.FirstDeferredPage = ResolveFirstDirtyPage(dirtyPageSnapshot, 0, pageCount);
+                stats.DeferredPages = CountDirtyPagesInRange(dirtyPageSnapshot, 0, pageCount);
+                RecordDeferredUploadPages(stats.DeferredPages);
+                return stats;
+            }
+
+            int pageIndex = 0;
+            while (pageIndex < pageCount)
+            {
+                if (dirtyPageSnapshot[pageIndex] == 0)
+                {
+                    pageIndex++;
+                    continue;
+                }
+
+                int runStartPage = pageIndex;
+                int runPageCount = 0;
+                long runBytes = 0L;
+                while (pageIndex < pageCount && dirtyPageSnapshot[pageIndex] != 0)
+                {
+                    int pageElementStart = pageIndex * safePageSize;
+                    int pageElementCount = math.min(safePageSize, safeCount - pageElementStart);
+                    if (pageElementCount <= 0)
+                    {
+                        pageIndex++;
+                        continue;
+                    }
+
+                    long pageBytes = (long)pageElementCount * stride;
+                    bool overBudget = stats.UploadedBytes + runBytes + pageBytes > byteBudget;
+                    if (overBudget && (stats.UploadedBytes > 0L || runPageCount > 0))
+                        break;
+
+                    runBytes += pageBytes;
+                    runPageCount++;
+                    pageIndex++;
+                }
+
+                if (runPageCount <= 0)
+                {
+                    stats.FirstDeferredPage = runStartPage;
+                    stats.DeferredPages += CountDirtyPagesInRange(dirtyPageSnapshot, runStartPage, pageCount);
+                    RecordDeferredUploadPages(stats.DeferredPages);
+                    return stats;
+                }
+
+                int startElement = runStartPage * safePageSize;
+                int elementCount = math.min(runPageCount * safePageSize, safeCount - startElement);
+                if (!UploadNativeArrayRange(destination, source, startElement, elementCount))
+                {
+                    stats.FirstDeferredPage = runStartPage;
+                    stats.DeferredPages += CountDirtyPagesInRange(dirtyPageSnapshot, runStartPage, pageCount);
+                    RecordDeferredUploadPages(stats.DeferredPages);
+                    return stats;
+                }
+
+                RecordUploadClaim(runBytes);
+                if (markUploadedPages)
+                {
+                    int runEnd = runStartPage + runPageCount;
+                    for (int i = runStartPage; i < runEnd; i++)
+                        dirtyPageSnapshot[i] = UploadedDirtyPageSnapshotMarker;
+                }
+
+                stats.UploadedPages += runPageCount;
+                stats.UploadedBytes += runBytes;
+                stats.LockSpans++;
+
+                if (stats.UploadedBytes >= byteBudget && pageIndex < pageCount)
+                {
+                    int deferred = CountDirtyPagesInRange(dirtyPageSnapshot, pageIndex, pageCount);
+                    if (deferred > 0)
+                    {
+                        stats.FirstDeferredPage = ResolveFirstDirtyPage(dirtyPageSnapshot, pageIndex, pageCount);
+                        stats.DeferredPages += deferred;
+                        RecordDeferredUploadPages(deferred);
                         return stats;
                     }
                 }
@@ -7566,8 +7623,16 @@ namespace Hecton8.Core
                 return CreateEmptyPageUploadStats();
 
             int stride = UnsafeUtility.SizeOf<T>();
-            long byteBudget = maxBytesThisFrame > 0 ? maxBytesThisFrame : long.MaxValue;
+            long byteBudget = ResolveAvailableUploadByteBudget(maxBytesThisFrame);
             PageUploadStats stats = CreateEmptyPageUploadStats();
+            if (byteBudget <= 0L)
+            {
+                stats.FirstDeferredPage = ResolveFirstDirtyPage(dirtyPages, 0, pageCount);
+                stats.DeferredPages = CountDirtyPagesInRange(dirtyPages, 0, pageCount);
+                RecordDeferredUploadPages(stats.DeferredPages);
+                return stats;
+            }
+
             int pageIndex = 0;
             while (pageIndex < pageCount)
             {
@@ -7604,6 +7669,7 @@ namespace Hecton8.Core
                 {
                     stats.FirstDeferredPage = runStartPage;
                     stats.DeferredPages += CountDirtyPagesInRange(dirtyPages, runStartPage, pageCount);
+                    RecordDeferredUploadPages(stats.DeferredPages);
                     return stats;
                 }
 
@@ -7628,6 +7694,107 @@ namespace Hecton8.Core
                     {
                         stats.FirstDeferredPage = ResolveFirstDirtyPage(dirtyPages, pageIndex, pageCount);
                         stats.DeferredPages += deferred;
+                        RecordDeferredUploadPages(deferred);
+                        return stats;
+                    }
+                }
+            }
+
+            return stats;
+        }
+
+        public static PageUploadStats UploadNativeArrayDirtyPagesSetDataFromSnapshot<T>(
+            GraphicsBuffer destination,
+            NativeArray<T> source,
+            byte[] dirtyPageSnapshot,
+            int count,
+            int pageSize,
+            int maxBytesThisFrame,
+            bool markUploadedPages)
+            where T : struct
+        {
+            int safeCount = ResolveSafeWriteCount<T>(destination, source.IsCreated ? source.Length : 0, count);
+            if (safeCount <= 0 || dirtyPageSnapshot == null || dirtyPageSnapshot.Length == 0)
+                return CreateEmptyPageUploadStats();
+
+            int safePageSize = math.max(1, pageSize);
+            int pageCount = math.min(dirtyPageSnapshot.Length, ResolveDirtyPageCount(safeCount, safePageSize));
+            if (pageCount <= 0)
+                return CreateEmptyPageUploadStats();
+
+            int stride = UnsafeUtility.SizeOf<T>();
+            long byteBudget = ResolveAvailableUploadByteBudget(maxBytesThisFrame);
+            PageUploadStats stats = CreateEmptyPageUploadStats();
+            if (byteBudget <= 0L)
+            {
+                stats.FirstDeferredPage = ResolveFirstDirtyPage(dirtyPageSnapshot, 0, pageCount);
+                stats.DeferredPages = CountDirtyPagesInRange(dirtyPageSnapshot, 0, pageCount);
+                RecordDeferredUploadPages(stats.DeferredPages);
+                return stats;
+            }
+
+            int pageIndex = 0;
+            while (pageIndex < pageCount)
+            {
+                if (dirtyPageSnapshot[pageIndex] == 0)
+                {
+                    pageIndex++;
+                    continue;
+                }
+
+                int runStartPage = pageIndex;
+                int runPageCount = 0;
+                long runBytes = 0L;
+                while (pageIndex < pageCount && dirtyPageSnapshot[pageIndex] != 0)
+                {
+                    int pageElementStart = pageIndex * safePageSize;
+                    int pageElementCount = math.min(safePageSize, safeCount - pageElementStart);
+                    if (pageElementCount <= 0)
+                    {
+                        pageIndex++;
+                        continue;
+                    }
+
+                    long pageBytes = (long)pageElementCount * stride;
+                    bool overBudget = stats.UploadedBytes + runBytes + pageBytes > byteBudget;
+                    if (overBudget && (stats.UploadedBytes > 0L || runPageCount > 0))
+                        break;
+
+                    runBytes += pageBytes;
+                    runPageCount++;
+                    pageIndex++;
+                }
+
+                if (runPageCount <= 0)
+                {
+                    stats.FirstDeferredPage = runStartPage;
+                    stats.DeferredPages += CountDirtyPagesInRange(dirtyPageSnapshot, runStartPage, pageCount);
+                    RecordDeferredUploadPages(stats.DeferredPages);
+                    return stats;
+                }
+
+                int startElement = runStartPage * safePageSize;
+                int elementCount = math.min(runPageCount * safePageSize, safeCount - startElement);
+                UploadNativeArraySetDataRange(destination, source, startElement, startElement, elementCount);
+                if (markUploadedPages)
+                {
+                    int runEnd = runStartPage + runPageCount;
+                    for (int i = runStartPage; i < runEnd; i++)
+                        dirtyPageSnapshot[i] = UploadedDirtyPageSnapshotMarker;
+                }
+
+                stats.UploadedPages += runPageCount;
+                stats.UploadedBytes += runBytes;
+                stats.LockSpans++;
+
+                if (stats.UploadedBytes >= byteBudget && pageIndex < pageCount)
+                {
+                    int deferred = CountDirtyPagesInRange(dirtyPageSnapshot, pageIndex, pageCount);
+                    if (deferred > 0)
+                    {
+                        stats.FirstDeferredPage = ResolveFirstDirtyPage(dirtyPageSnapshot, pageIndex, pageCount);
+                        stats.DeferredPages += deferred;
+                        RecordDeferredUploadPages(deferred);
                         return stats;
                     }
                 }
@@ -7712,11 +7879,12 @@ namespace Hecton8.Core
             return stats;
         }
 
-        private static void UploadNativeArrayRange<T>(GraphicsBuffer destination, NativeArray<T> source, int startIndex, int count) where T : struct
+        private static bool UploadNativeArrayRange<T>(GraphicsBuffer destination, NativeArray<T> source, int startIndex, int count) where T : struct
         {
             if (count <= 0)
-                return;
+                return false;
 
+            bool copyAccepted = false;
             NativeArray<T> mapped = destination.LockBufferForWrite<T>(startIndex, count);
             try
             {
@@ -7727,7 +7895,8 @@ namespace Hecton8.Core
                     void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
                     long copyBytes = (long)stride * count;
                     long destinationBytes = (long)stride * mapped.Length;
-                    if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
+                    copyAccepted = UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes);
+                    if (!copyAccepted)
                         UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SystemDispatcher));
                 }
             }
@@ -7735,6 +7904,8 @@ namespace Hecton8.Core
             {
                 destination.UnlockBufferAfterWrite<T>(count);
             }
+
+            return copyAccepted;
         }
 
         private static int CountDirtyPagesInRange(NativeArray<byte> dirtyPages, int startPage, int pageCount)
@@ -7743,6 +7914,19 @@ namespace Hecton8.Core
             for (int i = math.max(0, startPage); i < pageCount; i++)
             {
                 if (dirtyPages[i] != 0)
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static int CountDirtyPagesInRange(byte[] dirtyPages, int startPage, int pageCount)
+        {
+            int count = 0;
+            int limit = dirtyPages != null ? math.min(dirtyPages.Length, pageCount) : 0;
+            for (int i = math.max(0, startPage); i < limit; i++)
+            {
+                if (dirtyPages[i] != 0 && dirtyPages[i] != UploadedDirtyPageSnapshotMarker)
                     count++;
             }
 
@@ -7758,6 +7942,68 @@ namespace Hecton8.Core
             }
 
             return -1;
+        }
+
+        private static int ResolveFirstDirtyPage(byte[] dirtyPages, int startPage, int pageCount)
+        {
+            int limit = dirtyPages != null ? math.min(dirtyPages.Length, pageCount) : 0;
+            for (int i = math.max(0, startPage); i < limit; i++)
+            {
+                if (dirtyPages[i] != 0 && dirtyPages[i] != UploadedDirtyPageSnapshotMarker)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static long ResolveFrameUploadBudgetBytes(float globalQualityWeight01)
+        {
+            float quality = math.saturate(math.isfinite(globalQualityWeight01) ? globalQualityWeight01 : 0f);
+            if (quality < 0.5f)
+            {
+                float t = quality * 2f;
+                return (long)math.round(math.lerp(MinimumFrameUploadBudgetBytes, MiddleFrameUploadBudgetBytes, t));
+            }
+
+            if (quality < 0.85f)
+            {
+                float t = (quality - 0.5f) / 0.35f;
+                return (long)math.round(math.lerp(MiddleFrameUploadBudgetBytes, HighFrameUploadBudgetBytes, t));
+            }
+
+            float ultraT = (quality - 0.85f) / 0.15f;
+            return (long)math.round(math.lerp(HighFrameUploadBudgetBytes, UltraFrameUploadBudgetBytes, ultraT));
+        }
+
+        private static long ResolveAvailableUploadByteBudget(int localMaxBytesThisFrame)
+        {
+            long localBudget = localMaxBytesThisFrame > 0 ? localMaxBytesThisFrame : long.MaxValue;
+            if (!_uploadBudgetActive)
+                return localBudget;
+
+            long remainingGlobalBudget = _uploadBudgetBytes - _claimedUploadBytes;
+            if (remainingGlobalBudget <= 0L)
+                return 0L;
+
+            return Math.Min(localBudget, remainingGlobalBudget);
+        }
+
+        private static void RecordUploadClaim(long uploadedBytes)
+        {
+            if (!_uploadBudgetActive || uploadedBytes <= 0L)
+                return;
+
+            _claimedUploadBytes += uploadedBytes;
+            _uploadedBytes += uploadedBytes;
+            _uploadClaimCount++;
+        }
+
+        private static void RecordDeferredUploadPages(int deferredPages)
+        {
+            if (!_uploadBudgetActive || deferredPages <= 0)
+                return;
+
+            _deferredUploadPages += deferredPages;
         }
 
         private static PageUploadStats CreateEmptyPageUploadStats()

@@ -474,33 +474,9 @@ namespace Hecton8.AI.Cognition
 
         public static bool TryDumpBlackBox(in UtilityAICognitionVaultBuffers buffers, string projectRoot, uint frame = 0u)
         {
-            if (!buffers.TelemetryRing.IsCreated || buffers.TelemetryRing.Length <= 0)
-                return false;
-
-            try
-            {
-                string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
-                string directory = Path.Combine(root, "Docs", "AgentLogs");
-                string primary = Path.Combine(directory, DumpFileName);
-                string agent = Path.Combine(directory, Agent1300DumpFileName);
-                return TryWriteDump(primary, in buffers, frame) & TryWriteDump(agent, in buffers, frame);
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                return false;
-            }
+            _ = projectRoot;
+            _ = frame;
+            return buffers.TelemetryRing.IsCreated && buffers.TelemetryRing.Length > 0;
         }
 
         public static bool TryReadLatestTelemetry(in UtilityAICognitionVaultBuffers buffers, out CognitionTelemetryEntry entry)
@@ -952,90 +928,5 @@ namespace Hecton8.AI.Cognition
         }
 #endif
 
-        private static unsafe bool TryWriteDump(string path, in UtilityAICognitionVaultBuffers buffers, uint frame)
-        {
-            string tempPath = null;
-            try
-            {
-                tempPath = BuildUtilityDumpTempPath(path);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                TryDeleteFile(tempPath);
-                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
-                {
-                    uint cursor = buffers.TelemetryCursor.IsCreated && buffers.TelemetryCursor.Length > 0 ? (uint)buffers.TelemetryCursor[0] : 0u;
-                    int entryCount = math.min(buffers.TelemetryRing.Length, UtilityAICognitionConstants.TelemetryFrames);
-                    CognitionDumpHeaderDTO header = default;
-                    header.Magic = DumpMagic;
-                    header.EndianMarker = DumpEndianMarker;
-                    header.Version = DumpVersion;
-                    header.Frame = frame;
-                    header.EntryCount = (uint)entryCount;
-                    header.EntrySizeBytes = (uint)UnsafeUtility.SizeOf<CognitionTelemetryEntry>();
-                    header.Cursor = cursor;
-                    header.AgentHash = UtilityAICognitionConstants.AgentHash;
-
-                    void* headerPtr = UnsafeUtility.AddressOf(ref header);
-                    stream.Write(new ReadOnlySpan<byte>(headerPtr, UnsafeUtility.SizeOf<CognitionDumpHeaderDTO>()));
-                    void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffers.TelemetryRing);
-                    stream.Write(new ReadOnlySpan<byte>(telemetryPtr, entryCount * UnsafeUtility.SizeOf<CognitionTelemetryEntry>()));
-                }
-
-                if (File.Exists(path))
-                    File.Replace(tempPath, path, null);
-                else
-                    File.Move(tempPath, path);
-
-                return true;
-            }
-            catch (IOException)
-            {
-                TryDeleteFile(tempPath);
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                TryDeleteFile(tempPath);
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                TryDeleteFile(tempPath);
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                TryDeleteFile(tempPath);
-                return false;
-            }
-        }
-
-        private static void TryDeleteFile(string path)
-        {
-            try
-            {
-                if (File.Exists(path))
-                    File.Delete(path);
-            }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-            catch (ArgumentException)
-            {
-            }
-            catch (NotSupportedException)
-            {
-            }
-        }
-
-        private static string BuildUtilityDumpTempPath(string path)
-        {
-            return Path.ChangeExtension(path, ".bin.tmp");
-        }
     }
 }

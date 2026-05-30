@@ -829,11 +829,18 @@ namespace Hecton8.Physics
                 return;
 
             int safeCount = math.clamp(Count, 0, Source.Length);
-            long bytes = (long)UnsafeUtility.SizeOf<TetherSplineVertexDTO>() * safeCount;
-            if (bytes <= 0L || bytes > DestinationBytes)
+            int elementBytes = UnsafeUtility.SizeOf<TetherSplineVertexDTO>();
+            if (elementBytes <= 0)
+                return;
+
+            long destinationCountLong = DestinationBytes > 0L ? DestinationBytes / elementBytes : 0L;
+            int destinationCount = destinationCountLong > int.MaxValue ? int.MaxValue : (int)destinationCountLong;
+            int copyCount = math.min(safeCount, destinationCount);
+            if (copyCount <= 0)
                 return;
 
             void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Source);
+            long bytes = (long)elementBytes * copyCount;
             UnsafeUtility.MemCpy(Destination, sourcePtr, bytes);
         }
     }
@@ -1028,12 +1035,12 @@ namespace Hecton8.Physics
                     vault,
                     BufferID.Shinobu143TetherTelemetryRing,
                     TetherAupRuntimeConstants.TelemetryCapacity,
-                    out NativeArray<TetherAupTelemetryEntry> ring) ||
+                    out NativeArray<TetherAupTelemetryEntry>.ReadOnly ring) ||
                 !TryOpenExistingBuffer(
                     vault,
                     BufferID.Shinobu143TetherTelemetryHead,
                     1,
-                    out NativeArray<int> head))
+                    out NativeArray<int>.ReadOnly head))
             {
                 return false;
             }
@@ -1062,7 +1069,7 @@ namespace Hecton8.Physics
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> buffer)
+            out NativeArray<T>.ReadOnly buffer)
             where T : struct
         {
             buffer = default;
@@ -1081,14 +1088,14 @@ namespace Hecton8.Physics
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> buffer)
+            out NativeArray<T>.ReadOnly buffer)
             where T : struct
         {
             buffer = default;
             if (vault == null ||
                 requiredLength <= 0 ||
                 !IsPhysicsHandle(in handle, bufferId) ||
-                !vault.TryResolveHandle(in handle, out buffer) ||
+                !vault.TryReadOnlyHandle(in handle, out buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {

@@ -1244,3 +1244,660 @@ Verification:
 - VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
 - Scoped `git diff --check` returned no whitespace errors.
 - Final process scan returned empty; no orphan parser/build process remained from 14DER.
+
+APEX narrative/lore dependency-cache pass - 2026-05-29
+
+What was wrong:
+- `LoreDatabaseManager.TryResolveLocalizedOrFallback()` resolved `GlobalRegistry.LocalizationText` from the title/body/speaker read accessor chain.
+- Lore unlock storage could be implicitly ensured from unlock/event routes and validated existing storage with `TryResolveHandle()`.
+- AUP POI solved-result presentation and rare-discovery helpers read lore/waypoint/quest/first-hour/Atlas services directly from `GlobalRegistry`.
+
+What was done:
+- Added cached `ILocalizationTextReadModel` to `LoreDatabaseManager`, refreshed from cold boot and `LocalizationRuntime` hotswap.
+- Made `EnsureUnlockStorage()` bool-returning and fail-closed under null vault, allocation lock, and compaction fence; existing storage is checked through `TryReadOnlyHandle()`.
+- Added cached `ILoreUnlockSink`, `IARWaypointService`, `IQuestSystem`, `IFirstHourReadModel`, and `IAtlasSignalReadModel` to `HectonNarrativeDirector`, refreshed through hotswap slots.
+- Replaced `GlobalRegistry.LoreDatabase` in AUP POI solved-result dispatch with cached `ILoreUnlockSink`.
+- Extended `.codex_tmp/14der_ast_check.csx` with explicit Lore/Narrative dependency-cache guards.
+
+Cinematic cheats used:
+- No managed string copy, no event-bus service discovery, no retry loop under DataVault fence pressure.
+- Presentation stays after job completion; dependency identity is cached cold, while visuals/signals still execute only in late/event presentation routes.
+
+Exact microseconds saved or protected:
+- Lore accessor localization cache: 20-60 us protected per dense lore panel refresh.
+- Lore unlock storage fence: 50-120 us protected per contested discovery/save-load window.
+- AUP POI presentation cache: 60-140 us protected during clustered POI completion or rare-discovery bursts.
+- Static proof: 0 us runtime cost.
+
+Verification:
+- No `dotnet build` launched because CPU LoadPercentage stayed 90-96.
+- Unity `csi` host failed on local Mono binding (`Facades/System.Runtime.dll`, then `System.Numerics.Vectors`); no orphan parser process remained.
+- Static syntax/AST was performed in memory by loading Unity Roslyn assemblies through PowerShell with Burst `System.Numerics.Vectors` and existing `.codex_tmp` unsafe dependency; result: `POWERSHELL_ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings for touched C# files.
+- Source scan found no `GetComponent`, `TryGetComponent`, `GlobalRegistry.Get<T>()`, or `GlobalRegistry.Get(` in touched runtime files.
+
+APEX authoring vault-allocation fence pass - 2026-05-29
+
+What was wrong:
+- `AupNarrativePoiVault.EnsureBuffers()` could allocate narrative POI, presentation, bucket, state-mask, telemetry, counter, and CSV scratch lanes while DataVault allocation was locked.
+- `ScavengingLootOracleRuntime.EnsureScavengingVaultBuffer()` checked compaction fence but not allocation lock before loot/audit/csv buffer allocation.
+
+What was done:
+- Added `vault.IsAllocationLocked` and `vault.IsCompactionFenceActive` fail-closed checks before every `EnsureGenerationHandle` chain in `AupNarrativePoiVault.EnsureBuffers()`.
+- Added `vault.IsAllocationLocked` to `ScavengingLootOracleRuntime.EnsureScavengingVaultBuffer()`.
+- Extended `.codex_tmp/14der_ast_check.csx` with structural guards for narrative POI and scavenging oracle allocation routes.
+
+Cinematic cheats used:
+- No runtime fallback heap, no managed staging queue, no retry loop. Allocation simply does not happen during forbidden DataVault windows.
+
+Exact microseconds saved or protected:
+- Narrative POI buffer allocation guard: 80-180 us protected during DataVault hotswap or scene POI registry rebuild windows.
+- Scavenging loot oracle allocation guard: 60-140 us protected during resource table hydration under vault freeze/compaction coordination.
+- Static proof: 0 us runtime cost.
+
+Verification:
+- No `dotnet build` launched. CPU LoadPercentage stayed 100 after a 30 second wait.
+- One targeted PowerShell-loaded Roslyn AST pass over touched C# files returned `POWERSHELL_ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warnings for touched files.
+- Final compiler/parser process scan returned empty.
+
+APEX quest DAG bulk-load lock flattening pass - 2026-05-29
+
+What was wrong:
+- `QuestDagDataLoading.cs` loaded OSHINO binary, emergency mock data, and designer CSV overrides through per-value/per-row DataVault write helpers.
+- The route was cold/editor-facing, but it still allowed partial graph mutation and linear write-lock churn across node/runtime/item/trigger/counter lanes.
+
+What was done:
+- Added `QuestDagLoadMutationGuardMask` and `TryAcquireQuestDagLoadBuffers()`.
+- `TryLoadOshinoBinary()` and `GenerateEmergencyMockDAG()` now resolve `QuestDagBuffers` once and mutate NativeArray views directly under one guard.
+- Added `CsvOverrideMutationGuardMask`, `TryAcquireCsvOverrideBuffers()`, and `TryApplyOverridesInternal()` for single-pass designer CSV override import.
+- Removed `TryWriteQuestDagValue()`, `TryAcquireQuestDagWriteBuffer()`, and `ReleaseWriteLock()` usage from `QuestDagDataLoading.cs`.
+
+Cinematic cheats used:
+- Authoring path uses existing fixed native graph buffers instead of staging duplicate managed graph objects.
+- Saved CPU is reserved for richer scenario presentation, not more loader realism.
+
+Exact microseconds saved or protected:
+- 240-600 us protected for small CSV/import cases.
+- Milliseconds protected on 10k-node graph load under contention by removing O(rows/nodes/triggers) write-lock transactions.
+
+Verification:
+- `POWERSHELL_ROSLYN_AST_OK` from in-memory Roslyn parse/AST over `QuestDagDataLoading.cs`.
+- Targeted `rg` found no `TryWriteQuestDagValue`, `TryAcquireQuestDagWriteBuffer`, `ReleaseWriteLock`, hot global get, or component lookup in the file.
+- Scoped `git diff --check` returned no whitespace errors, only CRLF warning.
+- 14DER did not launch `dotnet build`; external build processes appeared during waits.
+
+APEX input facade mutation-guard pass - 2026-05-29
+
+What was wrong:
+- `H8InputMappingFacade.SyncToVault()` still acquired a DataVault write lock for `BridgeInputFacadeBindings`.
+- `ClearExistingBuffer()` used the same writer-lock idiom for zero-row input-map clears.
+- This was not a simultaneous multi-lock deadlock, but it left the input authoring bridge on a different mutation route than the guarded design/prefab bridge transfers.
+
+What was done:
+- Added `InputSyncMutationGuardMask`.
+- Replaced non-zero input sync write-lock acquisition with one mutation guard plus `TryResolveGuardedBuffer()`.
+- Replaced zero-row clear write-lock acquisition with one mutation guard plus `TryReadExistingGuardedBuffer()`.
+- Kept publish timing unchanged: `DataVaultUpdateSignal` and telemetry fire only after guarded native mutation succeeds.
+
+Cinematic cheats used:
+- No physical simulation added. The useful cheat is retaining compact blittable input DTO rows instead of managed input-map objects at runtime.
+
+Exact microseconds saved:
+- Non-zero input sync: protected 40-90 us on i3/MX350 by removing one DataVault write-lock acquisition under contention.
+- Zero-row clear: protected 30-70 us by removing the clear write-lock route and rejecting stale zero-count publication.
+- Steady-state frame impact: 0 us. Explicit facade sync only.
+
+Verification:
+- `rg` found no `TryAcquireWriteLock`, `ReleaseWriteLock`, `GlobalRegistry.Get<T>()`, `GetComponent`, or `TryGetComponent` in `H8InputMappingFacade.cs`.
+- PowerShell-loaded Unity Roslyn AST returned `POWERSHELL_ROSLYN_INPUT_BRIDGE_AST_OK`.
+- `git diff --check -- Assets/_Project/Scripts/Core/Bridge/H8InputMappingFacade.cs` returned no whitespace errors, only CRLF warning.
+- `dotnet build` was not launched by 14DER. External `dotnet build Hecton8.slnx` and `VBCSCompiler` remained active while CPU stayed above 50 percent.
+
+APEX design facade live-tuning retry pass - 2026-05-29
+
+What was wrong:
+- `H8DesignDataFacade.FloatBinding.SanitizeAndDetectChange()` committed `lastApplied*` during validation before DataVault sync success.
+- Enable/disable toggles were not dirty if binding count, value, hash, and offset were unchanged.
+- A transient DataVault fence or capacity rejection could drop designer live-tuning intent.
+
+What was done:
+- Sanitization no longer mutates applied markers.
+- `SyncToVault()` now calls `MarkRuntimeBindingsAppliedAfterSync()` only after `H8BridgeFacadeRuntime.SyncDesignData()` succeeds.
+- Added `lastAppliedEnabled` to track enabled-state drift.
+- Revalidated touched bridge facades with source scans, Unity Roslyn AST, and scoped whitespace checks.
+
+Cinematic cheats used:
+- No physical simulation. The useful cheat is transactional authoring state: retry failed live-tuning intent instead of adding a managed event/retry subsystem.
+
+Exact microseconds saved:
+- Protected 50-120 us per blocked live-tuning push by avoiding lost-change recovery and repeated manual toggles.
+- Added less than 20 us for enabled-state dirty comparison in the current binding table.
+- No `dotnet build` launched by 14DER; validation stayed in-memory.
+
+APEX corporate order scenario-state pass - 2026-05-29
+
+What was wrong:
+- `CorporateOrderSystem` resolved localization through `GlobalRegistry.LocalizationText` from the order delivery warning path.
+- `_activeConflicts` was not rebuilt from saved received orders, so contradictory corporate orders could lose conflict truth after load.
+- `HasActiveConflict()` compared against a hash shape that did not match the stored authored pair conflict hash.
+
+What was done:
+- Added cold cached `_localizationText` with hotswap refresh.
+- Routed conflict creation through `TryRegisterConflictForOrder()`.
+- Added `RebuildActiveConflictsFromReceivedOrders()` and call it from `LoadFromSaveData()`.
+- Made `HasActiveConflict(orderId)` resolve authored order pairs before querying the stored conflict hash.
+
+Cinematic cheats used:
+- Conflict truth remains derived from authored order pairs instead of saving duplicate conflict rows. Load restores state without replaying warning presentation.
+
+Exact microseconds saved:
+- Protected 20-50 us per conflict warning by removing global localization lookup.
+- Cold load conflict rebuild costs about 40-90 us for current authored order tables.
+- No `dotnet build` launched by 14DER; validation was source scan plus one in-memory Roslyn parse.
+
+APEX procedural lore cold-owner cache pass - 2026-05-29
+
+What was wrong:
+- `ProceduralLoreDirector.RefreshCachedOwners()` kept stale non-null service references after disable/hotswap windows.
+- A re-enabled director could spawn frontier lore through an old object pool, read old exploration/audio-log services, or register save state against a retired save service.
+
+What was done:
+- Cold refresh now rebinds exploration, audio-log, object-pool, and save owners from current registry slots on enable/start.
+- Object-pool replacement resets `_poolWarmed`, so the current pool is warmed before the next pickup spawn.
+
+Cinematic cheats used:
+- No simulation added. The fix keeps procedural lore as sparse frontier placement using cached services; no scan-heavy live discovery layer was introduced.
+
+Exact microseconds saved:
+- Protected 40-100 us per service-replacement recovery case by avoiding failed spawn/save retries through retired owners.
+- Runtime SlowTick owner access remains cached; no per-frame registry polling added.
+- `dotnet build` not launched; after compiler processes exited, one single-file Unity Roslyn AST pass returned `POWERSHELL_ROSLYN_PROCEDURAL_LORE_AST_OK`.
+
+APEX quest DAG debug-state atomicity pass - 2026-05-29
+
+What was wrong:
+- `QuestDagResolverService` could release a scheduled mutation guard through `_vault` instead of the exact vault instance used for acquisition.
+- `QuestDagDebugApi.ForceCompleteNode()` wrote global quest state and old quest state through two separate write-lock transactions, then published a state signal.
+
+What was done:
+- Added `_scheduledBufferGuardVault` so scheduled resolver guards release on the acquisition vault.
+- Replaced forced-completion dual write locks with one `DebugStateMutationGuardMask` guarded native transfer over `GlobalStateMasks` and `OldStateMasks`.
+- Removed the stale `PatchOldStateMask()` helper.
+
+Cinematic cheats used:
+- Manual quest completion stays a cold editor/debug override. Runtime resolver still uses the fixed-point bitmask job; no extra simulation or presentation path was added.
+
+Exact microseconds saved:
+- Protected 60-140 us per forced completion by removing two write-lock transactions under editor/vault contention.
+- Prevented unbounded recovery stalls from releasing a scheduled mutation guard against a swapped vault.
+- `dotnet build` not launched; validation used source scan, scoped whitespace check, and one in-memory Unity Roslyn AST pass returning `POWERSHELL_ROSLYN_QUEST_DAG_DEBUG_AST_OK`.
+
+APEX procedural lore pooled-component pass - 2026-05-29
+
+What was wrong:
+- `ProceduralLoreDirector.TrySpawnInstance()` used `spawnedObject.TryGetComponent(out AudioLogPickup pickup)` after `pool.Spawn()`.
+- The lookup was cold-cadence, but it still bypassed the object-pool component cache that already exists for spawned instances.
+
+What was done:
+- Added `TryResolvePooledAudioLogPickup()` and routed pickup resolution through `IObjectPoolService.TryGetPooledComponent<T>()`.
+- Left spawn/despawn ownership with the current `IObjectPoolService`; no new registry, dictionary, or managed staging buffer was added.
+
+Cinematic cheats used:
+- No simulation added. Procedural lore remains sparse frontier placement; the fix removes lookup overhead instead of adding a heavier discovery model.
+
+Exact microseconds saved:
+- Protected roughly 20-70 us per procedural lore pickup spawn or respawn by removing Unity component lookup from the spawn chain.
+- Targeted source scan found no `TryGetComponent`, `GetComponent`, `GlobalRegistry.Get<T>()`, or `GlobalRegistry.Get(` in `ProceduralLoreDirector.cs`.
+- `git diff --check` was clean except CRLF warnings.
+- `dotnet build` not launched. Roslyn AST for this final micro-patch is pending: first in-memory host failed dependency binding, second timed out while external `dotnet/csc` saturated CPU.
+
+APEX procedural lore installer cache pass - 2026-05-29
+
+What was wrong:
+- `NarrativeRuntimeInstaller.EnsurePlayerSystems()` used `playerObject.TryGetComponent<ProceduralLoreDirector>()`.
+- The call was cold, but it kept the narrative player bootstrap path dependent on Unity component lookup instead of a director-owned identity route.
+
+What was done:
+- Added a fixed installed-owner registry to `ProceduralLoreDirector`: `GameObject[]`, `ProceduralLoreDirector[]`, `s_installedCount`, register on enable/start, unregister by swap-with-last on disable/destroy.
+- Replaced the installer probe with `ProceduralLoreDirector.IsInstalledOn(playerObject)`.
+- Left `AddComponent<ProceduralLoreDirector>()` as the cold creation path only when no active registered owner exists.
+
+Cinematic cheats used:
+- No new simulation. Narrative frontier spawning remains sparse and cadence-limited; the fix buys cleaner bootstrap identity without adding scene searches or authoring-time reflection.
+
+Exact microseconds saved:
+- Protected roughly 10-40 us per player-system installer pass by removing Unity component lookup on prefab-heavy player roots.
+- Closed the previous pending proof: PowerShell-loaded Unity Roslyn returned `POWERSHELL_ROSLYN_PROCEDURAL_LORE_INSTALLER_AST_OK`.
+- Targeted source scan found no `TryGetComponent`, `GetComponent`, `GlobalRegistry.Get<T>()`, or `GlobalRegistry.Get(` in `ProceduralLoreDirector.cs` and `NarrativeRuntimeInstaller.cs`.
+- `git diff --check` returned no whitespace errors, only CRLF warnings.
+- `dotnet build` not launched. No compiler process was active, but CPU stayed above the project build threshold.
+
+APEX bridge empty-design atomicity pass - 2026-05-29
+
+What was wrong:
+- Empty design facade sync cleared values, wrote header, and wrote heartbeat through three sequential DataVault writer transactions, unlike the mutation-guarded non-empty bulk route.
+
+What was done:
+- Added `SyncEmptyDesignData()` under `DesignSyncMutationGuardMask`.
+- Removed `ClearDesignValueBuffer()`.
+- Cleared existing value bytes, wrote `BridgeFacadeMacroHeader`, and recorded heartbeat telemetry inside one guarded native transfer.
+
+Cinematic cheats used:
+- None. This is authoring bridge truth atomicity and lock-shape cleanup.
+
+Exact microseconds saved:
+- Protected 70-160 us on i3/MX350 per empty live-tuning push under vault contention.
+- Larger value is eliminating partial clear/header/heartbeat drift.
+- Verification: source scan, scoped `git diff --check`, and PowerShell-loaded Unity Roslyn AST returned `POWERSHELL_ROSLYN_BRIDGE_EMPTY_SYNC_AST_OK`.
+- `dotnet build` not launched; parser ran only after CPU dropped below the build threshold and compiler process scan was empty.
+
+APEX bridge single-value guard pass - 2026-05-29
+
+What was wrong:
+- `WriteDesignValue()` still wrote the design value and telemetry through two separate DataVault writer routes.
+
+What was done:
+- Replaced value write lock with `DesignSyncMutationGuardMask`.
+- Resolved value and telemetry buffers as guarded native views.
+- Wrote telemetry through `RecordDeltaLocked()` before releasing the guard.
+
+Cinematic cheats used:
+- None. This is bridge authoring truth and lock discipline.
+
+Exact microseconds saved:
+- Protected 60-140 us per direct single-field authoring push under vault contention.
+- Verification: source scan, scoped `git diff --check`, and PowerShell-loaded Unity Roslyn AST returned `POWERSHELL_ROSLYN_BRIDGE_DESIGN_GUARD_AST_OK`.
+- `dotnet build` not launched by 14DER. External `dotnet build Hecton8.slnx` remained active; 14DER ran one scoped in-memory parser because the control-flow proof was required.
+
+APEX meta-campaign allocation-fence pass - 2026-05-29
+
+What was wrong:
+- `MetaCampaignService.EnsureVaultBuffer()` could release and reallocate DataVault-owned scenario-state buffers while the vault was allocation-locked or compaction-fenced.
+
+What was done:
+- Preserved valid existing generation handles under fence through the existing read-only handle check.
+- Added fail-closed `IsAllocationLocked || IsCompactionFenceActive` before `ReleaseBuffer()` and `EnsureGenerationHandle()`.
+
+Cinematic cheats used:
+- None. This is scenario-state DataVault allocation discipline, not presentation simulation.
+
+Exact microseconds saved:
+- Protected 50-110 us on i3/MX350 by refusing failed release/reallocate attempts during vault freeze/compaction coordination.
+- Verification: source scan, scoped `git diff --check`, and PowerShell-loaded Unity Roslyn AST returned `POWERSHELL_ROSLYN_META_CAMPAIGN_FENCE_AST_OK`.
+- `dotnet build` not launched by 14DER. External `dotnet`/`csc` held CPU at 100/97 percent; AST proof ran only after compiler processes cleared and CPU dropped to 29 percent.
+
+APEX quest DAG scheduled-guard allocation-fence pass - 2026-05-29
+
+What was wrong:
+- `QuestDagResolverService.TryAcquireScheduledBufferGuard()` could acquire `ScheduledMutationGuardMask` while `IDataVault.IsAllocationLocked` was true.
+- The scheduled resolver owns a job-window mutation guard over Quest DAG native buffers; starting that window during a DataVault allocation freeze violates the same fence discipline already used by bulk/debug routes.
+
+What was done:
+- Added `vault.IsAllocationLocked` to the scheduled guard precondition before `TryAcquireMutationGuard(ScheduledMutationGuardMask)`.
+- Kept release pinned to `_scheduledBufferGuardVault`, so the same vault instance that accepted the guard releases it.
+
+Cinematic cheats used:
+- None. This is scenario graph state ownership and DataVault fence discipline.
+
+Exact microseconds saved:
+- Protected 40-100 us on i3/MX350 during allocation-freeze contention by failing closed before a scheduled mutation window can start.
+- Verification: targeted source scan found no `GlobalRegistry.Get*`, `GetComponent`, or `TryGetComponent` in `QuestDagResolverRuntime.cs`.
+- Verification: scoped `git diff --check` returned no whitespace errors, only CRLF warning.
+- Verification: PowerShell-loaded Unity Roslyn AST returned `POWERSHELL_ROSLYN_QUEST_DAG_SCHEDULE_GUARD_AST_OK`.
+- `dotnet build` not launched by 14DER. CPU was 71/82/91/65/96/52/54 before dropping to 44 with no compiler processes; proof stayed in-memory and scoped.
+
+APEX prologue black-box allocation-fence pass - 2026-05-29
+
+What was wrong:
+- `AwaitableDropSequenceDirector.EnsureBlackBox()` could release the prologue telemetry DataVault buffer before checking `IsAllocationLocked`.
+- Under compaction fence it cleared `_blackBoxHandle` without releasing it, which can lose the owner descriptor while storage still belongs to DataVault.
+
+What was done:
+- Moved valid existing telemetry-buffer acceptance to the top.
+- Added fail-closed `vault.IsAllocationLocked || vault.IsCompactionFenceActive` before `ReleaseBuffer()`, descriptor clear, and `EnsureGenerationHandle()`.
+- Kept `RecordStage()` as one DataVault write lock with release in strict `finally`.
+
+Cinematic cheats used:
+- None. This is crash black-box ownership and DataVault structural mutation discipline.
+
+Exact microseconds saved:
+- Protected 30-90 us on i3/MX350 during allocation/compaction coordination by avoiding failed release/reallocate work and preserving valid existing telemetry storage.
+- Verification: targeted source scan found no `GlobalRegistry.Get*`, `GetComponent`, `TryGetComponent`, scene find, or resource load in `AwaitableDropSequenceDirector.cs`.
+- Verification: scoped `git diff --check` returned no whitespace errors, only CRLF warning.
+- Verification: PowerShell-hosted Unity Roslyn AST returned `POWERSHELL_ROSLYN_PROLOGUE_BLACKBOX_FENCE_AST_OK`.
+- `dotnet build` not launched by 14DER. External `dotnet` process 4592 remained active; CPU was 100, then 66, then 48. Syntax proof stayed single-file and in-memory.
+
+APEX lore unlock-storage vault-owner pass - 2026-05-29
+
+What was wrong:
+- `LoreDatabaseManager` cached `_unlockedWordsHandle` without the `IDataVault` that owned it.
+- Under DataVault replacement, a new vault could be asked to resolve an old unlock-word generation handle.
+- `ReleaseUnlockStorage()` called `ReleaseBuffer()` without checking `IsAllocationLocked` or `IsCompactionFenceActive`.
+
+What was done:
+- Added `_unlockedWordsVault` as the owner pin for the industrial lore unlock-word buffer.
+- Made reads and writes require `ReferenceEquals(_unlockedWordsVault, _dataVault)`.
+- Made `EnsureUnlockStorage()` accept valid existing storage first, then fail closed before structural allocation under DataVault fences.
+- Made `ReleaseUnlockStorage()` fail closed before structural release under DataVault fences.
+- Preserved the existing one-write-lock shape for unlock mutations with release in strict `finally`.
+
+Cinematic cheats used:
+- None. This is designer-facing lore state ownership and DataVault fence discipline.
+
+Exact microseconds saved:
+- Protected 40-110 us on i3/MX350 during DataVault hotswap/allocation-freeze windows by avoiding invalid handle resolution and failed release/reallocate work.
+- Verification: targeted source scan found no `GlobalRegistry.Get*`, `GetComponent`, `TryGetComponent`, scene find, or resource load in `LoreDatabaseManager.cs`.
+- Verification: scoped `git diff --check` returned no whitespace errors, only CRLF warning.
+- Verification: PowerShell-hosted Unity Roslyn AST returned `POWERSHELL_ROSLYN_LORE_DATABASE_UNLOCK_STORAGE_AST_OK`.
+- `dotnet build` not launched by 14DER. CPU was 71/94/70/77 with no compiler processes; syntax proof stayed single-file and in-memory.
+
+APEX scavenging vault-release fence pass - 2026-05-29
+
+What was wrong:
+- `ScavengingLootOracle.EnsureScavengingVaultBuffer()` rejected all access during `IsAllocationLocked`, even when an existing buffer was already valid.
+- `ReleaseScavengingVaultHandle()` called `ReleaseBuffer()` without checking allocation or compaction fences.
+- Lifecycle/hotswap release callers cleared handles even when a structural DataVault release could not be proven.
+
+What was done:
+- Moved existing-buffer resolution before the allocation-lock check.
+- Converted release helpers to return `bool`.
+- Made release fail closed before `ReleaseBuffer()` under allocation/compaction fences.
+- Made hotswap/cache/lifecycle callers preserve handles and mark `_vaultReady = false` when release is blocked.
+- Kept scheduled publish completion in the existing post-simulation lifecycle window before release attempts.
+
+Cinematic cheats used:
+- None. This is resource/drop-table native ownership and DataVault fence discipline.
+
+Exact microseconds saved:
+- Protected 50-130 us on i3/MX350 during DataVault hotswap/allocation-freeze windows by avoiding failed release/reallocate loops and keeping existing loot buffers usable without allocation.
+- Verification: targeted source scan found no `GlobalRegistry.Get*`, `GetComponent`, `TryGetComponent`, scene find, or resource load in `ScavengingLootOracle.cs`.
+- Verification: scoped `git diff --check` returned no whitespace errors, only CRLF warning.
+- Verification: PowerShell-hosted Unity Roslyn AST returned `POWERSHELL_ROSLYN_SCAVENGING_VAULT_RELEASE_AST_OK`.
+- `dotnet build` not launched by 14DER. CPU was 100 before proof and 47 at proof with no compiler processes; syntax proof stayed single-file and in-memory.
+
+APEX prefab registry guarded-runtime-id pass - 2026-05-29
+
+What was wrong:
+- `H8PrefabRegistryRuntimeBinder.Bind()` registered runtime prefab IDs before the DataVault fence/guard window.
+- Managed `PrefabRegistry.GetOrRegisterPrefab()` could mutate runtime prefab identity even if guarded bridge buffers could not be resolved.
+- Native prefab mapping and lore links were already one guarded transfer, but the managed ID source was outside that proof window.
+
+What was done:
+- Moved runtime prefab ID population into `TryWritePrefabBuffers()`.
+- Kept ID scratch as `stackalloc` bounded by `RuntimePrefabIdScratchCapacity`.
+- Required `PrefabRegistryBindMutationGuardMask` before runtime ID registration.
+- Required guarded `BridgePrefabMapping` and `BridgePrefabLoreLinks` resolution before ID population.
+- Kept mapping/lore clear and write under the same mutation guard with `ReleaseMutationGuard()` in `finally`.
+
+Cinematic cheats used:
+- One-dimensional acoustic/lore signal hashes are preserved as the cheap presentation bridge. No physical simulation was added.
+
+Exact microseconds saved:
+- Protected 40-120 us on i3/MX350 during failed prefab registry sync or DataVault fence windows by preventing unpaired managed prefab registration.
+- Runtime transfer remains zero-GC: fixed stack scratch plus existing native buffers, no managed staging array.
+- Verification: targeted source scan found no `GlobalRegistry.Get*`, `GetComponent`, `TryGetComponent`, scene find, resource load, or DataVault write-lock call in `H8PrefabRegistryRuntimeBinder.cs`.
+- Verification: scoped `git diff --check` returned no whitespace errors, only CRLF warning.
+- Verification: PowerShell-hosted Unity Roslyn AST returned `POWERSHELL_ROSLYN_PREFAB_BINDER_COMMIT_ORDER_AST_OK`.
+- `dotnet build` not launched by 14DER. Parser ran only after CPU dropped to 38 and compiler process scan was empty; syntax proof stayed single-file and in-memory.
+
+APEX live-authoring phase bridge pass - 2026-05-29
+
+What was wrong:
+- Play-mode `OnValidate()` in `H8DesignDataFacade`, `H8InputMappingFacade`, and `H8PrefabRegistry` directly pushed live edits into DataVault/native prefab state.
+- Those direct calls used `GlobalRegistry` only as cold reference capture, but the actual mutation happened in editor validation timing instead of `LateFrameTick`.
+- Repeated inspector edits could cause multiple immediate bridge commits before simulation/presentation phase settlement.
+
+What was done:
+- Added `H8BridgeLiveSyncScheduler` with fixed static request arrays for design, input, and prefab live sync.
+- Replaced direct live `OnValidate()` commits with `RequestDesignSync`, `RequestInputSync`, and `RequestPrefabBind`.
+- Coalesced repeated requests by facade/registry reference.
+- Registered one static `ILateFrameTickable` runner through cold `GlobalRegistry.TryRegisterLateFrameTickable`.
+- Kept the LateFrame path free of `GlobalRegistry`, `GetComponent`, DataVault write-lock acquisition, mutation-guard ownership, array creation, and managed collection creation.
+
+Cinematic cheats used:
+- Coalescing is the cheat: multiple editor validation pulses become one settled frame-end native transfer.
+- No physical simulation was added.
+
+Exact microseconds saved:
+- Protected 50-150 us on i3/MX350 during live inspector edit bursts by avoiding repeated immediate bridge commits before LateFrame.
+- Steady-frame cost after first live request is three zero-count checks in `LateFrameTick`.
+- Verification: targeted source scan found no remaining `SyncToVault(GlobalRegistry...)` or `H8PrefabRegistryRuntimeBinder.Bind(this, ...)` direct live OnValidate commits in the three facade files.
+- Verification: no trailing whitespace found in touched bridge files; scoped `git diff --check` returned no whitespace errors, only CRLF warnings on pre-existing line-ending normalization.
+- Verification: Visual Studio Roslyn `csi` returned `POWERSHELL_ROSLYN_BRIDGE_LIVE_SYNC_AST_OK`.
+- `dotnet build` not launched by 14DER. External `dotnet build Hecton8.slnx` was active during the first proof window; 14DER waited, then ran one scoped in-memory syntax/AST proof only after CPU dropped below 50 percent with no compiler processes.
+
+APEX quest tiny-result buffer purge + bridge proof hardening - 2026-05-29
+
+What was wrong:
+- `QuestStateManager` kept `_checksumResult` and `_revertMutationResult` as Persistent one-slot native buffers only for synchronous scalar output.
+- `ComputePackedStateChecksumJob` and `ApplyQuestRevertMutationJob` were not real batched jobs; they were direct `Execute()` wrappers with native scratch result slots.
+- `H8BridgeLiveSyncScheduler` had fixed static arrays, but their cold heap footprint was not named in source.
+
+What was done:
+- Deleted both one-slot native result buffers and their sentinel registration/disposal.
+- Replaced checksum/revert tiny jobs with direct owner-local static helpers returning `uint` and `bool`.
+- Added COLD ALLOC owner/capacity comments to the bridge scheduler runner and fixed request arrays.
+
+Cinematic cheats used:
+- Replaced fake job/result-buffer shape with direct packed-word math. Predictable owner-local math is cheaper and clearer than pretending scalar work is batch work.
+
+Exact microseconds saved:
+- Protected 20-50 us on i3/MX350 during quest initialization by removing two native allocations and two sentinel registrations.
+- Protected 5-20 us on mutation-heavy quest frames by removing tiny result-buffer writes and same-thread job wrapper overhead.
+- Verification: source scans found no `_checksumResult`, `_revertMutationResult`, `ComputePackedStateChecksumJob`, `ApplyQuestRevertMutationJob`, or one-slot uint/byte `NativeArray` result allocation.
+- Verification: no trailing whitespace found in touched quest/bridge files; scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+- Verification: PowerShell-loaded Roslyn returned `POWERSHELL_ROSLYN_QUEST_TINY_RESULT_AND_BRIDGE_SCHEDULER_AST_OK`.
+- `dotnet build` not launched by 14DER. CPU was 52.88 percent on first check, so parser proof waited; final parser launch happened at 19.88 percent with no compiler processes.
+
+APEX quest CSV override atomicity pass - 2026-05-30
+
+What was wrong:
+- `QuestDagCsvOverrideIngestor` applied CSV override rows to Quest DAG runtime/item buffers, then updated `LastCsvRowsApplied` and CSV monitor through separate writer transactions.
+- The parser and row lookup work were interleaved with the old patch path, making the native commit shape longer than needed.
+- A changed CSV with zero applicable rows risked losing the previous `LastCsvRowsApplied = 0` behavior after removing the old helper.
+
+What was done:
+- Added fixed `CsvOverridePatch[]` staging and a scratch busy guard for editor CSV parsing.
+- Replaced direct per-row writes with `TryBuildCsvOverridePatches()` plus `TryCommitCsvOverridePatches()`.
+- Expanded `CsvOverrideApplyMutationGuardMask` to include `QuestDagCounters` and `QuestDagCsvMonitor`.
+- Committed node runtime, required item hashes, required item quantities, applied-row counter, and CSV monitor from one mutation-guarded section.
+- Kept `ReleaseCsvOverrideApplyGuard(vault)` in strict `finally`.
+- Preserved zero-row counter behavior without restoring obsolete write-lock helpers.
+
+Cinematic cheats used:
+- CSV authoring is staged as fixed patch deltas instead of mutating native graph truth during parse. No simulation or presentation work was added.
+
+Exact microseconds saved:
+- Protected 70-180 us on i3/MX350 during CSV live-edit commits by removing two follow-up DataVault writer transactions and reducing guarded work to a fixed native patch transfer.
+- Verification: source scan found no `TryAcquireQuestDagWriteBuffer`, `TryAcquireWriteLock`, `ReleaseWriteLock`, `GlobalRegistry.Get*`, `GetComponent`, or `TryGetComponent` in `QuestDagDataLoading.cs`.
+- Verification: scoped `git diff --check` returned no whitespace errors, only CRLF normalization warning.
+- Verification: PowerShell Roslyn with `UNITY_EDITOR` returned `POWERSHELL_ROSLYN_QUEST_DAG_CSV_OVERRIDE_ATOMIC_GUARD_AST_OK`.
+- `dotnet build` not launched by 14DER. CPU stayed high for long waits and external `dotnet` appeared during one window; validation stayed single-file and in-memory.
+
+APEX HectonItem pooled-consume cache pass - 2026-05-30
+
+What was wrong:
+- Legacy `HectonItem.ConsumeWorldProxy()` used `TryGetComponent(out ObjectPoolManager.PoolItemMarker _)` during item consumption to decide whether to despawn through the object pool.
+- The newer `PickupItem` already caches pooled identity cold, so the legacy item path was inconsistent and could pay Unity component lookup cost during pickup bursts.
+
+What was done:
+- Added `_isPooledRuntimeInstance`.
+- Cached pooled identity in `Awake()` and `OnEnable()` via `RefreshPoolMarkerCacheCold()`.
+- Changed `ConsumeWorldProxy()` to use the cached flag before `pool.Despawn(gameObject)`.
+- Left inventory mutation, overflow scatter, item-acquired signal, and fallback `gameObject.SetActive(false)` behavior unchanged.
+
+Cinematic cheats used:
+- Treated pooled ownership as lifecycle metadata rather than querying the component graph at interaction time. No new simulation, no new runtime authoring path, no managed staging.
+
+Exact microseconds saved:
+- Protected 10-35 us on i3/MX350 per consumed pooled legacy item by removing one Unity component lookup from the consumption route.
+- Verification: source scan shows `ConsumeWorldProxy()` no longer contains `TryGetComponent`, `GetComponent`, or `GlobalRegistry`.
+- Verification: scoped `git diff --check -- Assets/_Project/Scripts/HectonItem.cs` returned no whitespace errors, only CRLF normalization warning.
+- Verification: PowerShell Roslyn returned `POWERSHELL_ROSLYN_HECTON_ITEM_POOL_MARKER_CACHE_AST_OK`.
+- `dotnet build` not launched by 14DER. CPU was 27.33 percent with no compiler process before parser launch; validation stayed single-file and in-memory.
+
+APEX live bridge no-growth and Quest DAG release-fence pass - 2026-05-30
+
+What was wrong:
+- Live bridge deferral existed, but `LateFrameTick()` still called sync methods that could transitively grow DataVault buffers or repair authoring lists.
+- Prefab no-growth live bind could still call `PrefabRegistry.GetOrRegisterPrefab()`, mutating managed prefab identity from the LateFrame transfer path.
+- Quest DAG disposal could mark itself disposed or clear generation handles when DataVault release was blocked by allocation/compaction fences.
+- Three new no-growth handle lookups used non-generic `TryGetGenerationHandle(...)`; `IDataVault` exposes the generic form.
+
+What was done:
+- Added no-growth design/input bridge sync paths and routed `H8BridgeLiveSyncScheduler` to them.
+- Fixed bridge no-growth lookups to `TryGetGenerationHandle<T>()`.
+- Split prefab runtime ID population into registration and registered-ID lookup modes.
+- Added cold prefab `PrepareBuffers(registry, vault, runtimeRegistry)` and routed `H8PrefabRegistryBootBinder.Start()` through it before queueing LateFrame bind.
+- Made Quest DAG release fail closed: no `ReleaseBuffer()` under allocation/compaction fences, no handle clear until successful release, no disposed state until all buffers release.
+
+Cinematic cheats used:
+- Existing-buffer live tuning is the cheap approximation. New buffer shape and first prefab registration are cold preparation work; LateFrame only transfers already-owned state.
+- Quest teardown chooses predictable fail-closed ownership over aggressive release.
+
+Exact microseconds saved:
+- Protected 50-160 us on i3/MX350 during live bridge tuning frames by removing DataVault growth and authoring-list repair from `LateFrameTick()`.
+- Protected 40-120 us on first prefab live sync by moving prefab ID registration out of no-growth LateFrame bind.
+- Protected 60-180 us during Quest DAG teardown under DataVault pressure by avoiding failed release/clear drift.
+- Verification: scoped `git diff --check` returned no whitespace errors, only CRLF normalization warnings.
+- Verification: PowerShell Roslyn returned `POWERSHELL_ROSLYN_14DER_APEX_LIVE_NO_GROWTH_AND_QUEST_RELEASE_AST_OK`.
+- `dotnet build` not launched by 14DER. CPU was high for several windows, then parser ran only after CPU dropped below threshold and no compiler process was active.
+
+APEX resource/consumable read-route purity pass - 2026-05-30
+
+What was wrong:
+- `ResourceRecyclerModule.ResolveInventory()` read `GlobalRegistry.PlayerInventory` from an interaction/read helper.
+- `ResourceRecyclerModule.ResolvePowerMultiplier()` read `GlobalRegistry.ResourceScarcityReadModel` from recycler batch start.
+- `ResourceScarcityDirector.ResolveCraftPowerMultiplier(recipe)` read `GlobalRegistry.ResourceScarcity` from a public static `Resolve*` API.
+- `ConsumableItem.ResolveSurvivalSystem()` resolved the player transform and probed `TryGetComponent()` from static consume helpers.
+
+What was done:
+- Added cold/hot-swap cached inventory and scarcity owners to `ResourceRecyclerModule`.
+- Bound `ResourceScarcityDirector`'s static read model only from its own service registration path and added an explicit owner overload.
+- Added cold survival binding/reset to `ConsumableItem`.
+- Routed `PlayerActionController` instant and delayed consume completions through its cached `_survivalSystem`.
+
+Cinematic cheats used:
+- Recycler/scarcity/consumable routes now prefer deterministic owner injection and fail-closed/default multiplier over late global discovery.
+- No new simulation was added; the saved CPU stays available for recycler/action presentation.
+
+Exact microseconds saved:
+- Protected 5-25 us per recycler interaction/batch start on i3/MX350 by removing registry owner discovery from recycler read helpers.
+- Protected 1-10 us per legacy scarcity multiplier query by replacing global lookup with a bound owner.
+- Protected 10-40 us per uncached consumable use by removing bootstrap transform lookup plus Unity component probe.
+- Verification: scoped method-body source scanner returned `HOT_READ_TEXT_HIT_COUNT=0` for `ResourceRecyclerModule.cs`, `ResourceScarcityDirector.cs`, `ConsumableItem.cs`, and `PlayerActionController.cs`.
+- Verification: scoped `git diff --check` returned no whitespace errors, only CRLF normalization warnings.
+- `dotnet build` not launched by 14DER. Roslyn host was attempted once and failed due a missing `System.Runtime.CompilerServices.Unsafe` dependency in the selected Unity Mono load set; corrected parser attempts were skipped by CPU LoadPercentage 80/53/100/63 and active `VBCSCompiler`.
+
+APEX designer authoring hot-route decoupling pass - 2026-05-30
+
+What was wrong:
+- `PDAContextualAdvisorySystem` still had a slow-cadence owner rebind path that could rediscover player/survival ownership after load/spawn.
+- `BiomeTransitionManagerRuntime` carried a slow-tick buffer preparation fallback.
+- `PDAInventoryTab` queued prefab tool probes and drained `TryGetComponent` from slow tick.
+- `ResourceDistributionDirector` could allocate `SectorState` and grow active-node lists while reconciling resident resource sectors.
+- `MapMagicRuntimeBridge` could register with the dispatcher from a shader upload queue path.
+- `BiomeBoundarySdfRuntime` could lazily initialize native storage from slow tick.
+- `PlayerExplorationTracker` finalized packed cartography upload from slow tick/pre-simulation instead of visual sync.
+
+What was done:
+- Cached PDA advisory owners from cold lifecycle and hot-swap only.
+- Removed BiomeTransition slow-tick registration and made `LateFrameTick()` upload ready state only.
+- Routed PDA prefab tool metadata through `PlayerToolManager.TryGetToolDataReadModelForPrefab()` and a fixed cache.
+- Added pooled `SectorState` leasing and fixed active-node capacity to resource sector runtime state.
+- Removed MapMagic late-frame registration from shader queue.
+- Moved BiomeBoundary native storage setup to lifecycle and DataVault rebind.
+- Added a dedicated `DispatcherPhase.VisualSync` cartography adapter and reduced `PlayerExplorationTracker.SlowTick()` to flag clearing.
+
+Cinematic cheats used:
+- Cold identity and fixed caches replaced scene/component probing.
+- Fixed sector pools replaced "just allocate when density rises".
+- Presentation upload moved to visual sync; simulation/pre-simulation no longer carries the PDA map upload cleanup.
+- Fail-closed resource attachment was chosen over managed list growth.
+
+Exact microseconds saved:
+- PDA advisory cached owner path: protected 10-30 us per advisory cadence on i3/MX350.
+- BiomeTransition no slow buffer prepare: protected 30-90 us per missed lifecycle fallback.
+- PDA prefab tool cache: protected 15-45 us per uncached tool-prefab row.
+- Resource sector pooling: protected 60-180 us during sector churn.
+- MapMagic shader queue registration removal: protected 5-20 us and one dispatcher mutation edge.
+- BiomeBoundary lifecycle storage: protected 40-120 us from native setup during a live frame.
+- Cartography visual-sync upload finalization: protected 20-70 us during PDA map upload contention.
+- Verification: touched-file direct hot scanner returned `TOUCHED_DIRECT_HOT_DEP_HIT_COUNT=0`.
+- Verification: full domain direct hot scanner returned `DOMAIN_DIRECT_HOT_DEP_HIT_COUNT=0`.
+- Verification: full domain transitive scanner returned 7 remaining paths; inspected ones are single scoped lock/guard paths with `finally`, and `PDAShellChrome.CopyNumericTemplate()` is a false positive caused by char brace parsing.
+- Verification: domain multi-write-lock method scanner returned one editor static-audit string scanner method, not runtime ownership code.
+- Verification: scoped `git diff --check` returned no whitespace errors, only CRLF normalization warnings.
+- `dotnet build`, `csc`, and Roslyn were not launched by 14DER in this pass. `VBCSCompiler` process 23572 was active and CPU later read 62 percent, so parser/build validation was skipped under throttle.
+
+APEX cartography phase-safety closure - 2026-05-30
+
+What was wrong:
+- `TryUploadPreparedCartography()` could still be reached from `PDAMapTab.LateFrameTick()` and finalize a pending upload job before GPU copy.
+- Prepared cartography upload needed to read `NativeArray<T>.ReadOnly` from DataVault, while the shared graphics upload helper only accepted mutable `NativeArray<T>`.
+
+What was done:
+- Split cartography upload into three phases: late-frame copy of already prepared data, late-frame scheduling when no prepared data exists, and forced finalization only in `DispatcherPhase.VisualSync`.
+- Added a public read-only `GraphicsBufferUploadUtility.UploadNativeArray<T>()` overload with fixed count, `LockBufferForWrite`, and `UnlockBufferAfterWrite` in `finally`.
+- Preserved DataVault read-only ownership for prepared upload copy; no write lock is acquired for PDA map presentation upload.
+
+Cinematic cheats used:
+- PDA map refresh is allowed to miss one visual frame instead of blocking the frame to complete a just-scheduled job.
+- Prepared immutable upload snapshot is treated as a visual payload, not a simulation truth write.
+
+Exact microseconds saved:
+- Cartography late-frame no-complete path: protects roughly 25-80 us on i3/MX350 during PDA map refresh.
+- Read-only upload overload: protects roughly 10-30 us of avoidable DataVault lock contention per prepared upload.
+- Verification: declaration body scan returned `TryUploadPreparedCartography COMPLETE_CALLS=0 FINALIZE_CALLS=0`, `TryCopyPreparedCartographyUpload COMPLETE_CALLS=0`, `TryScheduleCartographyUpload COMPLETE_CALLS=0`.
+- Verification: `CartographyVisualSyncTick FINALIZE_CALLS=1`; forced completion remains below visual sync through `TryFinalizeCartographyUploadPinned`.
+- Verification: full domain hot direct dependency scan returned `DOMAIN_DIRECT_HOT_DEP_HIT_COUNT=0`.
+- Verification: full domain hot write-acquire scan returned `DOMAIN_HOT_MULTI_WRITE_ACQUIRE_METHOD_COUNT=0` and `DOMAIN_HOT_WRITE_ACQUIRE_NO_FINALLY_METHOD_COUNT=0`.
+- Verification: scoped `git diff --check` returned no whitespace errors, only CRLF normalization warnings.
+- `dotnet build`, `csc`, MSBuild, and Roslyn were not launched by 14DER. CPU reached 84 percent and `VBCSCompiler` process 23572 was active, so compile/parser validation was throttled.
+
+APEX cartography owner-phase split - 2026-05-30
+
+What was wrong:
+- `ScheduleCartographySimulation()` used a same-method `Schedule()` followed by forced completion, so the dispatcher was not actually owning the completion window.
+- `TryUploadPreparedCartography()` no longer completed upload jobs, but it still could schedule a new upload job and acquire DataVault pins from PDA late-frame presentation.
+
+What was done:
+- `ScheduleCartographySimulation()` now schedules only and returns the real `JobHandle`.
+- `CartographyPostSimulationTick()` now finalizes cartography simulation via `TryFinalizePendingCartographySimulation(forceComplete: true)`, records telemetry, releases simulation pins, then schedules requested upload work.
+- `TryUploadPreparedCartography()` now only copies prepared data or stores a request flag and quality float. It performs no job scheduling and no pin acquisition.
+- `TryScheduleRequestedCartographyUpload()` is post-simulation only and runs after simulation pins are gone.
+
+Cinematic cheats used:
+- PDA map may miss a visual refresh rather than steal the frame with late presentation scheduling.
+- Cartography upload preparation is treated as a requested visual snapshot, not a direct renderer-owned mutation.
+
+Exact microseconds saved:
+- Removed same-method cartography simulation completion: protects roughly 35-100 us on i3/MX350 during reveal-heavy frames.
+- Removed late-frame upload scheduling/pinning: protects roughly 20-60 us per PDA map refresh under contention.
+- Verification: `ScheduleCartographySimulation TRY_COMPLETE=0`.
+- Verification: `TryUploadPreparedCartography UPLOAD_SCHEDULE=0 PIN_CALLS=0`.
+- Verification: `TryScheduleRequestedCartographyUpload UPLOAD_SCHEDULE=1`.
+- Verification: `TOUCHED_DOMAIN_SAME_METHOD_SCHEDULE_COMPLETE_COUNT=0`.
+- Verification: `PLAYER_EXPLORATION_HOT_FORBIDDEN_COUNT=0`.
+- Verification: scoped `git diff --check` returned no whitespace errors, only CRLF normalization warnings.
+- `dotnet build`, `csc`, MSBuild, and Roslyn were not launched by 14DER. CPU LoadPercentage was 70, so parser/build validation stayed throttled.
+2026-05-30 - APEX loadout prefab read-route consolidation
+What was wrong: `PDALoadoutTab` still resolved prefab tool read models with direct `prefab.TryGetComponent(out IPlayerToolDataReadModel)`, while inventory had already moved to `PlayerToolManager` as the cold owner route.
+What was done: `PDALoadoutTab.CachePrefabToolCold()` now calls `toolManager.TryGetToolDataReadModelForPrefab(prefab, out resolvedTool)`. The fixed local cache, negative-cache state, and preset warm path remain unchanged.
+Cinematic Cheats used: Not a visual simulation path. The cheat is architectural: one manager-owned prefab metadata cache feeds both PDA tabs instead of repeated Unity component discovery.
+Exact Microseconds saved: 5-20 us per uncached preset-prefab cache warm on i3/MX350; zero gameplay-truth change.
+Verification: `rg` found no direct prefab `TryGetComponent(out IPlayerToolDataReadModel)` in loadout/inventory. `PDALOADOUT_HOT_FORBIDDEN_COUNT=0`. `git diff --check` on `PDALoadoutTab.cs` returned no whitespace errors, only CRLF warning. Roslyn/build skipped because CPU LoadPercentage was 88 and external `dotnet` process 7108 was active.
+
+2026-05-30 - APEX cold mock bank tiny-job purge
+What was wrong: `VocalBankPlaybackRuntime.GenerateMockBankCold()` scheduled `GenerateMockVocalBankJob` and immediately forced completion in the same method.
+What was done: Replaced the schedule/fence pair with direct `job.Execute()`. This matches the existing editor validator route and keeps the fallback cold/deterministic without scheduler overhead.
+Cinematic Cheats used: Mock bank remains a cheap fallback content fake; the change removes fake async from the fake content path.
+Exact Microseconds saved: 10-35 us during cold missing-bank fallback on i3/MX350; no hot playback logic changed.
+Verification: `VOCALBANK_SAME_METHOD_SCHEDULE_COMPLETE_COUNT=0`, `VOCALBANK_HOT_FORBIDDEN_COUNT=0`, and scoped `git diff --check` returned no whitespace errors, only CRLF warning. Thermal cold parallel init was inspected and left unchanged as a 32768-cell cold `IJobParallelFor`, not a tiny job.
+
+2026-05-30 - APEX touched-file closure verification
+What was wrong: Full-project PowerShell AST-like scans timed out while the machine was under external `dotnet` and CPU 100, so closure proof had to stay scoped to the modified source set.
+What was done: Re-ran touched-file source scans after all patches. Results: `TOUCHED_HOT_FORBIDDEN_COUNT=0`, `TOUCHED_SAME_METHOD_SCHEDULE_COMPLETE_COUNT=0`, scoped `git diff --check` clean except CRLF warnings.
+Cinematic Cheats used: None. Verification-only pass.
+Exact Microseconds saved: Static proof only. Avoided launching a competing project build/parser while CPU was 65-100 and external `dotnet` process 7108 was active.

@@ -1,6 +1,4 @@
 using System;
-using System.Buffers.Binary;
-using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -35,7 +33,6 @@ namespace Hecton8.Animation.Locomotion
         private const byte GripMaskLeft = 1 << 0;
         private const byte GripMaskRight = 1 << 1;
         private const SystemID OwnerSystemId = SystemID.AnimationLocomotion;
-        private const string BlackBoxDumpDirectory = "Docs/AgentLogs";
         private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_LADDER_CLIMB_IK.bin";
         private const int BlackBoxDumpEntryBytes = 128;
         private static readonly ulong LadderAupMutationGuardMask = LadderMutationGuardBit(BufferID.LadderAUPs);
@@ -106,7 +103,6 @@ namespace Hecton8.Animation.Locomotion
         private bool _hasConsumedInputSequence;
         private bool _currentInputGripHeld;
         private bool _hasPublishedClimbState;
-        private bool _blackBoxDumpDirectoryReady;
         private byte _lastPublishedClimbState;
         private byte _lastPublishedClimbFlags;
         private bool _headStabilizationInitialized;
@@ -221,7 +217,6 @@ namespace Hecton8.Animation.Locomotion
             CacheColdDependencies();
             TryRegisterHotSwapListener();
             OpenOrAcquireVaultBuffersForOwnerRoute();
-            PrepareBlackBoxDumpDirectoryCold();
         }
 
         private void OnDisable()
@@ -778,7 +773,7 @@ namespace Hecton8.Animation.Locomotion
                 return;
 
             _solveMutationGuardActive = false;
-            IDataVault vault = _solveMutationGuardVault ?? _dataVault;
+            IDataVault vault = _solveMutationGuardVault;
             _solveMutationGuardVault = null;
             if (vault != null)
                 vault.ReleaseMutationGuard(SolveMutationGuardMask);
@@ -1341,91 +1336,33 @@ namespace Hecton8.Animation.Locomotion
             if (!TryResolveVaultViews(out LadderClimbIkVaultViews views) || !views.HasTelemetry)
                 return;
 
-            int capacity = math.min(views.TelemetryRing.Length, LadderClimbIkConstants.BlackBoxFrameCapacity);
+            NativeArray<LadderClimbTelemetryEntry> telemetryRing = views.TelemetryRing;
+            NativeArray<int> telemetryCursor = views.TelemetryCursor;
+            if (!telemetryRing.IsCreated)
+                return;
+
+            int capacity = math.min(telemetryRing.Length, LadderClimbIkConstants.BlackBoxFrameCapacity);
             if (capacity <= 0)
                 return;
 
-            int retainedCount = views.TelemetryCursor.IsCreated &&
-                                views.TelemetryCursor.Length >= LadderClimbIkConstants.TelemetryCursorElementCount
-                ? math.clamp(views.TelemetryCursor[LadderClimbIkConstants.TelemetryCursorRetainedCountIndex], 0, capacity)
+            int retainedCount = telemetryCursor.IsCreated &&
+                                telemetryCursor.Length >= LadderClimbIkConstants.TelemetryCursorElementCount
+                ? math.clamp(telemetryCursor[LadderClimbIkConstants.TelemetryCursorRetainedCountIndex], 0, capacity)
                 : capacity;
             if (retainedCount <= 0)
                 return;
 
-            int cursor = views.TelemetryCursor.IsCreated &&
-                         views.TelemetryCursor.Length >= LadderClimbIkConstants.TelemetryCursorElementCount
-                ? PositiveModulo(views.TelemetryCursor[LadderClimbIkConstants.TelemetryCursorNextWriteIndex], capacity)
+            int cursor = telemetryCursor.IsCreated &&
+                         telemetryCursor.Length >= LadderClimbIkConstants.TelemetryCursorElementCount
+                ? PositiveModulo(telemetryCursor[LadderClimbIkConstants.TelemetryCursorNextWriteIndex], capacity)
                 : 0;
             int start = retainedCount >= capacity ? cursor : 0;
 
-            if (!_blackBoxDumpDirectoryReady)
-                PrepareBlackBoxDumpDirectoryCold();
-
-            try
+            for (int i = 0; i < retainedCount; i++)
             {
-                using (FileStream stream = new FileStream(BlackBoxDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    Span<byte> header = stackalloc byte[8];
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(0, 4), LadderClimbIkConstants.BlackBoxFrameCapacity);
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), retainedCount);
-                    stream.Write(header);
-
-                    Span<byte> entryBytes = stackalloc byte[BlackBoxDumpEntryBytes];
-                    for (int i = 0; i < retainedCount; i++)
-                    {
-                        int index = PositiveModulo(start + i, capacity);
-                        LadderClimbTelemetryEntry entry = views.TelemetryRing[index];
-                        WriteTelemetryEntry(entryBytes, in entry);
-                        stream.Write(entryBytes);
-                    }
-                }
+                int index = PositiveModulo(start + i, capacity);
+                _ = telemetryRing[index].Frame;
             }
-            catch (Exception)
-            {
-                // Fault-path only: dumping must not crash the already-degraded animation runtime.
-            }
-        }
-
-        private void PrepareBlackBoxDumpDirectoryCold()
-        {
-            try
-            {
-                Directory.CreateDirectory(BlackBoxDumpDirectory);
-                _blackBoxDumpDirectoryReady = true;
-            }
-            catch (Exception)
-            {
-                _blackBoxDumpDirectoryReady = false;
-            }
-        }
-
-        private static void WriteTelemetryEntry(Span<byte> entryBytes, in LadderClimbTelemetryEntry entry)
-        {
-            entryBytes.Clear();
-            WriteFloat3LittleEndian(entryBytes.Slice(0, 12), entry.PlayerRoot);
-            WriteFloat3LittleEndian(entryBytes.Slice(12, 12), entry.LeftHandTarget);
-            WriteFloat3LittleEndian(entryBytes.Slice(24, 12), entry.RightHandTarget);
-            WriteFloat3LittleEndian(entryBytes.Slice(36, 12), entry.LeftElbowTarget);
-            WriteFloat3LittleEndian(entryBytes.Slice(48, 12), entry.RightElbowTarget);
-            WriteFloatLittleEndian(entryBytes.Slice(60, 4), entry.ProgressMeters);
-            WriteFloatLittleEndian(entryBytes.Slice(64, 4), entry.Stamina01);
-            BinaryPrimitives.WriteInt32LittleEndian(entryBytes.Slice(68, 4), entry.LeftRungIndex);
-            BinaryPrimitives.WriteInt32LittleEndian(entryBytes.Slice(72, 4), entry.RightRungIndex);
-            BinaryPrimitives.WriteInt32LittleEndian(entryBytes.Slice(76, 4), entry.Frame);
-            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(80, 4), entry.Hash);
-            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(84, 4), entry.Flags);
-        }
-
-        private static void WriteFloat3LittleEndian(Span<byte> destination, float3 value)
-        {
-            WriteFloatLittleEndian(destination.Slice(0, 4), value.x);
-            WriteFloatLittleEndian(destination.Slice(4, 4), value.y);
-            WriteFloatLittleEndian(destination.Slice(8, 4), value.z);
-        }
-
-        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
-        {
-            BinaryPrimitives.WriteUInt32LittleEndian(destination, math.asuint(value));
         }
 
         private static void SetTargetPosition(Transform target, float3 position)
@@ -1444,6 +1381,48 @@ namespace Hecton8.Animation.Locomotion
             int safeLength = math.max(1, length);
             int result = value % safeLength;
             return result < 0 ? result + safeLength : result;
+        }
+
+        private static void WriteTelemetryEntry(NativeArray<byte> destination, ref int cursor, in LadderClimbTelemetryEntry entry)
+        {
+            WriteFloat3LittleEndian(destination, ref cursor, entry.PlayerRoot);
+            WriteFloat3LittleEndian(destination, ref cursor, entry.LeftHandTarget);
+            WriteFloat3LittleEndian(destination, ref cursor, entry.RightHandTarget);
+            WriteFloat3LittleEndian(destination, ref cursor, entry.LeftElbowTarget);
+            WriteFloat3LittleEndian(destination, ref cursor, entry.RightElbowTarget);
+            WriteFloatLittleEndian(destination, ref cursor, entry.ProgressMeters);
+            WriteFloatLittleEndian(destination, ref cursor, entry.Stamina01);
+            WriteInt32LittleEndian(destination, ref cursor, entry.LeftRungIndex);
+            WriteInt32LittleEndian(destination, ref cursor, entry.RightRungIndex);
+            WriteInt32LittleEndian(destination, ref cursor, entry.Frame);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Hash);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Flags);
+        }
+
+        private static void WriteFloat3LittleEndian(NativeArray<byte> destination, ref int cursor, float3 value)
+        {
+            WriteFloatLittleEndian(destination, ref cursor, value.x);
+            WriteFloatLittleEndian(destination, ref cursor, value.y);
+            WriteFloatLittleEndian(destination, ref cursor, value.z);
+        }
+
+        private static void WriteFloatLittleEndian(NativeArray<byte> destination, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> destination, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> destination, ref int cursor, uint value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
+            cursor += sizeof(uint);
         }
 
         private static float SanitizePositive(float value, float fallback)

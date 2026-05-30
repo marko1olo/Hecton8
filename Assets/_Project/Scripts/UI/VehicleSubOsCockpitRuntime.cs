@@ -8,9 +8,11 @@ using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Power;
+using Hecton8.SaveSystem;
 using Hecton8.World;
 using TMPro;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -25,7 +27,7 @@ namespace Hecton8.UI
     /// Dispatcher-owned diegetic submarine cockpit bridge: analytical controls, off-screen screens, and GPU sonar radar.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class VehicleSubOsCockpitRuntime : MonoBehaviour, ILateFrameTickable, IRenderable, ISubmarineOsEventListener, IPowerGridTelemetryListener, IGlobalRegistryHotSwapListener
+    public sealed class VehicleSubOsCockpitRuntime : MonoBehaviour, IColdTickable, ILateFrameTickable, ISlowTickable, IRenderable, ISubmarineOsEventListener, IPowerGridTelemetryListener, IGlobalRegistryHotSwapListener
     {
         private const int MaxRadarPoints = 4096;
         private const int MinQualityRadarPoints = 512;
@@ -33,7 +35,7 @@ namespace Hecton8.UI
         private const int MinQualityRadarPointsPerTap = 32;
         private const float CheapVisualQualityThreshold = 0.3f;
         private const float CheapVisualQualityRampInv = 5.5555553f;
-        private const float ExternalFeedEnableThreshold = 0.18f;
+        private const float MinExternalFeedBlendWeight = 0.125f;
         private const float RadarCapacityQuantumInv = 0.0078125f;
         private const float RadarPointTapQuantumInv = 0.0625f;
         private const int MaxButtons = 32;
@@ -67,6 +69,9 @@ namespace Hecton8.UI
         private const uint DamageHologramTelemetryHash = 0x44484F4Cu; // DHOL
         private const uint RadarActiveHash = 0x52414452u; // RADR
         private const uint InteractionHash = 0x42544E53u; // BTNS
+        private const int DumpHeaderBytes = 16;
+        private const int CockpitTelemetryDumpEntryBytes = 64;
+        private const int DamageHologramDumpEntryBytes = 24;
         private const int InvalidDisplayBucket = int.MinValue;
         private const int StatusModeInternalBus = 0;
         private const int StatusModeExternalLive = 1;
@@ -292,8 +297,11 @@ namespace Hecton8.UI
         private IHabitatGraphService _cachedHabitatGraph;
         private IPowerGridService _cachedPowerGrid;
         private IDataVault _dataVault;
+        private IDataVault _telemetryWriteVault;
 
         private bool _registeredLateFrame;
+        private bool _registeredSlowTick;
+        private bool _registeredColdTick;
         private bool _registeredRenderable;
         private bool _hotSwapListenerRegistered;
         private bool _externalFeedRequested;
@@ -309,6 +317,8 @@ namespace Hecton8.UI
         private bool _resourceRefreshDirty;
         private bool _radarResourcesReady;
         private bool _damageHologramResourcesReady;
+        private bool _presentationResourcesDirty = true;
+        private bool _renderTargetsDirty = true;
         private bool _radarMaterialBufferBound;
         private bool _damageHologramMaterialBufferBound;
         private bool _damageHologramFallbackPointUploaded;
@@ -380,7 +390,6 @@ namespace Hecton8.UI
         private float _externalFeedWeight01 = 1f;
         private bool _supportsComputeShadersCold;
         private bool _supportsRgb565RenderTextureCold;
-
         /// <summary>
         /// GPU matrix buffer for cockpit button presentation consumers.
         /// </summary>
@@ -508,29 +517,15 @@ namespace Hecton8.UI
 
             if (_resourceRefreshDirty || !_resourcesReady)
             {
-                _resourceRefreshDirty = false;
-                EnsureNativeResources();
-                EnsureRenderTargets();
+                RefreshNativeResourceReadinessForFrame();
             }
 
-            if (_resourcesReady)
+            bool presentationResourcesReady = HasPresentationResourcesReadyForFrame();
+            if (_resourcesReady && presentationResourcesReady)
             {
-                if (_graphicsResourceDisposalPending)
-                {
-                    _graphicsResourceDisposalPending = false;
-                    DisposeGraphicsResources();
-                }
-
-                if (_externalFeedStateDirty)
-                {
-                    _externalFeedStateDirty = false;
-                    UpdateExternalFeedState();
-                }
-
                 if (ShouldRetryRadarGraphicsResources())
                     ClearRadarDrawState();
                 FlushDamageRoomWaterUpload();
-                EnsureRenderTargets();
                 UploadSonarTapsAndDispatchRadar();
                 if (UpdateOffscreenText(SystemDispatcher.CurrentFrameUnscaledDeltaTime))
                     RequestOffscreenUiRender();
@@ -540,15 +535,74 @@ namespace Hecton8.UI
 
             if (_resourcesReady && (_buttonUploadDirty || _buttonAnimationActive))
             {
-                UploadButtonMatrices();
+                if (presentationResourcesReady)
+                    UploadButtonMatrices();
                 ApplyButtonTransforms();
                 _buttonAnimationActive = HasButtonTransitions();
                 _buttonUploadDirty = false;
             }
         }
 
+        public void SlowTick()
+        {
+            if (_resourceRefreshDirty || !_resourcesReady)
+            {
+                _resourceRefreshDirty = true;
+                return;
+            }
+
+            if (!_resourcesReady)
+                return;
+
+            if (_graphicsResourceDisposalPending)
+                return;
+
+            if (_externalFeedStateDirty)
+            {
+                _externalFeedStateDirty = false;
+                UpdateExternalFeedState();
+            }
+
+            if (_presentationResourcesDirty ||
+                _renderTargetsDirty ||
+                !AreRenderTargetsCurrent())
+            {
+                _resourceRefreshDirty = true;
+            }
+        }
+
+        public void ColdTick()
+        {
+            if (!Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            if (_graphicsResourceDisposalPending)
+            {
+                _graphicsResourceDisposalPending = false;
+                DisposeGraphicsResources();
+            }
+
+            if (_resourceRefreshDirty || !_resourcesReady)
+            {
+                _resourceRefreshDirty = false;
+                EnsureNativeResources();
+            }
+
+            if (!_resourcesReady)
+                return;
+
+            if (_presentationResourcesDirty)
+                EnsureGraphicsResources();
+
+            if (_renderTargetsDirty || !AreRenderTargetsCurrent())
+                EnsureRenderTargets();
+        }
+
         public void Render(float deltaTime)
         {
+            if (!HasPresentationResourcesReadyForFrame())
+                return;
+
             RenderDamageHologram();
             RenderRadarPointCloud();
         }
@@ -652,14 +706,30 @@ namespace Hecton8.UI
 
         private void TryRegisterRuntime()
         {
+            if (!_registeredColdTick)
+                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.UI);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
             if (!_registeredRenderable)
                 _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
         }
 
         private void UnregisterRuntime()
         {
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.UI);
+                _registeredColdTick = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = false;
+            }
+
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
@@ -730,7 +800,9 @@ namespace Hecton8.UI
                     BindDataVaultForLifecycle(nextVault, previousVault);
                     _buttonBasesInitialized = false;
                     _resourcesReady = false;
-                    _resourceRefreshDirty = isActiveAndEnabled;
+                    if (isActiveAndEnabled && nextVault != null)
+                        EnsureNativeResources();
+                    _resourceRefreshDirty = isActiveAndEnabled && !_resourcesReady;
                     break;
                 case GlobalRegistryServiceSlot.Logistics:
                     if (currentService is IHabitatGraphService || previousService is IHabitatGraphService)
@@ -762,7 +834,7 @@ namespace Hecton8.UI
             int pointsPerTap = ResolveRadarPointsPerTap(quality);
             float cheapVisualWeight = ResolveCheapVisualWeight(quality);
             float externalFeedWeight = ResolveExternalFeedWeight(quality);
-            RenderTextureFormat format = ResolveUiRenderTextureFormat(quality);
+            RenderTextureFormat format = ResolvePanelRenderTextureFormat();
             if (math.abs(quality - _qualityWeight01) <= 0.0001f &&
                 capacity == _radarCapacity &&
                 pointsPerTap == _radarPointsPerTap &&
@@ -778,15 +850,25 @@ namespace Hecton8.UI
             _externalFeedWeight01 = externalFeedWeight;
             _radarPointsPerTap = pointsPerTap;
             _uiRenderTextureFormat = format;
+            _renderTargetsDirty = true;
             _screenDirty = true;
             if (capacity != _radarCapacity)
             {
+                bool requiresRadarBufferGrow =
+                    capacity > _radarCapacity &&
+                    radarCompute != null &&
+                    _supportsComputeShadersCold &&
+                    !HasRadarBufferCapacity(capacity);
                 _radarCapacity = capacity;
-                _radarResourcesReady = false;
-                if (allowGraphicsResourceMutation)
-                    DisposeGraphicsResources();
-                else
-                    _graphicsResourceDisposalPending = true;
+                if (requiresRadarBufferGrow)
+                {
+                    _radarResourcesReady = false;
+                    if (allowGraphicsResourceMutation)
+                        DisposeGraphicsResources();
+                    else
+                        _graphicsResourceDisposalPending = true;
+                    _presentationResourcesDirty = true;
+                }
                 InvalidateRadarDispatchCache();
                 _buttonUploadDirty = true;
                 _buttonAnimationActive = true;
@@ -817,8 +899,8 @@ namespace Hecton8.UI
 
         private static float ResolveExternalFeedWeight(float qualityWeight01)
         {
-            float normalized = math.saturate((qualityWeight01 - ExternalFeedEnableThreshold) * 2.7777777f);
-            return normalized * normalized * (3f - 2f * normalized);
+            float curve = SmoothQuality(qualityWeight01);
+            return math.lerp(MinExternalFeedBlendWeight, 1f, curve);
         }
 
         private static float SmoothQuality(float qualityWeight01)
@@ -869,6 +951,11 @@ namespace Hecton8.UI
             }
 
             _resourcesReady = HasButtonNativeResources(safeButtonCount);
+        }
+
+        private void RefreshNativeResourceReadinessForFrame()
+        {
+            _resourcesReady = HasButtonNativeResources(ResolveButtonCount());
         }
 
         private void DisposeNativeResources()
@@ -1036,6 +1123,9 @@ namespace Hecton8.UI
         private bool TryAcquireTelemetryWriteBuffer(out NativeArray<CockpitTelemetryEntry> telemetryRing)
         {
             telemetryRing = default;
+            if (_telemetryWriteVault != null)
+                return false;
+
             IDataVault vault = _dataVault;
             bool locked = false;
             bool success = false;
@@ -1052,6 +1142,7 @@ namespace Hecton8.UI
                 if (!telemetryRing.IsCreated || telemetryRing.Length < TelemetryCapacity)
                     return false;
 
+                _telemetryWriteVault = vault;
                 success = true;
                 return true;
             }
@@ -1067,7 +1158,8 @@ namespace Hecton8.UI
 
         private void ReleaseTelemetryWriteBuffer()
         {
-            IDataVault vault = _dataVault;
+            IDataVault vault = _telemetryWriteVault;
+            _telemetryWriteVault = null;
             if (vault != null && IsExactVaultHandle(in _telemetryRingHandle, TelemetryRingBufferId))
                 vault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwnerSystemId);
         }
@@ -1141,6 +1233,7 @@ namespace Hecton8.UI
 
         private void ReleaseCockpitVaultHandles(IDataVault vault)
         {
+            ReleaseTelemetryWriteBuffer();
             ReleaseCockpitVaultHandle(vault, ref _buttonStatesHandle, ButtonStatesBufferId);
             ReleaseCockpitVaultHandle(vault, ref _buttonTargetsHandle, ButtonTargetsBufferId);
             ReleaseCockpitVaultHandle(vault, ref _buttonProgressHandle, ButtonProgressBufferId);
@@ -1148,6 +1241,7 @@ namespace Hecton8.UI
             ReleaseCockpitVaultHandle(vault, ref _buttonBaseLocalPositionsHandle, ButtonBaseLocalPositionsBufferId);
             ReleaseCockpitVaultHandle(vault, ref _buttonMatricesHandle, ButtonMatricesBufferId);
             ReleaseCockpitVaultHandle(vault, ref _telemetryRingHandle, TelemetryRingBufferId);
+            _telemetryWriteVault = null;
         }
 
         private static void ReleaseCockpitVaultHandle<T>(
@@ -1184,6 +1278,7 @@ namespace Hecton8.UI
             if (radarCompute == null || !_supportsComputeShadersCold)
             {
                 _radarResourcesReady = false;
+                _presentationResourcesDirty = false;
                 return;
             }
 
@@ -1246,6 +1341,7 @@ namespace Hecton8.UI
                                    radarCompute != null &&
                                    _radarKernel >= 0 &&
                                    _radarThreadGroupSizeX > 0;
+            _presentationResourcesDirty = false;
         }
 
         private void DisposeGraphicsResources()
@@ -1291,6 +1387,7 @@ namespace Hecton8.UI
             _lastDamageProxyMesh = null;
             _lastDamageArgsMesh = null;
             _lastDamageArgsInstanceCount = int.MinValue;
+            _presentationResourcesDirty = true;
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)
@@ -1508,6 +1605,38 @@ namespace Hecton8.UI
                    (radarBlipMesh == null && _runtimeRadarQuad == null);
         }
 
+        private bool HasRadarBufferCapacity(int requiredCapacity)
+        {
+            return requiredCapacity > 0 &&
+                   _sonarTapBufferA != null &&
+                   _sonarTapBufferB != null &&
+                   _radarBlipBuffer != null &&
+                   _sonarTapBufferA.count >= requiredCapacity &&
+                   _sonarTapBufferB.count >= requiredCapacity &&
+                   _radarBlipBuffer.count >= requiredCapacity;
+        }
+
+        private bool AreRenderTargetsCurrent()
+        {
+            int width = ResolveUiWidth();
+            int height = ResolveUiHeight();
+            RenderTextureFormat format = _uiRenderTextureFormat;
+            bool uiCurrent = _uiRenderTexture != null &&
+                   _uiRenderTexture.width == width &&
+                   _uiRenderTexture.height == height &&
+                   _uiRenderTexture.format == format &&
+                   (offscreenUiCamera == null || ReferenceEquals(offscreenUiCamera.targetTexture, _uiRenderTexture));
+            return uiCurrent && IsExternalRenderTargetCurrent();
+        }
+
+        private bool HasPresentationResourcesReadyForFrame()
+        {
+            return !_graphicsResourceDisposalPending &&
+                   !_presentationResourcesDirty &&
+                   !_renderTargetsDirty &&
+                   AreRenderTargetsCurrent();
+        }
+
         private void EnsureRenderTargets()
         {
             int width = ResolveUiWidth();
@@ -1541,6 +1670,9 @@ namespace Hecton8.UI
                     RequestOffscreenUiRender();
                 }
             }
+            if (_externalFeedRequested)
+                EnsureExternalRenderTextureCurrent();
+            _renderTargetsDirty = false;
         }
 
         private int ResolveUiWidth()
@@ -1578,11 +1710,8 @@ namespace Hecton8.UI
             return math.max(16, (resolved + 1) & ~1);
         }
 
-        private RenderTextureFormat ResolveUiRenderTextureFormat(float qualityWeight01)
+        private RenderTextureFormat ResolvePanelRenderTextureFormat()
         {
-            if (ResolveCheapVisualWeight(qualityWeight01) < 0.5f)
-                return RenderTextureFormat.ARGB32;
-
             return _supportsRgb565RenderTextureCold
                 ? RenderTextureFormat.RGB565
                 : RenderTextureFormat.ARGB32;
@@ -1605,16 +1734,9 @@ namespace Hecton8.UI
 
         private void UpdateExternalFeedState()
         {
-            if (_externalFeedWeight01 <= 0.0001f)
-            {
-                ReleaseExternalRenderTexture();
-                _externalFeedActive = false;
-                return;
-            }
-
             if (_externalFeedRequested)
             {
-                AcquireExternalRenderTexture();
+                EnsureExternalRenderTextureCurrent();
                 _externalFeedActive = _externalRenderTexture != null;
                 return;
             }
@@ -1623,16 +1745,46 @@ namespace Hecton8.UI
             _externalFeedActive = false;
         }
 
+        private bool IsExternalRenderTargetCurrent()
+        {
+            if (!_externalFeedRequested)
+                return true;
+            if (_externalRenderTexture == null)
+                return !_externalFeedActive;
+
+            return _externalRenderTexture.width == ResolveExternalWidth() &&
+                   _externalRenderTexture.height == ResolveExternalHeight() &&
+                   _externalRenderTexture.format == ResolvePanelRenderTextureFormat() &&
+                   (exteriorFeedCamera == null || ReferenceEquals(exteriorFeedCamera.targetTexture, _externalRenderTexture));
+        }
+
+        private void EnsureExternalRenderTextureCurrent()
+        {
+            if (IsExternalRenderTargetCurrent() && _externalRenderTexture != null)
+            {
+                if (exteriorFeedCamera != null && !exteriorFeedCamera.enabled)
+                    exteriorFeedCamera.enabled = true;
+                _externalFeedActive = true;
+                return;
+            }
+
+            ReleaseExternalRenderTexture();
+            AcquireExternalRenderTexture();
+            _externalFeedActive = _externalRenderTexture != null;
+            _lastScreenTexture = null;
+        }
+
         private void AcquireExternalRenderTexture()
         {
             if (_externalRenderTexture == null)
             {
                 int width = ResolveExternalWidth();
                 int height = ResolveExternalHeight();
+                RenderTextureFormat format = ResolvePanelRenderTextureFormat();
                 IRenderTexturePoolService pool = _cachedRenderTexturePool;
                 _externalRenderTexture = pool != null
-                    ? pool.Rent(width, height, RenderTextureFormat.ARGB32, this, 16)
-                    : CreateRenderTexture(width, height, RenderTextureFormat.ARGB32, "VSOS_EXTCAM_RT");
+                    ? pool.Rent(width, height, format, this, 16)
+                    : CreateRenderTexture(width, height, format, "VSOS_EXTCAM_RT");
                 _externalRenderTexturePoolOwner = pool;
                 if (_externalRenderTexture != null)
                 {
@@ -1648,8 +1800,9 @@ namespace Hecton8.UI
             {
                 if (!ReferenceEquals(exteriorFeedCamera.targetTexture, _externalRenderTexture))
                     exteriorFeedCamera.targetTexture = _externalRenderTexture;
-                if (!exteriorFeedCamera.enabled)
-                    exteriorFeedCamera.enabled = true;
+                bool shouldEnableCamera = _externalRenderTexture != null;
+                if (exteriorFeedCamera.enabled != shouldEnableCamera)
+                    exteriorFeedCamera.enabled = shouldEnableCamera;
             }
         }
 
@@ -1683,6 +1836,7 @@ namespace Hecton8.UI
                 offscreenUiCamera.targetTexture = null;
 
             DestroyRenderTexture(ref _uiRenderTexture);
+            _renderTargetsDirty = true;
         }
 
         private static void DestroyRenderTexture(ref RenderTexture rt)
@@ -1763,17 +1917,17 @@ namespace Hecton8.UI
         {
             if (_externalFeedActive && _externalRenderTexture != null)
                 return false;
-            if (_externalFeedWeight01 <= 0.0001f && _externalFeedRequested && staticExternalNoiseTexture != null)
+            if (_externalFeedRequested && staticExternalNoiseTexture != null)
                 return false;
             return true;
         }
 
         private int ResolveStatusDisplayMode()
         {
-            if (_externalFeedWeight01 <= 0.0001f && _externalFeedRequested)
-                return staticExternalNoiseTexture != null ? StatusModeExternalStatic : StatusModeExternalLocked;
             if (_externalFeedActive)
                 return StatusModeExternalLive;
+            if (_externalFeedRequested)
+                return staticExternalNoiseTexture != null ? StatusModeExternalStatic : StatusModeExternalLocked;
             return StatusModeInternalBus;
         }
 
@@ -2414,14 +2568,13 @@ namespace Hecton8.UI
                 return;
             }
 
-            _damageHologramArgsUpload[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
-            {
-                indexCountPerInstance = mesh.GetIndexCount(0),
-                instanceCount = (uint)safeInstanceCount,
-                startIndex = mesh.GetIndexStart(0),
-                baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
-                startInstance = 0u
-            };
+            GraphicsBuffer.IndirectDrawIndexedArgs args = default;
+            args.indexCountPerInstance = mesh.GetIndexCount(0);
+            args.instanceCount = (uint)safeInstanceCount;
+            args.startIndex = mesh.GetIndexStart(0);
+            args.baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0));
+            args.startInstance = 0u;
+            _damageHologramArgsUpload[0] = args;
             GraphicsBufferUploadUtility.UploadArrayAndCopyWholeBuffer(
                 _damageArgsUploadBuffer,
                 _damageArgsBuffer,
@@ -2722,10 +2875,10 @@ namespace Hecton8.UI
 
         private Texture ResolveActiveScreenTexture()
         {
-            if (_externalFeedWeight01 <= 0.0001f && _externalFeedRequested && staticExternalNoiseTexture != null)
-                return staticExternalNoiseTexture;
             if (_externalFeedActive && _externalRenderTexture != null)
                 return _externalRenderTexture;
+            if (_externalFeedRequested && staticExternalNoiseTexture != null)
+                return staticExternalNoiseTexture;
             return _uiRenderTexture;
         }
 
@@ -2843,37 +2996,38 @@ namespace Hecton8.UI
                 string directory = Path.Combine(root, "Docs", "AgentLogs");
                 Directory.CreateDirectory(directory);
                 string path = Path.Combine(directory, "Dump_VEHICLE_SUB_OS.bin");
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(TelemetryContextHash);
-                writer.Write(_telemetryCursor);
-                writer.Write(_telemetryWriteIndex);
                 int entryCount = math.min(_telemetryCursor, TelemetryCapacity);
-                writer.Write(entryCount);
-                int readIndex = _telemetryCursor >= TelemetryCapacity ? _telemetryWriteIndex : 0;
-                for (int i = 0; i < entryCount; i++)
+                int dumpBytes = DumpHeaderBytes + entryCount * CockpitTelemetryDumpEntryBytes;
+                NativeArray<byte> dump = new NativeArray<byte>(
+                    dumpBytes,
+                    Allocator.Temp,
+                    NativeArrayOptions.UninitializedMemory);
+                try
                 {
-                    int slot = readIndex + i;
-                    if (slot >= TelemetryCapacity)
-                        slot -= TelemetryCapacity;
+                    int cursor = 0;
+                    WriteUInt32LittleEndian(dump, ref cursor, TelemetryContextHash);
+                    WriteInt32LittleEndian(dump, ref cursor, _telemetryCursor);
+                    WriteInt32LittleEndian(dump, ref cursor, _telemetryWriteIndex);
+                    WriteInt32LittleEndian(dump, ref cursor, entryCount);
 
-                    CockpitTelemetryEntry entry = telemetryRing[slot];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.RadarActivePoints);
-                    writer.Write(entry.CockpitInteractions);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.Power);
-                    writer.Write(entry.Oxygen);
-                    writer.Write(entry.Co2);
-                    writer.Write(entry.SpeedKnots);
-                    writer.Write(entry.AnchorPosition.x);
-                    writer.Write(entry.AnchorPosition.y);
-                    writer.Write(entry.AnchorPosition.z);
-                    writer.Write(entry.HoloDamagePoints);
-                    writer.Write(entry.HoloProxyVertices);
-                    writer.Write(entry.HoloFlicker);
-                    writer.Write(entry.HoloFlood01);
-                    writer.Write(entry.HoloFlags);
+                    int readIndex = _telemetryCursor >= TelemetryCapacity ? _telemetryWriteIndex : 0;
+                    for (int i = 0; i < entryCount; i++)
+                    {
+                        int slot = readIndex + i;
+                        if (slot >= TelemetryCapacity)
+                            slot -= TelemetryCapacity;
+
+                        CockpitTelemetryEntry entry = telemetryRing[slot];
+                        WriteCockpitTelemetryDumpEntry(dump, ref cursor, in entry);
+                    }
+
+                    if (!WriteDumpBytes(path, dump, cursor))
+                        GlobalTelemetryBus.PublishPerformanceWarning(0x44554D50u, TelemetryContextHash, 2f);
+                }
+                finally
+                {
+                    if (dump.IsCreated)
+                        dump.Dispose();
                 }
 
                 WriteDamageHolographerMirrorDump(directory, entryCount, telemetryRing);
@@ -2890,27 +3044,104 @@ namespace Hecton8.UI
             NativeArray<CockpitTelemetryEntry>.ReadOnly telemetryRing)
         {
             string path = Path.Combine(directory, "Dump_DIEGETIC_DAMAGE_HOLOGRAPHER.bin");
-            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-            using BinaryWriter writer = new BinaryWriter(stream);
-            writer.Write(DamageHologramTelemetryHash);
-            writer.Write(_telemetryCursor);
-            writer.Write(_telemetryWriteIndex);
-            writer.Write(entryCount);
-            int readIndex = _telemetryCursor >= TelemetryCapacity ? _telemetryWriteIndex : 0;
-            for (int i = 0; i < entryCount; i++)
+            int dumpBytes = DumpHeaderBytes + entryCount * DamageHologramDumpEntryBytes;
+            NativeArray<byte> dump = new NativeArray<byte>(
+                dumpBytes,
+                Allocator.Temp,
+                NativeArrayOptions.UninitializedMemory);
+            try
             {
-                int slot = readIndex + i;
-                if (slot >= TelemetryCapacity)
-                    slot -= TelemetryCapacity;
+                int cursor = 0;
+                WriteUInt32LittleEndian(dump, ref cursor, DamageHologramTelemetryHash);
+                WriteInt32LittleEndian(dump, ref cursor, _telemetryCursor);
+                WriteInt32LittleEndian(dump, ref cursor, _telemetryWriteIndex);
+                WriteInt32LittleEndian(dump, ref cursor, entryCount);
+                int readIndex = _telemetryCursor >= TelemetryCapacity ? _telemetryWriteIndex : 0;
+                for (int i = 0; i < entryCount; i++)
+                {
+                    int slot = readIndex + i;
+                    if (slot >= TelemetryCapacity)
+                        slot -= TelemetryCapacity;
 
-                CockpitTelemetryEntry entry = telemetryRing[slot];
-                writer.Write(entry.Frame);
-                writer.Write(entry.HoloDamagePoints);
-                writer.Write(entry.HoloProxyVertices);
-                writer.Write(entry.HoloFlicker);
-                writer.Write(entry.HoloFlood01);
-                writer.Write(entry.HoloFlags);
+                    CockpitTelemetryEntry entry = telemetryRing[slot];
+                    WriteDamageHologramDumpEntry(dump, ref cursor, in entry);
+                }
+
+                if (!WriteDumpBytes(path, dump, cursor))
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x44554D50u, DamageHologramTelemetryHash, 2f);
             }
+            finally
+            {
+                if (dump.IsCreated)
+                    dump.Dispose();
+            }
+        }
+
+        private static void WriteCockpitTelemetryDumpEntry(
+            NativeArray<byte> dump,
+            ref int cursor,
+            in CockpitTelemetryEntry entry)
+        {
+            WriteInt32LittleEndian(dump, ref cursor, entry.Frame);
+            WriteInt32LittleEndian(dump, ref cursor, entry.RadarActivePoints);
+            WriteInt32LittleEndian(dump, ref cursor, entry.CockpitInteractions);
+            WriteUInt32LittleEndian(dump, ref cursor, entry.Flags);
+            WriteFloatLittleEndian(dump, ref cursor, entry.Power);
+            WriteFloatLittleEndian(dump, ref cursor, entry.Oxygen);
+            WriteFloatLittleEndian(dump, ref cursor, entry.Co2);
+            WriteFloatLittleEndian(dump, ref cursor, entry.SpeedKnots);
+            WriteFloatLittleEndian(dump, ref cursor, entry.AnchorPosition.x);
+            WriteFloatLittleEndian(dump, ref cursor, entry.AnchorPosition.y);
+            WriteFloatLittleEndian(dump, ref cursor, entry.AnchorPosition.z);
+            WriteInt32LittleEndian(dump, ref cursor, entry.HoloDamagePoints);
+            WriteInt32LittleEndian(dump, ref cursor, entry.HoloProxyVertices);
+            WriteFloatLittleEndian(dump, ref cursor, entry.HoloFlicker);
+            WriteFloatLittleEndian(dump, ref cursor, entry.HoloFlood01);
+            WriteUInt32LittleEndian(dump, ref cursor, entry.HoloFlags);
+        }
+
+        private static void WriteDamageHologramDumpEntry(
+            NativeArray<byte> dump,
+            ref int cursor,
+            in CockpitTelemetryEntry entry)
+        {
+            WriteInt32LittleEndian(dump, ref cursor, entry.Frame);
+            WriteInt32LittleEndian(dump, ref cursor, entry.HoloDamagePoints);
+            WriteInt32LittleEndian(dump, ref cursor, entry.HoloProxyVertices);
+            WriteFloatLittleEndian(dump, ref cursor, entry.HoloFlicker);
+            WriteFloatLittleEndian(dump, ref cursor, entry.HoloFlood01);
+            WriteUInt32LittleEndian(dump, ref cursor, entry.HoloFlags);
+        }
+
+        private static void WriteInt32LittleEndian(NativeArray<byte> dump, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(dump, ref cursor, unchecked((uint)value));
+        }
+
+        private static void WriteFloatLittleEndian(NativeArray<byte> dump, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(dump, ref cursor, math.asuint(value));
+        }
+
+        private static void WriteUInt32LittleEndian(NativeArray<byte> dump, ref int cursor, uint value)
+        {
+            if (cursor + 4 > dump.Length)
+                return;
+
+            dump[cursor] = (byte)value;
+            dump[cursor + 1] = (byte)(value >> 8);
+            dump[cursor + 2] = (byte)(value >> 16);
+            dump[cursor + 3] = (byte)(value >> 24);
+            cursor += 4;
+        }
+
+        private static unsafe bool WriteDumpBytes(string path, NativeArray<byte> dump, int byteCount)
+        {
+            if (string.IsNullOrEmpty(path) || !dump.IsCreated || byteCount <= 0 || byteCount > dump.Length)
+                return false;
+
+            void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(dump);
+            return AsyncWriteManager.WriteAll(path, source, byteCount, out _);
         }
 
         private bool HasButtonTransitions()

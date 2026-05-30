@@ -34,7 +34,6 @@ namespace Hecton8.Core
         private const int StandaloneOrbitWhiteoutFallbackFrames = 180;
         private const byte CriticalMemoryPressureSeverity = 2;
         private const float ForcedMemoryPressureThreshold01 = 0.85f;
-        private const float ForcedMemoryQualityThreshold01 = 0.12f;
         private const float MassiveImpactSeverity = 1f;
         private const float ReentryHeatStartThreshold01 = 0.001f;
 
@@ -90,13 +89,16 @@ namespace Hecton8.Core
             }
         }
 
-        public bool IsLowTier
+        public bool IsSurvivalProxySurfaceActive
         {
             get
             {
                 return SurvivalProxyPressure01 >= PrologueSequenceQualityPolicy.SurvivalProxyActivationThreshold01;
             }
         }
+
+        [Obsolete("Use SurvivalProxyPressure01 or IsSurvivalProxySurfaceActive. This member is a compatibility alias.")]
+        public bool IsLowTier => IsSurvivalProxySurfaceActive;
 
         public bool IsStandaloneOrbitHandoffProxyAllowed
         {
@@ -880,8 +882,7 @@ namespace Hecton8.Core
             float survivalPressure01 = 1.0f - SmoothStep01(qualityWeight01);
             float homeostasisPressure01 = ResolveHomeostasisPressure01();
             float pressure01 = math.max(survivalPressure01, homeostasisPressure01);
-            forcedLowMemory = qualityWeight01 <= ForcedMemoryQualityThreshold01 ||
-                              pressure01 >= ForcedMemoryPressureThreshold01;
+            forcedLowMemory = pressure01 >= ForcedMemoryPressureThreshold01;
             return forcedLowMemory ? 1f : pressure01;
         }
 

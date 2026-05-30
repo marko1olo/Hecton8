@@ -1263,6 +1263,9 @@ namespace Hecton8.Narrative.Campaign
                 return true;
             }
 
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
             if (handle.BufferID != 0u && handle.Generation != 0u)
                 vault.ReleaseBuffer(in handle);
 
@@ -1312,15 +1315,27 @@ namespace Hecton8.Narrative.Campaign
                 return false;
             }
 
-            if (variables.IsCreated && variables.Length >= GlobalVariableCapacity)
+            bool keepLock = false;
+            try
             {
-                lockedVault = vault;
-                return true;
-            }
+                if (variables.IsCreated && variables.Length >= GlobalVariableCapacity)
+                {
+                    lockedVault = vault;
+                    keepLock = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in _variablesHandle, VaultOwnerSystemId);
-            variables = default;
-            return false;
+                variables = default;
+                return false;
+            }
+            finally
+            {
+                if (!keepLock)
+                {
+                    vault.ReleaseWriteLock(in _variablesHandle, VaultOwnerSystemId);
+                    variables = default;
+                }
+            }
         }
 
         private void ReleaseVariablesWrite(IDataVault lockedVault)
@@ -1341,15 +1356,27 @@ namespace Hecton8.Narrative.Campaign
                 return false;
             }
 
-            if (rules.IsCreated && rules.Length >= RuleCapacity)
+            bool keepLock = false;
+            try
             {
-                lockedVault = vault;
-                return true;
-            }
+                if (rules.IsCreated && rules.Length >= RuleCapacity)
+                {
+                    lockedVault = vault;
+                    keepLock = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in _rulesHandle, VaultOwnerSystemId);
-            rules = default;
-            return false;
+                rules = default;
+                return false;
+            }
+            finally
+            {
+                if (!keepLock)
+                {
+                    vault.ReleaseWriteLock(in _rulesHandle, VaultOwnerSystemId);
+                    rules = default;
+                }
+            }
         }
 
         private void ReleaseRulesWrite(IDataVault lockedVault)
@@ -1370,15 +1397,27 @@ namespace Hecton8.Narrative.Campaign
                 return false;
             }
 
-            if (blackBox.IsCreated && blackBox.Length >= BlackBoxCapacity)
+            bool keepLock = false;
+            try
             {
-                lockedVault = vault;
-                return true;
-            }
+                if (blackBox.IsCreated && blackBox.Length >= BlackBoxCapacity)
+                {
+                    lockedVault = vault;
+                    keepLock = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
-            blackBox = default;
-            return false;
+                blackBox = default;
+                return false;
+            }
+            finally
+            {
+                if (!keepLock)
+                {
+                    vault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
+                    blackBox = default;
+                }
+            }
         }
 
         private void ReleaseBlackBoxWrite(IDataVault lockedVault)

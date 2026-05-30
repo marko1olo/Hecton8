@@ -68,28 +68,36 @@ namespace Hecton8.Core.Memory
                 return false;
 
             VaultMemoryLayoutConfig config = VaultMemoryMath.BuildMockConfig(0);
-            if (TryOpenExistingLane(
+            if (TryReadExistingLane(
                     vault,
                     BufferID.VaultMemoryLayoutConfig,
                     1,
-                    out NativeArray<VaultMemoryLayoutConfig> existingBuffer))
+                    out NativeArray<VaultMemoryLayoutConfig>.ReadOnly existingBuffer))
             {
                 config = existingBuffer[0];
             }
 
-            if (!OpenOrAcquireLane(
+            if (!TryAcquireWritableLane(
                     vault,
                     BufferID.VaultMemoryProfileCsvScratch,
                     CsvScratchBytes,
                     SystemID.CoreDataVault,
                     NativeArrayOptions.UninitializedMemory,
+                    out VaultGenerationHandle<byte> scratchHandle,
                     out NativeArray<byte> scratch) ||
                 scratch.Length < CsvMaxLineBytes + 64)
             {
                 return false;
             }
 
-            ParseCsvOverrideStream(csvPath, scratch, ref config);
+            try
+            {
+                ParseCsvOverrideStream(csvPath, scratch, ref config);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in scratchHandle, SystemID.CoreDataVault);
+            }
 
             config.SourceHash = SourceHashCsv;
             WriteConfigToVault(vault, in config);
@@ -341,25 +349,33 @@ namespace Hecton8.Core.Memory
 
         private static void WriteConfigToVault(IDataVault vault, in VaultMemoryLayoutConfig config)
         {
-            if (!OpenOrAcquireLane(
+            if (!TryAcquireWritableLane(
                     vault,
                     BufferID.VaultMemoryLayoutConfig,
                     1,
                     SystemID.CoreDataVault,
                     NativeArrayOptions.UninitializedMemory,
+                    out VaultGenerationHandle<VaultMemoryLayoutConfig> handle,
                     out NativeArray<VaultMemoryLayoutConfig> buffer))
             {
                 return;
             }
 
-            buffer[0] = config;
+            try
+            {
+                buffer[0] = config;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDataVault);
+            }
         }
 
-        private static bool TryOpenExistingLane<T>(
+        private static bool TryReadExistingLane<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> buffer)
+            out NativeArray<T>.ReadOnly buffer)
             where T : struct
         {
             buffer = default;
@@ -369,23 +385,25 @@ namespace Hecton8.Core.Memory
             if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
                 return false;
 
-            return TryOpenLane(vault, in handle, bufferId, requiredLength, out buffer);
+            return TryReadLane(vault, in handle, bufferId, requiredLength, out buffer);
         }
 
-        private static bool OpenOrAcquireLane<T>(
+        private static bool TryAcquireWritableLane<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
             SystemID owner,
             NativeArrayOptions options,
+            out VaultGenerationHandle<T> handle,
             out NativeArray<T> buffer)
             where T : struct
         {
+            handle = default;
             buffer = default;
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) ||
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
                 !IsHandleCreated(in handle, bufferId))
             {
                 if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
@@ -394,22 +412,45 @@ namespace Hecton8.Core.Memory
                 handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, owner, options);
             }
 
-            return TryOpenLane(vault, in handle, bufferId, requiredLength, out buffer);
+            if (!IsHandleCreated(in handle, bufferId) ||
+                !vault.TryAcquireWriteLock(in handle, owner, out buffer))
+            {
+                buffer = default;
+                return false;
+            }
+
+            bool releaseOnFailure = true;
+            try
+            {
+                if (buffer.IsCreated && buffer.Length >= requiredLength)
+                {
+                    releaseOnFailure = false;
+                    return true;
+                }
+
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnFailure)
+                    vault.ReleaseWriteLock(in handle, owner);
+            }
         }
 
-        private static bool TryOpenLane<T>(
+        private static bool TryReadLane<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> buffer)
+            out NativeArray<T>.ReadOnly buffer)
             where T : struct
         {
             buffer = default;
             if (vault == null || requiredLength <= 0 || !IsHandleCreated(in handle, bufferId))
                 return false;
 
-            if (!vault.TryResolveHandle(in handle, out buffer) || !buffer.IsCreated || buffer.Length < requiredLength)
+            if (!vault.TryReadOnlyHandle(in handle, out buffer) || !buffer.IsCreated || buffer.Length < requiredLength)
             {
                 buffer = default;
                 return false;

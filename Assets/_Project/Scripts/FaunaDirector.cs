@@ -133,6 +133,7 @@ namespace Hecton8.AI
             /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ð¹ Transform (avoid GetComponent per frame).</summary>
             public Transform transform;
             public FaunaBrain brain;
+            public Rigidbody rigidbody;
 
             /// <summary>Ð˜Ð½Ð´ÐµÐºÑ Ð² FaunaBiomeData.possibleCreatures (Ð´Ð»Ñ counting).</summary>
             public int creatureTypeIndex;
@@ -668,6 +669,7 @@ namespace Hecton8.AI
                 return;
 
             RefreshColdRegistryDependencies();
+            EnsureRuntimeStateInitialized();
             TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
             TryRegisterFaunaSimulationService();
@@ -1126,7 +1128,9 @@ namespace Hecton8.AI
         /// </summary>
         public void SlowTick()
         {
-            EnsureRuntimeStateInitialized();
+            if (!IsRuntimeStateInitialized())
+                return;
+
             ResolveBiomeMatrixDirector();
             ResolveWorldZoneDirector();
             ResolveDepthZoneDirector();
@@ -1544,7 +1548,9 @@ namespace Hecton8.AI
 
 
                 // â”€â”€ ÐÐ°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ° ÑÐ¿Ð°Ð²Ð½-Ð¿Ð¾Ð¸Ð½Ñ‚Ð° Ð´Ð»Ñ AI â”€â”€
-                if (instance.TryGetComponent(out FaunaBrain ai))
+                FaunaBrain ai = null;
+                pool.TryGetPooledComponent(instance, out ai);
+                if (ai != null)
                 {
                     ai.ApplyArchetype(selectedEntry.archetype);
                     ai.SetSpawnPoint(spawnPos);
@@ -1554,6 +1560,7 @@ namespace Hecton8.AI
                 }
 
                 int typeIndex = selectedEntry.creatureTypeIndex;
+                pool.TryGetPooledRootRigidbody(instance, out Rigidbody rigidbody);
 
                 // â”€â”€ Ð ÐµÐ³Ð¸ÑÑ‚Ñ€Ð°Ñ†Ð¸Ñ Ð² Ñ‚Ñ€ÐµÐºÐµÑ€Ðµ â”€â”€
                 if (!TryBuildActiveCreatureRecord(
@@ -1567,6 +1574,7 @@ namespace Hecton8.AI
                         isLargeThreat,
                         selectedEntry.isPredator,
                         ai,
+                        rigidbody,
                         uniqueInstanceUid,
                         in spawnAup,
                         out ActiveCreature record))
@@ -2215,17 +2223,7 @@ namespace Hecton8.AI
 
         private void EnsureRuntimeStateInitialized()
         {
-            if (_biomeLookup != null &&
-                _countsPerTypePerBiome != null &&
-                _resolvedEntriesPerBiome != null &&
-                _availablePoolCountsPerBiome != null &&
-                _prefabTypeIndexLookup != null &&
-                _countsPerChunk != null &&
-                _predatorCountsPerSector != null &&
-                _largeThreatCountsPerMacroZone != null &&
-                _activeCreatures != null &&
-                _countsPerBiome != null &&
-                _persistedFaunaRestoreScratch != null)
+            if (IsRuntimeStateInitialized())
             {
                 return;
             }
@@ -2308,6 +2306,21 @@ namespace Hecton8.AI
             _activeCreatures ??= new List<ActiveCreature>(Mathf.Max(4, globalMaxCount));
             if (_countsPerBiome == null || _countsPerBiome.Length < maxBiomeIndex + 1)
                 _countsPerBiome = new int[maxBiomeIndex + 1];
+        }
+
+        private bool IsRuntimeStateInitialized()
+        {
+            return _biomeLookup != null &&
+                   _countsPerTypePerBiome != null &&
+                   _resolvedEntriesPerBiome != null &&
+                   _availablePoolCountsPerBiome != null &&
+                   _prefabTypeIndexLookup != null &&
+                   _countsPerChunk != null &&
+                   _predatorCountsPerSector != null &&
+                   _largeThreatCountsPerMacroZone != null &&
+                   _activeCreatures != null &&
+                   _countsPerBiome != null &&
+                   _persistedFaunaRestoreScratch != null;
         }
 
         private void InitializeDehydrationResidencyState()
@@ -2605,13 +2618,6 @@ namespace Hecton8.AI
                     return unchecked((int)Hecton.Localization.LocHash.Compute(archetype.creatureId)) & int.MaxValue;
             }
 
-            if (prefabSource != null && prefabSource.TryGetComponent(out FaunaBrain faunaBrain))
-            {
-                int prefabSpeciesId = faunaBrain.SpeciesId;
-                if (prefabSpeciesId != 0)
-                    return prefabSpeciesId;
-            }
-
             return 0;
         }
 
@@ -2704,6 +2710,7 @@ namespace Hecton8.AI
             bool isLargeThreat,
             bool isPredator,
             FaunaBrain brain,
+            Rigidbody rigidbody,
             uint uniqueInstanceUid,
             in AbsoluteUniversePosition positionAup,
             out ActiveCreature record)
@@ -2716,13 +2723,29 @@ namespace Hecton8.AI
             if (slotIndex == InvalidDehydrationSlotIndex)
                 return false;
 
-            UpdateResidencySlot(slotIndex, instance, prefabSource, archetype, creatureTypeIndex, biomeIndex, chunkCoord, macroZoneCoord, isLargeThreat, isPredator, uniqueInstanceUid, in positionAup, markDehydrated: false);
+            UpdateResidencySlot(
+                slotIndex,
+                instance,
+                prefabSource,
+                archetype,
+                creatureTypeIndex,
+                biomeIndex,
+                chunkCoord,
+                macroZoneCoord,
+                isLargeThreat,
+                isPredator,
+                brain,
+                rigidbody,
+                uniqueInstanceUid,
+                in positionAup,
+                markDehydrated: false);
 
             record = new ActiveCreature
             {
                 gameObject = instance,
                 transform = instance.transform,
                 brain = brain,
+                rigidbody = rigidbody,
                 creatureTypeIndex = creatureTypeIndex,
                 biomeIndex = biomeIndex,
                 prefabSource = prefabSource,
@@ -2776,6 +2799,8 @@ namespace Hecton8.AI
                 creature.macroZoneCoord,
                 creature.isLargeThreat,
                 creature.isPredator,
+                creature.brain,
+                creature.rigidbody,
                 creature.uniqueInstanceUid,
                 in positionAup,
                 markDehydrated);
@@ -2792,6 +2817,8 @@ namespace Hecton8.AI
             WorldMacroZoneCoordinate macroZoneCoord,
             bool isLargeThreat,
             bool isPredator,
+            FaunaBrain cachedBrain,
+            Rigidbody cachedRigidbody,
             uint uniqueInstanceUid,
             in AbsoluteUniversePosition positionAup,
             bool markDehydrated)
@@ -2820,19 +2847,18 @@ namespace Hecton8.AI
             float health = archetype != null ? Mathf.Max(1f, archetype.maxHealth) : 1f;
             float hunger01 = 0f;
 
-            if (instance != null)
+            FaunaBrain ai = cachedBrain;
+            if (ai != null)
             {
-                if (instance.TryGetComponent(out FaunaBrain ai))
-                {
-                    health = ai.CurrentHealth;
-                    hunger01 = ai.CurrentHunger01;
-                }
+                health = ai.CurrentHealth;
+                hunger01 = ai.CurrentHunger01;
+            }
 
-                if (instance.TryGetComponent(out Rigidbody rigidbody))
-                {
-                    linearVelocity = rigidbody.linearVelocity;
-                    angularVelocity = rigidbody.angularVelocity;
-                }
+            Rigidbody rigidbody = cachedRigidbody;
+            if (rigidbody != null)
+            {
+                linearVelocity = rigidbody.linearVelocity;
+                angularVelocity = rigidbody.angularVelocity;
             }
 
             _faunaSimulationMemory.TryWriteLinearVelocity(
@@ -2912,7 +2938,9 @@ namespace Hecton8.AI
                 if (instance == null)
                     continue;
 
-                if (instance.TryGetComponent(out FaunaBrain ai))
+                FaunaBrain ai = null;
+                pool.TryGetPooledComponent(instance, out ai);
+                if (ai != null)
                 {
                     ai.ApplyArchetype(state.archetype);
                     ai.SetSpawnPoint(runtimePosition);
@@ -2935,7 +2963,8 @@ namespace Hecton8.AI
                     }
                 }
 
-                if (instance.TryGetComponent(out Rigidbody rigidbody))
+                pool.TryGetPooledRootRigidbody(instance, out Rigidbody rigidbody);
+                if (rigidbody != null)
                 {
                     IPhysicsService physicsService = _physicsService;
                     if (physicsService != null)
@@ -2950,6 +2979,7 @@ namespace Hecton8.AI
                     gameObject = instance,
                     transform = instance.transform,
                     brain = ai,
+                    rigidbody = rigidbody,
                     creatureTypeIndex = state.creatureTypeIndex,
                     biomeIndex = state.biomeIndex,
                     prefabSource = state.prefabSource,
@@ -3157,6 +3187,8 @@ namespace Hecton8.AI
                 macroZoneCoord,
                 isLargeThreat,
                 isPredator,
+                null,
+                null,
                 cachedState.InstanceUid,
                 in position,
                 markDehydrated: true);
@@ -3358,6 +3390,8 @@ namespace Hecton8.AI
                 macroZoneCoord,
                 isLargeThreat,
                 entry.isPredator,
+                null,
+                null,
                 uniqueInstanceUid,
                 in position,
                 markDehydrated: true);
@@ -4328,7 +4362,9 @@ namespace Hecton8.AI
 
             int typeIndex = selectedEntry.creatureTypeIndex;
 
-            if (instance.TryGetComponent(out FaunaBrain ai))
+            FaunaBrain ai = null;
+            pool.TryGetPooledComponent(instance, out ai);
+            if (ai != null)
             {
                 ai.ApplyArchetype(selectedEntry.archetype);
                 ai.SetSpawnPoint(spawnPosition);
@@ -4347,6 +4383,8 @@ namespace Hecton8.AI
                 }
             }
 
+            pool.TryGetPooledRootRigidbody(instance, out Rigidbody rigidbody);
+
             if (!TryBuildActiveCreatureRecord(
                     instance,
                     resolvedPrefab,
@@ -4358,6 +4396,7 @@ namespace Hecton8.AI
                     selectedEntry.isLargeThreat,
                     selectedEntry.isPredator,
                     ai,
+                    rigidbody,
                     uniqueInstanceUid,
                     in spawnAup,
                     out ActiveCreature record))
@@ -4901,7 +4940,9 @@ namespace Hecton8.AI
 
                 uint uniqueInstanceUid = BuildStandardFaunaInstanceUid(selectedEntry.speciesId, biomeIdx, spawnChunk, in spawnAup);
 
-                if (instance.TryGetComponent(out FaunaBrain ai))
+                FaunaBrain ai = null;
+                pool.TryGetPooledComponent(instance, out ai);
+                if (ai != null)
                 {
                     ai.ApplyArchetype(selectedEntry.archetype);
                     ai.SetSpawnPoint(spawnPos);
@@ -4910,6 +4951,7 @@ namespace Hecton8.AI
                     _faunaPresentationService?.ConfigureSpawnedCreature(ai, selectedEntry.archetype, biomeIdx, spawnPos, in spawnChunk);
                     ai.ForceState(FaunaBrain.AIState.Aggressive);
                 }
+                pool.TryGetPooledRootRigidbody(instance, out Rigidbody rigidbody);
 
                 if (!TryBuildActiveCreatureRecord(
                         instance,
@@ -4922,6 +4964,7 @@ namespace Hecton8.AI
                         false,
                         selectedEntry.isPredator,
                         ai,
+                        rigidbody,
                         uniqueInstanceUid,
                         in spawnAup,
                         out record))

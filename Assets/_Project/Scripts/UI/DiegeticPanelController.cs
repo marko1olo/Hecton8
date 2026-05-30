@@ -128,7 +128,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic Panel Controller")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class DiegeticPanelController : MonoBehaviour, ILateFrameTickable, ICursorHost, IDepthOcclusionReceiver, IDamageReceiver, IGlobalRegistryHotSwapListener
+    public sealed class DiegeticPanelController : MonoBehaviour, ILateFrameTickable, ISlowTickable, ICursorHost, IDepthOcclusionReceiver, IDamageReceiver, IGlobalRegistryHotSwapListener
     {
         private const string WorldGeometrySortingLayer = "WorldGeometry";
         private const float MinCanvasExtent = 0.0001f;
@@ -404,6 +404,9 @@ namespace Hecton8.UI
         private RenderTexture _panelRenderTexture;
         private RenderTexture _phosphorFrontTexture;
         private RenderTexture _phosphorBackTexture;
+        private RenderTargetIdentifier _phosphorFrontTarget;
+        private RenderTargetIdentifier _phosphorBackTarget;
+        private CommandBuffer _phosphorCommandBuffer;
         private Material _phosphorDecayMaterial;
         private Material _cachedPanelOutputMaterial;
         private Texture _appliedPanelOutputTexture;
@@ -428,7 +431,9 @@ namespace Hecton8.UI
         private float _appliedFlashlightGlare = -1f;
         private float _appliedPhosphorDecay = -1f;
         private bool _tickRegistered;
+        private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
+        private bool _dispatcherAvailableCold;
         private bool _renderPipelineHookRegistered;
         private bool _hotSwapListenerRegistered;
         private bool _inputAwaitingRegistration;
@@ -456,6 +461,7 @@ namespace Hecton8.UI
         private bool _pendingPanelViewEnabled;
         private bool _pendingQualityPresentationRefresh;
         private bool _pendingDistanceRenderTextureRefresh;
+        private bool _forceRenderTextureRefreshQueued;
         private float _pendingDistanceRefreshDeltaTime;
         private bool _pendingMaterialRefresh;
         private bool _pendingMaterialTextureRefresh;
@@ -518,6 +524,7 @@ namespace Hecton8.UI
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             TryRegisterTick();
+            TryRegisterSlowTick();
             RegisterRenderPipelineHook();
             ApplyCanvasWorldSpaceSettings();
             RefreshPanelData(forceRefresh: true);
@@ -527,6 +534,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             UnregisterTick();
+            UnregisterSlowTick();
             TryUnregisterHotSwapListener();
             UnregisterRenderPipelineHook();
             UnregisterProxyLight();
@@ -547,6 +555,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            UnregisterSlowTick();
             UnregisterRenderPipelineHook();
             TryUnregisterHotSwapListener();
             UnregisterProxyLight();
@@ -672,24 +681,39 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (_pendingQualityPresentationRefresh)
-            {
-                _pendingQualityPresentationRefresh = false;
-                RefreshQualityPresentationIfNeeded();
-            }
-
-            if (_pendingDistanceRenderTextureRefresh)
-            {
-                _pendingDistanceRenderTextureRefresh = false;
-                _pendingDistanceRefreshDeltaTime = 0f;
-            }
-
             FlushQueuedMaterialState();
 
             if (ShouldUsePhosphorDecay() && _panelRenderTexture != null)
                 ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
 
             _applyingLateFramePresentation = false;
+        }
+
+        /// <inheritdoc />
+        public void SlowTick()
+        {
+            if (!isActiveAndEnabled)
+                return;
+
+            bool forceRenderRefresh = _forceRenderTextureRefreshQueued;
+            bool needsRenderRefresh = forceRenderRefresh || _pendingDistanceRenderTextureRefresh;
+
+            if (_pendingQualityPresentationRefresh)
+            {
+                _pendingQualityPresentationRefresh = false;
+                needsRenderRefresh |= RefreshQualityPresentationIfNeeded();
+            }
+
+            if (needsRenderRefresh)
+            {
+                _forceRenderTextureRefreshQueued = false;
+                _pendingDistanceRenderTextureRefresh = false;
+                float refreshDeltaTime = _pendingDistanceRefreshDeltaTime;
+                _pendingDistanceRefreshDeltaTime = 0f;
+                RefreshDistanceAndRenderTexture(refreshDeltaTime, forceRenderRefresh);
+            }
+
+            RefreshLateFrameRegistration();
         }
 
         /// <inheritdoc />
@@ -753,7 +777,7 @@ namespace Hecton8.UI
             if (_presentationPausedByOwner)
                 return;
 
-            EnsureRenderTexture(forceRefresh: true);
+            QueueRenderTextureRefresh(forceRefresh: true);
         }
 
         /// <summary>
@@ -876,7 +900,7 @@ namespace Hecton8.UI
             _retainRenderTextureOnDisable = retainOnDisable;
 
             if (resolutionChanged || retentionChanged)
-                EnsureRenderTexture(forceRefresh: true);
+                QueueRenderTextureRefresh(forceRefresh: true);
         }
 
         internal void ClearFixedRenderTextureResolutionOverride()
@@ -886,7 +910,7 @@ namespace Hecton8.UI
             _retainRenderTextureOnDisable = false;
 
             if (hadOverride)
-                EnsureRenderTexture(forceRefresh: true);
+                QueueRenderTextureRefresh(forceRefresh: true);
         }
 
         internal void ReleasePresentationRenderTexture()
@@ -913,7 +937,7 @@ namespace Hecton8.UI
             }
 
             if (isActiveAndEnabled)
-                EnsureRenderTexture(forceRefresh: true);
+                QueueRenderTextureRefresh(forceRefresh: true);
             else
                 RefreshLateFrameRegistration();
         }
@@ -938,7 +962,7 @@ namespace Hecton8.UI
             enablePhosphorDecay = enabled;
             phosphorDecay = ResolveAuthoredPhosphorDecay(decay);
             if (ShouldUsePhosphorDecay())
-                EnsurePhosphorResources();
+                QueueRenderTextureRefresh(forceRefresh: true);
             else
                 ReleasePhosphorTextures();
 
@@ -1084,7 +1108,7 @@ namespace Hecton8.UI
             _phosphorBlend01 = SmoothStep01(phosphorT);
         }
 
-        private void RefreshQualityPresentationIfNeeded()
+        private bool RefreshQualityPresentationIfNeeded()
         {
             float previousQuality = _qualityWeight01;
             bool previousPhosphorState = ShouldUsePhosphorDecay();
@@ -1095,9 +1119,10 @@ namespace Hecton8.UI
             bool phosphorChanged = previousPhosphorState != ShouldUsePhosphorDecay();
             bool formatChanged = previousFormat != ResolveColorGraphicsFormat();
             if (!qualityChanged && !phosphorChanged && !formatChanged)
-                return;
+                return false;
 
             ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
+            return phosphorChanged || formatChanged || qualityChanged;
         }
 
         private void CacheRegistryServicesCold()
@@ -1151,6 +1176,17 @@ namespace Hecton8.UI
                 }
 
                 return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                _dispatcherAvailableCold = currentService != null;
+                if (_dispatcherAvailableCold && isActiveAndEnabled)
+                {
+                    TryRegisterTick();
+                    TryRegisterSlowTick();
+                    RefreshLateFrameRegistration();
+                }
             }
         }
 
@@ -1246,7 +1282,7 @@ namespace Hecton8.UI
             _matrixStateInitialized = true;
         }
 
-        private void RefreshDistanceAndRenderTexture(float deltaTime)
+        private void RefreshDistanceAndRenderTexture(float deltaTime, bool forceRefresh)
         {
             if (_presentationPausedByOwner)
             {
@@ -1254,8 +1290,8 @@ namespace Hecton8.UI
                 return;
             }
 
-            _refreshTimer -= deltaTime;
-            if (_refreshTimer > 0f)
+            _refreshTimer -= math.max(0f, deltaTime);
+            if (!forceRefresh && _refreshTimer > 0f)
                 return;
 
             _refreshTimer = ResolveDistanceRefreshInterval();
@@ -1270,7 +1306,7 @@ namespace Hecton8.UI
             Vector3 panelOrigin = (Vector3)_panelData.LocalToWorld.c3.xyz;
             Vector3 cameraPosition = cameraTransform.position;
             _panelData.DistToCameraSq = ResolveAupDistanceSqClamped(panelOrigin, cameraPosition);
-            EnsureRenderTexture(forceRefresh: false);
+            EnsureRenderTexture(forceRefresh);
         }
 
         private void EnsureRenderTexture(bool forceRefresh)
@@ -1358,7 +1394,7 @@ namespace Hecton8.UI
 
         private GraphicsFormat ResolveColorGraphicsFormat()
         {
-            return _isMx350Tier && _qualityWeight01 < 0.72f
+            return _isMx350Tier
                     ? GraphicsFormat.B5G6R5_UNormPack16
                     : GraphicsFormat.R8G8B8A8_UNorm;
         }
@@ -1384,6 +1420,7 @@ namespace Hecton8.UI
         private void ReleaseRenderTexture()
         {
             ReleasePhosphorTextures();
+            ReleasePhosphorCommandBuffer();
             _appliedPanelOutputTexture = null;
 
             if (panelCamera != null && panelCamera.targetTexture == _panelRenderTexture)
@@ -1416,6 +1453,7 @@ namespace Hecton8.UI
                 if (_phosphorFrontTexture != null || _phosphorBackTexture != null)
                 {
                     ReleasePhosphorTextures();
+                    ReleasePhosphorCommandBuffer();
                     ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
                 }
 
@@ -1441,6 +1479,9 @@ namespace Hecton8.UI
 
             _phosphorFrontTexture = CreatePhosphorTexture(descriptor, "DiegeticPanel_PhosphorFront");
             _phosphorBackTexture = CreatePhosphorTexture(descriptor, "DiegeticPanel_PhosphorBack");
+            _phosphorFrontTarget = new RenderTargetIdentifier(_phosphorFrontTexture);
+            _phosphorBackTarget = new RenderTargetIdentifier(_phosphorBackTexture);
+            EnsurePhosphorCommandBuffer();
             ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
         }
 
@@ -1491,7 +1532,7 @@ namespace Hecton8.UI
             return texture;
         }
 
-        private void CompositePhosphorFrame()
+        private void CompositePhosphorFrame(ScriptableRenderContext renderContext)
         {
             if (!ShouldUsePhosphorDecay() ||
                 _panelRenderTexture == null ||
@@ -1527,17 +1568,33 @@ namespace Hecton8.UI
                 _appliedPhosphorDecay = resolvedPhosphorDecay;
                 _phosphorDecayMaterial.SetFloat(_DecayId, resolvedPhosphorDecay);
             }
-            UnityEngine.Graphics.Blit(null, _phosphorBackTexture, _phosphorDecayMaterial, 0);
+            CommandBuffer commandBuffer = _phosphorCommandBuffer;
+            if (commandBuffer == null)
+                return;
+
+            commandBuffer.Clear();
+            CoreUtils.DrawFullScreen(
+                commandBuffer,
+                _phosphorDecayMaterial,
+                _phosphorBackTarget,
+                null,
+                0);
+            renderContext.ExecuteCommandBuffer(commandBuffer);
+            commandBuffer.Clear();
 
             RenderTexture swap = _phosphorFrontTexture;
             _phosphorFrontTexture = _phosphorBackTexture;
             _phosphorBackTexture = swap;
+            RenderTargetIdentifier targetSwap = _phosphorFrontTarget;
+            _phosphorFrontTarget = _phosphorBackTarget;
+            _phosphorBackTarget = targetSwap;
             ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
         }
 
         private void ReleasePhosphorResources()
         {
             ReleasePhosphorTextures();
+            ReleasePhosphorCommandBuffer();
             _phosphorDecayMaterial = null;
             _phosphorMaterialResolveAttempted = false;
             _phosphorMaterialResolveFailed = false;
@@ -1556,6 +1613,8 @@ namespace Hecton8.UI
 
             _appliedPhosphorPreviousTexture = null;
             _appliedPhosphorCurrentTexture = null;
+            _phosphorFrontTarget = default;
+            _phosphorBackTarget = default;
 
             if (_phosphorFrontTexture != null)
             {
@@ -1570,6 +1629,27 @@ namespace Hecton8.UI
                 Destroy(_phosphorBackTexture);
                 _phosphorBackTexture = null;
             }
+        }
+
+        private CommandBuffer EnsurePhosphorCommandBuffer()
+        {
+            if (_phosphorCommandBuffer != null)
+                return _phosphorCommandBuffer;
+
+            _phosphorCommandBuffer = new CommandBuffer
+            {
+                name = "Hecton Diegetic Panel Phosphor"
+            }; // COLD ALLOC: CommandBuffer[1] - SRP phosphor history composite - owner: DiegeticPanelController
+            return _phosphorCommandBuffer;
+        }
+
+        private void ReleasePhosphorCommandBuffer()
+        {
+            if (_phosphorCommandBuffer == null)
+                return;
+
+            _phosphorCommandBuffer.Release();
+            _phosphorCommandBuffer = null;
         }
 
         private void ApplyPowerLevel()
@@ -1701,6 +1781,12 @@ namespace Hecton8.UI
         {
             _pendingDistanceRenderTextureRefresh = true;
             _pendingDistanceRefreshDeltaTime = math.max(_pendingDistanceRefreshDeltaTime, math.max(0f, deltaTime));
+        }
+
+        private void QueueRenderTextureRefresh(bool forceRefresh)
+        {
+            _forceRenderTextureRefreshQueued |= forceRefresh;
+            _pendingDistanceRenderTextureRefresh = true;
         }
 
         private void QueueMaterialState(bool forceTextureRefresh, bool forceDepthRefresh)
@@ -2473,6 +2559,7 @@ namespace Hecton8.UI
             _pendingPanelViewEnabledDirty = false;
             _pendingQualityPresentationRefresh = false;
             _pendingDistanceRenderTextureRefresh = false;
+            _forceRenderTextureRefreshQueued = false;
             _pendingDistanceRefreshDeltaTime = 0f;
             _pendingMaterialRefresh = false;
             _pendingMaterialTextureRefresh = false;
@@ -2490,12 +2577,31 @@ namespace Hecton8.UI
             }
 
             if (GlobalRegistry.Dispatcher == null)
+            {
+                _dispatcherAvailableCold = false;
                 return;
+            }
 
+            _dispatcherAvailableCold = true;
             _tickRegistered = true;
             RefreshLateFrameRegistration();
             if (!_lateFrameRegistered)
                 _tickRegistered = false;
+        }
+
+        private void TryRegisterSlowTick()
+        {
+            if (_slowTickRegistered || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+            {
+                _dispatcherAvailableCold = false;
+                return;
+            }
+
+            _dispatcherAvailableCold = true;
+            _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void RefreshLateFrameRegistration()
@@ -2504,14 +2610,12 @@ namespace Hecton8.UI
                 _pendingCursorVisibilityDirty ||
                 _pendingCursorPoseDirty ||
                 _pendingPanelViewEnabledDirty ||
-                _pendingQualityPresentationRefresh ||
-                _pendingDistanceRenderTextureRefresh ||
                 _pendingMaterialRefresh ||
                 _pendingProxyLightFlush;
             bool shouldRegisterLateFrame =
                 isActiveAndEnabled &&
                 Application.isPlaying &&
-                GlobalRegistry.Dispatcher != null &&
+                _dispatcherAvailableCold &&
                 (_tickRegistered ||
                  hasPendingLateFrameWork ||
                  (ShouldUsePhosphorDecay() &&
@@ -2564,6 +2668,15 @@ namespace Hecton8.UI
             _tickRegistered = false;
         }
 
+        private void UnregisterSlowTick()
+        {
+            if (!_slowTickRegistered)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            _slowTickRegistered = false;
+        }
+
         private void RegisterRenderPipelineHook()
         {
             if (_renderPipelineHookRegistered)
@@ -2587,7 +2700,7 @@ namespace Hecton8.UI
             if (renderedCamera != panelCamera)
                 return;
 
-            CompositePhosphorFrame();
+            CompositePhosphorFrame(context);
         }
 
         private bool ShouldUsePhosphorDecay()

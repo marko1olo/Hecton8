@@ -35,7 +35,7 @@ namespace Hecton8.World.SeedShipAnomaly
             {
                 try
                 {
-                    if (TryResolveShaderSlots(vault, out NativeArray<float4> slots) &&
+                    if (TryEnsureShaderSlots(vault, out NativeArray<float4> slots) &&
                         slots.IsCreated &&
                         slots.Length > SeedShipAnomalySlot)
                     {
@@ -52,7 +52,7 @@ namespace Hecton8.World.SeedShipAnomaly
             Shader.SetGlobalFloat(_SeedShipUniverseOffsetNoiseId, payload.y);
         }
 
-        private static bool TryResolveShaderSlots(IDataVault vault, out NativeArray<float4> slots)
+        private static bool TryEnsureShaderSlots(IDataVault vault, out NativeArray<float4> slots)
         {
             slots = default;
             if (vault == null)

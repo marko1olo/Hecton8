@@ -858,7 +858,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            CacheReferences();
+            CacheReferencesCold();
             RefreshColdRegistryReferences();
         }
 
@@ -909,7 +909,7 @@ namespace Hecton8.Gameplay
             if (!CanUseRuntimeDispatcher() || !_subOsPowered)
                 return;
 
-            CacheReferences();
+            RefreshCachedComponentReferencesHot();
             float safeDeltaTime = math.max(0f, deltaTime);
             _navigationRefreshAccumulator += safeDeltaTime;
             _diagnosticsRefreshAccumulator += safeDeltaTime;
@@ -944,7 +944,7 @@ namespace Hecton8.Gameplay
             if (!CanUseRuntimeDispatcher())
                 return;
 
-            CacheReferences();
+            RefreshCachedComponentReferencesHot();
             RefreshTelemetryFromServices();
             bool wasPowered = _subOsPowered;
             SetSubOsPowered(ResolveSubOsPowered());
@@ -987,7 +987,7 @@ namespace Hecton8.Gameplay
             if (_runtimeLifecycleStarted || !CanUseRuntimeDispatcher())
                 return;
 
-            CacheReferences();
+            CacheReferencesCold();
             Subscribe();
             _fleetSnapshot = DroneFleetManager.CurrentSnapshot;
             TryRegister();
@@ -1008,7 +1008,7 @@ namespace Hecton8.Gameplay
             _runtimeLifecycleStarted = true;
         }
 
-        private void CacheReferences()
+        private void CacheReferencesCold()
         {
             if (_submarineCore == null)
                 TryGetComponent(out _submarineCore);
@@ -1021,6 +1021,13 @@ namespace Hecton8.Gameplay
                 if (_stationKeepingController == null)
                     _submarineCore.TryGetComponent(out _stationKeepingController);
             }
+        }
+
+        private void RefreshCachedComponentReferencesHot()
+        {
+            SubmarineCoreDirector submarineCore = _submarineCore;
+            if (submarineCore != null && _atmosphereSystem == null)
+                _atmosphereSystem = submarineCore.AtmosphereSystem;
         }
 
         private void RefreshColdRegistryReferences()
@@ -1598,10 +1605,10 @@ namespace Hecton8.Gameplay
 
         private static bool ResolveModuleGridBrownout(BaseModule module)
         {
-            if (module == null || !module.TryGetComponent(out PowerNode powerNode) || powerNode.Grid == null)
+            PowerGrid grid = module != null ? module.CachedPowerGrid : null;
+            if (grid == null)
                 return false;
 
-            PowerGrid grid = powerNode.Grid;
             return grid.BrownoutTier != LogisticsBrownoutTier.None || grid.IsBatteryEmergencyReserveActive;
         }
 

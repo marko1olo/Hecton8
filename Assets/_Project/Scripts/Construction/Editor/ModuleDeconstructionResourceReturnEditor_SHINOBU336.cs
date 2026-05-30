@@ -178,6 +178,10 @@ namespace Hecton8.Construction.Editor
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
+            string[] lines = File.ReadAllLines(path);
+            if (lines == null || lines.Length == 0)
+                return false;
+
             if (!GlobalDataVault.TryGetLatestCreated(out GlobalDataVault vault) || vault == null)
                 return false;
 
@@ -201,7 +205,6 @@ namespace Hecton8.Construction.Editor
                 for (int i = 0; i < profiles.Length; i++)
                     profiles[i] = default;
 
-                string[] lines = File.ReadAllLines(path);
                 for (int i = 0; i < lines.Length && rowsLoaded < profiles.Length; i++)
                 {
                     if (!TryParseLine(lines[i], out RefundProfileDTO profile))

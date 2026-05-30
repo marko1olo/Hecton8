@@ -13,6 +13,7 @@
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
     <BuildProjectReferences>false</BuildProjectReferences>
     <BuildInParallel>false</BuildInParallel>
+    <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
     <DefineConstants>$(DefineConstants);HECTON_CORE_CONTRACTS_DLL_LEGACY</DefineConstants>
   </PropertyGroup>
 

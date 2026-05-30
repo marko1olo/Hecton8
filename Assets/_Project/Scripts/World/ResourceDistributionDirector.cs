@@ -33,6 +33,7 @@ namespace Hecton8.World
         private const int DefaultPoolWarmupFloor = 64;
         private const int InitialMetamorphismCapacity = 128;
         private const int GhostProxySnapBatchCapacity = 32;
+        private const int TransientRuntimeSectorReserve = 16;
         private const SystemID MetamorphismJobOwnerSystemId = SystemID.WorldResourceSpawnerRuntime;
         private const float GameSecondsPerDay = 86400f;
         private const float DefaultSlopeSampleDistanceMeters = 4f;
@@ -97,18 +98,40 @@ namespace Hecton8.World
 
         private sealed class SectorState
         {
-            public readonly int2 Coordinates;
+            public readonly int PoolIndex;
+            public int2 Coordinates;
             public readonly List<ResourceNode> ActiveNodes;
             public bool SpawnEnvelopeQueued;
             public BrinePoolState BrinePool;
+            public bool IsLeased;
 
-            public SectorState(int2 coordinates, int initialCapacity)
+            public SectorState(int poolIndex, int initialCapacity)
             {
-                Coordinates = coordinates;
+                PoolIndex = poolIndex;
                 // COLD ALLOC: List<ResourceNode>[initialCapacity] — live sector resource node registry — owner: ResourceDistributionDirector
                 ActiveNodes = new List<ResourceNode>(initialCapacity);
+                Coordinates = default;
                 SpawnEnvelopeQueued = false;
                 BrinePool = default;
+                IsLeased = false;
+            }
+
+            public void Lease(int2 coordinates)
+            {
+                Coordinates = coordinates;
+                ActiveNodes.Clear();
+                SpawnEnvelopeQueued = false;
+                BrinePool = default;
+                IsLeased = true;
+            }
+
+            public void Release()
+            {
+                Coordinates = default;
+                ActiveNodes.Clear();
+                SpawnEnvelopeQueued = false;
+                BrinePool = default;
+                IsLeased = false;
             }
         }
 
@@ -361,6 +384,9 @@ namespace Hecton8.World
         // COLD ALLOC: List<long>[32] — sector eviction scratch list — owner: ResourceDistributionDirector
         private List<long> _sectorEvictionScratch;
         private readonly List<GameObject> _pendingNodeDeactivations = new List<GameObject>(64);
+        private SectorState[] _sectorStatePool;
+        private int[] _freeSectorStateIndices;
+        private int _freeSectorStateCount;
 
         private GameObject _runtimePrefab;
         private GameObject _magmaVentPrefab;
@@ -437,6 +463,7 @@ namespace Hecton8.World
         private void Awake()
         {
             sectorSizeMeters = math.max(32, sectorSizeMeters);
+            sectorRadius = math.clamp(sectorRadius, 0, 3);
             maxSpawnsPerSlowTick = math.max(1, maxSpawnsPerSlowTick);
             poolWarmupFloor = math.max(8, poolWarmupFloor);
             slopeSampleDistanceMeters = math.max(0.5f, slopeSampleDistanceMeters);
@@ -458,18 +485,23 @@ namespace Hecton8.World
             _meteorImpactTimerSeconds = ResolveNextMeteorImpactDelay(ref meteorSeed);
             _meteorImpactSequence = meteorSeed;
 
-            // COLD ALLOC: Dictionary<long,SectorState>[32] — resident sector registry keyed by AUP sector hash — owner: ResourceDistributionDirector
-            _residentSectors = new Dictionary<long, SectorState>(32);
+            int runtimeSectorCapacity = ComputeRuntimeSectorPoolCapacity();
+            int perSectorNodeCapacity = ComputePerSectorInitialCapacity();
+
+            // COLD ALLOC: Dictionary<long,SectorState>[runtimeSectorCapacity] — resident sector registry keyed by AUP sector hash — owner: ResourceDistributionDirector
+            _residentSectors = new Dictionary<long, SectorState>(runtimeSectorCapacity);
             // COLD ALLOC: Queue<SpawnRequest>[DefaultMaxPendingSpawnRequests] — deterministic deferred resource spawn queue — owner: ResourceDistributionDirector
             _pendingSpawns = new Queue<SpawnRequest>(DefaultMaxPendingSpawnRequests);
             // COLD ALLOC: Queue<SpawnRequest>[DefaultMaxPendingSpawnRequests] - pending meshless proxy down-snap requests - owner: ResourceDistributionDirector
             _pendingGhostProxySnaps = new Queue<SpawnRequest>(DefaultMaxPendingSpawnRequests);
-            // COLD ALLOC: List<long>[32] — sector eviction scratch list — owner: ResourceDistributionDirector
-            _sectorEvictionScratch = new List<long>(32);
+            // COLD ALLOC: List<long>[runtimeSectorCapacity] — sector eviction scratch list — owner: ResourceDistributionDirector
+            _sectorEvictionScratch = new List<long>(runtimeSectorCapacity);
             // COLD ALLOC: List<ResourceNodeTombstoneRecord>[64] — tectonic-upwelling scratch tombstone staging — owner: ResourceDistributionDirector
             _resourceTombstoneScratch = new List<ResourceNodeTombstoneRecord>(64);
             // COLD ALLOC: List<ResourceNode>[InitialMetamorphismCapacity] — pressure-metamorphism node mapping for Burst result commit — owner: ResourceDistributionDirector
             _metamorphismNodeScratch = new List<ResourceNode>(InitialMetamorphismCapacity);
+            InitializeSectorStatePoolCold(runtimeSectorCapacity, perSectorNodeCapacity);
+            EnsurePendingNodeDeactivationCapacityCold();
             EnsureGhostProxySnapStaging();
 
             CacheRegistryServicesCold();
@@ -817,6 +849,8 @@ namespace Hecton8.World
             SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
             if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
                 return false;
+            if (!HasActiveNodeCapacity(sectorState))
+                return false;
 
             uint yawSeed = SeedSectorCandidate(sector, template.StableHashId, (int)(sourceId & 0x7FFFFFFFu));
             yawSeed = Mix(yawSeed, (uint)math.asint(deltaTemperatureCelsius));
@@ -834,7 +868,12 @@ namespace Hecton8.World
 
             node.ApplyRuntimeTemplate(template, _ghostCubeMesh, _ghostMaterial);
             node.RefreshRuntimeSpatialRegistration();
-            sectorState.ActiveNodes.Add(node);
+            if (!TryAttachActiveNodeNoGrowth(sectorState, node))
+            {
+                pool.Despawn(instance);
+                return false;
+            }
+
             _debugLastAcceptedTemplateHash = template.StableHashId;
             return true;
         }
@@ -873,6 +912,8 @@ namespace Hecton8.World
             SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
             if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
                 return false;
+            if (!HasActiveNodeCapacity(sectorState))
+                return false;
 
             IObjectPoolService pool = _objectPool;
             if (pool == null)
@@ -893,7 +934,12 @@ namespace Hecton8.World
 
             node.ApplyRuntimeTemplate(template, _ghostCubeMesh, _ghostMaterial);
             node.RefreshRuntimeSpatialRegistration();
-            sectorState.ActiveNodes.Add(node);
+            if (!TryAttachActiveNodeNoGrowth(sectorState, node))
+            {
+                pool.Despawn(instance);
+                return false;
+            }
+
             _debugLastAcceptedTemplateHash = template.StableHashId;
             return true;
         }
@@ -993,6 +1039,8 @@ namespace Hecton8.World
             SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
             if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
                 return false;
+            if (!HasActiveNodeCapacity(sectorState))
+                return false;
 
             IObjectPoolService pool = _objectPool;
             if (pool == null)
@@ -1016,7 +1064,12 @@ namespace Hecton8.World
 
             node.ApplyRuntimeTemplate(template, _ghostCubeMesh, _ghostMaterial);
             node.RefreshRuntimeSpatialRegistration();
-            sectorState.ActiveNodes.Add(node);
+            if (!TryAttachActiveNodeNoGrowth(sectorState, node))
+            {
+                pool.Despawn(instance);
+                return false;
+            }
+
             _debugLastAcceptedTemplateHash = template.StableHashId;
             return true;
         }
@@ -1093,6 +1146,8 @@ namespace Hecton8.World
             SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
             if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
                 return false;
+            if (!HasActiveNodeCapacity(sectorState))
+                return false;
 
             uint yawSeed = SeedSectorCandidate(sector, template.StableHashId, (int)(sourceId & 0x7FFFFFFFu));
             float yawDegrees = Next01(ref yawSeed) * 360f;
@@ -1109,7 +1164,12 @@ namespace Hecton8.World
 
             node.ApplyRuntimeTemplate(template, _ghostCubeMesh, _ghostMaterial);
             node.RefreshRuntimeSpatialRegistration();
-            sectorState.ActiveNodes.Add(node);
+            if (!TryAttachActiveNodeNoGrowth(sectorState, node))
+            {
+                pool.Despawn(instance);
+                return false;
+            }
+
             _debugLastAcceptedTemplateHash = template.StableHashId;
             return true;
         }
@@ -1416,7 +1476,10 @@ namespace Hecton8.World
                         continue;
                     }
 
-                    SectorState state = new SectorState(sector, ComputePerSectorInitialCapacity());
+                    SectorState state = AcquireSectorStateNoGrowth(sector);
+                    if (state == null)
+                        continue;
+
                     _residentSectors.Add(sectorKey, state);
                     EnqueueSectorEnvelope(state, sectorKey);
                 }
@@ -1685,6 +1748,12 @@ namespace Hecton8.World
                     continue;
                 }
 
+                if (!HasActiveNodeCapacity(sectorState))
+                {
+                    _pendingSpawns.Dequeue();
+                    continue;
+                }
+
                 ResourceNodeTemplate template = resourceTemplates[request.TemplateIndex];
                 if (template == null)
                 {
@@ -1710,7 +1779,12 @@ namespace Hecton8.World
                 node.ApplyRuntimeTemplate(template, _ghostCubeMesh, _ghostMaterial);
                 TryApplyEmbeddedVein(node, template, in request);
                 node.RefreshRuntimeSpatialRegistration();
-                sectorState.ActiveNodes.Add(node);
+                if (!TryAttachActiveNodeNoGrowth(sectorState, node))
+                {
+                    pool.Despawn(instance);
+                    continue;
+                }
+
                 _debugLastAcceptedTemplateHash = template.StableHashId;
             }
         }
@@ -1915,6 +1989,96 @@ namespace Hecton8.World
             return math.max(InitialMetamorphismCapacity, ComputeRequiredPoolWarmupCount());
         }
 
+        private int ComputeResidentSectorWindowCount()
+        {
+            int radius = math.clamp(sectorRadius, 0, 3);
+            int diameter = (radius * 2) + 1;
+            return math.max(1, diameter * diameter);
+        }
+
+        private int ComputeRuntimeSectorPoolCapacity()
+        {
+            return ComputeResidentSectorWindowCount() + TransientRuntimeSectorReserve;
+        }
+
+        private void InitializeSectorStatePoolCold(int runtimeSectorCapacity, int perSectorNodeCapacity)
+        {
+            int safeSectorCapacity = math.max(1, runtimeSectorCapacity);
+            int safeNodeCapacity = math.max(1, perSectorNodeCapacity);
+
+            // COLD ALLOC: SectorState[safeSectorCapacity] + int freelist - no-growth runtime sector residency pool - owner: ResourceDistributionDirector
+            _sectorStatePool = new SectorState[safeSectorCapacity];
+            _freeSectorStateIndices = new int[safeSectorCapacity];
+            for (int i = 0; i < safeSectorCapacity; i++)
+            {
+                _sectorStatePool[i] = new SectorState(i, safeNodeCapacity);
+                _freeSectorStateIndices[i] = i;
+            }
+
+            _freeSectorStateCount = safeSectorCapacity;
+        }
+
+        private void EnsurePendingNodeDeactivationCapacityCold()
+        {
+            int requiredCapacity = math.max(
+                _pendingNodeDeactivations.Capacity,
+                ComputePerSectorInitialCapacity() * ComputeRuntimeSectorPoolCapacity());
+            if (_pendingNodeDeactivations.Capacity < requiredCapacity)
+                _pendingNodeDeactivations.Capacity = requiredCapacity;
+        }
+
+        private SectorState AcquireSectorStateNoGrowth(int2 sector)
+        {
+            if (_sectorStatePool == null ||
+                _freeSectorStateIndices == null ||
+                _freeSectorStateCount <= 0)
+            {
+                return null;
+            }
+
+            int index = _freeSectorStateIndices[_freeSectorStateCount - 1];
+            if ((uint)index >= (uint)_sectorStatePool.Length)
+                return null;
+
+            SectorState state = _sectorStatePool[index];
+            if (state == null || state.IsLeased)
+                return null;
+
+            _freeSectorStateCount--;
+            state.Lease(sector);
+            return state;
+        }
+
+        private void ReleaseSectorStateNoGrowth(SectorState state)
+        {
+            if (state == null ||
+                _freeSectorStateIndices == null ||
+                !state.IsLeased ||
+                (uint)state.PoolIndex >= (uint)_freeSectorStateIndices.Length)
+            {
+                return;
+            }
+
+            state.Release();
+            if (_freeSectorStateCount < _freeSectorStateIndices.Length)
+                _freeSectorStateIndices[_freeSectorStateCount++] = state.PoolIndex;
+        }
+
+        private static bool HasActiveNodeCapacity(SectorState state)
+        {
+            List<ResourceNode> nodes = state != null ? state.ActiveNodes : null;
+            return nodes != null && nodes.Count < nodes.Capacity;
+        }
+
+        private static bool TryAttachActiveNodeNoGrowth(SectorState state, ResourceNode node)
+        {
+            if (node == null || !HasActiveNodeCapacity(state))
+                return false;
+
+            state.ActiveNodes.Add(node);
+            return true;
+        }
+
         private void EnsureMetamorphismCapacityCold(int requiredCount)
         {
             if (!Application.isPlaying || requiredCount <= 0 || _metamorphismJobActive || _metamorphismWorkspaceInUse)
@@ -2098,7 +2262,10 @@ namespace Hecton8.World
             if (_residentSectors.TryGetValue(sectorKey, out SectorState state))
                 return state;
 
-            state = new SectorState(sector, ComputePerSectorInitialCapacity());
+            state = AcquireSectorStateNoGrowth(sector);
+            if (state == null)
+                return null;
+
             if (mapMagicBridge != null)
             {
                 state.BrinePool = ResolveBrinePoolState(sector);
@@ -2611,8 +2778,8 @@ namespace Hecton8.World
                 _pendingNodeDeactivations.Add(node.gameObject);
             }
 
-            nodes.Clear();
             _residentSectors.Remove(sectorKey);
+            ReleaseSectorStateNoGrowth(state);
         }
 
         private void FlushPendingNodeDeactivations()

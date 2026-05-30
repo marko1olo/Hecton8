@@ -20,6 +20,8 @@ namespace Hecton8.Core
             "[DispatcherJobFence] Non-forced job completion requested outside dispatcher swap window.";
         private const string IllegalForcedCompletionWarningMessage =
             "[DispatcherJobFence] Forced blocking job completion outside dispatcher swap window.";
+        private const string IllegalFinalizeCompletionWarningMessage =
+            "[DispatcherJobFence] Completed job finalization requested outside dispatcher swap window.";
 #endif
 
         private static int _activeSwapWindowDepth;
@@ -90,6 +92,11 @@ namespace Hecton8.Core
             if (!handle.IsCompleted)
                 return false;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (_activeSwapWindowDepth <= 0)
+                WarnIllegalFinalizeCompletion();
+#endif
+
             handle.Complete();
             handle = default;
             return true;
@@ -114,6 +121,16 @@ namespace Hecton8.Core
 
             _nextIllegalCompletionWarningTime = now + IllegalCompletionWarningIntervalSeconds;
             Hecton8.Core.H8Debug.LogWarning(IllegalForcedCompletionWarningMessage);
+        }
+
+        private static void WarnIllegalFinalizeCompletion()
+        {
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (now < _nextIllegalCompletionWarningTime)
+                return;
+
+            _nextIllegalCompletionWarningTime = now + IllegalCompletionWarningIntervalSeconds;
+            Hecton8.Core.H8Debug.LogWarning(IllegalFinalizeCompletionWarningMessage);
         }
 #endif
     }

@@ -478,7 +478,7 @@ namespace Hecton8.Core.Data.Editor
                     _lastSearchHash,
                     1f,
                     default(JobHandle));
-                handle.Complete();
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
                 DataOffsetLengthDTO result = output[0];
                 _lastSearchFound = (result.Flags & H8CacheBTree.ResultFoundFlag) != 0u;
                 _lastSearchResult = result.ByteOffset;

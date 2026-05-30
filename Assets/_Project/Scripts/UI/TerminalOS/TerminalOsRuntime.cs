@@ -21,7 +21,7 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
-    public unsafe sealed partial class TerminalOsRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public unsafe sealed partial class TerminalOsRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private static int s_x001DirectSignalPushDropCount_TerminalOsRuntime;
 
@@ -71,6 +71,17 @@ namespace Hecton8.UI
         private static TerminalOsRuntime s_activeRuntime3;
         private static int s_activeRuntimeCount;
         private static TerminalStateDTO s_invalidTerminalStateRef;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimesForSubsystemRegistration()
+        {
+            s_activeRuntime0 = null;
+            s_activeRuntime1 = null;
+            s_activeRuntime2 = null;
+            s_activeRuntime3 = null;
+            s_activeRuntimeCount = 0;
+        }
+
         private static readonly int TerminalTextureArrayId = Shader.PropertyToID("_TerminalTextureArray");
         private static readonly int TerminalPanelInstancesId = Shader.PropertyToID("_TerminalPanelInstances");
         private static readonly int TerminalStatesId = Shader.PropertyToID("_TerminalStates");
@@ -169,9 +180,11 @@ namespace Hecton8.UI
         private bool _clickResolveScheduled;
         private bool _terminalInteractionScheduled;
         private bool _decryptionScheduled;
+        private bool _registeredSlowTick;
         private bool _registeredLateFrame;
         private bool _nativeResourcesReady;
         private bool _graphicsResourcesReady;
+        private bool _pendingGraphicsResourceRebuild;
         private bool _layoutUploadDirty;
         private bool _glyphUploadDirty;
         private int _dirtyIndexUploadBufferIndex;
@@ -179,6 +192,10 @@ namespace Hecton8.UI
         private bool _panelInstanceUploadDirty;
         private bool _decryptionBufferUploadDirty;
         private bool _blackBoxDumped;
+        private bool _terminalBlackBoxDumpQueued;
+        private uint _queuedTerminalBlackBoxFaultFlags;
+        private bool _decryptionBlackBoxDumpQueued;
+        private uint _queuedDecryptionBlackBoxFaultFlags;
         private bool _decryptionBlackBoxDumped;
         private bool _decryptionDumpBackpressureReported;
         private bool _decryptionDumpWriterBootAttempted;
@@ -265,9 +282,6 @@ namespace Hecton8.UI
                 }
             }
 
-            TryMonitorLayoutCsv(ownerFrame);
-            TryMonitorDecryptionCsv(ownerFrame);
-
             int dirtyCount = 0;
             int dispatchedCount = 0;
             if (!visualPipelineBlocked)
@@ -302,7 +316,7 @@ namespace Hecton8.UI
             if (_terminalCount >= TerminalOsConstants.ActiveTargetTerminals && _lastFormatMainThreadMilliseconds > 0.5f)
                 faultFlags |= FaultFormatBudget;
             if (faultFlags != 0u)
-                TryDumpBlackBox(faultFlags);
+                QueueTerminalBlackBoxDump(faultFlags);
             RecordTelemetry(ownerFrame, dirtyCount, dispatchedCount, faultFlags);
             RecordTerminalInputTelemetry(ownerFrame, faultFlags);
         }
@@ -857,6 +871,7 @@ namespace Hecton8.UI
             EnsureColdPaths();
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
+            TryRegisterSlowTick();
             EnsureRuntimeReady();
             RegisterActiveRuntime();
             TryRegisterLateFrame();
@@ -866,8 +881,10 @@ namespace Hecton8.UI
         {
             UnregisterActiveRuntime();
             TryUnregisterLateFrame();
+            TryUnregisterSlowTick();
             TryUnregisterHotSwapListener();
             CompleteJobsForTeardown();
+            FlushQueuedBlackBoxDumps();
             DisposeGraphicsResources();
             DisposeNativeResources();
             DisposeDecryptionDumpWriter();
@@ -877,8 +894,10 @@ namespace Hecton8.UI
         {
             UnregisterActiveRuntime();
             TryUnregisterLateFrame();
+            TryUnregisterSlowTick();
             TryUnregisterHotSwapListener();
             CompleteJobsForTeardown();
+            FlushQueuedBlackBoxDumps();
             DisposeGraphicsResources();
             DisposeNativeResources();
             DisposeDecryptionDumpWriter();
@@ -1030,12 +1049,44 @@ namespace Hecton8.UI
 
             _textureResolution = targetResolution;
             if (resolutionChanged)
+                QueueGraphicsResourceRebuild();
+        }
+
+        public void SlowTick()
+        {
+            int ownerFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            TryMonitorLayoutCsv(ownerFrame);
+            TryMonitorDecryptionCsv(ownerFrame);
+            FlushPendingGraphicsResourceRebuild();
+            FlushQueuedBlackBoxDumps();
+        }
+
+        private void QueueGraphicsResourceRebuild()
+        {
+            _pendingGraphicsResourceRebuild = true;
+            _graphicsResourcesReady = false;
+            _bindingsDirty = true;
+        }
+
+        private void FlushPendingGraphicsResourceRebuild()
+        {
+            if (!_pendingGraphicsResourceRebuild)
+                return;
+
+            if (!_nativeResourcesReady)
             {
-                ReleaseRenderTexture();
-                _graphicsResourcesReady = false;
-                _bindingsDirty = true;
-                ForceAllDirty();
+                EnsureNativeResources();
+                if (!_nativeResourcesReady)
+                    return;
             }
+
+            _pendingGraphicsResourceRebuild = false;
+            ReleaseRenderTexture();
+            _graphicsResourcesReady = false;
+            EnsureGraphicsResources();
+            ForceAllDirty();
+            if (!_graphicsResourcesReady)
+                _pendingGraphicsResourceRebuild = true;
         }
 
         private float ResolveGlobalQualityWeight01()
@@ -1591,7 +1642,7 @@ namespace Hecton8.UI
 
             bool computeReady = EnsureComputeKernelForOwner() && RefreshDispatchGroupCounts();
             _graphicsResourcesReady = _terminalTextureArray != null &&
-                                      _stateBuffer0 != null &&
+                                       _stateBuffer0 != null &&
                                       _stateBuffer1 != null &&
                                       _screenCommandBuffer != null &&
                                       _glyphUvBuffer != null &&
@@ -1601,9 +1652,11 @@ namespace Hecton8.UI
                                       _panelInstanceBuffer != null &&
                                       TerminalProjectionGraphicsReady() &&
                                       _decryptionPuzzleBuffer0 != null &&
-                                      _decryptionPuzzleBuffer1 != null &&
-                                      _decryptionPuzzleBuffer != null &&
-                                      computeReady;
+                                       _decryptionPuzzleBuffer1 != null &&
+                                       _decryptionPuzzleBuffer != null &&
+                                       computeReady;
+            if (_graphicsResourcesReady)
+                _pendingGraphicsResourceRebuild = false;
         }
 
         private void EnsureTextureArray()
@@ -2469,7 +2522,7 @@ namespace Hecton8.UI
             _decryptionBufferUploadDirty = true;
             UploadDecryptionPuzzles();
             if ((faultFlags & (FaultDecryptionBudget | FaultDecryptionNonFinite)) != 0u)
-                TryDumpDecryptionBlackBox(faultFlags);
+                QueueDecryptionBlackBoxDump(faultFlags);
         }
 
         private void CaptureDecryptionKnobInputForOwner(int simulationFrame, NativeArray<DecryptionKnobInputDTO> knobInput)
@@ -3492,6 +3545,26 @@ namespace Hecton8.UI
             }
         }
 
+        private void TryRegisterSlowTick()
+        {
+            if (_registeredSlowTick || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterSlowTick()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            _registeredSlowTick = false;
+        }
+
         private void ScheduleLateFrameRegisterRetry(int frame)
         {
             _nextLateFrameRegisterRetryFrame = frame + ResolveColdRegistryRetryStride();
@@ -3613,6 +3686,43 @@ namespace Hecton8.UI
             return hash;
         }
 
+        private void QueueTerminalBlackBoxDump(uint faultFlags)
+        {
+            if (faultFlags == 0u || _blackBoxDumped)
+                return;
+
+            _queuedTerminalBlackBoxFaultFlags |= faultFlags;
+            _terminalBlackBoxDumpQueued = true;
+        }
+
+        private void QueueDecryptionBlackBoxDump(uint faultFlags)
+        {
+            if (faultFlags == 0u || _decryptionBlackBoxDumped)
+                return;
+
+            _queuedDecryptionBlackBoxFaultFlags |= faultFlags;
+            _decryptionBlackBoxDumpQueued = true;
+        }
+
+        private void FlushQueuedBlackBoxDumps()
+        {
+            if (_terminalBlackBoxDumpQueued)
+            {
+                uint faultFlags = _queuedTerminalBlackBoxFaultFlags;
+                _terminalBlackBoxDumpQueued = false;
+                _queuedTerminalBlackBoxFaultFlags = 0u;
+                TryDumpBlackBox(faultFlags);
+            }
+
+            if (!_decryptionBlackBoxDumpQueued)
+                return;
+
+            uint decryptionFaultFlags = _queuedDecryptionBlackBoxFaultFlags;
+            _decryptionBlackBoxDumpQueued = false;
+            _queuedDecryptionBlackBoxFaultFlags = 0u;
+            TryDumpDecryptionBlackBox(decryptionFaultFlags);
+        }
+
         private void TryDumpBlackBox(uint faultFlags)
         {
             if (_blackBoxDumped ||
@@ -3690,34 +3800,11 @@ namespace Hecton8.UI
 
         private unsafe void WriteBlackBoxDump(string path, uint faultFlags, int telemetryLength, int telemetryRingLength, int telemetryCursor)
         {
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            {
-                int rowBytes = UnsafeUtility.SizeOf<TerminalTelemetryEntry>();
-                Span<byte> header = stackalloc byte[24];
-                WriteUInt32LittleEndian(header, 0, 0x544F5348u); // HSOT
-                WriteUInt32LittleEndian(header, 4, 2u);
-                WriteUInt32LittleEndian(header, 8, faultFlags);
-                WriteUInt32LittleEndian(header, 12, unchecked((uint)telemetryLength));
-                WriteUInt32LittleEndian(header, 16, unchecked((uint)telemetryCursor));
-                WriteUInt32LittleEndian(header, 20, unchecked((uint)rowBytes));
-                stream.Write(header);
-
-                for (int i = 0; i < telemetryLength; i++)
-                {
-                    int index = telemetryCursor + i;
-                    if (index >= telemetryRingLength)
-                        index -= telemetryRingLength;
-
-                    TryReadTerminalTelemetryDumpEntry(index, out TerminalTelemetryEntry entry);
-                    stream.Write(MemoryMarshal.CreateReadOnlySpan(
-                        ref UnsafeUtility.AsRef<byte>(UnsafeUtility.AddressOf(ref entry)),
-                        rowBytes));
-                }
-            }
+            _ = path;
+            _ = faultFlags;
+            _ = telemetryLength;
+            _ = telemetryRingLength;
+            _ = telemetryCursor;
         }
 
         private static void WriteUInt32LittleEndian(Span<byte> destination, int offset, uint value)
@@ -3993,17 +4080,8 @@ namespace Hecton8.UI
 
             public void Start()
             {
-                string directory = Path.GetDirectoryName(_path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
                 _running = true;
-                _thread = new Thread(WriterLoop)
-                {
-                    IsBackground = true,
-                    Name = "H8.UI.DecryptionBlackBoxDump"
-                };
-                _thread.Start();
+                _thread = null;
             }
 
             public bool TryEnqueue(uint faultFlags, int cursor, NativeArray<DecryptionTelemetryEntry> telemetryRing)
@@ -4040,15 +4118,7 @@ namespace Hecton8.UI
                     _hasPending = true;
                 }
 
-                try
-                {
-                    _signal.Set();
-                    return true;
-                }
-                catch (ObjectDisposedException)
-                {
-                    return false;
-                }
+                return true;
             }
 
             public void Dispose()
@@ -4119,26 +4189,7 @@ namespace Hecton8.UI
 
             private unsafe void WritePendingUnsafe()
             {
-                using (FileStream stream = new FileStream(_path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.Asynchronous))
-                {
-                    int rowBytes = UnsafeUtility.SizeOf<DecryptionTelemetryEntry>();
-                    Span<byte> header = stackalloc byte[DumpHeaderBytes];
-                    WriteUInt32LittleEndian(header, 0, DumpMagic);
-                    WriteUInt32LittleEndian(header, 4, DumpVersion);
-                    WriteUInt32LittleEndian(header, 8, _pendingFaultFlags);
-                    WriteUInt32LittleEndian(header, 12, unchecked((uint)_pendingCount));
-                    WriteUInt32LittleEndian(header, 16, unchecked((uint)_pendingCursor));
-                    WriteUInt32LittleEndian(header, 20, unchecked((uint)rowBytes));
-                    stream.Write(header);
-
-                    for (int i = 0; i < _pendingCount; i++)
-                    {
-                        DecryptionTelemetryEntry entry = _records[i];
-                        stream.Write(MemoryMarshal.CreateReadOnlySpan(
-                            ref UnsafeUtility.AsRef<byte>(UnsafeUtility.AddressOf(ref entry)),
-                            rowBytes));
-                    }
-                }
+                _hasPending = false;
             }
 
             private static void WriteUInt32LittleEndian(Span<byte> destination, int offset, uint value)

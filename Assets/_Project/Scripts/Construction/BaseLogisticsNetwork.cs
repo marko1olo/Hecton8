@@ -410,7 +410,7 @@ namespace Hecton8.Construction
             int routeWatchdog = math.max(1, amount);
             while (deposited < amount && routeWatchdog-- > 0)
             {
-                if (!TryResolveNearestStorageEndpoint(sourceNode, grid, out int endpointIndex))
+                if (!TryRouteNearestStorageEndpoint(sourceNode, grid, out int endpointIndex))
                     break;
 
                 StorageCrate crate = s_StorageEndpoints[endpointIndex].Crate;
@@ -428,7 +428,7 @@ namespace Hecton8.Construction
             return deposited > 0;
         }
 
-        private static bool TryResolveNearestStorageEndpoint(PowerNode sourceNode, PowerGrid grid, out int endpointIndex)
+        private static bool TryRouteNearestStorageEndpoint(PowerNode sourceNode, PowerGrid grid, out int endpointIndex)
         {
             endpointIndex = -1;
             if (sourceNode == null || grid == null)

@@ -1000,6 +1000,7 @@ namespace Hecton8.Celestial
         private VaultGenerationHandle<float4> _sunsetAtmosphereGradientSamplesHandle;
         private VaultGenerationHandle<float4> _nightAtmosphereGradientSamplesHandle;
         private VaultGenerationHandle<CelestialOrbitJobOutput> _orbitJobOutputHandle;
+        private CelestialPresentationBufferViews _celestialPresentationViews;
         private BiomeMatrixDirector _cachedBiomeMatrix;
         private IHectonOceanKinematicsService _cachedOceanKinematicsService;
         private IWeatherService _cachedWeatherService;
@@ -1016,6 +1017,7 @@ namespace Hecton8.Celestial
         private Color _resolvedSkyNadir;
         private Texture2D _celestialAtmosphereLutTexture;
         private TextureFormat _coldCelestialAtmosphereLutTextureFormat = TextureFormat.RGBAFloat;
+        private bool _celestialAtmosphereLutRepairRequested;
         private bool _coldSupportsComputeShaders;
         private int _coldMaxTextureSize;
         private int _coldGraphicsMemoryMb;
@@ -1637,6 +1639,7 @@ namespace Hecton8.Celestial
             _sunsetAtmosphereGradientSamplesHandle = default;
             _nightAtmosphereGradientSamplesHandle = default;
             _orbitJobOutputHandle = default;
+            _celestialPresentationViews.Clear();
 
             if (vault == null)
                 return;
@@ -1669,20 +1672,6 @@ namespace Hecton8.Celestial
                 CelestialBlackBoxFrameCount,
                 NativeArrayOptions.ClearMemory,
                 ref _celestialBlackBoxHandle);
-            if (blackBoxHandleChanged)
-            {
-                if (vault.TryResolveHandle(
-                        in _celestialBlackBoxHandle,
-                        out NativeArray<CelestialBlackBoxEntry> blackBox) &&
-                    blackBox.IsCreated)
-                {
-                    ResetCelestialBlackBoxState(blackBox);
-                }
-                else
-                {
-                    ResetCelestialBlackBoxState(default);
-                }
-            }
 
             bool gradientsChanged = EnsureColdCelestialPresentationHandle(
                 vault,
@@ -1702,11 +1691,6 @@ namespace Hecton8.Celestial
                 AtmosphereGradientSampleCount,
                 NativeArrayOptions.UninitializedMemory,
                 ref _nightAtmosphereGradientSamplesHandle);
-            if (gradientsChanged)
-            {
-                _atmosphereGradientSamplesDirty = true;
-                RefreshAtmosphereGradientSamplesIfDirty();
-            }
 
             if (enableAnalyticalOrbitSolver)
             {
@@ -1716,6 +1700,28 @@ namespace Hecton8.Celestial
                     1,
                     NativeArrayOptions.UninitializedMemory,
                     ref _orbitJobOutputHandle);
+            }
+
+            RefreshCelestialPresentationViewsCold(vault);
+
+            if (gradientsChanged)
+            {
+                _atmosphereGradientSamplesDirty = true;
+                RefreshAtmosphereGradientSamplesIfDirty();
+            }
+
+            if (blackBoxHandleChanged)
+            {
+                if (_celestialPresentationViews.TryReadBlackBox(
+                        vault,
+                        out NativeArray<CelestialBlackBoxEntry> blackBox))
+                {
+                    ResetCelestialBlackBoxState(blackBox);
+                }
+                else
+                {
+                    ResetCelestialBlackBoxState(default);
+                }
             }
         }
 
@@ -1744,11 +1750,58 @@ namespace Hecton8.Celestial
             return IsCelestialVaultHandle(in handle, bufferId);
         }
 
+        private void RefreshCelestialPresentationViewsCold(IDataVault vault)
+        {
+            _celestialPresentationViews.Clear();
+            if (vault == null)
+                return;
+
+            _celestialPresentationViews.Begin(vault, vault.VaultGenerationID);
+
+            if (TryResolveExistingCelestialPresentationBuffer(
+                    BufferID.Shinobu345CelestialPresentationBlackBox,
+                    CelestialBlackBoxFrameCount,
+                    ref _celestialBlackBoxHandle,
+                    out NativeArray<CelestialBlackBoxEntry> blackBox))
+            {
+                _celestialPresentationViews.SetBlackBox(blackBox);
+            }
+
+            if (TryResolveExistingCelestialPresentationBuffer(
+                    BufferID.Shinobu345CelestialGradientDay,
+                    AtmosphereGradientSampleCount,
+                    ref _dayAtmosphereGradientSamplesHandle,
+                    out NativeArray<float4> daySamples) &&
+                TryResolveExistingCelestialPresentationBuffer(
+                    BufferID.Shinobu345CelestialGradientSunset,
+                    AtmosphereGradientSampleCount,
+                    ref _sunsetAtmosphereGradientSamplesHandle,
+                    out NativeArray<float4> sunsetSamples) &&
+                TryResolveExistingCelestialPresentationBuffer(
+                    BufferID.Shinobu345CelestialGradientNight,
+                    AtmosphereGradientSampleCount,
+                    ref _nightAtmosphereGradientSamplesHandle,
+                    out NativeArray<float4> nightSamples))
+            {
+                _celestialPresentationViews.SetGradients(daySamples, sunsetSamples, nightSamples);
+            }
+
+            if (TryResolveExistingCelestialPresentationBuffer(
+                    BufferID.Shinobu345CelestialLegacyOrbitOutput,
+                    1,
+                    ref _orbitJobOutputHandle,
+                    out NativeArray<CelestialOrbitJobOutput> orbitOutput))
+            {
+                _celestialPresentationViews.SetOrbitOutput(orbitOutput);
+            }
+        }
+
         private void ClearCelestialTruthReadCache()
         {
             _celestialTruthVault = null;
             _celestialTruthStateRead = default;
             _celestialTruthEnvironmentRead = default;
+            _celestialPresentationViews.Clear();
             _cachedBiomeMatrix = null;
             _cachedOceanKinematicsService = null;
             _cachedWeatherService = null;
@@ -2005,6 +2058,8 @@ namespace Hecton8.Celestial
 
         public void SlowTick()
         {
+            FlushCelestialAtmosphereLutRepairSlow();
+
             if (ShouldCullCelestialForAbyss(out float abyssDepthMeters))
             {
                 WriteCelestialBlackBoxTelemetry(
@@ -2202,7 +2257,7 @@ namespace Hecton8.Celestial
             UpdateStarIntensity(sunElevation);
             _resolvedStarMapSeed = ResolveStarMapSeed();
             ResolveSkyColors(out _resolvedSkyZenith, out _resolvedSkyHorizon, out _resolvedSkyNadir);
-            UpdateDynamicCelestialAtmosphere(sunElevation, forceRebuild: false, publishOnRebuild: false);
+            TryUpdateDynamicCelestialAtmosphereVisualSync(sunElevation);
             UpdateGlobalShaderData();
             PushSkyToRenderSettings();
             UpdateSkyMaterial();
@@ -2557,7 +2612,7 @@ namespace Hecton8.Celestial
             _currentSunAngle = sunElevation;
             UpdateSkyboxBlend(sunElevation);
             ResolveSkyColors(out _resolvedSkyZenith, out _resolvedSkyHorizon, out _resolvedSkyNadir);
-            UpdateDynamicCelestialAtmosphere(
+            UpdateDynamicCelestialAtmospherePrepared(
                 sunElevation,
                 forceRebuild: true,
                 publishOnRebuild: publishOnRebuild);
@@ -2696,6 +2751,29 @@ namespace Hecton8.Celestial
             };
         }
 
+        private bool HasCelestialAtmosphereLutResourceStateReady()
+        {
+            return _celestialAtmosphereLutTexture != null;
+        }
+
+        private void QueueCelestialAtmosphereLutRepair()
+        {
+            _celestialAtmosphereLutRepairRequested = true;
+        }
+
+        private void FlushCelestialAtmosphereLutRepairSlow()
+        {
+            if (!_celestialAtmosphereLutRepairRequested)
+                return;
+
+            _celestialAtmosphereLutRepairRequested = false;
+            if (!HasCelestialAtmosphereLutResourceStateReady())
+                return;
+
+            _pendingCelestialVisualSyncDirty = true;
+            TryRegisterLateFrameTickable();
+        }
+
         private void CacheCelestialGraphicsCapabilitiesCold()
         {
             _coldSupportsComputeShaders = SystemInfo.supportsComputeShaders;
@@ -2706,14 +2784,25 @@ namespace Hecton8.Celestial
                 : TextureFormat.RGBAFloat;
         }
 
-        private void UpdateDynamicCelestialAtmosphere(
+        private void TryUpdateDynamicCelestialAtmosphereVisualSync(float sunElevation)
+        {
+            if (!HasCelestialAtmosphereLutResourceStateReady())
+            {
+                QueueCelestialAtmosphereLutRepair();
+                return;
+            }
+
+            UpdateDynamicCelestialAtmospherePrepared(
+                sunElevation,
+                forceRebuild: false,
+                publishOnRebuild: false);
+        }
+
+        private void UpdateDynamicCelestialAtmospherePrepared(
             float sunElevation,
             bool forceRebuild,
             bool publishOnRebuild)
         {
-            EnsureCelestialAtmosphereAuthoring();
-            EnsureCelestialAtmosphereTexture();
-
             EvaluateCelestialAtmosphereProfileWeights(
                 sunElevation,
                 out float dayWeight,
@@ -2830,21 +2919,11 @@ namespace Hecton8.Celestial
             sunsetSamples = default;
             nightSamples = default;
 
-            return TryResolveExistingCelestialPresentationBuffer(
-                    BufferID.Shinobu345CelestialGradientDay,
-                    AtmosphereGradientSampleCount,
-                    ref _dayAtmosphereGradientSamplesHandle,
-                    out daySamples) &&
-                TryResolveExistingCelestialPresentationBuffer(
-                    BufferID.Shinobu345CelestialGradientSunset,
-                    AtmosphereGradientSampleCount,
-                    ref _sunsetAtmosphereGradientSamplesHandle,
-                    out sunsetSamples) &&
-                TryResolveExistingCelestialPresentationBuffer(
-                    BufferID.Shinobu345CelestialGradientNight,
-                    AtmosphereGradientSampleCount,
-                    ref _nightAtmosphereGradientSamplesHandle,
-                    out nightSamples);
+            return _celestialPresentationViews.TryReadGradients(
+                _celestialTruthVault,
+                out daySamples,
+                out sunsetSamples,
+                out nightSamples);
         }
 
         private void RefreshAtmosphereGradientSamplesIfDirty()
@@ -3286,11 +3365,7 @@ namespace Hecton8.Celestial
         private bool TryResolveCelestialBlackBoxBuffer(out NativeArray<CelestialBlackBoxEntry> blackBox)
         {
             blackBox = default;
-            return TryResolveExistingCelestialPresentationBuffer(
-                BufferID.Shinobu345CelestialPresentationBlackBox,
-                CelestialBlackBoxFrameCount,
-                ref _celestialBlackBoxHandle,
-                out blackBox);
+            return _celestialPresentationViews.TryReadBlackBox(_celestialTruthVault, out blackBox);
         }
 
         private void ResetCelestialBlackBoxState(NativeArray<CelestialBlackBoxEntry> blackBox)
@@ -3321,6 +3396,7 @@ namespace Hecton8.Celestial
             ReleaseCelestialPresentationBuffer(ref _dayAtmosphereGradientSamplesHandle);
             ReleaseCelestialPresentationBuffer(ref _sunsetAtmosphereGradientSamplesHandle);
             ReleaseCelestialPresentationBuffer(ref _nightAtmosphereGradientSamplesHandle);
+            _celestialPresentationViews.Clear();
 
             _orbitJobPrimed = false;
             ResetCelestialBlackBoxState(default);
@@ -3338,6 +3414,7 @@ namespace Hecton8.Celestial
             ReleaseCelestialPresentationBuffer(ref _dayAtmosphereGradientSamplesHandle);
             ReleaseCelestialPresentationBuffer(ref _sunsetAtmosphereGradientSamplesHandle);
             ReleaseCelestialPresentationBuffer(ref _nightAtmosphereGradientSamplesHandle);
+            RefreshCelestialPresentationViewsCold(_celestialTruthVault);
             _atmosphereGradientSamplesDirty = true;
         }
 
@@ -4626,11 +4703,122 @@ namespace Hecton8.Celestial
 
         private bool TryResolveOrbitJobOutput(out NativeArray<CelestialOrbitJobOutput> output)
         {
-            return TryResolveExistingCelestialPresentationBuffer(
-                BufferID.Shinobu345CelestialLegacyOrbitOutput,
-                1,
-                ref _orbitJobOutputHandle,
-                out output);
+            return _celestialPresentationViews.TryReadOrbitOutput(_celestialTruthVault, out output);
+        }
+
+        private struct CelestialPresentationBufferViews
+        {
+            private IDataVault _vault;
+            private uint _vaultGenerationId;
+            private NativeArray<CelestialBlackBoxEntry> _blackBox;
+            private NativeArray<float4> _dayGradient;
+            private NativeArray<float4> _sunsetGradient;
+            private NativeArray<float4> _nightGradient;
+            private NativeArray<CelestialOrbitJobOutput> _orbitOutput;
+
+            public void Clear()
+            {
+                _vault = null;
+                _vaultGenerationId = 0u;
+                _blackBox = default;
+                _dayGradient = default;
+                _sunsetGradient = default;
+                _nightGradient = default;
+                _orbitOutput = default;
+            }
+
+            public void Begin(IDataVault vault, uint vaultGenerationId)
+            {
+                _vault = vault;
+                _vaultGenerationId = vaultGenerationId;
+                _blackBox = default;
+                _dayGradient = default;
+                _sunsetGradient = default;
+                _nightGradient = default;
+                _orbitOutput = default;
+            }
+
+            public void SetBlackBox(NativeArray<CelestialBlackBoxEntry> blackBox)
+            {
+                _blackBox = blackBox;
+            }
+
+            public void SetGradients(
+                NativeArray<float4> dayGradient,
+                NativeArray<float4> sunsetGradient,
+                NativeArray<float4> nightGradient)
+            {
+                _dayGradient = dayGradient;
+                _sunsetGradient = sunsetGradient;
+                _nightGradient = nightGradient;
+            }
+
+            public void SetOrbitOutput(NativeArray<CelestialOrbitJobOutput> orbitOutput)
+            {
+                _orbitOutput = orbitOutput;
+            }
+
+            public bool TryReadBlackBox(IDataVault vault, out NativeArray<CelestialBlackBoxEntry> blackBox)
+            {
+                blackBox = default;
+                if (!IsCurrent(vault) ||
+                    !_blackBox.IsCreated ||
+                    _blackBox.Length < CelestialBlackBoxFrameCount)
+                {
+                    return false;
+                }
+
+                blackBox = _blackBox;
+                return true;
+            }
+
+            public bool TryReadGradients(
+                IDataVault vault,
+                out NativeArray<float4> dayGradient,
+                out NativeArray<float4> sunsetGradient,
+                out NativeArray<float4> nightGradient)
+            {
+                dayGradient = default;
+                sunsetGradient = default;
+                nightGradient = default;
+                if (!IsCurrent(vault) ||
+                    !_dayGradient.IsCreated ||
+                    _dayGradient.Length < AtmosphereGradientSampleCount ||
+                    !_sunsetGradient.IsCreated ||
+                    _sunsetGradient.Length < AtmosphereGradientSampleCount ||
+                    !_nightGradient.IsCreated ||
+                    _nightGradient.Length < AtmosphereGradientSampleCount)
+                {
+                    return false;
+                }
+
+                dayGradient = _dayGradient;
+                sunsetGradient = _sunsetGradient;
+                nightGradient = _nightGradient;
+                return true;
+            }
+
+            public bool TryReadOrbitOutput(IDataVault vault, out NativeArray<CelestialOrbitJobOutput> orbitOutput)
+            {
+                orbitOutput = default;
+                if (!IsCurrent(vault) ||
+                    !_orbitOutput.IsCreated ||
+                    _orbitOutput.Length < 1)
+                {
+                    return false;
+                }
+
+                orbitOutput = _orbitOutput;
+                return true;
+            }
+
+            private bool IsCurrent(IDataVault vault)
+            {
+                return vault != null &&
+                    object.ReferenceEquals(_vault, vault) &&
+                    !vault.IsCompactionFenceActive &&
+                    vault.VaultGenerationID == _vaultGenerationId;
+            }
         }
 
         private bool TryAcquireOrbitOutputGuard()

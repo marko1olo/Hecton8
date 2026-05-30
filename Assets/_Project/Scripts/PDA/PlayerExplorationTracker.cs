@@ -71,6 +71,7 @@ namespace Hecton8.PDA
         private const uint CartographyPreSimulationSystemHash = 0x53313350u;
         private const uint CartographySimulationSystemHash = 0x53313349u;
         private const uint CartographyPostSimulationSystemHash = 0x5331334Fu;
+        private const uint CartographyVisualSyncSystemHash = 0x53313356u;
 
         [Header("References")]
         [Tooltip("Optional explicit player transform. When empty, the tracker resolves the current registry player.")]
@@ -171,6 +172,7 @@ namespace Hecton8.PDA
         private CartographyDispatcherPhaseSystem _cartographyPreSimulationPhase;
         private CartographyDispatcherPhaseSystem _cartographySimulationPhase;
         private CartographyDispatcherPhaseSystem _cartographyPostSimulationPhase;
+        private CartographyDispatcherPhaseSystem _cartographyVisualSyncPhase;
         private bool _cartographyDispatcherRegistered;
         private bool _cartographyDispatcherFrameScheduled;
         private bool _cartographyDispatcherHasPlayerAup;
@@ -184,6 +186,8 @@ namespace Hecton8.PDA
         private bool _cartographySimulationPending;
         private JobHandle _cartographyUploadHandle;
         private bool _cartographyUploadPending;
+        private bool _cartographyUploadPrepared;
+        private bool _cartographyUploadRequested;
         private bool _cartographySimulationBuffersPinned;
         private bool _cartographyUploadBuffersPinned;
         private IDataVault _cartographySimulationPinnedVault;
@@ -192,6 +196,9 @@ namespace Hecton8.PDA
         private ulong _cartographyUploadPinnedMask;
         private uint _cartographyUploadPendingRevision;
         private int _cartographyUploadPendingCadence;
+        private uint _cartographyUploadPreparedRevision;
+        private int _cartographyUploadPreparedCadence;
+        private float _cartographyUploadRequestedQuality = 1f;
         private int _exploredChunkCountSnapshot;
         private CartographyTuningDTO _cartographyTuningSnapshot;
         private CartographyTelemetryEntry _latestCartographyTelemetrySnapshot;
@@ -311,73 +318,12 @@ namespace Hecton8.PDA
         public void Tick(float deltaTime)
         {
             DrainPhysicsEventPayloads();
-
-            if (!TryResolvePlayerAup(out AbsoluteUniversePosition currentAup))
-                return;
-
-            float requiredDistance = movementSampleDistance;
-            double requiredDistanceSq = (double)requiredDistance * requiredDistance;
-            if (_hasLastSampledAup &&
-                AbsoluteUniversePosition.DistanceSq(in currentAup, in _lastSampledAup) < requiredDistanceSq)
-            {
-                return;
-            }
-
-            _lastSampledAup = currentAup;
-            _hasLastSampledAup = true;
-            SampleCurrentChunk(force: false, in currentAup);
         }
 
         /// <inheritdoc />
         public void SlowTick()
         {
-            InitializeExplorationMask();
             _cartographyDeferredDumpFlags = 0u;
-            if (_cartographyUploadPending)
-            {
-                if (!TryFinalizePendingCartographyUpload())
-                    return;
-            }
-
-            if (_cartographyDispatcherRegistered)
-                return;
-
-            CartographyAup playerCartographyAup = default;
-            bool hasPlayerAup = TryResolvePlayerAup(out AbsoluteUniversePosition playerAup);
-            int revealedSignalCount = 0;
-            int revealedPoiCount = 0;
-            bool changed = false;
-            if (hasPlayerAup)
-            {
-                playerCartographyAup = ToCartographyAup(in playerAup);
-                if (!CartographyGridMath.IsFinite(in playerCartographyAup))
-                {
-                    RecordCartographyFaultAndDump(
-                        in playerCartographyAup,
-                        CartographyGridConstants.TelemetryFlagOutOfBoundsAup);
-                    return;
-                }
-
-                changed |= RevealCartographyCell(in playerCartographyAup, MapRevealSignalFlags.Player);
-            }
-
-            revealedSignalCount = DrainMapRevealSignals(out bool signalChanged);
-            changed |= signalChanged;
-
-            revealedPoiCount = InjectPoiReveals(out bool poiChanged);
-            changed |= poiChanged;
-
-            if (changed)
-                _cartographyRevision++;
-
-            uint stateFlags = hasPlayerAup ? 1u : 0u;
-            stateFlags |= _cartographyDeferredDumpFlags;
-            RecordCartographyBlackBox(in playerCartographyAup, revealedSignalCount, revealedPoiCount, stateFlags);
-            if (_cartographyDeferredDumpFlags != 0u)
-            {
-                DumpCartographyBlackBox();
-                _cartographyDeferredDumpFlags = 0u;
-            }
         }
 
         private void CartographyPreSimulationTick(in DispatcherTimingDTO timing)
@@ -388,12 +334,6 @@ namespace Hecton8.PDA
             _cartographyDispatcherPoiCount = 0;
             _cartographyDispatcherHasPlayerAup = false;
             _cartographyDispatcherPlayerAup = default;
-
-            if (_cartographyUploadPending &&
-                !TryFinalizePendingCartographyUpload())
-            {
-                return;
-            }
 
             const ulong pinMask = CartographyPinMockPings |
                                   CartographyPinPendingPings |
@@ -482,17 +422,16 @@ namespace Hecton8.PDA
                 return dependsOn;
             }
 
-            bool shouldRecordTelemetry = false;
-            bool shouldDumpTelemetry = false;
-            uint telemetryFlags = CartographyGridConstants.TelemetryFlagVaultContention;
-            int explicitSignalCount = 0;
+            bool scheduled = false;
+            bool shouldRecordFailure = false;
+            uint failureTelemetryFlags = CartographyGridConstants.TelemetryFlagVaultContention;
             try
             {
                 if (!TryResolvePinnedCartographyBuffers(_cartographySimulationPinnedMask, out CartographyVaultBuffers buffers) ||
                     !buffers.Counters.IsCreated ||
                     buffers.Counters.Length == 0)
                 {
-                    shouldRecordTelemetry = true;
+                    shouldRecordFailure = true;
                     _cartographyDispatcherFrameScheduled = false;
                     return dependsOn;
                 }
@@ -517,50 +456,24 @@ namespace Hecton8.PDA
                 _cartographySimulationHandle = job.Schedule(dependsOn);
                 _cartographySimulationPending = true;
                 H8Memory.RegisterActiveJob(SystemID.UI, _cartographySimulationHandle);
-
-                // Caller-owned completion keeps DataVault pins inside one dispatcher phase.
-                if (!DispatcherJobFence.TryComplete(ref _cartographySimulationHandle, forceComplete: true))
-                {
-                    shouldRecordTelemetry = true;
-                    _cartographyDispatcherFrameScheduled = false;
-                    return dependsOn;
-                }
-
-                _cartographySimulationPending = false;
-                H8Memory.RegisterActiveJob(SystemID.UI, default);
-                uint failureFlags = FinalizeCartographySimulationResultPinned(buffers);
-                shouldDumpTelemetry = (failureFlags & (CartographyGridConstants.TelemetryFlagMutationBudgetExceeded |
-                                                       CartographyGridConstants.TelemetryFlagOutOfBoundsAup |
-                                                       CartographyGridConstants.TelemetryFlagVaultContention)) != 0u;
-                telemetryFlags = _cartographyDispatcherHasPlayerAup ? 1u : 0u;
-                telemetryFlags |= 1u << 1;
-                explicitSignalCount = math.max(0, _cartographyDispatcherPendingSignalCount - _cartographyDispatcherPoiCount);
-                shouldRecordTelemetry = true;
+                scheduled = true;
                 _cartographyDispatcherFrameScheduled = false;
-                return dependsOn;
+                return _cartographySimulationHandle;
             }
             finally
             {
-                if (_cartographySimulationPending)
+                if (!scheduled)
                 {
-                    DispatcherJobFence.TryComplete(ref _cartographySimulationHandle, forceComplete: true);
-                    _cartographySimulationPending = false;
-                    H8Memory.RegisterActiveJob(SystemID.UI, default);
+                    ReleaseCartographySimulationPins();
+                    if (shouldRecordFailure)
+                    {
+                        RecordCartographyBlackBox(
+                            in _cartographyDispatcherPlayerAup,
+                            math.max(0, _cartographyDispatcherPendingSignalCount - _cartographyDispatcherPoiCount),
+                            _cartographyDispatcherPoiCount,
+                            failureTelemetryFlags);
+                    }
                 }
-
-                _cartographySimulationHandle = default;
-                ReleaseCartographySimulationPins();
-                if (shouldRecordTelemetry)
-                {
-                    RecordCartographyBlackBox(
-                        in _cartographyDispatcherPlayerAup,
-                        explicitSignalCount,
-                        _cartographyDispatcherPoiCount,
-                        telemetryFlags);
-                }
-
-                if (shouldDumpTelemetry)
-                    DumpCartographyBlackBox();
             }
         }
 
@@ -569,13 +482,23 @@ namespace Hecton8.PDA
             _cartographyDispatcherFrameScheduled = false;
             if (_cartographySimulationPending)
             {
-                if (!CompleteCartographySimulationJobBlocking())
+                if (!TryFinalizePendingCartographySimulation(forceComplete: true))
+                {
                     _cartographyDeferredDumpFlags |= CartographyGridConstants.TelemetryFlagVaultContention;
-                return;
+                    return;
+                }
             }
 
             if (_cartographySimulationBuffersPinned)
                 ReleaseCartographySimulationPins();
+
+            TryScheduleRequestedCartographyUpload();
+        }
+
+        private void CartographyVisualSyncTick(in DispatcherTimingDTO timing)
+        {
+            if (_cartographyUploadPending)
+                TryFinalizePendingCartographyUpload(forceComplete: true);
         }
 
         private uint FinalizeCartographySimulationResultPinned(CartographyVaultBuffers buffers)
@@ -1384,6 +1307,9 @@ namespace Hecton8.PDA
             _cartographyHandles = default;
             _cartographyVaultReady = false;
             _explorationMaskInitialized = false;
+            _cartographyUploadPending = false;
+            _cartographyUploadPrepared = false;
+            _cartographyUploadRequested = false;
             ClearExploredSnapshot();
             _cartographyTuningSnapshot = default;
             _latestCartographyTelemetrySnapshot = default;
@@ -1461,7 +1387,7 @@ namespace Hecton8.PDA
                 job.Execute(i);
         }
 
-        private bool TryFinalizePendingCartographyUpload()
+        private bool TryFinalizePendingCartographyUpload(bool forceComplete)
         {
             if (!TryPinCartographyUploadBuffers())
                 return false;
@@ -1469,22 +1395,61 @@ namespace Hecton8.PDA
             try
             {
                 return TryResolvePinnedCartographyBuffers(_cartographyUploadPinnedMask, out CartographyVaultBuffers buffers) &&
-                       TryFinalizeCartographyUploadPinned(buffers, out _, out _, out _);
+                       TryFinalizeCartographyUploadPinned(buffers, forceComplete, out _, out _, out _);
             }
             finally
             {
-                if (_cartographyUploadBuffersPinned)
-                {
-                    if (_cartographyUploadPending)
-                        CompleteCartographyUploadJobBlocking();
-                    else
-                        ReleaseCartographyUploadPins();
-                }
+                if (_cartographyUploadBuffersPinned && !_cartographyUploadPending)
+                    ReleaseCartographyUploadPins();
+            }
+        }
+
+        private bool TryFinalizePendingCartographySimulation(bool forceComplete)
+        {
+            if (!_cartographySimulationPending)
+                return true;
+
+            if (!DispatcherJobFence.TryFinalizeCompleted(ref _cartographySimulationHandle) &&
+                (!forceComplete || !DispatcherJobFence.TryComplete(ref _cartographySimulationHandle, forceComplete: true)))
+            {
+                return false;
+            }
+
+            bool shouldDumpTelemetry = false;
+            uint telemetryFlags = CartographyGridConstants.TelemetryFlagVaultContention;
+            int explicitSignalCount = math.max(0, _cartographyDispatcherPendingSignalCount - _cartographyDispatcherPoiCount);
+            try
+            {
+                if (!TryResolvePinnedCartographyBuffers(_cartographySimulationPinnedMask, out CartographyVaultBuffers buffers))
+                    return false;
+
+                uint failureFlags = FinalizeCartographySimulationResultPinned(buffers);
+                shouldDumpTelemetry = (failureFlags & (CartographyGridConstants.TelemetryFlagMutationBudgetExceeded |
+                                                       CartographyGridConstants.TelemetryFlagOutOfBoundsAup |
+                                                       CartographyGridConstants.TelemetryFlagVaultContention)) != 0u;
+                telemetryFlags = _cartographyDispatcherHasPlayerAup ? 1u : 0u;
+                telemetryFlags |= 1u << 1;
+                return true;
+            }
+            finally
+            {
+                _cartographySimulationPending = false;
+                _cartographySimulationHandle = default;
+                H8Memory.RegisterActiveJob(SystemID.UI, default);
+                ReleaseCartographySimulationPins();
+                RecordCartographyBlackBox(
+                    in _cartographyDispatcherPlayerAup,
+                    explicitSignalCount,
+                    _cartographyDispatcherPoiCount,
+                    telemetryFlags);
+                if (shouldDumpTelemetry)
+                    DumpCartographyBlackBox();
             }
         }
 
         private bool TryFinalizeCartographyUploadPinned(
             CartographyVaultBuffers buffers,
+            bool forceComplete,
             out NativeArray<uint> packedR8,
             out uint revision,
             out int framesBetweenUploads)
@@ -1495,16 +1460,23 @@ namespace Hecton8.PDA
             if (!_cartographyUploadPending)
                 return false;
 
-            if (!DispatcherJobFence.TryFinalizeCompleted(ref _cartographyUploadHandle) &&
-                !DispatcherJobFence.TryComplete(ref _cartographyUploadHandle, forceComplete: true))
-            {
+            bool completed = DispatcherJobFence.TryFinalizeCompleted(ref _cartographyUploadHandle);
+            if (!completed && forceComplete)
+                completed = DispatcherJobFence.TryComplete(ref _cartographyUploadHandle, forceComplete: true);
+
+            if (!completed)
                 return false;
-            }
 
             _cartographyUploadPending = false;
             H8Memory.RegisterActiveJob(SystemID.UI, default);
             packedR8 = buffers.UploadPackedR8;
-            return packedR8.IsCreated;
+            if (!packedR8.IsCreated)
+                return false;
+
+            _cartographyUploadPrepared = true;
+            _cartographyUploadPreparedRevision = revision;
+            _cartographyUploadPreparedCadence = framesBetweenUploads;
+            return true;
         }
 
         private void CompleteCartographyUploadJobForTeardown()
@@ -1524,17 +1496,7 @@ namespace Hecton8.PDA
 
         private bool CompleteCartographySimulationJobBlocking()
         {
-            if (!_cartographySimulationPending)
-                return true;
-
-            if (!DispatcherJobFence.TryFinalizeCompleted(ref _cartographySimulationHandle) &&
-                !DispatcherJobFence.TryComplete(ref _cartographySimulationHandle, forceComplete: true))
-            {
-                return false;
-            }
-
-            MarkCartographySimulationJobCompleted();
-            return true;
+            return TryFinalizePendingCartographySimulation(forceComplete: true);
         }
 
         private bool CompleteCartographyUploadJobBlocking()
@@ -2259,7 +2221,7 @@ namespace Hecton8.PDA
 
             IDataVault vault = _cartographyVault;
 
-            if (vault == null || !CartographyVault.TryResolve(vault, out _cartographyHandles))
+            if (vault == null || !CartographyVault.TryEnsure(vault, out _cartographyHandles))
                 return false;
 
             if (!TryAcquireCartographyPins(vault, CartographyPinCoreInitialize, out ulong pinnedMask))
@@ -2804,47 +2766,66 @@ namespace Hecton8.PDA
                 return false;
             }
 
-            if (!_cartographyUploadPending &&
-                !TryScheduleCartographyUpload(globalQualityWeight, out framesBetweenUploads, out revision))
+            if (_cartographyUploadPrepared &&
+                TryCopyPreparedCartographyUpload(destination, out framesBetweenUploads, out revision))
             {
-                return false;
-            }
-
-            if (!TryPinCartographyUploadBuffers())
-            {
-                RecordCartographyBlackBox(
-                    in _cartographyDispatcherPlayerAup,
-                    0,
-                    0,
-                    CartographyGridConstants.TelemetryFlagVaultContention);
-                return false;
-            }
-
-            try
-            {
-                if (!TryResolvePinnedCartographyBuffers(_cartographyUploadPinnedMask, out CartographyVaultBuffers buffers) ||
-                    !TryFinalizeCartographyUploadPinned(buffers, out NativeArray<uint> packedR8, out revision, out framesBetweenUploads) ||
-                    !packedR8.IsCreated)
-                {
-                    return false;
-                }
-
-                GraphicsBufferUploadUtility.UploadNativeArray(
-                    destination,
-                    packedR8,
-                    math.min(packedR8.Length, CartographyGridConstants.PackedUploadWordCount));
                 return true;
             }
-            finally
+
+            _cartographyUploadRequested = true;
+            _cartographyUploadRequestedQuality = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            return false;
+        }
+
+        private void TryScheduleRequestedCartographyUpload()
+        {
+            if (!_cartographyUploadRequested ||
+                _cartographyUploadPending ||
+                _cartographyUploadPrepared)
             {
-                if (_cartographyUploadBuffersPinned)
-                {
-                    if (_cartographyUploadPending)
-                        CompleteCartographyUploadJobBlocking();
-                    else
-                        ReleaseCartographyUploadPins();
-                }
+                return;
             }
+
+            float quality = _cartographyUploadRequestedQuality;
+            _cartographyUploadRequested = false;
+            TryScheduleCartographyUpload(
+                quality,
+                out _,
+                out _);
+        }
+
+        private bool TryCopyPreparedCartographyUpload(
+            GraphicsBuffer destination,
+            out int framesBetweenUploads,
+            out uint revision)
+        {
+            framesBetweenUploads = math.max(1, _cartographyUploadPreparedCadence);
+            revision = _cartographyUploadPreparedRevision;
+            if (!_cartographyUploadPrepared ||
+                destination == null ||
+                !destination.IsValid() ||
+                !_cartographyVaultReady)
+            {
+                return false;
+            }
+
+            IDataVault vault = _cartographyVault;
+            if (!TryReadPinnedCartographyBuffers(
+                    vault,
+                    in _cartographyHandles,
+                    CartographyPinUploadPackedR8,
+                    out CartographyVaultReadBuffers buffers) ||
+                !buffers.UploadPackedR8.IsCreated)
+            {
+                return false;
+            }
+
+            GraphicsBufferUploadUtility.UploadNativeArray(
+                destination,
+                buffers.UploadPackedR8,
+                math.min(buffers.UploadPackedR8.Length, CartographyGridConstants.PackedUploadWordCount));
+            _cartographyUploadPrepared = false;
+            return true;
         }
 
         private bool TryScheduleCartographyUpload(
@@ -2860,6 +2841,7 @@ namespace Hecton8.PDA
             if (_cartographyUploadPending)
                 return true;
 
+            _cartographyUploadPrepared = false;
             if (!TryPinCartographyUploadBuffers())
             {
                 RecordCartographyBlackBox(
@@ -3228,7 +3210,8 @@ namespace Hecton8.PDA
             bool registered =
                 GlobalRegistry.TryRegisterDispatcherSystem(_cartographyPreSimulationPhase) &&
                 GlobalRegistry.TryRegisterDispatcherSystem(_cartographySimulationPhase) &&
-                GlobalRegistry.TryRegisterDispatcherSystem(_cartographyPostSimulationPhase);
+                GlobalRegistry.TryRegisterDispatcherSystem(_cartographyPostSimulationPhase) &&
+                GlobalRegistry.TryRegisterDispatcherSystem(_cartographyVisualSyncPhase);
             if (!registered)
             {
                 UnregisterCartographyDispatcher();
@@ -3243,7 +3226,7 @@ namespace Hecton8.PDA
             if (_cartographyPreSimulationPhase != null)
                 return;
 
-            // COLD ALLOC: IDispatcherSystem[3] — Kahn dispatcher phase adapters — owner: PlayerExplorationTracker
+            // COLD ALLOC: IDispatcherSystem[4] — Kahn dispatcher phase adapters — owner: PlayerExplorationTracker
             _cartographyPreSimulationPhase = new CartographyDispatcherPhaseSystem(
                 this,
                 DispatcherPhase.PreSimulation,
@@ -3256,6 +3239,10 @@ namespace Hecton8.PDA
                 this,
                 DispatcherPhase.PostSimulation,
                 CartographyPostSimulationSystemHash);
+            _cartographyVisualSyncPhase = new CartographyDispatcherPhaseSystem(
+                this,
+                DispatcherPhase.VisualSync,
+                CartographyVisualSyncSystemHash);
         }
 
         private void UnregisterCartographyDispatcher()
@@ -3266,6 +3253,8 @@ namespace Hecton8.PDA
                 GlobalRegistry.UnregisterDispatcherSystem(_cartographySimulationPhase);
             if (_cartographyPostSimulationPhase != null)
                 GlobalRegistry.UnregisterDispatcherSystem(_cartographyPostSimulationPhase);
+            if (_cartographyVisualSyncPhase != null)
+                GlobalRegistry.UnregisterDispatcherSystem(_cartographyVisualSyncPhase);
 
             _cartographyDispatcherRegistered = false;
             _cartographyDispatcherFrameScheduled = false;
@@ -3404,6 +3393,11 @@ namespace Hecton8.PDA
             _cartographyHandles = default;
             _cartographyVaultReady = false;
             _explorationMaskInitialized = false;
+            _cartographyUploadPending = false;
+            _cartographyUploadPrepared = false;
+            _cartographyUploadRequested = false;
+            if (isActiveAndEnabled)
+                InitializeExplorationMask();
         }
 
         private void TryRegisterHotSwapListener()
@@ -3517,6 +3511,8 @@ namespace Hecton8.PDA
 
             public void VisualSyncTick(in DispatcherTimingDTO timing)
             {
+                if (_phase == DispatcherPhase.VisualSync)
+                    _owner.CartographyVisualSyncTick(in timing);
             }
         }
 

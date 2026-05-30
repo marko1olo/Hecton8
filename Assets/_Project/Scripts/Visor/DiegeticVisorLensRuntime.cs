@@ -14,7 +14,7 @@ using UnityEngine;
 namespace Hecton8.Visor
 {
     [DisallowMultipleComponent]
-    public unsafe sealed class DiegeticVisorLensRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public unsafe sealed class DiegeticVisorLensRuntime : MonoBehaviour, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private static int s_x001DiegeticVisorLensRuntimeSignalPushDropCount;
         private const int TelemetryCapacity = 300;
@@ -101,8 +101,12 @@ namespace Hecton8.Visor
         private bool _hasPendingEnvironment;
         private bool _pendingMockReset;
         private bool _registeredHotSwapListener;
+        private bool _registeredLateFrameTick;
+        private bool _registeredSlowTick;
         private bool _nativeFaultLogged;
         private bool _coldSupportsSetConstantBuffer;
+        private bool _nativeRepairPending;
+        private bool _gpuGlobalsBufferPrewarmPending;
 
         public bool TryGetPreview(out VisorStateDTO state, out DiegeticVisorLensGpuGlobalsDTO globals, out VisorLensTuningDTO tuning)
         {
@@ -200,14 +204,16 @@ namespace Hecton8.Visor
             CacheRegistryServicesCold();
             EnsureNativeState();
             TryRegisterHotSwapListener();
-            GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            TryRegisterSlowTickable();
+            TryRegisterLateFrameTickable();
         }
 
         private void OnDisable()
         {
             CompleteScheduledWorkForTeardown();
             UploadGpuGlobals();
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            TryUnregisterLateFrameTickable();
+            TryUnregisterSlowTickable();
             TryUnregisterHotSwapListener();
             ClearGpuGlobals();
             ReleaseGpuBuffer();
@@ -219,9 +225,8 @@ namespace Hecton8.Visor
         {
             if (!_nativeReady)
             {
-                EnsureNativeState();
-                if (!_nativeReady)
-                    return;
+                _nativeRepairPending = true;
+                return;
             }
 
             float safeDelta = SanitizeDelta(deltaTime);
@@ -253,6 +258,19 @@ namespace Hecton8.Visor
             AdvanceVisorSimulation(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
             TryFinalizeScheduledWorkNoWait();
             UploadGpuGlobals();
+        }
+
+        public void SlowTick()
+        {
+            if (_nativeRepairPending || !_nativeReady)
+            {
+                _nativeRepairPending = false;
+                CacheRegistryServicesCold();
+                EnsureNativeState();
+            }
+
+            if (_gpuGlobalsBufferPrewarmPending || (_nativeReady && !HasValidGpuBuffer()))
+                PrepareGpuGlobalsBufferCold();
         }
 
         public void GenerateEmergencyMockVisorData()
@@ -655,7 +673,7 @@ namespace Hecton8.Visor
                 TryReloadCsvOverrides();
 #endif
                 ProbeColdBinaryPayloads();
-                EnsureGpuBuffer();
+                RequestGpuGlobalsBufferPrewarm();
                 ClearGpuGlobals();
                 _simulationAccumulator = ResolveSimulationInterval(ResolveQualityWeight());
             }
@@ -703,6 +721,18 @@ namespace Hecton8.Visor
                 RebindDataVaultForLifecycle(nextVault);
                 if (_vault != null)
                     EnsureNativeState();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregisterSlowTickable();
+                TryUnregisterLateFrameTickable();
+                if (currentService != null)
+                {
+                    TryRegisterSlowTickable();
+                    TryRegisterLateFrameTickable();
+                }
             }
         }
 
@@ -751,6 +781,40 @@ namespace Hecton8.Visor
             _registeredHotSwapListener = false;
         }
 
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_registeredLateFrameTick || !Application.isPlaying)
+                return;
+
+            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_registeredLateFrameTick)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrameTick = false;
+        }
+
+        private void TryRegisterSlowTickable()
+        {
+            if (_registeredSlowTick || !Application.isPlaying)
+                return;
+
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterSlowTickable()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            _registeredSlowTick = false;
+        }
+
         private bool TryAcquireBuffer<T>(BufferID id, int length, out VaultGenerationHandle<T> handle) where T : unmanaged
         {
             handle = default;
@@ -776,6 +840,8 @@ namespace Hecton8.Visor
             _hasScheduledWork = false;
             _hasGpuGlobals = false;
             _hasUploadedGpuGlobals = false;
+            _nativeRepairPending = false;
+            _gpuGlobalsBufferPrewarmPending = false;
             _lastGpuGlobals = default;
             _uploadedGpuGlobals = default;
             _blackBoxDumped = false;
@@ -1128,6 +1194,24 @@ namespace Hecton8.Visor
             _coldSupportsSetConstantBuffer = SystemInfo.supportsSetConstantBuffer;
         }
 
+        private void RequestGpuGlobalsBufferPrewarm()
+        {
+            if (!_coldSupportsSetConstantBuffer)
+            {
+                _gpuGlobalsBufferPrewarmPending = false;
+                ReleaseGpuBuffer();
+                return;
+            }
+
+            _gpuGlobalsBufferPrewarmPending = !HasValidGpuBuffer();
+        }
+
+        private void PrepareGpuGlobalsBufferCold()
+        {
+            _gpuGlobalsBufferPrewarmPending = false;
+            EnsureGpuBuffer();
+        }
+
         private void ReleaseGpuBuffer()
         {
             _gpuGlobalsBufferA?.Release();
@@ -1449,40 +1533,53 @@ namespace Hecton8.Visor
             entry.ShaderUpdateComputeTimeNs = _lastShaderUpdateComputeTimeNs;
             entry.Anomaly01 = Sanitize01(environment.Corruption01);
 
-            int cursor = 0;
+            if (!TryAdvanceTelemetryCursor(vault, out int cursor))
+                return;
+
+            TryWriteTelemetryEntry(vault, cursor, in entry);
+        }
+
+        private bool TryAdvanceTelemetryCursor(IDataVault vault, out int cursor)
+        {
+            cursor = 0;
             bool cursorLocked = false;
             try
             {
                 if (!TryAcquireVisorWriteBuffer(vault, in _telemetryCursorHandle, TelemetryCursorBufferId, 1, out NativeArray<int> cursorBuffer))
-                    return;
+                    return false;
                 cursorLocked = true;
 
                 if (!cursorBuffer.IsCreated || cursorBuffer.Length <= 0)
-                    return;
+                    return false;
 
                 cursor = cursorBuffer[0];
                 if (cursor < 0 || cursor >= TelemetryCapacity)
                     cursor = 0;
 
                 cursorBuffer[0] = cursor + 1 >= TelemetryCapacity ? 0 : cursor + 1;
+                return true;
             }
             finally
             {
                 if (cursorLocked)
                     vault.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystem);
             }
+        }
 
+        private bool TryWriteTelemetryEntry(IDataVault vault, int cursor, in VisorLensTelemetryEntry entry)
+        {
             bool ringLocked = false;
             try
             {
                 if (!TryAcquireVisorWriteBuffer(vault, in _telemetryHandle, TelemetryRingBufferId, TelemetryCapacity, out NativeArray<VisorLensTelemetryEntry> ring))
-                    return;
+                    return false;
 
                 ringLocked = true;
                 if (!ring.IsCreated || ring.Length < TelemetryCapacity)
-                    return;
+                    return false;
 
                 ring[cursor] = entry;
+                return true;
             }
             finally
             {

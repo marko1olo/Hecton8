@@ -66,9 +66,7 @@ namespace Hecton8.Thermodynamics
         private const int CsvBufferBytes = 4096;
         private const int BinaryConstantsBytes = 16;
         private const uint TelemetryFlagNaN = 1u << 0;
-        private const uint TelemetryFlagQualityPressure = 1u << 1;
         private const uint TelemetryFlagRebase = 1u << 2;
-        private const uint TelemetryFlagHealthPressureSurvival = 1u << 3;
         private const uint TelemetryFlagSignalDrop = 1u << 4;
         private static readonly int HeatTexturePropertyId = Shader.PropertyToID("_HectonThermoHazardHeatTex3D");
         private static readonly int GridMetaPropertyId = Shader.PropertyToID("_HectonThermoHazardGridMeta");
@@ -1243,7 +1241,7 @@ namespace Hecton8.Thermodynamics
 #if UNITY_EDITOR
         private void TryReloadCsvOverrides()
         {
-            if (!HasHandle(in _csvBytes) || !HasHandle(in _constants))
+            if (!HasHandle(in _constants))
                 return;
 
             StartConfigWorkerIfNeeded();
@@ -1787,10 +1785,7 @@ namespace Hecton8.Thermodynamics
             {
                 float maxTemp = -1000f;
                 float maxRad = 0f;
-                uint flags = QualityPressureQ8 >= 128u ? TelemetryFlagQualityPressure : 0u;
-                if (HealthPressureQ8 > 0u)
-                    flags |= TelemetryFlagHealthPressureSurvival;
-
+                uint flags = 0u;
                 uint nanIndex = 0u;
                 int updraftCount = 0;
                 int plane = Resolution * Resolution;
@@ -1844,7 +1839,8 @@ namespace Hecton8.Thermodynamics
                     NaNCellIndex = nanIndex,
                     ActiveResolution = unchecked((uint)Resolution),
                     GridOriginHash = GridOriginHash,
-                    _pad0 = 0u,
+                    QualityPressureQ8 = (byte)math.min(QualityPressureQ8, 255u),
+                    HealthPressureQ8 = (byte)math.min(HealthPressureQ8, 255u),
                     _pad1 = 0u
                 };
             }

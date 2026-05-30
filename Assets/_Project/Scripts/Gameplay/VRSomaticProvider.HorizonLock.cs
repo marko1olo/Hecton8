@@ -15,7 +15,6 @@ namespace Hecton8.Gameplay
     {
         private const int VRSomaticComfortDtoBytes = 32;
         private const int SomaticTelemetryEntryBytes = 96;
-        private const int SomaticHorizonEntityCapacity = 1;
         private const uint SomaticComfortFlagNaN = 1u << 28;
         private const uint SomaticComfortFlagBudgetExceeded = 1u << 29;
         private const uint SomaticComfortFlagHorizonInitialized = 1u << 30;
@@ -33,224 +32,86 @@ namespace Hecton8.Gameplay
         private bool _somaticHasStabilizedRotation;
         private int _somaticHorizonTelemetryCursor;
 
-        private unsafe JobHandle ScheduleHorizonLockKernel(
+        private unsafe bool EvaluateHorizonLockImmediate(
             in global::Hecton8.World.AbsoluteUniversePosition sourceAup,
             quaternion sourceRotation,
             float simulationTickDelta,
             float globalQualityWeight01,
-            JobHandle dependency)
+            in SomaticDerivativeDTO derivatives,
+            in VrComfortProfileDTO profile)
         {
             if (!_somaticKccStateMirror.IsCreated ||
                 !_somaticRawRotation.IsCreated ||
                 !_somaticHorizonWrite.IsCreated ||
                 !_somaticHorizonRead.IsCreated ||
-                !_somaticDerivatives.IsCreated ||
-                !_somaticProfiles.IsCreated)
+                !TryReadFirst(in _somaticHorizonRead, out VRSomaticComfortDTO previousRead) ||
+                !TryReadFirst(in _somaticHorizonWrite, out VRSomaticComfortDTO writeState))
             {
-                return dependency;
+                return false;
             }
 
-            bool kccLocked = false;
-            bool rawLocked = false;
-            bool writeLocked = false;
-            bool readLocked = false;
-            bool derivativesLocked = false;
-            bool profilesLocked = false;
-            try
+            VRSomaticKinematicStateMirrorDTO kccState = default;
+            quaternion rawRotation = sourceRotation;
+            SomaticDerivativeDTO derivativeState = derivatives;
+            VrComfortProfileDTO profileState = SanitizeJobProfile(profile);
+            PrepareAndEvaluateHorizonComfortJob job = new PrepareAndEvaluateHorizonComfortJob
             {
-                if (!_somaticKccStateMirror.TryAcquireWriteNativeArray(out NativeArray<VRSomaticKinematicStateMirrorDTO> kcc))
-                    return dependency;
-                kccLocked = true;
-
-                if (!_somaticRawRotation.TryAcquireWriteNativeArray(out NativeArray<quaternion> rawRotations))
-                    return dependency;
-                rawLocked = true;
-
-                if (!_somaticHorizonWrite.TryAcquireWriteNativeArray(out NativeArray<VRSomaticComfortDTO> write))
-                    return dependency;
-                writeLocked = true;
-
-                if (!_somaticHorizonRead.TryAcquireWriteNativeArray(out NativeArray<VRSomaticComfortDTO> read))
-                    return dependency;
-                readLocked = true;
-
-                if (!_somaticDerivatives.TryAcquireWriteNativeArray(out NativeArray<SomaticDerivativeDTO> derivatives))
-                    return dependency;
-                derivativesLocked = true;
-
-                if (!_somaticProfiles.TryAcquireWriteNativeArray(out NativeArray<VrComfortProfileDTO> profiles))
-                    return dependency;
-                profilesLocked = true;
-
-                if (kcc.Length < SomaticHorizonEntityCapacity ||
-                    rawRotations.Length < SomaticHorizonEntityCapacity ||
-                    write.Length < SomaticHorizonEntityCapacity ||
-                    read.Length < SomaticHorizonEntityCapacity ||
-                    derivatives.Length == 0 ||
-                    profiles.Length == 0)
-                {
-                    return dependency;
-                }
-
-                PrepareAndEvaluateHorizonComfortJob job = new PrepareAndEvaluateHorizonComfortJob
-                {
-                    KinematicStates = (VRSomaticKinematicStateMirrorDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(kcc),
-                    RawRotations = (quaternion*)NativeArrayUnsafeUtility.GetUnsafePtr(rawRotations),
-                    PreviousRead = (VRSomaticComfortDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(read),
-                    ComfortWrite = (VRSomaticComfortDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(write),
-                    Derivatives = (SomaticDerivativeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(derivatives),
-                    Profile = (VrComfortProfileDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(profiles),
-                    SourceAup = ToDouble3(in sourceAup),
-                    RawRotation = sourceRotation,
-                    AngularVelocity = new float3(0f, math.select(_kccAngularVelocityRadiansPerSecond, 0f, !math.isfinite(_kccAngularVelocityRadiansPerSecond)), 0f),
-                    GlobalQualityWeight01 = globalQualityWeight01,
-                    RuntimeComfortBlend01 = _somaticComfortPresence01,
-                    DeltaTime = math.max(simulationTickDelta, MinimumDeltaTime)
-                };
-                return job.Schedule(dependency);
-            }
-            finally
-            {
-                if (profilesLocked)
-                    _somaticProfiles.ReleaseWriteNativeArray();
-                if (derivativesLocked)
-                    _somaticDerivatives.ReleaseWriteNativeArray();
-                if (readLocked)
-                    _somaticHorizonRead.ReleaseWriteNativeArray();
-                if (writeLocked)
-                    _somaticHorizonWrite.ReleaseWriteNativeArray();
-                if (rawLocked)
-                    _somaticRawRotation.ReleaseWriteNativeArray();
-                if (kccLocked)
-                    _somaticKccStateMirror.ReleaseWriteNativeArray();
-            }
+                KinematicStates = (VRSomaticKinematicStateMirrorDTO*)UnsafeUtility.AddressOf(ref kccState),
+                RawRotations = (quaternion*)UnsafeUtility.AddressOf(ref rawRotation),
+                PreviousRead = (VRSomaticComfortDTO*)UnsafeUtility.AddressOf(ref previousRead),
+                ComfortWrite = (VRSomaticComfortDTO*)UnsafeUtility.AddressOf(ref writeState),
+                Derivatives = (SomaticDerivativeDTO*)UnsafeUtility.AddressOf(ref derivativeState),
+                Profile = (VrComfortProfileDTO*)UnsafeUtility.AddressOf(ref profileState),
+                SourceAup = ToDouble3(in sourceAup),
+                RawRotation = sourceRotation,
+                AngularVelocity = new float3(0f, math.select(_kccAngularVelocityRadiansPerSecond, 0f, !math.isfinite(_kccAngularVelocityRadiansPerSecond)), 0f),
+                GlobalQualityWeight01 = globalQualityWeight01,
+                RuntimeComfortBlend01 = _somaticComfortPresence01,
+                DeltaTime = math.max(simulationTickDelta, MinimumDeltaTime)
+            };
+            job.Execute();
+            return
+                TryPublishFirst(ref _somaticKccStateMirror, in kccState) &&
+                TryPublishFirst(ref _somaticRawRotation, in rawRotation) &&
+                TryPublishFirst(ref _somaticHorizonWrite, in writeState);
         }
 
-        private unsafe JobHandle SchedulePreparedHorizonLockEvaluation(
+        private unsafe bool EvaluatePreparedHorizonLockImmediate(
             float simulationTickDelta,
             float globalQualityWeight01,
-            JobHandle dependency)
+            in VRSomaticKinematicStateMirrorDTO kccState,
+            quaternion rawRotation,
+            in SomaticDerivativeDTO derivatives,
+            in VrComfortProfileDTO profile)
         {
             if (!_somaticKccStateMirror.IsCreated ||
                 !_somaticRawRotation.IsCreated ||
                 !_somaticHorizonWrite.IsCreated ||
                 !_somaticHorizonRead.IsCreated ||
-                !_somaticDerivatives.IsCreated ||
-                !_somaticProfiles.IsCreated)
+                !TryReadFirst(in _somaticHorizonRead, out VRSomaticComfortDTO previousRead) ||
+                !TryReadFirst(in _somaticHorizonWrite, out VRSomaticComfortDTO writeState))
             {
-                return dependency;
+                return false;
             }
 
-            bool kccLocked = false;
-            bool rawLocked = false;
-            bool writeLocked = false;
-            bool readLocked = false;
-            bool derivativesLocked = false;
-            bool profilesLocked = false;
-            try
+            VRSomaticKinematicStateMirrorDTO kcc = kccState;
+            quaternion raw = rawRotation;
+            SomaticDerivativeDTO derivativeState = derivatives;
+            VrComfortProfileDTO profileState = SanitizeJobProfile(profile);
+            EvaluatePreparedHorizonComfortJob job = new EvaluatePreparedHorizonComfortJob
             {
-                if (!_somaticKccStateMirror.TryAcquireWriteNativeArray(out NativeArray<VRSomaticKinematicStateMirrorDTO> kcc))
-                    return dependency;
-                kccLocked = true;
-
-                if (!_somaticRawRotation.TryAcquireWriteNativeArray(out NativeArray<quaternion> rawRotations))
-                    return dependency;
-                rawLocked = true;
-
-                if (!_somaticHorizonWrite.TryAcquireWriteNativeArray(out NativeArray<VRSomaticComfortDTO> write))
-                    return dependency;
-                writeLocked = true;
-
-                if (!_somaticHorizonRead.TryAcquireWriteNativeArray(out NativeArray<VRSomaticComfortDTO> read))
-                    return dependency;
-                readLocked = true;
-
-                if (!_somaticDerivatives.TryAcquireWriteNativeArray(out NativeArray<SomaticDerivativeDTO> derivatives))
-                    return dependency;
-                derivativesLocked = true;
-
-                if (!_somaticProfiles.TryAcquireWriteNativeArray(out NativeArray<VrComfortProfileDTO> profiles))
-                    return dependency;
-                profilesLocked = true;
-
-                if (kcc.Length < SomaticHorizonEntityCapacity ||
-                    rawRotations.Length < SomaticHorizonEntityCapacity ||
-                    write.Length < SomaticHorizonEntityCapacity ||
-                    read.Length < SomaticHorizonEntityCapacity ||
-                    derivatives.Length == 0 ||
-                    profiles.Length == 0)
-                {
-                    return dependency;
-                }
-
-                EvaluatePreparedHorizonComfortJob job = new EvaluatePreparedHorizonComfortJob
-                {
-                    KinematicStates = (VRSomaticKinematicStateMirrorDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(kcc),
-                    RawRotations = (quaternion*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(rawRotations),
-                    PreviousRead = (VRSomaticComfortDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(read),
-                    ComfortWrite = (VRSomaticComfortDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(write),
-                    Derivatives = (SomaticDerivativeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(derivatives),
-                    Profile = (VrComfortProfileDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(profiles),
-                    GlobalQualityWeight01 = globalQualityWeight01,
-                    RuntimeComfortBlend01 = _somaticComfortPresence01,
-                    DeltaTime = math.max(simulationTickDelta, MinimumDeltaTime)
-                };
-                return job.Schedule(dependency);
-            }
-            finally
-            {
-                if (profilesLocked)
-                    _somaticProfiles.ReleaseWriteNativeArray();
-                if (derivativesLocked)
-                    _somaticDerivatives.ReleaseWriteNativeArray();
-                if (readLocked)
-                    _somaticHorizonRead.ReleaseWriteNativeArray();
-                if (writeLocked)
-                    _somaticHorizonWrite.ReleaseWriteNativeArray();
-                if (rawLocked)
-                    _somaticRawRotation.ReleaseWriteNativeArray();
-                if (kccLocked)
-                    _somaticKccStateMirror.ReleaseWriteNativeArray();
-            }
-        }
-
-        private unsafe JobHandle ScheduleMockKinematicJitter(uint frame, float globalQualityWeight01, JobHandle dependency)
-        {
-            if (!_somaticKccStateMirror.IsCreated || !_somaticRawRotation.IsCreated)
-                return dependency;
-
-            bool kccLocked = false;
-            bool rawLocked = false;
-            try
-            {
-                if (!_somaticKccStateMirror.TryAcquireWriteNativeArray(out NativeArray<VRSomaticKinematicStateMirrorDTO> kcc))
-                    return dependency;
-                kccLocked = true;
-
-                if (!_somaticRawRotation.TryAcquireWriteNativeArray(out NativeArray<quaternion> rawRotations))
-                    return dependency;
-                rawLocked = true;
-
-                if (kcc.Length < SomaticHorizonEntityCapacity || rawRotations.Length < SomaticHorizonEntityCapacity)
-                    return dependency;
-
-                GenerateMockKinematicJitterJob job = new GenerateMockKinematicJitterJob
-                {
-                    KinematicStates = (VRSomaticKinematicStateMirrorDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(kcc),
-                    RawRotations = (quaternion*)NativeArrayUnsafeUtility.GetUnsafePtr(rawRotations),
-                    GlobalQualityWeight01 = globalQualityWeight01,
-                    Frame = frame,
-                    DeltaTime = math.max(HectonXRRuntimeState.FrameIntervalSeconds, MinimumDeltaTime)
-                };
-                return job.Schedule(dependency);
-            }
-            finally
-            {
-                if (rawLocked)
-                    _somaticRawRotation.ReleaseWriteNativeArray();
-                if (kccLocked)
-                    _somaticKccStateMirror.ReleaseWriteNativeArray();
-            }
+                KinematicStates = (VRSomaticKinematicStateMirrorDTO*)UnsafeUtility.AddressOf(ref kcc),
+                RawRotations = (quaternion*)UnsafeUtility.AddressOf(ref raw),
+                PreviousRead = (VRSomaticComfortDTO*)UnsafeUtility.AddressOf(ref previousRead),
+                ComfortWrite = (VRSomaticComfortDTO*)UnsafeUtility.AddressOf(ref writeState),
+                Derivatives = (SomaticDerivativeDTO*)UnsafeUtility.AddressOf(ref derivativeState),
+                Profile = (VrComfortProfileDTO*)UnsafeUtility.AddressOf(ref profileState),
+                GlobalQualityWeight01 = globalQualityWeight01,
+                RuntimeComfortBlend01 = _somaticComfortPresence01,
+                DeltaTime = math.max(simulationTickDelta, MinimumDeltaTime)
+            };
+            job.Execute();
+            return TryPublishFirst(ref _somaticHorizonWrite, in writeState);
         }
 
         private unsafe bool TryPublishHorizonLockStateFromWrite(out VRSomaticComfortDTO state)
@@ -298,6 +159,7 @@ namespace Hecton8.Gameplay
                 return;
 
             bool telemetryLocked = false;
+            bool shouldDump = false;
             try
             {
                 if (!_somaticHorizonTelemetry.TryAcquireWriteNativeArray(out NativeArray<SomaticTelemetryEntry> telemetry))
@@ -315,50 +177,52 @@ namespace Hecton8.Gameplay
 
                 VRSomaticKinematicStateMirrorDTO rawState = kcc[0];
                 quaternion rawRotation = SanitizeJobQuaternion(rawRotations[0], quaternion.identity);
-            quaternion stabilized = SanitizeJobQuaternion(state.StabilizedRotation, quaternion.identity);
-            quaternion delta = SanitizeJobQuaternion(math.mul(rawRotation, math.inverse(stabilized)), quaternion.identity);
-            float burstMicroseconds = 0f;
-            if (_somaticScheduleTimestamp > 0L)
-            {
-                long ticks = System.Diagnostics.Stopwatch.GetTimestamp() - _somaticScheduleTimestamp;
-                burstMicroseconds = (float)(ticks * 1000000.0 / System.Diagnostics.Stopwatch.Frequency);
-            }
+                quaternion stabilized = SanitizeJobQuaternion(state.StabilizedRotation, quaternion.identity);
+                quaternion delta = SanitizeJobQuaternion(math.mul(rawRotation, math.inverse(stabilized)), quaternion.identity);
+                float burstMicroseconds = 0f;
+                if (_somaticScheduleTimestamp > 0L)
+                {
+                    long ticks = System.Diagnostics.Stopwatch.GetTimestamp() - _somaticScheduleTimestamp;
+                    burstMicroseconds = (float)(ticks * 1000000.0 / System.Diagnostics.Stopwatch.Frequency);
+                }
 
-            uint flags = state.ComfortFlags;
-            if (!math.all(math.isfinite(stabilized.value)) || !math.all(math.isfinite(delta.value)))
-                flags |= SomaticComfortFlagNaN;
-            if (burstMicroseconds > SomaticHorizonBudgetMicroseconds)
-                flags |= SomaticComfortFlagBudgetExceeded;
+                uint flags = state.ComfortFlags;
+                if (!math.all(math.isfinite(stabilized.value)) || !math.all(math.isfinite(delta.value)))
+                    flags |= SomaticComfortFlagNaN;
+                if (burstMicroseconds > SomaticHorizonBudgetMicroseconds)
+                    flags |= SomaticComfortFlagBudgetExceeded;
 
-            _somaticLastQuaternionDelta = delta.value;
-            _somaticLastRawAngularVelocity = rawState.AngularVelocity;
-            int index = PositiveModuloSomatic(_somaticHorizonTelemetryCursor, telemetry.Length);
-            telemetry[index] = new SomaticTelemetryEntry
-            {
-                StabilizedRotation = stabilized,
-                QuaternionDelta = delta.value,
-                RawAngularVelocity = SanitizeJobFloat3(rawState.AngularVelocity),
-                FovTunnelScalar = Sanitize01(state.FovTunnelScalar, 0f),
-                PitchDampening = Sanitize01(state.PitchDampening, 0f),
-                BurstExecutionMicroseconds = SanitizeNonNegative(burstMicroseconds),
-                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                Flags = flags,
-                StateHash = ResolveHorizonStateHash(in state, rawState.AngularVelocity, delta.value, flags),
-                AupHash = ResolveDouble3Hash(rawState.AUP_Position)
-            };
+                _somaticLastQuaternionDelta = delta.value;
+                _somaticLastRawAngularVelocity = rawState.AngularVelocity;
+                int index = PositiveModuloSomatic(_somaticHorizonTelemetryCursor, telemetry.Length);
+                telemetry[index] = new SomaticTelemetryEntry
+                {
+                    StabilizedRotation = stabilized,
+                    QuaternionDelta = delta.value,
+                    RawAngularVelocity = SanitizeJobFloat3(rawState.AngularVelocity),
+                    FovTunnelScalar = Sanitize01(state.FovTunnelScalar, 0f),
+                    PitchDampening = Sanitize01(state.PitchDampening, 0f),
+                    BurstExecutionMicroseconds = SanitizeNonNegative(burstMicroseconds),
+                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
+                    Flags = flags,
+                    StateHash = ResolveHorizonStateHash(in state, rawState.AngularVelocity, delta.value, flags),
+                    AupHash = ResolveDouble3Hash(rawState.AUP_Position)
+                };
 
-            _somaticHorizonTelemetryCursor = _somaticHorizonTelemetryCursor == int.MaxValue
-                ? telemetry.Length
-                : _somaticHorizonTelemetryCursor + 1;
+                _somaticHorizonTelemetryCursor = _somaticHorizonTelemetryCursor == int.MaxValue
+                    ? telemetry.Length
+                    : _somaticHorizonTelemetryCursor + 1;
 
-            if ((flags & (SomaticComfortFlagNaN | SomaticComfortFlagBudgetExceeded)) != 0u)
-                DumpComfortTelemetryOnce();
+                shouldDump = (flags & (SomaticComfortFlagNaN | SomaticComfortFlagBudgetExceeded)) != 0u;
             }
             finally
             {
                 if (telemetryLocked)
                     _somaticHorizonTelemetry.ReleaseWriteNativeArray();
             }
+
+            if (shouldDump)
+                DumpComfortTelemetryOnce();
         }
 
         private quaternion ResolveSomaticStabilizedRootRotation(Quaternion headRotation)
@@ -635,42 +499,6 @@ namespace Hecton8.Gameplay
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private unsafe struct GenerateMockKinematicJitterJob : IJob
-        {
-            [NativeDisableUnsafePtrRestriction, NoAlias] public VRSomaticKinematicStateMirrorDTO* KinematicStates;
-            [NativeDisableUnsafePtrRestriction, NoAlias] public quaternion* RawRotations;
-            public float GlobalQualityWeight01;
-            public uint Frame;
-            public float DeltaTime;
-
-            public void Execute()
-            {
-                float quality = SmoothJob01(SanitizeJob01(GlobalQualityWeight01, 1f));
-                float t = Frame * math.lerp(0.37f, 0.083f, quality);
-                float triangle = math.abs(frac(t * 2.37f) * 2f - 1f);
-                float pulse = (triangle * 2f) - 1f;
-                float amplitude = math.lerp(1.4f, 3.8f, quality);
-                float pitch = MathLodApproximation.ApproxSinBhaskara(t * 3.1f) * 0.28f * amplitude;
-                float yaw = pulse * 0.72f * amplitude;
-                float roll = MathLodApproximation.ApproxSinBhaskara(t * 5.3f) * 0.42f * amplitude;
-                quaternion raw = SanitizeJobQuaternion(math.mul(math.mul(quaternion.RotateY(yaw), quaternion.RotateX(pitch)), quaternion.RotateZ(roll)), quaternion.identity);
-                RawRotations[0] = raw;
-                KinematicStates[0] = new VRSomaticKinematicStateMirrorDTO
-                {
-                    AUP_Position = double3.zero,
-                    Velocity = float3.zero,
-                    AngularVelocity = ClampLength(new float3(pitch, yaw, roll) * math.rcp(math.max(DeltaTime, MinimumDeltaTime)), 48f),
-                    Mass = 1f,
-                    Flags = SomaticComfortFlagMockData,
-                    DragCoefficient = 0f,
-                    RestingFrameCount = 0,
-                    DeepSleepTickCount = 0,
-                    SleepMaterialIndex = 0
-                };
-            }
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float ResolveCriticalDampedSpringBlend(float omega, float deltaTime, float globalQualityWeight01)
         {
@@ -686,15 +514,5 @@ namespace Hecton8.Gameplay
             return SanitizeJob01(math.lerp(cheapCriticalApprox, exactCritical, exactWeight), 0f);
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct ClearHorizonTelemetryJob : IJobParallelFor
-        {
-            [WriteOnly, NoAlias] public NativeArray<SomaticTelemetryEntry> Telemetry;
-
-            public void Execute(int index)
-            {
-                Telemetry[index] = default;
-            }
-        }
     }
 }

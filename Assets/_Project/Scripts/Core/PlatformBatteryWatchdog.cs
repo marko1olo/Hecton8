@@ -1,3 +1,4 @@
+using System.Threading;
 using Hecton8.Core.Contracts;
 using Unity.Mathematics;
 using UnityEngine;
@@ -38,7 +39,7 @@ namespace Hecton8.Core
         private static void ResetStaticState()
         {
             TryUnregisterHotSwap();
-            _hardwareThermalService = null;
+            Volatile.Write(ref _hardwareThermalService, null);
             _criticalQualityApplied = false;
             _criticalBatteryPressureMilli = 0;
         }
@@ -56,7 +57,7 @@ namespace Hecton8.Core
         /// </summary>
         public static void SampleAndApply()
         {
-            IHardwareThermalService hardware = _hardwareThermalService;
+            IHardwareThermalService hardware = Volatile.Read(ref _hardwareThermalService);
             if (hardware == null)
             {
                 _criticalQualityApplied = false;
@@ -77,7 +78,7 @@ namespace Hecton8.Core
         public static void SampleAndApply(IHardwareThermalService hardware)
         {
             if (hardware != null)
-                _hardwareThermalService = hardware;
+                Volatile.Write(ref _hardwareThermalService, hardware);
 
             SampleAndApply();
         }
@@ -149,7 +150,7 @@ namespace Hecton8.Core
 
         private static void RebindHardwareServiceCold()
         {
-            _hardwareThermalService = GlobalRegistry.HardwareThermal;
+            Volatile.Write(ref _hardwareThermalService, GlobalRegistry.HardwareThermal);
         }
 
         private static void RebindHardwareService(GlobalRegistryServiceSlot serviceSlot, object currentService)
@@ -157,7 +158,7 @@ namespace Hecton8.Core
             if (serviceSlot != GlobalRegistryServiceSlot.HardwareThermalService)
                 return;
 
-            _hardwareThermalService = currentService as IHardwareThermalService;
+            Volatile.Write(ref _hardwareThermalService, currentService as IHardwareThermalService);
             SampleAndApply();
         }
 

@@ -13,7 +13,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8011)]
-    public sealed class AssetLoadDispatcher : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class AssetLoadDispatcher : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const int Tier01Slots = 8;
         private const int Tier2Slots = 6;
@@ -43,7 +43,7 @@ namespace Hecton8.Optimization
         [SerializeField] private int maxReadyTicketCount = 32;
 
         private bool _registeredTick;
-        private bool _registeredLateFrame;
+        private bool _registeredSlowTick;
         private bool _registeredService;
         private bool _registeredHotSwap;
         private int _nextRequestId = 1;
@@ -175,7 +175,7 @@ namespace Hecton8.Optimization
         }
 
         /// <inheritdoc />
-        public void LateFrameTick()
+        public void SlowTick()
         {
             if (!_uiMipBiasGateEvaluationQueued && !_uiMipBiasGateActive)
                 return;
@@ -442,7 +442,7 @@ namespace Hecton8.Optimization
 
         private void TryRegister()
         {
-            if (_registeredTick && _registeredLateFrame)
+            if (_registeredTick && _registeredSlowTick)
                 return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
@@ -452,8 +452,8 @@ namespace Hecton8.Optimization
             CacheDependencies();
             if (!_registeredTick)
                 _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
-            if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
         }
 
         private bool TryRegisterService()
@@ -489,10 +489,10 @@ namespace Hecton8.Optimization
                 _registeredTick = false;
             }
 
-            if (_registeredLateFrame)
+            if (_registeredSlowTick)
             {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
-                _registeredLateFrame = false;
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+                _registeredSlowTick = false;
             }
         }
 

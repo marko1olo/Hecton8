@@ -7,6 +7,9 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'strict_json_io.ps1')
+
+$MaxManifestJsonBytes = 65536
 
 function Fail([string]$Message) {
     Write-Error ('[H8MOD_DEPENDENCIES] ' + $Message)
@@ -31,12 +34,12 @@ function Require-File([string]$RelativePath) {
     return $path
 }
 
-function Read-JsonFile([string]$RelativePath) {
+function Read-JsonFile([string]$RelativePath, [long]$MaxBytes = $MaxManifestJsonBytes) {
     $path = Require-File $RelativePath
     try {
-        return Get-Content -Raw -LiteralPath $path | ConvertFrom-Json
+        return Read-H8JsonFileCapped $path $RelativePath $MaxBytes
     } catch {
-        Fail ('Invalid JSON in ' + $RelativePath + ': ' + $_.Exception.Message)
+        Fail $_.Exception.Message
     }
 }
 
@@ -121,7 +124,7 @@ function Assert-DependencyListValid([string]$ModId, [string[]]$Dependencies) {
 function Invoke-LocalValidation {
     $validator = Require-File 'Tools/validate_structure.ps1'
     $global:LASTEXITCODE = 0
-    $validationOutput = & $validator -Root $Root 2>&1
+    $validationOutput = & $validator -Root $Root *>&1
     if (-not $?) {
         throw ('validate_structure.ps1 failed: ' + (($validationOutput | ForEach-Object { [string]$_ }) -join ' | '))
     }
@@ -133,8 +136,8 @@ function Invoke-LocalValidation {
 function Write-ManifestsWithValidation([object]$Authoring, [object]$Runtime) {
     $authoringPath = Require-File 'mod.h8manifest.json'
     $runtimePath = Require-File 'mod.json'
-    $authoringOriginal = Get-Content -Raw -LiteralPath $authoringPath
-    $runtimeOriginal = Get-Content -Raw -LiteralPath $runtimePath
+    $authoringOriginal = Read-H8TextFileCapped $authoringPath 'mod.h8manifest.json rollback copy' $MaxManifestJsonBytes
+    $runtimeOriginal = Read-H8TextFileCapped $runtimePath 'mod.json rollback copy' $MaxManifestJsonBytes
     $tempId = [System.Guid]::NewGuid().ToString('N')
     $authoringTemp = Join-Path ([System.IO.Path]::GetTempPath()) ('hecton8-dependencies-authoring-' + $tempId + '.json')
     $runtimeTemp = Join-Path ([System.IO.Path]::GetTempPath()) ('hecton8-dependencies-runtime-' + $tempId + '.json')

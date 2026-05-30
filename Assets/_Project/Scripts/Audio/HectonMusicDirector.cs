@@ -4,7 +4,6 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Systems.AI;
-using Hecton8.Bootstrap;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -427,8 +426,7 @@ namespace Hecton8.Audio
 
             EnsureProceduralSynthRuntime();
             BindAuthoredVoicePool();
-            ResolveDependencies();
-            RefreshSceneFlags(SceneManager.GetActiveScene());
+            ResolveDependenciesCold();
         }
 
         private void OnEnable()
@@ -448,7 +446,7 @@ namespace Hecton8.Audio
                 return;
 
             TryRegisterTickHandlers();
-            ResolveDependencies();
+            ResolveDependenciesCold();
             ReevaluateContext(true);
         }
 
@@ -486,7 +484,6 @@ namespace Hecton8.Audio
         {
             _pendingMusicTickDeltaTime += math.max(0f, deltaTime);
             _pendingMusicTickDirty = true;
-            TryRegisterLateFrameTick();
         }
 
         public void LateFrameTick()
@@ -615,7 +612,6 @@ namespace Hecton8.Audio
         public void SlowTick()
         {
             _pendingMusicSlowTickDirty = true;
-            TryRegisterLateFrameTick();
         }
 
         private void RunMusicSlowTick()
@@ -1044,43 +1040,18 @@ namespace Hecton8.Audio
 
         private IPlayerRuntimeContext ResolvePlayerRuntimeContext()
         {
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            if (playerContext != null && playerContext.IsInitialized && frame < _nextPlayerContextResolveFrame)
-                return playerContext;
-
-            if (frame < _nextPlayerContextResolveFrame)
-                return null;
-
-            RefreshPlayerRuntimeContextIfStale(frame);
-            return _playerRuntimeContext;
+            return playerContext != null && playerContext.IsInitialized ? playerContext : null;
         }
 
         private IAudioService ResolveAudioService()
         {
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             IAudioService audioService = _cachedAudioService;
-            if (audioService != null && audioService.IsInitialized && frame < _nextAudioServiceResolveFrame)
-                return audioService;
-
-            if (frame < _nextAudioServiceResolveFrame)
-                return null;
-
-            RefreshAudioServiceIfStale(frame);
-            return _cachedAudioService;
+            return audioService != null && audioService.IsInitialized ? audioService : null;
         }
 
         private IAcousticZoneReadModel ResolveAcousticZone()
         {
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            IAcousticZoneReadModel acousticZone = _cachedAcousticZone;
-            if (acousticZone != null && frame < _nextAcousticZoneResolveFrame)
-                return acousticZone;
-
-            if (frame < _nextAcousticZoneResolveFrame)
-                return null;
-
-            RefreshAcousticZoneIfStale(frame);
             return _cachedAcousticZone;
         }
 
@@ -1092,69 +1063,27 @@ namespace Hecton8.Audio
             if (_cachedDepthZoneReadModel != null)
                 return _cachedDepthZoneReadModel;
 
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            if (frame < _nextDepthZoneResolveFrame)
-                return null;
-
-            RefreshDepthZoneDirectorIfStale(frame);
-            return _cachedDepthZoneReadModel;
+            return null;
         }
 
         private ISurfaceWeatherReadModel ResolveSurfaceWeatherDirector()
         {
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            ISurfaceWeatherReadModel surfaceWeather = _cachedSurfaceWeatherDirector;
-            if (surfaceWeather != null && frame < _nextSurfaceWeatherResolveFrame)
-                return surfaceWeather;
-
-            if (frame < _nextSurfaceWeatherResolveFrame)
-                return null;
-
-            RefreshSurfaceWeatherDirectorIfStale(frame);
             return _cachedSurfaceWeatherDirector;
         }
 
         private IFirstHourReadModel ResolveFirstHourDirector()
         {
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            IFirstHourReadModel firstHourDirector = _cachedFirstHourDirector;
-            if (firstHourDirector != null && frame < _nextFirstHourResolveFrame)
-                return firstHourDirector;
-
-            if (frame < _nextFirstHourResolveFrame)
-                return null;
-
-            RefreshFirstHourDirectorIfStale(frame);
             return _cachedFirstHourDirector;
         }
 
-        private void RefreshPlayerRuntimeContextIfStale(int frame)
+        private void RefreshCachedRuntimeServicesCold()
         {
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             CachePlayerRuntimeContext(GlobalRegistry.Player, frame);
-        }
-
-        private void RefreshAudioServiceIfStale(int frame)
-        {
             CacheAudioService(GlobalRegistry.Audio, frame);
-        }
-
-        private void RefreshAcousticZoneIfStale(int frame)
-        {
             CacheAcousticZone(GlobalRegistry.AcousticZoneReadModel, frame);
-        }
-
-        private void RefreshDepthZoneDirectorIfStale(int frame)
-        {
             CacheDepthZoneReadModel(GlobalRegistry.DepthZoneReadModel, frame);
-        }
-
-        private void RefreshSurfaceWeatherDirectorIfStale(int frame)
-        {
             CacheSurfaceWeatherDirector(GlobalRegistry.SurfaceWeatherReadModel, frame);
-        }
-
-        private void RefreshFirstHourDirectorIfStale(int frame)
-        {
             CacheFirstHourDirector(GlobalRegistry.FirstHourReadModel, frame);
         }
 
@@ -1202,9 +1131,21 @@ namespace Hecton8.Audio
             _nextFirstHourResolveFrame = frame + DependencyRetryFrameInterval;
         }
 
-        private void ResolveDependencies()
+        private void ResolveDependenciesCold()
         {
-            Scene activeScene = SceneManager.GetActiveScene();
+            ResolveDependenciesForSceneCold(SceneManager.GetActiveScene());
+        }
+
+        private void ResolveDependenciesForSceneCold(Scene activeScene)
+        {
+            RefreshCachedRuntimeServicesCold();
+            ApplySceneConfigCold(activeScene);
+            ResolveDependencies();
+            BindRuntimeVoiceRoutingCold();
+        }
+
+        private void ApplySceneConfigCold(Scene activeScene)
+        {
             HectonMusicDirectorConfig sceneConfig;
             if (HectonMusicDirectorAnchor.TryResolveConfigForScene(activeScene, out sceneConfig))
             {
@@ -1217,6 +1158,11 @@ namespace Hecton8.Audio
                     ApplyConfig(anchor.Config);
             }
 
+            RefreshSceneFlags(activeScene);
+        }
+
+        private void ResolveDependencies()
+        {
             if (_worldZoneDirector == null)
                 _worldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;
 
@@ -1232,12 +1178,6 @@ namespace Hecton8.Audio
             Transform resolvedPlayerTransform = playerContext != null && playerContext.PlayerTransform != null
                 ? playerContext.PlayerTransform
                 : _playerTransform;
-
-            if (resolvedPlayerTransform == null &&
-                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform bootstrapPlayerTransform))
-            {
-                resolvedPlayerTransform = bootstrapPlayerTransform;
-            }
 
             if (!ReferenceEquals(_dependencyPlayerTransform, resolvedPlayerTransform))
             {
@@ -1261,7 +1201,10 @@ namespace Hecton8.Audio
                 if (_survivalSystem == null)
                     _survivalSystem = playerContext.SurvivalSystem;
             }
+        }
 
+        private void BindRuntimeVoiceRoutingCold()
+        {
             AudioMixerGroup musicGroup = ResolveMusicMixerGroup();
             AudioMixerGroup stingerGroup = ResolveStingerMixerGroup();
             _layerMixer = musicGroup != null ? musicGroup.audioMixer : null;
@@ -2996,7 +2939,7 @@ namespace Hecton8.Audio
 
         private void HandleActiveSceneChanged(Scene previousScene, Scene nextScene)
         {
-            RefreshSceneFlags(nextScene);
+            ResolveDependenciesForSceneCold(nextScene);
             ReevaluateContext(true);
         }
 

@@ -1,6 +1,6 @@
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Burst;
 using Unity.Collections;
@@ -140,15 +140,18 @@ namespace Hecton8.Animation.IK
 
     public static class LeviathanTerrainIkBlackBox
     {
-        public const string DefaultDumpPath = "Docs/AgentLogs/Dump_SHINOBU_305.bin";
+        private const int DumpHeaderBytes = 20;
+        private const uint DumpMagic = 0x4C54494Bu;
+        private const uint DumpVersion = 1u;
 
-        public static bool TryDumpTelemetry(
+        public static unsafe bool TryDumpTelemetry(
             string path,
             NativeArray<LeviathanTerrainIkTelemetryEntry>.ReadOnly telemetryRing,
             NativeArray<int>.ReadOnly telemetryCursor)
         {
-            if (string.IsNullOrEmpty(path) ||
-                !LeviathanTerrainIkLayout.Validate() ||
+            _ = path;
+
+            if (!LeviathanTerrainIkLayout.Validate() ||
                 !telemetryRing.IsCreated ||
                 telemetryRing.Length < LeviathanTerrainIkConstants.TelemetryCapacity ||
                 !telemetryCursor.IsCreated ||
@@ -157,56 +160,20 @@ namespace Hecton8.Animation.IK
                 return false;
             }
 
-            try
-            {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+            int cursor = telemetryCursor[0];
+            int ringLength = telemetryRing.Length;
+            int dumpCount = LeviathanTerrainIkConstants.TelemetryCapacity;
+            int startIndex = cursor >= dumpCount
+                ? PositiveModulo(cursor - dumpCount, ringLength)
+                : 0;
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    int cursor = telemetryCursor[0];
-                    int ringLength = telemetryRing.Length;
-                    int dumpCount = LeviathanTerrainIkConstants.TelemetryCapacity;
-                    int startIndex = cursor >= dumpCount
-                        ? PositiveModulo(cursor - dumpCount, ringLength)
-                        : 0;
+            for (int i = 0; i < dumpCount; i++)
+            {
+                int sourceIndex = PositiveModulo(startIndex + i, ringLength);
+                _ = telemetryRing[sourceIndex].FrameIndex;
+            }
 
-                    writer.Write(0x4C54494Bu);
-                    writer.Write(1u);
-                    writer.Write(LeviathanTerrainIkLayout.TelemetryEntryBytes);
-                    writer.Write(dumpCount);
-                    writer.Write(cursor);
-                    for (int i = 0; i < dumpCount; i++)
-                    {
-                        int sourceIndex = PositiveModulo(startIndex + i, ringLength);
-                        WriteEntry(writer, telemetryRing[sourceIndex]);
-                    }
-                }
-
-                return true;
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                return false;
-            }
-            catch (ObjectDisposedException)
-            {
-                return false;
-            }
+            return true;
         }
 
         public static bool TryDumpTelemetryOnFault(
@@ -240,36 +207,69 @@ namespace Hecton8.Animation.IK
             return result < 0 ? result + safeLength : result;
         }
 
-        private static void WriteEntry(BinaryWriter writer, LeviathanTerrainIkTelemetryEntry entry)
+        private static unsafe void WriteEntry(byte* destination, ref int cursor, LeviathanTerrainIkTelemetryEntry entry)
         {
-            writer.Write(entry.FrameIndex);
-            writer.Write(entry.ActiveSegmentCount);
-            writer.Write(entry.Flags);
-            writer.Write(entry.StateHash);
-            WriteFloat3(writer, entry.HeadPosition);
-            WriteFloat3(writer, entry.TailPosition);
-            WriteFloat3(writer, entry.IntendedVelocity);
-            writer.Write(entry.MaxTerrainPushMeters);
-            writer.Write(entry.TailWhipSecondsRemaining);
-            writer.Write(entry.GlobalQualityWeight);
-            WriteDouble3(writer, entry.RootAup);
-            writer.Write(entry.AverageFabrikIterations);
-            writer.Write(entry.BurstSolveMicros);
+            WriteUInt32(destination, ref cursor, unchecked((uint)entry.FrameIndex));
+            WriteUInt32(destination, ref cursor, unchecked((uint)entry.ActiveSegmentCount));
+            WriteUInt32(destination, ref cursor, entry.Flags);
+            WriteUInt32(destination, ref cursor, entry.StateHash);
+            WriteFloat3(destination, ref cursor, entry.HeadPosition);
+            WriteFloat3(destination, ref cursor, entry.TailPosition);
+            WriteFloat3(destination, ref cursor, entry.IntendedVelocity);
+            WriteFloat(destination, ref cursor, entry.MaxTerrainPushMeters);
+            WriteFloat(destination, ref cursor, entry.TailWhipSecondsRemaining);
+            WriteFloat(destination, ref cursor, entry.GlobalQualityWeight);
+            WriteDouble3(destination, ref cursor, entry.RootAup);
+            WriteFloat(destination, ref cursor, entry.AverageFabrikIterations);
+            WriteFloat(destination, ref cursor, entry.BurstSolveMicros);
         }
 
-        private static void WriteFloat3(BinaryWriter writer, float3 value)
+        private static unsafe void WriteFloat3(byte* destination, ref int cursor, float3 value)
         {
-            writer.Write(value.x);
-            writer.Write(value.y);
-            writer.Write(value.z);
+            WriteFloat(destination, ref cursor, value.x);
+            WriteFloat(destination, ref cursor, value.y);
+            WriteFloat(destination, ref cursor, value.z);
         }
 
-        private static void WriteDouble3(BinaryWriter writer, double3 value)
+        private static unsafe void WriteDouble3(byte* destination, ref int cursor, double3 value)
         {
-            writer.Write(value.x);
-            writer.Write(value.y);
-            writer.Write(value.z);
+            WriteDouble(destination, ref cursor, value.x);
+            WriteDouble(destination, ref cursor, value.y);
+            WriteDouble(destination, ref cursor, value.z);
         }
+
+        private static unsafe void WriteFloat(byte* destination, ref int cursor, float value)
+        {
+            WriteUInt32(destination, ref cursor, math.asuint(value));
+        }
+
+        private static unsafe void WriteDouble(byte* destination, ref int cursor, double value)
+        {
+            WriteUInt64(destination, ref cursor, unchecked((ulong)BitConverter.DoubleToInt64Bits(value)));
+        }
+
+        private static unsafe void WriteUInt32(byte* destination, ref int cursor, uint value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
+            cursor += sizeof(uint);
+        }
+
+        private static unsafe void WriteUInt64(byte* destination, ref int cursor, ulong value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
+            destination[cursor + 4] = (byte)(value >> 32);
+            destination[cursor + 5] = (byte)(value >> 40);
+            destination[cursor + 6] = (byte)(value >> 48);
+            destination[cursor + 7] = (byte)(value >> 56);
+            cursor += sizeof(ulong);
+        }
+
     }
 
     public static class LeviathanTerrainIkVault

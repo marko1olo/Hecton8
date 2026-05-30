@@ -504,9 +504,9 @@ namespace Hecton8.Physics
                 OriginAUP = tuningDto.SectorAUP,
                 SimulationFrame = _simulationFrame
             };
-            JobHandle handle = job.Schedule(mockCount, 64);
-            // COLD/EDITOR BLOCKING SYNC: emergency 1000-record data generator is not part of the live frame solver.
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            // COLD/EDITOR DIRECT SEED: avoid scheduling a job that is completed in the same method.
+            for (int i = 0; i < mockCount; i++)
+                job.Execute(i);
             tuningDto.ActiveRequestCount = mockCount;
             tuningDto.MockRequestCount = mockCount;
             tuning[0] = tuningDto;
@@ -642,9 +642,8 @@ namespace Hecton8.Physics
                 AudioSignals = audioSignals,
                 CavitationSignals = cavitationSignals
             };
-            JobHandle handle = initJob.Schedule();
-            // COLD BOOT BLOCKING SYNC: one-time Vault clear and layout trap seed before runtime scheduling starts.
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            // COLD BOOT DIRECT CLEAR: one-time Vault reset before runtime scheduling starts.
+            initJob.Execute();
             EnsureSeaglideSignalLanes();
             SeedDefaultTuningIfNeeded();
 #if UNITY_EDITOR
@@ -1325,7 +1324,7 @@ namespace Hecton8.Physics
             if (!_jobGuardHeld)
                 return;
 
-            IDataVault vault = _jobGuardVault ?? _dataVault;
+            IDataVault vault = _jobGuardVault;
             _jobGuardVault = null;
             _jobGuardHeld = false;
             if (vault != null)

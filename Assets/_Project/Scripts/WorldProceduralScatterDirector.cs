@@ -79,6 +79,8 @@ namespace Hecton8.World
         private const string PlacementPoolExhaustedWarning =
             "[WorldScatter] Placement pool exhausted. Candidate dropped; increase placement pool capacity.";
         private const int ScatterLayerCount = 4;
+        private const int ProxyOptimizationRefreshLowTierBudget = 8;
+        private const int ProxyOptimizationRefreshUltraTierBudget = 64;
         private const string ScatterPatternNoneLabel = "None";
         private const string ScatterPatternSedimentResourcesLabel = "SedimentResources";
         private const string ScatterPatternFertileShallowsLabel = "FertileShallows";
@@ -703,6 +705,7 @@ namespace Hecton8.World
             CachePlayerContextCold();
             EnsureWorkingMemory();
             ResolveReferences();
+            ResolveGenerativeGeologyService(createIfMissing: true);
             CacheMigratorySargassumOrganicManagerCold();
             RegisterProceduralStateRegistryCallbacks();
             SubscribeToBootstrap();
@@ -730,6 +733,7 @@ namespace Hecton8.World
             TryRegisterRuntimeDirector();
             EnsureWorkingMemory();
             ResolveReferences();
+            ResolveGenerativeGeologyService(createIfMissing: true);
             CacheMigratorySargassumOrganicManagerCold();
             RegisterProceduralStateRegistryCallbacks();
             SubscribeToBootstrap();
@@ -979,6 +983,7 @@ namespace Hecton8.World
                 if (ShouldDeferUntilBootstrapReady())
                     return;
 
+                FlushProxyOptimizationRegistrationSlow();
                 TickMigratorySargassumLane(RuntimeNowSeconds());
 
                 if (_scatterState == ScatterState.Sampling && _isSamplingJobRunning)
@@ -1001,6 +1006,40 @@ namespace Hecton8.World
 
                 QueueScatterVisualSync(forceRebuild: true);
             }
+        }
+
+        private void FlushProxyOptimizationRegistrationSlow()
+        {
+            if (_activeInstances.Count == 0)
+                return;
+
+            int processed = 0;
+            int budget = ResolveProxyOptimizationRefreshBudget();
+            Dictionary<long, WorldProceduralProxyInstance>.Enumerator enumerator = _activeInstances.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                WorldProceduralProxyInstance instance = enumerator.Current.Value;
+                if (instance == null || !instance.HasPendingOptimizationRegistration)
+                    continue;
+
+                instance.RefreshOptimizationRegistrationCold();
+                processed++;
+                if (processed >= budget)
+                    break;
+            }
+        }
+
+        private static int ResolveProxyOptimizationRefreshBudget()
+        {
+            float rawQuality = HomeostasisBrain.GlobalQualityWeight;
+            float quality = math.saturate(math.select(rawQuality, 1f, !math.isfinite(rawQuality)));
+            float curve = quality * quality * (3f - 2f * quality);
+            return math.max(
+                1,
+                (int)math.round(math.lerp(
+                    ProxyOptimizationRefreshLowTierBudget,
+                    ProxyOptimizationRefreshUltraTierBudget,
+                    curve)));
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
@@ -1291,11 +1330,8 @@ namespace Hecton8.World
             if (_bootstrapRuntimeState.PresenceResolved != 0)
                 return _bootstrapRuntimeState.Present != 0;
 
-            GameBootstrapper bootstrap = GameBootstrapper.ActiveInstance;
             _bootstrapRuntimeState.PresenceResolved = 1;
-            _bootstrapRuntimeState.Present = bootstrap != null
-                && bootstrap.isActiveAndEnabled
-                && bootstrap.gameObject.activeInHierarchy ? (byte)1 : (byte)0;
+            _bootstrapRuntimeState.Present = BootstrapState.HasActiveInstance ? (byte)1 : (byte)0;
             return _bootstrapRuntimeState.Present != 0;
         }
 
@@ -1825,6 +1861,14 @@ namespace Hecton8.World
                     continue;
 
                 WorldPrefabFamilyProfile family = rule.familyProfile;
+                _instancingService?.PrewarmFamilyPrototypeCacheCold(family);
+                _instancingService?.PrewarmFamilyAggregationStorageCold(
+                    family,
+                    _floraGpuiKnownPrototypes,
+                    _floraGpuiMatrices,
+                    _floraGpuiCounts,
+                    _floraGpuiBufferCapacities,
+                    ResolveFloraGpuiPrewarmCapacity());
                 float scoreBaseBonus = GetPlacementModeBonus(family.placementMode) + GetScatterLayerBonus(family.scatterLayer);
                 string heatmapChannel = !string.IsNullOrWhiteSpace(rule.requiredHeatmapChannel)
                     ? rule.requiredHeatmapChannel
@@ -2525,7 +2569,7 @@ namespace Hecton8.World
                 long reconcileStartTimestamp = captureProfiling ? Stopwatch.GetTimestamp() : 0L;
                 Transform root = GetOrCreateRoot().transform;
                 bool hasObserverPosition = TryGetObserverAbsolutePosition(out Vector3 observerPosition);
-                WorldGenerativeGeologyService cachedGeologyService = generativeGeologyService ?? ResolveGenerativeGeologyService(true);
+                WorldGenerativeGeologyService cachedGeologyService = generativeGeologyService;
                 if (_activeInstances.Count == 0)
                     ClearRootChildren(root);
 
@@ -3991,7 +4035,7 @@ namespace Hecton8.World
             bool finalVariantActive)
         {
             bool hasObserverPosition = TryGetObserverAbsolutePosition(out Vector3 observerPosition);
-            WorldGenerativeGeologyService cachedService = generativeGeologyService ?? ResolveGenerativeGeologyService(true);
+            WorldGenerativeGeologyService cachedService = generativeGeologyService;
             bool shouldApplyGeneratedGeology = ShouldApplyGeneratedGeology(placement, finalVariantActive, observerPosition, hasObserverPosition);
             ApplyGeneratedGeology(metadata, placement, finalVariantActive, shouldApplyGeneratedGeology, cachedService, observerPosition, hasObserverPosition);
         }
@@ -7890,25 +7934,44 @@ namespace Hecton8.World
                 instance.name = $"SCATTER_{layerLabel}_{finalLabel}_{placement.Family.familyId}_{placement.CellX}_{placement.CellZ}";
             }
 
-            if (instance != null && !instance.TryGetComponent(out metadata))
+            if (instance != null &&
+                Application.isPlaying &&
+                !WorldProceduralProxyInstance.TryGetCached(instance, out metadata))
             {
-                if (Application.isPlaying)
-                {
-                    if (poolManaged && pool != null)
-                        pool.Despawn(instance);
-                    else
-                        Destroy(instance);
-                    return null;
-                }
-
-                metadata = instance.AddComponent<WorldProceduralProxyInstance>();
+                if (poolManaged && pool != null)
+                    pool.Despawn(instance);
+                else
+                    Destroy(instance);
+                return null;
             }
+
+#if UNITY_EDITOR
+            if (instance != null &&
+                !Application.isPlaying &&
+                !TryResolveEditorProxyMetadata(instance, out metadata))
+            {
+                return null;
+            }
+#endif
 
             if (metadata != null)
                 metadata.SetPoolManaged(poolManaged);
 
             return instance;
         }
+
+#if UNITY_EDITOR
+        private static bool TryResolveEditorProxyMetadata(GameObject instance, out WorldProceduralProxyInstance metadata)
+        {
+            if (WorldProceduralProxyInstance.TryGetCached(instance, out metadata))
+                return true;
+
+            if (!instance.TryGetComponent(out metadata))
+                metadata = instance.AddComponent<WorldProceduralProxyInstance>();
+
+            return metadata != null;
+        }
+#endif
 
         private void DestroyProxyInstance(WorldProceduralProxyInstance proxy)
         {
@@ -11257,12 +11320,6 @@ namespace Hecton8.World
             if (node == null)
                 return;
 
-            if (node.TryGetComponent(out WorldProceduralProxyInstance proxy))
-            {
-                DestroyProxyInstance(proxy);
-                return;
-            }
-
             for (int i = node.childCount - 1; i >= 0; i--)
                 ClearScatterHierarchy(node.GetChild(i));
 
@@ -11459,14 +11516,27 @@ namespace Hecton8.World
 
         private void ResetFloraGpuiAggregation()
         {
-            EnsureWorkingMemory();
             _debugFloraGpuiFrustumRejected = 0;
             _floraGpuiHasLastFrustumChunk = false;
             RefreshFloraGpuiFrustumPlanes();
+            if (_instancingService == null)
+            {
+                _activeGpuiFloraPlacements = 0;
+                return;
+            }
+
             _instancingService.ResetAggregation(
                 _floraGpuiKnownPrototypes,
                 _floraGpuiCounts,
                 ref _activeGpuiFloraPlacements);
+        }
+
+        private static int ResolveFloraGpuiPrewarmCapacity()
+        {
+            float rawQuality = HomeostasisBrain.GlobalQualityWeight;
+            float quality = math.saturate(math.select(rawQuality, 1f, !math.isfinite(rawQuality)));
+            float curve = quality * quality * (3f - 2f * quality);
+            return Mathf.NextPowerOfTwo((int)math.round(math.lerp(64f, 512f, curve)));
         }
 
         private bool TryRegisterFloraGpuiPlacement(
@@ -11474,7 +11544,10 @@ namespace Hecton8.World
             WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
             out GPUInstancerPrefabPrototype prototype)
         {
-            EnsureWorkingMemory();
+            prototype = null;
+            if (_instancingService == null)
+                return false;
+
             if (!_instancingService.CanUseFloraGpuiPath(
                     floraGpuiManager,
                     placement,
@@ -11562,7 +11635,9 @@ namespace Hecton8.World
 
         private void FlushFloraGpuiBuffers()
         {
-            EnsureWorkingMemory();
+            if (_instancingService == null)
+                return;
+
             _instancingService.FlushBuffers(
                 floraGpuiManager,
                 _floraGpuiKnownPrototypes,
@@ -11625,6 +11700,14 @@ namespace Hecton8.World
                 if (variant == null)
                     variant = placement.Variant;
 
+                _instancingService.PrewarmVariantPrototypeCacheCold(variant);
+                _instancingService.PrewarmVariantAggregationStorageCold(
+                    variant,
+                    _floraGpuiKnownPrototypes,
+                    _floraGpuiMatrices,
+                    _floraGpuiCounts,
+                    _floraGpuiBufferCapacities,
+                    ResolveFloraGpuiPrewarmCapacity());
                 TryRegisterFloraGpuiPlacement(placement, variant, out _);
             }
 
@@ -11636,7 +11719,10 @@ namespace Hecton8.World
             WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
             out GPUInstancerPrefabPrototype prototype)
         {
-            EnsureWorkingMemory();
+            prototype = null;
+            if (_instancingService == null)
+                return false;
+
             return _instancingService.CanUseFloraGpuiPath(
                 floraGpuiManager,
                 placement,

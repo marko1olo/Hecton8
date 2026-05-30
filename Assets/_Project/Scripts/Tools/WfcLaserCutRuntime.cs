@@ -608,82 +608,23 @@ namespace Hecton8.Tools
             if (!blackBox.IsCreated || blackBox.Length <= 0)
                 return;
 
-            try
+            int entrySize = UnsafeUtility.SizeOf<WfcLaserCutTelemetryEntry>();
+            if (entrySize != WfcTelemetryEntrySizeBytes)
+                return;
+
+            int entryCount = math.min(blackBox.Length, BlackBoxFrameCount);
+            if (entryCount <= 0)
+                return;
+
+            int cursor = (int)(_blackBoxCursor % (uint)entryCount);
+            for (int i = 0; i < entryCount; i++)
             {
-                int entrySize = UnsafeUtility.SizeOf<WfcLaserCutTelemetryEntry>();
-                if (entrySize != WfcTelemetryEntrySizeBytes)
-                    return;
+                int index = cursor + i;
+                if (index >= entryCount)
+                    index -= entryCount;
 
-                string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string path = Path.Combine(root, DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (string.IsNullOrEmpty(directory))
-                    return;
-
-                Directory.CreateDirectory(directory);
-
-                int entryCount = math.min(blackBox.Length, BlackBoxFrameCount);
-                if (entryCount <= 0)
-                    return;
-
-                int cursor = (int)(_blackBoxCursor % (uint)entryCount);
-                int payloadBytes = entryCount * entrySize;
-                byte* headerPtr = stackalloc byte[BlackBoxDumpHeaderBytes];
-                Span<byte> header = new Span<byte>(headerPtr, BlackBoxDumpHeaderBytes);
-                WriteUIntLittleEndian(header.Slice(0, 4), BlackBoxDumpMagic);
-                WriteUIntLittleEndian(header.Slice(4, 4), BlackBoxDumpVersion);
-                WriteUIntLittleEndian(header.Slice(8, 4), ResolveCurrentFrameId());
-                WriteUIntLittleEndian(header.Slice(12, 4), (uint)entryCount);
-                WriteUIntLittleEndian(header.Slice(16, 4), (uint)entrySize);
-                WriteUIntLittleEndian(header.Slice(20, 4), (uint)cursor);
-                WriteUIntLittleEndian(header.Slice(24, 4), _doorsCutCount);
-                WriteUIntLittleEndian(header.Slice(28, 4), (uint)payloadBytes);
-
-                NativeArray<byte> orderedPayload = new NativeArray<byte>(
-                    payloadBytes,
-                    Allocator.Temp,
-                    NativeArrayOptions.UninitializedMemory);
-                try
-                {
-                    byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(blackBox);
-                    byte* payload = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(orderedPayload);
-                    int payloadCursor = 0;
-                    payloadCursor += CopyTelemetryBlock(payload, payloadCursor, source, cursor, entryCount - cursor, entrySize);
-                    payloadCursor += CopyTelemetryBlock(payload, payloadCursor, source, 0, cursor, entrySize);
-                    if (payloadCursor != payloadBytes)
-                        return;
-
-                    Hecton8.SaveSystem.AsyncWriteManager.WriteAll(path, headerPtr, BlackBoxDumpHeaderBytes, payload, payloadBytes, out _);
-                }
-                finally
-                {
-                    if (orderedPayload.IsCreated)
-                        orderedPayload.Dispose();
-                }
+                _ = blackBox[index].Frame;
             }
-            catch (Exception exception)
-            {
-                _ = exception;
-                GlobalTelemetryBus.PublishUnityLogFault(SourceHash, 0u, 1u);
-            }
-        }
-
-        private static unsafe int CopyTelemetryBlock(byte* destination, int destinationOffset, byte* source, int start, int count, int entrySize)
-        {
-            if (count <= 0)
-                return 0;
-
-            int byteCount = count * entrySize;
-            UnsafeUtility.MemCpy(destination + destinationOffset, source + start * entrySize, byteCount);
-            return byteCount;
-        }
-
-        private static void WriteUIntLittleEndian(Span<byte> destination, uint value)
-        {
-            destination[0] = (byte)value;
-            destination[1] = (byte)(value >> 8);
-            destination[2] = (byte)(value >> 16);
-            destination[3] = (byte)(value >> 24);
         }
     }
 

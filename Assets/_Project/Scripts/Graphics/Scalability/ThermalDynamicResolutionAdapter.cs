@@ -45,7 +45,7 @@ namespace Hecton8.Graphics.Scalability
         private const uint DrsWarningHash = 0x44525357u; // DRSW
         private const uint UpscalerNativeHash = 0x4E415456u; // NATV
         private const uint UpscalerBilateralTaaHash = 0x42494C55u; // BILU
-        private const uint UpscalerFsrTaaHash = 0x46535254u; // FSRT
+        private const uint UpscalerBilateralDrsHash = 0x42445253u; // BDRS
         private const uint CsvMinScaleLimitHash = 0xF3608E52u;
         private const uint CsvSmoothingFactorHash = 0x6D58F632u;
         private const uint CsvSharpeningMultiplierHash = 0x4ADC1687u;
@@ -79,8 +79,6 @@ namespace Hecton8.Graphics.Scalability
         private const float SharpenEpsilon = 0.001f;
         private const float VisualBudgetEpsilon = 0.01f;
         private const float VisualFeatureFeather = 0.14f;
-        private const float VisualFeatureFlagEpsilon = 0.001f;
-        private const float FsrEligibilityEpsilon = 0.001f;
         private const int AupShiftLockFrames = 3;
         private const int PressureHysteresisFrames = 3;
         private const int RecoveryHysteresisFrames = 15;
@@ -92,6 +90,13 @@ namespace Hecton8.Graphics.Scalability
         private const uint VisualFeaturePom16Tap = 1u << 3;
         private const uint VisualFeatureSubsurfaceScatter = 1u << 4;
         private const uint VisualFeatureRaymarchedFog = 1u << 5;
+        private const uint VisualFeatureRouteMask =
+            VisualFeatureVisorSalt |
+            VisualFeatureVolumetricSilt |
+            VisualFeatureProceduralHullDents |
+            VisualFeaturePom16Tap |
+            VisualFeatureSubsurfaceScatter |
+            VisualFeatureRaymarchedFog;
         private const byte FlagThermalOverride = 1 << 0;
         private const byte FlagFramePressure = 1 << 1;
         private const byte FlagNotification = 1 << 2;
@@ -207,8 +212,8 @@ namespace Hecton8.Graphics.Scalability
         private bool _systemScalerInstalled;
         private bool _blackBoxDumped;
         private bool _stpActive = true;
-        private bool _coldFsrCapabilityAllowed;
-        private bool _fsrUpscalerAllowed;
+        private bool _coldBilateralDrsRouteAllowed;
+        private bool _bilateralDrsRouteAllowed;
         private bool _scalabilityQualityWeightSnapshotValid;
         private bool _shaderQualityWeightSnapshotValid;
         private bool _cameraShieldRegistered;
@@ -399,7 +404,7 @@ namespace Hecton8.Graphics.Scalability
             RefreshQualityTierPolicyFromContinuousWeight(_latestGlobalQualityWeight01);
             GenerateEmergencyMockLimits();
             _minScaleLimit = ResolveMinScaleLimit(_latestGlobalQualityWeight01);
-            _upscalerTypeHash = ResolveUpscalerHash(_latestGlobalQualityWeight01, _currentScale);
+            _upscalerTypeHash = ResolveUpscalerHash(_currentScale);
             _drsState = default;
             _drsState.CurrentRenderScale = _currentScale;
             _drsState.TargetRenderScale = _targetScale;
@@ -515,7 +520,7 @@ namespace Hecton8.Graphics.Scalability
             _latestGpuUtil01 = Sanitize01(_latestGpuUtil01);
             _latestGlobalQualityWeight01 = ResolveQualitySignalWeight();
             RefreshQualityTierPolicyFromContinuousWeight(_latestGlobalQualityWeight01);
-            _stpActive = ResolveStpIntent((HectonQualityTier)_hardwareTier);
+            _stpActive = ResolveStpIntent(_bootHardwareTier, _cachedQualityTier);
             _latestSystemStress01 = ResolveSystemStressInput01();
             ApplySystemStressEwmaInline(_latestSystemStress01);
 
@@ -568,7 +573,7 @@ namespace Hecton8.Graphics.Scalability
             nextScale = ResolvePixelStableRenderScale(nextScale);
             _targetScale = targetScale;
             _sharpenIntensity01 = ResolveSharpenIntensity(nextScale);
-            _upscalerTypeHash = ResolveUpscalerHash(qualityWeight01, nextScale);
+            _upscalerTypeHash = ResolveUpscalerHash(nextScale);
             UpdateVisualBudget(qualityWeight01, stress01, nextScale);
             bool notifyScale = nextScale < NotificationThreshold;
             if (notifyScale)
@@ -854,9 +859,7 @@ namespace Hecton8.Graphics.Scalability
             s_systemScalePercentage = forcedScale * 100f;
             _drsState.CurrentRenderScale = forcedScale;
             _drsState.TargetRenderScale = forcedScale;
-            _drsState.UpscalerTypeHash = forcedScale < PolicyMaxScale - ScaleEpsilon
-                ? UpscalerBilateralTaaHash
-                : UpscalerNativeHash;
+            _drsState.UpscalerTypeHash = ResolveUpscalerHash(forcedScale);
             if (_scaleStateMirrorValid)
             {
                 _scaleStateMirror.CurrentRenderScale01 = forcedScale;
@@ -1059,7 +1062,7 @@ namespace Hecton8.Graphics.Scalability
         {
             _currentScale = ClampRenderScale(_currentScale);
             _targetScale = ClampRenderScale(_targetScale);
-            _upscalerTypeHash = ResolveUpscalerHash(_latestGlobalQualityWeight01, _currentScale);
+            _upscalerTypeHash = ResolveUpscalerHash(_currentScale);
             UpdateDrsState();
             s_systemScalePercentage = _currentScale * 100f;
             DynamicResolutionHandler.SetActiveDynamicScalerSlot(DynamicResScalerSlot.System);
@@ -1178,7 +1181,7 @@ namespace Hecton8.Graphics.Scalability
                 return;
             }
 
-            IDataVault vault = _drsStateGuardVault ?? _dataVault;
+            IDataVault vault = _drsStateGuardVault;
             _drsStateGuardVault = null;
             _drsStateGuardHeld = false;
             ReleaseDrsGuard(vault, DrsStateMutationGuardMask);
@@ -1234,7 +1237,7 @@ namespace Hecton8.Graphics.Scalability
                 return;
             }
 
-            IDataVault vault = _scaleStateGuardVault ?? _dataVault;
+            IDataVault vault = _scaleStateGuardVault;
             _scaleStateGuardVault = null;
             _scaleStateGuardHeld = false;
             ReleaseDrsGuard(vault, ResolutionScaleStateMutationGuardMask);
@@ -1290,7 +1293,7 @@ namespace Hecton8.Graphics.Scalability
                 return;
             }
 
-            IDataVault vault = _telemetryGuardVault ?? _dataVault;
+            IDataVault vault = _telemetryGuardVault;
             _telemetryGuardVault = null;
             _telemetryGuardHeld = false;
             ReleaseDrsGuard(vault, ResolutionScaleTelemetryMutationGuardMask);
@@ -1435,7 +1438,7 @@ namespace Hecton8.Graphics.Scalability
 
                 ref DrsStateDTO state = ref UnsafeUtility.AsRef<DrsStateDTO>(drsState);
                 state.TargetRenderScale = math.lerp(_minScaleLimit, PolicyMaxScale, 0.2f);
-                state.UpscalerTypeHash = UpscalerBilateralTaaHash;
+                state.UpscalerTypeHash = ResolveUpscalerHash(state.TargetRenderScale);
                 _drsState = state;
             }
             finally
@@ -1501,7 +1504,7 @@ namespace Hecton8.Graphics.Scalability
             _visualOverkill01 = 0f;
             _visualFeatureFlags = 0u;
             _latestGlobalQualityWeight01 = ResolveQualitySignalWeight();
-            _upscalerTypeHash = ResolveUpscalerHash(_latestGlobalQualityWeight01, _currentScale);
+            _upscalerTypeHash = ResolveUpscalerHash(_currentScale);
             UpdateDrsState();
             ApplyVisualBudgetGlobals();
             s_systemScalePercentage = _currentScale * 100f;
@@ -1732,7 +1735,7 @@ namespace Hecton8.Graphics.Scalability
             _pressureFrameCount = 0;
             _recoveryFrameCount = RecoveryHysteresisFrames;
             s_systemScalePercentage = 100f;
-            _upscalerTypeHash = ResolveUpscalerHash(_latestGlobalQualityWeight01, _currentScale);
+            _upscalerTypeHash = ResolveUpscalerHash(_currentScale);
             UpdateVisualBudget(_latestGlobalQualityWeight01, _latestSystemStressEwma01, _currentScale);
             QueueRenderScaleCommit(FlagInvalidState);
             UpdateScaleState(FlagInvalidState);
@@ -2506,39 +2509,28 @@ namespace Hecton8.Graphics.Scalability
             return ClampRenderScale(snappedScale);
         }
 
-        private uint ResolveUpscalerHash(float qualityWeight01, float renderScale)
+        private uint ResolveUpscalerHash(float renderScale)
         {
             if (renderScale >= PolicyMaxScale - ScaleEpsilon)
                 return UpscalerNativeHash;
 
-            if (ResolveFsrUpscalerEligibility01(qualityWeight01) <= FsrEligibilityEpsilon || !_fsrUpscalerAllowed)
-                return UpscalerBilateralTaaHash;
-
-            return UpscalerFsrTaaHash;
+            return _bilateralDrsRouteAllowed ? UpscalerBilateralDrsHash : UpscalerBilateralTaaHash;
         }
 
-        private bool ResolveFsrUpscalerAllowed(float qualityWeight01)
+        private bool ResolveBilateralDrsRouteAllowed()
         {
-            if (!_coldFsrCapabilityAllowed)
-                return false;
-
-            return ResolveFsrUpscalerEligibility01(qualityWeight01) > FsrEligibilityEpsilon;
+            return _coldBilateralDrsRouteAllowed;
         }
 
         private void CacheGraphicsCapabilitySnapshotCold()
         {
-            _coldFsrCapabilityAllowed = !Application.isMobilePlatform && SystemInfo.supportsComputeShaders;
+            _coldBilateralDrsRouteAllowed = !Application.isMobilePlatform && SystemInfo.supportsComputeShaders;
         }
 
         private void RefreshRenderSurfaceSnapshotCold()
         {
             _screenWidthSnapshot = math.max(1, Screen.width);
             _screenHeightSnapshot = math.max(1, Screen.height);
-        }
-
-        private static float ResolveFsrUpscalerEligibility01(float qualityWeight01)
-        {
-            return SmoothRange01(Sanitize01(qualityWeight01), 0.42f, 0.74f);
         }
 
         private static float ResolveSurvivalPressureWeight01(float qualityWeight01)
@@ -2558,7 +2550,10 @@ namespace Hecton8.Graphics.Scalability
             if (upscalerHash == UpscalerBilateralTaaHash)
                 return 0.045f + deficit * 0.055f;
 
-            return 0.12f + deficit * 0.10f;
+            if (upscalerHash == UpscalerBilateralDrsHash)
+                return 0.075f + deficit * 0.075f;
+
+            return 0.045f + deficit * 0.055f;
         }
 
         private void GenerateEmergencyMockLimits()
@@ -2570,21 +2565,32 @@ namespace Hecton8.Graphics.Scalability
             _scaleLimits.UltraMinScale = DefaultUltraMinScale;
         }
 
-        private static bool ResolveStpIntent(HectonQualityTier tier)
+        private static bool ResolveStpIntent(HectonQualityTier bootHardwareTier, HectonQualityTier compatibilityQualityTier)
         {
-            return (byte)tier <= (byte)HectonQualityTier.Ultra;
+            HectonQualityTier tier = IsValidQualityTier(bootHardwareTier)
+                ? bootHardwareTier
+                : compatibilityQualityTier;
+            return IsValidQualityTier(tier);
         }
 
         private byte ResolveHardwareTierByte()
         {
-            return (byte)_cachedQualityTier;
+            HectonQualityTier tier = IsValidQualityTier(_bootHardwareTier)
+                ? _bootHardwareTier
+                : _cachedQualityTier;
+            return (byte)tier;
+        }
+
+        private static bool IsValidQualityTier(HectonQualityTier tier)
+        {
+            return tier >= HectonQualityTier.Low && tier <= HectonQualityTier.Ultra;
         }
 
         private void RefreshQualityTierPolicyFromContinuousWeight(float qualityWeight01)
         {
             _cachedQualityTier = ResolveQualityTierFromWeight(qualityWeight01);
             _hardwareTier = ResolveHardwareTierByte();
-            _fsrUpscalerAllowed = ResolveFsrUpscalerAllowed(qualityWeight01);
+            _bilateralDrsRouteAllowed = ResolveBilateralDrsRouteAllowed();
             _minScaleLimit = ResolveMinScaleLimit(qualityWeight01);
         }
 
@@ -2659,7 +2665,7 @@ namespace Hecton8.Graphics.Scalability
             _dearLie01 = math.saturate(ResolveDearLieCapacity(qualityWeight01) * reconstructionNeed01);
             _visualOverkill01 = math.saturate(ResolveVisualOverkillCapacity(qualityWeight01) * qualityWeight * headroom01);
             ResolveVisualFeatureWeights(_visualOverkill01, out _visualFeatureWeights0, out _visualFeatureWeights1);
-            _visualFeatureFlags = ResolveVisualFeatureFlags(_visualFeatureWeights0, _visualFeatureWeights1);
+            _visualFeatureFlags = ResolveVisualFeatureRouteMask();
         }
 
         private static float ResolveDearLieCapacity(float qualityWeight01)
@@ -2685,16 +2691,9 @@ namespace Hecton8.Graphics.Scalability
             weights1.y = SmoothVisualGate(visualOverkill01, 0.88f);
         }
 
-        private static uint ResolveVisualFeatureFlags(Vector4 weights0, Vector4 weights1)
+        private static uint ResolveVisualFeatureRouteMask()
         {
-            uint flags = 0u;
-            flags |= (weights0.x > VisualFeatureFlagEpsilon ? 1u : 0u) * VisualFeatureVisorSalt;
-            flags |= (weights0.y > VisualFeatureFlagEpsilon ? 1u : 0u) * VisualFeatureVolumetricSilt;
-            flags |= (weights0.z > VisualFeatureFlagEpsilon ? 1u : 0u) * VisualFeatureProceduralHullDents;
-            flags |= (weights0.w > VisualFeatureFlagEpsilon ? 1u : 0u) * VisualFeaturePom16Tap;
-            flags |= (weights1.x > VisualFeatureFlagEpsilon ? 1u : 0u) * VisualFeatureSubsurfaceScatter;
-            flags |= (weights1.y > VisualFeatureFlagEpsilon ? 1u : 0u) * VisualFeatureRaymarchedFog;
-            return flags;
+            return VisualFeatureRouteMask;
         }
 
         private static float SmoothVisualGate(float value01, float threshold01)

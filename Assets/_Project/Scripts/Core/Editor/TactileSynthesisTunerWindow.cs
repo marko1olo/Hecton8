@@ -1,7 +1,6 @@
 #if UNITY_EDITOR
 using Hecton8.Core.Memory;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
 using Unity.Mathematics;
 using UnityEngine;
@@ -9,7 +8,7 @@ using UnityEngine.UIElements;
 
 namespace Hecton8.Core.Editor
 {
-    public sealed unsafe class TactileSynthesisTunerWindow : EditorWindow
+    public sealed class TactileSynthesisTunerWindow : EditorWindow
     {
         private HapticTelemetryGraphElement _graph;
         private Slider _distanceSlider;
@@ -58,7 +57,7 @@ namespace Hecton8.Core.Editor
             if (_graph != null)
                 _graph.MarkDirtyRepaint();
 
-            if (!Application.isPlaying || !TryResolveTuning(out NativeArray<HapticTuningDTO> tuning) || tuning.Length <= 0)
+            if (!Application.isPlaying || !TryReadTuning(out NativeArray<HapticTuningDTO>.ReadOnly tuning) || tuning.Length <= 0)
                 return;
 
             HapticTuningDTO dto = tuning[0];
@@ -98,32 +97,48 @@ namespace Hecton8.Core.Editor
 
         private static void MutateTuning(float value, int field)
         {
-            if (!TryResolveTuning(out NativeArray<HapticTuningDTO> tuning) || tuning.Length <= 0)
-                return;
-
-            void* ptr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(tuning);
-            ref HapticTuningDTO dto = ref UnsafeUtility.AsRef<HapticTuningDTO>(ptr);
-            switch (field)
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null ||
+                !vault.TryGetGenerationHandle(BufferID.ShinobuHapticSynthesisTuning, out VaultGenerationHandle<HapticTuningDTO> handle) ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.CoreDeterminism, out NativeArray<HapticTuningDTO> tuning))
             {
-                case 0:
-                    dto.DistanceAttenuationCurve = Mathf.Max(0.0001f, value);
-                    break;
-                case 1:
-                    dto.GlobalRumbleMultiplier = Mathf.Max(0f, value);
-                    break;
-                default:
-                    dto.MaxMotorAmplitude = Mathf.Clamp01(value);
-                    break;
+                return;
+            }
+
+            try
+            {
+                if (!tuning.IsCreated || tuning.Length <= 0)
+                    return;
+
+                HapticTuningDTO dto = tuning[0];
+                switch (field)
+                {
+                    case 0:
+                        dto.DistanceAttenuationCurve = Mathf.Max(0.0001f, value);
+                        break;
+                    case 1:
+                        dto.GlobalRumbleMultiplier = Mathf.Max(0f, value);
+                        break;
+                    default:
+                        dto.MaxMotorAmplitude = Mathf.Clamp01(value);
+                        break;
+                }
+
+                tuning[0] = dto;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDeterminism);
             }
         }
 
-        private static bool TryResolveTuning(out NativeArray<HapticTuningDTO> tuning)
+        private static bool TryReadTuning(out NativeArray<HapticTuningDTO>.ReadOnly tuning)
         {
             tuning = default;
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
                 !vault.TryGetGenerationHandle(BufferID.ShinobuHapticSynthesisTuning, out VaultGenerationHandle<HapticTuningDTO> handle) ||
-                !vault.TryResolveHandle(in handle, out tuning) ||
+                !vault.TryReadOnlyHandle(in handle, out tuning) ||
                 !tuning.IsCreated)
             {
                 tuning = default;

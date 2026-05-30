@@ -51,14 +51,22 @@ namespace Hecton8.Physics.Vehicles.Editor
                 Assert.IsTrue(first.IsCreated);
                 try
                 {
-                    vault.TryAcquireWriteLock(in handle, Owner, out NativeArray<BallastTankDTO> warmup);
+                    bool warmupAcquired = vault.TryAcquireWriteLock(in handle, Owner, out NativeArray<BallastTankDTO> warmup);
+                    if (warmupAcquired)
+                        vault.ReleaseWriteLock(in handle, Owner);
+
+                    Assert.IsFalse(warmupAcquired);
                     Assert.IsFalse(warmup.IsCreated);
 
                     long beforeBytes = GC.GetAllocatedBytesForCurrentThread();
                     bool allFailedClosed = true;
                     for (int i = 0; i < Attempts; i++)
                     {
-                        allFailedClosed &= !vault.TryAcquireWriteLock(in handle, Owner, out NativeArray<BallastTankDTO> blocked);
+                        bool blockedAcquired = vault.TryAcquireWriteLock(in handle, Owner, out NativeArray<BallastTankDTO> blocked);
+                        if (blockedAcquired)
+                            vault.ReleaseWriteLock(in handle, Owner);
+
+                        allFailedClosed &= !blockedAcquired;
                         allFailedClosed &= !blocked.IsCreated;
                     }
 
@@ -189,7 +197,7 @@ namespace Hecton8.Physics.Vehicles.Editor
                 }
 
                 WriteExtremeCommands(commands, samples, frame);
-                new EvaluateBallastTanksJob
+                JobHandle evaluateHandle = new EvaluateBallastTanksJob
                 {
                     Tanks = tanks,
                     Commands = commands,
@@ -197,9 +205,10 @@ namespace Hecton8.Physics.Vehicles.Editor
                     DeltaTime = 0.02f,
                     Frame = frame,
                     EmitAcousticSignals = 0
-                }.Schedule(SubmarineBallastConstants.TankCount, 1).Complete();
+                }.Schedule(SubmarineBallastConstants.TankCount, 1);
+                Hecton8.Core.DispatcherJobFence.TryComplete(ref evaluateHandle, forceComplete: true);
 
-                new CalculateBuoyancyForceJob
+                JobHandle forceHandle = new CalculateBuoyancyForceJob
                 {
                     Tanks = tanks,
                     FluidSamples = samples,
@@ -207,7 +216,8 @@ namespace Hecton8.Physics.Vehicles.Editor
                     TelemetryRing = telemetry,
                     TankCount = SubmarineBallastConstants.TankCount,
                     Frame = frame
-                }.Schedule(1, 1).Complete();
+                }.Schedule(1, 1);
+                Hecton8.Core.DispatcherJobFence.TryComplete(ref forceHandle, forceComplete: true);
 
                 return forcePackets[0];
             }

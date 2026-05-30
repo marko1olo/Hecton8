@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton.Localization;
 using Hecton8.Caves;
 using Unity.Collections;
@@ -175,8 +176,8 @@ namespace Hecton8.Core
     }
 
     /// <summary>
-    /// Dispatcher-owned lock-free structural command queue.
-    /// Jobs publish blittable intent only; the main thread resolves targets and applies mutations in LateUpdate.
+    /// Dispatcher-owned structural command queue.
+    /// Producers publish blittable intent only; the main thread resolves targets and applies mutations in LateUpdate.
     /// </summary>
     public static class ThreadSafeCommandQueue
     {
@@ -223,6 +224,8 @@ namespace Hecton8.Core
         private static readonly List<int> _freeTokens = new List<int>(64);
         // COLD ALLOC: object[8] - storage reservation acknowledgement listeners drained after command queue, object-backed to avoid interface arrays - owner: ThreadSafeCommandQueue
         private static readonly object[] _storageReservationCommitListeners = new object[StorageReservationCommitListenerCapacity];
+        // COLD ALLOC: object[8] - fixed dispatch copy to call listeners outside the listener gate - owner: ThreadSafeCommandQueue
+        private static readonly object[] _storageReservationCommitDispatchBuffer = new object[StorageReservationCommitListenerCapacity];
 
         private static NativeQueue<EntityCommand> _pendingCommands;
         private static NativeQueue<StorageReservationCommitResolvedPayload> _pendingStorageReservationCommitResolved;
@@ -233,18 +236,24 @@ namespace Hecton8.Core
         private static int _storageReservationCommitListenerCount;
         private static int _lastCommandOverflowWarningFrame = -1;
         private static int _lastStorageReservationCommitOverflowWarningFrame = -1;
+        private static int _pendingCommandsReady;
+        private static int _pendingStorageReservationCommitResolvedReady;
+        private static int _commandQueueGate;
+        private static int _storageReservationCommitResolvedGate;
+        private static int _targetRegistryGate;
+        private static int _storageReservationCommitListenerGate;
         private static IObjectPoolService _objectPool;
 
         /// <summary>
         /// True once the structural command queue has allocated its persistent native storage.
         /// </summary>
-        public static bool IsReady => _pendingCommands.IsCreated;
+        public static bool IsReady => Volatile.Read(ref _pendingCommandsReady) != 0;
 
-        public static int PendingCount => _pendingCommandCount;
+        public static int PendingCount => Volatile.Read(ref _pendingCommandCount);
 
-        public static int DroppedCommandCount => _droppedCommandCount;
+        public static int DroppedCommandCount => Volatile.Read(ref _droppedCommandCount);
 
-        public static int PendingStorageReservationCommitResolvedCount => _pendingStorageReservationCommitResolvedCount;
+        public static int PendingStorageReservationCommitResolvedCount => Volatile.Read(ref _pendingStorageReservationCommitResolvedCount);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -254,17 +263,30 @@ namespace Hecton8.Core
 
         public static void Initialize()
         {
-            if (_pendingCommands.IsCreated)
+            if (Volatile.Read(ref _pendingCommandsReady) != 0)
                 return;
 
-            _pendingCommands = new NativeQueue<EntityCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EntityCommand>(Persistent) - structural command ingress drained by SystemDispatcher LateUpdate - owner: ThreadSafeCommandQueue
-            NativeMemorySentinel.RegisterNativeQueue(
-                _pendingCommands,
-                MaxMainThreadCommandsPerDrain,
-                nameof(ThreadSafeCommandQueue),
-                nameof(_pendingCommands),
-                NativeAllocationLifetime.Session);
-            PrewarmQueue(ref _pendingCommands, MaxMainThreadCommandsPerDrain);
+            EnterGate(ref _commandQueueGate);
+            try
+            {
+                if (Volatile.Read(ref _pendingCommandsReady) == 0)
+                {
+                    _pendingCommands = new NativeQueue<EntityCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EntityCommand>(Persistent) - structural command ingress drained by SystemDispatcher LateUpdate - owner: ThreadSafeCommandQueue
+                    NativeMemorySentinel.RegisterNativeQueue(
+                        _pendingCommands,
+                        MaxMainThreadCommandsPerDrain,
+                        nameof(ThreadSafeCommandQueue),
+                        nameof(_pendingCommands),
+                        NativeAllocationLifetime.Session);
+                    PrewarmQueue(ref _pendingCommands, MaxMainThreadCommandsPerDrain);
+                    Volatile.Write(ref _pendingCommandsReady, 1);
+                }
+            }
+            finally
+            {
+                ExitGate(ref _commandQueueGate);
+            }
+
             CacheRegistryServicesCold();
         }
 
@@ -273,17 +295,30 @@ namespace Hecton8.Core
             if (listener == null)
                 return;
 
-            if (IndexOfStorageReservationCommitListener(listener) >= 0)
-                return;
-
-            if (_storageReservationCommitListenerCount >= StorageReservationCommitListenerCapacity)
+            bool capacityExceeded = false;
+            EnterGate(ref _storageReservationCommitListenerGate);
+            try
             {
-                LogStorageReservationCommitListenerCapacityExceeded();
-                return;
+                if (IndexOfStorageReservationCommitListener(listener) < 0)
+                {
+                    if (_storageReservationCommitListenerCount >= StorageReservationCommitListenerCapacity)
+                    {
+                        capacityExceeded = true;
+                    }
+                    else
+                    {
+                        _storageReservationCommitListeners[_storageReservationCommitListenerCount] = listener;
+                        _storageReservationCommitListenerCount++;
+                    }
+                }
+            }
+            finally
+            {
+                ExitGate(ref _storageReservationCommitListenerGate);
             }
 
-            _storageReservationCommitListeners[_storageReservationCommitListenerCount] = listener;
-            _storageReservationCommitListenerCount++;
+            if (capacityExceeded)
+                LogStorageReservationCommitListenerCapacityExceeded();
         }
 
         public static void Unregister(IStorageReservationCommitResolvedListener listener)
@@ -291,15 +326,23 @@ namespace Hecton8.Core
             if (listener == null)
                 return;
 
-            int index = IndexOfStorageReservationCommitListener(listener);
-            if (index < 0)
-                return;
+            EnterGate(ref _storageReservationCommitListenerGate);
+            try
+            {
+                int index = IndexOfStorageReservationCommitListener(listener);
+                if (index < 0)
+                    return;
 
-            _storageReservationCommitListenerCount--;
-            if (index < _storageReservationCommitListenerCount)
-                _storageReservationCommitListeners[index] = _storageReservationCommitListeners[_storageReservationCommitListenerCount];
+                _storageReservationCommitListenerCount--;
+                if (index < _storageReservationCommitListenerCount)
+                    _storageReservationCommitListeners[index] = _storageReservationCommitListeners[_storageReservationCommitListenerCount];
 
-            _storageReservationCommitListeners[_storageReservationCommitListenerCount] = null;
+                _storageReservationCommitListeners[_storageReservationCommitListenerCount] = null;
+            }
+            finally
+            {
+                ExitGate(ref _storageReservationCommitListenerGate);
+            }
         }
 
         public static void Enqueue(in EntityCommand command)
@@ -316,19 +359,50 @@ namespace Hecton8.Core
                 return false;
 
             Initialize();
-            if (_pendingCommandCount >= MaxMainThreadCommandsPerDrain)
+            bool reportOverflow = false;
+            bool raiseReservationRejected = false;
+            bool enqueued = false;
+            int rejectedRequesterId = 0;
+            int rejectedReservationId = 0;
+            EnterGate(ref _commandQueueGate);
+            try
             {
-                _droppedCommandCount++;
-                if (command.CommandType == EntityCommandType.CommitStorageReservation)
-                    RaiseStorageReservationCommitResolved(command.SecondaryToken, command.IntValue, false);
-
-                ReportCommandOverflowOncePerFrame();
-                return false;
+                if (Volatile.Read(ref _pendingCommandsReady) != 0)
+                {
+                    if (_pendingCommandCount >= MaxMainThreadCommandsPerDrain)
+                    {
+                        _droppedCommandCount++;
+                        reportOverflow = true;
+                        if (command.CommandType == EntityCommandType.CommitStorageReservation)
+                        {
+                            raiseReservationRejected = true;
+                            rejectedRequesterId = command.SecondaryToken;
+                            rejectedReservationId = command.IntValue;
+                        }
+                    }
+                    else
+                    {
+                        _pendingCommands.Enqueue(command);
+                        _pendingCommandCount++;
+                        enqueued = true;
+                    }
+                }
+            }
+            finally
+            {
+                ExitGate(ref _commandQueueGate);
             }
 
-            _pendingCommands.Enqueue(command);
-            _pendingCommandCount++;
-            return true;
+            if (enqueued)
+                return true;
+
+            if (raiseReservationRejected)
+                RaiseStorageReservationCommitResolved(rejectedRequesterId, rejectedReservationId, false);
+
+            if (reportOverflow)
+                ReportCommandOverflowOncePerFrame();
+
+            return false;
         }
 
         public static int RegisterGameObjectTarget(GameObject instance)
@@ -337,14 +411,35 @@ namespace Hecton8.Core
                 return 0;
 
             ulong instanceId = EntityId.ToULong(instance.GetEntityId());
-            if (_tokensByInstanceId.TryGetValue(instanceId, out int existingToken))
-                return existingToken;
+            HectonVoxelVolume volume = null;
+            IStorageReservationCommitTarget storageTarget = null;
+            if (instance.TryGetComponent(out HectonVoxelVolume resolvedVolume))
+                volume = resolvedVolume;
 
-            int token = AllocateToken();
-            _targetsByToken[token] = instance;
-            _tokensByInstanceId[instanceId] = token;
-            CacheCommandTargetInterfacesCold(token, instance);
-            return token;
+            if (instance.TryGetComponent(out IStorageReservationCommitTarget resolvedStorageTarget))
+                storageTarget = resolvedStorageTarget;
+
+            EnterGate(ref _targetRegistryGate);
+            try
+            {
+                if (_tokensByInstanceId.TryGetValue(instanceId, out int existingToken))
+                    return existingToken;
+
+                int token = AllocateTokenLocked();
+                _targetsByToken[token] = instance;
+                _tokensByInstanceId[instanceId] = token;
+                if (volume != null)
+                    _voxelVolumesByToken[token] = volume;
+
+                if (storageTarget != null)
+                    _storageCommitTargetsByToken[token] = storageTarget;
+
+                return token;
+            }
+            finally
+            {
+                ExitGate(ref _targetRegistryGate);
+            }
         }
 
         public static bool TryGetGameObjectTargetToken(GameObject instance, out int token)
@@ -353,7 +448,15 @@ namespace Hecton8.Core
             if (instance == null)
                 return false;
 
-            return _tokensByInstanceId.TryGetValue(EntityId.ToULong(instance.GetEntityId()), out token);
+            EnterGate(ref _targetRegistryGate);
+            try
+            {
+                return _tokensByInstanceId.TryGetValue(EntityId.ToULong(instance.GetEntityId()), out token);
+            }
+            finally
+            {
+                ExitGate(ref _targetRegistryGate);
+            }
         }
 
         public static void UnregisterGameObjectTarget(GameObject instance)
@@ -361,138 +464,250 @@ namespace Hecton8.Core
             if (instance == null)
                 return;
 
-            if (_tokensByInstanceId.TryGetValue(EntityId.ToULong(instance.GetEntityId()), out int token))
-                UnregisterToken(token, instance);
+            EnterGate(ref _targetRegistryGate);
+            try
+            {
+                if (_tokensByInstanceId.TryGetValue(EntityId.ToULong(instance.GetEntityId()), out int token))
+                    UnregisterTokenLocked(token, instance);
+            }
+            finally
+            {
+                ExitGate(ref _targetRegistryGate);
+            }
         }
 
         public static void Clear()
         {
-            if (_pendingCommands.IsCreated)
+            EnterGate(ref _commandQueueGate);
+            try
             {
-                while (_pendingCommands.TryDequeue(out _))
+                if (Volatile.Read(ref _pendingCommandsReady) != 0)
                 {
+                    while (_pendingCommands.TryDequeue(out _))
+                    {
+                    }
                 }
+
+                _pendingCommandCount = 0;
+                _droppedCommandCount = 0;
+            }
+            finally
+            {
+                ExitGate(ref _commandQueueGate);
             }
 
-            if (_pendingStorageReservationCommitResolved.IsCreated)
+            EnterGate(ref _storageReservationCommitResolvedGate);
+            try
             {
-                while (_pendingStorageReservationCommitResolved.TryDequeue(out _))
+                if (Volatile.Read(ref _pendingStorageReservationCommitResolvedReady) != 0)
                 {
+                    while (_pendingStorageReservationCommitResolved.TryDequeue(out _))
+                    {
+                    }
                 }
+
+                _pendingStorageReservationCommitResolvedCount = 0;
+            }
+            finally
+            {
+                ExitGate(ref _storageReservationCommitResolvedGate);
             }
 
-            _targetsByToken.Clear();
-            _tokensByInstanceId.Clear();
-            _voxelVolumesByToken.Clear();
-            _storageCommitTargetsByToken.Clear();
-            _freeTokens.Clear();
-            _nextToken = 1;
-            _pendingCommandCount = 0;
-            _droppedCommandCount = 0;
-            _pendingStorageReservationCommitResolvedCount = 0;
-            _objectPool = null;
+            EnterGate(ref _targetRegistryGate);
+            try
+            {
+                _targetsByToken.Clear();
+                _tokensByInstanceId.Clear();
+                _voxelVolumesByToken.Clear();
+                _storageCommitTargetsByToken.Clear();
+                _freeTokens.Clear();
+                _nextToken = 1;
+            }
+            finally
+            {
+                ExitGate(ref _targetRegistryGate);
+            }
+
+            Volatile.Write(ref _objectPool, null);
         }
 
         public static bool DrainMainThread()
         {
-            if (!_pendingCommands.IsCreated)
+            if (Volatile.Read(ref _pendingCommandsReady) == 0)
                 return true;
 
             int remainingBudget = MaxMainThreadCommandsPerDrain;
-            while (remainingBudget > 0 && !_pendingCommands.IsEmpty())
+            while (remainingBudget > 0)
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return false;
 
-                if (!_pendingCommands.TryDequeue(out EntityCommand command))
+                bool hasCommand = false;
+                EntityCommand command = default;
+                EnterGate(ref _commandQueueGate);
+                try
                 {
-                    _pendingCommandCount = 0;
-                    break;
+                    if (Volatile.Read(ref _pendingCommandsReady) == 0)
+                        return true;
+
+                    if (_pendingCommands.IsEmpty())
+                    {
+                        _pendingCommandCount = 0;
+                        return true;
+                    }
+
+                    hasCommand = _pendingCommands.TryDequeue(out command);
+                    if (!hasCommand)
+                    {
+                        _pendingCommandCount = 0;
+                        return true;
+                    }
+
+                    if (_pendingCommandCount > 0)
+                        _pendingCommandCount--;
+
+                    if (_pendingCommands.IsEmpty())
+                        _pendingCommandCount = 0;
+                }
+                finally
+                {
+                    ExitGate(ref _commandQueueGate);
                 }
 
-                if (_pendingCommandCount > 0)
-                    _pendingCommandCount--;
+                if (hasCommand)
+                    ExecuteCommand(in command);
 
-                ExecuteCommand(in command);
                 remainingBudget--;
             }
 
-            if (_pendingCommands.IsEmpty())
-                _pendingCommandCount = 0;
-
-            return _pendingCommands.IsEmpty();
+            return !HasPendingCommands();
         }
 
         public static bool FlushStorageReservationCommitResolvedEvents()
         {
-            if (!_pendingStorageReservationCommitResolved.IsCreated)
+            if (Volatile.Read(ref _pendingStorageReservationCommitResolvedReady) == 0)
                 return true;
 
-            int scanBudget = _pendingStorageReservationCommitResolvedCount > 0
-                ? _pendingStorageReservationCommitResolvedCount
+            int pendingCount = Volatile.Read(ref _pendingStorageReservationCommitResolvedCount);
+            int scanBudget = pendingCount > 0
+                ? pendingCount
                 : StorageReservationCommitEventCapacity;
-            while (scanBudget-- > 0 && !_pendingStorageReservationCommitResolved.IsEmpty())
+            while (scanBudget-- > 0)
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return false;
 
-                if (!_pendingStorageReservationCommitResolved.TryDequeue(out StorageReservationCommitResolvedPayload payload))
+                bool hasPayload = false;
+                StorageReservationCommitResolvedPayload payload = default;
+                EnterGate(ref _storageReservationCommitResolvedGate);
+                try
                 {
-                    _pendingStorageReservationCommitResolvedCount = 0;
-                    break;
+                    if (Volatile.Read(ref _pendingStorageReservationCommitResolvedReady) == 0)
+                        return true;
+
+                    if (_pendingStorageReservationCommitResolved.IsEmpty())
+                    {
+                        _pendingStorageReservationCommitResolvedCount = 0;
+                        return true;
+                    }
+
+                    hasPayload = _pendingStorageReservationCommitResolved.TryDequeue(out payload);
+                    if (!hasPayload)
+                    {
+                        _pendingStorageReservationCommitResolvedCount = 0;
+                        return true;
+                    }
+
+                    if (_pendingStorageReservationCommitResolvedCount > 0)
+                        _pendingStorageReservationCommitResolvedCount--;
+
+                    if (_pendingStorageReservationCommitResolved.IsEmpty())
+                        _pendingStorageReservationCommitResolvedCount = 0;
+                }
+                finally
+                {
+                    ExitGate(ref _storageReservationCommitResolvedGate);
                 }
 
-                if (_pendingStorageReservationCommitResolvedCount > 0)
-                    _pendingStorageReservationCommitResolvedCount--;
-
-                int count = _storageReservationCommitListenerCount;
-                for (int i = count - 1; i >= 0; i--)
-                {
-                    IStorageReservationCommitResolvedListener listener = _storageReservationCommitListeners[i] as IStorageReservationCommitResolvedListener;
-                    if (listener != null)
-                        listener.OnStorageReservationCommitResolved(in payload);
-                }
+                if (hasPayload)
+                    DispatchStorageReservationCommitResolved(in payload);
             }
 
-            if (_pendingStorageReservationCommitResolved.IsEmpty())
-                _pendingStorageReservationCommitResolvedCount = 0;
-
-            return _pendingStorageReservationCommitResolved.IsEmpty();
+            return !HasPendingStorageReservationCommitResolved();
         }
 
         public static void Shutdown()
         {
-            if (_pendingCommands.IsCreated)
+            EnterGate(ref _commandQueueGate);
+            try
             {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ThreadSafeCommandQueue), nameof(_pendingCommands));
-                _pendingCommands.Dispose();
-                _pendingCommands = default;
+                if (Volatile.Read(ref _pendingCommandsReady) != 0)
+                {
+                    NativeMemorySentinel.UnregisterNativeQueue(nameof(ThreadSafeCommandQueue), nameof(_pendingCommands));
+                    _pendingCommands.Dispose();
+                    _pendingCommands = default;
+                    Volatile.Write(ref _pendingCommandsReady, 0);
+                }
+
+                _pendingCommandCount = 0;
+                _droppedCommandCount = 0;
+            }
+            finally
+            {
+                ExitGate(ref _commandQueueGate);
             }
 
-            if (_pendingStorageReservationCommitResolved.IsCreated)
+            EnterGate(ref _storageReservationCommitResolvedGate);
+            try
             {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(ThreadSafeCommandQueue), nameof(_pendingStorageReservationCommitResolved));
-                _pendingStorageReservationCommitResolved.Dispose();
-                _pendingStorageReservationCommitResolved = default;
+                if (Volatile.Read(ref _pendingStorageReservationCommitResolvedReady) != 0)
+                {
+                    NativeMemorySentinel.UnregisterNativeQueue(nameof(ThreadSafeCommandQueue), nameof(_pendingStorageReservationCommitResolved));
+                    _pendingStorageReservationCommitResolved.Dispose();
+                    _pendingStorageReservationCommitResolved = default;
+                    Volatile.Write(ref _pendingStorageReservationCommitResolvedReady, 0);
+                }
+
+                _pendingStorageReservationCommitResolvedCount = 0;
+            }
+            finally
+            {
+                ExitGate(ref _storageReservationCommitResolvedGate);
             }
 
-            _targetsByToken.Clear();
-            _tokensByInstanceId.Clear();
-            _voxelVolumesByToken.Clear();
-            _storageCommitTargetsByToken.Clear();
-            _freeTokens.Clear();
-            System.Array.Clear(_storageReservationCommitListeners, 0, _storageReservationCommitListenerCount);
-            _storageReservationCommitListenerCount = 0;
-            _nextToken = 1;
-            _pendingCommandCount = 0;
-            _droppedCommandCount = 0;
-            _pendingStorageReservationCommitResolvedCount = 0;
+            EnterGate(ref _targetRegistryGate);
+            try
+            {
+                _targetsByToken.Clear();
+                _tokensByInstanceId.Clear();
+                _voxelVolumesByToken.Clear();
+                _storageCommitTargetsByToken.Clear();
+                _freeTokens.Clear();
+                _nextToken = 1;
+            }
+            finally
+            {
+                ExitGate(ref _targetRegistryGate);
+            }
+
+            EnterGate(ref _storageReservationCommitListenerGate);
+            try
+            {
+                System.Array.Clear(_storageReservationCommitListeners, 0, _storageReservationCommitListenerCount);
+                System.Array.Clear(_storageReservationCommitDispatchBuffer, 0, StorageReservationCommitListenerCapacity);
+                _storageReservationCommitListenerCount = 0;
+            }
+            finally
+            {
+                ExitGate(ref _storageReservationCommitListenerGate);
+            }
+
             _lastCommandOverflowWarningFrame = -1;
             _lastStorageReservationCommitOverflowWarningFrame = -1;
-            _objectPool = null;
+            Volatile.Write(ref _objectPool, null);
         }
 
-        private static int AllocateToken()
+        private static int AllocateTokenLocked()
         {
             int freeCount = _freeTokens.Count;
             if (freeCount > 0)
@@ -564,7 +779,7 @@ namespace Hecton8.Core
 
                 case EntityCommandType.ModifyVoxel:
                 {
-                    if (!_voxelVolumesByToken.TryGetValue(command.TargetToken, out HectonVoxelVolume volume) || volume == null)
+                    if (!TryResolveVoxelVolume(command.TargetToken, out HectonVoxelVolume volume))
                         break;
 
                     HectonVoxelEngine engine = HectonVoxelEngine.ActiveRuntimeInstance;
@@ -583,8 +798,7 @@ namespace Hecton8.Core
                 case EntityCommandType.CommitStorageReservation:
                 {
                     if (command.IntValue <= 0 ||
-                        !_storageCommitTargetsByToken.TryGetValue(command.TargetToken, out IStorageReservationCommitTarget target) ||
-                        target == null)
+                        !TryResolveStorageCommitTarget(command.TargetToken, out IStorageReservationCommitTarget target))
                     {
                         RaiseStorageReservationCommitResolved(command.SecondaryToken, command.IntValue, false);
                         break;
@@ -599,17 +813,17 @@ namespace Hecton8.Core
 
         private static void CacheRegistryServicesCold()
         {
-            _objectPool = GlobalRegistry.ObjectPoolService;
+            Volatile.Write(ref _objectPool, GlobalRegistry.ObjectPoolService);
         }
 
         internal static void BindObjectPoolServiceCold(IObjectPoolService objectPool)
         {
-            _objectPool = objectPool;
+            Volatile.Write(ref _objectPool, objectPool);
         }
 
         private static IObjectPoolService ResolveObjectPoolCold()
         {
-            return _objectPool;
+            return Volatile.Read(ref _objectPool);
         }
 
         private static void RaiseStorageReservationCommitResolved(int requesterId, int reservationId, bool committed)
@@ -636,9 +850,33 @@ namespace Hecton8.Core
             return -1;
         }
 
+        private static void DispatchStorageReservationCommitResolved(in StorageReservationCommitResolvedPayload payload)
+        {
+            int count;
+            EnterGate(ref _storageReservationCommitListenerGate);
+            try
+            {
+                count = _storageReservationCommitListenerCount;
+                for (int i = 0; i < count; i++)
+                    _storageReservationCommitDispatchBuffer[i] = _storageReservationCommitListeners[i];
+            }
+            finally
+            {
+                ExitGate(ref _storageReservationCommitListenerGate);
+            }
+
+            for (int i = count - 1; i >= 0; i--)
+            {
+                IStorageReservationCommitResolvedListener listener = _storageReservationCommitDispatchBuffer[i] as IStorageReservationCommitResolvedListener;
+                _storageReservationCommitDispatchBuffer[i] = null;
+                if (listener != null)
+                    listener.OnStorageReservationCommitResolved(in payload);
+            }
+        }
+
         private static void EnsureStorageReservationCommitResolvedQueue()
         {
-            if (_pendingStorageReservationCommitResolved.IsCreated)
+            if (Volatile.Read(ref _pendingStorageReservationCommitResolvedReady) != 0)
                 return;
 
             _pendingStorageReservationCommitResolved = new NativeQueue<StorageReservationCommitResolvedPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<StorageReservationCommitResolvedPayload>[64] - deferred storage reservation acknowledgements - owner: ThreadSafeCommandQueue
@@ -649,6 +887,7 @@ namespace Hecton8.Core
                 nameof(_pendingStorageReservationCommitResolved),
                 NativeAllocationLifetime.Session);
             PrewarmQueue(ref _pendingStorageReservationCommitResolved, StorageReservationCommitEventCapacity);
+            Volatile.Write(ref _pendingStorageReservationCommitResolvedReady, 1);
         }
 
         private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
@@ -667,16 +906,32 @@ namespace Hecton8.Core
 
         private static bool EnqueueStorageReservationCommitResolved(in StorageReservationCommitResolvedPayload payload)
         {
-            if (_pendingStorageReservationCommitResolvedCount >= StorageReservationCommitEventCapacity)
+            bool reportOverflow = false;
+            bool enqueued = false;
+            EnterGate(ref _storageReservationCommitResolvedGate);
+            try
             {
-                ReportStorageReservationCommitOverflowOncePerFrame();
-                return false;
+                if (_pendingStorageReservationCommitResolvedCount >= StorageReservationCommitEventCapacity)
+                {
+                    reportOverflow = true;
+                }
+                else
+                {
+                    EnsureStorageReservationCommitResolvedQueue();
+                    _pendingStorageReservationCommitResolved.Enqueue(payload);
+                    _pendingStorageReservationCommitResolvedCount++;
+                    enqueued = true;
+                }
+            }
+            finally
+            {
+                ExitGate(ref _storageReservationCommitResolvedGate);
             }
 
-            EnsureStorageReservationCommitResolvedQueue();
-            _pendingStorageReservationCommitResolved.Enqueue(payload);
-            _pendingStorageReservationCommitResolvedCount++;
-            return true;
+            if (reportOverflow)
+                ReportStorageReservationCommitOverflowOncePerFrame();
+
+            return enqueued;
         }
 
         private static void ReportCommandOverflowOncePerFrame()
@@ -731,32 +986,68 @@ namespace Hecton8.Core
 
         private static bool TryResolveTarget(int token, out GameObject instance)
         {
-            if (_targetsByToken.TryGetValue(token, out instance) && instance != null)
-                return true;
-
-            instance = null;
-            if (_targetsByToken.ContainsKey(token))
+            EnterGate(ref _targetRegistryGate);
+            try
             {
-                _targetsByToken.Remove(token);
-                _voxelVolumesByToken.Remove(token);
-                _storageCommitTargetsByToken.Remove(token);
+                if (_targetsByToken.TryGetValue(token, out instance) && instance != null)
+                    return true;
+
+                instance = null;
+                if (_targetsByToken.ContainsKey(token))
+                {
+                    _targetsByToken.Remove(token);
+                    _voxelVolumesByToken.Remove(token);
+                    _storageCommitTargetsByToken.Remove(token);
+                }
+
+                return false;
             }
-            return false;
+            finally
+            {
+                ExitGate(ref _targetRegistryGate);
+            }
         }
 
-        private static void CacheCommandTargetInterfacesCold(int token, GameObject instance)
+        private static bool TryResolveVoxelVolume(int token, out HectonVoxelVolume volume)
         {
-            if (instance == null)
-                return;
+            EnterGate(ref _targetRegistryGate);
+            try
+            {
+                return _voxelVolumesByToken.TryGetValue(token, out volume) && volume != null;
+            }
+            finally
+            {
+                ExitGate(ref _targetRegistryGate);
+            }
+        }
 
-            if (instance.TryGetComponent(out HectonVoxelVolume volume))
-                _voxelVolumesByToken[token] = volume;
-
-            if (instance.TryGetComponent(out IStorageReservationCommitTarget storageTarget))
-                _storageCommitTargetsByToken[token] = storageTarget;
+        private static bool TryResolveStorageCommitTarget(int token, out IStorageReservationCommitTarget target)
+        {
+            EnterGate(ref _targetRegistryGate);
+            try
+            {
+                return _storageCommitTargetsByToken.TryGetValue(token, out target) && target != null;
+            }
+            finally
+            {
+                ExitGate(ref _targetRegistryGate);
+            }
         }
 
         private static void UnregisterToken(int token, GameObject instance)
+        {
+            EnterGate(ref _targetRegistryGate);
+            try
+            {
+                UnregisterTokenLocked(token, instance);
+            }
+            finally
+            {
+                ExitGate(ref _targetRegistryGate);
+            }
+        }
+
+        private static void UnregisterTokenLocked(int token, GameObject instance)
         {
             _targetsByToken.Remove(token);
             _voxelVolumesByToken.Remove(token);
@@ -764,6 +1055,58 @@ namespace Hecton8.Core
             if (instance != null)
                 _tokensByInstanceId.Remove(EntityId.ToULong(instance.GetEntityId()));
             _freeTokens.Add(token);
+        }
+
+        private static bool HasPendingCommands()
+        {
+            EnterGate(ref _commandQueueGate);
+            try
+            {
+                if (Volatile.Read(ref _pendingCommandsReady) == 0)
+                    return false;
+
+                bool hasPending = !_pendingCommands.IsEmpty();
+                if (!hasPending)
+                    _pendingCommandCount = 0;
+
+                return hasPending;
+            }
+            finally
+            {
+                ExitGate(ref _commandQueueGate);
+            }
+        }
+
+        private static bool HasPendingStorageReservationCommitResolved()
+        {
+            EnterGate(ref _storageReservationCommitResolvedGate);
+            try
+            {
+                if (Volatile.Read(ref _pendingStorageReservationCommitResolvedReady) == 0)
+                    return false;
+
+                bool hasPending = !_pendingStorageReservationCommitResolved.IsEmpty();
+                if (!hasPending)
+                    _pendingStorageReservationCommitResolvedCount = 0;
+
+                return hasPending;
+            }
+            finally
+            {
+                ExitGate(ref _storageReservationCommitResolvedGate);
+            }
+        }
+
+        private static void EnterGate(ref int gate)
+        {
+            SpinWait spinWait = default;
+            while (Interlocked.CompareExchange(ref gate, 1, 0) != 0)
+                spinWait.SpinOnce();
+        }
+
+        private static void ExitGate(ref int gate)
+        {
+            Volatile.Write(ref gate, 0);
         }
     }
 }

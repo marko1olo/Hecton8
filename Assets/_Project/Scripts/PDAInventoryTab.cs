@@ -251,10 +251,7 @@ namespace Hecton8.UI
         private readonly int[] _prefabToolCacheIds = new int[PrefabToolCacheCapacity]; // COLD ALLOC: int[32] - prefab metadata lookup cache keys - owner: PDAInventoryTab
         private readonly byte[] _prefabToolCacheStates = new byte[PrefabToolCacheCapacity]; // COLD ALLOC: byte[32] - 1=hit, 2=miss - owner: PDAInventoryTab
         private readonly IPlayerToolDataReadModel[] _prefabToolCacheTools = new IPlayerToolDataReadModel[PrefabToolCacheCapacity]; // COLD ALLOC: interface[32] - cached prefab tool metadata - owner: PDAInventoryTab
-        private readonly int[] _prefabToolProbeIds = new int[PrefabToolCacheCapacity]; // COLD ALLOC: int[32] - cold prefab probe queue keys - owner: PDAInventoryTab
-        private readonly GameObject[] _prefabToolProbePrefabs = new GameObject[PrefabToolCacheCapacity]; // COLD ALLOC: GameObject[32] - cold prefab probe queue refs - owner: PDAInventoryTab
         private int _prefabToolCacheCount;
-        private int _prefabToolProbeCount;
         private int[] _filteredAnchorIndices;
         private bool _gridDirty;
         private bool _detailsDirty;
@@ -358,7 +355,6 @@ namespace Hecton8.UI
         public void SlowTick()
         {
             RefreshScreenSnapshotCold();
-            FlushPrefabToolCacheProbesCold();
         }
 
         public void LateFrameTick()
@@ -499,6 +495,7 @@ namespace Hecton8.UI
 
         private void AutoResolve()
         {
+            PlayerToolManager previousToolManager = toolManager;
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (_dropOrigin == null && playerContext != null)
                 _dropOrigin = playerContext.PlayerCamera != null
@@ -541,6 +538,9 @@ namespace Hecton8.UI
                 labelFont = TMP_Settings.defaultFontAsset;
             if (numericFont == null)
                 numericFont = labelFont;
+
+            if (!ReferenceEquals(previousToolManager, toolManager))
+                ClearPrefabToolCache();
 
             RefreshInventorySignalBinding();
             RefreshToolLoadoutSignalBinding();
@@ -638,6 +638,7 @@ namespace Hecton8.UI
 
         private void MarkToolLoadoutDirty()
         {
+            ClearPrefabToolCache();
             _toolStripDirty = true;
             _detailsDirty = true;
         }
@@ -2860,77 +2861,35 @@ namespace Hecton8.UI
                     return _prefabToolCacheStates[i] == 1 ? _prefabToolCacheTools[i] : null;
             }
 
-            QueuePrefabToolCacheProbe(prefab, prefabId);
-            return null;
+            if (toolManager == null)
+                return null;
+
+            toolManager.TryGetToolDataReadModelForPrefab(prefab, out IPlayerToolDataReadModel resolvedTool);
+            CachePrefabToolResult(prefabId, resolvedTool);
+            return resolvedTool;
         }
 
-        private void QueuePrefabToolCacheProbe(GameObject prefab, int prefabId)
+        private void CachePrefabToolResult(int prefabId, IPlayerToolDataReadModel resolvedTool)
         {
-            if (prefab == null || _prefabToolCacheCount >= PrefabToolCacheCapacity)
+            if (_prefabToolCacheCount >= PrefabToolCacheCapacity)
                 return;
 
+            int index = _prefabToolCacheCount++;
+            _prefabToolCacheIds[index] = prefabId;
+            _prefabToolCacheStates[index] = resolvedTool != null ? (byte)1 : (byte)2;
+            _prefabToolCacheTools[index] = resolvedTool;
+        }
+
+        private void ClearPrefabToolCache()
+        {
             for (int i = 0; i < _prefabToolCacheCount; i++)
             {
-                if (_prefabToolCacheIds[i] == prefabId)
-                    return;
+                _prefabToolCacheIds[i] = 0;
+                _prefabToolCacheStates[i] = 0;
+                _prefabToolCacheTools[i] = null;
             }
 
-            for (int i = 0; i < _prefabToolProbeCount; i++)
-            {
-                if (_prefabToolProbeIds[i] == prefabId)
-                    return;
-            }
-
-            if (_prefabToolProbeCount >= PrefabToolCacheCapacity)
-                return;
-
-            int index = _prefabToolProbeCount++;
-            _prefabToolProbeIds[index] = prefabId;
-            _prefabToolProbePrefabs[index] = prefab;
-        }
-
-        private void FlushPrefabToolCacheProbesCold()
-        {
-            int probeCount = _prefabToolProbeCount;
-            if (probeCount <= 0)
-                return;
-
-            _prefabToolProbeCount = 0;
-            bool cacheChanged = false;
-            for (int i = 0; i < probeCount; i++)
-            {
-                GameObject prefab = _prefabToolProbePrefabs[i];
-                int prefabId = _prefabToolProbeIds[i];
-                _prefabToolProbePrefabs[i] = null;
-                _prefabToolProbeIds[i] = 0;
-                if (prefab == null || _prefabToolCacheCount >= PrefabToolCacheCapacity)
-                    continue;
-
-                bool alreadyCached = false;
-                for (int cacheIndex = 0; cacheIndex < _prefabToolCacheCount; cacheIndex++)
-                {
-                    if (_prefabToolCacheIds[cacheIndex] == prefabId)
-                    {
-                        alreadyCached = true;
-                        break;
-                    }
-                }
-
-                if (alreadyCached)
-                    continue;
-
-                if (!prefab.TryGetComponent(out IPlayerToolDataReadModel resolvedTool))
-                    resolvedTool = null;
-
-                int index = _prefabToolCacheCount++;
-                _prefabToolCacheIds[index] = prefabId;
-                _prefabToolCacheStates[index] = resolvedTool != null ? (byte)1 : (byte)2;
-                _prefabToolCacheTools[index] = resolvedTool;
-                cacheChanged = true;
-            }
-
-            if (cacheChanged)
-                _toolStripDirty = true;
+            _prefabToolCacheCount = 0;
         }
 
         private static ReadOnlySpan<char> ResolveFilterEmptyLabelChars(InventoryViewFilter filter)

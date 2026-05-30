@@ -327,3 +327,63 @@ Rejected Alternatives: Reapplying the same patch indefinitely was rejected after
 Scalability potential: No quality path changed. The desired fix remains one contention-only atomic writer gate. `GlobalQualityWeight` remains deliberately irrelevant to DataVault memory authority.
 
 Hardware Impact: No measured microseconds. Build was not launched: immediate pre-build sample wrote CPU `93`, active compiler processes `0`, and gate skipped the command in `Docs/AgentLogs/Dump_1404_build_after_source_drift_20260528T213058_SAMARA.log`.
+
+### APEX Integrator Reconciliation 2026-05-29
+
+Problem: The prior 1404 rationale mixed three incompatible contracts: false-return deferred release, all-kind de-duplication, and strict spin-based writer enqueue. Current source and current 1404/1414 editor tests reject that chain. `ReleaseWriteLock` success means synchronous release or accepted deferred ownership transfer. Writer release de-duplication is advisory and writer-only; duplicate writer release requests drain safely because `DrainDeferredWriterReleaseLocked` no-ops after metadata owner mismatch or unlocked state. Buffer-pin releases are counted and must not be collapsed by generic `pending->Kind == kind`.
+
+Solution: Treat the other agent's rollback as correct for this contract. Keep `return QueueDeferredWriterRelease(...)`. Keep nonblocking `enqueueGateAcquired = Interlocked.CompareExchange(...) == 0`, because the release path must not spin under allocator pressure. Keep `Volatile.Write(ref _deferredReleaseEnqueueGate, 0)` in `finally` only when the gate was acquired. Do not regenerate JSON or binary dumps; the integrator mandate deprecates those artifacts as proof.
+
+Rejected Alternatives: Reapplying `Thread.SpinWait` was rejected because active tests explicitly forbid it and it burns CPU in a release contention path. Reapplying `_ = QueueDeferredWriterRelease(...); return false;` was rejected because it lies to callers after the queue has accepted release ownership. All-kind de-duplication was rejected because counted buffer-pin release records can be legitimate.
+
+Scalability potential: Low devices avoid CPU spin and keep release contention bounded. Middle, High, and Ultra keep the same DataVault authority route; no `GlobalQualityWeight` scaling applies to memory ownership, static DTO layout, save identity, or Android data truth.
+
+Hardware Impact: No measured runtime microseconds. Static scan only. Latest sampled host CPU was `66`, active compiler process count `0`; build remained blocked by CPU > 50 and by the current no-spam static-validation mandate.
+
+### APEX Integrator Source Patch 2026-05-29
+
+Problem: `H8StaticDataArena` set `_residentBlobBytes` before read/copy success in four loader routes. On a failed file/native/memory/Android read, the failure telemetry path could briefly describe the payload as resident even though the bytes were untrusted and the arena was about to be torn down.
+
+Solution: Move `_residentBlobBytes` assignment to the commit point after read/copy success and write-lock release, before `TryValidateResidentArena`, in file, memory, Android AAssetManager, and Windows native StreamingAssets loaders. Add an editor static guard that asserts this ordering.
+
+Rejected Alternatives: Leaving the early assignment was rejected because resident byte count is data truth, not requested capacity. Changing DataVault deferred writer-release semantics was rejected again because current 1404/1414 tests define queued writer release as accepted ownership transfer.
+
+Scalability potential: Low/Middle/High/Ultra use identical static-data truth. No `GlobalQualityWeight` route applies because resident byte count, DTO layout, BufferID ownership, and authority route must not vary with hardware.
+
+Hardware Impact: No frame microseconds claimed. The fix removes failure-path state drift without adding allocations, locks, jobs, registry lookups, or per-frame work. Build not launched: CPU `80` with active `csc` PID `49632` and `dotnet` PID `15800`.
+
+### APEX Integrator Source Cleanup 2026-05-29
+
+Problem: Private cold helpers used `Get/Read` names while either probing the filesystem through `FileInfo` or mutating the DataVault arena. That was not a runtime bug, but it created a source-contract ambiguity against the rule that `Get*`, `TryGet*`, `Resolve*`, and `Read*` accessors must be pure.
+
+Solution: Renamed the helpers to command/probe names: `TryProbeExistingBlobLength`, `TryLoadWholeFileIntoArena`, and `TryLoadWholeNativeFileIntoArena`. Hardened `TryAcquireArenaWriteView` so the invalid-view post-acquire path releases inside `finally`; successful locks are explicitly transferred to caller-owned `finally` blocks. Extended the 1404 editor source guard to assert payload write-lock release ordering.
+
+Rejected Alternatives: Reapplying the old DataVault spin-gate fix was rejected because current 1404/1414 tests define nonblocking deferred writer-release enqueue as the active contract. Keeping `Read` names on arena-mutating methods was rejected because it weakens source audits. Running `dotnet build` was rejected because CPU sampled at `70` with active `dotnet` PID `24736`.
+
+Scalability potential: Low/Middle/High/Ultra devices use the same static-data truth. No `GlobalQualityWeight` path applies because this code owns payload identity, BufferID authority, DTO layout, and boot hydration, not visual fidelity.
+
+Hardware Impact: No measured microseconds. The changes add no hot-path work and no allocations; they remove failure-path lock ambiguity and audit drift.
+
+### APEX Integrator LocData Fail-Closed Patch 2026-05-29
+
+Problem: Offset-only localization readers were documented as null-terminated, but accepted the entire remaining LocData block when no zero terminator was found. That is fail-open behavior on a corrupt static_data blob.
+
+Solution: Require an observed zero terminator in both offset-only runtime accessors before decoding or returning a span. Add a 1404 editor source guard that asserts `foundTerminator` exists in both methods.
+
+Rejected Alternatives: Leaving the behavior unchanged was rejected because section bounds are not a substitute for a string terminator. Adding a new allocation or copying into scratch storage was rejected because the caller already owns the decode buffer and the span path is read-only.
+
+Scalability potential: Low/Middle/High/Ultra all use the same static-data truth. `GlobalQualityWeight` does not apply to corrupt-data acceptance, DTO identity, or Android boot authority.
+
+Hardware Impact: No measured microseconds. The change is a bounded pointer loop over an existing read-only span, adds no heap allocation, no registry lookup, no write lock, and no presentation work.
+
+### APEX Integrator Deferred Release Dispute Resolution 2026-05-29
+
+Problem: The previous 1404 spin-gate/false-return idea contradicted the current core-memory tests and would burn CPU under release contention.
+
+Solution: Do not change `GlobalDataVault`. Current source/test contract is accepted: queued writer release is a successful ownership transfer; duplicate scan is writer-only and nonblocking; the enqueue gate is released in `finally`.
+
+Rejected Alternatives: `Thread.SpinWait` was rejected because active tests forbid it and weak CPUs should not spin in a release path. Returning false after queue acceptance was rejected because callers would see a failed release even though ownership had transferred to the deferred queue.
+
+Scalability potential: Low devices avoid a contention spin. Strong devices get no different memory truth path; this is authority plumbing, not visual fidelity.
+
+Hardware Impact: Static verification only. Build skipped because CPU was `100` with active `dotnet` and `VBCSCompiler`.

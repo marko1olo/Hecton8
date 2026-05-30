@@ -67,16 +67,9 @@ namespace Hecton8.Core.Persistence.Paging
         private const uint PagerTelemetryFlagDirectoryCollision = 1u << 12;
         private const uint PagerTelemetryFlagPayloadOverflowRejected = 1u << 13;
 
-        private VaultGenerationHandle<PageWriteCommand> _writeCommandsHandle;
-        private VaultGenerationHandle<PageReadCommand> _readCommandsHandle;
-        private VaultGenerationHandle<PageReadResult> _readResultsHandle;
-        private VaultGenerationHandle<byte> _writeArenaHandle;
-        private VaultGenerationHandle<byte> _readArenaHandle;
-        private VaultGenerationHandle<byte> _readSlotStatesHandle;
         private VaultGenerationHandle<byte> _readStagingHandle;
-        private VaultGenerationHandle<byte> _compressionScratchHandle;
-        private VaultGenerationHandle<byte> _hotStateArenaHandle;
         private VaultGenerationHandle<H8BinaryWorldPagerTelemetryEntry> _telemetryRingHandle;
+        private PagerNativeState _nativeState;
         private IDataVault _vault;
         private SpinLock _writeQueueLock;
         private SpinLock _readQueueLock;
@@ -777,6 +770,7 @@ namespace Hecton8.Core.Persistence.Paging
 
             DumpBlackBox();
             ClearPagerTransientBuffers();
+            _nativeState.Dispose();
             ReleasePagerVaultHandles(previousService as IDataVault ?? _vault);
             _vault = null;
             ResetPagerTransientState();
@@ -900,51 +894,17 @@ namespace Hecton8.Core.Persistence.Paging
             if (!_registeredHotSwap)
                 _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
 
-            _writeCommandsHandle = vault.EnsureGenerationHandle<PageWriteCommand>(
-                BufferID.SaveWorldPagerWriteCommands,
-                WriteSlotCount,
-                VaultOwner,
-                NativeArrayOptions.UninitializedMemory);
-            _readCommandsHandle = vault.EnsureGenerationHandle<PageReadCommand>(
-                BufferID.SaveWorldPagerReadCommands,
-                QueueCapacity,
-                VaultOwner,
-                NativeArrayOptions.UninitializedMemory);
-            _readResultsHandle = vault.EnsureGenerationHandle<PageReadResult>(
-                BufferID.SaveWorldPagerReadResults,
-                ReadSlotCount,
-                VaultOwner,
-                NativeArrayOptions.ClearMemory);
-            _writeArenaHandle = vault.EnsureGenerationHandle<byte>(
-                BufferID.SaveWorldPagerWriteArena,
-                WriteSlotCount * SectorPayloadBytes,
-                VaultOwner,
-                NativeArrayOptions.UninitializedMemory);
-            _readArenaHandle = vault.EnsureGenerationHandle<byte>(
-                BufferID.SaveWorldPagerReadArena,
-                ReadSlotCount * SectorPayloadBytes,
-                VaultOwner,
-                NativeArrayOptions.UninitializedMemory);
-            _readSlotStatesHandle = vault.EnsureGenerationHandle<byte>(
-                BufferID.SaveWorldPagerReadSlotStates,
-                ReadSlotCount,
-                VaultOwner,
-                NativeArrayOptions.ClearMemory);
+            if (!_nativeState.EnsureAll())
+            {
+                MarkInitializationFault();
+                return;
+            }
+
             _readStagingHandle = vault.EnsureGenerationHandle<byte>(
                 BufferID.SaveWorldPagerReadStaging,
                 SectorPayloadBytes * 2,
                 VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _compressionScratchHandle = vault.EnsureGenerationHandle<byte>(
-                BufferID.SaveWorldPagerCompressionScratch,
-                SectorPayloadBytes,
-                VaultOwner,
-                NativeArrayOptions.UninitializedMemory);
-            _hotStateArenaHandle = vault.EnsureGenerationHandle<byte>(
-                BufferID.SaveWorldPagerHotState,
-                HotStateMaxBytes,
-                VaultOwner,
-                NativeArrayOptions.ClearMemory);
             _telemetryRingHandle = vault.EnsureGenerationHandle<H8BinaryWorldPagerTelemetryEntry>(
                 BufferID.SaveWorldPagerTelemetryRing,
                 TelemetryCapacity,
@@ -966,6 +926,7 @@ namespace Hecton8.Core.Persistence.Paging
         {
             ClearPagerTransientBuffers();
 
+            _nativeState.Dispose();
             ReleasePagerVaultHandles(_vault);
             if (_registeredHotSwap)
             {
@@ -1021,15 +982,8 @@ namespace Hecton8.Core.Persistence.Paging
         private bool ArePagerVaultHandlesReady()
         {
             return
-                HasPagerVaultBuffer(in _writeCommandsHandle, BufferID.SaveWorldPagerWriteCommands, WriteSlotCount) &&
-                HasPagerVaultBuffer(in _readCommandsHandle, BufferID.SaveWorldPagerReadCommands, QueueCapacity) &&
-                HasPagerVaultBuffer(in _readResultsHandle, BufferID.SaveWorldPagerReadResults, ReadSlotCount) &&
-                HasPagerVaultBuffer(in _writeArenaHandle, BufferID.SaveWorldPagerWriteArena, WriteSlotCount * SectorPayloadBytes) &&
-                HasPagerVaultBuffer(in _readArenaHandle, BufferID.SaveWorldPagerReadArena, ReadSlotCount * SectorPayloadBytes) &&
-                HasPagerVaultBuffer(in _readSlotStatesHandle, BufferID.SaveWorldPagerReadSlotStates, ReadSlotCount) &&
+                _nativeState.IsReady() &&
                 HasPagerVaultBuffer(in _readStagingHandle, BufferID.SaveWorldPagerReadStaging, SectorPayloadBytes * 2) &&
-                HasPagerVaultBuffer(in _compressionScratchHandle, BufferID.SaveWorldPagerCompressionScratch, SectorPayloadBytes) &&
-                HasPagerVaultBuffer(in _hotStateArenaHandle, BufferID.SaveWorldPagerHotState, HotStateMaxBytes) &&
                 HasPagerVaultBuffer(in _telemetryRingHandle, BufferID.SaveWorldPagerTelemetryRing, TelemetryCapacity);
         }
 
@@ -1039,23 +993,6 @@ namespace Hecton8.Core.Persistence.Paging
             int requiredLength) where T : struct
         {
             return TryReadPagerVaultBuffer(in handle, bufferId, requiredLength, out _);
-        }
-
-        private bool TryResolvePagerVaultBuffer<T>(
-            in VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredLength,
-            out NativeArray<T> array) where T : struct
-        {
-            IDataVault vault = _vault;
-            array = default;
-            return vault != null &&
-                   !vault.IsCompactionFenceActive &&
-                   requiredLength > 0 &&
-                   IsPagerVaultHandle(in handle, bufferId) &&
-                   vault.TryResolveHandle(in handle, out array) &&
-                   array.IsCreated &&
-                   array.Length >= requiredLength;
         }
 
         private bool TryReadPagerVaultBuffer<T>(
@@ -1085,15 +1022,7 @@ namespace Hecton8.Core.Persistence.Paging
 
         private void ReleasePagerVaultHandles(IDataVault vault)
         {
-            ReleasePagerVaultHandle(vault, ref _writeCommandsHandle, BufferID.SaveWorldPagerWriteCommands);
-            ReleasePagerVaultHandle(vault, ref _readCommandsHandle, BufferID.SaveWorldPagerReadCommands);
-            ReleasePagerVaultHandle(vault, ref _readResultsHandle, BufferID.SaveWorldPagerReadResults);
-            ReleasePagerVaultHandle(vault, ref _writeArenaHandle, BufferID.SaveWorldPagerWriteArena);
-            ReleasePagerVaultHandle(vault, ref _readArenaHandle, BufferID.SaveWorldPagerReadArena);
-            ReleasePagerVaultHandle(vault, ref _readSlotStatesHandle, BufferID.SaveWorldPagerReadSlotStates);
             ReleasePagerVaultHandle(vault, ref _readStagingHandle, BufferID.SaveWorldPagerReadStaging);
-            ReleasePagerVaultHandle(vault, ref _compressionScratchHandle, BufferID.SaveWorldPagerCompressionScratch);
-            ReleasePagerVaultHandle(vault, ref _hotStateArenaHandle, BufferID.SaveWorldPagerHotState);
             ReleasePagerVaultHandle(vault, ref _telemetryRingHandle, BufferID.SaveWorldPagerTelemetryRing);
         }
 
@@ -1110,27 +1039,27 @@ namespace Hecton8.Core.Persistence.Paging
 
         private void ResolveWriteCommands(out NativeArray<PageWriteCommand> array)
         {
-            TryResolvePagerVaultBuffer(in _writeCommandsHandle, BufferID.SaveWorldPagerWriteCommands, WriteSlotCount, out array);
+            array = _nativeState.WriteCommands;
         }
 
         private void ResolveReadCommands(out NativeArray<PageReadCommand> array)
         {
-            TryResolvePagerVaultBuffer(in _readCommandsHandle, BufferID.SaveWorldPagerReadCommands, QueueCapacity, out array);
+            array = _nativeState.ReadCommands;
         }
 
         private void ResolveReadResults(out NativeArray<PageReadResult> array)
         {
-            TryResolvePagerVaultBuffer(in _readResultsHandle, BufferID.SaveWorldPagerReadResults, ReadSlotCount, out array);
+            array = _nativeState.ReadResults;
         }
 
         private void ResolveWriteArena(out NativeArray<byte> array)
         {
-            TryResolvePagerVaultBuffer(in _writeArenaHandle, BufferID.SaveWorldPagerWriteArena, WriteSlotCount * SectorPayloadBytes, out array);
+            array = _nativeState.WriteArena;
         }
 
         private void ResolveReadArena(out NativeArray<byte> array)
         {
-            TryResolvePagerVaultBuffer(in _readArenaHandle, BufferID.SaveWorldPagerReadArena, ReadSlotCount * SectorPayloadBytes, out array);
+            array = _nativeState.ReadArena;
         }
 
         private bool TryAcquireDirectReadStagingWrite(
@@ -1178,17 +1107,17 @@ namespace Hecton8.Core.Persistence.Paging
 
         private void ResolveReadSlotStates(out NativeArray<byte> array)
         {
-            TryResolvePagerVaultBuffer(in _readSlotStatesHandle, BufferID.SaveWorldPagerReadSlotStates, ReadSlotCount, out array);
+            array = _nativeState.ReadSlotStates;
         }
 
         private void ResolveCompressionScratch(out NativeArray<byte> array)
         {
-            TryResolvePagerVaultBuffer(in _compressionScratchHandle, BufferID.SaveWorldPagerCompressionScratch, SectorPayloadBytes, out array);
+            array = _nativeState.CompressionScratch;
         }
 
         private void ResolveHotStateArena(out NativeArray<byte> array)
         {
-            TryResolvePagerVaultBuffer(in _hotStateArenaHandle, BufferID.SaveWorldPagerHotState, HotStateMaxBytes, out array);
+            array = _nativeState.HotStateArena;
         }
 
         private bool TryReadTelemetryRing(out NativeArray<H8BinaryWorldPagerTelemetryEntry>.ReadOnly array)
@@ -3166,6 +3095,96 @@ namespace Hecton8.Core.Persistence.Paging
             catch (InvalidOperationException)
             {
                 Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+        }
+
+        private struct PagerNativeState : IDisposable
+        {
+            public NativeArray<PageWriteCommand> WriteCommands;
+            public NativeArray<PageReadCommand> ReadCommands;
+            public NativeArray<PageReadResult> ReadResults;
+            public NativeArray<byte> WriteArena;
+            public NativeArray<byte> ReadArena;
+            public NativeArray<byte> ReadSlotStates;
+            public NativeArray<byte> CompressionScratch;
+            public NativeArray<byte> HotStateArena;
+
+            public bool IsReady()
+            {
+                return
+                    WriteCommands.IsCreated &&
+                    WriteCommands.Length >= WriteSlotCount &&
+                    ReadCommands.IsCreated &&
+                    ReadCommands.Length >= QueueCapacity &&
+                    ReadResults.IsCreated &&
+                    ReadResults.Length >= ReadSlotCount &&
+                    WriteArena.IsCreated &&
+                    WriteArena.Length >= WriteSlotCount * SectorPayloadBytes &&
+                    ReadArena.IsCreated &&
+                    ReadArena.Length >= ReadSlotCount * SectorPayloadBytes &&
+                    ReadSlotStates.IsCreated &&
+                    ReadSlotStates.Length >= ReadSlotCount &&
+                    CompressionScratch.IsCreated &&
+                    CompressionScratch.Length >= SectorPayloadBytes &&
+                    HotStateArena.IsCreated &&
+                    HotStateArena.Length >= HotStateMaxBytes;
+            }
+
+            public bool EnsureAll()
+            {
+                if (IsReady())
+                    return true;
+
+                Dispose();
+                try
+                {
+                    Allocate(ref WriteCommands, WriteSlotCount, NativeArrayOptions.UninitializedMemory, nameof(WriteCommands));
+                    Allocate(ref ReadCommands, QueueCapacity, NativeArrayOptions.UninitializedMemory, nameof(ReadCommands));
+                    Allocate(ref ReadResults, ReadSlotCount, NativeArrayOptions.ClearMemory, nameof(ReadResults));
+                    Allocate(ref WriteArena, WriteSlotCount * SectorPayloadBytes, NativeArrayOptions.UninitializedMemory, nameof(WriteArena));
+                    Allocate(ref ReadArena, ReadSlotCount * SectorPayloadBytes, NativeArrayOptions.UninitializedMemory, nameof(ReadArena));
+                    Allocate(ref ReadSlotStates, ReadSlotCount, NativeArrayOptions.ClearMemory, nameof(ReadSlotStates));
+                    Allocate(ref CompressionScratch, SectorPayloadBytes, NativeArrayOptions.UninitializedMemory, nameof(CompressionScratch));
+                    Allocate(ref HotStateArena, HotStateMaxBytes, NativeArrayOptions.ClearMemory, nameof(HotStateArena));
+                    return IsReady();
+                }
+                catch (Exception)
+                {
+                    Dispose();
+                    return false;
+                }
+            }
+
+            public void Dispose()
+            {
+                Dispose(ref HotStateArena);
+                Dispose(ref CompressionScratch);
+                Dispose(ref ReadSlotStates);
+                Dispose(ref ReadArena);
+                Dispose(ref WriteArena);
+                Dispose(ref ReadResults);
+                Dispose(ref ReadCommands);
+                Dispose(ref WriteCommands);
+            }
+
+            private static void Allocate<T>(
+                ref NativeArray<T> array,
+                int length,
+                NativeArrayOptions options,
+                string label) where T : struct
+            {
+                array = new NativeArray<T>(length, Allocator.Persistent, options);
+                NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Session);
+            }
+
+            private static void Dispose<T>(ref NativeArray<T> array) where T : struct
+            {
+                if (!array.IsCreated)
+                    return;
+
+                NativeMemorySentinel.UnregisterNativeArray(array);
+                array.Dispose();
+                array = default;
             }
         }
 

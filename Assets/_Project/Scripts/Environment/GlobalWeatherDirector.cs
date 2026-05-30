@@ -261,6 +261,7 @@ namespace Hecton8.Environment
         private HectonCelestialEngine _cachedCelestialEngine;
         private bool _atmosphericShaderDirty;
         private bool _noirFogLutDirty;
+        private bool _noirFogLutRepairRequested;
         private bool _transitioning;
         private float _phaseHoldTimer;
         private float _transitionTimer;
@@ -327,6 +328,7 @@ namespace Hecton8.Environment
             InitializeRuntimeStateIfNeeded();
             UpdateBiomeLutState(transitionDurationSeconds, true);
             PublishSnapshot();
+            EnsureNoirFogLutResources();
             PublishWeatherShaderState();
             _weatherShaderDirty = false;
             PublishAtmosphericBridgeShaderState();
@@ -345,6 +347,7 @@ namespace Hecton8.Environment
             UpdateBiomeLutState(transitionDurationSeconds, true);
             GlobalRegistry.RegisterWeatherService(this);
             PublishSnapshot();
+            EnsureNoirFogLutResources();
             PublishWeatherShaderState();
             _weatherShaderDirty = false;
             PublishAtmosphericBridgeShaderState();
@@ -384,6 +387,7 @@ namespace Hecton8.Environment
             _weatherShaderDirty = false;
             _atmosphericShaderDirty = false;
             _noirFogLutDirty = false;
+            _noirFogLutRepairRequested = false;
             _hasPublishedWeatherEvent = false;
         }
 
@@ -415,6 +419,7 @@ namespace Hecton8.Environment
             _weatherShaderDirty = false;
             _atmosphericShaderDirty = false;
             _noirFogLutDirty = false;
+            _noirFogLutRepairRequested = false;
             _hasPublishedWeatherEvent = false;
             ReleaseNoirFogLutResources();
         }
@@ -467,6 +472,8 @@ namespace Hecton8.Environment
             InitializeRuntimeStateIfNeeded();
             if (!_initialized)
                 return;
+
+            FlushNoirFogLutRepairSlow();
 
             if (_transitioning)
             {
@@ -777,9 +784,11 @@ namespace Hecton8.Environment
             if (!_noirFogLutDirty && _noirFogLutTexture != null && _noirFogLutPixels != null)
                 return;
 
-            EnsureNoirFogLutResources();
-            if (_noirFogLutTexture == null || _noirFogLutPixels == null)
+            if (!HasNoirFogLutResourcesReady())
+            {
+                QueueNoirFogLutRepair();
                 return;
+            }
 
             RebuildNoirFogLutTexture(
                 _activeBiomeLutSourceProfile,
@@ -873,6 +882,32 @@ namespace Hecton8.Environment
             };
             // COLD ALLOC: Color[resolution * NoirFogLutRowCount] — runtime noir fog LUT staging buffer — owner: GlobalWeatherDirector
             _noirFogLutPixels = new Color[resolution * NoirFogLutRowCount];
+        }
+
+        private bool HasNoirFogLutResourcesReady()
+        {
+            int resolution = math.clamp(noirFogLutResolution, 8, MaxRuntimeNoirFogLutResolution);
+            return _noirFogLutTexture != null &&
+                   _noirFogLutTexture.width == resolution &&
+                   _noirFogLutTexture.height == NoirFogLutRowCount &&
+                   _noirFogLutPixels != null &&
+                   _noirFogLutPixels.Length == resolution * NoirFogLutRowCount;
+        }
+
+        private void QueueNoirFogLutRepair()
+        {
+            _noirFogLutRepairRequested = true;
+            _noirFogLutDirty = true;
+        }
+
+        private void FlushNoirFogLutRepairSlow()
+        {
+            if (!_noirFogLutRepairRequested && HasNoirFogLutResourcesReady())
+                return;
+
+            _noirFogLutRepairRequested = false;
+            EnsureNoirFogLutResources();
+            _weatherShaderDirty = true;
         }
 
         private void ReleaseNoirFogLutResources()

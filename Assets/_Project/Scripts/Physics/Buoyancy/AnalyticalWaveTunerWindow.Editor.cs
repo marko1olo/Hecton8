@@ -274,10 +274,20 @@ namespace Hecton8.Physics
 
             if (vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer))
             {
-                if (buffer.IsCreated && buffer.Length >= requiredLength)
-                    return true;
-
-                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+                bool releaseOnFailure = true;
+                try
+                {
+                    if (buffer.IsCreated && buffer.Length >= requiredLength)
+                    {
+                        releaseOnFailure = false;
+                        return true;
+                    }
+                }
+                finally
+                {
+                    if (releaseOnFailure)
+                        vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+                }
             }
 
             buffer = default;

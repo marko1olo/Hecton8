@@ -112,7 +112,12 @@ namespace Hecton8.Physics
 
         public static bool TryDequeueSnap(out TetherSnappedSignal signal)
         {
-            EnsureInitialized();
+            if (!_initialized)
+            {
+                signal = default;
+                return false;
+            }
+
             ReadOnlySpan<TetherSnappedSignal> snapshot = SignalBus<TetherSnappedSignal>.GetFrameSnapshot();
             if (snapshot.Length <= 0)
             {

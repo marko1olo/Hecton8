@@ -13,6 +13,8 @@ namespace Hecton8.Core.Bridge
     public sealed class H8InputMappingFacade : ScriptableObject
     {
         private static int s_x001H8InputMappingFacadeSignalPushDropCount;
+        private const ulong InputSyncMutationGuardMask =
+            1UL << (unchecked((int)(uint)(int)BufferID.BridgeInputFacadeBindings) & 31);
         [Serializable]
         public sealed class Binding
         {
@@ -82,12 +84,23 @@ namespace Hecton8.Core.Bridge
 
         public unsafe bool SyncToVault(IDataVault vault)
         {
+            return SyncToVault(vault, allowAuthoringRepair: true, allowBufferGrowth: true);
+        }
+
+        internal unsafe bool SyncToVaultExistingBuffer(IDataVault vault)
+        {
+            return SyncToVault(vault, allowAuthoringRepair: false, allowBufferGrowth: false);
+        }
+
+        private unsafe bool SyncToVault(IDataVault vault, bool allowAuthoringRepair, bool allowBufferGrowth)
+        {
             if (vault == null)
                 return false;
 
-            EnsureBindingList();
-            ValidateBindings();
-            int rawCount = bindings.Count;
+            if (!ValidateBindings(allowAuthoringRepair))
+                return false;
+
+            int rawCount = bindings != null ? bindings.Count : 0;
             int runtimeBindingCount = validationRuntimeBindingCount;
             if (validationDuplicateActionHashCount > 0)
                 return false;
@@ -102,26 +115,25 @@ namespace Hecton8.Core.Bridge
                 return true;
             }
 
-            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
-                return false;
-
-            VaultGenerationHandle<H8InputFacadeBindingEntry> handle = vault.EnsureGenerationHandle<H8InputFacadeBindingEntry>(
-                BufferID.BridgeInputFacadeBindings,
-                runtimeBindingCount,
-                SystemID.CoreBridge,
-                NativeArrayOptions.ClearMemory);
-
-            if (handle.BufferID == 0u ||
-                !vault.TryAcquireWriteLock(in handle, SystemID.CoreBridge, out NativeArray<H8InputFacadeBindingEntry> buffer))
+            if (vault.IsAllocationLocked ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(InputSyncMutationGuardMask))
             {
                 return false;
             }
 
             int activeCount = 0;
+            bool syncWritten = false;
             try
             {
-                if (!buffer.IsCreated || buffer.Length < runtimeBindingCount)
+                if (!TryAcquireGuardedBuffer(
+                        vault,
+                        runtimeBindingCount,
+                        allowBufferGrowth,
+                        out NativeArray<H8InputFacadeBindingEntry> buffer))
+                {
                     return false;
+                }
 
                 Thread.MemoryBarrier();
                 ClearBuffer(buffer);
@@ -135,12 +147,19 @@ namespace Hecton8.Core.Bridge
                     buffer[activeCount++] = binding.ToEntry();
                 }
 
+                if (activeCount != runtimeBindingCount)
+                    return false;
+
                 Thread.MemoryBarrier();
+                syncWritten = true;
             }
             finally
             {
-                vault.ReleaseWriteLock(in handle, SystemID.CoreBridge);
+                vault.ReleaseMutationGuard(InputSyncMutationGuardMask);
             }
+
+            if (!syncWritten)
+                return false;
 
             PublishInputUpdateSignal(activeCount);
             GlobalTelemetryBus.PublishModTelemetry(H8BridgeHashes.InputFacade, H8BridgeHashes.InputFacade, activeCount);
@@ -152,30 +171,88 @@ namespace Hecton8.Core.Bridge
             if (vault == null)
                 return false;
 
-            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+            if (vault.IsAllocationLocked ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryAcquireMutationGuard(InputSyncMutationGuardMask))
+            {
                 return false;
+            }
 
-            if (!vault.TryGetGenerationHandle<H8InputFacadeBindingEntry>(BufferID.BridgeInputFacadeBindings, out VaultGenerationHandle<H8InputFacadeBindingEntry> handle) ||
-                handle.BufferID == 0u)
-                return true;
-
-            if (!vault.TryAcquireWriteLock(in handle, SystemID.CoreBridge, out NativeArray<H8InputFacadeBindingEntry> buffer))
-                return false;
-
+            bool cleared = false;
             try
             {
-                if (!buffer.IsCreated)
-                    return true;
+                if (!TryReadExistingGuardedBuffer(vault, out NativeArray<H8InputFacadeBindingEntry> buffer, out bool exists))
+                    return false;
 
-                Thread.MemoryBarrier();
-                ClearBuffer(buffer);
-                Thread.MemoryBarrier();
-                return true;
+                if (exists)
+                {
+                    Thread.MemoryBarrier();
+                    ClearBuffer(buffer);
+                    Thread.MemoryBarrier();
+                }
+
+                cleared = true;
             }
             finally
             {
-                vault.ReleaseWriteLock(in handle, SystemID.CoreBridge);
+                vault.ReleaseMutationGuard(InputSyncMutationGuardMask);
             }
+
+            return cleared;
+        }
+
+        private static bool TryAcquireGuardedBuffer(
+            IDataVault vault,
+            int requiredLength,
+            bool allowBufferGrowth,
+            out NativeArray<H8InputFacadeBindingEntry> buffer)
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0 || vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
+            VaultGenerationHandle<H8InputFacadeBindingEntry> handle;
+            if (allowBufferGrowth)
+            {
+                handle = vault.EnsureGenerationHandle<H8InputFacadeBindingEntry>(
+                    BufferID.BridgeInputFacadeBindings,
+                    requiredLength,
+                    SystemID.CoreBridge,
+                    NativeArrayOptions.ClearMemory);
+            }
+            else if (!vault.TryGetGenerationHandle<H8InputFacadeBindingEntry>(BufferID.BridgeInputFacadeBindings, out handle))
+            {
+                return false;
+            }
+
+            return handle.BufferID != 0u &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryReadExistingGuardedBuffer(
+            IDataVault vault,
+            out NativeArray<H8InputFacadeBindingEntry> buffer,
+            out bool exists)
+        {
+            buffer = default;
+            exists = false;
+            if (vault == null ||
+                !vault.TryGetGenerationHandle<H8InputFacadeBindingEntry>(BufferID.BridgeInputFacadeBindings, out VaultGenerationHandle<H8InputFacadeBindingEntry> handle) ||
+                handle.BufferID == 0u)
+            {
+                return true;
+            }
+
+            if (!vault.TryReadHandle(in handle, out buffer))
+                return false;
+
+            if (!buffer.IsCreated)
+                return false;
+
+            exists = true;
+            return true;
         }
 
         private static unsafe void ClearBuffer(NativeArray<H8InputFacadeBindingEntry> buffer)
@@ -209,27 +286,27 @@ namespace Hecton8.Core.Bridge
         private void Reset()
         {
             EnsureDefaultBindings();
-            ValidateBindings();
+            ValidateBindings(allowAuthoringRepair: true);
         }
 
         private void OnValidate()
         {
-            ValidateBindings();
+            ValidateBindings(allowAuthoringRepair: true);
 
             if (pushOnValidateInPlayMode && Application.isPlaying)
-                SyncToVault(GlobalRegistry.DataVault);
+                H8BridgeLiveSyncScheduler.RequestInputSync(this, GlobalRegistry.DataVault);
         }
 
         private void OnEnable()
         {
-            ValidateBindings();
+            ValidateBindings(allowAuthoringRepair: true);
         }
 
         [ContextMenu("Seed Default Input Bindings")]
         private void SeedDefaultBindings()
         {
             EnsureDefaultBindings();
-            ValidateBindings();
+            ValidateBindings(allowAuthoringRepair: true);
         }
 
         private void EnsureBindingList()
@@ -257,12 +334,20 @@ namespace Hecton8.Core.Bridge
             bindings.Add(binding);
         }
 
-        private void ValidateBindings()
+        private bool ValidateBindings(bool allowAuthoringRepair)
         {
-            EnsureBindingList();
             ResetValidationState();
+            if (bindings == null)
+            {
+                if (!allowAuthoringRepair)
+                    return false;
+
+                EnsureBindingList();
+            }
+
             validationRuntimeBindingCount = RebuildHashesAndCountRuntimeBindings(bindings.Count);
             validationDuplicateActionHashCount = CountDuplicateActionHashes(out validationFirstDuplicateActionHashIndex);
+            return true;
         }
 
         private void ResetValidationState()

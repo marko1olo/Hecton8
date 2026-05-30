@@ -24,7 +24,7 @@ namespace Hecton8.Physics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float ApproximateSqrtPositive(float value)
         {
-            float safeValue = math.max(0f, value);
+            float safeValue = SanitizeNonNegative(value);
             if (safeValue <= 0f)
                 return 0f;
 
@@ -51,8 +51,8 @@ namespace Hecton8.Physics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveTorricelliIngressVelocity(float depthMeters, float gravityMetersPerSecondSquared)
         {
-            float safeDepth = math.max(0f, depthMeters);
-            float safeGravity = math.max(0f, gravityMetersPerSecondSquared);
+            float safeDepth = SanitizeNonNegative(depthMeters);
+            float safeGravity = SanitizeNonNegative(gravityMetersPerSecondSquared);
             float velocity = ApproximateSqrtPositive(2f * safeGravity * safeDepth);
             return math.isfinite(velocity) ? velocity : 0f;
         }
@@ -69,20 +69,30 @@ namespace Hecton8.Physics
             float gravityMetersPerSecondSquared,
             float epsilon)
         {
-            float remainingCapacity = maxVolume - currentVolume;
-            if (breachAreaSquareMeters <= epsilon || remainingCapacity <= epsilon)
-                return currentVolume;
+            float safeCurrentVolume = math.isfinite(currentVolume) ? math.max(0f, currentVolume) : 0f;
+            float safeMaxVolume = math.isfinite(maxVolume) ? math.max(0f, maxVolume) : 0f;
+            float remainingCapacity = safeMaxVolume - safeCurrentVolume;
+            float safeBreachArea = SanitizeNonNegative(breachAreaSquareMeters);
+            if (safeBreachArea <= epsilon || remainingCapacity <= epsilon)
+                return math.min(safeCurrentVolume, safeMaxVolume);
 
             float ingressVelocity = ResolveTorricelliIngressVelocity(depthMeters, gravityMetersPerSecondSquared);
-            float cd = math.clamp(dischargeCoefficient, HectonPhysicsContract.FluidDischargeCoefficientMin, 1f);
-            float deltaVolume = ingressVelocity * breachAreaSquareMeters * cd * math.max(0f, fixedDeltaTime);
+            float cd = math.isfinite(dischargeCoefficient)
+                ? math.clamp(dischargeCoefficient, HectonPhysicsContract.FluidDischargeCoefficientMin, 1f)
+                : HectonPhysicsContract.FluidDischargeCoefficientMin;
+            float safeDeltaTime = SanitizeNonNegative(fixedDeltaTime);
+            float deltaVolume = ingressVelocity * safeBreachArea * cd * safeDeltaTime;
             if (!math.isfinite(deltaVolume))
                 deltaVolume = 0f;
 
-            float maxIngressScale = math.max(HectonPhysicsContract.FluidMaximumIngressScaleMin, maximumIngressPerSecondNormalized) * math.max(0f, fixedDeltaTime);
-            float maxIngressThisStep = math.max(0f, maxVolume) * maxIngressScale;
+            float safeMaxIngressNormalized = SanitizeNonNegative(
+                maximumIngressPerSecondNormalized,
+                HectonPhysicsContract.FluidMaximumIngressScaleMin);
+            float maxIngressScale = math.max(HectonPhysicsContract.FluidMaximumIngressScaleMin, safeMaxIngressNormalized) * safeDeltaTime;
+            float maxIngressThisStep = safeMaxVolume * maxIngressScale;
             deltaVolume = math.clamp(deltaVolume, 0f, math.min(remainingCapacity, maxIngressThisStep));
-            return currentVolume + deltaVolume;
+            float resolvedVolume = safeCurrentVolume + deltaVolume;
+            return math.isfinite(resolvedVolume) ? math.min(resolvedVolume, safeMaxVolume) : safeCurrentVolume;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -106,26 +116,28 @@ namespace Hecton8.Physics
                 return 0f;
             }
 
-            float transferCoefficient = math.max(0f, bulkheadFlowCoefficient);
-            float perTickTransferCap = math.max(0.01f, maxTransferPerTick);
-            float safeDoorArea = math.max(epsilon, doorAreaSquareMeters);
+            float transferCoefficient = SanitizeNonNegative(bulkheadFlowCoefficient);
+            float perTickTransferCap = math.max(0.01f, SanitizeNonNegative(maxTransferPerTick, 0.01f));
+            float safeDoorArea = math.max(epsilon, SanitizeNonNegative(doorAreaSquareMeters, epsilon));
             float characteristicHeightA = math.max(HectonPhysicsContract.FluidCharacteristicHeightMinMeters, SafeCubeRoot(sourceMaxVolume));
             float characteristicHeightB = math.max(HectonPhysicsContract.FluidCharacteristicHeightMinMeters, SafeCubeRoot(destinationMaxVolume));
             float headDifferenceMeters = (fillA * characteristicHeightA) - (fillB * characteristicHeightB);
             float absHeadDifferenceMeters = math.abs(headDifferenceMeters);
-            float dampingHeadMeters = math.max(epsilon, nearZeroHeadDampingMeters);
+            float dampingHeadMeters = math.max(epsilon, SanitizeNonNegative(nearZeroHeadDampingMeters, epsilon));
             float dampingFactor = math.smoothstep(0f, dampingHeadMeters, absHeadDifferenceMeters);
             if (dampingFactor <= epsilon)
                 return 0f;
 
-            float velocityMetersPerSecond = ApproximateSqrtPositive(2f * math.max(0f, gravityMetersPerSecondSquared) * absHeadDifferenceMeters);
+            float velocityMetersPerSecond = ApproximateSqrtPositive(2f * SanitizeNonNegative(gravityMetersPerSecondSquared) * absHeadDifferenceMeters);
+            float safeDischargeCoefficient = SanitizeNonNegative(dischargeCoefficient);
+            float safeDeltaTime = SanitizeNonNegative(fixedDeltaTime);
             float signedDeltaVolume =
                 math.sign(headDifferenceMeters) *
                 safeDoorArea *
-                math.max(0f, dischargeCoefficient) *
+                safeDischargeCoefficient *
                 velocityMetersPerSecond *
                 transferCoefficient *
-                math.max(0f, fixedDeltaTime) *
+                safeDeltaTime *
                 dampingFactor;
             float deltaVolume = math.clamp(signedDeltaVolume, -perTickTransferCap, perTickTransferCap);
 
@@ -160,7 +172,7 @@ namespace Hecton8.Physics
             }
 
             float3 delta = blendedCenter - currentCenter;
-            float maxCenterDelta = math.max(epsilon, maxCenterDeltaMeters);
+            float maxCenterDelta = math.max(epsilon, SanitizeNonNegative(maxCenterDeltaMeters, epsilon));
             float deltaMagnitude = ApproximateMagnitude(delta);
             if (deltaMagnitude > maxCenterDelta)
             {
@@ -198,7 +210,7 @@ namespace Hecton8.Physics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float SafeCubeRoot(float value)
         {
-            float safeValue = math.max(0f, value);
+            float safeValue = SanitizeNonNegative(value);
             if (safeValue <= 0f)
                 return 0f;
 
@@ -231,6 +243,15 @@ namespace Hecton8.Physics
 
             quotient = candidate;
             return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeNonNegative(float value, float fallback = 0f)
+        {
+            if (!math.isfinite(value))
+                return math.isfinite(fallback) ? math.max(0f, fallback) : 0f;
+
+            return math.max(0f, value);
         }
     }
 }

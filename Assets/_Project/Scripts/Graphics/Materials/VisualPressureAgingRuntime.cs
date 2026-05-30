@@ -1273,7 +1273,7 @@ namespace Hecton8.Graphics.Materials
                 return;
             }
 
-            IDataVault vault = _jobGuardVault ?? _vault;
+            IDataVault vault = _jobGuardVault;
             ulong guardMask = _jobGuardMask;
             _jobGuardVault = null;
             _jobGuardMask = 0UL;

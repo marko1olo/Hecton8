@@ -6641,7 +6641,7 @@ namespace Hecton8.AI
             ArmCorpseBloatShaderTimer();
             _deathSpiralTorque = ResolveDeathSpiralTorque();
             ResolveDeathCorkscrewPhases(out _deathCorkscrewPhaseX, out _deathCorkscrewPhaseZ);
-            TryResolveCorpseSinkingKinematicsBuffers(out _, out _);
+            TryEnsureCorpseSinkingKinematicsBuffers(out _, out _);
             TryRegisterCorpseSinkLateFrame();
             Vector3 corpseRuntimePosition = _rb != null
                 ? _rb.position
@@ -6732,7 +6732,7 @@ namespace Hecton8.AI
             if (_corpseSinkJobScheduled)
                 return;
 
-            if (!TryResolveCorpseSinkingKinematicsBuffers(
+            if (!TryEnsureCorpseSinkingKinematicsBuffers(
                     out NativeArray<CorpseSinkKinematicInput> corpseSinkInput,
                     out NativeArray<CorpseSinkKinematicOutput> corpseSinkOutput))
             {
@@ -6807,7 +6807,7 @@ namespace Hecton8.AI
                 return;
 
             _corpseSinkJobScheduled = false;
-            if (!TryResolveCorpseSinkingOutputBuffer(out NativeArray<CorpseSinkKinematicOutput> corpseSinkOutput))
+            if (!TryReadCorpseSinkingOutputBuffer(out NativeArray<CorpseSinkKinematicOutput> corpseSinkOutput))
                 return;
 
             CorpseSinkKinematicOutput output = corpseSinkOutput[0];
@@ -6819,7 +6819,7 @@ namespace Hecton8.AI
                 TryUnregisterCorpseSinkLateFrame();
         }
 
-        private bool TryResolveCorpseSinkingKinematicsBuffers(
+        private bool TryEnsureCorpseSinkingKinematicsBuffers(
             out NativeArray<CorpseSinkKinematicInput> corpseSinkInput,
             out NativeArray<CorpseSinkKinematicOutput> corpseSinkOutput)
         {
@@ -6883,10 +6883,19 @@ namespace Hecton8.AI
             return true;
         }
 
-        private bool TryResolveCorpseSinkingOutputBuffer(out NativeArray<CorpseSinkKinematicOutput> corpseSinkOutput)
+        private bool TryReadCorpseSinkingOutputBuffer(out NativeArray<CorpseSinkKinematicOutput> corpseSinkOutput)
         {
             corpseSinkOutput = default;
-            return TryResolveCorpseSinkingKinematicsBuffers(out _, out corpseSinkOutput);
+            IDataVault vault = _corpseSinkVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            return TryValidateCorpseSinkingKinematicsHandles(
+                vault,
+                in _corpseSinkInputHandle,
+                in _corpseSinkOutputHandle,
+                out _,
+                out corpseSinkOutput);
         }
 
         private static bool TryValidateCorpseSinkingKinematicsHandles(

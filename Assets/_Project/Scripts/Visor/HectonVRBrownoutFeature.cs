@@ -20,7 +20,7 @@ namespace Hecton8.Visor
     /// <summary>
     /// Single fullscreen VR visor brownout and focus blur pass.
     /// </summary>
-    public sealed class HectonVRBrownoutFeature : ScriptableRendererFeature
+    public sealed class HectonVRBrownoutFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable
     {
         private const int VRBrownoutGlobalsStrideBytes = 64;
 
@@ -70,6 +70,7 @@ namespace Hecton8.Visor
             private BrownoutGlobalsDTO _lastBrownoutGlobals;
             private int _brownoutGlobalsWriteIndex;
             private bool _hasBrownoutGlobals;
+            private bool _supportsSetConstantBuffer;
 
             private sealed class BrownoutPassData
             {
@@ -97,6 +98,13 @@ namespace Hecton8.Visor
             public bool PrepareResources()
             {
                 return EnsureBrownoutGlobalsBuffer();
+            }
+
+            public void SetGraphicsCapabilitiesCold(bool supportsSetConstantBuffer)
+            {
+                _supportsSetConstantBuffer = supportsSetConstantBuffer;
+                if (!_supportsSetConstantBuffer)
+                    Dispose();
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -195,7 +203,7 @@ namespace Hecton8.Visor
 
             private bool EnsureBrownoutGlobalsBuffer()
             {
-                if (!SystemInfo.supportsSetConstantBuffer)
+                if (!_supportsSetConstantBuffer)
                 {
                     Dispose();
                     return false;
@@ -299,7 +307,7 @@ namespace Hecton8.Visor
 
             private bool HasBrownoutGlobalsBuffer()
             {
-                if (!SystemInfo.supportsSetConstantBuffer)
+                if (!_supportsSetConstantBuffer)
                     return false;
 
                 if (_brownoutGlobalsBufferA == null || !_brownoutGlobalsBufferA.IsValid() ||
@@ -383,6 +391,23 @@ namespace Hecton8.Visor
 
         private BrownoutPass _pass;
         private Material _material;
+        private float _cachedBrownoutIntensity;
+        private float _cachedWorldFocusBlur;
+        private float _cachedNearCollisionIntensity;
+        private Vector4 _cachedVrComfortSignals;
+        private Vector4 _cachedVrComfortMotion;
+        private Vector4 _cachedVrSomaticComfortState;
+        private bool _hotSwapRegistered;
+        private bool _lateFrameRegistered;
+        private bool _supportsSetConstantBuffer;
+
+        private void OnEnable()
+        {
+            CacheGraphicsCapabilitiesCold();
+            TryRegisterLateFrameTickable();
+            TryRegisterHotSwapListener();
+            CachePresentationGlobalsLate();
+        }
 
         /// <inheritdoc />
         public override void Create()
@@ -402,7 +427,11 @@ namespace Hecton8.Visor
             }
 
             RecreateMaterial(ref _material, shader);
+            CacheGraphicsCapabilitiesCold();
             _pass.PrepareResources();
+            TryRegisterLateFrameTickable();
+            TryRegisterHotSwapListener();
+            CachePresentationGlobalsLate();
         }
 
         /// <inheritdoc />
@@ -431,6 +460,83 @@ namespace Hecton8.Visor
             _pass?.Dispose();
             CoreUtils.Destroy(_material);
             _material = null;
+            TryUnregisterLateFrameTickable();
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            TryUnregisterLateFrameTickable();
+            if (currentService != null)
+                TryRegisterLateFrameTickable();
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            CachePresentationGlobalsLate();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterLateFrameTickable();
+            TryUnregisterHotSwapListener();
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsSetConstantBuffer = SystemInfo.supportsSetConstantBuffer;
+            _pass?.SetGraphicsCapabilitiesCold(_supportsSetConstantBuffer);
+        }
+
+        private void CachePresentationGlobalsLate()
+        {
+            _cachedBrownoutIntensity = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.BrownoutIntensityId));
+            _cachedWorldFocusBlur = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.WorldFocusBlurId));
+            _cachedNearCollisionIntensity = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.NearCollisionIntensityId));
+            _cachedVrComfortSignals = SanitizeVrComfortSignals(Shader.GetGlobalVector(ShaderConstants.VrComfortSignalsId));
+            _cachedVrComfortMotion = SanitizeVrComfortMotion(Shader.GetGlobalVector(ShaderConstants.VrComfortMotionId));
+            _cachedVrSomaticComfortState = SanitizeVrSomaticComfortState(Shader.GetGlobalVector(ShaderConstants.VrSomaticComfortStateId));
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_lateFrameRegistered)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _lateFrameRegistered = false;
         }
 
         private bool TryBuildRuntimeState(Camera renderCamera, XRPass xrPass, out RuntimeState runtimeState)
@@ -442,12 +548,12 @@ namespace Hecton8.Visor
             if (!IsComfortEligibleCamera(renderCamera, xrPass))
                 return false;
 
-            float brownoutIntensity = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.BrownoutIntensityId));
-            float worldFocusBlur = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.WorldFocusBlurId));
-            float nearCollisionIntensity = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.NearCollisionIntensityId));
-            Vector4 vrComfortSignals = SanitizeVrComfortSignals(Shader.GetGlobalVector(ShaderConstants.VrComfortSignalsId));
-            Vector4 vrComfortMotion = SanitizeVrComfortMotion(Shader.GetGlobalVector(ShaderConstants.VrComfortMotionId));
-            Vector4 vrSomaticComfortState = SanitizeVrSomaticComfortState(Shader.GetGlobalVector(ShaderConstants.VrSomaticComfortStateId));
+            float brownoutIntensity = _cachedBrownoutIntensity;
+            float worldFocusBlur = _cachedWorldFocusBlur;
+            float nearCollisionIntensity = _cachedNearCollisionIntensity;
+            Vector4 vrComfortSignals = _cachedVrComfortSignals;
+            Vector4 vrComfortMotion = _cachedVrComfortMotion;
+            Vector4 vrSomaticComfortState = _cachedVrSomaticComfortState;
             float somaticTunnel = vrSomaticComfortState.x;
             if (somaticTunnel > vrComfortSignals.x)
                 vrComfortSignals.x = somaticTunnel;

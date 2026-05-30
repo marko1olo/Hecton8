@@ -168,6 +168,7 @@ namespace Hecton8.Core.Scheduling
             JobAdmissionLane pendingNonFiniteLane = JobAdmissionLane.Lane0_Critical;
             uint pendingNonFiniteJobHash = 0u;
             float pendingNonFiniteValue = 0f;
+            float telemetryRefillScale = 0f;
             try
             {
                 _refillFrameSequence = _refillFrameSequence == uint.MaxValue ? 1u : _refillFrameSequence + 1u;
@@ -191,6 +192,7 @@ namespace Hecton8.Core.Scheduling
                 float qualityScale = math.lerp(SurvivalBudgetScalar, 1f, qualityCurve01);
                 float missScale = previousFrameMissedBudget ? MissedFrameRefillScalar : 1f;
                 float refillScale = deltaScale * qualityScale * missScale;
+                telemetryRefillScale = refillScale;
 
                 for (int lane = 0; lane < LaneCount; lane++)
                 {
@@ -286,7 +288,6 @@ namespace Hecton8.Core.Scheduling
                     }
 
                     laneBudgetsMs[lane] = math.min(next, cap);
-                    _telemetrySink?.ReportLaneState((JobAdmissionLane)lane, laneBudgetsMs[lane], refill, _criticalDebtFrameCount, _systemKillSwitchMask);
                 }
 
                 if (laneBudgetsMs[JobAdmissionLanes.Lane0Critical] < 0f)
@@ -305,6 +306,9 @@ namespace Hecton8.Core.Scheduling
             {
                 ReleaseWriteView(in _laneBudgetsMsHandle);
             }
+
+            if (_telemetrySink != null)
+                ReportLaneStatesReadOnly(telemetryRefillScale);
 
             if (pendingNonFinite)
                 ReportNonFinite(pendingNonFiniteLane, pendingNonFiniteJobHash, pendingNonFiniteValue);
@@ -998,19 +1002,7 @@ namespace Hecton8.Core.Scheduling
             _lastFaultDumpFrameSequence = _refillFrameSequence;
             if (_telemetrySink != null)
             {
-                NativeArray<float>.ReadOnly laneBudgetsMs = ReadLaneBudgets();
-                NativeArray<float>.ReadOnly baseRefillMs = ReadBaseRefill();
-                for (int lane = 0; lane < LaneCount; lane++)
-                {
-                    float budget = laneBudgetsMs.IsCreated && laneBudgetsMs.Length > lane ? laneBudgetsMs[lane] : 0f;
-                    float refill = baseRefillMs.IsCreated && baseRefillMs.Length > lane ? baseRefillMs[lane] : 0f;
-                    _telemetrySink.ReportLaneState(
-                        (JobAdmissionLane)lane,
-                        ClampLaneBudgetMilliseconds(lane, budget),
-                        ClampNonNegativeTelemetryMilliseconds(refill),
-                        _criticalDebtFrameCount,
-                        _systemKillSwitchMask);
-                }
+                ReportLaneStatesReadOnly(1f);
 
                 int slotCount = math.min(_costSlotCount, CostSlotCapacity);
                 float overflow = ResolveOverflowEstimatedCostMs();
@@ -1032,6 +1024,25 @@ namespace Hecton8.Core.Scheduling
             }
 
             DumpAdmissionBlackboxCold();
+        }
+
+        private void ReportLaneStatesReadOnly(float refillScale)
+        {
+            NativeArray<float>.ReadOnly laneBudgetsMs = ReadLaneBudgets();
+            NativeArray<float>.ReadOnly baseRefillMs = ReadBaseRefill();
+            float safeRefillScale = math.isfinite(refillScale) ? math.max(0f, refillScale) : 0f;
+            for (int lane = 0; lane < LaneCount; lane++)
+            {
+                float budget = laneBudgetsMs.IsCreated && laneBudgetsMs.Length > lane ? laneBudgetsMs[lane] : 0f;
+                float baseRefill = baseRefillMs.IsCreated && baseRefillMs.Length > lane ? baseRefillMs[lane] : 0f;
+                float refill = baseRefill * safeRefillScale;
+                _telemetrySink.ReportLaneState(
+                    (JobAdmissionLane)lane,
+                    ClampLaneBudgetMilliseconds(lane, budget),
+                    ClampNonNegativeTelemetryMilliseconds(refill),
+                    _criticalDebtFrameCount,
+                    _systemKillSwitchMask);
+            }
         }
 
         private void WriteBlackbox(JobAdmissionLane lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, bool admitted)

@@ -138,7 +138,7 @@ namespace Hecton8.VFX.PlasmaBeam
         [FieldOffset(24)] public ulong _pad0;
     }
 
-    public sealed unsafe class ShinobuPlasmaBeamRuntime : IGlobalRegistryHotSwapListener
+    public sealed unsafe class ShinobuPlasmaBeamRuntime : IGlobalRegistryHotSwapListener, IColdTickable
     {
         private static int s_x001ShinobuPlasmaBeamRuntimeSignalPushDropCount;
         public const int MaxBeamCount = 20;
@@ -225,6 +225,7 @@ namespace Hecton8.VFX.PlasmaBeam
         private long _jobScheduleTimestamp;
         private JobHandle _simulationHandle;
         private ulong _activeJobMutationGuardMask;
+        private IDataVault _activeJobMutationGuardVault;
         private int _vertexGpuUploadBufferIndex;
         private int _indirectArgsGpuUploadBufferIndex;
         private int _lastVertexCount;
@@ -237,6 +238,7 @@ namespace Hecton8.VFX.PlasmaBeam
         private bool _registeredSimulation;
         private bool _registeredPostSimulation;
         private bool _registeredVisualSync;
+        private bool _registeredColdTick;
         private bool _vaultInitialized;
         private bool _defaultsInitialized;
         private bool _layoutChecked;
@@ -245,6 +247,8 @@ namespace Hecton8.VFX.PlasmaBeam
         private bool _dumpedNonFinite;
         private bool _shutdown;
         private bool _registeredHotSwapListener;
+        private bool _vaultRepairRequested;
+        private readonly PlasmaBeamAcousticEchoTap[] _tapPublishSnapshot = new PlasmaBeamAcousticEchoTap[MaxBeamCount];
 
         public static bool TryWriteEditorTuning(float radius, float noiseFrequency, float noiseAmplitude, uint radialSegments)
         {
@@ -289,7 +293,7 @@ namespace Hecton8.VFX.PlasmaBeam
                 return false;
 
             IDataVault vault = active.ResolveVault();
-            if (vault == null || !active.EnsureVaultState(vault))
+            if (vault == null || !active.HasVaultStateReady(vault))
                 return false;
 
             if (active.TryResolveVaultBuffer(
@@ -329,7 +333,7 @@ namespace Hecton8.VFX.PlasmaBeam
                 return false;
 
             IDataVault vault = active.ResolveVault();
-            if (vault == null || !active.EnsureVaultState(vault))
+            if (vault == null || !active.HasVaultStateReady(vault))
                 return false;
 
             if (!active.TryResolveVaultBuffer(
@@ -400,7 +404,7 @@ namespace Hecton8.VFX.PlasmaBeam
             TryRegisterHotSwapListener();
             SignalBus<PlasmaBeamAcousticEchoTap>.Configure(MaxBeamCount, maxFrameSignals: MaxBeamCount, lowTierFrameSignals: MaxBeamCount, laneHash: 0x504C4153u);
             SignalBus<PlasmaBeamAcousticEchoTap>.EnsureInitialized();
-            EnsureGraphicsResources(allowAllocation: true);
+            PrepareRuntimeStateCold();
             RegisterDispatcherPhases();
             Application.quitting -= ShutdownActive;
             Application.quitting += ShutdownActive;
@@ -435,10 +439,18 @@ namespace Hecton8.VFX.PlasmaBeam
                 _registeredPostSimulation = true;
             if (!_registeredVisualSync && GlobalRegistry.TryRegisterDispatcherSystem(_visualSyncPhase))
                 _registeredVisualSync = true;
+            if (!_registeredColdTick && GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment))
+                _registeredColdTick = true;
         }
 
         private void UnregisterDispatcherPhases()
         {
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _registeredColdTick = false;
+            }
+
             if (_registeredPreSimulation)
             {
                 GlobalRegistry.UnregisterDispatcherSystem(_preSimulationPhase);
@@ -479,6 +491,26 @@ namespace Hecton8.VFX.PlasmaBeam
 
             IDataVault nextVault = currentService is IDataVault currentVault ? currentVault : null;
             RebindDataVaultForLifecycle(nextVault);
+            if (!_shutdown)
+                PrepareRuntimeStateCold();
+        }
+
+        public void ColdTick()
+        {
+            if (_shutdown)
+                return;
+
+            IDataVault vault = ResolveVault();
+            if (vault == null)
+                return;
+
+            if (!_vaultRepairRequested && HasVaultStateReady(vault) && HasGraphicsResourcesReady())
+                return;
+
+            if (_simulationScheduled)
+                return;
+
+            PrepareRuntimeStateCold();
         }
 
         private void RebindDataVaultForLifecycle(IDataVault vault)
@@ -502,8 +534,10 @@ namespace Hecton8.VFX.PlasmaBeam
             _simulationScheduled = false;
             _dumpedNonFinite = false;
             _activeJobMutationGuardMask = 0UL;
+            _activeJobMutationGuardVault = null;
             _lastVertexCount = 0;
             _lastActiveBeamCount = 0;
+            _vaultRepairRequested = true;
         }
 
         private void ReleaseVaultHandles(IDataVault vault)
@@ -550,10 +584,22 @@ namespace Hecton8.VFX.PlasmaBeam
         private void PreSimulationTick(in DispatcherTimingDTO timing)
         {
             IDataVault vault = ResolveVault();
-            if (vault == null || !EnsureVaultState(vault))
+            if (vault == null || !HasVaultStateReady(vault))
+            {
+                _vaultRepairRequested = true;
                 return;
+            }
 
-            ApplyQualityAndEditorTuning(vault);
+            if (!vault.TryAcquireMutationGuard(PlasmaBeamJobMutationGuardMask))
+                return;
+            try
+            {
+                ApplyQualityAndEditorTuning(vault);
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(PlasmaBeamJobMutationGuardMask);
+            }
 #if UNITY_EDITOR
             uint frame = unchecked(_lastDispatcherFrame + 1u);
             if ((frame & (CsvPollCadenceFrames - 1)) == 0u)
@@ -573,8 +619,11 @@ namespace Hecton8.VFX.PlasmaBeam
             }
 
             IDataVault vault = ResolveVault();
-            if (vault == null || !EnsureVaultState(vault))
+            if (vault == null || !HasVaultStateReady(vault))
+            {
+                _vaultRepairRequested = true;
                 return dependsOn;
+            }
 
             _lastDispatcherFrame = context.Frame;
 
@@ -660,6 +709,9 @@ namespace Hecton8.VFX.PlasmaBeam
 
             _simulationScheduled = false;
 
+            bool dumpNonFinite = false;
+            int tapSnapshotCount = 0;
+            NativeArray<PlasmaBeamTelemetryEntry> telemetryForDump = default;
             try
             {
                 TryResolveVaultBuffer(vault, in _argsHandle, BufferID.ShinobuPlasmaBeamIndirectArgs, 1, out NativeArray<PlasmaBeamIndirectArgsDTO> args);
@@ -674,13 +726,11 @@ namespace Hecton8.VFX.PlasmaBeam
                     PlasmaBeamTelemetryEntry entry = telemetry[telemetryIndex];
                     entry.MeshingComputeTimeMs = ElapsedMilliseconds(_jobScheduleTimestamp);
                     telemetry[telemetryIndex] = entry;
+                    telemetryForDump = telemetry;
                     _lastActiveBeamCount = (int)math.min(entry.ActiveBeams, (uint)MaxBeamCount);
 
                     if (entry.NonFiniteCount > 0u && !_dumpedNonFinite)
-                    {
-                        DumpTelemetry(vault, telemetry);
-                        _dumpedNonFinite = true;
-                    }
+                        dumpNonFinite = true;
                 }
 
                 if (taps.IsCreated)
@@ -690,13 +740,26 @@ namespace Hecton8.VFX.PlasmaBeam
                     {
                         PlasmaBeamAcousticEchoTap tap = taps[i];
                         if (tap.Intensity01 > 0.001f)
-                            SignalBus<PlasmaBeamAcousticEchoTap>.TryPushTracked(in tap, ref s_x001ShinobuPlasmaBeamRuntimeSignalPushDropCount);
+                            _tapPublishSnapshot[tapSnapshotCount++] = tap;
                     }
                 }
             }
             finally
             {
                 ReleasePlasmaBeamJobMutationGuard();
+            }
+
+            if (dumpNonFinite)
+            {
+                DumpTelemetry(vault, telemetryForDump);
+                _dumpedNonFinite = true;
+            }
+
+            for (int i = 0; i < tapSnapshotCount; i++)
+            {
+                PlasmaBeamAcousticEchoTap tap = _tapPublishSnapshot[i];
+                SignalBus<PlasmaBeamAcousticEchoTap>.TryPushTracked(in tap, ref s_x001ShinobuPlasmaBeamRuntimeSignalPushDropCount);
+                _tapPublishSnapshot[i] = default;
             }
         }
 
@@ -718,9 +781,15 @@ namespace Hecton8.VFX.PlasmaBeam
 
         private void VisualSyncTick(in DispatcherTimingDTO timing)
         {
-            IDataVault vault = ResolveVault();
-            if (vault == null || !EnsureVaultState(vault) || !EnsureGraphicsResources(allowAllocation: false))
+            if (_simulationScheduled)
                 return;
+
+            IDataVault vault = ResolveVault();
+            if (vault == null || !HasVaultStateReady(vault) || !HasGraphicsResourcesReady())
+            {
+                _vaultRepairRequested = true;
+                return;
+            }
 
             if (!TryResolveVaultBuffer(vault, in _verticesHandle, BufferID.ShinobuPlasmaBeamVertices, MaxVertexCount, out NativeArray<BeamVertexDTO> vertices) ||
                 !TryResolveVaultBuffer(vault, in _argsHandle, BufferID.ShinobuPlasmaBeamIndirectArgs, 1, out NativeArray<PlasmaBeamIndirectArgsDTO> args) ||
@@ -819,6 +888,30 @@ namespace Hecton8.VFX.PlasmaBeam
             return true;
         }
 
+        private void PrepareRuntimeStateCold()
+        {
+            IDataVault vault = ResolveVault();
+            bool vaultReady = vault != null && EnsureVaultState(vault);
+            bool graphicsReady = EnsureGraphicsResources(allowAllocation: true);
+            _vaultRepairRequested = !vaultReady || !graphicsReady;
+        }
+
+        private bool HasVaultStateReady(IDataVault vault)
+        {
+            return vault != null &&
+                _vaultInitialized &&
+                _defaultsInitialized &&
+                TryResolveVaultBuffer(vault, in _statesHandle, BufferID.ShinobuPlasmaBeamStates, MaxBeamCount, out NativeArray<BeamStateDTO> _) &&
+                TryResolveVaultBuffer(vault, in _verticesHandle, BufferID.ShinobuPlasmaBeamVertices, MaxVertexCount, out NativeArray<BeamVertexDTO> _) &&
+                TryResolveVaultBuffer(vault, in _trigHandle, BufferID.ShinobuPlasmaBeamTrigLut, TrigLutCount, out NativeArray<BeamTrigLutEntry> _) &&
+                TryResolveVaultBuffer(vault, in _scalarsHandle, BufferID.ShinobuPlasmaBeamRuntimeScalars, 1, out NativeArray<PlasmaBeamRuntimeScalarsDTO> _) &&
+                TryResolveVaultBuffer(vault, in _argsHandle, BufferID.ShinobuPlasmaBeamIndirectArgs, 1, out NativeArray<PlasmaBeamIndirectArgsDTO> _) &&
+                TryResolveVaultBuffer(vault, in _telemetryHandle, BufferID.ShinobuPlasmaBeamTelemetryRing, TelemetryFrameCount, out NativeArray<PlasmaBeamTelemetryEntry> _) &&
+                TryResolveVaultBuffer(vault, in _mockSignalsHandle, BufferID.ShinobuPlasmaBeamMockSignals, MaxBeamCount, out NativeArray<MockLaserFireSignal> _) &&
+                TryResolveVaultBuffer(vault, in _acousticTapsHandle, BufferID.ShinobuPlasmaBeamAcousticTaps, MaxBeamCount, out NativeArray<PlasmaBeamAcousticEchoTap> _) &&
+                TryResolveVaultBuffer(vault, in _csvScratchHandle, BufferID.ShinobuPlasmaBeamCsvScratch, CsvScratchBytes, out NativeArray<byte> _);
+        }
+
         private bool TryResolveVaultBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
@@ -843,72 +936,82 @@ namespace Hecton8.VFX.PlasmaBeam
 
         private void GenerateEmergencyMockBeams(IDataVault vault)
         {
-            if (!TryResolveVaultBuffer(vault, in _statesHandle, BufferID.ShinobuPlasmaBeamStates, MaxBeamCount, out NativeArray<BeamStateDTO> states) ||
-                !TryResolveVaultBuffer(vault, in _trigHandle, BufferID.ShinobuPlasmaBeamTrigLut, TrigLutCount, out NativeArray<BeamTrigLutEntry> trig) ||
-                !TryResolveVaultBuffer(vault, in _scalarsHandle, BufferID.ShinobuPlasmaBeamRuntimeScalars, 1, out NativeArray<PlasmaBeamRuntimeScalarsDTO> scalars) ||
-                !TryResolveVaultBuffer(vault, in _argsHandle, BufferID.ShinobuPlasmaBeamIndirectArgs, 1, out NativeArray<PlasmaBeamIndirectArgsDTO> args) ||
-                !TryResolveVaultBuffer(vault, in _mockSignalsHandle, BufferID.ShinobuPlasmaBeamMockSignals, MaxBeamCount, out NativeArray<MockLaserFireSignal> mockSignals))
-            {
+            if (vault == null || !vault.TryAcquireMutationGuard(PlasmaBeamJobMutationGuardMask))
                 return;
-            }
 
-            if (!_layoutChecked)
+            try
             {
-                _layoutValid = IsLayoutValid();
-                _layoutChecked = true;
-            }
-
-            uint layoutFlags = _layoutValid ? 0u : FlagLayoutFault;
-            PlasmaBeamRuntimeScalarsDTO scalar = default;
-            scalar.BaseRadius = s_pendingRadius;
-            scalar.NoiseFrequency = s_pendingNoiseFrequency;
-            scalar.NoiseAmplitude = s_pendingNoiseAmplitude;
-            scalar.UvScrollSpeed = 9.0f;
-            scalar.GlobalQualityWeight = ResolveGlobalQualityWeight();
-            scalar.HeatLevel = 1.0f;
-            scalar.EnergyRemaining = 1.0f;
-            scalar.BiomeExtinction01 = 0.18f;
-            scalar.ActiveBeamCount = 4u;
-            scalar.RequestedBeamCount = 4u;
-            scalar.ForcedRadialSegments = s_pendingRadialSegments;
-            scalar.CsvGeneration = _csvGeneration;
-            scalar.Flags = FlagMockInputEnabled | layoutFlags;
-            scalar.SectorHash = 0x53363953u; // S69S
-            scalars[0] = scalar;
-
-            for (int radial = 1; radial <= MaxRadialSegments; radial++)
-            {
-                for (int i = 0; i < MaxRadialSegments; i++)
+                if (!TryResolveVaultBuffer(vault, in _statesHandle, BufferID.ShinobuPlasmaBeamStates, MaxBeamCount, out NativeArray<BeamStateDTO> states) ||
+                    !TryResolveVaultBuffer(vault, in _trigHandle, BufferID.ShinobuPlasmaBeamTrigLut, TrigLutCount, out NativeArray<BeamTrigLutEntry> trig) ||
+                    !TryResolveVaultBuffer(vault, in _scalarsHandle, BufferID.ShinobuPlasmaBeamRuntimeScalars, 1, out NativeArray<PlasmaBeamRuntimeScalarsDTO> scalars) ||
+                    !TryResolveVaultBuffer(vault, in _argsHandle, BufferID.ShinobuPlasmaBeamIndirectArgs, 1, out NativeArray<PlasmaBeamIndirectArgsDTO> args) ||
+                    !TryResolveVaultBuffer(vault, in _mockSignalsHandle, BufferID.ShinobuPlasmaBeamMockSignals, MaxBeamCount, out NativeArray<MockLaserFireSignal> mockSignals))
                 {
-                    float angle = (i % math.max(1, radial)) * (math.PI * 2.0f / math.max(1, radial));
-                    MathLodApproximation.ApproxSinCosBhaskara(angle, out float sinValue, out float cosValue);
-                    trig[radial * MaxRadialSegments + i] = new BeamTrigLutEntry
-                    {
-                        Cos = cosValue,
-                        Sin = sinValue
-                    };
+                    return;
                 }
-            }
 
-            for (int i = 0; i < mockSignals.Length; i++)
+                if (!_layoutChecked)
+                {
+                    _layoutValid = IsLayoutValid();
+                    _layoutChecked = true;
+                }
+
+                uint layoutFlags = _layoutValid ? 0u : FlagLayoutFault;
+                PlasmaBeamRuntimeScalarsDTO scalar = default;
+                scalar.BaseRadius = s_pendingRadius;
+                scalar.NoiseFrequency = s_pendingNoiseFrequency;
+                scalar.NoiseAmplitude = s_pendingNoiseAmplitude;
+                scalar.UvScrollSpeed = 9.0f;
+                scalar.GlobalQualityWeight = ResolveGlobalQualityWeight();
+                scalar.HeatLevel = 1.0f;
+                scalar.EnergyRemaining = 1.0f;
+                scalar.BiomeExtinction01 = 0.18f;
+                scalar.ActiveBeamCount = 4u;
+                scalar.RequestedBeamCount = 4u;
+                scalar.ForcedRadialSegments = s_pendingRadialSegments;
+                scalar.CsvGeneration = _csvGeneration;
+                scalar.Flags = FlagMockInputEnabled | layoutFlags;
+                scalar.SectorHash = 0x53363953u; // S69S
+                scalars[0] = scalar;
+
+                for (int radial = 1; radial <= MaxRadialSegments; radial++)
+                {
+                    for (int i = 0; i < MaxRadialSegments; i++)
+                    {
+                        float angle = (i % math.max(1, radial)) * (math.PI * 2.0f / math.max(1, radial));
+                        MathLodApproximation.ApproxSinCosBhaskara(angle, out float sinValue, out float cosValue);
+                        trig[radial * MaxRadialSegments + i] = new BeamTrigLutEntry
+                        {
+                            Cos = cosValue,
+                            Sin = sinValue
+                        };
+                    }
+                }
+
+                for (int i = 0; i < mockSignals.Length; i++)
+                {
+                    MockLaserFireSignal signal = default;
+                    signal.Start = new float3(-0.4f + i * 0.04f, 0.12f + i * 0.015f, 0.0f);
+                    signal.End = new float3(1.8f + i * 0.06f, 0.15f + i * 0.02f, 4.5f + i * 0.15f);
+                    signal.HeatLevel = 1.0f;
+                    signal.EnergyRemaining = 1.0f;
+                    signal.BeamId = (uint)i;
+                    signal.NoiseSeed = HashU32((uint)i ^ 0xB34D69u);
+                    signal.Flags = i < (int)scalar.RequestedBeamCount ? 1u : 0u;
+                    mockSignals[i] = signal;
+                    states[i] = default;
+                }
+
+                args[0] = default;
+                _runtimeFlags = scalar.Flags;
+                _lastVertexCount = 0;
+                _lastActiveBeamCount = 0;
+                _defaultsInitialized = true;
+            }
+            finally
             {
-                MockLaserFireSignal signal = default;
-                signal.Start = new float3(-0.4f + i * 0.04f, 0.12f + i * 0.015f, 0.0f);
-                signal.End = new float3(1.8f + i * 0.06f, 0.15f + i * 0.02f, 4.5f + i * 0.15f);
-                signal.HeatLevel = 1.0f;
-                signal.EnergyRemaining = 1.0f;
-                signal.BeamId = (uint)i;
-                signal.NoiseSeed = HashU32((uint)i ^ 0xB34D69u);
-                signal.Flags = i < (int)scalar.RequestedBeamCount ? 1u : 0u;
-                mockSignals[i] = signal;
-                states[i] = default;
+                vault.ReleaseMutationGuard(PlasmaBeamJobMutationGuardMask);
             }
-
-            args[0] = default;
-            _runtimeFlags = scalar.Flags;
-            _lastVertexCount = 0;
-            _lastActiveBeamCount = 0;
-            _defaultsInitialized = true;
         }
 
         private void ApplyQualityAndEditorTuning(IDataVault vault)
@@ -949,8 +1052,17 @@ namespace Hecton8.VFX.PlasmaBeam
             if (vault == null || !EnsureVaultState(vault))
                 return false;
 
-            ApplyQualityAndEditorTuning(vault);
-            return true;
+            if (!vault.TryAcquireMutationGuard(PlasmaBeamJobMutationGuardMask))
+                return false;
+            try
+            {
+                ApplyQualityAndEditorTuning(vault);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(PlasmaBeamJobMutationGuardMask);
+            }
         }
 
         private bool EnsureGraphicsResources(bool allowAllocation)
@@ -1045,6 +1157,30 @@ namespace Hecton8.VFX.PlasmaBeam
             return true;
         }
 
+        private bool HasGraphicsResourcesReady()
+        {
+            return _vertexGpuBufferA != null &&
+                _vertexGpuBufferA.IsValid() &&
+                _vertexGpuBufferA.count == MaxVertexCount &&
+                _vertexGpuBufferA.stride == UnsafeUtility.SizeOf<BeamVertexDTO>() &&
+                _vertexGpuBufferB != null &&
+                _vertexGpuBufferB.IsValid() &&
+                _vertexGpuBufferB.count == MaxVertexCount &&
+                _vertexGpuBufferB.stride == UnsafeUtility.SizeOf<BeamVertexDTO>() &&
+                _indirectArgsGpuBufferA != null &&
+                _indirectArgsGpuBufferA.IsValid() &&
+                _indirectArgsGpuBufferA.count == 1 &&
+                _indirectArgsGpuBufferA.stride == UnsafeUtility.SizeOf<PlasmaBeamIndirectArgsDTO>() &&
+                _indirectArgsGpuBufferB != null &&
+                _indirectArgsGpuBufferB.IsValid() &&
+                _indirectArgsGpuBufferB.count == 1 &&
+                _indirectArgsGpuBufferB.stride == UnsafeUtility.SizeOf<PlasmaBeamIndirectArgsDTO>() &&
+                _activeVertexGpuBuffer != null &&
+                _activeVertexGpuBuffer.IsValid() &&
+                _activeIndirectArgsGpuBuffer != null &&
+                _activeIndirectArgsGpuBuffer.IsValid();
+        }
+
         private void ReleaseGraphicsResources()
         {
             ReleaseGraphicsBuffer(ref _vertexGpuBufferA);
@@ -1082,15 +1218,18 @@ namespace Hecton8.VFX.PlasmaBeam
                 return false;
 
             _activeJobMutationGuardMask = PlasmaBeamJobMutationGuardMask;
+            _activeJobMutationGuardVault = vault;
             return true;
         }
 
         private void ReleasePlasmaBeamJobMutationGuard()
         {
             ulong guardMask = _activeJobMutationGuardMask;
+            IDataVault vault = _activeJobMutationGuardVault;
             if (guardMask != 0UL)
-                _vault?.ReleaseMutationGuard(guardMask);
+                vault?.ReleaseMutationGuard(guardMask);
             _activeJobMutationGuardMask = 0UL;
+            _activeJobMutationGuardVault = null;
         }
 
 #if UNITY_EDITOR

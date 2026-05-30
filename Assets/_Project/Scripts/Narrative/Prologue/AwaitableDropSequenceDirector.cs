@@ -583,12 +583,6 @@ namespace Hecton8.Narrative.Prologue
             if (vault == null)
                 return;
 
-            if (vault.IsCompactionFenceActive)
-            {
-                ClearBlackBoxDescriptor();
-                return;
-            }
-
             if (IsVaultHandleCreated(in _blackBoxHandle) &&
                 vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<PrologueSequenceTelemetryEntry>.ReadOnly buffer) &&
                 buffer.IsCreated &&
@@ -596,6 +590,9 @@ namespace Hecton8.Narrative.Prologue
             {
                 return;
             }
+
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return;
 
             if (IsVaultHandleCreated(in _blackBoxHandle))
                 vault.ReleaseBuffer(in _blackBoxHandle);
@@ -611,9 +608,6 @@ namespace Hecton8.Narrative.Prologue
                 _blackBoxHandle = existing;
                 return;
             }
-
-            if (vault.IsAllocationLocked)
-                return;
 
             VaultGenerationHandle<PrologueSequenceTelemetryEntry> acquired = vault.EnsureGenerationHandle<PrologueSequenceTelemetryEntry>(
                 BufferID.PrologueSequenceTelemetryRing,

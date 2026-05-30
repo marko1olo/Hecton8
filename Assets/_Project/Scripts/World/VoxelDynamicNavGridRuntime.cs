@@ -61,6 +61,8 @@ namespace Hecton8.World
         private const int PureVoidScanBlockShift = 6;
         private const int MaxTrackedVolumeRecords = 512;
         private const int MaxRegisteredObstacleRecords = 512;
+        private const int MaxObstacleSnapshotLeaseCount = 64;
+        private const int MaxObstacleSnapshotPrimitiveCount = 1024;
         private const int MaxPortalFaceScratchCells = 4096;
         private const int MaxPortalGraphNodeCapacity = 4096;
         private const float PersistentObstacleMergeDistanceMeters = 2f;
@@ -127,8 +129,11 @@ namespace Hecton8.World
         private static readonly DirtyVolumeRequest[] _dirtyVolumes = new DirtyVolumeRequest[DirtyVolumeQueueCapacity];
         private static readonly DynamicObstacleClearRequest[] _pendingObstacleClears = new DynamicObstacleClearRequest[PendingObstacleClearQueueCapacity];
         private static readonly NavObstaclePrimitive[] _persistentDynamicObstacles = new NavObstaclePrimitive[MaxPersistentDynamicObstacleCount];
+        private static readonly NativeArray<NavObstaclePrimitive>[] _obstacleSnapshotPool = new NativeArray<NavObstaclePrimitive>[MaxObstacleSnapshotLeaseCount];
+        private static readonly byte[] _obstacleSnapshotLeaseStates = new byte[MaxObstacleSnapshotLeaseCount];
         private static VoxelDynamicNavGridRuntimeLifecycle _lifecycleOwner;
         private static IDataVault _dataVault;
+        private static HectonMapMagicVegetationBridge _vegetationBridge;
         private static VaultGenerationHandle<NavGridTelemetryEntry> _navGridTelemetryRingHandle;
         private static VaultGenerationHandle<int> _navGridTelemetryCursorHandle;
         private static uint _navGridTelemetrySequence;
@@ -154,6 +159,7 @@ namespace Hecton8.World
         private static int _routePathCount;
         private static int _recordRemovalScratchCount;
         private static int _registeredObstacleCount;
+        private static bool _obstacleSnapshotPoolReady;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextDynamicClearanceWarningTime = float.NegativeInfinity;
 #endif
@@ -350,6 +356,7 @@ namespace Hecton8.World
         {
             [NoAlias] public NativeArray<byte> Passability;
             [ReadOnly, NoAlias] public NativeArray<NavObstaclePrimitive> Obstacles;
+            public int ObstacleCount;
             public int3 Dimensions;
             public float3 Origin;
             public float CellSize;
@@ -358,12 +365,15 @@ namespace Hecton8.World
             {
                 if (!Passability.IsCreated ||
                     !Obstacles.IsCreated ||
-                    Obstacles.Length <= 0 ||
                     index < 0 ||
                     index >= Passability.Length)
                 {
                     return;
                 }
+
+                int obstacleLimit = math.min(ObstacleCount, Obstacles.Length);
+                if (obstacleLimit <= 0)
+                    return;
 
                 int slice = Dimensions.x * Dimensions.y;
                 int z = index / slice;
@@ -371,7 +381,7 @@ namespace Hecton8.World
                 int x = index - (z * slice) - (y * Dimensions.x);
                 float3 samplePoint = Origin + new float3(x * CellSize, y * CellSize, z * CellSize);
 
-                for (int obstacleIndex = 0; obstacleIndex < Obstacles.Length; obstacleIndex++)
+                for (int obstacleIndex = 0; obstacleIndex < obstacleLimit; obstacleIndex++)
                 {
                     NavObstaclePrimitive obstacle = Obstacles[obstacleIndex];
                     if (!math.all(math.isfinite(obstacle.Center)) ||
@@ -437,6 +447,7 @@ namespace Hecton8.World
             [ReadOnly, NoAlias] public NativeArray<byte> BasePassability;
             [NoAlias] public NativeArray<byte> Passability;
             [ReadOnly, NoAlias] public NativeArray<NavObstaclePrimitive> Obstacles;
+            public int ObstacleCount;
             public int3 Dimensions;
             public int3 RegionMin;
             public int3 RegionMax;
@@ -472,10 +483,13 @@ namespace Hecton8.World
                     return;
 
                 byte resolvedPassability = BasePassability[globalIndex];
-                if (Obstacles.IsCreated && Obstacles.Length > 0)
+                int obstacleLimit = Obstacles.IsCreated
+                    ? math.min(ObstacleCount, Obstacles.Length)
+                    : 0;
+                if (obstacleLimit > 0)
                 {
                     float3 samplePoint = Origin + new float3(globalX * CellSize, globalY * CellSize, globalZ * CellSize);
-                    for (int obstacleIndex = 0; obstacleIndex < Obstacles.Length; obstacleIndex++)
+                    for (int obstacleIndex = 0; obstacleIndex < obstacleLimit; obstacleIndex++)
                     {
                         NavObstaclePrimitive obstacle = Obstacles[obstacleIndex];
                         if (!math.all(math.isfinite(obstacle.Center)) ||
@@ -702,6 +716,15 @@ namespace Hecton8.World
             public JobHandle PendingDynamicUpdateHandle;
             public VaultGenerationHandle<byte> PendingDynamicNextHandle;
             public VaultGenerationHandle<ushort> PendingDynamicNextDistanceHandle;
+            public int PendingBuildRuntimeStamp;
+            public int PendingBuildObstacleSnapshotLease;
+            public int PendingBuildObstacleSnapshotCount;
+            public int PendingDynamicObstacleSnapshotLease;
+            public int PendingDynamicObstacleSnapshotCount;
+            public ulong PendingBuildMutationGuardMask;
+            public ulong PendingDynamicMutationGuardMask;
+            public IDataVault PendingBuildMutationGuardVault;
+            public IDataVault PendingDynamicMutationGuardVault;
             public long PendingDynamicScheduleTimestamp;
             public bool HasPendingDynamicUpdate;
             public bool PendingRemoval;
@@ -745,6 +768,15 @@ namespace Hecton8.World
                 PendingDynamicUpdateHandle = default;
                 PendingDynamicNextHandle = default;
                 PendingDynamicNextDistanceHandle = default;
+                PendingBuildRuntimeStamp = 0;
+                PendingBuildObstacleSnapshotLease = -1;
+                PendingBuildObstacleSnapshotCount = 0;
+                PendingDynamicObstacleSnapshotLease = -1;
+                PendingDynamicObstacleSnapshotCount = 0;
+                PendingBuildMutationGuardMask = 0UL;
+                PendingDynamicMutationGuardMask = 0UL;
+                PendingBuildMutationGuardVault = null;
+                PendingDynamicMutationGuardVault = null;
                 PendingDynamicScheduleTimestamp = 0L;
                 HasPendingDynamicUpdate = false;
                 PendingRemoval = false;
@@ -962,22 +994,28 @@ namespace Hecton8.World
             NativeArray<byte> baseOutputBuffer = default;
             NativeArray<ushort> distanceBuffer = default;
             NativeArray<NavObstaclePrimitive> obstacleSnapshot = default;
-            bool outputLocked = false;
-            bool baseOutputLocked = false;
-            bool distanceLocked = false;
+            int obstacleSnapshotLease = -1;
+            int obstacleSnapshotCount = 0;
+            IDataVault guardVault = null;
+            ulong guardMask = 0UL;
             try
             {
-                if (!TryAcquireNavGridWrite(in record.NextHandle, pointCount, out outputBuffer))
+                if (!TryAcquireNavGridMutationGuard(
+                        in record.NextHandle,
+                        in record.BaseNextHandle,
+                        in record.NextDistanceHandle,
+                        out guardMask,
+                        out guardVault))
+                {
                     return false;
-                outputLocked = true;
+                }
 
-                if (!TryAcquireNavGridWrite(in record.BaseNextHandle, pointCount, out baseOutputBuffer))
+                if (!TryResolveNavGridMutable(in record.NextHandle, pointCount, out outputBuffer) ||
+                    !TryResolveNavGridMutable(in record.BaseNextHandle, pointCount, out baseOutputBuffer) ||
+                    !TryResolveNavGridMutable(in record.NextDistanceHandle, pointCount, out distanceBuffer))
+                {
                     return false;
-                baseOutputLocked = true;
-
-                if (!TryAcquireNavGridWrite(in record.NextDistanceHandle, pointCount, out distanceBuffer))
-                    return false;
-                distanceLocked = true;
+                }
 
                 IDataVault vault = _dataVault;
                 if (vault == null || vault.IsCompactionFenceActive)
@@ -997,27 +1035,30 @@ namespace Hecton8.World
                     Destination = baseOutputBuffer
                 }.Schedule(pointCount, safeBatch, passabilityHandle);
 
-                int obstacleSnapshotCount = CountObstacleSnapshotPrimitives();
-                if (obstacleSnapshotCount > 0)
+                obstacleSnapshotCount = CountObstacleSnapshotPrimitives();
+                if (obstacleSnapshotCount > 0 &&
+                    TryAcquireObstacleSnapshotLease(out obstacleSnapshot, out obstacleSnapshotLease))
                 {
-                    obstacleSnapshot = new NativeArray<NavObstaclePrimitive>(
-                        obstacleSnapshotCount,
-                        Allocator.TempJob,
-                        NativeArrayOptions.UninitializedMemory);
-                    RegisterObstacleSnapshot(obstacleSnapshot, Allocator.TempJob);
-                    if (!TryFillObstacleSnapshot(obstacleSnapshot, out _))
+                    if (!TryFillObstacleSnapshot(obstacleSnapshot, out obstacleSnapshotCount))
                     {
-                        DisposeObstacleSnapshot(obstacleSnapshot);
+                        ReleaseObstacleSnapshotLease(obstacleSnapshotLease);
                         obstacleSnapshot = default;
+                        obstacleSnapshotLease = -1;
+                        obstacleSnapshotCount = 0;
                     }
                 }
+                else
+                {
+                    obstacleSnapshotCount = 0;
+                }
 
-                if (obstacleSnapshot.IsCreated)
+                if (obstacleSnapshot.IsCreated && obstacleSnapshotCount > 0)
                 {
                     baseCopyHandle = new ObstacleStampJob
                     {
                         Passability = outputBuffer,
                         Obstacles = obstacleSnapshot,
+                        ObstacleCount = obstacleSnapshotCount,
                         Dimensions = dimensions,
                         Origin = origin,
                         CellSize = cellSize
@@ -1032,27 +1073,21 @@ namespace Hecton8.World
                     AgentRadiusCells = ResolveClearanceRadiusCells(cellSize)
                 }.Schedule(baseCopyHandle);
 
-                if (obstacleSnapshot.IsCreated)
-                {
-                    scheduledHandle = DisposeObstacleSnapshot(obstacleSnapshot, scheduledHandle);
-                    obstacleSnapshot = default;
-                }
-
-                outputLocked = false;
-                baseOutputLocked = false;
-                distanceLocked = false;
+                record.PendingBuildRuntimeStamp = runtimeStamp;
+                record.PendingBuildObstacleSnapshotLease = obstacleSnapshotLease;
+                record.PendingBuildObstacleSnapshotCount = obstacleSnapshotCount;
+                record.PendingBuildMutationGuardMask = guardMask;
+                record.PendingBuildMutationGuardVault = guardVault;
+                obstacleSnapshotLease = -1;
+                guardMask = 0UL;
                 return true;
             }
             finally
             {
-                if (obstacleSnapshot.IsCreated)
-                    DisposeObstacleSnapshot(obstacleSnapshot);
-                if (distanceLocked)
-                    ReleaseNavGridWrite(in record.NextDistanceHandle);
-                if (baseOutputLocked)
-                    ReleaseNavGridWrite(in record.BaseNextHandle);
-                if (outputLocked)
-                    ReleaseNavGridWrite(in record.NextHandle);
+                if (obstacleSnapshotLease >= 0)
+                    ReleaseObstacleSnapshotLease(obstacleSnapshotLease);
+                if (guardMask != 0UL)
+                    ReleaseNavGridMutationGuard(guardVault, guardMask);
             }
         }
 
@@ -1143,28 +1178,52 @@ namespace Hecton8.World
                 return;
 
             int volumeInstanceId = GetStableVolumeEntityId(volume);
-            if (!TryGetRecord(volumeInstanceId, out VolumeRecord record) ||
-                record.RuntimeStamp != runtimeStamp)
+            if (!TryGetRecord(volumeInstanceId, out VolumeRecord record))
+                return;
+
+            if (record.RuntimeStamp != runtimeStamp)
             {
+                if (record.PendingBuildRuntimeStamp == runtimeStamp)
+                {
+                    ReleaseNavGridMutationGuard(record.PendingBuildMutationGuardVault, record.PendingBuildMutationGuardMask);
+                    ReleaseObstacleSnapshotLease(record.PendingBuildObstacleSnapshotLease);
+                    record.PendingBuildRuntimeStamp = 0;
+                    record.PendingBuildObstacleSnapshotLease = -1;
+                    record.PendingBuildObstacleSnapshotCount = 0;
+                    record.PendingBuildMutationGuardMask = 0UL;
+                    record.PendingBuildMutationGuardVault = null;
+                    record.IsDirty = true;
+                }
+
                 return;
             }
 
-            ReleaseNavGridWrite(in record.NextDistanceHandle);
-            ReleaseNavGridWrite(in record.BaseNextHandle);
-            ReleaseNavGridWrite(in record.NextHandle);
-            SwapHandles(ref record.CurrentHandle, ref record.NextHandle);
-            SwapHandles(ref record.BaseCurrentHandle, ref record.BaseNextHandle);
-            SwapHandles(ref record.CurrentDistanceHandle, ref record.NextDistanceHandle);
-            EvaluatePureVoidState(record);
-            if (record.IsPureVoid)
+            try
             {
-                record.PortalsReady = true;
+                SwapHandles(ref record.CurrentHandle, ref record.NextHandle);
+                SwapHandles(ref record.BaseCurrentHandle, ref record.BaseNextHandle);
+                SwapHandles(ref record.CurrentDistanceHandle, ref record.NextDistanceHandle);
+                EvaluatePureVoidState(record);
+                if (record.IsPureVoid)
+                {
+                    record.PortalsReady = true;
+                    _portalGraphDirty = true;
+                    return;
+                }
+
+                RebuildPortals(record);
                 _portalGraphDirty = true;
-                return;
             }
-
-            RebuildPortals(record);
-            _portalGraphDirty = true;
+            finally
+            {
+                ReleaseNavGridMutationGuard(record.PendingBuildMutationGuardVault, record.PendingBuildMutationGuardMask);
+                ReleaseObstacleSnapshotLease(record.PendingBuildObstacleSnapshotLease);
+                record.PendingBuildRuntimeStamp = 0;
+                record.PendingBuildObstacleSnapshotLease = -1;
+                record.PendingBuildObstacleSnapshotCount = 0;
+                record.PendingBuildMutationGuardMask = 0UL;
+                record.PendingBuildMutationGuardVault = null;
+            }
         }
 
         internal static void RegisterModuleObstacle(int obstacleId, BoxCollider[] boxes, CapsuleCollider[] capsules)
@@ -1207,7 +1266,7 @@ namespace Hecton8.World
                 obstacleCount += CountLiveColliders(registration.Capsules);
             }
 
-            HectonMapMagicVegetationBridge activeBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge activeBridge = _vegetationBridge;
             obstacleCount += CountMacroFloraObstacles(activeBridge);
             obstacleCount += CountPersistentDynamicObstacles();
 
@@ -1230,62 +1289,90 @@ namespace Hecton8.World
                 WriteColliderBounds(registration.Capsules, ref snapshot, ref writeIndex);
             }
 
-            HectonMapMagicVegetationBridge activeBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge activeBridge = _vegetationBridge;
             WriteMacroFloraObstacles(activeBridge, ref snapshot, ref writeIndex);
             WritePersistentDynamicObstacles(ref snapshot, ref writeIndex);
             writtenCount = math.min(writeIndex, snapshot.Length);
-            ClearInvalidObstacleTail(snapshot, writtenCount);
             return writtenCount > 0;
         }
 
-        internal static void RegisterObstacleSnapshot(
-            NativeArray<NavObstaclePrimitive> snapshot,
-            Allocator allocator)
+        private static bool EnsureObstacleSnapshotPoolCold()
         {
-            if (!snapshot.IsCreated)
-                return;
+            if (_obstacleSnapshotPoolReady)
+                return true;
 
-            NativeMemorySentinel.RegisterNativeArray(
-                snapshot,
-                NativeMemoryOwner,
-                ObstacleSnapshotNativeMemoryLabel,
-                ResolveObstacleSnapshotLifetime(allocator));
-        }
-
-        internal static void DisposeObstacleSnapshot(NativeArray<NavObstaclePrimitive> snapshot)
-        {
-            if (!snapshot.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(snapshot);
-            snapshot.Dispose();
-        }
-
-        internal static JobHandle DisposeObstacleSnapshot(
-            NativeArray<NavObstaclePrimitive> snapshot,
-            JobHandle dependency)
-        {
-            if (!snapshot.IsCreated)
-                return dependency;
-
-            NativeMemorySentinel.UnregisterNativeArray(snapshot);
-            JobHandle disposeHandle = snapshot.Dispose(dependency);
-            return disposeHandle;
-        }
-
-        private static NativeAllocationLifetime ResolveObstacleSnapshotLifetime(Allocator allocator)
-        {
-            switch (allocator)
+            for (int i = 0; i < _obstacleSnapshotPool.Length; i++)
             {
-                case Allocator.Temp:
-                    return NativeAllocationLifetime.Temp;
-                case Allocator.TempJob:
-                    return NativeAllocationLifetime.TempJob;
-                case Allocator.Persistent:
-                    return NativeMemoryLifetime;
-                default:
-                    return NativeAllocationLifetime.TransientArena;
+                if (!_obstacleSnapshotPool[i].IsCreated)
+                {
+                    _obstacleSnapshotPool[i] = new NativeArray<NavObstaclePrimitive>(
+                        MaxObstacleSnapshotPrimitiveCount,
+                        Allocator.Persistent,
+                        NativeArrayOptions.UninitializedMemory);
+                    NativeMemorySentinel.RegisterNativeArray(
+                        _obstacleSnapshotPool[i],
+                        NativeMemoryOwner,
+                        ObstacleSnapshotNativeMemoryLabel,
+                        NativeMemoryLifetime);
+                }
+
+                _obstacleSnapshotLeaseStates[i] = 0;
             }
+
+            _obstacleSnapshotPoolReady = true;
+            return true;
+        }
+
+        private static bool TryAcquireObstacleSnapshotLease(
+            out NativeArray<NavObstaclePrimitive> snapshot,
+            out int leaseIndex)
+        {
+            snapshot = default;
+            leaseIndex = -1;
+            if (!_obstacleSnapshotPoolReady)
+                return false;
+
+            for (int i = 0; i < _obstacleSnapshotPool.Length; i++)
+            {
+                if (_obstacleSnapshotLeaseStates[i] != 0)
+                    continue;
+
+                NativeArray<NavObstaclePrimitive> candidate = _obstacleSnapshotPool[i];
+                if (!candidate.IsCreated)
+                    continue;
+
+                _obstacleSnapshotLeaseStates[i] = 1;
+                snapshot = candidate;
+                leaseIndex = i;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void ReleaseObstacleSnapshotLease(int leaseIndex)
+        {
+            if ((uint)leaseIndex >= (uint)_obstacleSnapshotLeaseStates.Length)
+                return;
+
+            _obstacleSnapshotLeaseStates[leaseIndex] = 0;
+        }
+
+        private static void DisposeObstacleSnapshotPool()
+        {
+            for (int i = 0; i < _obstacleSnapshotPool.Length; i++)
+            {
+                _obstacleSnapshotLeaseStates[i] = 0;
+                NativeArray<NavObstaclePrimitive> snapshot = _obstacleSnapshotPool[i];
+                if (!snapshot.IsCreated)
+                    continue;
+
+                NativeMemorySentinel.UnregisterNativeArray(snapshot);
+                snapshot.Dispose();
+                _obstacleSnapshotPool[i] = default;
+            }
+
+            _obstacleSnapshotPoolReady = false;
         }
 
         internal static void EnqueueDynamicObstacleGrowth(float3 center, float3 extents, float expansionMeters)
@@ -1385,21 +1472,31 @@ namespace Hecton8.World
             if (record == null)
                 return;
 
-            EvaluateDynamicClearanceBudget(record.PendingDynamicScheduleTimestamp);
-            ReleaseNavGridWrite(in record.PendingDynamicNextDistanceHandle);
-            ReleaseNavGridWrite(in record.PendingDynamicNextHandle);
-            record.PendingDynamicNextHandle = default;
-            record.PendingDynamicNextDistanceHandle = default;
-            record.PendingDynamicScheduleTimestamp = 0L;
-            record.HasPendingDynamicUpdate = false;
-            SwapHandles(ref record.CurrentHandle, ref record.NextHandle);
-            SwapHandles(ref record.CurrentDistanceHandle, ref record.NextDistanceHandle);
-            record.PendingRegionMin = int3.zero;
-            record.PendingRegionMax = int3.zero;
-            EvaluatePureVoidState(record);
-            if (!record.IsPureVoid)
-                RebuildPortals(record);
-            _portalGraphDirty = true;
+            try
+            {
+                EvaluateDynamicClearanceBudget(record.PendingDynamicScheduleTimestamp);
+                record.PendingDynamicNextHandle = default;
+                record.PendingDynamicNextDistanceHandle = default;
+                record.PendingDynamicScheduleTimestamp = 0L;
+                record.HasPendingDynamicUpdate = false;
+                SwapHandles(ref record.CurrentHandle, ref record.NextHandle);
+                SwapHandles(ref record.CurrentDistanceHandle, ref record.NextDistanceHandle);
+                record.PendingRegionMin = int3.zero;
+                record.PendingRegionMax = int3.zero;
+                EvaluatePureVoidState(record);
+                if (!record.IsPureVoid)
+                    RebuildPortals(record);
+                _portalGraphDirty = true;
+            }
+            finally
+            {
+                ReleaseNavGridMutationGuard(record.PendingDynamicMutationGuardVault, record.PendingDynamicMutationGuardMask);
+                ReleaseObstacleSnapshotLease(record.PendingDynamicObstacleSnapshotLease);
+                record.PendingDynamicObstacleSnapshotLease = -1;
+                record.PendingDynamicObstacleSnapshotCount = 0;
+                record.PendingDynamicMutationGuardMask = 0UL;
+                record.PendingDynamicMutationGuardVault = null;
+            }
         }
 
         internal static void SchedulePendingDynamicObstacleUpdates()
@@ -1440,25 +1537,36 @@ namespace Hecton8.World
                 NativeArray<ushort> currentDistance = default;
                 NativeArray<ushort> nextDistance = default;
                 NativeArray<NavObstaclePrimitive> obstacleSnapshot = default;
+                int obstacleSnapshotLease = -1;
+                int obstacleSnapshotCount = 0;
                 VaultGenerationHandle<byte> lockedNextHandle = record.NextHandle;
                 VaultGenerationHandle<ushort> lockedNextDistanceHandle = record.NextDistanceHandle;
-                bool nextLocked = false;
-                bool nextDistanceLocked = false;
+                IDataVault guardVault = null;
+                ulong guardMask = 0UL;
                 try
                 {
                     if (!TryResolveNavGridRead(in record.CurrentHandle, requiredCellCount, out current) ||
                         !TryResolveNavGridRead(in record.BaseCurrentHandle, requiredCellCount, out baseCurrent) ||
-                        !TryResolveNavGridRead(in record.CurrentDistanceHandle, requiredCellCount, out currentDistance) ||
-                        !TryAcquireNavGridWrite(in record.NextHandle, requiredCellCount, out next))
+                        !TryResolveNavGridRead(in record.CurrentDistanceHandle, requiredCellCount, out currentDistance))
                     {
                         continue;
                     }
 
-                    nextLocked = true;
-                    if (!TryAcquireNavGridWrite(in record.NextDistanceHandle, requiredCellCount, out nextDistance))
+                    if (!TryAcquireNavGridMutationGuard(
+                            in record.NextHandle,
+                            in record.NextDistanceHandle,
+                            out guardMask,
+                            out guardVault))
+                    {
                         continue;
+                    }
 
-                    nextDistanceLocked = true;
+                    if (!TryResolveNavGridMutable(in record.NextHandle, requiredCellCount, out next) ||
+                        !TryResolveNavGridMutable(in record.NextDistanceHandle, requiredCellCount, out nextDistance))
+                    {
+                        continue;
+                    }
+
                     IDataVault vault = _dataVault;
                     if (vault == null || vault.IsCompactionFenceActive)
                         continue;
@@ -1475,19 +1583,21 @@ namespace Hecton8.World
                     }.Schedule(requiredCellCount, 64);
                     JobHandle resetDependency = JobHandle.CombineDependencies(passabilityCopyHandle, distanceCopyHandle);
 
-                    int obstacleSnapshotCount = CountObstacleSnapshotPrimitives();
-                    if (obstacleSnapshotCount > 0)
+                    obstacleSnapshotCount = CountObstacleSnapshotPrimitives();
+                    if (obstacleSnapshotCount > 0 &&
+                        TryAcquireObstacleSnapshotLease(out obstacleSnapshot, out obstacleSnapshotLease))
                     {
-                        obstacleSnapshot = new NativeArray<NavObstaclePrimitive>(
-                            obstacleSnapshotCount,
-                            Allocator.TempJob,
-                            NativeArrayOptions.UninitializedMemory);
-                        RegisterObstacleSnapshot(obstacleSnapshot, Allocator.TempJob);
-                        if (!TryFillObstacleSnapshot(obstacleSnapshot, out _))
+                        if (!TryFillObstacleSnapshot(obstacleSnapshot, out obstacleSnapshotCount))
                         {
-                            DisposeObstacleSnapshot(obstacleSnapshot);
+                            ReleaseObstacleSnapshotLease(obstacleSnapshotLease);
                             obstacleSnapshot = default;
+                            obstacleSnapshotLease = -1;
+                            obstacleSnapshotCount = 0;
                         }
+                    }
+                    else
+                    {
+                        obstacleSnapshotCount = 0;
                     }
 
                     record.PendingRegionMin = regionMin;
@@ -1499,6 +1609,7 @@ namespace Hecton8.World
                         BasePassability = baseCurrent,
                         Passability = next,
                         Obstacles = obstacleSnapshot,
+                        ObstacleCount = obstacleSnapshotCount,
                         Dimensions = record.Dimensions,
                         RegionMin = regionMin,
                         RegionMax = regionMax,
@@ -1522,30 +1633,26 @@ namespace Hecton8.World
                         }.Schedule(stampHandle);
                     }
 
-                    if (obstacleSnapshot.IsCreated)
-                    {
-                        updateHandle = DisposeObstacleSnapshot(obstacleSnapshot, updateHandle);
-                        obstacleSnapshot = default;
-                    }
-
                     record.PendingDynamicUpdateHandle = updateHandle;
                     record.PendingDynamicNextHandle = lockedNextHandle;
                     record.PendingDynamicNextDistanceHandle = lockedNextDistanceHandle;
+                    record.PendingDynamicObstacleSnapshotLease = obstacleSnapshotLease;
+                    record.PendingDynamicObstacleSnapshotCount = obstacleSnapshotCount;
+                    record.PendingDynamicMutationGuardMask = guardMask;
+                    record.PendingDynamicMutationGuardVault = guardVault;
                     record.PendingDynamicScheduleTimestamp = completionStartTimestamp;
                     record.HasPendingDynamicUpdate = true;
                     obstacleSnapshot = default;
-                    nextDistanceLocked = false;
-                    nextLocked = false;
+                    obstacleSnapshotLease = -1;
+                    guardMask = 0UL;
                     scheduledAnyRecord = true;
                 }
                 finally
                 {
-                    if (obstacleSnapshot.IsCreated)
-                        DisposeObstacleSnapshot(obstacleSnapshot);
-                    if (nextDistanceLocked)
-                        ReleaseNavGridWrite(in lockedNextDistanceHandle);
-                    if (nextLocked)
-                        ReleaseNavGridWrite(in lockedNextHandle);
+                    if (obstacleSnapshotLease >= 0)
+                        ReleaseObstacleSnapshotLease(obstacleSnapshotLease);
+                    if (guardMask != 0UL)
+                        ReleaseNavGridMutationGuard(guardVault, guardMask);
                 }
             }
 
@@ -1889,7 +1996,7 @@ namespace Hecton8.World
                 return false;
 
             sample.FloorBoundaryY = worldPosition.y;
-            HectonMapMagicVegetationBridge activeBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge activeBridge = _vegetationBridge;
             if (activeBridge != null &&
                 activeBridge.TryGetCachedTerrainHeight(worldPosition.x, worldPosition.z, out float terrainHeight) &&
                 math.isfinite(terrainHeight))
@@ -2056,6 +2163,7 @@ namespace Hecton8.World
         {
             ClearRecordStorage();
             ReleaseNavGridTelemetryBuffers(_dataVault);
+            DisposeObstacleSnapshotPool();
             ClearDeferredDirtyVolumes();
             ClearObstacleRegistrations();
             _dirtyRequestSpillCount = 0;
@@ -2471,7 +2579,15 @@ namespace Hecton8.World
 
             _dataVault = dataVault;
             if (dataVault != null)
+            {
                 EnsureNavGridTelemetryBuffers(dataVault);
+                EnsureObstacleSnapshotPoolCold();
+            }
+        }
+
+        internal static void SetVegetationBridge(HectonMapMagicVegetationBridge vegetationBridge)
+        {
+            _vegetationBridge = vegetationBridge;
         }
 
         internal static bool IsTeardownPending()
@@ -2775,70 +2891,84 @@ namespace Hecton8.World
             return math.saturate(math.select(1f, weight, math.isfinite(weight)));
         }
 
-        private static bool TryAcquireNavGridWrite<T>(
+        private static bool TryAcquireNavGridMutationGuard<TA, TB>(
+            in VaultGenerationHandle<TA> first,
+            in VaultGenerationHandle<TB> second,
+            out ulong guardMask,
+            out IDataVault guardVault)
+            where TA : struct
+            where TB : struct
+        {
+            guardMask = NavGridMutationGuardBit(in first) |
+                        NavGridMutationGuardBit(in second);
+            return TryAcquireNavGridMutationGuard(guardMask, out guardVault);
+        }
+
+        private static bool TryAcquireNavGridMutationGuard<TA, TB, TC>(
+            in VaultGenerationHandle<TA> first,
+            in VaultGenerationHandle<TB> second,
+            in VaultGenerationHandle<TC> third,
+            out ulong guardMask,
+            out IDataVault guardVault)
+            where TA : struct
+            where TB : struct
+            where TC : struct
+        {
+            guardMask = NavGridMutationGuardBit(in first) |
+                        NavGridMutationGuardBit(in second) |
+                        NavGridMutationGuardBit(in third);
+            return TryAcquireNavGridMutationGuard(guardMask, out guardVault);
+        }
+
+        private static bool TryAcquireNavGridMutationGuard(ulong guardMask, out IDataVault guardVault)
+        {
+            guardVault = _dataVault;
+            if (guardVault == null || guardMask == 0UL || guardVault.IsCompactionFenceActive)
+                return false;
+
+            if (!guardVault.TryAcquireMutationGuard(guardMask))
+            {
+                guardVault = null;
+                return false;
+            }
+
+            bool keepGuard = false;
+            try
+            {
+                keepGuard = true;
+                return true;
+            }
+            finally
+            {
+                if (!keepGuard)
+                {
+                    guardVault.ReleaseMutationGuard(guardMask);
+                    guardVault = null;
+                }
+            }
+        }
+
+        private static void ReleaseNavGridMutationGuard(IDataVault vault, ulong guardMask)
+        {
+            if (vault != null && guardMask != 0UL)
+                vault.ReleaseMutationGuard(guardMask);
+        }
+
+        private static ulong NavGridMutationGuardBit<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.BufferID == (uint)BufferID.Unknown
+                ? 0UL
+                : 1UL << (unchecked((int)handle.BufferID) & 31);
+        }
+
+        private static bool TryResolveNavGridMutable<T>(
             in VaultGenerationHandle<T> handle,
             int requiredLength,
             out NativeArray<T> buffer)
             where T : struct
         {
-            buffer = default;
-            IDataVault vault = _dataVault;
-            if (vault == null || requiredLength <= 0)
-            {
-                RecordNavGridTelemetry(handle.BufferID, handle.Generation, requiredLength, 0, -1, NavGridFailureVaultMissing, NavGridPhaseVault, NavGridFlagFailClosed, 0f, float3.zero);
-                return false;
-            }
-
-            if (vault.IsCompactionFenceActive)
-            {
-                RecordNavGridTelemetry(handle.BufferID, handle.Generation, requiredLength, 0, -1, NavGridFailureCompactionFence, NavGridPhaseVault, NavGridFlagFailClosed | NavGridFlagCompaction, 0f, float3.zero);
-                return false;
-            }
-
-            if (!IsVaultHandleCreated(in handle))
-            {
-                RecordNavGridTelemetry(handle.BufferID, handle.Generation, requiredLength, 0, -1, NavGridFailureHandleResolve, NavGridPhaseVault, NavGridFlagFailClosed, 0f, float3.zero);
-                return false;
-            }
-
-            if (!vault.TryAcquireWriteLock(in handle, NavGridVaultOwner, out NativeArray<T> lockedBuffer))
-            {
-                RecordNavGridTelemetry(handle.BufferID, handle.Generation, requiredLength, 0, -1, NavGridFailureWriteLock, NavGridPhaseVault, NavGridFlagFailClosed | NavGridFlagContention, 0f, float3.zero);
-                return false;
-            }
-
-            if (!lockedBuffer.IsCreated ||
-                lockedBuffer.Length < requiredLength ||
-                vault.IsCompactionFenceActive)
-            {
-                int actualLength = lockedBuffer.IsCreated ? lockedBuffer.Length : 0;
-                vault.ReleaseWriteLock(in handle, NavGridVaultOwner);
-                RecordNavGridTelemetry(
-                    handle.BufferID,
-                    handle.Generation,
-                    requiredLength,
-                    actualLength,
-                    -1,
-                    vault.IsCompactionFenceActive ? NavGridFailureCompactionFence : NavGridFailureCapacity,
-                    NavGridPhaseVault,
-                    vault.IsCompactionFenceActive ? NavGridFlagFailClosed | NavGridFlagCompaction : NavGridFlagFailClosed,
-                    0f,
-                    float3.zero);
-                return false;
-            }
-
-            buffer = lockedBuffer;
-            return true;
-        }
-
-        private static void ReleaseNavGridWrite<T>(in VaultGenerationHandle<T> handle)
-            where T : struct
-        {
-            IDataVault vault = _dataVault;
-            if (vault == null || !IsVaultHandleCreated(in handle))
-                return;
-
-            vault.ReleaseWriteLock(in handle, NavGridVaultOwner);
+            return TryResolveNavGridRead(in handle, requiredLength, out buffer);
         }
 
         private static bool TryResolveNavGridRead<T>(
@@ -2850,40 +2980,19 @@ namespace Hecton8.World
             buffer = default;
             IDataVault vault = _dataVault;
             if (vault == null || requiredLength <= 0)
-            {
-                RecordNavGridTelemetry(handle.BufferID, handle.Generation, requiredLength, 0, -1, NavGridFailureVaultMissing, NavGridPhaseVault, NavGridFlagFailClosed, 0f, float3.zero);
                 return false;
-            }
 
             if (vault.IsCompactionFenceActive)
-            {
-                RecordNavGridTelemetry(handle.BufferID, handle.Generation, requiredLength, 0, -1, NavGridFailureCompactionFence, NavGridPhaseVault, NavGridFlagFailClosed | NavGridFlagCompaction, 0f, float3.zero);
                 return false;
-            }
 
             if (!IsVaultHandleCreated(in handle))
-            {
-                RecordNavGridTelemetry(handle.BufferID, handle.Generation, requiredLength, 0, -1, NavGridFailureHandleResolve, NavGridPhaseVault, NavGridFlagFailClosed, 0f, float3.zero);
                 return false;
-            }
 
             if (!vault.TryResolveHandle(in handle, out NativeArray<T> resolved) ||
                 !resolved.IsCreated ||
                 resolved.Length < requiredLength ||
                 vault.IsCompactionFenceActive)
             {
-                int actualLength = resolved.IsCreated ? resolved.Length : 0;
-                RecordNavGridTelemetry(
-                    handle.BufferID,
-                    handle.Generation,
-                    requiredLength,
-                    actualLength,
-                    -1,
-                    vault.IsCompactionFenceActive ? NavGridFailureCompactionFence : NavGridFailureHandleResolve,
-                    NavGridPhaseVault,
-                    vault.IsCompactionFenceActive ? NavGridFlagFailClosed | NavGridFlagCompaction : NavGridFlagFailClosed,
-                    0f,
-                    float3.zero);
                 return false;
             }
 
@@ -3018,6 +3127,19 @@ namespace Hecton8.World
             if (record.HasPendingDynamicUpdate)
                 return false;
 
+            ReleaseNavGridMutationGuard(record.PendingBuildMutationGuardVault, record.PendingBuildMutationGuardMask);
+            ReleaseNavGridMutationGuard(record.PendingDynamicMutationGuardVault, record.PendingDynamicMutationGuardMask);
+            ReleaseObstacleSnapshotLease(record.PendingBuildObstacleSnapshotLease);
+            ReleaseObstacleSnapshotLease(record.PendingDynamicObstacleSnapshotLease);
+            record.PendingBuildRuntimeStamp = 0;
+            record.PendingBuildObstacleSnapshotLease = -1;
+            record.PendingBuildObstacleSnapshotCount = 0;
+            record.PendingDynamicObstacleSnapshotLease = -1;
+            record.PendingDynamicObstacleSnapshotCount = 0;
+            record.PendingBuildMutationGuardMask = 0UL;
+            record.PendingDynamicMutationGuardMask = 0UL;
+            record.PendingBuildMutationGuardVault = null;
+            record.PendingDynamicMutationGuardVault = null;
             ReleaseNavGridBuffer(ref record.CurrentHandle);
             ReleaseNavGridBuffer(ref record.NextHandle);
             ReleaseNavGridBuffer(ref record.BaseCurrentHandle);

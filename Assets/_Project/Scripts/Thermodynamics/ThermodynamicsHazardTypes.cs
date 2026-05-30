@@ -143,6 +143,8 @@ namespace Hecton8.Thermodynamics
         [FieldOffset(44)] public uint NaNCellIndex;
         [FieldOffset(48)] public uint ActiveResolution;
         [FieldOffset(52)] public uint GridOriginHash;
+        [FieldOffset(56)] public byte QualityPressureQ8;
+        [FieldOffset(57)] public byte HealthPressureQ8;
         [FieldOffset(56)] public uint _pad0;
         [FieldOffset(60)] public uint _pad1;
     }

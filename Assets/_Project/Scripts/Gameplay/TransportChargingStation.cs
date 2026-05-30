@@ -90,6 +90,7 @@ namespace Hecton8.Gameplay
         {
             TryRegisterHotSwapListener();
             TryRegister();
+            RefreshTrackedTransportsFromRegistryCold();
             UpdateIndicators();
         }
 
@@ -124,7 +125,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Tick(float deltaTime)
         {
-            RefreshTrackedTransportsFromRegistry();
+            RefreshTrackedTransportsFromCachedOverlap();
 
             int nextActiveChargingCount = 0;
             if (_hasPower && chargeRatePerSecond > 0f)
@@ -175,6 +176,23 @@ namespace Hecton8.Gameplay
             UpdateIndicators();
         }
 
+        private void OnTriggerEnter(Collider other)
+        {
+            if (!TryResolveTransportLifecycleOwner(other, out IPlayerTransportLifecycleOwner lifecycleOwner, out MonoBehaviour lifecycleBehaviour))
+                return;
+
+            if (PassesTransportFilter(lifecycleBehaviour) && IsTransportInsideStation(lifecycleBehaviour))
+                AddTrackedTransport(lifecycleOwner, lifecycleBehaviour);
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if (!TryResolveTransportLifecycleOwner(other, out IPlayerTransportLifecycleOwner lifecycleOwner, out MonoBehaviour lifecycleBehaviour))
+                return;
+
+            RemoveTrackedTransport(lifecycleOwner, lifecycleBehaviour);
+        }
+
         private void TryRegister()
         {
             if (!Application.isPlaying)
@@ -221,7 +239,7 @@ namespace Hecton8.Gameplay
             _registeredHotSwap = false;
         }
 
-        private void RefreshTrackedTransportsFromRegistry()
+        private void RefreshTrackedTransportsFromCachedOverlap()
         {
             for (int i = 0; i < _trackedTransports.Length; i++)
             {
@@ -235,7 +253,10 @@ namespace Hecton8.Gameplay
                     _trackedBehaviours[i] = null;
                 }
             }
+        }
 
+        private void RefreshTrackedTransportsFromRegistryCold()
+        {
             for (int i = 0; i < PlayerTransportLifecycleRegistry.SlotCapacity; i++)
             {
                 if (!PlayerTransportLifecycleRegistry.TryGetAt(i, out IPlayerTransportLifecycleOwner owner, out MonoBehaviour behaviour))
@@ -266,21 +287,29 @@ namespace Hecton8.Gameplay
 
         private bool TryResolveTransportLifecycleOwner(Collider other, out IPlayerTransportLifecycleOwner lifecycleOwner, out MonoBehaviour lifecycleBehaviour)
         {
-            lifecycleOwner = other.GetComponentInParent<IPlayerTransportLifecycleOwner>();
-            lifecycleBehaviour = lifecycleOwner as MonoBehaviour;
-            if (lifecycleOwner != null && lifecycleBehaviour != null)
-                return true;
-
-            IPlayerTransportLifecycleResolver transportResolver = other.GetComponentInParent<IPlayerTransportLifecycleResolver>();
-            if (transportResolver != null && transportResolver.TryResolveTransportLifecycleOwner(out lifecycleOwner))
-            {
-                lifecycleBehaviour = lifecycleOwner as MonoBehaviour;
-                return lifecycleBehaviour != null;
-            }
-
             lifecycleOwner = null;
             lifecycleBehaviour = null;
-            return false;
+            if (other == null)
+                return false;
+
+            lifecycleOwner = other.GetComponentInParent<IPlayerTransportLifecycleOwner>();
+            lifecycleBehaviour = lifecycleOwner as MonoBehaviour;
+            if (lifecycleOwner == null || lifecycleBehaviour == null)
+            {
+                IPlayerTransportLifecycleResolver transportResolver = other.GetComponentInParent<IPlayerTransportLifecycleResolver>();
+                if (transportResolver != null && transportResolver.TryResolveTransportLifecycleOwner(out lifecycleOwner))
+                    lifecycleBehaviour = lifecycleOwner as MonoBehaviour;
+            }
+
+            return PlayerTransportLifecycleRegistry.TryGetRegistered(
+                lifecycleOwner,
+                lifecycleBehaviour,
+                out lifecycleOwner,
+                out lifecycleBehaviour,
+                out _,
+                out _,
+                out _,
+                out _);
         }
 
         private void AddTrackedTransport(IPlayerTransportLifecycleOwner lifecycleOwner, MonoBehaviour lifecycleBehaviour)

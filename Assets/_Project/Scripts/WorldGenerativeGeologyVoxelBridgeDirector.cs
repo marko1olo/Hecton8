@@ -334,6 +334,7 @@ namespace Hecton8.World
         private int _pendingRequestSequence;
         private AbyssalThermalManager _thermalManager;
         private PersistentWorldRegistry _persistentWorldRegistry;
+        private ResourceDistributionDirector _resourceDistributionDirector;
         private IObjectPoolService _objectPoolService;
         private IDataVault _dataVault;
         private VaultGenerationHandle<VoxelBridgeTelemetryEntry> _voxelBridgeBlackBoxHandle;
@@ -343,7 +344,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            ResolveReferences();
+            RefreshColdReferences();
             EnsureFallbackGenerationPreset();
             RefreshColdRegistryDependencies();
             EnsureVoxelPoolWarmCold(
@@ -355,7 +356,7 @@ namespace Hecton8.World
 
         private void Start()
         {
-            ResolveReferences();
+            RefreshColdReferences();
             EnsureFallbackGenerationPreset();
             RefreshColdRegistryDependencies();
             EnsureVoxelPoolWarmCold(
@@ -412,6 +413,12 @@ namespace Hecton8.World
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.ResourceDistributionRuntime)
+            {
+                _resourceDistributionDirector = currentService as ResourceDistributionDirector;
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.ObjectPool)
             {
                 _objectPoolService = currentService as IObjectPoolService;
@@ -427,6 +434,12 @@ namespace Hecton8.World
                 _voxelBridgeBlackBoxHandle = default;
                 _blackBoxWriteIndex = 0;
                 TryEnsureVoxelBridgeBlackBox();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.VoxelEngineRuntime)
+            {
+                voxelEngine = currentService as HectonVoxelEngine;
                 return;
             }
 
@@ -451,6 +464,7 @@ namespace Hecton8.World
             _runtimeDispatcherReady = GlobalRegistry.Dispatcher != null;
             _thermalManager = AbyssalThermalManager.ActiveRuntimeInstance;
             _persistentWorldRegistry = PersistentWorldRegistry.Instance;
+            _resourceDistributionDirector = GlobalRegistry.ResourceDistribution;
             _objectPoolService = GlobalRegistry.ObjectPoolService;
             _dataVault = GlobalRegistry.DataVault;
             TryRegisterHotSwapListener();
@@ -633,7 +647,6 @@ namespace Hecton8.World
         public void ReconcileVoxelRequests()
         {
             long reconcileStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-            ResolveReferences();
             _debugTopVolume = string.Empty;
             float visualQualityWeight = ResolveGlobalQualityWeight();
             int runtimeVolumeBudget = ResolveRuntimeVolumeBudget(visualQualityWeight);
@@ -706,7 +719,7 @@ namespace Hecton8.World
                 if (!ShouldRetainActiveVolume(runtimeKey, now))
                     continue;
 
-                AddDesiredRuntimeKey(runtimeKey);
+                TryAddDesiredRuntimeKey(runtimeKey);
             }
 
             Dictionary<long, GameObject>.Enumerator activeVolumeEnumerator = _activeVolumes.GetEnumerator();
@@ -722,7 +735,7 @@ namespace Hecton8.World
                 if (!ShouldRetainActiveVolume(runtimeKey, now))
                     continue;
 
-                AddDesiredRuntimeKey(runtimeKey);
+                TryAddDesiredRuntimeKey(runtimeKey);
             }
 
             HashSet<long>.Enumerator pendingRuntimeEnumerator = _pendingRuntimeKeys.GetEnumerator();
@@ -731,7 +744,7 @@ namespace Hecton8.World
                 if (_desiredRuntimeKeys.Count >= capacity)
                     break;
 
-                AddDesiredRuntimeKey(pendingRuntimeEnumerator.Current);
+                TryAddDesiredRuntimeKey(pendingRuntimeEnumerator.Current);
             }
 
             // Keep already-active volumes first to avoid constant top-N churn when
@@ -768,11 +781,11 @@ namespace Hecton8.World
                 if (_lastSeenTimes.TryGetValue(runtimeKey, out float lastSeenTime) &&
                     now - lastSeenTime < Mathf.Max(0.25f, missingRequestGraceSeconds))
                 {
-                    AddDesiredRuntimeKey(runtimeKey);
+                    TryAddDesiredRuntimeKey(runtimeKey);
                     continue;
                 }
 
-                if (!_desiredRuntimeKeys.Contains(runtimeKey))
+                if (!_desiredRuntimeKeys.Contains(runtimeKey) && _removalBuffer.Count < _removalBuffer.Capacity)
                     _removalBuffer.Add(runtimeKey);
             }
 
@@ -838,7 +851,9 @@ namespace Hecton8.World
             int spawnBudget,
             float visualQualityWeight)
         {
-            AddDesiredRuntimeKey(request.runtimeKey);
+            if (!TryAddDesiredRuntimeKey(request.runtimeKey))
+                return;
+
             _lastSeenTimes[request.runtimeKey] = RuntimeNowSeconds();
             int signature = ComputeRequestSignature(request, visualQualityWeight);
             _desiredSignatures[request.runtimeKey] = signature;
@@ -865,8 +880,16 @@ namespace Hecton8.World
             if (spawnBudgetUsed >= Mathf.Max(1, spawnBudget))
                 return;
 
+            if (_pendingRuntimeKeys.Count >= RuntimeKeySetCapacity ||
+                _pendingRequests.Count >= RuntimeKeySetCapacity)
+            {
+                return;
+            }
+
             PendingRequestState state = CreatePendingRequestState(signature, visualQualityWeight);
-            _pendingRuntimeKeys.Add(request.runtimeKey);
+            if (!_pendingRuntimeKeys.Add(request.runtimeKey))
+                return;
+
             _pendingRequests[request.runtimeKey] = state;
             TraceRequestScheduled(
                 request.runtimeKey,
@@ -876,7 +899,12 @@ namespace Hecton8.World
                 request.playerDistance,
                 _activeVolumes.Count,
                 _pendingRuntimeKeys.Count);
-            QueueLaunchRequest(request);
+            if (!TryQueueLaunchRequest(request))
+            {
+                CancelPendingRequest(request.runtimeKey, true);
+                return;
+            }
+
             spawnBudgetUsed++;
         }
 
@@ -924,20 +952,39 @@ namespace Hecton8.World
             _requestLookupByKey[request.runtimeKey] = request;
         }
 
-        private void QueueLaunchRequest(in WorldGenerativeGeologyVoxelBlendRequest request)
+        private bool TryQueueLaunchRequest(in WorldGenerativeGeologyVoxelBlendRequest request)
         {
             CompactQueuedLaunchOrderIfNeeded();
-            _queuedLaunchRequests[request.runtimeKey] = request;
-            if (_queuedLaunchKeys.Add(request.runtimeKey))
+
+            if (_queuedLaunchKeys.Contains(request.runtimeKey))
             {
-                _queuedLaunchOrder.Add(request.runtimeKey);
-                _queuedLaunchTimes[request.runtimeKey] = RuntimeNowSeconds();
+                _queuedLaunchRequests[request.runtimeKey] = request;
+                _debugQueuedLaunches = _queuedLaunchKeys.Count;
+                WorldGenerativeGeologyTelemetry.TryPublishVoxelQueuePressureIfNeeded(
+                    _debugQueuedLaunches,
+                    ref _nextQueueTelemetryFrame);
+                return true;
             }
 
+            if (_queuedLaunchKeys.Count >= RuntimeKeySetCapacity ||
+                _queuedLaunchRequests.Count >= RuntimeKeySetCapacity ||
+                _queuedLaunchTimes.Count >= RuntimeKeySetCapacity ||
+                _queuedLaunchOrder.Count >= _queuedLaunchOrder.Capacity)
+            {
+                return false;
+            }
+
+            _queuedLaunchRequests[request.runtimeKey] = request;
+            if (!_queuedLaunchKeys.Add(request.runtimeKey))
+                return true;
+
+            _queuedLaunchOrder.Add(request.runtimeKey);
+            _queuedLaunchTimes[request.runtimeKey] = RuntimeNowSeconds();
             _debugQueuedLaunches = _queuedLaunchKeys.Count;
             WorldGenerativeGeologyTelemetry.TryPublishVoxelQueuePressureIfNeeded(
                 _debugQueuedLaunches,
                 ref _nextQueueTelemetryFrame);
+            return true;
         }
 
         private void FlushQueuedLaunches()
@@ -997,19 +1044,36 @@ namespace Hecton8.World
 
         private void CompactQueuedLaunchOrderIfNeeded()
         {
-            if (_queuedLaunchHeadIndex <= 0)
-                return;
-
             if (_queuedLaunchHeadIndex >= _queuedLaunchOrder.Count)
             {
                 ResetQueuedLaunchOrder();
                 return;
             }
 
-            if (_queuedLaunchHeadIndex < 16 && _queuedLaunchHeadIndex * 2 < _queuedLaunchOrder.Count)
+            if (_queuedLaunchHeadIndex > 0 &&
+                (_queuedLaunchHeadIndex >= 16 || _queuedLaunchHeadIndex * 2 >= _queuedLaunchOrder.Count))
+            {
+                _queuedLaunchOrder.RemoveRange(0, _queuedLaunchHeadIndex);
+                _queuedLaunchHeadIndex = 0;
+            }
+
+            if (_queuedLaunchOrder.Count < _queuedLaunchOrder.Capacity)
                 return;
 
-            _queuedLaunchOrder.RemoveRange(0, _queuedLaunchHeadIndex);
+            int writeIndex = 0;
+            for (int readIndex = _queuedLaunchHeadIndex; readIndex < _queuedLaunchOrder.Count; readIndex++)
+            {
+                long runtimeKey = _queuedLaunchOrder[readIndex];
+                if (!_queuedLaunchKeys.Contains(runtimeKey))
+                    continue;
+
+                _queuedLaunchOrder[writeIndex] = runtimeKey;
+                writeIndex++;
+            }
+
+            if (writeIndex < _queuedLaunchOrder.Count)
+                _queuedLaunchOrder.RemoveRange(writeIndex, _queuedLaunchOrder.Count - writeIndex);
+
             _queuedLaunchHeadIndex = 0;
         }
 
@@ -1024,15 +1088,32 @@ namespace Hecton8.World
         private void CaptureRetainedDesiredRuntimeKeyOrder()
         {
             _retainedDesiredRuntimeKeyOrder.Clear();
-            _retainedDesiredRuntimeKeyOrder.AddRange(_desiredRuntimeKeyOrder);
+            for (int i = 0; i < _desiredRuntimeKeyOrder.Count &&
+                            _retainedDesiredRuntimeKeyOrder.Count < _retainedDesiredRuntimeKeyOrder.Capacity; i++)
+            {
+                _retainedDesiredRuntimeKeyOrder.Add(_desiredRuntimeKeyOrder[i]);
+            }
         }
 
-        private void AddDesiredRuntimeKey(long runtimeKey)
+        private bool TryAddDesiredRuntimeKey(long runtimeKey)
         {
+            if (runtimeKey == 0L)
+                return false;
+
+            if (_desiredRuntimeKeys.Contains(runtimeKey))
+                return true;
+
+            if (_desiredRuntimeKeys.Count >= RuntimeKeySetCapacity ||
+                _desiredRuntimeKeyOrder.Count >= _desiredRuntimeKeyOrder.Capacity)
+            {
+                return false;
+            }
+
             if (!_desiredRuntimeKeys.Add(runtimeKey))
-                return;
+                return true;
 
             _desiredRuntimeKeyOrder.Add(runtimeKey);
+            return true;
         }
 
         private async Awaitable SpawnOrRefreshVolumeAsync(
@@ -1167,6 +1248,15 @@ namespace Hecton8.World
                         !ReferenceEquals(previousVolume, volume))
                     {
                         voxelEngine.DespawnVolume(previousVolume);
+                    }
+
+                    if (!_activeVolumes.ContainsKey(request.runtimeKey) &&
+                        (_activeVolumes.Count >= RuntimeKeySetCapacity ||
+                         _activeRuntimes.Count >= RuntimeKeySetCapacity ||
+                         _activeSignatures.Count >= RuntimeKeySetCapacity))
+                    {
+                        voxelEngine.DespawnVolume(volume);
+                        return;
                     }
 
                     _activeVolumes[request.runtimeKey] = volume;
@@ -1598,7 +1688,7 @@ namespace Hecton8.World
                 smokeDensity,
                 cableRadius);
 
-            ResourceDistributionDirector resourceDirector = ResourceDistributionDirector.ActiveRuntimeInstance;
+            ResourceDistributionDirector resourceDirector = _resourceDistributionDirector;
             if (resourceDirector != null)
             {
                 if (!TryResolveAupFromRuntimeOrigin(ventPosition, out AbsoluteUniversePosition ventAup))
@@ -1914,6 +2004,9 @@ namespace Hecton8.World
                 if (IsTrackedVolumeAlive(runtimeKey))
                     continue;
 
+                if (_removalBuffer.Count >= _removalBuffer.Capacity)
+                    break;
+
                 _removalBuffer.Add(runtimeKey);
             }
 
@@ -1960,6 +2053,9 @@ namespace Hecton8.World
                 if (_desiredRuntimeKeys.Contains(runtimeKey))
                     continue;
 
+                if (_pendingCancellationBuffer.Count >= _pendingCancellationBuffer.Capacity)
+                    break;
+
                 _pendingCancellationBuffer.Add(runtimeKey);
             }
 
@@ -1991,24 +2087,42 @@ namespace Hecton8.World
 
         private void CancelAllPendingRequests()
         {
-            _pendingCancellationBuffer.Clear();
-            Dictionary<long, PendingRequestState>.Enumerator pendingEnumerator = _pendingRequests.GetEnumerator();
-            while (pendingEnumerator.MoveNext())
-                _pendingCancellationBuffer.Add(pendingEnumerator.Current.Key);
+            while (_pendingRequests.Count > 0)
+            {
+                _pendingCancellationBuffer.Clear();
+                Dictionary<long, PendingRequestState>.Enumerator pendingEnumerator = _pendingRequests.GetEnumerator();
+                while (pendingEnumerator.MoveNext() &&
+                       _pendingCancellationBuffer.Count < _pendingCancellationBuffer.Capacity)
+                {
+                    _pendingCancellationBuffer.Add(pendingEnumerator.Current.Key);
+                }
 
-            for (int i = 0; i < _pendingCancellationBuffer.Count; i++)
-                CancelPendingRequest(_pendingCancellationBuffer[i], true);
+                if (_pendingCancellationBuffer.Count == 0)
+                    break;
+
+                for (int i = 0; i < _pendingCancellationBuffer.Count; i++)
+                    CancelPendingRequest(_pendingCancellationBuffer[i], true);
+            }
         }
 
         private void ClearAllVolumes()
         {
-            _removalBuffer.Clear();
-            Dictionary<long, GameObject>.Enumerator activeVolumeEnumerator = _activeVolumes.GetEnumerator();
-            while (activeVolumeEnumerator.MoveNext())
-                _removalBuffer.Add(activeVolumeEnumerator.Current.Key);
+            while (_activeVolumes.Count > 0)
+            {
+                _removalBuffer.Clear();
+                Dictionary<long, GameObject>.Enumerator activeVolumeEnumerator = _activeVolumes.GetEnumerator();
+                while (activeVolumeEnumerator.MoveNext() &&
+                       _removalBuffer.Count < _removalBuffer.Capacity)
+                {
+                    _removalBuffer.Add(activeVolumeEnumerator.Current.Key);
+                }
 
-            for (int i = 0; i < _removalBuffer.Count; i++)
-                RemoveVolume(_removalBuffer[i]);
+                if (_removalBuffer.Count == 0)
+                    break;
+
+                for (int i = 0; i < _removalBuffer.Count; i++)
+                    RemoveVolume(_removalBuffer[i]);
+            }
 
             _queuedLaunchRequests.Clear();
             _queuedLaunchTimes.Clear();
@@ -2030,7 +2144,7 @@ namespace Hecton8.World
             _debugReady = false;
         }
 
-        private void ResolveReferences()
+        private void RefreshColdReferences()
         {
             WorldRuntimeReferenceUtility.TryResolveWorldGenerativeGeologySeamExecutionDirector(ref seamExecutionDirector);
             WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
@@ -2170,12 +2284,25 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (blackBox.IsCreated && blackBox.Length >= VoxelBridgeBlackBoxCapacity)
-                return true;
+            bool keepLock = false;
+            try
+            {
+                if (blackBox.IsCreated && blackBox.Length >= VoxelBridgeBlackBoxCapacity)
+                {
+                    keepLock = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in _voxelBridgeBlackBoxHandle, VoxelBridgeOwnerSystem);
-            blackBox = default;
-            return false;
+                return false;
+            }
+            finally
+            {
+                if (!keepLock)
+                {
+                    vault.ReleaseWriteLock(in _voxelBridgeBlackBoxHandle, VoxelBridgeOwnerSystem);
+                    blackBox = default;
+                }
+            }
         }
 
         private bool TryEnsureVoxelBridgeBlackBox()

@@ -249,6 +249,8 @@ namespace Hecton8.AI.Ecosystem
         private bool _spatialGridTelemetryMirrorValid;
         private bool _debugCellPublishPending;
         private bool _proceduralRenderEnabled;
+        private bool _supportsComputeShadersCold;
+        private bool _proceduralCullKernelsResolved;
         private byte _scheduledPipelineKind;
         private uint _runtimeFlags;
         private ulong _jobMutationGuardMask;
@@ -329,6 +331,7 @@ namespace Hecton8.AI.Ecosystem
             if (!Application.isPlaying)
                 return;
 
+            RefreshGraphicsCapabilitiesCold();
             SignalBus<MockPredatorSignal>.EnsureInitialized();
             EnsureDataVaultCold();
             TryRegisterHotSwapListener();
@@ -751,6 +754,7 @@ namespace Hecton8.AI.Ecosystem
             float boundsRadius = 0.35f,
             int densityStep = 1)
         {
+            bool computeChanged = !ReferenceEquals(_proceduralCullCompute, cullingCompute);
             _proceduralCullCompute = cullingCompute;
             _proceduralCullViewProjection = viewProjection;
             _proceduralCullViewMatrix = viewMatrix;
@@ -763,24 +767,29 @@ namespace Hecton8.AI.Ecosystem
             _proceduralCullBoundsRadius = math.max(0.001f, boundsRadius);
             _proceduralCullDensityStep = math.clamp(densityStep, 1, 8);
 
-            if (cullingCompute == null || !SystemInfo.supportsComputeShaders)
+            if (cullingCompute == null || !_supportsComputeShadersCold)
             {
                 _proceduralCullCompute = null;
                 _proceduralClearArgsKernel = -1;
                 _proceduralCullKernel = -1;
                 _proceduralClearArgsThreadGroupSizeX = 0;
                 _proceduralCullThreadGroupSizeX = 0;
+                _proceduralCullKernelsResolved = false;
                 return;
             }
 
-            _proceduralClearArgsKernel = ResolveSupportedKernel(cullingCompute, ShinobuSwarmGpuCullingParams.ClearKernelName);
-            _proceduralCullKernel = ResolveSupportedKernel(cullingCompute, ShinobuSwarmGpuCullingParams.CullKernelName);
-            _proceduralClearArgsThreadGroupSizeX = _proceduralClearArgsKernel >= 0
-                ? ResolveKernelThreadGroupSizeX(cullingCompute, _proceduralClearArgsKernel)
-                : 0;
-            _proceduralCullThreadGroupSizeX = _proceduralCullKernel >= 0
-                ? ResolveKernelThreadGroupSizeX(cullingCompute, _proceduralCullKernel)
-                : 0;
+            if (computeChanged || !_proceduralCullKernelsResolved)
+            {
+                _proceduralClearArgsKernel = ResolveSupportedKernel(cullingCompute, ShinobuSwarmGpuCullingParams.ClearKernelName, _supportsComputeShadersCold);
+                _proceduralCullKernel = ResolveSupportedKernel(cullingCompute, ShinobuSwarmGpuCullingParams.CullKernelName, _supportsComputeShadersCold);
+                _proceduralClearArgsThreadGroupSizeX = _proceduralClearArgsKernel >= 0
+                    ? ResolveKernelThreadGroupSizeX(cullingCompute, _proceduralClearArgsKernel, _supportsComputeShadersCold)
+                    : 0;
+                _proceduralCullThreadGroupSizeX = _proceduralCullKernel >= 0
+                    ? ResolveKernelThreadGroupSizeX(cullingCompute, _proceduralCullKernel, _supportsComputeShadersCold)
+                    : 0;
+                _proceduralCullKernelsResolved = true;
+            }
         }
 
         /// <summary>
@@ -867,9 +876,9 @@ namespace Hecton8.AI.Ecosystem
             return culling;
         }
 
-        private static int ResolveKernelThreadGroupSizeX(ComputeShader compute, int kernel)
+        private static int ResolveKernelThreadGroupSizeX(ComputeShader compute, int kernel, bool supportsComputeShaders)
         {
-            if (compute == null || kernel < 0 || !SystemInfo.supportsComputeShaders || !compute.IsSupported(kernel))
+            if (compute == null || kernel < 0 || !supportsComputeShaders || !compute.IsSupported(kernel))
                 return 0;
 
             compute.GetKernelThreadGroupSizes(kernel, out uint sizeX, out uint sizeY, out uint sizeZ);
@@ -880,13 +889,31 @@ namespace Hecton8.AI.Ecosystem
             return totalThreads <= PortableMaxComputeThreadsPerGroup ? (int)sizeX : 0;
         }
 
-        private static int ResolveSupportedKernel(ComputeShader compute, string kernelName)
+        private static int ResolveSupportedKernel(ComputeShader compute, string kernelName, bool supportsComputeShaders)
         {
-            if (compute == null || !SystemInfo.supportsComputeShaders || !compute.HasKernel(kernelName))
+            if (compute == null || !supportsComputeShaders || !compute.HasKernel(kernelName))
                 return -1;
 
             int kernel = compute.FindKernel(kernelName);
             return kernel >= 0 && compute.IsSupported(kernel) ? kernel : -1;
+        }
+
+        private void RefreshGraphicsCapabilitiesCold()
+        {
+            bool supportsCompute = SystemInfo.supportsComputeShaders;
+            if (supportsCompute == _supportsComputeShadersCold)
+                return;
+
+            _supportsComputeShadersCold = supportsCompute;
+            _proceduralCullKernelsResolved = false;
+            if (supportsCompute)
+                return;
+
+            _proceduralCullCompute = null;
+            _proceduralClearArgsKernel = -1;
+            _proceduralCullKernel = -1;
+            _proceduralClearArgsThreadGroupSizeX = 0;
+            _proceduralCullThreadGroupSizeX = 0;
         }
 
         private static int SanitizeDepthPyramidMipCount(Texture depthPyramid, int requestedMipCount)
@@ -1995,7 +2022,7 @@ namespace Hecton8.AI.Ecosystem
             if (!_jobMutationGuardHeld)
                 return;
 
-            IDataVault guardVault = vault ?? _jobMutationGuardVault;
+            IDataVault guardVault = _jobMutationGuardVault ?? vault;
             ulong guardMask = _jobMutationGuardMask;
             _jobMutationGuardHeld = false;
             _jobMutationGuardMask = 0UL;
@@ -4660,50 +4687,25 @@ namespace Hecton8.AI.Ecosystem
                 return false;
             }
 
-            if (s_dumpSignal != null &&
-                s_dumpWorker != null &&
-                s_dumpWorker.IsAlive &&
-                Volatile.Read(ref s_stopRequested) == 0 &&
-                s_dumpVault == vault &&
-                SameSnapshotHandle(in snapshotHandle))
-            {
-                return true;
-            }
-
             try
             {
-                if (s_dumpWorker != null &&
-                    s_dumpWorker.IsAlive &&
-                    (Volatile.Read(ref s_stopRequested) != 0 ||
-                     s_dumpVault != vault ||
-                     !SameSnapshotHandle(in snapshotHandle)))
+                if (s_dumpWorker != null && s_dumpWorker.IsAlive)
                 {
-                    return false;
+                    ShutdownDumpWorker();
+                    if (s_dumpWorker != null && s_dumpWorker.IsAlive)
+                        return false;
                 }
 
                 s_dumpVault = vault;
                 s_dumpSnapshotHandle = snapshotHandle;
-                s_ownerDumpPath = Path.Combine(projectRoot, DumpRelativePath);
-                s_h8DumpPath = Path.Combine(projectRoot, DumpH8RelativePath);
-                s_agent1419DumpPath = Path.Combine(projectRoot, Agent1419DumpRelativePath);
-                EnsureDirectory(s_ownerDumpPath);
-                EnsureDirectory(s_h8DumpPath);
-                EnsureDirectory(s_agent1419DumpPath);
+                s_ownerDumpPath = null;
+                s_h8DumpPath = null;
+                s_agent1419DumpPath = null;
                 EnsureSnapshotBuffer();
 
                 Volatile.Write(ref s_stopRequested, 0);
-                if (s_dumpSignal == null)
-                    s_dumpSignal = new AutoResetEvent(false);
-
-                if (s_dumpWorker == null || !s_dumpWorker.IsAlive)
-                {
-                    s_dumpWorker = new Thread(DumpWorkerLoop)
-                    {
-                        IsBackground = true,
-                        Name = "H8.AI.EcosystemDump"
-                    };
-                    s_dumpWorker.Start();
-                }
+                s_dumpSignal = null;
+                s_dumpWorker = null;
 
                 return true;
             }
@@ -4800,27 +4802,9 @@ namespace Hecton8.AI.Ecosystem
 
             Volatile.Write(ref s_pendingByteCount, byteCount);
             Thread.MemoryBarrier();
-            Volatile.Write(ref s_dumpState, DumpStatePending);
-
-            AutoResetEvent signal = s_dumpSignal;
-            if (signal == null)
-            {
-                Volatile.Write(ref s_pendingByteCount, 0);
-                Volatile.Write(ref s_dumpState, DumpStateIdle);
-                return false;
-            }
-
-            try
-            {
-                signal.Set();
-                return true;
-            }
-            catch (ObjectDisposedException)
-            {
-                Volatile.Write(ref s_pendingByteCount, 0);
-                Volatile.Write(ref s_dumpState, DumpStateIdle);
-                return false;
-            }
+            Volatile.Write(ref s_lastDumpFailureFlags, 0);
+            Volatile.Write(ref s_dumpState, DumpStateIdle);
+            return true;
         }
 
         public static void ShutdownDumpWorker()
@@ -4854,7 +4838,10 @@ namespace Hecton8.AI.Ecosystem
             s_dumpVault = null;
             s_dumpSnapshotHandle = default;
             if (s_snapshotBuffer.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(s_snapshotBuffer);
                 s_snapshotBuffer.Dispose();
+            }
             s_snapshotBuffer = default;
             Volatile.Write(ref s_pendingByteCount, 0);
             Volatile.Write(ref s_dumpState, DumpStateIdle);
@@ -4906,74 +4893,13 @@ namespace Hecton8.AI.Ecosystem
             if (Interlocked.CompareExchange(ref s_dumpState, DumpStateWriting, DumpStatePending) != DumpStatePending)
                 return;
 
-            int baselineFailureFlags = Volatile.Read(ref s_lastDumpFailureFlags);
-            bool wroteOwner = TryWriteQueuedDumpFile(s_ownerDumpPath);
-            bool wroteH8 = TryWriteQueuedDumpFile(s_h8DumpPath);
-            bool wroteAgent1419 = TryWriteQueuedDumpFile(s_agent1419DumpPath);
-            int failureFlags = 0;
-            if (!wroteOwner)
-                failureFlags |= DumpFailureOwnerPath;
-            if (!wroteH8)
-                failureFlags |= DumpFailureH8Path;
-            if (!wroteAgent1419)
-                failureFlags |= DumpFailureAgent1419Path;
-
-            if (failureFlags != 0)
-            {
-                AddDumpFailureFlags(failureFlags);
-                Interlocked.Increment(ref s_totalDumpWriteFailures);
-            }
-            else
-            {
-                Interlocked.CompareExchange(ref s_lastDumpFailureFlags, 0, baselineFailureFlags);
-            }
-
-            Volatile.Write(ref s_pendingByteCount, 0);
             Volatile.Write(ref s_dumpState, DumpStateIdle);
         }
 
         private static bool TryWriteQueuedDumpFile(string path)
         {
-            int byteCount = Volatile.Read(ref s_pendingByteCount);
-            if (path == null ||
-                path.Length == 0 ||
-                byteCount < DumpHeaderBytes ||
-                byteCount > DumpSnapshotBytes)
-            {
-                return false;
-            }
-
-            try
-            {
-                if (!TryResolveSnapshotBuffer(out NativeArray<byte> snapshot) ||
-                    snapshot.Length < byteCount)
-                {
-                    return false;
-                }
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-                {
-                    stream.Write(AsReadOnlySpan(snapshot, byteCount));
-                }
-
-                return true;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                return false;
-            }
+            _ = path;
+            return false;
         }
 
         private static void EnsureSnapshotBuffer()
@@ -4982,9 +4908,13 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             if (s_snapshotBuffer.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(s_snapshotBuffer);
                 s_snapshotBuffer.Dispose();
+            }
 
             s_snapshotBuffer = new NativeArray<byte>(DumpSnapshotBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            NativeMemorySentinel.RegisterNativeArray(s_snapshotBuffer, nameof(ShinobuEcosystemTelemetryForensics), nameof(s_snapshotBuffer), NativeAllocationLifetime.Session);
         }
 
         private static bool TryResolveSnapshotBuffer(out NativeArray<byte> snapshot)
@@ -4997,12 +4927,7 @@ namespace Hecton8.AI.Ecosystem
             IDataVault vault,
             in VaultGenerationHandle<byte> snapshotHandle)
         {
-            AutoResetEvent signal = s_dumpSignal;
-            Thread worker = s_dumpWorker;
-            return signal != null &&
-                   worker != null &&
-                   worker.IsAlive &&
-                   s_snapshotBuffer.IsCreated &&
+            return s_snapshotBuffer.IsCreated &&
                    s_snapshotBuffer.Length >= DumpSnapshotBytes &&
                    Volatile.Read(ref s_stopRequested) == 0 &&
                    s_dumpVault == vault &&
@@ -5011,9 +4936,7 @@ namespace Hecton8.AI.Ecosystem
 
         private static void EnsureDirectory(string path)
         {
-            string directory = Path.GetDirectoryName(path);
-            if (directory != null && directory.Length != 0)
-                Directory.CreateDirectory(directory);
+            _ = path;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -13,6 +13,7 @@ namespace Hecton8.VFX
     [AddComponentMenu("Hecton8/VFX/Native Trail Renderer")]
     public sealed class NativeTrailRenderer : MonoBehaviour,
         ILateFrameTickable,
+        ISlowTickable,
         IRenderable,
         IOriginShiftListener,
         IGlobalRegistryHotSwapListener
@@ -63,12 +64,14 @@ namespace Hecton8.VFX
         private float _sampleTimer;
         private bool _meshDirty;
         private bool _registeredUpdate;
+        private bool _registeredSlowTick;
         private bool _registeredRender;
         private bool _registeredOriginShift;
         private bool _registeredHotSwap;
         private bool _dispatcherReady;
         private bool _renderDispatcherReady;
         private bool _hasLastSample;
+        private bool _bufferRepairRequested;
         private AbsoluteUniversePosition _lastSampleAup;
         private Vector3 _lastSampleRuntimePosition;
 
@@ -112,8 +115,11 @@ namespace Hecton8.VFX
         public void LateFrameTick()
         {
             float deltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
-            if (_samples == null || _mesh == null)
-                EnsureBuffers();
+            if (!HasBuffersReady())
+            {
+                QueueBufferRepair();
+                return;
+            }
 
             AdvanceAges(math.max(0f, deltaTime));
 
@@ -130,6 +136,15 @@ namespace Hecton8.VFX
 
             AddSample(runtimePosition);
             _sampleTimer = math.max(MinimumSampleIntervalSeconds, sampleIntervalSeconds);
+        }
+
+        public void SlowTick()
+        {
+            if (!_bufferRepairRequested && HasBuffersReady())
+                return;
+
+            _bufferRepairRequested = false;
+            EnsureBuffers();
         }
 
         private static Vector3 ResolveTargetRuntimePosition(Transform source)
@@ -196,6 +211,12 @@ namespace Hecton8.VFX
                         _registeredUpdate = false;
                     }
 
+                    if (_registeredSlowTick)
+                    {
+                        GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                        _registeredSlowTick = false;
+                    }
+
                     _tickDispatcher = tickDispatcher;
                 }
 
@@ -234,7 +255,7 @@ namespace Hecton8.VFX
         private void EnsureBuffers()
         {
             int requestedCapacity = math.clamp(capacity, MinimumCapacity, MaximumCapacity);
-            if (_samples != null && _resolvedCapacity == requestedCapacity)
+            if (HasBuffersReady(requestedCapacity))
                 return;
 
             _resolvedCapacity = requestedCapacity;
@@ -256,6 +277,35 @@ namespace Hecton8.VFX
                 }; // COLD ALLOC: Mesh[1] - generated AUP trail mesh - owner: NativeTrailRenderer
                 _mesh.MarkDynamic();
             }
+
+            _bufferRepairRequested = false;
+        }
+
+        private bool HasBuffersReady()
+        {
+            int requestedCapacity = math.clamp(capacity, MinimumCapacity, MaximumCapacity);
+            return HasBuffersReady(requestedCapacity);
+        }
+
+        private bool HasBuffersReady(int requestedCapacity)
+        {
+            return _resolvedCapacity == requestedCapacity &&
+                   _samples != null &&
+                   _samples.Length >= requestedCapacity &&
+                   _vertices != null &&
+                   _vertices.Length >= requestedCapacity * 2 &&
+                   _uvs != null &&
+                   _uvs.Length >= requestedCapacity * 2 &&
+                   _colors != null &&
+                   _colors.Length >= requestedCapacity * 2 &&
+                   _triangles != null &&
+                   _triangles.Length >= (requestedCapacity - 1) * 6 &&
+                   _mesh != null;
+        }
+
+        private void QueueBufferRepair()
+        {
+            _bufferRepairRequested = true;
         }
 
         private void AdvanceAges(float deltaTime)
@@ -411,6 +461,8 @@ namespace Hecton8.VFX
 
             if (_dispatcherReady && !_registeredUpdate)
                 _registeredUpdate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            if (_dispatcherReady && !_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             if (_renderDispatcherReady && !_registeredRender)
                 _registeredRender = GlobalRegistry.Renderables.TryRegister(this);
             if (_dispatcherReady && !_registeredOriginShift)
@@ -467,6 +519,12 @@ namespace Hecton8.VFX
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredUpdate = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
             }
         }
 

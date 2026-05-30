@@ -1010,7 +1010,7 @@ namespace Hecton8.Construction
             if (guardMask == 0UL)
                 return;
 
-            IDataVault vault = _pendingVaultGuardVault ?? _vault;
+            IDataVault vault = _pendingVaultGuardVault;
             _pendingVaultGuardVault = null;
             _pendingVaultGuardMask = 0UL;
             vault?.ReleaseMutationGuard(guardMask);

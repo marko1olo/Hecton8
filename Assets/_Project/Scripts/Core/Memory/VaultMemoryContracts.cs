@@ -200,7 +200,7 @@ namespace Hecton8.Core.Memory
             if (!EnsureRing(vault))
                 return false;
 
-            if (!TryResolveRing(vault, out NativeArray<VaultSovereigntyTelemetryEntry> ring) ||
+            if (!TryReadRing(vault, out NativeArray<VaultSovereigntyTelemetryEntry>.ReadOnly ring) ||
                 ring.Length == 0)
             {
                 return false;
@@ -223,7 +223,9 @@ namespace Hecton8.Core.Memory
             entry.StateHash = HashTelemetry(entry.TotalVaultBytes, entry.ArenaBytes, sourceHash, frame);
             entry.GlobalQualityWeight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
             entry.Flags = flags;
-            ring[cursor] = entry;
+
+            if (!TryWriteRingEntry(vault, cursor, in entry, ring.Length))
+                return false;
 
             cursor++;
             if (cursor >= ring.Length)
@@ -243,7 +245,7 @@ namespace Hecton8.Core.Memory
                 _ringVault = vault;
             }
 
-            if (TryResolveRing(vault, out NativeArray<VaultSovereigntyTelemetryEntry> existingRing) &&
+            if (TryReadRing(vault, out NativeArray<VaultSovereigntyTelemetryEntry>.ReadOnly existingRing) &&
                 existingRing.Length >= Capacity)
             {
                 return true;
@@ -256,17 +258,37 @@ namespace Hecton8.Core.Memory
                 Capacity,
                 SystemID.CoreDataVault,
                 NativeArrayOptions.ClearMemory);
-            return TryResolveRing(vault, out NativeArray<VaultSovereigntyTelemetryEntry> ring) &&
+            return TryReadRing(vault, out NativeArray<VaultSovereigntyTelemetryEntry>.ReadOnly ring) &&
                    ring.Length >= Capacity;
         }
 
-        private static bool TryResolveRing(IDataVault vault, out NativeArray<VaultSovereigntyTelemetryEntry> ring)
+        private static bool TryWriteRingEntry(
+            IDataVault vault,
+            int cursor,
+            in VaultSovereigntyTelemetryEntry entry,
+            int expectedLength)
         {
-            ring = default;
-            return vault != null &&
-                   _ringHandle.BufferID != 0u &&
-                   vault.TryResolveHandle(in _ringHandle, out ring) &&
-                   ring.IsCreated;
+            if (vault == null ||
+                _ringHandle.BufferID == 0u ||
+                cursor < 0 ||
+                expectedLength <= 0 ||
+                !vault.TryAcquireWriteLock(in _ringHandle, SystemID.CoreDataVault, out NativeArray<VaultSovereigntyTelemetryEntry> ring))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!ring.IsCreated || ring.Length != expectedLength || (uint)cursor >= (uint)ring.Length)
+                    return false;
+
+                ring[cursor] = entry;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _ringHandle, SystemID.CoreDataVault);
+            }
         }
 
         private static bool TryReadRing(IDataVault vault, out NativeArray<VaultSovereigntyTelemetryEntry>.ReadOnly ring)

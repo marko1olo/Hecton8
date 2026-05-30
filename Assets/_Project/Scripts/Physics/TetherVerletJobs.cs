@@ -14,6 +14,7 @@ namespace Hecton8.Physics
     internal static class TetherVerletJobLayout
     {
         public const int TelemetryEntryStrideBytes = 64;
+        public const int MaxSolverIterations = 10;
     }
 
     internal static class TetherVerletFaultFlags
@@ -25,6 +26,7 @@ namespace Hecton8.Physics
         public const int VaultLockFailed = 8;
         public const int VaultMetadataMismatch = 16;
         public const int VaultFailureDumpRequested = 32;
+        public const int BufferBoundsMismatch = 64;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = TetherVerletJobLayout.TelemetryEntryStrideBytes)]
@@ -75,9 +77,15 @@ namespace Hecton8.Physics
             if (NodeFaultFlags.IsCreated && index < NodeFaultFlags.Length)
                 NodeFaultFlags[index] = 0;
 
+            if (!PreviousPositions.IsCreated || (uint)index >= (uint)PreviousPositions.Length)
+            {
+                WriteNodeFault(index, TetherVerletFaultFlags.BufferBoundsMismatch);
+                return;
+            }
+
             if (PinnedMask.IsCreated && index < PinnedMask.Length && (PinnedMask[index] & PinnedNodeMask) != 0)
             {
-                float3 pinned = SanitizeFloat3(PinnedPositions[index], float3.zero);
+                float3 pinned = ResolvePinnedPosition(index);
                 Positions[index] = pinned;
                 PreviousPositions[index] = pinned;
                 if (Velocities.IsCreated && index < Velocities.Length)
@@ -99,7 +107,8 @@ namespace Hecton8.Physics
                 return;
             }
 
-            float3 velocity = (position - previous) * VelocityDamping;
+            float velocityDamping = SanitizeNonNegative(VelocityDamping, 0f);
+            float3 velocity = (position - previous) * velocityDamping;
             float maxVelocity = math.select(0f, math.max(0f, MaxCableVelocity), math.isfinite(MaxCableVelocity));
             float velocityLengthSq = math.lengthsq(velocity);
             if (!math.isfinite(velocityLengthSq))
@@ -128,8 +137,9 @@ namespace Hecton8.Physics
             float3 sampledAcceleration = SanitizeFloat3(acceleration + WorldSampler.SampleFlowAcceleration(position), acceleration);
             acceleration = math.select(acceleration, sampledAcceleration, WorldSamplerEnabled != 0);
             float safeDeltaTimeSq = math.select(0f, DeltaTimeSq, math.isfinite(DeltaTimeSq) & DeltaTimeSq >= 0f);
+            float nodeRadius = SanitizeNonNegative(NodeRadius, 0f);
+            float floor = SanitizeFinite(FloorY, 0f) + nodeRadius;
             float3 next = position + velocity + (acceleration * safeDeltaTimeSq);
-            float floor = FloorY + math.max(0f, NodeRadius);
             if (next.y < floor)
                 next.y = floor;
 
@@ -137,7 +147,6 @@ namespace Hecton8.Physics
             if (WorldSamplerEnabled != 0)
             {
                 SdfSampleDTO sample = WorldSampler.Sample(next);
-                float nodeRadius = math.max(0f, NodeRadius);
                 if (sample.Distance < nodeRadius)
                 {
                     float3 up = default;
@@ -147,7 +156,7 @@ namespace Hecton8.Physics
                     float3 impactVelocity = next - position;
                     float3 normalVelocity = normal * math.dot(impactVelocity, normal);
                     float3 tangentVelocity = impactVelocity - normalVelocity;
-                    float roughness = math.saturate(RockFriction01);
+                    float roughness = math.saturate(SanitizeFinite(RockFriction01, 0f));
                     previousForNextStep = next - tangentVelocity * (1f - roughness);
                 }
             }
@@ -167,6 +176,31 @@ namespace Hecton8.Physics
         private static float3 SanitizeFloat3(float3 value, float3 fallback)
         {
             return math.select(fallback, value, math.isfinite(value));
+        }
+
+        private float3 ResolvePinnedPosition(int index)
+        {
+            if (PinnedPositions.IsCreated && (uint)index < (uint)PinnedPositions.Length)
+                return SanitizeFloat3(PinnedPositions[index], float3.zero);
+
+            WriteNodeFault(index, TetherVerletFaultFlags.BufferBoundsMismatch);
+            return float3.zero;
+        }
+
+        private void WriteNodeFault(int index, int faultFlag)
+        {
+            if (NodeFaultFlags.IsCreated && (uint)index < (uint)NodeFaultFlags.Length)
+                NodeFaultFlags[index] = (byte)faultFlag;
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return math.select(fallback, value, math.isfinite(value));
+        }
+
+        private static float SanitizeNonNegative(float value, float fallback)
+        {
+            return math.select(fallback, math.max(0f, value), math.isfinite(value));
         }
     }
 
@@ -195,17 +229,38 @@ namespace Hecton8.Physics
 
         public void Execute()
         {
-            int nodeCount = math.clamp(NodeCount, 0, Positions.Length);
-            if (nodeCount < 2)
+            if (!Positions.IsCreated ||
+                !Corrections.IsCreated ||
+                !CorrectionWeights.IsCreated ||
+                !SegmentRestLengths.IsCreated ||
+                !SegmentTensions.IsCreated)
             {
-                WriteStats(0f, TetherVerletFaultFlags.None);
+                WriteStats(0f, TetherVerletFaultFlags.BufferBoundsMismatch);
                 return;
             }
 
-            int segmentCount = math.min(nodeCount - 1, SegmentRestLengths.Length);
-            int iterations = math.max(1, IterationCount);
+            int nodeCapacity = math.min(Positions.Length, math.min(Corrections.Length, CorrectionWeights.Length));
+            int nodeCount = math.clamp(NodeCount, 0, nodeCapacity);
+            int faultFlags = nodeCount != NodeCount
+                ? TetherVerletFaultFlags.BufferBoundsMismatch
+                : TetherVerletFaultFlags.None;
+            if (nodeCount < 2)
+            {
+                WriteStats(0f, faultFlags);
+                return;
+            }
+
+            int segmentCapacity = math.min(SegmentRestLengths.Length, SegmentTensions.Length);
+            int segmentCount = math.min(nodeCount - 1, segmentCapacity);
+            if (segmentCount < nodeCount - 1)
+                faultFlags |= TetherVerletFaultFlags.BufferBoundsMismatch;
+
+            int iterations = math.clamp(IterationCount, 1, TetherVerletJobLayout.MaxSolverIterations);
+            if (iterations != IterationCount)
+                faultFlags |= TetherVerletFaultFlags.BufferBoundsMismatch;
+
+            float floor = SanitizeFinite(FloorY, 0f) + SanitizeNonNegative(NodeRadius, 0f);
             float peakDelta = 0f;
-            int faultFlags = TetherVerletFaultFlags.None;
 
             for (int iteration = 0; iteration < iterations; iteration++)
             {
@@ -218,7 +273,7 @@ namespace Hecton8.Physics
 
                     if (IsPinned(nodeIndex))
                     {
-                        Positions[nodeIndex] = SanitizeFloat3(PinnedPositions[nodeIndex], float3.zero, ref faultFlags);
+                        Positions[nodeIndex] = ResolvePinnedPosition(nodeIndex, ref faultFlags);
                         continue;
                     }
 
@@ -297,7 +352,7 @@ namespace Hecton8.Physics
                 {
                     if (IsPinned(nodeIndex))
                     {
-                        Positions[nodeIndex] = SanitizeFloat3(PinnedPositions[nodeIndex], float3.zero, ref faultFlags);
+                        Positions[nodeIndex] = ResolvePinnedPosition(nodeIndex, ref faultFlags);
                         continue;
                     }
 
@@ -306,7 +361,6 @@ namespace Hecton8.Physics
                         Positions[nodeIndex] += Corrections[nodeIndex] * math.rcp(math.max(weight, 0.000001f));
 
                     float3 constrained = Positions[nodeIndex];
-                    float floor = FloorY + math.max(0f, NodeRadius);
                     if (constrained.y < floor)
                         constrained.y = floor;
 
@@ -328,6 +382,15 @@ namespace Hecton8.Physics
             return PinnedMask.IsCreated && index < PinnedMask.Length && (PinnedMask[index] & PinnedNodeMask) != 0;
         }
 
+        private float3 ResolvePinnedPosition(int index, ref int faultFlags)
+        {
+            if (PinnedPositions.IsCreated && (uint)index < (uint)PinnedPositions.Length)
+                return SanitizeFloat3(PinnedPositions[index], float3.zero, ref faultFlags);
+
+            faultFlags |= TetherVerletFaultFlags.BufferBoundsMismatch;
+            return float3.zero;
+        }
+
         private void WriteStats(float peakDelta, int faultFlags)
         {
             if (SolverStats.IsCreated && SolverStats.Length > 0)
@@ -344,6 +407,16 @@ namespace Hecton8.Physics
 
             faultFlags |= TetherVerletFaultFlags.ConstraintNonFinite;
             return fallback;
+        }
+
+        private static float SanitizeFinite(float value, float fallback)
+        {
+            return math.select(fallback, value, math.isfinite(value));
+        }
+
+        private static float SanitizeNonNegative(float value, float fallback)
+        {
+            return math.select(fallback, math.max(0f, value), math.isfinite(value));
         }
     }
 

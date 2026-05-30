@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Hecton.Localization;
-using Hecton8.Bootstrap;
 using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -408,7 +407,9 @@ namespace Hecton8.Gameplay
 
         private Vector3 ResolvePlayerPosition()
         {
-            return GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null
+            IPlayerRuntimeContext playerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            return playerTransform != null
                 ? playerTransform.position
                 : transform.position;
         }

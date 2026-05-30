@@ -36,7 +36,6 @@
 // ============================================================================
 
 using System.Collections.Generic;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -44,7 +43,6 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Fluids;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Bootstrap;
 using Hecton8.Celestial;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
@@ -224,7 +222,6 @@ namespace Hecton8.Physics
         private const float SplashdownBubbleUpwardBiasMeters = 1.8f;
         private const float SplashdownBubbleMinimumQualityMaxVelocityMetersPerSecond = 8f;
         private const float SplashdownGoldenAngleRadians = 2.39996323f;
-        private const uint SplashdownImpulseQualityPressureFlag = 1u << 0;
         private const uint SplashdownImpulseOutsideFlowVolumeFlag = 1u << 1;
         private const uint SplashdownImpulseJobBusyFlag = 1u << 2;
         private const uint SplashdownImpulseUploadFailedFlag = 1u << 3;
@@ -365,7 +362,101 @@ namespace Hecton8.Physics
         // Keep GPU sampling dormant until it matches the 16-wave/AUP/terrain Burst path.
         private const bool GpuBuoyancySurfaceParityAvailable = false;
         private const string NativeMemoryOwner = nameof(HectonFluidEngine);
+        private const string GpuReadbackDataLabel = "_gpuReadbackData";
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+
+        private sealed class GpuReadbackNativeRing : System.IDisposable
+        {
+            private readonly NativeArray<float4>[] _data;
+
+            public GpuReadbackNativeRing(int ringSize)
+            {
+                _data = new NativeArray<float4>[math.max(1, ringSize)];
+            }
+
+            public bool IsReady(int slot, int requiredCount)
+            {
+                return slot >= 0 &&
+                       slot < _data.Length &&
+                       _data[slot].IsCreated &&
+                       _data[slot].Length >= math.max(1, requiredCount);
+            }
+
+            public ref NativeArray<float4> Slot(int slot)
+            {
+                return ref _data[slot];
+            }
+
+            public bool EnsureAllCold(int requiredCount)
+            {
+                requiredCount = math.max(1, requiredCount);
+                try
+                {
+                    for (int i = 0; i < _data.Length; i++)
+                        EnsureSlotCold(i, requiredCount);
+                    return true;
+                }
+                catch
+                {
+                    Dispose();
+                    throw;
+                }
+            }
+
+            private void EnsureSlotCold(int slot, int requiredCount)
+            {
+                if (IsReady(slot, requiredCount))
+                    return;
+
+                DisposeSlot(slot);
+                NativeArray<float4> array = default;
+                try
+                {
+                    array = new NativeArray<float4>(
+                        requiredCount,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory);
+                    NativeMemorySentinel.RegisterNativeArray(
+                        array,
+                        NativeMemoryOwner,
+                        GpuReadbackDataLabel,
+                        NativeMemoryLifetime);
+                    _data[slot] = array;
+                }
+                catch
+                {
+                    if (array.IsCreated)
+                    {
+                        try
+                        {
+                            NativeMemorySentinel.UnregisterNativeArray(array);
+                        }
+                        finally
+                        {
+                            array.Dispose();
+                        }
+                    }
+
+                    throw;
+                }
+            }
+
+            public void Dispose()
+            {
+                for (int i = 0; i < _data.Length; i++)
+                    DisposeSlot(i);
+            }
+
+            private void DisposeSlot(int slot)
+            {
+                if (slot < 0 || slot >= _data.Length || !_data[slot].IsCreated)
+                    return;
+
+                NativeMemorySentinel.UnregisterNativeArray(_data[slot]);
+                _data[slot].Dispose();
+                _data[slot] = default;
+            }
+        }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
         private struct GpuBuoyancyObjectData
@@ -591,6 +682,7 @@ namespace Hecton8.Physics
             private VaultGenerationHandle<T> _handle;
             private BufferID _bufferId;
             private int _requiredLength;
+            private IDataVault _writeLockVault;
 
             public bool IsCreated
             {
@@ -761,6 +853,9 @@ namespace Hecton8.Physics
             public bool TryAcquireWriteLock(out NativeArray<T> buffer)
             {
                 buffer = default;
+                if (_writeLockVault != null)
+                    return false;
+
                 IDataVault vault = ResolveStaticFluidDataVault();
                 if (vault == null)
                     return false;
@@ -777,18 +872,34 @@ namespace Hecton8.Physics
                 if (!vault.TryAcquireWriteLock(in _handle, SystemID.Fluid, out buffer))
                     return false;
 
-                if (buffer.IsCreated && (_requiredLength <= 0 || buffer.Length >= _requiredLength))
-                    return true;
+                bool ownershipTransferred = false;
+                try
+                {
+                    if (buffer.IsCreated && (_requiredLength <= 0 || buffer.Length >= _requiredLength))
+                    {
+                        _writeLockVault = vault;
+                        ownershipTransferred = true;
+                        return true;
+                    }
 
-                vault.ReleaseWriteLock(in _handle, SystemID.Fluid);
-                buffer = default;
-                return false;
+                    buffer = default;
+                    return false;
+                }
+                finally
+                {
+                    if (!ownershipTransferred)
+                        vault.ReleaseWriteLock(in _handle, SystemID.Fluid);
+                }
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void ReleaseWriteLock()
             {
-                IDataVault vault = ResolveStaticFluidDataVault();
+                IDataVault vault = _writeLockVault;
+                if (vault == null)
+                    return;
+
+                _writeLockVault = null;
                 if (vault != null && IsHandleUsable(in _handle, _bufferId))
                     vault.ReleaseWriteLock(in _handle, SystemID.Fluid);
             }
@@ -796,6 +907,11 @@ namespace Hecton8.Physics
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Release()
             {
+                IDataVault writeLockVault = _writeLockVault;
+                if (writeLockVault != null && IsHandleUsable(in _handle, _bufferId))
+                    writeLockVault.ReleaseWriteLock(in _handle, SystemID.Fluid);
+
+                _writeLockVault = null;
                 IDataVault vault = ResolveStaticFluidDataVault();
                 if (vault != null && IsHandleUsable(in _handle, _bufferId))
                     vault.ReleaseBuffer(in _handle);
@@ -808,6 +924,7 @@ namespace Hecton8.Physics
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Reset()
             {
+                _writeLockVault = null;
                 _handle = default;
             }
 
@@ -1745,6 +1862,7 @@ namespace Hecton8.Physics
         private GraphicsBuffer[] _gpuBuoyancyResultBuffers;
         private int _gpuBuoyancyUploadBufferIndex;
         private AsyncGPUReadbackRequest[] _gpuReadbackRequests;
+        private GpuReadbackNativeRing _gpuReadbackData;
         private int[] _gpuReadbackCounts;
         private bool[] _gpuReadbackActive;
         private int _gpuReadbackWriteIndex;
@@ -1807,6 +1925,9 @@ namespace Hecton8.Physics
         private FluidVaultBuffer<byte> _advectedSiltDirtyPages;
         private FluidVaultBuffer<byte> _advectedBubbleDirtyPages;
         private FluidVaultBuffer<byte> _advectedDebrisDirtyPages;
+        private byte[] _advectedSiltDirtyPageUploadSnapshot;
+        private byte[] _advectedBubbleDirtyPageUploadSnapshot;
+        private byte[] _advectedDebrisDirtyPageUploadSnapshot;
         private FluidVaultBuffer<float4> _emptyAbyssalFlowUpload;
         private FluidVaultBuffer<FluidAdvectionTelemetryEntry> _fluidAdvectionTelemetry;
         private FluidVaultBuffer<float4> _splashdownImpulseUpload;
@@ -1855,6 +1976,7 @@ namespace Hecton8.Physics
         private float _splashdownImpulseRemainingSeconds;
         private float _splashdownImpulseDurationSeconds;
         private int _lastSplashdownFluidImpulseCount;
+        private byte _splashdownImpulseQualityPressureQ8;
         private ushort _lastProcessedSplashdownSequence;
         private uint _lastProcessedSplashdownFrame;
         private uint _lastProcessedSplashdownSourceHash;
@@ -1998,6 +2120,7 @@ namespace Hecton8.Physics
             }
 
             _gpuReadbackRequests = new AsyncGPUReadbackRequest[GpuReadbackRingSize]; // COLD ALLOC: AsyncGPUReadbackRequest[3] — fixed GPU buoyancy readback ring state — owner: HectonFluidEngine
+            _gpuReadbackData = new GpuReadbackNativeRing(GpuReadbackRingSize); // COLD ALLOC: owner for fixed GPU buoyancy readback native targets - owner: HectonFluidEngine
             _gpuReadbackCounts = new int[GpuReadbackRingSize]; // COLD ALLOC: int[3] — GPU buoyancy readback element counts — owner: HectonFluidEngine
             _gpuReadbackActive = new bool[GpuReadbackRingSize]; // COLD ALLOC: bool[3] — GPU buoyancy readback slot activity — owner: HectonFluidEngine
             EnsureAbyssalFlowNativeState();
@@ -3043,6 +3166,60 @@ namespace Hecton8.Physics
             };
         }
 
+        private static string ResolveFluidDumpPath(string relativePath)
+        {
+            return Application.dataPath + "/../" + relativePath;
+        }
+
+        private static unsafe void WriteNativeDump(string absolutePath, NativeArray<byte> payload, int byteCount)
+        {
+            if (!payload.IsCreated || byteCount <= 0 || byteCount > payload.Length)
+                return;
+
+            void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(payload);
+            Hecton8.SaveSystem.AsyncWriteManager.WriteAll(absolutePath, source, byteCount, out _);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void WriteUInt64LittleEndian(NativeArray<byte> destination, ref int cursor, ulong value)
+        {
+            destination[cursor++] = (byte)value;
+            destination[cursor++] = (byte)(value >> 8);
+            destination[cursor++] = (byte)(value >> 16);
+            destination[cursor++] = (byte)(value >> 24);
+            destination[cursor++] = (byte)(value >> 32);
+            destination[cursor++] = (byte)(value >> 40);
+            destination[cursor++] = (byte)(value >> 48);
+            destination[cursor++] = (byte)(value >> 56);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void WriteInt64LittleEndian(NativeArray<byte> destination, ref int cursor, long value)
+        {
+            WriteUInt64LittleEndian(destination, ref cursor, unchecked((ulong)value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void WriteUInt32LittleEndian(NativeArray<byte> destination, ref int cursor, uint value)
+        {
+            destination[cursor++] = (byte)value;
+            destination[cursor++] = (byte)(value >> 8);
+            destination[cursor++] = (byte)(value >> 16);
+            destination[cursor++] = (byte)(value >> 24);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void WriteInt32LittleEndian(NativeArray<byte> destination, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, unchecked((uint)value));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void WriteFloatLittleEndian(NativeArray<byte> destination, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, math.asuint(value));
+        }
+
         private void DumpOceanSurfaceTelemetry()
         {
             if (!_oceanSurfaceTelemetry.IsCreated ||
@@ -3053,35 +3230,39 @@ namespace Hecton8.Physics
             }
 
             _lastOceanSurfaceDumpFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            string absolutePath = Path.Combine(Application.dataPath, "..", OceanSurfaceDumpPath);
-            string directory = Path.GetDirectoryName(absolutePath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            int entryBytes = 60;
+            int byteCount = 8 + _oceanSurfaceTelemetry.Length * entryBytes;
+            NativeArray<byte> dump = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            try
             {
-                writer.Write(_oceanSurfaceTelemetryWriteIndex);
-                writer.Write(_oceanSurfaceTelemetry.Length);
+                int cursor = 0;
+                WriteInt32LittleEndian(dump, ref cursor, _oceanSurfaceTelemetryWriteIndex);
+                WriteInt32LittleEndian(dump, ref cursor, _oceanSurfaceTelemetry.Length);
                 for (int i = 0; i < _oceanSurfaceTelemetry.Length; i++)
                 {
                     FluidOceanSurfaceTelemetryEntry entry = _oceanSurfaceTelemetry[i];
-                    writer.Write(entry.FrameIndex);
-                    writer.Write(entry.OriginShiftSequence);
-                    writer.Write(entry.ActiveFloaters);
-                    writer.Write(entry.SleepingFloaters);
-                    writer.Write(entry.WaveOctaves);
-                    writer.Write(entry.TerrainRevision);
-                    writer.Write(entry.WaterLevelY);
-                    writer.Write(entry.MinSurfaceOffset);
-                    writer.Write(entry.MaxSurfaceOffset);
-                    writer.Write(entry.ObserverWS.x);
-                    writer.Write(entry.ObserverWS.y);
-                    writer.Write(entry.ObserverWS.z);
-                    writer.Write(entry.WindWS.x);
-                    writer.Write(entry.WindWS.y);
-                    writer.Write(entry.WindWS.z);
+                    WriteUInt32LittleEndian(dump, ref cursor, entry.FrameIndex);
+                    WriteUInt32LittleEndian(dump, ref cursor, entry.OriginShiftSequence);
+                    WriteInt32LittleEndian(dump, ref cursor, entry.ActiveFloaters);
+                    WriteInt32LittleEndian(dump, ref cursor, entry.SleepingFloaters);
+                    WriteInt32LittleEndian(dump, ref cursor, entry.WaveOctaves);
+                    WriteInt32LittleEndian(dump, ref cursor, entry.TerrainRevision);
+                    WriteFloatLittleEndian(dump, ref cursor, entry.WaterLevelY);
+                    WriteFloatLittleEndian(dump, ref cursor, entry.MinSurfaceOffset);
+                    WriteFloatLittleEndian(dump, ref cursor, entry.MaxSurfaceOffset);
+                    WriteFloatLittleEndian(dump, ref cursor, entry.ObserverWS.x);
+                    WriteFloatLittleEndian(dump, ref cursor, entry.ObserverWS.y);
+                    WriteFloatLittleEndian(dump, ref cursor, entry.ObserverWS.z);
+                    WriteFloatLittleEndian(dump, ref cursor, entry.WindWS.x);
+                    WriteFloatLittleEndian(dump, ref cursor, entry.WindWS.y);
+                    WriteFloatLittleEndian(dump, ref cursor, entry.WindWS.z);
                 }
+
+                WriteNativeDump(ResolveFluidDumpPath(OceanSurfaceDumpPath), dump, cursor);
+            }
+            finally
+            {
+                dump.Dispose();
             }
         }
 
@@ -3318,19 +3499,16 @@ namespace Hecton8.Physics
             if (!ring.IsCreated || ring.Length == 0)
                 return;
 
-            string absolutePath = Path.Combine(Application.dataPath, "..", FluidSovereigntyDumpRelativePath);
-            string directory = Path.GetDirectoryName(absolutePath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            int byteCount = 20 + ring.Length * FluidSovereigntyTelemetryEntrySizeBytes;
+            NativeArray<byte> dump = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            try
             {
-                writer.Write(FluidSovereigntyTelemetryMagic);
-                writer.Write(FluidSovereigntyTelemetryCapacity);
-                writer.Write(_fluidSovereigntyTelemetryCursorMirror);
-                writer.Write(reasonFlags);
-                writer.Write(UnsafeUtility.SizeOf<FluidTelemetryEntry>());
+                int cursor = 0;
+                WriteUInt32LittleEndian(dump, ref cursor, FluidSovereigntyTelemetryMagic);
+                WriteInt32LittleEndian(dump, ref cursor, FluidSovereigntyTelemetryCapacity);
+                WriteInt32LittleEndian(dump, ref cursor, _fluidSovereigntyTelemetryCursorMirror);
+                WriteUInt32LittleEndian(dump, ref cursor, reasonFlags);
+                WriteInt32LittleEndian(dump, ref cursor, UnsafeUtility.SizeOf<FluidTelemetryEntry>());
                 for (int i = 0; i < ring.Length; i++)
                 {
                     int index = _fluidSovereigntyTelemetryCursorMirror + i;
@@ -3338,21 +3516,27 @@ namespace Hecton8.Physics
                         index -= ring.Length;
 
                     FluidTelemetryEntry entry = ring[index];
-                    writer.Write(entry.VaultAllocatedBytes);
-                    writer.Write(entry.VaultArenaBytes);
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.BufferId);
-                    writer.Write(entry.Generation);
-                    writer.Write(entry.VaultGenerationId);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.ExpectedLength);
-                    writer.Write(entry.ActualLength);
-                    writer.Write(entry.GlobalQualityWeight);
-                    writer.Write(entry.CpuMicroseconds);
-                    writer.Write(entry.GpuMicroseconds);
-                    writer.Write(entry.ActiveFlowRate);
+                    WriteInt64LittleEndian(dump, ref cursor, entry.VaultAllocatedBytes);
+                    WriteInt64LittleEndian(dump, ref cursor, entry.VaultArenaBytes);
+                    WriteUInt32LittleEndian(dump, ref cursor, entry.Frame);
+                    WriteUInt32LittleEndian(dump, ref cursor, entry.BufferId);
+                    WriteUInt32LittleEndian(dump, ref cursor, entry.Generation);
+                    WriteUInt32LittleEndian(dump, ref cursor, entry.VaultGenerationId);
+                    WriteUInt32LittleEndian(dump, ref cursor, entry.Flags);
+                    WriteUInt32LittleEndian(dump, ref cursor, entry.StateHash);
+                    WriteInt32LittleEndian(dump, ref cursor, entry.ExpectedLength);
+                    WriteInt32LittleEndian(dump, ref cursor, entry.ActualLength);
+                    WriteFloatLittleEndian(dump, ref cursor, entry.GlobalQualityWeight);
+                    WriteFloatLittleEndian(dump, ref cursor, entry.CpuMicroseconds);
+                    WriteFloatLittleEndian(dump, ref cursor, entry.GpuMicroseconds);
+                    WriteFloatLittleEndian(dump, ref cursor, entry.ActiveFlowRate);
                 }
+
+                WriteNativeDump(ResolveFluidDumpPath(FluidSovereigntyDumpRelativePath), dump, cursor);
+            }
+            finally
+            {
+                dump.Dispose();
             }
         }
 
@@ -3939,7 +4123,8 @@ namespace Hecton8.Physics
             float qualityDetail01 = SmoothFluidAdvectionQuality(ResolveFluidAdvectionQualityWeight());
             float qualityPressure01 = 1f - qualityDetail01;
             int queuedBubbles = QueueSplashdownBubbleRing(runtimePosition, qualityPressure01);
-            uint flags = qualityPressure01 > 0.001f ? SplashdownImpulseQualityPressureFlag : 0u;
+            _splashdownImpulseQualityPressureQ8 = EncodeSplashdownImpulseQualityPressureQ8(qualityPressure01);
+            uint flags = 0u;
 
             if (qualityDetail01 <= 0.001f)
             {
@@ -4214,11 +4399,17 @@ namespace Hecton8.Physics
                 : _emptyAbyssalFlowBuffer;
         }
 
+        private static byte EncodeSplashdownImpulseQualityPressureQ8(float qualityPressure01)
+        {
+            return (byte)math.clamp((int)math.round(math.saturate(qualityPressure01) * 255f), 0, 255);
+        }
+
         private void PublishSplashdownFluidImpulseTelemetry(int count, uint flags)
         {
+            uint qualityPressureContext = (uint)_splashdownImpulseQualityPressureQ8 << 16;
             GlobalTelemetryBus.PublishPerformanceWarning(
                 SplashdownFluidImpulseCountHash,
-                SplashdownFluidImpulseContextHash ^ flags,
+                SplashdownFluidImpulseContextHash ^ flags ^ qualityPressureContext,
                 math.max(0, count));
         }
 
@@ -4637,6 +4828,10 @@ namespace Hecton8.Physics
                     NativeArrayOptions.ClearMemory);
             }
 
+            EnsureFluidAdvectionDirtyPageUploadSnapshot(ref _advectedSiltDirtyPageUploadSnapshot, siltDirtyPageCount);
+            EnsureFluidAdvectionDirtyPageUploadSnapshot(ref _advectedBubbleDirtyPageUploadSnapshot, bubbleDirtyPageCount);
+            EnsureFluidAdvectionDirtyPageUploadSnapshot(ref _advectedDebrisDirtyPageUploadSnapshot, debrisDirtyPageCount);
+
             if (!_emptyAbyssalFlowUpload.IsCreated)
             {
                 _emptyAbyssalFlowUpload.Ensure(
@@ -4904,6 +5099,7 @@ namespace Hecton8.Physics
                     _advectedSiltBufferB,
                     _advectedSiltUpload,
                     ref _advectedSiltDirtyPages,
+                    _advectedSiltDirtyPageUploadSnapshot,
                     MaxAdvectedSiltCount,
                     ref remainingBudgetBytes,
                     ref _advectedSiltGpuUploadDirty);
@@ -4920,6 +5116,7 @@ namespace Hecton8.Physics
                     _advectedBubbleBufferB,
                     _advectedBubbleUpload,
                     ref _advectedBubbleDirtyPages,
+                    _advectedBubbleDirtyPageUploadSnapshot,
                     MaxAdvectedBubbleCount,
                     ref remainingBudgetBytes,
                     ref _advectedBubbleGpuUploadDirty);
@@ -4936,6 +5133,7 @@ namespace Hecton8.Physics
                     _advectedDebrisBufferB,
                     _advectedDebrisUpload,
                     ref _advectedDebrisDirtyPages,
+                    _advectedDebrisDirtyPageUploadSnapshot,
                     MaxAdvectedDebrisCount,
                     ref remainingBudgetBytes,
                     ref _advectedDebrisGpuUploadDirty);
@@ -4949,6 +5147,7 @@ namespace Hecton8.Physics
             GraphicsBuffer bufferB,
             FluidVaultBuffer<T> uploadSource,
             ref FluidVaultBuffer<byte> dirtyPagesHandle,
+            byte[] dirtyPageSnapshot,
             int elementCount,
             ref int remainingBudgetBytes,
             ref bool dirtyFlag)
@@ -4957,12 +5156,24 @@ namespace Hecton8.Physics
             if (!uploadSource.TryResolve(out NativeArray<T> source) || !source.IsCreated)
                 return false;
 
+            int requiredPages = GraphicsBufferUploadUtility.ResolveDirtyPageCount(
+                elementCount,
+                FluidAdvectionDirtyPageSize);
+            if (dirtyPageSnapshot == null || dirtyPageSnapshot.Length < requiredPages)
+                return false;
+
             if (!dirtyPagesHandle.TryAcquireWriteLock(out NativeArray<byte> dirtyPages))
                 return false;
 
+            int copiedPageCount;
+            int firstPageBytes;
             try
             {
-                int firstPageBytes = GraphicsBufferUploadUtility.ResolveFirstDirtyPageBytes<T>(
+                copiedPageCount = CopyFluidAdvectionDirtyPagesToSnapshot(
+                    dirtyPages,
+                    dirtyPageSnapshot,
+                    requiredPages);
+                firstPageBytes = GraphicsBufferUploadUtility.ResolveFirstDirtyPageBytes<T>(
                     dirtyPages,
                     elementCount,
                     FluidAdvectionDirtyPageSize);
@@ -4971,42 +5182,119 @@ namespace Hecton8.Physics
                     dirtyFlag = false;
                     return true;
                 }
+            }
+            finally
+            {
+                dirtyPagesHandle.ReleaseWriteLock();
+            }
 
-                int firstMirroredPageBytes = firstPageBytes * 2;
-                if (remainingBudgetBytes < firstMirroredPageBytes)
-                    return false;
+            int firstMirroredPageBytes = firstPageBytes * 2;
+            if (remainingBudgetBytes < firstMirroredPageBytes)
+                return false;
 
-                int perBufferBudget = math.max(firstPageBytes, remainingBudgetBytes >> 1);
-                GraphicsBufferUploadUtility.PageUploadStats aStats =
-                    GraphicsBufferUploadUtility.UploadNativeArrayDirtyPagesSetData(
-                        bufferA,
-                        source,
-                        dirtyPages,
-                        elementCount,
-                        FluidAdvectionDirtyPageSize,
-                        perBufferBudget,
-                        clearUploadedPages: false);
-                GraphicsBufferUploadUtility.PageUploadStats bStats =
-                    GraphicsBufferUploadUtility.UploadNativeArrayDirtyPagesSetData(
-                        bufferB,
-                        source,
-                        dirtyPages,
-                        elementCount,
-                        FluidAdvectionDirtyPageSize,
-                        perBufferBudget,
-                        clearUploadedPages: true);
-
-                long uploadedBytes = aStats.UploadedBytes + bStats.UploadedBytes;
-                remainingBudgetBytes = uploadedBytes >= remainingBudgetBytes
-                    ? 0
-                    : remainingBudgetBytes - (int)uploadedBytes;
-
-                bool hasDeferredPages = GraphicsBufferUploadUtility.HasAnyDirtyPage(
-                    dirtyPages,
+            int perBufferBudget = math.max(firstPageBytes, remainingBudgetBytes >> 1);
+            GraphicsBufferUploadUtility.PageUploadStats aStats =
+                GraphicsBufferUploadUtility.UploadNativeArrayDirtyPagesSetDataFromSnapshot(
+                    bufferA,
+                    source,
+                    dirtyPageSnapshot,
                     elementCount,
-                    FluidAdvectionDirtyPageSize);
-                dirtyFlag = hasDeferredPages;
-                return !hasDeferredPages;
+                    FluidAdvectionDirtyPageSize,
+                    perBufferBudget,
+                    markUploadedPages: false);
+            GraphicsBufferUploadUtility.PageUploadStats bStats =
+                GraphicsBufferUploadUtility.UploadNativeArrayDirtyPagesSetDataFromSnapshot(
+                    bufferB,
+                    source,
+                    dirtyPageSnapshot,
+                    elementCount,
+                    FluidAdvectionDirtyPageSize,
+                    perBufferBudget,
+                    markUploadedPages: true);
+
+            long uploadedBytes = aStats.UploadedBytes + bStats.UploadedBytes;
+            remainingBudgetBytes = uploadedBytes >= remainingBudgetBytes
+                ? 0
+                : remainingBudgetBytes - (int)uploadedBytes;
+
+            bool hasDeferredPages = true;
+            if (bStats.UploadedPages > 0 &&
+                !TryClearFluidAdvectionUploadedDirtyPages(
+                    ref dirtyPagesHandle,
+                    dirtyPageSnapshot,
+                    copiedPageCount,
+                    out hasDeferredPages))
+            {
+                dirtyFlag = true;
+                return false;
+            }
+
+            if (bStats.UploadedPages <= 0)
+                hasDeferredPages = bStats.DeferredPages > 0 || aStats.DeferredPages > 0;
+
+            dirtyFlag = hasDeferredPages;
+            return !hasDeferredPages;
+        }
+
+        private static void EnsureFluidAdvectionDirtyPageUploadSnapshot(ref byte[] snapshot, int requiredPageCount)
+        {
+            if (requiredPageCount <= 0 || (snapshot != null && snapshot.Length >= requiredPageCount))
+                return;
+
+            // COLD ALLOC: byte[dirtyPageCount] - fluid advection dirty-page GPU upload snapshot copied under DataVault lock and consumed after release - owner: HectonFluidEngine
+            snapshot = new byte[requiredPageCount];
+        }
+
+        private static int CopyFluidAdvectionDirtyPagesToSnapshot(
+            NativeArray<byte> dirtyPages,
+            byte[] dirtyPageSnapshot,
+            int requiredPages)
+        {
+            if (!dirtyPages.IsCreated || dirtyPageSnapshot == null || requiredPages <= 0)
+                return 0;
+
+            int pageCount = math.min(requiredPages, math.min(dirtyPages.Length, dirtyPageSnapshot.Length));
+            for (int i = 0; i < pageCount; i++)
+            {
+                bool dirty = dirtyPages[i] != 0;
+                dirtyPageSnapshot[i] = dirty ? (byte)1 : (byte)0;
+                if (dirty)
+                    dirtyPages[i] = GraphicsBufferUploadUtility.UploadedDirtyPageSnapshotMarker;
+            }
+
+            return pageCount;
+        }
+
+        private static bool TryClearFluidAdvectionUploadedDirtyPages(
+            ref FluidVaultBuffer<byte> dirtyPagesHandle,
+            byte[] dirtyPageSnapshot,
+            int pageCount,
+            out bool hasDeferredPages)
+        {
+            hasDeferredPages = true;
+            if (dirtyPageSnapshot == null || pageCount <= 0)
+                return true;
+
+            if (!dirtyPagesHandle.TryAcquireWriteLock(out NativeArray<byte> dirtyPages))
+                return false;
+
+            try
+            {
+                hasDeferredPages = false;
+                int limit = math.min(pageCount, math.min(dirtyPages.Length, dirtyPageSnapshot.Length));
+                for (int i = 0; i < limit; i++)
+                {
+                    if (dirtyPageSnapshot[i] == GraphicsBufferUploadUtility.UploadedDirtyPageSnapshotMarker &&
+                        dirtyPages[i] == GraphicsBufferUploadUtility.UploadedDirtyPageSnapshotMarker)
+                    {
+                        dirtyPages[i] = 0;
+                    }
+
+                    dirtyPageSnapshot[i] = 0;
+                    hasDeferredPages |= dirtyPages[i] != 0;
+                }
+
+                return true;
             }
             finally
             {
@@ -5167,9 +5455,7 @@ namespace Hecton8.Physics
             _fluidAdvectionTelemetryDumped = true;
             try
             {
-                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-                string dumpPath = Path.Combine(projectRoot, FluidAdvectionDumpRelativePath);
-                WriteFluidAdvectionTelemetryDump(dumpPath, reasonFlags);
+                WriteFluidAdvectionTelemetryDump(ResolveFluidDumpPath(FluidAdvectionDumpRelativePath), reasonFlags);
             }
             catch (System.Exception)
             {
@@ -5181,31 +5467,36 @@ namespace Hecton8.Physics
 
         private void WriteFluidAdvectionTelemetryDump(string dumpPath, uint reasonFlags)
         {
-            string directory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            int entryBytes = 36;
+            int byteCount = 16 + _fluidAdvectionTelemetry.Length * entryBytes;
+            NativeArray<byte> dump = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            try
             {
-                writer.Write(0x41435654u);
-                writer.Write(FluidAdvectionTelemetryCapacity);
-                writer.Write(_fluidAdvectionTelemetryCursor);
-                writer.Write(reasonFlags);
+                int cursor = 0;
+                WriteUInt32LittleEndian(dump, ref cursor, 0x41435654u);
+                WriteInt32LittleEndian(dump, ref cursor, FluidAdvectionTelemetryCapacity);
+                WriteInt32LittleEndian(dump, ref cursor, _fluidAdvectionTelemetryCursor);
+                WriteUInt32LittleEndian(dump, ref cursor, reasonFlags);
                 for (int i = 0; i < _fluidAdvectionTelemetry.Length; i++)
                 {
                     int index = (_fluidAdvectionTelemetryCursor + i) % _fluidAdvectionTelemetry.Length;
                     FluidAdvectionTelemetryEntry entry = _fluidAdvectionTelemetry[index];
-                    writer.Write(entry.FrameIndex);
-                    writer.Write(entry.OriginShiftSequence);
-                    writer.Write(entry.ActiveAdvectedParticles);
-                    writer.Write(entry.SiltCount);
-                    writer.Write(entry.BubbleCount);
-                    writer.Write(entry.DebrisCount);
-                    writer.Write(entry.ActiveTurbulenceWakes);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.StateHash);
+                    WriteUInt32LittleEndian(dump, ref cursor, entry.FrameIndex);
+                    WriteUInt32LittleEndian(dump, ref cursor, entry.OriginShiftSequence);
+                    WriteInt32LittleEndian(dump, ref cursor, entry.ActiveAdvectedParticles);
+                    WriteInt32LittleEndian(dump, ref cursor, entry.SiltCount);
+                    WriteInt32LittleEndian(dump, ref cursor, entry.BubbleCount);
+                    WriteInt32LittleEndian(dump, ref cursor, entry.DebrisCount);
+                    WriteInt32LittleEndian(dump, ref cursor, entry.ActiveTurbulenceWakes);
+                    WriteUInt32LittleEndian(dump, ref cursor, entry.Flags);
+                    WriteUInt32LittleEndian(dump, ref cursor, entry.StateHash);
                 }
+
+                WriteNativeDump(dumpPath, dump, cursor);
+            }
+            finally
+            {
+                dump.Dispose();
             }
         }
 
@@ -6123,6 +6414,9 @@ namespace Hecton8.Physics
             _advectedSiltDirtyPages.Release();
             _advectedBubbleDirtyPages.Release();
             _advectedDebrisDirtyPages.Release();
+            _advectedSiltDirtyPageUploadSnapshot = null;
+            _advectedBubbleDirtyPageUploadSnapshot = null;
+            _advectedDebrisDirtyPageUploadSnapshot = null;
             _fluidAdvectionTelemetry.Release();
             _fluidAdvectionStateReady = false;
             _fluidAdvectionRenderGraphQueued = false;
@@ -7011,43 +7305,46 @@ namespace Hecton8.Physics
             _maelstromTelemetryDumped = true;
             try
             {
-                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-                string dumpPath = Path.Combine(projectRoot, MaelstromDumpRelativePath);
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                int entryBytes = 64;
+                int byteCount = 16 + _maelstromTelemetry.Length * entryBytes;
+                NativeArray<byte> dump = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                try
                 {
-                    writer.Write(0x4D41454Cu);
-                    writer.Write(MaelstromTelemetryCapacity);
-                    writer.Write(_maelstromTelemetryCursor);
-                    writer.Write(reasonFlags);
+                    int cursor = 0;
+                    WriteUInt32LittleEndian(dump, ref cursor, 0x4D41454Cu);
+                    WriteInt32LittleEndian(dump, ref cursor, MaelstromTelemetryCapacity);
+                    WriteInt32LittleEndian(dump, ref cursor, _maelstromTelemetryCursor);
+                    WriteUInt32LittleEndian(dump, ref cursor, reasonFlags);
                     for (int i = 0; i < _maelstromTelemetry.Length; i++)
                     {
                         int index = (_maelstromTelemetryCursor + i) % _maelstromTelemetry.Length;
                         MaelstromTelemetryEntry entry = _maelstromTelemetry[index];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.FixedTime);
-                        writer.Write(entry.PrimaryCenterWS.x);
-                        writer.Write(entry.PrimaryCenterWS.y);
-                        writer.Write(entry.PrimaryCenterWS.z);
-                        writer.Write(entry.PrimaryRadius);
-                        writer.Write(entry.PrimaryCompact.x);
-                        writer.Write(entry.PrimaryCompact.y);
-                        writer.Write(entry.PrimaryCompact.z);
-                        writer.Write(entry.PrimaryCompact.w);
-                        writer.Write(entry.Warp01);
-                        writer.Write(entry.ActiveCount);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.EscapeVelocityClamp);
-                        writer.Write(entry.EventHorizonRadius);
+                        WriteInt32LittleEndian(dump, ref cursor, entry.Frame);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.FixedTime);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.PrimaryCenterWS.x);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.PrimaryCenterWS.y);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.PrimaryCenterWS.z);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.PrimaryRadius);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.PrimaryCompact.x);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.PrimaryCompact.y);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.PrimaryCompact.z);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.PrimaryCompact.w);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.Warp01);
+                        WriteInt32LittleEndian(dump, ref cursor, entry.ActiveCount);
+                        WriteUInt32LittleEndian(dump, ref cursor, entry.Flags);
+                        WriteUInt32LittleEndian(dump, ref cursor, entry.StateHash);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.EscapeVelocityClamp);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.EventHorizonRadius);
                     }
+
+                    WriteNativeDump(ResolveFluidDumpPath(MaelstromDumpRelativePath), dump, cursor);
+                }
+                finally
+                {
+                    dump.Dispose();
                 }
             }
-            catch (IOException)
+            catch (System.Exception)
             {
             }
         }
@@ -7314,6 +7611,7 @@ namespace Hecton8.Physics
             }
 
             EnsureGpuBuoyancyBuffers(capacity);
+            EnsureGpuReadbackDataCold(capacity);
         }
 
         private bool HasGpuBuoyancyBuffers(int capacity)
@@ -7347,8 +7645,30 @@ namespace Hecton8.Physics
             return true;
         }
 
+        private void EnsureGpuReadbackDataCold(int count)
+        {
+            if (_gpuReadbackData == null)
+                _gpuReadbackData = new GpuReadbackNativeRing(GpuReadbackRingSize);
+
+            int requiredCount = ResolveGpuReadbackElementCount(count);
+            _gpuReadbackData.EnsureAllCold(requiredCount);
+        }
+
+        private bool HasGpuReadbackData(int slot, int count)
+        {
+            return _gpuReadbackData != null &&
+                   _gpuReadbackData.IsReady(slot, ResolveGpuReadbackElementCount(count));
+        }
+
+        private static int ResolveGpuReadbackElementCount(int count)
+        {
+            return Mathf.NextPowerOfTwo(math.max(1, count));
+        }
+
         private void ReleaseGpuBuoyancyBuffers()
         {
+            CompletePendingGpuBuoyancyReadbacksForRelease();
+            DisposeGpuReadbackData();
             ReleaseGraphicsBuffer(ref _gpuBuoyancyPositionBufferA);
             ReleaseGraphicsBuffer(ref _gpuBuoyancyPositionBufferB);
             ReleaseGraphicsBuffer(ref _gpuBuoyancyParamBufferA);
@@ -7676,6 +7996,9 @@ namespace Hecton8.Physics
             _advectedSiltDirtyPages.Release();
             _advectedBubbleDirtyPages.Release();
             _advectedDebrisDirtyPages.Release();
+            _advectedSiltDirtyPageUploadSnapshot = null;
+            _advectedBubbleDirtyPageUploadSnapshot = null;
+            _advectedDebrisDirtyPageUploadSnapshot = null;
             _emptyAbyssalFlowUpload.Release();
             _fluidAdvectionTelemetry.Release();
 
@@ -8442,44 +8765,44 @@ namespace Hecton8.Physics
             _abyssalFlowTelemetryDumped = true;
             try
             {
-                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-                string dumpPath = Path.Combine(projectRoot, AbyssalFlowDumpRelativePath);
-                string directory = Path.GetDirectoryName(dumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                int entryBytes = 64;
+                int byteCount = 16 + _abyssalFlowTelemetry.Length * entryBytes;
+                NativeArray<byte> dump = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                try
                 {
-                    writer.Write(0x41424646u);
-                    writer.Write(AbyssalFlowTelemetryCapacity);
-                    writer.Write(_abyssalFlowTelemetryCursor);
-                    writer.Write(reasonFlags);
+                    int cursor = 0;
+                    WriteUInt32LittleEndian(dump, ref cursor, 0x41424646u);
+                    WriteInt32LittleEndian(dump, ref cursor, AbyssalFlowTelemetryCapacity);
+                    WriteInt32LittleEndian(dump, ref cursor, _abyssalFlowTelemetryCursor);
+                    WriteUInt32LittleEndian(dump, ref cursor, reasonFlags);
                     for (int i = 0; i < _abyssalFlowTelemetry.Length; i++)
                     {
                         int index = (_abyssalFlowTelemetryCursor + i) % _abyssalFlowTelemetry.Length;
                         AbyssalFlowTelemetryEntry entry = _abyssalFlowTelemetry[index];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.FixedTime);
-                        writer.Write(entry.CenterWS.x);
-                        writer.Write(entry.CenterWS.y);
-                        writer.Write(entry.CenterWS.z);
-                        writer.Write(entry.WakePositionWS.x);
-                        writer.Write(entry.WakePositionWS.y);
-                        writer.Write(entry.WakePositionWS.z);
-                        writer.Write(entry.WakeVelocityWS.x);
-                        writer.Write(entry.WakeVelocityWS.y);
-                        writer.Write(entry.WakeVelocityWS.z);
-                        writer.Write(entry.WakeRadius);
-                        writer.Write(entry.HeatSourceCount);
-                        writer.Write(entry.FluidImpulseCount);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.StateHash);
+                        WriteInt32LittleEndian(dump, ref cursor, entry.Frame);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.FixedTime);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.CenterWS.x);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.CenterWS.y);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.CenterWS.z);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.WakePositionWS.x);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.WakePositionWS.y);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.WakePositionWS.z);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.WakeVelocityWS.x);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.WakeVelocityWS.y);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.WakeVelocityWS.z);
+                        WriteFloatLittleEndian(dump, ref cursor, entry.WakeRadius);
+                        WriteInt32LittleEndian(dump, ref cursor, entry.HeatSourceCount);
+                        WriteInt32LittleEndian(dump, ref cursor, entry.FluidImpulseCount);
+                        WriteUInt32LittleEndian(dump, ref cursor, entry.Flags);
+                        WriteUInt32LittleEndian(dump, ref cursor, entry.StateHash);
                     }
+
+                    WriteNativeDump(ResolveFluidDumpPath(AbyssalFlowDumpRelativePath), dump, cursor);
                 }
-            }
-            catch (IOException)
-            {
+                finally
+                {
+                    dump.Dispose();
+                }
             }
             catch (System.Exception)
             {
@@ -8618,7 +8941,7 @@ namespace Hecton8.Physics
         {
             using (_gpuReadbackProfilerMarker.Auto())
             {
-            if (_gpuReadbackRequests == null || _gpuReadbackActive == null || !_gpuBuoyancyReadback.IsCreated)
+            if (_gpuReadbackRequests == null || _gpuReadbackActive == null || _gpuReadbackData == null || !_gpuBuoyancyReadback.IsCreated)
                 return;
 
             for (int requestIndex = 0; requestIndex < GpuReadbackRingSize; requestIndex++)
@@ -8634,8 +8957,11 @@ namespace Hecton8.Physics
                 if (request.hasError)
                     continue;
 
-                int readCount = math.min(_gpuReadbackCounts[requestIndex], _gpuBuoyancyReadback.Length);
-                var readbackData = request.GetData<float4>();
+                NativeArray<float4> readbackData = _gpuReadbackData.Slot(requestIndex);
+                int readCount = math.min(_gpuReadbackCounts[requestIndex], math.min(_gpuBuoyancyReadback.Length, readbackData.Length));
+                if (!readbackData.IsCreated || readCount <= 0)
+                    continue;
+
                 for (int i = 0; i < readCount; i++)
                 {
                     float4 sample = readbackData[i];
@@ -8722,6 +9048,13 @@ namespace Hecton8.Physics
             if (positionBuffer == null || paramBuffer == null || resultBuffer == null)
                 return;
 
+            if (!HasGpuReadbackData(slot, count))
+                return;
+
+            int readbackBytes = ResolveGpuReadbackByteCount(resultBuffer, count);
+            if (readbackBytes <= 0)
+                return;
+
             UploadGpuBuoyancyObjectData(count);
             GraphicsBufferUploadUtility.UploadNativeArray<float3>(positionBuffer, _positions, count);
             GraphicsBufferUploadUtility.UploadNativeArray<GpuBuoyancyObjectData>(paramBuffer, _gpuBuoyancyObjectDataUpload, count);
@@ -8737,10 +9070,55 @@ namespace Hecton8.Physics
             SetGpuWave(gpuBuoyancyCompute, _GpuBuoyancyWave2AId, _GpuBuoyancyWave2BId, weatherSnapshot.Wave2);
 
             gpuBuoyancyCompute.Dispatch(_gpuBuoyancyKernel, groupCount, 1, 1);
-            _gpuReadbackRequests[slot] = AsyncGPUReadback.Request(resultBuffer);
+            ref NativeArray<float4> readbackData = ref _gpuReadbackData.Slot(slot);
+            _gpuReadbackRequests[slot] = AsyncGPUReadback.RequestIntoNativeArray(ref readbackData, resultBuffer, readbackBytes, 0, null);
+            if (_gpuReadbackRequests[slot].hasError)
+                return;
+
             _gpuReadbackCounts[slot] = count;
             _gpuReadbackActive[slot] = true;
             _gpuReadbackWriteIndex = (_gpuReadbackWriteIndex + 1) % GpuReadbackRingSize;
+        }
+
+        private void CompletePendingGpuBuoyancyReadbacksForRelease()
+        {
+            if (_gpuReadbackActive == null)
+                return;
+
+            bool hasPending = false;
+            for (int i = 0; i < math.min(_gpuReadbackActive.Length, GpuReadbackRingSize); i++)
+            {
+                hasPending |= _gpuReadbackActive[i];
+            }
+
+            if (!hasPending)
+                return;
+
+            // BLOCKING_SYNC_POINT: teardown/configuration must not release GPU buoyancy result buffers while AsyncGPUReadback owns them.
+            AsyncGPUReadback.WaitAllRequests();
+            for (int i = 0; i < math.min(_gpuReadbackActive.Length, GpuReadbackRingSize); i++)
+            {
+                _gpuReadbackActive[i] = false;
+            }
+        }
+
+        private void DisposeGpuReadbackData()
+        {
+            if (_gpuReadbackData == null)
+                return;
+
+            _gpuReadbackData.Dispose();
+        }
+
+        private static int ResolveGpuReadbackByteCount(GraphicsBuffer buffer, int count)
+        {
+            if (buffer == null || count <= 0)
+                return 0;
+
+            int safeCount = math.min(count, math.max(0, buffer.count));
+            long byteCount = (long)safeCount * UnsafeUtility.SizeOf<float4>();
+            long maxBytes = (long)math.max(0, buffer.count) * math.max(1, buffer.stride);
+            return byteCount > 0L && byteCount <= maxBytes ? (int)byteCount : 0;
         }
 
         private void QueueGpuBuoyancySampling(in WeatherRuntimeSnapshot weatherSnapshot, int count, float resolvedWaterLevel)
@@ -8813,8 +9191,9 @@ namespace Hecton8.Physics
 
             _observerResolveRetryTimer = ObserverResolveRetryInterval;
 
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
-                lodObserver = playerTransform;
+            IPlayerRuntimeContext playerRuntime = TryGetCachedPlayerRuntime();
+            if (playerRuntime != null && playerRuntime.PlayerTransform != null)
+                lodObserver = playerRuntime.PlayerTransform;
         }
 
         private static float ResolveAbyssalVisualQualityWeight()

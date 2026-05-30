@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -18,7 +19,6 @@ namespace Hecton8.World.VoxelSurfaceNets
         public VaultGenerationHandle<VoxelMeshingTuningDTO> Tuning;
         public VaultGenerationHandle<VoxelMeshingTelemetryEntry> TelemetryRing;
         public VaultGenerationHandle<int> TelemetryCursor;
-        public VaultGenerationHandle<byte> CsvScratch;
         public VaultGenerationHandle<uint> SurfaceEdgeMasks;
         public VaultGenerationHandle<float3> RawDebugVertices;
         public VaultGenerationHandle<VoxelSurfaceAabbDTO> ChunkAabbs;
@@ -39,7 +39,6 @@ namespace Hecton8.World.VoxelSurfaceNets
                    IsHandleValid(in Tuning) &&
                    IsHandleValid(in TelemetryRing) &&
                    IsHandleValid(in TelemetryCursor) &&
-                   IsHandleValid(in CsvScratch) &&
                    IsHandleValid(in SurfaceEdgeMasks) &&
                    IsHandleValid(in RawDebugVertices) &&
                    IsHandleValid(in ChunkAabbs) &&
@@ -70,7 +69,6 @@ namespace Hecton8.World.VoxelSurfaceNets
         public NativeArray<VoxelMeshingTuningDTO> Tuning => ResolveView(Vault, in Handles.Tuning);
         public NativeArray<VoxelMeshingTelemetryEntry> TelemetryRing => ResolveView(Vault, in Handles.TelemetryRing);
         public NativeArray<int> TelemetryCursor => ResolveView(Vault, in Handles.TelemetryCursor);
-        public NativeArray<byte> CsvScratch => ResolveView(Vault, in Handles.CsvScratch);
         public NativeArray<uint> SurfaceEdgeMasks => ResolveView(Vault, in Handles.SurfaceEdgeMasks);
         public NativeArray<float3> RawDebugVertices => ResolveView(Vault, in Handles.RawDebugVertices);
         public NativeArray<VoxelSurfaceAabbDTO> ChunkAabbs => ResolveView(Vault, in Handles.ChunkAabbs);
@@ -91,7 +89,6 @@ namespace Hecton8.World.VoxelSurfaceNets
                    Tuning.IsCreated &&
                    TelemetryRing.IsCreated &&
                    TelemetryCursor.IsCreated &&
-                   CsvScratch.IsCreated &&
                    SurfaceEdgeMasks.IsCreated &&
                    RawDebugVertices.IsCreated &&
                    ChunkAabbs.IsCreated &&
@@ -167,6 +164,14 @@ namespace Hecton8.World.VoxelSurfaceNets
         private const uint JobPrioritiesLock = 1u << 12;
         private const uint JobHzbTilesLock = 1u << 13;
         private const uint JobMockDensityConfigLock = 1u << 14;
+        private static readonly WaitCallback TelemetryDumpWorkerCallback = RunTelemetryDumpWorker;
+        private static readonly VoxelMeshingTelemetryEntry[] TelemetryDumpSnapshot =
+            new VoxelMeshingTelemetryEntry[VoxelSurfaceNetsConstants.TelemetryFrames];
+        private static string _telemetryDumpProjectRoot;
+        private static int _telemetryDumpInFlight;
+        private static int _telemetryDumpCount;
+        private static int _telemetryDumpCursor;
+        private static uint _telemetryDumpReason;
         private static readonly ulong GpuUploadSourceMutationGuardMask =
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.Vertices) |
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.Indices) |
@@ -198,8 +203,6 @@ namespace Hecton8.World.VoxelSurfaceNets
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.States);
         private static readonly ulong TuningMutationGuardMask =
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.Tuning);
-        private static readonly ulong CsvScratchMutationGuardMask =
-            VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.CsvScratch);
         private static readonly ulong SurfaceEdgeMasksMutationGuardMask =
             VaultMutationGuardBit(VoxelSurfaceNetsVaultBufferIds.SurfaceEdgeMasks);
         private static readonly ulong MockDensityConfigMutationGuardMask =
@@ -221,7 +224,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             return 1UL << (unchecked((int)bufferId) & 31);
         }
 
-        public static bool TryResolve(IDataVault vault, out VoxelSurfaceNetsVaultHandles handles)
+        public static bool TryEnsure(IDataVault vault, out VoxelSurfaceNetsVaultHandles handles)
         {
             handles = default;
             if (vault == null)
@@ -278,11 +281,6 @@ namespace Hecton8.World.VoxelSurfaceNets
                 1,
                 SystemID.WorldStreaming,
                 NativeArrayOptions.ClearMemory);
-            handles.CsvScratch = vault.EnsureGenerationHandle<byte>(
-                VoxelSurfaceNetsVaultBufferIds.CsvScratch,
-                VoxelSurfaceNetsConstants.CsvScratchBytes,
-                SystemID.WorldStreaming,
-                NativeArrayOptions.UninitializedMemory);
             handles.SurfaceEdgeMasks = vault.EnsureGenerationHandle<uint>(
                 VoxelSurfaceNetsVaultBufferIds.SurfaceEdgeMasks,
                 VoxelSurfaceNetsConstants.LookupCaseCount,
@@ -352,7 +350,6 @@ namespace Hecton8.World.VoxelSurfaceNets
                    vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.Tuning, out handles.Tuning) &&
                    vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.TelemetryRing, out handles.TelemetryRing) &&
                    vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.TelemetryCursor, out handles.TelemetryCursor) &&
-                   vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.CsvScratch, out handles.CsvScratch) &&
                    vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.SurfaceEdgeMasks, out handles.SurfaceEdgeMasks) &&
                    vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.RawDebugVertices, out handles.RawDebugVertices) &&
                    vault.TryGetGenerationHandle(VoxelSurfaceNetsVaultBufferIds.ChunkAabbs, out handles.ChunkAabbs) &&
@@ -864,7 +861,6 @@ namespace Hecton8.World.VoxelSurfaceNets
         public static bool TryLoadCsvOverrides(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, string projectRoot)
         {
             if (vault == null ||
-                handles.CsvScratch.BufferID == 0u ||
                 handles.Tuning.BufferID == 0u ||
                 handles.States.BufferID == 0u)
             {
@@ -879,37 +875,18 @@ namespace Hecton8.World.VoxelSurfaceNets
             if (!TryReadTuning(vault, in handles, out VoxelMeshingTuningDTO tuning))
                 return false;
 
-            if (!TryAcquireMutationView(
-                    vault,
-                    in handles.CsvScratch,
-                    VoxelSurfaceNetsVaultBufferIds.CsvScratch,
-                    1,
-                    CsvScratchMutationGuardMask,
-                    out NativeArray<byte> csvScratch))
+            Span<byte> csvScratch = stackalloc byte[VoxelSurfaceNetsConstants.CsvScratchBytes];
+            int length = ReadFileIntoSpan(path, csvScratch);
+            if (length <= 0)
                 return false;
 
-            int length;
-            uint csvHash;
-            bool changed;
-            try
-            {
-                length = ReadFileIntoNativeScratch(path, csvScratch);
-                if (length <= 0)
-                    return false;
-
-                changed = TryApplyCsvOverrides(csvScratch, length, ref tuning);
-                csvHash = changed ? HashBytes(csvScratch, length) : 0u;
-            }
-            finally
-            {
-                vault.ReleaseMutationGuard(CsvScratchMutationGuardMask);
-            }
-
+            ReadOnlySpan<byte> csvBytes = csvScratch.Slice(0, length);
+            bool changed = TryApplyCsvOverrides(csvBytes, ref tuning);
             if (!changed)
                 return false;
 
             tuning.ForceRemeshVersion++;
-            tuning.LastCsvHash = csvHash;
+            tuning.LastCsvHash = HashBytes(csvBytes);
             tuning.LastCsvWriteTicks = writeTicks;
             return TryCommitCsvTuning(vault, in handles, in tuning);
         }
@@ -932,13 +909,13 @@ namespace Hecton8.World.VoxelSurfaceNets
             return TryLoadCsvOverrides(vault, ref handles, projectRoot);
         }
 
-        public static bool TryApplyCsvOverrides(NativeArray<byte> bytes, int length, ref VoxelMeshingTuningDTO tuning)
+        public static bool TryApplyCsvOverrides(ReadOnlySpan<byte> bytes, ref VoxelMeshingTuningDTO tuning)
         {
-            if (!bytes.IsCreated || length <= 0)
+            if (bytes.Length <= 0)
                 return false;
 
             bool changed = false;
-            int limit = math.min(length, bytes.Length);
+            int limit = bytes.Length;
             int index = 0;
             while (index < limit)
             {
@@ -1003,47 +980,100 @@ namespace Hecton8.World.VoxelSurfaceNets
 
         public static bool TryDumpBlackBoxOnSlowExtraction(in VoxelSurfaceNetsVaultBuffers buffers, string projectRoot)
         {
-            if (string.IsNullOrEmpty(projectRoot) ||
-                !TryAcquireTelemetryDumpLease(in buffers, out VoxelSurfaceNetsJobBufferLease lease))
-                return false;
-
-            try
-            {
-                if (!buffers.TelemetryRing.IsCreated || !buffers.TelemetryCursor.IsCreated || buffers.TelemetryCursor.Length <= 0)
-                    return false;
-
-                int cursor = math.clamp(buffers.TelemetryCursor[0], 0, buffers.TelemetryRing.Length - 1);
-                VoxelMeshingTelemetryEntry entry = buffers.TelemetryRing[cursor];
-                if (entry.DumpReason == 0u && entry.ExtractionComputeTimeMs <= 2f)
-                    return false;
-
-                uint reason = entry.DumpReason == 0u ? VoxelSurfaceNetsConstants.FaultSlowExtraction : entry.DumpReason;
-                return TryWriteDumpFiles(projectRoot, in buffers, reason);
-            }
-            finally
-            {
-                ReleaseJobBufferLease(ref lease);
-            }
+            return TryQueueBlackBoxDump(in buffers, projectRoot, VoxelSurfaceNetsConstants.FaultSlowExtraction, true);
         }
 
         public static bool TryDumpBlackBox(in VoxelSurfaceNetsVaultBuffers buffers, string projectRoot, uint reason)
         {
+            return TryQueueBlackBoxDump(in buffers, projectRoot, reason, false);
+        }
+
+        private static bool TryQueueBlackBoxDump(
+            in VoxelSurfaceNetsVaultBuffers buffers,
+            string projectRoot,
+            uint reason,
+            bool requireSlowExtraction)
+        {
             if (buffers.Vault == null ||
                 buffers.Handles.TelemetryRing.BufferID == 0u ||
-                string.IsNullOrEmpty(projectRoot))
+                string.IsNullOrEmpty(projectRoot) ||
+                Interlocked.CompareExchange(ref _telemetryDumpInFlight, 1, 0) != 0)
                 return false;
 
+            bool staged = false;
             if (!TryAcquireTelemetryDumpLease(in buffers, out VoxelSurfaceNetsJobBufferLease lease))
+            {
+                Volatile.Write(ref _telemetryDumpInFlight, 0);
                 return false;
+            }
 
             try
             {
-                return TryWriteDumpFiles(projectRoot, in buffers, reason);
+                staged = TryStageTelemetryDumpSnapshot(in buffers, projectRoot, reason, requireSlowExtraction);
             }
             finally
             {
                 ReleaseJobBufferLease(ref lease);
             }
+
+            if (!staged)
+            {
+                Volatile.Write(ref _telemetryDumpInFlight, 0);
+                return false;
+            }
+
+            try
+            {
+                if (ThreadPool.QueueUserWorkItem(TelemetryDumpWorkerCallback))
+                    return true;
+            }
+            catch (InvalidOperationException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+
+            _telemetryDumpProjectRoot = null;
+            Volatile.Write(ref _telemetryDumpInFlight, 0);
+            return false;
+        }
+
+        private static bool TryStageTelemetryDumpSnapshot(
+            in VoxelSurfaceNetsVaultBuffers buffers,
+            string projectRoot,
+            uint reason,
+            bool requireSlowExtraction)
+        {
+            if (!buffers.TelemetryRing.IsCreated ||
+                !buffers.TelemetryCursor.IsCreated ||
+                buffers.TelemetryCursor.Length <= 0)
+                return false;
+
+            int count = math.min(buffers.TelemetryRing.Length, TelemetryDumpSnapshot.Length);
+            if (count <= 0)
+                return false;
+
+            int cursor = math.clamp(buffers.TelemetryCursor[0], 0, count - 1);
+            VoxelMeshingTelemetryEntry entry = buffers.TelemetryRing[cursor];
+            if (requireSlowExtraction)
+            {
+                if (entry.DumpReason == 0u && entry.ExtractionComputeTimeMs <= 2f)
+                    return false;
+
+                reason = entry.DumpReason == 0u ? VoxelSurfaceNetsConstants.FaultSlowExtraction : entry.DumpReason;
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                TelemetryDumpSnapshot[i] = buffers.TelemetryRing[i];
+            }
+
+            _telemetryDumpProjectRoot = projectRoot;
+            _telemetryDumpCount = count;
+            _telemetryDumpCursor = cursor;
+            _telemetryDumpReason = reason;
+            return true;
         }
 
         public static bool TryMarkChunkDirty(NativeArray<ChunkMeshingStateDTO> states, uint chunkHash, uint version)
@@ -1085,7 +1115,6 @@ namespace Hecton8.World.VoxelSurfaceNets
                 TryClearBuffer(buffers.Vault, in buffers.Handles.Priorities);
                 TryClearBuffer(buffers.Vault, in buffers.Handles.PhysicsBakeRequests);
                 TryClearBuffer(buffers.Vault, in buffers.Handles.HzbTiles);
-                TryClearBuffer(buffers.Vault, in buffers.Handles.CsvScratch);
                 TryWriteEmergencyMockTables(buffers.Vault, in buffers.Handles);
                 TryWriteDefaultTuning(buffers.Vault, in buffers.Handles);
             }
@@ -1457,18 +1486,15 @@ namespace Hecton8.World.VoxelSurfaceNets
         }
 
 #if UNITY_EDITOR
-        private static int ReadFileIntoNativeScratch(string path, NativeArray<byte> scratch)
+        private static int ReadFileIntoSpan(string path, Span<byte> scratch)
         {
-            if (!scratch.IsCreated || string.IsNullOrEmpty(path))
+            if (scratch.Length <= 0 || string.IsNullOrEmpty(path))
                 return 0;
 
-            int length;
             using (FileStream stream = File.OpenRead(path))
             {
-                length = (int)math.min(stream.Length, scratch.Length);
-                void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
-                Span<byte> span = new Span<byte>(ptr, length);
-                return stream.Read(span);
+                int length = (int)math.min(stream.Length, scratch.Length);
+                return stream.Read(scratch.Slice(0, length));
             }
         }
 
@@ -1477,7 +1503,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             return string.IsNullOrEmpty(projectRoot) ? null : Path.Combine(projectRoot, CsvFileName);
         }
 
-        private static void SkipWhitespace(NativeArray<byte> bytes, int limit, ref int index)
+        private static void SkipWhitespace(ReadOnlySpan<byte> bytes, int limit, ref int index)
         {
             while (index < limit)
             {
@@ -1489,7 +1515,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             }
         }
 
-        private static void SkipLine(NativeArray<byte> bytes, int limit, ref int index)
+        private static void SkipLine(ReadOnlySpan<byte> bytes, int limit, ref int index)
         {
             while (index < limit && bytes[index] != (byte)'\n')
                 index++;
@@ -1498,7 +1524,7 @@ namespace Hecton8.World.VoxelSurfaceNets
                 index++;
         }
 
-        private static uint ReadKeyHash(NativeArray<byte> bytes, int limit, ref int index)
+        private static uint ReadKeyHash(ReadOnlySpan<byte> bytes, int limit, ref int index)
         {
             uint hash = 2166136261u;
             while (index < limit)
@@ -1522,7 +1548,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             return hash;
         }
 
-        private static bool TryReadFloat(NativeArray<byte> bytes, int limit, ref int index, out float value)
+        private static bool TryReadFloat(ReadOnlySpan<byte> bytes, int limit, ref int index, out float value)
         {
             value = 0f;
             SkipValueWhitespace(bytes, limit, ref index);
@@ -1575,7 +1601,7 @@ namespace Hecton8.World.VoxelSurfaceNets
             return readAny && math.isfinite(value);
         }
 
-        private static void SkipValueWhitespace(NativeArray<byte> bytes, int limit, ref int index)
+        private static void SkipValueWhitespace(ReadOnlySpan<byte> bytes, int limit, ref int index)
         {
             while (index < limit)
             {
@@ -1587,11 +1613,10 @@ namespace Hecton8.World.VoxelSurfaceNets
             }
         }
 
-        private static uint HashBytes(NativeArray<byte> bytes, int length)
+        private static uint HashBytes(ReadOnlySpan<byte> bytes)
         {
             uint hash = 2166136261u;
-            int limit = math.min(length, bytes.Length);
-            for (int i = 0; i < limit; i++)
+            for (int i = 0; i < bytes.Length; i++)
             {
                 hash ^= bytes[i];
                 hash *= 16777619u;
@@ -1628,39 +1653,89 @@ namespace Hecton8.World.VoxelSurfaceNets
             return t * t * (3f - (2f * t));
         }
 
-        private static bool TryWriteDumpFile(string path, in VoxelSurfaceNetsVaultBuffers buffers, uint reason)
+        private static void RunTelemetryDumpWorker(object state)
         {
-            if (string.IsNullOrEmpty(path) || !buffers.TelemetryRing.IsCreated)
+            try
+            {
+                TryWriteDumpFiles(
+                    _telemetryDumpProjectRoot,
+                    TelemetryDumpSnapshot,
+                    _telemetryDumpCount,
+                    _telemetryDumpCursor,
+                    _telemetryDumpReason);
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
+            finally
+            {
+                _telemetryDumpProjectRoot = null;
+                Volatile.Write(ref _telemetryDumpInFlight, 0);
+            }
+        }
+
+        private static bool TryWriteDumpFile(
+            string path,
+            VoxelMeshingTelemetryEntry[] telemetrySnapshot,
+            int telemetryCount,
+            int telemetryCursor,
+            uint reason)
+        {
+            if (string.IsNullOrEmpty(path) || telemetrySnapshot == null || telemetryCount <= 0)
                 return false;
 
+            int count = math.min(telemetryCount, telemetrySnapshot.Length);
+            if (count <= 0)
+                return false;
+
+            int cursor = math.clamp(telemetryCursor, 0, count - 1);
             Span<byte> header = stackalloc byte[32];
             WriteUInt32(header, 0, VoxelSurfaceNetsConstants.DumpMagic);
             WriteUInt32(header, 4, VoxelSurfaceNetsConstants.DumpEndianMarker);
             WriteUInt32(header, 8, DumpVersion);
             WriteUInt32(header, 12, reason);
-            WriteUInt32(header, 16, (uint)buffers.TelemetryRing.Length);
+            WriteUInt32(header, 16, (uint)count);
             WriteUInt32(header, 20, (uint)UnsafeUtility.SizeOf<VoxelMeshingTelemetryEntry>());
-            WriteUInt32(header, 24, buffers.TelemetryCursor.IsCreated && buffers.TelemetryCursor.Length > 0 ? (uint)buffers.TelemetryCursor[0] : 0u);
+            WriteUInt32(header, 24, (uint)cursor);
             WriteUInt32(header, 28, 0u);
 
             using (FileStream stream = File.Create(path))
             {
                 stream.Write(header);
-                void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffers.TelemetryRing);
-                int byteLength = buffers.TelemetryRing.Length * UnsafeUtility.SizeOf<VoxelMeshingTelemetryEntry>();
-                ReadOnlySpan<byte> telemetry = new ReadOnlySpan<byte>(ptr, byteLength);
-                stream.Write(telemetry);
+                fixed (VoxelMeshingTelemetryEntry* ptr = telemetrySnapshot)
+                {
+                    int byteLength = count * UnsafeUtility.SizeOf<VoxelMeshingTelemetryEntry>();
+                    ReadOnlySpan<byte> telemetry = new ReadOnlySpan<byte>(ptr, byteLength);
+                    stream.Write(telemetry);
+                }
             }
 
             return true;
         }
 
-        private static bool TryWriteDumpFiles(string projectRoot, in VoxelSurfaceNetsVaultBuffers buffers, uint reason)
+        private static bool TryWriteDumpFiles(
+            string projectRoot,
+            VoxelMeshingTelemetryEntry[] telemetrySnapshot,
+            int telemetryCount,
+            int telemetryCursor,
+            uint reason)
         {
+            if (string.IsNullOrEmpty(projectRoot))
+                return false;
+
             string dir = Path.Combine(projectRoot, "Docs", "AgentLogs");
             Directory.CreateDirectory(dir);
-            bool primary = TryWriteDumpFile(Path.Combine(dir, DumpFileName), in buffers, reason);
-            bool agent = TryWriteDumpFile(Path.Combine(dir, AgentDumpFileName), in buffers, reason);
+            bool primary = TryWriteDumpFile(Path.Combine(dir, DumpFileName), telemetrySnapshot, telemetryCount, telemetryCursor, reason);
+            bool agent = TryWriteDumpFile(Path.Combine(dir, AgentDumpFileName), telemetrySnapshot, telemetryCount, telemetryCursor, reason);
             return primary && agent;
         }
 

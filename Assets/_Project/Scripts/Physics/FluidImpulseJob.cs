@@ -28,7 +28,10 @@ namespace Hecton8.Physics
         public void Execute()
         {
             int resolution = math.max(1, Resolution);
-            int cellCount = math.min(ImpulseField.Length, resolution * resolution * resolution);
+            long planeCellCount = (long)resolution * resolution;
+            int fieldLength = ImpulseField.IsCreated ? ImpulseField.Length : 0;
+            long requestedCellCount = planeCellCount > fieldLength ? fieldLength : planeCellCount * resolution;
+            int cellCount = requestedCellCount > fieldLength ? fieldLength : (int)requestedCellCount;
             float worldSize = math.max(1f, WorldSizeMeters);
             float radius = math.max(0.01f, RadiusMeters);
             float radiusSq = radius * radius;
@@ -51,10 +54,10 @@ namespace Hecton8.Physics
 
             for (int index = 0; index < cellCount; index++)
             {
-                int y = index / (resolution * resolution);
-                int remainder = index - y * resolution * resolution;
-                int z = remainder / resolution;
-                int x = remainder - z * resolution;
+                int y = (int)(index / planeCellCount);
+                long remainder = index - ((long)y * planeCellCount);
+                int z = (int)(remainder / resolution);
+                int x = (int)(remainder - ((long)z * resolution));
 
                 float3 uvw = (new float3(x, y, z) + 0.5f) * inverseResolution;
                 float3 cellPosition = FieldCenterWS + (uvw - 0.5f) * worldSize;

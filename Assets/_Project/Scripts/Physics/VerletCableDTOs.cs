@@ -541,7 +541,8 @@ namespace Hecton8.Physics
             float phase = (position.x * 0.071f + position.z * 0.047f) * 0.159154943f;
             float wave = CheapTriangleWave01(phase);
             float scale = math.max(0f, math.isfinite(FlowAccelerationScale) ? FlowAccelerationScale : 0f);
-            return FlowVelocity * (scale * (0.35f + wave * 0.65f));
+            float3 flowVelocity = math.select(float3.zero, FlowVelocity, math.isfinite(FlowVelocity));
+            return flowVelocity * (scale * (0.35f + wave * 0.65f));
         }
 
         private static float CheapTriangleWave01(float phase)
@@ -696,7 +697,9 @@ namespace Hecton8.Physics
                 velocity *= maxVelocity * math.rsqrt(math.max(velocityLengthSq, 0.000001f));
 
             float safeDt = SanitizeNonNegative(DeltaTime, 0f);
-            float3 acceleration = Sanitize(ExternalAcceleration, float3.zero) + WorldSampler.SampleFlowAcceleration(position);
+            float3 acceleration = Sanitize(
+                Sanitize(ExternalAcceleration, float3.zero) + WorldSampler.SampleFlowAcceleration(position),
+                float3.zero);
             float3 next = position + velocity + acceleration * (safeDt * safeDt);
             next = Sanitize(next, position);
 
@@ -709,7 +712,7 @@ namespace Hecton8.Physics
                 float3 impactVelocity = next - position;
                 float3 normalVelocity = normal * math.dot(impactVelocity, normal);
                 float3 tangentVelocity = impactVelocity - normalVelocity;
-                float roughness = math.saturate(RockFriction01);
+                float roughness = math.saturate(SanitizeNonNegative(RockFriction01, 0f));
                 float3 dampedTangent = tangentVelocity * (1f - roughness);
                 oldPosition = next - dampedTangent;
             }
@@ -757,8 +760,18 @@ namespace Hecton8.Physics
 
         public void Execute()
         {
+            if (!Nodes.IsCreated || !Constraints.IsCreated)
+            {
+                WriteSolverStats(0f, 0f, 0f, 0);
+                return;
+            }
+
             int constraintCount = math.min(math.max(0, ActiveConstraintCount), Constraints.Length);
             int iterations = math.clamp(IterationCount, 1, 10);
+            float plasticStretch = SanitizeNonNegative(PlasticStretch01);
+            float plasticCreep = math.saturate(SanitizeNonNegative(PlasticCreep01));
+            float snapStretch = SanitizeNonNegative(SnapStretch01);
+            float tensionScale = SanitizeNonNegative(TensionScale);
             float peakTension = 0f;
             float maxError = 0f;
             float errorSum = 0f;
@@ -770,7 +783,8 @@ namespace Hecton8.Physics
                 for (int constraintIndex = 0; constraintIndex < constraintCount; constraintIndex++)
                 {
                     VerletConstraintDTO constraint = Constraints[constraintIndex];
-                    if (constraint.Stiffness <= 0f ||
+                    float stiffness = math.saturate(SanitizeNonNegative(constraint.Stiffness));
+                    if (stiffness <= 0f ||
                         (uint)constraint.NodeA >= (uint)Nodes.Length ||
                         (uint)constraint.NodeB >= (uint)Nodes.Length)
                     {
@@ -780,7 +794,21 @@ namespace Hecton8.Physics
 
                     VerletNodeDTO nodeA = Nodes[constraint.NodeA];
                     VerletNodeDTO nodeB = Nodes[constraint.NodeB];
-                    float3 delta = nodeB.Position - nodeA.Position;
+                    float3 nodeAPosition = SanitizeFloat3(nodeA.Position, float3.zero);
+                    float3 nodeBPosition = SanitizeFloat3(nodeB.Position, float3.zero);
+                    if (!math.all(math.isfinite(nodeA.Position)) || !math.all(math.isfinite(nodeB.Position)))
+                    {
+                        nodeA.Position = nodeAPosition;
+                        nodeA.OldPosition = SanitizeFloat3(nodeA.OldPosition, nodeAPosition);
+                        nodeB.Position = nodeBPosition;
+                        nodeB.OldPosition = SanitizeFloat3(nodeB.OldPosition, nodeBPosition);
+                        Nodes[constraint.NodeA] = nodeA;
+                        Nodes[constraint.NodeB] = nodeB;
+                        WriteTension(constraintIndex, 0f);
+                        continue;
+                    }
+
+                    float3 delta = nodeBPosition - nodeAPosition;
                     float lenSq = math.lengthsq(delta);
                     if (!math.isfinite(lenSq) || lenSq <= VerletCableLayout.MinConstraintLengthSq)
                     {
@@ -790,7 +818,9 @@ namespace Hecton8.Physics
 
                     float distance = math.max(VerletCableSimdMath.LengthFromSq(lenSq), 0.0001f);
                     float invDistance = math.rcp(distance);
-                    float restLength = math.max(VerletCableLayout.MinConstraintLength, constraint.RestLength);
+                    float restLength = math.max(
+                        VerletCableLayout.MinConstraintLength,
+                        SanitizeNonNegative(constraint.RestLength));
                     float error = distance - restLength;
                     float absError = math.abs(error);
                     maxError = math.max(maxError, absError);
@@ -798,13 +828,12 @@ namespace Hecton8.Physics
                     errorSamples++;
 
                     float stretch01 = math.max(0f, error) * math.rcp(math.max(restLength, VerletCableLayout.MinConstraintLength));
-                    float stiffness = math.saturate(constraint.Stiffness);
-                    float tension = ClampTension(math.max(0f, error) * stiffness * SanitizeNonNegative(TensionScale));
+                    float tension = ClampTension(math.max(0f, error) * stiffness * tensionScale);
                     peakTension = math.max(peakTension, tension);
                     WriteTension(constraintIndex, tension);
                     WriteTensionForce(constraintIndex, SanitizeDirection(delta * invDistance), tension, nodeA.Position);
 
-                    if (SnapStretch01 > 0f && stretch01 >= SnapStretch01)
+                    if (snapStretch > 0f && stretch01 >= snapStretch)
                     {
                         constraint.Stiffness = 0f;
                         Constraints[constraintIndex] = constraint;
@@ -813,15 +842,14 @@ namespace Hecton8.Physics
                         continue;
                     }
 
-                    if (PlasticStretch01 > 0f && stretch01 > PlasticStretch01)
+                    if (plasticStretch > 0f && stretch01 > plasticStretch)
                     {
-                        float creep = math.saturate(PlasticCreep01);
-                        constraint.RestLength = math.lerp(restLength, distance, creep);
+                        constraint.RestLength = math.lerp(restLength, distance, plasticCreep);
                         Constraints[constraintIndex] = constraint;
                     }
 
-                    float invMassA = math.max(0f, nodeA.InvMass);
-                    float invMassB = math.max(0f, nodeB.InvMass);
+                    float invMassA = SanitizeNonNegative(nodeA.InvMass);
+                    float invMassB = SanitizeNonNegative(nodeB.InvMass);
                     float invMassSum = invMassA + invMassB;
                     if (invMassSum <= 0.000001f)
                         continue;
@@ -842,17 +870,10 @@ namespace Hecton8.Physics
                 }
             }
 
-            if (SolverStats.IsCreated)
-            {
-                if (SolverStats.Length > 0)
-                    SolverStats[0] = ClampTension(peakTension);
-                if (SolverStats.Length > 1)
-                    SolverStats[1] = errorSamples > 0 && math.isfinite(errorSum) ? math.max(0f, errorSum * math.rcp(errorSamples)) : 0f;
-                if (SolverStats.Length > 2)
-                    SolverStats[2] = math.isfinite(maxError) ? math.max(0f, maxError) : 0f;
-                if (SolverStats.Length > 3)
-                    SolverStats[3] = snappedCount;
-            }
+            float averageError = errorSamples > 0 && math.isfinite(errorSum)
+                ? math.max(0f, errorSum * math.rcp(errorSamples))
+                : 0f;
+            WriteSolverStats(ClampTension(peakTension), averageError, maxError, snappedCount);
         }
 
         private void WriteTension(int index, float tension)
@@ -891,6 +912,11 @@ namespace Hecton8.Physics
             return math.all(math.isfinite(direction)) ? direction : float3.zero;
         }
 
+        private static float3 SanitizeFloat3(float3 value, float3 fallback)
+        {
+            return math.all(math.isfinite(value)) ? value : fallback;
+        }
+
         private void WriteSnapSignal(int constraintIndex, float3 position, float tension, float stretch01)
         {
             if (!SnapSignals.IsCreated || !SnapSignalCount.IsCreated || SnapSignalCount.Length == 0 || SnapSignals.Length == 0)
@@ -909,11 +935,26 @@ namespace Hecton8.Physics
             signal.Reason = 1;
             signal.Flags = 0;
             signal.NodeCount = (ushort)math.min(Nodes.Length, ushort.MaxValue);
-            signal.SnapThreshold = math.max(0f, SnapStretch01);
-            signal.Severity01 = math.saturate(stretch01 * math.rcp(math.max(SnapStretch01, 0.0001f)));
+            signal.SnapThreshold = SanitizeNonNegative(SnapStretch01);
+            signal.Severity01 = math.saturate(stretch01 * math.rcp(math.max(signal.SnapThreshold, 0.0001f)));
             signal.Reserved = 0u;
             SnapSignals[writeIndex] = signal;
             SnapSignalCount[0] = writeIndex + 1;
+        }
+
+        private void WriteSolverStats(float peakTension, float averageError, float maxError, int snappedCount)
+        {
+            if (!SolverStats.IsCreated)
+                return;
+
+            if (SolverStats.Length > 0)
+                SolverStats[0] = ClampTension(peakTension);
+            if (SolverStats.Length > 1)
+                SolverStats[1] = SanitizeNonNegative(averageError);
+            if (SolverStats.Length > 2)
+                SolverStats[2] = SanitizeNonNegative(maxError);
+            if (SolverStats.Length > 3)
+                SolverStats[3] = math.max(0, snappedCount);
         }
     }
 
@@ -930,22 +971,24 @@ namespace Hecton8.Physics
 
         public void Execute()
         {
-            if ((uint)SystemIndex >= (uint)Systems.Length)
+            if (!Systems.IsCreated || !Constraints.IsCreated || (uint)SystemIndex >= (uint)Systems.Length)
                 return;
 
             CableSystemDTO system = Systems[SystemIndex];
-            int constraintCount = math.clamp(system.ConstraintCount, 0, Constraints.Length - system.ConstraintOffset);
+            int constraintOffset = math.clamp(system.ConstraintOffset, 0, Constraints.Length);
+            int constraintCount = math.clamp(system.ConstraintCount, 0, Constraints.Length - constraintOffset);
             if (constraintCount <= 0)
                 return;
 
-            float shrink = math.max(0f, system.ReelingSpeedMetersPerSecond) * math.max(0f, DeltaTime);
-            float minRestLength = math.max(VerletCableLayout.MinConstraintLength, MinRestLength);
+            float safeDeltaTime = SanitizeNonNegative(DeltaTime);
+            float shrink = SanitizeNonNegative(system.ReelingSpeedMetersPerSecond) * safeDeltaTime;
+            float minRestLength = math.max(VerletCableLayout.MinConstraintLength, SanitizeNonNegative(MinRestLength));
             if (WinchSignals.IsCreated && (uint)WinchSignalIndex < (uint)WinchSignals.Length)
             {
                 MockWinchSignal signal = WinchSignals[WinchSignalIndex];
                 if (signal.SystemIndex == SystemIndex || signal.SystemIndex < 0)
                 {
-                    shrink += math.max(0f, signal.SpeedMetersPerSecond) * math.max(0f, DeltaTime);
+                    shrink += SanitizeNonNegative(signal.SpeedMetersPerSecond) * safeDeltaTime;
                     if (math.isfinite(signal.MinRestLength) && signal.MinRestLength > 0f)
                         minRestLength = math.max(VerletCableLayout.MinConstraintLength, signal.MinRestLength);
                     if (math.isfinite(signal.DeltaMeters))
@@ -959,13 +1002,13 @@ namespace Hecton8.Physics
             float perConstraintShrink = shrink * math.rcp(constraintCount);
             for (int i = 0; i < constraintCount; i++)
             {
-                int constraintIndex = system.ConstraintOffset + i;
+                int constraintIndex = constraintOffset + i;
                 VerletConstraintDTO constraint = Constraints[constraintIndex];
-                constraint.RestLength = math.max(minRestLength, constraint.RestLength - perConstraintShrink);
+                constraint.RestLength = math.max(minRestLength, SanitizeNonNegative(constraint.RestLength, minRestLength) - perConstraintShrink);
                 Constraints[constraintIndex] = constraint;
             }
 
-            int lastConstraint = system.ConstraintOffset + constraintCount - 1;
+            int lastConstraint = constraintOffset + constraintCount - 1;
             if (constraintCount > 1 && Constraints[lastConstraint].RestLength <= minRestLength + 0.0001f)
             {
                 system.ActiveNodeCount = math.max(2, system.ActiveNodeCount - 1);
@@ -974,6 +1017,16 @@ namespace Hecton8.Physics
             }
 
             Systems[SystemIndex] = system;
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static float SanitizeNonNegative(float value, float fallback)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : fallback;
         }
     }
 
@@ -1017,9 +1070,19 @@ namespace Hecton8.Physics
                 tension = SegmentTensions[math.min(index, SegmentTensions.Length - 1)];
 
             GpuCableSplinePointDTO point = default;
-            point.Position = Nodes[index].Position + Origin;
-            point.Tension01 = math.saturate(tension * math.max(0f, InvSnapTension));
+            point.Position = SanitizeFloat3(Nodes[index].Position) + SanitizeFloat3(Origin);
+            point.Tension01 = math.saturate(SanitizeNonNegative(tension) * SanitizeNonNegative(InvSnapTension));
             GpuPoints[index] = point;
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static float3 SanitizeFloat3(float3 value)
+        {
+            return math.all(math.isfinite(value)) ? value : float3.zero;
         }
     }
 
@@ -1038,17 +1101,18 @@ namespace Hecton8.Physics
             if (!Nodes.IsCreated || Nodes.Length == 0 || !Aabbs.IsCreated || (uint)AabbIndex >= (uint)Aabbs.Length)
                 return;
 
-            float3 first = Nodes[0].Position + Origin;
+            float3 origin = SanitizeFloat3(Origin);
+            float3 first = SanitizeFloat3(Nodes[0].Position) + origin;
             float3 minPoint = first;
             float3 maxPoint = first;
             for (int i = 1; i < Nodes.Length; i++)
             {
-                float3 point = Nodes[i].Position + Origin;
+                float3 point = SanitizeFloat3(Nodes[i].Position) + origin;
                 minPoint = math.min(minPoint, point);
                 maxPoint = math.max(maxPoint, point);
             }
 
-            float radius = math.max(0f, Radius);
+            float radius = SanitizeNonNegative(Radius);
             minPoint -= radius;
             maxPoint += radius;
 
@@ -1057,6 +1121,9 @@ namespace Hecton8.Physics
             for (int i = 0; i < planeCount; i++)
             {
                 float4 plane = FrustumPlanes[i];
+                if (!math.all(math.isfinite(plane)))
+                    continue;
+
                 float3 positive = default;
                 positive.x = plane.x >= 0f ? maxPoint.x : minPoint.x;
                 positive.y = plane.y >= 0f ? maxPoint.y : minPoint.y;
@@ -1074,6 +1141,16 @@ namespace Hecton8.Physics
             aabb.Visible = visible;
             aabb.Dirty = 1;
             Aabbs[AabbIndex] = aabb;
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static float3 SanitizeFloat3(float3 value)
+        {
+            return math.all(math.isfinite(value)) ? value : float3.zero;
         }
     }
 
@@ -1101,12 +1178,12 @@ namespace Hecton8.Physics
                 head = 0;
 
             int activeCount = math.clamp(ActiveNodeCount, 0, Nodes.IsCreated ? Nodes.Length : 0);
-            float3 first = activeCount > 0 ? Nodes[0].Position : float3.zero;
-            float3 last = activeCount > 0 ? Nodes[activeCount - 1].Position : float3.zero;
+            float3 first = activeCount > 0 ? SanitizeFloat3(Nodes[0].Position) : float3.zero;
+            float3 last = activeCount > 0 ? SanitizeFloat3(Nodes[activeCount - 1].Position) : float3.zero;
             uint hash = 2166136261u;
             for (int i = 0; i < activeCount; i++)
             {
-                float3 point = Nodes[i].Position;
+                float3 point = SanitizeFloat3(Nodes[i].Position);
                 hash = (hash ^ math.asuint(point.x)) * 16777619u;
                 hash = (hash ^ math.asuint(point.y)) * 16777619u;
                 hash = (hash ^ math.asuint(point.z)) * 16777619u;
@@ -1119,14 +1196,24 @@ namespace Hecton8.Physics
             entry.ConstraintCount = ConstraintCount;
             entry.FirstPosition = first;
             entry.LastPosition = last;
-            entry.MaxTension = SolverStats.IsCreated && SolverStats.Length > 0 ? SolverStats[0] : 0f;
-            entry.AverageError = SolverStats.IsCreated && SolverStats.Length > 1 ? SolverStats[1] : 0f;
+            entry.MaxTension = SanitizeNonNegative(SolverStats.IsCreated && SolverStats.Length > 0 ? SolverStats[0] : 0f);
+            entry.AverageError = SanitizeNonNegative(SolverStats.IsCreated && SolverStats.Length > 1 ? SolverStats[1] : 0f);
             entry.Flags = Flags;
             entry.StateHash = hash;
             entry.Reserved0 = 0u;
             entry.Reserved1 = 0u;
             Ring[head] = entry;
             Head[0] = (head + 1) % capacity;
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static float3 SanitizeFloat3(float3 value)
+        {
+            return math.all(math.isfinite(value)) ? value : float3.zero;
         }
     }
 

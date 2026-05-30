@@ -15,12 +15,13 @@ namespace Hecton8.AI.Pathfinding
     /// Persistent state lives in GlobalDataVault buffers; this component only caches generation-checked handles.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed partial class PathFunnelNavmeshRuntime : MonoBehaviour, IFastTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed partial class PathFunnelNavmeshRuntime : MonoBehaviour, IColdTickable, IFastTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int DefaultActivePathCapacity = 128;
         private const int DefaultInvalidationCapacity = 64;
         private const int MaxActivePathCapacity = 4096;
         private const int MaxInvalidationCapacity = 4096;
+        private const int TelemetryEntryDumpStrideBytes = 64;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_13AI.bin";
         private static readonly ulong FastTickMutationGuardMask =
             PathFunnelMutationGuardBit(BufferID.PathFunnelActivePaths) |
@@ -54,6 +55,8 @@ namespace Hecton8.AI.Pathfinding
         private VaultGenerationHandle<PathFunnelTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<PathFunnelRuntimeState> _runtimeStateHandle;
         private VaultGenerationHandle<byte> _wfcGridHandle;
+        private readonly byte[] _telemetryDumpBytes = new byte[PathFunnelConstants.TelemetryFrames * TelemetryEntryDumpStrideBytes];
+        private bool _registeredColdTick;
         private bool _registeredFastTick;
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
@@ -144,35 +147,60 @@ namespace Hecton8.AI.Pathfinding
         }
 
         /// <inheritdoc />
+        public void ColdTick()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            if (_dataVault == null)
+                RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
+
+            BootstrapPathFunnelCold();
+            BootstrapVoxelAStarCold();
+        }
+
+        /// <inheritdoc />
         public void LateFrameTick()
         {
+            bool dumpRequested = false;
+            bool dumpStaged = false;
+            int dumpByteCount = 0;
+            int dumpTelemetryCursor = -1;
+            ushort dumpTelemetryFlags = 0;
+
             if (TryAcquirePathFunnelMutationGuard(TelemetryMutationGuardMask, out IDataVault guardVault))
             {
                 try
                 {
-                    if (EnsureTelemetryViews(
+                    if (TryResolveTelemetryViews(
                             out NativeArray<PathFunnelTelemetryEntry> telemetry,
                             out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer))
                     {
                         PathFunnelRuntimeState runtimeState = runtimeStateBuffer[0];
-                        bool dumpRequested = runtimeState.DumpRequested != 0;
+                        dumpRequested = runtimeState.DumpRequested != 0;
                         if (dumpRequested)
                         {
                             runtimeState.TelemetryFlags = (ushort)(runtimeState.TelemetryFlags & ~PathFunnelTelemetryFlags.BlackBoxDumpFailed);
                         }
 
-                        ushort writtenTelemetryFlags = runtimeState.TelemetryFlags;
-                        int telemetryCursor = WriteTelemetry(telemetry, ref runtimeState);
+                        dumpTelemetryFlags = runtimeState.TelemetryFlags;
+                        dumpTelemetryCursor = WriteTelemetry(telemetry, ref runtimeState);
                         runtimeState.DumpRequested = 0;
                         runtimeState.TelemetryFlags = (ushort)(runtimeState.TelemetryFlags & ~PathFunnelTelemetryFlags.TransientFrameMask);
                         runtimeStateBuffer[0] = runtimeState;
 
-                        if (dumpRequested && !TryDumpBlackBox(telemetry))
+                        if (dumpRequested)
                         {
-                            runtimeState.TelemetryFlags = (ushort)(runtimeState.TelemetryFlags | PathFunnelTelemetryFlags.BlackBoxDumpFailed);
-                            ushort patchedTelemetryFlags = (ushort)(writtenTelemetryFlags | PathFunnelTelemetryFlags.BlackBoxDumpFailed);
-                            PatchTelemetryFlags(telemetry, telemetryCursor, patchedTelemetryFlags);
-                            runtimeStateBuffer[0] = runtimeState;
+                            dumpStaged = TryStageBlackBoxDump(telemetry, _telemetryDumpBytes, out dumpByteCount);
+                            if (!dumpStaged)
+                            {
+                                runtimeState.TelemetryFlags = (ushort)(runtimeState.TelemetryFlags | PathFunnelTelemetryFlags.BlackBoxDumpFailed);
+                                PatchTelemetryFlags(
+                                    telemetry,
+                                    dumpTelemetryCursor,
+                                    (ushort)(dumpTelemetryFlags | PathFunnelTelemetryFlags.BlackBoxDumpFailed));
+                                runtimeStateBuffer[0] = runtimeState;
+                            }
                         }
                     }
                 }
@@ -180,6 +208,13 @@ namespace Hecton8.AI.Pathfinding
                 {
                     ReleasePathFunnelMutationGuard(guardVault, TelemetryMutationGuardMask);
                 }
+            }
+
+            if (dumpRequested &&
+                dumpStaged &&
+                !TryDumpBlackBox(_telemetryDumpBytes, dumpByteCount))
+            {
+                TryPatchBlackBoxDumpFailure(dumpTelemetryCursor, dumpTelemetryFlags);
             }
 
             LateFrameTickVoxelAStar();
@@ -194,6 +229,7 @@ namespace Hecton8.AI.Pathfinding
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
+                    _registeredColdTick = false;
                     _registeredFastTick = false;
                     _registeredLateFrame = false;
                     if (currentService != null && isActiveAndEnabled)
@@ -225,6 +261,9 @@ namespace Hecton8.AI.Pathfinding
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
+            if (!_registeredColdTick)
+                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
+
             if (!_registeredFastTick)
                 _registeredFastTick = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Environment);
 
@@ -244,6 +283,12 @@ namespace Hecton8.AI.Pathfinding
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrame = false;
+            }
+
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _registeredColdTick = false;
             }
         }
 
@@ -808,7 +853,7 @@ namespace Hecton8.AI.Pathfinding
             return true;
         }
 
-        private bool EnsureTelemetryViews(
+        private bool TryResolveTelemetryViews(
             out NativeArray<PathFunnelTelemetryEntry> telemetry,
             out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer)
         {
@@ -1166,9 +1211,62 @@ namespace Hecton8.AI.Pathfinding
             telemetry[telemetryCursor] = entry;
         }
 
-        private static unsafe bool TryDumpBlackBox(NativeArray<PathFunnelTelemetryEntry> telemetry)
+        private bool TryPatchBlackBoxDumpFailure(int telemetryCursor, ushort writtenTelemetryFlags)
         {
-            if (!telemetry.IsCreated || telemetry.Length <= 0)
+            if (!TryAcquirePathFunnelMutationGuard(TelemetryMutationGuardMask, out IDataVault guardVault))
+                return false;
+
+            try
+            {
+                if (!TryResolveTelemetryViews(
+                        out NativeArray<PathFunnelTelemetryEntry> telemetry,
+                        out NativeArray<PathFunnelRuntimeState> runtimeStateBuffer))
+                {
+                    return false;
+                }
+
+                PathFunnelRuntimeState runtimeState = runtimeStateBuffer[0];
+                runtimeState.TelemetryFlags = (ushort)(runtimeState.TelemetryFlags | PathFunnelTelemetryFlags.BlackBoxDumpFailed);
+                runtimeStateBuffer[0] = runtimeState;
+                PatchTelemetryFlags(
+                    telemetry,
+                    telemetryCursor,
+                    (ushort)(writtenTelemetryFlags | PathFunnelTelemetryFlags.BlackBoxDumpFailed));
+                return true;
+            }
+            finally
+            {
+                ReleasePathFunnelMutationGuard(guardVault, TelemetryMutationGuardMask);
+            }
+        }
+
+        private static unsafe bool TryStageBlackBoxDump(
+            NativeArray<PathFunnelTelemetryEntry> telemetry,
+            byte[] target,
+            out int byteCount)
+        {
+            byteCount = 0;
+            if (!telemetry.IsCreated || telemetry.Length <= 0 || target == null)
+                return false;
+
+            int telemetryLength = ResolveTelemetryRingLength(telemetry);
+            int entryBytes = UnsafeUtility.SizeOf<PathFunnelTelemetryEntry>();
+            byteCount = telemetryLength * entryBytes;
+            if (telemetryLength <= 0 || byteCount <= 0 || target.Length < byteCount)
+                return false;
+
+            void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+            fixed (byte* destination = target)
+            {
+                Buffer.MemoryCopy(source, destination, target.Length, byteCount);
+            }
+
+            return true;
+        }
+
+        private static bool TryDumpBlackBox(byte[] telemetryBytes, int byteCount)
+        {
+            if (telemetryBytes == null || byteCount <= 0 || byteCount > telemetryBytes.Length)
                 return false;
 
             try
@@ -1181,12 +1279,9 @@ namespace Hecton8.AI.Pathfinding
 
                 Directory.CreateDirectory(directory);
 
-                int byteCount = UnsafeUtility.SizeOf<PathFunnelTelemetryEntry>() * ResolveTelemetryRingLength(telemetry);
-                void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                ReadOnlySpan<byte> telemetryBytes = new ReadOnlySpan<byte>(source, byteCount);
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
                 {
-                    stream.Write(telemetryBytes);
+                    stream.Write(telemetryBytes, 0, byteCount);
                     stream.Flush(true);
                 }
 

@@ -306,6 +306,7 @@ namespace Hecton8.Gameplay
         private HazardVaultArray<int> _spatialQueryHandles;
         private bool _jobRunning;
         private bool _exposureJobGuardHeld;
+        private bool _hazardStateGuardHeld;
         private bool _registered;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
@@ -319,6 +320,7 @@ namespace Hecton8.Gameplay
         private Transform _playerTransform;
         private IDataVault _pendingDataVault;
         private IDataVault _exposureJobGuardVault;
+        private IDataVault _hazardStateGuardVault;
         private HectonSurvivalSystem _playerSurvival;
         private HectonPlayerHealth _playerHealth;
         private TraumaDispatcher _playerTraumaDispatcher;
@@ -1341,8 +1343,12 @@ namespace Hecton8.Gameplay
             volumeCurveLutSamples = default;
 
             IDataVault vault = _dataVault;
-            if (vault == null || !vault.TryAcquireMutationGuard(HazardStateMutationGuardMask))
+            if (_hazardStateGuardHeld ||
+                vault == null ||
+                !vault.TryAcquireMutationGuard(HazardStateMutationGuardMask))
+            {
                 return false;
+            }
 
             if (!_volumes.TryResolveMutable(out volumes) ||
                 !_volumeIds.TryResolveMutable(out volumeIds) ||
@@ -1367,12 +1373,19 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
+            _hazardStateGuardVault = vault;
+            _hazardStateGuardHeld = true;
             return true;
         }
 
         private void ReleaseHazardStateWriteViews()
         {
-            IDataVault vault = _dataVault;
+            if (!_hazardStateGuardHeld)
+                return;
+
+            IDataVault vault = _hazardStateGuardVault;
+            _hazardStateGuardVault = null;
+            _hazardStateGuardHeld = false;
             if (vault != null)
                 vault.ReleaseMutationGuard(HazardStateMutationGuardMask);
         }
@@ -1438,6 +1451,7 @@ namespace Hecton8.Gameplay
 
         private void ReleaseHazardVaultBuffers()
         {
+            ReleaseHazardStateWriteViews();
             ReleaseExposureJobLocks();
             _volumes.ReleaseBuffer();
             _volumeIds.ReleaseBuffer();
@@ -1454,7 +1468,7 @@ namespace Hecton8.Gameplay
             if (!_exposureJobGuardHeld)
                 return;
 
-            IDataVault vault = _exposureJobGuardVault ?? _dataVault;
+            IDataVault vault = _exposureJobGuardVault;
             _exposureJobGuardVault = null;
             _exposureJobGuardHeld = false;
             if (vault != null)

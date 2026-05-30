@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -18,7 +19,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/World/Ground Penetrating Radar Runtime")]
-    public sealed class GroundPenetratingRadarRuntime : MonoBehaviour, ILateFrameTickable, IRenderable, IGroundRadarService, IDisposable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed class GroundPenetratingRadarRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IRenderable, IGroundRadarService, IDisposable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private static int s_x001GroundPenetratingRadarRuntimeSignalPushDropCount;
         private const string OwnerName = "TERRAIN_GPR_SYSTEM";
@@ -29,6 +30,7 @@ namespace Hecton8.World
         private const uint TelemetryFaultFlag = 1u << 31;
         private const uint TelemetryPublishDropFlag = 1u << 30;
         private const uint GroundRadarProceduralVertexCount = 6u;
+        private static readonly WaitCallback BlackBoxDumpWorkerCallback = WriteBlackBoxDumpWorker;
         private static readonly int GroundRadarPingsId = Shader.PropertyToID("_GroundRadarPings");
         private static readonly int GroundRadarPulseId = Shader.PropertyToID("_GroundRadarPulse");
         private static readonly int GroundRadarScaleId = Shader.PropertyToID("_GroundRadarScale");
@@ -95,6 +97,7 @@ namespace Hecton8.World
         private IEcosystemDirectorService _ecosystemDirector;
         private IWorldResourceSpawnerReadModel _worldResourceSpawnerReadModel;
         private IWorldResourceSpawnerReadDependencySink _worldResourceSpawnerReadDependencySink;
+        private readonly GroundRadarTelemetryEntry[] _blackBoxDumpSnapshot = new GroundRadarTelemetryEntry[GroundRadarConstants.TelemetryFrames]; // COLD ALLOC: fixed fault dump snapshot - owner: TERRAIN_GPR_SYSTEM
         private RadarPendingJob _radarJob;
         private JobHandle _radarJobHandle;
         private Bounds _drawBounds;
@@ -105,16 +108,22 @@ namespace Hecton8.World
         private int _lastScannerSignalSequence;
         private int _oreFilterType;
         private int _registeredLateFrame;
+        private int _registeredSlowTick;
         private int _registeredRenderable;
         private int _hotSwapRegistered;
         private int _scanJobBufferPinCount;
         private int _radarJobScheduled;
+        private int _blackBoxDumpSnapshotCount;
+        private int _blackBoxDumpSnapshotCursor;
+        private int _blackBoxDumpInFlight;
         private bool _gprReadSnapshotsValid;
         private bool _pendingDataVaultRebind;
+        private bool _pendingIndirectArgsClear;
         private float _scanTimer;
         private float _pulsePhaseSeconds;
         private float _highestSignalStrength;
         private float3 _lastProbeOrigin;
+        private string _blackBoxDumpPath;
         private IDataVault _scanJobGuardVault;
         private IDataVault _pendingDataVault;
 
@@ -155,12 +164,14 @@ namespace Hecton8.World
 
             TryRegisterHotSwapDependency();
             CacheRuntimeServices();
-            AllocatePersistentState();
-            EnsureRuntimeDrawResources();
+            AllocatePersistentStateCold();
+            EnsureRuntimeDrawResourcesCold();
+            EnsureBlackBoxDumpPathCold();
             GlobalRegistry.RegisterGroundRadarService(this);
             CacheConfiguredOreReadModel();
             CacheOreReadModelFromOwnerRoute();
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment) ? 1 : 0;
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment) ? 1 : 0;
             _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this) ? 1 : 0;
         }
 
@@ -187,6 +198,12 @@ namespace Hecton8.World
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrame = 0;
+            }
+
+            if (_registeredSlowTick != 0)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = 0;
             }
 
             if (ReferenceEquals(GlobalRegistry.GroundRadar, this))
@@ -218,6 +235,8 @@ namespace Hecton8.World
             _dataVault = null;
             _pendingDataVault = null;
             _pendingDataVaultRebind = false;
+            _blackBoxDumpSnapshotCount = 0;
+            _blackBoxDumpSnapshotCursor = 0;
             _gprReadSnapshotsValid = false;
             _activeGprPings = 0;
             _highestSignalStrength = 0f;
@@ -264,6 +283,7 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
+            FlushPendingIndirectArgsClear();
             CompleteRadarJob(forceComplete: false);
             if (_radarJobScheduled != 0)
                 return;
@@ -271,15 +291,19 @@ namespace Hecton8.World
             AdvanceRadarFrameState(SystemDispatcher.CurrentFrameDeltaTime);
             if (_radarJobScheduled != 0)
                 return;
+        }
 
-            TryApplyPendingDataVaultRebind();
+        public void SlowTick()
+        {
+            if (_dataVault == null || !_gprReadSnapshotsValid || !HasRuntimeGpuBuffersReady())
+                QueueIndirectArgsClear();
         }
 
         public void Render(float deltaTime)
         {
             GraphicsBuffer pingBuffer = _activeGprPingBuffer;
             GraphicsBuffer argsBuffer = _activeGprArgsBuffer;
-            if (_activeGprPings <= 0 || argsBuffer == null || pingBuffer == null)
+            if (_activeGprPings <= 0 || !IsValidBuffer(argsBuffer) || !IsValidBuffer(pingBuffer))
                 return;
 
             Material material = ResolveRenderMaterial();
@@ -348,13 +372,10 @@ namespace Hecton8.World
             _oreFilterType = math.clamp(oreType, WorldOreTypeIds.None, WorldOreTypeIds.Silver);
         }
 
-        private void AllocatePersistentState()
+        private void AllocatePersistentStateCold()
         {
             if (AreGprHandlesCreated() &&
-                _gprPingBufferA != null &&
-                _gprPingBufferB != null &&
-                _gprArgsBufferA != null &&
-                _gprArgsBufferB != null)
+                HasRuntimeGpuBuffersReady())
             {
                 if (_activeGprPingBuffer == null)
                     _activeGprPingBuffer = _gprPingBufferA;
@@ -389,17 +410,37 @@ namespace Hecton8.World
             _highestSignalStrength = 0f;
             _telemetryWriteIndex = 0;
 
-            if (_gprPingBufferA == null)
+            if (!IsValidBuffer(_gprPingBufferA))
+            {
+                ReleaseGraphicsBuffer(ref _gprPingBufferA);
                 _gprPingBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(GroundRadarConstants.MaxPings); // COLD ALLOC: GraphicsBuffer[128 float4] A - shared GPR StructuredBuffer - owner: TERRAIN_GPR_SYSTEM
-            if (_gprPingBufferB == null)
+            }
+            if (!IsValidBuffer(_gprPingBufferB))
+            {
+                ReleaseGraphicsBuffer(ref _gprPingBufferB);
                 _gprPingBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(GroundRadarConstants.MaxPings); // COLD ALLOC: GraphicsBuffer[128 float4] B - shared GPR StructuredBuffer - owner: TERRAIN_GPR_SYSTEM
-            if (_gprArgsBufferA == null)
+            }
+            if (!IsValidBuffer(_gprArgsBufferA))
+            {
+                ReleaseGraphicsBuffer(ref _gprArgsBufferA);
                 _gprArgsBufferA = CreateIndirectArgsBuffer(); // COLD ALLOC: GraphicsBuffer[1] A - GPR procedural indirect args - owner: TERRAIN_GPR_SYSTEM
-            if (_gprArgsBufferB == null)
+            }
+            if (!IsValidBuffer(_gprArgsBufferB))
+            {
+                ReleaseGraphicsBuffer(ref _gprArgsBufferB);
                 _gprArgsBufferB = CreateIndirectArgsBuffer(); // COLD ALLOC: GraphicsBuffer[1] B - GPR procedural indirect args - owner: TERRAIN_GPR_SYSTEM
+            }
             if (_activeGprPingBuffer == null)
                 _activeGprPingBuffer = _gprPingBufferA;
-            UpdateIndirectArgsBuffer(0u);
+            QueueIndirectArgsClear();
+        }
+
+        private bool HasRuntimeGpuBuffersReady()
+        {
+            return IsValidBuffer(_gprPingBufferA) &&
+                   IsValidBuffer(_gprPingBufferB) &&
+                   IsValidBuffer(_gprArgsBufferA) &&
+                   IsValidBuffer(_gprArgsBufferB);
         }
 
         private bool TryPrepareGprState(
@@ -543,11 +584,6 @@ namespace Hecton8.World
         private bool TryReadGprPingGpu(out NativeArray<float4>.ReadOnly pingGpu)
         {
             return TryReadVaultBuffer(_dataVault, BufferID.GroundRadarPingGpu, in _gprPingGpuHandle, GroundRadarConstants.MaxPings, out pingGpu);
-        }
-
-        private bool TryOpenGprTelemetryForOwnerWrite(out NativeArray<GroundRadarTelemetryEntry> telemetryRing)
-        {
-            return TryOpenVaultBufferForOwnerWrite(_dataVault, BufferID.GroundRadarTelemetryRing, in _telemetryRingHandle, GroundRadarConstants.TelemetryFrames, out telemetryRing);
         }
 
         private static bool TryOpenVaultBufferForOwnerWrite<T>(
@@ -1170,7 +1206,7 @@ namespace Hecton8.World
             if (_scanJobBufferPinCount == 0)
                 return;
 
-            IDataVault vault = _scanJobGuardVault ?? _dataVault;
+            IDataVault vault = _scanJobGuardVault;
             if (vault != null)
                 vault.ReleaseMutationGuard(ScanJobMutationGuardMask);
 
@@ -1429,9 +1465,10 @@ namespace Hecton8.World
         {
             _pendingDataVault = currentVault;
             _pendingDataVaultRebind = true;
+            TryApplyPendingDataVaultRebindCold();
         }
 
-        private bool TryApplyPendingDataVaultRebind()
+        private bool TryApplyPendingDataVaultRebindCold()
         {
             if (!_pendingDataVaultRebind)
                 return _dataVault != null;
@@ -1442,12 +1479,26 @@ namespace Hecton8.World
             ClearGprVaultDescriptors();
             if (_dataVault == null)
             {
-                UpdateIndirectArgsBuffer(0u);
+                QueueIndirectArgsClear();
                 return false;
             }
 
-            AllocatePersistentState();
+            AllocatePersistentStateCold();
             return _gprReadSnapshotsValid;
+        }
+
+        private void QueueIndirectArgsClear()
+        {
+            _pendingIndirectArgsClear = true;
+        }
+
+        private void FlushPendingIndirectArgsClear()
+        {
+            if (!_pendingIndirectArgsClear)
+                return;
+
+            _pendingIndirectArgsClear = false;
+            UpdateIndirectArgsBuffer(0u);
         }
 
         private void ClearGprVaultDescriptors()
@@ -1464,6 +1515,14 @@ namespace Hecton8.World
             _activeGprPings = 0;
             _highestSignalStrength = 0f;
             _telemetryWriteIndex = 0;
+        }
+
+        private void EnsureBlackBoxDumpPathCold()
+        {
+            if (!string.IsNullOrEmpty(_blackBoxDumpPath))
+                return;
+
+            _blackBoxDumpPath = Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_TERRAIN_GPR_SYSTEM.bin"); // COLD ALLOC: string[path] - GPR blackbox dump destination - owner: TERRAIN_GPR_SYSTEM
         }
 
         private void WriteTelemetry(uint frameId, int addedCount, int rayCount, float highestStrength, uint flags)
@@ -1491,16 +1550,15 @@ namespace Hecton8.World
                 }
 
                 int index = _telemetryWriteIndex % telemetryRing.Length;
-                telemetryRing[index] = new GroundRadarTelemetryEntry
-                {
-                    Frame = frameId,
-                    ActiveGprPings = _activeGprPings,
-                    AddedGprPings = addedCount,
-                    RayCount = rayCount,
-                    HighestSignalStrength = highestStrength,
-                    ProbeOrigin = _lastProbeOrigin,
-                    Flags = flags
-                };
+                GroundRadarTelemetryEntry entry = default;
+                entry.Frame = frameId;
+                entry.ActiveGprPings = _activeGprPings;
+                entry.AddedGprPings = addedCount;
+                entry.RayCount = rayCount;
+                entry.HighestSignalStrength = highestStrength;
+                entry.ProbeOrigin = _lastProbeOrigin;
+                entry.Flags = flags;
+                telemetryRing[index] = entry;
                 _telemetryWriteIndex = (_telemetryWriteIndex + 1) % telemetryRing.Length;
             }
             finally
@@ -1512,19 +1570,72 @@ namespace Hecton8.World
 
         private void DumpBlackBox()
         {
-            if (!TryOpenGprTelemetryForOwnerWrite(out NativeArray<GroundRadarTelemetryEntry> telemetryRing))
+            if (Interlocked.CompareExchange(ref _blackBoxDumpInFlight, 1, 0) != 0)
+                return;
+
+            if (!TryStageBlackBoxDumpSnapshot())
+            {
+                Interlocked.Exchange(ref _blackBoxDumpInFlight, 0);
+                return;
+            }
+
+            EnsureBlackBoxDumpPathCold();
+            if (!ThreadPool.QueueUserWorkItem(BlackBoxDumpWorkerCallback, this))
+                Interlocked.Exchange(ref _blackBoxDumpInFlight, 0);
+        }
+
+        private bool TryStageBlackBoxDumpSnapshot()
+        {
+            IDataVault vault = _dataVault;
+            if (!TryReadVaultBuffer(vault, BufferID.GroundRadarTelemetryRing, in _telemetryRingHandle, GroundRadarConstants.TelemetryFrames, out NativeArray<GroundRadarTelemetryEntry>.ReadOnly telemetryRing))
+                return false;
+
+            int count = math.min(telemetryRing.Length, _blackBoxDumpSnapshot.Length);
+            for (int i = 0; i < count; i++)
+                _blackBoxDumpSnapshot[i] = telemetryRing[i];
+
+            _blackBoxDumpSnapshotCount = count;
+            _blackBoxDumpSnapshotCursor = _telemetryWriteIndex;
+            return count > 0;
+        }
+
+        private static void WriteBlackBoxDumpWorker(object state)
+        {
+            GroundPenetratingRadarRuntime runtime = state as GroundPenetratingRadarRuntime;
+            if (runtime == null)
                 return;
 
             try
             {
-                string path = Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", "Dump_TERRAIN_GPR_SYSTEM.bin");
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read); // COLD ALLOC: FileStream[GPR telemetry dump] — blackbox dump file writer — owner: TERRAIN_GPR_SYSTEM
-                using BinaryWriter writer = new BinaryWriter(stream); // COLD ALLOC: BinaryWriter[GPR telemetry dump] — blackbox binary row serializer — owner: TERRAIN_GPR_SYSTEM
-                writer.Write(telemetryRing.Length);
-                writer.Write(_telemetryWriteIndex);
-                for (int i = 0; i < telemetryRing.Length; i++)
+                runtime.TryWriteBlackBoxSnapshotCold();
+            }
+            finally
+            {
+                Interlocked.Exchange(ref runtime._blackBoxDumpInFlight, 0);
+            }
+        }
+
+        private void TryWriteBlackBoxSnapshotCold()
+        {
+            string path = _blackBoxDumpPath;
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            try
+            {
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                int count = math.min(math.max(0, Volatile.Read(ref _blackBoxDumpSnapshotCount)), _blackBoxDumpSnapshot.Length);
+                int cursor = Volatile.Read(ref _blackBoxDumpSnapshotCursor);
+                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read); // COLD ALLOC: FileStream[GPR telemetry dump] - blackbox dump file writer - owner: TERRAIN_GPR_SYSTEM
+                using BinaryWriter writer = new BinaryWriter(stream); // COLD ALLOC: BinaryWriter[GPR telemetry dump] - blackbox binary row serializer - owner: TERRAIN_GPR_SYSTEM
+                writer.Write(count);
+                writer.Write(cursor);
+                for (int i = 0; i < count; i++)
                 {
-                    GroundRadarTelemetryEntry entry = telemetryRing[i];
+                    GroundRadarTelemetryEntry entry = _blackBoxDumpSnapshot[i];
                     writer.Write(entry.Frame);
                     writer.Write(entry.ActiveGprPings);
                     writer.Write(entry.AddedGprPings);
@@ -1542,7 +1653,7 @@ namespace Hecton8.World
             }
         }
 
-        private void EnsureRuntimeDrawResources()
+        private void EnsureRuntimeDrawResourcesCold()
         {
             if (radarPingMaterial == null && _runtimeMaterial == null)
             {
@@ -1594,10 +1705,10 @@ namespace Hecton8.World
         private bool TryAcquireGprPingWriteBuffer(out GraphicsBuffer buffer)
         {
             buffer = _gprUploadBufferIndex == 0 ? _gprPingBufferA : _gprPingBufferB;
-            if (buffer == null)
+            if (!IsValidBuffer(buffer))
                 buffer = ReferenceEquals(_activeGprPingBuffer, _gprPingBufferA) ? _gprPingBufferB : _gprPingBufferA;
 
-            if (buffer == null)
+            if (!IsValidBuffer(buffer))
                 return false;
 
             _gprUploadBufferIndex ^= 1;
@@ -1607,10 +1718,10 @@ namespace Hecton8.World
         private bool TryResolveGprArgsWriteBuffer(out GraphicsBuffer buffer)
         {
             buffer = _gprUploadBufferIndex == 0 ? _gprArgsBufferA : _gprArgsBufferB;
-            if (buffer == null)
+            if (!IsValidBuffer(buffer))
                 buffer = ReferenceEquals(_activeGprArgsBuffer, _gprArgsBufferA) ? _gprArgsBufferB : _gprArgsBufferA;
 
-            return buffer != null;
+            return IsValidBuffer(buffer);
         }
 
         private static GraphicsBuffer CreateIndirectArgsBuffer()
@@ -1638,6 +1749,11 @@ namespace Hecton8.World
 
             buffer.Release();
             buffer = null;
+        }
+
+        private static bool IsValidBuffer(GraphicsBuffer buffer)
+        {
+            return buffer != null && buffer.IsValid();
         }
     }
 }

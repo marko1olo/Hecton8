@@ -692,7 +692,7 @@ namespace Hecton8.QA.Headless
             tuning.Tier = (uint)ResolveTierFromArgs();
 
             _dataVault = GlobalRegistry.DataVault;
-            ResolveVaultHandles();
+            EnsureVaultHandles();
             if (!LockRuntimeBuffers())
                 throw new InvalidOperationException("SHINOBU_79 failed to lock DataVault buffers.");
 
@@ -753,7 +753,7 @@ namespace Hecton8.QA.Headless
             _lastAupAuditPosition = double3.zero;
         }
 
-        private void ResolveVaultHandles()
+        private void EnsureVaultHandles()
         {
             IDataVault vault = _dataVault;
             if (vault == null)
@@ -850,7 +850,7 @@ namespace Hecton8.QA.Headless
             if (!_vaultBuffersLocked)
                 return;
 
-            IDataVault vault = _runtimeBufferGuardVault ?? _dataVault;
+            IDataVault vault = _runtimeBufferGuardVault;
             ulong guardMask = _runtimeBufferGuardMask;
             _runtimeBufferGuardVault = null;
             _runtimeBufferGuardMask = 0UL;

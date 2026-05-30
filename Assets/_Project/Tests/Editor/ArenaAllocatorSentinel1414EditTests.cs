@@ -85,8 +85,10 @@ namespace Hecton8.Tests.Editor
             string blockRelease = ExtractMethod(vault, "private bool ReleaseWriterBlockLock");
             string queue = ExtractMethod(vault, "private bool QueueDeferredRelease");
 
-            StringAssert.Contains("return QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID)", release);
-            StringAssert.Contains("return QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0)", blockRelease);
+            StringAssert.Contains("bool queuedRelease = QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID)", release);
+            StringAssert.Contains("bool queuedRelease = QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0)", blockRelease);
+            StringAssert.Contains("return queuedRelease;", release);
+            StringAssert.Contains("return queuedRelease;", blockRelease);
             StringAssert.Contains("if (kind == DeferredReleaseKindWriter)", queue);
             StringAssert.Contains("Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate, 1, 0)", queue);
             StringAssert.Contains("finally", queue);
@@ -188,7 +190,8 @@ namespace Hecton8.Tests.Editor
             Assert.IsFalse(acquire.Contains("TryEnterReleaseMutationGate()"));
 
             Assert.AreEqual(1, CountOccurrences(release, "TryEnterReleaseMutationGate()"));
-            StringAssert.Contains("return QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID)", release);
+            StringAssert.Contains("bool queuedRelease = QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID)", release);
+            StringAssert.Contains("return queuedRelease;", release);
             StringAssert.Contains("finally", release);
             StringAssert.Contains("ReleaseBlockMutationGate();", release);
             Assert.IsFalse(release.Contains("TryEnterBlockMutationGate()"));
@@ -198,6 +201,52 @@ namespace Hecton8.Tests.Editor
             Assert.IsFalse(queue.Contains("while (Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate"));
             StringAssert.Contains("finally", queue);
             StringAssert.Contains("Volatile.Write(ref _deferredReleaseEnqueueGate, 0)", queue);
+        }
+
+        [Test]
+        public void GlobalDataVault_WriteLockThreadSlotsPreventNestedWritersAndReleaseInFinally()
+        {
+            string vault = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs");
+            string initialize = ExtractMethod(vault, "public void Initialize");
+            string dispose = ExtractMethod(vault, "public void Dispose");
+            string acquire = ExtractMethod(vault, "public bool TryAcquireWriteLock<T>");
+            string release = ExtractMethod(vault, "public bool ReleaseWriteLock<T>");
+            string rollback = ExtractMethod(vault, "private bool RollbackWriterLockUnlocked");
+            string drain = ExtractMethod(vault, "private bool DrainDeferredWriterReleaseLocked");
+            string reserveSlot = ExtractMethod(vault, "private bool TryReserveThreadWriterSlot");
+            string releaseSlot = ExtractMethod(vault, "private bool ReleaseThreadWriterSlotForLock");
+
+            StringAssert.Contains("[StructLayout(LayoutKind.Explicit, Size = 24)]", vault);
+            StringAssert.Contains("private const int WriterThreadLockSlotCapacity = 128", vault);
+            StringAssert.Contains("private NativeArray<VaultThreadWriteLockSlot> _writerThreadLockSlots;", vault);
+            StringAssert.Contains("_writerThreadLockSlots = H8Memory.Allocate<VaultThreadWriteLockSlot>", initialize);
+            StringAssert.Contains("_writerThreadLockSlots.IsCreated", initialize);
+            StringAssert.Contains("H8Memory.Release(ref _writerThreadLockSlots, SystemID.CoreDataVault)", dispose);
+
+            StringAssert.Contains("int writerThreadId = Thread.CurrentThread.ManagedThreadId;", acquire);
+            StringAssert.Contains("writerSlotOffsetBytes = meta.OffsetBytes;", acquire);
+            StringAssert.Contains("TryReserveThreadWriterSlot(writerThreadId, key, writerSlotOffsetBytes, (int)systemID)", acquire);
+            StringAssert.Contains("bool releaseThreadWriterSlot = false;", acquire);
+            Assert.Less(
+                acquire.IndexOf("TryEnterBlockMutationGate()", StringComparison.Ordinal),
+                acquire.IndexOf("TryReserveThreadWriterSlot(writerThreadId, key, writerSlotOffsetBytes, (int)systemID)", StringComparison.Ordinal));
+            StringAssert.Contains("finally", acquire);
+            StringAssert.Contains("if (releaseThreadWriterSlot)", acquire);
+            StringAssert.Contains("ReleaseThreadWriterSlotForLock(key, writerSlotOffsetBytes, (int)systemID)", acquire);
+            Assert.AreEqual(1, CountOccurrences(acquire, "TryReserveThreadWriterSlot("));
+
+            StringAssert.Contains("state != WriterThreadLockSlotStateEmpty", reserveSlot);
+            StringAssert.Contains("Volatile.Read(ref slot->ThreadId) == threadId", reserveSlot);
+            StringAssert.Contains("slot->OffsetBytes = offsetBytes;", reserveSlot);
+            StringAssert.Contains("Interlocked.CompareExchange(", reserveSlot);
+            StringAssert.Contains("Volatile.Write(ref slot->State, WriterThreadLockSlotStateActive)", reserveSlot);
+            StringAssert.Contains("Volatile.Read(ref slot->OffsetBytes) != offsetBytes", releaseSlot);
+            StringAssert.Contains("slot->OffsetBytes = 0L;", releaseSlot);
+            StringAssert.Contains("Volatile.Write(ref slot->State, WriterThreadLockSlotStateEmpty)", releaseSlot);
+
+            StringAssert.Contains("ReleaseThreadWriterSlotForLock(key, meta.OffsetBytes, (int)systemID)", release);
+            StringAssert.Contains("ReleaseThreadWriterSlotForLock(bufferKey, offsetBytes, systemID)", rollback);
+            StringAssert.Contains("ReleaseThreadWriterSlotForLock(request.BufferKey, request.OffsetBytes, owner)", drain);
         }
 
         [Test]
@@ -213,7 +262,7 @@ namespace Hecton8.Tests.Editor
             AssertNoColdLookup(ExtractMethod(vault, "public bool ProcessDeferredArenaGrowth"));
             AssertNoColdLookup(ExtractMethod(vault, "private bool TryGrowArena("));
             AssertNoColdLookup(ExtractMethod(h8Memory, "private static int RegisterBlockDescriptorThreadSafe"));
-            AssertNoColdLookup(ExtractMethod(h8Memory, "private static void EnterBlockDescriptorMutationGate"));
+            AssertNoColdLookup(ExtractMethod(h8Memory, "private static bool TryEnterBlockDescriptorMutationGate"));
             AssertNoColdLookup(ExtractMethod(sentinel, "private static int RegisterPointer("));
             AssertNoColdLookup(ExtractMethod(dispatcher, "private void ProcessDeferredArenaGrowthPostSimulation"));
             AssertNoColdLookup(ExtractMethod(dispatcher, "private void RunMasterVisualSyncPhase"));
@@ -241,6 +290,34 @@ namespace Hecton8.Tests.Editor
             AssertNoForbiddenManagedHotPathConstructs(clear);
             AssertNoForbiddenManagedHotPathConstructs(process);
             AssertNoForbiddenManagedHotPathConstructs(bridge);
+        }
+
+        [Test]
+        public void GlobalDataVault_AupAllocationLockUsesVolatilePublication()
+        {
+            string vault = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs");
+            string lockAllocations = ExtractMethod(vault, "public void LockAllocationsForAupShift");
+            string unlockAllocations = ExtractMethod(vault, "public void UnlockAllocationsAfterAupShift");
+
+            StringAssert.Contains("public bool IsAllocationLocked => Interlocked.Read(ref _allocationLock) != 0L;", vault);
+            StringAssert.Contains("private long _allocationLock;", vault);
+            Assert.IsFalse(vault.Contains("_lockedShiftFrameId"));
+            Assert.IsFalse(vault.Contains("Volatile.Read(ref _allocationLock)"));
+            StringAssert.Contains("private static long ResolveAllocationLockToken", vault);
+            StringAssert.Contains("return shiftFrameId == 0u ? -1L : shiftFrameId;", vault);
+            StringAssert.Contains("long lockToken = ResolveAllocationLockToken(shiftFrameId);", lockAllocations);
+            Assert.Less(
+                lockAllocations.IndexOf("long lockToken = ResolveAllocationLockToken(shiftFrameId);", StringComparison.Ordinal),
+                lockAllocations.IndexOf("Interlocked.Exchange(ref _allocationLock, lockToken);", StringComparison.Ordinal));
+            StringAssert.Contains("long observedLockToken = Interlocked.Read(ref _allocationLock);", unlockAllocations);
+            StringAssert.Contains("if (observedLockToken == 0L)", unlockAllocations);
+            StringAssert.Contains("Interlocked.Exchange(ref _allocationLock, 0L);", unlockAllocations);
+            StringAssert.Contains("Interlocked.CompareExchange(ref _allocationLock, 0L, lockToken);", unlockAllocations);
+            StringAssert.Contains("Interlocked.Read(ref _allocationLock) != 0L", ExtractMethod(vault, "private bool TryGrowArenaForBytes"));
+            StringAssert.Contains("Interlocked.Read(ref _allocationLock) != 0L", ExtractMethod(vault, "public bool ProcessDeferredArenaGrowth"));
+            StringAssert.Contains("Interlocked.Read(ref _allocationLock) != 0L", ExtractMethod(vault, "private bool TryRunLiveCompactionSlice"));
+            Assert.AreEqual(0, CountOccurrences(vault, "_allocationLock != 0"));
+            Assert.AreEqual(0, CountOccurrences(vault, "_allocationLock == 0"));
         }
 
         [Test]

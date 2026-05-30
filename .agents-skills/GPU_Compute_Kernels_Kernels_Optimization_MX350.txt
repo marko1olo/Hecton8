@@ -22,6 +22,8 @@
 [RULE]: NEVER call SetData/GetData inside Update/FixedUpdate.
 [RULE]: All CPU->GPU data: frame-start upload block only.
 [RULE]: All GPU->CPU readback: AsyncGPUReadback, 3-frame ring buffer delay.
+[RULE]: Hot CPU->GPU uploads must claim an owned per-frame byte budget and use dirty pages/ranges by default.
+[FORBID]: Full-buffer hot reupload unless the buffer is explicitly all-dirty or the path is documented cold fallback.
 
 UPLOAD SCHEDULE (per frame):
   Frame N:   Dispatch compute kernels

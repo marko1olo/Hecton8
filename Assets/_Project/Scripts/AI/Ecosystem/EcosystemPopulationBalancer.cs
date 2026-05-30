@@ -1048,66 +1048,7 @@ namespace Hecton8.AI.Ecosystem
                 return;
             }
 
-            try
-            {
-                string path = BuildProjectRelativePath(DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (directory != null && directory.Length != 0 && !Directory.Exists(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    int capacity = telemetry.Length;
-                    int writtenCount = math.max(0, telemetryCursor);
-                    int dumpCount = math.min(writtenCount, capacity);
-                    int startIndex = writtenCount < capacity ? 0 : PositiveModulo(telemetryCursor, capacity);
-                    writer.Write(DumpMagic);
-                    writer.Write(DumpFormatVersion);
-                    writer.Write(capacity);
-                    writer.Write(dumpCount);
-                    writer.Write(telemetryCursor);
-                    writer.Write(startIndex);
-                    for (int offset = 0; offset < dumpCount; offset++)
-                    {
-                        int index = startIndex + offset;
-                        if (index >= capacity)
-                            index -= capacity;
-                        EcosystemPopulationTelemetryEntry entry = telemetry[index];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.TotalActiveEntities);
-                        writer.Write(entry.CulledByEcology);
-                        writer.Write(entry.SpawnedByEcology);
-                        writer.Write(entry.FleeDownRequests);
-                        writer.Write(entry.SectorCount);
-                        writer.Write(entry.FreeRingCount);
-                        writer.Write(entry.SystemStress01);
-                        writer.Write(entry.Flags);
-                    }
-                }
-            }
-            catch (IOException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(BlackBoxDumpIoFaultHash, EcologySourceHash, telemetry.Length);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(BlackBoxDumpIoFaultHash, EcologySourceHash, telemetry.Length);
-            }
-            catch (ArgumentException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(BlackBoxDumpIoFaultHash, EcologySourceHash, telemetry.Length);
-            }
-            catch (NotSupportedException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(BlackBoxDumpIoFaultHash, EcologySourceHash, telemetry.Length);
-            }
-            catch (InvalidOperationException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(BlackBoxDumpIoFaultHash, EcologySourceHash, telemetry.Length);
-            }
-
+            _ = telemetryCursor;
             GlobalTelemetryBus.PublishMathGuardInvalidNumber(unchecked((int)EcologySourceHash));
         }
 

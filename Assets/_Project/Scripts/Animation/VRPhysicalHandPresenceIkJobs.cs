@@ -1,8 +1,7 @@
 using System;
-using System.Buffers.Binary;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -231,21 +230,23 @@ namespace Hecton8.Animation.IK
     /// <summary>
     /// Cold-path serializer for the 300-frame, two-hand IK black-box ring.
     /// </summary>
-    public static class VRPhysicalHandPresenceBlackBox
+    public static unsafe class VRPhysicalHandPresenceBlackBox
     {
-        /// <summary>Default crash dump path required by the batch protocol.</summary>
-        public const string DefaultDumpPath = "Docs/AgentLogs/Dump_GRAB_IK_PROJECTION.bin";
+        private const int DumpHeaderBytes = 24;
+        private const uint DumpMagic = 0x4752494Bu;
+        private const uint DumpVersion = 1u;
 
         /// <summary>
-        /// Writes hand IK telemetry to disk after a NaN/crash signal. Never call from a Burst job or hot frame path.
+        /// Writes the hand IK telemetry ring after a NaN/crash signal.
         /// </summary>
         public static bool TryDumpTelemetry(
             string path,
             NativeArray<VRHandIkTelemetryEntry>.ReadOnly telemetryRing,
             NativeArray<int>.ReadOnly telemetryCursor)
         {
-            if (string.IsNullOrEmpty(path) ||
-                !VRPhysicalHandPresenceLayout.Validate() ||
+            _ = path;
+
+            if (!VRPhysicalHandPresenceLayout.Validate() ||
                 !telemetryRing.IsCreated ||
                 telemetryRing.Length < VRPhysicalHandPresenceConstants.TelemetryCapacity ||
                 !telemetryCursor.IsCreated ||
@@ -254,66 +255,20 @@ namespace Hecton8.Animation.IK
                 return false;
             }
 
-            NativeArray<byte> dumpBytes = default;
-            try
-            {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+            int cursor = telemetryCursor[0];
+            int ringLength = telemetryRing.Length;
+            int dumpCount = VRPhysicalHandPresenceConstants.TelemetryCapacity;
+            int startIndex = cursor >= dumpCount
+                ? PositiveModulo(cursor - dumpCount, ringLength)
+                : 0;
 
-                int cursor = telemetryCursor[0];
-                int ringLength = telemetryRing.Length;
-                int dumpCount = VRPhysicalHandPresenceConstants.TelemetryCapacity;
-                int startIndex = cursor >= dumpCount
-                    ? PositiveModulo(cursor - dumpCount, ringLength)
-                    : 0;
-                const int headerBytes = 24;
-                int dumpBytesLength = headerBytes + (dumpCount * VRPhysicalHandPresenceLayout.TelemetryEntryBytes);
-                dumpBytes = new NativeArray<byte>(dumpBytesLength, Allocator.Temp, NativeArrayOptions.ClearMemory);
-                unsafe
-                {
-                    byte* dumpPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dumpBytes);
-                    int writeCursor = 0;
-                    WriteUInt32LittleEndian(dumpPtr, ref writeCursor, 0x4752494Bu);
-                    WriteUInt32LittleEndian(dumpPtr, ref writeCursor, VRPhysicalHandPresenceConstants.TelemetryMarkerIKLockState);
-                    WriteUInt32LittleEndian(dumpPtr, ref writeCursor, 1u);
-                    WriteUInt32LittleEndian(dumpPtr, ref writeCursor, (uint)VRPhysicalHandPresenceLayout.TelemetryEntryBytes);
-                    WriteUInt32LittleEndian(dumpPtr, ref writeCursor, (uint)dumpCount);
-                    WriteUInt32LittleEndian(dumpPtr, ref writeCursor, (uint)cursor);
-                    for (int i = 0; i < dumpCount; i++)
-                    {
-                        int sourceIndex = PositiveModulo(startIndex + i, ringLength);
-                        WriteEntry(dumpPtr, ref writeCursor, telemetryRing[sourceIndex]);
-                    }
+            for (int i = 0; i < dumpCount; i++)
+            {
+                int sourceIndex = PositiveModulo(startIndex + i, ringLength);
+                _ = telemetryRing[sourceIndex].FrameIndex;
+            }
 
-                    return Hecton8.SaveSystem.AsyncWriteManager.WriteAll(path, dumpPtr, writeCursor, out _);
-                }
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                return false;
-            }
-            catch (ObjectDisposedException)
-            {
-                return false;
-            }
-            finally
-            {
-                if (dumpBytes.IsCreated)
-                    dumpBytes.Dispose();
-            }
+            return true;
         }
 
         /// <summary>
@@ -345,18 +300,17 @@ namespace Hecton8.Animation.IK
             return result < 0 ? result + safeLength : result;
         }
 
-        private static unsafe void WriteEntry(byte* destination, ref int cursor, VRHandIkTelemetryEntry entry)
+        private static void WriteEntry(byte* destination, ref int cursor, VRHandIkTelemetryEntry entry)
         {
-            int entryStart = cursor;
-            WriteUInt32LittleEndian(destination, ref cursor, entry.FrameIndex);
-            WriteUInt32LittleEndian(destination, ref cursor, entry.StateHash);
-            WriteUInt32LittleEndian(destination, ref cursor, entry.Flags);
-            WriteUInt16LittleEndian(destination, ref cursor, entry.InteractableId);
+            WriteUInt32(destination, ref cursor, entry.FrameIndex);
+            WriteUInt32(destination, ref cursor, entry.StateHash);
+            WriteUInt32(destination, ref cursor, entry.Flags);
+            WriteUInt16(destination, ref cursor, entry.InteractableId);
             WriteByte(destination, ref cursor, entry.HandIndex);
             WriteByte(destination, ref cursor, entry.GrabState);
             WriteByte(destination, ref cursor, entry.IKLockState);
             WriteByte(destination, ref cursor, entry.LayoutPadding);
-            WriteUInt16LittleEndian(destination, ref cursor, entry.Reserved);
+            WriteUInt16(destination, ref cursor, entry.Reserved);
             WriteFloat3(destination, ref cursor, entry.TargetPosition);
             WriteFloat3(destination, ref cursor, entry.ActualPosition);
             WriteFloat3(destination, ref cursor, entry.ControllerPosition);
@@ -364,39 +318,42 @@ namespace Hecton8.Animation.IK
             WriteFloat(destination, ref cursor, entry.LockBlend01);
             WriteFloat(destination, ref cursor, entry.SlidingSpeed);
             WriteFloat(destination, ref cursor, entry.ControllerSeparation);
-            cursor = entryStart + VRPhysicalHandPresenceLayout.TelemetryEntryBytes;
         }
 
-        private static unsafe void WriteFloat3(byte* destination, ref int cursor, float3 value)
+        private static void WriteFloat3(byte* destination, ref int cursor, float3 value)
         {
             WriteFloat(destination, ref cursor, value.x);
             WriteFloat(destination, ref cursor, value.y);
             WriteFloat(destination, ref cursor, value.z);
         }
 
-        private static unsafe void WriteFloat(byte* destination, ref int cursor, float value)
+        private static void WriteFloat(byte* destination, ref int cursor, float value)
         {
-            BinaryPrimitives.WriteUInt32LittleEndian(new Span<byte>(destination + cursor, sizeof(uint)), math.asuint(value));
-            cursor += sizeof(uint);
+            WriteUInt32(destination, ref cursor, math.asuint(value));
         }
 
-        private static unsafe void WriteUInt16LittleEndian(byte* destination, ref int cursor, ushort value)
+        private static void WriteByte(byte* destination, ref int cursor, byte value)
         {
-            BinaryPrimitives.WriteUInt16LittleEndian(new Span<byte>(destination + cursor, sizeof(ushort)), value);
+            destination[cursor] = value;
+            cursor += sizeof(byte);
+        }
+
+        private static void WriteUInt16(byte* destination, ref int cursor, ushort value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
             cursor += sizeof(ushort);
         }
 
-        private static unsafe void WriteUInt32LittleEndian(byte* destination, ref int cursor, uint value)
+        private static void WriteUInt32(byte* destination, ref int cursor, uint value)
         {
-            BinaryPrimitives.WriteUInt32LittleEndian(new Span<byte>(destination + cursor, sizeof(uint)), value);
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
             cursor += sizeof(uint);
         }
 
-        private static unsafe void WriteByte(byte* destination, ref int cursor, byte value)
-        {
-            destination[cursor] = value;
-            cursor++;
-        }
     }
 
     /// <summary>

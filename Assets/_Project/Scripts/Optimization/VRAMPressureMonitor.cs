@@ -13,7 +13,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8007)]
-    public sealed class VRAMPressureMonitor : MonoBehaviour, ILateFrameTickable, IVramPressureReadModel, IVramPressureSampleSink, IVramPressureMipBiasSink, IGlobalRegistryHotSwapListener
+    public sealed class VRAMPressureMonitor : MonoBehaviour, ISlowTickable, IVramPressureReadModel, IVramPressureSampleSink, IVramPressureMipBiasSink, IGlobalRegistryHotSwapListener
     {
         private static int s_x001VRAMPressureMonitorSignalPushDropCount;
         private const float BytesPerMegabyte = 1024f * 1024f;
@@ -48,11 +48,11 @@ namespace Hecton8.Optimization
         [Tooltip("Maximum number of forced evictions performed in a single emergency pass.")]
         [SerializeField, Range(1, 8)] private int maxEmergencyEvictionsPerPass = 4;
 
-        private bool _registeredLateFrame;
+        private bool _registeredSlowTick;
         private bool _registeredService;
         private bool _registeredHotSwap;
         private bool _forceSampleQueued;
-        private int _framesUntilSample;
+        private int _nextSampleFrame;
         private int _baselineMipLimit;
         private int _activeMipLimit;
         private float _externalMipPressureResponse;
@@ -103,7 +103,7 @@ namespace Hecton8.Optimization
             _baselineMipLimit = QualitySettings.globalTextureMipmapLimit;
             _activeMipLimit = _baselineMipLimit;
             _baselineLodBias = QualitySettings.lodBias;
-            _framesUntilSample = Mathf.Max(1, sampleIntervalFrames);
+            _nextSampleFrame = ResolveSampleFrame(Hecton8.Core.SystemDispatcher.CurrentFrameId, sampleIntervalFrames);
             _runtimeSystemRamBytes = ResolveSystemMemoryBytesCold();
         }
 
@@ -147,17 +147,14 @@ namespace Hecton8.Optimization
         }
 
         /// <inheritdoc />
-        public void LateFrameTick()
+        public void SlowTick()
         {
-            if (!_forceSampleQueued)
-            {
-                _framesUntilSample--;
-                if (_framesUntilSample > 0)
-                    return;
-            }
+            int currentFrame = ResolveCurrentFrame();
+            if (!_forceSampleQueued && currentFrame < _nextSampleFrame)
+                return;
 
             _forceSampleQueued = false;
-            _framesUntilSample = Mathf.Max(1, sampleIntervalFrames);
+            _nextSampleFrame = ResolveSampleFrame(currentFrame, sampleIntervalFrames);
             SampleAndRespond();
         }
 
@@ -166,15 +163,33 @@ namespace Hecton8.Optimization
             _forceSampleQueued = true;
         }
 
+        private static int ResolveCurrentFrame()
+        {
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+            return frame <= int.MaxValue ? (int)frame : int.MaxValue;
+        }
+
+        private static int ResolveSampleFrame(uint currentFrame, int intervalFrames)
+        {
+            int clampedFrame = currentFrame <= int.MaxValue ? (int)currentFrame : int.MaxValue;
+            return ResolveSampleFrame(clampedFrame, intervalFrames);
+        }
+
+        private static int ResolveSampleFrame(int currentFrame, int intervalFrames)
+        {
+            int interval = Mathf.Max(1, intervalFrames);
+            return currentFrame <= int.MaxValue - interval ? currentFrame + interval : int.MaxValue;
+        }
+
         private void TryRegister()
         {
-            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
             if (!ReferenceEquals(GlobalRegistry.VRAMPressure, this))
                 return;
 
             CacheDependencies();
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
         }
 
         private bool TryRegisterService()
@@ -198,11 +213,11 @@ namespace Hecton8.Optimization
 
         private void TryUnregister()
         {
-            if (!_registeredLateFrame)
+            if (!_registeredSlowTick)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
-            _registeredLateFrame = false;
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+            _registeredSlowTick = false;
         }
 
         private void TryRegisterHotSwap()
@@ -577,7 +592,7 @@ namespace Hecton8.Optimization
 
                 if (governor != null)
                 {
-                    governor.ForceDrainPendingReleaseQueue();
+                    governor.DrainPendingReleaseQueueBudgeted(emergencyEvictionBudget);
                     EmergencyEvictionCount = governor.EvictLowestPriorityUnusedAssets(
                         emergencyEvictionBudget,
                         AssetPriorityTierCodes.Tier4MidRange);

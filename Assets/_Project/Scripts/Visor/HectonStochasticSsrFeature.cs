@@ -81,6 +81,7 @@ namespace Hecton8.Visor
             private StochasticSsrGlobalsDTO _lastStochasticSsrGlobals;
             private int _stochasticSsrGlobalsWriteIndex;
             private bool _hasStochasticSsrGlobals;
+            private bool _supportsSetConstantBuffer;
 
             public ReflectionSheenPass()
             {
@@ -100,6 +101,13 @@ namespace Hecton8.Visor
             public bool PrepareResources()
             {
                 return EnsureStochasticSsrGlobalsBuffer();
+            }
+
+            public void SetGraphicsCapabilitiesCold(bool supportsSetConstantBuffer)
+            {
+                _supportsSetConstantBuffer = supportsSetConstantBuffer;
+                if (!_supportsSetConstantBuffer)
+                    Dispose();
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -264,7 +272,7 @@ namespace Hecton8.Visor
 
             private bool EnsureStochasticSsrGlobalsBuffer()
             {
-                if (!SystemInfo.supportsSetConstantBuffer)
+                if (!_supportsSetConstantBuffer)
                 {
                     Dispose();
                     return false;
@@ -383,7 +391,7 @@ namespace Hecton8.Visor
 
             private bool HasStochasticSsrGlobalsBuffer()
             {
-                if (!SystemInfo.supportsSetConstantBuffer)
+                if (!_supportsSetConstantBuffer)
                     return false;
 
                 if (_stochasticSsrGlobalsBufferA == null || !_stochasticSsrGlobalsBufferA.IsValid() ||
@@ -443,6 +451,7 @@ namespace Hecton8.Visor
 
         private ReflectionSheenPass _pass;
         private Material _material;
+        private bool _supportsSetConstantBuffer;
 
         public override void Create()
         {
@@ -460,6 +469,7 @@ namespace Hecton8.Visor
 #endif
             RecreateMaterial(ref _material, shader);
             _pass ??= new ReflectionSheenPass();
+            CacheGraphicsCapabilitiesCold();
             _pass.PrepareResources();
         }
 
@@ -482,6 +492,12 @@ namespace Hecton8.Visor
         {
             _pass?.Dispose();
             DisposeMaterial(ref _material);
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsSetConstantBuffer = SystemInfo.supportsSetConstantBuffer;
+            _pass?.SetGraphicsCapabilitiesCold(_supportsSetConstantBuffer);
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

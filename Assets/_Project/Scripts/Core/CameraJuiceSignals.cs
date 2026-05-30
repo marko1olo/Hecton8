@@ -21,7 +21,7 @@ namespace Hecton8.Core
         private static int _droppedImpactCount;
 
         /// <summary>Number of camera impact packets in the current typed-lane snapshot.</summary>
-        public static int PendingImpactCount => SignalBus<CameraJuiceImpactSignal>.SnapshotCount;
+        public static int PendingImpactCount => _signalLaneConfigured ? SignalBus<CameraJuiceImpactSignal>.SnapshotCount : 0;
 
         public static int DroppedImpactCount => _droppedImpactCount;
 
@@ -91,6 +91,12 @@ namespace Hecton8.Core
         /// <returns>True when a packet was dequeued.</returns>
         public static bool TryDequeueImpact(out CameraJuiceImpactSignal signal)
         {
+            if (!_signalLaneConfigured)
+            {
+                signal = default;
+                return false;
+            }
+
             return SignalBus<CameraJuiceImpactSignal>.TryConsumeFrame(out signal);
         }
 

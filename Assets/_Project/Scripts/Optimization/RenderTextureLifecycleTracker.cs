@@ -12,7 +12,7 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7999)]
-    public sealed class RenderTextureLifecycleTracker : MonoBehaviour, IRenderTextureLifecycleService, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class RenderTextureLifecycleTracker : MonoBehaviour, IRenderTextureLifecycleService, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         // ── REGISTRY CACHE ─────────────────────────────────────────────────────────
         
@@ -20,10 +20,8 @@ namespace Hecton8.Optimization
         // ── PRIVATE STATE ──────────────────────────────────────────────────────────
         
         private bool _registeredSlowTick;
-        private bool _registeredLateFrame;
         private bool _registeredService;
         private bool _hotSwapRegistered;
-        private bool _leakCheckPending;
         
         // COLD ALLOC: Dictionary<EntityId, RenderTextureAllocationRecord>[256] — RT tracking — owner: RenderTextureLifecycleTracker
         private readonly Dictionary<EntityId, RenderTextureAllocationRecord> _allocations = new Dictionary<EntityId, RenderTextureAllocationRecord>(256);
@@ -124,15 +122,6 @@ namespace Hecton8.Optimization
         /// </summary>
         public void SlowTick()
         {
-            _leakCheckPending = true;
-        }
-
-        public void LateFrameTick()
-        {
-            if (!_leakCheckPending)
-                return;
-
-            _leakCheckPending = false;
             CheckForLeaks();
         }
         
@@ -334,7 +323,6 @@ namespace Hecton8.Optimization
                 return;
 
             _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
-            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
         }
 
         private bool TryRegisterService()
@@ -364,13 +352,6 @@ namespace Hecton8.Optimization
                 _registeredSlowTick = false;
             }
 
-            if (_registeredLateFrame)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
-                _registeredLateFrame = false;
-            }
-
-            _leakCheckPending = false;
         }
 
         private void TryUnregisterService()

@@ -203,3 +203,122 @@ Exact microseconds saved:
 - Loot hot sidecar route closed: 0 B/frame from edited hot bodies.
 - Scavenge spawn/cull moved out of late frame: burst jitter removed from visual phase; density-dependent cost.
 - Hot registry unregisters removed: iterator mutation hazard removed; accepted idle branch overhead.
+
+2026-05-29 SEVENTH PASS APEX INTEGRATOR
+
+What was wrong:
+- `DestructibleOrganicManager.LateFrameTick` still drained Dear Lie destruction signals, forced job completion, processed regeneration, drained item drops into inventory/world registry, executed yield, and scheduled nav obstacle updates.
+- Organic presentation scans ran from `Tick`, which made presentation timing depend on simulation cadence.
+- Organic tick lanes could register even if there was no guaranteed PostSimulation bridge.
+
+What was done:
+- Added a cold `PostSimulationPhaseSystem : IDispatcherSystem` bridge with hash `DOPS`.
+- Registered the PostSimulation bridge before updatable/slow/late lanes; dispatcher hot-swap now unregisters tick lanes before bridge re-registration.
+- Moved Dear Lie truth signal processing, forced job completion, regeneration, drop draining, yield execution, and nav scheduling into `PostSimulationTick`.
+- Kept `LateFrameTick` presentation-only: organic visual metadata scans plus staged debris/audio DTO flushes.
+- Moved decomposition/regrowth/spore/damage/wilt presentation scans out of `Tick`.
+- Deferred Dear Lie debris signal flush from job completion to `LateFrameTick`.
+
+Cinematic cheats used:
+- No new physical simulation. Organic destruction still routes visual belief through staged debris/audio DTOs.
+- Continuous `GlobalQualityWeight` remains the only visual scan budget scaler; truth ownership and DTO layouts do not branch by quality tier.
+
+Verification:
+- `DOM_HOT_LOOKUP_HITS=0`.
+- `DOM_LATEFRAME_TRUTH_HITS=0`.
+- `DOM_MULTI_ACQUIRE_METHODS=0`.
+- `git diff --check`: no whitespace errors; CRLF normalization warning only.
+- Build throttle observed: CPU readings 94, 100, 65, 65, 76 caused waits; compile launched only after CPU 31 and no `dotnet/csc/VBCSCompiler` process.
+- Final targeted compile command: `dotnet build .\Assembly-CSharp.csproj -nologo -clp:ErrorsOnly -maxcpucount:1 /p:UseSharedCompilation=false --no-restore`.
+- Final targeted compile result: 1 warning, 0 errors, 35.90s.
+
+Exact microseconds saved:
+- Organic truth removed from late frame: estimated 20-180 us render-adjacent burst jitter avoided during dense Dear Lie destruction/yield spikes.
+- Presentation moved out of `Tick`: phase drift removed; no steady-state speed claim.
+- Organic bridge gate: orphaned job completion route removed.
+- Lock proof: no direct method body now acquires more than one organic DataVault guard.
+
+2026-05-29 EIGHTH PASS APEX INTEGRATOR
+
+What was wrong:
+- `PlayerInventory.LateFrameTick` still called `WriteSoaQueryTelemetryOwnerPhase()`, writing SoA query telemetry and cursor state into DataVault during the visual-adjacent lane.
+- The domain scan also confirmed no direct hot `GlobalRegistry`/`GetComponent` violations and no active multi-guard callsites, so the remaining actionable issue was phase ownership, not dependency caching or lock flattening.
+
+What was done:
+- Added `PlayerInventory.PostSimulationPhaseSystem : IDispatcherSystem` with a stable FNV-1a system hash.
+- Registered/unregistered that bridge from inventory lifecycle and dispatcher hot-swap handling.
+- Moved `WriteSoaQueryTelemetryOwnerPhase()` out of `LateFrameTick` into `PostSimulationTick`.
+- Left late-frame inventory signal capture in fixed cold arrays because those frame snapshots are transferred zero-GC and applied later in `SlowTick`; moving them into PostSimulation without publisher dependencies could miss same-frame SignalBus output.
+
+Cinematic cheats used:
+- No new simulation. SoA telemetry is a data ring, and visual belief remains shader/audio/presentation driven.
+- Continuous `GlobalQualityWeight` remains the telemetry estimate scaler; no low/high binary behavior was added.
+
+Verification:
+- Domain files scanned: 57.
+- `HOT_DIRECT_HITS=0`.
+- `MULTI_GUARD_HOT_METHODS=0`.
+- `ALL_DOMAIN_MULTI_ACTIVE_GUARD_CALL_METHODS=0`.
+- `SINGLE_ACTIVE_GUARD_CALLSITE_WITHOUT_FINALLY=0`.
+- `PLAYER_INVENTORY_CSI_AST_SYNTAX_ERRORS=0` via C# Interactive/Roslyn AST parse in memory.
+- `git diff --check`: no whitespace errors; CRLF normalization warning only.
+- Build throttle observed: CPU 87-90%, then 61-84%, with external `dotnet build .\Assembly-CSharp.csproj`, `dotnet build .\Hecton8.Core.csproj`, and `csc.exe` compiler lanes active. No targeted build launched by this pass.
+
+Exact microseconds saved:
+- Inventory SoA telemetry removed from late frame: estimated 2-12 us render-adjacent cursor/ring write jitter avoided on telemetry frames.
+- No steady-state gameplay throughput claim. The gain is phase safety and removal of visual-lane DataVault mutation.
+- Cold bridge allocation: one object per inventory owner lifecycle, 0 B/frame.
+
+2026-05-29 NINTH PASS APEX INTEGRATOR
+
+What was wrong:
+- The PlayerInventory post-simulation bridge patch had AST/static proof but no targeted compile because the previous pass was blocked by CPU/compiler throttle.
+- Repeated domain scan still needed to prove no new direct hot lookup, late-frame truth write, or active multi-lock pattern was introduced by the bridge.
+
+What was done:
+- Re-ran the domain static scan over 57 owner-domain C# files.
+- Waited until CPU dropped to 44% and no `dotnet/csc/VBCSCompiler` process existed.
+- Ran exactly one targeted compile: `dotnet build .\Assembly-CSharp.csproj -nologo -clp:ErrorsOnly -maxcpucount:1 /p:UseSharedCompilation=false --no-restore`.
+- Rechecked for orphan compiler/parser processes after AST and build verification.
+
+Cinematic cheats used:
+- No new simulation or visual workload. The pass only verified and preserved the existing PostSimulation telemetry route.
+- Visual budgets remain continuous through `GlobalQualityWeight`; no binary quality tier was added.
+
+Verification:
+- Domain files scanned: 57.
+- `HOT_DIRECT_HITS=0`.
+- `LATEFRAME_TRUTH_HITS=1`, only `LootMagnetSystem` presentation flag accumulation; no gameplay truth or DataVault write.
+- `MULTI_ACTIVE_GUARD_CALL_METHODS=0`.
+- `SINGLE_ACTIVE_GUARD_WITHOUT_FINALLY=0`.
+- `PLAYER_INVENTORY_CSI_AST_SYNTAX_ERRORS=0`.
+- `git diff --check`: no whitespace errors; CRLF normalization warning only.
+- Targeted compile result: 0 warnings, 0 errors, 36.06s.
+- Post-verification process check: no orphan from this pass. A later active `dotnet build .\Hecton8.Editor.csproj` process was external and was not touched.
+
+Exact microseconds saved:
+- No additional code-path speed claim in ninth pass.
+- Eighth-pass PlayerInventory change remains the measured delta: estimated 2-12 us visual-lane jitter removed by moving SoA telemetry ring writes to PostSimulation.
+2026-05-29 TENTH PASS APEX INTEGRATOR
+
+What was wrong:
+- `DestructibleOrganicManager.TryReadDropBudgetGuarded` was not a pure read by contract: it acquired one organic DataVault guard and released it in `finally`.
+- The code was not deadlock-broken, but the name was harmful because future agents could treat it as an accessor and route new side effects through it.
+
+What was done:
+- Renamed `TryReadDropBudgetGuarded` to `TryCaptureDropBudgetGuarded`.
+- Updated all three private organic drop-buffer call sites.
+- Preserved the existing single-guard acquisition and strict `finally` release.
+
+Cinematic Cheats:
+- No new simulation. Organic debris/yield visuals remain presentation/staged routes; this pass only removed accessor-contract drift.
+
+Exact Microseconds saved:
+- 0 us claimed. This is a correctness/proof patch, not a frame-time optimization.
+
+Verification:
+- `DOM_ACCESSOR_SIDE_EFFECT_HITS=0`.
+- `DOM_HOT_FORBIDDEN_CASESENSITIVE_HITS=0`.
+- `git diff --check -- Assets/_Project/Scripts/World/DestructibleOrganicManager.cs`: CRLF warning only.
+- Build intentionally not launched: CPU 74-100% and external `dotnet build .\Hecton8.Core.csproj`, `dotnet build .\Hecton8.Editor.csproj`, and `csc.exe` lanes were active.
+- No compiler/parser process was created by this pass.

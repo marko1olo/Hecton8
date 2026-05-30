@@ -470,7 +470,7 @@ namespace Hecton8.Core
             if (ActiveRuntimeInstance == null)
                 ActiveRuntimeInstance = this;
 
-            RefreshViewportSnapshotCold();
+            RefreshViewportSnapshotSlowSample();
             EnsureInputBinding();
             RefreshCachedPlayerRuntimeContext();
             RefreshCachedDataVaultCold();
@@ -488,7 +488,7 @@ namespace Hecton8.Core
             CaptureOwnerThread();
             ActiveRuntimeInstance = this;
 
-            RefreshViewportSnapshotCold();
+            RefreshViewportSnapshotSlowSample();
             EnsureInputBinding();
             RefreshCachedDataVaultCold();
             EnsureHapticDeviceBinding();
@@ -590,7 +590,7 @@ namespace Hecton8.Core
 
         public void SlowTick()
         {
-            RefreshViewportSnapshotCold();
+            RefreshViewportSnapshotSlowSample();
         }
 
         public void PreSimulationInputTick(float deltaTime)
@@ -1679,7 +1679,14 @@ namespace Hecton8.Core
                 if (_inputReplayPointer != null)
                 {
                     void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(inputReplaySnapshot);
-                    UnsafeUtility.MemCpy(_inputReplayPointer + InputReplayHeaderBytes, source, InputReplayPayloadBytes);
+                    if (!Hecton8.Core.UnsafeMemoryCopyGuard.SafeCopy(
+                            _inputReplayPointer + InputReplayHeaderBytes,
+                            InputReplayPayloadBytes,
+                            source,
+                            InputReplayPayloadBytes))
+                    {
+                        return;
+                    }
                 }
 #endif
             }
@@ -2757,7 +2764,7 @@ namespace Hecton8.Core
             return rawLookDelta * (sensitivity * acceleration / viewportHeight);
         }
 
-        private void RefreshViewportSnapshotCold()
+        private void RefreshViewportSnapshotSlowSample()
         {
             _viewportHeightSnapshot = math.max(1f, Screen.height);
         }

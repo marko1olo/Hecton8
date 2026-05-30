@@ -201,6 +201,9 @@ namespace Hecton8.UI
         private bool _hotSwapRegistered;
         private bool _coldSupportsSetConstantBuffer;
         private bool _coldSupportsComputeShaders;
+        private Vector4 _cachedActiveSonarGeoParams;
+        private float _cachedActiveSonarRadiusMeters;
+
         private void Awake()
         {
             CacheGraphicsCapabilitiesCold();
@@ -249,6 +252,7 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             RunVisualSync(SystemDispatcher.CurrentFrameDeltaTime);
+            CachePresentationGlobalsLate();
             RenderHologramMap();
             RenderPointCloud();
             ProcessPendingMarkerUpdates(MaxMarkerUiUpdatesPerLateFrame);
@@ -367,6 +371,12 @@ namespace Hecton8.UI
                 _refreshCountdown = math.max(0.05f, sourceRefreshInterval);
                 RefreshMapSource();
             }
+        }
+
+        private void CachePresentationGlobalsLate()
+        {
+            _cachedActiveSonarGeoParams = Shader.GetGlobalVector(ActiveSonarGeoParamsId);
+            _cachedActiveSonarRadiusMeters = math.max(0f, Shader.GetGlobalFloat(ActiveSonarRadiusId));
         }
 
         private void TryRegisterPDAEvents()
@@ -974,8 +984,8 @@ namespace Hecton8.UI
             if (!DispatchSonarPointCloud(in playerAup, playerPosition, quality))
                 return;
 
-            Vector4 activeSonarGeoParams = Shader.GetGlobalVector(ActiveSonarGeoParamsId);
-            float activeSonarRadiusMeters = math.max(0f, Shader.GetGlobalFloat(ActiveSonarRadiusId));
+            Vector4 activeSonarGeoParams = _cachedActiveSonarGeoParams;
+            float activeSonarRadiusMeters = _cachedActiveSonarRadiusMeters;
             float activeSonarMaxRangeMeters = math.max(1f, activeSonarGeoParams.y);
             float pingRadius = activeSonarGeoParams.x > 0.5f
                 ? math.saturate(activeSonarRadiusMeters * math.rcp(activeSonarMaxRangeMeters))

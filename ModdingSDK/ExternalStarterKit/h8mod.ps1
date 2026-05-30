@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('menu','first-mod','install-local','diagnose-local','dependencies','setup','validate','review','prepare','submission','opcodes','opcodes-json','node-snippet','apply-node-snippet','setting-snippet','locale-snippet','apply-setting-snippet','apply-locale-snippet','asset-snippet','apply-asset-snippet','manifest-contract','capabilities')]
+    [ValidateSet('menu','first-mod','install-local','diagnose-local','doctor','dependencies','setup','validate','review','prepare','submission','opcodes','opcodes-json','node-snippet','apply-node-snippet','setting-snippet','locale-snippet','apply-setting-snippet','apply-locale-snippet','asset-snippet','apply-asset-snippet','manifest-contract','capabilities')]
     [string]$Action = 'menu',
     [string]$Id = '',
     [string]$DisplayName = '',
@@ -44,6 +44,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$MaxCapabilitiesGuideBytes = 262144
 
 function Fail([string]$Message) {
     Write-Error ('[H8MOD] ' + $Message)
@@ -77,11 +78,13 @@ function Resolve-StarterTool([string]$RelativePath) {
 }
 
 function Complete-StarterTool {
-    if (-not $?) {
-        exit 1
+    $toolSucceeded = $?
+    $toolExitCode = $global:LASTEXITCODE
+    if ($toolExitCode -ne 0) {
+        exit $toolExitCode
     }
-    if ($global:LASTEXITCODE -ne 0) {
-        exit $global:LASTEXITCODE
+    if (-not $toolSucceeded) {
+        exit 1
     }
 }
 
@@ -155,6 +158,17 @@ function Invoke-DiagnoseLocal([bool]$PromptForMissingValues) {
     Complete-StarterTool
 }
 
+function Invoke-Doctor {
+    $tool = Resolve-StarterTool 'Tools/run_doctor.ps1'
+    $global:LASTEXITCODE = 0
+    if ($Json) {
+        & $tool -Root $Root -Json
+    } else {
+        & $tool -Root $Root
+    }
+    Complete-StarterTool
+}
+
 function Invoke-Opcodes([bool]$Json) {
     $tool = Resolve-StarterTool 'Tools/list_allowed_opcodes.ps1'
     $global:LASTEXITCODE = 0
@@ -171,7 +185,15 @@ function Invoke-Capabilities {
     if (-not (Test-Path -LiteralPath $guide -PathType Leaf)) {
         Fail 'Missing Docs/capabilities.md'
     }
-    Get-Content -LiteralPath $guide
+
+    $strictJsonIo = Resolve-StarterTool 'Tools/strict_json_io.ps1'
+    . $strictJsonIo
+
+    try {
+        Write-Output (Read-H8TextFileCapped $guide 'Docs/capabilities.md' $MaxCapabilitiesGuideBytes)
+    } catch {
+        Fail $_.Exception.Message
+    }
 }
 
 function Invoke-Dependencies([bool]$PromptForMissingValues) {
@@ -493,6 +515,7 @@ function Show-Menu {
     Write-Host '19 install local discovery copy'
     Write-Host '20 diagnose local Mods folder'
     Write-Host '21 configure dependencies'
+    Write-Host '22 doctor package readiness'
     Write-Host 'q quit'
     Write-Host ''
     $choice = Read-Host 'Select action'
@@ -519,6 +542,7 @@ function Show-Menu {
         '19' { Invoke-InstallLocal $true }
         '20' { Invoke-DiagnoseLocal $true }
         '21' { Invoke-Dependencies $true }
+        '22' { Invoke-Doctor }
         'q' { return }
         'Q' { return }
         default { Fail ('Unknown menu action: ' + $choice) }
@@ -532,6 +556,7 @@ switch ($Action) {
     'first-mod' { Invoke-FirstMod $false }
     'install-local' { Invoke-InstallLocal $false }
     'diagnose-local' { Invoke-DiagnoseLocal $false }
+    'doctor' { Invoke-Doctor }
     'dependencies' { Invoke-Dependencies $false }
     'setup' { Invoke-Setup $false }
     'validate' { Invoke-Validate }

@@ -477,16 +477,17 @@ namespace Hecton8.Tools
             out NativeArray<HapticCommand> frontBuffer,
             out NativeArray<HapticCommand> backBuffer)
         {
-            return TryResolveBuffers(false, out frontBuffer, out backBuffer);
+            bool frontResolved = TryResolveFrontBuffer(out frontBuffer);
+            bool backResolved = TryResolveBackBuffer(out backBuffer);
+            return frontResolved && backResolved;
         }
 
-        private bool TryResolveBuffers(
-            bool allowCreate,
+        private bool TryOpenOrCreateBuffers(
             out NativeArray<HapticCommand> frontBuffer,
             out NativeArray<HapticCommand> backBuffer)
         {
-            bool frontResolved = TryResolveFrontBuffer(allowCreate, out frontBuffer);
-            bool backResolved = TryResolveBackBuffer(allowCreate, out backBuffer);
+            bool frontResolved = TryOpenOrCreateFrontBuffer(out frontBuffer);
+            bool backResolved = TryOpenOrCreateBackBuffer(out backBuffer);
             return frontResolved && backResolved;
         }
 
@@ -499,28 +500,27 @@ namespace Hecton8.Tools
 
         private bool TryResolveFrontBuffer(out NativeArray<HapticCommand> frontBuffer)
         {
-            return TryResolveFrontBuffer(false, out frontBuffer);
+            return TryResolveHapticBuffer(BufferID.ToolHapticFrontCommands, ref _frontBufferHandle, out frontBuffer);
         }
 
-        private bool TryResolveFrontBuffer(bool allowCreate, out NativeArray<HapticCommand> frontBuffer)
+        private bool TryOpenOrCreateFrontBuffer(out NativeArray<HapticCommand> frontBuffer)
         {
-            return TryResolveHapticBuffer(BufferID.ToolHapticFrontCommands, ref _frontBufferHandle, allowCreate, out frontBuffer);
+            return TryOpenOrCreateHapticBuffer(BufferID.ToolHapticFrontCommands, ref _frontBufferHandle, out frontBuffer);
         }
 
         private bool TryResolveBackBuffer(out NativeArray<HapticCommand> backBuffer)
         {
-            return TryResolveBackBuffer(false, out backBuffer);
+            return TryResolveHapticBuffer(BufferID.ToolHapticBackCommands, ref _backBufferHandle, out backBuffer);
         }
 
-        private bool TryResolveBackBuffer(bool allowCreate, out NativeArray<HapticCommand> backBuffer)
+        private bool TryOpenOrCreateBackBuffer(out NativeArray<HapticCommand> backBuffer)
         {
-            return TryResolveHapticBuffer(BufferID.ToolHapticBackCommands, ref _backBufferHandle, allowCreate, out backBuffer);
+            return TryOpenOrCreateHapticBuffer(BufferID.ToolHapticBackCommands, ref _backBufferHandle, out backBuffer);
         }
 
         private bool TryResolveHapticBuffer(
             BufferID bufferId,
             ref VaultGenerationHandle<HapticCommand> handle,
-            bool allowCreate,
             out NativeArray<HapticCommand> buffer)
         {
             buffer = default;
@@ -536,7 +536,19 @@ namespace Hecton8.Tools
                 return true;
             }
 
-            if (!allowCreate)
+            return false;
+        }
+
+        private bool TryOpenOrCreateHapticBuffer(
+            BufferID bufferId,
+            ref VaultGenerationHandle<HapticCommand> handle,
+            out NativeArray<HapticCommand> buffer)
+        {
+            if (TryResolveHapticBuffer(bufferId, ref handle, out buffer))
+                return true;
+
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
                 return false;
 
             if (IsToolHapticHandle(in handle, bufferId))
@@ -576,7 +588,7 @@ namespace Hecton8.Tools
 
         private void EnsureBuffers()
         {
-            TryResolveBuffers(true, out _, out _);
+            TryOpenOrCreateBuffers(out _, out _);
         }
 
         private void DisposeBuffers()

@@ -81,10 +81,20 @@ namespace Hecton8.Ecosystem
             MutationGuardBit(BufferID.ShinobuCarrionProfiles) |
             MutationGuardBit(BufferID.ShinobuCarrionFaunaStates) |
             MutationGuardBit(BufferID.ShinobuCarrionFaultFlags);
+        private static readonly ulong CarrionDeathIngressMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuCarrionDeathIngress) |
+            MutationGuardBit(BufferID.ShinobuCarrionRuntimeCounters);
         private static readonly ulong CombinedJobMutationGuardMask = NutrientJobMutationGuardMask | CarrionJobMutationGuardMask;
         private static readonly ulong InitializationMutationGuardMask =
             NutrientJobMutationGuardMask |
             MutationGuardBit(BufferID.ShinobuNutrientDriftProfiles);
+        private static readonly ulong ProfileCsvMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuNutrientDriftProfiles);
+#if UNITY_EDITOR
+        private static readonly byte[] s_profileCsvImportScratch = new byte[CsvScratchBytes];
+        private static readonly NutrientProfileDTO[] s_profileImportScratch = new NutrientProfileDTO[ProfileCapacity];
+        private static int s_profileCsvImportScratchBusy;
+#endif
         private static NutrientDriftRuntime s_runtime;
 
         private VaultGenerationHandle<NutrientCellDTO> _frontHandle;
@@ -103,6 +113,7 @@ namespace Hecton8.Ecosystem
         private VaultGenerationHandle<uint> _faultFlagHandle;
 
         private IDataVault _vault;
+        private IDataVault _jobGuardVault;
         private INutrientThermalVentReadModel _thermalVentReadModel;
         private IAbyssalFlowVolumeReadModel _abyssalFlowReadModel;
         private IPlayerRuntimeContext _playerContext;
@@ -881,6 +892,7 @@ namespace Hecton8.Ecosystem
                 return false;
 
             _jobLocksHeld = true;
+            _jobGuardVault = vault;
             return true;
         }
 
@@ -892,7 +904,8 @@ namespace Hecton8.Ecosystem
                 return;
 
             _jobLocksHeld = false;
-            IDataVault vault = _vault;
+            IDataVault vault = _jobGuardVault;
+            _jobGuardVault = null;
             if (vault != null)
                 vault.ReleaseMutationGuard(CombinedJobMutationGuardMask);
         }
@@ -1175,95 +1188,125 @@ namespace Hecton8.Ecosystem
             if (lastWriteUtc.Ticks == _csvTimestampTicks)
                 return true;
 
-            if (!IsMatchingVaultHandle(in _csvScratchHandle, BufferID.ShinobuNutrientDriftCsvScratch) ||
-                !IsMatchingVaultHandle(in _profileHandle, BufferID.ShinobuNutrientDriftProfiles))
+            if (!IsMatchingVaultHandle(in _profileHandle, BufferID.ShinobuNutrientDriftProfiles))
             {
                 return false;
             }
 
-            int bytesRead = 0;
-            bool scratchLocked = false;
+            int bytesRead;
+            int parsed;
+            if (System.Threading.Interlocked.CompareExchange(ref s_profileCsvImportScratchBusy, 1, 0) != 0)
+                return false;
+
             try
             {
-                if (!vault.TryAcquireWriteLock(in _csvScratchHandle, SystemID.AIEcology, out NativeArray<byte> scratch))
-                    return false;
-
-                scratchLocked = true;
-                if (!scratch.IsCreated ||
-                    scratch.Length <= 0)
+                try
                 {
+                    bytesRead = ReadCsvBytesCold(path, s_profileCsvImportScratch, CsvScratchBytes);
+                    if (bytesRead <= 0)
+                        return false;
+
+                    parsed = NutrientDriftCsvParser.ParseProfiles(
+                        s_profileCsvImportScratch.AsSpan(0, bytesRead),
+                        s_profileImportScratch);
+                    if (parsed <= 0)
+                        return false;
+                }
+                catch (IOException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+                    return false;
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+                    return false;
+                }
+                catch (NotSupportedException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
                     return false;
                 }
 
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                if (!vault.TryAcquireMutationGuard(ProfileCsvMutationGuardMask))
+                    return false;
+
+                try
                 {
-                    int maxBytes = math.min(scratch.Length, CsvScratchBytes);
-                    bytesRead = stream.Read(new Span<byte>(NativeArrayUnsafeUtility.GetUnsafePtr(scratch), maxBytes));
-                }
-            }
-            finally
-            {
-                if (scratchLocked)
-                    vault.ReleaseWriteLock(in _csvScratchHandle, SystemID.AIEcology);
-            }
+                    if (!vault.TryResolveHandle(in _profileHandle, out NativeArray<NutrientProfileDTO> profiles) ||
+                        !profiles.IsCreated ||
+                        profiles.Length < ProfileCapacity)
+                    {
+                        return false;
+                    }
 
-            bool profilesLocked = false;
-            try
-            {
-                if (!TryOpenReadVaultBuffer(vault, in _csvScratchHandle, bytesRead, out NativeArray<byte>.ReadOnly scratchRead))
-                    return false;
+                    fixed (NutrientProfileDTO* source = s_profileImportScratch)
+                    {
+                        UnsafeUtility.MemCpy(
+                            NativeArrayUnsafeUtility.GetUnsafePtr(profiles),
+                            source,
+                            parsed * UnsafeUtility.SizeOf<NutrientProfileDTO>());
+                    }
 
-                if (!vault.TryAcquireWriteLock(in _profileHandle, SystemID.AIEcology, out NativeArray<NutrientProfileDTO> profiles))
-                    return false;
-
-                profilesLocked = true;
-                if (!profiles.IsCreated ||
-                    profiles.Length < ProfileCapacity)
-                {
-                    return false;
-                }
-
-                if (bytesRead <= 0)
-                    return false;
-
-                int parsed = NutrientDriftCsvParser.ParseProfiles(
-                    new ReadOnlySpan<byte>(scratchRead.GetUnsafeReadOnlyPtr(), bytesRead),
-                    profiles);
-                if (parsed > 0)
-                {
                     _csvTimestampTicks = lastWriteUtc.Ticks;
                     return true;
                 }
-            }
-            catch (IOException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
-            }
-            catch (ArgumentException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
-            }
-            catch (NotSupportedException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
-            }
-            catch (InvalidOperationException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+                catch (IOException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+                }
+                catch (ArgumentException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+                }
+                catch (NotSupportedException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+                }
+                catch (InvalidOperationException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+                }
+                finally
+                {
+                    vault.ReleaseMutationGuard(ProfileCsvMutationGuardMask);
+                }
             }
             finally
             {
-                if (profilesLocked)
-                    vault.ReleaseWriteLock(in _profileHandle, SystemID.AIEcology);
+                System.Threading.Volatile.Write(ref s_profileCsvImportScratchBusy, 0);
             }
 
             return false;
 #endif
         }
+
+#if UNITY_EDITOR
+        private static int ReadCsvBytesCold(string path, byte[] scratch, int maxBytes)
+        {
+            if (scratch == null || scratch.Length <= 0 || maxBytes <= 0)
+                return 0;
+
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                return stream.Read(scratch, 0, math.min(scratch.Length, maxBytes));
+            }
+        }
+#endif
 
         private static string BuildProfileCsvPath()
         {
@@ -1432,6 +1475,8 @@ namespace Hecton8.Ecosystem
             _csvScratchHandle = default;
             _profileHandle = default;
             _faultFlagHandle = default;
+            _jobLocksHeld = false;
+            _jobGuardVault = null;
         }
 
         private static void WriteUInt32(Span<byte> target, uint value)
@@ -2150,9 +2195,19 @@ namespace Hecton8.Ecosystem
     #if UNITY_EDITOR
     public static class NutrientDriftCsvParser
     {
-        public static int ParseProfiles(ReadOnlySpan<byte> bytes, NativeArray<NutrientProfileDTO> profiles)
+        public static unsafe int ParseProfiles(ReadOnlySpan<byte> bytes, NativeArray<NutrientProfileDTO> profiles)
         {
             if (!profiles.IsCreated || profiles.Length <= 0)
+                return 0;
+
+            return ParseProfiles(
+                bytes,
+                new Span<NutrientProfileDTO>(NativeArrayUnsafeUtility.GetUnsafePtr(profiles), profiles.Length));
+        }
+
+        public static int ParseProfiles(ReadOnlySpan<byte> bytes, Span<NutrientProfileDTO> profiles)
+        {
+            if (profiles.Length <= 0)
                 return 0;
 
             int cursor = 0;

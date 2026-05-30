@@ -12,6 +12,9 @@ namespace Hecton8.Tools
     [DefaultExecutionOrder(800)]
     public sealed class PauseSystemVerifier : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
+        private const string PauseChangedPausedLog = "[PauseSystemVerifier] Pause state changed: PAUSED";
+        private const string PauseChangedUnpausedLog = "[PauseSystemVerifier] Pause state changed: UNPAUSED";
+
         [Header("Verification Settings")]
         [SerializeField, Tooltip("Enable automatic pause verification")]
         private bool _enableVerification = true;
@@ -250,7 +253,7 @@ namespace Hecton8.Tools
 
         private void OnPauseStateChanged(bool isPaused)
         {
-            LogVerification($"Pause state changed: {(isPaused ? "PAUSED" : "UNPAUSED")}");
+            LogPauseStateChanged(isPaused);
 
             if (isPaused)
                 VerifyPauseEntry();
@@ -395,6 +398,16 @@ namespace Hecton8.Tools
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_enableLogging)
                 Hecton8.Core.H8Debug.Log($"[PauseSystemVerifier] {message}");
+#endif
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void LogPauseStateChanged(bool isPaused)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (_enableLogging)
+                Hecton8.Core.H8Debug.Log(isPaused ? PauseChangedPausedLog : PauseChangedUnpausedLog);
 #endif
         }
     }

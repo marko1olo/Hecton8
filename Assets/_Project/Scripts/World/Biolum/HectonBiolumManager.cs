@@ -302,6 +302,7 @@ namespace Hecton8.Biolum
         private VaultGenerationHandle<BiolumTelemetryEntry> _telemetryRingHandle;
         private bool _disposed = false;
         private double _fallbackCelestialTimeSeconds;
+        private ICelestialRuntimeSnapshotReadModel _cachedCelestialSnapshot;
 
         #if UNITY_EDITOR
         [SerializeField] private bool _debugLogUpdates = false;
@@ -342,6 +343,7 @@ namespace Hecton8.Biolum
             TryRegisterHotSwapListener();
             TryRegisterService();
             TryRegister();
+            TryRegisterLateFrameTick();
             HectonFloatingOrigin.RegisterListener(this);
             EnsureRuntimeResources();
             SpectrumEvents.RegisterSonarPulseListener(this);
@@ -605,8 +607,8 @@ namespace Hecton8.Biolum
 
         public void LateFrameTick()
         {
-            if (_touchRippleVisualDirty)
-                EnsureRuntimeResources();
+            if (_touchRippleVisualDirty && !AreRuntimeResourcesReady())
+                return;
 
             FlushGlobalBiolumPhase();
 
@@ -623,7 +625,7 @@ namespace Hecton8.Biolum
                 !_floraShaderGlobalsDirty &&
                 !_touchRippleVisualDirty)
             {
-                TryUnregisterLateFrameTick();
+                return;
             }
         }
 
@@ -700,7 +702,6 @@ namespace Hecton8.Biolum
             }
 
             _floraShaderGlobalsDirty = true;
-            TryRegisterLateFrameTick();
         }
 
         private void UpdateGlobalBiolumPhase(float deltaTime)
@@ -739,7 +740,6 @@ namespace Hecton8.Biolum
                 _pendingMasterPhase = phaseVector;
                 _pendingBiolumIntensity = intensityVector;
                 _globalBiolumPhaseDirty = true;
-                TryRegisterLateFrameTick();
             }
         }
 
@@ -786,7 +786,8 @@ namespace Hecton8.Biolum
 
         private void UpdateCelestialBiolumStateFromSnapshot(float safeDeltaTime, out double celestialTime)
         {
-            CelestialRuntimeSnapshot snapshot = GlobalRegistry.CelestialRuntimeSnapshot;
+            ICelestialRuntimeSnapshotReadModel readModel = _cachedCelestialSnapshot;
+            CelestialRuntimeSnapshot snapshot = readModel != null ? readModel.RuntimeSnapshot : default;
             bool valid = (snapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u;
             valid = valid &&
                 !double.IsNaN(snapshot.AbsoluteUniverseTime) &&
@@ -997,7 +998,6 @@ namespace Hecton8.Biolum
             _pendingTouchRippleUploadBlend = uploadBlend;
             _pendingTouchRippleQualityWeight = qualityWeight;
             _touchRippleVisualDirty = true;
-            TryRegisterLateFrameTick();
         }
 
         private void FlushTouchRippleBuffer()
@@ -1199,6 +1199,14 @@ namespace Hecton8.Biolum
             }
 
             EnsureVaultBuffers();
+        }
+
+        private bool AreRuntimeResourcesReady()
+        {
+            return !_disposed &&
+                   _touchRippleBufferA != null &&
+                   _touchRippleBufferB != null &&
+                   _publishedTouchRippleBuffer != null;
         }
 
         private void ReleaseRuntimeResources()
@@ -1815,6 +1823,7 @@ namespace Hecton8.Biolum
             _cachedTickDispatcher = GlobalRegistry.TickDispatcher;
             _cachedFluid = GlobalRegistry.AbyssalFlowGpu;
             _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedCelestialSnapshot = GlobalRegistry.CelestialRuntimeSnapshotReadModel;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1861,6 +1870,9 @@ namespace Hecton8.Biolum
                     _cachedCameraTransform = null;
                     _cachedCameraPosition = Vector3.zero;
                     _cachedCameraAupFrame = -1;
+                    break;
+                case GlobalRegistryServiceSlot.CelestialEngineRuntime:
+                    _cachedCelestialSnapshot = GlobalRegistry.CelestialRuntimeSnapshotReadModel;
                     break;
             }
         }

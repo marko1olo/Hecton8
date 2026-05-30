@@ -691,87 +691,6 @@ namespace Hecton8.Core.Data
             };
         }
 
-        private static bool EnsureTelemetryVaultBuffersCold(
-            IDataVault vault,
-            out NativeArray<BTreeTelemetryEntry> ring,
-            out NativeArray<int> cursor,
-            out NativeArray<BTreeTelemetryAccumulatorDTO> accumulator)
-        {
-            ring = default;
-            cursor = default;
-            accumulator = default;
-            if (vault == null)
-                return false;
-
-            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
-                return false;
-
-            VaultGenerationHandle<BTreeTelemetryEntry> ringHandle = vault.EnsureGenerationHandle<BTreeTelemetryEntry>(
-                BTreeTelemetryRingBufferId,
-                H8StaticDataFormat.TelemetryFrameCount,
-                SystemID.CoreDataVault,
-                NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<int> cursorHandle = vault.EnsureGenerationHandle<int>(
-                BTreeTelemetryCursorBufferId,
-                1,
-                SystemID.CoreDataVault,
-                NativeArrayOptions.ClearMemory);
-            VaultGenerationHandle<BTreeTelemetryAccumulatorDTO> accumulatorHandle = vault.EnsureGenerationHandle<BTreeTelemetryAccumulatorDTO>(
-                BTreeTelemetryAccumulatorBufferId,
-                1,
-                SystemID.CoreDataVault,
-                NativeArrayOptions.ClearMemory);
-
-            return ringHandle.BufferID == unchecked((uint)(int)BTreeTelemetryRingBufferId) &&
-                   cursorHandle.BufferID == unchecked((uint)(int)BTreeTelemetryCursorBufferId) &&
-                   accumulatorHandle.BufferID == unchecked((uint)(int)BTreeTelemetryAccumulatorBufferId) &&
-                   vault.TryResolveHandle(in ringHandle, out ring) &&
-                   vault.TryResolveHandle(in cursorHandle, out cursor) &&
-                   vault.TryResolveHandle(in accumulatorHandle, out accumulator) &&
-                   ring.IsCreated &&
-                   ring.Length >= H8StaticDataFormat.TelemetryFrameCount &&
-                   cursor.IsCreated &&
-                   cursor.Length > 0 &&
-                   accumulator.IsCreated &&
-                   accumulator.Length > 0;
-        }
-
-        private static bool TryResolveTelemetryVaultBuffers(
-            IDataVault vault,
-            out NativeArray<BTreeTelemetryEntry> ring,
-            out NativeArray<int> cursor,
-            out NativeArray<BTreeTelemetryAccumulatorDTO> accumulator)
-        {
-            ring = default;
-            cursor = default;
-            accumulator = default;
-
-            if (vault == null ||
-                !vault.TryGetGenerationHandle<BTreeTelemetryEntry>(BTreeTelemetryRingBufferId, out VaultGenerationHandle<BTreeTelemetryEntry> ringHandle) ||
-                !vault.TryGetGenerationHandle<int>(BTreeTelemetryCursorBufferId, out VaultGenerationHandle<int> cursorHandle) ||
-                !vault.TryGetGenerationHandle<BTreeTelemetryAccumulatorDTO>(BTreeTelemetryAccumulatorBufferId, out VaultGenerationHandle<BTreeTelemetryAccumulatorDTO> accumulatorHandle) ||
-                ringHandle.BufferID != unchecked((uint)(int)BTreeTelemetryRingBufferId) ||
-                cursorHandle.BufferID != unchecked((uint)(int)BTreeTelemetryCursorBufferId) ||
-                accumulatorHandle.BufferID != unchecked((uint)(int)BTreeTelemetryAccumulatorBufferId) ||
-                !vault.TryResolveHandle(in ringHandle, out ring) ||
-                !vault.TryResolveHandle(in cursorHandle, out cursor) ||
-                !vault.TryResolveHandle(in accumulatorHandle, out accumulator) ||
-                !ring.IsCreated ||
-                ring.Length < H8StaticDataFormat.TelemetryFrameCount ||
-                !cursor.IsCreated ||
-                cursor.Length <= 0 ||
-                !accumulator.IsCreated ||
-                accumulator.Length <= 0)
-            {
-                ring = default;
-                cursor = default;
-                accumulator = default;
-                return false;
-            }
-
-            return true;
-        }
-
         public static JobHandle ScheduleTelemetryPostSimulationFlush(
             NativeArray<BTreeTelemetryEntry> ring,
             NativeArray<int> cursor,
@@ -795,26 +714,6 @@ namespace Hecton8.Core.Data
                 Accumulator = accumulator
             };
             return job.Schedule(dependency);
-        }
-
-        private static bool EnsureTuningProfileVaultBufferCold(IDataVault vault, out NativeArray<BTreeTuningProfileDTO> profiles)
-        {
-            profiles = default;
-            if (vault == null)
-                return false;
-
-            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
-                return false;
-
-            VaultGenerationHandle<BTreeTuningProfileDTO> handle = vault.EnsureGenerationHandle<BTreeTuningProfileDTO>(
-                BTreeTuningProfilesBufferId,
-                BTreeTuningProfileCapacity,
-                SystemID.CoreDataVault,
-                NativeArrayOptions.ClearMemory);
-            return handle.BufferID == unchecked((uint)(int)BTreeTuningProfilesBufferId) &&
-                   vault.TryResolveHandle(in handle, out profiles) &&
-                   profiles.IsCreated &&
-                   profiles.Length >= BTreeTuningProfileCapacity;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

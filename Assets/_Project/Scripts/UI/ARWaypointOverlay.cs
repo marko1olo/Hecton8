@@ -55,6 +55,7 @@ namespace Hecton8.UI
 
         private static readonly uint _WaypointSolveBudgetWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HUD_AR_WAYPOINT_SOLVE_OVER_BUDGET"));
         private static readonly uint _WaypointSolveBudgetContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ARWaypointOverlay.Solve"));
+        private static readonly uint DefaultExternalLabelHash = unchecked((uint)Hecton.Localization.LocHash.Compute(DefaultExternalLabel));
         private static readonly Color RelayColor = new Color(0.64f, 0.94f, 0.98f, 0.96f);
         private static readonly Color OccludedColor = new Color(0.94f, 0.94f, 0.94f, 0.62f);
         private static ARWaypointOverlay s_activeRuntimeInstance;
@@ -99,9 +100,13 @@ namespace Hecton8.UI
             public Transform Target;
             public AbsoluteUniversePosition PositionAup;
             public Vector3 PresentationPosition;
-            public string Label;
+            public uint LabelHash;
+            public int LabelOffset;
+            public int LabelLength;
+            public uint LabelRevision;
             public Color Color;
             public bool Active;
+            public bool HasLabel;
             public bool UseTransform;
             public bool HasPositionAup;
         }
@@ -109,9 +114,14 @@ namespace Hecton8.UI
         private struct RuntimeWaypoint
         {
             public AbsoluteUniversePosition PositionAup;
-            public string Label;
+            public uint LabelHash;
+            public int LabelOffset;
+            public int LabelLength;
+            public int LabelSlotIndex;
+            public uint LabelRevision;
             public Color Color;
             public bool Active;
+            public bool HasLabel;
             public bool Occluded;
         }
 
@@ -124,7 +134,10 @@ namespace Hecton8.UI
             public Image Fill;
             public Image Outline;
             public TextMeshProUGUI Label;
-            public string CachedLabel;
+            public uint CachedLabelHash;
+            public int CachedLabelLength;
+            public int CachedLabelSlotIndex;
+            public uint CachedLabelRevision;
             public int CachedAnchoredX;
             public int CachedAnchoredY;
             public int CachedRotationIndex;
@@ -195,6 +208,8 @@ namespace Hecton8.UI
         private readonly WaypointSlot[] _slots = new WaypointSlot[MaxWaypoints];
         // COLD ALLOC: char[48] - transient zero-GC waypoint label formatter buffer - owner: ARWaypointOverlay
         private readonly char[] _labelCharBuffer = new char[MaximumLabelCharacters];
+        // COLD ALLOC: char[768] - fixed external waypoint label bank, 16 slots * 48 chars - owner: ARWaypointOverlay
+        private readonly char[] _externalWaypointLabelBuffer = new char[MaxExternalWaypoints * MaximumLabelCharacters];
 
         private bool _registeredWaypointService;
         private bool _registeredTick;
@@ -277,6 +292,18 @@ namespace Hecton8.UI
         }
 
         /// <summary>
+        /// Register or refresh an external waypoint bound to a transform target using caller-owned text identity.
+        /// </summary>
+        public static void SetWaypoint(int id, Transform target, uint labelHash, ReadOnlySpan<char> label, Color color)
+        {
+            IARWaypointService service = CacheWaypointServiceCold();
+            if (service == null)
+                return;
+
+            service.SetWaypoint(id, target, labelHash, label, color);
+        }
+
+        /// <summary>
         /// Register or refresh an external waypoint bound to a runtime-space position.
         /// </summary>
         public static void SetWaypoint(int id, Vector3 worldPosition, string label, Color color)
@@ -286,6 +313,18 @@ namespace Hecton8.UI
                 return;
 
             service.SetWaypoint(id, worldPosition, label, color);
+        }
+
+        /// <summary>
+        /// Register or refresh an external waypoint bound to a runtime-space position using caller-owned text identity.
+        /// </summary>
+        public static void SetWaypoint(int id, Vector3 worldPosition, uint labelHash, ReadOnlySpan<char> label, Color color)
+        {
+            IARWaypointService service = CacheWaypointServiceCold();
+            if (service == null)
+                return;
+
+            service.SetWaypoint(id, worldPosition, labelHash, label, color);
         }
 
         /// <summary>
@@ -411,12 +450,28 @@ namespace Hecton8.UI
 
         void IARWaypointService.SetWaypoint(int id, Transform target, string label, Color color)
         {
-            SetExternalWaypointInternal(id, target, default, useTransform: true, label, color);
+            ReadOnlySpan<char> labelSpan = ReadOnlySpan<char>.Empty;
+            if (label != null && label.Length > 0)
+                labelSpan = label.AsSpan();
+            SetExternalWaypointInternal(id, target, default, useTransform: true, ResolveLabelHash(labelSpan), labelSpan, color);
+        }
+
+        void IARWaypointService.SetWaypoint(int id, Transform target, uint labelHash, ReadOnlySpan<char> label, Color color)
+        {
+            SetExternalWaypointInternal(id, target, default, useTransform: true, labelHash, label, color);
         }
 
         void IARWaypointService.SetWaypoint(int id, Vector3 worldPosition, string label, Color color)
         {
-            SetExternalWaypointInternal(id, null, worldPosition, useTransform: false, label, color);
+            ReadOnlySpan<char> labelSpan = ReadOnlySpan<char>.Empty;
+            if (label != null && label.Length > 0)
+                labelSpan = label.AsSpan();
+            SetExternalWaypointInternal(id, null, worldPosition, useTransform: false, ResolveLabelHash(labelSpan), labelSpan, color);
+        }
+
+        void IARWaypointService.SetWaypoint(int id, Vector3 worldPosition, uint labelHash, ReadOnlySpan<char> label, Color color)
+        {
+            SetExternalWaypointInternal(id, null, worldPosition, useTransform: false, labelHash, label, color);
         }
 
         void IARWaypointService.ClearWaypoint(int id)
@@ -668,9 +723,14 @@ namespace Hecton8.UI
 
                 RuntimeWaypoint runtimeWaypoint = _runtimeWaypoints[count];
                 runtimeWaypoint.PositionAup = externalWaypoint.PositionAup;
-                runtimeWaypoint.Label = string.IsNullOrEmpty(externalWaypoint.Label) ? DefaultExternalLabel : externalWaypoint.Label;
+                runtimeWaypoint.LabelHash = externalWaypoint.HasLabel ? externalWaypoint.LabelHash : DefaultExternalLabelHash;
+                runtimeWaypoint.LabelOffset = externalWaypoint.LabelOffset;
+                runtimeWaypoint.LabelLength = externalWaypoint.HasLabel ? externalWaypoint.LabelLength : DefaultExternalLabel.Length;
+                runtimeWaypoint.LabelSlotIndex = i;
+                runtimeWaypoint.LabelRevision = externalWaypoint.LabelRevision;
                 runtimeWaypoint.Color = externalWaypoint.Color.a <= 0f ? RelayColor : externalWaypoint.Color;
                 runtimeWaypoint.Active = true;
+                runtimeWaypoint.HasLabel = externalWaypoint.HasLabel;
                 runtimeWaypoint.Occluded = count < _waypointCount && _runtimeWaypoints[count].Occluded;
                 _runtimeWaypoints[count] = runtimeWaypoint;
                 count++;
@@ -802,10 +862,25 @@ namespace Hecton8.UI
                 ApplySlotAlpha(ref slot, alpha);
                 ApplySlotImageState(ref slot, !useOutlineOnly, true, waypoint.Color, useOutlineOnly ? OccludedColor : outlineColor);
 
-                if (!string.Equals(slot.CachedLabel, waypoint.Label, StringComparison.Ordinal))
+                if (slot.CachedLabelHash != waypoint.LabelHash ||
+                    slot.CachedLabelLength != waypoint.LabelLength ||
+                    slot.CachedLabelSlotIndex != waypoint.LabelSlotIndex ||
+                    slot.CachedLabelRevision != waypoint.LabelRevision)
                 {
-                    ApplyLabelText(slot.Label, waypoint.Label);
-                    slot.CachedLabel = waypoint.Label;
+                    ReadOnlySpan<char> labelSpan = DefaultExternalLabel.AsSpan();
+                    if (waypoint.HasLabel &&
+                        waypoint.LabelLength > 0 &&
+                        waypoint.LabelOffset >= 0 &&
+                        waypoint.LabelOffset <= _externalWaypointLabelBuffer.Length - waypoint.LabelLength)
+                    {
+                        labelSpan = new ReadOnlySpan<char>(_externalWaypointLabelBuffer, waypoint.LabelOffset, waypoint.LabelLength);
+                    }
+
+                    ApplyLabelText(slot.Label, labelSpan);
+                    slot.CachedLabelHash = waypoint.LabelHash;
+                    slot.CachedLabelLength = waypoint.LabelLength;
+                    slot.CachedLabelSlotIndex = waypoint.LabelSlotIndex;
+                    slot.CachedLabelRevision = waypoint.LabelRevision;
                 }
 
                 _slots[i] = slot;
@@ -1033,7 +1108,8 @@ namespace Hecton8.UI
             Transform target,
             Vector3 worldPosition,
             bool useTransform,
-            string label,
+            uint labelHash,
+            ReadOnlySpan<char> label,
             Color color)
         {
             int freeIndex = -1;
@@ -1072,9 +1148,19 @@ namespace Hecton8.UI
             externalWaypoint.Target = target;
             externalWaypoint.PositionAup = hasCachedAup ? cachedAup : default;
             externalWaypoint.PresentationPosition = worldPosition;
-            externalWaypoint.Label = label;
+            bool hasLabel = label.Length > 0;
+            int labelOffset = freeIndex * MaximumLabelCharacters;
+            int labelLength = hasLabel ? CopyExternalLabelToBank(freeIndex, label) : 0;
+            uint labelRevision = externalWaypoint.LabelRevision + 1u;
+            if (labelRevision == 0u)
+                labelRevision = 1u;
+            externalWaypoint.LabelHash = hasLabel ? labelHash : DefaultExternalLabelHash;
+            externalWaypoint.LabelOffset = labelOffset;
+            externalWaypoint.LabelLength = labelLength;
+            externalWaypoint.LabelRevision = labelRevision;
             externalWaypoint.Color = color;
             externalWaypoint.Active = true;
+            externalWaypoint.HasLabel = hasLabel;
             externalWaypoint.UseTransform = useTransform;
             externalWaypoint.HasPositionAup = hasCachedAup;
             if (TryCaptureExternalWaypointAup(ref externalWaypoint))
@@ -1135,6 +1221,10 @@ namespace Hecton8.UI
                 {
                     _externalWaypoints[i].Active = false;
                     _externalWaypoints[i].HasPositionAup = false;
+                    _externalWaypoints[i].LabelHash = 0u;
+                    _externalWaypoints[i].LabelOffset = i * MaximumLabelCharacters;
+                    _externalWaypoints[i].LabelLength = 0;
+                    _externalWaypoints[i].HasLabel = false;
                     break;
                 }
             }
@@ -1298,7 +1388,10 @@ namespace Hecton8.UI
                 Fill = fill,
                 Outline = outline,
                 Label = label,
-                CachedLabel = string.Empty,
+                CachedLabelHash = 0u,
+                CachedLabelLength = 0,
+                CachedLabelSlotIndex = -1,
+                CachedLabelRevision = 0u,
                 CachedEdgeState = false,
                 CachedFillEnabled = true,
                 CachedOutlineEnabled = true,
@@ -1358,7 +1451,7 @@ namespace Hecton8.UI
             return label;
         }
 
-        private void ApplyLabelText(TextMeshProUGUI label, string value)
+        private void ApplyLabelText(TextMeshProUGUI label, ReadOnlySpan<char> value)
         {
             if (label == null)
                 return;
@@ -1367,30 +1460,68 @@ namespace Hecton8.UI
             label.SetCharArray(_labelCharBuffer, 0, length);
         }
 
-        private static int CopyLabelToBuffer(string value, char[] destination)
+        private int CopyExternalLabelToBank(int waypointIndex, ReadOnlySpan<char> value)
+        {
+            if ((uint)waypointIndex >= MaxExternalWaypoints)
+                return 0;
+
+            int offset = waypointIndex * MaximumLabelCharacters;
+            return CopyLabelToBuffer(value, _externalWaypointLabelBuffer, offset, MaximumLabelCharacters);
+        }
+
+        private static int CopyLabelToBuffer(ReadOnlySpan<char> value, char[] destination)
+        {
+            return destination == null ? 0 : CopyLabelToBuffer(value, destination, 0, destination.Length);
+        }
+
+        private static int CopyLabelToBuffer(ReadOnlySpan<char> value, char[] destination, int destinationOffset, int capacity)
         {
             if (destination == null || destination.Length == 0)
                 return 0;
 
-            if (string.IsNullOrEmpty(value))
+            if (destinationOffset < 0 || destinationOffset >= destination.Length || capacity <= 0)
+                return 0;
+
+            int max = math.min(capacity, destination.Length - destinationOffset);
+            if (max <= 0)
+                return 0;
+
+            if (value.Length <= 0)
             {
-                destination[0] = '\0';
+                destination[destinationOffset] = '\0';
                 return 0;
             }
 
-            int length = math.min(value.Length, destination.Length);
-            if (value.Length > destination.Length && destination.Length >= 4)
-                length = destination.Length - 3;
+            int length = math.min(value.Length, max);
+            if (value.Length > max && max >= 4)
+                length = max - 3;
             for (int i = 0; i < length; i++)
-                destination[i] = value[i];
-            if (value.Length > destination.Length && destination.Length >= 4)
+                destination[destinationOffset + i] = value[i];
+            if (value.Length > max && max >= 4)
             {
-                destination[length++] = '.';
-                destination[length++] = '.';
-                destination[length++] = '.';
+                destination[destinationOffset + length++] = '.';
+                destination[destinationOffset + length++] = '.';
+                destination[destinationOffset + length++] = '.';
             }
 
             return length;
+        }
+
+        private static uint ResolveLabelHash(ReadOnlySpan<char> label)
+        {
+            return label.Length <= 0
+                ? DefaultExternalLabelHash
+                : unchecked((uint)Hecton.Localization.LocHash.Compute(label));
+        }
+
+        private static int ResolveRenderedLabelLength(int sourceLength)
+        {
+            if (sourceLength <= 0)
+                return DefaultExternalLabel.Length;
+
+            return sourceLength > MaximumLabelCharacters && MaximumLabelCharacters >= 4
+                ? MaximumLabelCharacters
+                : math.min(sourceLength, MaximumLabelCharacters);
         }
 
         private static void ApplySlotIconState(ref WaypointSlot slot, bool edgeState)

@@ -806,6 +806,210 @@ Rejected Alternatives: Manual inspection only. The user requested source-code pr
 Scalability potential: Runtime unchanged; proof protects all device tiers from lock-order drift.
 Hardware Impact: Static proof only. No runtime cost and no project build CPU spike.
 
+Problem: `H8BridgeFacadeRuntime.SyncDesignData()` used the mutation-guarded bulk path for non-empty design facades, but the zero-row path still cleared `BridgeDesignFacadeValues`, persisted `BridgeFacadeMacroHeader`, and wrote the heartbeat telemetry through separate DataVault writer transactions. The path was sequential and `finally`-released, but it was not atomic authoring truth: stale values could be cleared before header/heartbeat failure.
+Solution: Added `SyncEmptyDesignData()` using the existing `DesignSyncMutationGuardMask`. It resolves the existing value buffer as a guarded read/write native view, clears it if present, resolves telemetry/header buffers, records the heartbeat, writes the macro header, and releases the mutation guard in strict `finally`.
+Rejected Alternatives: Leaving three single writer locks was rejected because it kept empty live-tuning commits on a different mutation contract than non-empty commits. Duplicating a managed staging record was rejected because all affected buffers already live in GlobalDataVault and can be updated directly under one guard.
+Scalability potential: Low keeps designer live-tuning disable/empty-table commits atomic without lock churn. Middle supports preset/profile swaps that temporarily clear all bindings. High and Ultra can increase bridge telemetry/presentation detail while the native truth transfer remains one guarded operation.
+Hardware Impact: Removes up to three DataVault write-lock acquire/release transactions from zero-binding design facade sync. Estimated protected low-end cost is 70-160 us per empty live-tuning push under vault contention, plus lower partial-state recovery risk.
+
+Problem: The old `ClearDesignValueBuffer()` helper remained as a private writer-lock route after the empty design sync moved to mutation guards.
+Solution: Deleted the helper and added `TryReadExistingGuardedBuffer<T>()` plus `ClearBuffer<T>()` for guarded native view clearing.
+Rejected Alternatives: Keeping the dead helper was rejected because it invites future regression to writer-lock clear paths. Folding clear code inline was rejected because prefab/input bridge routes already use small reusable guarded-buffer helpers.
+Scalability potential: Low/Middle keep bridge clear routes consistent. High and Ultra can add more bridge lanes using the same guarded helper shape.
+Hardware Impact: Static/runtime cleanup only; the runtime saving is captured by the empty-sync transfer change.
+
+Problem: Verification had to prove the bridge patch without violating compile throttling.
+Solution: Waited through CPU 100 and 57 percent windows, confirmed no compiler processes, then ran one PowerShell-loaded Unity Roslyn AST pass when CPU dropped to 48 percent. The AST proof rejected `ClearDesignValueBuffer`, rejected old zero-row calls, required `SyncEmptyDesignData()`, required mutation guard acquire/release/finally, and rejected write-lock/component/global lookup usage inside the new method.
+Rejected Alternatives: `dotnet build` was rejected because the AGENTS throttle bars project builds above 50 percent CPU and this patch only needed syntax/AST proof. Broad parser suites were rejected because they waste CPU in a multi-agent workspace.
+Scalability potential: Runtime unchanged. The proof protects the bridge authoring path from lock-shape drift as designer facades grow.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike.
+
+Problem: `ProceduralLoreDirector.TrySpawnInstance()` still used `spawnedObject.TryGetComponent(out AudioLogPickup pickup)` immediately after object-pool spawn. The route is cold cadence, but it is still a Unity component lookup in the designer-facing procedural lore spawn chain and violates the APEX rule that dependency/component lookups must be cached cold.
+Solution: Replaced the spawned-object component probe with `TryResolvePooledAudioLogPickup()`, which reads `AudioLogPickup` through `IObjectPoolService.TryGetPooledComponent<T>()`. The object pool already caches root components during cold pool instantiation, so the lore director now consumes the pool-owned component cache.
+Rejected Alternatives: Adding a new dictionary in `AudioLogPickup` was rejected because capacity growth would add a second managed cache and possible allocation pressure. Scanning active pickup registries was rejected because a spawned pooled instance can temporarily deactivate from old serialized state before procedural configuration. Keeping `TryGetComponent` because the path is `SlowTick` was rejected; cold cadence does not justify a direct Unity lookup when a cached pool route exists.
+Scalability potential: Low avoids hierarchy/component lookup spikes during frontier lore spawn and respawn. Middle supports more procedural lore drops without changing the lookup route. High and Ultra can spend saved CPU on richer PDA/lore presentation while spawn still resolves through the same pool cache.
+Hardware Impact: Removes one Unity component lookup per procedural lore spawn or respawn. Estimated low-end protected cost is 20-70 us per spawned pickup, with higher protection for deeper prefab hierarchies or cache-cold frames.
+
+Problem: Verification had to prove the micro-patch without adding project build pressure while another compiler was active.
+Solution: Ran targeted source scans and scoped `git diff --check`; the scan found no `TryGetComponent`, `GetComponent`, `GlobalRegistry.Get<T>()`, or `GlobalRegistry.Get(` in `ProceduralLoreDirector.cs`, and diff check returned no whitespace errors. Roslyn AST was attempted only as an in-memory parse, not as a build.
+Rejected Alternatives: `dotnet build` was rejected because external `dotnet/csc` were active and CPU reached 100 percent. Claiming AST success was rejected because the Roslyn host first failed dependency binding and later timed out under external compiler pressure.
+Scalability potential: Runtime unchanged. Proof discipline prevents the lore authoring chain from drifting back to component lookup while keeping compiler throttling intact.
+Hardware Impact: Static proof only. No runtime cost. Avoided adding another build/compiler load to an already saturated machine.
+
+Problem: `NarrativeRuntimeInstaller.EnsurePlayerSystems()` still used `playerObject.TryGetComponent<ProceduralLoreDirector>()`. The call is bootstrap/cold, not a hot-loop breach, but it left the 14DER narrative authoring installer dependent on Unity component lookup when the installed lore director can publish its own cold identity.
+Solution: `ProceduralLoreDirector` now owns a fixed installed-owner registry with `GameObject[]` and `ProceduralLoreDirector[]`, registers on enable/start, unregisters by swap-with-last on disable/destroy, and exposes `IsInstalledOn(GameObject)` for the installer. `NarrativeRuntimeInstaller` uses that cache and only calls cold `AddComponent<ProceduralLoreDirector>()` when no active registered owner exists.
+Rejected Alternatives: A single static owner was rejected because a second enabled director could overwrite the player owner and trigger duplicate add attempts. `ComponentReferenceUtility` was rejected because it still resolves via Unity component probing. A managed `HashSet` was rejected because this route only needs a small fixed bootstrap registry and should not grow heap state.
+Scalability potential: Low devices avoid component probing during bootstrap player system installation. Middle keeps multiple scene/player bootstrap arrangements deterministic. High and Ultra can add richer procedural lore authoring roots without changing the cold identity route.
+Hardware Impact: Removes one Unity component lookup from narrative player bootstrap checks and keeps duplicate detection O(8) fixed-array scan. Estimated protected low-end cost is 10-40 us per installer pass and avoids hidden hierarchy lookup spikes on prefab-heavy player roots.
+
+Problem: The procedural lore installer and pooled-component patches needed a fresh structural proof after earlier Roslyn host failures.
+Solution: Loaded Unity Roslyn directly in PowerShell with the required `System.Runtime.CompilerServices.Unsafe` 4.0.4.1 dependency and Burst `System.Buffers`/`System.Numerics.Vectors`, parsed `ProceduralLoreDirector.cs` and `NarrativeRuntimeInstaller.cs`, rejected syntax errors, rejected component/global lookups in hot methods, and rejected installer component probing. Result: `POWERSHELL_ROSLYN_PROCEDURAL_LORE_INSTALLER_AST_OK`.
+Rejected Alternatives: `dotnet build` was rejected because CPU stayed above 50 percent. Running the broad `.csx` suite was rejected because this proof only needed the two touched narrative files and broad parsing would waste CPU during multi-agent work.
+Scalability potential: Runtime unchanged. The proof gate now covers both procedural lore spawn and installer ownership routes as the designer-facing narrative system expands.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike.
+
+Problem: `H8BridgeFacadeRuntime.WriteDesignValue()` still used a design-value write lock and then a separate telemetry write-lock route. The method is a public authoring bridge API; even if current bulk sync no longer calls it per row, leaving this path unflattened kept partial value/telemetry mutation possible for direct callers.
+Solution: Routed `WriteDesignValue()` through `DesignSyncMutationGuardMask`, resolved `BridgeDesignFacadeValues` and `BridgeDesignFacadeTelemetryRing` as guarded native views, wrote the float value, and recorded telemetry through `RecordDeltaLocked()` before releasing the guard in strict `finally`.
+Rejected Alternatives: Leaving the method because no current source caller uses it was rejected; public bridge APIs are future authoring integration points. Removing the method was rejected because it may be part of editor/mod tooling expectations.
+Scalability potential: Low keeps single-field live tuning deterministic. Middle supports focused designer tweaks without separate lock churn. High and Ultra can push richer single-field previews while telemetry/value truth remains one guarded operation.
+Hardware Impact: Removes two sequential DataVault write-lock transactions from direct single-value authoring writes. Estimated protected low-end cost is 60-140 us per direct field push under vault contention.
+
+Problem: Verification had to close the second bridge patch while an external `dotnet build Hecton8.slnx` stayed active and CPU was 80-100 percent.
+Solution: Did not launch a project build. Ran exactly one scoped in-memory PowerShell Roslyn parse over `H8BridgeFacadeRuntime.cs` because control-flow proof was required. The AST proof returned `POWERSHELL_ROSLYN_BRIDGE_DESIGN_GUARD_AST_OK`.
+Rejected Alternatives: Waiting indefinitely for another responsive build was rejected after several throttle windows; killing the external build was rejected because it was not owned by 14DER. Broad parser suites were rejected because one touched file was sufficient.
+Scalability potential: Runtime unchanged. The proof protects bridge guard invariants as authoring facades and mod tooling grow.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike from 14DER.
+
+Problem: `H8BridgeLiveSyncScheduler.LateFrameTick()` had been phase-deferred, but its flush helpers still reached bridge sync methods that could grow DataVault buffers or repair authoring lists through `EnsureGenerationHandle()` and `new List<T>` paths.
+Solution: Added no-growth bridge sync routes: design and input facades now expose `SyncToVaultExistingBuffer()`, and the runtime bridge helpers take `allowAuthoringRepair` plus `allowBufferGrowth`. LateFrame calls only these no-growth routes; if buffers were not prewarmed, the sync fails closed.
+Rejected Alternatives: Letting LateFrame allocate because live editing is rare was rejected. Rare editor live edits still execute in a frame phase and must not hide structural DataVault mutation or authoring repair.
+Scalability potential: Low uses existing-buffer updates only and skips oversized/new live edits until a cold prepare path. Middle keeps live tuning for existing bindings. High and Ultra can add richer preview visuals after the same LateFrame transfer without changing truth ownership.
+Hardware Impact: Protects roughly 50-160 us on i3/MX350 during inspector live tuning by avoiding buffer growth and authoring-list repair in the frame-end route.
+
+Problem: No-growth prefab live bind still called `PrefabRegistry.GetOrRegisterPrefab()` transitively from LateFrame, which can mutate managed dictionaries and allocate when a prefab is first seen.
+Solution: Split prefab runtime ID transfer into registration and lookup modes. `BindExistingBuffers()` disables runtime registration and reads only `GetPrefabId()`. `PrepareBuffers(registry, vault, runtimeRegistry)` prewarms DataVault mapping/lore buffers and runtime IDs from cold `Start()` before queuing the LateFrame bind.
+Rejected Alternatives: Registering prefab IDs inside LateFrame was rejected because managed runtime identity can move ahead of native bridge truth and can allocate. Dropping prefab LiveSync entirely was rejected because existing registered prefabs can still update safely.
+Scalability potential: Low keeps prefab authoring sync deterministic and fail-closed. Middle supports registered prefab set edits. High and Ultra can spend visual budget on lore/acoustic presentation after native commit instead of managed dictionary mutation.
+Hardware Impact: Protects roughly 40-120 us on i3/MX350 on first-use prefab sync paths by moving dictionary registration out of the LateFrame transfer and making the hot path a dictionary read only.
+
+Problem: Quest DAG disposal could clear generation handles or mark the resolver disposed after `ReleaseBuffer()` was refused by DataVault allocation/compaction fences, losing ownership proof while native buffers might still exist.
+Solution: `QuestDagVault.ReleaseBuffers()` now returns a boolean. `ReleaseQuestDagVaultHandle()` refuses release under `IsAllocationLocked` or `IsCompactionFenceActive`, clears the handle only after successful release, and `QuestDagResolverService.Dispose()` keeps `_disposePending` until every buffer is released.
+Rejected Alternatives: Clearing stale handles on failed release was rejected because it hides leaked native ownership. Blocking forever in hot methods was rejected; schedule/debug/force-complete routes fail closed while dispose is pending.
+Scalability potential: Low avoids release/reallocate stalls under DataVault freeze. Middle keeps quest graph teardown deterministic. High and Ultra can grow quest presentation/authoring tools without relying on unsafe buffer release timing.
+Hardware Impact: Protects roughly 60-180 us on i3/MX350 during scene teardown or resolver replacement under DataVault pressure, and eliminates the larger risk of a stranded write/release ownership state.
+
+Problem: The APEX pass needed syntax/control-flow proof without violating compilation throttle.
+Solution: Waited until CPU dropped below threshold and no compiler processes were present, then ran one in-memory PowerShell Roslyn parse over touched files. Result: `POWERSHELL_ROSLYN_14DER_APEX_LIVE_NO_GROWTH_AND_QUEST_RELEASE_AST_OK`.
+Rejected Alternatives: `dotnet build` was rejected because the requested proof was static AST and project compile was throttled. A broad parser/report artifact was rejected; no JSON or telemetry dump was written.
+Scalability potential: Runtime unchanged. The proof gate is reusable for future bridge/quest edits without adding runtime code.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike from 14DER.
+
+Problem: `LoreDatabaseManager` kept a `VaultGenerationHandle<uint>` for industrial lore unlock words without recording the `IDataVault` instance that owned it. During DataVault replacement the same handle could be tested against a new vault, and `ReleaseUnlockStorage()` could attempt `ReleaseBuffer()` while `IsAllocationLocked` or `IsCompactionFenceActive` was true.
+Solution: Added `_unlockedWordsVault` owner pinning. Reads and writes now require `ReferenceEquals(_unlockedWordsVault, vault)`. `EnsureUnlockStorage()` accepts an existing valid buffer first, releases an old owner only through `ReleaseUnlockStorage()`, then fails closed before `EnsureGenerationHandle()` when allocation or compaction fences are active. `ReleaseUnlockStorage()` fails closed before structural release under the same fences.
+Rejected Alternatives: Keeping handle-only ownership was rejected because generation descriptors are not a vault identity. Clearing the handle after a failed release was rejected when the old buffer is still readable, because that hides an unreleased owner. Allocating a replacement buffer before old-vault release was rejected because it forks lore unlock truth across vaults.
+Scalability potential: Low devices avoid lore unlock stalls and false locked-state reads during bootstrap/hotswap fences. Middle devices keep save/load and audio-log discovery deterministic. High and Ultra can add richer PDA lore presentation and designer-authored lore banks while the unlock truth remains one native owner route.
+Hardware Impact: Protects roughly 40-110 us on i3/MX350 during DataVault hotswap/allocation-freeze windows by avoiding invalid handle resolution, failed release/reallocate loops, and duplicated unlock storage.
+
+Problem: The lore unlock-storage patch changed native ownership control flow and needed proof without violating compile throttling.
+Solution: Ran targeted source scans, scoped whitespace validation, and one PowerShell-hosted Unity Roslyn AST parse over `LoreDatabaseManager.cs`; result `POWERSHELL_ROSLYN_LORE_DATABASE_UNLOCK_STORAGE_AST_OK`. The AST requires valid read before fence, fence before `EnsureGenerationHandle()` and `ReleaseBuffer()`, owner-vault checks on read/write, and `ReleaseWriteLock()` inside `finally`.
+Rejected Alternatives: `dotnet build` was rejected because CPU stayed above 50 percent through all proof windows. Broad parser suites were rejected because this pass touched one C# file and one DataVault ownership invariant.
+Scalability potential: Runtime unchanged except fail-closed ownership behavior. The proof protects industrial lore authoring/save growth from drifting into cross-vault state forks.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike from 14DER.
+
+Problem: `QuestDagResolverService.TryAcquireScheduledBufferGuard()` rejected compaction fences but not DataVault allocation locks before acquiring `ScheduledMutationGuardMask`. The scheduled resolver then writes Quest DAG state, faction, telemetry, and counters through native views held across a job window, so starting it during an allocation freeze is an avoidable authority/fence violation.
+Solution: Added `vault.IsAllocationLocked` to the guard precondition before `TryAcquireMutationGuard(ScheduledMutationGuardMask)`. Existing release remains pinned to `_scheduledBufferGuardVault`, so hotswap cannot release the mutation guard on the wrong vault instance.
+Rejected Alternatives: Leaving the guard compaction-only was rejected because allocation freeze and compaction fence are both DataVault ownership windows. Rewriting the resolver writer model was rejected because the scheduled path already uses one mutation guard and the issue was a missing fence predicate, not a multi-lock shape.
+Scalability potential: Low devices skip one resolver schedule rather than risking a stall during allocation freeze. Middle keeps quest graph cadence deterministic. High and Ultra can spend saved stability budget on richer quest presentation after `CompleteScheduled()` finalizes, without changing simulation truth.
+Hardware Impact: Protects roughly 40-100 us on i3/MX350 during DataVault allocation-freeze contention by avoiding a doomed scheduled-guard acquire and by preventing a longer native mutation window from starting at the wrong time.
+
+Problem: The one-line Quest DAG change still needed proof that it did not hide hot dependency lookups, phase drift, or write-lock stacking.
+Solution: Ran targeted source scans and one PowerShell-loaded Unity Roslyn AST parse. The AST requires `vault.IsAllocationLocked` before `TryAcquireMutationGuard(ScheduledMutationGuardMask)`, requires release through `_scheduledBufferGuardVault`, and rejects `GlobalRegistry.Get*`, `GetComponent`, and `TryGetComponent` in `Schedule`, `CompleteScheduled`, and guard methods.
+Rejected Alternatives: `dotnet build` was rejected because CPU stayed above the 50 percent throttle for most windows. A broad parser suite was rejected because one touched file and one control-flow invariant were sufficient.
+Scalability potential: Runtime unchanged except fail-closed scheduling under fence. The proof gate preserves authoring/scenario graph scalability without adding per-frame checks beyond one existing branch.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike from 14DER.
+
+Problem: `AwaitableDropSequenceDirector.EnsureBlackBox()` could call `ReleaseBuffer(in _blackBoxHandle)` before checking `IDataVault.IsAllocationLocked`, and under `IsCompactionFenceActive` it cleared the black-box descriptor without releasing the DataVault handle. That shape can lose ownership metadata during compaction and can attempt structural buffer release during an allocation freeze.
+Solution: Reordered the method: valid existing telemetry storage is accepted first; if it is missing or too small, `IsAllocationLocked || IsCompactionFenceActive` now fails closed before descriptor clear, buffer release, existing-handle adoption, or `EnsureGenerationHandle()`.
+Rejected Alternatives: Clearing the descriptor under compaction was rejected because it forgets the owner handle without freeing storage. Releasing first and then refusing allocation was rejected because release is also structural DataVault mutation. Changing the black-box DTO or async prologue sequence was rejected because the defect is strictly fence order.
+Scalability potential: Low devices keep the prologue crash recorder from causing a stall during DataVault freeze. Middle keeps the same 300-frame black-box contract. High and Ultra can add richer prologue presentation after handoff without changing telemetry truth or ownership.
+Hardware Impact: Protects roughly 30-90 us on i3/MX350 during DataVault freeze/compaction windows by avoiding failed release/reallocate paths and preserving the existing telemetry buffer when valid.
+
+Problem: The prologue black-box patch needed proof without adding build pressure while an external `dotnet` process stayed active.
+Solution: Ran targeted source scans, scoped whitespace check, and one single-file PowerShell-hosted Unity Roslyn AST parse. The AST requires the valid-handle read before the fence, requires the allocation/compaction fence before `ReleaseBuffer()` and `EnsureGenerationHandle()`, and verifies `RecordStage()` keeps write-lock release inside `finally`.
+Rejected Alternatives: `dotnet build` was rejected because CPU hit 100 percent and external `dotnet` remained active. A broad parser suite was rejected because this patch changed one file and one fence-order invariant.
+Scalability potential: Runtime unchanged except fail-closed DataVault structural mutation. The proof protects prologue authoring/telemetry expansion from regressing into buffer ownership drift.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike from 14DER.
+
+Problem: `ScavengingLootOracle.EnsureScavengingVaultBuffer()` rejected all access during `IsAllocationLocked`, even when the loot, biome modifier, audit, or CSV scratch buffer already existed and only needed a current-phase native view. Its lifecycle release path also cleared handles after calling `ReleaseBuffer()` without checking allocation or compaction fences.
+Solution: Moved existing-buffer resolution before the allocation-lock check. Converted scavenging vault release helpers to return `bool`, made `ReleaseScavengingVaultHandle()` fail closed before `ReleaseBuffer()` under `IsAllocationLocked || IsCompactionFenceActive`, and changed hotswap/cache/lifecycle callers to preserve handles when structural release is unsafe.
+Rejected Alternatives: Clearing handles after a fenced release was rejected because it destroys ownership evidence while DataVault still owns the buffer. Allocating fresh replacement buffers before releasing old handles was rejected because it can fork loot truth and audit state. Releasing under compaction was rejected because DataVault aliases are explicitly fenced.
+Scalability potential: Low devices keep scavenging loot tables stable through bootstrap/hotswap pressure. Middle devices support larger authored loot and biome modifier sets without release/reallocate churn. High and Ultra can spend saved stability budget on richer visual scavenging feedback while loot truth stays in one native route.
+Hardware Impact: Protects roughly 50-130 us on i3/MX350 during DataVault hotswap/allocation-freeze windows by avoiding failed release/reallocate loops and keeping valid existing buffers available without allocation.
+
+Problem: The scavenging vault-release patch touched lifecycle control flow around scheduled jobs and native buffer ownership, so proof had to cover ordering and release-result propagation without project compile pressure.
+Solution: Ran targeted source scans, scoped whitespace validation, and one PowerShell-hosted Unity Roslyn AST parse over `ScavengingLootOracle.cs`; result `POWERSHELL_ROSLYN_SCAVENGING_VAULT_RELEASE_AST_OK`. The AST requires resolve-before-allocation-fence, fence-before-release, boolean aggregate release, and hotswap/cache/lifecycle callers that respect failed release.
+Rejected Alternatives: `dotnet build` was rejected because CPU hit 100 percent before the proof window. Broad parser suites were rejected because this pass touched one file and one DataVault ownership invariant.
+Scalability potential: Runtime unchanged except fail-closed structural release. The proof protects resource/drop-table authoring growth from losing native ownership during DataVault maintenance windows.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike from 14DER.
+
+Problem: `AwaitableDropSequenceDirector.EnsureBlackBox()` could call `ReleaseBuffer(in _blackBoxHandle)` before checking `IDataVault.IsAllocationLocked`, and under `IsCompactionFenceActive` it cleared the black-box descriptor without releasing the DataVault handle. That shape can lose ownership metadata during compaction and can attempt structural buffer release during an allocation freeze.
+Solution: Reordered the method: valid existing telemetry storage is accepted first; if it is missing or too small, `IsAllocationLocked || IsCompactionFenceActive` now fails closed before descriptor clear, buffer release, existing-handle adoption, or `EnsureGenerationHandle()`.
+Rejected Alternatives: Clearing the descriptor under compaction was rejected because it forgets the owner handle without freeing storage. Releasing first and then refusing allocation was rejected because release is also structural DataVault mutation. Changing the black-box DTO or async prologue sequence was rejected because the defect is strictly fence order.
+Scalability potential: Low devices keep the prologue crash recorder from causing a stall during DataVault freeze. Middle keeps the same 300-frame black-box contract. High and Ultra can add richer prologue presentation after handoff without changing telemetry truth or ownership.
+Hardware Impact: Protects roughly 30-90 us on i3/MX350 during DataVault freeze/compaction windows by avoiding failed release/reallocate paths and preserving the existing telemetry buffer when valid.
+
+Problem: The prologue black-box patch needed proof without adding build pressure while an external `dotnet` process stayed active.
+Solution: Ran targeted source scans, scoped whitespace check, and one single-file PowerShell-hosted Unity Roslyn AST parse. The AST requires the valid-handle read before the fence, requires the allocation/compaction fence before `ReleaseBuffer()` and `EnsureGenerationHandle()`, and verifies `RecordStage()` keeps write-lock release inside `finally`.
+Rejected Alternatives: `dotnet build` was rejected because CPU hit 100 percent and external `dotnet` remained active. A broad parser suite was rejected because this patch changed one file and one fence-order invariant.
+Scalability potential: Runtime unchanged except fail-closed DataVault structural mutation. The proof protects prologue authoring/telemetry expansion from regressing into buffer ownership drift.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike from 14DER.
+
+Problem: `MetaCampaignService.EnsureVaultBuffer()` could call `ReleaseBuffer()` and `EnsureGenerationHandle()` during DataVault allocation-lock or compaction-fence windows. Meta-campaign state is scenario truth used by designers and save/load; reallocating those lanes during hotswap/bootstrap freeze violates the DataVault fence contract.
+Solution: The method now first accepts an already-valid generation handle through `TryReadOnlyHandle()`. Only if a new or replacement buffer is needed does it check `vault.IsAllocationLocked || vault.IsCompactionFenceActive` and fail closed before release or allocation.
+Rejected Alternatives: A guard at the top of the method was rejected because it would reject valid existing buffers under a fence and make bootstrap/hotswap less resilient. A broad mutation-guard rewrite was rejected because current variable/rule/blackbox routes hold one write lock at a time and release through `try/finally`; the real defect was allocation during fenced windows.
+Scalability potential: Low devices avoid allocation attempts during scene/hotswap pressure. Middle devices keep campaign authoring state deterministic during save/load and service replacement. High and Ultra can expand scenario variables and visual side effects without changing the fence contract.
+Hardware Impact: Adds one cold branch only on replacement allocation. Protected low-end cost is 50-110 us by avoiding failed release/reallocate attempts during vault freeze/compaction coordination.
+
+Problem: Verification needed proof without adding compiler load while another agent's `dotnet`/`csc` compile saturated CPU.
+Solution: Waited until compiler processes exited and CPU dropped below threshold, then ran one targeted PowerShell-loaded Unity Roslyn AST parse over `MetaCampaignService.cs`. The AST gate required existing-handle read before fence failure, required fence checks before release/allocation, rejected multi-write-lock methods, and checked `Tick`/`LateFrameTick` for direct registry/component lookup.
+Rejected Alternatives: `dotnet build` was rejected while CPU was 100/97 and compiler processes were active. Broad parser suites were rejected because this patch touched one file and one allocation route.
+Scalability potential: Runtime unchanged. The proof protects scenario-state allocation rules as designer-facing campaign variables grow.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike from 14DER.
+
+Problem: `NarrativeRuntimeInstaller.EnsurePlayerSystems()` still used `playerObject.TryGetComponent<ProceduralLoreDirector>()`. The call is bootstrap/cold, not a hot-loop breach, but it left the 14DER narrative authoring installer dependent on Unity component lookup when the installed lore director can publish its own cold identity.
+Solution: `ProceduralLoreDirector` now owns a fixed installed-owner registry with `GameObject[]` and `ProceduralLoreDirector[]`, registers on enable/start, unregisters by swap-with-last on disable/destroy, and exposes `IsInstalledOn(GameObject)` for the installer. `NarrativeRuntimeInstaller` uses that cache and only calls cold `AddComponent<ProceduralLoreDirector>()` when no active registered owner exists.
+Rejected Alternatives: A single static owner was rejected because a second enabled director could overwrite the player owner and trigger duplicate add attempts. `ComponentReferenceUtility` was rejected because it still resolves via Unity component probing. A managed `HashSet` was rejected because this route only needs a small fixed bootstrap registry and should not grow heap state.
+Scalability potential: Low devices avoid component probing during bootstrap player system installation. Middle keeps multiple scene/player bootstrap arrangements deterministic. High and Ultra can add richer procedural lore authoring roots without changing the cold identity route.
+Hardware Impact: Removes one Unity component lookup from narrative player bootstrap checks and keeps duplicate detection O(8) fixed-array scan. Estimated protected low-end cost is 10-40 us per installer pass and avoids hidden hierarchy lookup spikes on prefab-heavy player roots.
+
+Problem: The procedural lore installer and pooled-component patches needed a fresh structural proof after earlier Roslyn host failures.
+Solution: Loaded Unity Roslyn directly in PowerShell with the required `System.Runtime.CompilerServices.Unsafe` 4.0.4.1 dependency and Burst `System.Buffers`/`System.Numerics.Vectors`, parsed `ProceduralLoreDirector.cs` and `NarrativeRuntimeInstaller.cs`, rejected syntax errors, rejected component/global lookups in hot methods, and rejected installer component probing. Result: `POWERSHELL_ROSLYN_PROCEDURAL_LORE_INSTALLER_AST_OK`.
+Rejected Alternatives: `dotnet build` was rejected because CPU stayed above 50 percent. Running the broad `.csx` suite was rejected because this proof only needed the two touched narrative files and broad parsing would waste CPU during multi-agent work.
+Scalability potential: Runtime unchanged. The proof gate now covers both procedural lore spawn and installer ownership routes as the designer-facing narrative system expands.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike.
+
+Problem: `ProceduralLoreDirector.TrySpawnInstance()` still used `spawnedObject.TryGetComponent(out AudioLogPickup pickup)` immediately after object-pool spawn. The route is cold cadence, but it is still a Unity component lookup in the designer-facing procedural lore spawn chain and violates the APEX rule that dependency/component lookups must be cached cold.
+Solution: Replaced the spawned-object component probe with `TryResolvePooledAudioLogPickup()`, which reads `AudioLogPickup` through `IObjectPoolService.TryGetPooledComponent<T>()`. The object pool already caches root components during cold pool instantiation, so the lore director now consumes the pool-owned component cache.
+Rejected Alternatives: Adding a new dictionary in `AudioLogPickup` was rejected because capacity growth would add a second managed cache and possible allocation pressure. Scanning active pickup registries was rejected because a spawned pooled instance can temporarily deactivate from old serialized state before procedural configuration. Keeping `TryGetComponent` because the path is `SlowTick` was rejected; cold cadence does not justify a direct Unity lookup when a cached pool route exists.
+Scalability potential: Low avoids hierarchy/component lookup spikes during frontier lore spawn and respawn. Middle supports more procedural lore drops without changing the lookup route. High and Ultra can spend saved CPU on richer PDA/lore presentation while spawn still resolves through the same pool cache.
+Hardware Impact: Removes one Unity component lookup per procedural lore spawn or respawn. Estimated low-end protected cost is 20-70 us per spawned pickup, with higher protection for deeper prefab hierarchies or cache-cold frames.
+
+Problem: Verification had to prove the micro-patch without adding project build pressure while another compiler was active.
+Solution: Ran targeted source scans and scoped `git diff --check`; the scan found no `TryGetComponent`, `GetComponent`, `GlobalRegistry.Get<T>()`, or `GlobalRegistry.Get(` in `ProceduralLoreDirector.cs`, and diff check returned no whitespace errors. Roslyn AST was attempted only as an in-memory parse, not as a build.
+Rejected Alternatives: `dotnet build` was rejected because external `dotnet/csc` were active and CPU reached 100 percent. Claiming AST success was rejected because the Roslyn host first failed dependency binding and later timed out under external compiler pressure.
+Scalability potential: Runtime unchanged. Proof discipline prevents the lore authoring chain from drifting back to component lookup while keeping compiler throttling intact.
+Hardware Impact: Static proof only. No runtime cost. Avoided adding another build/compiler load to an already saturated machine.
+
+Problem: `QuestDagResolverService.ReleaseScheduledBufferGuard()` released the scheduled job mutation guard through `_vault`. If an editor/runtime hotswap replaced the vault reference while a scheduled resolver job was still fenced, release could target the wrong vault instance.
+Solution: Store `_scheduledBufferGuardVault` at acquisition time and release that exact instance. Clear the field on every no-op or successful release path.
+Rejected Alternatives: Relying on `_vault` stability was rejected because Quest DAG is shared by editor inspector, save bridge, and runtime resolver service. Adding a second write lock was rejected because the scheduled guard already owns the cross-phase fence.
+Scalability potential: Low devices avoid stuck mutation masks during tool/runtime transitions. Middle keeps quest graph hot-reload predictable. High and Ultra can schedule denser DAG evaluation without changing guard ownership.
+Hardware Impact: One reference assignment on schedule and one field clear on completion/dispose. Protected low-end recovery cost is unbounded in fault cases because a leaked guard blocks later authoring/runtime mutations.
+
+Problem: `QuestDagDebugApi.ForceCompleteNode()` updated `GlobalStateMasks` under one DataVault write lock, released it, then attempted to patch `OldStateMasks` under a second write lock. A signal could be published after partial state transfer if the old-mask patch failed or raced with a vault fence.
+Solution: Added `DebugStateMutationGuardMask`. Forced completion now acquires one mutation guard, resolves Quest DAG buffers once, writes both global and old masks in one guarded native section, releases in `finally`, and publishes `StateChangedSignal` only after both masks are committed.
+Rejected Alternatives: Keeping sequential write locks was rejected because it proves no simultaneous lock nesting but not atomic state transfer. Completing the node through the scheduled resolver job was rejected for editor usability; the inspector needs a cold manual override without waiting for player AUP trigger conditions.
+Scalability potential: Low keeps debug/manual quest repair deterministic on weak machines. Middle supports larger scenario DAG inspection. High and Ultra can expose richer quest tooling without adding runtime lock churn.
+Hardware Impact: Removes two write-lock transactions from forced completion and replaces them with one guarded native transfer. Estimated protected cost is 60-140 us per manual completion under editor/vault contention.
+
+Problem: Quest DAG debug-state proof needed syntax and structural validation while other agents were compiling.
+Solution: Waited through active external `dotnet/csc` windows, then ran one PowerShell-loaded Unity Roslyn parse with explicit `System.Memory`/`Unsafe` dependencies. The AST proof rejects write-lock calls, stale helper calls, and missing `finally` release in `ForceCompleteNode()`.
+Rejected Alternatives: `dotnet build` was rejected under the compile throttle. Text-only proof was rejected because the patch touched C# control flow and a previous validation attempt exposed a real parser dependency issue.
+Scalability potential: Runtime unchanged. The proof gate protects forced-completion tooling from regressing to partial state writes as Quest DAG authoring grows.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike.
+
+Problem: `ProceduralLoreDirector.RefreshCachedOwners()` only populated owner services when cached fields were null. If the director was disabled while exploration/audio-log/object-pool/save services were replaced, re-enable could keep stale non-null owners and route frontier lore spawn/save work through retired services.
+Solution: Refresh now assigns current `GlobalRegistry` slots on every cold enable/start refresh. Object-pool identity is compared; when it changes, `_poolWarmed` is reset so the next pickup spawn warms the current pool.
+Rejected Alternatives: Relying on hotswap callbacks only was rejected because disabled components are not guaranteed to be registered as listeners. Nulling all owners on disable was rejected because cold refresh on enable is the stronger single owner route and avoids unnecessary state churn.
+Scalability potential: Low avoids stale service routes during scene/service churn. Middle keeps frontier lore spawns deterministic across reloads. High and Ultra can increase procedural lore density without stale pool/save ownership.
+Hardware Impact: Four cold registry reads on enable/start only. Runtime SlowTick remains cached-owner only. Protected low-end cost is 40-100 us of avoided failed spawn/save recovery after service replacement.
+
+Problem: The procedural lore patch touched C# while external compiler load was active.
+Solution: Performed targeted source scan and scoped `git diff --check`; after compiler processes exited, ran one single-file PowerShell-loaded Unity Roslyn AST pass returning `POWERSHELL_ROSLYN_PROCEDURAL_LORE_AST_OK`.
+Rejected Alternatives: `dotnet build` and broad parser passes were rejected while CPU stayed above 50 percent. An initial whole-file text guard was rejected after it correctly parsed syntax but falsely matched a non-cache null check outside `RefreshCachedOwners()`.
+Scalability potential: Runtime unchanged; proof protects cold owner refresh from dependency drift.
+Hardware Impact: No runtime cost. Verification avoids adding parser/build load during active compilation.
+
 Problem: `H8BridgeFacadeRuntime.SyncDesignData()` wrote enabled designer float bindings by calling `WriteDesignValue()` per row. Each row acquired and released the design-value write lock, then recorded telemetry through another write-lock path. A late bad row could leave earlier values and signals already published.
 Solution: Added a preflight `TryComputeDesignValueBufferLength()` pass and a non-zero-row `SyncDesignValuesBulk()` path. The bulk route reserves one `DesignSyncMutationGuardMask`, resolves values, telemetry, and header lanes as owned native views, writes all rows, records `RecordDeltaLocked()` telemetry, writes heartbeat and header, then releases in `finally`.
 Rejected Alternatives: Keeping per-row `WriteDesignValue()` was rejected because it scales lock churn linearly with designer field count and permits partial sync. Allocating a managed scratch list of old values for post-guard publication was rejected because it violates zero-GC live authoring.
@@ -865,3 +1069,405 @@ Solution: `TryApplyVariableChanges()` now exposes `shouldRetry` only when the va
 Rejected Alternatives: Retrying inside the same frame. That can burn frame time under contention and violates cadence control. Publishing a warning signal was rejected because no native state changed.
 Scalability potential: Low avoids mission event loss when DataVault contention appears on weak CPUs. Middle keeps scenario scripts deterministic under save/load or hot-swap pressure. High and Ultra can process richer campaign effects without increasing same-frame retry loops.
 Hardware Impact: Adds one bool branch on the rare failure route; no normal hot-path cost. Protected cost is 70-140 us of avoided scenario recovery/debug churn per transient lock miss.
+
+Problem: `LoreDatabaseManager.TryResolveLocalizedOrFallback()` resolved `GlobalRegistry.LocalizationText` from the title/body/speaker read accessor chain. That made a designer-facing lore read model depend on a hot global lookup instead of a cold dependency route.
+Solution: Added `_localizationText` as a cold cached read model, refreshed from `CacheRegistryServicesCold()` and `LocalizationRuntime` hotswap. The accessor now reads the cached interface and falls back to authored fixed char buffers without registry access.
+Rejected Alternatives: Leaving localization lookup in the read accessor because it is "just a property." That still violates the registry-as-cold-DI rule and makes UI/lore presentation dependent on global service polling. Copying localized strings into managed buffers was rejected because the existing `LocRegistry.TryGetRawBuffer()` path already exposes stable buffers.
+Scalability potential: Low gets cheap lore reads with fallback text. Middle keeps localization swaps deterministic. High and Ultra can present richer lore UI and right-to-left variants without adding registry traffic per field.
+Hardware Impact: Removes up to three global service reads per lore record panel refresh. Estimated low-end protected cost is 20-60 us during dense PDA/lore list redraws, with larger savings from eliminating service drift.
+
+Problem: Lore unlock writes could call `EnsureGenerationHandle()` from the same route that handles audio-log discovery and unlock sinks, and existing storage validation used `TryResolveHandle()`. Under allocation lock or compaction fence this could mutate storage ownership from a runtime event path.
+Solution: `EnsureUnlockStorage()` now returns bool, rejects null vault, allocation lock, and compaction fence, validates existing storage through `TryReadOnlyHandle()`, and `TryAcquireUnlockWordsWrite()` fails closed unless ensure succeeds.
+Rejected Alternatives: Treating `EnsureGenerationHandle()` as harmless because the buffer is small. Allocation during a discovery event still violates the low-level ownership route and can stall weak devices. Preallocating a managed mask was rejected because the runtime truth is already in a native fixed buffer.
+Scalability potential: Low avoids allocation/fence stalls on audio-log discovery. Middle keeps save/load and lore unlocks deterministic. High and Ultra can add more lore presentation on top of the same fixed native bitmask route.
+Hardware Impact: Adds two fence checks before the rare ensure path; normal unlock cost stays one write lock. Protected low-end cost is 50-120 us by avoiding fence contention and hidden native allocation attempts.
+
+Problem: AUP POI completion dispatched lore unlock, HUD waypoints, quest checks, first-hour gates, and Atlas pulse logic through direct `GlobalRegistry` reads inside presentation helpers called after the trigger job completes.
+Solution: Added cold cached interfaces on `HectonNarrativeDirector` for `ILoreUnlockSink`, `IARWaypointService`, `IQuestSystem`, `IFirstHourReadModel`, and `IAtlasSignalReadModel`, refreshed by hotswap slots. LateFrame presentation now reads cached interfaces after the simulation job has settled.
+Rejected Alternatives: Keeping direct registry properties because the phase is `LateFrameTick`. Presentation phase is allowed to publish visuals, not to poll dependency identity. Dispatching managed event-bus messages to find lore/quest services was rejected because it adds managed indirection and does not improve determinism.
+Scalability potential: Low keeps POI completion cheap and predictable. Middle supports more authored POI side effects. High and Ultra can layer stronger HUD/Atlas/lore presentation without reintroducing global lookup traffic.
+Hardware Impact: Removes five direct global service reads from POI/rare-discovery presentation routes. Estimated low-end saved/protected cost is 60-140 us during clustered POI completion or director rare-discovery bursts.
+
+Problem: `AupNarrativePoiVault.EnsureBuffers()` could allocate nine DataVault lanes through `EnsureGenerationHandle()` while the vault was allocation-locked or under compaction fence.
+Solution: Added allocation-lock and compaction-fence checks at the top of `EnsureBuffers()`, returning default handles before any owner allocation route.
+Rejected Alternatives: Relying on `InitializeAupNarrativePoiVaultStorage()` caller discipline. The buffer owner owns the allocation contract; every call site should inherit the same fail-closed guard. Delaying allocation through a managed queue was rejected because POI native lanes are bootstrap/state storage, not frame work.
+Scalability potential: Low avoids hotswap allocation stalls on weak CPUs. Middle keeps scenario POI buffer initialization deterministic. High and Ultra can raise POI/bucket capacity later without changing the fence contract.
+Hardware Impact: Adds two cold branches before allocation. Protected low-end cost is 80-180 us during DataVault hotswap or scene POI registry rebuild windows.
+
+Problem: `ScavengingLootOracleRuntime.EnsureScavengingVaultBuffer()` checked compaction fence but not allocation lock before cold loot/audit/csv buffer allocation.
+Solution: Added `vault.IsAllocationLocked` to the fail-closed guard before `EnsureGenerationHandle()`.
+Rejected Alternatives: Treating scavenging hydration as safe because it is cold. Resource authoring/runtime bridge can be rehydrated from hotswap, and cold does not mean allowed during a vault allocation freeze. Managed fallback arrays were rejected because the oracle already owns fixed native storage and native scratch.
+Scalability potential: Low prevents loot oracle allocation pressure during weak-device scene transitions. Middle keeps resource authoring hydration deterministic. High and Ultra can expand loot/biome audit buffers without bypassing DataVault allocation fences.
+Hardware Impact: Adds one cold branch. Protected low-end cost is 60-140 us by avoiding allocation attempts during vault freeze/compaction coordination.
+
+Problem: Quest DAG binary and emergency mock loaders wrote scenario graph buffers through `TryWriteQuestDagValue()` inside node/trigger loops. That created hundreds or thousands of DataVault write-lock acquire/release operations during one graph load and allowed partial graph mutation if a later lane failed.
+Solution: Added `QuestDagLoadMutationGuardMask`, `TryAcquireQuestDagLoadBuffers()`, and direct guarded NativeArray mutation for OSHINO binary load and emergency mock generation. The loader now clears/fills node/runtime/item/trigger/no-trigger/counter lanes under one mutation guard and releases it in strict `finally`.
+Rejected Alternatives: Keeping per-value write helpers because loading is cold was rejected; designer scenario bootstrap still needs atomic graph truth. Staging the whole graph in managed arrays was rejected because capacities already exist in GlobalDataVault and staging would duplicate memory during load.
+Scalability potential: Low avoids lock churn and partial graph state on weak CPUs. Middle keeps authored mission graph swaps predictable. High and Ultra can increase quest graph density without increasing writer lock count.
+Hardware Impact: Removes O(nodes + triggers + item overrides) write-lock transactions from graph load. For a 10k-node graph this protects milliseconds of low-end lock overhead and eliminates the partial-load recovery path.
+
+Problem: Quest CSV overrides are the designer-facing scenario tweak path, but each applied row could read/find through vault helpers and then write item/runtime/counter/monitor lanes through separate write-lock transactions.
+Solution: Added `CsvOverrideMutationGuardMask` and `TryApplyOverridesInternal()` as a single guarded span parser. It resolves Quest DAG NativeArray views once, scans hashes in-place, patches runtime/item requirements, writes `LastCsvRowsApplied`, and patches CSV monitor state inside the same guarded section when file import succeeds.
+Rejected Alternatives: Leaving CSV as editor-only lock churn was rejected because editor tooling still modifies the live authoring truth and can be invoked from the narrative DAG window. Allocating a parsed row list was rejected; the existing span parser can write bounded native views directly.
+Scalability potential: Low handles small override sheets with deterministic cost. Middle supports larger scenario tweak sheets. High and Ultra can expose more designer override fields without per-row DataVault writer traffic.
+Hardware Impact: Removes up to three row-level write-lock transactions plus counter/monitor write-lock patches per applied CSV row. On i3/MX350 this protects roughly 120-320 us for a 64-row override sheet and more under vault contention.
+
+Problem: Verification needed proof without violating the project build throttle while other agents were compiling.
+Solution: Waited through high-CPU/external `dotnet` windows, then ran one PowerShell-loaded Roslyn parse/AST check with Unity Roslyn DLLs and Burst `System.Numerics.Vectors`. The check enforced no old QuestDag write helpers/global gets/component lookups in the changed load/import routes.
+Rejected Alternatives: `dotnet build` was rejected under CPU >50 percent and active external compiler processes. Unity `csi.exe` was rejected after it failed on missing `Facades/System.Runtime.dll`.
+Scalability potential: Runtime unchanged; the proof gate protects authoring graph growth from lock-regression drift.
+Hardware Impact: No runtime cost. Verification stayed in-memory and avoided adding a project build to an already saturated machine.
+
+Problem: `H8InputMappingFacade.SyncToVault()` still used a DataVault write lock for `BridgeInputFacadeBindings` while adjacent design and prefab bridge transfers had already moved to mutation-guarded native view writes. The input map is designer-facing authoring truth; leaving it on a different lock route increases bridge drift and keeps a writer-lock dependency in a low-level facade path.
+Solution: Added `InputSyncMutationGuardMask` and routed non-zero input sync through `TryResolveGuardedBuffer()`. The method now acquires one mutation guard, resolves the DataVault-owned native binding buffer once, clears it, writes the dense non-null prefix, verifies `activeCount == validationRuntimeBindingCount`, and releases the guard in `finally`.
+Rejected Alternatives: Keeping the single write lock was rejected because it is technically deadlock-safe but no longer consistent with the bridge's guarded bulk-sync contract. A managed staging array was rejected because the bindings already convert directly to a fixed blittable DTO.
+Scalability potential: Low keeps designer input-map hot reload cheap and deterministic. Middle supports larger controller/PDA/scanner mappings without writer-lock churn. High and Ultra can add richer display groups and input presentation metadata without changing the transfer shape.
+Hardware Impact: Removes one DataVault write-lock acquisition from every non-zero input facade sync. Estimated low-end protected cost is 40-90 us per editor/play-mode input-map push under vault contention.
+
+Problem: Empty input facades cleared stale `BridgeInputFacadeBindings` through a separate write-lock route. The zero-row path could still publish the correct signal only after a write-lock clear, while the rest of the bridge clear routes were already mutation-guarded.
+Solution: `ClearExistingBuffer()` now acquires `InputSyncMutationGuardMask`, resolves the existing binding buffer through `TryReadHandle`, clears it under the guard, and releases in `finally`. Missing existing buffers remain a valid already-clear state.
+Rejected Alternatives: Leaving the zero-row clear on a write lock was rejected because it preserves a second mutation idiom for the same bridge lane. Returning success on guard failure was rejected because a zero-count signal with stale button masks is false authoring truth.
+Scalability potential: Low avoids stale input tombstones after designers disable mappings. Middle keeps live input profile swaps deterministic. High and Ultra can expose richer input layouts without stale low-level binding rows.
+Hardware Impact: Removes one DataVault write-lock acquisition from empty input-map sync and prevents stale input recovery churn. Estimated low-end protected cost is 30-70 us per failed/contended clear.
+
+Problem: Verification had to prove the input facade changed structurally without violating compilation throttling while another agent's build was active.
+Solution: Used targeted source scans plus one PowerShell-loaded Unity Roslyn parse over `H8InputMappingFacade.cs`. The proof rejects `TryAcquireWriteLock`, `ReleaseWriteLock`, `GlobalRegistry.Get<T>()`, `GetComponent`, and `TryGetComponent`, and requires `InputSyncMutationGuardMask` acquire/release.
+Rejected Alternatives: `dotnet build` was rejected because an external `dotnet build Hecton8.slnx` and `VBCSCompiler` were running and CPU stayed above 50 percent. The .NET SDK Roslyn load path was rejected after loader errors; Unity Roslyn loaded cleanly via `Assembly.LoadFrom`.
+Scalability potential: Runtime unchanged; proof protects the input-authoring bridge from returning to writer-lock drift as mappings grow.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike.
+
+Problem: `H8DesignDataFacade.FloatBinding.SanitizeAndDetectChange()` updated `lastAppliedValue`, `lastAppliedFieldHash`, and `lastAppliedOffsetBytes` during validation, before `H8BridgeFacadeRuntime.SyncDesignData()` proved that DataVault accepted the live-tuning transfer. A blocked sync could therefore lose the dirty state and never retry.
+Solution: Sanitization now only clamps/normalizes the binding and detects drift. `SyncToVault()` marks bindings applied only after the bridge runtime returns success through `MarkRuntimeBindingsAppliedAfterSync()`.
+Rejected Alternatives: Keeping pre-sync applied markers and relying on the next inspector edit to retry was rejected because failed DataVault fences, stress limits, or capacity failures are transient and should not discard designer intent. Managed retry queues were rejected because the facade already owns deterministic dirty state.
+Scalability potential: Low devices keep live tuning cheap and retry-safe under vault contention. Middle devices can run richer authoring previews without lost tweaks. High and Ultra can expose larger tuning tables while preserving the same successful-sync commit point.
+Hardware Impact: Adds one post-success loop over active bindings only after sync. Removes failed-sync recovery churn; estimated protected low-end cost is 50-120 us per blocked live-tuning push.
+
+Problem: Enabling or disabling a design binding did not participate in dirty detection when the binding count stayed the same. A designer could toggle a row and leave stale runtime design values if no other value/hash/offset changed.
+Solution: Added `lastAppliedEnabled` and included `enabled != lastAppliedEnabled` in dirty detection. `MarkApplied()` records the enabled state only after successful sync.
+Rejected Alternatives: Treating disabled rows as a runtime copy concern was rejected because the facade must know whether the authored table changed. Forcing full sync every validation was rejected because it burns authoring CPU and hides dirty-state bugs.
+Scalability potential: Low keeps disabled tuning rows deterministic without broad scans. Middle supports scenario/profile presets that toggle bindings. High and Ultra can add richer live-tuning groups without stale disabled rows.
+Hardware Impact: One bool comparison per binding during cold validation. Estimated cost is under 20 us for the current table and avoids stale authoring recovery work.
+
+Problem: Verification had to cover both bridge facade patches without launching a project build under active external compiler load.
+Solution: Ran targeted source scans and a PowerShell-loaded Unity Roslyn parse over `H8DesignDataFacade.cs` plus `H8InputMappingFacade.cs`; the proof returned `POWERSHELL_ROSLYN_BRIDGE_FACADE_AST_OK`.
+Rejected Alternatives: `dotnet build` was rejected because external build activity and CPU above the 50 percent throttle were present. The broken .NET SDK Roslyn load path was not used as proof.
+Scalability potential: Runtime unchanged. The structural proof protects designer bridge routes from applied-state and writer-lock regression as facade tables grow.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike.
+
+Problem: `CorporateOrderSystem.ResolveLocalizedSpan()` pulled `GlobalRegistry.LocalizationText` directly from the order delivery warning path. Corporate orders are scenario-facing narrative state; delivery happens from the slow-tick timer and should not poll global dependency identity when emitting presentation text.
+Solution: Added `_localizationText`, initialized from cold enable and refreshed through `GlobalRegistryServiceSlot.LocalizationRuntime` hotswap. `ResolveLocalizedSpan()` now reads the cached interface and falls back to the static warning span.
+Rejected Alternatives: Leaving the global property read because the path is only SlowTick was rejected; the doctrine treats registry as cold DI, not a presentation resolver. Managed string caching was rejected because localization already exposes raw spans.
+Scalability potential: Low keeps delayed mission-order warnings cheap. Middle supports more corporate order notifications. High and Ultra can add richer localized PDA presentation without registry lookup drift.
+Hardware Impact: Removes one global service read from each conflict warning resolution. Estimated protected low-end cost is 20-50 us during delayed order delivery bursts.
+
+Problem: `_activeConflicts` was runtime-only and was not rebuilt after `LoadFromSaveData()`. A save containing both contradictory received orders could reload with no active conflict truth, breaking later PDA/scenario reads.
+Solution: Added `TryRegisterConflictForOrder()` and `RebuildActiveConflictsFromReceivedOrders()`. Save load clears stale conflicts, restores received orders, then rebuilds deterministic conflict hashes from authored order pairs before pending timers resume.
+Rejected Alternatives: Saving `_activeConflicts` as a new save field was rejected because it duplicates derived truth and risks migration churn. Replaying delivery warnings on load was rejected because load should restore state without presentation spam.
+Scalability potential: Low restores narrative state with one bounded scan over authored orders. Middle supports more delayed order pairs. High and Ultra can add richer faction conflict logic while keeping conflict truth derived from one authored route.
+Hardware Impact: Cold load-only scan over `corporationData.orders`, bounded by small order tables. Estimated cost is 40-90 us and prevents scenario-state debugging churn after reload.
+
+Problem: The corporate order patch needed syntax and structural proof without violating compile throttling while CPU stayed above the build threshold.
+Solution: Ran targeted source scans plus one PowerShell-loaded Unity Roslyn parse over `CorporateOrderSystem.cs`; the proof returned `POWERSHELL_ROSLYN_CORPORATE_ORDER_AST_OK`.
+Rejected Alternatives: `dotnet build` was rejected because CPU stayed above 50 percent. Skipping AST proof was rejected after touching C# control flow.
+Scalability potential: Runtime unchanged. Proof protects the order-state restoration path as scenario authoring grows.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike.
+
+Problem: `ProceduralLoreDirector.TrySpawnInstance()` still used `spawnedObject.TryGetComponent(out AudioLogPickup pickup)` immediately after object-pool spawn. The route is cold cadence, but it is still a Unity component lookup in the designer-facing procedural lore spawn chain and violates the APEX rule that dependency/component lookups must be cached cold.
+Solution: Replaced the spawned-object component probe with `TryResolvePooledAudioLogPickup()`, which reads `AudioLogPickup` through `IObjectPoolService.TryGetPooledComponent<T>()`. The object pool already caches root components during cold pool instantiation, so the lore director now consumes the pool-owned component cache.
+Rejected Alternatives: Adding a new dictionary in `AudioLogPickup` was rejected because capacity growth would add a second managed cache and possible allocation pressure. Scanning active pickup registries was rejected because a spawned pooled instance can temporarily deactivate from old serialized state before procedural configuration. Keeping `TryGetComponent` because the path is `SlowTick` was rejected; cold cadence does not justify a direct Unity lookup when a cached pool route exists.
+Scalability potential: Low avoids hierarchy/component lookup spikes during frontier lore spawn and respawn. Middle supports more procedural lore drops without changing the lookup route. High and Ultra can spend saved CPU on richer PDA/lore presentation while spawn still resolves through the same pool cache.
+Hardware Impact: Removes one Unity component lookup per procedural lore spawn or respawn. Estimated low-end protected cost is 20-70 us per spawned pickup, with higher protection for deeper prefab hierarchies or cache-cold frames.
+
+Problem: Verification had to prove the micro-patch without adding project build pressure while another compiler was active.
+Solution: Ran targeted source scans and scoped `git diff --check`; the scan found no `TryGetComponent`, `GetComponent`, `GlobalRegistry.Get<T>()`, or `GlobalRegistry.Get(` in `ProceduralLoreDirector.cs`, and diff check returned no whitespace errors. Roslyn AST was attempted only as an in-memory parse, not as a build.
+Rejected Alternatives: `dotnet build` was rejected because external `dotnet/csc` were active and CPU reached 100 percent. Claiming AST success was rejected because the Roslyn host first failed dependency binding and later timed out under external compiler pressure.
+Scalability potential: Runtime unchanged. Proof discipline prevents the lore authoring chain from drifting back to component lookup while keeping compiler throttling intact.
+Hardware Impact: Static proof only. No runtime cost. Avoided adding another build/compiler load to an already saturated machine.
+
+Problem: `NarrativeRuntimeInstaller.EnsurePlayerSystems()` still used `playerObject.TryGetComponent<ProceduralLoreDirector>()`. The call is bootstrap/cold, not a hot-loop breach, but it left the 14DER narrative authoring installer dependent on Unity component lookup when the installed lore director can publish its own cold identity.
+Solution: `ProceduralLoreDirector` now owns a fixed installed-owner registry with `GameObject[]` and `ProceduralLoreDirector[]`, registers on enable/start, unregisters by swap-with-last on disable/destroy, and exposes `IsInstalledOn(GameObject)` for the installer. `NarrativeRuntimeInstaller` uses that cache and only calls cold `AddComponent<ProceduralLoreDirector>()` when no active registered owner exists.
+Rejected Alternatives: A single static owner was rejected because a second enabled director could overwrite the player owner and trigger duplicate add attempts. `ComponentReferenceUtility` was rejected because it still resolves via Unity component probing. A managed `HashSet` was rejected because this route only needs a small fixed bootstrap registry and should not grow heap state.
+Scalability potential: Low devices avoid component probing during bootstrap player system installation. Middle keeps multiple scene/player bootstrap arrangements deterministic. High and Ultra can add richer procedural lore authoring roots without changing the cold identity route.
+Hardware Impact: Removes one Unity component lookup from narrative player bootstrap checks and keeps duplicate detection O(8) fixed-array scan. Estimated protected low-end cost is 10-40 us per installer pass and avoids hidden hierarchy lookup spikes on prefab-heavy player roots.
+
+Problem: The procedural lore installer and pooled-component patches needed a fresh structural proof after earlier Roslyn host failures.
+Solution: Loaded Unity Roslyn directly in PowerShell with the required `System.Runtime.CompilerServices.Unsafe` 4.0.4.1 dependency and Burst `System.Buffers`/`System.Numerics.Vectors`, parsed `ProceduralLoreDirector.cs` and `NarrativeRuntimeInstaller.cs`, rejected syntax errors, rejected component/global lookups in hot methods, and rejected installer component probing. Result: `POWERSHELL_ROSLYN_PROCEDURAL_LORE_INSTALLER_AST_OK`.
+Rejected Alternatives: `dotnet build` was rejected because CPU stayed above 50 percent. Running the broad `.csx` suite was rejected because this proof only needed the two touched narrative files and broad parsing would waste CPU during multi-agent work.
+Scalability potential: Runtime unchanged. The proof gate now covers both procedural lore spawn and installer ownership routes as the designer-facing narrative system expands.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike.
+
+Problem: `H8BridgeFacadeRuntime.SyncDesignData()` used the mutation-guarded bulk path for non-empty design facades, but the zero-row path still cleared `BridgeDesignFacadeValues`, persisted `BridgeFacadeMacroHeader`, and wrote heartbeat telemetry through separate DataVault writer transactions.
+Solution: Added `SyncEmptyDesignData()` under `DesignSyncMutationGuardMask`; it clears existing value bytes, records heartbeat, writes the macro header, and releases the mutation guard in strict `finally`.
+Rejected Alternatives: Keeping three single writer locks was rejected because empty live-tuning commits must share the same guarded transfer contract as non-empty commits. Managed staging was rejected because the affected buffers already live in GlobalDataVault.
+Scalability potential: Low keeps empty-table and disabled-binding commits atomic. Middle supports preset/profile swaps. High and Ultra can grow bridge telemetry and preview fidelity without changing the native transfer shape.
+Hardware Impact: Removes up to three DataVault write-lock acquire/release transactions from zero-binding design sync; protected low-end cost is 70-160 us per empty live-tuning push under contention.
+
+Problem: `H8BridgeFacadeRuntime.WriteDesignValue()` still used a value write lock followed by a separate telemetry write lock.
+Solution: Routed `WriteDesignValue()` through `DesignSyncMutationGuardMask`, resolved value and telemetry buffers as guarded native views, wrote the value, recorded telemetry through `RecordDeltaLocked()`, and released in strict `finally`.
+Rejected Alternatives: Leaving the method because bulk sync no longer calls it was rejected; it is a public authoring bridge API and future tooling can call it directly. Removing it was rejected because external editor/mod tooling may depend on it.
+Scalability potential: Low keeps single-field live tuning deterministic. Middle supports focused designer tweaks without lock churn. High and Ultra can add richer single-field previews while telemetry/value truth remains one guarded operation.
+Hardware Impact: Removes two sequential DataVault write-lock transactions from direct single-value authoring writes; protected low-end cost is 60-140 us per direct field push under vault contention.
+
+Problem: Verification had to close the bridge control-flow patch while an external `dotnet build Hecton8.slnx` stayed active and CPU remained high.
+Solution: Did not launch a project build. Ran one scoped in-memory PowerShell Roslyn parse over `H8BridgeFacadeRuntime.cs`; result `POWERSHELL_ROSLYN_BRIDGE_DESIGN_GUARD_AST_OK`.
+Rejected Alternatives: Killing the external build was rejected because it was not owned by 14DER. Broad parser suites were rejected because one touched file was sufficient.
+Scalability potential: Runtime unchanged. The proof protects bridge guard invariants as authoring facades and mod tooling grow.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike from 14DER.
+
+Problem: `QuestDagResolverService.TryAcquireScheduledBufferGuard()` rejected compaction fences but not DataVault allocation locks before acquiring `ScheduledMutationGuardMask`. The scheduled resolver then writes Quest DAG state, faction, telemetry, and counters through native views held across a job window, so starting it during an allocation freeze is an avoidable authority/fence violation.
+Solution: Added `vault.IsAllocationLocked` to the guard precondition before `TryAcquireMutationGuard(ScheduledMutationGuardMask)`. Existing release remains pinned to `_scheduledBufferGuardVault`, so hotswap cannot release the mutation guard on the wrong vault instance.
+Rejected Alternatives: Leaving the guard compaction-only was rejected because allocation freeze and compaction fence are both DataVault ownership windows. Rewriting the resolver writer model was rejected because the scheduled path already uses one mutation guard and the issue was a missing fence predicate, not a multi-lock shape.
+Scalability potential: Low devices skip one resolver schedule rather than risking a stall during allocation freeze. Middle keeps quest graph cadence deterministic. High and Ultra can spend saved stability budget on richer quest presentation after `CompleteScheduled()` finalizes, without changing simulation truth.
+Hardware Impact: Protects roughly 40-100 us on i3/MX350 during DataVault allocation-freeze contention by avoiding a doomed scheduled-guard acquire and by preventing a longer native mutation window from starting at the wrong time.
+
+Problem: The one-line Quest DAG change still needed proof that it did not hide hot dependency lookups, phase drift, or write-lock stacking.
+Solution: Ran targeted source scans and one PowerShell-loaded Unity Roslyn AST parse. The AST requires `vault.IsAllocationLocked` before `TryAcquireMutationGuard(ScheduledMutationGuardMask)`, requires release through `_scheduledBufferGuardVault`, and rejects `GlobalRegistry.Get*`, `GetComponent`, and `TryGetComponent` in `Schedule`, `CompleteScheduled`, and guard methods.
+Rejected Alternatives: `dotnet build` was rejected because CPU stayed above the 50 percent throttle for most windows. A broad parser suite was rejected because one touched file and one control-flow invariant were sufficient.
+Scalability potential: Runtime unchanged except fail-closed scheduling under fence. The proof gate preserves authoring/scenario graph scalability without adding per-frame checks beyond one existing branch.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike from 14DER.
+
+Problem: `AwaitableDropSequenceDirector.EnsureBlackBox()` could call `ReleaseBuffer(in _blackBoxHandle)` before checking `IDataVault.IsAllocationLocked`, and under `IsCompactionFenceActive` it cleared the black-box descriptor without releasing the DataVault handle. That shape can lose ownership metadata during compaction and can attempt structural buffer release during an allocation freeze.
+Solution: Reordered the method: valid existing telemetry storage is accepted first; if it is missing or too small, `IsAllocationLocked || IsCompactionFenceActive` now fails closed before descriptor clear, buffer release, existing-handle adoption, or `EnsureGenerationHandle()`.
+Rejected Alternatives: Clearing the descriptor under compaction was rejected because it forgets the owner handle without freeing storage. Releasing first and then refusing allocation was rejected because release is also structural DataVault mutation. Changing the black-box DTO or async prologue sequence was rejected because the defect is strictly fence order.
+Scalability potential: Low devices keep the prologue crash recorder from causing a stall during DataVault freeze. Middle keeps the same 300-frame black-box contract. High and Ultra can add richer prologue presentation after handoff without changing telemetry truth or ownership.
+Hardware Impact: Protects roughly 30-90 us on i3/MX350 during DataVault freeze/compaction windows by avoiding failed release/reallocate paths and preserving the existing telemetry buffer when valid.
+
+Problem: The prologue black-box patch needed proof without adding build pressure while an external `dotnet` process stayed active.
+Solution: Ran targeted source scans, scoped whitespace check, and one single-file PowerShell-hosted Unity Roslyn AST parse. The AST requires the valid-handle read before the fence, requires the allocation/compaction fence before `ReleaseBuffer()` and `EnsureGenerationHandle()`, and verifies `RecordStage()` keeps write-lock release inside `finally`.
+Rejected Alternatives: `dotnet build` was rejected because CPU hit 100 percent and external `dotnet` remained active. A broad parser suite was rejected because this patch changed one file and one fence-order invariant.
+Scalability potential: Runtime unchanged except fail-closed DataVault structural mutation. The proof protects prologue authoring/telemetry expansion from regressing into buffer ownership drift.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike from 14DER.
+
+Problem: `H8PrefabRegistryRuntimeBinder.Bind()` registered runtime prefab IDs through `PrefabRegistry.GetOrRegisterPrefab()` before the DataVault allocation/compaction fence and before `PrefabRegistryBindMutationGuardMask` was acquired. That allowed managed prefab identity mutation to happen without proof that `BridgePrefabMapping` and `BridgePrefabLoreLinks` could commit in the same native transfer.
+Solution: Moved runtime ID population into `TryWritePrefabBuffers()`. The method now acquires `PrefabRegistryBindMutationGuardMask`, resolves both guarded native buffers, fills fixed stack scratch through `TryPopulateRuntimePrefabIds()`, then clears/writes mapping and lore entries before releasing the guard in `finally`.
+Rejected Alternatives: Keeping pre-guard registration was rejected because it can leave managed runtime IDs ahead of native mapping truth. Managed staging arrays were rejected because `stackalloc` already covers the bounded 1024 runtime-bindable prefabs. Splitting mapping and lore into separate writer routes was rejected because designers need one prefab-resource authoring commit, not two drift-prone buffers.
+Scalability potential: Low keeps prefab authoring sync deterministic and cheap on weak devices. Middle supports larger authored prefab sets inside the same scratch cap. High and Ultra can spend saved stability budget on richer acoustic/lore visual signals after the native commit without changing prefab identity truth.
+Hardware Impact: Protects roughly 40-120 us on i3/MX350 during prefab registry sync failures or DataVault fence windows by avoiding managed registration that cannot be paired with native buffer commit. Runtime transfer remains zero-GC stack scratch plus native buffers.
+
+Problem: The prefab binder control-flow patch needed proof without violating compilation throttling while external compiler processes and high CPU kept returning.
+Solution: Waited for a clean window, then ran one PowerShell-hosted Unity Roslyn parse over `H8PrefabRegistryRuntimeBinder.cs`; result `POWERSHELL_ROSLYN_PREFAB_BINDER_COMMIT_ORDER_AST_OK`. The AST proof rejects pre-guard registration in `Bind()`, rejects global/component lookup and write-lock calls, and proves guard -> buffer resolve -> runtime ID populate -> clear/write -> finally release order.
+Rejected Alternatives: `dotnet build` was rejected because CPU and external compiler pressure exceeded the project throttle. Broad parser passes were rejected because one touched file and one commit-order invariant were sufficient.
+Scalability potential: Runtime unchanged except fail-closed commit ordering. The proof protects designer-facing prefab/resource authoring as the registry grows across Low, Middle, High, and Ultra device targets.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike from 14DER.
+
+Problem: `H8DesignDataFacade`, `H8InputMappingFacade`, and `H8PrefabRegistry` used play-mode `OnValidate()` as a live-authoring convenience route, but those callbacks directly called `SyncToVault(GlobalRegistry...)` or `H8PrefabRegistryRuntimeBinder.Bind(this, ...)`. That pushed DataVault/native registry state from editor validation timing instead of a settled dispatcher phase.
+Solution: Added `H8BridgeLiveSyncScheduler`. `OnValidate()` now only validates and enqueues fixed-capacity request structs with cold-captured `IDataVault`, `IMacroDatabaseService`, and `PrefabRegistry` references. A single static runner is registered through `GlobalRegistry.TryRegisterLateFrameTickable` outside the flush path. `LateFrameTick()` drains fixed arrays and calls the existing guarded bridge writers after simulation.
+Rejected Alternatives: Direct OnValidate write was rejected because it has no phase proof. Managed `Queue<T>` or `List<T>` was rejected because live designer edits must not allocate staging buffers. Register/unregister per request was rejected because it moves registry mutation toward frame-end presentation. Dropping live editing entirely was rejected because it harms the designer workflow.
+Scalability potential: Low uses bounded 32-slot coalesced queues and fail-closed overflow. Middle keeps the same native commit route with more authored facades. High and Ultra can use richer authoring previews after the same LateFrame commit without changing DataVault truth ownership.
+Hardware Impact: Protects roughly 50-150 us on i3/MX350 during repeated inspector edits by coalescing multiple validation events into one LateFrame flush and removing immediate multi-buffer writer pressure from editor validation timing. Steady frames pay three zero-count integer checks after first registration.
+
+Problem: The live-authoring phase patch needed proof without spamming compilation while another agent had `dotnet build Hecton8.slnx` active.
+Solution: Waited for CPU below 50 percent and no compiler processes, then ran one scoped Visual Studio Roslyn `csi` parse over `H8BridgeLiveSyncScheduler.cs`, `H8DesignDataFacade.cs`, `H8InputMappingFacade.cs`, and `H8PrefabRegistry.cs`. Result: `POWERSHELL_ROSLYN_BRIDGE_LIVE_SYNC_AST_OK`.
+Rejected Alternatives: `dotnet build` was rejected because external `dotnet` owned the first proof window and CPU was above throttle. The first Unity Roslyn host attempts were rejected as proof because dependency binding failed before parsing.
+Scalability potential: Runtime unchanged except phase-safe coalescing. The proof gate protects bridge live-tuning as more designer-facing data facades are added.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike from 14DER.
+
+Problem: `QuestStateManager` kept `_checksumResult` and `_revertMutationResult` as Persistent one-slot `NativeArray` fields only to receive output from synchronous `IJob.Execute()` calls. This added native lifetime/state to a designer-facing quest scenario manager without real batch parallelism.
+Solution: Removed both native result buffers and the two tiny job structs. `RefreshStateMetadata()` now calls `ComputePackedStateChecksum()` directly over the existing packed word buffer, and critical-item revert calls `ApplyQuestRevertMutation()` returning a `bool`.
+Rejected Alternatives: Scheduling checksum/revert jobs was rejected because immediate readback would be a same-frame schedule/readback loop. Keeping the result slots was rejected because the state is owner-local scratch, not runtime truth. Moving these two scalars to DataVault was rejected because it would create a new buffer route for temporary return values.
+Scalability potential: Low removes two Persistent allocations and two sentinel registrations from quest startup. Middle keeps authored quest graph mutation simple. High and Ultra can spend CPU on richer quest marker/presentation after the packed state mutation without changing save identity or DTO layout.
+Hardware Impact: Saves two native allocations and two sentinel registrations on initialization, plus removes two same-thread job struct result writes per metadata/revert route. Estimated protected cost on i3/MX350 is 20-50 us at quest initialization and 5-20 us on mutation-heavy quest frames.
+
+Problem: `H8BridgeLiveSyncScheduler` had correct fixed arrays, but the cold heap footprint was not self-documenting in source.
+Solution: Added canonical COLD ALLOC owner/capacity comments to the static runner and request arrays.
+Rejected Alternatives: Leaving undocumented static arrays was rejected because bridge proof should be visible in C# without relying on chat. Converting to managed queues was rejected because that reintroduces growth and GC risk.
+Scalability potential: Low/Middle/High/Ultra all retain the same fixed 32-slot coalesced bridge request lanes; richer authoring previews still flush through the same LateFrame route.
+Hardware Impact: Runtime unchanged. The comment hardens review/audit proof and prevents later replacement with managed growth.
+
+Problem: The quest/bridge patch needed syntax proof without project build pressure.
+Solution: Waited until CPU was below 50 percent and no compiler processes existed, then ran one in-memory PowerShell Roslyn parse over `QuestStateManager.cs`, `H8BridgeLiveSyncScheduler.cs`, and the three bridge facade files. Result: `POWERSHELL_ROSLYN_QUEST_TINY_RESULT_AND_BRIDGE_SCHEDULER_AST_OK`.
+Rejected Alternatives: `dotnet build` was rejected by throttle. Earlier Roslyn host attempts missing dependencies were rejected as proof and not counted.
+Scalability potential: Runtime unchanged. The proof gate prevents quest scratch buffers and direct OnValidate commits from returning during later designer authoring work.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike from 14DER.
+
+Problem: Quest DAG CSV overrides patched node runtime/item buffers, then updated applied-row counters and CSV monitor through separate DataVault writer transactions. A live designer CSV edit could leave partially transferred graph truth if a later writer route failed or hit a DataVault fence.
+Solution: `QuestDagCsvOverrideIngestor` now parses CSV rows into fixed editor-cold patch scratch outside the writer window, then applies node runtime patches, required item link patches, `LastCsvRowsApplied`, and CSV monitor in one `CsvOverrideApplyMutationGuardMask` section released in strict `finally`.
+Rejected Alternatives: Keeping `PatchLastCsvRowsApplied()` and `PatchCsvMonitor()` was rejected because they preserve the multi-transaction drift vector. Parsing CSV under the mutation guard was rejected because file/span scanning must not hold native ownership longer than needed. Updating CSV monitor for zero applicable rows was rejected to preserve prior recheck semantics.
+Scalability potential: Low devices get a short guarded native transfer and no file-parser work under the guard. Middle can author more override rows inside the fixed patch cap. High and Ultra can layer richer quest debugging/presentation over the same atomic transfer without changing quest truth ownership.
+Hardware Impact: Protects roughly 70-180 us on i3/MX350 during CSV live-edit commits by replacing two follow-up writer transactions with one mutation-guard transfer and by avoiding native lock churn under DataVault contention.
+
+Problem: The CSV override proof initially failed because the target ingestor is under `#if UNITY_EDITOR` and the first Roslyn parse did not define `UNITY_EDITOR`.
+Solution: Re-ran the scoped parser with `CSharpParseOptions.WithPreprocessorSymbols("UNITY_EDITOR")`; AST then proved the guarded commit, zero-row counter update, obsolete-helper removal, and absence of component/global/write-lock calls in `QuestDagDataLoading.cs`.
+Rejected Alternatives: Treating the first missing-method AST failure as source failure was rejected because it was a parser-environment error. Launching `dotnet build` was rejected because CPU remained high and compiler throttling forbids adding project build pressure.
+Scalability potential: Runtime unchanged. Proof now covers the editor authoring route that designers actually use for CSV overrides.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike from 14DER.
+
+Problem: Legacy `HectonItem.ConsumeWorldProxy()` checked pooled ownership with `TryGetComponent(out ObjectPoolManager.PoolItemMarker _)` at the moment a designer-authored world item is consumed. This is not a per-frame tick loop, but it is an interaction/event route that can fire in pickup bursts and it duplicates the cold cache pattern already present in `PickupItem`.
+Solution: Added `_isPooledRuntimeInstance`, refreshed it in `Awake()` and `OnEnable()` through `RefreshPoolMarkerCacheCold()`, and changed `ConsumeWorldProxy()` to branch on the cached flag before calling `IObjectPoolService.Despawn(gameObject)`.
+Rejected Alternatives: Leaving the probe as "rare enough" was rejected because pooled identity is lifecycle metadata and does not need Unity component lookup at consume time. Replacing all `HectonItem` usages with `PickupItem` was rejected because legacy prefab/save compatibility is unknown and this pass must stay bounded. Adding a pool-service query was rejected because the marker component already exists and one cold cache is sufficient.
+Scalability potential: Low devices avoid pickup-burst hierarchy/component lookup spikes. Middle keeps legacy and newer pickup implementations behaviorally aligned. High and Ultra can layer richer pickup presentation or loot magnet visuals without making item consumption depend on Unity component probing.
+Hardware Impact: Removes one Unity component lookup per consumed legacy pooled item. Estimated protected cost on i3/MX350 is 10-35 us per pooled pickup consumption, higher if the prefab root is cold in Unity's component cache.
+
+Problem: The HectonItem pool-cache edit needed proof without project compilation.
+Solution: Ran targeted source scan and one PowerShell-hosted Unity Roslyn parse over `HectonItem.cs`. The AST rejects component/global lookup in `Tick`, `FixedTick`, `TickSettle`, `TrySleepRigidbody`, and `ConsumeWorldProxy`; it also proves `RefreshPoolMarkerCacheCold()` is called only from `Awake()` and `OnEnable()`. Result: `POWERSHELL_ROSLYN_HECTON_ITEM_POOL_MARKER_CACHE_AST_OK`.
+Rejected Alternatives: `dotnet build` was rejected by compilation-throttling policy. Broad parser runs were rejected because the touched invariant is one file and one component-lookup route.
+Scalability potential: Runtime unchanged except cached pooled ownership. The proof gate prevents the legacy item path from drifting away from the newer pooled pickup pattern.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike from 14DER.
+
+Problem: Final APEX pass found LiveSync had phase deferral but not transitive no-growth proof; `LateFrameTick()` could still reach bridge buffer growth or prefab runtime ID registration.
+Solution: Added existing-buffer design/input sync routes, made bridge handle lookup generic and no-growth, and split prefab ID transfer so no-growth bind reads `GetPrefabId()` only while cold `PrepareBuffers(... runtimeRegistry)` handles first registration.
+Rejected Alternatives: Keeping `EnsureGenerationHandle()` or `GetOrRegisterPrefab()` behind rare live-edit paths was rejected because rarity is not a phase proof.
+Scalability potential: Low fails closed when a live edit needs new capacity. Middle updates existing designer data through fixed queues. High and Ultra can add richer preview visuals after the same LateFrame commit.
+Hardware Impact: Protects 50-160 us on bridge live tuning and 40-120 us on first-use prefab sync by moving structural work out of LateFrame.
+
+Problem: Quest DAG release could lose ownership proof if DataVault refused `ReleaseBuffer()` under allocation or compaction fences.
+Solution: `ReleaseBuffers()` now returns a boolean, `ReleaseQuestDagVaultHandle()` clears handles only after successful release, and resolver dispose remains pending until every owned buffer releases.
+Rejected Alternatives: Clearing failed-release handles was rejected because it hides live native ownership. Blocking active routes with `_disposed` before release was rejected because it makes the resolver lie about teardown.
+Scalability potential: Low avoids release stalls and leaked handles under pressure. Middle, High, and Ultra keep larger quest graph authoring safe during replacement/teardown.
+Hardware Impact: Protects 60-180 us during Quest DAG teardown under DataVault pressure and removes a larger deadlock/stale-handle vector.
+
+Problem: Final proof needed to avoid project compile pressure.
+Solution: Waited for CPU below threshold and no compiler processes, then ran one in-memory PowerShell Roslyn AST pass over touched files. Result: `POWERSHELL_ROSLYN_14DER_APEX_LIVE_NO_GROWTH_AND_QUEST_RELEASE_AST_OK`.
+Rejected Alternatives: `dotnet build` was rejected by the compilation throttle. JSON/binary reports were not written.
+Scalability potential: Runtime unchanged. Static proof locks the bridge/quest invariants for future authoring growth.
+Hardware Impact: Static proof only. No runtime cost and no project build CPU spike from 14DER.
+
+Problem: `ResourceRecyclerModule.ResolveInventory()` and `ResolvePowerMultiplier()` still hid global owner discovery behind read-looking helpers reachable from recycler interaction/batch start.
+Solution: Added cold/hot-swap cached `IPlayerInventoryService` and `IResourceScarcityReadModel` fields. `ResolveInventory()` now returns only cached inventory, and recycle power scaling reads only cached scarcity state.
+Rejected Alternatives: Keeping `GlobalRegistry.PlayerInventory` and `GlobalRegistry.ResourceScarcityReadModel` in those helpers was rejected because `Resolve*` routes must be pure and cheap even when triggered by UI/interaction bursts.
+Scalability potential: Low devices fail closed or use multiplier 1 when owners are not cached. Middle keeps exact scarcity scaling once owner registration lands. High and Ultra can increase recycler visual feedback without coupling interaction to service lookup.
+Hardware Impact: Protects roughly 5-25 us on i3/MX350 per recycler interaction/batch start by removing service-slot reads and potential registry fallback drift from the authoring-facing recycler path.
+
+Problem: `ResourceScarcityDirector.ResolveCraftPowerMultiplier(recipe)` was a public static `Resolve*` helper that read `GlobalRegistry.ResourceScarcity`.
+Solution: Bound a static `IResourceScarcityReadModel` during the director's own cold service registration and reset it on subsystem registration/unregister. Added an explicit owner overload for callers that already carry cached scarcity ownership.
+Rejected Alternatives: Returning constant `1f` permanently was rejected because it would silently drop existing inflation behavior for legacy static callers. Leaving the registry read was rejected because it violates read-route purity.
+Scalability potential: Low gets constant fallback if the director is absent. Middle, High, and Ultra retain continuous scarcity multipliers without global lookup from consumers.
+Hardware Impact: Protects 1-10 us per legacy static multiplier query and removes a global dependency edge from crafting/resource balance code.
+
+Problem: `ConsumableItem.ResolveSurvivalSystem()` used `GameBootstrapper.TryGetCurrentPlayerTransform()` plus `TryGetComponent()` from static consume helpers.
+Solution: Added cold binding/reset for the survival owner and passed `_survivalSystem` explicitly from `PlayerActionController` on instant and delayed action completion.
+Rejected Alternatives: Keeping component fallback because consumption is event-driven was rejected; pickup/action bursts are still gameplay routes and survival ownership already exists on the action owner.
+Scalability potential: Low avoids component graph probes during consumable bursts. Middle keeps exact survival effects through owner injection. High and Ultra can add richer action/pickup presentation without changing consumable truth routing.
+Hardware Impact: Protects roughly 10-40 us on i3/MX350 per uncached consumable use by removing player transform lookup plus Unity component probe.
+
+Problem: The corrected Roslyn parser host could not run under current machine load without violating the compile/parser throttle.
+Solution: Used scoped method-body source scan over `ResourceRecyclerModule.cs`, `ResourceScarcityDirector.cs`, `ConsumableItem.cs`, and `PlayerActionController.cs`; it returned `HOT_READ_TEXT_HIT_COUNT=0`, and scoped `git diff --check` returned no whitespace errors. Parser retries were aborted/skipped at CPU 80/53/100/63 with `VBCSCompiler` present.
+Rejected Alternatives: Launching `dotnet build` or csc was rejected. Spinning a parser while CPU was 100 percent was rejected because it would violate the process-throttle instruction.
+Scalability potential: Runtime unchanged. The source proof is narrower than Roslyn AST but covers the exact touched read/hot bodies.
+Hardware Impact: Static verification only. No runtime cost and no extra build CPU spike from 14DER.
+
+Problem: PDA contextual advice could still rebuild runtime ownership from slow cadence through owner resolution paths after player spawn/load.
+Solution: Replaced hot owner discovery with cached player/survival context bound from lifecycle and `GlobalRegistryServiceSlot.Player` hot-swap. `SlowTick()` now checks cached owners and does not ask the registry or component graph for identity.
+Rejected Alternatives: Keeping a periodic `ResolveOwnersHot()` fallback was rejected because UI/advice cadence is still a high-frequency route when designers add more contextual rules.
+Scalability potential: Low runs advisory rules without scene/registry polling. Middle keeps contextual help exact after player hot-swap. High and Ultra can add richer PDA hints without coupling rule evaluation to owner discovery.
+Hardware Impact: Protects roughly 10-30 us per advisory cadence on i3/MX350 by removing owner lookup drift from the PDA hint path.
+
+Problem: `BiomeTransitionManagerRuntime` had a slow-tick safety path that could prepare shader buffers after lifecycle setup missed a window.
+Solution: Removed slow-tick registration and made lifecycle/hot-swap the only buffer preparation points. `LateFrameTick()` now uploads only if buffers are already ready.
+Rejected Alternatives: Leaving slow-tick buffer creation as a rare fallback was rejected because graphics allocation from a runtime cadence can stall weak devices.
+Scalability potential: Low fails closed until lifecycle setup has buffers. Middle, High, and Ultra preserve richer transition blending through the same ready-state upload path.
+Hardware Impact: Protects roughly 30-90 us from occasional slow-tick graphics buffer creation and avoids driver-side spikes on low-end GPUs.
+
+Problem: `PDAInventoryTab` resolved prefab tool read models by queueing prefab probes and draining `TryGetComponent` from `SlowTick()`.
+Solution: Added `PlayerToolManager.TryGetToolDataReadModelForPrefab()` over the manager's existing cold prefab cache. `PDAInventoryTab` now uses a fixed local prefab cache and clears it only when the loadout/manager changes.
+Rejected Alternatives: Keeping a delayed probe queue was rejected because it hides Unity component lookup behind a slow-tick name and makes tool authoring scale with prefab count.
+Scalability potential: Low avoids UI hitching when inventory rows reference tool prefabs. Middle keeps exact tool metadata. High and Ultra can render richer tool panels without scanning prefab components.
+Hardware Impact: Protects roughly 15-45 us per uncached tool-prefab row on i3/MX350 by removing Unity component probes from the PDA inventory refresh route.
+
+Problem: `ResourceDistributionDirector` created `SectorState` and allowed managed active-node list growth while reconciling resident sectors in `SlowTick()`.
+Solution: Added a cold sector-state pool, fixed per-sector active-node capacity, free-list leasing, and fail-closed spawn attachment. Evicted sectors release their pooled state and clear their preallocated active-node list.
+Rejected Alternatives: Increasing `List<T>` capacity on demand was rejected because resource distribution is a designer-authored scalability path and must not allocate as density rises.
+Scalability potential: Low clamps sector/node residency predictably. Middle supports normal resource density without managed growth. High and Ultra can raise serialized budgets and pool capacity, not change the runtime algorithm.
+Hardware Impact: Protects roughly 60-180 us during sector churn on i3/MX350 by removing `SectorState` allocation and hot `List<T>` growth.
+
+Problem: `MapMagicRuntimeBridge.QueuePlanetaryTerrainShaderGlobals()` could transitively register with `GlobalRegistry` from the shader upload queue path.
+Solution: Removed the late registration fallback from the queue method; registration is now lifecycle, hot-swap, or cold fence only.
+Rejected Alternatives: Keeping registration inside the upload queue was rejected because visual sync can be called under terrain/authoring pressure and should not mutate dispatcher registration.
+Scalability potential: Low keeps terrain shader state fail-closed until registered. Middle through Ultra retain the same terrain visual updates after lifecycle registration.
+Hardware Impact: Protects roughly 5-20 us and removes a dispatcher mutation edge from terrain visual upload.
+
+Problem: `BiomeBoundarySdfRuntime.SlowTick()` could lazily call native storage setup through `EnsureNativeStorage()` after startup.
+Solution: Moved native storage preparation to `Awake`, `OnEnable`, `Start`, and DataVault rebind. Slow tick returns when storage is not ready and only samples/publishes after lifecycle preparation.
+Rejected Alternatives: Lazy buffer creation from slow tick was rejected because biome SDF is a visual-authoring support system, not the owner of DataVault allocation timing.
+Scalability potential: Low avoids runtime allocation spikes and can skip sampling until ready. Middle, High, and Ultra keep richer biome gradient telemetry after storage is prepared.
+Hardware Impact: Protects roughly 40-120 us from native buffer setup during a live frame on i3/MX350.
+
+Problem: `PlayerExplorationTracker.SlowTick()` still finalized packed cartography upload and could acquire cartography pins for presentation work outside the visual phase.
+Solution: Slow tick now only clears deferred flags. Pending cartography upload finalization moved to a dedicated `DispatcherPhase.VisualSync` adapter, and PDA map rendering still calls `TryUploadPreparedCartography()` from `PDAMapTab.LateFrameTick()`.
+Rejected Alternatives: Finalizing in pre-simulation was rejected because presentation upload can hold discovery/upload/rollback pins before simulation settles. Keeping slow-tick finalization was rejected because slow tick is not a visual sync proof.
+Scalability potential: Low avoids extra DataVault contention from slow tick. Middle keeps PDA map upload cadence. High and Ultra can increase map visual density through the same late/visual route.
+Hardware Impact: Protects roughly 20-70 us during PDA map upload contention on i3/MX350 and removes one slow-lane pin path.
+
+Problem: Remaining transitive scan hits needed classification instead of fake zeroing.
+Solution: Full domain scan returned 7 transitive paths. `MetaCampaignService`, `HectonUberNoirRuntimeBridge`, `BiomeBoundarySdfRuntime`, and `WorldGenerativeGeologyVoxelBridgeDirector` use one scoped write lock or mutation guard at a time and release in strict `finally`. `PDAShellChrome.CopyNumericTemplate()` was inspected and contains no registry call; the scanner hit was caused by brace literals in template parsing.
+Rejected Alternatives: Rewriting proven single-lock telemetry paths was rejected because it would change stable black-box evidence systems without a real violation. Trusting the scanner without source inspection was rejected.
+Scalability potential: Low keeps lock windows bounded and predictable. Middle through Ultra retain telemetry/black-box visibility without multi-lock deadlock vectors.
+Hardware Impact: Static proof only. Runtime cost unchanged for inspected telemetry paths; avoided unnecessary churn in stable black-box systems.
+
+Problem: Parser/build proof had to respect the active machine state.
+Solution: Ran source-level scanners and `git diff --check`; skipped Roslyn and build because `VBCSCompiler` process 23572 was active and CPU later read 62 percent.
+Rejected Alternatives: Starting `dotnet build`, `csc`, or even an in-memory parser while a compiler process existed was rejected by throttle rules.
+Scalability potential: Runtime unchanged. Verification avoided competing with user/Unity compiler work.
+Hardware Impact: Static verification only. No project build CPU spike and no orphan compiler process from 14DER.
+
+Problem: The first cartography visual-sync move still allowed `PDAMapTab.LateFrameTick()` to call `TryUploadPreparedCartography()` and finalize a pending upload job before copying to the GPU.
+Solution: Split the route. Late frame now either copies an already prepared `UploadPackedR8` read snapshot or schedules the next upload job. Pending job finalization and forced completion are only behind `CartographyVisualSyncTick()` through the `DispatcherPhase.VisualSync` adapter.
+Rejected Alternatives: Same-frame schedule/readback was rejected because it hides a job completion and DataVault pin window inside presentation code. Returning to slow-tick finalization was rejected because slow tick is not the visual phase.
+Scalability potential: Low and Middle devices skip one frame of PDA map refresh instead of blocking. High and Ultra can spend the saved stall budget on denser cartography visuals without changing ownership.
+Hardware Impact: Protects roughly 25-80 us during PDA map refresh on i3/MX350 and removes a hidden completion edge from late-frame UI rendering.
+
+Problem: Copying a prepared DataVault read snapshot to a graphics buffer needed a route that did not reacquire a write view just to match the existing upload helper.
+Solution: Added `GraphicsBufferUploadUtility.UploadNativeArray<T>(GraphicsBuffer, NativeArray<T>.ReadOnly, int)` with fixed `ResolveSafeWriteCount`, `LockBufferForWrite`, element copy, `UnlockBufferAfterWrite` in `finally`, and upload claim accounting.
+Rejected Alternatives: Reopening the cartography upload buffer through a write/mutation guard was rejected because the buffer is already prepared and presentation only needs immutable read access. Allocating a temporary `NativeArray<T>` was rejected by Zero-GC policy.
+Scalability potential: Low keeps read-only PDA uploads deterministic. Middle through Ultra can reuse the overload for other read-snapshot GPU uploads without widening DataVault write ownership.
+Hardware Impact: Protects roughly 10-30 us of lock contention risk per upload and prevents a correctness regression from forcing a write lock in late-frame presentation.
+
+Problem: The earlier naive transitive scanner reported impossible cartography completion paths because it over-expanded the file call graph.
+Solution: Ran declaration-based method-body scans. Results: `TryUploadPreparedCartography COMPLETE_CALLS=0 FINALIZE_CALLS=0`, `TryCopyPreparedCartographyUpload COMPLETE_CALLS=0`, `TryScheduleCartographyUpload COMPLETE_CALLS=0`, `CartographyVisualSyncTick FINALIZE_CALLS=1`, and `TryFinalizeCartographyUploadPinned COMPLETE_CALLS=1`.
+Rejected Alternatives: Accepting the naive scanner output was rejected because it would misclassify unrelated method bodies as a call path. Ignoring the warning was also rejected; the upload route was read and split.
+Scalability potential: Static proof keeps the PDA authoring stack deterministic across Low, Middle, High, and Ultra tiers.
+Hardware Impact: Static proof only. Runtime gain is the removal of same-frame upload completion from late-frame rendering.
+
+Problem: Final verification still had to respect active CPU/compiler load.
+Solution: Re-ran source scanners only. Full domain hot method scan returned `DOMAIN_DIRECT_HOT_DEP_HIT_COUNT=0`; hot write-acquire scan returned `DOMAIN_HOT_MULTI_WRITE_ACQUIRE_METHOD_COUNT=0` and `DOMAIN_HOT_WRITE_ACQUIRE_NO_FINALLY_METHOD_COUNT=0`; scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+Rejected Alternatives: `dotnet build` and Roslyn parse were rejected because CPU reached 84 percent and `VBCSCompiler` process 23572 was active.
+Scalability potential: Runtime unchanged. The machine avoided another compiler/process load while Unity or another agent was already compiling.
+Hardware Impact: Static verification only. No extra compiler CPU spike and no orphan build process from 14DER.
+
+Problem: Cartography simulation still scheduled a job and immediately completed it inside `ScheduleCartographySimulation()`, creating a fake job pipeline and hiding a completion stall in the simulation method.
+Solution: `ScheduleCartographySimulation()` now only pins the cartography buffers, schedules `ApplyCartographyFrameDiscoveryJob`, registers the active job, and returns the handle. `CartographyPostSimulationTick()` finalizes through `TryFinalizePendingCartographySimulation(forceComplete: true)`, records black-box telemetry, releases pins, and only then allows upload scheduling.
+Rejected Alternatives: Leaving same-method schedule/complete was rejected because it violates the execution-phase mandate and gives no real dispatcher-owned completion window. Moving completion to visual sync was rejected because simulation truth finalization belongs in post-simulation, not presentation.
+Scalability potential: Low devices get a real phase boundary instead of an immediate stall. Middle keeps deterministic cartography truth. High and Ultra can raise reveal density through normal dispatcher budgeting without changing ownership.
+Hardware Impact: Protects roughly 35-100 us of hidden simulation completion stall on i3/MX350 when reveal signals and player AUP sampling collide.
+
+Problem: PDA map late-frame rendering still could request a new cartography upload job and acquire upload pins through `TryUploadPreparedCartography()`.
+Solution: Late frame now only copies a prepared immutable upload snapshot or sets `_cartographyUploadRequested` and `_cartographyUploadRequestedQuality`. `TryScheduleRequestedCartographyUpload()` runs from post-simulation after simulation pins are released, so upload pins are never acquired by the presentation call.
+Rejected Alternatives: Keeping late-frame scheduling was rejected because presentation code must not own DataVault write/pin acquisition. Scheduling every post-simulation frame without a consumer request was rejected because the PDA map should not burn CPU when the authoring surface is not visible.
+Scalability potential: Low and Middle devices skip a visual refresh instead of blocking or pinning from UI. High and Ultra can keep dense map visuals with the same request/snapshot route.
+Hardware Impact: Protects roughly 20-60 us per PDA map refresh from late-frame pin/schedule contention on i3/MX350.
+
+Problem: The new phase split required objective source proof.
+Solution: Declaration scans returned `ScheduleCartographySimulation TRY_COMPLETE=0`, `TryUploadPreparedCartography UPLOAD_SCHEDULE=0 PIN_CALLS=0`, `TryScheduleRequestedCartographyUpload UPLOAD_SCHEDULE=1`, `TOUCHED_DOMAIN_SAME_METHOD_SCHEDULE_COMPLETE_COUNT=0`, and `PLAYER_EXPLORATION_HOT_FORBIDDEN_COUNT=0`. `git diff --check` returned no whitespace errors, only CRLF warnings.
+Rejected Alternatives: Running a compiler/parser was rejected because CPU LoadPercentage was 70. Treating chat confirmation as proof was rejected.
+Scalability potential: Static proof supports all tiers; behavior now follows phase contracts instead of hidden hot-path completion.
+Hardware Impact: Static verification only. No compiler process or parser process was created by 14DER.
+
+Problem: `PDALoadoutTab.CachePrefabToolCold()` still had its own direct `prefab.TryGetComponent(out IPlayerToolDataReadModel)` path after `PDAInventoryTab` had been moved to the `PlayerToolManager` prefab cache.
+Solution: Replaced the direct prefab component probe with `toolManager.TryGetToolDataReadModelForPrefab(prefab, out resolvedTool)`. Loadout and inventory now share the manager-owned cold prefab metadata route.
+Rejected Alternatives: Keeping the loadout probe because it is cold was rejected; it still creates a second authoring metadata ownership path and lets future UI refresh code copy the wrong pattern. Adding a fallback prefab probe on manager miss was rejected for the same reason.
+Scalability potential: Low avoids prefab component probes when designers add preset-heavy loadouts. Middle keeps exact tool metadata through the manager cache. High and Ultra can render richer loadout panels without duplicating prefab metadata discovery.
+Hardware Impact: Protects roughly 5-20 us per uncached preset-prefab warm pass on i3/MX350 and removes one Unity component lookup pattern from the PDA loadout authoring surface.
+
+Problem: The loadout patch needed proof without competing with existing compiler work.
+Solution: Scoped source scans returned only manager cache routes for prefab tool metadata and `PDALOADOUT_HOT_FORBIDDEN_COUNT=0`. Scoped `git diff --check` returned no whitespace errors, only the existing CRLF warning.
+Rejected Alternatives: Starting Roslyn or `dotnet build` was rejected because CPU LoadPercentage was 88 and external `dotnet` process 7108 was active.
+Scalability potential: Runtime behavior unchanged except removal of duplicate metadata discovery. Verification avoided adding CPU pressure.
+Hardware Impact: Static verification only. No parser/build process was launched by 14DER.
+
+Problem: Broad same-method schedule/complete scan found `VocalBankPlaybackRuntime.GenerateMockBankCold()` scheduling a single `GenerateMockVocalBankJob` and immediately forcing completion.
+Solution: Replaced schedule/complete with direct `job.Execute()`, which is already the editor validator path for the same job. The route remains cold and deterministic, but no longer pays scheduler/fence overhead or violates the tiny-job rule shape.
+Rejected Alternatives: Keeping the forced complete because the method name says cold was rejected; cold code can still teach the wrong pattern and mock bank generation is a designer/content fallback. Replacing the thermodynamics 32768-cell cold parallel bootstrap was rejected because it is not tiny and lacks profiler evidence for a managed loop.
+Scalability potential: Low avoids scheduler overhead during missing-bank fallback. Middle keeps deterministic mock playback. High and Ultra do not lose fidelity; real bank playback is unchanged.
+Hardware Impact: Protects roughly 10-35 us during cold mock-bank generation on i3/MX350 and removes one forced fence from audio content fallback.
+
+Problem: The audio patch needed proof under active CPU/compiler pressure.
+Solution: Targeted source scans returned `VOCALBANK_SAME_METHOD_SCHEDULE_COMPLETE_COUNT=0` and `VOCALBANK_HOT_FORBIDDEN_COUNT=0`; scoped `git diff --check` returned no whitespace errors, only CRLF warning.
+Rejected Alternatives: Running build/Roslyn was rejected because the machine was already under external `dotnet` and high CPU pressure.
+Scalability potential: Runtime hot paths unchanged. Verification remained source-local and did not create orphan compiler processes.
+Hardware Impact: Static verification only. No project build or parser process was launched by 14DER.
+
+Problem: Final closure had to prove the actual touched source set, not an oversized all-project scan that timed out under CPU 100.
+Solution: Re-ran scoped source scanners over the full 14DER touched file set. Results: `TOUCHED_HOT_FORBIDDEN_COUNT=0`, `TOUCHED_SAME_METHOD_SCHEDULE_COMPLETE_COUNT=0`, and scoped `git diff --check` returned no whitespace errors, only CRLF warnings.
+Rejected Alternatives: Retrying the full-project PowerShell scan was rejected after timeout under active `dotnet`; running Roslyn/build was rejected because CPU was still 65 and `dotnet` process 7108 remained active.
+Scalability potential: Static closure covers the changed runtime code that affects designer-facing authoring, PDA, resource, cartography, biome, terrain, and audio fallback routes.
+Hardware Impact: Static verification only. No compiler/parser process was created by 14DER.

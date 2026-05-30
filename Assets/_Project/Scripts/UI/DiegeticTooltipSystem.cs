@@ -23,7 +23,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic Tooltip System")]
-    public sealed class DiegeticTooltipSystem : MonoBehaviour, ILateFrameTickable, IRenderable, IGlobalRegistryHotSwapListener
+    public sealed class DiegeticTooltipSystem : MonoBehaviour, ISlowTickable, ILateFrameTickable, IRenderable, IGlobalRegistryHotSwapListener
     {
         private const int MaxGlyphCount = 96;
         private const int MaxIconCount = 1;
@@ -207,6 +207,7 @@ namespace Hecton8.UI
         private bool _hasSignalTarget;
         private bool _diagnosticActive;
         private bool _registeredLateFrame;
+        private bool _registeredSlowTick;
         private bool _registeredRenderable;
         private bool _hotSwapListenerRegistered;
         private bool _fontUvTableDirty;
@@ -218,6 +219,7 @@ namespace Hecton8.UI
         private float _qualityWeight01 = 1f;
         private bool _cachedRenderCameraFromInteraction;
         private bool _textSinkHasPayload;
+        private bool _blackBoxDumpQueued;
         private bool _blackBoxDumped;
 
         public void LateFrameTick()
@@ -266,7 +268,7 @@ namespace Hecton8.UI
 
             if (!IsFinite(anchorPosition))
             {
-                DumpBlackBox();
+                QueueBlackBoxDump();
                 ClearTooltipState();
                 return;
             }
@@ -372,8 +374,14 @@ namespace Hecton8.UI
             _activeSchemeHash = ResolveCurrentSchemeHash();
         }
 
+        public void SlowTick()
+        {
+            FlushQueuedBlackBoxDump();
+        }
+
         private void OnDisable()
         {
+            FlushQueuedBlackBoxDump();
             UnregisterRuntime();
             TryUnregisterHotSwapListener();
             ClearTooltipState();
@@ -384,6 +392,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            FlushQueuedBlackBoxDump();
             UnregisterRuntime();
             TryUnregisterHotSwapListener();
             ReleaseResources();
@@ -1332,6 +1341,9 @@ namespace Hecton8.UI
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
 
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+
             if (!_registeredRenderable && Application.isPlaying)
                 _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
         }
@@ -1342,6 +1354,12 @@ namespace Hecton8.UI
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = false;
             }
 
             if (_registeredRenderable)
@@ -1513,6 +1531,21 @@ namespace Hecton8.UI
             }
         }
 
+        private void QueueBlackBoxDump()
+        {
+            if (!_blackBoxDumped)
+                _blackBoxDumpQueued = true;
+        }
+
+        private void FlushQueuedBlackBoxDump()
+        {
+            if (!_blackBoxDumpQueued)
+                return;
+
+            _blackBoxDumpQueued = false;
+            DumpBlackBox();
+        }
+
         private void DumpBlackBox()
         {
             IDataVault vault = _dataVault;
@@ -1521,6 +1554,7 @@ namespace Hecton8.UI
                 vault.IsCompactionFenceActive ||
                 !IsBlackBoxHandle(in _blackBoxHandle))
             {
+                _blackBoxDumpQueued = !_blackBoxDumped;
                 return;
             }
 

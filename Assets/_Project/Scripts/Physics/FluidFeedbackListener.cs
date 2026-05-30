@@ -150,7 +150,9 @@ namespace Hecton8.Physics
             if (_listenerCount <= 0)
                 return;
 
-            EnsureInitialized();
+            if (!_initialized)
+                return;
+
             if (SignalBus<SplashEvent>.DroppedLastFlush > 0)
                 ReportOverflowOncePerSnapshot();
 

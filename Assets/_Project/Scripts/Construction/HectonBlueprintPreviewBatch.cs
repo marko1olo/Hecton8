@@ -972,16 +972,27 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            if (telemetry.IsCreated &&
-                telemetry.Length >= ShinobuSocketConstructionRuntime.TelemetryCapacity)
+            bool keepLock = false;
+            try
             {
-                return true;
-            }
+                if (telemetry.IsCreated &&
+                    telemetry.Length >= ShinobuSocketConstructionRuntime.TelemetryCapacity)
+                {
+                    keepLock = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in _telemetryHandle, SystemID.Construction);
-            telemetry = default;
-            vault = null;
-            return false;
+                return false;
+            }
+            finally
+            {
+                if (!keepLock)
+                {
+                    vault.ReleaseWriteLock(in _telemetryHandle, SystemID.Construction);
+                    telemetry = default;
+                    vault = null;
+                }
+            }
         }
 
         private void ReleasePendingPreviewBuildWriteLocks()

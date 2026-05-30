@@ -22,6 +22,7 @@ namespace Hecton8.Core
         private const float DistantFloraPressureDisableThreshold01 = 0.75f;
         private const float VoxelAoEnableWeightThreshold01 = 0.5f;
         private const float VoxelAoPressureDisableThreshold01 = 0.6f;
+        private const float FeatureWeightEpsilon = 0.001f;
         private const float ThermalParticleSpawnScale = 0.5f;
         private const float FullParticleSpawnScale = 1f;
         private const float FramePressureReleasePerSecond = 0.5f;
@@ -64,15 +65,21 @@ namespace Hecton8.Core
         private static float _lastScalabilitySwitchTimeSeconds = -ScalabilityCooldownSeconds;
         private static float _particleEmissionScale = 1f;
         private static float _visualQualityWeight01 = 1f;
+        private static float _distantFloraRenderingWeight01 = 1f;
+        private static float _voxelAmbientOcclusionWeight01 = 1f;
+        private static float _mathPrecisionWeight01 = 1f;
         private static MathLodMode _mathLodMode = MathLodMode.High;
         private static bool _voxelAoEnabled = true;
         private static bool _systemDegradationActive;
         private static bool _shaderLodPushed;
 
-        public static bool IsDistantFloraRenderingEnabled => !_systemDegradationActive;
+        public static bool IsDistantFloraRenderingEnabled => _distantFloraRenderingWeight01 > FeatureWeightEpsilon;
+        public static float DistantFloraRenderingWeight01 => _distantFloraRenderingWeight01;
         public static float ParticleEmissionScale => _particleEmissionScale;
         public static float CurrentVisualQualityWeight01 => _visualQualityWeight01;
-        public static bool IsVoxelAmbientOcclusionEnabled => _voxelAoEnabled;
+        public static bool IsVoxelAmbientOcclusionEnabled => _voxelAmbientOcclusionWeight01 > FeatureWeightEpsilon;
+        public static float VoxelAmbientOcclusionWeight01 => _voxelAmbientOcclusionWeight01;
+        public static float MathPrecisionWeight01 => _mathPrecisionWeight01;
 
         internal static void TickMathPrecisionTransition(int frame)
         {
@@ -106,6 +113,9 @@ namespace Hecton8.Core
             _lastScalabilitySwitchTimeSeconds = -ScalabilityCooldownSeconds;
             _particleEmissionScale = 1f;
             _visualQualityWeight01 = 1f;
+            _distantFloraRenderingWeight01 = 1f;
+            _voxelAmbientOcclusionWeight01 = 1f;
+            _mathPrecisionWeight01 = 1f;
             _mathLodMode = MathLodMode.High;
             _voxelAoEnabled = true;
             _systemDegradationActive = false;
@@ -372,13 +382,20 @@ namespace Hecton8.Core
             float effectiveQuality01 = math.lerp(safeQuality01, pressureFloor01, pressure01);
             float curvedQuality01 = SmoothStep01(effectiveQuality01);
             _visualQualityWeight01 = curvedQuality01;
-            _systemDegradationActive =
-                pressure01 >= DistantFloraPressureDisableThreshold01 ||
-                curvedQuality01 <= DistantFloraDisableWeightThreshold01;
+            _mathPrecisionWeight01 = curvedQuality01;
+            _distantFloraRenderingWeight01 = ResolveContinuousFeatureWeight01(
+                curvedQuality01,
+                DistantFloraDisableWeightThreshold01,
+                pressure01,
+                DistantFloraPressureDisableThreshold01);
+            _voxelAmbientOcclusionWeight01 = ResolveContinuousFeatureWeight01(
+                curvedQuality01,
+                VoxelAoEnableWeightThreshold01,
+                pressure01,
+                VoxelAoPressureDisableThreshold01);
+            _systemDegradationActive = _distantFloraRenderingWeight01 <= FeatureWeightEpsilon;
             _particleEmissionScale = math.lerp(ThermalParticleSpawnScale, FullParticleSpawnScale, curvedQuality01);
-            _voxelAoEnabled =
-                pressure01 < VoxelAoPressureDisableThreshold01 &&
-                curvedQuality01 >= VoxelAoEnableWeightThreshold01;
+            _voxelAoEnabled = _voxelAmbientOcclusionWeight01 > FeatureWeightEpsilon;
         }
 
         private static float ResolveShaderQualityWeight01(float qualityWeight01)
@@ -420,6 +437,19 @@ namespace Hecton8.Core
             return SmoothStep01(qualityWeight01) >= MathLodPrecisionWeightThreshold01
                 ? MathLodMode.High
                 : MathLodMode.Low;
+        }
+
+        private static float ResolveContinuousFeatureWeight01(
+            float qualityWeight01,
+            float qualityFloor01,
+            float pressure01,
+            float pressureCeiling01)
+        {
+            float qualityRange = math.max(0.0001f, 1f - qualityFloor01);
+            float pressureRange = math.max(0.0001f, pressureCeiling01);
+            float qualityWeight = SmoothStep01((qualityWeight01 - qualityFloor01) / qualityRange);
+            float pressureWeight = 1f - SmoothStep01(pressure01 / pressureRange);
+            return math.saturate(qualityWeight * pressureWeight);
         }
 
         private static float ResolveGlobalQualityWeight01()

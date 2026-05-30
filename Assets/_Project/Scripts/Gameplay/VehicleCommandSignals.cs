@@ -134,8 +134,14 @@ namespace Hecton8.Core
         private static NativeQueue<VehicleCommandSignal> _nextFrameCommands;
         private static int _pendingCommandCount;
         private static int _nextFrameCommandCount;
+        private static int _droppedCommandCount;
         private static uint _nextSequence;
         private static bool _isDispatching;
+
+        // BRIDGE CONTRACT: owner: VehicleCommandSignalBus; drain phase: SystemDispatcher LateUpdate/VISUAL_SYNC flush;
+        // max frame budget/capacity: PendingCommandCapacity; overflow policy: fail-fast/drop newest via false return, sequence preserves deterministic FIFO, next-frame prevents same-frame reentrancy; telemetry counter: DroppedCount.
+
+        public static int DroppedCount => _droppedCommandCount;
 
         public static void Register(IVehicleCommandSignalListener listener)
         {
@@ -170,7 +176,10 @@ namespace Hecton8.Core
 
             EnsureInitialized();
             if (_pendingCommandCount + _nextFrameCommandCount >= PendingCommandCapacity)
+            {
+                _droppedCommandCount++;
                 return false;
+            }
 
             VehicleCommandSignal queued = signal;
             queued.Sequence = ResolveNextSequence();
@@ -225,6 +234,7 @@ namespace Hecton8.Core
             DisposeQueue(ref _nextFrameCommands, nameof(_nextFrameCommands));
             _pendingCommandCount = 0;
             _nextFrameCommandCount = 0;
+            _droppedCommandCount = 0;
             _nextSequence = 0u;
             _isDispatching = false;
             _listeners.Clear();

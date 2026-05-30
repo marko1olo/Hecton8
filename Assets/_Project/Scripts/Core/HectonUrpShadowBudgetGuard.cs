@@ -88,8 +88,7 @@ namespace Hecton8.Core
 
             if (!IsAllowedForwardSpotlightCold(light, requireForwardName))
             {
-                if (light.shadows != LightShadows.None)
-                    light.shadows = LightShadows.None;
+                DisableShadowIfAny(light);
                 return false;
             }
 
@@ -111,6 +110,7 @@ namespace Hecton8.Core
                 return true;
             }
 
+            DisableShadowIfAny(light);
             return false;
         }
 
@@ -124,8 +124,7 @@ namespace Hecton8.Core
                 if (_trackedDynamicShadowLights[i] != light)
                     continue;
 
-                if (light.shadows != LightShadows.None)
-                    light.shadows = LightShadows.None;
+                DisableShadowIfAny(light);
                 ClearTrackedDynamicShadowLightSlot(i);
                 return;
             }
@@ -394,6 +393,12 @@ namespace Hecton8.Core
         private static LightShadows ResolveAllowedShadowMode(LightShadows shadowMode)
         {
             return shadowMode == LightShadows.None ? LightShadows.Soft : shadowMode;
+        }
+
+        private static void DisableShadowIfAny(Light light)
+        {
+            if (light != null && light.shadows != LightShadows.None)
+                light.shadows = LightShadows.None;
         }
 
         private static float ResolveShadowQuality01()

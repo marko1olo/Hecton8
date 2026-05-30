@@ -55,7 +55,7 @@ namespace Hecton8.Atmosphere
     }
 
     [DisallowMultipleComponent]
-    public sealed class BaseAtmosphereEngine : MonoBehaviour, IFixedTickable, IPostFixedTickable, IGlobalRegistryHotSwapListener
+    public sealed class BaseAtmosphereEngine : MonoBehaviour, IColdTickable, IFixedTickable, IPostFixedTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxCompartmentCapacity = 128;
         private const int BlackBoxCapacity = 300;
@@ -103,6 +103,7 @@ namespace Hecton8.Atmosphere
         private JobHandle _coldTickHandle;
         private JobHandle _disposeHandle;
         private bool _coldTickRunning;
+        private bool _registeredColdTick;
         private bool _registered;
         private bool _registeredHotSwap;
         private bool _pendingVaultRebind;
@@ -148,7 +149,7 @@ namespace Hecton8.Atmosphere
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwap();
-            EnsureNativeState();
+            PrepareNativeStateCold();
             SeedDefaultAtmosphereIfNeeded();
             TryRegister();
         }
@@ -167,21 +168,33 @@ namespace Hecton8.Atmosphere
             DisposeNativeStateDeferred();
         }
 
-        public void FixedTick(float fixedDeltaTime)
+        public void ColdTick()
         {
-            if (fixedDeltaTime <= 0f)
+            if (!Application.isPlaying)
                 return;
 
-            _fixedFrameIndex++;
             if (!TryFinalizeDeferredNativeDisposal())
                 return;
 
             if (_pendingVaultRebind && !_coldTickRunning)
                 RebindNativeStateAfterVaultReplacement();
 
-            EnsureNativeState();
+            PrepareNativeStateCold();
             SeedDefaultAtmosphereIfNeeded();
-            if (_coldTickRunning || !TryReadFront(out NativeArray<CompartmentState>.ReadOnly front))
+        }
+
+        public void FixedTick(float fixedDeltaTime)
+        {
+            if (fixedDeltaTime <= 0f)
+                return;
+
+            _fixedFrameIndex++;
+
+            if (_pendingNativeStateRelease ||
+                _pendingVaultRebind ||
+                _coldTickRunning ||
+                !HasNativeStateReady() ||
+                !TryReadFront(out NativeArray<CompartmentState>.ReadOnly front))
             {
                 _tickAccumulator += math.max(0f, fixedDeltaTime);
                 return;
@@ -370,6 +383,9 @@ namespace Hecton8.Atmosphere
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
+            if (!_registeredColdTick)
+                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
+
             bool fixedRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             bool postFixedRegistered = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
             _registered = fixedRegistered && postFixedRegistered;
@@ -384,12 +400,18 @@ namespace Hecton8.Atmosphere
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+                _registered = false;
+            }
 
-            GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
-            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
-            _registered = false;
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _registeredColdTick = false;
+            }
         }
 
         private void CacheRegistryServicesCold()
@@ -435,7 +457,7 @@ namespace Hecton8.Atmosphere
             }
         }
 
-        private void EnsureNativeState()
+        private void PrepareNativeStateCold()
         {
             if (!TryFinalizeDeferredNativeDisposal())
                 return;
@@ -615,7 +637,6 @@ namespace Hecton8.Atmosphere
 
         private void RecordBlackBox(in CompartmentState state)
         {
-            EnsureBlackBoxState();
             if (!TryOpenBlackBox(out NativeArray<BaseAtmosphereTelemetryEntry> blackBox) ||
                 !TryReadFront(out NativeArray<CompartmentState>.ReadOnly front))
                 return;
@@ -798,13 +819,19 @@ namespace Hecton8.Atmosphere
                    IsOwnedVaultHandle(in _blackBoxHandle, BlackBoxBufferId);
         }
 
+        private bool HasNativeStateReady()
+        {
+            return TryOpenCompartmentViews(out _, out _, out _) &&
+                   TryOpenBlackBox(out _);
+        }
+
         private void RebindNativeStateAfterVaultReplacement()
         {
             if (!TryFinalizeDeferredNativeDisposal())
                 return;
 
             _pendingVaultRebind = false;
-            EnsureNativeState();
+            PrepareNativeStateCold();
             SeedDefaultAtmosphereIfNeeded();
         }
 

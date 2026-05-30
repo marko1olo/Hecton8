@@ -54,6 +54,9 @@ namespace Hecton8.Core
         public static EnvironmentRuntimeContextService EnsureRuntimeInstance()
         {
             EnvironmentRuntimeContextService runtime = GlobalRegistry.EnvironmentRuntimeContextRuntime;
+            if (runtime == null)
+                runtime = GlobalRegistry.Environment as EnvironmentRuntimeContextService;
+
             if (runtime != null)
                 return runtime;
 
@@ -68,6 +71,10 @@ namespace Hecton8.Core
         {
             if (_isInitialized)
             {
+                EnsureSingletonOwnership();
+                if (GlobalRegistry.EnvironmentRuntimeContextRuntime != this)
+                    return;
+
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterContext();
@@ -103,6 +110,10 @@ namespace Hecton8.Core
         {
             if (_isInitialized)
             {
+                EnsureSingletonOwnership();
+                if (GlobalRegistry.EnvironmentRuntimeContextRuntime != this)
+                    return;
+
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterContext();
@@ -187,6 +198,9 @@ namespace Hecton8.Core
         private void EnsureSingletonOwnership()
         {
             EnvironmentRuntimeContextService runtime = GlobalRegistry.EnvironmentRuntimeContextRuntime;
+            if (runtime == null)
+                runtime = GlobalRegistry.Environment as EnvironmentRuntimeContextService;
+
             if (runtime != null && runtime != this)
             {
                 Destroy(gameObject);
@@ -266,6 +280,10 @@ namespace Hecton8.Core
         private void TryRegisterContext()
         {
             if (_registeredContext)
+                return;
+
+            IEnvironmentRuntimeContext registeredContext = GlobalRegistry.Environment;
+            if (registeredContext != null && !ReferenceEquals(registeredContext, this))
                 return;
 
             GlobalRegistry.RegisterEnvironmentRuntimeContext(this);

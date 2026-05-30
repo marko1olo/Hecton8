@@ -12,7 +12,7 @@ public class EnemySpawners : MonoBehaviour
     private float timer = 0f;
     //parent layer parallax
     [SerializeField]
-    private GameObject parentLayer;
+    private GameObject parentLayer = null;
     private Transform parentLayerTransform;
     // COLD ALLOC: GameObject[32] - bounded Candice demo enemy pool - owner: EnemySpawners
     private readonly GameObject[] enemyPool = new GameObject[MaxPooledEnemies];

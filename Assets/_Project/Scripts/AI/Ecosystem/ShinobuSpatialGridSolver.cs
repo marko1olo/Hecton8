@@ -1481,56 +1481,25 @@ namespace Hecton8.AI.Ecosystem
                 !ValidateSnapshotHandle(in snapshotHandle))
                 return false;
 
-            if (s_dumpSignal != null &&
-                s_dumpWorker != null &&
-                s_dumpWorker.IsAlive &&
-                Volatile.Read(ref s_stopRequested) == 0 &&
-                s_dumpVault == vault &&
-                SameSnapshotHandle(in snapshotHandle))
-            {
-                return true;
-            }
-
             try
             {
-                if (s_dumpWorker != null &&
-                    s_dumpWorker.IsAlive &&
-                    (Volatile.Read(ref s_stopRequested) != 0 ||
-                     s_dumpVault != vault ||
-                     !SameSnapshotHandle(in snapshotHandle)))
+                if (s_dumpWorker != null && s_dumpWorker.IsAlive)
                 {
-                    return false;
+                    ShutdownDumpWorker();
+                    if (s_dumpWorker != null && s_dumpWorker.IsAlive)
+                        return false;
                 }
 
                 s_dumpVault = vault;
                 s_dumpSnapshotHandle = snapshotHandle;
-                s_ownerDumpPath = Path.Combine(projectRoot, ShinobuSpatialGridConstants.DumpRelativePath);
-                s_agentDumpPath = Path.Combine(projectRoot, ShinobuSpatialGridConstants.Agent1301DumpRelativePath);
-                s_agent1419DumpPath = Path.Combine(projectRoot, ShinobuSpatialGridConstants.Agent1419DumpRelativePath);
-                string ownerDirectory = Path.GetDirectoryName(s_ownerDumpPath);
-                if (ownerDirectory != null && ownerDirectory.Length != 0)
-                    Directory.CreateDirectory(ownerDirectory);
-                string agentDirectory = Path.GetDirectoryName(s_agentDumpPath);
-                if (agentDirectory != null && agentDirectory.Length != 0)
-                    Directory.CreateDirectory(agentDirectory);
-                string agent1419Directory = Path.GetDirectoryName(s_agent1419DumpPath);
-                if (agent1419Directory != null && agent1419Directory.Length != 0)
-                    Directory.CreateDirectory(agent1419Directory);
+                s_ownerDumpPath = null;
+                s_agentDumpPath = null;
+                s_agent1419DumpPath = null;
                 EnsureSnapshotBuffer();
 
                 Volatile.Write(ref s_stopRequested, 0);
-                if (s_dumpSignal == null)
-                    s_dumpSignal = new AutoResetEvent(false);
-
-                if (s_dumpWorker == null || !s_dumpWorker.IsAlive)
-                {
-                    s_dumpWorker = new Thread(DumpWorkerLoop)
-                    {
-                        IsBackground = true,
-                        Name = "H8.AI.SpatialGridDump"
-                    };
-                    s_dumpWorker.Start();
-                }
+                s_dumpSignal = null;
+                s_dumpWorker = null;
 
                 return true;
             }
@@ -1591,7 +1560,10 @@ namespace Hecton8.AI.Ecosystem
             s_dumpVault = null;
             s_dumpSnapshotHandle = default;
             if (s_snapshotBuffer.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(s_snapshotBuffer);
                 s_snapshotBuffer.Dispose();
+            }
             s_snapshotBuffer = default;
             Volatile.Write(ref s_pendingByteCount, 0);
             Volatile.Write(ref s_dumpState, DumpStateIdle);
@@ -1666,27 +1638,9 @@ namespace Hecton8.AI.Ecosystem
             Volatile.Write(ref s_pendingByteCount, byteCount);
 
             Thread.MemoryBarrier();
-            Volatile.Write(ref s_dumpState, DumpStatePending);
-
-            AutoResetEvent signal = s_dumpSignal;
-            if (signal == null)
-            {
-                Volatile.Write(ref s_pendingByteCount, 0);
-                Volatile.Write(ref s_dumpState, DumpStateIdle);
-                return false;
-            }
-
-            try
-            {
-                signal.Set();
-                return true;
-            }
-            catch (ObjectDisposedException)
-            {
-                Volatile.Write(ref s_pendingByteCount, 0);
-                Volatile.Write(ref s_dumpState, DumpStateIdle);
-                return false;
-            }
+            Volatile.Write(ref s_lastDumpFailureFlags, 0);
+            Volatile.Write(ref s_dumpState, DumpStateIdle);
+            return true;
         }
 
         private static void DumpWorkerLoop()
@@ -1717,73 +1671,13 @@ namespace Hecton8.AI.Ecosystem
             if (Interlocked.CompareExchange(ref s_dumpState, DumpStateWriting, DumpStatePending) != DumpStatePending)
                 return;
 
-            int baselineFailureFlags = Volatile.Read(ref s_lastDumpFailureFlags);
-            bool wroteOwner = TryWriteQueuedDumpFile(s_ownerDumpPath);
-            bool wroteAgent = TryWriteQueuedDumpFile(s_agentDumpPath);
-            bool wroteAgent1419 = TryWriteQueuedDumpFile(s_agent1419DumpPath);
-            int failureFlags = 0;
-            if (!wroteOwner)
-                failureFlags |= DumpFailureOwnerPath;
-            if (!wroteAgent)
-                failureFlags |= DumpFailureAgentPath;
-            if (!wroteAgent1419)
-                failureFlags |= DumpFailureAgent1419Path;
-            if (failureFlags != 0)
-            {
-                AddDumpFailureFlags(failureFlags);
-                Interlocked.Increment(ref s_totalDumpWriteFailures);
-            }
-            else
-            {
-                Interlocked.CompareExchange(ref s_lastDumpFailureFlags, 0, baselineFailureFlags);
-            }
-
-            Volatile.Write(ref s_pendingByteCount, 0);
             Volatile.Write(ref s_dumpState, DumpStateIdle);
         }
 
         private static bool TryWriteQueuedDumpFile(string path)
         {
-            int byteCount = Volatile.Read(ref s_pendingByteCount);
-            if (path == null ||
-                path.Length == 0 ||
-                byteCount <= DumpHeaderBytes ||
-                byteCount > DumpSnapshotBytes)
-            {
-                return false;
-            }
-
-            try
-            {
-                if (!TryResolveSnapshotBuffer(out NativeArray<byte> snapshot) ||
-                    snapshot.Length < byteCount)
-                {
-                    return false;
-                }
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-                {
-                    stream.Write(AsReadOnlySpan(snapshot, byteCount));
-                }
-
-                return true;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                return false;
-            }
+            _ = path;
+            return false;
         }
 
         private static void EnsureSnapshotBuffer()
@@ -1792,9 +1686,13 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             if (s_snapshotBuffer.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(s_snapshotBuffer);
                 s_snapshotBuffer.Dispose();
+            }
 
             s_snapshotBuffer = new NativeArray<byte>(DumpSnapshotBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            NativeMemorySentinel.RegisterNativeArray(s_snapshotBuffer, nameof(ShinobuSpatialGridForensics), nameof(s_snapshotBuffer), NativeAllocationLifetime.Session);
         }
 
         private static bool TryResolveSnapshotBuffer(out NativeArray<byte> snapshot)
@@ -1807,12 +1705,7 @@ namespace Hecton8.AI.Ecosystem
             IDataVault vault,
             in VaultGenerationHandle<byte> snapshotHandle)
         {
-            AutoResetEvent signal = s_dumpSignal;
-            Thread worker = s_dumpWorker;
-            return signal != null &&
-                   worker != null &&
-                   worker.IsAlive &&
-                   s_snapshotBuffer.IsCreated &&
+            return s_snapshotBuffer.IsCreated &&
                    s_snapshotBuffer.Length >= DumpSnapshotBytes &&
                    Volatile.Read(ref s_stopRequested) == 0 &&
                    s_dumpVault == vault &&

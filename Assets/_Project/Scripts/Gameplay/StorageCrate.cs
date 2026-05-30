@@ -54,9 +54,21 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(Collider))]
     public sealed class StorageCrate : MonoBehaviour, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, IStorageReservationCommitTarget, IGlobalRegistryHotSwapListener
     {
+        private const int ActiveCrateRegistryCapacity = 512;
         private const string DefaultOpenText = "Open Crate";
         private const string DefaultAccessText = "Access Crate";
         private const string DefaultLockedText = "Locked";
+        private static readonly StorageCrate[] s_activeCrates = new StorageCrate[ActiveCrateRegistryCapacity];
+        private static int s_activeCrateCount;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            for (int i = 0; i < s_activeCrateCount; i++)
+                s_activeCrates[i] = null;
+
+            s_activeCrateCount = 0;
+        }
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — STATE
@@ -153,6 +165,7 @@ namespace Hecton8.Gameplay
         private Collider _collider;
         private CrateState _state;
         private bool _hotSwapRegistered;
+        private bool _registeredActiveCrate;
         private IAudioService _audioService;
         private ILocalizationTextReadModel _localizationManager;
         private PowerNode _logisticsPowerNode;
@@ -196,6 +209,17 @@ namespace Hecton8.Gameplay
         /// <summary>Items contained in this crate.</summary>
         public ItemData[] ContainedItems => containedItems;
 
+        internal static int ActiveCrateCount => s_activeCrateCount;
+
+        internal static StorageCrate GetActiveCrateAt(int index)
+        {
+            return index >= 0 && index < s_activeCrateCount ? s_activeCrates[index] : null;
+        }
+
+        internal Transform CachedTransform => _transform;
+
+        internal PowerNode LogisticsPowerNode => _logisticsPowerNode;
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
@@ -224,6 +248,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            RegisterActiveCrate();
             InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
             TryRegisterHotSwap();
@@ -239,6 +264,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            UnregisterActiveCrate();
             InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwap();
             LocalizationEvents.UnregisterLanguageListener(this);
@@ -247,7 +273,50 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            UnregisterActiveCrate();
             InteractableRegistry.InvalidateTree(this);
+        }
+
+        private void RegisterActiveCrate()
+        {
+            if (_registeredActiveCrate)
+                return;
+
+            for (int i = 0; i < s_activeCrateCount; i++)
+            {
+                if (ReferenceEquals(s_activeCrates[i], this))
+                {
+                    _registeredActiveCrate = true;
+                    return;
+                }
+            }
+
+            if (s_activeCrateCount >= s_activeCrates.Length)
+                return;
+
+            s_activeCrates[s_activeCrateCount] = this;
+            s_activeCrateCount++;
+            _registeredActiveCrate = true;
+        }
+
+        private void UnregisterActiveCrate()
+        {
+            if (!_registeredActiveCrate)
+                return;
+
+            for (int i = s_activeCrateCount - 1; i >= 0; i--)
+            {
+                if (!ReferenceEquals(s_activeCrates[i], this))
+                    continue;
+
+                int lastIndex = s_activeCrateCount - 1;
+                s_activeCrates[i] = s_activeCrates[lastIndex];
+                s_activeCrates[lastIndex] = null;
+                s_activeCrateCount--;
+                break;
+            }
+
+            _registeredActiveCrate = false;
         }
 
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)

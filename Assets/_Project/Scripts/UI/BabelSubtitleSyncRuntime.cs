@@ -138,6 +138,9 @@ namespace Hecton8.UI
 
         private static readonly DispatcherBridge s_dispatcherBridge = new DispatcherBridge();
         private static IDataVault s_vault;
+        private static IDataVault s_cueMutationGuardVault;
+        private static IDataVault s_telemetryMutationGuardVault;
+        private static IDataVault s_uiOptimizationTelemetryMutationGuardVault;
         private static VaultGenerationHandle<SubtitleCueDTO> s_cueHandle;
         private static VaultGenerationHandle<LocalizationTelemetryEntry> s_telemetryHandle;
         private static VaultGenerationHandle<UIOptimizationTelemetryEntry> s_uiOptimizationTelemetryHandle;
@@ -171,8 +174,12 @@ namespace Hecton8.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            ReleaseAllSubtitleMutationBuffers();
             ReleaseSubtitleBuffers(s_vault);
             s_vault = null;
+            s_cueMutationGuardVault = null;
+            s_telemetryMutationGuardVault = null;
+            s_uiOptimizationTelemetryMutationGuardVault = null;
             s_cueHandle = default;
             s_telemetryHandle = default;
             s_uiOptimizationTelemetryHandle = default;
@@ -215,6 +222,7 @@ namespace Hecton8.UI
 
             if (s_vault != null && !ReferenceEquals(s_vault, vault))
             {
+                ReleaseAllSubtitleMutationBuffers();
                 ReleaseSubtitleBuffers(s_vault);
                 s_initialized = false;
             }
@@ -618,12 +626,13 @@ namespace Hecton8.UI
             out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
-            if (s_vault == null ||
-                s_vault.IsCompactionFenceActive ||
+            IDataVault vault = s_vault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 requiredLength <= 0 ||
                 !IsSubtitleVaultHandle(in handle, bufferId) ||
                 mutationGuardMask == 0ul ||
-                !s_vault.TryAcquireMutationGuard(mutationGuardMask))
+                !vault.TryAcquireMutationGuard(mutationGuardMask))
             {
                 return false;
             }
@@ -631,9 +640,9 @@ namespace Hecton8.UI
             bool releaseOnExit = true;
             try
             {
-                if (s_vault.IsCompactionFenceActive ||
-                    !s_vault.TryResolveHandle(in handle, out buffer) ||
-                    s_vault.IsCompactionFenceActive ||
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryResolveHandle(in handle, out buffer) ||
+                    vault.IsCompactionFenceActive ||
                     !buffer.IsCreated ||
                     buffer.Length < requiredLength)
                 {
@@ -641,13 +650,14 @@ namespace Hecton8.UI
                     return false;
                 }
 
+                StoreSubtitleMutationVault(mutationGuardMask, vault);
                 releaseOnExit = false;
                 return true;
             }
             finally
             {
                 if (releaseOnExit)
-                    s_vault.ReleaseMutationGuard(mutationGuardMask);
+                    vault.ReleaseMutationGuard(mutationGuardMask);
             }
         }
 
@@ -668,9 +678,59 @@ namespace Hecton8.UI
 
         private static void ReleaseSubtitleMutationBuffer(ulong mutationGuardMask)
         {
-            IDataVault vault = s_vault;
+            IDataVault vault = TakeSubtitleMutationVault(mutationGuardMask);
             if (vault != null && mutationGuardMask != 0ul)
                 vault.ReleaseMutationGuard(mutationGuardMask);
+        }
+
+        private static void ReleaseAllSubtitleMutationBuffers()
+        {
+            ReleaseStoredSubtitleMutationBuffer(CueStateMutationGuardMask);
+            ReleaseStoredSubtitleMutationBuffer(TelemetryMutationGuardMask);
+            ReleaseStoredSubtitleMutationBuffer(UIOptimizationTelemetryMutationGuardMask);
+        }
+
+        private static void ReleaseStoredSubtitleMutationBuffer(ulong mutationGuardMask)
+        {
+            IDataVault vault = TakeSubtitleMutationVault(mutationGuardMask);
+            if (vault != null && mutationGuardMask != 0ul)
+                vault.ReleaseMutationGuard(mutationGuardMask);
+        }
+
+        private static void StoreSubtitleMutationVault(ulong mutationGuardMask, IDataVault vault)
+        {
+            if (mutationGuardMask == CueStateMutationGuardMask)
+                s_cueMutationGuardVault = vault;
+            else if (mutationGuardMask == TelemetryMutationGuardMask)
+                s_telemetryMutationGuardVault = vault;
+            else if (mutationGuardMask == UIOptimizationTelemetryMutationGuardMask)
+                s_uiOptimizationTelemetryMutationGuardVault = vault;
+        }
+
+        private static IDataVault TakeSubtitleMutationVault(ulong mutationGuardMask)
+        {
+            if (mutationGuardMask == CueStateMutationGuardMask)
+            {
+                IDataVault vault = s_cueMutationGuardVault;
+                s_cueMutationGuardVault = null;
+                return vault;
+            }
+
+            if (mutationGuardMask == TelemetryMutationGuardMask)
+            {
+                IDataVault vault = s_telemetryMutationGuardVault;
+                s_telemetryMutationGuardVault = null;
+                return vault;
+            }
+
+            if (mutationGuardMask == UIOptimizationTelemetryMutationGuardMask)
+            {
+                IDataVault vault = s_uiOptimizationTelemetryMutationGuardVault;
+                s_uiOptimizationTelemetryMutationGuardVault = null;
+                return vault;
+            }
+
+            return null;
         }
 
         private static bool IsSubtitleVaultHandle<T>(

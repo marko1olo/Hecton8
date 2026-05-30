@@ -316,8 +316,6 @@ namespace Hecton8.Vehicles.Automation
     {
         private const int DefaultActiveSplineCapacity = 64;
         private const int MaxActiveSplineCapacity = 256;
-        private static readonly ulong ActiveSplineMutationGuardMask =
-            VaultMutationGuardBit(BufferID.VehicleDockingActiveSplines);
 
         [SerializeField, Min(1)] private int activeSplineCapacity = DefaultActiveSplineCapacity;
 
@@ -391,14 +389,11 @@ namespace Hecton8.Vehicles.Automation
         {
             slot = -1;
             IDataVault vault = _dataVault;
-            if (ownerHash == 0u || !IsReady || !TryAcquireDockingMutationGuard(vault, ActiveSplineMutationGuardMask))
+            if (ownerHash == 0u || !IsReady || !TryAcquireActiveSplineWriteView(vault, out NativeArray<ActiveSplineData> activeSplines))
                 return false;
 
             try
             {
-                if (!TryResolveActiveSplineView(out NativeArray<ActiveSplineData> activeSplines))
-                    return false;
-
                 int length = activeSplines.Length;
                 for (int i = 0; i < length; i++)
                 {
@@ -429,7 +424,7 @@ namespace Hecton8.Vehicles.Automation
             }
             finally
             {
-                vault.ReleaseMutationGuard(ActiveSplineMutationGuardMask);
+                vault.ReleaseWriteLock(in _activeSplineHandle, SystemID.VehiclesPhysics);
             }
         }
 
@@ -438,15 +433,14 @@ namespace Hecton8.Vehicles.Automation
             IDataVault vault = _dataVault;
             if (!spline.IsFinite() ||
                 !IsReady ||
-                !TryAcquireDockingMutationGuard(vault, ActiveSplineMutationGuardMask))
+                !TryAcquireActiveSplineWriteView(vault, out NativeArray<ActiveSplineData> activeSplines))
             {
                 return false;
             }
 
             try
             {
-                if (!TryResolveActiveSplineView(out NativeArray<ActiveSplineData> activeSplines) ||
-                    (uint)slot >= (uint)activeSplines.Length)
+                if ((uint)slot >= (uint)activeSplines.Length)
                 {
                     return false;
                 }
@@ -467,7 +461,7 @@ namespace Hecton8.Vehicles.Automation
             }
             finally
             {
-                vault.ReleaseMutationGuard(ActiveSplineMutationGuardMask);
+                vault.ReleaseWriteLock(in _activeSplineHandle, SystemID.VehiclesPhysics);
             }
         }
 
@@ -505,15 +499,14 @@ namespace Hecton8.Vehicles.Automation
             IDataVault vault = _dataVault;
             if (ownerHash == 0u ||
                 !IsReady ||
-                !TryAcquireDockingMutationGuard(vault, ActiveSplineMutationGuardMask))
+                !TryAcquireActiveSplineWriteView(vault, out NativeArray<ActiveSplineData> activeSplines))
             {
                 return false;
             }
 
             try
             {
-                if (!TryResolveActiveSplineView(out NativeArray<ActiveSplineData> activeSplines) ||
-                    (uint)slot >= (uint)activeSplines.Length)
+                if ((uint)slot >= (uint)activeSplines.Length)
                 {
                     return false;
                 }
@@ -527,26 +520,23 @@ namespace Hecton8.Vehicles.Automation
             }
             finally
             {
-                vault.ReleaseMutationGuard(ActiveSplineMutationGuardMask);
+                vault.ReleaseWriteLock(in _activeSplineHandle, SystemID.VehiclesPhysics);
             }
         }
 
         public void OnServiceShutdown()
         {
             IDataVault vault = _dataVault;
-            if (TryAcquireDockingMutationGuard(vault, ActiveSplineMutationGuardMask))
+            if (TryAcquireActiveSplineWriteView(vault, out NativeArray<ActiveSplineData> activeSplines))
             {
                 try
                 {
-                    if (TryResolveActiveSplineView(out NativeArray<ActiveSplineData> activeSplines))
-                    {
-                        for (int i = 0; i < activeSplines.Length; i++)
-                            activeSplines[i] = default;
-                    }
+                    for (int i = 0; i < activeSplines.Length; i++)
+                        activeSplines[i] = default;
                 }
                 finally
                 {
-                    vault.ReleaseMutationGuard(ActiveSplineMutationGuardMask);
+                    vault.ReleaseWriteLock(in _activeSplineHandle, SystemID.VehiclesPhysics);
                 }
             }
 
@@ -615,24 +605,39 @@ namespace Hecton8.Vehicles.Automation
                 _dataVault = GlobalRegistry.DataVault;
         }
 
-        private bool TryResolveActiveSplineView(out NativeArray<ActiveSplineData> activeSplines)
+        private bool TryAcquireActiveSplineWriteView(IDataVault vault, out NativeArray<ActiveSplineData> activeSplines)
         {
             activeSplines = default;
-            if (!IsVaultHandleCreated(in _activeSplineHandle) || _dataVault == null || _dataVault.IsCompactionFenceActive)
+            if (!IsVaultHandleCreated(in _activeSplineHandle) || vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!_dataVault.TryResolveHandle(in _activeSplineHandle, out activeSplines) ||
-                !activeSplines.IsCreated ||
-                activeSplines.Length <= 0)
+            VaultGenerationHandle<ActiveSplineData> activeSplineHandle = _activeSplineHandle;
+            if (!vault.TryAcquireWriteLock(in activeSplineHandle, SystemID.VehiclesPhysics, out activeSplines))
+                return false;
+
+            bool releaseOnFailure = true;
+            try
             {
-                _activeSplineHandle = default;
-                _activeSplineLength = 0;
-                _heartbeatState = ServiceHeartbeatState.Degraded;
-                return false;
-            }
+                if (!activeSplines.IsCreated || activeSplines.Length <= 0)
+                {
+                    _activeSplineHandle = default;
+                    _activeSplineLength = 0;
+                    _heartbeatState = ServiceHeartbeatState.Degraded;
+                    return false;
+                }
 
-            _activeSplineLength = activeSplines.Length;
-            return true;
+                _activeSplineLength = activeSplines.Length;
+                releaseOnFailure = false;
+                return true;
+            }
+            finally
+            {
+                if (releaseOnFailure)
+                {
+                    vault.ReleaseWriteLock(in activeSplineHandle, SystemID.VehiclesPhysics);
+                    activeSplines = default;
+                }
+            }
         }
 
         private bool TryReadOnlyActiveSplineView(out NativeArray<ActiveSplineData>.ReadOnly activeSplines)
@@ -649,19 +654,6 @@ namespace Hecton8.Vehicles.Automation
             }
 
             return true;
-        }
-
-        private static bool TryAcquireDockingMutationGuard(IDataVault vault, ulong mask)
-        {
-            return vault != null &&
-                   mask != 0UL &&
-                   !vault.IsCompactionFenceActive &&
-                   vault.TryAcquireMutationGuard(mask);
-        }
-
-        private static ulong VaultMutationGuardBit(BufferID bufferId)
-        {
-            return 1UL << ((int)bufferId & 63);
         }
 
         private void ReleaseActiveSplineBuffer()

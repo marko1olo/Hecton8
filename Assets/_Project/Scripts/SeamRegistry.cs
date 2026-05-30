@@ -226,7 +226,12 @@ namespace Hecton8.World
 
             Dictionary<long, ProceduralGeologySeamStateDTO>.Enumerator enumerator = _recordsByRuntimeKey.GetEnumerator();
             while (enumerator.MoveNext())
+            {
+                if (destination.Count >= destination.Capacity)
+                    break;
+
                 destination.Add(enumerator.Current.Value);
+            }
 
             enumerator.Dispose();
         }
@@ -245,7 +250,12 @@ namespace Hecton8.World
 
             Dictionary<long, ProceduralGeologyCaveEntranceDTO>.Enumerator enumerator = _caveEntrancesByRuntimeKey.GetEnumerator();
             while (enumerator.MoveNext())
+            {
+                if (destination.Count >= destination.Capacity)
+                    break;
+
                 destination.Add(enumerator.Current.Value);
+            }
 
             enumerator.Dispose();
         }

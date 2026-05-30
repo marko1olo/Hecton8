@@ -281,9 +281,6 @@ namespace Hecton8.World
 
             ApplyPlayerRuntimeContext();
 
-            if (playerTransform != null && _playerMovement == null)
-                playerTransform.TryGetComponent(out _playerMovement);
-
 #if UNITY_EDITOR
             if (playerTransform == null && !Application.isPlaying)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);

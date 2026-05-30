@@ -76,11 +76,13 @@ namespace Hecton8.World
         private const string CaveBlendProbeOnlyLabel = "ProbeOnly";
         private const string CaveBlendSdfBlendLabel = "SdfBlend";
         private const string CaveBlendCarvePortalLabel = "CarvePortal";
+        private const int BindingRegistryCapacity = 256;
+        private const int StaleBindingIndexCapacity = 256;
 
         // COLD ALLOC: List<WorldGenerativeGeologyBinding>[256] - loaded geology binding registry including inactive editor bindings - owner: WorldGenerativeGeologyBinding
-        private static readonly List<WorldGenerativeGeologyBinding> _knownBindings = new List<WorldGenerativeGeologyBinding>(256);
-        private static readonly List<WorldGenerativeGeologyBinding> _activeBindings = new List<WorldGenerativeGeologyBinding>(256);
-        private static readonly List<int> _staleBindingIndexBuffer = new List<int>(32);
+        private static readonly List<WorldGenerativeGeologyBinding> _knownBindings = new List<WorldGenerativeGeologyBinding>(BindingRegistryCapacity);
+        private static readonly List<WorldGenerativeGeologyBinding> _activeBindings = new List<WorldGenerativeGeologyBinding>(BindingRegistryCapacity);
+        private static readonly List<int> _staleBindingIndexBuffer = new List<int>(StaleBindingIndexCapacity);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -112,6 +114,7 @@ namespace Hecton8.World
         [SerializeField] private int suggestedDebrisCount;
 
         private WorldProceduralProxyInstance _cachedProxyInstance;
+        private Renderer _cachedSeamRenderer;
 
         public long RuntimeKey => runtimeKey;
         public string FamilyId => familyId;
@@ -133,6 +136,7 @@ namespace Hecton8.World
         public int SuggestedDebrisCount => suggestedDebrisCount;
         internal WorldProceduralProxyInstance CachedProxyInstance => _cachedProxyInstance;
         internal long CachedProxyRuntimeKey => _cachedProxyInstance != null ? _cachedProxyInstance.RuntimeKey : 0L;
+        internal Material CachedSeamMaterial => _cachedSeamRenderer != null ? _cachedSeamRenderer.sharedMaterial : null;
         public static int ActiveBindingCount => _activeBindings.Count;
 
         public WorldGenerativeGeologyProfile.ShapeArchetype Archetype
@@ -194,6 +198,9 @@ namespace Hecton8.World
         {
             if (!TryGetComponent(out _cachedProxyInstance))
                 _cachedProxyInstance = null;
+
+            if (!TryGetComponent(out _cachedSeamRenderer))
+                _cachedSeamRenderer = GetComponentInChildren<Renderer>(true);
         }
 
         public static void CopyActiveBindingsTo(List<WorldGenerativeGeologyBinding> destination)
@@ -208,9 +215,13 @@ namespace Hecton8.World
                 WorldGenerativeGeologyBinding binding = _activeBindings[i];
                 if (binding == null || !binding.isActiveAndEnabled)
                 {
-                    _staleBindingIndexBuffer.Add(i);
+                    if (_staleBindingIndexBuffer.Count < _staleBindingIndexBuffer.Capacity)
+                        _staleBindingIndexBuffer.Add(i);
                     continue;
                 }
+
+                if (destination.Count >= destination.Capacity)
+                    break;
 
                 destination.Add(binding);
             }
@@ -230,12 +241,16 @@ namespace Hecton8.World
                 WorldGenerativeGeologyBinding binding = _knownBindings[i];
                 if (binding == null)
                 {
-                    _staleBindingIndexBuffer.Add(i);
+                    if (_staleBindingIndexBuffer.Count < _staleBindingIndexBuffer.Capacity)
+                        _staleBindingIndexBuffer.Add(i);
                     continue;
                 }
 
                 if (!includeInactive && !binding.isActiveAndEnabled)
                     continue;
+
+                if (destination.Count >= destination.Capacity)
+                    break;
 
                 destination.Add(binding);
             }
@@ -255,7 +270,8 @@ namespace Hecton8.World
                 WorldGenerativeGeologyBinding candidate = _activeBindings[i];
                 if (candidate == null || !candidate.isActiveAndEnabled)
                 {
-                    _staleBindingIndexBuffer.Add(i);
+                    if (_staleBindingIndexBuffer.Count < _staleBindingIndexBuffer.Capacity)
+                        _staleBindingIndexBuffer.Add(i);
                     continue;
                 }
 
@@ -276,6 +292,9 @@ namespace Hecton8.World
             if (binding == null || _knownBindings.Contains(binding))
                 return;
 
+            if (_knownBindings.Count >= BindingRegistryCapacity)
+                return;
+
             _knownBindings.Add(binding);
         }
 
@@ -290,6 +309,9 @@ namespace Hecton8.World
         private static void RegisterActiveBinding(WorldGenerativeGeologyBinding binding)
         {
             if (binding == null || _activeBindings.Contains(binding))
+                return;
+
+            if (_activeBindings.Count >= BindingRegistryCapacity)
                 return;
 
             _activeBindings.Add(binding);

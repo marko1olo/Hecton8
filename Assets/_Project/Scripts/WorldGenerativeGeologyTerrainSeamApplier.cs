@@ -151,6 +151,9 @@ namespace Hecton8.World
         private readonly List<int> _knownTerrainIds = new List<int>(8);
         private readonly List<SeismicTrenchState> _activeTrenches = new List<SeismicTrenchState>(8);
         private readonly List<int> _terrainBucketScratch = new List<int>(8);
+        private readonly TerrainApplyState[] _terrainStatePool = new TerrainApplyState[TerrainStateCapacity]; // COLD ALLOC: TerrainApplyState[8] - fixed terrain seam state pool - owner: WorldGenerativeGeologyTerrainSeamApplier
+        private readonly List<WorldGenerativeGeologySeamPlan>[] _planBucketPool = new List<WorldGenerativeGeologySeamPlan>[TerrainStateCapacity]; // COLD ALLOC: List<WorldGenerativeGeologySeamPlan>[8] - fixed per-terrain plan bucket refs - owner: WorldGenerativeGeologyTerrainSeamApplier
+        private readonly List<SeismicTrenchState>[] _trenchBucketPool = new List<SeismicTrenchState>[TerrainStateCapacity]; // COLD ALLOC: List<SeismicTrenchState>[8] - fixed per-terrain trench bucket refs - owner: WorldGenerativeGeologyTerrainSeamApplier
         private MapMagicTerrainTileSnapshot[] _tileSnapshotScratch;
         private Texture2D _voxelBlendMaskTexture;
         private IDataVault _dataVault;
@@ -179,6 +182,7 @@ namespace Hecton8.World
         private int _vaultHeightmapCacheRevision;
         private bool _voxelBlendMaskGlobalActive;
         private bool _voxelBlendMaskUploadedThisPass;
+        private bool _terrainBucketPoolsInitialized;
         private float _debugGlobalQualityWeight = 1f;
         private float _debugSeamExpensiveWeight;
         private float _debugMaskDetailWeight;
@@ -190,7 +194,7 @@ namespace Hecton8.World
             EnsureHybridTerrainSeamState();
             PublishActiveRuntimeInstance();
             RefreshDataVaultRoute();
-            ResolveReferences();
+            RefreshColdReferences();
             ReconcileTerrainSeams();
         }
 
@@ -199,7 +203,7 @@ namespace Hecton8.World
             EnsureHybridTerrainSeamState();
             PublishActiveRuntimeInstance();
             RefreshDataVaultRoute();
-            ResolveReferences();
+            RefreshColdReferences();
             TryRegisterHotSwapListener();
             TryRegisterToTickManager();
             TryRegisterToLateFrameTickManager();
@@ -208,6 +212,7 @@ namespace Hecton8.World
         private void Start()
         {
             RefreshDataVaultRoute();
+            RefreshColdReferences();
             TryRegisterToTickManager();
             TryRegisterToLateFrameTickManager();
             ReconcileTerrainSeams();
@@ -317,8 +322,6 @@ namespace Hecton8.World
 
         public void ReconcileTerrainSeams()
         {
-            ResolveReferences();
-
             ClearBuckets();
             _touchedTerrainIds.Clear();
             _debugAppliedTerrains = 0;
@@ -353,7 +356,11 @@ namespace Hecton8.World
 
                 int terrainId = unchecked((int)EntityId.ToULong(terrain.GetEntityId()));
                 EnsureTerrainState(terrain, terrainId);
-                List<WorldGenerativeGeologySeamPlan> terrainPlans = _plansByTerrain[terrainId];
+                if (!_plansByTerrain.TryGetValue(terrainId, out List<WorldGenerativeGeologySeamPlan> terrainPlans) ||
+                    terrainPlans == null)
+                {
+                    continue;
+                }
 
                 terrainPlans.Add(plan);
                 _touchedTerrainIds.Add(terrainId);
@@ -442,6 +449,12 @@ namespace Hecton8.World
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
                 _dataVault = currentService as IDataVault;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.MapMagicRuntime)
+            {
+                mapMagicBridge = currentService as MapMagicBridge;
                 return;
             }
 
@@ -644,25 +657,33 @@ namespace Hecton8.World
                 return false;
 
             int requiredLength = payload.HeightmapResolution * payload.HeightmapResolution;
-            if (!TryAcquireTerrainSeamBuffer(
+            if (!TryAcquireTerrainSeamWriteBuffer(
                     vault,
                     BufferID.TerrainSeamHeightmap,
                     requiredLength,
                     NativeArrayOptions.UninitializedMemory,
+                    out VaultGenerationHandle<ushort> heightmapHandle,
                     out NativeArray<ushort> vaultHeights))
             {
                 return false;
             }
 
-            for (int i = 0; i < requiredLength; i++)
-                vaultHeights[i] = payload.HeightSamples[i];
+            try
+            {
+                for (int i = 0; i < requiredLength; i++)
+                    vaultHeights[i] = payload.HeightSamples[i];
 
-            _vaultHeightmapTerrainHash = signal.TerrainEntityHash;
-            _vaultHeightmapFrame = signal.Frame;
-            _vaultHeightmapResolution = payload.HeightmapResolution;
-            _vaultHeightmapCacheRevision = payload.CacheRevision;
-            copiedSampleCount = requiredLength;
-            return true;
+                _vaultHeightmapTerrainHash = signal.TerrainEntityHash;
+                _vaultHeightmapFrame = signal.Frame;
+                _vaultHeightmapResolution = payload.HeightmapResolution;
+                _vaultHeightmapCacheRevision = payload.CacheRevision;
+                copiedSampleCount = requiredLength;
+                return true;
+            }
+            finally
+            {
+                ReleaseTerrainSeamWriteBuffer(vault, in heightmapHandle);
+            }
         }
 
         private bool TryApplyHybridTerrainProjection(
@@ -711,6 +732,8 @@ namespace Hecton8.World
             NativeArray<float> patchHeights = default;
             NativeArray<byte> blendMask = default;
             NativeArray<float3> normals = default;
+            ulong terrainSeamGuardMask = 0UL;
+            IDataVault terrainSeamGuardVault = null;
 
             try
             {
@@ -722,6 +745,16 @@ namespace Hecton8.World
                         out patchHeights,
                         out blendMask,
                         out normals))
+                {
+                    return false;
+                }
+
+                if (!TryAcquireHybridTerrainMutationGuard(
+                        state,
+                        maskDetailActive,
+                        quantizedHeightmap.IsCreated,
+                        out terrainSeamGuardMask,
+                        out terrainSeamGuardVault))
                 {
                     return false;
                 }
@@ -748,8 +781,8 @@ namespace Hecton8.World
                         terrainPosition);
                     nativePlans[writeIndex++] = new HybridTerrainSeamPlanNative
                     {
-                        RuntimeContactPosition = localContact,
-                        RuntimeVoxelCenter = localVoxelCenter,
+                        TerrainLocalContactPosition = localContact,
+                        TerrainLocalVoxelCenter = localVoxelCenter,
                         VoxelSize = new float3(
                             Mathf.Max(0.5f, voxelSize.x),
                             Mathf.Max(0.5f, voxelSize.y),
@@ -848,6 +881,10 @@ namespace Hecton8.World
                 }
 
                 QueueVoxelBlendMaskTextureUpload(terrain, applyRect, blendMask, seamExpensiveWeight);
+                ReleaseHybridTerrainMutationGuard(terrainSeamGuardVault, terrainSeamGuardMask);
+                terrainSeamGuardMask = 0UL;
+                terrainSeamGuardVault = null;
+
                 uint terrainHash = unchecked((uint)EntityId.ToULong(terrain.GetEntityId()));
                 uint stateHash = HashTerrainSeamState(
                     terrainHash,
@@ -905,6 +942,7 @@ namespace Hecton8.World
             }
             finally
             {
+                ReleaseHybridTerrainMutationGuard(terrainSeamGuardVault, terrainSeamGuardMask);
                 normals = default;
                 blendMask = default;
                 patchHeights = default;
@@ -1003,6 +1041,64 @@ namespace Hecton8.World
                    (!needsNormals || (normals.IsCreated && normals.Length >= sampleCount));
         }
 
+        private bool TryAcquireHybridTerrainMutationGuard(
+            TerrainApplyState state,
+            bool needsNormals,
+            bool hasVaultHeightmap,
+            out ulong guardMask,
+            out IDataVault guardVault)
+        {
+            guardMask = 0UL;
+            guardVault = null;
+            IDataVault vault = _dataVault;
+            if (vault == null || state == null || state.baselineHeightsBufferId == BufferID.Unknown)
+                return false;
+
+            guardMask =
+                TerrainSeamMutationGuardBit(state.baselineHeightsBufferId) |
+                TerrainSeamMutationGuardBit(TerrainSeamNativePlansBufferId) |
+                TerrainSeamMutationGuardBit(TerrainSeamPatchHeightsBufferId) |
+                TerrainSeamMutationGuardBit(TerrainSeamBlendMaskBufferId);
+
+            if (hasVaultHeightmap)
+                guardMask |= TerrainSeamMutationGuardBit(BufferID.TerrainSeamHeightmap);
+            if (needsNormals)
+                guardMask |= TerrainSeamMutationGuardBit(TerrainSeamNormalsBufferId);
+
+            if (guardMask == 0UL || !vault.TryAcquireMutationGuard(guardMask))
+                return false;
+
+            bool keepGuard = false;
+            try
+            {
+                guardVault = vault;
+                keepGuard = true;
+                return true;
+            }
+            finally
+            {
+                if (!keepGuard)
+                {
+                    vault.ReleaseMutationGuard(guardMask);
+                    guardMask = 0UL;
+                    guardVault = null;
+                }
+            }
+        }
+
+        private static void ReleaseHybridTerrainMutationGuard(IDataVault vault, ulong guardMask)
+        {
+            if (vault != null && guardMask != 0UL)
+                vault.ReleaseMutationGuard(guardMask);
+        }
+
+        private static ulong TerrainSeamMutationGuardBit(BufferID bufferId)
+        {
+            return bufferId == BufferID.Unknown
+                ? 0UL
+                : 1UL << (unchecked((int)(uint)(int)bufferId) & 31);
+        }
+
         private bool TryResolveBaselineHeights(TerrainApplyState state, out NativeArray<float> baselineHeights)
         {
             baselineHeights = default;
@@ -1047,6 +1143,94 @@ namespace Hecton8.World
                 OwnerSystem,
                 options);
             return TryOpenTerrainSeamBuffer(vault, in handle, bufferId, length, out buffer);
+        }
+
+        private static bool TryAcquireTerrainSeamWriteBuffer<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options,
+            out VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer) where T : struct
+        {
+            handle = default;
+            buffer = default;
+            int length = math.max(1, requiredLength);
+            if (vault == null || bufferId == BufferID.Unknown || length <= 0)
+                return false;
+
+            if (vault.TryGetGenerationHandle(bufferId, out handle) &&
+                TryOpenTerrainSeamBuffer(vault, in handle, bufferId, length, out _))
+            {
+                if (TryAcquireTerrainSeamWriteLock(vault, in handle, bufferId, length, out buffer))
+                    return true;
+
+                handle = default;
+                return false;
+            }
+
+            if (vault.IsAllocationLocked)
+            {
+                handle = default;
+                return false;
+            }
+
+            handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                length,
+                OwnerSystem,
+                options);
+            if (TryAcquireTerrainSeamWriteLock(vault, in handle, bufferId, length, out buffer))
+                return true;
+
+            handle = default;
+            return false;
+        }
+
+        private static bool TryAcquireTerrainSeamWriteLock<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                handle.BufferID != (uint)bufferId ||
+                handle.SystemID != (uint)OwnerSystem ||
+                handle.Generation == 0u ||
+                !vault.TryAcquireWriteLock(in handle, OwnerSystem, out buffer))
+            {
+                buffer = default;
+                return false;
+            }
+
+            bool releaseLock = true;
+            try
+            {
+                if (!buffer.IsCreated || buffer.Length < requiredLength)
+                {
+                    buffer = default;
+                    return false;
+                }
+
+                releaseLock = false;
+                return true;
+            }
+            finally
+            {
+                if (releaseLock)
+                    vault.ReleaseWriteLock(in handle, OwnerSystem);
+            }
+        }
+
+        private static void ReleaseTerrainSeamWriteBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseWriteLock(in handle, OwnerSystem);
         }
 
         private static bool TryOpenExistingTerrainSeamBuffer<T>(
@@ -1467,10 +1651,20 @@ namespace Hecton8.World
             bool faulted,
             uint stateHash)
         {
-            if (!TryResolveTerrainSeamBlackBox(out NativeArray<TerrainSeamTelemetryEntry> blackBox) ||
-                terrain == null ||
-                terrain.terrainData == null)
+            if (terrain == null || terrain.terrainData == null)
                 return;
+
+            IDataVault vault = _dataVault;
+            if (!TryAcquireTerrainSeamWriteBuffer(
+                    vault,
+                    TerrainSeamBlackBoxBufferId,
+                    TerrainSeamBlackBoxCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out _terrainSeamBlackBoxHandle,
+                    out NativeArray<TerrainSeamTelemetryEntry> blackBox))
+            {
+                return;
+            }
 
             UnityEngine.TerrainData terrainData = terrain.terrainData;
             Vector3 position = terrain.transform.position;
@@ -1496,8 +1690,15 @@ namespace Hecton8.World
                 StateHash = stateHash
             };
 
-            blackBox[_blackBoxWriteIndex] = entry;
-            _blackBoxWriteIndex = (_blackBoxWriteIndex + 1) % TerrainSeamBlackBoxCapacity;
+            try
+            {
+                blackBox[_blackBoxWriteIndex] = entry;
+                _blackBoxWriteIndex = (_blackBoxWriteIndex + 1) % TerrainSeamBlackBoxCapacity;
+            }
+            finally
+            {
+                ReleaseTerrainSeamWriteBuffer(vault, in _terrainSeamBlackBoxHandle);
+            }
         }
 
         private uint AdvanceTerrainSeamFrame()
@@ -1828,10 +2029,10 @@ namespace Hecton8.World
             int resolution = terrainData.heightmapResolution;
             if (!_terrainStates.TryGetValue(terrainId, out TerrainApplyState state))
             {
-                state = new TerrainApplyState();
+                if (!TryBindTerrainStateBucket(terrainId, out state))
+                    return;
+
                 RefreshTerrainBaseline(state, terrain, terrainData, resolution);
-                _terrainStates.Add(terrainId, state);
-                _knownTerrainIds.Add(terrainId);
             }
             else if (state.terrain != terrain ||
                      state.terrainData != terrainData ||
@@ -1840,18 +2041,37 @@ namespace Hecton8.World
             {
                 RefreshTerrainBaseline(state, terrain, terrainData, resolution);
             }
+        }
 
-            if (!_plansByTerrain.ContainsKey(terrainId))
-            {
-                // COLD ALLOC: one reusable plan bucket per touched terrain.
-                _plansByTerrain.Add(terrainId, new List<WorldGenerativeGeologySeamPlan>(8));
-            }
+        private bool TryBindTerrainStateBucket(int terrainId, out TerrainApplyState state)
+        {
+            state = null;
+            EnsureTerrainBucketPoolsCold();
+            int bucketIndex = _knownTerrainIds.Count;
+            if (bucketIndex >= TerrainStateCapacity)
+                return false;
 
-            if (!_trenchesByTerrain.ContainsKey(terrainId))
-            {
-                // COLD ALLOC: one reusable trench bucket per touched terrain.
-                _trenchesByTerrain.Add(terrainId, new List<SeismicTrenchState>(4));
-            }
+            TerrainApplyState candidateState = _terrainStatePool[bucketIndex];
+            List<WorldGenerativeGeologySeamPlan> planBucket = _planBucketPool[bucketIndex];
+            List<SeismicTrenchState> trenchBucket = _trenchBucketPool[bucketIndex];
+            if (candidateState == null || planBucket == null || trenchBucket == null)
+                return false;
+
+            candidateState.ReleaseBaseline();
+            candidateState.terrain = null;
+            candidateState.terrainData = null;
+            candidateState.heightmapResolution = 0;
+            candidateState.previousRect = default;
+            candidateState.hasPreviousRect = false;
+            planBucket.Clear();
+            trenchBucket.Clear();
+
+            _terrainStates.Add(terrainId, candidateState);
+            _plansByTerrain.Add(terrainId, planBucket);
+            _trenchesByTerrain.Add(terrainId, trenchBucket);
+            _knownTerrainIds.Add(terrainId);
+            state = candidateState;
+            return true;
         }
 
         private float[,] PreparePatchBuffer(TerrainApplyState state, RectInt rect)
@@ -1894,26 +2114,23 @@ namespace Hecton8.World
                 if (vault != null)
                 {
                     state.baselineHeightsBufferId = ResolveTerrainBaselineBufferId(terrain);
-                    if (vault.IsAllocationLocked)
-                    {
-                        if (!vault.TryGetGenerationHandle(
-                                state.baselineHeightsBufferId,
-                                out state.baselineHeightsHandle))
-                        {
-                            state.baselineHeightsHandle = default;
-                        }
-                    }
-                    else
-                    {
-                        state.baselineHeightsHandle = vault.EnsureGenerationHandle<float>(
+                    if (TryAcquireTerrainSeamWriteBuffer(
+                            vault,
                             state.baselineHeightsBufferId,
                             totalHeights,
-                            OwnerSystem,
-                            NativeArrayOptions.UninitializedMemory);
+                            NativeArrayOptions.UninitializedMemory,
+                            out state.baselineHeightsHandle,
+                            out NativeArray<float> baselineHeights))
+                    {
+                        try
+                        {
+                            PopulateTerrainBaselineNative(baselineHeights, terrain, terrainData, resolution);
+                        }
+                        finally
+                        {
+                            ReleaseTerrainSeamWriteBuffer(vault, in state.baselineHeightsHandle);
+                        }
                     }
-
-                    if (TryResolveBaselineHeights(state, out NativeArray<float> baselineHeights))
-                        PopulateTerrainBaselineNative(baselineHeights, terrain, terrainData, resolution);
                 }
             }
             state.patchBuffer = null;
@@ -1959,13 +2176,44 @@ namespace Hecton8.World
 
         private void EnsureHybridTerrainSeamState()
         {
+            EnsureTerrainBucketPoolsCold();
+
             if (_tileSnapshotScratch == null || _tileSnapshotScratch.Length != TerrainTileSnapshotCapacity)
             {
-                // COLD ALLOC: fixed MapMagic tile snapshot scratch used only while draining terrain generated signals.
+                // COLD ALLOC: MapMagicTerrainTileSnapshot[32] - fixed MapMagic tile snapshot scratch used while draining terrain generated signals - owner: WorldGenerativeGeologyTerrainSeamApplier
                 _tileSnapshotScratch = new MapMagicTerrainTileSnapshot[TerrainTileSnapshotCapacity];
             }
 
-            TryResolveTerrainSeamBlackBox(out _);
+            TryEnsureTerrainSeamBlackBox(out _);
+        }
+
+        private void EnsureTerrainBucketPoolsCold()
+        {
+            if (_terrainBucketPoolsInitialized)
+                return;
+
+            for (int i = 0; i < TerrainStateCapacity; i++)
+            {
+                if (_terrainStatePool[i] == null)
+                {
+                    // COLD ALLOC: TerrainApplyState[8] - fixed terrain seam state pool - owner: WorldGenerativeGeologyTerrainSeamApplier
+                    _terrainStatePool[i] = new TerrainApplyState();
+                }
+
+                if (_planBucketPool[i] == null)
+                {
+                    // COLD ALLOC: List<WorldGenerativeGeologySeamPlan>[8] - fixed per-terrain plan buckets - owner: WorldGenerativeGeologyTerrainSeamApplier
+                    _planBucketPool[i] = new List<WorldGenerativeGeologySeamPlan>(8);
+                }
+
+                if (_trenchBucketPool[i] == null)
+                {
+                    // COLD ALLOC: List<SeismicTrenchState>[8] - fixed per-terrain trench buckets - owner: WorldGenerativeGeologyTerrainSeamApplier
+                    _trenchBucketPool[i] = new List<SeismicTrenchState>(4);
+                }
+            }
+
+            _terrainBucketPoolsInitialized = true;
         }
 
         private void DisposeHybridTerrainSeamState()
@@ -1978,7 +2226,7 @@ namespace Hecton8.World
             _voxelBlendMaskGlobalActive = false;
         }
 
-        private bool TryResolveTerrainSeamBlackBox(out NativeArray<TerrainSeamTelemetryEntry> blackBox)
+        private bool TryEnsureTerrainSeamBlackBox(out NativeArray<TerrainSeamTelemetryEntry> blackBox)
         {
             blackBox = default;
             IDataVault vault = _dataVault;
@@ -2078,7 +2326,7 @@ namespace Hecton8.World
         private void DumpTerrainSeamBlackBox()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (!TryResolveTerrainSeamBlackBox(out NativeArray<TerrainSeamTelemetryEntry> blackBox))
+            if (!TryEnsureTerrainSeamBlackBox(out NativeArray<TerrainSeamTelemetryEntry> blackBox))
                 return;
 
             try
@@ -2192,7 +2440,13 @@ namespace Hecton8.World
 
                     _terrainBucketScratch.Add(terrainId);
                     EnsureTerrainState(terrain, terrainId);
-                    _trenchesByTerrain[terrainId].Add(trench);
+                    if (!_trenchesByTerrain.TryGetValue(terrainId, out List<SeismicTrenchState> terrainTrenches) ||
+                        terrainTrenches == null)
+                    {
+                        continue;
+                    }
+
+                    terrainTrenches.Add(trench);
                     _touchedTerrainIds.Add(terrainId);
                 }
             }
@@ -2329,7 +2583,7 @@ namespace Hecton8.World
             return null;
         }
 
-        private void ResolveReferences()
+        private void RefreshColdReferences()
         {
             WorldRuntimeReferenceUtility.TryResolveWorldGenerativeGeologyIntegrationDirector(ref integrationDirector);
             WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);

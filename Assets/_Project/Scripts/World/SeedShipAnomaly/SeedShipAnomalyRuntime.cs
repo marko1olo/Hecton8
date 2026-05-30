@@ -16,7 +16,7 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 namespace Hecton8.World.SeedShipAnomaly
 {
     [DisallowMultipleComponent]
-    public sealed unsafe class SeedShipAnomalyRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed unsafe class SeedShipAnomalyRuntime : MonoBehaviour, IColdTickable, IUpdatable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private int _signalPushDropCount;
         private const SystemID OwnerSystem = SystemID.EndgameAnomaly;
@@ -47,12 +47,7 @@ namespace Hecton8.World.SeedShipAnomaly
             MutationGuardBit(BufferID.ShinobuSeedShipAnomalyMockAupRebase) |
             MutationGuardBit(BufferID.ShinobuSeedShipAnomalyThermoSource) |
             MutationGuardBit(BufferID.ShinobuSeedShipAnomalyTelemetryRing);
-        private static readonly ulong IoScratchMutationGuardMask = MutationGuardBit(BufferID.ShinobuSeedShipAnomalyIoScratch);
-        private static readonly ulong DumpMutationGuardMask =
-            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyTelemetryRing) |
-            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyDumpScratch);
-        private static readonly ulong CsvImportMutationGuardMask =
-            MutationGuardBit(BufferID.ShinobuSeedShipAnomalyIoScratch) |
+        private static readonly ulong CsvApplyMutationGuardMask =
             MutationGuardBit(BufferID.ShinobuSeedShipAnomalyTuning) |
             MutationGuardBit(BufferID.ShinobuSeedShipAnomalyField) |
             MutationGuardBit(BufferID.ShinobuSeedShipAnomalyCsvOverrides);
@@ -66,6 +61,7 @@ namespace Hecton8.World.SeedShipAnomaly
         private static readonly uint _RadarJamIntensityHash = HashLowerAsciiString("radar_jam_intensity");
         private static readonly uint _BabelScrambleStrengthHash = HashLowerAsciiString("babel_scramble_strength");
         private static readonly uint _GlobalQualityWeightHash = HashLowerAsciiString("global_quality_weight");
+        private static readonly System.Threading.WaitCallback TelemetryDumpWorkerCallback = RunTelemetryDumpWorker;
 
         [Header("Seed Ship AUP")]
         [SerializeField] private double seedShipAupX;
@@ -86,8 +82,6 @@ namespace Hecton8.World.SeedShipAnomaly
         private VaultGenerationHandle<AnomalyThermoSourceDTO> _thermoHandle;
         private VaultGenerationHandle<AnomalyTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<AnomalyCsvOverrideDTO> _csvOverrideHandle;
-        private VaultGenerationHandle<byte> _ioScratchHandle;
-        private VaultGenerationHandle<byte> _dumpScratchHandle;
         private VaultGenerationHandle<ScalabilityStateDTO> _scalabilityHandle;
 
         private IDataVault _dataVault;
@@ -98,6 +92,7 @@ namespace Hecton8.World.SeedShipAnomaly
         private string _csvPath;
 #endif
         private string _dumpPath;
+        private readonly byte[] _telemetryDumpScratch = new byte[DumpScratchBytes];
 #if UNITY_EDITOR
         private long _csvLastWriteTicks;
 #endif
@@ -110,13 +105,17 @@ namespace Hecton8.World.SeedShipAnomaly
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _registeredSlowTick;
+        private bool _registeredColdTick;
         private bool _registeredHotSwap;
+        private bool _vaultRepairRequested;
         private bool _radiationExportRequested;
         private bool _radiationSourceActive;
         private bool _jobScheduled;
         private bool _jobLocksHeld;
         private bool _defaultsInitialized;
         private bool _dumpedBudgetBreach;
+        private int _telemetryDumpInFlight;
+        private int _telemetryDumpByteCount;
         private bool _legacyReconComplete;
         private uint _legacyReconFlags;
 
@@ -142,8 +141,10 @@ namespace Hecton8.World.SeedShipAnomaly
 
             EnsureSignalLanesReady();
             TryRegisterHotSwapListener();
+            TryRegisterColdTick();
             RebindColdServices();
-            if (EnsureVaultState())
+            PrepareRuntimeStateCold();
+            if (HasVaultStateReady())
                 TryRegisterTicks();
         }
 
@@ -153,7 +154,9 @@ namespace Hecton8.World.SeedShipAnomaly
                 return;
 
             RebindColdServices();
-            if (EnsureVaultState())
+            TryRegisterColdTick();
+            PrepareRuntimeStateCold();
+            if (HasVaultStateReady())
                 TryRegisterTicks();
         }
 
@@ -180,7 +183,10 @@ namespace Hecton8.World.SeedShipAnomaly
                 ClearCachedHandles();
                 _defaultsInitialized = false;
                 _legacyReconComplete = false;
-                if (_dataVault != null && EnsureVaultState())
+                _vaultRepairRequested = true;
+                TryRegisterColdTick();
+                PrepareRuntimeStateCold();
+                if (HasVaultStateReady())
                     TryRegisterTicks();
                 return;
             }
@@ -195,8 +201,11 @@ namespace Hecton8.World.SeedShipAnomaly
                 return;
 
             IDataVault vault = _dataVault;
-            if (vault == null || !EnsureVaultState())
+            if (vault == null || !HasVaultStateReady())
+            {
+                _vaultRepairRequested = true;
                 return;
+            }
 
             float dt = math.clamp(deltaTime, 0.0001f, 0.05f);
             _localTimeSeconds += dt;
@@ -304,12 +313,28 @@ namespace Hecton8.World.SeedShipAnomaly
         {
             _radiationExportRequested = true;
             IDataVault vault = _dataVault;
-            if (vault == null || _jobScheduled || !EnsureVaultState())
+            if (vault == null || _jobScheduled || !HasVaultStateReady())
+            {
+                _vaultRepairRequested = true;
                 return;
+            }
 
 #if UNITY_EDITOR
             MonitorCsvOverrides(vault);
 #endif
+        }
+
+        public void ColdTick()
+        {
+            if (!Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            if (!_vaultRepairRequested && HasVaultStateReady())
+                return;
+
+            PrepareRuntimeStateCold();
+            if (HasVaultStateReady())
+                TryRegisterTicks();
         }
 
         public ref AnomalyFieldDTO GetAnomalyFieldRef()
@@ -432,15 +457,27 @@ namespace Hecton8.World.SeedShipAnomaly
                 !EnsureSeedShipVaultBuffer(vault, ref _rebaseHandle, BufferID.ShinobuSeedShipAnomalyMockAupRebase, 1, NativeArrayOptions.UninitializedMemory, out _) ||
                 !EnsureSeedShipVaultBuffer(vault, ref _thermoHandle, BufferID.ShinobuSeedShipAnomalyThermoSource, 1, NativeArrayOptions.UninitializedMemory, out _) ||
                 !EnsureSeedShipVaultBuffer(vault, ref _telemetryHandle, BufferID.ShinobuSeedShipAnomalyTelemetryRing, SeedShipAnomalyConstants.TelemetryFrameCount, NativeArrayOptions.UninitializedMemory, out _) ||
-                !EnsureSeedShipVaultBuffer(vault, ref _csvOverrideHandle, BufferID.ShinobuSeedShipAnomalyCsvOverrides, SeedShipAnomalyConstants.CsvOverrideCapacity, NativeArrayOptions.UninitializedMemory, out _) ||
-                !EnsureSeedShipVaultBuffer(vault, ref _ioScratchHandle, BufferID.ShinobuSeedShipAnomalyIoScratch, CsvMaxBytes, NativeArrayOptions.UninitializedMemory, out _) ||
-                !EnsureSeedShipVaultBuffer(vault, ref _dumpScratchHandle, BufferID.ShinobuSeedShipAnomalyDumpScratch, DumpScratchBytes, NativeArrayOptions.UninitializedMemory, out _))
+                !EnsureSeedShipVaultBuffer(vault, ref _csvOverrideHandle, BufferID.ShinobuSeedShipAnomalyCsvOverrides, SeedShipAnomalyConstants.CsvOverrideCapacity, NativeArrayOptions.UninitializedMemory, out _))
             {
                 return false;
             }
 
             InitializeDefaults(vault);
             return true;
+        }
+
+        private void PrepareRuntimeStateCold()
+        {
+            _vaultRepairRequested = !EnsureVaultState();
+        }
+
+        private bool HasVaultStateReady()
+        {
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   _defaultsInitialized &&
+                   HandlesReady(vault);
         }
 
         private bool HandlesReady(IDataVault vault)
@@ -454,9 +491,7 @@ namespace Hecton8.World.SeedShipAnomaly
                    HasSeedShipVaultBuffer(vault, in _rebaseHandle, BufferID.ShinobuSeedShipAnomalyMockAupRebase, 1) &&
                    HasSeedShipVaultBuffer(vault, in _thermoHandle, BufferID.ShinobuSeedShipAnomalyThermoSource, 1) &&
                    HasSeedShipVaultBuffer(vault, in _telemetryHandle, BufferID.ShinobuSeedShipAnomalyTelemetryRing, SeedShipAnomalyConstants.TelemetryFrameCount) &&
-                   HasSeedShipVaultBuffer(vault, in _csvOverrideHandle, BufferID.ShinobuSeedShipAnomalyCsvOverrides, SeedShipAnomalyConstants.CsvOverrideCapacity) &&
-                   HasSeedShipVaultBuffer(vault, in _ioScratchHandle, BufferID.ShinobuSeedShipAnomalyIoScratch, CsvMaxBytes) &&
-                   HasSeedShipVaultBuffer(vault, in _dumpScratchHandle, BufferID.ShinobuSeedShipAnomalyDumpScratch, DumpScratchBytes);
+                   HasSeedShipVaultBuffer(vault, in _csvOverrideHandle, BufferID.ShinobuSeedShipAnomalyCsvOverrides, SeedShipAnomalyConstants.CsvOverrideCapacity);
         }
 
         private void InitializeDefaults(IDataVault vault)
@@ -581,7 +616,7 @@ namespace Hecton8.World.SeedShipAnomaly
             try
             {
                 if (TryFindLegacyFile(LegacyEmissionFile, out string emissionPath) &&
-                    TryReadLegacyEmission(vault, emissionPath, out float radius, out float heat, out float radiation))
+                    TryReadLegacyEmission(emissionPath, out float radius, out float heat, out float radiation))
                 {
                     AnomalyFieldDTO currentField = field[0];
                     currentField.Radius = math.clamp(radius, 1f, 12000f);
@@ -596,7 +631,7 @@ namespace Hecton8.World.SeedShipAnomaly
                 }
 
                 if (TryFindLegacyFile(LegacyGlitchFile, out string glitchPath) &&
-                    TryReadLegacyGlitch(vault, glitchPath, out uint glitchHash, out float intensity))
+                    TryReadLegacyGlitch(glitchPath, out uint glitchHash, out float intensity))
                 {
                     AnomalyFieldDTO currentField = field[0];
                     currentField.GlitchHash = glitchHash != 0u ? glitchHash : SeedShipAnomalyConstants.GlitchHash;
@@ -648,17 +683,16 @@ namespace Hecton8.World.SeedShipAnomaly
             }
         }
 
-        private bool TryReadLegacyEmission(IDataVault vault, string path, out float radius, out float heat, out float radiation)
+        private static bool TryReadLegacyEmission(string path, out float radius, out float heat, out float radiation)
         {
             radius = SeedShipAnomalyConstants.DefaultRadiusMeters;
             heat = 0.9f;
             radiation = 0.7f;
-            if (!TryLockIoScratch(vault, out NativeArray<byte> scratch))
-                return false;
+            Span<byte> scratch = stackalloc byte[16];
 
             try
             {
-                int read = ReadColdBytes(path, 16, scratch);
+                int read = ReadColdBytes(path, scratch);
                 if (read < 12)
                     return false;
 
@@ -667,22 +701,21 @@ namespace Hecton8.World.SeedShipAnomaly
                 radiation = ReadFloatLittleEndian(scratch, 8);
                 return math.isfinite(radius) && math.isfinite(heat) && math.isfinite(radiation);
             }
-            finally
+            catch (Exception)
             {
-                vault.ReleaseMutationGuard(IoScratchMutationGuardMask);
+                return false;
             }
         }
 
-        private bool TryReadLegacyGlitch(IDataVault vault, string path, out uint glitchHash, out float intensity)
+        private static bool TryReadLegacyGlitch(string path, out uint glitchHash, out float intensity)
         {
             glitchHash = SeedShipAnomalyConstants.GlitchHash;
             intensity = 0.85f;
-            if (!TryLockIoScratch(vault, out NativeArray<byte> scratch))
-                return false;
+            Span<byte> scratch = stackalloc byte[16];
 
             try
             {
-                int read = ReadColdBytes(path, 16, scratch);
+                int read = ReadColdBytes(path, scratch);
                 if (read < 8)
                     return false;
 
@@ -690,42 +723,19 @@ namespace Hecton8.World.SeedShipAnomaly
                 intensity = ReadFloatLittleEndian(scratch, 4);
                 return math.isfinite(intensity);
             }
-            finally
+            catch (Exception)
             {
-                vault.ReleaseMutationGuard(IoScratchMutationGuardMask);
+                return false;
             }
         }
 
-        private bool TryLockIoScratch(IDataVault vault, out NativeArray<byte> scratch)
+        private static int ReadColdBytes(string path, Span<byte> scratch)
         {
-            scratch = default;
-            if (!vault.TryAcquireMutationGuard(IoScratchMutationGuardMask))
-                return false;
-
-            if (!TryResolveSeedShipVaultBuffer(
-                    vault,
-                    ref _ioScratchHandle,
-                    BufferID.ShinobuSeedShipAnomalyIoScratch,
-                    CsvMaxBytes,
-                    out scratch))
-            {
-                vault.ReleaseMutationGuard(IoScratchMutationGuardMask);
-                return false;
-            }
-
-            return true;
-        }
-
-        private static int ReadColdBytes(string path, int maxBytes, NativeArray<byte> scratch)
-        {
-            int byteCount = math.min(math.max(0, maxBytes), scratch.Length);
-            if (byteCount == 0)
+            if (scratch.Length == 0)
                 return 0;
 
             using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            void* ptr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-            Span<byte> span = new Span<byte>(ptr, byteCount);
-            return stream.Read(span);
+            return stream.Read(scratch);
         }
 
         private bool TryResolveBuffers(
@@ -987,62 +997,31 @@ namespace Hecton8.World.SeedShipAnomaly
             if (_dumpedBudgetBreach || vault == null)
                 return;
 
-            if (!vault.TryAcquireMutationGuard(DumpMutationGuardMask))
+            if (System.Threading.Interlocked.CompareExchange(ref _telemetryDumpInFlight, 1, 0) != 0)
+            {
+                _dumpedBudgetBreach = true;
                 return;
+            }
+
+            bool queued = false;
+            if (!TryReadOnlySeedShipVaultBuffer(
+                    vault,
+                    ref _telemetryHandle,
+                    BufferID.ShinobuSeedShipAnomalyTelemetryRing,
+                    SeedShipAnomalyConstants.TelemetryFrameCount,
+                    out NativeArray<AnomalyTelemetryEntry>.ReadOnly telemetry) ||
+                !telemetry.IsCreated ||
+                telemetry.Length == 0)
+            {
+                System.Threading.Volatile.Write(ref _telemetryDumpInFlight, 0);
+                return;
+            }
 
             try
             {
-                if (!TryResolveSeedShipVaultBuffer(
-                        vault,
-                        ref _telemetryHandle,
-                        BufferID.ShinobuSeedShipAnomalyTelemetryRing,
-                        SeedShipAnomalyConstants.TelemetryFrameCount,
-                        out NativeArray<AnomalyTelemetryEntry> telemetry) ||
-                    !TryResolveSeedShipVaultBuffer(
-                        vault,
-                        ref _dumpScratchHandle,
-                        BufferID.ShinobuSeedShipAnomalyDumpScratch,
-                        DumpScratchBytes,
-                        out NativeArray<byte> dumpScratch) ||
-                    !telemetry.IsCreated ||
-                    telemetry.Length == 0)
-                {
-                    return;
-                }
-
                 _dumpedBudgetBreach = true;
-                void* ptr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dumpScratch);
-                Span<byte> scratch = new Span<byte>(ptr, math.min(DumpScratchBytes, dumpScratch.Length));
-                scratch.Clear();
-                BinaryPrimitives.WriteUInt64LittleEndian(scratch.Slice(0, 8), DumpMagic);
-                BinaryPrimitives.WriteUInt32LittleEndian(scratch.Slice(8, 4), DumpVersion);
-                BinaryPrimitives.WriteUInt32LittleEndian(scratch.Slice(12, 4), reasonFlags);
-                BinaryPrimitives.WriteInt32LittleEndian(scratch.Slice(16, 4), telemetry.Length);
-                BinaryPrimitives.WriteInt32LittleEndian(scratch.Slice(20, 4), _telemetryCursor);
-
-                int offset = 32;
-                for (int i = 0; i < telemetry.Length && offset + 64 <= scratch.Length; i++)
-                {
-                    AnomalyTelemetryEntry entry = telemetry[i];
-                    WriteFloatLittleEndian(scratch.Slice(offset, 4), entry.CurrentCorruptionLevel);
-                    BinaryPrimitives.WriteInt32LittleEndian(scratch.Slice(offset + 4, 4), entry.EntitiesAffected);
-                    WriteFloatLittleEndian(scratch.Slice(offset + 8, 4), entry.AnomalyComputeTimeMs);
-                    WriteFloatLittleEndian(scratch.Slice(offset + 12, 4), entry.GravityY);
-                    WriteFloatLittleEndian(scratch.Slice(offset + 16, 4), entry.RadarJam01);
-                    WriteFloatLittleEndian(scratch.Slice(offset + 20, 4), entry.HeatSource01);
-                    WriteFloatLittleEndian(scratch.Slice(offset + 24, 4), entry.GlobalQualityWeight);
-                    BinaryPrimitives.WriteUInt32LittleEndian(scratch.Slice(offset + 28, 4), entry.Frame);
-                    BinaryPrimitives.WriteUInt32LittleEndian(scratch.Slice(offset + 32, 4), entry.Flags);
-                    BinaryPrimitives.WriteUInt32LittleEndian(scratch.Slice(offset + 36, 4), entry.StateHash);
-                    WriteDoubleLittleEndian(scratch.Slice(offset + 40, 8), entry.EpicenterAUP.x);
-                    WriteDoubleLittleEndian(scratch.Slice(offset + 48, 8), entry.EpicenterAUP.y);
-                    WriteDoubleLittleEndian(scratch.Slice(offset + 56, 8), entry.EpicenterAUP.z);
-                    offset += 64;
-                }
-
-                Directory.CreateDirectory(Path.GetDirectoryName(_dumpPath));
-                using FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                stream.Write(scratch.Slice(0, math.min(offset, scratch.Length)));
+                _telemetryDumpByteCount = PackTelemetryDumpBytes(telemetry, reasonFlags, _telemetryCursor, _telemetryDumpScratch);
+                queued = System.Threading.ThreadPool.QueueUserWorkItem(TelemetryDumpWorkerCallback, this);
             }
             catch (Exception)
             {
@@ -1050,8 +1029,75 @@ namespace Hecton8.World.SeedShipAnomaly
             }
             finally
             {
-                vault.ReleaseMutationGuard(DumpMutationGuardMask);
+                if (!queued)
+                    System.Threading.Volatile.Write(ref _telemetryDumpInFlight, 0);
             }
+        }
+
+        private static int PackTelemetryDumpBytes(
+            NativeArray<AnomalyTelemetryEntry>.ReadOnly telemetry,
+            uint reasonFlags,
+            int telemetryCursor,
+            byte[] scratchBytes)
+        {
+            Span<byte> scratch = scratchBytes;
+            scratch.Clear();
+            BinaryPrimitives.WriteUInt64LittleEndian(scratch.Slice(0, 8), DumpMagic);
+            BinaryPrimitives.WriteUInt32LittleEndian(scratch.Slice(8, 4), DumpVersion);
+            BinaryPrimitives.WriteUInt32LittleEndian(scratch.Slice(12, 4), reasonFlags);
+            BinaryPrimitives.WriteInt32LittleEndian(scratch.Slice(16, 4), telemetry.Length);
+            BinaryPrimitives.WriteInt32LittleEndian(scratch.Slice(20, 4), telemetryCursor);
+
+            int offset = 32;
+            for (int i = 0; i < telemetry.Length && offset + 64 <= scratch.Length; i++)
+            {
+                AnomalyTelemetryEntry entry = telemetry[i];
+                WriteFloatLittleEndian(scratch.Slice(offset, 4), entry.CurrentCorruptionLevel);
+                BinaryPrimitives.WriteInt32LittleEndian(scratch.Slice(offset + 4, 4), entry.EntitiesAffected);
+                WriteFloatLittleEndian(scratch.Slice(offset + 8, 4), entry.AnomalyComputeTimeMs);
+                WriteFloatLittleEndian(scratch.Slice(offset + 12, 4), entry.GravityY);
+                WriteFloatLittleEndian(scratch.Slice(offset + 16, 4), entry.RadarJam01);
+                WriteFloatLittleEndian(scratch.Slice(offset + 20, 4), entry.HeatSource01);
+                WriteFloatLittleEndian(scratch.Slice(offset + 24, 4), entry.GlobalQualityWeight);
+                BinaryPrimitives.WriteUInt32LittleEndian(scratch.Slice(offset + 28, 4), entry.Frame);
+                BinaryPrimitives.WriteUInt32LittleEndian(scratch.Slice(offset + 32, 4), entry.Flags);
+                BinaryPrimitives.WriteUInt32LittleEndian(scratch.Slice(offset + 36, 4), entry.StateHash);
+                WriteDoubleLittleEndian(scratch.Slice(offset + 40, 8), entry.EpicenterAUP.x);
+                WriteDoubleLittleEndian(scratch.Slice(offset + 48, 8), entry.EpicenterAUP.y);
+                WriteDoubleLittleEndian(scratch.Slice(offset + 56, 8), entry.EpicenterAUP.z);
+                offset += 64;
+            }
+
+            return math.min(offset, scratch.Length);
+        }
+
+        private static void RunTelemetryDumpWorker(object state)
+        {
+            if (state is SeedShipAnomalyRuntime runtime)
+                runtime.WriteQueuedTelemetryDump();
+        }
+
+        private void WriteQueuedTelemetryDump()
+        {
+            try
+            {
+                WriteColdDumpBytes(_dumpPath, _telemetryDumpScratch, _telemetryDumpByteCount);
+            }
+            catch (Exception)
+            {
+                _dumpedBudgetBreach = true;
+            }
+            finally
+            {
+                System.Threading.Volatile.Write(ref _telemetryDumpInFlight, 0);
+            }
+        }
+
+        private static void WriteColdDumpBytes(string path, byte[] bytes, int byteCount)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+            stream.Write(bytes, 0, math.min(byteCount, bytes.Length));
         }
 
         private void ConsumeHackSignals(float dt)
@@ -1108,32 +1154,24 @@ namespace Hecton8.World.SeedShipAnomaly
                     return;
 
                 _csvLastWriteTicks = ticks;
-                if (!vault.TryAcquireMutationGuard(CsvImportMutationGuardMask))
+                Span<byte> scratch = stackalloc byte[CsvMaxBytes];
+                int read = ReadColdBytes(_csvPath, scratch);
+                if (read <= 0)
                     return;
 
-                try
+                Span<AnomalyCsvOverrideDTO> overrides = stackalloc AnomalyCsvOverrideDTO[SeedShipAnomalyConstants.CsvOverrideCapacity];
+                if (!TryBuildCsvOverrides(
+                        vault,
+                        scratch.Slice(0, read),
+                        overrides,
+                        out AnomalyTuningDTO tuning,
+                        out AnomalyFieldDTO field,
+                        out int overrideCount))
                 {
-                    if (!TryResolveSeedShipVaultBuffer(
-                            vault,
-                            ref _ioScratchHandle,
-                            BufferID.ShinobuSeedShipAnomalyIoScratch,
-                            CsvMaxBytes,
-                            out NativeArray<byte> scratch))
-                    {
-                        return;
-                    }
+                    return;
+                }
 
-                    int read = ReadColdBytes(_csvPath, CsvMaxBytes, scratch);
-                    if (read > 0)
-                    {
-                        void* ptr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                        ParseCsvOverrides(vault, new ReadOnlySpan<byte>(ptr, read));
-                    }
-                }
-                finally
-                {
-                    vault.ReleaseMutationGuard(CsvImportMutationGuardMask);
-                }
+                TryCommitCsvOverrides(vault, in tuning, in field, overrides, overrideCount);
             }
             catch (Exception)
             {
@@ -1141,18 +1179,25 @@ namespace Hecton8.World.SeedShipAnomaly
             }
         }
 
-        private void ParseCsvOverrides(IDataVault vault, ReadOnlySpan<byte> bytes)
+        private bool TryBuildCsvOverrides(
+            IDataVault vault,
+            ReadOnlySpan<byte> bytes,
+            Span<AnomalyCsvOverrideDTO> stagedOverrides,
+            out AnomalyTuningDTO tuning,
+            out AnomalyFieldDTO field,
+            out int overrideCount)
         {
-            if (!TryResolveSeedShipVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuSeedShipAnomalyTuning, 1, out NativeArray<AnomalyTuningDTO> tuningArray) ||
-                !TryResolveSeedShipVaultBuffer(vault, ref _fieldHandle, BufferID.ShinobuSeedShipAnomalyField, 1, out NativeArray<AnomalyFieldDTO> fieldArray) ||
-                !TryResolveSeedShipVaultBuffer(vault, ref _csvOverrideHandle, BufferID.ShinobuSeedShipAnomalyCsvOverrides, SeedShipAnomalyConstants.CsvOverrideCapacity, out NativeArray<AnomalyCsvOverrideDTO> overrides))
+            tuning = default;
+            field = default;
+            overrideCount = 0;
+            if (!TryReadOnlySeedShipVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuSeedShipAnomalyTuning, 1, out NativeArray<AnomalyTuningDTO>.ReadOnly tuningArray) ||
+                !TryReadOnlySeedShipVaultBuffer(vault, ref _fieldHandle, BufferID.ShinobuSeedShipAnomalyField, 1, out NativeArray<AnomalyFieldDTO>.ReadOnly fieldArray))
             {
-                return;
+                return false;
             }
 
-            AnomalyTuningDTO tuning = tuningArray[0];
-            AnomalyFieldDTO field = fieldArray[0];
-            int overrideIndex = 0;
+            tuning = tuningArray[0];
+            field = fieldArray[0];
             int lineStart = 0;
             uint frame = _simulationFrameCounter;
 
@@ -1179,22 +1224,55 @@ namespace Hecton8.World.SeedShipAnomaly
 
                 uint keyHash = HashLowerAscii(key);
                 ApplyCsvOverride(keyHash, value, ref tuning, ref field);
-                if (overrideIndex < overrides.Length)
+                if (overrideCount < stagedOverrides.Length)
                 {
-                    overrides[overrideIndex++] = new AnomalyCsvOverrideDTO
-                    {
-                        KeyHash = keyHash,
-                        Value = value,
-                        Frame = frame,
-                        Flags = 1u
-                    };
+                    AnomalyCsvOverrideDTO row = default;
+                    row.KeyHash = keyHash;
+                    row.Value = value;
+                    row.Frame = frame;
+                    row.Flags = 1u;
+                    stagedOverrides[overrideCount++] = row;
                 }
             }
 
-            tuningArray[0] = SeedShipAnomalyMath.SanitizeTuning(tuning);
+            tuning = SeedShipAnomalyMath.SanitizeTuning(tuning);
             field.Radius = math.max(0f, field.Radius);
             field.CorruptionLevel = math.saturate(field.CorruptionLevel);
-            fieldArray[0] = field;
+            return true;
+        }
+
+        private bool TryCommitCsvOverrides(
+            IDataVault vault,
+            in AnomalyTuningDTO tuning,
+            in AnomalyFieldDTO field,
+            ReadOnlySpan<AnomalyCsvOverrideDTO> stagedOverrides,
+            int overrideCount)
+        {
+            if (vault == null || !vault.TryAcquireMutationGuard(CsvApplyMutationGuardMask))
+                return false;
+
+            try
+            {
+                if (!TryResolveSeedShipVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuSeedShipAnomalyTuning, 1, out NativeArray<AnomalyTuningDTO> tuningArray) ||
+                    !TryResolveSeedShipVaultBuffer(vault, ref _fieldHandle, BufferID.ShinobuSeedShipAnomalyField, 1, out NativeArray<AnomalyFieldDTO> fieldArray) ||
+                    !TryResolveSeedShipVaultBuffer(vault, ref _csvOverrideHandle, BufferID.ShinobuSeedShipAnomalyCsvOverrides, SeedShipAnomalyConstants.CsvOverrideCapacity, out NativeArray<AnomalyCsvOverrideDTO> overrides))
+                {
+                    return false;
+                }
+
+                tuningArray[0] = tuning;
+                fieldArray[0] = field;
+                int safeOverrideCount = math.min(math.max(0, overrideCount), math.min(stagedOverrides.Length, overrides.Length));
+                for (int i = 0; i < safeOverrideCount; i++)
+                    overrides[i] = stagedOverrides[i];
+                for (int i = safeOverrideCount; i < overrides.Length; i++)
+                    overrides[i] = default;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(CsvApplyMutationGuardMask);
+            }
         }
 
         private static void ApplyCsvOverride(uint keyHash, float value, ref AnomalyTuningDTO tuning, ref AnomalyFieldDTO field)
@@ -1241,6 +1319,8 @@ namespace Hecton8.World.SeedShipAnomaly
 
         private void TryRegisterTicks()
         {
+            TryRegisterColdTick();
+
             if (!_registeredUpdate)
                 _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             if (!_registeredLateFrame)
@@ -1249,11 +1329,35 @@ namespace Hecton8.World.SeedShipAnomaly
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
 
             if (!_registeredUpdate || !_registeredLateFrame || !_registeredSlowTick)
-                TryUnregisterTicks();
+            {
+                if (_registeredUpdate)
+                {
+                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                    _registeredUpdate = false;
+                }
+
+                if (_registeredLateFrame)
+                {
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                    _registeredLateFrame = false;
+                }
+
+                if (_registeredSlowTick)
+                {
+                    GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                    _registeredSlowTick = false;
+                }
+            }
         }
 
         private void TryUnregisterTicks()
         {
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _registeredColdTick = false;
+            }
+
             if (_registeredUpdate)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -1271,6 +1375,12 @@ namespace Hecton8.World.SeedShipAnomaly
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
             }
+        }
+
+        private void TryRegisterColdTick()
+        {
+            if (!_registeredColdTick)
+                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
         }
 
         private void TryRegisterHotSwapListener()
@@ -1378,6 +1488,39 @@ namespace Hecton8.World.SeedShipAnomaly
             return true;
         }
 
+        private bool TryReadOnlySeedShipVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (IsSeedShipVaultHandle(in handle, bufferId) &&
+                vault.TryReadOnlyHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
+                !IsSeedShipVaultHandle(in handle, bufferId) ||
+                !vault.TryReadOnlyHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                handle = default;
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
         private static bool IsSeedShipVaultHandle<T>(
             in VaultGenerationHandle<T> handle,
             BufferID bufferId) where T : struct
@@ -1435,8 +1578,6 @@ namespace Hecton8.World.SeedShipAnomaly
             ReleaseSeedShipVaultHandle(vault, ref _thermoHandle);
             ReleaseSeedShipVaultHandle(vault, ref _telemetryHandle);
             ReleaseSeedShipVaultHandle(vault, ref _csvOverrideHandle);
-            ReleaseSeedShipVaultHandle(vault, ref _ioScratchHandle);
-            ReleaseSeedShipVaultHandle(vault, ref _dumpScratchHandle);
         }
 
         private static void ReleaseSeedShipVaultHandle<T>(
@@ -1466,8 +1607,6 @@ namespace Hecton8.World.SeedShipAnomaly
             _thermoHandle = default;
             _telemetryHandle = default;
             _csvOverrideHandle = default;
-            _ioScratchHandle = default;
-            _dumpScratchHandle = default;
             _scalabilityHandle = default;
         }
 
@@ -1596,7 +1735,7 @@ namespace Hecton8.World.SeedShipAnomaly
             return hash;
         }
 
-        private static uint ReadUInt32LittleEndian(NativeArray<byte> bytes, int offset)
+        private static uint ReadUInt32LittleEndian(ReadOnlySpan<byte> bytes, int offset)
         {
             return (uint)(bytes[offset] |
                           (bytes[offset + 1] << 8) |
@@ -1604,7 +1743,7 @@ namespace Hecton8.World.SeedShipAnomaly
                           (bytes[offset + 3] << 24));
         }
 
-        private static float ReadFloatLittleEndian(NativeArray<byte> bytes, int offset)
+        private static float ReadFloatLittleEndian(ReadOnlySpan<byte> bytes, int offset)
         {
             uint raw = ReadUInt32LittleEndian(bytes, offset);
             return math.asfloat(raw);

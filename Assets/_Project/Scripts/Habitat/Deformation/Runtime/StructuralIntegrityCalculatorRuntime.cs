@@ -112,6 +112,7 @@ namespace Hecton8.Habitat.Deformation
         private int _solverLockMask;
         private ulong _solverMutationGuardMask;
         private IDataVault _solverGuardVault;
+        private IDataVault _structuralMutationGuardVault;
         private int _activeNodeCount;
         private int _activeEdgeCount;
         private uint _frame;
@@ -947,13 +948,19 @@ namespace Hecton8.Habitat.Deformation
 
         private bool TryAcquireStructuralMutationGuard()
         {
-            return _dataVault != null && _dataVault.TryAcquireMutationGuard(StructuralMutationGuardMask);
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(StructuralMutationGuardMask))
+                return false;
+
+            _structuralMutationGuardVault = vault;
+            return true;
         }
 
         private void ReleaseStructuralMutationGuard()
         {
-            if (_dataVault != null)
-                _dataVault.ReleaseMutationGuard(StructuralMutationGuardMask);
+            IDataVault vault = _structuralMutationGuardVault;
+            _structuralMutationGuardVault = null;
+            vault?.ReleaseMutationGuard(StructuralMutationGuardMask);
         }
 
         private void UnlockSolverBuffers()

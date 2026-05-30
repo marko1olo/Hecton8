@@ -246,6 +246,7 @@ namespace Hecton8.Visor
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
 
         private VoxelSsaoPass _pass;
+        private bool _supportsComputeShaders;
 
         /// <inheritdoc />
         public override void Create()
@@ -256,6 +257,7 @@ namespace Hecton8.Visor
 #endif
 
             _pass ??= new VoxelSsaoPass();
+            CacheGraphicsCapabilitiesCold();
         }
 
         /// <inheritdoc />
@@ -267,7 +269,7 @@ namespace Hecton8.Visor
             if (settings == null ||
                 settings.computeShader == null ||
                 _pass == null ||
-                !SystemInfo.supportsComputeShaders)
+                !_supportsComputeShaders)
             {
                 return;
             }
@@ -284,6 +286,11 @@ namespace Hecton8.Visor
         protected override void Dispose(bool disposing)
         {
             _pass?.Dispose();
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsComputeShaders = SystemInfo.supportsComputeShaders;
         }
     }
 }

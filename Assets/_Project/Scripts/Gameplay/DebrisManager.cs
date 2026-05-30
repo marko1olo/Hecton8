@@ -361,7 +361,7 @@ namespace Hecton8.Gameplay
 
             if (_pendingShiftOffset.sqrMagnitude > 0.000001f && !_simulationScheduled)
             {
-                if (TryAcquireVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> shiftedFrontStates))
+                if (TryAcquireVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> shiftedFrontStates, out IDataVault shiftedFrontVault))
                 {
                     try
                     {
@@ -369,7 +369,7 @@ namespace Hecton8.Gameplay
                     }
                     finally
                     {
-                        ReleaseVaultWrite(in _frontStatesHandle);
+                        ReleaseVaultWrite(shiftedFrontVault, in _frontStatesHandle);
                     }
                 }
 
@@ -447,7 +447,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (TryAcquireVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> frontStates))
+            if (TryAcquireVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> frontStates, out IDataVault frontVault))
             {
                 try
                 {
@@ -455,11 +455,11 @@ namespace Hecton8.Gameplay
                 }
                 finally
                 {
-                    ReleaseVaultWrite(in _frontStatesHandle);
+                    ReleaseVaultWrite(frontVault, in _frontStatesHandle);
                 }
             }
 
-            if (TryAcquireVaultBuffer(in _backStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> backStates))
+            if (TryAcquireVaultBuffer(in _backStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> backStates, out IDataVault backVault))
             {
                 try
                 {
@@ -467,7 +467,7 @@ namespace Hecton8.Gameplay
                 }
                 finally
                 {
-                    ReleaseVaultWrite(in _backStatesHandle);
+                    ReleaseVaultWrite(backVault, in _backStatesHandle);
                 }
             }
         }
@@ -809,7 +809,7 @@ namespace Hecton8.Gameplay
 
         private void ResetActiveState()
         {
-            if (TryAcquireVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> frontStates))
+            if (TryAcquireVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> frontStates, out IDataVault frontVault))
             {
                 try
                 {
@@ -818,11 +818,11 @@ namespace Hecton8.Gameplay
                 }
                 finally
                 {
-                    ReleaseVaultWrite(in _frontStatesHandle);
+                    ReleaseVaultWrite(frontVault, in _frontStatesHandle);
                 }
             }
 
-            if (TryAcquireVaultBuffer(in _backStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> backStates))
+            if (TryAcquireVaultBuffer(in _backStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> backStates, out IDataVault backVault))
             {
                 try
                 {
@@ -831,7 +831,7 @@ namespace Hecton8.Gameplay
                 }
                 finally
                 {
-                    ReleaseVaultWrite(in _backStatesHandle);
+                    ReleaseVaultWrite(backVault, in _backStatesHandle);
                 }
             }
 
@@ -847,7 +847,7 @@ namespace Hecton8.Gameplay
 
         private void ProcessThermalPetrification()
         {
-            if (!TryAcquireVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> frontStates))
+            if (!TryAcquireVaultBuffer(in _frontStatesHandle, MaxActiveChunks, out NativeArray<DebrisChunkState> frontStates, out IDataVault frontVault))
                 return;
 
             try
@@ -925,7 +925,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                ReleaseVaultWrite(in _frontStatesHandle);
+                ReleaseVaultWrite(frontVault, in _frontStatesHandle);
             }
         }
 
@@ -1054,9 +1054,11 @@ namespace Hecton8.Gameplay
         private bool TryAcquireVaultBuffer(
             in VaultGenerationHandle<DebrisChunkState> handle,
             int requiredLength,
-            out NativeArray<DebrisChunkState> buffer)
+            out NativeArray<DebrisChunkState> buffer,
+            out IDataVault writeVault)
         {
             buffer = default;
+            writeVault = null;
             IDataVault vault = _dataVault;
             if (vault == null ||
                 !IsVaultHandleCreated(in handle) ||
@@ -1065,17 +1067,29 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            if (buffer.IsCreated && buffer.Length >= requiredLength)
-                return true;
+            bool ownershipTransferred = false;
+            try
+            {
+                if (buffer.IsCreated && buffer.Length >= requiredLength)
+                {
+                    writeVault = vault;
+                    ownershipTransferred = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
-            buffer = default;
-            return false;
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                    vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+            }
         }
 
-        private void ReleaseVaultWrite(in VaultGenerationHandle<DebrisChunkState> handle)
+        private static void ReleaseVaultWrite(IDataVault vault, in VaultGenerationHandle<DebrisChunkState> handle)
         {
-            _dataVault?.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+            vault?.ReleaseWriteLock(in handle, VaultOwnerSystemId);
         }
 
         private void ReleaseVaultBuffer(ref VaultGenerationHandle<DebrisChunkState> handle)
@@ -1113,7 +1127,7 @@ namespace Hecton8.Gameplay
             if (!_simulationJobGuardHeld)
                 return;
 
-            IDataVault vault = _simulationJobGuardVault ?? _dataVault;
+            IDataVault vault = _simulationJobGuardVault;
             _simulationJobGuardVault = null;
             _simulationJobGuardHeld = false;
             if (vault != null)

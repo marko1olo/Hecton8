@@ -83,6 +83,9 @@ namespace Hecton8.SaveSystem
         private const string NativeMemoryOwner = nameof(SaveManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const NativeAllocationLifetime NativeTransientMemoryLifetime = NativeAllocationLifetime.TransientArena;
+        private const string NativeMemoryRegistrationFailureMessage = "NativeMemorySentinel registration failed for persistent SaveManager buffer.";
+        private const string NativeMemoryTransientRegistrationFailureMessage = "NativeMemorySentinel registration failed for transient SaveManager buffer.";
+        private const string NativeMemoryRestoreFailureMessage = "NativeMemorySentinel restore failed after SaveManager native disposal fault.";
         private const uint WfcOutpostBlackBoxMagic = 0x57464342u; // WFCB
         private const uint WfcOutpostBlackBoxVersion = 3u;
         private const uint WfcOutpostBlackBoxOperationPersist = 0x50525354u; // PRST
@@ -213,6 +216,7 @@ namespace Hecton8.SaveSystem
                 EnsureSaveTelemetryRing();
                 EnsureWfcOutpostBlackBoxRing();
                 EnsureWfcOutpostNativeBuffers();
+                EnsureSaveStagingBuffer();
                 EnsureLoadCandidateScratch();
             }
 
@@ -231,8 +235,10 @@ namespace Hecton8.SaveSystem
                     return;
 
                 // COLD ALLOC: NativeArray<byte>[67108864] - raw binary save staging buffer for save payload assembly - owner: SaveManagerNativeBufferSet
-                SavePayloadBuffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(SavePayloadBuffer, NativeMemoryOwner, nameof(SavePayloadBuffer), NativeMemoryLifetime);
+                SavePayloadBuffer = CreatePersistentNativeArray<byte>(
+                    SaveBinaryStorage.RawPayloadCapacityBytes,
+                    NativeArrayOptions.UninitializedMemory,
+                    nameof(SavePayloadBuffer));
             }
 
             public void EnsureCompressedSaveBuffer()
@@ -241,8 +247,10 @@ namespace Hecton8.SaveSystem
                     return;
 
                 // COLD ALLOC: NativeArray<byte>[71303168] - protected 16KB LZ4 block-compressed save payload buffer for 64MB raw save budget - owner: SaveManagerNativeBufferSet
-                CompressedSaveBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(CompressedSaveBuffer, NativeMemoryOwner, nameof(CompressedSaveBuffer), NativeMemoryLifetime);
+                CompressedSaveBuffer = CreatePersistentNativeArray<byte>(
+                    SaveBinaryStorage.MaxCompressedPayloadBytes,
+                    NativeArrayOptions.UninitializedMemory,
+                    nameof(CompressedSaveBuffer));
             }
 
             public void EnsureSaveStagingBuffer()
@@ -251,8 +259,10 @@ namespace Hecton8.SaveSystem
                     return;
 
                 // COLD ALLOC: NativeArray<byte>[10485760] - 10MB async persistence snapshot staging arena - owner: SaveManagerNativeBufferSet
-                SaveStagingBuffer = new NativeArray<byte>(SaveStagingBufferBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(SaveStagingBuffer, NativeMemoryOwner, nameof(SaveStagingBuffer), NativeMemoryLifetime);
+                SaveStagingBuffer = CreatePersistentNativeArray<byte>(
+                    SaveStagingBufferBytes,
+                    NativeArrayOptions.UninitializedMemory,
+                    nameof(SaveStagingBuffer));
             }
 
             public void EnsureWfcOutpostNativeBuffers()
@@ -260,29 +270,37 @@ namespace Hecton8.SaveSystem
                 if (!WfcOutpostPackedWords.IsCreated)
                 {
                     // COLD ALLOC: NativeArray<ulong>[32] - WFC outpost mutable-bit payload pack scratch - owner: SaveManagerNativeBufferSet
-                    WfcOutpostPackedWords = new NativeArray<ulong>(WfcOutpostPersistenceConstants.PackedWordCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(WfcOutpostPackedWords, NativeMemoryOwner, nameof(WfcOutpostPackedWords), NativeMemoryLifetime);
+                    WfcOutpostPackedWords = CreatePersistentNativeArray<ulong>(
+                        WfcOutpostPersistenceConstants.PackedWordCount,
+                        NativeArrayOptions.ClearMemory,
+                        nameof(WfcOutpostPackedWords));
                 }
 
                 if (!WfcOutpostRestoreWords.IsCreated)
                 {
                     // COLD ALLOC: NativeArray<ulong>[32] - WFC outpost mutable-bit restore scratch - owner: SaveManagerNativeBufferSet
-                    WfcOutpostRestoreWords = new NativeArray<ulong>(WfcOutpostPersistenceConstants.PackedWordCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(WfcOutpostRestoreWords, NativeMemoryOwner, nameof(WfcOutpostRestoreWords), NativeMemoryLifetime);
+                    WfcOutpostRestoreWords = CreatePersistentNativeArray<ulong>(
+                        WfcOutpostPersistenceConstants.PackedWordCount,
+                        NativeArrayOptions.ClearMemory,
+                        nameof(WfcOutpostRestoreWords));
                 }
 
                 if (!WfcOutpostPayloadBuffer.IsCreated)
                 {
                     // COLD ALLOC: NativeArray<byte>[288] - WFC outpost RLE payload staging buffer - owner: SaveManagerNativeBufferSet
-                    WfcOutpostPayloadBuffer = new NativeArray<byte>(WfcOutpostPersistenceConstants.PayloadMaxBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                    NativeMemorySentinel.RegisterNativeArray(WfcOutpostPayloadBuffer, NativeMemoryOwner, nameof(WfcOutpostPayloadBuffer), NativeMemoryLifetime);
+                    WfcOutpostPayloadBuffer = CreatePersistentNativeArray<byte>(
+                        WfcOutpostPersistenceConstants.PayloadMaxBytes,
+                        NativeArrayOptions.UninitializedMemory,
+                        nameof(WfcOutpostPayloadBuffer));
                 }
 
                 if (!WfcOutpostSnapshotCache.IsCreated)
                 {
                     // COLD ALLOC: NativeArray<WfcOutpostSnapshotCacheEntry>[256] - WFC per-sector payload-hash dedupe cache - owner: SaveManagerNativeBufferSet
-                    WfcOutpostSnapshotCache = new NativeArray<WfcOutpostSnapshotCacheEntry>(WfcOutpostSnapshotCacheCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(WfcOutpostSnapshotCache, NativeMemoryOwner, nameof(WfcOutpostSnapshotCache), NativeMemoryLifetime);
+                    WfcOutpostSnapshotCache = CreatePersistentNativeArray<WfcOutpostSnapshotCacheEntry>(
+                        WfcOutpostSnapshotCacheCapacity,
+                        NativeArrayOptions.ClearMemory,
+                        nameof(WfcOutpostSnapshotCache));
                 }
             }
 
@@ -292,8 +310,10 @@ namespace Hecton8.SaveSystem
                     return;
 
                 // COLD ALLOC: NativeArray<AsyncPersistenceTelemetryEntry>[300] - save black box duration/size ring - owner: SaveManagerNativeBufferSet
-                SaveTelemetryRing = new NativeArray<AsyncPersistenceTelemetryEntry>(SaveTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(SaveTelemetryRing, NativeMemoryOwner, nameof(SaveTelemetryRing), NativeMemoryLifetime);
+                SaveTelemetryRing = CreatePersistentNativeArray<AsyncPersistenceTelemetryEntry>(
+                    SaveTelemetryCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    nameof(SaveTelemetryRing));
             }
 
             public void EnsureWfcOutpostBlackBoxRing()
@@ -301,15 +321,19 @@ namespace Hecton8.SaveSystem
                 if (!WfcOutpostTelemetryRing.IsCreated)
                 {
                     // COLD ALLOC: NativeArray<WfcOutpostTelemetryEntry>[300] - WFC outpost frame black-box ring - owner: SaveManagerNativeBufferSet
-                    WfcOutpostTelemetryRing = new NativeArray<WfcOutpostTelemetryEntry>(WfcOutpostTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(WfcOutpostTelemetryRing, NativeMemoryOwner, nameof(WfcOutpostTelemetryRing), NativeMemoryLifetime);
+                    WfcOutpostTelemetryRing = CreatePersistentNativeArray<WfcOutpostTelemetryEntry>(
+                        WfcOutpostTelemetryCapacity,
+                        NativeArrayOptions.ClearMemory,
+                        nameof(WfcOutpostTelemetryRing));
                 }
 
                 if (!WfcOutpostEventTelemetryRing.IsCreated)
                 {
                     // COLD ALLOC: NativeArray<WfcOutpostTelemetryEntry>[300] - WFC outpost event black-box ring - owner: SaveManagerNativeBufferSet
-                    WfcOutpostEventTelemetryRing = new NativeArray<WfcOutpostTelemetryEntry>(WfcOutpostEventTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(WfcOutpostEventTelemetryRing, NativeMemoryOwner, nameof(WfcOutpostEventTelemetryRing), NativeMemoryLifetime);
+                    WfcOutpostEventTelemetryRing = CreatePersistentNativeArray<WfcOutpostTelemetryEntry>(
+                        WfcOutpostEventTelemetryCapacity,
+                        NativeArrayOptions.ClearMemory,
+                        nameof(WfcOutpostEventTelemetryRing));
                 }
             }
 
@@ -319,8 +343,10 @@ namespace Hecton8.SaveSystem
                     return;
 
                 // COLD ALLOC: NativeArray<SaveLoadCandidate>[9] - unmanaged load fallback descriptors - owner: SaveManagerNativeBufferSet
-                LoadCandidateScratch = new NativeArray<SaveLoadCandidate>(MaxSaveLoadCandidateCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(LoadCandidateScratch, NativeMemoryOwner, nameof(LoadCandidateScratch), NativeMemoryLifetime);
+                LoadCandidateScratch = CreatePersistentNativeArray<SaveLoadCandidate>(
+                    MaxSaveLoadCandidateCount,
+                    NativeArrayOptions.ClearMemory,
+                    nameof(LoadCandidateScratch));
             }
 
             public void Dispose()
@@ -350,6 +376,7 @@ namespace Hecton8.SaveSystem
             public static NativeArray<byte> CompressedWriteBuffer;
             private static bool s_writeBuffersInUse;
             private static bool s_disposeRequested;
+            private static Exception s_disposeException;
 
             public static void EnsureLoadCandidateScratch()
             {
@@ -359,8 +386,10 @@ namespace Hecton8.SaveSystem
                         return;
 
                     // COLD ALLOC: NativeArray<SaveLoadCandidate>[9] - static repair/audit fallback descriptors - owner: SaveManager.StaticNativeBuffers
-                    SaveLoadCandidateScratch = new NativeArray<SaveLoadCandidate>(MaxSaveLoadCandidateCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                    NativeMemorySentinel.RegisterNativeArray(SaveLoadCandidateScratch, NativeMemoryOwner, nameof(SaveLoadCandidateScratch), NativeMemoryLifetime);
+                    SaveLoadCandidateScratch = CreatePersistentNativeArray<SaveLoadCandidate>(
+                        MaxSaveLoadCandidateCount,
+                        NativeArrayOptions.ClearMemory,
+                        nameof(SaveLoadCandidateScratch));
                 }
             }
 
@@ -377,49 +406,17 @@ namespace Hecton8.SaveSystem
 
                 lock (Sync)
                 {
-                    if (!s_disposeRequested)
+                    ThrowFirstDisposeException(s_disposeException);
+                    while (s_writeBuffersInUse || s_disposeRequested)
                     {
-                        EnsureWriteBuffers();
-                        if (!s_writeBuffersInUse)
-                        {
-                            s_writeBuffersInUse = true;
-                            rawBuffer = RawWriteBuffer;
-                            compressedBuffer = CompressedWriteBuffer;
-                            ownsRawBuffer = false;
-                            ownsCompressedBuffer = false;
-                            return;
-                        }
+                        System.Threading.Monitor.Wait(Sync);
+                        ThrowFirstDisposeException(s_disposeException);
                     }
-                }
 
-                NativeArray<byte> fallbackRawBuffer = default;
-                NativeArray<byte> fallbackCompressedBuffer = default;
-                bool fallbackRawRegistered = false;
-                bool fallbackCompressedRegistered = false;
-                try
-                {
-                    // COLD ALLOC: NativeArray<byte>[67108864] - contested isolated static save raw write fallback - owner: SaveManager.StaticNativeBuffers
-                    fallbackRawBuffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                    NativeMemorySentinel.RegisterNativeArray(fallbackRawBuffer, NativeMemoryOwner, "contendedStaticRawWriteBuffer", NativeMemoryLifetime);
-                    fallbackRawRegistered = true;
-
-                    // COLD ALLOC: NativeArray<byte>[71303168] - contested isolated static save compressed write fallback - owner: SaveManager.StaticNativeBuffers
-                    fallbackCompressedBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                    NativeMemorySentinel.RegisterNativeArray(fallbackCompressedBuffer, NativeMemoryOwner, "contendedStaticCompressedWriteBuffer", NativeMemoryLifetime);
-                    fallbackCompressedRegistered = true;
-
-                    rawBuffer = fallbackRawBuffer;
-                    compressedBuffer = fallbackCompressedBuffer;
-                    ownsRawBuffer = true;
-                    ownsCompressedBuffer = true;
-                    fallbackRawBuffer = default;
-                    fallbackCompressedBuffer = default;
-                }
-                catch
-                {
-                    TryDisposeFallbackBufferAfterAcquireFailure(ref fallbackCompressedBuffer, fallbackCompressedRegistered);
-                    TryDisposeFallbackBufferAfterAcquireFailure(ref fallbackRawBuffer, fallbackRawRegistered);
-                    throw;
+                    EnsureWriteBuffers();
+                    s_writeBuffersInUse = true;
+                    rawBuffer = RawWriteBuffer;
+                    compressedBuffer = CompressedWriteBuffer;
                 }
             }
 
@@ -438,11 +435,16 @@ namespace Hecton8.SaveSystem
                 if (ownsRawBuffer && ownsCompressedBuffer)
                     return;
 
+                bool disposeRequested;
                 lock (Sync)
                 {
                     s_writeBuffersInUse = false;
-                    DisposeIfRequestedAndIdle();
+                    disposeRequested = s_disposeRequested;
+                    System.Threading.Monitor.PulseAll(Sync);
                 }
+
+                if (disposeRequested)
+                    Dispose();
             }
 
             public static void Dispose()
@@ -462,15 +464,19 @@ namespace Hecton8.SaveSystem
                 if (!RawWriteBuffer.IsCreated)
                 {
                     // COLD ALLOC: NativeArray<byte>[67108864] - isolated static save write buffer prevents live SaveManager payload aliasing - owner: SaveManager.StaticNativeBuffers
-                    RawWriteBuffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                    NativeMemorySentinel.RegisterNativeArray(RawWriteBuffer, NativeMemoryOwner, nameof(RawWriteBuffer), NativeMemoryLifetime);
+                    RawWriteBuffer = CreatePersistentNativeArray<byte>(
+                        SaveBinaryStorage.RawPayloadCapacityBytes,
+                        NativeArrayOptions.UninitializedMemory,
+                        nameof(RawWriteBuffer));
                 }
 
                 if (!CompressedWriteBuffer.IsCreated)
                 {
                     // COLD ALLOC: NativeArray<byte>[71303168] - isolated static compressed save buffer prevents live SaveManager payload aliasing - owner: SaveManager.StaticNativeBuffers
-                    CompressedWriteBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                    NativeMemorySentinel.RegisterNativeArray(CompressedWriteBuffer, NativeMemoryOwner, nameof(CompressedWriteBuffer), NativeMemoryLifetime);
+                    CompressedWriteBuffer = CreatePersistentNativeArray<byte>(
+                        SaveBinaryStorage.MaxCompressedPayloadBytes,
+                        NativeArrayOptions.UninitializedMemory,
+                        nameof(CompressedWriteBuffer));
                 }
             }
 
@@ -483,7 +489,17 @@ namespace Hecton8.SaveSystem
                 DisposeNativeArrayBestEffort(ref SaveLoadCandidateScratch, ref firstException, sentinelLabel: nameof(SaveLoadCandidateScratch));
                 DisposeNativeArrayBestEffort(ref RawWriteBuffer, ref firstException, sentinelLabel: nameof(RawWriteBuffer));
                 DisposeNativeArrayBestEffort(ref CompressedWriteBuffer, ref firstException, sentinelLabel: nameof(CompressedWriteBuffer));
-                s_disposeRequested = false;
+                if (firstException == null)
+                {
+                    s_disposeException = null;
+                    s_disposeRequested = false;
+                }
+                else
+                {
+                    s_disposeException = firstException;
+                }
+
+                System.Threading.Monitor.PulseAll(Sync);
                 ThrowFirstDisposeException(firstException);
             }
 
@@ -496,30 +512,6 @@ namespace Hecton8.SaveSystem
                 buffer.Dispose();
             }
 
-            private static void TryDisposeFallbackBufferAfterAcquireFailure(ref NativeArray<byte> buffer, bool registered)
-            {
-                if (!buffer.IsCreated)
-                    return;
-
-                try
-                {
-                    if (registered)
-                        NativeMemorySentinel.UnregisterNativeArray(buffer);
-                }
-                catch
-                {
-                }
-
-                try
-                {
-                    buffer.Dispose();
-                }
-                catch
-                {
-                }
-
-                buffer = default;
-            }
         }
 
         private ref NativeArray<byte> _savePayloadBuffer => ref _nativeBuffers.SavePayloadBuffer;
@@ -2136,7 +2128,8 @@ namespace Hecton8.SaveSystem
             if (_worldPager == null || !_worldPager.IsInitialized || _worldPager.HasInitializationFault)
                 return;
 
-            EnsureSaveStagingBuffer();
+            if (!_saveStagingBuffer.IsCreated || _saveStagingBuffer.Length < SaveStagingBufferBytes)
+                return;
 
             PlayerInventory inventory = ResolveRegisteredSaveable<PlayerInventory>();
             if (inventory != null &&
@@ -3153,7 +3146,11 @@ namespace Hecton8.SaveSystem
                 NativeArray<byte> dumpBytes = default;
                 try
                 {
-                    dumpBytes = new NativeArray<byte>(dumpBytesLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    dumpBytes = CreateTransientNativeArray<byte>(
+                        dumpBytesLength,
+                        Allocator.Temp,
+                        NativeArrayOptions.UninitializedMemory,
+                        "wfcOutpostBlackBoxDumpBytes");
                     byte* dumpPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dumpBytes);
                     int cursor = 0;
                     WriteUInt32LittleEndian(dumpPtr, ref cursor, WfcOutpostBlackBoxMagic);
@@ -3183,8 +3180,7 @@ namespace Hecton8.SaveSystem
                 }
                 finally
                 {
-                    if (dumpBytes.IsCreated)
-                        dumpBytes.Dispose();
+                    DisposeTransientNativeArray(ref dumpBytes, sentinelLabel: "wfcOutpostBlackBoxDumpBytes");
                 }
 
                 _wfcOutpostBlackBoxDumped = true;
@@ -3230,7 +3226,11 @@ namespace Hecton8.SaveSystem
                 NativeArray<byte> dumpBytes = default;
                 try
                 {
-                    dumpBytes = new NativeArray<byte>(dumpBytesLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    dumpBytes = CreateTransientNativeArray<byte>(
+                        dumpBytesLength,
+                        Allocator.Temp,
+                        NativeArrayOptions.UninitializedMemory,
+                        "asyncPersistenceBlackBoxDumpBytes");
                     byte* dumpPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dumpBytes);
                     int cursor = 0;
                     WriteUInt32LittleEndian(dumpPtr, ref cursor, 0x48384153u); // H8AS
@@ -3249,8 +3249,7 @@ namespace Hecton8.SaveSystem
                 }
                 finally
                 {
-                    if (dumpBytes.IsCreated)
-                        dumpBytes.Dispose();
+                    DisposeTransientNativeArray(ref dumpBytes, sentinelLabel: "asyncPersistenceBlackBoxDumpBytes");
                 }
             }
             catch (Exception)
@@ -3341,24 +3340,77 @@ namespace Hecton8.SaveSystem
             _integritySlotName = string.Empty;
         }
 
-        private static void RegisterVoxelDeltaSnapshot(NativeArray<byte> snapshot, string label)
-        {
-            RegisterTransientNativeArray(snapshot, label);
-        }
-
         private static void RegisterTransientNativeArray<T>(NativeArray<T> array, string label) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeTransientMemoryLifetime);
+            int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeTransientMemoryLifetime);
+            if (registrationId <= 0)
+                throw new InvalidOperationException(NativeMemoryTransientRegistrationFailureMessage);
+        }
+
+        private static NativeArray<T> CreateTransientNativeArray<T>(
+            int length,
+            Allocator allocator,
+            NativeArrayOptions options,
+            string sentinelLabel) where T : struct
+        {
+            NativeArray<T> array = default;
+            try
+            {
+                array = new NativeArray<T>(length, allocator, options);
+                RegisterTransientNativeArray(array, sentinelLabel);
+                return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+        }
+
+        private static NativeArray<T> CreatePersistentNativeArray<T>(
+            int length,
+            NativeArrayOptions options,
+            string sentinelLabel) where T : struct
+        {
+            NativeArray<T> array = default;
+            try
+            {
+                array = new NativeArray<T>(length, Allocator.Persistent, options);
+                int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel, NativeMemoryLifetime);
+                if (registrationId <= 0)
+                    throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
+
+                return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+        }
+
+        private static void DisposeTransientNativeArray<T>(
+            ref NativeArray<T> array,
+            JobHandle dependency = default,
+            bool deferDisposal = false,
+            string sentinelLabel = null) where T : struct
+        {
+            DisposeNativeArray(ref array, dependency, deferDisposal, sentinelLabel, NativeTransientMemoryLifetime);
         }
 
         private static void DisposeNativeArray<T>(
             ref NativeArray<T> array,
             JobHandle dependency = default,
             bool deferDisposal = false,
-            string sentinelLabel = null) where T : struct
+            string sentinelLabel = null,
+            NativeAllocationLifetime sentinelLifetime = NativeMemoryLifetime) where T : struct
         {
             if (!array.IsCreated)
                 return;
@@ -3380,27 +3432,32 @@ namespace Hecton8.SaveSystem
 
                 array = default;
             }
-            catch
+            catch (Exception exception)
             {
-                TryRestoreNativeSentinelRecord(array, sentinelUnregistered, sentinelLabel);
+                RestoreNativeSentinelRecordOrThrow(array, sentinelUnregistered, sentinelLabel, sentinelLifetime, exception);
                 throw;
             }
         }
 
-        private static void TryRestoreNativeSentinelRecord<T>(
+        private static void RestoreNativeSentinelRecordOrThrow<T>(
             NativeArray<T> array,
             bool sentinelUnregistered,
-            string sentinelLabel) where T : struct
+            string sentinelLabel,
+            NativeAllocationLifetime sentinelLifetime,
+            Exception disposalException) where T : struct
         {
             if (!sentinelUnregistered || !array.IsCreated)
                 return;
 
             try
             {
-                NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel ?? nameof(DisposeNativeArray), NativeMemoryLifetime);
+                int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel ?? nameof(DisposeNativeArray), sentinelLifetime);
+                if (registrationId <= 0)
+                    throw new InvalidOperationException(NativeMemoryRestoreFailureMessage, disposalException);
             }
-            catch
+            catch (Exception restoreException)
             {
+                throw new AggregateException(NativeMemoryRestoreFailureMessage, disposalException, restoreException);
             }
         }
 
@@ -3669,7 +3726,7 @@ namespace Hecton8.SaveSystem
                         }
 
                         if (voxelDeltaSnapshot.IsCreated && ownsVoxelDeltaSnapshot)
-                            DisposeNativeArray(ref voxelDeltaSnapshot);
+                            DisposeTransientNativeArray(ref voxelDeltaSnapshot, sentinelLabel: "voxelDeltaSnapshot");
                         else
                             voxelDeltaSnapshot = default;
 
@@ -3745,18 +3802,18 @@ namespace Hecton8.SaveSystem
                     int persistentWorldSnapshotCapacity = persistentWorldRegistry.SaveSnapshotCapacity;
                     if (persistentWorldSnapshotCapacity > 0)
                     {
-                        persistentWorldDeltaSnapshotOwner = new NativeArray<PersistentWorldDeltaRecord>(
+                        persistentWorldDeltaSnapshotOwner = CreateTransientNativeArray<PersistentWorldDeltaRecord>(
                             persistentWorldSnapshotCapacity,
                             Allocator.Persistent,
-                            NativeArrayOptions.UninitializedMemory);
-                        RegisterTransientNativeArray(persistentWorldDeltaSnapshotOwner, "persistentWorldDeltaSnapshotOwner");
+                            NativeArrayOptions.UninitializedMemory,
+                            "persistentWorldDeltaSnapshotOwner");
 
                         if (!persistentWorldRegistry.TryCopySaveSnapshotDeltas(
                             persistentWorldDeltaSnapshotOwner,
                             persistentWorldSnapshotCapacity,
                             out int copiedPersistentWorldDeltas))
                         {
-                            DisposeNativeArray(ref persistentWorldDeltaSnapshotOwner);
+                            DisposeTransientNativeArray(ref persistentWorldDeltaSnapshotOwner, sentinelLabel: "persistentWorldDeltaSnapshotOwner");
                             const string reason = "Persistent world save snapshot copy failed.";
                             const string logReason = "[SaveManager] Save failed: persistent world save snapshot copy failed.";
                             const uint failureCode = 3u;
@@ -3794,11 +3851,11 @@ namespace Hecton8.SaveSystem
                     NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemView = ecosystemDirector.GetSaveSnapshotArray(out int ecosystemRecordCount);
                     if (ecosystemView.IsCreated && ecosystemRecordCount > 0)
                     {
-                        ecosystemSectorSnapshotOwner = new NativeArray<EcosystemSectorSaveRecord>(
+                        ecosystemSectorSnapshotOwner = CreateTransientNativeArray<EcosystemSectorSaveRecord>(
                             ecosystemRecordCount,
                             Allocator.Persistent,
-                            NativeArrayOptions.UninitializedMemory);
-                        RegisterTransientNativeArray(ecosystemSectorSnapshotOwner, "ecosystemSectorSnapshotOwner");
+                            NativeArrayOptions.UninitializedMemory,
+                            "ecosystemSectorSnapshotOwner");
 
                         for (int i = 0; i < ecosystemRecordCount; i++)
                             ecosystemSectorSnapshotOwner[i] = ecosystemView[i];
@@ -3815,11 +3872,11 @@ namespace Hecton8.SaveSystem
                     int packedQuestWordCount = questManager.PackedStateWordCount;
                     if (packedQuestWordCount > 0)
                     {
-                        packedQuestStateSnapshot = new NativeArray<uint>(
+                        packedQuestStateSnapshot = CreateTransientNativeArray<uint>(
                             packedQuestWordCount,
                             Allocator.Persistent,
-                            NativeArrayOptions.ClearMemory);
-                        RegisterTransientNativeArray(packedQuestStateSnapshot, "packedQuestStateSnapshot");
+                            NativeArrayOptions.ClearMemory,
+                            "packedQuestStateSnapshot");
 
                         bool copiedQuestState;
                         unsafe
@@ -3833,7 +3890,7 @@ namespace Hecton8.SaveSystem
                         }
 
                         if (!copiedQuestState)
-                            DisposeNativeArray(ref packedQuestStateSnapshot);
+                            DisposeTransientNativeArray(ref packedQuestStateSnapshot, sentinelLabel: "packedQuestStateSnapshot");
                     }
                 }
 
@@ -3955,16 +4012,16 @@ namespace Hecton8.SaveSystem
                     ReleaseSnapshotPause(operationId);
 
                 if (packedQuestStateSnapshot.IsCreated)
-                    DisposeNativeArray(ref packedQuestStateSnapshot);
+                    DisposeTransientNativeArray(ref packedQuestStateSnapshot, sentinelLabel: "packedQuestStateSnapshot");
 
                 if (persistentWorldDeltaSnapshotOwner.IsCreated)
-                    DisposeNativeArray(ref persistentWorldDeltaSnapshotOwner);
+                    DisposeTransientNativeArray(ref persistentWorldDeltaSnapshotOwner, sentinelLabel: "persistentWorldDeltaSnapshotOwner");
 
                 if (ecosystemSectorSnapshotOwner.IsCreated)
-                    DisposeNativeArray(ref ecosystemSectorSnapshotOwner);
+                    DisposeTransientNativeArray(ref ecosystemSectorSnapshotOwner, sentinelLabel: "ecosystemSectorSnapshotOwner");
 
                 if (voxelDeltaSnapshot.IsCreated && ownsVoxelDeltaSnapshot)
-                    DisposeNativeArray(ref voxelDeltaSnapshot);
+                    DisposeTransientNativeArray(ref voxelDeltaSnapshot, sentinelLabel: "voxelDeltaSnapshot");
 
                 if (borrowedVoxelDeltaSnapshotOwner != null)
                 {
@@ -4161,7 +4218,10 @@ namespace Hecton8.SaveSystem
             if (savedVelocity.y < 0f)
                 savedVelocity.y = 0f;
 
-            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : playerTransform.GetComponent<Rigidbody>();
+            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
+            if (playerBody == null)
+                playerTransform.TryGetComponent(out playerBody);
+
             HectonFloatingOrigin.BeginSafeTeleportProtocol();
             try
             {
@@ -4399,7 +4459,7 @@ namespace Hecton8.SaveSystem
                         if (!candidates[i].IsBackup && candidateIndexedBackupRecoveryUsed)
                         {
                             if (candidateVoxelDeltaSnapshot.IsCreated)
-                                DisposeNativeArray(ref candidateVoxelDeltaSnapshot);
+                                DisposeTransientNativeArray(ref candidateVoxelDeltaSnapshot, sentinelLabel: "loadedVoxelDeltaSnapshot");
 
                             if (!TryLoadAndPromoteCriticalBackup(
                                     slotName,
@@ -4662,7 +4722,7 @@ namespace Hecton8.SaveSystem
                 ClearLoadCandidates(candidates, candidateCount);
 
                 if (loadedVoxelDeltaSnapshot.IsCreated)
-                    DisposeNativeArray(ref loadedVoxelDeltaSnapshot);
+                    DisposeTransientNativeArray(ref loadedVoxelDeltaSnapshot, sentinelLabel: "loadedVoxelDeltaSnapshot");
 
                 _isBusy = false;
                 NotifyMacroDatabasePersistenceGate(false);
@@ -5351,7 +5411,7 @@ namespace Hecton8.SaveSystem
             if (repairedData == null)
             {
                 if (voxelDeltaSnapshot.IsCreated)
-                    DisposeNativeArray(ref voxelDeltaSnapshot);
+                    DisposeTransientNativeArray(ref voxelDeltaSnapshot, sentinelLabel: "loadedVoxelDeltaSnapshot");
 
                 result.Message = string.IsNullOrEmpty(errorMessage)
                     ? "No valid save candidate could be repaired."
@@ -5395,7 +5455,7 @@ namespace Hecton8.SaveSystem
             RecordRepairResult(result, repairedData != null ? repairedData.version : 0);
 
             if (voxelDeltaSnapshot.IsCreated)
-                DisposeNativeArray(ref voxelDeltaSnapshot);
+                DisposeTransientNativeArray(ref voxelDeltaSnapshot, sentinelLabel: "loadedVoxelDeltaSnapshot");
 
             return true;
         }
@@ -5484,7 +5544,7 @@ namespace Hecton8.SaveSystem
                             }
 
                             if (candidateVoxelDeltaSnapshot.IsCreated)
-                                DisposeNativeArray(ref candidateVoxelDeltaSnapshot);
+                                DisposeTransientNativeArray(ref candidateVoxelDeltaSnapshot, sentinelLabel: "loadedVoxelDeltaSnapshot");
                         }
                         else
                         {
@@ -5641,7 +5701,7 @@ namespace Hecton8.SaveSystem
             if (indexedBackupRecoveryUsed)
             {
                 if (voxelDeltaSnapshot.IsCreated)
-                    DisposeNativeArray(ref voxelDeltaSnapshot);
+                    DisposeTransientNativeArray(ref voxelDeltaSnapshot, sentinelLabel: "loadedVoxelDeltaSnapshot");
 
                 errorMessage = $"CRITICAL_RECOVERY rejected cascading backup-sector recovery in '{backupSavePath}'. Primary failure: {primaryError}";
                 return false;
@@ -5650,7 +5710,7 @@ namespace Hecton8.SaveSystem
             if (!TryPromoteBackupToPrimaryAfterCriticalRecovery(slotName, backupSavePath, out string promotionError))
             {
                 if (voxelDeltaSnapshot.IsCreated)
-                    DisposeNativeArray(ref voxelDeltaSnapshot);
+                    DisposeTransientNativeArray(ref voxelDeltaSnapshot, sentinelLabel: "loadedVoxelDeltaSnapshot");
 
                 errorMessage = $"CRITICAL_RECOVERY promotion failed for '{backupSavePath}': {promotionError}. Primary failure: {primaryError}";
                 return false;
@@ -5821,11 +5881,11 @@ namespace Hecton8.SaveSystem
 
                 if (voxelDeltaSnapshotByteLength > 0)
                 {
-                    loadedVoxelDeltaSnapshot = new NativeArray<byte>(
+                    loadedVoxelDeltaSnapshot = CreateTransientNativeArray<byte>(
                         voxelDeltaSnapshotByteLength,
                         Allocator.Persistent,
-                        NativeArrayOptions.UninitializedMemory);
-                    RegisterVoxelDeltaSnapshot(loadedVoxelDeltaSnapshot, "loadedVoxelDeltaSnapshot");
+                        NativeArrayOptions.UninitializedMemory,
+                        "loadedVoxelDeltaSnapshot");
                 }
 
                 if (!SaveBinaryStorage.TryLoadSaveData(
@@ -5848,7 +5908,7 @@ namespace Hecton8.SaveSystem
                     out errorMessage))
                 {
                     if (loadedVoxelDeltaSnapshot.IsCreated)
-                        DisposeNativeArray(ref loadedVoxelDeltaSnapshot);
+                        DisposeTransientNativeArray(ref loadedVoxelDeltaSnapshot, sentinelLabel: "loadedVoxelDeltaSnapshot");
 
                     return false;
                 }
@@ -5857,7 +5917,7 @@ namespace Hecton8.SaveSystem
                 {
                     errorMessage = "Loaded voxel delta snapshot byte count mismatch.";
                     if (loadedVoxelDeltaSnapshot.IsCreated)
-                        DisposeNativeArray(ref loadedVoxelDeltaSnapshot);
+                        DisposeTransientNativeArray(ref loadedVoxelDeltaSnapshot, sentinelLabel: "loadedVoxelDeltaSnapshot");
 
                     return false;
                 }
@@ -5869,7 +5929,7 @@ namespace Hecton8.SaveSystem
             finally
             {
                 if (loadedVoxelDeltaSnapshot.IsCreated)
-                    DisposeNativeArray(ref loadedVoxelDeltaSnapshot);
+                    DisposeTransientNativeArray(ref loadedVoxelDeltaSnapshot, sentinelLabel: "loadedVoxelDeltaSnapshot");
                 ReleaseWriteBuffers(readBuffer, ownsReadBuffer, compressedReadBuffer, ownsCompressedReadBuffer);
             }
         }
@@ -5938,33 +5998,33 @@ namespace Hecton8.SaveSystem
                     if (persistentWorldItems != null && persistentWorldItems.Length > 0)
                     {
                         // COLD ALLOC: NativeArray<PersistentWorldDeltaRecord>[persistentWorldItems.Length] — static save assembly staging buffer — owner: SaveManager
-                        persistentWorldItemBuffer = new NativeArray<PersistentWorldDeltaRecord>(
+                        persistentWorldItemBuffer = CreateTransientNativeArray<PersistentWorldDeltaRecord>(
                             persistentWorldItems.Length,
                             Allocator.Temp,
-                            NativeArrayOptions.UninitializedMemory);
-                        RegisterTransientNativeArray(persistentWorldItemBuffer, "persistentWorldItemBuffer");
+                            NativeArrayOptions.UninitializedMemory,
+                            "persistentWorldItemBuffer");
                         persistentWorldItemBuffer.CopyFrom(persistentWorldItems);
                     }
 
                     if (ecosystemSectorStates != null && ecosystemSectorStates.Length > 0)
                     {
                         // COLD ALLOC: NativeArray<EcosystemSectorSaveRecord>[ecosystemSectorStates.Length] — static save assembly staging buffer — owner: SaveManager
-                        ecosystemSectorBuffer = new NativeArray<EcosystemSectorSaveRecord>(
+                        ecosystemSectorBuffer = CreateTransientNativeArray<EcosystemSectorSaveRecord>(
                             ecosystemSectorStates.Length,
                             Allocator.Temp,
-                            NativeArrayOptions.UninitializedMemory);
-                        RegisterTransientNativeArray(ecosystemSectorBuffer, "ecosystemSectorBuffer");
+                            NativeArrayOptions.UninitializedMemory,
+                            "ecosystemSectorBuffer");
                         ecosystemSectorBuffer.CopyFrom(ecosystemSectorStates);
                     }
 
                     if (packedQuestStateWords != null && packedQuestStateWords.Length > 0)
                     {
                         // COLD ALLOC: NativeArray<UInt32>[packedQuestStateWords.Length] — static save assembly staging buffer — owner: SaveManager
-                        packedQuestStateBuffer = new NativeArray<uint>(
+                        packedQuestStateBuffer = CreateTransientNativeArray<uint>(
                             packedQuestStateWords.Length,
                             Allocator.Temp,
-                            NativeArrayOptions.UninitializedMemory);
-                        RegisterTransientNativeArray(packedQuestStateBuffer, "packedQuestStateBuffer");
+                            NativeArrayOptions.UninitializedMemory,
+                            "packedQuestStateBuffer");
                         packedQuestStateBuffer.CopyFrom(packedQuestStateWords);
                     }
 
@@ -5993,13 +6053,13 @@ namespace Hecton8.SaveSystem
                 finally
                 {
                     if (persistentWorldItemBuffer.IsCreated)
-                        DisposeNativeArray(ref persistentWorldItemBuffer);
+                        DisposeTransientNativeArray(ref persistentWorldItemBuffer, sentinelLabel: "persistentWorldItemBuffer");
 
                     if (ecosystemSectorBuffer.IsCreated)
-                        DisposeNativeArray(ref ecosystemSectorBuffer);
+                        DisposeTransientNativeArray(ref ecosystemSectorBuffer, sentinelLabel: "ecosystemSectorBuffer");
 
                     if (packedQuestStateBuffer.IsCreated)
-                        DisposeNativeArray(ref packedQuestStateBuffer);
+                        DisposeTransientNativeArray(ref packedQuestStateBuffer, sentinelLabel: "packedQuestStateBuffer");
 
                     ReleaseWriteBuffers(rawBuffer, ownsRawBuffer, compressedBuffer, ownsCompressedBuffer);
                 }

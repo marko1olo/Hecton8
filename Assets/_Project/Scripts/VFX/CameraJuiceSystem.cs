@@ -830,7 +830,7 @@ namespace Hecton8.VFX
             if (_dependencyResolveSlowTickCountdown <= 0)
             {
                 _dependencyResolveSlowTickCountdown = 4;
-                TryResolveGameplayDependencies();
+                RefreshGameplayDependenciesFromCachedRuntime();
                 SyncDependencySubscriptions();
             }
             else
@@ -2282,6 +2282,23 @@ namespace Hecton8.VFX
 
             SyncDependencyFlags();
             RefreshCameraJuiceColdVaultHandles();
+        }
+
+        private void RefreshGameplayDependenciesFromCachedRuntime()
+        {
+            _submarineHullRigidbody = _submarineRuntimeContext != null ? _submarineRuntimeContext.HullRigidbody : null;
+
+            if (_survivalSystemReference != null)
+                _survivalSystem = _survivalSystemReference;
+            else if (_survivalSystem == null && _playerRuntimeContext != null)
+                _survivalSystem = _playerRuntimeContext.SurvivalSystem;
+
+            if (_playerMovementReference != null)
+                _playerMovement = _playerMovementReference;
+            else if (_playerMovement == null && _playerRuntimeContext != null)
+                _playerMovement = _playerRuntimeContext.PlayerMovement;
+
+            SyncDependencyFlags();
         }
 
         private void SyncDependencyFlags()

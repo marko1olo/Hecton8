@@ -281,12 +281,19 @@ namespace Hecton8.Core.Bridge
 
         public void RebuildAllHashes()
         {
-            ValidateEntries();
+            ValidateEntries(allowAuthoringRepair: true);
         }
 
         internal int RefreshRuntimeBindingStateForSync()
         {
-            ValidateEntries();
+            return RefreshRuntimeBindingStateForSync(allowAuthoringRepair: true);
+        }
+
+        internal int RefreshRuntimeBindingStateForSync(bool allowAuthoringRepair)
+        {
+            if (!ValidateEntries(allowAuthoringRepair))
+                return -1;
+
             return validationRuntimeBindableCount;
         }
 
@@ -308,25 +315,29 @@ namespace Hecton8.Core.Bridge
 
         private void OnValidate()
         {
-            ValidateEntries();
+            ValidateEntries(allowAuthoringRepair: true);
             if (bindOnValidateInPlayMode && Application.isPlaying)
-                H8PrefabRegistryRuntimeBinder.Bind(this, GlobalRegistry.DataVault, GlobalRegistry.PrefabRegistryRuntime);
+                H8BridgeLiveSyncScheduler.RequestPrefabBind(this, GlobalRegistry.DataVault, GlobalRegistry.PrefabRegistryRuntime);
         }
 
         private void OnEnable()
         {
-            ValidateEntries();
+            ValidateEntries(allowAuthoringRepair: true);
         }
 
-        private void ValidateEntries()
+        private bool ValidateEntries(bool allowAuthoringRepair)
         {
+            ResetValidationState();
             if (entries == null)
+            {
+                if (!allowAuthoringRepair)
+                    return false;
+
                 entries = new List<Entry>(128);
+            }
 
             if (registryHash == 0u)
                 registryHash = H8BridgeHashes.PrefabRegistry;
-
-            ResetValidationState();
 
             for (int i = 0; i < entries.Count; i++)
             {
@@ -349,6 +360,7 @@ namespace Hecton8.Core.Bridge
             }
 
             validationDuplicateHashCount = CountDuplicateRuntimeHashes(out validationFirstDuplicateHashIndex);
+            return true;
         }
 
         private void ResetValidationState()

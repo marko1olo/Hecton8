@@ -641,3 +641,36 @@ Compilation/resource throttling:
 
 Cinematic Cheats used -> None; offline telemetry/reporting only.
 Exact Microseconds saved -> 0 us game runtime.
+
+## 2026-05-30 12:10 Europe/Samara - Text-only token stats refresh
+
+What was wrong:
+- The 2026-05-29 token report was stale after date rollover and new local Codex JSONL activity.
+- The operator requested count/update/commit/push; no new chart or image generation was requested.
+
+What was done:
+- Rechecked official OpenAI GPT-5.5 and model comparison pricing pages.
+- Ran `python Tools\CodexTokenUsageFastRefresh_20260528.py`.
+- Did not run `ProjectMetricsDashboard_20260528.py`.
+- Did not regenerate chart PNGs.
+- Parsed the persisted JSON and checked the ledger contains the refreshed total.
+- Checked dashboard/chart paths were not modified.
+
+Evidence:
+- Token report: `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-30.json`.
+- Token total: `121,116,760,791`.
+- Delta tokens since previous snapshot: `3,431,972,122`.
+- Tokens/hour: `207,591,690.16966933`.
+- Tokens/second: `57,664.3583804637`.
+- GPT-5.5 base API-equivalent: `$93,833.43491299999`.
+- GPT-5.5 delta cost: `$2,478.854132999986`.
+- Hour buckets retained in JSON: `99`.
+- Dashboard/charts diff check: no modified `Docs/Reports/MetricCharts` or `PROJECT_METRICS_DASHBOARD_2026-05-30.*` files from this refresh.
+- Reserved-path caveat before staging: untracked `CON` exists at `C:\hades\Hecton8\CON` and must be treated carefully by git on Windows.
+
+Compilation/resource throttling:
+- `dotnet build`: not invoked by TOKEN_USAGE_AUDIT.
+- Unity build/import/playmode: not invoked.
+
+Cinematic Cheats used -> None; offline telemetry/reporting only.
+Exact Microseconds saved -> 0 us game runtime.

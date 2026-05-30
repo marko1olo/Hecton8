@@ -98,6 +98,7 @@ namespace Hecton8.Visor
             private float _surfaceFogWeight01 = 1f;
             private float _qualityWeight01 = 1f;
             private bool _hasDepthFogGlobals;
+            private bool _supportsSetConstantBuffer;
 
             public NoirDepthFogPass()
             {
@@ -119,6 +120,13 @@ namespace Hecton8.Visor
             public bool PrepareResources()
             {
                 return EnsureDepthFogGlobalsBuffer();
+            }
+
+            public void SetGraphicsCapabilitiesCold(bool supportsSetConstantBuffer)
+            {
+                _supportsSetConstantBuffer = supportsSetConstantBuffer;
+                if (!_supportsSetConstantBuffer)
+                    Dispose();
             }
 
             public void Dispose()
@@ -210,7 +218,7 @@ namespace Hecton8.Visor
 
             private bool EnsureDepthFogGlobalsBuffer()
             {
-                if (!SystemInfo.supportsSetConstantBuffer)
+                if (!_supportsSetConstantBuffer)
                     return false;
 
                 if (_depthFogGlobalsBufferA != null && _depthFogGlobalsBufferA.IsValid() &&
@@ -307,7 +315,7 @@ namespace Hecton8.Visor
 
             private bool HasDepthFogGlobalsBuffer()
             {
-                if (!SystemInfo.supportsSetConstantBuffer)
+                if (!_supportsSetConstantBuffer)
                     return false;
 
                 if (_depthFogGlobalsBufferA == null || !_depthFogGlobalsBufferA.IsValid() ||
@@ -391,6 +399,7 @@ namespace Hecton8.Visor
         private Material _material;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _hotSwapRegistered;
+        private bool _supportsSetConstantBuffer;
 
         public override void Create()
         {
@@ -408,6 +417,7 @@ namespace Hecton8.Visor
 #endif
             RecreateMaterial(ref _material, shader);
             _pass ??= new NoirDepthFogPass();
+            CacheGraphicsCapabilitiesCold();
             _pass.PrepareResources();
             TryRegisterHotSwapListener();
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
@@ -484,6 +494,12 @@ namespace Hecton8.Visor
         private void OnDisable()
         {
             TryUnregisterHotSwapListener();
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsSetConstantBuffer = SystemInfo.supportsSetConstantBuffer;
+            _pass?.SetGraphicsCapabilitiesCold(_supportsSetConstantBuffer);
         }
 
         private void TryRegisterHotSwapListener()

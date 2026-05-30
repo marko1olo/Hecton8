@@ -21,7 +21,6 @@ namespace Hecton8.World
         [Header("Planning")]
         [SerializeField] private bool includeInactiveBindings;
         [SerializeField] private int maxTrackedPlans = 256;
-        [SerializeField, Min(0f)] private float autoResolveRetryInterval = 1f;
         [SerializeField] private float searchRadiusPadding = 24f;
         [SerializeField] private float terrainDeltaBlendWindow = 18f;
         [SerializeField] private float minPlanWeight = 0.12f;
@@ -65,7 +64,6 @@ namespace Hecton8.World
         private Vector3 _lastPlanRefreshPosition;
         private AbsoluteUniversePosition _lastPlanRefreshAup;
         private float _lastPlanRefreshTime = float.NegativeInfinity;
-        private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
         internal static WorldGenerativeGeologyIntegrationDirector ActiveRuntimeInstance { get; private set; }
 
@@ -76,14 +74,14 @@ namespace Hecton8.World
         private void Awake()
         {
             ActiveRuntimeInstance = this;
-            ResolveReferences();
+            RefreshColdReferences();
             CacheRegistryServicesCold();
             RebuildIntegrationPlans();
         }
 
         private void OnEnable()
         {
-            ResolveReferences();
+            RefreshColdReferences();
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             if (Application.isPlaying)
@@ -94,6 +92,7 @@ namespace Hecton8.World
 
         private void Start()
         {
+            RefreshColdReferences();
             TryRegister();
 
             RebuildIntegrationPlans();
@@ -160,6 +159,14 @@ namespace Hecton8.World
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                     _hasPlanRefreshSample = false;
                     _hasPlanRefreshAup = false;
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicRuntime:
+                    mapMagicBridge = currentService as MapMagicBridge;
+                    _hasPlanRefreshSample = false;
+                    _hasPlanRefreshAup = false;
+                    break;
+                case GlobalRegistryServiceSlot.VoxelEngineRuntime:
+                    voxelEngine = currentService as HectonVoxelEngine;
                     break;
             }
         }
@@ -265,13 +272,12 @@ namespace Hecton8.World
                 return;
 
             destination.Clear();
-            destination.AddRange(_orderedPlans);
+            for (int i = 0; i < _orderedPlans.Count && destination.Count < destination.Capacity; i++)
+                destination.Add(_orderedPlans[i]);
         }
 
         public void RebuildIntegrationPlans()
         {
-            ResolveReferences();
-
             CaptureRetainedRuntimeKeys();
             CaptureRetainedBindings();
             _plansByKey.Clear();
@@ -357,10 +363,47 @@ namespace Hecton8.World
             if (!TryBuildPlan(binding, searchRadius, playerRuntimePosition, hasPlayerAup, in playerAup, out WorldGenerativeGeologySeamPlan plan))
                 return;
 
+            TryUpsertPlan(plan, binding, now);
+        }
+
+        private bool TryUpsertPlan(
+            in WorldGenerativeGeologySeamPlan plan,
+            WorldGenerativeGeologyBinding binding,
+            float now)
+        {
+            if (plan.runtimeKey == 0L || binding == null)
+                return false;
+
+            bool existing = _plansByKey.ContainsKey(plan.runtimeKey);
+            if (!existing &&
+                (_plansByKey.Count >= PlanRuntimeKeyCapacity ||
+                 _bindingsByKey.Count >= PlanRuntimeKeyCapacity ||
+                 _bindingLastSeenTimes.Count >= PlanRuntimeKeyCapacity ||
+                 _orderedPlans.Count >= _orderedPlans.Capacity))
+            {
+                return false;
+            }
+
             _plansByKey[plan.runtimeKey] = plan;
             _bindingsByKey[plan.runtimeKey] = binding;
             _bindingLastSeenTimes[plan.runtimeKey] = now;
+            if (existing)
+            {
+                for (int i = 0; i < _orderedPlans.Count; i++)
+                {
+                    if (_orderedPlans[i].runtimeKey != plan.runtimeKey)
+                        continue;
+
+                    _orderedPlans[i] = plan;
+                    return true;
+                }
+            }
+
+            if (_orderedPlans.Count >= _orderedPlans.Capacity)
+                return false;
+
             _orderedPlans.Add(plan);
+            return true;
         }
 
         private bool ShouldSkipPlanRefresh()
@@ -409,7 +452,7 @@ namespace Hecton8.World
         private void CaptureRetainedRuntimeKeys()
         {
             _retainedRuntimeKeys.Clear();
-            for (int i = 0; i < _orderedPlans.Count; i++)
+            for (int i = 0; i < _orderedPlans.Count && _retainedRuntimeKeys.Count < _retainedRuntimeKeys.Capacity; i++)
                 _retainedRuntimeKeys.Add(_orderedPlans[i].runtimeKey);
         }
 
@@ -486,7 +529,7 @@ namespace Hecton8.World
                     plan.worldScale = binding.transform.lossyScale;
                     plan.playerDistance = playerDistance;
                     float terrainHeight = 0f;
-                    bool hasTerrainSample = mapMagicBridge != null && mapMagicBridge.TryGetHeight(runtimeWorldPosition.x, runtimeWorldPosition.z, out terrainHeight);
+                    bool hasTerrainSample = mapMagicBridge != null && mapMagicBridge.TryGetHeightAUP(in plan.absoluteUniverseAup, out terrainHeight);
                     float voxelCenterY = hasTerrainSample
                         ? terrainHeight - plan.suggestedTerrainCut * 0.35f + plan.voxelVolumeSize.y * 0.5f
                         : runtimeWorldPosition.y;
@@ -510,9 +553,7 @@ namespace Hecton8.World
                     plan.hasAbsoluteVoxelVolumeCenterAup = true;
                 }
 
-                _plansByKey[runtimeKey] = plan;
-                _bindingsByKey[runtimeKey] = binding;
-                _orderedPlans.Add(plan);
+                TryUpsertPlan(plan, binding, now);
             }
         }
 
@@ -543,7 +584,9 @@ namespace Hecton8.World
             }
 
             _orderedPlans.Clear();
-            _orderedPlans.AddRange(_selectionBuffer);
+            for (int i = 0; i < _selectionBuffer.Count && _orderedPlans.Count < _orderedPlans.Capacity; i++)
+                _orderedPlans.Add(_selectionBuffer[i]);
+
             TrimPlanDictionaries();
         }
 
@@ -555,7 +598,12 @@ namespace Hecton8.World
             {
                 long runtimeKey = planEnumerator.Current.Key;
                 if (!_selectedRuntimeKeys.Contains(runtimeKey))
+                {
+                    if (_dictionaryTrimBuffer.Count >= _dictionaryTrimBuffer.Capacity)
+                        break;
+
                     _dictionaryTrimBuffer.Add(runtimeKey);
+                }
             }
 
             for (int i = 0; i < _dictionaryTrimBuffer.Count; i++)
@@ -567,7 +615,12 @@ namespace Hecton8.World
             {
                 long runtimeKey = bindingEnumerator.Current.Key;
                 if (!_selectedRuntimeKeys.Contains(runtimeKey))
+                {
+                    if (_dictionaryTrimBuffer.Count >= _dictionaryTrimBuffer.Capacity)
+                        break;
+
                     _dictionaryTrimBuffer.Add(runtimeKey);
+                }
             }
 
             for (int i = 0; i < _dictionaryTrimBuffer.Count; i++)
@@ -611,7 +664,7 @@ namespace Hecton8.World
                 return false;
 
             float terrainHeight = 0f;
-            bool hasTerrainSample = mapMagicBridge != null && mapMagicBridge.TryGetHeight(runtimeWorldPosition.x, runtimeWorldPosition.z, out terrainHeight);
+            bool hasTerrainSample = mapMagicBridge != null && mapMagicBridge.TryGetHeightAUP(in absoluteUniverseAup, out terrainHeight);
             float terrainDelta = hasTerrainSample ? runtimeWorldPosition.y - terrainHeight : 0f;
             float terrainAnchor = hasTerrainSample
                 ? 1f - Mathf.Clamp01(Mathf.Abs(terrainDelta) / Mathf.Max(6f, terrainDeltaBlendWindow))
@@ -833,7 +886,7 @@ namespace Hecton8.World
 
         private int ResolveTrackedPlanCapacity(float visualQualityWeight)
         {
-            int configuredCapacity = Mathf.Max(1, maxTrackedPlans);
+            int configuredCapacity = Mathf.Clamp(maxTrackedPlans, 1, PlanRuntimeKeyCapacity);
             int survivalCapacity = Mathf.Clamp(Mathf.CeilToInt(configuredCapacity * 0.35f), 1, configuredCapacity);
             return Mathf.Clamp(
                 Mathf.RoundToInt(Mathf.Lerp(survivalCapacity, configuredCapacity, SmoothQualityWeight(visualQualityWeight))),
@@ -951,16 +1004,10 @@ namespace Hecton8.World
                 : (long)(clamped - 0.5d);
         }
 
-        private void ResolveReferences()
+        private void RefreshColdReferences()
         {
             if (playerTransform != null && mapMagicBridge != null && voxelEngine != null)
                 return;
-
-            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
-            if (now < _nextAutoResolveAttemptTime)
-                return;
-
-            _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
 
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
             WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);

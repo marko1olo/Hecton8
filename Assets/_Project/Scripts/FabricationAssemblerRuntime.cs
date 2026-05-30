@@ -187,7 +187,7 @@ namespace Hecton8.Crafting
         public const uint SignalDrop = 1u << 8;
     }
 
-    public sealed class FabricationAssemblerRuntime : IGlobalRegistryHotSwapListener
+    public sealed class FabricationAssemblerRuntime : IGlobalRegistryHotSwapListener, IColdTickable
     {
         public const int MaxFabricationJobs = 128;
         public const int TelemetryFrameCount = 300;
@@ -210,11 +210,18 @@ namespace Hecton8.Crafting
         private static readonly int AssemblyEdgeBoostId = Shader.PropertyToID("_H8FabricationAssemblyEdgeBoost");
 
         private static FabricationAssemblerRuntime s_active;
+        private static readonly System.Threading.WaitCallback TelemetryDumpWorkerCallback = RunTelemetryDumpWorker;
+#if UNITY_EDITOR
+        private static byte[] s_csvManagedScratch;
+        private static FabricationTimingDTO[] s_timingManagedScratch;
+        private static int s_csvScratchBusy;
+#endif
 
         private readonly PreSimulationPhaseSystem _preSimulationPhase;
         private readonly SimulationPhaseSystem _simulationPhase;
         private readonly PostSimulationPhaseSystem _postSimulationPhase;
         private readonly VisualSyncPhaseSystem _visualSyncPhase;
+        private readonly FabricationTelemetryEntry[] _telemetryDumpSnapshot = new FabricationTelemetryEntry[TelemetryFrameCount];
         private readonly string _dumpPath;
 
         private IDataVault _vault;
@@ -224,9 +231,6 @@ namespace Hecton8.Crafting
         private VaultGenerationHandle<FabricationTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<FabricationTuningDTO> _tuningHandle;
         private VaultGenerationHandle<FabricationTimingDTO> _timingHandle;
-#if UNITY_EDITOR
-        private VaultGenerationHandle<byte> _csvScratchHandle;
-#endif
         private VaultGenerationHandle<ScalabilityStateDTO> _scalabilityHandle;
 
         private GraphicsBuffer _gpuPayloadBufferA;
@@ -235,18 +239,24 @@ namespace Hecton8.Crafting
         private bool _registeredSimulation;
         private bool _registeredPostSimulation;
         private bool _registeredVisualSync;
+        private bool _registeredColdTick;
         private bool _registeredHotSwap;
         private bool _vaultInitialized;
         private bool _shutdown;
         private bool _simulationScheduled;
+        private bool _vaultRepairRequested;
         private bool _payloadDirty;
         private JobHandle _simulationHandle;
         private int _gpuWriteIndex;
         private int _telemetryCursor;
+        private int _telemetryDumpInFlight;
+        private int _telemetryDumpCount;
         private int _activeUploadCount;
         private uint _lastFrame;
         private uint _lastRollbackHash;
         private uint _lastFaultFlags;
+        private uint _telemetryDumpFrame;
+        private uint _telemetryDumpReasonFlags;
         private float _lastQualityWeight = 1f;
         private float _lastShaderEdgeGlowIntensity = 1f;
         private float _lastVisualUploadMicroseconds;
@@ -678,65 +688,98 @@ namespace Hecton8.Crafting
             if (runtime == null || !runtime.EnsureVaultState())
                 return false;
 
-            IDataVault vault = runtime.ResolveVault();
-            if (vault == null)
-                return false;
-
-            int readLength;
-            if (!runtime.TryOpenWriteArray(BufferID.ShinobuFabricationCsvScratch, in runtime._csvScratchHandle, OwnerSystemId, CsvScratchByteCapacity, out NativeArray<byte> scratch))
+            if (System.Threading.Interlocked.CompareExchange(ref s_csvScratchBusy, 1, 0) != 0)
                 return false;
 
             try
             {
+                byte[] csvScratch = s_csvManagedScratch;
+                if (csvScratch == null || csvScratch.Length < CsvScratchByteCapacity)
+                {
+                    // COLD EDITOR ALLOC: CSV import byte scratch; never used by dispatcher ticks.
+                    csvScratch = new byte[CsvScratchByteCapacity];
+                    s_csvManagedScratch = csvScratch;
+                }
+
+                FabricationTimingDTO[] timingScratch = s_timingManagedScratch;
+                if (timingScratch == null || timingScratch.Length < TimingLookupCapacity)
+                {
+                    // COLD EDITOR ALLOC: staged timing rows before DataVault publication.
+                    timingScratch = new FabricationTimingDTO[TimingLookupCapacity];
+                    s_timingManagedScratch = timingScratch;
+                }
+
+                int readLength;
                 using (FileStream stream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
                     long streamLength = stream.Length;
-                    int cappedLength = streamLength > scratch.Length ? scratch.Length : (int)streamLength;
-                    Span<byte> span = new Span<byte>(scratch.GetUnsafePtr(), cappedLength);
-                    readLength = stream.Read(span);
+                    int cappedLength = streamLength > CsvScratchByteCapacity ? CsvScratchByteCapacity : (int)streamLength;
+                    readLength = stream.Read(csvScratch, 0, cappedLength);
                 }
+
+                Span<FabricationTimingDTO> stagedTimings = timingScratch.AsSpan(0, TimingLookupCapacity);
+                bool parsed = ParseTimingCsv(csvScratch.AsSpan(0, readLength), stagedTimings, out parsedRows);
+                if (!parsed)
+                    return false;
+
+                if (!runtime.TryCommitTimingLookup(stagedTimings))
+                    return false;
             }
             finally
             {
-                vault.ReleaseWriteLock(in runtime._csvScratchHandle, OwnerSystemId);
+                System.Threading.Interlocked.Exchange(ref s_csvScratchBusy, 0);
             }
 
-            if (!runtime.TryOpenReadArray(BufferID.ShinobuFabricationCsvScratch, in runtime._csvScratchHandle, CsvScratchByteCapacity, out NativeArray<byte> scratchRead) ||
-                !runtime.TryOpenWriteArray(BufferID.ShinobuFabricationTimingLookup, in runtime._timingHandle, OwnerSystemId, TimingLookupCapacity, out NativeArray<FabricationTimingDTO> timings))
+            runtime.TryIncrementCsvTimingsVersion();
+            return true;
+        }
+#endif
+
+        private bool TryCommitTimingLookup(ReadOnlySpan<FabricationTimingDTO> stagedTimings)
+        {
+            IDataVault vault = ResolveVault();
+            if (vault == null ||
+                !TryOpenWriteArray(BufferID.ShinobuFabricationTimingLookup, in _timingHandle, OwnerSystemId, TimingLookupCapacity, out NativeArray<FabricationTimingDTO> timings))
             {
                 return false;
             }
 
-            bool parsed;
             try
             {
-                parsed = ParseTimingCsv(scratchRead, readLength, timings, out parsedRows);
+                int count = math.min(timings.Length, stagedTimings.Length);
+                for (int i = 0; i < count; i++)
+                    timings[i] = stagedTimings[i];
+                for (int i = count; i < timings.Length; i++)
+                    timings[i] = default;
+                return true;
             }
             finally
             {
-                vault.ReleaseWriteLock(in runtime._timingHandle, OwnerSystemId);
+                vault.ReleaseWriteLock(in _timingHandle, OwnerSystemId);
             }
+        }
 
-            if (!parsed)
+        private bool TryIncrementCsvTimingsVersion()
+        {
+            IDataVault vault = ResolveVault();
+            if (vault == null ||
+                !TryOpenWriteArray(BufferID.ShinobuFabricationTuning, in _tuningHandle, OwnerSystemId, 1, out NativeArray<FabricationTuningDTO> tuning))
+            {
                 return false;
-
-            if (!runtime.TryOpenWriteArray(BufferID.ShinobuFabricationTuning, in runtime._tuningHandle, OwnerSystemId, 1, out NativeArray<FabricationTuningDTO> tuning))
-                return true;
+            }
 
             try
             {
                 FabricationTuningDTO next = tuning[0];
                 next.CsvTimingsVersion++;
                 tuning[0] = next;
+                return true;
             }
             finally
             {
-                vault.ReleaseWriteLock(in runtime._tuningHandle, OwnerSystemId);
+                vault.ReleaseWriteLock(in _tuningHandle, OwnerSystemId);
             }
-
-            return true;
         }
-#endif
 
         private FabricationAssemblerRuntime()
         {
@@ -756,13 +799,7 @@ namespace Hecton8.Crafting
             _vault = GlobalRegistry.DataVault;
             TryRegisterHotSwapListener();
             ConfigureSignalLanes();
-            if (!Application.isBatchMode)
-            {
-                EnsureGraphicsBuffers();
-                Shader.SetGlobalFloat(AssemblyEdgeBoostId, 1f);
-            }
-
-            EnsureVaultState();
+            PrepareRuntimeStateCold();
             RegisterDispatcherPhases();
             Application.quitting -= ShutdownActive;
             Application.quitting += ShutdownActive;
@@ -804,10 +841,18 @@ namespace Hecton8.Crafting
                 _registeredPostSimulation = true;
             if (!_registeredVisualSync && GlobalRegistry.TryRegisterDispatcherSystem(_visualSyncPhase))
                 _registeredVisualSync = true;
+            if (!_registeredColdTick && GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment))
+                _registeredColdTick = true;
         }
 
         private void UnregisterDispatcherPhases()
         {
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _registeredColdTick = false;
+            }
+
             if (_registeredPreSimulation)
             {
                 GlobalRegistry.UnregisterDispatcherSystem(_preSimulationPhase);
@@ -849,6 +894,27 @@ namespace Hecton8.Crafting
             ReleaseVaultHandles(previousService is IDataVault previousVault ? previousVault : _vault);
             _vault = nextVault;
             _vaultInitialized = false;
+            _vaultRepairRequested = true;
+            if (!_shutdown)
+                PrepareRuntimeStateCold();
+        }
+
+        public void ColdTick()
+        {
+            if (_shutdown)
+                return;
+
+            if (!_vaultRepairRequested &&
+                HasVaultStateReady() &&
+                (Application.isBatchMode || HasGraphicsBuffersReady()))
+            {
+                return;
+            }
+
+            if (_simulationScheduled)
+                return;
+
+            PrepareRuntimeStateCold();
         }
 
         private IDataVault ResolveVault()
@@ -938,9 +1004,6 @@ namespace Hecton8.Crafting
             ReleaseOwnedHandle(vault, BufferID.ShinobuFabricationTelemetryRing, ref _telemetryHandle);
             ReleaseOwnedHandle(vault, BufferID.ShinobuFabricationTuning, ref _tuningHandle);
             ReleaseOwnedHandle(vault, BufferID.ShinobuFabricationTimingLookup, ref _timingHandle);
-#if UNITY_EDITOR
-            ReleaseOwnedHandle(vault, BufferID.ShinobuFabricationCsvScratch, ref _csvScratchHandle);
-#endif
             _scalabilityHandle = default;
             _vaultInitialized = false;
         }
@@ -993,9 +1056,6 @@ namespace Hecton8.Crafting
             _telemetryHandle = vault.EnsureGenerationHandle<FabricationTelemetryEntry>(BufferID.ShinobuFabricationTelemetryRing, TelemetryFrameCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             _tuningHandle = vault.EnsureGenerationHandle<FabricationTuningDTO>(BufferID.ShinobuFabricationTuning, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             _timingHandle = vault.EnsureGenerationHandle<FabricationTimingDTO>(BufferID.ShinobuFabricationTimingLookup, TimingLookupCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-#if UNITY_EDITOR
-            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.ShinobuFabricationCsvScratch, CsvScratchByteCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-#endif
             if (vault.TryGetGenerationHandle(BufferID.ShinobuScalabilityState, out VaultGenerationHandle<ScalabilityStateDTO> scalability))
                 _scalabilityHandle = scalability;
 
@@ -1008,11 +1068,6 @@ namespace Hecton8.Crafting
             {
                 return false;
             }
-
-#if UNITY_EDITOR
-            if (!TryOpenArray(BufferID.ShinobuFabricationCsvScratch, in _csvScratchHandle, CsvScratchByteCapacity, out _))
-                return false;
-#endif
 
             // COLD SYNC JOB: first-use Vault sanitation before dispatcher systems can read fabrication slots.
             ClearFabricationJobsJob clearJob = new ClearFabricationJobsJob
@@ -1043,10 +1098,33 @@ namespace Hecton8.Crafting
             return true;
         }
 
+        private void PrepareRuntimeStateCold()
+        {
+            bool vaultReady = EnsureVaultState();
+            bool graphicsReady = Application.isBatchMode || EnsureGraphicsBuffers();
+            if (graphicsReady && !Application.isBatchMode)
+                _payloadDirty = true;
+            _vaultRepairRequested = !vaultReady || !graphicsReady;
+        }
+
+        private bool HasVaultStateReady()
+        {
+            return _vaultInitialized &&
+                TryOpenArray(BufferID.ShinobuFabricationJobs, in _jobsHandle, MaxFabricationJobs, out NativeArray<FabricationJobDTO> _) &&
+                TryOpenArray(BufferID.ShinobuFabricationRuntime, in _runtimeHandle, MaxFabricationJobs, out NativeArray<FabricationRuntimeDTO> _) &&
+                TryOpenArray(BufferID.ShinobuFabricationGpuPayload, in _gpuPayloadHandle, MaxFabricationJobs, out NativeArray<FabricationGpuPayloadDTO> _) &&
+                TryOpenArray(BufferID.ShinobuFabricationTelemetryRing, in _telemetryHandle, TelemetryFrameCount, out NativeArray<FabricationTelemetryEntry> _) &&
+                TryOpenArray(BufferID.ShinobuFabricationTuning, in _tuningHandle, 1, out NativeArray<FabricationTuningDTO> _) &&
+                TryOpenArray(BufferID.ShinobuFabricationTimingLookup, in _timingHandle, TimingLookupCapacity, out NativeArray<FabricationTimingDTO> _);
+        }
+
         private void PreSimulationTick(in DispatcherTimingDTO timing)
         {
-            if (!EnsureVaultState())
+            if (!HasVaultStateReady())
+            {
+                _vaultRepairRequested = true;
                 return;
+            }
 
             _lastQualityWeight = ResolveGlobalQualityWeight();
         }
@@ -1061,8 +1139,11 @@ namespace Hecton8.Crafting
                 _simulationScheduled = false;
             }
 
-            if (!EnsureVaultState())
+            if (!HasVaultStateReady())
+            {
+                _vaultRepairRequested = true;
                 return dependsOn;
+            }
 
             if (!TryOpenArray(BufferID.ShinobuFabricationJobs, in _jobsHandle, MaxFabricationJobs, out NativeArray<FabricationJobDTO> jobs) ||
                 !TryOpenArray(BufferID.ShinobuFabricationRuntime, in _runtimeHandle, MaxFabricationJobs, out NativeArray<FabricationRuntimeDTO> states) ||
@@ -1115,10 +1196,12 @@ namespace Hecton8.Crafting
                 _simulationScheduled = false;
             }
 
-            if (!EnsureVaultState())
+            if (!HasVaultStateReady())
+            {
+                _vaultRepairRequested = true;
                 return;
+            }
 
-            IDataVault vault = ResolveVault();
             if (!TryOpenReadArray(BufferID.ShinobuFabricationJobs, in _jobsHandle, MaxFabricationJobs, out NativeArray<FabricationJobDTO> jobs) ||
                 !TryOpenReadArray(BufferID.ShinobuFabricationRuntime, in _runtimeHandle, MaxFabricationJobs, out NativeArray<FabricationRuntimeDTO> states) ||
                 !TryOpenArray(BufferID.ShinobuFabricationTelemetryRing, in _telemetryHandle, TelemetryFrameCount, out NativeArray<FabricationTelemetryEntry> telemetry) ||
@@ -1169,23 +1252,21 @@ namespace Hecton8.Crafting
             _activeUploadCount = ResolveActiveUploadCount(states);
             _payloadDirty |= active > 0u;
             float activeF = math.max(1f, active);
-            FabricationTelemetryEntry entry = new FabricationTelemetryEntry
-            {
-                Frame = _lastFrame,
-                ActiveJobs = active,
-                CompletedJobs = completed,
-                FaultFlags = faultFlags,
-                RollbackHash = rollback,
-                AverageProgress01 = active > 0u ? sum / activeF : 0f,
-                GlobalQualityWeight = _lastQualityWeight,
-                VisualUploadMicroseconds = _lastVisualUploadMicroseconds,
-                SimulationBudgetMicroseconds = active * 0.42f,
-                PowerPotential01 = active > 0u ? power / activeF : 0f,
-                MinProgress01 = active > 0u ? min : 0f,
-                MaxProgress01 = active > 0u ? max : 0f,
-                LastTargetPrefabHash = lastHash,
-                LastFabricatorHash = lastFabricator
-            };
+            FabricationTelemetryEntry entry = default;
+            entry.Frame = _lastFrame;
+            entry.ActiveJobs = active;
+            entry.CompletedJobs = completed;
+            entry.FaultFlags = faultFlags;
+            entry.RollbackHash = rollback;
+            entry.AverageProgress01 = active > 0u ? sum / activeF : 0f;
+            entry.GlobalQualityWeight = _lastQualityWeight;
+            entry.VisualUploadMicroseconds = _lastVisualUploadMicroseconds;
+            entry.SimulationBudgetMicroseconds = active * 0.42f;
+            entry.PowerPotential01 = active > 0u ? power / activeF : 0f;
+            entry.MinProgress01 = active > 0u ? min : 0f;
+            entry.MaxProgress01 = active > 0u ? max : 0f;
+            entry.LastTargetPrefabHash = lastHash;
+            entry.LastFabricatorHash = lastFabricator;
             unsafe
             {
                 ref FabricationTelemetryEntry telemetryEntry = ref UnsafeUtility.ArrayElementAsRef<FabricationTelemetryEntry>(
@@ -1196,7 +1277,7 @@ namespace Hecton8.Crafting
             _telemetryCursor = (_telemetryCursor + 1) % telemetry.Length;
 
             if (faultFlags != 0u)
-                DumpTelemetry(vault, telemetry, faultFlags);
+                QueueTelemetryDump(telemetry, faultFlags);
         }
 
         private void CompleteSimulationForLifecycle()
@@ -1210,11 +1291,20 @@ namespace Hecton8.Crafting
 
         private void VisualSyncTick(in DispatcherTimingDTO timing)
         {
-            if (!EnsureVaultState())
+            if (_simulationScheduled)
                 return;
 
-            if (!EnsureGraphicsBuffers())
+            if (!HasVaultStateReady())
+            {
+                _vaultRepairRequested = true;
                 return;
+            }
+
+            if (!HasGraphicsBuffersReady())
+            {
+                _vaultRepairRequested = true;
+                return;
+            }
 
             if (!_payloadDirty)
                 return;
@@ -1260,6 +1350,14 @@ namespace Hecton8.Crafting
             return _gpuPayloadBufferA != null && _gpuPayloadBufferB != null;
         }
 
+        private bool HasGraphicsBuffersReady()
+        {
+            return _gpuPayloadBufferA != null &&
+                   _gpuPayloadBufferA.IsValid() &&
+                   _gpuPayloadBufferB != null &&
+                   _gpuPayloadBufferB.IsValid();
+        }
+
         private static void ConfigureSignalLanes()
         {
             SignalBus<FabricationCompletedSignal>.Configure(128, maxFrameSignals: 128, lowTierFrameSignals: 32, laneHash: FabricationCompletedLaneHash);
@@ -1269,7 +1367,33 @@ namespace Hecton8.Crafting
             SignalCorridorRuntime.EnsureInitialized();
         }
 
-        private void DumpTelemetry(IDataVault vault, NativeArray<FabricationTelemetryEntry> telemetry, uint reasonFlags)
+        private void QueueTelemetryDump(NativeArray<FabricationTelemetryEntry> telemetry, uint reasonFlags)
+        {
+            if (_shutdown ||
+                !telemetry.IsCreated ||
+                System.Threading.Interlocked.CompareExchange(ref _telemetryDumpInFlight, 1, 0) != 0)
+            {
+                return;
+            }
+
+            int count = math.min(telemetry.Length, _telemetryDumpSnapshot.Length);
+            for (int i = 0; i < count; i++)
+                _telemetryDumpSnapshot[i] = telemetry[i];
+
+            _telemetryDumpCount = count;
+            _telemetryDumpFrame = _lastFrame;
+            _telemetryDumpReasonFlags = reasonFlags;
+            if (!System.Threading.ThreadPool.QueueUserWorkItem(TelemetryDumpWorkerCallback, this))
+                System.Threading.Volatile.Write(ref _telemetryDumpInFlight, 0);
+        }
+
+        private static void RunTelemetryDumpWorker(object state)
+        {
+            FabricationAssemblerRuntime runtime = state as FabricationAssemblerRuntime;
+            runtime?.WriteTelemetryDumpWorker();
+        }
+
+        private void WriteTelemetryDumpWorker()
         {
             try
             {
@@ -1280,12 +1404,12 @@ namespace Hecton8.Crafting
                 using FileStream stream = new FileStream(_dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
                 using BinaryWriter writer = new BinaryWriter(stream);
                 writer.Write(0x53483142u);
-                writer.Write(_lastFrame);
-                writer.Write(reasonFlags);
-                writer.Write(telemetry.Length);
-                for (int i = 0; i < telemetry.Length; i++)
+                writer.Write(_telemetryDumpFrame);
+                writer.Write(_telemetryDumpReasonFlags);
+                writer.Write(_telemetryDumpCount);
+                for (int i = 0; i < _telemetryDumpCount; i++)
                 {
-                    FabricationTelemetryEntry entry = telemetry[i];
+                    FabricationTelemetryEntry entry = _telemetryDumpSnapshot[i];
                     writer.Write(entry.Frame);
                     writer.Write(entry.ActiveJobs);
                     writer.Write(entry.CompletedJobs);
@@ -1307,6 +1431,10 @@ namespace Hecton8.Crafting
             {
                 _lastFaultFlags |= FabricationAssemblerFlags.Fault;
             }
+            finally
+            {
+                System.Threading.Volatile.Write(ref _telemetryDumpInFlight, 0);
+            }
         }
 
         private float ResolveGlobalQualityWeight()
@@ -1314,12 +1442,6 @@ namespace Hecton8.Crafting
             IDataVault vault = ResolveVault();
             if (vault != null)
             {
-                if (!HasScalabilityHandle(in _scalabilityHandle) &&
-                    vault.TryGetGenerationHandle(BufferID.ShinobuScalabilityState, out VaultGenerationHandle<ScalabilityStateDTO> scalability))
-                {
-                    _scalabilityHandle = scalability;
-                }
-
                 if (HasScalabilityHandle(in _scalabilityHandle) &&
                     vault.TryReadHandle(in _scalabilityHandle, out NativeArray<ScalabilityStateDTO> state) &&
                     state.IsCreated &&
@@ -1399,28 +1521,27 @@ namespace Hecton8.Crafting
 
 #if UNITY_EDITOR
         private static bool ParseTimingCsv(
-            NativeArray<byte> bytes,
-            int length,
-            NativeArray<FabricationTimingDTO> timings,
+            ReadOnlySpan<byte> bytes,
+            Span<FabricationTimingDTO> timings,
             out int parsedRows)
         {
             parsedRows = 0;
-            if (!bytes.IsCreated || !timings.IsCreated || length <= 0)
+            if (timings.Length <= 0 || bytes.Length <= 0)
                 return false;
 
             for (int i = 0; i < timings.Length; i++)
                 timings[i] = default;
 
             int index = 0;
-            while (index < length)
+            while (index < bytes.Length)
             {
-                SkipLineBreaks(bytes, length, ref index);
-                if (index >= length)
+                SkipLineBreaks(bytes, ref index);
+                if (index >= bytes.Length)
                     break;
 
                 uint hash = FnvOffset;
                 bool hasName = false;
-                while (index < length)
+                while (index < bytes.Length)
                 {
                     byte b = bytes[index++];
                     if (b == (byte)',' || b == (byte)'\n' || b == (byte)'\r')
@@ -1437,8 +1558,8 @@ namespace Hecton8.Crafting
                     hasName = true;
                 }
 
-                bool hasDuration = TryParsePositiveFloat(bytes, length, ref index, out float duration);
-                SkipToNextLine(bytes, length, ref index);
+                bool hasDuration = TryParsePositiveFloat(bytes, ref index, out float duration);
+                SkipToNextLine(bytes, ref index);
                 if (!hasName || !hasDuration)
                     continue;
 
@@ -1449,7 +1570,7 @@ namespace Hecton8.Crafting
             return parsedRows > 0;
         }
 
-        private static void InsertTiming(NativeArray<FabricationTimingDTO> timings, uint prefabHash, float durationSeconds)
+        private static void InsertTiming(Span<FabricationTimingDTO> timings, uint prefabHash, float durationSeconds)
         {
             if (prefabHash == 0u || !math.isfinite(durationSeconds) || durationSeconds <= 0f)
                 return;
@@ -1462,26 +1583,25 @@ namespace Hecton8.Crafting
                 if (existing.PrefabHash != 0u && existing.PrefabHash != prefabHash)
                     continue;
 
-                timings[slot] = new FabricationTimingDTO
-                {
-                    PrefabHash = prefabHash,
-                    DurationSeconds = math.max(0.001f, durationSeconds),
-                    PowerDrawMultiplier = 1f,
-                    Flags = 1u
-                };
+                FabricationTimingDTO next = default;
+                next.PrefabHash = prefabHash;
+                next.DurationSeconds = math.max(0.001f, durationSeconds);
+                next.PowerDrawMultiplier = 1f;
+                next.Flags = 1u;
+                timings[slot] = next;
                 return;
             }
         }
 
-        private static bool TryParsePositiveFloat(NativeArray<byte> bytes, int length, ref int index, out float value)
+        private static bool TryParsePositiveFloat(ReadOnlySpan<byte> bytes, ref int index, out float value)
         {
             value = 0f;
-            while (index < length && (bytes[index] == (byte)' ' || bytes[index] == (byte)'\t' || bytes[index] == (byte)','))
+            while (index < bytes.Length && (bytes[index] == (byte)' ' || bytes[index] == (byte)'\t' || bytes[index] == (byte)','))
                 index++;
 
             float integer = 0f;
             bool hasDigit = false;
-            while (index < length)
+            while (index < bytes.Length)
             {
                 byte b = bytes[index];
                 if (b < (byte)'0' || b > (byte)'9')
@@ -1493,11 +1613,11 @@ namespace Hecton8.Crafting
             }
 
             float fractional = 0f;
-            if (index < length && bytes[index] == (byte)'.')
+            if (index < bytes.Length && bytes[index] == (byte)'.')
             {
                 index++;
                 float scale = 0.1f;
-                while (index < length)
+                while (index < bytes.Length)
                 {
                     byte b = bytes[index];
                     if (b < (byte)'0' || b > (byte)'9')
@@ -1514,15 +1634,15 @@ namespace Hecton8.Crafting
             return hasDigit && math.isfinite(value) && value > 0f;
         }
 
-        private static void SkipLineBreaks(NativeArray<byte> bytes, int length, ref int index)
+        private static void SkipLineBreaks(ReadOnlySpan<byte> bytes, ref int index)
         {
-            while (index < length && (bytes[index] == (byte)'\n' || bytes[index] == (byte)'\r'))
+            while (index < bytes.Length && (bytes[index] == (byte)'\n' || bytes[index] == (byte)'\r'))
                 index++;
         }
 
-        private static void SkipToNextLine(NativeArray<byte> bytes, int length, ref int index)
+        private static void SkipToNextLine(ReadOnlySpan<byte> bytes, ref int index)
         {
-            while (index < length)
+            while (index < bytes.Length)
             {
                 byte b = bytes[index++];
                 if (b == (byte)'\n')

@@ -84,6 +84,7 @@ namespace Hecton8.World
         private bool _runtimeRegistered;
         private bool _hotSwapRegistered;
         private bool _localProxyLightsDirty;
+        private IPlayerRuntimeContext _playerRuntimeContext;
 
         public ServiceHeartbeatState HeartbeatState => _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
         public bool IsServiceReady => _runtimeRegistered;
@@ -96,6 +97,8 @@ namespace Hecton8.World
         {
             HectonBiolumController registered = GlobalRegistry.BiolumController;
             if (registered != null && registered != this) { Destroy(gameObject); return; }
+
+            CachePlayerRuntimeContext(GlobalRegistry.Player, null);
         }
 
         private void OnEnable()
@@ -106,6 +109,7 @@ namespace Hecton8.World
             TryRegisterHotSwapListener();
             TryRegister();
 
+            CachePlayerRuntimeContext(GlobalRegistry.Player, null);
             TryBindSurvivalSystemFromPlayerContext();
 
             EclipseGameplayEvents.Register(this);
@@ -169,6 +173,7 @@ namespace Hecton8.World
             DepthZoneEvents.Unregister(this);
             SpectrumEvents.UnregisterSonarPulseListener(this);
             _localProxyLightBaseIntensities = null;
+            _playerRuntimeContext = null;
             _atlasPulseBurst = 0f;
             _sonarPulseBurst = 0f;
             _targetEclipseMultiplier = 1f;
@@ -353,13 +358,35 @@ namespace Hecton8.World
             if (survivalSystem != null)
                 return true;
 
-            if (!BootstrapState.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
-                playerTransform == null)
-            {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null)
                 return false;
+
+            HectonSurvivalSystem contextSurvival = playerContext.SurvivalSystem;
+            if (contextSurvival == null)
+                return false;
+
+            survivalSystem = contextSurvival;
+            return true;
+        }
+
+        private void CachePlayerRuntimeContext(
+            IPlayerRuntimeContext currentPlayerContext,
+            IPlayerRuntimeContext previousPlayerContext)
+        {
+            if (previousPlayerContext != null &&
+                ReferenceEquals(survivalSystem, previousPlayerContext.SurvivalSystem))
+            {
+                survivalSystem = null;
             }
 
-            return playerTransform.TryGetComponent(out survivalSystem);
+            _playerRuntimeContext = currentPlayerContext;
+            HectonSurvivalSystem contextSurvival = currentPlayerContext != null
+                ? currentPlayerContext.SurvivalSystem
+                : null;
+
+            if (contextSurvival != null)
+                survivalSystem = contextSurvival;
         }
 
         void IDepthZoneEventListener.OnDepthZoneEntered(DepthZoneProfile zone)
@@ -422,6 +449,14 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                CachePlayerRuntimeContext(
+                    currentService as IPlayerRuntimeContext,
+                    previousService as IPlayerRuntimeContext);
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
                 return;
 

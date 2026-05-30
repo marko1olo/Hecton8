@@ -328,6 +328,7 @@ namespace Hecton8.Physics
         private VaultGenerationHandle<float> _dataVaultCableMassesHandle;
         private VaultGenerationHandle<float> _dataVaultCableSegmentTensionsHandle;
         private IDataVault _dataVault;
+        private IDataVault _dataVaultCableWriteVault;
         private int _dataVaultSlot = -1;
         private int _dataVaultNativeStateMask;
         private bool _dataVaultCableStateReady;
@@ -343,6 +344,7 @@ namespace Hecton8.Physics
         private bool _verletFaultDumpedThisActivation;
         private int _consecutiveVaultAccessFailures;
         private HectonQualityTier _qualityTier = HectonQualityTier.Unknown;
+        private float _qualityWeight01 = 1f;
         private JobHandle _pendingVerletSolveHandle;
         private bool _pendingVerletSolveActive;
         private IDataVault _pendingVerletSolveGuardVault;
@@ -412,10 +414,10 @@ namespace Hecton8.Physics
             float initialDistance)
         {
             _ = legacyAnchorBody;
-            HectonQualityTier qualityTier = _manager != null
-                ? _manager.CachedQualityTier
-                : HectonQualityTier.Unknown;
-            Configure(owner, playerMotor, payloadBody, payloadCollider, initialDistance, qualityTier);
+            float qualityWeight01 = _manager != null
+                ? _manager.CachedQualityWeight01
+                : ResolveCompatibilityTetherQualityWeight(HectonQualityTier.Unknown);
+            Configure(owner, playerMotor, payloadBody, payloadCollider, initialDistance, qualityWeight01);
         }
 
         internal void Configure(
@@ -426,7 +428,34 @@ namespace Hecton8.Physics
             float initialDistance,
             HectonQualityTier qualityTier)
         {
-            Configure(owner, playerMotor, null, payloadBody, payloadCollider, initialDistance, qualityTier);
+            Configure(
+                owner,
+                playerMotor,
+                null,
+                payloadBody,
+                payloadCollider,
+                initialDistance,
+                qualityTier,
+                ResolveCompatibilityTetherQualityWeight(qualityTier));
+        }
+
+        internal void Configure(
+            HeavyTowWinch owner,
+            HectonPlayerMotor playerMotor,
+            Rigidbody payloadBody,
+            Collider payloadCollider,
+            float initialDistance,
+            float qualityWeight01)
+        {
+            Configure(
+                owner,
+                playerMotor,
+                null,
+                payloadBody,
+                payloadCollider,
+                initialDistance,
+                HectonQualityTier.Unknown,
+                qualityWeight01);
         }
 
         private void Configure(
@@ -436,9 +465,11 @@ namespace Hecton8.Physics
             Rigidbody payloadBody,
             Collider payloadCollider,
             float initialDistance,
-            HectonQualityTier qualityTier)
+            HectonQualityTier qualityTier,
+            float qualityWeight01)
         {
             _qualityTier = TetherManager.SanitizeQualityTier(qualityTier);
+            _qualityWeight01 = SanitizeQualityWeight(qualityWeight01);
             _owner = owner;
             _playerMotor = playerMotor;
             _anchorBody = anchorBody;
@@ -471,7 +502,7 @@ namespace Hecton8.Physics
             _bioCableHoldTime = owner != null ? owner.ResolveBioCableHoldTime() : 0f;
             _bioCableBlendSharpness = owner != null ? owner.ResolveBioCableBlendSharpness() : 1f;
             _restLength = owner != null ? owner.ResolveTowRestLength(initialDistance) : math.max(1f, initialDistance);
-            _visualSegmentCount = ResolveVerletPointCount(_qualityTier);
+            _visualSegmentCount = ResolveVerletPointCount(_qualityWeight01);
             _visualSegmentSmoothSpeed = math.max(1f, _visualSegmentSmoothSpeed);
             _payloadMass = _payloadBody != null ? _payloadBody.mass : 0f;
             _payloadMass01 = owner != null ? owner.ResolvePayloadMass01(_payloadMass) : 0f;
@@ -579,7 +610,7 @@ namespace Hecton8.Physics
             int fixedFrameIndex,
             int activeTetherCount,
             int maxVisualizedTethers,
-            HectonQualityTier qualityTier)
+            float qualityWeight01)
         {
             if (!_isActive || _owner == null || _payloadBody == null || (_playerMotor == null && _anchorBody == null))
                 return TetherLifecycleState.Released;
@@ -588,7 +619,7 @@ namespace Hecton8.Physics
                 return TetherLifecycleState.Released;
 
             FinalizePendingVerletSolveNoWait(publishResults: true);
-            _qualityTier = TetherManager.SanitizeQualityTier(qualityTier);
+            _qualityWeight01 = SanitizeQualityWeight(qualityWeight01);
             _currentSimulationFrameIndex = fixedFrameIndex >= 0 ? fixedFrameIndex : 0;
 
             if (fixedDeltaTime <= 0f || !math.isfinite(fixedDeltaTime))
@@ -649,10 +680,10 @@ namespace Hecton8.Physics
         /// </summary>
         public void UpdateVisuals(float deltaTime)
         {
-            UpdateVisuals(deltaTime, _qualityTier, null);
+            UpdateVisuals(deltaTime, _qualityWeight01, null);
         }
 
-        internal void UpdateVisuals(float deltaTime, HectonQualityTier qualityTier, Plane[] frustumPlanes)
+        internal void UpdateVisuals(float deltaTime, float qualityWeight01, Plane[] frustumPlanes)
         {
             _visualCulledThisFrame = false;
             if (!_isActive)
@@ -664,14 +695,14 @@ namespace Hecton8.Physics
                 return;
             }
 
-            _qualityTier = TetherManager.SanitizeQualityTier(qualityTier);
+            _qualityWeight01 = SanitizeQualityWeight(qualityWeight01);
             if (VisualSegmentBuffer == null || VisualSegmentTensionBuffer == null || VisualDrawParamsBuffer == null)
-                EnsureVisualBuffers(_verletNodeCount > 1 ? _verletNodeCount : ResolveVerletPointCount(_qualityTier));
+                EnsureVisualBuffers(_verletNodeCount > 1 ? _verletNodeCount : ResolveVerletPointCount(_qualityWeight01));
 
             if (VisualSegmentBuffer == null || VisualSegmentTensionBuffer == null || VisualDrawParamsBuffer == null)
                 return;
 
-            int nodeCount = _verletNodeCount > 1 ? _verletNodeCount : ResolveVerletPointCount(_qualityTier);
+            int nodeCount = _verletNodeCount > 1 ? _verletNodeCount : ResolveVerletPointCount(_qualityWeight01);
             EnsureDataVaultCableState(nodeCount);
             nodeCount = ResolveDataVaultNodeCount(nodeCount);
 
@@ -680,12 +711,13 @@ namespace Hecton8.Physics
 
             if (_verletPositions.IsCreated && _verletPositions.Length > 1)
             {
-                UpdateVerletVisualUpload(_qualityTier, frustumPlanes);
+                UpdateVerletVisualUpload(_qualityWeight01, frustumPlanes);
                 return;
             }
 
             bool visualGuardHeld = false;
             IDataVault visualGuardVault = null;
+            bool uploadFallbackGpuBuffers = false;
             try
             {
                 visualGuardVault = _dataVault;
@@ -769,7 +801,7 @@ namespace Hecton8.Physics
 
                 _visualBounds.SetMinMax(minBounds, maxBounds);
                 if (ShouldUploadVisualBounds(frustumPlanes))
-                    UploadVisualGpuBuffers(includeTension: true);
+                    uploadFallbackGpuBuffers = true;
                 else
                     _visualCulledThisFrame = true;
                 ResetVaultFailureStreak();
@@ -779,6 +811,9 @@ namespace Hecton8.Physics
                 if (visualGuardHeld && visualGuardVault != null)
                     visualGuardVault.ReleaseMutationGuard(VisualFallbackMutationGuardMask);
             }
+
+            if (uploadFallbackGpuBuffers)
+                UploadVisualGpuBuffers(includeTension: true);
         }
 
         private static void BuildVisualCatenaryImmediate(
@@ -943,6 +978,7 @@ namespace Hecton8.Physics
             _verletFaultDumpedThisActivation = false;
             _consecutiveVaultAccessFailures = 0;
             _qualityTier = HectonQualityTier.Unknown;
+            _qualityWeight01 = 1f;
             ClearBendMetadata(0);
             gameObject.SetActive(false);
         }
@@ -1647,7 +1683,7 @@ namespace Hecton8.Physics
         {
             int nodeCount = requestedNodeCount > 0
                 ? requestedNodeCount
-                : (_verletNodeCount > 1 ? _verletNodeCount : ResolveVerletPointCount(_qualityTier));
+                : (_verletNodeCount > 1 ? _verletNodeCount : ResolveVerletPointCount(_qualityWeight01));
             return math.clamp(nodeCount, 2, DataVaultCablePointCount);
         }
 
@@ -1873,6 +1909,7 @@ namespace Hecton8.Physics
             buffer = default;
             IDataVault vault = _dataVault;
             if (vault == null ||
+                _dataVaultCableWriteVault != null ||
                 requiredLength <= 0 ||
                 !IsDataVaultCableHandle(in handle, bufferId) ||
                 !vault.TryAcquireWriteLock(in handle, SystemID.Physics, out buffer))
@@ -1881,12 +1918,27 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            if (buffer.IsCreated && buffer.Length >= requiredLength)
-                return true;
+            bool keepLock = false;
+            try
+            {
+                if (buffer.IsCreated && buffer.Length >= requiredLength)
+                {
+                    _dataVaultCableWriteVault = vault;
+                    keepLock = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, SystemID.Physics);
-            buffer = default;
-            return false;
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (!keepLock)
+                {
+                    vault.ReleaseWriteLock(in handle, SystemID.Physics);
+                    buffer = default;
+                }
+            }
         }
 
         private bool TryAcquireDataVaultCableSlice<T>(
@@ -1930,7 +1982,8 @@ namespace Hecton8.Physics
             BufferID bufferId)
             where T : struct
         {
-            IDataVault vault = _dataVault;
+            IDataVault vault = _dataVaultCableWriteVault;
+            _dataVaultCableWriteVault = null;
             if (vault != null && IsDataVaultCableHandle(in handle, bufferId))
                 vault.ReleaseWriteLock(in handle, SystemID.Physics);
         }
@@ -2847,8 +2900,8 @@ namespace Hecton8.Physics
             if (!FinalizePendingVerletSolveNoWait(publishResults: true))
                 return ResolvePrimaryConstraintForceMagnitude();
 
-            EnsureDataVaultCableState(_verletNodeCount > 1 ? _verletNodeCount : ResolveVerletPointCount(_qualityTier));
-            int nodeCount = ResolveDataVaultNodeCount(_verletNodeCount > 1 ? _verletNodeCount : ResolveVerletPointCount(_qualityTier));
+            EnsureDataVaultCableState(_verletNodeCount > 1 ? _verletNodeCount : ResolveVerletPointCount(_qualityWeight01));
+            int nodeCount = ResolveDataVaultNodeCount(_verletNodeCount > 1 ? _verletNodeCount : ResolveVerletPointCount(_qualityWeight01));
             int segmentCount = math.max(1, nodeCount - 1);
 
             NativeArray<float3> _verletPositions;
@@ -3076,7 +3129,7 @@ namespace Hecton8.Physics
                     fixedDeltaTime,
                     tuning.ReelSpeedMetersPerSecond);
 
-                int iterationCount = ResolveVerletIterationCount(_qualityTier, tuning.ConstraintIterations);
+                int iterationCount = ResolveVerletIterationCount(_qualityWeight01, tuning.ConstraintIterations);
                 _lastVerletIterationCount = iterationCount;
                 float dtSq = fixedDeltaTime * fixedDeltaTime;
                 float3 defaultGravity = default;
@@ -3088,7 +3141,7 @@ namespace Hecton8.Physics
                 MockWorldSampler worldSampler = BuildVerletWorldSampler(payloadLocal, flowAcceleration);
                 float velocityDamping = tuning.FluidFriction > 0f && math.isfinite(tuning.FluidFriction)
                     ? math.saturate(tuning.FluidFriction)
-                    : ResolveVerletVelocityDamping(_qualityTier);
+                    : ResolveVerletVelocityDamping(_qualityWeight01);
                 TetherVerletIntegrationJob integrationJob = default;
                 integrationJob.Positions = _verletPositions;
                 integrationJob.PreviousPositions = _verletPreviousPositions;
@@ -3724,7 +3777,7 @@ namespace Hecton8.Physics
                 maxPayloadForce);
         }
 
-        private void UpdateVerletVisualUpload(HectonQualityTier qualityTier, Plane[] frustumPlanes)
+        private void UpdateVerletVisualUpload(float qualityWeight01, Plane[] frustumPlanes)
         {
             int nodeCount = ResolveDataVaultNodeCount(_verletNodeCount);
             if (!TryResolveVerletPositions(nodeCount, out NativeArray<float3> _verletPositions))
@@ -3746,6 +3799,7 @@ namespace Hecton8.Physics
                 return;
             }
 
+            bool uploadGpuBuffers = false;
             try
             {
                 if (_visualSegmentPositions.Length != _verletPositions.Length)
@@ -3754,7 +3808,7 @@ namespace Hecton8.Physics
                     return;
                 }
 
-                float curveWeight01 = ResolveTautLineVisualCurveWeight(qualityTier);
+                float curveWeight01 = ResolveTautLineVisualCurveWeight(qualityWeight01);
                 float3 start = _verletPositions[0];
                 float3 end = _verletPositions[_verletPositions.Length - 1];
                 float invLast = math.rcp(math.max(1, _visualSegmentPositions.Length - 1));
@@ -3783,7 +3837,7 @@ namespace Hecton8.Physics
 
                 _visualBounds.SetMinMax(minBounds, maxBounds);
                 if (ShouldUploadVisualBounds(frustumPlanes))
-                    UploadVisualGpuBuffers(includeTension: true);
+                    uploadGpuBuffers = true;
                 else
                     _visualCulledThisFrame = true;
                 ResetVaultFailureStreak();
@@ -3792,6 +3846,9 @@ namespace Hecton8.Physics
             {
                 ReleaseDataVaultCableWriteLock(in _visualSegmentPositionsHandle, BufferID.TetherVisualSegmentPositions);
             }
+
+            if (uploadGpuBuffers)
+                UploadVisualGpuBuffers(includeTension: true);
         }
 
         private bool ShouldUploadVisualBounds(Plane[] frustumPlanes)
@@ -3802,9 +3859,9 @@ namespace Hecton8.Physics
             return GeometryUtility.TestPlanesAABB(frustumPlanes, _visualBounds);
         }
 
-        private float ResolveTautLineVisualCurveWeight(HectonQualityTier qualityTier)
+        private float ResolveTautLineVisualCurveWeight(float qualityWeight01)
         {
-            float qualityWeight = ResolveTetherQualityWeight(qualityTier);
+            float qualityWeight = SanitizeQualityWeight(qualityWeight01);
             float collapseWeight = math.saturate((0.35f - qualityWeight) * math.rcp(0.35f));
             float loadWeight = SmoothRange01(
                 LowTierTautLineVisualThreshold01 - 0.08f,
@@ -3813,12 +3870,12 @@ namespace Hecton8.Physics
             return math.saturate(1f - collapseWeight * loadWeight);
         }
 
-        private static int ResolveVerletIterationCount(HectonQualityTier qualityTier, int tuningOverride)
+        private static int ResolveVerletIterationCount(float qualityWeight01, int tuningOverride)
         {
             if (tuningOverride > 0)
                 return math.clamp(tuningOverride, VerletLowIterationCount, VerletUltraIterationCount);
 
-            float qualityWeight = ResolveTetherQualityWeight(qualityTier);
+            float qualityWeight = SanitizeQualityWeight(qualityWeight01);
             float qualityCurve = Smooth01(qualityWeight);
             return math.clamp(
                 (int)math.round(math.lerp(VerletLowIterationCount, VerletUltraIterationCount, qualityCurve)),
@@ -3826,14 +3883,14 @@ namespace Hecton8.Physics
                 VerletUltraIterationCount);
         }
 
-        private static int ResolveVerletPointCount(HectonQualityTier qualityTier)
+        private static int ResolveVerletPointCount(float qualityWeight01)
         {
-            return ResolveVerletSegmentCount(qualityTier) + 1;
+            return ResolveVerletSegmentCount(qualityWeight01) + 1;
         }
 
-        private static int ResolveVerletSegmentCount(HectonQualityTier qualityTier)
+        private static int ResolveVerletSegmentCount(float qualityWeight01)
         {
-            float qualityWeight = ResolveTetherQualityWeight(qualityTier);
+            float qualityWeight = SanitizeQualityWeight(qualityWeight01);
             float qualityCurve = Smooth01(qualityWeight);
             return math.clamp(
                 (int)math.round(math.lerp(VerletLowSegmentCount, DataVaultCableSegmentCount, qualityCurve)),
@@ -3841,22 +3898,23 @@ namespace Hecton8.Physics
                 DataVaultCableSegmentCount);
         }
 
-        private static float ResolveVerletVelocityDamping(HectonQualityTier qualityTier)
+        private static float ResolveVerletVelocityDamping(float qualityWeight01)
         {
-            float qualityWeight = ResolveTetherQualityWeight(qualityTier);
+            float qualityWeight = SanitizeQualityWeight(qualityWeight01);
             float qualityCurve = Smooth01(qualityWeight);
             return math.lerp(VerletLowVelocityDamping, VerletHighVelocityDamping, qualityCurve);
         }
 
-        private static float ResolveTetherQualityWeight(HectonQualityTier qualityTier)
+        private static float ResolveCompatibilityTetherQualityWeight(HectonQualityTier qualityTier)
         {
-            float globalWeight = HomeostasisBrain.GlobalQualityWeight;
-            if (math.isfinite(globalWeight))
-                return math.saturate(globalWeight);
-
             float tierOrdinal = math.clamp((int)TetherManager.SanitizeQualityTier(qualityTier), (int)HectonQualityTier.Low, (int)HectonQualityTier.Ultra);
             const float qualityTierRange = (int)HectonQualityTier.Ultra - (int)HectonQualityTier.Low;
             return math.saturate((tierOrdinal - (int)HectonQualityTier.Low) * math.rcp(qualityTierRange));
+        }
+
+        private static float SanitizeQualityWeight(float qualityWeight01)
+        {
+            return math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 1f);
         }
 
         private static float Smooth01(float value)

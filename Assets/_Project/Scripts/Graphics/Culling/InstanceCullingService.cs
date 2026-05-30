@@ -82,9 +82,15 @@ namespace Hecton8.Graphics.Culling
         private GraphicsBuffer _indirectArgsBuffer;
         private GraphicsBuffer _indirectArgsUploadBuffer;
         private readonly uint[] _indirectArgsUpload = new uint[IndirectArgsCount]; // COLD ALLOC: uint[5] - cached indirect args initialization upload - owner: InstanceCullingService
+        private IndirectArgsReadbackOwner _indirectArgsReadback;
         private VaultGenerationHandle<InstanceCullingTelemetryEntry> _telemetryRingHandle;
         private IDataVault _dataVault;
         private Action<AsyncGPUReadbackRequest> _cachedReadbackCallback;
+
+        private struct IndirectArgsReadbackOwner
+        {
+            public NativeArray<uint> Data;
+        }
         private InstanceCullingCameraPositionSignal _cameraPosition;
         private InstanceCullingCameraFrustumSignal _cameraFrustum;
         private Texture _voxelSdfTexture;
@@ -108,6 +114,7 @@ namespace Hecton8.Graphics.Culling
         private float _lastCullDistance;
         private float _lastVramUsedMb;
         private uint _lastFlags;
+        private bool _supportsComputeShadersCold;
         private bool _voxelSdfEnabled;
         private bool _dumpedInvalidState;
         private bool _registeredHotSwap;
@@ -141,6 +148,7 @@ namespace Hecton8.Graphics.Culling
         private void Awake()
         {
             _cachedReadbackCallback = OnIndirectArgsReadback;
+            CacheGraphicsCapabilitiesCold();
             if (_computeShader != null)
                 Configure(_computeShader, _capacity);
         }
@@ -149,6 +157,7 @@ namespace Hecton8.Graphics.Culling
         {
             TryRegisterHotSwapListener();
             CacheDataVaultCold();
+            CacheGraphicsCapabilitiesCold();
             if (_visibleInstancesBuffer == null && _activeComputeShader != null)
                 Configure(_activeComputeShader, _capacity);
         }
@@ -168,9 +177,10 @@ namespace Hecton8.Graphics.Culling
         /// <inheritdoc />
         public void Configure(ComputeShader computeShader, int capacity)
         {
+            CacheGraphicsCapabilitiesCold();
             _activeComputeShader = computeShader;
             _capacity = math.max(1, capacity);
-            if (!SystemInfo.supportsComputeShaders)
+            if (!_supportsComputeShadersCold)
             {
                 _activeComputeShader = null;
                 _kernel = -1;
@@ -357,6 +367,7 @@ namespace Hecton8.Graphics.Culling
         public void ReleaseResources()
         {
             CompletePendingReadbackBeforeRelease();
+            DisposeIndirectArgsReadbackData();
             _readbackPending = 0;
             ReleaseBuffer(ref _visibleInstancesBuffer);
             ReleaseBuffer(ref _indirectArgsBuffer);
@@ -395,7 +406,7 @@ namespace Hecton8.Graphics.Culling
 
         private bool ValidateDispatch(in InstanceCullingDispatchDescriptor descriptor)
         {
-            if (!SystemInfo.supportsComputeShaders ||
+            if (!_supportsComputeShadersCold ||
                 !IsAvailable ||
                 descriptor.AllInstancesBuffer == null ||
                 descriptor.InstanceCount <= 0)
@@ -524,8 +535,9 @@ namespace Hecton8.Graphics.Culling
             if (frame % TelemetryReadbackStride != 0)
                 return;
 
+            EnsureIndirectArgsReadbackData();
+            AsyncGPUReadback.RequestIntoNativeArray(ref _indirectArgsReadback.Data, _indirectArgsBuffer, _cachedReadbackCallback);
             _readbackPending = 1;
-            AsyncGPUReadback.Request(_indirectArgsBuffer, _cachedReadbackCallback);
         }
 
         private void OnIndirectArgsReadback(AsyncGPUReadbackRequest request)
@@ -533,7 +545,7 @@ namespace Hecton8.Graphics.Culling
             _readbackPending = 0;
             NativeArray<uint> indirectArgsReadback = request.hasError
                 ? default
-                : request.GetData<uint>();
+                : _indirectArgsReadback.Data;
             if (!indirectArgsReadback.IsCreated || indirectArgsReadback.Length < 2)
             {
                 WriteInvalidTelemetry();
@@ -737,6 +749,29 @@ namespace Hecton8.Graphics.Culling
             _readbackPending = 0;
         }
 
+        private void EnsureIndirectArgsReadbackData()
+        {
+            if (_indirectArgsReadback.Data.IsCreated && _indirectArgsReadback.Data.Length >= IndirectArgsCount)
+                return;
+
+            DisposeIndirectArgsReadbackData();
+            _indirectArgsReadback.Data = new NativeArray<uint>(
+                IndirectArgsCount,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[5] - async indirect args telemetry readback target - owner: InstanceCullingService
+            NativeMemorySentinel.RegisterNativeArray(_indirectArgsReadback.Data, nameof(InstanceCullingService), "_indirectArgsReadbackData", NativeAllocationLifetime.Scene);
+        }
+
+        private void DisposeIndirectArgsReadbackData()
+        {
+            if (_indirectArgsReadback.Data.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_indirectArgsReadback.Data);
+                _indirectArgsReadback.Data.Dispose();
+                _indirectArgsReadback.Data = default;
+            }
+        }
+
         private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
         {
             return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
@@ -767,6 +802,11 @@ namespace Hecton8.Graphics.Culling
 
             buffer.Release();
             buffer = null;
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsComputeShadersCold = SystemInfo.supportsComputeShaders;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

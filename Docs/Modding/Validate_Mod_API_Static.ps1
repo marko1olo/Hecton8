@@ -117,8 +117,10 @@ $externalStarterKitTemplateDependenciesToolPath = Join-Path $externalStarterKitT
 $externalStarterKitTemplateFirstModToolPath = Join-Path $externalStarterKitTemplatePath 'Tools\create_first_mod.ps1'
 $externalStarterKitTemplateInstallLocalToolPath = Join-Path $externalStarterKitTemplatePath 'Tools\install_local_mod.ps1'
 $externalStarterKitTemplateDiagnoseLocalToolPath = Join-Path $externalStarterKitTemplatePath 'Tools\diagnose_local_mods.ps1'
+$externalStarterKitTemplateDoctorToolPath = Join-Path $externalStarterKitTemplatePath 'Tools\run_doctor.ps1'
 $externalStarterKitTemplateIdentityToolPath = Join-Path $externalStarterKitTemplatePath 'Tools\set_mod_identity.ps1'
 $externalStarterKitTemplatePrepareToolPath = Join-Path $externalStarterKitTemplatePath 'Tools\prepare_mod.ps1'
+$externalStarterKitTemplateStrictJsonIoToolPath = Join-Path $externalStarterKitTemplatePath 'Tools\strict_json_io.ps1'
 $externalStarterKitTemplateReviewManifestPath = Join-Path $externalStarterKitTemplatePath 'Reports\review_manifest.json'
 $externalStarterKitTemplateVsCodeSettingsPath = Join-Path $externalStarterKitTemplatePath '.vscode\settings.json'
 $externalStarterKitTemplateVsCodeTasksPath = Join-Path $externalStarterKitTemplatePath '.vscode\tasks.json'
@@ -192,8 +194,10 @@ Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateAssetEntrySnippet
 Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateAssetEntryApplyToolPath -PathType Leaf) "Missing external starter kit asset entry apply tool: $externalStarterKitTemplateAssetEntryApplyToolPath"
 Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateManifestContractToolPath -PathType Leaf) "Missing external starter kit manifest contract tool: $externalStarterKitTemplateManifestContractToolPath"
 Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateDependenciesToolPath -PathType Leaf) "Missing external starter kit dependency config tool: $externalStarterKitTemplateDependenciesToolPath"
+Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateDoctorToolPath -PathType Leaf) "Missing external starter kit package doctor tool: $externalStarterKitTemplateDoctorToolPath"
 Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateIdentityToolPath -PathType Leaf) "Missing external starter kit identity tool: $externalStarterKitTemplateIdentityToolPath"
 Assert-True (Test-Path -LiteralPath $externalStarterKitTemplatePrepareToolPath -PathType Leaf) "Missing external starter kit prepare tool: $externalStarterKitTemplatePrepareToolPath"
+Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateStrictJsonIoToolPath -PathType Leaf) "Missing external starter kit strict JSON I/O helper: $externalStarterKitTemplateStrictJsonIoToolPath"
 Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateVsCodeSettingsPath -PathType Leaf) "Missing external starter kit VS Code settings: $externalStarterKitTemplateVsCodeSettingsPath"
 Assert-True (Test-Path -LiteralPath $changeControlChecklistPath) "Missing change control checklist: $changeControlChecklistPath"
 Assert-True (Test-Path -LiteralPath $runtimePlaybookPath) "Missing runtime verification playbook: $runtimePlaybookPath"
@@ -305,9 +309,18 @@ $externalStarterKitTemplateDependenciesToolSource = Get-Content -Raw -LiteralPat
 $externalStarterKitTemplateFirstModToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateFirstModToolPath
 $externalStarterKitTemplateInstallLocalToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateInstallLocalToolPath
 $externalStarterKitTemplateDiagnoseLocalToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateDiagnoseLocalToolPath
+$externalStarterKitTemplateDoctorToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateDoctorToolPath
 $externalStarterKitTemplateIdentityToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateIdentityToolPath
 $externalStarterKitTemplatePrepareToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplatePrepareToolPath
+$externalStarterKitTemplateStrictJsonIoToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateStrictJsonIoToolPath
 $externalStarterKitTemplateValidatorSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateValidatorPath
+$externalStarterKitTemplateToolSources = @(Get-ChildItem -LiteralPath (Join-Path $externalStarterKitTemplatePath 'Tools') -Filter '*.ps1' -File | ForEach-Object {
+    [pscustomobject]@{
+        Name = $_.Name
+        Path = $_.FullName
+        Source = Get-Content -Raw -LiteralPath $_.FullName
+    }
+})
 $externalStarterKitTemplateValidatorOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $externalStarterKitTemplateValidatorPath -Root $externalStarterKitTemplatePath
 $externalStarterKitTemplateLocalValidatorExitCode = $LASTEXITCODE
 $externalStarterKitTemplateLauncherValidateOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $externalStarterKitTemplateLauncherPath -Action validate
@@ -319,6 +332,73 @@ $externalStarterKitTemplateVsCodeTasks = Get-Content -Raw -LiteralPath $external
 
 function Normalize-TextForCompare([string]$Text) {
     return ($Text -replace "`r`n", "`n").TrimEnd()
+}
+
+function Invoke-StarterValidatorHardeningProbe([string]$TemplatePath) {
+    $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) 'Hecton8ModApiStaticValidation'
+    $probeRoot = Join-Path $tempRoot ([System.Guid]::NewGuid().ToString('N'))
+    $probeFull = $null
+    try {
+        [void](New-Item -ItemType Directory -Path $probeRoot -Force)
+        Get-ChildItem -LiteralPath $TemplatePath -Force | Copy-Item -Destination $probeRoot -Recurse -Force
+        $probeFull = (Resolve-Path -LiteralPath $probeRoot).Path
+        $validatorPath = Join-Path $probeFull 'Tools\validate_structure.ps1'
+        $utf8NoBom = New-Object System.Text.UTF8Encoding $false
+
+        $authoringPath = Join-Path $probeFull 'mod.h8manifest.json'
+        $authoringOriginal = Get-Content -Raw -LiteralPath $authoringPath
+        $oversizedPadding = ''.PadRight(66000, 'x')
+        $oversizedManifest = '{"Schema":"' + $oversizedPadding + '"}'
+        [System.IO.File]::WriteAllText($authoringPath, $oversizedManifest, $utf8NoBom)
+        $previousErrorActionPreference = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try {
+            $oversizedOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $validatorPath -Root $probeFull *>&1
+            $oversizedExit = $LASTEXITCODE
+        } finally {
+            $ErrorActionPreference = $previousErrorActionPreference
+        }
+        [System.IO.File]::WriteAllText($authoringPath, $authoringOriginal, $utf8NoBom)
+
+        $assetManifestPath = Join-Path $probeFull 'Content\assets.h8manifest.json'
+        $assetManifest = [pscustomobject][ordered]@{
+            Schema = 'hecton8.assets.draft.v1'
+            Assets = @(
+                [pscustomobject][ordered]@{
+                    Id = 'asset.invalid_path'
+                    Kind = 'data_blob'
+                    Path = 'Content/Assets/invalid.bytes:ads'
+                    Bytes = 0
+                    Crc32 = '00000000'
+                }
+            )
+        }
+        [System.IO.File]::WriteAllText($assetManifestPath, ($assetManifest | ConvertTo-Json -Depth 8), $utf8NoBom)
+        $previousErrorActionPreference = $ErrorActionPreference
+        $ErrorActionPreference = 'Continue'
+        try {
+            $assetPathOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $validatorPath -Root $probeFull *>&1
+            $assetPathExit = $LASTEXITCODE
+        } finally {
+            $ErrorActionPreference = $previousErrorActionPreference
+        }
+
+        return [pscustomobject]@{
+            OversizedManifestExitCode = $oversizedExit
+            OversizedManifestOutput = @($oversizedOutput | ForEach-Object { [string]$_ })
+            InvalidAssetPathExitCode = $assetPathExit
+            InvalidAssetPathOutput = @($assetPathOutput | ForEach-Object { [string]$_ })
+        }
+    } finally {
+        if ($null -ne $probeFull) {
+            $tempRootFull = [System.IO.Path]::GetFullPath($tempRoot)
+            $probeFullPath = [System.IO.Path]::GetFullPath($probeFull)
+            if ($probeFullPath.StartsWith($tempRootFull, [System.StringComparison]::OrdinalIgnoreCase) -and
+                (Test-Path -LiteralPath $probeFullPath -PathType Container)) {
+                Remove-Item -LiteralPath $probeFullPath -Recurse -Force
+            }
+        }
+    }
 }
 
 function Invoke-StarterIdentityToolProbe([string]$TemplatePath) {
@@ -583,6 +663,11 @@ function Invoke-StarterGraphNodeSnippetProbe([string]$TemplatePath) {
         $badExitCode = $LASTEXITCODE
         $badParametersOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $toolPath -Root $probeFull -Id 'node.bad_parameters' -Opcode 'SpawnItem' -ParametersJson '[]'
         $badParametersExitCode = $LASTEXITCODE
+        $oversizedParameters = 'x' * 8193
+        $oversizedParametersOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $toolPath -Root $probeFull -Id 'node.too_many_parameters' -Opcode 'SpawnItem' -ParametersJson $oversizedParameters
+        $oversizedParametersExitCode = $LASTEXITCODE
+        $badOutputPathOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $toolPath -Root $probeFull -Id 'node.bad_output' -Opcode 'SpawnItem' -Output 'Generated/bad.txt'
+        $badOutputPathExitCode = $LASTEXITCODE
         $relaxedOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $toolPath -Root $probeFull -Id 'node.relaxed_parameters' -Opcode 'SpawnItem' -ParametersJson '{Quantity:7,Mode:relaxed}' -Output 'Generated/relaxed_graph_node_snippet.json' -Json
         $relaxedExitCode = $LASTEXITCODE
         $relaxedPayload = $null
@@ -640,6 +725,10 @@ function Invoke-StarterGraphNodeSnippetProbe([string]$TemplatePath) {
             InvalidOpcodeOutput = @($badOutput)
             InvalidParametersExitCode = $badParametersExitCode
             InvalidParametersOutput = @($badParametersOutput)
+            OversizedParametersExitCode = $oversizedParametersExitCode
+            OversizedParametersOutput = @($oversizedParametersOutput)
+            InvalidOutputPathExitCode = $badOutputPathExitCode
+            InvalidOutputPathOutput = @($badOutputPathOutput)
             RelaxedParametersExitCode = $relaxedExitCode
             RelaxedParametersNodeId = if ($null -ne $relaxedPayload -and $null -ne $relaxedPayload.Node) { [string]$relaxedPayload.Node.Id } else { '' }
             RelaxedParametersQuantity = if ($null -ne $relaxedPayload -and $null -ne $relaxedPayload.Node -and $null -ne $relaxedPayload.Node.Parameters) { [int]$relaxedPayload.Node.Parameters.Quantity } else { 0 }
@@ -687,6 +776,8 @@ function Invoke-StarterSettingsRowSnippetProbe([string]$TemplatePath) {
         $badKindExitCode = $LASTEXITCODE
         $badDefaultOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $toolPath -Root $probeFull -Id 'setting.validation_bad_default' -Kind 'int' -Default 'abc'
         $badDefaultExitCode = $LASTEXITCODE
+        $badOutputPathOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $toolPath -Root $probeFull -Id 'setting.bad_output_path' -Kind 'bool' -Default 'true' -Output 'Generated//bad.json'
+        $badOutputPathExitCode = $LASTEXITCODE
         $applyToolPath = Join-Path $probeFull 'Tools\apply_settings_row_snippet.ps1'
         $applyOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $applyToolPath -Root $probeFull -Snippet 'Generated/settings_row_snippet.json' -Json
         $applyExitCode = $LASTEXITCODE
@@ -710,6 +801,12 @@ function Invoke-StarterSettingsRowSnippetProbe([string]$TemplatePath) {
 
         $duplicateApplyOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $applyToolPath -Root $probeFull -Snippet 'Generated/settings_row_snippet.json'
         $duplicateApplyExitCode = $LASTEXITCODE
+        $invalidSnippetPathOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $applyToolPath -Root $probeFull -Snippet 'Generated/bad.txt'
+        $invalidSnippetPathExitCode = $LASTEXITCODE
+        $oversizedSnippetPath = Join-Path $probeFull 'Generated\oversized_settings_row_snippet.json'
+        [System.IO.File]::WriteAllText($oversizedSnippetPath, (' ' * 65537), [System.Text.Encoding]::UTF8)
+        $oversizedApplyOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $applyToolPath -Root $probeFull -Snippet 'Generated/oversized_settings_row_snippet.json'
+        $oversizedApplyExitCode = $LASTEXITCODE
 
         return [pscustomobject]@{
             TextExitCode = $textExitCode
@@ -728,6 +825,8 @@ function Invoke-StarterSettingsRowSnippetProbe([string]$TemplatePath) {
             InvalidKindOutput = @($badKindOutput)
             InvalidDefaultExitCode = $badDefaultExitCode
             InvalidDefaultOutput = @($badDefaultOutput)
+            InvalidOutputPathExitCode = $badOutputPathExitCode
+            InvalidOutputPathOutput = @($badOutputPathOutput)
             ApplyExitCode = $applyExitCode
             ApplySchema = if ($null -ne $applyPayload) { [string]$applyPayload.Schema } else { '' }
             ApplyRuntime = if ($null -ne $applyPayload) { [string]$applyPayload.Runtime } else { '' }
@@ -737,6 +836,10 @@ function Invoke-StarterSettingsRowSnippetProbe([string]$TemplatePath) {
             AppliedRowExists = $appliedRows.Count -eq 1
             DuplicateApplyExitCode = $duplicateApplyExitCode
             DuplicateApplyOutput = @($duplicateApplyOutput)
+            InvalidSnippetPathExitCode = $invalidSnippetPathExitCode
+            InvalidSnippetPathOutput = @($invalidSnippetPathOutput)
+            OversizedApplyExitCode = $oversizedApplyExitCode
+            OversizedApplyOutput = @($oversizedApplyOutput)
         }
     } finally {
         if ($null -ne $probeFull) {
@@ -780,6 +883,8 @@ function Invoke-StarterLocaleEntrySnippetProbe([string]$TemplatePath) {
         $badKeyExitCode = $LASTEXITCODE
         $badValueOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $toolPath -Root $probeFull -Key 'text.bad_value' -Value ' '
         $badValueExitCode = $LASTEXITCODE
+        $badOutputPathOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $toolPath -Root $probeFull -Key 'text.bad_output' -Value 'Bad output' -Output 'Generated/bad.json:ads'
+        $badOutputPathExitCode = $LASTEXITCODE
         $applyToolPath = Join-Path $probeFull 'Tools\apply_locale_entry_snippet.ps1'
         $applyOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $applyToolPath -Root $probeFull -Snippet 'Generated/locale_entry_snippet.json' -Json
         $applyExitCode = $LASTEXITCODE
@@ -819,6 +924,8 @@ function Invoke-StarterLocaleEntrySnippetProbe([string]$TemplatePath) {
             InvalidKeyOutput = @($badKeyOutput)
             InvalidValueExitCode = $badValueExitCode
             InvalidValueOutput = @($badValueOutput)
+            InvalidOutputPathExitCode = $badOutputPathExitCode
+            InvalidOutputPathOutput = @($badOutputPathOutput)
             ApplyExitCode = $applyExitCode
             ApplySchema = if ($null -ne $applyPayload) { [string]$applyPayload.Schema } else { '' }
             ApplyRuntime = if ($null -ne $applyPayload) { [string]$applyPayload.Runtime } else { '' }
@@ -873,8 +980,12 @@ function Invoke-StarterAssetEntrySnippetProbe([string]$TemplatePath) {
         $badKindExitCode = $LASTEXITCODE
         $badPathOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $toolPath -Root $probeFull -Id 'asset.bad_path' -Kind 'data_blob' -Path '../probe.bytes' -Crc32 'auto' -Bytes -1
         $badPathExitCode = $LASTEXITCODE
+        $badPortablePathOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $toolPath -Root $probeFull -Id 'asset.bad_portable_path' -Kind 'data_blob' -Path 'Content/Assets/probe.bytes:ads' -Crc32 'auto' -Bytes -1
+        $badPortablePathExitCode = $LASTEXITCODE
         $badCrcOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $toolPath -Root $probeFull -Id 'asset.bad_crc' -Kind 'data_blob' -Path 'Content/Assets/probe.bytes' -Crc32 '00000000' -Bytes -1
         $badCrcExitCode = $LASTEXITCODE
+        $badOutputPathOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $toolPath -Root $probeFull -Id 'asset.bad_output' -Kind 'data_blob' -Path 'Content/Assets/probe.bytes' -Crc32 'auto' -Bytes -1 -Output 'Generated/bad.txt'
+        $badOutputPathExitCode = $LASTEXITCODE
         [void](& powershell -NoProfile -ExecutionPolicy Bypass -File $toolPath -Root $probeFull -Id 'asset.validation_blob' -Kind 'data_blob' -Path 'Content/Assets/probe.bytes' -Crc32 'auto' -Bytes -1)
         $applyToolPath = Join-Path $probeFull 'Tools\apply_asset_entry_snippet.ps1'
         $applyOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $applyToolPath -Root $probeFull -Snippet 'Generated/asset_entry_snippet.json' -Json
@@ -920,8 +1031,12 @@ function Invoke-StarterAssetEntrySnippetProbe([string]$TemplatePath) {
             InvalidKindOutput = @($badKindOutput)
             InvalidPathExitCode = $badPathExitCode
             InvalidPathOutput = @($badPathOutput)
+            InvalidPortablePathExitCode = $badPortablePathExitCode
+            InvalidPortablePathOutput = @($badPortablePathOutput)
             InvalidCrcExitCode = $badCrcExitCode
             InvalidCrcOutput = @($badCrcOutput)
+            InvalidOutputPathExitCode = $badOutputPathExitCode
+            InvalidOutputPathOutput = @($badOutputPathOutput)
             ApplyExitCode = $applyExitCode
             ApplySchema = if ($null -ne $applyPayload) { [string]$applyPayload.Schema } else { '' }
             ApplyRuntime = if ($null -ne $applyPayload) { [string]$applyPayload.Runtime } else { '' }
@@ -1046,7 +1161,9 @@ function Invoke-StarterSubmissionPackageProbe([string]$TemplatePath) {
         $output = & powershell -NoProfile -ExecutionPolicy Bypass -File $toolPath -Root $probeFull
         $exitCode = $LASTEXITCODE
         $zipPath = Join-Path $probeFull 'Generated\com.example.starter_submission.zip'
+        $reviewPath = Join-Path $probeFull 'Reports\review_manifest.json'
         $entries = @()
+        $zipIsNotOlderThanReview = $false
         if (Test-Path -LiteralPath $zipPath -PathType Leaf) {
             try {
                 Add-Type -AssemblyName System.IO.Compression -ErrorAction Stop
@@ -1061,6 +1178,9 @@ function Invoke-StarterSubmissionPackageProbe([string]$TemplatePath) {
                 $entries = @()
             }
         }
+        if ((Test-Path -LiteralPath $zipPath -PathType Leaf) -and (Test-Path -LiteralPath $reviewPath -PathType Leaf)) {
+            $zipIsNotOlderThanReview = ((Get-Item -LiteralPath $zipPath).LastWriteTimeUtc -ge (Get-Item -LiteralPath $reviewPath).LastWriteTimeUtc)
+        }
 
         return [pscustomobject]@{
             ExitCode = $exitCode
@@ -1073,6 +1193,7 @@ function Invoke-StarterSubmissionPackageProbe([string]$TemplatePath) {
             HasSubmissionTool = $entries -contains 'Tools/build_submission_package.ps1'
             HasGeneratedOutputEntry = (@($entries | Where-Object { $_ -like 'Generated/*' }).Count -gt 0)
             HasReportsSourceEntry = (@($entries | Where-Object { $_ -like 'Reports/*' -and $_ -ne 'Reports/review_manifest.json' }).Count -gt 0)
+            ZipIsNotOlderThanReview = $zipIsNotOlderThanReview
         }
     } finally {
         if ($null -ne $probeFull) {
@@ -1632,6 +1753,42 @@ $externalStarterKitWorkbenchShowsSubmissionPackageStatus =
     $externalStarterKitWorkbenchSource.Contains('Package freshness: current against review manifest') -and
     $externalStarterKitWorkbenchSource.Contains('Generated Folder') -and
     $externalStarterKitContractText.Contains('shows current submission package path/freshness')
+$externalStarterKitWorkbenchShowsSubmissionZipIntegrity =
+    $externalStarterKitWorkbenchSource.Contains('TryBuildSubmissionZipIntegritySummary') -and
+    $externalStarterKitWorkbenchSource.Contains('Zip integrity: verified') -and
+    $externalStarterKitWorkbenchSource.Contains('MaxSubmissionIntegrityEntries') -and
+    $externalStarterKitWorkbenchSource.Contains('MaxSubmissionIntegrityEntryBytes') -and
+    $externalStarterKitWorkbenchSource.Contains('Reports/review_manifest.json') -and
+    $externalStarterKitWorkbenchSource.Contains('IsSafeSubmissionZipEntry') -and
+    $externalStarterKitContractText.Contains('shows current submission package path/freshness plus case-exact zip path integrity')
+$externalStarterKitWorkbenchUsesCaseExactSubmissionZipIntegrity =
+    ($externalStarterKitWorkbenchSource -match 'new\s+Dictionary<string,\s*SubmissionExpectedEntry>\(review\.Files\.Length \+ 1,\s*StringComparer\.Ordinal\)') -and
+    ($externalStarterKitWorkbenchSource -match 'new\s+Dictionary<string,\s*ZipArchiveEntry>\(Math\.Max\(1,\s*expectedEntries\.Count\),\s*StringComparer\.Ordinal\)') -and
+    $externalStarterKitWorkbenchSource.Contains('MaxSubmissionIntegrityReviewManifestBytes') -and
+    $externalStarterKitWorkbenchSource.Contains('expectedCaseFoldPaths') -and
+    $externalStarterKitWorkbenchSource.Contains('zipCaseFoldPaths') -and
+    $externalStarterKitWorkbenchSource.Contains('IsSha256Hex') -and
+    $externalStarterKitWorkbenchSource.Contains('Path match: case-exact') -and
+    $externalStarterKitContractText.Contains('case-exact zip path integrity')
+$externalStarterKitWorkbenchReportsReservedFolderCaseVariants =
+    $externalStarterKitWorkbenchSource.Contains('ReservedStarterTopLevelFolders') -and
+    $externalStarterKitWorkbenchSource.Contains('CountReservedTopLevelCaseVariants') -and
+    $externalStarterKitWorkbenchSource.Contains('Reserved folder casing mismatches') -and
+    $externalStarterKitWorkbenchSource.Contains('CASE_MISMATCH') -and
+    $externalStarterKitWorkbenchSource.Contains('Rename to exact starter contract casing') -and
+    $externalStarterKitContractText.Contains('reserved top-level folder case variants')
+$externalStarterKitPackageProofRequiresLowercaseSha256 =
+    $externalStarterKitWorkbenchSource.Contains("bool lower = c >= 'a' && c <= 'f';") -and
+    $externalStarterKitWorkbenchSource.Contains('StringComparison.Ordinal)') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('$isLowerHex = $ch -ge ''a'' -and $ch -le ''f''') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains("^[0-9a-f]{64}$") -and
+    $externalStarterKitContractText.Contains('lowercase SHA-256')
+$externalStarterKitWorkbenchRunsDoctor =
+    $externalStarterKitWorkbenchSource.Contains('Run Package Doctor') -and
+    $externalStarterKitWorkbenchSource.Contains('RunPackageDoctor') -and
+    $externalStarterKitWorkbenchSource.Contains('Open Doctor Tool') -and
+    $externalStarterKitWorkbenchSource.Contains('Tools/run_doctor.ps1') -and
+    $externalStarterKitContractText.Contains('run the package doctor')
 $externalStarterKitWorkbenchShowsAuthoringDataPreview =
     $externalStarterKitWorkbenchSource.Contains('Authoring Data Preview') -and
     $externalStarterKitWorkbenchSource.Contains('LoadAuthoringDataPreview') -and
@@ -1679,6 +1836,43 @@ $externalStarterKitWorkbenchChecksRootLauncher =
     $externalStarterKitWorkbenchSource.Contains('"h8mod.ps1"') -and
     $externalStarterKitWorkbenchSource.Contains('Open Root Launcher') -and
     $externalStarterKitWorkbenchSource.Contains('ModdingSDK/ExternalStarterKit/h8mod.ps1')
+$externalStarterKitWorkbenchReadAllTextCount =
+    ([regex]::Matches($externalStarterKitWorkbenchSource, 'File\.ReadAllText\(')).Count
+$externalStarterKitWorkbenchUsesStreamingCappedPreviewReads =
+    $externalStarterKitWorkbenchSource.Contains('File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)') -and
+    $externalStarterKitWorkbenchSource.Contains('const int ChunkBytes = 8192') -and
+    $externalStarterKitWorkbenchSource.Contains('totalBytes > byteLimit') -and
+    $externalStarterKitWorkbenchSource.Contains('StrictUtf8NoBom.GetString(bytes, 0, totalBytes)') -and
+    $externalStarterKitWorkbenchReadAllTextCount -eq 0 -and
+    $externalStarterKitContractText.Contains('Workbench previews stream starter JSON/text reads with hard byte caps') -and
+    $runtimePlaybookText.Contains('ExternalStarterKitWorkbenchUsesStreamingCappedPreviewReads = True') -and
+    $specText.Contains('schema revision `123`')
+$externalStarterKitWorkbenchRejectsInvalidUtf8PreviewReads =
+    $externalStarterKitWorkbenchUsesStreamingCappedPreviewReads -and
+    $externalStarterKitWorkbenchSource.Contains('new UTF8Encoding(false, true)') -and
+    $externalStarterKitWorkbenchSource.Contains('DecoderFallbackException') -and
+    $externalStarterKitWorkbenchSource.Contains('is not strict UTF-8') -and
+    $externalStarterKitContractText.Contains('Workbench preview reads reject invalid UTF-8 before JSON parsing') -and
+    $runtimePlaybookText.Contains('ExternalStarterKitWorkbenchRejectsInvalidUtf8PreviewReads = True') -and
+    $specText.Contains('schema revision `123`')
+$externalStarterKitWorkbenchUsesBoundedPreviewReads =
+    $externalStarterKitWorkbenchSource.Contains('MaxAuthoringManifestPreviewBytes = 65536L') -and
+    $externalStarterKitWorkbenchSource.Contains('MaxGraphPreviewBytes = 262144L') -and
+    $externalStarterKitWorkbenchSource.Contains('MaxSettingsPreviewBytes = 262144L') -and
+    $externalStarterKitWorkbenchSource.Contains('MaxLocalePreviewBytes = 2097152L') -and
+    $externalStarterKitWorkbenchSource.Contains('MaxAssetManifestPreviewBytes = 262144L') -and
+    $externalStarterKitWorkbenchSource.Contains('MaxReviewManifestPreviewBytes = 1048576L') -and
+    $externalStarterKitWorkbenchSource.Contains('ReadTextFileCapped') -and
+    $externalStarterKitWorkbenchSource.Contains('ReadJsonFileCapped<AuthoringManifest>') -and
+    $externalStarterKitWorkbenchSource.Contains('ReadJsonFileCapped<GraphDocument>') -and
+    $externalStarterKitWorkbenchSource.Contains('ReadJsonFileCapped<SettingsTableDocument>') -and
+    $externalStarterKitWorkbenchSource.Contains('ReadJsonFileCapped<LocaleDocument>') -and
+    $externalStarterKitWorkbenchSource.Contains('ReadJsonFileCapped<AssetManifestDocument>') -and
+    $externalStarterKitWorkbenchSource.Contains('ReadJsonFileCapped<ReviewManifest>') -and
+    $externalStarterKitWorkbenchUsesStreamingCappedPreviewReads -and
+    $externalStarterKitContractText.Contains('Workbench previews cap starter JSON/text reads before parsing') -and
+    $runtimePlaybookText.Contains('ExternalStarterKitWorkbenchUsesBoundedPreviewReads = True') -and
+    $specText.Contains('schema revision `123`')
 Assert-True $moddingSdkHubPresent 'ModdingSdkHubWindow must expose Hecton/Modding/SDK Hub.'
 Assert-True $moddingSdkHubOpensBuilder 'ModdingSdkHubWindow must open ModBuilderWindow.'
 Assert-True $moddingSdkHubOpensStarterWorkbench 'ModdingSdkHubWindow must open the External Starter Kit Workbench from public authoring actions.'
@@ -1715,6 +1909,11 @@ Assert-True $externalStarterKitWorkbenchGeneratesAuthoringSnippets 'External Sta
 Assert-True $externalStarterKitWorkbenchAppliesAuthoringSnippets 'External Starter Kit Workbench must apply settings and locale snippets through bounded no-Unity helpers with duplicate rejection and rollback.'
 Assert-True $externalStarterKitWorkbenchBuildsSubmissionPackage 'External Starter Kit Workbench must build a no-Unity submission package from the reviewed starter kit.'
 Assert-True $externalStarterKitWorkbenchShowsSubmissionPackageStatus 'External Starter Kit Workbench must show current submission zip path/freshness and expose the Generated handoff folder.'
+Assert-True $externalStarterKitWorkbenchShowsSubmissionZipIntegrity 'External Starter Kit Workbench must show submission zip integrity against Reports/review_manifest.json with bounded entry/hash checks.'
+Assert-True $externalStarterKitWorkbenchUsesCaseExactSubmissionZipIntegrity 'External Starter Kit Workbench submission zip integrity must use exact path casing, reject case-fold duplicates, and cap review manifest bytes.'
+Assert-True $externalStarterKitWorkbenchReportsReservedFolderCaseVariants 'External Starter Kit Workbench must report reserved top-level folder case variants in starter health.'
+Assert-True $externalStarterKitPackageProofRequiresLowercaseSha256 'External starter kit package proof must require lowercase SHA-256 rows and exact hash comparison.'
+Assert-True $externalStarterKitWorkbenchRunsDoctor 'External Starter Kit Workbench must run the no-Unity package doctor through the bounded starter tool.'
 Assert-True $externalStarterKitWorkbenchShowsAuthoringDataPreview 'External Starter Kit Workbench must show settings and locale authoring data preview before submission handoff.'
 Assert-True $externalStarterKitWorkbenchShowsContentAssetPreview 'External Starter Kit Workbench must show content asset manifest state, missing files, invalid entries, and byte totals.'
 Assert-True $externalStarterKitWorkbenchGeneratesAssetEntrySnippet 'External Starter Kit Workbench must generate content asset snippets through the no-Unity helper.'
@@ -1722,6 +1921,9 @@ Assert-True $externalStarterKitWorkbenchAppliesAssetEntrySnippet 'External Start
 Assert-True $externalStarterKitWorkbenchConfiguresManifestContract 'External Starter Kit Workbench must configure manifest capabilities/budgets through the bounded no-Unity helper.'
 Assert-True $externalStarterKitWorkbenchConfiguresDependencies 'External Starter Kit Workbench must configure dependency metadata through the bounded no-Unity helper.'
 Assert-True $externalStarterKitWorkbenchChecksRootLauncher 'External Starter Kit Workbench must include the root no-Unity h8mod.ps1 launcher in health and file access.'
+Assert-True $externalStarterKitWorkbenchUsesBoundedPreviewReads 'External Starter Kit Workbench must cap starter JSON/text preview reads before parsing.'
+Assert-True $externalStarterKitWorkbenchUsesStreamingCappedPreviewReads 'External Starter Kit Workbench must stream capped starter JSON/text preview reads without raw File.ReadAllText.'
+Assert-True $externalStarterKitWorkbenchRejectsInvalidUtf8PreviewReads 'External Starter Kit Workbench must reject invalid UTF-8 starter previews before JSON parsing.'
 $externalStarterKitGeneratorPresent =
     $moddingSdkHubSource.Contains('ExternalStarterKitRoot = "ModdingSDK/ExternalStarterKit"') -and
     $moddingSdkHubSource.Contains('CreateExternalStarterKit') -and
@@ -1729,25 +1931,26 @@ $externalStarterKitGeneratorPresent =
     $moddingSdkHubSource.Contains('Open External Starter Kit')
 $externalStarterKitWritesRootLauncher =
     $moddingSdkHubSource.Contains('"h8mod.ps1"') -and
-    $moddingSdkHubSource.Contains('BuildStarterKitLauncherScript') -and
-    $moddingSdkHubSource.Contains("ValidateSet('menu','first-mod','install-local','diagnose-local','dependencies','setup','validate','review','prepare','submission','opcodes','opcodes-json','node-snippet','apply-node-snippet','setting-snippet','locale-snippet','apply-setting-snippet','apply-locale-snippet','asset-snippet','apply-asset-snippet','manifest-contract','capabilities')") -and
-    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/prepare_mod.ps1'") -and
-    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/validate_structure.ps1'") -and
-    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/build_review_manifest.ps1'") -and
-    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/build_submission_package.ps1'") -and
-    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/install_local_mod.ps1'") -and
-    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/diagnose_local_mods.ps1'") -and
-    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/list_allowed_opcodes.ps1'") -and
-    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/create_graph_node_snippet.ps1'") -and
-    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/apply_graph_node_snippet.ps1'") -and
-    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/create_settings_row_snippet.ps1'") -and
-    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/create_locale_entry_snippet.ps1'") -and
-    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/apply_settings_row_snippet.ps1'") -and
-    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/apply_locale_entry_snippet.ps1'") -and
-    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/create_asset_entry_snippet.ps1'") -and
-    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/apply_asset_entry_snippet.ps1'") -and
-    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/configure_manifest_contract.ps1'") -and
-    $moddingSdkHubSource.Contains('Invoke-Capabilities')
+    $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate("h8mod.ps1")') -and
+    $externalStarterKitTemplateLauncherSource.Contains("ValidateSet('menu','first-mod','install-local','diagnose-local','doctor','dependencies','setup','validate','review','prepare','submission','opcodes','opcodes-json','node-snippet','apply-node-snippet','setting-snippet','locale-snippet','apply-setting-snippet','apply-locale-snippet','asset-snippet','apply-asset-snippet','manifest-contract','capabilities')") -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/prepare_mod.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/validate_structure.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/build_review_manifest.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/build_submission_package.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/install_local_mod.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/diagnose_local_mods.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/run_doctor.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/list_allowed_opcodes.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/create_graph_node_snippet.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/apply_graph_node_snippet.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/create_settings_row_snippet.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/create_locale_entry_snippet.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/apply_settings_row_snippet.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/apply_locale_entry_snippet.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/create_asset_entry_snippet.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/apply_asset_entry_snippet.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/configure_manifest_contract.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains('Invoke-Capabilities')
 $externalStarterKitWritesAuthoringManifest =
     $moddingSdkHubSource.Contains('mod.h8manifest.json') -and
     $moddingSdkHubSource.Contains('BuildAuthoringManifestTemplate') -and
@@ -1784,14 +1987,15 @@ $externalStarterKitDocumentsEnvelopeOnlyBoundary =
 $externalStarterKitWritesLocalStructureValidator =
     $moddingSdkHubSource.Contains('Tools", "validate_structure.ps1"') -and
     $moddingSdkHubSource.Contains('BuildStarterKitValidatorScript') -and
-    $moddingSdkHubSource.Contains('H8MOD_STARTER_VALIDATION') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate("Tools/validate_structure.ps1")') -and
+    $externalStarterKitTemplateValidatorSource.Contains('H8MOD_STARTER_VALIDATION') -and
     $externalStarterKitContractText.Contains('Tools/validate_structure.ps1')
 $externalStarterKitValidatorChecksRequiredFiles =
-    $moddingSdkHubSource.Contains('function Require-File') -and
-    $moddingSdkHubSource.Contains('function Require-Directory') -and
-    $moddingSdkHubSource.Contains("'Docs/capabilities.md'") -and
+    $externalStarterKitTemplateValidatorSource.Contains('function Require-File') -and
+    $externalStarterKitTemplateValidatorSource.Contains('function Require-Directory') -and
+    $externalStarterKitTemplateValidatorSource.Contains("'Docs/capabilities.md'") -and
     $moddingSdkHubSource.Contains('"Content", "Assets", "README.md"') -and
-    $moddingSdkHubSource.Contains("'Tools/build_submission_package.ps1'") -and
+    $externalStarterKitTemplateValidatorSource.Contains("'Tools/build_submission_package.ps1'") -and
     $externalStarterKitTemplateValidatorSource.Contains("'Content/Assets/README.md'") -and
     $externalStarterKitTemplateValidatorSource.Contains("'Tools/apply_graph_node_snippet.ps1'") -and
     $externalStarterKitTemplateValidatorSource.Contains("'Tools/create_settings_row_snippet.ps1'") -and
@@ -1804,11 +2008,11 @@ $externalStarterKitValidatorChecksRequiredFiles =
     $externalStarterKitTemplateValidatorSource.Contains("'Tools/configure_manifest_contract.ps1'") -and
     $externalStarterKitTemplateValidatorSource.Contains("'Tools/install_local_mod.ps1'") -and
     $externalStarterKitTemplateValidatorSource.Contains("'Tools/diagnose_local_mods.ps1'") -and
+    $externalStarterKitTemplateValidatorSource.Contains("'Tools/run_doctor.ps1'") -and
     $externalStarterKitTemplateValidatorSource.Contains("'.vscode/tasks.json'") -and
-    $moddingSdkHubSource.Contains('[switch]$ThrowInsteadOfExit') -and
     $externalStarterKitTemplateValidatorSource.Contains('[switch]$ThrowInsteadOfExit') -and
-    $moddingSdkHubSource.Contains('Reference/allowed_opcodes.csv') -and
-    $moddingSdkHubSource.Contains('Reference/kernel_tuning_profiles.csv')
+    $externalStarterKitTemplateValidatorSource.Contains("'Reference/allowed_opcodes.csv'") -and
+    $externalStarterKitTemplateValidatorSource.Contains("'Reference/kernel_tuning_profiles.csv'")
 $externalStarterKitValidatorChecksCapabilityGuide =
     $externalStarterKitTemplateValidatorSource.Contains('Docs/capabilities.md missing required capability text') -and
     $externalStarterKitTemplateValidatorSource.Contains('h8mod.ps1 -Action capabilities') -and
@@ -1822,41 +2026,31 @@ $externalStarterKitValidatorChecksCapabilityGuide =
     $externalStarterKitTemplateValidatorSource.Contains('install_local_mod.ps1') -and
     $externalStarterKitTemplateValidatorSource.Contains('h8mod.ps1 -Action diagnose-local') -and
     $externalStarterKitTemplateValidatorSource.Contains('diagnose_local_mods.ps1') -and
+    $externalStarterKitTemplateValidatorSource.Contains('h8mod.ps1 -Action doctor') -and
+    $externalStarterKitTemplateValidatorSource.Contains('run_doctor.ps1') -and
+    $externalStarterKitTemplateValidatorSource.Contains('review manifest freshness') -and
+    $externalStarterKitTemplateValidatorSource.Contains('submission zip freshness') -and
+    $externalStarterKitTemplateValidatorSource.Contains('case-exact zip path integrity') -and
     $externalStarterKitTemplateValidatorSource.Contains('configure_dependencies.ps1') -and
     $externalStarterKitTemplateValidatorSource.Contains('configure_manifest_contract.ps1') -and
-    $moddingSdkHubSource.Contains('Docs/capabilities.md missing required capability text') -and
-    $moddingSdkHubSource.Contains('h8mod.ps1 -Action setting-snippet') -and
-    $moddingSdkHubSource.Contains('h8mod.ps1 -Action locale-snippet') -and
-    $moddingSdkHubSource.Contains('h8mod.ps1 -Action asset-snippet') -and
-    $moddingSdkHubSource.Contains('h8mod.ps1 -Action apply-asset-snippet') -and
-    $moddingSdkHubSource.Contains('h8mod.ps1 -Action manifest-contract') -and
-    $moddingSdkHubSource.Contains('h8mod.ps1 -Action dependencies') -and
-    $moddingSdkHubSource.Contains('h8mod.ps1 -Action install-local') -and
-    $moddingSdkHubSource.Contains('install_local_mod.ps1') -and
-    $moddingSdkHubSource.Contains('h8mod.ps1 -Action diagnose-local') -and
-    $moddingSdkHubSource.Contains('diagnose_local_mods.ps1') -and
-    $moddingSdkHubSource.Contains('configure_dependencies.ps1') -and
-    $moddingSdkHubSource.Contains('configure_manifest_contract.ps1') -and
     $externalStarterKitContractText.Contains('rejects missing capability guide text')
 $externalStarterKitValidatorChecksEnvelopeOnly =
-    $moddingSdkHubSource.Contains('Compatibility.Runtime must be envelope-only') -and
-    $moddingSdkHubSource.Contains('Runtime must be envelope-only')
+    $externalStarterKitTemplateValidatorSource.Contains('Compatibility.Runtime must be envelope-only') -and
+    $externalStarterKitTemplateValidatorSource.Contains('Runtime must be envelope-only')
 $externalStarterKitValidatorChecksManagedEntryDisabled =
-    $moddingSdkHubSource.Contains('EntryAssembly must stay empty in envelope-only starter kits') -and
-    $moddingSdkHubSource.Contains('EntryType must stay empty in envelope-only starter kits')
+    $externalStarterKitTemplateValidatorSource.Contains('EntryAssembly must stay empty in envelope-only starter kits') -and
+    $externalStarterKitTemplateValidatorSource.Contains('EntryType must stay empty in envelope-only starter kits')
 $externalStarterKitValidatorChecksCanonicalIds =
-    $moddingSdkHubSource.Contains('function Validate-ModId') -and
-    $moddingSdkHubSource.Contains('reserved filesystem device segment') -and
-    $moddingSdkHubSource.Contains('^[a-z0-9]+([._-][a-z0-9]+)*$')
+    $externalStarterKitTemplateValidatorSource.Contains('function Validate-ModId') -and
+    $externalStarterKitTemplateValidatorSource.Contains('reserved filesystem device segment') -and
+    $externalStarterKitTemplateValidatorSource.Contains('^[a-z0-9]+([._-][a-z0-9]+)*$')
 $externalStarterKitValidatorChecksManifestIdParity =
-    $moddingSdkHubSource.Contains('mod.h8manifest.json Id must match mod.json Id')
+    $externalStarterKitTemplateValidatorSource.Contains('mod.h8manifest.json Id must match mod.json Id')
 $externalStarterKitValidatorChecksDependencyIds =
     $externalStarterKitTemplateValidatorSource.Contains('function Validate-DependencyList') -and
     $externalStarterKitTemplateValidatorSource.Contains('mod.h8manifest.json Dependencies must match mod.json Dependencies in the same order') -and
     $externalStarterKitTemplateValidatorSource.Contains('must not contain self dependency') -and
-    $externalStarterKitTemplateValidatorSource.Contains('contains duplicate dependency') -and
-    $moddingSdkHubSource.Contains('Validate-DependencyList') -and
-    $moddingSdkHubSource.Contains('mod.h8manifest.json Dependencies must match mod.json Dependencies')
+    $externalStarterKitTemplateValidatorSource.Contains('contains duplicate dependency')
 $externalStarterKitInvalidGraphOpcodeProbe = Invoke-StarterInvalidGraphOpcodeProbe $externalStarterKitTemplatePath
 $externalStarterKitValidatorRejectsInvalidGraphOpcode =
     $externalStarterKitInvalidGraphOpcodeProbe.ExitCode -ne 0
@@ -1867,25 +2061,23 @@ $externalStarterKitValidatorChecksGraphOpcodes =
     $externalStarterKitTemplateValidatorSource.Contains('duplicate node Id') -and
     $externalStarterKitTemplateValidatorSource.Contains('Nodes exceeds 256 entries') -and
     $externalStarterKitTemplateValidatorSource.Contains('node Opcode is required') -and
-    $moddingSdkHubSource.Contains('function Read-AllowedGraphOpcodeTokens') -and
-    $moddingSdkHubSource.Contains('node Opcode is not in Reference/allowed_opcodes.csv') -and
-    $moddingSdkHubSource.Contains('Nodes exceeds 256 entries') -and
     $externalStarterKitContractText.Contains('graph opcode allowlist') -and
     $externalStarterKitValidatorRejectsInvalidGraphOpcode
 $externalStarterKitValidatorChecksGraphBudget =
     $externalStarterKitTemplateValidatorSource.Contains('MaxEnvelopesPerFrame must not exceed mod.h8manifest.json Budgets.MaxEnvelopesPerFrame') -and
     $externalStarterKitTemplateValidatorSource.Contains('MaxEnvelopesPerFrame must be >= 1 when opcode nodes exist') -and
-    $moddingSdkHubSource.Contains('MaxEnvelopesPerFrame must not exceed mod.h8manifest.json Budgets.MaxEnvelopesPerFrame') -and
     $externalStarterKitContractText.Contains('graph budget parity')
 $externalStarterKitWritesReviewManifestBuilder =
     $moddingSdkHubSource.Contains('Tools", "build_review_manifest.ps1"') -and
     $moddingSdkHubSource.Contains('BuildStarterKitReviewManifestScript') -and
-    $moddingSdkHubSource.Contains('H8MOD_REVIEW_MANIFEST') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate("Tools/build_review_manifest.ps1")') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('H8MOD_REVIEW_MANIFEST') -and
     $externalStarterKitContractText.Contains('Tools/build_review_manifest.ps1')
 $externalStarterKitWritesSubmissionPackageTool =
     $moddingSdkHubSource.Contains('Tools", "build_submission_package.ps1"') -and
     $moddingSdkHubSource.Contains('BuildStarterKitSubmissionPackageScript') -and
-    $moddingSdkHubSource.Contains('H8MOD_SUBMISSION_PACKAGE') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate("Tools/build_submission_package.ps1")') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('H8MOD_SUBMISSION_PACKAGE') -and
     $externalStarterKitTemplateSubmissionPackageToolSource.Contains('hecton8.external_review_manifest.v1') -and
     $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Add-Type -AssemblyName System.IO.Compression ') -and
     $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Add-Type -AssemblyName System.IO.Compression.FileSystem') -and
@@ -1895,32 +2087,70 @@ $externalStarterKitSubmissionPackagePreservesPreviousOutputUntilSuccess =
     $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Submission package zip write failed') -and
     $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Submission package zip replace failed') -and
     $externalStarterKitContractText.Contains('restores the previous submission zip') -and
-    $moddingSdkHubSource.Contains('Submission package zip write failed') -and
-    $moddingSdkHubSource.Contains('Submission package zip replace failed') -and
     $externalStarterKitTemplateSubmissionPackageToolSource.Contains('New-TempArtifactPath') -and
-    $moddingSdkHubSource.Contains('New-TempArtifactPath') -and
     $externalStarterKitTemplateSubmissionPackageToolSource.Contains('previousCopiedToBackup') -and
-    $moddingSdkHubSource.Contains('previousCopiedToBackup') -and
     $externalStarterKitTemplateSubmissionPackageToolSource.Contains("Copy-Item -LiteralPath `$outputPath -Destination `$backupOutputPath -Force") -and
     $externalStarterKitTemplateSubmissionPackageToolSource.Contains("Copy-Item -LiteralPath `$tempOutputPath -Destination `$outputPath -Force") -and
-    $externalStarterKitTemplateSubmissionPackageToolSource.Contains("Copy-Item -LiteralPath `$backupOutputPath -Destination `$outputPath -Force -ErrorAction SilentlyContinue") -and
-    $moddingSdkHubSource.Contains("Copy-Item -LiteralPath `$outputPath -Destination `$backupOutputPath -Force") -and
-    $moddingSdkHubSource.Contains("Copy-Item -LiteralPath `$tempOutputPath -Destination `$outputPath -Force") -and
-    $moddingSdkHubSource.Contains("Copy-Item -LiteralPath `$backupOutputPath -Destination `$outputPath -Force -ErrorAction SilentlyContinue")
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains("Copy-Item -LiteralPath `$backupOutputPath -Destination `$outputPath -Force -ErrorAction SilentlyContinue")
+$externalStarterKitSubmissionPackageRefreshesTimestampAfterReplace =
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('$reviewTimestampUtc = (Get-Item -LiteralPath $reviewPath).LastWriteTimeUtc') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('$outputItem.LastWriteTimeUtc = $reviewTimestampUtc.AddSeconds(1)')
+$externalStarterKitReviewManifestRejectsCaseFoldSourceDuplicates =
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Assert-StandardReviewOutput') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Reports/review_manifest.json') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('[System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::Ordinal)') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('seenReviewCaseFoldPaths') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('source path duplicate or case-fold duplicate') -and
+    $externalStarterKitContractText.Contains('case-fold duplicate source paths')
+$externalStarterKitSubmissionPackageUsesCaseExactSourceEntries =
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('$MaxSubmissionPackageEntryBytes = 4194304') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Assert-StandardReviewOutput') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('ReviewOutput path must be exactly Reports/review_manifest.json') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Test-Sha256Hex') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Get-NumericLong') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('[System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::Ordinal)') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('seenCaseFoldEntries') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('source path duplicate or case-fold duplicate') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains(".EndsWith('.zip', [System.StringComparison]::Ordinal)") -and
+    $externalStarterKitContractText.Contains('case-exact submission package builder')
+$externalStarterKitValidatorRequiresExactPathCasing =
+    $externalStarterKitTemplateValidatorSource.Contains('function Test-StarterPathExactCase') -and
+    $externalStarterKitTemplateValidatorSource.Contains('Assert-NoReservedTopLevelCaseVariants') -and
+    $externalStarterKitTemplateValidatorSource.Contains('Reserved starter top-level folder casing mismatch') -and
+    $externalStarterKitTemplateValidatorSource.Contains('[System.StringComparison]::Ordinal') -and
+    $externalStarterKitContractText.Contains('required starter paths are exact-case')
+$externalStarterKitRejectsReservedTopLevelCaseVariants =
+    $externalStarterKitTemplateValidatorSource.Contains('Assert-NoReservedTopLevelCaseVariants') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Test-ReservedTopLevelCaseVariant') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Test-ReservedTopLevelCaseVariant') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('Test-ReservedTopLevelCaseVariant') -and
+    $externalStarterKitContractText.Contains('reserved top-level folder case variants')
+$externalStarterKitReviewManifestUsesExactReservedOutputFolders =
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('$ReservedTopLevelFolders') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Test-ReviewOutputPath') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains("StartsWith('Generated/', [System.StringComparison]::Ordinal)") -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains("StartsWith('Reports/', [System.StringComparison]::Ordinal)") -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Output path must be exactly Reports/review_manifest.json') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Reserved starter top-level folder casing mismatch in review source') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Reserved starter top-level folder casing mismatch in review file path') -and
+    $externalStarterKitContractText.Contains('review and submission builders exclude only exact `Generated/` and `Reports/` output folders')
 $externalStarterKitWritesIdentityTool =
     $moddingSdkHubSource.Contains('Tools", "set_mod_identity.ps1"') -and
     $moddingSdkHubSource.Contains('BuildStarterKitIdentityScript') -and
-    $moddingSdkHubSource.Contains('H8MOD_SET_IDENTITY') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate("Tools/set_mod_identity.ps1")') -and
+    $externalStarterKitTemplateIdentityToolSource.Contains('H8MOD_SET_IDENTITY') -and
     $externalStarterKitContractText.Contains('Tools/set_mod_identity.ps1')
 $externalStarterKitWritesPrepareTool =
     $moddingSdkHubSource.Contains('Tools", "prepare_mod.ps1"') -and
     $moddingSdkHubSource.Contains('BuildStarterKitPrepareScript') -and
-    $moddingSdkHubSource.Contains('H8MOD_PREPARE') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate("Tools/prepare_mod.ps1")') -and
+    $externalStarterKitTemplatePrepareToolSource.Contains('H8MOD_PREPARE') -and
     $externalStarterKitContractText.Contains('Tools/prepare_mod.ps1')
 $externalStarterKitWritesAllowedOpcodeListTool =
     $moddingSdkHubSource.Contains('Tools", "list_allowed_opcodes.ps1"') -and
     $moddingSdkHubSource.Contains('BuildStarterKitAllowedOpcodesScript') -and
-    $moddingSdkHubSource.Contains('H8MOD_OPCODE_LIST') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate("Tools/list_allowed_opcodes.ps1")') -and
+    $externalStarterKitTemplateAllowedOpcodeListToolSource.Contains('H8MOD_OPCODE_LIST') -and
     $externalStarterKitContractText.Contains('Tools/list_allowed_opcodes.ps1')
 $externalStarterKitAllowedOpcodeListProbe = Invoke-StarterAllowedOpcodeListProbe $externalStarterKitTemplatePath
 $externalStarterKitAllowedOpcodeListToolPasses =
@@ -1945,8 +2175,52 @@ $externalStarterKitGraphNodeSnippetSupportsParameters =
     $externalStarterKitTemplateGraphNodeSnippetToolSource.Contains('Read-RelaxedParametersObject') -and
     $externalStarterKitTemplateGraphNodeSnippetToolSource.Contains('ParametersJson must be a JSON object') -and
     $externalStarterKitTemplateGraphNodeSnippetToolSource.Contains('Enabled = (-not $Disabled)') -and
-    $moddingSdkHubSource.Contains('NodeParametersJson') -and
-    $moddingSdkHubSource.Contains('NodeDisabled')
+    $externalStarterKitTemplateLauncherSource.Contains('NodeParametersJson') -and
+    $externalStarterKitTemplateLauncherSource.Contains('NodeDisabled')
+$externalStarterKitSnippetCreateToolSources = @(
+    $externalStarterKitTemplateGraphNodeSnippetToolSource,
+    $externalStarterKitTemplateSettingsRowSnippetToolSource,
+    $externalStarterKitTemplateLocaleEntrySnippetToolSource,
+    $externalStarterKitTemplateAssetEntrySnippetToolSource
+)
+$externalStarterKitSnippetApplyToolSources = @(
+    $externalStarterKitTemplateGraphNodeApplyToolSource,
+    $externalStarterKitTemplateSettingsRowApplyToolSource,
+    $externalStarterKitTemplateLocaleEntryApplyToolSource,
+    $externalStarterKitTemplateAssetEntryApplyToolSource
+)
+$externalStarterKitSnippetSourceRequiresStrictJsonRelativePaths =
+    (@($externalStarterKitSnippetCreateToolSources | Where-Object {
+        $_.Contains('function Test-StrictJsonRelativePath') -and
+        $_.Contains(".EndsWith('.json', [System.StringComparison]::Ordinal)") -and
+        $_.Contains(".Contains(':')") -and
+        $_.Contains('must not contain empty, dot, or dot-dot path segments.')
+    }).Count -eq $externalStarterKitSnippetCreateToolSources.Count) -and
+    (@($externalStarterKitSnippetApplyToolSources | Where-Object {
+        $_.Contains('function Resolve-StarterRelativePath') -and
+        $_.Contains(".EndsWith('.json', [System.StringComparison]::Ordinal)") -and
+        $_.Contains(".Contains(':')") -and
+        $_.Contains('must not contain empty, dot, or dot-dot path segments.')
+    }).Count -eq $externalStarterKitSnippetApplyToolSources.Count)
+$externalStarterKitSnippetApplySourceUsesBoundedJsonReads =
+    (@($externalStarterKitSnippetApplyToolSources | Where-Object {
+        $_.Contains('$MaxSnippetJsonBytes = 65536') -and
+        $_.Contains('function Read-JsonFile([string]$Path, [string]$Label, [long]$MaxBytes)') -and
+        $_.Contains("strict_json_io.ps1") -and
+        $_.Contains('Read-H8JsonFileCapped')
+    }).Count -eq $externalStarterKitSnippetApplyToolSources.Count) -and
+    $externalStarterKitTemplateStrictJsonIoToolSource.Contains('exceeds byte cap') -and
+    $externalStarterKitTemplateGraphNodeApplyToolSource.Contains('$MaxGraphJsonBytes = 262144') -and
+    $externalStarterKitTemplateSettingsRowApplyToolSource.Contains('$MaxSettingsTableJsonBytes = 262144') -and
+    $externalStarterKitTemplateLocaleEntryApplyToolSource.Contains('$MaxLocaleJsonBytes = 2097152') -and
+    $externalStarterKitTemplateAssetEntryApplyToolSource.Contains('$MaxAssetManifestJsonBytes = 262144') -and
+    $externalStarterKitTemplateAssetEntryApplyToolSource.Contains('$MaxManifestJsonBytes = 65536')
+$externalStarterKitAssetSnippetSourceRejectsNonPortableAssetPaths =
+    $externalStarterKitTemplateAssetEntrySnippetToolSource.Contains("StartsWith('/')") -and
+    $externalStarterKitTemplateAssetEntrySnippetToolSource.Contains(".Contains(':')") -and
+    $externalStarterKitTemplateAssetEntrySnippetToolSource.Contains('Path must not contain empty, dot, or dot-dot path segments.') -and
+    $externalStarterKitTemplateAssetEntryApplyToolSource.Contains('Resolve-StarterRelativePath $RelativePath ''Content/Assets/'' ''Asset Path'' $false') -and
+    $externalStarterKitTemplateAssetEntryApplyToolSource.Contains(".Contains(':')")
 $externalStarterKitWritesGraphNodeApplyTool =
     $moddingSdkHubSource.Contains('Tools", "apply_graph_node_snippet.ps1"') -and
     $moddingSdkHubSource.Contains('BuildStarterKitGraphNodeApplyScript') -and
@@ -1994,7 +2268,8 @@ $externalStarterKitGraphNodeApplyToolRejectsDuplicateWithoutReplace =
 $externalStarterKitWritesSettingsRowSnippetTool =
     $moddingSdkHubSource.Contains('Tools", "create_settings_row_snippet.ps1"') -and
     $moddingSdkHubSource.Contains('BuildStarterKitSettingsRowSnippetScript') -and
-    $moddingSdkHubSource.Contains('H8MOD_SETTINGS_SNIPPET') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate("Tools/create_settings_row_snippet.ps1")') -and
+    $externalStarterKitTemplateSettingsRowSnippetToolSource.Contains('H8MOD_SETTINGS_SNIPPET') -and
     $externalStarterKitContractText.Contains('Tools/create_settings_row_snippet.ps1')
 $externalStarterKitWritesSettingsRowApplyTool =
     $moddingSdkHubSource.Contains('Tools", "apply_settings_row_snippet.ps1"') -and
@@ -2030,7 +2305,8 @@ $externalStarterKitSettingsRowApplyToolRejectsDuplicateWithoutReplace =
 $externalStarterKitWritesLocaleEntrySnippetTool =
     $moddingSdkHubSource.Contains('Tools", "create_locale_entry_snippet.ps1"') -and
     $moddingSdkHubSource.Contains('BuildStarterKitLocaleEntrySnippetScript') -and
-    $moddingSdkHubSource.Contains('H8MOD_LOCALE_SNIPPET') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate("Tools/create_locale_entry_snippet.ps1")') -and
+    $externalStarterKitTemplateLocaleEntrySnippetToolSource.Contains('H8MOD_LOCALE_SNIPPET') -and
     $externalStarterKitContractText.Contains('Tools/create_locale_entry_snippet.ps1')
 $externalStarterKitWritesLocaleEntryApplyTool =
     $moddingSdkHubSource.Contains('Tools", "apply_locale_entry_snippet.ps1"') -and
@@ -2107,6 +2383,104 @@ $externalStarterKitAssetEntryApplyToolPasses =
     $externalStarterKitAssetEntrySnippetProbe.ValidatorExitCode -eq 0
 $externalStarterKitAssetEntryApplyToolRejectsDuplicateWithoutReplace =
     $externalStarterKitAssetEntrySnippetProbe.DuplicateApplyExitCode -ne 0
+$externalStarterKitSnippetPathsRequireStrictJsonRelativePaths =
+    $externalStarterKitSnippetSourceRequiresStrictJsonRelativePaths -and
+    $externalStarterKitGraphNodeSnippetProbe.InvalidOutputPathExitCode -ne 0 -and
+    $externalStarterKitSettingsRowSnippetProbe.InvalidOutputPathExitCode -ne 0 -and
+    $externalStarterKitLocaleEntrySnippetProbe.InvalidOutputPathExitCode -ne 0 -and
+    $externalStarterKitAssetEntrySnippetProbe.InvalidOutputPathExitCode -ne 0 -and
+    $externalStarterKitSettingsRowSnippetProbe.InvalidSnippetPathExitCode -ne 0
+$externalStarterKitSnippetApplyUsesBoundedJsonReads =
+    $externalStarterKitSnippetApplySourceUsesBoundedJsonReads -and
+    $externalStarterKitSettingsRowSnippetProbe.OversizedApplyExitCode -ne 0
+$externalStarterKitAssetSnippetRejectsNonPortableAssetPaths =
+    $externalStarterKitAssetSnippetSourceRejectsNonPortableAssetPaths -and
+    $externalStarterKitAssetEntrySnippetProbe.InvalidPortablePathExitCode -ne 0
+$externalStarterKitGraphNodeSnippetCapsParametersJson =
+    $externalStarterKitTemplateGraphNodeSnippetToolSource.Contains('ParametersJson must be 8192 characters or shorter.') -and
+    $externalStarterKitGraphNodeSnippetProbe.OversizedParametersExitCode -ne 0
+$externalStarterKitValidatorHardeningProbe = Invoke-StarterValidatorHardeningProbe $externalStarterKitTemplatePath
+$externalStarterKitValidatorCapsRootJsonReads =
+    $externalStarterKitTemplateValidatorSource.Contains('$MaxManifestJsonBytes = 65536') -and
+    $externalStarterKitTemplateValidatorSource.Contains('$MaxGraphJsonBytes = 262144') -and
+    $externalStarterKitTemplateValidatorSource.Contains('$MaxAssetManifestJsonBytes = 262144') -and
+    $externalStarterKitTemplateValidatorSource.Contains('$MaxSettingsTableJsonBytes = 262144') -and
+    $externalStarterKitTemplateValidatorSource.Contains('$MaxLocaleJsonBytes = 2097152') -and
+    $externalStarterKitTemplateValidatorSource.Contains('$MaxCapabilityGuideBytes = 262144') -and
+    $externalStarterKitTemplateValidatorSource.Contains('function Read-Json([string]$RelativePath, [long]$MaxBytes)') -and
+    $externalStarterKitTemplateValidatorSource.Contains('function Read-TextFile([string]$RelativePath, [long]$MaxBytes)') -and
+    $externalStarterKitValidatorHardeningProbe.OversizedManifestExitCode -ne 0
+$externalStarterKitValidatorRejectsNonPortableAssetManifestPaths =
+    $externalStarterKitTemplateValidatorSource.Contains("Path must not contain colon or stream syntax.") -and
+    $externalStarterKitTemplateValidatorSource.Contains('Path must not contain empty, dot, or dot-dot path segments.') -and
+    $externalStarterKitValidatorHardeningProbe.InvalidAssetPathExitCode -ne 0
+$externalStarterKitCoreToolsUseBoundedJsonReads =
+    $externalStarterKitValidatorCapsRootJsonReads -and
+    $externalStarterKitTemplateIdentityToolSource.Contains('$MaxManifestJsonBytes = 65536') -and
+    $externalStarterKitTemplateIdentityToolSource.Contains('function Read-JsonFile([string]$Path, [string]$Label, [long]$MaxBytes)') -and
+    $externalStarterKitTemplateDependenciesToolSource.Contains('$MaxManifestJsonBytes = 65536') -and
+    $externalStarterKitTemplateManifestContractToolSource.Contains('$MaxManifestJsonBytes = 65536') -and
+    $externalStarterKitTemplateManifestContractToolSource.Contains('$MaxGraphJsonBytes = 262144') -and
+    $externalStarterKitTemplateManifestContractToolSource.Contains('$MaxAssetManifestJsonBytes = 262144') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('$MaxManifestJsonBytes = 65536') -and
+    $externalStarterKitTemplatePrepareToolSource.Contains('$MaxReviewManifestBytes = 1048576') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('$MaxReviewManifestBytes = 1048576') -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains('$MaxReviewManifestBytes = 1048576') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('$MaxReviewManifestBytes = 1048576') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('$MaxDoctorManifestBytes = 65536') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('$MaxDoctorGraphBytes = 262144') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('$MaxDoctorAssetManifestBytes = 262144') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('$MaxDoctorSettingsTableBytes = 262144') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('$MaxDoctorLocaleBytes = 2097152') -and
+    $externalStarterKitContractText.Contains('cap external JSON/text reads before parsing') -and
+    $runtimePlaybookText.Contains('ExternalStarterKitCoreToolsUseBoundedJsonReads = True') -and
+    $specText.Contains('schema revision `124`')
+$externalStarterKitStrictJsonIoRequiredToolSources = @(
+    [pscustomobject]@{ Name = 'validate_structure.ps1'; Source = $externalStarterKitTemplateValidatorSource },
+    [pscustomobject]@{ Name = 'build_review_manifest.ps1'; Source = $externalStarterKitTemplateReviewManifestBuilderSource },
+    [pscustomobject]@{ Name = 'build_submission_package.ps1'; Source = $externalStarterKitTemplateSubmissionPackageToolSource },
+    [pscustomobject]@{ Name = 'list_allowed_opcodes.ps1'; Source = $externalStarterKitTemplateAllowedOpcodeListToolSource },
+    [pscustomobject]@{ Name = 'create_graph_node_snippet.ps1'; Source = $externalStarterKitTemplateGraphNodeSnippetToolSource },
+    [pscustomobject]@{ Name = 'apply_graph_node_snippet.ps1'; Source = $externalStarterKitTemplateGraphNodeApplyToolSource },
+    [pscustomobject]@{ Name = 'apply_settings_row_snippet.ps1'; Source = $externalStarterKitTemplateSettingsRowApplyToolSource },
+    [pscustomobject]@{ Name = 'apply_locale_entry_snippet.ps1'; Source = $externalStarterKitTemplateLocaleEntryApplyToolSource },
+    [pscustomobject]@{ Name = 'apply_asset_entry_snippet.ps1'; Source = $externalStarterKitTemplateAssetEntryApplyToolSource },
+    [pscustomobject]@{ Name = 'configure_manifest_contract.ps1'; Source = $externalStarterKitTemplateManifestContractToolSource },
+    [pscustomobject]@{ Name = 'configure_dependencies.ps1'; Source = $externalStarterKitTemplateDependenciesToolSource },
+    [pscustomobject]@{ Name = 'install_local_mod.ps1'; Source = $externalStarterKitTemplateInstallLocalToolSource },
+    [pscustomobject]@{ Name = 'diagnose_local_mods.ps1'; Source = $externalStarterKitTemplateDiagnoseLocalToolSource },
+    [pscustomobject]@{ Name = 'run_doctor.ps1'; Source = $externalStarterKitTemplateDoctorToolSource },
+    [pscustomobject]@{ Name = 'set_mod_identity.ps1'; Source = $externalStarterKitTemplateIdentityToolSource },
+    [pscustomobject]@{ Name = 'prepare_mod.ps1'; Source = $externalStarterKitTemplatePrepareToolSource }
+)
+$externalStarterKitStrictJsonIoHelperHasStreamingStrictUtf8 =
+    $externalStarterKitTemplateStrictJsonIoToolSource.Contains('$script:H8StrictUtf8NoBom = New-Object System.Text.UTF8Encoding -ArgumentList $false, $true') -and
+    $externalStarterKitTemplateStrictJsonIoToolSource.Contains('$script:H8ReadChunkBytes = 8192') -and
+    $externalStarterKitTemplateStrictJsonIoToolSource.Contains('function Read-H8TextFileCapped([string]$Path, [string]$Label, [long]$MaxBytes)') -and
+    $externalStarterKitTemplateStrictJsonIoToolSource.Contains('function Read-H8JsonFileCapped([string]$Path, [string]$Label, [long]$MaxBytes)') -and
+    $externalStarterKitTemplateStrictJsonIoToolSource.Contains('[System.IO.FileShare]::ReadWrite') -and
+    $externalStarterKitTemplateStrictJsonIoToolSource.Contains('exceeds byte cap') -and
+    $externalStarterKitTemplateStrictJsonIoToolSource.Contains('DecoderFallbackException') -and
+    $externalStarterKitTemplateStrictJsonIoToolSource.Contains('is not strict UTF-8') -and
+    $externalStarterKitTemplateStrictJsonIoToolSource.Contains('ConvertFrom-Json')
+$externalStarterKitStrictJsonIoRequiredToolsDotSourceHelper =
+    (($externalStarterKitStrictJsonIoRequiredToolSources | Where-Object { -not $_.Source.Contains("strict_json_io.ps1") }).Count -eq 0)
+$externalStarterKitStrictJsonIoRequiredToolsUseCappedHelper =
+    (($externalStarterKitStrictJsonIoRequiredToolSources | Where-Object { -not ($_.Source.Contains('Read-H8JsonFileCapped') -or $_.Source.Contains('Read-H8TextFileCapped')) }).Count -eq 0)
+$externalStarterKitToolsHaveNoRawOrLineGetContent =
+    (($externalStarterKitTemplateToolSources | Where-Object { $_.Source -match 'Get-Content' }).Count -eq 0)
+$externalStarterKitCoreToolsUseStreamingStrictUtf8JsonReads =
+    $externalStarterKitCoreToolsUseBoundedJsonReads -and
+    $externalStarterKitStrictJsonIoHelperHasStreamingStrictUtf8 -and
+    $externalStarterKitStrictJsonIoRequiredToolsDotSourceHelper -and
+    $externalStarterKitStrictJsonIoRequiredToolsUseCappedHelper -and
+    $externalStarterKitToolsHaveNoRawOrLineGetContent -and
+    $externalStarterKitTemplateValidatorSource.Contains("'Tools/strict_json_io.ps1'") -and
+    $moddingSdkHubSource.Contains('Tools", "strict_json_io.ps1"') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitStrictJsonIoScript') -and
+    $externalStarterKitContractText.Contains('`Tools/strict_json_io.ps1` is the shared strict JSON/text ingestion helper') -and
+    $runtimePlaybookText.Contains('ExternalStarterKitCoreToolsUseStreamingStrictUtf8JsonReads = True') -and
+    $specText.Contains('schema revision `124`')
 $externalStarterKitWritesManifestContractTool =
     $moddingSdkHubSource.Contains('Tools", "configure_manifest_contract.ps1"') -and
     $moddingSdkHubSource.Contains('BuildStarterKitManifestContractScript') -and
@@ -2169,6 +2543,34 @@ $externalStarterKitWritesDiagnoseLocalTool =
     $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('Resolve-DependencyGraph') -and
     $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('Dependency cycle or unresolved ordering deadlock.') -and
     $externalStarterKitContractText.Contains('Tools/diagnose_local_mods.ps1')
+$externalStarterKitLocalInstallRequiresExactReviewProof =
+    $externalStarterKitTemplateInstallLocalToolSource.Contains('Assert-StandardReviewOutput') -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains('ReviewOutput path must be exactly Reports/review_manifest.json.') -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains('Test-ReservedTopLevelCaseVariant') -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains('Test-Sha256Hex') -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains("-cmatch '^[0-9a-f]{64}$'") -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains("-cne 'Reports/review_manifest.json'") -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains('$hash -cne [string]$Entry.Sha256') -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains('[System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::Ordinal)') -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains('[System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::OrdinalIgnoreCase)') -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains('Review manifest contains duplicate or case-fold duplicate source path') -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains('Review manifest contains invalid lowercase SHA-256') -and
+    (-not $externalStarterKitTemplateInstallLocalToolSource.Contains('([string]$Entry.Sha256).ToLowerInvariant()')) -and
+    $externalStarterKitContractText.Contains('exact `Reports/review_manifest.json`') -and
+    $externalStarterKitContractText.Contains('duplicate or case-fold duplicate review entries')
+$externalStarterKitDiagnoseLocalRequiresExactReviewProof =
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('Test-ReservedTopLevelCaseVariant') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('Test-Sha256Hex') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains("-cmatch '^[0-9a-f]{64}$'") -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('$actualSha -cne [string]$file.Sha256') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('[System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::Ordinal)') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('[System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::OrdinalIgnoreCase)') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('Review manifest contains duplicate or case-fold duplicate source path') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('Review manifest contains invalid lowercase SHA-256') -and
+    $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('Local reviewed install proof is missing or invalid.') -and
+    (-not $externalStarterKitTemplateDiagnoseLocalToolSource.Contains('([string]$file.Sha256).ToLowerInvariant()')) -and
+    $externalStarterKitContractText.Contains('exact lower-case SHA-256') -and
+    $externalStarterKitContractText.Contains('duplicate or case-fold duplicate review entries')
 $externalStarterKitWritesDependenciesTool =
     $moddingSdkHubSource.Contains('Tools", "configure_dependencies.ps1"') -and
     $moddingSdkHubSource.Contains('BuildStarterKitDependenciesScript') -and
@@ -2181,6 +2583,90 @@ $externalStarterKitWritesDependenciesTool =
     $externalStarterKitTemplateDependenciesToolSource.Contains('Invoke-LocalValidation') -and
     $externalStarterKitTemplateDependenciesToolSource.Contains('Write-ManifestsWithValidation') -and
     $externalStarterKitContractText.Contains('Tools/configure_dependencies.ps1')
+$externalStarterKitWritesDoctorTool =
+    $moddingSdkHubSource.Contains('Tools", "run_doctor.ps1"') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitDoctorScript') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate("Tools/run_doctor.ps1")') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('hecton8.starter_doctor.v1') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('Tools/validate_structure.ps1') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('Reports/review_manifest.json') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('Generated/') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('submission.zip') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('Get-FileHash -LiteralPath $sourcePath -Algorithm SHA256') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('NextActions') -and
+    $externalStarterKitContractText.Contains('Tools/run_doctor.ps1')
+$externalStarterKitDoctorToolIsReadOnly =
+    (-not ($externalStarterKitTemplateDoctorToolSource -match '(?m)^\s*(Set-Content|Out-File|New-Item|Remove-Item|Copy-Item|Move-Item|Rename-Item|Compress-Archive)\b')) -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('$MaxDoctorSourceFiles = 256') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('$MaxDoctorZipEntries = 300') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('$MaxDoctorZipEntryBytes = 4194304') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('Status = $status')
+$externalStarterKitDoctorVerifiesSubmissionZipContents =
+    $externalStarterKitTemplateDoctorToolSource.Contains('System.IO.Compression.ZipFile]::OpenRead') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('Test-SubmissionZipIntegrity') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('Reports/review_manifest.json') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('CheckedEntryCount') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('ZipEntryCount') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('Submission zip entries differ from review manifest')
+$externalStarterKitDoctorRejectsUnsafeZipEntries =
+    $externalStarterKitTemplateDoctorToolSource.Contains('Test-SafeZipEntryPath') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('Submission zip contains unsafe entry paths') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('Submission zip contains unreviewed entries') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('Submission zip contains duplicate entry paths') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('Generated/')
+$externalStarterKitDoctorUsesCaseExactSubmissionZipIntegrity =
+    $externalStarterKitTemplateDoctorToolSource.Contains('$MaxDoctorReviewManifestBytes = 1048576') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('[System.Collections.Generic.Dictionary[string,object]]::new([System.StringComparer]::Ordinal)') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('expectedCaseFoldPaths') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('zipCaseFoldPaths') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('Test-Sha256Hex') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('DuplicateReviewPathCount') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('InvalidReviewRecordCount') -and
+    $externalStarterKitContractText.Contains('case-exact package doctor zip integrity')
+$externalStarterKitDoctorRejectsReservedTopLevelCaseVariants =
+    $externalStarterKitTemplateDoctorToolSource.Contains('$ReservedTopLevelFolders') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('Test-ReservedTopLevelCaseVariant') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('Test-ReviewOutputPath') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains("StartsWith('Generated/', [System.StringComparison]::OrdinalIgnoreCase)") -and
+    $externalStarterKitTemplateDoctorToolSource.Contains("StartsWith('Reports/', [System.StringComparison]::OrdinalIgnoreCase)") -and
+    $externalStarterKitContractText.Contains('reserved top-level folder case variants')
+$externalStarterKitDoctorFailsNonReadyExit =
+    $externalStarterKitTemplateDoctorToolSource.Contains("if (`$status -eq 'invalid')") -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('exit 1') -and
+    $externalStarterKitTemplateDoctorToolSource.Contains("if (`$status -eq 'needs_review')") -and
+    $externalStarterKitTemplateDoctorToolSource.Contains('exit 2') -and
+    $externalStarterKitContractText.Contains('exits `2` for `needs_review`') -and
+    $runtimePlaybookText.Contains('ExternalStarterKitDoctorFailsNonReadyExit = True') -and
+    $specText.Contains('schema revision `130`')
+$externalStarterKitRootLauncherPreservesToolExitCodes =
+    $externalStarterKitTemplateLauncherSource.Contains('$toolSucceeded = $?') -and
+    $externalStarterKitTemplateLauncherSource.Contains('$toolExitCode = $global:LASTEXITCODE') -and
+    $externalStarterKitTemplateLauncherSource.Contains('if ($toolExitCode -ne 0)') -and
+    $externalStarterKitTemplateLauncherSource.Contains('exit $toolExitCode') -and
+    $externalStarterKitTemplateLauncherSource.Contains('if (-not $toolSucceeded)') -and
+    $externalStarterKitContractText.Contains('preserves nonzero tool exit codes') -and
+    $runtimePlaybookText.Contains('ExternalStarterKitRootLauncherPreservesToolExitCodes = True')
+$externalStarterKitNestedToolsPreserveChildExitCodes =
+    $externalStarterKitTemplateFirstModToolSource.Contains('function Complete-Tool([bool]$ToolSucceeded, [int]$ToolExitCode, [string]$Step)') -and
+    $externalStarterKitTemplateFirstModToolSource.Contains('Complete-Tool $toolSucceeded $toolExitCode $Step') -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains('function Complete-Tool([bool]$ToolSucceeded, [int]$ToolExitCode, [string]$Step)') -and
+    $externalStarterKitTemplateInstallLocalToolSource.Contains('Complete-Tool $toolSucceeded $toolExitCode $Step') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Invoke-RequiredTool { & $validator -Root $rootFull }') -and
+    $externalStarterKitTemplatePrepareToolSource.Contains('Invoke-RequiredTool { & $identityTool -Root $rootFull') -and
+    $externalStarterKitTemplatePrepareToolSource.Contains('Invoke-RequiredTool { & $reviewTool -Root $rootFull -Output $ReviewOutput }') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('Invoke-RequiredTool { & $prepareTool -Root $rootFull -ReviewOutput $ReviewOutput }') -and
+    $externalStarterKitTemplateIdentityToolSource.Contains('Invoke-RequiredTool { & $validator -Root $rootFull }') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('$toolExitCode = $global:LASTEXITCODE') -and
+    $externalStarterKitTemplatePrepareToolSource.Contains('$toolExitCode = $global:LASTEXITCODE') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('$toolExitCode = $global:LASTEXITCODE') -and
+    $externalStarterKitTemplateIdentityToolSource.Contains('$toolExitCode = $global:LASTEXITCODE') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('exit $toolExitCode') -and
+    $externalStarterKitTemplatePrepareToolSource.Contains('exit $toolExitCode') -and
+    $externalStarterKitTemplateSubmissionPackageToolSource.Contains('exit $toolExitCode') -and
+    $externalStarterKitTemplateIdentityToolSource.Contains('exit $toolExitCode') -and
+    $externalStarterKitContractText.Contains('nested starter tools preserve child exit codes') -and
+    $runtimePlaybookText.Contains('ExternalStarterKitNestedToolsPreserveChildExitCodes = True') -and
+    $specText.Contains('schema revision `131`')
 $externalStarterKitDependencyToolMirrorsBothManifests =
     $externalStarterKitTemplateDependenciesToolSource.Contains("Set-JsonStringArray `$authoring 'Dependencies'") -and
     $externalStarterKitTemplateDependenciesToolSource.Contains("Set-JsonStringArray `$runtime 'Dependencies'") -and
@@ -2199,49 +2685,39 @@ $externalStarterKitDiagnoseLocalChecksDependencyGraph =
 $externalStarterKitRootLauncherSupportsGraphNodeSnippet =
     $externalStarterKitTemplateLauncherSource.Contains("'node-snippet'") -and
     $externalStarterKitTemplateLauncherSource.Contains('Invoke-GraphNodeSnippet') -and
-    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/create_graph_node_snippet.ps1'") -and
-    $moddingSdkHubSource.Contains("'node-snippet' { Invoke-GraphNodeSnippet")
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/create_graph_node_snippet.ps1'")
 $externalStarterKitRootLauncherSupportsGraphNodeParameters =
     $externalStarterKitTemplateLauncherSource.Contains('NodeParametersJson') -and
     $externalStarterKitTemplateLauncherSource.Contains('NodeDisabled') -and
     $externalStarterKitTemplateLauncherSource.Contains('-ParametersJson') -and
     $externalStarterKitTemplateLauncherSource.Contains('$snippetParametersJson') -and
-    $externalStarterKitTemplateLauncherSource.Contains('-Disabled') -and
-    $moddingSdkHubSource.Contains('NodeParametersJson') -and
-    $moddingSdkHubSource.Contains('NodeDisabled')
+    $externalStarterKitTemplateLauncherSource.Contains('-Disabled')
 $externalStarterKitRootLauncherSupportsGraphNodeApply =
     $externalStarterKitTemplateLauncherSource.Contains("'apply-node-snippet'") -and
     $externalStarterKitTemplateLauncherSource.Contains('Invoke-ApplyGraphNodeSnippet') -and
-    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/apply_graph_node_snippet.ps1'") -and
-    $moddingSdkHubSource.Contains("'apply-node-snippet' { Invoke-ApplyGraphNodeSnippet")
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/apply_graph_node_snippet.ps1'")
 $externalStarterKitRootLauncherSupportsAuthoringSnippets =
     $externalStarterKitTemplateLauncherSource.Contains("'setting-snippet'") -and
     $externalStarterKitTemplateLauncherSource.Contains("'locale-snippet'") -and
     $externalStarterKitTemplateLauncherSource.Contains('Invoke-SettingsRowSnippet') -and
     $externalStarterKitTemplateLauncherSource.Contains('Invoke-LocaleEntrySnippet') -and
     $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/create_settings_row_snippet.ps1'") -and
-    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/create_locale_entry_snippet.ps1'") -and
-    $moddingSdkHubSource.Contains("'setting-snippet' { Invoke-SettingsRowSnippet") -and
-    $moddingSdkHubSource.Contains("'locale-snippet' { Invoke-LocaleEntrySnippet")
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/create_locale_entry_snippet.ps1'")
 $externalStarterKitRootLauncherSupportsAuthoringSnippetApply =
     $externalStarterKitTemplateLauncherSource.Contains("'apply-setting-snippet'") -and
     $externalStarterKitTemplateLauncherSource.Contains("'apply-locale-snippet'") -and
     $externalStarterKitTemplateLauncherSource.Contains('Invoke-ApplySettingsRowSnippet') -and
     $externalStarterKitTemplateLauncherSource.Contains('Invoke-ApplyLocaleEntrySnippet') -and
     $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/apply_settings_row_snippet.ps1'") -and
-    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/apply_locale_entry_snippet.ps1'") -and
-    $moddingSdkHubSource.Contains("'apply-setting-snippet' { Invoke-ApplySettingsRowSnippet") -and
-    $moddingSdkHubSource.Contains("'apply-locale-snippet' { Invoke-ApplyLocaleEntrySnippet")
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/apply_locale_entry_snippet.ps1'")
 $externalStarterKitRootLauncherSupportsAssetEntrySnippet =
     $externalStarterKitTemplateLauncherSource.Contains("'asset-snippet'") -and
     $externalStarterKitTemplateLauncherSource.Contains('Invoke-AssetEntrySnippet') -and
-    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/create_asset_entry_snippet.ps1'") -and
-    $moddingSdkHubSource.Contains("'asset-snippet' { Invoke-AssetEntrySnippet")
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/create_asset_entry_snippet.ps1'")
 $externalStarterKitRootLauncherSupportsAssetEntryApply =
     $externalStarterKitTemplateLauncherSource.Contains("'apply-asset-snippet'") -and
     $externalStarterKitTemplateLauncherSource.Contains('Invoke-ApplyAssetEntrySnippet') -and
-    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/apply_asset_entry_snippet.ps1'") -and
-    $moddingSdkHubSource.Contains("'apply-asset-snippet' { Invoke-ApplyAssetEntrySnippet")
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/apply_asset_entry_snippet.ps1'")
 $externalStarterKitRootLauncherSupportsManifestContract =
     $externalStarterKitTemplateLauncherSource.Contains("'manifest-contract'") -and
     $externalStarterKitTemplateLauncherSource.Contains('Invoke-ManifestContractConfig') -and
@@ -2250,13 +2726,73 @@ $externalStarterKitRootLauncherSupportsManifestContract =
     $externalStarterKitTemplateLauncherSource.Contains('MaxEnvelopesPerFrame') -and
     $externalStarterKitTemplateLauncherSource.Contains('MaxAssetBytes') -and
     $externalStarterKitManifestContractProbe.LauncherExitCode -eq 0 -and
-    $externalStarterKitManifestContractProbe.LauncherHasSettingsCapability -eq $true -and
-    $moddingSdkHubSource.Contains("'manifest-contract' { Invoke-ManifestContractConfig")
+    $externalStarterKitManifestContractProbe.LauncherHasSettingsCapability -eq $true
 $externalStarterKitRootLauncherSupportsCapabilities =
     $externalStarterKitTemplateLauncherSource.Contains("'capabilities'") -and
     $externalStarterKitTemplateLauncherSource.Contains('Invoke-Capabilities') -and
-    $externalStarterKitTemplateLauncherSource.Contains('Docs/capabilities.md') -and
-    $moddingSdkHubSource.Contains("'capabilities' { Invoke-Capabilities")
+    $externalStarterKitTemplateLauncherSource.Contains('Docs/capabilities.md')
+$externalStarterKitRootLauncherUsesStrictCapabilityGuideRead =
+    $externalStarterKitRootLauncherSupportsCapabilities -and
+    $externalStarterKitTemplateLauncherSource.Contains('$MaxCapabilitiesGuideBytes = 262144') -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/strict_json_io.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains('Read-H8TextFileCapped $guide ''Docs/capabilities.md'' $MaxCapabilitiesGuideBytes') -and
+    (-not $externalStarterKitTemplateLauncherSource.Contains('Get-Content -LiteralPath $guide'))
+$externalStarterKitRequiredTemplateScriptPaths = @(
+    'h8mod.ps1',
+    'Tools/strict_json_io.ps1',
+    'Tools/apply_asset_entry_snippet.ps1',
+    'Tools/build_review_manifest.ps1',
+    'Tools/build_submission_package.ps1',
+    'Tools/configure_dependencies.ps1',
+    'Tools/configure_manifest_contract.ps1',
+    'Tools/create_first_mod.ps1',
+    'Tools/install_local_mod.ps1',
+    'Tools/diagnose_local_mods.ps1',
+    'Tools/run_doctor.ps1',
+    'Tools/apply_graph_node_snippet.ps1',
+    'Tools/apply_locale_entry_snippet.ps1',
+    'Tools/apply_settings_row_snippet.ps1',
+    'Tools/create_asset_entry_snippet.ps1',
+    'Tools/create_locale_entry_snippet.ps1',
+    'Tools/create_graph_node_snippet.ps1',
+    'Tools/create_settings_row_snippet.ps1',
+    'Tools/list_allowed_opcodes.ps1',
+    'Tools/prepare_mod.ps1',
+    'Tools/set_mod_identity.ps1',
+    'Tools/validate_structure.ps1'
+)
+$externalStarterKitHubScriptsRequireCheckedInTemplates =
+    ([regex]::Matches($moddingSdkHubSource, 'BuildStarterKitTemplateFile\("(?:(?:Tools/[^"]+\.ps1)|h8mod\.ps1)')).Count -eq 0
+foreach ($templateScriptPath in $externalStarterKitRequiredTemplateScriptPaths) {
+    $externalStarterKitHubScriptsRequireCheckedInTemplates =
+        $externalStarterKitHubScriptsRequireCheckedInTemplates -and
+        $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate("' + $templateScriptPath + '")')
+}
+function Test-HubToolShim([string]$MethodName, [string]$TemplatePath) {
+    $pattern =
+        'private static string ' + [regex]::Escape($MethodName) +
+        '\(\)\s*\{\s*return BuildStarterKitToolFromTemplate\("' +
+        [regex]::Escape($TemplatePath) +
+        '"\);\s*\}'
+    return [regex]::IsMatch($moddingSdkHubSource, $pattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)
+}
+$externalStarterKitHubExecutableFallbackBodiesRemoved =
+    (Test-HubToolShim 'BuildStarterKitLauncherScript' 'h8mod.ps1') -and
+    (Test-HubToolShim 'BuildStarterKitAllowedOpcodesScript' 'Tools/list_allowed_opcodes.ps1') -and
+    (Test-HubToolShim 'BuildStarterKitSettingsRowSnippetScript' 'Tools/create_settings_row_snippet.ps1') -and
+    (Test-HubToolShim 'BuildStarterKitLocaleEntrySnippetScript' 'Tools/create_locale_entry_snippet.ps1') -and
+    (Test-HubToolShim 'BuildStarterKitPrepareScript' 'Tools/prepare_mod.ps1') -and
+    (Test-HubToolShim 'BuildStarterKitIdentityScript' 'Tools/set_mod_identity.ps1') -and
+    (Test-HubToolShim 'BuildStarterKitValidatorScript' 'Tools/validate_structure.ps1') -and
+    (-not [regex]::IsMatch($moddingSdkHubSource, 'BuildStarterKit(?:LauncherScript|AllowedOpcodesScript|SettingsRowSnippetScript|LocaleEntrySnippetScript|PrepareScript|IdentityScript|ValidatorScript)\(\)\s*\{\s*StringBuilder', [System.Text.RegularExpressions.RegexOptions]::Singleline)) -and
+    (-not $moddingSdkHubSource.Contains('H8MOD_OPCODE_LIST')) -and
+    (-not $moddingSdkHubSource.Contains('H8MOD_SETTINGS_SNIPPET')) -and
+    (-not $moddingSdkHubSource.Contains('H8MOD_LOCALE_SNIPPET')) -and
+    (-not $moddingSdkHubSource.Contains('H8MOD_PREPARE')) -and
+    (-not $moddingSdkHubSource.Contains('H8MOD_SET_IDENTITY')) -and
+    (-not $moddingSdkHubSource.Contains('H8MOD_STARTER_VALIDATION')) -and
+    (-not $moddingSdkHubSource.Contains('Get-Content -Raw -LiteralPath')) -and
+    (-not $moddingSdkHubSource.Contains('foreach ($line in (Get-Content -LiteralPath $path))'))
 $externalStarterKitSubmissionPackageProbe = Invoke-StarterSubmissionPackageProbe $externalStarterKitTemplatePath
 $externalStarterKitSubmissionPackageToolPasses =
     $externalStarterKitSubmissionPackageProbe.ExitCode -eq 0 -and
@@ -2265,6 +2801,7 @@ $externalStarterKitSubmissionPackageToolPasses =
     $externalStarterKitSubmissionPackageProbe.HasRuntimeManifest -eq $true -and
     $externalStarterKitSubmissionPackageProbe.HasAuthoringManifest -eq $true -and
     $externalStarterKitSubmissionPackageProbe.HasSubmissionTool -eq $true -and
+    $externalStarterKitSubmissionPackageProbe.ZipIsNotOlderThanReview -eq $true -and
     $externalStarterKitSubmissionPackageProbe.HasGeneratedOutputEntry -eq $false -and
     $externalStarterKitSubmissionPackageProbe.HasReportsSourceEntry -eq $false
 $externalStarterKitSubmissionPackageIncludesReviewManifest =
@@ -2272,42 +2809,42 @@ $externalStarterKitSubmissionPackageIncludesReviewManifest =
 $externalStarterKitRootLauncherSupportsSubmissionPackage =
     $externalStarterKitTemplateLauncherSource.Contains("'submission'") -and
     $externalStarterKitTemplateLauncherSource.Contains('Invoke-SubmissionPackage') -and
-    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/build_submission_package.ps1'") -and
-    $moddingSdkHubSource.Contains("'submission' { Invoke-SubmissionPackage")
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/build_submission_package.ps1'")
 $externalStarterKitRootLauncherSupportsFirstMod =
     $externalStarterKitTemplateLauncherSource.Contains("'first-mod'") -and
     $externalStarterKitTemplateLauncherSource.Contains('Invoke-FirstMod') -and
     $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/create_first_mod.ps1'") -and
     $externalStarterKitTemplateLauncherSource.Contains('-BuildSubmission') -and
-    $externalStarterKitTemplateLauncherSource.Contains('-Replace -BuildSubmission') -and
-    $moddingSdkHubSource.Contains("'first-mod' { Invoke-FirstMod")
+    $externalStarterKitTemplateLauncherSource.Contains('-Replace -BuildSubmission')
 $externalStarterKitRootLauncherSupportsInstallLocal =
     $externalStarterKitTemplateLauncherSource.Contains("'install-local'") -and
     $externalStarterKitTemplateLauncherSource.Contains('Invoke-InstallLocal') -and
     $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/install_local_mod.ps1'") -and
     $externalStarterKitTemplateLauncherSource.Contains('ProjectRoot') -and
     $externalStarterKitTemplateLauncherSource.Contains('ModsRoot') -and
-    $externalStarterKitTemplateLauncherSource.Contains('-Replace') -and
-    $moddingSdkHubSource.Contains("'install-local' { Invoke-InstallLocal")
+    $externalStarterKitTemplateLauncherSource.Contains('-Replace')
 $externalStarterKitRootLauncherSupportsDiagnoseLocal =
     $externalStarterKitTemplateLauncherSource.Contains("'diagnose-local'") -and
     $externalStarterKitTemplateLauncherSource.Contains('Invoke-DiagnoseLocal') -and
     $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/diagnose_local_mods.ps1'") -and
     $externalStarterKitTemplateLauncherSource.Contains('ProjectRoot') -and
     $externalStarterKitTemplateLauncherSource.Contains('ModsRoot') -and
-    $externalStarterKitTemplateLauncherSource.Contains('-ModsRoot $diagnoseModsRoot -Json') -and
-    $moddingSdkHubSource.Contains("'diagnose-local' { Invoke-DiagnoseLocal")
+    $externalStarterKitTemplateLauncherSource.Contains('-ModsRoot $diagnoseModsRoot -Json')
+$externalStarterKitRootLauncherSupportsDoctor =
+    $externalStarterKitTemplateLauncherSource.Contains("'doctor'") -and
+    $externalStarterKitTemplateLauncherSource.Contains('Invoke-Doctor') -and
+    $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/run_doctor.ps1'") -and
+    $externalStarterKitTemplateLauncherSource.Contains('& $tool -Root $Root -Json')
 $externalStarterKitRootLauncherSupportsDependencies =
     $externalStarterKitTemplateLauncherSource.Contains("'dependencies'") -and
     $externalStarterKitTemplateLauncherSource.Contains('Invoke-Dependencies') -and
     $externalStarterKitTemplateLauncherSource.Contains("Resolve-StarterTool 'Tools/configure_dependencies.ps1'") -and
     $externalStarterKitTemplateLauncherSource.Contains('DependencyAction') -and
-    $externalStarterKitTemplateLauncherSource.Contains('DependencyId') -and
-    $moddingSdkHubSource.Contains("'dependencies' { Invoke-Dependencies")
+    $externalStarterKitTemplateLauncherSource.Contains('DependencyId')
 $externalStarterKitIdentityToolValidatesCanonicalId =
-    $moddingSdkHubSource.Contains('Validate-ModId $Id') -and
-    $moddingSdkHubSource.Contains('reserved filesystem device segment') -and
-    $moddingSdkHubSource.Contains('PASS HECTON-8 starter identity set')
+    $externalStarterKitTemplateIdentityToolSource.Contains('Validate-ModId $Id') -and
+    $externalStarterKitTemplateIdentityToolSource.Contains('reserved filesystem device segment') -and
+    $externalStarterKitTemplateIdentityToolSource.Contains('PASS HECTON-8 starter identity set')
 $externalStarterKitInvalidVersionProbe = Invoke-StarterInvalidVersionProbe $externalStarterKitTemplatePath
 $externalStarterKitIdentityToolRejectsInvalidVersion =
     $externalStarterKitInvalidVersionProbe.ExitCode -ne 0
@@ -2316,15 +2853,11 @@ $externalStarterKitValidatorChecksSemver =
     $externalStarterKitTemplateIdentityToolSource.Contains('function Validate-Version') -and
     $externalStarterKitTemplateValidatorSource.Contains('semantic version form MAJOR.MINOR.PATCH') -and
     $externalStarterKitTemplateIdentityToolSource.Contains('semantic version form MAJOR.MINOR.PATCH') -and
-    $moddingSdkHubSource.Contains('function Validate-Version') -and
-    $moddingSdkHubSource.Contains('semantic version form MAJOR.MINOR.PATCH') -and
     $externalStarterKitIdentityToolRejectsInvalidVersion
 $externalStarterKitValidatorChecksManifestIdentityTextParity =
     $externalStarterKitTemplateValidatorSource.Contains('DisplayName must match mod.json Name') -and
     $externalStarterKitTemplateValidatorSource.Contains('Author must match mod.json Author') -and
-    $externalStarterKitTemplateValidatorSource.Contains('Version must match mod.json Version') -and
-    $moddingSdkHubSource.Contains('DisplayName must match mod.json Name') -and
-    $moddingSdkHubSource.Contains('Version must match mod.json Version')
+    $externalStarterKitTemplateValidatorSource.Contains('Version must match mod.json Version')
 $externalStarterKitToolsAvoidNestedPowerShell =
     (-not $externalStarterKitTemplateLauncherSource.Contains('& powershell')) -and
     (-not $externalStarterKitTemplateIdentityToolSource.Contains('& powershell')) -and
@@ -2342,9 +2875,9 @@ $externalStarterKitToolsAvoidNestedPowerShell =
     (-not $externalStarterKitTemplateManifestContractToolSource.Contains('& powershell')) -and
     (-not $externalStarterKitTemplateFirstModToolSource.Contains('& powershell')) -and
     (-not $externalStarterKitTemplatePrepareToolSource.Contains('& powershell')) -and
-    $moddingSdkHubSource.Contains('& $validator -Root $rootFull | Out-Host') -and
-    $moddingSdkHubSource.Contains('& $identityTool -Root $rootFull -Id $Id') -and
-    $moddingSdkHubSource.Contains('& $reviewTool -Root $rootFull -Output $ReviewOutput | Out-Host')
+    $externalStarterKitTemplatePrepareToolSource.Contains('Invoke-RequiredTool { & $identityTool -Root $rootFull -Id $Id') -and
+    $externalStarterKitTemplatePrepareToolSource.Contains('Invoke-RequiredTool { & $reviewTool -Root $rootFull -Output $ReviewOutput }') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Invoke-RequiredTool { & $validator -Root $rootFull }')
 $externalStarterKitToolsUsePortableJoinPath =
     $externalStarterKitTemplateLauncherSource.Contains('function Join-StarterPath') -and
     $externalStarterKitTemplateLauncherSource.Contains('$tool = Join-StarterPath $Root $RelativePath') -and
@@ -2368,7 +2901,6 @@ $externalStarterKitToolsUsePortableJoinPath =
     $externalStarterKitTemplateSubmissionPackageToolSource.Contains('$outputPath = Join-StarterPath $rootFull $Output') -and
     $externalStarterKitTemplatePrepareToolSource.Contains('Join-StarterPath $rootFull ''Tools/set_mod_identity.ps1''') -and
     $externalStarterKitTemplateIdentityToolSource.Contains('Join-StarterPath $rootFull ''Tools/validate_structure.ps1''') -and
-    $moddingSdkHubSource.Contains('function Join-StarterPath') -and
     (-not $externalStarterKitTemplateIdentityToolSource.Contains("'Tools\")) -and
     (-not $externalStarterKitTemplateReviewManifestBuilderSource.Contains("'Tools\")) -and
     (-not $externalStarterKitTemplateSubmissionPackageToolSource.Contains("'Tools\")) -and
@@ -2398,7 +2930,6 @@ $externalStarterKitWritesJsonSchemas =
 $starterKitGeneratorTemplateMarkers = @(
     'BuildStarterKitTemplateFile("README.md"',
     'BuildStarterKitTemplateFile("Docs/capabilities.md"',
-    'BuildStarterKitTemplateFile("h8mod.ps1"',
     'BuildStarterKitTemplateFile("mod.h8manifest.json"',
     'BuildStarterKitTemplateFile("mod.json"',
     'BuildStarterKitTemplateFile("Content/README.md"',
@@ -2417,22 +2948,6 @@ $starterKitGeneratorTemplateMarkers = @(
     'BuildStarterKitTemplateFile("Schemas/runtime.mod.schema.json"',
     'BuildStarterKitTemplateFile("Schemas/settings_table.schema.json"',
     'BuildStarterKitTemplateFile("Tools/README.md"',
-    'BuildStarterKitTemplateFile("Tools/apply_asset_entry_snippet.ps1"',
-    'BuildStarterKitTemplateFile("Tools/build_review_manifest.ps1"',
-    'BuildStarterKitTemplateFile("Tools/build_submission_package.ps1"',
-    'BuildStarterKitTemplateFile("Tools/configure_manifest_contract.ps1"',
-    'BuildStarterKitTemplateFile("Tools/create_first_mod.ps1"',
-    'BuildStarterKitTemplateFile("Tools/apply_graph_node_snippet.ps1"',
-    'BuildStarterKitTemplateFile("Tools/apply_locale_entry_snippet.ps1"',
-    'BuildStarterKitTemplateFile("Tools/apply_settings_row_snippet.ps1"',
-    'BuildStarterKitTemplateFile("Tools/create_asset_entry_snippet.ps1"',
-    'BuildStarterKitTemplateFile("Tools/create_locale_entry_snippet.ps1"',
-    'BuildStarterKitTemplateFile("Tools/create_graph_node_snippet.ps1"',
-    'BuildStarterKitTemplateFile("Tools/create_settings_row_snippet.ps1"',
-    'BuildStarterKitTemplateFile("Tools/list_allowed_opcodes.ps1"',
-    'BuildStarterKitTemplateFile("Tools/prepare_mod.ps1"',
-    'BuildStarterKitTemplateFile("Tools/set_mod_identity.ps1"',
-    'BuildStarterKitTemplateFile("Tools/validate_structure.ps1"',
     'BuildStarterKitTemplateFile(".vscode/settings.json"',
     'BuildStarterKitTemplateFile(".vscode/tasks.json"'
 )
@@ -2441,9 +2956,9 @@ $externalStarterKitGeneratorUsesCheckedInTemplates =
     $moddingSdkHubSource.Contains('return fallbackFactory();') -and
     (@($starterKitGeneratorTemplateMarkers | Where-Object { -not $moddingSdkHubSource.Contains($_) }).Count -eq 0)
 $externalStarterKitValidatorChecksJsonSchemas =
-    $moddingSdkHubSource.Contains('$schemaFiles = @(') -and
-    $moddingSdkHubSource.Contains('requires $schema') -and
-    $moddingSdkHubSource.Contains('.vscode/settings.json requires json.schemas mapping')
+    $externalStarterKitTemplateValidatorSource.Contains('$schemaFiles = @(') -and
+    $externalStarterKitTemplateValidatorSource.Contains('requires $schema') -and
+    $externalStarterKitTemplateValidatorSource.Contains('.vscode/settings.json requires json.schemas mapping')
 $externalStarterKitValidatorChecksEditorSchemaMappings =
     $externalStarterKitTemplateValidatorSource.Contains('$requiredSchemaMappings = @(') -and
     $externalStarterKitTemplateValidatorSource.Contains("Url = './Schemas/h8mod.authoring.schema.json'; Match = '/mod.h8manifest.json'") -and
@@ -2452,9 +2967,7 @@ $externalStarterKitValidatorChecksEditorSchemaMappings =
     $externalStarterKitTemplateValidatorSource.Contains("Url = './Schemas/assets.schema.json'; Match = '/Content/*.h8manifest.json'") -and
     $externalStarterKitTemplateValidatorSource.Contains("Url = './Schemas/settings_table.schema.json'; Match = '/Tables/*.h8table.json'") -and
     $externalStarterKitTemplateValidatorSource.Contains("Url = './Schemas/locale.schema.json'; Match = '/Locales/*.h8loc.json'") -and
-    $externalStarterKitTemplateValidatorSource.Contains('.vscode/settings.json missing schema mapping') -and
-    $moddingSdkHubSource.Contains('$requiredSchemaMappings = @(') -and
-    $moddingSdkHubSource.Contains('.vscode/settings.json missing schema mapping')
+    $externalStarterKitTemplateValidatorSource.Contains('.vscode/settings.json missing schema mapping')
 $requiredVsCodeTaskLabels = @(
     'HECTON-8: setup identity',
     'HECTON-8: create first playable mod',
@@ -2463,6 +2976,7 @@ $requiredVsCodeTaskLabels = @(
     'HECTON-8: build submission zip',
     'HECTON-8: install local discovery copy',
     'HECTON-8: diagnose local Mods folder',
+    'HECTON-8: doctor package readiness',
     'HECTON-8: list dependencies',
     'HECTON-8: add dependency',
     'HECTON-8: remove dependency',
@@ -2545,6 +3059,11 @@ $externalStarterKitVsCodeTasksSupportLocalDiagnose =
         @($_.args | ForEach-Object { [string]$_ }) -contains '-ProjectRoot'
     }).Count -eq 1) -and
     ($externalStarterKitVsCodeTaskInputIds -contains 'projectRoot')
+$externalStarterKitVsCodeTasksSupportDoctor =
+    (@($externalStarterKitTemplateVsCodeTasks.tasks | Where-Object {
+        [string]$_.label -eq 'HECTON-8: doctor package readiness' -and
+        @($_.args | ForEach-Object { [string]$_ }) -contains 'doctor'
+    }).Count -eq 1)
 $externalStarterKitVsCodeTasksSupportDependencies =
     (@($externalStarterKitTemplateVsCodeTasks.tasks | Where-Object {
         [string]$_.label -eq 'HECTON-8: list dependencies' -and
@@ -2572,7 +3091,7 @@ $externalStarterKitVsCodeTasksSupportDependencies =
 $externalStarterKitWritesVsCodeTasks =
     $moddingSdkHubSource.Contains('BuildVsCodeTasks') -and
     $moddingSdkHubSource.Contains('Path.Combine(rootPath, ".vscode", "tasks.json")') -and
-    $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate(".vscode/tasks.json")') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitTemplateFile(".vscode/tasks.json"') -and
     $externalStarterKitContractText.Contains('.vscode/tasks.json')
 $externalStarterKitValidatorChecksVsCodeTasks =
     $externalStarterKitTemplateValidatorSource.Contains('function Validate-VsCodeTasks') -and
@@ -2584,6 +3103,8 @@ $externalStarterKitValidatorChecksVsCodeTasks =
     $externalStarterKitTemplateValidatorSource.Contains('local install task must pass -Action install-local') -and
     $externalStarterKitTemplateValidatorSource.Contains('HECTON-8: diagnose local Mods folder') -and
     $externalStarterKitTemplateValidatorSource.Contains('local diagnose task must pass -Action diagnose-local') -and
+    $externalStarterKitTemplateValidatorSource.Contains('HECTON-8: doctor package readiness') -and
+    $externalStarterKitTemplateValidatorSource.Contains('doctor task must pass -Action doctor') -and
     $externalStarterKitTemplateValidatorSource.Contains('HECTON-8: add dependency') -and
     $externalStarterKitTemplateValidatorSource.Contains('dependency task must pass -Action dependencies') -and
     $externalStarterKitTemplateValidatorSource.Contains('dependency id task must pass -DependencyId') -and
@@ -2602,8 +3123,6 @@ $externalStarterKitValidatorChecksSettingsAndLocaleContracts =
     $externalStarterKitTemplateValidatorSource.Contains('function Validate-LocaleTable') -and
     $externalStarterKitTemplateValidatorSource.Contains('Kind must be one of: bool, int, float, string, enum') -and
     $externalStarterKitTemplateValidatorSource.Contains('Strings exceeds 512 entries') -and
-    $moddingSdkHubSource.Contains('function Validate-SettingsTable') -and
-    $moddingSdkHubSource.Contains('function Validate-LocaleTable') -and
     $externalStarterKitTemplateSettingsSchemaSource.Contains('"maxItems": 128') -and
     $externalStarterKitTemplateSettingsSchemaSource.Contains('"enum": ["bool", "int", "float", "string", "enum"]') -and
     $externalStarterKitTemplateLocaleSchemaSource.Contains('"maxProperties": 512') -and
@@ -2636,8 +3155,7 @@ $externalStarterKitValidatorChecksManifestCapabilities =
     $externalStarterKitTemplateManifestContractToolSource.Contains('Restore-ManifestBackup') -and
     $externalStarterKitTemplateManifestContractToolSource.Contains('Invoke-StarterValidator') -and
     $externalStarterKitTemplateManifestContractToolSource.Contains('hecton8.manifest_contract_config.v1') -and
-    $externalStarterKitManifestContractRejectsUnknownCapability -and
-    $moddingSdkHubSource.Contains('function Validate-ManifestCapabilities')
+    $externalStarterKitManifestContractRejectsUnknownCapability
 $externalStarterKitSchemaRelativePaths = @(
     'Schemas\assets.schema.json',
     'Schemas\h8graph.schema.json',
@@ -2739,9 +3257,7 @@ $externalStarterKitReviewManifestHasLimits =
     $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Limits = [pscustomobject][ordered]@{') -and
     $externalStarterKitTemplateReviewManifestBuilderSource.Contains('TotalBytes = $totalBytes') -and
     $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Identity = [pscustomobject][ordered]@{') -and
-    $moddingSdkHubSource.Contains('$MaxReviewFiles = 256') -and
-    $moddingSdkHubSource.Contains('Identity = [pscustomobject][ordered]@{') -and
-    $moddingSdkHubSource.Contains('Review file exceeds max bytes') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate("Tools/build_review_manifest.ps1")') -and
     $externalStarterKitPrepareToolPasses -and
     $externalStarterKitReviewManifestRejectsOversizedFile
 $externalStarterKitTemplateRequiredFiles = @(
@@ -2773,6 +3289,7 @@ $externalStarterKitTemplateRequiredFiles = @(
     'Tools\configure_dependencies.ps1',
     'Tools\install_local_mod.ps1',
     'Tools\diagnose_local_mods.ps1',
+    'Tools\run_doctor.ps1',
     'Tools\apply_graph_node_snippet.ps1',
     'Tools\apply_asset_entry_snippet.ps1',
     'Tools\apply_locale_entry_snippet.ps1',
@@ -2803,7 +3320,7 @@ $externalStarterKitRootLauncherPasses =
     @($externalStarterKitTemplateLauncherValidateOutput) -contains 'PASS HECTON-8 external starter structure'
 $externalStarterKitValidatorChecksRootLauncher =
     $externalStarterKitTemplateValidatorSource.Contains("'h8mod.ps1'") -and
-    $moddingSdkHubSource.Contains("    'h8mod.ps1',")
+    $moddingSdkHubSource.Contains('BuildStarterKitToolFromTemplate("h8mod.ps1")')
 $externalStarterKitTemplateAllowedOpcodesPath = Join-Path $externalStarterKitTemplatePath 'Reference\allowed_opcodes.csv'
 $externalStarterKitTemplateKernelTuningPath = Join-Path $externalStarterKitTemplatePath 'Reference\kernel_tuning_profiles.csv'
 $externalStarterKitTemplateReferenceCsvsMatchSource = $false
@@ -2894,6 +3411,7 @@ $externalStarterKitReviewManifestHashesFiles =
     $externalStarterKitReviewManifestPaths -contains 'Tools/configure_dependencies.ps1' -and
     $externalStarterKitReviewManifestPaths -contains 'Tools/create_first_mod.ps1' -and
     $externalStarterKitReviewManifestPaths -contains 'Tools/install_local_mod.ps1' -and
+    $externalStarterKitReviewManifestPaths -contains 'Tools/run_doctor.ps1' -and
     $externalStarterKitReviewManifestPaths -contains 'Tools/list_allowed_opcodes.ps1' -and
     $externalStarterKitReviewManifestPaths -contains 'Tools/prepare_mod.ps1'
 $externalStarterKitReviewManifestExcludesReports =
@@ -2923,6 +3441,12 @@ Assert-True $externalStarterKitValidatorRejectsInvalidGraphOpcode 'External star
 Assert-True $externalStarterKitWritesReviewManifestBuilder 'External starter kit must write a no-Unity review manifest builder.'
 Assert-True $externalStarterKitWritesSubmissionPackageTool 'External starter kit must write a no-Unity submission package tool.'
 Assert-True $externalStarterKitSubmissionPackagePreservesPreviousOutputUntilSuccess 'External starter kit submission package tool must keep the previous zip until the new temp zip has been written successfully.'
+Assert-True $externalStarterKitSubmissionPackageRefreshesTimestampAfterReplace 'External starter kit submission package tool must keep the final zip timestamp at or after the rebuilt review manifest.'
+Assert-True $externalStarterKitReviewManifestRejectsCaseFoldSourceDuplicates 'External starter kit review manifest builder must reject duplicate and case-fold duplicate source paths.'
+Assert-True $externalStarterKitSubmissionPackageUsesCaseExactSourceEntries 'External starter kit submission package builder must use exact source entry casing and reject case-fold duplicates.'
+Assert-True $externalStarterKitValidatorRequiresExactPathCasing 'External starter kit local validator must require exact path casing for required files and folders.'
+Assert-True $externalStarterKitRejectsReservedTopLevelCaseVariants 'External starter kit tools must reject reserved top-level folder case variants.'
+Assert-True $externalStarterKitReviewManifestUsesExactReservedOutputFolders 'External starter kit review/submission builders must treat only exact Generated/ and Reports/ as reserved output folders.'
 Assert-True $externalStarterKitWritesIdentityTool 'External starter kit must write a no-Unity identity helper.'
 Assert-True $externalStarterKitWritesPrepareTool 'External starter kit must write a one-command no-Unity prepare tool.'
 Assert-True $externalStarterKitWritesAllowedOpcodeListTool 'External starter kit must write a no-Unity allowed opcode list helper.'
@@ -2956,28 +3480,51 @@ Assert-True $externalStarterKitAssetEntrySnippetToolSupportsJson 'External start
 Assert-True $externalStarterKitWritesAssetEntryApplyTool 'External starter kit must write a no-Unity content asset entry apply helper.'
 Assert-True $externalStarterKitAssetEntryApplyToolPasses 'External starter kit content asset apply helper must insert the generated asset, verify file CRC/bytes, repair asset byte budget, and validate after write.'
 Assert-True $externalStarterKitAssetEntryApplyToolRejectsDuplicateWithoutReplace 'External starter kit content asset apply helper must reject duplicate asset IDs unless -Replace is explicit.'
+Assert-True $externalStarterKitSnippetPathsRequireStrictJsonRelativePaths 'External starter kit snippet helpers must require exact starter-relative Generated/*.json paths and reject ADS/empty/dot segments.'
+Assert-True $externalStarterKitSnippetApplyUsesBoundedJsonReads 'External starter kit snippet apply helpers must cap JSON reads before ConvertFrom-Json.'
+Assert-True $externalStarterKitAssetSnippetRejectsNonPortableAssetPaths 'External starter kit asset snippet helpers must reject non-portable Content/Assets paths before CRC/file probing.'
+Assert-True $externalStarterKitGraphNodeSnippetCapsParametersJson 'External starter kit graph node snippet helper must cap ParametersJson before parsing.'
+Assert-True $externalStarterKitValidatorCapsRootJsonReads 'External starter kit structure validator must cap all root JSON/text reads before parsing.'
+Assert-True $externalStarterKitValidatorRejectsNonPortableAssetManifestPaths 'External starter kit structure validator must reject non-portable manually edited asset manifest paths.'
+Assert-True $externalStarterKitCoreToolsUseBoundedJsonReads 'External starter kit core prepare/identity/dependency/package/doctor tools must cap external JSON reads before parsing.'
+Assert-True $externalStarterKitCoreToolsUseStreamingStrictUtf8JsonReads 'External starter kit no-Unity tools must use shared streaming capped strict UTF-8 JSON/text reads.'
 Assert-True $externalStarterKitWritesManifestContractTool 'External starter kit must write a no-Unity manifest capability/budget configuration helper.'
 Assert-True $externalStarterKitManifestContractToolPasses 'External starter kit manifest contract helper must configure allowlisted capabilities/budgets and validate after write.'
 Assert-True $externalStarterKitManifestContractRejectsUnknownCapability 'External starter kit manifest contract helper must reject unknown public capability IDs.'
 Assert-True $externalStarterKitWritesFirstModTool 'External starter kit must write a no-Unity first playable mod onboarding helper.'
 Assert-True $externalStarterKitWritesInstallLocalTool 'External starter kit must write a no-Unity local discovery install helper.'
 Assert-True $externalStarterKitWritesDiagnoseLocalTool 'External starter kit must write a no-Unity read-only local Mods diagnosis helper.'
+Assert-True $externalStarterKitLocalInstallRequiresExactReviewProof 'External starter kit local install must require exact review output casing, lowercase SHA-256 rows, and reject case-fold duplicate review entries.'
+Assert-True $externalStarterKitDiagnoseLocalRequiresExactReviewProof 'External starter kit local Mods diagnosis must require exact lowercase review proof and reject case-fold duplicate review entries.'
 Assert-True $externalStarterKitDiagnoseLocalUsesRecursiveManifestDiscovery 'External starter kit local diagnosis must mirror recursive ModLoader mod.json discovery.'
 Assert-True $externalStarterKitDiagnoseLocalChecksDependencyGraph 'External starter kit local diagnosis must report duplicate IDs, missing dependencies, dependency cycles, and load order.'
 Assert-True $externalStarterKitWritesDependenciesTool 'External starter kit must write a no-Unity dependency configuration helper.'
 Assert-True $externalStarterKitDependencyToolMirrorsBothManifests 'External starter kit dependency helper must mirror Dependencies across authoring/runtime manifests and validate after write.'
+Assert-True $externalStarterKitWritesDoctorTool 'External starter kit must write a no-Unity read-only package doctor.'
+Assert-True $externalStarterKitDoctorToolIsReadOnly 'External starter kit package doctor must be read-only and bounded.'
+Assert-True $externalStarterKitDoctorVerifiesSubmissionZipContents 'External starter kit package doctor must verify submission zip contents against the review manifest.'
+Assert-True $externalStarterKitDoctorRejectsUnsafeZipEntries 'External starter kit package doctor must reject unsafe, duplicate, generated, and unreviewed submission zip entries.'
+Assert-True $externalStarterKitDoctorUsesCaseExactSubmissionZipIntegrity 'External starter kit package doctor must use case-exact submission zip integrity and reject case-fold duplicates.'
+Assert-True $externalStarterKitDoctorRejectsReservedTopLevelCaseVariants 'External starter kit package doctor must reject reserved top-level folder case variants in sources and zip entries.'
+Assert-True $externalStarterKitDoctorFailsNonReadyExit 'External starter kit package doctor must exit nonzero for needs_review and invalid readiness states.'
+Assert-True $externalStarterKitRootLauncherPreservesToolExitCodes 'External starter kit root launcher must preserve delegated tool exit codes instead of collapsing them to exit 1.'
+Assert-True $externalStarterKitNestedToolsPreserveChildExitCodes 'External starter kit nested parent tools must capture child $? and LASTEXITCODE immediately and preserve child exit codes.'
 Assert-True $externalStarterKitRootLauncherSupportsAuthoringSnippets 'External starter kit root launcher must route setting-snippet and locale-snippet to authoring snippet helpers.'
 Assert-True $externalStarterKitRootLauncherSupportsAuthoringSnippetApply 'External starter kit root launcher must route apply-setting-snippet and apply-locale-snippet to bounded authoring data apply helpers.'
 Assert-True $externalStarterKitRootLauncherSupportsAssetEntrySnippet 'External starter kit root launcher must route asset-snippet to the content asset entry snippet helper.'
 Assert-True $externalStarterKitRootLauncherSupportsAssetEntryApply 'External starter kit root launcher must route apply-asset-snippet to the bounded content asset apply helper.'
 Assert-True $externalStarterKitRootLauncherSupportsManifestContract 'External starter kit root launcher must route manifest-contract to the bounded manifest contract helper.'
 Assert-True $externalStarterKitRootLauncherSupportsCapabilities 'External starter kit root launcher must route capabilities to Docs/capabilities.md.'
+Assert-True $externalStarterKitRootLauncherUsesStrictCapabilityGuideRead 'External starter kit root launcher must print Docs/capabilities.md through the shared strict capped UTF-8 reader.'
+Assert-True $externalStarterKitHubScriptsRequireCheckedInTemplates 'External starter kit Hub must copy root/tool scripts from checked-in templates or generate fail-closed missing-template scripts, not stale C# fallbacks.'
+Assert-True $externalStarterKitHubExecutableFallbackBodiesRemoved 'External starter kit Hub must not retain embedded executable fallback bodies after switching root/tool scripts to checked-in templates.'
 Assert-True $externalStarterKitSubmissionPackageToolPasses 'External starter kit submission package tool must write a Generated/ zip on a temp copy.'
 Assert-True $externalStarterKitSubmissionPackageIncludesReviewManifest 'External starter kit submission package must include Reports/review_manifest.json as the review proof.'
 Assert-True $externalStarterKitRootLauncherSupportsSubmissionPackage 'External starter kit root launcher must route submission to the submission package helper.'
 Assert-True $externalStarterKitRootLauncherSupportsFirstMod 'External starter kit root launcher must route first-mod to the first playable mod helper.'
 Assert-True $externalStarterKitRootLauncherSupportsInstallLocal 'External starter kit root launcher must route install-local to the local discovery install helper.'
 Assert-True $externalStarterKitRootLauncherSupportsDiagnoseLocal 'External starter kit root launcher must route diagnose-local to the read-only local Mods diagnosis helper.'
+Assert-True $externalStarterKitRootLauncherSupportsDoctor 'External starter kit root launcher must route doctor to the read-only package doctor.'
 Assert-True $externalStarterKitRootLauncherSupportsDependencies 'External starter kit root launcher must route dependencies to the dependency configuration helper.'
 Assert-True $externalStarterKitIdentityToolValidatesCanonicalId 'External starter kit identity helper must validate canonical mod IDs.'
 Assert-True $externalStarterKitValidatorChecksSemver 'External starter kit validator and identity helper must enforce semantic version strings.'
@@ -2986,7 +3533,7 @@ Assert-True $externalStarterKitIdentityToolRejectsInvalidVersion 'External start
 Assert-True $externalStarterKitToolsAvoidNestedPowerShell 'External starter kit tools must chain scripts in-process instead of requiring nested Windows PowerShell.'
 Assert-True $externalStarterKitToolsUsePortableJoinPath 'External starter kit tools must compose child paths through portable Join-Path segments.'
 Assert-True $externalStarterKitWritesJsonSchemas 'External starter kit must write JSON Schemas and editor schema mapping.'
-Assert-True $externalStarterKitGeneratorUsesCheckedInTemplates 'External starter kit generator must prefer checked-in starter templates for docs, manifests, schemas, VS Code files, and tools.'
+Assert-True $externalStarterKitGeneratorUsesCheckedInTemplates 'External starter kit generator must prefer checked-in starter templates for docs, manifests, schemas, and VS Code files.'
 Assert-True $externalStarterKitValidatorChecksJsonSchemas 'External starter kit local validator must check JSON Schema files and editor mapping.'
 Assert-True $externalStarterKitValidatorChecksEditorSchemaMappings 'External starter kit local validator must check each editor schema URL and fileMatch mapping.'
 Assert-True $externalStarterKitWritesVsCodeTasks 'External starter kit generator must write VS Code task runner integration.'
@@ -3614,6 +4161,10 @@ Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchGeneratesAuthoringS
 Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchAppliesAuthoringSnippets) 'Schema sdkAuthoringAudit must record starter workbench settings/locale snippet apply route.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchBuildsSubmissionPackage) 'Schema sdkAuthoringAudit must record starter workbench submission package generation.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchShowsSubmissionPackageStatus) 'Schema sdkAuthoringAudit must record starter workbench submission package status/freshness.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchShowsSubmissionZipIntegrity) 'Schema sdkAuthoringAudit must record starter workbench submission zip integrity display.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchUsesCaseExactSubmissionZipIntegrity) 'Schema sdkAuthoringAudit must record starter workbench case-exact submission zip integrity.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchReportsReservedFolderCaseVariants) 'Schema sdkAuthoringAudit must record starter workbench reserved folder case-variant reporting.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchRunsDoctor) 'Schema sdkAuthoringAudit must record starter workbench package doctor route.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchShowsAuthoringDataPreview) 'Schema sdkAuthoringAudit must record starter workbench settings/locale authoring data preview.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchShowsContentAssetPreview) 'Schema sdkAuthoringAudit must record starter workbench content asset manifest preview.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchGeneratesAssetEntrySnippet) 'Schema sdkAuthoringAudit must record starter workbench content asset snippet generation.'
@@ -3674,32 +4225,65 @@ Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitAssetEntrySnippet
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesAssetEntryApplyTool) 'Schema sdkAuthoringAudit must record starter asset entry apply helper output.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitAssetEntryApplyToolPasses) 'Schema sdkAuthoringAudit must record starter asset entry apply helper pass.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitAssetEntryApplyToolRejectsDuplicateWithoutReplace) 'Schema sdkAuthoringAudit must record starter asset entry apply duplicate rejection.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitSnippetPathsRequireStrictJsonRelativePaths) 'Schema sdkAuthoringAudit must record starter snippet strict JSON path gates.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitSnippetApplyUsesBoundedJsonReads) 'Schema sdkAuthoringAudit must record starter snippet apply bounded JSON reads.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitAssetSnippetRejectsNonPortableAssetPaths) 'Schema sdkAuthoringAudit must record starter asset snippet portable path gate.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitGraphNodeSnippetCapsParametersJson) 'Schema sdkAuthoringAudit must record graph node snippet ParametersJson cap.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorCapsRootJsonReads) 'Schema sdkAuthoringAudit must record structure validator bounded root JSON/text reads.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorRejectsNonPortableAssetManifestPaths) 'Schema sdkAuthoringAudit must record structure validator portable asset manifest path gate.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitCoreToolsUseBoundedJsonReads) 'Schema sdkAuthoringAudit must record bounded JSON reads in public starter core tools.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitCoreToolsUseStreamingStrictUtf8JsonReads) 'Schema sdkAuthoringAudit must record shared streaming strict UTF-8 JSON/text reads in public starter tools.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchConfiguresManifestContract) 'Schema sdkAuthoringAudit must record starter Workbench manifest contract configuration.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchConfiguresDependencies) 'Schema sdkAuthoringAudit must record starter Workbench dependency configuration.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchUsesBoundedPreviewReads) 'Schema sdkAuthoringAudit must record starter Workbench bounded preview reads.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchUsesStreamingCappedPreviewReads) 'Schema sdkAuthoringAudit must record starter Workbench streaming capped preview reads.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchRejectsInvalidUtf8PreviewReads) 'Schema sdkAuthoringAudit must record starter Workbench strict UTF-8 preview reads.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesManifestContractTool) 'Schema sdkAuthoringAudit must record starter manifest contract helper output.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitManifestContractToolPasses) 'Schema sdkAuthoringAudit must record starter manifest contract helper pass.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitManifestContractRejectsUnknownCapability) 'Schema sdkAuthoringAudit must record starter manifest contract unknown capability rejection.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesFirstModTool) 'Schema sdkAuthoringAudit must record starter first playable mod helper output.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesInstallLocalTool) 'Schema sdkAuthoringAudit must record starter local discovery install helper output.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesDiagnoseLocalTool) 'Schema sdkAuthoringAudit must record starter local Mods diagnosis helper output.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitLocalInstallRequiresExactReviewProof) 'Schema sdkAuthoringAudit must record starter local install exact review proof.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDiagnoseLocalRequiresExactReviewProof) 'Schema sdkAuthoringAudit must record starter local diagnosis exact review proof.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDiagnoseLocalUsesRecursiveManifestDiscovery) 'Schema sdkAuthoringAudit must record recursive local Mods manifest discovery.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDiagnoseLocalChecksDependencyGraph) 'Schema sdkAuthoringAudit must record local Mods dependency graph diagnosis.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesDependenciesTool) 'Schema sdkAuthoringAudit must record starter dependency helper output.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDependencyToolMirrorsBothManifests) 'Schema sdkAuthoringAudit must record starter dependency helper authoring/runtime manifest parity.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesDoctorTool) 'Schema sdkAuthoringAudit must record starter package doctor helper output.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDoctorToolIsReadOnly) 'Schema sdkAuthoringAudit must record starter package doctor read-only contract.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDoctorVerifiesSubmissionZipContents) 'Schema sdkAuthoringAudit must record starter package doctor submission zip content proof.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDoctorRejectsUnsafeZipEntries) 'Schema sdkAuthoringAudit must record starter package doctor unsafe zip entry rejection.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDoctorUsesCaseExactSubmissionZipIntegrity) 'Schema sdkAuthoringAudit must record starter package doctor case-exact submission zip integrity.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDoctorRejectsReservedTopLevelCaseVariants) 'Schema sdkAuthoringAudit must record starter package doctor reserved top-level case-variant rejection.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDoctorFailsNonReadyExit) 'Schema sdkAuthoringAudit must record starter package doctor non-ready nonzero exit contract.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherPreservesToolExitCodes) 'Schema sdkAuthoringAudit must record starter root launcher delegated exit-code preservation.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitNestedToolsPreserveChildExitCodes) 'Schema sdkAuthoringAudit must record nested starter child exit-code preservation.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitReviewManifestRejectsCaseFoldSourceDuplicates) 'Schema sdkAuthoringAudit must record starter review manifest case-fold duplicate rejection.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorRequiresExactPathCasing) 'Schema sdkAuthoringAudit must record starter validator exact path casing.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRejectsReservedTopLevelCaseVariants) 'Schema sdkAuthoringAudit must record reserved starter top-level case-variant rejection.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitReviewManifestUsesExactReservedOutputFolders) 'Schema sdkAuthoringAudit must record exact reserved output folder handling.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitPackageProofRequiresLowercaseSha256) 'Schema sdkAuthoringAudit must record lowercase SHA-256 package proof.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsAuthoringSnippets) 'Schema sdkAuthoringAudit must record starter root launcher settings/locale snippet route.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsAuthoringSnippetApply) 'Schema sdkAuthoringAudit must record starter root launcher settings/locale apply route.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsAssetEntrySnippet) 'Schema sdkAuthoringAudit must record starter root launcher asset snippet route.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsAssetEntryApply) 'Schema sdkAuthoringAudit must record starter root launcher asset apply route.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsManifestContract) 'Schema sdkAuthoringAudit must record starter root launcher manifest contract route.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsCapabilities) 'Schema sdkAuthoringAudit must record starter root launcher capability guide route.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherUsesStrictCapabilityGuideRead) 'Schema sdkAuthoringAudit must record strict capped capability guide reads in the root launcher.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitHubScriptsRequireCheckedInTemplates) 'Schema sdkAuthoringAudit must record checked-in template enforcement for starter root/tool scripts.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitHubExecutableFallbackBodiesRemoved) 'Schema sdkAuthoringAudit must record removal of embedded executable fallback bodies from the starter Hub.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesSubmissionPackageTool) 'Schema sdkAuthoringAudit must record starter submission package helper output.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitSubmissionPackagePreservesPreviousOutputUntilSuccess) 'Schema sdkAuthoringAudit must record starter submission package atomic handoff.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitSubmissionPackageRefreshesTimestampAfterReplace) 'Schema sdkAuthoringAudit must record starter submission package timestamp freshness after replace.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitSubmissionPackageToolPasses) 'Schema sdkAuthoringAudit must record starter submission package helper pass.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitSubmissionPackageIncludesReviewManifest) 'Schema sdkAuthoringAudit must record starter submission package review manifest inclusion.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitSubmissionPackageUsesCaseExactSourceEntries) 'Schema sdkAuthoringAudit must record starter submission package exact source entry contract.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsSubmissionPackage) 'Schema sdkAuthoringAudit must record starter root launcher submission package route.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsFirstMod) 'Schema sdkAuthoringAudit must record starter root launcher first-mod route.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsInstallLocal) 'Schema sdkAuthoringAudit must record starter root launcher install-local route.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsDiagnoseLocal) 'Schema sdkAuthoringAudit must record starter root launcher diagnose-local route.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsDoctor) 'Schema sdkAuthoringAudit must record starter root launcher doctor route.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherSupportsDependencies) 'Schema sdkAuthoringAudit must record starter root launcher dependencies route.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitIdentityToolValidatesCanonicalId) 'Schema sdkAuthoringAudit must record starter identity helper canonical ID validation.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksSemver) 'Schema sdkAuthoringAudit must record starter semantic version validation.'
@@ -3717,6 +4301,7 @@ Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitVsCodeTasksSuppor
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitVsCodeTasksSupportLocalInstall) 'Schema sdkAuthoringAudit must record starter VS Code local discovery install task surface.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitVsCodeTasksSupportLocalDiagnose) 'Schema sdkAuthoringAudit must record starter VS Code local Mods diagnosis task surface.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitVsCodeTasksSupportDependencies) 'Schema sdkAuthoringAudit must record starter VS Code dependency task surface.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitVsCodeTasksSupportDoctor) 'Schema sdkAuthoringAudit must record starter VS Code package doctor task surface.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksVsCodeTasks) 'Schema sdkAuthoringAudit must record starter VS Code task validation.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksSettingsAndLocaleContracts) 'Schema sdkAuthoringAudit must record starter settings/locale contract validation.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksAssetManifestContracts) 'Schema sdkAuthoringAudit must record starter content asset manifest validation.'
@@ -4258,6 +4843,9 @@ Assert-True ($lastStaticValidation.externalStarterKitWorkbenchGeneratesAuthoring
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchAppliesAuthoringSnippets -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench settings/locale snippet apply route."
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchBuildsSubmissionPackage -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench submission package generation."
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchShowsSubmissionPackageStatus -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench submission package status/freshness."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchShowsSubmissionZipIntegrity -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench submission zip integrity display."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchUsesCaseExactSubmissionZipIntegrity -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench case-exact submission zip integrity."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchRunsDoctor -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench package doctor route."
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchShowsAuthoringDataPreview -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench settings/locale authoring data preview."
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchShowsContentAssetPreview -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench content asset manifest preview."
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchGeneratesAssetEntrySnippet -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench content asset snippet generation."
@@ -4265,6 +4853,9 @@ Assert-True ($lastStaticValidation.externalStarterKitWorkbenchAppliesAssetEntryS
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchConfiguresManifestContract -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench manifest contract configuration."
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchConfiguresDependencies -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench dependency configuration."
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchChecksRootLauncher -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench root launcher health/file access."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchUsesBoundedPreviewReads -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench bounded preview reads."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchUsesStreamingCappedPreviewReads -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench streaming capped preview reads."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchRejectsInvalidUtf8PreviewReads -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench strict UTF-8 preview reads."
 Assert-True ($lastStaticValidation.externalStarterKitGeneratorPresent -eq $true) "Schema lastStaticValidationSnapshot must record external starter kit generator presence."
 Assert-True ($lastStaticValidation.externalStarterKitWritesRootLauncher -eq $true) "Schema lastStaticValidationSnapshot must record root no-Unity launcher output."
 Assert-True ($lastStaticValidation.externalStarterKitWritesAuthoringManifest -eq $true) "Schema lastStaticValidationSnapshot must record external starter kit authoring manifest output."
@@ -4320,6 +4911,14 @@ Assert-True ($lastStaticValidation.externalStarterKitAssetEntrySnippetToolSuppor
 Assert-True ($lastStaticValidation.externalStarterKitWritesAssetEntryApplyTool -eq $true) "Schema lastStaticValidationSnapshot must record starter asset entry apply helper output."
 Assert-True ($lastStaticValidation.externalStarterKitAssetEntryApplyToolPasses -eq $true) "Schema lastStaticValidationSnapshot must record starter asset entry apply helper pass."
 Assert-True ($lastStaticValidation.externalStarterKitAssetEntryApplyToolRejectsDuplicateWithoutReplace -eq $true) "Schema lastStaticValidationSnapshot must record starter asset entry apply duplicate rejection."
+Assert-True ($lastStaticValidation.externalStarterKitSnippetPathsRequireStrictJsonRelativePaths -eq $true) "Schema lastStaticValidationSnapshot must record starter snippet strict JSON path gates."
+Assert-True ($lastStaticValidation.externalStarterKitSnippetApplyUsesBoundedJsonReads -eq $true) "Schema lastStaticValidationSnapshot must record starter snippet apply bounded JSON reads."
+Assert-True ($lastStaticValidation.externalStarterKitAssetSnippetRejectsNonPortableAssetPaths -eq $true) "Schema lastStaticValidationSnapshot must record starter asset snippet portable path gate."
+Assert-True ($lastStaticValidation.externalStarterKitGraphNodeSnippetCapsParametersJson -eq $true) "Schema lastStaticValidationSnapshot must record graph node snippet ParametersJson cap."
+Assert-True ($lastStaticValidation.externalStarterKitValidatorCapsRootJsonReads -eq $true) "Schema lastStaticValidationSnapshot must record structure validator bounded root JSON/text reads."
+Assert-True ($lastStaticValidation.externalStarterKitValidatorRejectsNonPortableAssetManifestPaths -eq $true) "Schema lastStaticValidationSnapshot must record structure validator portable asset manifest path gate."
+Assert-True ($lastStaticValidation.externalStarterKitCoreToolsUseBoundedJsonReads -eq $true) "Schema lastStaticValidationSnapshot must record public starter core tool bounded JSON reads."
+Assert-True ($lastStaticValidation.externalStarterKitCoreToolsUseStreamingStrictUtf8JsonReads -eq $true) "Schema lastStaticValidationSnapshot must record public starter shared streaming strict UTF-8 JSON/text reads."
 Assert-True ($lastStaticValidation.externalStarterKitWritesManifestContractTool -eq $true) "Schema lastStaticValidationSnapshot must record starter manifest contract helper output."
 Assert-True ($lastStaticValidation.externalStarterKitManifestContractToolPasses -eq $true) "Schema lastStaticValidationSnapshot must record starter manifest contract helper pass."
 Assert-True ($lastStaticValidation.externalStarterKitManifestContractRejectsUnknownCapability -eq $true) "Schema lastStaticValidationSnapshot must record starter manifest contract unknown capability rejection."
@@ -4330,21 +4929,42 @@ Assert-True ($lastStaticValidation.externalStarterKitDiagnoseLocalUsesRecursiveM
 Assert-True ($lastStaticValidation.externalStarterKitDiagnoseLocalChecksDependencyGraph -eq $true) "Schema lastStaticValidationSnapshot must record local Mods dependency graph diagnosis."
 Assert-True ($lastStaticValidation.externalStarterKitWritesDependenciesTool -eq $true) "Schema lastStaticValidationSnapshot must record starter dependency helper output."
 Assert-True ($lastStaticValidation.externalStarterKitDependencyToolMirrorsBothManifests -eq $true) "Schema lastStaticValidationSnapshot must record starter dependency helper authoring/runtime manifest parity."
+Assert-True ($lastStaticValidation.externalStarterKitWritesDoctorTool -eq $true) "Schema lastStaticValidationSnapshot must record starter package doctor helper output."
+Assert-True ($lastStaticValidation.externalStarterKitDoctorToolIsReadOnly -eq $true) "Schema lastStaticValidationSnapshot must record starter package doctor read-only contract."
+Assert-True ($lastStaticValidation.externalStarterKitDoctorVerifiesSubmissionZipContents -eq $true) "Schema lastStaticValidationSnapshot must record starter package doctor submission zip content proof."
+Assert-True ($lastStaticValidation.externalStarterKitDoctorRejectsUnsafeZipEntries -eq $true) "Schema lastStaticValidationSnapshot must record starter package doctor unsafe zip entry rejection."
+Assert-True ($lastStaticValidation.externalStarterKitDoctorUsesCaseExactSubmissionZipIntegrity -eq $true) "Schema lastStaticValidationSnapshot must record starter package doctor case-exact submission zip integrity."
+Assert-True ($lastStaticValidation.externalStarterKitDoctorRejectsReservedTopLevelCaseVariants -eq $true) "Schema lastStaticValidationSnapshot must record starter package doctor reserved top-level case-variant rejection."
+Assert-True ($lastStaticValidation.externalStarterKitDoctorFailsNonReadyExit -eq $true) "Schema lastStaticValidationSnapshot must record starter package doctor non-ready nonzero exit contract."
+Assert-True ($lastStaticValidation.externalStarterKitRootLauncherPreservesToolExitCodes -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher delegated exit-code preservation."
+Assert-True ($lastStaticValidation.externalStarterKitReviewManifestRejectsCaseFoldSourceDuplicates -eq $true) "Schema lastStaticValidationSnapshot must record starter review manifest case-fold duplicate rejection."
+Assert-True ($lastStaticValidation.externalStarterKitValidatorRequiresExactPathCasing -eq $true) "Schema lastStaticValidationSnapshot must record starter validator exact path casing."
+Assert-True ($lastStaticValidation.externalStarterKitRejectsReservedTopLevelCaseVariants -eq $true) "Schema lastStaticValidationSnapshot must record reserved starter top-level case-variant rejection."
+Assert-True ($lastStaticValidation.externalStarterKitReviewManifestUsesExactReservedOutputFolders -eq $true) "Schema lastStaticValidationSnapshot must record exact reserved output folder handling."
+Assert-True ($lastStaticValidation.externalStarterKitPackageProofRequiresLowercaseSha256 -eq $true) "Schema lastStaticValidationSnapshot must record lowercase SHA-256 package proof."
 Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsAuthoringSnippets -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher settings/locale snippet route."
 Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsAuthoringSnippetApply -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher settings/locale apply route."
 Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsAssetEntrySnippet -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher asset snippet route."
 Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsAssetEntryApply -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher asset apply route."
 Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsManifestContract -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher manifest contract route."
 Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsCapabilities -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher capability guide route."
+Assert-True ($lastStaticValidation.externalStarterKitRootLauncherUsesStrictCapabilityGuideRead -eq $true) "Schema lastStaticValidationSnapshot must record strict capped capability guide reads in the root launcher."
+Assert-True ($lastStaticValidation.externalStarterKitHubScriptsRequireCheckedInTemplates -eq $true) "Schema lastStaticValidationSnapshot must record checked-in template enforcement for starter root/tool scripts."
+Assert-True ($lastStaticValidation.externalStarterKitHubExecutableFallbackBodiesRemoved -eq $true) "Schema lastStaticValidationSnapshot must record removal of embedded executable fallback bodies from the starter Hub."
 Assert-True ($lastStaticValidation.externalStarterKitWritesSubmissionPackageTool -eq $true) "Schema lastStaticValidationSnapshot must record starter submission package helper output."
 Assert-True ($lastStaticValidation.externalStarterKitSubmissionPackagePreservesPreviousOutputUntilSuccess -eq $true) "Schema lastStaticValidationSnapshot must record starter submission package atomic handoff."
+Assert-True ($lastStaticValidation.externalStarterKitSubmissionPackageRefreshesTimestampAfterReplace -eq $true) "Schema lastStaticValidationSnapshot must record starter submission package timestamp freshness after replace."
 Assert-True ($lastStaticValidation.externalStarterKitSubmissionPackageToolPasses -eq $true) "Schema lastStaticValidationSnapshot must record starter submission package helper pass."
 Assert-True ($lastStaticValidation.externalStarterKitSubmissionPackageIncludesReviewManifest -eq $true) "Schema lastStaticValidationSnapshot must record starter submission package review manifest inclusion."
+Assert-True ($lastStaticValidation.externalStarterKitSubmissionPackageUsesCaseExactSourceEntries -eq $true) "Schema lastStaticValidationSnapshot must record starter submission package exact source entry contract."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchReportsReservedFolderCaseVariants -eq $true) "Schema lastStaticValidationSnapshot must record starter Workbench reserved folder case-variant reporting."
 Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsSubmissionPackage -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher submission package route."
 Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsFirstMod -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher first-mod route."
 Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsInstallLocal -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher install-local route."
 Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsDiagnoseLocal -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher diagnose-local route."
+Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsDoctor -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher doctor route."
 Assert-True ($lastStaticValidation.externalStarterKitRootLauncherSupportsDependencies -eq $true) "Schema lastStaticValidationSnapshot must record starter root launcher dependencies route."
+Assert-True ($lastStaticValidation.externalStarterKitNestedToolsPreserveChildExitCodes -eq $true) "Schema lastStaticValidationSnapshot must record nested starter child exit-code preservation."
 Assert-True ($lastStaticValidation.externalStarterKitIdentityToolValidatesCanonicalId -eq $true) "Schema lastStaticValidationSnapshot must record starter identity helper canonical ID validation."
 Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksSemver -eq $true) "Schema lastStaticValidationSnapshot must record starter semantic version validation."
 Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksManifestIdentityTextParity -eq $true) "Schema lastStaticValidationSnapshot must record starter identity text parity validation."
@@ -4360,6 +4980,7 @@ Assert-True ($lastStaticValidation.externalStarterKitVsCodeTasksSupportDisabledA
 Assert-True ($lastStaticValidation.externalStarterKitVsCodeTasksSupportLocalInstall -eq $true) "Schema lastStaticValidationSnapshot must record starter VS Code local discovery install task surface."
 Assert-True ($lastStaticValidation.externalStarterKitVsCodeTasksSupportLocalDiagnose -eq $true) "Schema lastStaticValidationSnapshot must record starter VS Code local Mods diagnosis task surface."
 Assert-True ($lastStaticValidation.externalStarterKitVsCodeTasksSupportDependencies -eq $true) "Schema lastStaticValidationSnapshot must record starter VS Code dependency task surface."
+Assert-True ($lastStaticValidation.externalStarterKitVsCodeTasksSupportDoctor -eq $true) "Schema lastStaticValidationSnapshot must record starter VS Code package doctor task surface."
 Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksVsCodeTasks -eq $true) "Schema lastStaticValidationSnapshot must record starter VS Code task validation."
 Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksSettingsAndLocaleContracts -eq $true) "Schema lastStaticValidationSnapshot must record starter settings/locale contract validation."
 Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksAssetManifestContracts -eq $true) "Schema lastStaticValidationSnapshot must record starter content asset manifest validation."
@@ -4375,6 +4996,8 @@ Assert-True ($lastStaticValidation.externalStarterKitReviewManifestIdentityMatch
 Assert-True ($lastStaticValidation.externalStarterKitReviewManifestExcludesReports -eq $true) "Schema lastStaticValidationSnapshot must record starter review manifest report/output exclusion."
 Assert-True ($lastStaticValidation.externalStarterKitReviewManifestHasLimits -eq $true) "Schema lastStaticValidationSnapshot must record starter review manifest count/byte limits."
 Assert-True ($lastStaticValidation.externalStarterKitReviewManifestRejectsOversizedFile -eq $true) "Schema lastStaticValidationSnapshot must record starter review manifest oversized-file rejection."
+Assert-True ($lastStaticValidation.externalStarterKitLocalInstallRequiresExactReviewProof -eq $true) "Schema lastStaticValidationSnapshot must record starter local install exact review proof."
+Assert-True ($lastStaticValidation.externalStarterKitDiagnoseLocalRequiresExactReviewProof -eq $true) "Schema lastStaticValidationSnapshot must record starter local diagnosis exact review proof."
 Assert-True ($lastStaticValidation.externalStarterKitIdentityToolPasses -eq $true) "Schema lastStaticValidationSnapshot must record starter identity helper pass."
 Assert-True ($lastStaticValidation.externalStarterKitPrepareToolPasses -eq $true) "Schema lastStaticValidationSnapshot must record starter prepare tool pass."
 Assert-True ($lastStaticValidation.externalStarterKitPrepareToolSupportsExistingManifest -eq $true) "Schema lastStaticValidationSnapshot must record starter prepare existing-manifest rerun proof."
@@ -4511,6 +5134,10 @@ Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchGenerates
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchAppliesAuthoringSnippets = True')) 'Runtime playbook missing starter workbench settings/locale snippet apply evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchBuildsSubmissionPackage = True')) 'Runtime playbook missing starter workbench submission package evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchShowsSubmissionPackageStatus = True')) 'Runtime playbook missing starter workbench submission package status evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchShowsSubmissionZipIntegrity = True')) 'Runtime playbook missing starter workbench submission zip integrity evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchUsesCaseExactSubmissionZipIntegrity = True')) 'Runtime playbook missing starter workbench case-exact submission zip integrity evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchReportsReservedFolderCaseVariants = True')) 'Runtime playbook missing starter workbench reserved folder case-variant evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchRunsDoctor = True')) 'Runtime playbook missing starter workbench package doctor evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchShowsAuthoringDataPreview = True')) 'Runtime playbook missing starter workbench authoring data preview evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchShowsContentAssetPreview = True')) 'Runtime playbook missing starter workbench content asset preview evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchGeneratesAssetEntrySnippet = True')) 'Runtime playbook missing starter workbench content asset snippet generation evidence.'
@@ -4518,6 +5145,9 @@ Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchAppliesAs
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchConfiguresManifestContract = True')) 'Runtime playbook missing starter workbench manifest contract evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchConfiguresDependencies = True')) 'Runtime playbook missing starter workbench dependency contract evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchChecksRootLauncher = True')) 'Runtime playbook missing starter workbench root launcher evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchUsesBoundedPreviewReads = True')) 'Runtime playbook missing starter workbench bounded preview-read evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchUsesStreamingCappedPreviewReads = True')) 'Runtime playbook missing starter workbench streaming capped preview-read evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchRejectsInvalidUtf8PreviewReads = True')) 'Runtime playbook missing starter workbench strict UTF-8 preview-read evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesRootLauncher = True')) 'Runtime playbook missing starter root launcher generator evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorChecksRootLauncher = True')) 'Runtime playbook missing starter validator root launcher evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherPasses = True')) 'Runtime playbook missing starter root launcher pass evidence.'
@@ -4576,6 +5206,10 @@ Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitAssetEntrySnippetT
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesAssetEntryApplyTool = True')) 'Runtime playbook missing starter content asset apply helper evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitAssetEntryApplyToolPasses = True')) 'Runtime playbook missing starter content asset apply pass evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitAssetEntryApplyToolRejectsDuplicateWithoutReplace = True')) 'Runtime playbook missing starter content asset apply duplicate rejection evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitSnippetPathsRequireStrictJsonRelativePaths = True')) 'Runtime playbook missing starter snippet strict JSON path evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitSnippetApplyUsesBoundedJsonReads = True')) 'Runtime playbook missing starter snippet bounded JSON read evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitAssetSnippetRejectsNonPortableAssetPaths = True')) 'Runtime playbook missing starter asset snippet portable path evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitGraphNodeSnippetCapsParametersJson = True')) 'Runtime playbook missing graph node ParametersJson cap evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSupportsAssetEntrySnippet = True')) 'Runtime playbook missing starter root launcher content asset snippet evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSupportsAssetEntryApply = True')) 'Runtime playbook missing starter root launcher content asset apply evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesManifestContractTool = True')) 'Runtime playbook missing starter manifest contract helper evidence.'
@@ -4584,20 +5218,41 @@ Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitManifestContractRe
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesFirstModTool = True')) 'Runtime playbook missing starter first playable mod helper evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesInstallLocalTool = True')) 'Runtime playbook missing starter local discovery install helper evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesDiagnoseLocalTool = True')) 'Runtime playbook missing starter local Mods diagnosis helper evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitLocalInstallRequiresExactReviewProof = True')) 'Runtime playbook missing starter local install exact review proof evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDiagnoseLocalRequiresExactReviewProof = True')) 'Runtime playbook missing starter local diagnosis exact review proof evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDiagnoseLocalUsesRecursiveManifestDiscovery = True')) 'Runtime playbook missing recursive local Mods manifest discovery evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDiagnoseLocalChecksDependencyGraph = True')) 'Runtime playbook missing local Mods dependency graph diagnosis evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesDependenciesTool = True')) 'Runtime playbook missing starter dependency helper evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDependencyToolMirrorsBothManifests = True')) 'Runtime playbook missing starter dependency helper manifest parity evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesDoctorTool = True')) 'Runtime playbook missing starter package doctor helper evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDoctorToolIsReadOnly = True')) 'Runtime playbook missing starter package doctor read-only evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDoctorVerifiesSubmissionZipContents = True')) 'Runtime playbook missing starter package doctor submission zip content evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDoctorRejectsUnsafeZipEntries = True')) 'Runtime playbook missing starter package doctor unsafe zip entry evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDoctorUsesCaseExactSubmissionZipIntegrity = True')) 'Runtime playbook missing starter package doctor case-exact submission zip integrity evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDoctorRejectsReservedTopLevelCaseVariants = True')) 'Runtime playbook missing starter package doctor reserved top-level case-variant evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitDoctorFailsNonReadyExit = True')) 'Runtime playbook missing starter package doctor non-ready nonzero exit evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherPreservesToolExitCodes = True')) 'Runtime playbook missing starter root launcher delegated exit-code preservation evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitReviewManifestRejectsCaseFoldSourceDuplicates = True')) 'Runtime playbook missing starter review manifest case-fold duplicate rejection evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorRequiresExactPathCasing = True')) 'Runtime playbook missing starter validator exact path casing evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRejectsReservedTopLevelCaseVariants = True')) 'Runtime playbook missing reserved starter top-level case-variant rejection evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitReviewManifestUsesExactReservedOutputFolders = True')) 'Runtime playbook missing exact reserved output folder evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitPackageProofRequiresLowercaseSha256 = True')) 'Runtime playbook missing lowercase SHA-256 package proof evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSupportsManifestContract = True')) 'Runtime playbook missing starter root launcher manifest contract evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSupportsCapabilities = True')) 'Runtime playbook missing starter root launcher capability guide evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherUsesStrictCapabilityGuideRead = True')) 'Runtime playbook missing starter root launcher strict capability guide read evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitHubScriptsRequireCheckedInTemplates = True')) 'Runtime playbook missing starter Hub checked-in script template evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitHubExecutableFallbackBodiesRemoved = True')) 'Runtime playbook missing starter Hub executable fallback body removal evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesSubmissionPackageTool = True')) 'Runtime playbook missing starter submission package helper evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitSubmissionPackagePreservesPreviousOutputUntilSuccess = True')) 'Runtime playbook missing starter submission package atomic handoff evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitSubmissionPackageRefreshesTimestampAfterReplace = True')) 'Runtime playbook missing starter submission package timestamp freshness evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitSubmissionPackageToolPasses = True')) 'Runtime playbook missing starter submission package helper pass evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitSubmissionPackageIncludesReviewManifest = True')) 'Runtime playbook missing starter submission package review manifest evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitSubmissionPackageUsesCaseExactSourceEntries = True')) 'Runtime playbook missing starter submission package exact source entry evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSupportsSubmissionPackage = True')) 'Runtime playbook missing starter root launcher submission package evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSupportsFirstMod = True')) 'Runtime playbook missing starter root launcher first-mod evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSupportsInstallLocal = True')) 'Runtime playbook missing starter root launcher install-local evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSupportsDiagnoseLocal = True')) 'Runtime playbook missing starter root launcher diagnose-local evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSupportsDoctor = True')) 'Runtime playbook missing starter root launcher doctor evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherSupportsDependencies = True')) 'Runtime playbook missing starter root launcher dependencies evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitIdentityToolValidatesCanonicalId = True')) 'Runtime playbook missing starter identity helper canonical ID evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorChecksSemver = True')) 'Runtime playbook missing starter semver validation evidence.'
@@ -4615,6 +5270,7 @@ Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitVsCodeTasksSupport
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitVsCodeTasksSupportLocalInstall = True')) 'Runtime playbook missing starter VS Code local discovery install task evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitVsCodeTasksSupportLocalDiagnose = True')) 'Runtime playbook missing starter VS Code local Mods diagnosis task evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitVsCodeTasksSupportDependencies = True')) 'Runtime playbook missing starter VS Code dependency task evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitVsCodeTasksSupportDoctor = True')) 'Runtime playbook missing starter VS Code package doctor task evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorChecksVsCodeTasks = True')) 'Runtime playbook missing starter VS Code task validation evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorChecksSettingsAndLocaleContracts = True')) 'Runtime playbook missing starter settings/locale contract validation evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorChecksAssetManifestContracts = True')) 'Runtime playbook missing starter content asset manifest validation evidence.'
@@ -4815,6 +5471,10 @@ $result = [pscustomobject]@{
     ExternalStarterKitWorkbenchAppliesAuthoringSnippets = $externalStarterKitWorkbenchAppliesAuthoringSnippets
     ExternalStarterKitWorkbenchBuildsSubmissionPackage = $externalStarterKitWorkbenchBuildsSubmissionPackage
     ExternalStarterKitWorkbenchShowsSubmissionPackageStatus = $externalStarterKitWorkbenchShowsSubmissionPackageStatus
+    ExternalStarterKitWorkbenchShowsSubmissionZipIntegrity = $externalStarterKitWorkbenchShowsSubmissionZipIntegrity
+    ExternalStarterKitWorkbenchUsesCaseExactSubmissionZipIntegrity = $externalStarterKitWorkbenchUsesCaseExactSubmissionZipIntegrity
+    ExternalStarterKitWorkbenchReportsReservedFolderCaseVariants = $externalStarterKitWorkbenchReportsReservedFolderCaseVariants
+    ExternalStarterKitWorkbenchRunsDoctor = $externalStarterKitWorkbenchRunsDoctor
     ExternalStarterKitWorkbenchShowsAuthoringDataPreview = $externalStarterKitWorkbenchShowsAuthoringDataPreview
     ExternalStarterKitWorkbenchShowsContentAssetPreview = $externalStarterKitWorkbenchShowsContentAssetPreview
     ExternalStarterKitWorkbenchGeneratesAssetEntrySnippet = $externalStarterKitWorkbenchGeneratesAssetEntrySnippet
@@ -4822,6 +5482,9 @@ $result = [pscustomobject]@{
     ExternalStarterKitWorkbenchConfiguresManifestContract = $externalStarterKitWorkbenchConfiguresManifestContract
     ExternalStarterKitWorkbenchConfiguresDependencies = $externalStarterKitWorkbenchConfiguresDependencies
     ExternalStarterKitWorkbenchChecksRootLauncher = $externalStarterKitWorkbenchChecksRootLauncher
+    ExternalStarterKitWorkbenchUsesBoundedPreviewReads = $externalStarterKitWorkbenchUsesBoundedPreviewReads
+    ExternalStarterKitWorkbenchUsesStreamingCappedPreviewReads = $externalStarterKitWorkbenchUsesStreamingCappedPreviewReads
+    ExternalStarterKitWorkbenchRejectsInvalidUtf8PreviewReads = $externalStarterKitWorkbenchRejectsInvalidUtf8PreviewReads
     ExternalStarterKitGeneratorPresent = $externalStarterKitGeneratorPresent
     ExternalStarterKitWritesRootLauncher = $externalStarterKitWritesRootLauncher
     ExternalStarterKitWritesAuthoringManifest = $externalStarterKitWritesAuthoringManifest
@@ -4877,30 +5540,60 @@ $result = [pscustomobject]@{
     ExternalStarterKitWritesAssetEntryApplyTool = $externalStarterKitWritesAssetEntryApplyTool
     ExternalStarterKitAssetEntryApplyToolPasses = $externalStarterKitAssetEntryApplyToolPasses
     ExternalStarterKitAssetEntryApplyToolRejectsDuplicateWithoutReplace = $externalStarterKitAssetEntryApplyToolRejectsDuplicateWithoutReplace
+    ExternalStarterKitSnippetPathsRequireStrictJsonRelativePaths = $externalStarterKitSnippetPathsRequireStrictJsonRelativePaths
+    ExternalStarterKitSnippetApplyUsesBoundedJsonReads = $externalStarterKitSnippetApplyUsesBoundedJsonReads
+    ExternalStarterKitAssetSnippetRejectsNonPortableAssetPaths = $externalStarterKitAssetSnippetRejectsNonPortableAssetPaths
+    ExternalStarterKitGraphNodeSnippetCapsParametersJson = $externalStarterKitGraphNodeSnippetCapsParametersJson
+    ExternalStarterKitValidatorCapsRootJsonReads = $externalStarterKitValidatorCapsRootJsonReads
+    ExternalStarterKitValidatorRejectsNonPortableAssetManifestPaths = $externalStarterKitValidatorRejectsNonPortableAssetManifestPaths
+    ExternalStarterKitCoreToolsUseBoundedJsonReads = $externalStarterKitCoreToolsUseBoundedJsonReads
+    ExternalStarterKitCoreToolsUseStreamingStrictUtf8JsonReads = $externalStarterKitCoreToolsUseStreamingStrictUtf8JsonReads
     ExternalStarterKitWritesManifestContractTool = $externalStarterKitWritesManifestContractTool
     ExternalStarterKitManifestContractToolPasses = $externalStarterKitManifestContractToolPasses
     ExternalStarterKitManifestContractRejectsUnknownCapability = $externalStarterKitManifestContractRejectsUnknownCapability
     ExternalStarterKitWritesFirstModTool = $externalStarterKitWritesFirstModTool
     ExternalStarterKitWritesInstallLocalTool = $externalStarterKitWritesInstallLocalTool
     ExternalStarterKitWritesDiagnoseLocalTool = $externalStarterKitWritesDiagnoseLocalTool
+    ExternalStarterKitLocalInstallRequiresExactReviewProof = $externalStarterKitLocalInstallRequiresExactReviewProof
+    ExternalStarterKitDiagnoseLocalRequiresExactReviewProof = $externalStarterKitDiagnoseLocalRequiresExactReviewProof
     ExternalStarterKitDiagnoseLocalUsesRecursiveManifestDiscovery = $externalStarterKitDiagnoseLocalUsesRecursiveManifestDiscovery
     ExternalStarterKitDiagnoseLocalChecksDependencyGraph = $externalStarterKitDiagnoseLocalChecksDependencyGraph
     ExternalStarterKitWritesDependenciesTool = $externalStarterKitWritesDependenciesTool
     ExternalStarterKitDependencyToolMirrorsBothManifests = $externalStarterKitDependencyToolMirrorsBothManifests
+    ExternalStarterKitWritesDoctorTool = $externalStarterKitWritesDoctorTool
+    ExternalStarterKitDoctorToolIsReadOnly = $externalStarterKitDoctorToolIsReadOnly
+    ExternalStarterKitDoctorVerifiesSubmissionZipContents = $externalStarterKitDoctorVerifiesSubmissionZipContents
+    ExternalStarterKitDoctorRejectsUnsafeZipEntries = $externalStarterKitDoctorRejectsUnsafeZipEntries
+    ExternalStarterKitDoctorUsesCaseExactSubmissionZipIntegrity = $externalStarterKitDoctorUsesCaseExactSubmissionZipIntegrity
+    ExternalStarterKitDoctorRejectsReservedTopLevelCaseVariants = $externalStarterKitDoctorRejectsReservedTopLevelCaseVariants
+    ExternalStarterKitDoctorFailsNonReadyExit = $externalStarterKitDoctorFailsNonReadyExit
+    ExternalStarterKitRootLauncherPreservesToolExitCodes = $externalStarterKitRootLauncherPreservesToolExitCodes
+    ExternalStarterKitNestedToolsPreserveChildExitCodes = $externalStarterKitNestedToolsPreserveChildExitCodes
+    ExternalStarterKitReviewManifestRejectsCaseFoldSourceDuplicates = $externalStarterKitReviewManifestRejectsCaseFoldSourceDuplicates
+    ExternalStarterKitValidatorRequiresExactPathCasing = $externalStarterKitValidatorRequiresExactPathCasing
+    ExternalStarterKitRejectsReservedTopLevelCaseVariants = $externalStarterKitRejectsReservedTopLevelCaseVariants
+    ExternalStarterKitReviewManifestUsesExactReservedOutputFolders = $externalStarterKitReviewManifestUsesExactReservedOutputFolders
+    ExternalStarterKitPackageProofRequiresLowercaseSha256 = $externalStarterKitPackageProofRequiresLowercaseSha256
     ExternalStarterKitRootLauncherSupportsAuthoringSnippets = $externalStarterKitRootLauncherSupportsAuthoringSnippets
     ExternalStarterKitRootLauncherSupportsAuthoringSnippetApply = $externalStarterKitRootLauncherSupportsAuthoringSnippetApply
     ExternalStarterKitRootLauncherSupportsAssetEntrySnippet = $externalStarterKitRootLauncherSupportsAssetEntrySnippet
     ExternalStarterKitRootLauncherSupportsAssetEntryApply = $externalStarterKitRootLauncherSupportsAssetEntryApply
     ExternalStarterKitRootLauncherSupportsManifestContract = $externalStarterKitRootLauncherSupportsManifestContract
     ExternalStarterKitRootLauncherSupportsCapabilities = $externalStarterKitRootLauncherSupportsCapabilities
+    ExternalStarterKitRootLauncherUsesStrictCapabilityGuideRead = $externalStarterKitRootLauncherUsesStrictCapabilityGuideRead
+    ExternalStarterKitHubScriptsRequireCheckedInTemplates = $externalStarterKitHubScriptsRequireCheckedInTemplates
+    ExternalStarterKitHubExecutableFallbackBodiesRemoved = $externalStarterKitHubExecutableFallbackBodiesRemoved
     ExternalStarterKitWritesSubmissionPackageTool = $externalStarterKitWritesSubmissionPackageTool
     ExternalStarterKitSubmissionPackagePreservesPreviousOutputUntilSuccess = $externalStarterKitSubmissionPackagePreservesPreviousOutputUntilSuccess
+    ExternalStarterKitSubmissionPackageRefreshesTimestampAfterReplace = $externalStarterKitSubmissionPackageRefreshesTimestampAfterReplace
     ExternalStarterKitSubmissionPackageToolPasses = $externalStarterKitSubmissionPackageToolPasses
     ExternalStarterKitSubmissionPackageIncludesReviewManifest = $externalStarterKitSubmissionPackageIncludesReviewManifest
+    ExternalStarterKitSubmissionPackageUsesCaseExactSourceEntries = $externalStarterKitSubmissionPackageUsesCaseExactSourceEntries
     ExternalStarterKitRootLauncherSupportsSubmissionPackage = $externalStarterKitRootLauncherSupportsSubmissionPackage
     ExternalStarterKitRootLauncherSupportsFirstMod = $externalStarterKitRootLauncherSupportsFirstMod
     ExternalStarterKitRootLauncherSupportsInstallLocal = $externalStarterKitRootLauncherSupportsInstallLocal
     ExternalStarterKitRootLauncherSupportsDiagnoseLocal = $externalStarterKitRootLauncherSupportsDiagnoseLocal
+    ExternalStarterKitRootLauncherSupportsDoctor = $externalStarterKitRootLauncherSupportsDoctor
     ExternalStarterKitRootLauncherSupportsDependencies = $externalStarterKitRootLauncherSupportsDependencies
     ExternalStarterKitIdentityToolValidatesCanonicalId = $externalStarterKitIdentityToolValidatesCanonicalId
     ExternalStarterKitValidatorChecksSemver = $externalStarterKitValidatorChecksSemver
@@ -4918,6 +5611,7 @@ $result = [pscustomobject]@{
     ExternalStarterKitVsCodeTasksSupportLocalInstall = $externalStarterKitVsCodeTasksSupportLocalInstall
     ExternalStarterKitVsCodeTasksSupportLocalDiagnose = $externalStarterKitVsCodeTasksSupportLocalDiagnose
     ExternalStarterKitVsCodeTasksSupportDependencies = $externalStarterKitVsCodeTasksSupportDependencies
+    ExternalStarterKitVsCodeTasksSupportDoctor = $externalStarterKitVsCodeTasksSupportDoctor
     ExternalStarterKitValidatorChecksVsCodeTasks = $externalStarterKitValidatorChecksVsCodeTasks
     ExternalStarterKitValidatorChecksSettingsAndLocaleContracts = $externalStarterKitValidatorChecksSettingsAndLocaleContracts
     ExternalStarterKitValidatorChecksAssetManifestContracts = $externalStarterKitValidatorChecksAssetManifestContracts

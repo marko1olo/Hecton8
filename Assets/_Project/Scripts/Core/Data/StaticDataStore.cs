@@ -583,7 +583,7 @@ namespace Hecton8.Core.Data
                     NativeArrayOptions.ClearMemory);
             }
 
-            return TryResolveBlackBox(out _, out _);
+            return TryReadBlackBox(out _, out _);
         }
 
         private bool EnsureBTreeTelemetry()
@@ -631,25 +631,7 @@ namespace Hecton8.Core.Data
                     NativeArrayOptions.ClearMemory);
             }
 
-            return TryResolveBTreeTelemetry(out _, out _, out _);
-        }
-
-        private bool TryResolveBlackBox(
-            out NativeArray<H8StaticDataTelemetryEntry> ring,
-            out NativeArray<int> cursor)
-        {
-            ring = default;
-            cursor = default;
-            IDataVault vault = _dataVault;
-            return vault != null &&
-                   _blackBoxHandle.BufferID != 0u &&
-                   _blackBoxCursorHandle.BufferID != 0u &&
-                   vault.TryResolveHandle(in _blackBoxHandle, out ring) &&
-                   ring.IsCreated &&
-                   ring.Length >= H8StaticDataFormat.TelemetryFrameCount &&
-                   vault.TryResolveHandle(in _blackBoxCursorHandle, out cursor) &&
-                   cursor.IsCreated &&
-                   cursor.Length >= 1;
+            return TryReadBTreeTelemetry(out _, out _, out _);
         }
 
         private bool TryReadBlackBox(
@@ -668,30 +650,6 @@ namespace Hecton8.Core.Data
                    vault.TryReadOnlyHandle(in _blackBoxCursorHandle, out cursor) &&
                    cursor.IsCreated &&
                    cursor.Length >= 1;
-        }
-
-        private bool TryResolveBTreeTelemetry(
-            out NativeArray<BTreeTelemetryEntry> ring,
-            out NativeArray<int> cursor,
-            out NativeArray<BTreeTelemetryAccumulatorDTO> accumulator)
-        {
-            ring = default;
-            cursor = default;
-            accumulator = default;
-            IDataVault vault = _dataVault;
-            return vault != null &&
-                   _btreeTelemetryHandle.BufferID != 0u &&
-                   _btreeTelemetryCursorHandle.BufferID != 0u &&
-                   _btreeTelemetryAccumulatorHandle.BufferID != 0u &&
-                   vault.TryResolveHandle(in _btreeTelemetryHandle, out ring) &&
-                   ring.IsCreated &&
-                   ring.Length >= H8StaticDataFormat.TelemetryFrameCount &&
-                   vault.TryResolveHandle(in _btreeTelemetryCursorHandle, out cursor) &&
-                   cursor.IsCreated &&
-                   cursor.Length >= 1 &&
-                   vault.TryResolveHandle(in _btreeTelemetryAccumulatorHandle, out accumulator) &&
-                   accumulator.IsCreated &&
-                   accumulator.Length >= 1;
         }
 
         private bool TryReadBTreeTelemetry(

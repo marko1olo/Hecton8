@@ -237,12 +237,6 @@ namespace Hecton8.Graphics.Culling
             IDataVault vault = _dataVault;
             if (vault == null)
             {
-                RebindDataVaultForLifecycle(GlobalRegistry.DataVault, null);
-                vault = _dataVault;
-            }
-
-            if (vault == null)
-            {
                 _resourceRefreshRequested = true;
                 return;
             }
@@ -250,7 +244,7 @@ namespace Hecton8.Graphics.Culling
             if (!_resourceRefreshRequested && _initialized)
                 return;
 
-            _initialized = EnsureInitialized(vault);
+            _initialized = HasInitializedResourcesReady(vault);
             _resourceRefreshRequested = !_initialized;
         }
 
@@ -557,8 +551,6 @@ namespace Hecton8.Graphics.Culling
 
         private IDataVault ResolveVault()
         {
-            if (_dataVault == null)
-                RebindDataVaultForLifecycle(GlobalRegistry.DataVault, null);
             return _dataVault;
         }
 
@@ -567,9 +559,27 @@ namespace Hecton8.Graphics.Culling
             if (!EnsureVaultBuffers(vault))
                 return false;
 
-            EnsureGpuBuffers(math.max(1, _instanceCapacity));
+            EnsureGpuBuffersCold(math.max(1, _instanceCapacity));
             _initialized = true;
             return true;
+        }
+
+        private bool HasInitializedResourcesReady(IDataVault vault)
+        {
+            int instanceCount = math.max(1, _instanceCapacity);
+            return vault != null &&
+                   TryOpenVaultBuffer(vault, ref _instanceHandle, AbyssalShadowBufferIds.Instances, instanceCount, out NativeArray<ShadowCullInstanceDTO> _) &&
+                   TryOpenVaultBuffer(vault, ref _stateHandle, AbyssalShadowBufferIds.States, instanceCount, out NativeArray<ShadowCullStateDTO> _) &&
+                   TryOpenVaultBuffer(vault, ref _illuminationHandle, AbyssalShadowBufferIds.IlluminationScalars, instanceCount, out NativeArray<float> _) &&
+                   TryOpenVaultBuffer(vault, ref _frustumHandle, AbyssalShadowBufferIds.FrustumPlanes, AbyssalShadowCullingConstants.FrustumPlaneCount, out NativeArray<float4> _) &&
+                   TryOpenVaultBuffer(vault, ref _counterHandle, AbyssalShadowBufferIds.Counters, 1, out NativeArray<ShadowCullCountersDTO> _) &&
+                   TryOpenVaultBuffer(vault, ref _telemetryHandle, AbyssalShadowBufferIds.TelemetryRing, AbyssalShadowCullingConstants.TelemetryCapacity, out NativeArray<CullingTelemetryEntry> _) &&
+                   TryOpenVaultBuffer(vault, ref _runtimeHandle, AbyssalShadowBufferIds.RuntimeState, 1, out NativeArray<AbyssalShadowRuntimeStateDTO> _) &&
+                   TryOpenVaultBuffer(vault, ref _profileRuleHandle, AbyssalShadowBufferIds.ProfileRules, AbyssalShadowCullingConstants.ProfileRuleCapacity, out NativeArray<ShadowCullProfileRuleDTO> _) &&
+                   TryOpenVaultBuffer(vault, ref _csvScratchHandle, AbyssalShadowBufferIds.CsvScratch, AbyssalShadowCullingConstants.CsvScratchCapacity, out NativeArray<byte> _) &&
+                   TryOpenVaultBuffer(vault, ref _hzbTileHandle, AbyssalShadowBufferIds.HzbDepthTiles, AbyssalShadowCullingConstants.HzbTileCapacity, out NativeArray<ShadowCullHzbTileDTO> _) &&
+                   TryOpenVaultBuffer(vault, ref _indirectArgsHandle, AbyssalShadowBufferIds.IndirectArgs, 1, out NativeArray<ShadowCullIndirectArgsDTO> _) &&
+                   HasGpuBuffersReady(instanceCount);
         }
 
         private bool EnsureVaultBuffers(IDataVault vault)
@@ -733,6 +743,11 @@ namespace Hecton8.Graphics.Culling
                 return;
 
             RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
+            if (_dataVault != null && isActiveAndEnabled)
+            {
+                _initialized = EnsureInitialized(_dataVault);
+                _resourceRefreshRequested = !_initialized;
+            }
         }
 
         private void RebindDataVaultForLifecycle(IDataVault nextVault, IDataVault releaseVaultFallback)
@@ -798,17 +813,23 @@ namespace Hecton8.Graphics.Culling
             _registeredHotSwapListener = false;
         }
 
-        private void EnsureGpuBuffers(int capacity)
+        private bool HasGpuBuffersReady(int capacity)
         {
             int stride = UnsafeUtility.SizeOf<ShadowCullStateDTO>();
             int argsStride = UnsafeUtility.SizeOf<ShadowCullIndirectArgsDTO>();
-            if (_stateUploadBufferA != null && _stateUploadBufferA.count >= capacity && _stateUploadBufferA.stride == stride &&
-                _stateUploadBufferB != null && _stateUploadBufferB.count >= capacity && _stateUploadBufferB.stride == stride &&
-                _indirectArgsBufferA != null && _indirectArgsBufferA.count >= 1 && _indirectArgsBufferA.stride == argsStride &&
-                _indirectArgsBufferB != null && _indirectArgsBufferB.count >= 1 && _indirectArgsBufferB.stride == argsStride)
-            {
+            return _stateUploadBufferA != null && _stateUploadBufferA.count >= capacity && _stateUploadBufferA.stride == stride &&
+                   _stateUploadBufferB != null && _stateUploadBufferB.count >= capacity && _stateUploadBufferB.stride == stride &&
+                   _indirectArgsBufferA != null && _indirectArgsBufferA.count >= 1 && _indirectArgsBufferA.stride == argsStride &&
+                   _indirectArgsBufferB != null && _indirectArgsBufferB.count >= 1 && _indirectArgsBufferB.stride == argsStride;
+        }
+
+        private void EnsureGpuBuffersCold(int capacity)
+        {
+            if (HasGpuBuffersReady(capacity))
                 return;
-            }
+
+            int stride = UnsafeUtility.SizeOf<ShadowCullStateDTO>();
+            int argsStride = UnsafeUtility.SizeOf<ShadowCullIndirectArgsDTO>();
 
             ReleaseGpuBuffers();
             _stateUploadBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, capacity, stride);
@@ -1075,7 +1096,12 @@ namespace Hecton8.Graphics.Culling
                 count <= 0)
                 return 0u;
 
-            EnsureGpuBuffers(count);
+            if (!HasGpuBuffersReady(count))
+            {
+                _resourceRefreshRequested = true;
+                return 0u;
+            }
+
             bool writeBufferA = _uploadBufferFlip;
             GraphicsBuffer target = writeBufferA ? _stateUploadBufferA : _stateUploadBufferB;
             GraphicsBuffer indirectTarget = writeBufferA ? _indirectArgsBufferA : _indirectArgsBufferB;

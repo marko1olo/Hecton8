@@ -101,6 +101,7 @@ Do not fake segregation by creating one giant `RuntimeSignal` with a switch. Tha
 
 [RULE] Every lane has a max events per frame.
 [RULE] Overflow policy is deterministic: drop newest, drop oldest, coalesce by entity id, or fail-fast. Pick one and document it.
+[RULE] Gameplay-truth lanes must declare deterministic application order before mutating authority state: tick/order key, entity id, owner sequence, or explicit coalescing rule.
 [RULE] Backpressure state is visible to telemetry.
 
 Default:
@@ -168,6 +169,7 @@ that same consumer.
 ## 8. Legacy GlobalSignals Migration
 
 [RULE] `GlobalSignals` direct `NativeQueue<T>` surfaces are legacy or bridge infrastructure unless a current owner contract says otherwise.
+[FORBID] New first-party gameplay `NativeQueue<T>` or direct `GlobalSignals` queues unless documented as bridge lanes with route-card `GREEN` review.
 [RULE] New gameplay traffic must prefer `SignalBus<T>.Push/TryPush` with frame snapshot consumption.
 [RULE] Every retained direct queue must have an owner, drain phase, max frame budget, overflow policy, and telemetry counter.
 [RULE] New lanes follow `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_SETUP_PLAYBOOK.md`: owner-local first, owner interface second, SignalBus only for real fan-out or phase crossing.

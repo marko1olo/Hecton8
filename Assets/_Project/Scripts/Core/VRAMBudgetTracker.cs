@@ -17,6 +17,7 @@ namespace Hecton8.Core
         private static readonly long[] _payloadBytes = new long[RegistryCapacity];
 
         private static long _estimatedBytes;
+        private static int _registryGate;
         private static int _warningIssued;
 
         /// <summary>
@@ -39,6 +40,7 @@ namespace Hecton8.Core
             }
 
             Interlocked.Exchange(ref _estimatedBytes, 0L);
+            Volatile.Write(ref _registryGate, 0);
             Volatile.Write(ref _warningIssued, 0);
         }
 
@@ -53,28 +55,44 @@ namespace Hecton8.Core
                 return false;
 
             long safeBytes = bytes > 0L ? bytes : 0L;
-            for (int i = 0; i < RegistryCapacity; i++)
+            if (!TryEnterRegistryGate())
+                return false;
+
+            long total = 0L;
+            bool updated = false;
+            try
             {
-                uint hash = _ownerHashes[i];
-                if (hash == ownerHash)
+                for (int i = 0; i < RegistryCapacity; i++)
                 {
-                    long previousBytes = _payloadBytes[i];
+                    uint hash = _ownerHashes[i];
+                    if (hash == ownerHash)
+                    {
+                        long previousBytes = _payloadBytes[i];
+                        _payloadBytes[i] = safeBytes;
+                        total = Interlocked.Add(ref _estimatedBytes, safeBytes - previousBytes);
+                        updated = true;
+                        break;
+                    }
+
+                    if (hash != 0u)
+                        continue;
+
+                    _ownerHashes[i] = ownerHash;
                     _payloadBytes[i] = safeBytes;
-                    long total = Interlocked.Add(ref _estimatedBytes, safeBytes - previousBytes);
-                    CheckWarning(total);
-                    return true;
+                    total = Interlocked.Add(ref _estimatedBytes, safeBytes);
+                    updated = true;
+                    break;
                 }
-
-                if (hash != 0u)
-                    continue;
-
-                _ownerHashes[i] = ownerHash;
-                _payloadBytes[i] = safeBytes;
-                CheckWarning(Interlocked.Add(ref _estimatedBytes, safeBytes));
-                return true;
+            }
+            finally
+            {
+                ExitRegistryGate();
             }
 
-            return false;
+            if (updated)
+                CheckWarning(total);
+
+            return updated;
         }
 
         /// <summary>
@@ -86,22 +104,54 @@ namespace Hecton8.Core
             if (ownerHash == 0u)
                 return false;
 
-            for (int i = 0; i < RegistryCapacity; i++)
+            if (!TryEnterRegistryGate())
+                return false;
+
+            long total = 0L;
+            bool removed = false;
+            try
             {
-                if (_ownerHashes[i] != ownerHash)
-                    continue;
+                for (int i = 0; i < RegistryCapacity; i++)
+                {
+                    if (_ownerHashes[i] != ownerHash)
+                        continue;
 
-                long previousBytes = _payloadBytes[i];
-                _ownerHashes[i] = 0u;
-                _payloadBytes[i] = 0L;
-                long total = Interlocked.Add(ref _estimatedBytes, -previousBytes);
-                if (total < ResolveWarningThresholdBytes())
-                    Volatile.Write(ref _warningIssued, 0);
+                    long previousBytes = _payloadBytes[i];
+                    _ownerHashes[i] = 0u;
+                    _payloadBytes[i] = 0L;
+                    total = Interlocked.Add(ref _estimatedBytes, -previousBytes);
+                    removed = true;
+                    break;
+                }
+            }
+            finally
+            {
+                ExitRegistryGate();
+            }
 
-                return true;
+            if (removed && total < ResolveWarningThresholdBytes())
+                Volatile.Write(ref _warningIssued, 0);
+
+            return removed;
+        }
+
+        private static bool TryEnterRegistryGate()
+        {
+            for (int spin = 0; spin < 64; spin++)
+            {
+                if (Interlocked.CompareExchange(ref _registryGate, 1, 0) == 0)
+                    return true;
+
+                int wait = spin < 6 ? 1 << spin : 64;
+                Thread.SpinWait(wait);
             }
 
             return false;
+        }
+
+        private static void ExitRegistryGate()
+        {
+            Volatile.Write(ref _registryGate, 0);
         }
 
         private static void CheckWarning(long totalBytes)

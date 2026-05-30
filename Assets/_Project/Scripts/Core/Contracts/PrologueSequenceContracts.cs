@@ -149,6 +149,8 @@ namespace Hecton8.Core.Contracts
     {
         bool IsDevelopmentBuild { get; }
         float SurvivalProxyPressure01 { get; }
+        bool IsSurvivalProxySurfaceActive { get; }
+        [Obsolete("Use SurvivalProxyPressure01 or IsSurvivalProxySurfaceActive. This member is a compatibility alias.")]
         bool IsLowTier { get; }
         bool IsStandaloneOrbitHandoffProxyAllowed { get; }
         uint CurrentFrame { get; }

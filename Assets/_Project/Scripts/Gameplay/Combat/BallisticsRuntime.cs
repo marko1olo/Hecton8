@@ -256,6 +256,7 @@ namespace Hecton8.Gameplay
 #endif
 
         private static JobHandle _activeHandle;
+        private static IDataVault _activeJobMutationGuardVault;
         private static int _pendingTrajectoryCount;
         private static int _primitiveCount;
         private static int _writeTrajectoryBufferIndex;
@@ -505,7 +506,7 @@ namespace Hecton8.Gameplay
             if (_jobScheduled || !IsFinite(center) || !IsFinite(halfExtents))
                 return false;
 
-            if (!_vault.TryAcquireMutationGuard(MutationGuardBit))
+            if (!TryAcquireBallisticsMutationGuard(out IDataVault guardVault))
                 return false;
 
             try
@@ -571,7 +572,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                _vault.ReleaseMutationGuard(MutationGuardBit);
+                ReleaseBallisticsMutationGuard(guardVault);
             }
         }
 
@@ -607,7 +608,7 @@ namespace Hecton8.Gameplay
             if (targetEntityId == 0u || !EnsureInitialized() || _jobScheduled)
                 return false;
 
-            if (!_vault.TryAcquireMutationGuard(MutationGuardBit))
+            if (!TryAcquireBallisticsMutationGuard(out IDataVault guardVault))
                 return false;
 
             try
@@ -633,7 +634,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                _vault.ReleaseMutationGuard(MutationGuardBit);
+                ReleaseBallisticsMutationGuard(guardVault);
             }
         }
 
@@ -649,6 +650,12 @@ namespace Hecton8.Gameplay
                 if (_jobScheduled || _pendingTrajectoryCount <= 0 || _primitiveCount <= 0)
                     return;
 
+                if (!TryAcquireBallisticsMutationGuard(out IDataVault guardVault))
+                    return;
+
+                bool guardTransferred = false;
+                try
+                {
                 float quality = ResolveGlobalQualityWeight();
                 BallisticsTuningDTO tuning = ResolveTuning(quality);
                 NativeArray<BallisticTrajectoryDTO> solverTrajectories = ResolveWriteTrajectories();
@@ -684,7 +691,7 @@ namespace Hecton8.Gameplay
                 if (trajectoryCount <= 0)
                     return;
 
-                if (_vault == null || _vault.IsCompactionFenceActive)
+                if (!ReferenceEquals(_vault, guardVault) || guardVault.IsCompactionFenceActive)
                     return;
 
                 _activeReadCount = trajectoryCount;
@@ -752,9 +759,17 @@ namespace Hecton8.Gameplay
 
                 _activeScheduleTicks = System.Diagnostics.Stopwatch.GetTimestamp();
                 _activeHandle = handle;
+                _activeJobMutationGuardVault = guardVault;
+                guardTransferred = true;
                 _jobScheduled = true;
                 H8Memory.RegisterActiveJob(OwnerSystem, _activeHandle);
                 JobHandle.ScheduleBatchedJobs();
+                }
+                finally
+                {
+                    if (!guardTransferred)
+                        ReleaseBallisticsMutationGuard(guardVault);
+                }
             }
         }
 
@@ -802,7 +817,7 @@ namespace Hecton8.Gameplay
             if (!EnsureInitialized() || _jobScheduled)
                 return false;
 
-            if (!_vault.TryAcquireMutationGuard(MutationGuardBit))
+            if (!TryAcquireBallisticsMutationGuard(out IDataVault guardVault))
                 return false;
 
             try
@@ -818,7 +833,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                _vault.ReleaseMutationGuard(MutationGuardBit);
+                ReleaseBallisticsMutationGuard(guardVault);
             }
         }
 
@@ -828,7 +843,7 @@ namespace Hecton8.Gameplay
             if (!EnsureInitialized() || _jobScheduled)
                 return false;
 
-            if (!_vault.TryAcquireMutationGuard(MutationGuardBit))
+            if (!TryAcquireBallisticsMutationGuard(out IDataVault guardVault))
                 return false;
 
             try
@@ -873,7 +888,7 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                _vault.ReleaseMutationGuard(MutationGuardBit);
+                ReleaseBallisticsMutationGuard(guardVault);
             }
         }
 
@@ -885,9 +900,10 @@ namespace Hecton8.Gameplay
                 return false;
 
             bool mutationGuarded = false;
+            IDataVault guardVault = null;
             try
             {
-                mutationGuarded = _vault.TryAcquireMutationGuard(MutationGuardBit);
+                mutationGuarded = TryAcquireBallisticsMutationGuard(out guardVault);
                 if (!mutationGuarded)
                     return false;
 
@@ -937,7 +953,7 @@ namespace Hecton8.Gameplay
             finally
             {
                 if (mutationGuarded)
-                    _vault.ReleaseMutationGuard(MutationGuardBit);
+                    ReleaseBallisticsMutationGuard(guardVault);
             }
         }
 
@@ -1168,6 +1184,25 @@ namespace Hecton8.Gameplay
             return _initialized && _vault != null && AreVaultLanesBound();
         }
 
+        private static bool TryAcquireBallisticsMutationGuard(out IDataVault guardVault)
+        {
+            guardVault = _vault;
+            return guardVault != null && guardVault.TryAcquireMutationGuard(MutationGuardBit);
+        }
+
+        private static void ReleaseBallisticsMutationGuard(IDataVault guardVault)
+        {
+            guardVault?.ReleaseMutationGuard(MutationGuardBit);
+        }
+
+        private static void ReleaseActiveJobMutationGuard()
+        {
+            IDataVault guardVault = _activeJobMutationGuardVault;
+            if (guardVault != null)
+                guardVault.ReleaseMutationGuard(MutationGuardBit);
+            _activeJobMutationGuardVault = null;
+        }
+
         private static void CompleteScheduledForTeardown()
         {
             if (!_jobScheduled)
@@ -1186,7 +1221,14 @@ namespace Hecton8.Gameplay
                 (System.Diagnostics.Stopwatch.GetTimestamp() - _activeScheduleTicks) *
                 1000000.0d /
                 System.Diagnostics.Stopwatch.Frequency;
-            RecordCompletedTelemetry(elapsedUs);
+            try
+            {
+                RecordCompletedTelemetry(elapsedUs);
+            }
+            finally
+            {
+                ReleaseActiveJobMutationGuard();
+            }
         }
 
         private static void RecordCompletedTelemetry(double elapsedUs)
@@ -1321,6 +1363,7 @@ namespace Hecton8.Gameplay
         private static void ResetTransientState()
         {
             _activeHandle = default;
+            _activeJobMutationGuardVault = null;
             _pendingTrajectoryCount = 0;
             _primitiveCount = 0;
             _writeTrajectoryBufferIndex = 0;

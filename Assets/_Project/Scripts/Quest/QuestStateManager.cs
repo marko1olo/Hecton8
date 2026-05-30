@@ -52,8 +52,6 @@ namespace Hecton8.Quest
         private readonly QuestTransitionAuditEntry[] _transitionAuditRing = new QuestTransitionAuditEntry[QuestTransitionAuditCapacity]; // COLD ALLOC: QuestTransitionAuditEntry[128] - fixed dev transition ring, no file I/O in signal drain - owner: QuestStateManager
 
         private NativeArray<uint> _globalPrerequisites;
-        private NativeArray<uint> _checksumResult;
-        private NativeArray<byte> _revertMutationResult;
         private NativeArray<QuestNodeDescriptor> _nodes;
         private NativeArray<QuestPrerequisiteDescriptor> _prerequisites;
         private NativeList<int> _activatedQuestIndices;
@@ -157,18 +155,6 @@ namespace Hecton8.Quest
                 _globalPrerequisites.Dispose();
             }
 
-            if (_checksumResult.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_checksumResult);
-                _checksumResult.Dispose();
-            }
-
-            if (_revertMutationResult.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_revertMutationResult);
-                _revertMutationResult.Dispose();
-            }
-
             _runtimeResults.Clear();
             _bitAddressByHash = null;
             _questIndexByHash = null;
@@ -206,11 +192,7 @@ namespace Hecton8.Quest
             _authoredQuestCount = allQuests != null ? allQuests.Length : 0;
             int questArrayLength = _authoredQuestCount + ProceduralQuestCapacity;
             _globalPrerequisites = new NativeArray<uint>(WordCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _checksumResult = new NativeArray<uint>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[1] - Burst checksum result slot - owner: QuestStateManager
-            _revertMutationResult = new NativeArray<byte>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[1] - Burst revert mutation result slot - owner: QuestStateManager
             RegisterTrackedNativeArray(_globalPrerequisites, nameof(_globalPrerequisites));
-            RegisterTrackedNativeArray(_checksumResult, nameof(_checksumResult));
-            RegisterTrackedNativeArray(_revertMutationResult, nameof(_revertMutationResult));
             _bitAddressByHash = new Dictionary<uint, QuestBitAddress>(Math.Max(questArrayLength * 6, 16)); // COLD ALLOC: Dictionary<uint,QuestBitAddress>[questArrayLength*6] - compiled flag lookup - owner: QuestStateManager
             _questIndexByHash = new Dictionary<uint, int>(Math.Max(questArrayLength, 16)); // COLD ALLOC: Dictionary<uint,int>[questArrayLength] - quest hash to source index mapping - owner: QuestStateManager
             _revertDescriptorIndexByItemHash = new Dictionary<uint, int>(Math.Max(questArrayLength, 8)); // COLD ALLOC: Dictionary<uint,int>[questArrayLength] - critical item revert lookup - owner: QuestStateManager
@@ -851,29 +833,24 @@ namespace Hecton8.Quest
             if (!_bitAddressByHash.TryGetValue(descriptor.EntityDestroyFlagId, out QuestBitAddress entityDestroyAddress) ||
                 !_bitAddressByHash.TryGetValue(descriptor.DeadlockFlagId, out QuestBitAddress deadlockAddress) ||
                 !_bitAddressByHash.TryGetValue(descriptor.CompletedFlagId, out QuestBitAddress completedAddress) ||
-                !_bitAddressByHash.TryGetValue(descriptor.ActiveFlagId, out QuestBitAddress activeAddress) ||
-                !_revertMutationResult.IsCreated)
+                !_bitAddressByHash.TryGetValue(descriptor.ActiveFlagId, out QuestBitAddress activeAddress))
             {
                 return false;
             }
 
-            _revertMutationResult[0] = 0;
-            ApplyQuestRevertMutationJob revertJob = new ApplyQuestRevertMutationJob
+            if (!ApplyQuestRevertMutation(
+                    _globalPrerequisites,
+                    entityDestroyAddress.WordIndex,
+                    entityDestroyAddress.BitMask,
+                    deadlockAddress.WordIndex,
+                    deadlockAddress.BitMask,
+                    completedAddress.WordIndex,
+                    completedAddress.BitMask,
+                    activeAddress.WordIndex,
+                    activeAddress.BitMask))
             {
-                GlobalPrerequisites = _globalPrerequisites,
-                Result = _revertMutationResult,
-                EntityDestroyWordIndex = entityDestroyAddress.WordIndex,
-                EntityDestroyMask = entityDestroyAddress.BitMask,
-                DeadlockWordIndex = deadlockAddress.WordIndex,
-                DeadlockMask = deadlockAddress.BitMask,
-                CompletedWordIndex = completedAddress.WordIndex,
-                CompletedMask = completedAddress.BitMask,
-                ActiveWordIndex = activeAddress.WordIndex,
-                ActiveMask = activeAddress.BitMask
-            };
-            revertJob.Execute();
-            if (_revertMutationResult[0] == 0)
                 return false;
+            }
 
             QuestSignalPayload payload = new QuestSignalPayload
             {
@@ -1658,13 +1635,7 @@ namespace Hecton8.Quest
                 return;
             }
 
-            ComputePackedStateChecksumJob checksumJob = new ComputePackedStateChecksumJob
-            {
-                GlobalPrerequisites = _globalPrerequisites,
-                Result = _checksumResult
-            };
-            checksumJob.Execute();
-            _stateChecksum = _checksumResult[0];
+            _stateChecksum = ComputePackedStateChecksum(_globalPrerequisites);
         }
 
         private static uint ResolveCriticalItemHash(QuestData questData)
@@ -1933,74 +1904,60 @@ namespace Hecton8.Quest
             };
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct ComputePackedStateChecksumJob : IJob
+        private static uint ComputePackedStateChecksum(NativeArray<uint> globalPrerequisites)
         {
-            [ReadOnly] public NativeArray<uint> GlobalPrerequisites;
-            [WriteOnly] public NativeArray<uint> Result;
-
-            public void Execute()
+            unchecked
             {
-                unchecked
+                uint hash = Hecton.Localization.LocHash.FnvOffsetBasis;
+                for (int i = 0; i < globalPrerequisites.Length; i++)
                 {
-                    uint hash = Hecton.Localization.LocHash.FnvOffsetBasis;
-                    for (int i = 0; i < GlobalPrerequisites.Length; i++)
-                    {
-                        uint word = GlobalPrerequisites[i];
-                        hash ^= word & 0xFFu;
-                        hash *= Hecton.Localization.LocHash.FnvPrime;
-                        hash ^= (word >> 8) & 0xFFu;
-                        hash *= Hecton.Localization.LocHash.FnvPrime;
-                        hash ^= (word >> 16) & 0xFFu;
-                        hash *= Hecton.Localization.LocHash.FnvPrime;
-                        hash ^= (word >> 24) & 0xFFu;
-                        hash *= Hecton.Localization.LocHash.FnvPrime;
-                    }
-
-                    Result[0] = hash;
+                    uint word = globalPrerequisites[i];
+                    hash ^= word & 0xFFu;
+                    hash *= Hecton.Localization.LocHash.FnvPrime;
+                    hash ^= (word >> 8) & 0xFFu;
+                    hash *= Hecton.Localization.LocHash.FnvPrime;
+                    hash ^= (word >> 16) & 0xFFu;
+                    hash *= Hecton.Localization.LocHash.FnvPrime;
+                    hash ^= (word >> 24) & 0xFFu;
+                    hash *= Hecton.Localization.LocHash.FnvPrime;
                 }
+
+                return hash;
             }
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct ApplyQuestRevertMutationJob : IJob
+        private static bool ApplyQuestRevertMutation(
+            NativeArray<uint> globalPrerequisites,
+            int entityDestroyWordIndex,
+            uint entityDestroyMask,
+            int deadlockWordIndex,
+            uint deadlockMask,
+            int completedWordIndex,
+            uint completedMask,
+            int activeWordIndex,
+            uint activeMask)
         {
-            public NativeArray<uint> GlobalPrerequisites;
-            public NativeArray<byte> Result;
-            public int EntityDestroyWordIndex;
-            public uint EntityDestroyMask;
-            public int DeadlockWordIndex;
-            public uint DeadlockMask;
-            public int CompletedWordIndex;
-            public uint CompletedMask;
-            public int ActiveWordIndex;
-            public uint ActiveMask;
-
-            public void Execute()
+            if (!IsValidQuestWord(globalPrerequisites, completedWordIndex) ||
+                !IsValidQuestWord(globalPrerequisites, entityDestroyWordIndex) ||
+                !IsValidQuestWord(globalPrerequisites, deadlockWordIndex) ||
+                !IsValidQuestWord(globalPrerequisites, activeWordIndex))
             {
-                if (!IsValidWord(CompletedWordIndex) ||
-                    !IsValidWord(EntityDestroyWordIndex) ||
-                    !IsValidWord(DeadlockWordIndex) ||
-                    !IsValidWord(ActiveWordIndex) ||
-                    Result.Length <= 0)
-                {
-                    return;
-                }
-
-                if ((GlobalPrerequisites[CompletedWordIndex] & CompletedMask) != CompletedMask)
-                    return;
-
-                GlobalPrerequisites[EntityDestroyWordIndex] |= EntityDestroyMask;
-                GlobalPrerequisites[DeadlockWordIndex] |= DeadlockMask;
-                GlobalPrerequisites[CompletedWordIndex] &= ~CompletedMask;
-                GlobalPrerequisites[ActiveWordIndex] |= ActiveMask;
-                Result[0] = 1;
+                return false;
             }
 
-            private bool IsValidWord(int wordIndex)
-            {
-                return wordIndex >= 0 && wordIndex < GlobalPrerequisites.Length;
-            }
+            if ((globalPrerequisites[completedWordIndex] & completedMask) != completedMask)
+                return false;
+
+            globalPrerequisites[entityDestroyWordIndex] |= entityDestroyMask;
+            globalPrerequisites[deadlockWordIndex] |= deadlockMask;
+            globalPrerequisites[completedWordIndex] &= ~completedMask;
+            globalPrerequisites[activeWordIndex] |= activeMask;
+            return true;
+        }
+
+        private static bool IsValidQuestWord(NativeArray<uint> globalPrerequisites, int wordIndex)
+        {
+            return wordIndex >= 0 && wordIndex < globalPrerequisites.Length;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

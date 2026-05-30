@@ -330,14 +330,10 @@ namespace Hecton8.Physics
                     1,
                     SystemID.Physics,
                     NativeArrayOptions.UninitializedMemory);
-                if (!vault.TryResolveHandle(in bootstrapHandle, out bootstrap) ||
-                    !bootstrap.IsCreated ||
-                    bootstrap.Length <= 0)
+                if (!TryInitializeBootstrapState(vault, in bootstrapHandle, out bootstrap))
                 {
                     return;
                 }
-
-                bootstrap[0] = 0;
             }
 
             if (IsMockBootstrapValid(vault, bootstrap))
@@ -381,9 +377,11 @@ namespace Hecton8.Physics
                     nodes,
                     previousNodes,
                     constraints,
-                    bootstrap,
                     frameIndex,
                     globalQualityWeight);
+
+                if (!TryPublishBootstrapMagic(vault))
+                    return;
             }
             finally
             {
@@ -1148,7 +1146,6 @@ namespace Hecton8.Physics
             NativeArray<float3> nodes,
             NativeArray<float3> previousNodes,
             NativeArray<TetherConstraintDTO> constraints,
-            NativeArray<int> bootstrap,
             uint frameIndex,
             float globalQualityWeight)
         {
@@ -1217,8 +1214,61 @@ namespace Hecton8.Physics
                 }
             }
 
-            if (bootstrap.IsCreated && bootstrap.Length > 0)
+        }
+
+        private static bool TryInitializeBootstrapState(
+            IDataVault vault,
+            in VaultGenerationHandle<int> bootstrapHandle,
+            out NativeArray<int> bootstrap)
+        {
+            bootstrap = default;
+            if (vault == null ||
+                bootstrapHandle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in bootstrapHandle, SystemID.Physics, out NativeArray<int> writableBootstrap))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!writableBootstrap.IsCreated || writableBootstrap.Length <= 0)
+                    return false;
+
+                writableBootstrap[0] = 0;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in bootstrapHandle, SystemID.Physics);
+            }
+
+            return vault.TryResolveHandle(in bootstrapHandle, out bootstrap) &&
+                   bootstrap.IsCreated &&
+                   bootstrap.Length > 0;
+        }
+
+        private static bool TryPublishBootstrapMagic(IDataVault vault)
+        {
+            if (vault == null ||
+                !vault.TryGetGenerationHandle<int>(
+                    HarpoonTensionSolver328BufferIds.BootstrapState,
+                    out VaultGenerationHandle<int> bootstrapHandle) ||
+                !vault.TryAcquireWriteLock(in bootstrapHandle, SystemID.Physics, out NativeArray<int> bootstrap))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!bootstrap.IsCreated || bootstrap.Length <= 0)
+                    return false;
+
                 bootstrap[0] = HarpoonTensionSolver328Constants.BootstrapMagic;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in bootstrapHandle, SystemID.Physics);
+            }
         }
 
         private static TetherMaterialProfileDTO DefaultProfile(uint index)

@@ -8,6 +8,11 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'strict_json_io.ps1')
+
+$MaxSnippetJsonBytes = 65536
+$MaxAssetManifestJsonBytes = 262144
+$MaxManifestJsonBytes = 65536
 
 function Fail([string]$Message) {
     Write-Error ('[H8MOD_ASSET_APPLY] ' + $Message)
@@ -79,20 +84,28 @@ function Get-AllowedExtensions([string]$KindValue) {
     }
 }
 
-function Resolve-StarterRelativePath([string]$RelativePath, [string]$RequiredPrefix, [string]$Label) {
+function Resolve-StarterRelativePath([string]$RelativePath, [string]$RequiredPrefix, [string]$Label, [bool]$RequireJson = $true) {
     if ([string]::IsNullOrWhiteSpace($RelativePath)) {
         Fail ($Label + ' is required.')
     }
 
-    $normalized = $RelativePath.Replace('\','/').Trim()
-    if ([System.IO.Path]::IsPathRooted($normalized)) {
+    $normalized = $RelativePath.Replace('\','/')
+    if ($normalized.Trim() -cne $normalized) {
+        Fail ($Label + ' must not contain leading or trailing whitespace.')
+    }
+    if ([System.IO.Path]::IsPathRooted($normalized) -or $normalized.StartsWith('/') -or $normalized.Contains(':')) {
         Fail ($Label + ' must be a starter-relative path.')
     }
-    if ($normalized.StartsWith('../') -or $normalized.Contains('/../') -or $normalized.Contains('..')) {
-        Fail ($Label + ' must not contain .. segments.')
+    foreach ($segment in ($normalized -split '/')) {
+        if ([string]::IsNullOrWhiteSpace($segment) -or $segment -eq '.' -or $segment -eq '..') {
+            Fail ($Label + ' must not contain empty, dot, or dot-dot path segments.')
+        }
     }
     if (-not $normalized.StartsWith($RequiredPrefix, [System.StringComparison]::Ordinal)) {
         Fail ($Label + ' must stay under ' + $RequiredPrefix)
+    }
+    if ($RequireJson -and -not $normalized.EndsWith('.json', [System.StringComparison]::Ordinal)) {
+        Fail ($Label + ' must end with .json.')
     }
 
     return [pscustomobject][ordered]@{
@@ -102,7 +115,7 @@ function Resolve-StarterRelativePath([string]$RelativePath, [string]$RequiredPre
 }
 
 function Resolve-AssetPath([string]$RelativePath, [string]$KindValue) {
-    $resolved = Resolve-StarterRelativePath $RelativePath 'Content/Assets/' 'Asset Path'
+    $resolved = Resolve-StarterRelativePath $RelativePath 'Content/Assets/' 'Asset Path' $false
     $extension = [System.IO.Path]::GetExtension($resolved.Relative).ToLowerInvariant()
     if ((Get-AllowedExtensions $KindValue) -notcontains $extension) {
         Fail ('Asset Path extension is not allowed for ' + $KindValue + ': ' + $extension)
@@ -110,15 +123,11 @@ function Resolve-AssetPath([string]$RelativePath, [string]$KindValue) {
     return $resolved
 }
 
-function Read-JsonFile([string]$Path, [string]$Label) {
-    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-        Fail ($Label + ' is missing: ' + $Path)
-    }
-
+function Read-JsonFile([string]$Path, [string]$Label, [long]$MaxBytes) {
     try {
-        return Get-Content -Raw -LiteralPath $Path | ConvertFrom-Json
+        return Read-H8JsonFileCapped $Path $Label $MaxBytes
     } catch {
-        Fail ($Label + ' is invalid JSON: ' + $_.Exception.Message)
+        Fail $_.Exception.Message
     }
 }
 
@@ -267,7 +276,7 @@ function Write-JsonFile([string]$Path, [object]$Value) {
     $utf8NoBom = New-Object System.Text.UTF8Encoding $false
     $jsonText = ($Value | ConvertTo-Json -Depth 32)
     [System.IO.File]::WriteAllText($Path, ($jsonText + [System.Environment]::NewLine), $utf8NoBom)
-    [void](Get-Content -Raw -LiteralPath $Path | ConvertFrom-Json)
+    [void](Read-H8JsonFileCapped $Path 'Written JSON' 4194304)
 }
 
 $Root = (Resolve-Path -LiteralPath $Root).Path
@@ -281,10 +290,10 @@ if ($manifestPath.Relative -ne 'mod.h8manifest.json') {
     Fail 'Manifest must be mod.h8manifest.json for this tool.'
 }
 
-$snippetDocument = Read-JsonFile $snippetPath.Full 'Asset entry snippet'
+$snippetDocument = Read-JsonFile $snippetPath.Full 'Asset entry snippet' $MaxSnippetJsonBytes
 $newAsset = Build-CleanAssetEntry (Get-SnippetAsset $snippetDocument)
-$assetManifest = Read-JsonFile $targetPath.Full 'Asset manifest'
-$authoring = Read-JsonFile $manifestPath.Full 'Authoring manifest'
+$assetManifest = Read-JsonFile $targetPath.Full 'Asset manifest' $MaxAssetManifestJsonBytes
+$authoring = Read-JsonFile $manifestPath.Full 'Authoring manifest' $MaxManifestJsonBytes
 Validate-AssetManifestDocument $assetManifest
 
 $sourceAssets = @($assetManifest.Assets)

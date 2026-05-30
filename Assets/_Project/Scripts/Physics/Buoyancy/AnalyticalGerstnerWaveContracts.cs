@@ -303,6 +303,35 @@ namespace Hecton8.Physics
             return rowsWritten > 0;
         }
 
+        public static bool TryApply(ReadOnlySpan<byte> csv, Span<WaveSpectrumProfileDTO> output, out int rowsWritten)
+        {
+            rowsWritten = 0;
+            if (csv.Length <= 0 || output.Length <= 0)
+                return false;
+
+            for (int i = 0; i < output.Length; i++)
+                output[i] = default;
+
+            int cursor = 0;
+            while (cursor < csv.Length && rowsWritten < output.Length)
+            {
+                int lineStart = cursor;
+                while (cursor < csv.Length && csv[cursor] != LineFeed)
+                    cursor++;
+
+                int lineEnd = cursor;
+                if (cursor < csv.Length)
+                    cursor++;
+                if (lineEnd > lineStart && csv[lineEnd - 1] == CarriageReturn)
+                    lineEnd--;
+
+                if (TryParseLine(csv.Slice(lineStart, lineEnd - lineStart), out WaveSpectrumProfileDTO row))
+                    output[rowsWritten++] = row;
+            }
+
+            return rowsWritten > 0;
+        }
+
         private static bool TryParseLine(ReadOnlySpan<byte> line, out WaveSpectrumProfileDTO row)
         {
             row = default;

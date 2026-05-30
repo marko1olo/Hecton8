@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using Hecton8.Core.Contracts;
 using Unity.Mathematics;
 using UnityEngine;
@@ -123,8 +124,8 @@ namespace Hecton8.Core
             _frameTimeTrendMs = DefaultTargetFrameTimeMs;
             _sustainedFramePressureSamples = 0;
             _hasFrameTimeSample = false;
-            _hardwareThermalService = null;
-            _dynamicResolutionRuntime = null;
+            Volatile.Write(ref _hardwareThermalService, null);
+            Volatile.Write(ref _dynamicResolutionRuntime, null);
             s_tickable.Reset();
         }
 
@@ -213,7 +214,7 @@ namespace Hecton8.Core
 
         private static bool IsCriticalBattery()
         {
-            IHardwareThermalService hardware = _hardwareThermalService;
+            IHardwareThermalService hardware = Volatile.Read(ref _hardwareThermalService);
             if (hardware == null)
                 return false;
 
@@ -222,7 +223,7 @@ namespace Hecton8.Core
 
         private static bool IsThermalThrottling(out bool critical)
         {
-            IHardwareThermalService hardware = _hardwareThermalService;
+            IHardwareThermalService hardware = Volatile.Read(ref _hardwareThermalService);
             if (hardware == null)
             {
                 critical = false;
@@ -236,7 +237,7 @@ namespace Hecton8.Core
 
         private static float ResolveThermalPressure01()
         {
-            IHardwareThermalService hardware = _hardwareThermalService;
+            IHardwareThermalService hardware = Volatile.Read(ref _hardwareThermalService);
             if (hardware == null)
                 return 0f;
 
@@ -311,7 +312,10 @@ namespace Hecton8.Core
             if ((flags & (uint)PlatformAdaptivePressureFlags.VramNearBudget) != 0u)
                 pressure = math.max(pressure, ResolveVramPressure01());
             if ((flags & (uint)PlatformAdaptivePressureFlags.CriticalBattery) != 0u)
-                pressure = math.max(pressure, PlatformBatteryWatchdog.ResolveCriticalBatteryPressure01(_hardwareThermalService));
+            {
+                IHardwareThermalService hardware = Volatile.Read(ref _hardwareThermalService);
+                pressure = math.max(pressure, PlatformBatteryWatchdog.ResolveCriticalBatteryPressure01(hardware));
+            }
             if ((flags & (uint)(PlatformAdaptivePressureFlags.ThermalThrottling |
                                 PlatformAdaptivePressureFlags.ThermalCritical)) != 0u)
                 pressure = math.max(pressure, ResolveThermalPressure01());
@@ -408,7 +412,7 @@ namespace Hecton8.Core
             if (!_dynamicResolutionDirty)
                 return;
 
-            IDynamicResolutionRuntime runtime = _dynamicResolutionRuntime;
+            IDynamicResolutionRuntime runtime = Volatile.Read(ref _dynamicResolutionRuntime);
             if (runtime == null)
                 return;
 
@@ -431,8 +435,8 @@ namespace Hecton8.Core
         private static void RebindServicesCold()
         {
             CacheHardwareBudgetProfileCold();
-            _hardwareThermalService = GlobalRegistry.HardwareThermal;
-            _dynamicResolutionRuntime = GlobalRegistry.DynamicResolutionRuntime;
+            Volatile.Write(ref _hardwareThermalService, GlobalRegistry.HardwareThermal);
+            Volatile.Write(ref _dynamicResolutionRuntime, GlobalRegistry.DynamicResolutionRuntime);
         }
 
         private static void CacheHardwareBudgetProfileCold()
@@ -479,13 +483,13 @@ namespace Hecton8.Core
         {
             if (serviceSlot == GlobalRegistryServiceSlot.HardwareThermalService)
             {
-                _hardwareThermalService = currentService as IHardwareThermalService;
+                Volatile.Write(ref _hardwareThermalService, currentService as IHardwareThermalService);
                 return;
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.DynamicResolutionRuntime)
             {
-                _dynamicResolutionRuntime = currentService as IDynamicResolutionRuntime;
+                Volatile.Write(ref _dynamicResolutionRuntime, currentService as IDynamicResolutionRuntime);
                 _dynamicResolutionDirty = true;
             }
         }

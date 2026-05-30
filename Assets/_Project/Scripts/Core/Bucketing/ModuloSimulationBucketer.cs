@@ -81,6 +81,7 @@ namespace Hecton8.Core.Bucketing
         private bool _rebalancePending;
         private bool _nonFiniteCostObserved;
         private bool _pendingBlackBoxDump;
+        private IDataVault _rebalanceVaultGuardVault;
         private bool _rebalanceVaultGuardHeld;
 
         public bool IsInitialized
@@ -144,7 +145,7 @@ namespace Hecton8.Core.Bucketing
         }
 
         /// <summary>
-        /// Resolves all persistent tables from the bootstrap-owned vault.
+        /// Binds all persistent tables from the bootstrap-owned vault.
         /// </summary>
         public void Initialize(int entityCapacity, IDataVault dataVault)
         {
@@ -158,7 +159,7 @@ namespace Hecton8.Core.Bucketing
                 return;
             }
 
-            if (ReferenceEquals(_dataVault, dataVault) && _entityCapacity == capacity && ResolveEntityBuckets().IsCreated)
+            if (ReferenceEquals(_dataVault, dataVault) && _entityCapacity == capacity && ReadEntityBuckets().IsCreated)
                 return;
 
             if (dataVault.IsAllocationLocked || dataVault.IsCompactionFenceActive)
@@ -505,14 +506,14 @@ namespace Hecton8.Core.Bucketing
             if (_entityCapacity <= 0)
                 return false;
 
-            NativeArray<int> entityBuckets = ResolveEntityBuckets();
-            NativeArray<int> work = ResolveEntityBucketsWork();
-            NativeArray<float> costs = ResolveEntityCostEwma();
-            NativeArray<float> bucketLoads = ResolveBucketLoadEwma();
-            NativeArray<float> rebalanceLoads = ResolveRebalanceBucketLoads();
-            NativeArray<SimulationBucketRebalanceResult> result = ResolveRebalanceResult();
-            NativeArray<SimulationBucketFrameState> frameState = ResolveFrameStateBuffer();
-            NativeArray<SimulationBucketBlackBoxEntry> blackBox = ResolveBlackBoxBuffer();
+            NativeArray<int> entityBuckets = OpenEntityBucketsForOwner();
+            NativeArray<int> work = OpenEntityBucketsWorkForOwner();
+            NativeArray<float> costs = OpenEntityCostEwmaForOwner();
+            NativeArray<float> bucketLoads = OpenBucketLoadEwmaForOwner();
+            NativeArray<float> rebalanceLoads = OpenRebalanceBucketLoadsForOwner();
+            NativeArray<SimulationBucketRebalanceResult> result = OpenRebalanceResultForOwner();
+            NativeArray<SimulationBucketFrameState> frameState = OpenFrameStateBufferForOwner();
+            NativeArray<SimulationBucketBlackBoxEntry> blackBox = OpenBlackBoxBufferForOwner();
 
             return entityBuckets.IsCreated &&
                    entityBuckets.Length >= _entityCapacity &&
@@ -532,9 +533,9 @@ namespace Hecton8.Core.Bucketing
                    blackBox.Length >= BlackBoxFrameCount;
         }
 
-        private NativeArray<int> ResolveEntityBuckets()
+        private NativeArray<int> OpenEntityBucketsForOwner()
         {
-            return TryResolveVaultBuffer(in _entityBucketsHandle, out NativeArray<int> buffer) ? buffer : default;
+            return TryOpenVaultBufferForOwner(in _entityBucketsHandle, out NativeArray<int> buffer) ? buffer : default;
         }
 
         private NativeArray<int>.ReadOnly ReadEntityBuckets()
@@ -542,43 +543,43 @@ namespace Hecton8.Core.Bucketing
             return TryReadVaultBuffer(in _entityBucketsHandle, out NativeArray<int>.ReadOnly buffer) ? buffer : default;
         }
 
-        private NativeArray<int> ResolveEntityBucketsWork()
+        private NativeArray<int> OpenEntityBucketsWorkForOwner()
         {
-            return TryResolveVaultBuffer(in _entityBucketsWorkHandle, out NativeArray<int> buffer) ? buffer : default;
+            return TryOpenVaultBufferForOwner(in _entityBucketsWorkHandle, out NativeArray<int> buffer) ? buffer : default;
         }
 
-        private NativeArray<float> ResolveEntityCostEwma()
+        private NativeArray<float> OpenEntityCostEwmaForOwner()
         {
-            return TryResolveVaultBuffer(in _entityCostEwmaHandle, out NativeArray<float> buffer) ? buffer : default;
+            return TryOpenVaultBufferForOwner(in _entityCostEwmaHandle, out NativeArray<float> buffer) ? buffer : default;
         }
 
-        private NativeArray<float> ResolveBucketLoadEwma()
+        private NativeArray<float> OpenBucketLoadEwmaForOwner()
         {
-            return TryResolveVaultBuffer(in _bucketLoadEwmaHandle, out NativeArray<float> buffer) ? buffer : default;
+            return TryOpenVaultBufferForOwner(in _bucketLoadEwmaHandle, out NativeArray<float> buffer) ? buffer : default;
         }
 
-        private NativeArray<float> ResolveRebalanceBucketLoads()
+        private NativeArray<float> OpenRebalanceBucketLoadsForOwner()
         {
-            return TryResolveVaultBuffer(in _rebalanceBucketLoadsHandle, out NativeArray<float> buffer) ? buffer : default;
+            return TryOpenVaultBufferForOwner(in _rebalanceBucketLoadsHandle, out NativeArray<float> buffer) ? buffer : default;
         }
 
-        private NativeArray<SimulationBucketRebalanceResult> ResolveRebalanceResult()
+        private NativeArray<SimulationBucketRebalanceResult> OpenRebalanceResultForOwner()
         {
-            return TryResolveVaultBuffer(in _rebalanceResultHandle, out NativeArray<SimulationBucketRebalanceResult> buffer) ? buffer : default;
+            return TryOpenVaultBufferForOwner(in _rebalanceResultHandle, out NativeArray<SimulationBucketRebalanceResult> buffer) ? buffer : default;
         }
 
-        private NativeArray<SimulationBucketFrameState> ResolveFrameStateBuffer()
+        private NativeArray<SimulationBucketFrameState> OpenFrameStateBufferForOwner()
         {
-            return TryResolveVaultBuffer(in _frameStateHandle, out NativeArray<SimulationBucketFrameState> buffer) ? buffer : default;
+            return TryOpenVaultBufferForOwner(in _frameStateHandle, out NativeArray<SimulationBucketFrameState> buffer) ? buffer : default;
         }
 
-        private NativeArray<SimulationBucketBlackBoxEntry> ResolveBlackBoxBuffer()
+        private NativeArray<SimulationBucketBlackBoxEntry> OpenBlackBoxBufferForOwner()
         {
-            return TryResolveVaultBuffer(in _blackBoxHandle, out NativeArray<SimulationBucketBlackBoxEntry> buffer) ? buffer : default;
+            return TryOpenVaultBufferForOwner(in _blackBoxHandle, out NativeArray<SimulationBucketBlackBoxEntry> buffer) ? buffer : default;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool TryResolveVaultBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
+        private bool TryOpenVaultBufferForOwner<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
             where T : struct
         {
             IDataVault vault = _dataVault;
@@ -695,51 +696,51 @@ namespace Hecton8.Core.Bucketing
 
         private void ClearEntityState()
         {
-            if (!TryAcquireVaultMutationGuard(EntityStateVaultMutationGuardMask))
+            if (!TryAcquireVaultMutationGuard(EntityStateVaultMutationGuardMask, out IDataVault guardVault))
                 return;
 
             try
             {
-                NativeArray<int> entityBuckets = ResolveEntityBuckets();
+                NativeArray<int> entityBuckets = OpenEntityBucketsForOwner();
                 if (entityBuckets.IsCreated)
                 {
                     for (int i = 0; i < entityBuckets.Length; i++)
                         entityBuckets[i] = -1;
                 }
 
-                NativeArray<int> work = ResolveEntityBucketsWork();
+                NativeArray<int> work = OpenEntityBucketsWorkForOwner();
                 if (work.IsCreated)
                 {
                     for (int i = 0; i < work.Length; i++)
                         work[i] = -1;
                 }
 
-                NativeArray<float> costs = ResolveEntityCostEwma();
+                NativeArray<float> costs = OpenEntityCostEwmaForOwner();
                 if (costs.IsCreated)
                 {
                     for (int i = 0; i < costs.Length; i++)
                         costs[i] = 0f;
                 }
 
-                NativeArray<float> bucketLoads = ResolveBucketLoadEwma();
+                NativeArray<float> bucketLoads = OpenBucketLoadEwmaForOwner();
                 if (bucketLoads.IsCreated)
                 {
                     for (int i = 0; i < bucketLoads.Length; i++)
                         bucketLoads[i] = 0f;
                 }
 
-                NativeArray<float> rebalanceLoads = ResolveRebalanceBucketLoads();
+                NativeArray<float> rebalanceLoads = OpenRebalanceBucketLoadsForOwner();
                 if (rebalanceLoads.IsCreated)
                 {
                     for (int i = 0; i < rebalanceLoads.Length; i++)
                         rebalanceLoads[i] = 0f;
                 }
 
-                NativeArray<SimulationBucketRebalanceResult> result = ResolveRebalanceResult();
+                NativeArray<SimulationBucketRebalanceResult> result = OpenRebalanceResultForOwner();
                 if (result.IsCreated && result.Length > 0)
                     result[0] = default;
 
-                NativeArray<SimulationBucketBlackBoxEntry> blackBox = ResolveBlackBoxBuffer();
+                NativeArray<SimulationBucketBlackBoxEntry> blackBox = OpenBlackBoxBufferForOwner();
                 if (blackBox.IsCreated)
                 {
                     for (int i = 0; i < blackBox.Length; i++)
@@ -748,7 +749,7 @@ namespace Hecton8.Core.Bucketing
             }
             finally
             {
-                ReleaseVaultMutationGuard(EntityStateVaultMutationGuardMask);
+                ReleaseVaultMutationGuard(guardVault, EntityStateVaultMutationGuardMask);
             }
         }
 
@@ -764,10 +765,10 @@ namespace Hecton8.Core.Bucketing
             if (!TryAcquireRebalanceVaultGuard())
                 return;
 
-            NativeArray<float> costs = ResolveEntityCostEwma();
-            NativeArray<int> work = ResolveEntityBucketsWork();
-            NativeArray<float> bucketLoads = ResolveRebalanceBucketLoads();
-            NativeArray<SimulationBucketRebalanceResult> result = ResolveRebalanceResult();
+            NativeArray<float> costs = OpenEntityCostEwmaForOwner();
+            NativeArray<int> work = OpenEntityBucketsWorkForOwner();
+            NativeArray<float> bucketLoads = OpenRebalanceBucketLoadsForOwner();
+            NativeArray<SimulationBucketRebalanceResult> result = OpenRebalanceResultForOwner();
             if (!costs.IsCreated ||
                 costs.Length <= 0 ||
                 !work.IsCreated ||
@@ -829,7 +830,7 @@ namespace Hecton8.Core.Bucketing
                     try
                     {
                         frontLocked = TryAcquireWriteView(in _entityBucketsHandle, out NativeArray<int> front);
-                        NativeArray<int> work = ResolveEntityBucketsWork();
+                        NativeArray<int> work = OpenEntityBucketsWorkForOwner();
                         if (frontLocked && front.IsCreated && work.IsCreated)
                         {
                             int count = math.min(front.Length, work.Length);
@@ -844,7 +845,7 @@ namespace Hecton8.Core.Bucketing
                     }
                 }
 
-                NativeArray<SimulationBucketRebalanceResult> resultBuffer = ResolveRebalanceResult();
+                NativeArray<SimulationBucketRebalanceResult> resultBuffer = OpenRebalanceResultForOwner();
                 if (resultBuffer.IsCreated && resultBuffer.Length > 0)
                 {
                     SimulationBucketRebalanceResult result = resultBuffer[0];
@@ -875,36 +876,45 @@ namespace Hecton8.Core.Bucketing
 
             ReleaseRebalanceVaultGuard();
             _rebalanceVaultGuardHeld = vault.TryAcquireMutationGuard(RebalanceVaultMutationGuardMask);
+            _rebalanceVaultGuardVault = _rebalanceVaultGuardHeld ? vault : null;
             return _rebalanceVaultGuardHeld;
         }
 
-        private bool TryAcquireVaultMutationGuard(ulong mask)
+        private bool TryAcquireVaultMutationGuard(ulong mask, out IDataVault guardVault)
         {
+            guardVault = null;
             IDataVault vault = _dataVault;
-            return vault != null && vault.TryAcquireMutationGuard(mask);
+            if (vault == null || !vault.TryAcquireMutationGuard(mask))
+                return false;
+
+            guardVault = vault;
+            return true;
         }
 
-        private void ReleaseVaultMutationGuard(ulong mask)
+        private static void ReleaseVaultMutationGuard(IDataVault vault, ulong mask)
         {
-            IDataVault vault = _dataVault;
             if (vault != null)
                 vault.ReleaseMutationGuard(mask);
         }
 
         private void ReleaseRebalanceVaultGuard()
         {
-            IDataVault vault = _dataVault;
-            if (vault == null)
+            if (!_rebalanceVaultGuardHeld)
             {
-                _rebalanceVaultGuardHeld = false;
+                _rebalanceVaultGuardVault = null;
                 return;
             }
 
-            if (!_rebalanceVaultGuardHeld)
+            IDataVault vault = _rebalanceVaultGuardVault;
+            _rebalanceVaultGuardVault = null;
+            _rebalanceVaultGuardHeld = false;
+            if (vault == null)
+            {
+                _pendingBlackBoxDump = true;
                 return;
+            }
 
             vault.ReleaseMutationGuard(RebalanceVaultMutationGuardMask);
-            _rebalanceVaultGuardHeld = false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

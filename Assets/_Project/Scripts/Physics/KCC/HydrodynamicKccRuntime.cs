@@ -2237,8 +2237,8 @@ namespace Hecton8.Physics.KCC
     {
         [ReadOnly, NoAlias] public NativeArray<KinematicStateDTO> States;
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
-        // RollbackBytes is a raw byte snapshot lane whose size is validated against the KinematicStateDTO count
-        // before UnsafeUtility.MemCpy. Unity safety cannot prove this byte view is a non-overlapping destination
+        // RollbackBytes is a raw byte snapshot lane whose widened byte count is validated against capacity before
+        // UnsafeUtility.MemCpy. Unity safety cannot prove this byte view is a non-overlapping destination
         // for the typed States source.
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_2:
@@ -2254,8 +2254,9 @@ namespace Hecton8.Physics.KCC
         public void Execute()
         {
             int count = math.clamp(EntityCount, 0, States.Length);
-            int bytes = count * UnsafeUtility.SizeOf<KinematicStateDTO>();
-            if (bytes <= 0 || !RollbackBytes.IsCreated || RollbackBytes.Length < bytes)
+            int stateBytes = UnsafeUtility.SizeOf<KinematicStateDTO>();
+            long bytes = (long)count * stateBytes;
+            if (bytes <= 0L || !RollbackBytes.IsCreated || bytes > RollbackBytes.Length)
                 return;
 
             void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(States);
@@ -2738,6 +2739,7 @@ namespace Hecton8.Physics.KCC
             KccVaultMutationGuardBit(BufferID.ShinobuKccEnvironmentGrid) |
             KccVaultMutationGuardBit(BufferID.ShinobuKccEnvironmentFlowField) |
             KccVaultMutationGuardBit(BufferID.ShinobuKccEnvironmentSdf) |
+            KccVaultMutationGuardBit(BufferID.ShinobuMetabolismStates) |
             KccVaultMutationGuardBit(BufferID.ShinobuKccEnvironmentMockMetabolism) |
             KccVaultMutationGuardBit(BufferID.ShinobuKccEnvironmentDebug) |
             KccVaultMutationGuardBit(BufferID.ShinobuHydroKccPreviousAup) |
@@ -2809,6 +2811,7 @@ namespace Hecton8.Physics.KCC
         private bool _coreBlackboxWarmed;
         private bool _scheduledVaultBufferGuardHeld;
         private IDataVault _scheduledVaultBufferGuardVault;
+        private IDataVault _metabolismStateReadGuardVault;
         private int _dumpedFaultMask;
         private int _rollbackVisualBypassFrames;
         private int _respawnCollisionBypassFrames;
@@ -2852,22 +2855,22 @@ namespace Hecton8.Physics.KCC
                 return false;
             }
 
-            if (!TryOpenVaultBuffer(runtime._dataVault, ref runtime._telemetryRingHandle, BufferID.ShinobuHydroKccTelemetryRing, SystemID.Physics, TelemetryCapacity, out NativeArray<KinematicTelemetryEntry> mutableTelemetry))
+            if (!TryReadVaultBuffer(runtime._dataVault, in runtime._telemetryRingHandle, BufferID.ShinobuHydroKccTelemetryRing, SystemID.Physics, TelemetryCapacity, out NativeArray<KinematicTelemetryEntry> telemetryBuffer))
                 return false;
 
-            NativeArray<int> cursorBuffer = TryOpenVaultBuffer(
+            NativeArray<int> cursorBuffer = TryReadVaultBuffer(
                 runtime._dataVault,
-                ref runtime._telemetryCursorHandle,
+                in runtime._telemetryCursorHandle,
                 BufferID.ShinobuHydroKccTelemetryCursor,
                 SystemID.Physics,
                 1,
                 out NativeArray<int> resolvedCursor)
                 ? resolvedCursor
                 : default;
-            if (!mutableTelemetry.IsCreated || mutableTelemetry.Length == 0)
+            if (!telemetryBuffer.IsCreated || telemetryBuffer.Length == 0)
                 return false;
 
-            telemetry = mutableTelemetry.AsReadOnly();
+            telemetry = telemetryBuffer.AsReadOnly();
             length = math.min(TelemetryCapacity, telemetry.Length);
             cursor = cursorBuffer.IsCreated && cursorBuffer.Length > 0
                 ? math.clamp(cursorBuffer[0], 0, length - 1)
@@ -2905,22 +2908,22 @@ namespace Hecton8.Physics.KCC
                 return false;
             }
 
-            if (!TryOpenVaultBuffer(runtime._dataVault, ref runtime._environmentTelemetryRingHandle, BufferID.ShinobuKccEnvironmentTelemetryRing, SystemID.Physics, TelemetryCapacity, out NativeArray<KccEnvironmentTelemetryEntry> mutableTelemetry))
+            if (!TryReadVaultBuffer(runtime._dataVault, in runtime._environmentTelemetryRingHandle, BufferID.ShinobuKccEnvironmentTelemetryRing, SystemID.Physics, TelemetryCapacity, out NativeArray<KccEnvironmentTelemetryEntry> telemetryBuffer))
                 return false;
 
-            NativeArray<int> cursorBuffer = TryOpenVaultBuffer(
+            NativeArray<int> cursorBuffer = TryReadVaultBuffer(
                 runtime._dataVault,
-                ref runtime._environmentTelemetryCursorHandle,
+                in runtime._environmentTelemetryCursorHandle,
                 BufferID.ShinobuKccEnvironmentTelemetryCursor,
                 SystemID.Physics,
                 1,
                 out NativeArray<int> resolvedCursor)
                 ? resolvedCursor
                 : default;
-            if (!mutableTelemetry.IsCreated || mutableTelemetry.Length == 0)
+            if (!telemetryBuffer.IsCreated || telemetryBuffer.Length == 0)
                 return false;
 
-            telemetry = mutableTelemetry.AsReadOnly();
+            telemetry = telemetryBuffer.AsReadOnly();
             length = math.min(TelemetryCapacity, telemetry.Length);
             cursor = cursorBuffer.IsCreated && cursorBuffer.Length > 0
                 ? math.clamp(cursorBuffer[0], 0, length - 1)
@@ -2975,7 +2978,7 @@ namespace Hecton8.Physics.KCC
 
         public void FixedTick(float fixedDeltaTime)
         {
-            if (_collisionScheduled || _postScheduled || !EnsureVaultBuffers(allowAcquire: false))
+            if (_collisionScheduled || _postScheduled || !HasVaultBuffersReady())
                 return;
 
             bool collisionBypass = ConsumeRespawnCollisionSuspendSignals();
@@ -3439,7 +3442,7 @@ namespace Hecton8.Physics.KCC
             ReleaseMetabolismStateReadGuard();
             ReleaseScheduledVaultBufferGuard();
             _postScheduled = false;
-            if (!EnsureVaultBuffers(allowAcquire: false))
+            if (!HasVaultBuffersReady())
                 return;
 
             int entityCapacity = math.max(DefaultCapacity, _entityCapacity);
@@ -3723,7 +3726,7 @@ namespace Hecton8.Physics.KCC
                 return;
             }
 
-            IDataVault vault = _scheduledVaultBufferGuardVault ?? _dataVault;
+            IDataVault vault = _scheduledVaultBufferGuardVault;
             _scheduledVaultBufferGuardVault = null;
             _scheduledVaultBufferGuardHeld = false;
             vault?.ReleaseMutationGuard(ScheduledVaultMutationGuardMask);
@@ -3737,40 +3740,58 @@ namespace Hecton8.Physics.KCC
         private bool OpenPublishedMetabolismStateView(int requiredLength, out NativeArray<MetabolicStateDTO> states)
         {
             states = default;
-            if (_dataVault == null || requiredLength <= 0 || _metabolismStateReadGuardHeld)
+            IDataVault vault = _dataVault;
+            if (vault == null || requiredLength <= 0 || _metabolismStateReadGuardHeld)
                 return false;
 
             BufferID bufferId = BufferID.ShinobuMetabolismStates;
-            if (!_dataVault.TryAcquireMutationGuard(MetabolismStateMutationGuardMask))
-                return false;
-
-            _metabolismStateReadGuardHeld = true;
-            if (!IsVaultHandle(in _metabolismStatesHandle, bufferId, SystemID.GameplayPlayer))
+            bool coveredByScheduledGuard = _scheduledVaultBufferGuardHeld &&
+                                           ReferenceEquals(_scheduledVaultBufferGuardVault, vault);
+            bool acquiredReadGuard = false;
+            bool success = false;
+            try
             {
-                if (!_dataVault.TryGetGenerationHandle(bufferId, out _metabolismStatesHandle) ||
-                    !IsVaultHandle(in _metabolismStatesHandle, bufferId, SystemID.GameplayPlayer))
+                if (!coveredByScheduledGuard)
                 {
+                    if (!vault.TryAcquireMutationGuard(MetabolismStateMutationGuardMask))
+                        return false;
+
+                    _metabolismStateReadGuardVault = vault;
+                    _metabolismStateReadGuardHeld = true;
+                    acquiredReadGuard = true;
+                }
+
+                if (!IsVaultHandle(in _metabolismStatesHandle, bufferId, SystemID.GameplayPlayer))
+                {
+                    if (!vault.TryGetGenerationHandle(bufferId, out _metabolismStatesHandle) ||
+                        !IsVaultHandle(in _metabolismStatesHandle, bufferId, SystemID.GameplayPlayer))
+                    {
+                        _metabolismStatesHandle = default;
+                        return false;
+                    }
+                }
+
+                if (!TryReadVaultBuffer(
+                        vault,
+                        in _metabolismStatesHandle,
+                        bufferId,
+                        SystemID.GameplayPlayer,
+                        requiredLength,
+                        out states))
+                {
+                    states = default;
                     _metabolismStatesHandle = default;
-                    ReleaseMetabolismStateReadGuard();
                     return false;
                 }
-            }
 
-            if (!TryReadVaultBuffer(
-                    _dataVault,
-                    in _metabolismStatesHandle,
-                    bufferId,
-                    SystemID.GameplayPlayer,
-                    requiredLength,
-                    out states))
+                success = true;
+                return true;
+            }
+            finally
             {
-                states = default;
-                _metabolismStatesHandle = default;
-                ReleaseMetabolismStateReadGuard();
-                return false;
+                if (!success && acquiredReadGuard)
+                    ReleaseMetabolismStateReadGuard();
             }
-
-            return true;
         }
 
         private void ReleaseMetabolismStateReadGuard()
@@ -3778,10 +3799,11 @@ namespace Hecton8.Physics.KCC
             if (!_metabolismStateReadGuardHeld)
                 return;
 
-            IDataVault vault = _dataVault;
+            IDataVault vault = _metabolismStateReadGuardVault;
+            _metabolismStateReadGuardVault = null;
+            _metabolismStateReadGuardHeld = false;
             if (vault != null)
                 vault.ReleaseMutationGuard(MetabolismStateMutationGuardMask);
-            _metabolismStateReadGuardHeld = false;
         }
 
         private bool OpenOrAcquirePhysicsVaultBuffer<T>(
@@ -3930,6 +3952,16 @@ namespace Hecton8.Physics.KCC
             if (!ready)
                 _resolvedBufferCapacity = 0;
             return ready;
+        }
+
+        private bool HasVaultBuffersReady()
+        {
+            if (_dataVault == null)
+                return false;
+
+            int entityCapacity = math.max(DefaultCapacity, _entityCapacity);
+            return _resolvedBufferCapacity == entityCapacity &&
+                   AreVaultBuffersReady(entityCapacity);
         }
 
         private void ResetVaultHandles()

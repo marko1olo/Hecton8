@@ -523,7 +523,7 @@
     "firstPartyRuntimePayloadSizedDispatchCallsWithoutThreadGroupQueryCount": 4,
     "numthreadsDeclarations": 156,
     "referenceFileMaxBytes": 2000000,
-    "referenceFilesScanned": 9605,
+    "referenceFilesScanned": 9606,
     "riskyThreadGroupCount": 4,
     "riskyThreadGroupCountByExecutionSurface": {
       "Editor": 2,

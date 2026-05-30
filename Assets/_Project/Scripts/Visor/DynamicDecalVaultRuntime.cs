@@ -269,6 +269,15 @@ namespace Hecton8.Visor
         private static VaultGenerationHandle<byte> _csvScratchHandle;
         private static VaultGenerationHandle<DecalRequestSignal> _requestRingHandle;
         private static VaultGenerationHandle<DecalRequestQueueStateDTO> _requestStateHandle;
+        private static IDataVault _instancesGuardVault;
+        private static IDataVault _uploadGuardVault;
+        private static IDataVault _stateGuardVault;
+        private static IDataVault _telemetryGuardVault;
+        private static IDataVault _tuningGuardVault;
+        private static IDataVault _materialProfileGuardVault;
+        private static IDataVault _csvScratchGuardVault;
+        private static IDataVault _requestRingGuardVault;
+        private static IDataVault _requestStateGuardVault;
         private static uint _lastIngestedBallisticFrame;
         private static uint _lastIngestedHighSpeedFrame;
         private static uint _lastIngestedCombatDamageFrame;
@@ -1393,20 +1402,24 @@ namespace Hecton8.Visor
             out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
-            if (_vault == null || _vault.IsCompactionFenceActive || requiredLength <= 0)
+            IDataVault vault = _vault;
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
                 return false;
 
             if (!IsDynamicDecalVaultHandle(in handle, bufferId) ||
-                !_vault.TryAcquireWriteLock(in handle, OwnerSystem, out buffer))
+                HasDynamicDecalGuardVault(bufferId) ||
+                !vault.TryAcquireMutationGuard(ResolveDynamicDecalMutationGuardMask(bufferId)))
             {
                 buffer = default;
                 return false;
             }
 
+            StoreDynamicDecalGuardVault(bufferId, vault);
             bool releaseOnExit = true;
             try
             {
-                if (_vault.IsCompactionFenceActive ||
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryResolveHandle(in handle, out buffer) ||
                     !buffer.IsCreated ||
                     buffer.Length < requiredLength)
                 {
@@ -1428,8 +1441,121 @@ namespace Hecton8.Visor
             in VaultGenerationHandle<T> handle,
             BufferID bufferId) where T : unmanaged
         {
-            if (_vault != null && IsDynamicDecalVaultHandle(in handle, bufferId))
-                _vault.ReleaseWriteLock(in handle, OwnerSystem);
+            IDataVault vault = TakeDynamicDecalGuardVault(bufferId);
+            if (vault != null && IsDynamicDecalVaultHandle(in handle, bufferId))
+                vault.ReleaseMutationGuard(ResolveDynamicDecalMutationGuardMask(bufferId));
+        }
+
+        private static ulong ResolveDynamicDecalMutationGuardMask(BufferID bufferId)
+        {
+            return 1UL << unchecked((int)((uint)bufferId & 31u));
+        }
+
+        private static bool HasDynamicDecalGuardVault(BufferID bufferId)
+        {
+            switch (bufferId)
+            {
+                case DynamicDecalVaultBufferIds.Instances:
+                    return _instancesGuardVault != null;
+                case DynamicDecalVaultBufferIds.UploadScratch:
+                    return _uploadGuardVault != null;
+                case DynamicDecalVaultBufferIds.RuntimeState:
+                    return _stateGuardVault != null;
+                case DynamicDecalVaultBufferIds.TelemetryRing:
+                    return _telemetryGuardVault != null;
+                case DynamicDecalVaultBufferIds.Tuning:
+                    return _tuningGuardVault != null;
+                case DynamicDecalVaultBufferIds.MaterialProfiles:
+                    return _materialProfileGuardVault != null;
+                case DynamicDecalVaultBufferIds.CsvScratch:
+                    return _csvScratchGuardVault != null;
+                case DynamicDecalVaultBufferIds.RequestRing:
+                    return _requestRingGuardVault != null;
+                case DynamicDecalVaultBufferIds.RequestState:
+                    return _requestStateGuardVault != null;
+                default:
+                    return false;
+            }
+        }
+
+        private static void StoreDynamicDecalGuardVault(BufferID bufferId, IDataVault vault)
+        {
+            switch (bufferId)
+            {
+                case DynamicDecalVaultBufferIds.Instances:
+                    _instancesGuardVault = vault;
+                    return;
+                case DynamicDecalVaultBufferIds.UploadScratch:
+                    _uploadGuardVault = vault;
+                    return;
+                case DynamicDecalVaultBufferIds.RuntimeState:
+                    _stateGuardVault = vault;
+                    return;
+                case DynamicDecalVaultBufferIds.TelemetryRing:
+                    _telemetryGuardVault = vault;
+                    return;
+                case DynamicDecalVaultBufferIds.Tuning:
+                    _tuningGuardVault = vault;
+                    return;
+                case DynamicDecalVaultBufferIds.MaterialProfiles:
+                    _materialProfileGuardVault = vault;
+                    return;
+                case DynamicDecalVaultBufferIds.CsvScratch:
+                    _csvScratchGuardVault = vault;
+                    return;
+                case DynamicDecalVaultBufferIds.RequestRing:
+                    _requestRingGuardVault = vault;
+                    return;
+                case DynamicDecalVaultBufferIds.RequestState:
+                    _requestStateGuardVault = vault;
+                    return;
+            }
+        }
+
+        private static IDataVault TakeDynamicDecalGuardVault(BufferID bufferId)
+        {
+            IDataVault vault;
+            switch (bufferId)
+            {
+                case DynamicDecalVaultBufferIds.Instances:
+                    vault = _instancesGuardVault;
+                    _instancesGuardVault = null;
+                    return vault;
+                case DynamicDecalVaultBufferIds.UploadScratch:
+                    vault = _uploadGuardVault;
+                    _uploadGuardVault = null;
+                    return vault;
+                case DynamicDecalVaultBufferIds.RuntimeState:
+                    vault = _stateGuardVault;
+                    _stateGuardVault = null;
+                    return vault;
+                case DynamicDecalVaultBufferIds.TelemetryRing:
+                    vault = _telemetryGuardVault;
+                    _telemetryGuardVault = null;
+                    return vault;
+                case DynamicDecalVaultBufferIds.Tuning:
+                    vault = _tuningGuardVault;
+                    _tuningGuardVault = null;
+                    return vault;
+                case DynamicDecalVaultBufferIds.MaterialProfiles:
+                    vault = _materialProfileGuardVault;
+                    _materialProfileGuardVault = null;
+                    return vault;
+                case DynamicDecalVaultBufferIds.CsvScratch:
+                    vault = _csvScratchGuardVault;
+                    _csvScratchGuardVault = null;
+                    return vault;
+                case DynamicDecalVaultBufferIds.RequestRing:
+                    vault = _requestRingGuardVault;
+                    _requestRingGuardVault = null;
+                    return vault;
+                case DynamicDecalVaultBufferIds.RequestState:
+                    vault = _requestStateGuardVault;
+                    _requestStateGuardVault = null;
+                    return vault;
+                default:
+                    return null;
+            }
         }
 
         private static void ReleaseAllDynamicDecalWriteLocks()

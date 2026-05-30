@@ -1499,31 +1499,26 @@ namespace Hecton8.UI
 
         private bool TryPrepareRenderableShell()
         {
-            PrepareRuntimeVisibility();
-
-            if (pdaPanel == null)
+            if (pdaPanel == null || pdaCanvasGroup == null || !HasAnyResolvedTab())
             {
                 ReportMissingUiShellOnce();
                 return false;
             }
 
-            bool resolvedTabsDuringOpen = false;
-            if (!HasAnyResolvedTab())
-            {
-                ResolveTabReferences(createMissingTabs: false);
-                if (!HasAnyResolvedTab())
-                {
-                    ReportMissingUiShellOnce();
-                    return false;
-                }
-
-                resolvedTabsDuringOpen = true;
-            }
-
-            if (resolvedTabsDuringOpen)
-                PrepareRuntimeVisibility();
-
+            ApplyPreparedRuntimeVisibility();
             return true;
+        }
+
+        private void ApplyPreparedRuntimeVisibility()
+        {
+            if (!Application.isPlaying || pdaPanel == null || pdaCanvasGroup == null)
+                return;
+
+            pdaCanvasGroup.alpha = 0f;
+            pdaCanvasGroup.interactable = false;
+            pdaCanvasGroup.blocksRaycasts = false;
+
+            ApplyTabVisibility(_activeTab);
         }
 
         private bool HasAnyResolvedTab()

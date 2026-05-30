@@ -1100,7 +1100,7 @@ namespace Hecton8.Gameplay.Loot
             if (!_scheduledVaultGuardHeld)
                 return;
 
-            IDataVault vault = _scheduledVaultGuardVault ?? _vault;
+            IDataVault vault = _scheduledVaultGuardVault;
             _scheduledVaultGuardVault = null;
             _scheduledVaultGuardHeld = false;
             if (vault != null)

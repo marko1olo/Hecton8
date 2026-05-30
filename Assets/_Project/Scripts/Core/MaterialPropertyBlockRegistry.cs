@@ -16,11 +16,50 @@ namespace Hecton8.Core
         private static readonly Dictionary<ulong, MaterialPropertyBlock> s_LegacyBlocks = new Dictionary<ulong, MaterialPropertyBlock>(16);
 
         /// <summary>
-        /// Returns the reusable MaterialPropertyBlock assigned to the given owner entity.
+        /// Returns the existing reusable MaterialPropertyBlock assigned to the given owner entity.
+        /// </summary>
+        /// <param name="ownerEntityId">Stable entity identifier for the procedural draw owner.</param>
+        /// <returns>Existing reusable property block for the owner entity, or null when absent.</returns>
+        public static MaterialPropertyBlock GetLegacyBlock(ulong ownerEntityId)
+        {
+            if (s_LegacyBlocks.TryGetValue(ownerEntityId, out MaterialPropertyBlock block))
+                return block;
+
+            return null;
+        }
+
+        /// <summary>
+        /// Returns the existing reusable MaterialPropertyBlock assigned to the given owner.
+        /// </summary>
+        /// <param name="owner">Owner requesting a legacy draw property block.</param>
+        /// <returns>Existing reusable property block for the owner, or null when no owner was supplied or cached.</returns>
+        public static MaterialPropertyBlock GetLegacyBlock(Object owner)
+        {
+            if (owner == null)
+                return null;
+
+            return GetLegacyBlock(EntityId.ToULong(owner.GetEntityId()));
+        }
+
+        /// <summary>
+        /// Acquires the reusable MaterialPropertyBlock assigned to the given owner.
+        /// </summary>
+        /// <param name="owner">Owner requesting a legacy draw property block.</param>
+        /// <returns>Reusable property block for the owner, or null when no owner was supplied.</returns>
+        public static MaterialPropertyBlock AcquireLegacyBlock(Object owner)
+        {
+            if (owner == null)
+                return null;
+
+            return AcquireLegacyBlock(EntityId.ToULong(owner.GetEntityId()));
+        }
+
+        /// <summary>
+        /// Acquires the reusable MaterialPropertyBlock assigned to the given owner entity identifier.
         /// </summary>
         /// <param name="ownerEntityId">Stable entity identifier for the procedural draw owner.</param>
         /// <returns>Reusable property block for the owner entity.</returns>
-        public static MaterialPropertyBlock GetLegacyBlock(ulong ownerEntityId)
+        public static MaterialPropertyBlock AcquireLegacyBlock(ulong ownerEntityId)
         {
             if (s_LegacyBlocks.TryGetValue(ownerEntityId, out MaterialPropertyBlock block))
                 return block;
@@ -31,26 +70,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Returns the reusable MaterialPropertyBlock assigned to the given owner.
-        /// </summary>
-        /// <param name="owner">Owner requesting a legacy draw property block.</param>
-        /// <returns>Reusable property block for the owner, or null when no owner was supplied.</returns>
-        public static MaterialPropertyBlock GetLegacyBlock(Object owner)
-        {
-            if (owner == null)
-                return null;
-
-            return GetLegacyBlock(EntityId.ToULong(owner.GetEntityId()));
-        }
-
-        /// <summary>
         /// Legacy compatibility alias for callers that already use the previous registry method name.
         /// </summary>
         /// <param name="owner">Owner requesting a legacy draw property block.</param>
         /// <returns>Reusable property block for the owner, or null when no owner was supplied.</returns>
+        [System.Obsolete("Use AcquireLegacyBlock for the explicit mutating path. GetLegacyBlock is pure.", false)]
         public static MaterialPropertyBlock GetOrCreateLegacyBlock(Object owner)
         {
-            return GetLegacyBlock(owner);
+            return AcquireLegacyBlock(owner);
         }
 
         /// <summary>
@@ -58,9 +85,10 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="ownerEntityId">Stable entity identifier for the procedural draw owner.</param>
         /// <returns>Reusable property block for the owner entity.</returns>
+        [System.Obsolete("Use AcquireLegacyBlock for the explicit mutating path. GetLegacyBlock is pure.", false)]
         public static MaterialPropertyBlock GetOrCreateLegacyBlock(ulong ownerEntityId)
         {
-            return GetLegacyBlock(ownerEntityId);
+            return AcquireLegacyBlock(ownerEntityId);
         }
 
         /// <summary>

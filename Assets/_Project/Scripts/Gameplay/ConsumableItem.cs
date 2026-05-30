@@ -35,6 +35,17 @@ namespace Hecton8.Gameplay
     {
         private static HectonSurvivalSystem s_cachedSurvivalSystem;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_cachedSurvivalSystem = null;
+        }
+
+        public static void BindSurvivalSystemCold(HectonSurvivalSystem survivalSystem)
+        {
+            s_cachedSurvivalSystem = survivalSystem;
+        }
+
         /// <summary>
         /// Attempts to consume an item and apply its effects.
         /// Called by PlayerInventory when player uses a consumable from inventory.
@@ -76,10 +87,14 @@ namespace Hecton8.Gameplay
 
         public static bool TryConsumeWithoutAudio(ItemData item)
         {
+            return TryConsumeWithoutAudio(item, ResolveSurvivalSystem());
+        }
+
+        public static bool TryConsumeWithoutAudio(ItemData item, HectonSurvivalSystem survivalSystem)
+        {
             if (item == null || !item.isConsumable)
                 return false;
 
-            HectonSurvivalSystem survivalSystem = ResolveSurvivalSystem();
             if (survivalSystem != null)
                 ApplyEffects(item, survivalSystem);
 
@@ -194,13 +209,6 @@ namespace Hecton8.Gameplay
 
         private static HectonSurvivalSystem ResolveSurvivalSystem()
         {
-            if (s_cachedSurvivalSystem != null)
-                return s_cachedSurvivalSystem;
-
-            if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
-                return null;
-
-            playerTransform.TryGetComponent(out s_cachedSurvivalSystem);
             return s_cachedSurvivalSystem;
         }
 

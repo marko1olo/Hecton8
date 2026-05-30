@@ -812,6 +812,20 @@ namespace Hecton8.Core
         public abstract bool TryGetHeightAUP(Vector3 absoluteUniversePosition, out float height);
         public abstract bool TryGetNormalAUP(Vector3 absoluteUniversePosition, float sampleDistance, out Vector3 normal);
 
+        public virtual bool TryGetHeightAUP(in AbsoluteUniversePosition absoluteUniversePosition, out float height)
+        {
+            height = 0f;
+            return absoluteUniversePosition.IsFinite() &&
+                   TryGetHeightAUP(ToVector3(absoluteUniversePosition.ToAbsoluteDouble3()), out height);
+        }
+
+        public virtual bool TryGetNormalAUP(in AbsoluteUniversePosition absoluteUniversePosition, float sampleDistance, out Vector3 normal)
+        {
+            normal = Vector3.up;
+            return absoluteUniversePosition.IsFinite() &&
+                   TryGetNormalAUP(ToVector3(absoluteUniversePosition.ToAbsoluteDouble3()), sampleDistance, out normal);
+        }
+
         public virtual float GetHeightAt(float3 aup)
         {
             return TryGetHeightAUP(new Vector3(aup.x, aup.y, aup.z), out float height) ? height : 0f;
@@ -821,8 +835,32 @@ namespace Hecton8.Core
         public abstract bool TryGetQuantizedHeightmapPayload(float x, float z, out QuantizedHeightmapPayload payload);
         public abstract bool TryGetQuantizedHeightmapPayloadAUP(Vector3 absoluteUniversePosition, out QuantizedHeightmapPayload payload);
         public abstract bool TryGetTerrainSplatColorAUP(Vector3 absoluteUniversePosition, out Color color, out float confidence);
+
+        public virtual bool TryGetQuantizedHeightmapPayloadAUP(in AbsoluteUniversePosition absoluteUniversePosition, out QuantizedHeightmapPayload payload)
+        {
+            payload = default;
+            return absoluteUniversePosition.IsFinite() &&
+                   TryGetQuantizedHeightmapPayloadAUP(ToVector3(absoluteUniversePosition.ToAbsoluteDouble3()), out payload);
+        }
+
+        public virtual bool TryGetTerrainSplatColorAUP(in AbsoluteUniversePosition absoluteUniversePosition, out Color color, out float confidence)
+        {
+            color = Color.clear;
+            confidence = 0f;
+            return absoluteUniversePosition.IsFinite() &&
+                   TryGetTerrainSplatColorAUP(ToVector3(absoluteUniversePosition.ToAbsoluteDouble3()), out color, out confidence);
+        }
+
         public abstract bool TryGetTerrainSplatColor(float x, float z, out Color color, out float confidence);
         public abstract float SampleHeightAUP(Vector3 absoluteUniversePosition, float fallbackHeight = 0f);
+
+        public virtual float SampleHeightAUP(in AbsoluteUniversePosition absoluteUniversePosition, float fallbackHeight = 0f)
+        {
+            return TryGetHeightAUP(in absoluteUniversePosition, out float height)
+                ? height
+                : fallbackHeight;
+        }
+
         public abstract float GetHeight(float x, float z);
         public abstract bool TryResolveTerrainAt(float x, float z, out Terrain terrain);
         public abstract int CopyResolvedTerrainsTo(Terrain[] destination);
@@ -970,6 +1008,11 @@ namespace Hecton8.Core
         private static bool IsTectonicSpineFamilyId(string familyId)
         {
             return string.Equals(familyId, TectonicSpineFamilyId, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static Vector3 ToVector3(double3 value)
+        {
+            return new Vector3((float)value.x, (float)value.y, (float)value.z);
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

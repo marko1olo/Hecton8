@@ -1120,8 +1120,11 @@ namespace Hecton8.World
             public int PendingCacheBufferIndex;
             public uint LastAccessFrame;
             public bool HeightReadbackPending;
+            public bool HeightReadbackRepairRequested;
             public bool PendingRemoval;
             public AsyncGPUReadbackRequest HeightReadbackRequest;
+            public NativeArray<ushort> HeightReadbackData;
+            public int HeightReadbackRepairSampleCount;
             public int HolesResolution;
             public bool TerrainHolesDirty;
             public bool[,] TerrainHoleMaskManaged;
@@ -1623,8 +1626,11 @@ namespace Hecton8.World
             state.PendingCacheBufferIndex = 0;
             state.LastAccessFrame = 0u;
             state.HeightReadbackPending = false;
+            state.HeightReadbackRepairRequested = false;
             state.PendingRemoval = false;
             state.HeightReadbackRequest = default;
+            state.HeightReadbackRepairSampleCount = 0;
+            DisposeTileHeightReadbackData(state);
             state.HolesResolution = 0;
             state.TerrainHolesDirty = false;
             state.TerrainHoleMaskManaged = null;
@@ -2805,6 +2811,7 @@ namespace Hecton8.World
             EvictDistantTerrainHoles();
             TryScheduleTerrainHoleJobs();
             RebuildHLODRegistrySnapshot();
+            FlushTileHeightReadbackRepairsSlow();
             QueueResidentTileCacheValidation();
             if (CanRefreshThreatSpatialSnapshots())
             {
@@ -3363,14 +3370,24 @@ namespace Hecton8.World
             matrices = default;
             metadata = default;
             types = default;
-            count = _surfaceFrontCount;
-            return count > 0 &&
-                   TryReadAggregateBuffer(in _surfaceAggregateFrontBuffers.MatricesHandle, count, out matrices) &&
-                   TryReadAggregateBuffer(in _surfaceAggregateFrontBuffers.MetadataHandle, count, out metadata) &&
-                   TryReadAggregateBuffer(in _surfaceAggregateFrontBuffers.TypesHandle, count, out types) &&
-                   matrices.IsCreated &&
-                   metadata.IsCreated &&
-                   types.IsCreated;
+            count = 0;
+            int activeCount = _surfaceFrontCount;
+            if (activeCount <= 0 ||
+                !TryReadAggregateBuffer(in _surfaceAggregateFrontBuffers.MatricesHandle, activeCount, out matrices) ||
+                !TryReadAggregateBuffer(in _surfaceAggregateFrontBuffers.MetadataHandle, activeCount, out metadata) ||
+                !TryReadAggregateBuffer(in _surfaceAggregateFrontBuffers.TypesHandle, activeCount, out types) ||
+                !matrices.IsCreated ||
+                !metadata.IsCreated ||
+                !types.IsCreated)
+            {
+                matrices = default;
+                metadata = default;
+                types = default;
+                return false;
+            }
+
+            count = activeCount;
+            return true;
         }
 
         /// <summary>
@@ -3378,8 +3395,17 @@ namespace Hecton8.World
         /// </summary>
         public bool TryGetActiveSurfaceFlowPayload(out NativeArray<Vector2>.ReadOnly flowDirections, out int count)
         {
-            count = _surfaceFrontCount;
-            return TryReadAggregateBufferReadOnly(in _surfaceAggregateFrontBuffers.FlowDirectionsHandle, count, out flowDirections);
+            count = 0;
+            int activeCount = _surfaceFrontCount;
+            if (activeCount <= 0 ||
+                !TryReadAggregateBufferReadOnly(in _surfaceAggregateFrontBuffers.FlowDirectionsHandle, activeCount, out flowDirections))
+            {
+                flowDirections = default;
+                return false;
+            }
+
+            count = activeCount;
+            return true;
         }
 
         /// <summary>
@@ -3502,9 +3528,19 @@ namespace Hecton8.World
         {
             semanticTypes = default;
             biomeLayers = default;
-            count = _surfaceFrontCount;
-            return TryReadAggregateBufferReadOnly(in _surfaceAggregateFrontBuffers.SemanticTypesHandle, count, out semanticTypes) &&
-                   TryReadAggregateBufferReadOnly(in _surfaceAggregateFrontBuffers.BiomeLayersHandle, count, out biomeLayers);
+            count = 0;
+            int activeCount = _surfaceFrontCount;
+            if (activeCount <= 0 ||
+                !TryReadAggregateBufferReadOnly(in _surfaceAggregateFrontBuffers.SemanticTypesHandle, activeCount, out semanticTypes) ||
+                !TryReadAggregateBufferReadOnly(in _surfaceAggregateFrontBuffers.BiomeLayersHandle, activeCount, out biomeLayers))
+            {
+                semanticTypes = default;
+                biomeLayers = default;
+                return false;
+            }
+
+            count = activeCount;
+            return true;
         }
 
         /// <summary>
@@ -3512,8 +3548,17 @@ namespace Hecton8.World
         /// </summary>
         public bool TryGetActiveSurfaceFlowVectorPayload(out NativeArray<Vector3>.ReadOnly flowVectors, out int count)
         {
-            count = _surfaceFrontCount;
-            return TryReadAggregateBufferReadOnly(in _surfaceAggregateFrontBuffers.FlowVectorsHandle, count, out flowVectors);
+            count = 0;
+            int activeCount = _surfaceFrontCount;
+            if (activeCount <= 0 ||
+                !TryReadAggregateBufferReadOnly(in _surfaceAggregateFrontBuffers.FlowVectorsHandle, activeCount, out flowVectors))
+            {
+                flowVectors = default;
+                return false;
+            }
+
+            count = activeCount;
+            return true;
         }
 
         /// <summary>
@@ -3528,14 +3573,24 @@ namespace Hecton8.World
             matrices = default;
             metadata = default;
             types = default;
-            count = _underwaterFrontCount;
-            return count > 0 &&
-                   TryReadAggregateBuffer(in _underwaterAggregateFrontBuffers.MatricesHandle, count, out matrices) &&
-                   TryReadAggregateBuffer(in _underwaterAggregateFrontBuffers.MetadataHandle, count, out metadata) &&
-                   TryReadAggregateBuffer(in _underwaterAggregateFrontBuffers.TypesHandle, count, out types) &&
-                   matrices.IsCreated &&
-                   metadata.IsCreated &&
-                   types.IsCreated;
+            count = 0;
+            int activeCount = _underwaterFrontCount;
+            if (activeCount <= 0 ||
+                !TryReadAggregateBuffer(in _underwaterAggregateFrontBuffers.MatricesHandle, activeCount, out matrices) ||
+                !TryReadAggregateBuffer(in _underwaterAggregateFrontBuffers.MetadataHandle, activeCount, out metadata) ||
+                !TryReadAggregateBuffer(in _underwaterAggregateFrontBuffers.TypesHandle, activeCount, out types) ||
+                !matrices.IsCreated ||
+                !metadata.IsCreated ||
+                !types.IsCreated)
+            {
+                matrices = default;
+                metadata = default;
+                types = default;
+                return false;
+            }
+
+            count = activeCount;
+            return true;
         }
 
         /// <summary>
@@ -3543,8 +3598,17 @@ namespace Hecton8.World
         /// </summary>
         public bool TryGetActiveUnderwaterFlowPayload(out NativeArray<Vector2>.ReadOnly flowDirections, out int count)
         {
-            count = _underwaterFrontCount;
-            return TryReadAggregateBufferReadOnly(in _underwaterAggregateFrontBuffers.FlowDirectionsHandle, count, out flowDirections);
+            count = 0;
+            int activeCount = _underwaterFrontCount;
+            if (activeCount <= 0 ||
+                !TryReadAggregateBufferReadOnly(in _underwaterAggregateFrontBuffers.FlowDirectionsHandle, activeCount, out flowDirections))
+            {
+                flowDirections = default;
+                return false;
+            }
+
+            count = activeCount;
+            return true;
         }
 
         /// <summary>
@@ -3557,9 +3621,19 @@ namespace Hecton8.World
         {
             semanticTypes = default;
             biomeLayers = default;
-            count = _underwaterFrontCount;
-            return TryReadAggregateBufferReadOnly(in _underwaterAggregateFrontBuffers.SemanticTypesHandle, count, out semanticTypes) &&
-                   TryReadAggregateBufferReadOnly(in _underwaterAggregateFrontBuffers.BiomeLayersHandle, count, out biomeLayers);
+            count = 0;
+            int activeCount = _underwaterFrontCount;
+            if (activeCount <= 0 ||
+                !TryReadAggregateBufferReadOnly(in _underwaterAggregateFrontBuffers.SemanticTypesHandle, activeCount, out semanticTypes) ||
+                !TryReadAggregateBufferReadOnly(in _underwaterAggregateFrontBuffers.BiomeLayersHandle, activeCount, out biomeLayers))
+            {
+                semanticTypes = default;
+                biomeLayers = default;
+                return false;
+            }
+
+            count = activeCount;
+            return true;
         }
 
         /// <summary>
@@ -3567,8 +3641,17 @@ namespace Hecton8.World
         /// </summary>
         public bool TryGetActiveUnderwaterFlowVectorPayload(out NativeArray<Vector3>.ReadOnly flowVectors, out int count)
         {
-            count = _underwaterFrontCount;
-            return TryReadAggregateBufferReadOnly(in _underwaterAggregateFrontBuffers.FlowVectorsHandle, count, out flowVectors);
+            count = 0;
+            int activeCount = _underwaterFrontCount;
+            if (activeCount <= 0 ||
+                !TryReadAggregateBufferReadOnly(in _underwaterAggregateFrontBuffers.FlowVectorsHandle, activeCount, out flowVectors))
+            {
+                flowVectors = default;
+                return false;
+            }
+
+            count = activeCount;
+            return true;
         }
 
         /// <summary>
@@ -3784,18 +3867,22 @@ namespace Hecton8.World
         /// </summary>
         public bool TryGetMegaWreckStreamPayload(out NativeArray<MegaWreckStreamSection>.ReadOnly sections, out int count)
         {
-            count = _megaWreckStreamCount;
-            if (count <= 0)
+            sections = default;
+            count = 0;
+            int activeCount = _megaWreckStreamCount;
+            if (activeCount <= 0 ||
+                !TryReadOnlyVegetationMemoryBuffer(
+                    in _nativeMemory.MegaWreckStreamSnapshotHandle,
+                    BufferID.VegetationMegaWreckStreamSnapshot,
+                    activeCount,
+                    out sections))
             {
                 sections = default;
                 return false;
             }
 
-            return TryReadOnlyVegetationMemoryBuffer(
-                in _nativeMemory.MegaWreckStreamSnapshotHandle,
-                BufferID.VegetationMegaWreckStreamSnapshot,
-                count,
-                out sections);
+            count = activeCount;
+            return true;
         }
 
         /// <summary>
@@ -3803,18 +3890,22 @@ namespace Hecton8.World
         /// </summary>
         public bool TryGetTerrainHoleStreamingPayload(out NativeArray<TerrainHoleStreamingRecord>.ReadOnly holes, out int count)
         {
-            count = _terrainHoleCount;
-            if (count <= 0)
+            holes = default;
+            count = 0;
+            int activeCount = _terrainHoleCount;
+            if (activeCount <= 0 ||
+                !TryReadOnlyVegetationMemoryBuffer(
+                    in _nativeMemory.TerrainHoleStreamingRecordsHandle,
+                    BufferID.VegetationTerrainHoleStreamingRecords,
+                    activeCount,
+                    out holes))
             {
                 holes = default;
                 return false;
             }
 
-            return TryReadOnlyVegetationMemoryBuffer(
-                in _nativeMemory.TerrainHoleStreamingRecordsHandle,
-                BufferID.VegetationTerrainHoleStreamingRecords,
-                count,
-                out holes);
+            count = activeCount;
+            return true;
         }
 
         /// <summary>
@@ -3823,18 +3914,28 @@ namespace Hecton8.World
         public bool TryGetCanopyHeightGridPayload(out NativeArray<float>.ReadOnly canopyHeights, out int gridResolution, out Vector3 gridCenter, out float cellSize)
         {
             canopyHeights = default;
-            gridResolution = _canopyGridResolution;
+            gridResolution = 0;
+            gridCenter = Vector3.zero;
+            cellSize = 0f;
+            int activeGridResolution = _canopyGridResolution;
+            float activeCellSize = canopyGridCellSize;
+            if (!_canopyGridInitialized ||
+                activeGridResolution <= 0 ||
+                activeCellSize <= 0f ||
+                !TryReadOnlyVegetationMemoryBuffer(
+                    in _nativeMemory.CanopyHeightGridHandle,
+                    BufferID.VegetationCanopyHeightGrid,
+                    _canopyGridCellCount,
+                    out canopyHeights))
+            {
+                canopyHeights = default;
+                return false;
+            }
+
+            gridResolution = activeGridResolution;
             gridCenter = _canopyGridCenter;
-            cellSize = canopyGridCellSize;
-            bool hasPayload = _canopyGridInitialized &&
-                              gridResolution > 0 &&
-                              cellSize > 0f &&
-                              TryReadOnlyVegetationMemoryBuffer(
-                                  in _nativeMemory.CanopyHeightGridHandle,
-                                  BufferID.VegetationCanopyHeightGrid,
-                                  _canopyGridCellCount,
-                                  out canopyHeights);
-            return hasPayload;
+            cellSize = activeCellSize;
+            return true;
         }
 
         /// <summary>
@@ -3843,13 +3944,21 @@ namespace Hecton8.World
         public bool TryGetActiveAbyssalNavNodeTypePayload(out NativeArray<byte>.ReadOnly nodeTypes, out int count)
         {
             nodeTypes = default;
-            count = ResolveAbyssalNavNodeTypeViewCount();
-            return count > 0 &&
-                   TryReadOnlyVegetationMemoryBuffer(
-                       in _nativeMemory.AbyssalNavNodeTypesHandle,
-                       BufferID.VegetationAbyssalNavNodeTypes,
-                       count,
-                       out nodeTypes);
+            count = 0;
+            int activeCount = ResolveAbyssalNavNodeTypeViewCount();
+            if (activeCount <= 0 ||
+                !TryReadOnlyVegetationMemoryBuffer(
+                    in _nativeMemory.AbyssalNavNodeTypesHandle,
+                    BufferID.VegetationAbyssalNavNodeTypes,
+                    activeCount,
+                    out nodeTypes))
+            {
+                nodeTypes = default;
+                return false;
+            }
+
+            count = activeCount;
+            return true;
         }
 
         /// <summary>
@@ -7683,7 +7792,7 @@ namespace Hecton8.World
                 if (state == null)
                     continue;
 
-                if (state.PendingRemoval || state.HeightReadbackPending)
+                if (state.PendingRemoval || state.HeightReadbackPending || state.HeightReadbackRepairRequested)
                     return true;
             }
 
@@ -7824,7 +7933,7 @@ namespace Hecton8.World
             state.TileZ = snapshot.TileZ;
             state.Terrain = terrain;
             state.TerrainData = terrainData;
-            RefreshTerrainTextureCaches(state, terrainData);
+            RefreshTerrainTextureCachesCold(state, terrainData);
             state.TerrainPosition = terrain.GetPosition();
             state.TerrainSize = terrainData.size;
             state.AlphamapResolution = terrainData.alphamapResolution;
@@ -8303,7 +8412,9 @@ namespace Hecton8.World
             if (!EnsureTileNativeCacheBufferCapacity(state, writeBufferIndex, sampleCount, heightSampleCount))
                 return false;
 
-            RefreshTerrainTextureCaches(state, terrainData);
+            if (!TryRefreshTerrainTextureCachesHot(state, terrainData))
+                return false;
+
             CaptureTileCacheSignature(
                 state.AlphamapTextureCache,
                 state.HeightTextureCache,
@@ -8343,7 +8454,20 @@ namespace Hecton8.World
             if (heightTexture == null)
                 return false;
 
-            AsyncGPUReadbackRequest request = AsyncGPUReadback.Request(heightTexture, 0, TextureFormat.R16);
+            if (!HasTileHeightReadbackData(state, heightSampleCount))
+            {
+                QueueTileHeightReadbackRepair(state, heightSampleCount);
+                return false;
+            }
+
+            AsyncGPUReadbackRequest request = AsyncGPUReadback.RequestIntoNativeArray(
+                ref state.HeightReadbackData,
+                heightTexture,
+                0,
+                TextureFormat.R16);
+            if (request.hasError)
+                return false;
+
             state.PendingCacheBufferIndex = writeBufferIndex;
             state.HeightReadbackRequest = request;
             state.HeightReadbackPending = true;
@@ -8353,6 +8477,82 @@ namespace Hecton8.World
                 state.SecondaryCacheBuffer = writeBuffer;
 
             return false;
+        }
+
+        private static void EnsureTileHeightReadbackData(TileRuntimeState state, int sampleCount)
+        {
+            if (state == null)
+                return;
+
+            int requiredCount = Mathf.NextPowerOfTwo(math.max(1, sampleCount));
+            if (state.HeightReadbackData.IsCreated && state.HeightReadbackData.Length >= requiredCount)
+            {
+                state.HeightReadbackRepairRequested = false;
+                state.HeightReadbackRepairSampleCount = 0;
+                return;
+            }
+
+            DisposeTileHeightReadbackData(state);
+            state.HeightReadbackData = new NativeArray<ushort>(
+                requiredCount,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<ushort>[tile height samples] - async vegetation tile height readback target - owner: HectonMapMagicVegetationBridge
+            state.HeightReadbackRepairRequested = false;
+            state.HeightReadbackRepairSampleCount = 0;
+        }
+
+        private static bool HasTileHeightReadbackData(TileRuntimeState state, int sampleCount)
+        {
+            if (state == null)
+                return false;
+
+            int requiredCount = Mathf.NextPowerOfTwo(math.max(1, sampleCount));
+            return state.HeightReadbackData.IsCreated && state.HeightReadbackData.Length >= requiredCount;
+        }
+
+        private static void QueueTileHeightReadbackRepair(TileRuntimeState state, int sampleCount)
+        {
+            if (state == null)
+                return;
+
+            state.HeightReadbackRepairRequested = true;
+            state.HeightReadbackRepairSampleCount = math.max(state.HeightReadbackRepairSampleCount, sampleCount);
+        }
+
+        private void FlushTileHeightReadbackRepairsSlow()
+        {
+            if (_tileStates.Count <= 0)
+                return;
+
+            bool repairedAny = false;
+            FixedTileStateMap.Enumerator enumerator = _tileStates.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                TileRuntimeState state = enumerator.Current.Value;
+                if (state == null || !state.HeightReadbackRepairRequested || state.HeightReadbackPending)
+                    continue;
+
+                int repairSampleCount = state.HeightReadbackRepairSampleCount;
+                EnsureTileHeightReadbackData(state, repairSampleCount);
+                repairedAny |= HasTileHeightReadbackData(state, repairSampleCount);
+            }
+
+            if (repairedAny)
+                _residentTileCacheValidationRequested = true;
+        }
+
+        private static void DisposeTileHeightReadbackData(TileRuntimeState state)
+        {
+            if (state == null)
+                return;
+
+            state.HeightReadbackRepairRequested = false;
+            state.HeightReadbackRepairSampleCount = 0;
+            if (state.HeightReadbackData.IsCreated)
+            {
+                state.HeightReadbackData.Dispose();
+                state.HeightReadbackData = default;
+            }
         }
 
         private bool WriteTileSandMask(
@@ -8516,7 +8716,7 @@ namespace Hecton8.World
             heightmapUpdateCount = heightTexture.updateCount;
         }
 
-        private static void RefreshTerrainTextureCaches(TileRuntimeState state, UnityEngine.TerrainData terrainData)
+        private static void RefreshTerrainTextureCachesCold(TileRuntimeState state, UnityEngine.TerrainData terrainData)
         {
             if (state == null || terrainData == null)
                 return;
@@ -8541,6 +8741,30 @@ namespace Hecton8.World
             }
 
             state.HeightTextureCache = terrainData.heightmapTexture;
+        }
+
+        private static bool TryRefreshTerrainTextureCachesHot(TileRuntimeState state, UnityEngine.TerrainData terrainData)
+        {
+            if (state == null || terrainData == null)
+                return false;
+
+            int textureCount = math.max(0, terrainData.alphamapTextureCount);
+            if (textureCount == 0)
+            {
+                state.AlphamapTextureCache = null;
+                state.HeightTextureCache = terrainData.heightmapTexture;
+                return true;
+            }
+
+            Texture2D[] cachedTextures = state.AlphamapTextureCache;
+            if (cachedTextures == null || cachedTextures.Length != textureCount)
+                return false;
+
+            for (int i = 0; i < textureCount; i++)
+                cachedTextures[i] = terrainData.GetAlphamapTexture(i);
+
+            state.HeightTextureCache = terrainData.heightmapTexture;
+            return true;
         }
 
         private void ClearRendererBindings()

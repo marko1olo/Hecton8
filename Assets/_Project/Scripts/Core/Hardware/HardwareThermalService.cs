@@ -23,7 +23,6 @@ namespace Hecton8.Core.Hardware
         IHardwareThermalService,
         IFrostTickable,
         IUpdatable,
-        ISlowTickable,
         IGlobalRegistryHotSwapListener,
         IGlobalRegistryHotSwapRefListener
     {
@@ -92,7 +91,6 @@ namespace Hecton8.Core.Hardware
         private bool _serviceRegistered;
         private bool _registeredFrostTick;
         private bool _registeredFrameTick;
-        private bool _registeredSlowTick;
         private bool _hotSwapRegistered;
         private bool _policyInitialized;
         private bool _throttlingPolicyApplied;
@@ -102,8 +100,8 @@ namespace Hecton8.Core.Hardware
         private IFoveatedSimulationDirector _foveatedDirector;
         private SystemDispatcher _dispatcher;
         private ToolHapticsRuntime _haptics;
-        private byte _fallbackBatteryPercentCold = BatteryPercentUnknown;
-        private byte _fallbackBatteryStatusCold = UnknownBatteryStatus;
+        private byte _fallbackBatteryPercentSnapshot = BatteryPercentUnknown;
+        private byte _fallbackBatteryStatusSnapshot = UnknownBatteryStatus;
 
         public byte CurrentSeverity => _severity;
         public byte BatteryPercent => _batteryPercent;
@@ -199,22 +197,19 @@ namespace Hecton8.Core.Hardware
 
         public void ForceColdSample()
         {
+            RefreshSystemInfoFallbackSnapshot();
             SampleAndApplyCold();
         }
 
         public void FrostTick()
         {
+            RefreshSystemInfoFallbackSnapshot();
             SampleAndApplyCold();
         }
 
         public void Tick(float deltaTime)
         {
             WriteBlackBox(Hecton8.Core.SystemDispatcher.CurrentFrameId);
-        }
-
-        public void SlowTick()
-        {
-            RefreshSystemInfoFallbackCold();
         }
 
         private void Awake()
@@ -245,9 +240,8 @@ namespace Hecton8.Core.Hardware
 
             TryRegisterHotSwap();
             TryRegisterFrameTick();
-            TryRegisterSlowTick();
             TryRegisterFrostTick();
-            RefreshSystemInfoFallbackCold();
+            RefreshSystemInfoFallbackSnapshot();
             SampleAndApplyCold();
         }
 
@@ -271,7 +265,6 @@ namespace Hecton8.Core.Hardware
         {
             TryUnregisterFrostTick();
             TryUnregisterFrameTick();
-            TryUnregisterSlowTick();
             TryUnregisterHotSwap();
             TryUnregisterService();
             ReleaseThermalPolicies();
@@ -465,7 +458,7 @@ namespace Hecton8.Core.Hardware
             return a > b ? a : b;
         }
 
-        private void RefreshSystemInfoFallbackCold()
+        private void RefreshSystemInfoFallbackSnapshot()
         {
             byte batteryPercent = BatteryPercentUnknown;
             byte batteryStatus = (byte)SystemInfo.batteryStatus;
@@ -473,14 +466,14 @@ namespace Hecton8.Core.Hardware
             if (math.isfinite(level) && level >= 0f)
                 batteryPercent = (byte)math.clamp((int)math.round(math.saturate(level) * 100f), 0, 100);
 
-            _fallbackBatteryPercentCold = batteryPercent;
-            _fallbackBatteryStatusCold = batteryStatus;
+            _fallbackBatteryPercentSnapshot = batteryPercent;
+            _fallbackBatteryStatusSnapshot = batteryStatus;
         }
 
         private void ReadSystemInfoFallbackSnapshot(out byte batteryPercent, out byte batteryStatus)
         {
-            batteryPercent = _fallbackBatteryPercentCold;
-            batteryStatus = _fallbackBatteryStatusCold;
+            batteryPercent = _fallbackBatteryPercentSnapshot;
+            batteryStatus = _fallbackBatteryStatusSnapshot;
         }
 
         private byte ApplyRecoveryHysteresis(byte mappedSeverity)
@@ -684,27 +677,34 @@ namespace Hecton8.Core.Hardware
 
         private void WriteBlackBox(uint frame)
         {
-            if (!TryResolveThermalBlackBoxWriteViewCurrentPhase(out NativeArray<HardwareThermalTelemetryEntry> blackBox))
+            if (!TryAcquireThermalBlackBoxWriteView(out NativeArray<HardwareThermalTelemetryEntry> blackBox))
                 return;
 
-            int index = _blackBoxCursor;
-            blackBox[index] = new HardwareThermalTelemetryEntry
+            try
             {
-                Frame = frame,
-                Sequence = _sequence,
-                ActionMask = _lastActionMask,
-                TemperatureTenthsCelsius = _temperatureTenthsCelsius,
-                Severity = _severity,
-                BatteryPercent = _batteryPercent,
-                BatteryStatus = _batteryStatus,
-                ThermalStatus = _thermalStatus,
-                Flags = (byte)(_hapticMuteApplied ? 1 : 0)
-            };
+                int index = _blackBoxCursor;
+                blackBox[index] = new HardwareThermalTelemetryEntry
+                {
+                    Frame = frame,
+                    Sequence = _sequence,
+                    ActionMask = _lastActionMask,
+                    TemperatureTenthsCelsius = _temperatureTenthsCelsius,
+                    Severity = _severity,
+                    BatteryPercent = _batteryPercent,
+                    BatteryStatus = _batteryStatus,
+                    ThermalStatus = _thermalStatus,
+                    Flags = (byte)(_hapticMuteApplied ? 1 : 0)
+                };
 
-            index++;
-            if (index >= BlackBoxFrameCount)
-                index = 0;
-            _blackBoxCursor = index;
+                index++;
+                if (index >= BlackBoxFrameCount)
+                    index = 0;
+                _blackBoxCursor = index;
+            }
+            finally
+            {
+                ReleaseThermalBlackBoxWriteView();
+            }
         }
 
         private void DumpBlackBoxCold()
@@ -907,18 +907,6 @@ namespace Hecton8.Core.Hardware
                    blackBox.Length >= BlackBoxFrameCount;
         }
 
-        private bool TryResolveThermalBlackBoxWriteViewCurrentPhase(out NativeArray<HardwareThermalTelemetryEntry> blackBox)
-        {
-            blackBox = default;
-            IDataVault vault = _dataVault;
-            if (vault == null || _blackBoxHandle.BufferID == 0u)
-                return false;
-
-            return vault.TryResolveHandle(in _blackBoxHandle, out blackBox) &&
-                   blackBox.IsCreated &&
-                   blackBox.Length >= BlackBoxFrameCount;
-        }
-
         private bool TryAcquireThermalBlackBoxWriteView(out NativeArray<HardwareThermalTelemetryEntry> blackBox)
         {
             blackBox = default;
@@ -1052,11 +1040,9 @@ namespace Hecton8.Core.Hardware
                 _dispatcher = currentService as SystemDispatcher;
                 _registeredFrameTick = false;
                 _registeredFrostTick = false;
-                _registeredSlowTick = false;
                 if (currentService != null && isActiveAndEnabled && _serviceRegistered)
                 {
                     TryRegisterFrameTick();
-                    TryRegisterSlowTick();
                     TryRegisterFrostTick();
                 }
                 return;
@@ -1115,23 +1101,6 @@ namespace Hecton8.Core.Hardware
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registeredFrameTick = false;
-        }
-
-        private void TryRegisterSlowTick()
-        {
-            if (_registeredSlowTick)
-                return;
-
-            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
-        }
-
-        private void TryUnregisterSlowTick()
-        {
-            if (!_registeredSlowTick)
-                return;
-
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
-            _registeredSlowTick = false;
         }
     }
 }

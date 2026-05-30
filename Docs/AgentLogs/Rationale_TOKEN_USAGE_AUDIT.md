@@ -228,3 +228,11 @@ Solution: Recheck the official GPT-5.5 pricing/model boundary, run only the fast
 Rejected Alternatives: Running `ProjectMetricsDashboard_20260528.py` was rejected because it regenerates chart PNGs. Running `dotnet build` was rejected because this pass touched offline telemetry/docs only and the request was a token-data checkpoint, not runtime validation.
 Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected. Reporting scalability improves because text-only refreshes can update current token economics quickly without churn in generated image artifacts.
 Hardware Impact: 0 us runtime gain. Audit evidence gain: current total is 117,684,788,669 tokens, delta is 1,442,071,455 tokens, GPT-5.5 base API-equivalent cost is 91,354.58078 USD, and ledger presence was machine-checked.
+
+## Decision 37 - 2026-05-30 text-only token refresh
+
+Problem: The operator requested another count/update/commit/push after a date rollover, and the workspace contains live parallel-agent churn plus an untracked Windows-reserved `CON` filename.
+Solution: Recheck official GPT-5.5 pricing/model evidence, run only the fast token refresh, validate the persisted JSON/ledger, and handle full checkpoint staging with an explicit protected-path and reserved-path gate.
+Rejected Alternatives: Regenerating dashboard images was rejected because the operator asked to count/update/commit/push, not produce new charts. Blind `git add -A` without inspecting `CON` was rejected because Windows device names can break checkout/staging semantics.
+Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected. Reporting scalability improves because dated text-only refreshes can move across date boundaries without chart churn.
+Hardware Impact: 0 us runtime gain. Audit evidence gain: current total is 121,116,760,791 tokens, delta is 3,431,972,122 tokens, GPT-5.5 base API-equivalent cost is 93,833.434913 USD, and dashboard/chart paths remained unchanged.

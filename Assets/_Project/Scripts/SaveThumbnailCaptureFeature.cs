@@ -27,12 +27,14 @@ namespace Hecton8.SaveSystem
                 internal TextureHandle destination;
                 internal RTHandle destinationHandle;
                 internal int requestSequenceId;
+                internal int requestGenerationId;
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Save Thumbnail Capture");
             private FeatureSettings _settings;
             private RTHandle _captureTexture;
             private int _requestSequenceId;
+            private int _requestGenerationId;
 
             public SaveThumbnailCapturePass()
             {
@@ -40,14 +42,23 @@ namespace Hecton8.SaveSystem
                 requiresIntermediateTexture = true;
             }
 
-            public void Setup(FeatureSettings settings, in SaveThumbnailSystem.RenderRequest request)
+            public bool Setup(FeatureSettings settings, in SaveThumbnailSystem.RenderRequest request)
             {
+                if (!HasCaptureTextureReady())
+                    return false;
+
                 _settings = settings;
                 _requestSequenceId = request.SequenceId;
+                _requestGenerationId = request.Generation;
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.AfterRendering;
                 ConfigureInput(ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
-                EnsureCaptureTexture();
+                return true;
+            }
+
+            public void PrepareCaptureTextureCold()
+            {
+                EnsureCaptureTextureCold();
             }
 
             public void Dispose()
@@ -85,32 +96,38 @@ namespace Hecton8.SaveSystem
                     passData.destination = captureTexture;
                     passData.destinationHandle = _captureTexture;
                     passData.requestSequenceId = _requestSequenceId;
+                    passData.requestGenerationId = _requestGenerationId;
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(captureTexture, AccessFlags.Write);
 
                     builder.SetRenderFunc((PassData data, UnsafeGraphContext context) =>
                     {
-                        if (!SaveThumbnailSystem.TrySubmitGpuReadback(data.requestSequenceId))
-                            return;
-
                         CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
                         Blitter.BlitCameraTexture(cmd, data.source, data.destination, 0f, true);
-                        cmd.RequestAsyncReadback(
-                            data.destinationHandle.rt,
-                            0,
-                            GraphicsFormat.R8G8B8A8_SRGB,
-                            SaveThumbnailSystem.ReadbackCompletedCallback);
+                        if (!SaveThumbnailSystem.TryQueueGpuReadback(
+                                cmd,
+                                data.destinationHandle.rt,
+                                data.requestSequenceId,
+                                data.requestGenerationId))
+                        {
+                            SaveThumbnailSystem.TryFailPendingRenderRequest(data.requestSequenceId, data.requestGenerationId);
+                        }
                     });
                 }
             }
 
-            private void EnsureCaptureTexture()
+            private bool HasCaptureTextureReady()
             {
-                if (_captureTexture != null &&
-                    _captureTexture.rt != null &&
-                    _captureTexture.rt.width == SaveThumbnailSystem.CaptureWidth &&
-                    _captureTexture.rt.height == SaveThumbnailSystem.CaptureHeight)
+                return _captureTexture != null &&
+                       _captureTexture.rt != null &&
+                       _captureTexture.rt.width == SaveThumbnailSystem.CaptureWidth &&
+                       _captureTexture.rt.height == SaveThumbnailSystem.CaptureHeight;
+            }
+
+            private void EnsureCaptureTextureCold()
+            {
+                if (HasCaptureTextureReady())
                 {
                     return;
                 }
@@ -137,6 +154,7 @@ namespace Hecton8.SaveSystem
         public override void Create()
         {
             _pass ??= new SaveThumbnailCapturePass();
+            _pass.PrepareCaptureTextureCold();
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -144,7 +162,12 @@ namespace Hecton8.SaveSystem
             if (_pass == null || !SaveThumbnailSystem.TryAcquireRenderRequest(renderingData.cameraData.camera, out SaveThumbnailSystem.RenderRequest request))
                 return;
 
-            _pass.Setup(settings, request);
+            if (!_pass.Setup(settings, request))
+            {
+                SaveThumbnailSystem.TryFailPendingRenderRequest(request.SequenceId, request.Generation);
+                return;
+            }
+
             renderer.EnqueuePass(_pass);
         }
 

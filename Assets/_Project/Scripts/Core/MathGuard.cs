@@ -28,6 +28,10 @@ namespace Hecton8.Core
         private static IDataVault _dataVault;
         private static VaultGenerationHandle<int> _invalidNumberCodesHandle;
         private static VaultGenerationHandle<InvalidNumberCounter64> _invalidNumberCounterHandle;
+        private static bool _invalidNumberMutationGuardHeld;
+        private static readonly ulong InvalidNumberMutationGuardMask =
+            MutationGuardBit(InvalidNumberCodesBufferId) |
+            MutationGuardBit(InvalidNumberCounterBufferId);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -38,11 +42,11 @@ namespace Hecton8.Core
         /// <summary>Resolves the vault-owned invalid-number ring before Burst jobs can request a writer.</summary>
         public static void Initialize()
         {
-            if (!OpenOrAcquireInvalidNumberBuffersForOwnerRoute() ||
-                !TryAcquireInvalidNumberCounterWriteBuffer(out NativeArray<InvalidNumberCounter64> invalidNumberCounters))
-            {
+            if (!OpenOrAcquireInvalidNumberBuffersForOwnerRoute())
                 return;
-            }
+
+            if (!TryAcquireInvalidNumberCounterWriteBuffer(out NativeArray<InvalidNumberCounter64> invalidNumberCounters))
+                return;
 
             try
             {
@@ -53,6 +57,8 @@ namespace Hecton8.Core
             {
                 ReleaseInvalidNumberCounterWriteLock();
             }
+
+            TryAcquireInvalidNumberMutationGuard(_dataVault);
         }
 
         /// <summary>Binds the bootstrap-owned DataVault used for invalid-number telemetry.</summary>
@@ -82,6 +88,9 @@ namespace Hecton8.Core
         {
             if (vault != null)
             {
+                if (_invalidNumberMutationGuardHeld)
+                    ReleaseInvalidNumberMutationGuardNoThrow(vault);
+
                 if (IsVaultHandleCreated(in _invalidNumberCodesHandle))
                     vault.ReleaseBuffer(in _invalidNumberCodesHandle);
                 if (IsVaultHandleCreated(in _invalidNumberCounterHandle))
@@ -90,12 +99,14 @@ namespace Hecton8.Core
 
             _invalidNumberCodesHandle = default;
             _invalidNumberCounterHandle = default;
+            _invalidNumberMutationGuardHeld = false;
         }
 
         /// <summary>Returns a Burst-safe writer for invalid-number error codes.</summary>
         public static InvalidNumberWriter AsParallelWriter()
         {
-            return TryResolveExistingInvalidNumberBuffers(
+            return _invalidNumberMutationGuardHeld &&
+                TryOpenExistingInvalidNumberBuffersForOwnerRoute(
                     out NativeArray<int> invalidNumberCodes,
                     out NativeArray<InvalidNumberCounter64> invalidNumberCounters)
                 ? new InvalidNumberWriter(invalidNumberCodes, invalidNumberCounters)
@@ -149,10 +160,14 @@ namespace Hecton8.Core
         public static int DrainInvalidNumberErrors(int maxDrainCount = MaxMainThreadDrainPerLateFrame)
         {
             int maxCodesToDrain = math.clamp(maxDrainCount, 0, MaxMainThreadDrainPerLateFrame);
-            if (maxCodesToDrain <= 0 ||
-                !TryReadInvalidNumberCodes(out NativeArray<int>.ReadOnly invalidNumberCodes) ||
+            if (maxCodesToDrain <= 0)
+                return 0;
+
+            ReleaseInvalidNumberMutationGuardNoThrow(_dataVault);
+            if (!TryReadInvalidNumberCodes(out NativeArray<int>.ReadOnly invalidNumberCodes) ||
                 !TryAcquireInvalidNumberCounterWriteBuffer(out NativeArray<InvalidNumberCounter64> invalidNumberCounters))
             {
+                TryAcquireInvalidNumberMutationGuard(_dataVault);
                 return 0;
             }
 
@@ -187,6 +202,7 @@ namespace Hecton8.Core
             finally
             {
                 ReleaseInvalidNumberCounterWriteLock();
+                TryAcquireInvalidNumberMutationGuard(_dataVault);
             }
 
             for (int i = 0; i < drainedCount; i++)
@@ -386,7 +402,7 @@ namespace Hecton8.Core
                 return false;
             }
 
-            return TryResolveExistingInvalidNumberBuffers(out _, out _);
+            return TryOpenExistingInvalidNumberBuffersForOwnerRoute(out _, out _);
         }
 
         private static bool OpenOrAcquireInvalidNumberHandleForOwnerRoute<T>(
@@ -411,7 +427,7 @@ namespace Hecton8.Core
             return IsVaultHandleCreated(in handle);
         }
 
-        private static bool TryResolveExistingInvalidNumberBuffers(
+        private static bool TryOpenExistingInvalidNumberBuffersForOwnerRoute(
             out NativeArray<int> invalidNumberCodes,
             out NativeArray<InvalidNumberCounter64> invalidNumberCounters)
         {
@@ -431,6 +447,36 @@ namespace Hecton8.Core
                 invalidNumberCounters.IsCreated &&
                 invalidNumberCodes.Length >= InvalidNumberQueuePrewarmCapacity &&
                 invalidNumberCounters.Length > 0;
+        }
+
+        private static bool TryAcquireInvalidNumberMutationGuard(IDataVault vault)
+        {
+            if (_invalidNumberMutationGuardHeld)
+                return true;
+
+            if (vault == null || !vault.TryAcquireMutationGuard(InvalidNumberMutationGuardMask))
+                return false;
+
+            _invalidNumberMutationGuardHeld = true;
+            return true;
+        }
+
+        private static void ReleaseInvalidNumberMutationGuardNoThrow(IDataVault vault)
+        {
+            if (!_invalidNumberMutationGuardHeld)
+                return;
+
+            try
+            {
+                vault?.ReleaseMutationGuard(InvalidNumberMutationGuardMask);
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                _invalidNumberMutationGuardHeld = false;
+            }
         }
 
         private static bool TryReadInvalidNumberCodes(out NativeArray<int>.ReadOnly invalidNumberCodes)
@@ -485,6 +531,11 @@ namespace Hecton8.Core
             where T : struct
         {
             return handle.BufferID != 0u;
+        }
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << (unchecked((int)(uint)(int)bufferId) & 63);
         }
 
         private static unsafe ref InvalidNumberCounter64 ResolveCounterRef(NativeArray<InvalidNumberCounter64> invalidNumberCounters)

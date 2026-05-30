@@ -97,10 +97,12 @@ namespace Hecton8.World
         {
             _drawBounds = new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
             EnsureResources();
+            PrepareRuntimeMaterialCold();
         }
 
         private void OnEnable()
         {
+            PrepareRuntimeMaterialCold();
             HectonFloatingOrigin.RegisterListener(this);
             TryRegisterHotSwapListener();
             RegisterTick();
@@ -127,12 +129,11 @@ namespace Hecton8.World
             if (_instanceCount <= 0)
                 return;
 
-            EnsureResources();
-            if (_batchRendererGroup == null || _batchId.Equals(default))
+            if (!AreResourcesReady())
                 return;
 
             Mesh activeMesh = _mesh;
-            Material activeMaterial = ResolveMaterial();
+            Material activeMaterial = GetPreparedMaterial();
             if (activeMesh == null || activeMaterial == null)
                 return;
 
@@ -426,6 +427,13 @@ namespace Hecton8.World
             }
         }
 
+        private bool AreResourcesReady()
+        {
+            return _batchRendererGroup != null &&
+                   !_batchId.Equals(default) &&
+                   _batchHandleBuffer != null;
+        }
+
         private void SyncBatchRegistration(Mesh activeMesh, Material activeMaterial)
         {
             if (_batchRendererGroup == null)
@@ -508,17 +516,17 @@ namespace Hecton8.World
             _ownedUploadBufferIndex ^= 1;
         }
 
-        private Material ResolveMaterial()
+        private void PrepareRuntimeMaterialCold()
         {
             if (_material != null)
-                return _material;
+                return;
 
             Shader fallbackShader = ResolveFallbackShader();
             if (fallbackShader == null)
-                return null;
+                return;
 
             if (_runtimeMaterial != null && _runtimeMaterialShader == fallbackShader)
-                return _runtimeMaterial;
+                return;
 
             ReleaseRuntimeMaterial();
             _runtimeMaterial = new Material(fallbackShader)
@@ -527,6 +535,13 @@ namespace Hecton8.World
                 hideFlags = HideFlags.HideAndDontSave
             };
             _runtimeMaterialShader = fallbackShader;
+        }
+
+        private Material GetPreparedMaterial()
+        {
+            if (_material != null)
+                return _material;
+
             return _runtimeMaterial;
         }
 

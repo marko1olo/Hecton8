@@ -28,7 +28,7 @@ namespace NASAPunk.Visor
     /// </summary>
     [DisallowMultipleComponent]
     [ExecuteAlways]
-    public class VisorHUDController : MonoBehaviour, ILateFrameTickable, ISubmarineOsEventListener, IGlobalRegistryHotSwapListener
+    public class VisorHUDController : MonoBehaviour, ILateFrameTickable, ISlowTickable, ISubmarineOsEventListener, IGlobalRegistryHotSwapListener
     {
         private const float BiosRecoveryClarityThreshold = 0.1f;
         private const float LowPowerBiosThreshold = 0.15f;
@@ -179,11 +179,15 @@ namespace NASAPunk.Visor
         private Camera _hudScissorCamera;
         private int _hudScissorWidth = -1;
         private int _hudScissorHeight = -1;
+        private bool _hudScissorCommandBufferRepairRequested = true;
+        private bool _scriptableRenderPipelineActiveCold;
         private bool _ownsRuntimeTexture;
         // COLD ALLOC: LabelSwapScheduler[1] â€” staged BIOS HUD font swap queue â€” owner: VisorHUDController
         private readonly LabelSwapScheduler _biosFontSwapScheduler = new LabelSwapScheduler();
         private int _cachedRTWidth = -1;
         private int _cachedRTHeight = -1;
+        private int _cachedScreenWidth = RuntimeHudCompositeMaxWidth;
+        private int _cachedScreenHeight = RuntimeHudCompositeMaxHeight;
         private float _cachedEffectiveRenderScale = -1f;
         private float _nextAutoResolveAt;
         private bool _materialPropertiesDirty = true;
@@ -274,6 +278,7 @@ namespace NASAPunk.Visor
         private float _interferenceDistortionHoldTimer;
         private float _interferenceDistortionRecoverySpeed;
         private bool _runtimeLateFrameRegistered;
+        private bool _runtimeSlowTickRegistered;
         private bool _editorPreviewSuspended;
         private bool _editorReferencePoseCached;
         private Camera _editorLastReferenceCamera;
@@ -516,8 +521,10 @@ namespace NASAPunk.Visor
         private void Awake()
         {
             CacheGraphicsCapabilitiesCold();
+            CacheScreenSurfaceCold();
             EnsurePropertyBlock();
             PrewarmBiosTerminalFont();
+            EnsureHudScissorCommandBuffersCold();
         }
 
         private void OnEnable()
@@ -533,10 +540,12 @@ namespace NASAPunk.Visor
 
             RegisterActiveController();
             CacheGraphicsCapabilitiesCold();
+            CacheScreenSurfaceCold();
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             EnsurePropertyBlock();
             PrewarmBiosTerminalFont();
+            EnsureHudScissorCommandBuffersCold();
             _materialPropertiesDirty = true;
             AutoResolveReferences(force: true);
             SyncProjectionPose();
@@ -682,7 +691,17 @@ namespace NASAPunk.Visor
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime)
+            {
                 _cachedRenderTextureLifecycle = currentService as IRenderTextureLifecycleService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                UnregisterRuntimeTick();
+                if (currentService != null)
+                    TryRegisterRuntimeTick();
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -822,6 +841,13 @@ namespace NASAPunk.Visor
                 ApplyMaterialProperties();
         }
 
+        public void SlowTick()
+        {
+            CacheGraphicsCapabilitiesCold();
+            CacheScreenSurfaceCold();
+            FlushHudScissorCommandBufferRepairSlow();
+        }
+
         /// <summary>
         /// xorshift32 based zero-GC pseudo-random in [0, 1).
         /// </summary>
@@ -857,17 +883,23 @@ namespace NASAPunk.Visor
 
             if (!_runtimeLateFrameRegistered)
                 _runtimeLateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+
+            if (!_runtimeSlowTickRegistered)
+                _runtimeSlowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterRuntimeTick()
         {
-            if (!_runtimeLateFrameRegistered)
-                return;
-
             if (_runtimeLateFrameRegistered)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _runtimeLateFrameRegistered = false;
+            }
+
+            if (_runtimeSlowTickRegistered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _runtimeSlowTickRegistered = false;
             }
         }
 
@@ -1205,6 +1237,7 @@ namespace NASAPunk.Visor
         private void CacheGraphicsCapabilitiesCold()
         {
             _memoryQualityPressureFloor01 = ResolveMemoryQualityPressureFloor01Cold();
+            _scriptableRenderPipelineActiveCold = SampleScriptableRenderPipelineActiveCold();
         }
 
         private static float ResolveMemoryQualityPressureFloor01Cold()
@@ -2233,13 +2266,19 @@ namespace NASAPunk.Visor
 
         private void CalculateTargetRTDimensions(float effectiveRenderScale, out int targetWidth, out int targetHeight)
         {
-            int baseWidth = _matchScreenResolution ? Screen.width : _rtWidth;
-            int baseHeight = _matchScreenResolution ? Screen.height : _rtHeight;
+            int baseWidth = _matchScreenResolution ? _cachedScreenWidth : _rtWidth;
+            int baseHeight = _matchScreenResolution ? _cachedScreenHeight : _rtHeight;
             float clampedScale = Mathf.Clamp(effectiveRenderScale, 0.1f, 1f);
             targetWidth = Mathf.Max(32, Mathf.RoundToInt(baseWidth * clampedScale));
             targetHeight = Mathf.Max(32, Mathf.RoundToInt(baseHeight * clampedScale));
             targetWidth = Mathf.Min(RuntimeHudCompositeMaxWidth, targetWidth);
             targetHeight = Mathf.Min(RuntimeHudCompositeMaxHeight, targetHeight);
+        }
+
+        private void CacheScreenSurfaceCold()
+        {
+            _cachedScreenWidth = Mathf.Max(1, Screen.width);
+            _cachedScreenHeight = Mathf.Max(1, Screen.height);
         }
 
         private float QuantizeAdaptiveScale(float scale)
@@ -2354,7 +2393,7 @@ namespace NASAPunk.Visor
 
         private void ConfigureHudScissorCommandBuffers()
         {
-            if (IsScriptableRenderPipelineActive())
+            if (_scriptableRenderPipelineActiveCold)
             {
                 ClearHudScissorCommandBufferState();
                 return;
@@ -2372,7 +2411,11 @@ namespace NASAPunk.Visor
                 return;
 
             ReleaseHudScissorCommandBuffers();
-            EnsureHudScissorCommandBuffers();
+            if (!HasHudScissorCommandBuffersReady())
+            {
+                _hudScissorCommandBufferRepairRequested = true;
+                return;
+            }
 
             Rect scissorRect = ResolveHudScissorRect(width, height);
             _hudScissorBeginCommandBuffer.Clear();
@@ -2387,13 +2430,36 @@ namespace NASAPunk.Visor
             _hudScissorHeight = height;
         }
 
-        private void EnsureHudScissorCommandBuffers()
+        private void EnsureHudScissorCommandBuffersCold()
         {
+            if (_scriptableRenderPipelineActiveCold)
+            {
+                _hudScissorCommandBufferRepairRequested = false;
+                return;
+            }
+
             if (_hudScissorBeginCommandBuffer == null)
                 _hudScissorBeginCommandBuffer = new CommandBuffer { name = "Hecton HUD Scissor Begin" }; // COLD ALLOC: CommandBuffer[1] â€” HUD camera scissor begin guard â€” owner: VisorHUDController
 
             if (_hudScissorEndCommandBuffer == null)
                 _hudScissorEndCommandBuffer = new CommandBuffer { name = "Hecton HUD Scissor End" }; // COLD ALLOC: CommandBuffer[1] â€” HUD camera scissor end guard â€” owner: VisorHUDController
+
+            _hudScissorCommandBufferRepairRequested = !HasHudScissorCommandBuffersReady();
+        }
+
+        private void FlushHudScissorCommandBufferRepairSlow()
+        {
+            if (!_hudScissorCommandBufferRepairRequested)
+                return;
+
+            EnsureHudScissorCommandBuffersCold();
+            if (HasHudScissorCommandBuffersReady() && _hudCamera != null && _projectionMode != ProjectionMode.Disabled && _hudRT != null)
+                ConfigureHudScissorCommandBuffers();
+        }
+
+        private bool HasHudScissorCommandBuffersReady()
+        {
+            return _hudScissorBeginCommandBuffer != null && _hudScissorEndCommandBuffer != null;
         }
 
         private static Rect ResolveHudScissorRect(int width, int height)
@@ -2405,7 +2471,7 @@ namespace NASAPunk.Visor
             return new Rect(insetX, insetY, scissorWidth, scissorHeight);
         }
 
-        private static bool IsScriptableRenderPipelineActive()
+        private static bool SampleScriptableRenderPipelineActiveCold()
         {
             return GraphicsSettings.currentRenderPipeline != null || GraphicsSettings.defaultRenderPipeline != null;
         }
@@ -2419,7 +2485,7 @@ namespace NASAPunk.Visor
 
         private void ReleaseHudScissorCommandBuffers()
         {
-            if (_hudScissorCamera != null && !IsScriptableRenderPipelineActive())
+            if (_hudScissorCamera != null && !_scriptableRenderPipelineActiveCold)
             {
                 if (_hudScissorBeginCommandBuffer != null)
                     _hudScissorCamera.RemoveCommandBuffer(CameraEvent.BeforeForwardOpaque, _hudScissorBeginCommandBuffer);

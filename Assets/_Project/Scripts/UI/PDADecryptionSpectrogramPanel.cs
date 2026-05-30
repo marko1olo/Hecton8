@@ -21,7 +21,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Decryption Spectrogram Panel")]
-    public sealed class PDADecryptionSpectrogramPanel : MonoBehaviour, ILateFrameTickable, IDisposable, IGlobalRegistryHotSwapListener
+    public sealed class PDADecryptionSpectrogramPanel : MonoBehaviour, ISlowTickable, ILateFrameTickable, IDisposable, IGlobalRegistryHotSwapListener
     {
         private static int s_x001PDADecryptionSpectrogramPanelSignalPushDropCount;
         internal const string WaveShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_FrequencyTuningWave.shader";
@@ -129,10 +129,12 @@ namespace Hecton8.UI
         private bool _scannerActive;
         private bool _unlocked;
         private bool _registeredLateFrame;
+        private bool _registeredSlowTick;
         private bool _nativeReady;
         private bool _graphicsReady;
         private bool _disposed;
         private bool _registeredHotSwapListener;
+        private bool _telemetryDumpQueued;
         private bool _presentationFeedbackClearRequested;
         private bool _waveResultDirty;
         private bool _nativeResourcesDirty;
@@ -169,6 +171,7 @@ namespace Hecton8.UI
             TryUnregisterTickHandlers();
             TryUnregisterHotSwapListener();
             ClearPresentationFeedback();
+            FlushQueuedTelemetryDump();
             DisposeNativeResources();
         }
 
@@ -185,6 +188,7 @@ namespace Hecton8.UI
             _disposed = true;
             TryUnregisterTickHandlers();
             TryUnregisterHotSwapListener();
+            FlushQueuedTelemetryDump();
             DisposeNativeResources();
             DisposeGraphicsResources();
         }
@@ -255,6 +259,11 @@ namespace Hecton8.UI
                 RenderWaveMesh();
         }
 
+        public void SlowTick()
+        {
+            FlushQueuedTelemetryDump();
+        }
+
         public void SubmitNormalized(float frequency01, float amplitude01)
         {
             float safeFrequency01 = Sanitize01(frequency01);
@@ -272,7 +281,7 @@ namespace Hecton8.UI
             _waveSegmentCount = math.max(1, _pointCount - 1);
             _gpuSegmentCapacity = _waveSegmentCount * 2;
 
-            if (!TryAcquireStageTargetsWrite(out NativeArray<FrequencyTuningStageTarget> stageTargets))
+            if (!TryAcquireStageTargetsWrite(out IDataVault stageTargetsWriteVault, out NativeArray<FrequencyTuningStageTarget> stageTargets))
                 return;
 
             try
@@ -281,12 +290,10 @@ namespace Hecton8.UI
             }
             finally
             {
-                IDataVault vault = _cachedDataVault;
-                if (vault != null && IsExactVaultHandle(in _stageTargetsHandle, BufferID.PdaFrequencyStageTargets))
-                    vault.ReleaseWriteLock(in _stageTargetsHandle, VaultOwnerSystemId);
+                ReleaseVaultWriteBuffer(stageTargetsWriteVault, in _stageTargetsHandle, BufferID.PdaFrequencyStageTargets);
             }
 
-            if (!TryAcquireTelemetryRingWrite(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing))
+            if (!TryAcquireTelemetryRingWrite(out IDataVault telemetryWriteVault, out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing))
                 return;
 
             try
@@ -296,29 +303,29 @@ namespace Hecton8.UI
             }
             finally
             {
-                IDataVault vault = _cachedDataVault;
-                if (vault != null && IsExactVaultHandle(in _telemetryRingHandle, BufferID.PdaFrequencyTelemetryRing))
-                    vault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwnerSystemId);
+                ReleaseVaultWriteBuffer(telemetryWriteVault, in _telemetryRingHandle, BufferID.PdaFrequencyTelemetryRing);
             }
         }
 
-        private bool TryAcquireStageTargetsWrite(out NativeArray<FrequencyTuningStageTarget> stageTargets)
+        private bool TryAcquireStageTargetsWrite(out IDataVault writeVault, out NativeArray<FrequencyTuningStageTarget> stageTargets)
         {
             return TryAcquireVaultWriteBuffer(
                 ref _stageTargetsHandle,
                 BufferID.PdaFrequencyStageTargets,
                 StageCount,
                 NativeArrayOptions.ClearMemory,
+                out writeVault,
                 out stageTargets);
         }
 
-        private bool TryAcquireTelemetryRingWrite(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing)
+        private bool TryAcquireTelemetryRingWrite(out IDataVault writeVault, out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing)
         {
             return TryAcquireVaultWriteBuffer(
                 ref _telemetryRingHandle,
                 BufferID.PdaFrequencyTelemetryRing,
                 TelemetryCapacity,
                 NativeArrayOptions.ClearMemory,
+                out writeVault,
                 out telemetryRing);
         }
 
@@ -327,8 +334,10 @@ namespace Hecton8.UI
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
+            out IDataVault writeVault,
             out NativeArray<T> buffer) where T : unmanaged
         {
+            writeVault = null;
             buffer = default;
             IDataVault vault = _cachedDataVault;
             if (vault == null || requiredLength <= 0 || vault.IsCompactionFenceActive)
@@ -337,7 +346,7 @@ namespace Hecton8.UI
             }
 
             if (IsExactVaultHandle(in handle, bufferId) &&
-                TryAcquireExistingVaultWriteBuffer(vault, in handle, requiredLength, out buffer))
+                TryAcquireExistingVaultWriteBuffer(vault, in handle, requiredLength, out writeVault, out buffer))
             {
                 return true;
             }
@@ -354,15 +363,17 @@ namespace Hecton8.UI
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystemId, options);
             return IsExactVaultHandle(in handle, bufferId) &&
-                   TryAcquireExistingVaultWriteBuffer(vault, in handle, requiredLength, out buffer);
+                   TryAcquireExistingVaultWriteBuffer(vault, in handle, requiredLength, out writeVault, out buffer);
         }
 
         private static bool TryAcquireExistingVaultWriteBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
             int requiredLength,
+            out IDataVault writeVault,
             out NativeArray<T> buffer) where T : unmanaged
         {
+            writeVault = null;
             buffer = default;
             if (vault == null ||
                 requiredLength <= 0 ||
@@ -380,6 +391,7 @@ namespace Hecton8.UI
                     buffer.Length >= requiredLength)
                 {
                     releaseOnExit = false;
+                    writeVault = vault;
                     return true;
                 }
 
@@ -393,6 +405,15 @@ namespace Hecton8.UI
                     buffer = default;
                 }
             }
+        }
+
+        private static void ReleaseVaultWriteBuffer<T>(
+            IDataVault writeVault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : unmanaged
+        {
+            if (writeVault != null && IsExactVaultHandle(in handle, bufferId))
+                writeVault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
         }
 
         private bool TryReadStageTarget(int index, out FrequencyTuningStageTarget target)
@@ -615,7 +636,7 @@ namespace Hecton8.UI
         {
             if (!math.isfinite(rawError))
             {
-                DumpTelemetryCold();
+                QueueTelemetryDump();
                 _currentError01 = 1f;
                 _holdTimerSeconds = 0f;
                 return;
@@ -813,11 +834,11 @@ namespace Hecton8.UI
             if (!math.all(math.isfinite(finiteProbe)) ||
                 !math.isfinite(_currentError01))
             {
-                DumpTelemetryCold();
+                QueueTelemetryDump();
                 return;
             }
 
-            if (!TryAcquireTelemetryRingWrite(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing))
+            if (!TryAcquireTelemetryRingWrite(out IDataVault telemetryWriteVault, out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing))
                 return;
 
             try
@@ -840,16 +861,31 @@ namespace Hecton8.UI
             }
             finally
             {
-                IDataVault vault = _cachedDataVault;
-                if (vault != null && IsExactVaultHandle(in _telemetryRingHandle, BufferID.PdaFrequencyTelemetryRing))
-                    vault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwnerSystemId);
+                ReleaseVaultWriteBuffer(telemetryWriteVault, in _telemetryRingHandle, BufferID.PdaFrequencyTelemetryRing);
             }
+        }
+
+        private void QueueTelemetryDump()
+        {
+            _telemetryDumpQueued = true;
+        }
+
+        private void FlushQueuedTelemetryDump()
+        {
+            if (!_telemetryDumpQueued)
+                return;
+
+            _telemetryDumpQueued = false;
+            DumpTelemetryCold();
         }
 
         private void DumpTelemetryCold()
         {
             if (!IsExactVaultHandle(in _telemetryRingHandle, BufferID.PdaFrequencyTelemetryRing))
+            {
+                _telemetryDumpQueued = true;
                 return;
+            }
 
             try
             {
@@ -867,7 +903,10 @@ namespace Hecton8.UI
                 for (int i = 0; i < TelemetryCapacity; i++)
                 {
                     if (!TryReadTelemetryEntry(i, out FrequencyTuningTelemetryEntry entry))
+                    {
+                        _telemetryDumpQueued = true;
                         return;
+                    }
 
                     WriteFrequencyTuningTelemetryEntry(row, in entry);
                     stream.Write(row);
@@ -895,7 +934,7 @@ namespace Hecton8.UI
 
         private void BuildStageTargets(uint seed)
         {
-            if (!TryAcquireStageTargetsWrite(out NativeArray<FrequencyTuningStageTarget> stageTargets))
+            if (!TryAcquireStageTargetsWrite(out IDataVault stageTargetsWriteVault, out NativeArray<FrequencyTuningStageTarget> stageTargets))
                 return;
 
             try
@@ -913,9 +952,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                IDataVault vault = _cachedDataVault;
-                if (vault != null && IsExactVaultHandle(in _stageTargetsHandle, BufferID.PdaFrequencyStageTargets))
-                    vault.ReleaseWriteLock(in _stageTargetsHandle, VaultOwnerSystemId);
+                ReleaseVaultWriteBuffer(stageTargetsWriteVault, in _stageTargetsHandle, BufferID.PdaFrequencyStageTargets);
             }
         }
 
@@ -1060,6 +1097,9 @@ namespace Hecton8.UI
 
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTickHandlers()
@@ -1068,6 +1108,12 @@ namespace Hecton8.UI
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = false;
             }
         }
 

@@ -399,6 +399,8 @@ namespace Hecton8.Core.Contracts.Signals
         private static NativeArray<int> _parallelWriterBudget;
         private static VaultGenerationHandle<T> _frameSnapshotHandle;
         private static IDataVault _frameSnapshotVault;
+        private static VaultGenerationHandle<T> _frameSnapshotActiveWriteHandle;
+        private static IDataVault _frameSnapshotActiveWriteVault;
         private static BufferID _frameSnapshotBufferId;
         private static int _frameSnapshotCount;
         private static int _frameSnapshotGeneration;
@@ -826,18 +828,25 @@ namespace Hecton8.Core.Contracts.Signals
         public static void TransformSnapshot<TTransformer>(TTransformer transformer)
             where TTransformer : struct, ISignalSnapshotTransformer<T>
         {
-            if (!TryOpenFrameSnapshotForOwnerWrite(out NativeArray<T> frameSnapshot))
+            if (!TryAcquireFrameSnapshotForOwnerWrite(out NativeArray<T> frameSnapshot))
                 return;
 
-            int snapshotCount = _frameSnapshotCount;
-            if (snapshotCount <= 0)
-                return;
-
-            for (int i = 0; i < snapshotCount; i++)
+            try
             {
-                T signal = frameSnapshot[i];
-                transformer.Transform(ref signal);
-                frameSnapshot[i] = signal;
+                int snapshotCount = _frameSnapshotCount;
+                if (snapshotCount <= 0)
+                    return;
+
+                for (int i = 0; i < snapshotCount; i++)
+                {
+                    T signal = frameSnapshot[i];
+                    transformer.Transform(ref signal);
+                    frameSnapshot[i] = signal;
+                }
+            }
+            finally
+            {
+                ReleaseFrameSnapshotOwnerWrite();
             }
         }
 
@@ -845,37 +854,42 @@ namespace Hecton8.Core.Contracts.Signals
         public static int FilterSnapshot<TFilter>(TFilter filter)
             where TFilter : struct, ISignalSnapshotFilter<T>
         {
-            if (!TryOpenFrameSnapshotForOwnerWrite(out NativeArray<T> frameSnapshot))
+            if (!TryAcquireFrameSnapshotForOwnerWrite(out NativeArray<T> frameSnapshot))
                 return 0;
 
-            int snapshotCount = _frameSnapshotCount;
-            if (snapshotCount == 0)
+            try
             {
-                return 0;
-            }
+                int snapshotCount = _frameSnapshotCount;
+                if (snapshotCount == 0)
+                    return 0;
 
-            int writeIndex = 0;
-            int originalLength = snapshotCount;
-            for (int readIndex = 0; readIndex < originalLength; readIndex++)
+                int writeIndex = 0;
+                int originalLength = snapshotCount;
+                for (int readIndex = 0; readIndex < originalLength; readIndex++)
+                {
+                    T signal = frameSnapshot[readIndex];
+                    if (!filter.Keep(in signal))
+                        continue;
+
+                    if (writeIndex != readIndex)
+                        frameSnapshot[writeIndex] = signal;
+
+                    writeIndex++;
+                }
+
+                int dropped = originalLength - writeIndex;
+                if (dropped <= 0)
+                    return 0;
+
+                _frameSnapshotCount = writeIndex;
+                _droppedLastFlush += dropped;
+                Interlocked.Add(ref _loadShedTotal, dropped);
+                return dropped;
+            }
+            finally
             {
-                T signal = frameSnapshot[readIndex];
-                if (!filter.Keep(in signal))
-                    continue;
-
-                if (writeIndex != readIndex)
-                    frameSnapshot[writeIndex] = signal;
-
-                writeIndex++;
+                ReleaseFrameSnapshotOwnerWrite();
             }
-
-            int dropped = originalLength - writeIndex;
-            if (dropped <= 0)
-                return 0;
-
-            _frameSnapshotCount = writeIndex;
-            _droppedLastFlush += dropped;
-            Interlocked.Add(ref _loadShedTotal, dropped);
-            return dropped;
         }
 
         internal static void FlushPostSimulation(int systemStressMilli)
@@ -883,97 +897,104 @@ namespace Hecton8.Core.Contracts.Signals
             if (!_initialized)
                 return;
 
-            if (!TryOpenFrameSnapshotForOwnerWrite(out NativeArray<T> frameSnapshot))
+            if (!TryAcquireFrameSnapshotForOwnerWrite(out NativeArray<T> frameSnapshot))
                 return;
 
-            _frameSnapshotCount = 0;
-            _legacyReadCursor = 0;
-            _frameSnapshotGeneration = _frameSnapshotGeneration == int.MaxValue ? 1 : _frameSnapshotGeneration + 1;
-            _droppedLastFlush = Interlocked.Exchange(ref _droppedPendingFlush, 0);
-            int parallelWriterDrops = ConsumeParallelWriterDropsAndResetBudget();
-            if (parallelWriterDrops > 0)
+            try
             {
-                _droppedLastFlush += parallelWriterDrops;
-                Interlocked.Add(ref _loadShedTotal, parallelWriterDrops);
-            }
-
-            _coalescedLastFlush = 0;
-            _stormDetectedLastFlush = 0;
-            int coalescedThisFlush = 0;
-            int loadShedThisFlush = 0;
-            int corruptedThisFlush = 0;
-
-            int queued = CountPendingSignals();
-            _queuedBeforeFlush = queued;
-            _pushedLastFlush = queued + _droppedLastFlush;
-            _peakQueuedLastFlush = queued > _peakQueuedLastFlush ? queued : _peakQueuedLastFlush;
-            bool nonCriticalVfx = SignalLanePolicyCache<T>.NonCriticalVfx;
-            int priority = SignalPriorityTable.GetPriority(_laneHash);
-            int frameLimit = ResolveFrameLimit(systemStressMilli, nonCriticalVfx, priority);
-            if (frameSnapshot.Length < frameLimit)
-                frameLimit = frameSnapshot.Length;
-
-            if (queued > LaneOverflowFaultThreshold)
-            {
-                _droppedLastFlush += queued;
-                Interlocked.Add(ref _loadShedTotal, queued);
-                _stormDetectedLastFlush = 1;
-                ClearPendingSignals();
-                global::Hecton8.Core.GlobalTelemetryBus.PublishSystemDegradation(
-                    LaneOverflowFaultHash,
-                    NonCriticalVfxKillSwitchMask,
-                    queued);
-                SignalBusRegistry.SetSignalOverflowKillSwitchBits(NonCriticalVfxKillSwitchMask, LaneOverflowFaultHash);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogWarning("[LANE_OVERFLOW_FAULT]");
-#endif
-                return;
-            }
-
-            int overflow = Math.Max(0, queued - frameLimit);
-            if (overflow > 0)
-            {
-                _droppedLastFlush += overflow;
-                Interlocked.Add(ref _loadShedTotal, overflow);
-                if (queued > _maxFrameSignals)
-                    _stormDetectedLastFlush = 1;
-
-                DropOldest(overflow);
-            }
-
-            int copyLimit = Math.Min(CountPendingSignals(), frameLimit);
-            for (int i = 0; i < copyLimit; i++)
-            {
-                if (!TryDequeuePendingSignal(out T signal))
-                    break;
-
-                int guardCode = SignalPayloadFiniteGuards.Sanitize(ref signal);
-                if (guardCode != 0)
+                _frameSnapshotCount = 0;
+                _legacyReadCursor = 0;
+                _frameSnapshotGeneration = _frameSnapshotGeneration == int.MaxValue ? 1 : _frameSnapshotGeneration + 1;
+                _droppedLastFlush = Interlocked.Exchange(ref _droppedPendingFlush, 0);
+                int parallelWriterDrops = ConsumeParallelWriterDropsAndResetBudget();
+                if (parallelWriterDrops > 0)
                 {
-                    corruptedThisFlush++;
-                    _droppedLastFlush++;
-                    global::Hecton8.Core.GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
-                    continue;
+                    _droppedLastFlush += parallelWriterDrops;
+                    Interlocked.Add(ref _loadShedTotal, parallelWriterDrops);
                 }
 
-                if (TryCoalesceOrAppend(ref signal, frameLimit, frameSnapshot, ref coalescedThisFlush, ref loadShedThisFlush))
-                    continue;
-            }
+                _coalescedLastFlush = 0;
+                _stormDetectedLastFlush = 0;
+                int coalescedThisFlush = 0;
+                int loadShedThisFlush = 0;
+                int corruptedThisFlush = 0;
 
-            if (coalescedThisFlush > 0)
+                int queued = CountPendingSignals();
+                _queuedBeforeFlush = queued;
+                _pushedLastFlush = queued + _droppedLastFlush;
+                _peakQueuedLastFlush = queued > _peakQueuedLastFlush ? queued : _peakQueuedLastFlush;
+                bool nonCriticalVfx = SignalLanePolicyCache<T>.NonCriticalVfx;
+                int priority = SignalPriorityTable.GetPriority(_laneHash);
+                int frameLimit = ResolveFrameLimit(systemStressMilli, nonCriticalVfx, priority);
+                if (frameSnapshot.Length < frameLimit)
+                    frameLimit = frameSnapshot.Length;
+
+                if (queued > LaneOverflowFaultThreshold)
+                {
+                    _droppedLastFlush += queued;
+                    Interlocked.Add(ref _loadShedTotal, queued);
+                    _stormDetectedLastFlush = 1;
+                    ClearPendingSignals();
+                    global::Hecton8.Core.GlobalTelemetryBus.PublishSystemDegradation(
+                        LaneOverflowFaultHash,
+                        NonCriticalVfxKillSwitchMask,
+                        queued);
+                    SignalBusRegistry.SetSignalOverflowKillSwitchBits(NonCriticalVfxKillSwitchMask, LaneOverflowFaultHash);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Hecton8.Core.H8Debug.LogWarning("[LANE_OVERFLOW_FAULT]");
+#endif
+                    return;
+                }
+
+                int overflow = Math.Max(0, queued - frameLimit);
+                if (overflow > 0)
+                {
+                    _droppedLastFlush += overflow;
+                    Interlocked.Add(ref _loadShedTotal, overflow);
+                    if (queued > _maxFrameSignals)
+                        _stormDetectedLastFlush = 1;
+
+                    DropOldest(overflow);
+                }
+
+                int copyLimit = Math.Min(CountPendingSignals(), frameLimit);
+                for (int i = 0; i < copyLimit; i++)
+                {
+                    if (!TryDequeuePendingSignal(out T signal))
+                        break;
+
+                    int guardCode = SignalPayloadFiniteGuards.Sanitize(ref signal);
+                    if (guardCode != 0)
+                    {
+                        corruptedThisFlush++;
+                        _droppedLastFlush++;
+                        global::Hecton8.Core.GlobalTelemetryBus.PublishMathGuardInvalidNumber(guardCode);
+                        continue;
+                    }
+
+                    if (TryCoalesceOrAppend(ref signal, frameLimit, frameSnapshot, ref coalescedThisFlush, ref loadShedThisFlush))
+                        continue;
+                }
+
+                if (coalescedThisFlush > 0)
+                {
+                    _coalescedLastFlush = coalescedThisFlush;
+                    Interlocked.Add(ref _coalescedTotal, coalescedThisFlush);
+                }
+
+                if (loadShedThisFlush > 0)
+                    Interlocked.Add(ref _loadShedTotal, loadShedThisFlush);
+
+                if (corruptedThisFlush > 0)
+                    Interlocked.Add(ref _corruptedSignalTotal, corruptedThisFlush);
+
+                if (_frameSnapshotCount > 1 && SignalLanePolicyCache<T>.DeterministicMutationOrder)
+                    SortSnapshotDeterministically(frameSnapshot);
+            }
+            finally
             {
-                _coalescedLastFlush = coalescedThisFlush;
-                Interlocked.Add(ref _coalescedTotal, coalescedThisFlush);
+                ReleaseFrameSnapshotOwnerWrite();
             }
-
-            if (loadShedThisFlush > 0)
-                Interlocked.Add(ref _loadShedTotal, loadShedThisFlush);
-
-            if (corruptedThisFlush > 0)
-                Interlocked.Add(ref _corruptedSignalTotal, corruptedThisFlush);
-
-            if (_frameSnapshotCount > 1 && SignalLanePolicyCache<T>.DeterministicMutationOrder)
-                SortSnapshotDeterministically(frameSnapshot);
         }
 
         private static int ResolveFrameLimit(int systemStressMilli, bool nonCriticalVfx, int priority)
@@ -1477,7 +1498,7 @@ namespace Hecton8.Core.Contracts.Signals
                 Math.Max(1, capacity),
                 SystemID.CoreDataVault,
                 NativeArrayOptions.UninitializedMemory);
-            if (!vault.TryResolveHandle(in _frameSnapshotHandle, out NativeArray<T> frameSnapshot) ||
+            if (!vault.TryReadOnlyHandle(in _frameSnapshotHandle, out NativeArray<T>.ReadOnly frameSnapshot) ||
                 !frameSnapshot.IsCreated ||
                 frameSnapshot.Length < capacity)
             {
@@ -1499,11 +1520,15 @@ namespace Hecton8.Core.Contracts.Signals
 
         private static void ReleaseFrameSnapshotBuffer()
         {
+            ReleaseFrameSnapshotOwnerWrite();
+
             if (_frameSnapshotVault != null && _frameSnapshotHandle.BufferID != 0u)
                 _frameSnapshotVault.ReleaseBuffer(in _frameSnapshotHandle);
 
             _frameSnapshotHandle = default;
             _frameSnapshotVault = null;
+            _frameSnapshotActiveWriteHandle = default;
+            _frameSnapshotActiveWriteVault = null;
             _frameSnapshotBufferId = BufferID.Unknown;
             _frameSnapshotCount = 0;
             _frameSnapshotGeneration = 0;
@@ -1529,35 +1554,75 @@ namespace Hecton8.Core.Contracts.Signals
             return true;
         }
 
-        private static bool TryOpenFrameSnapshotForOwnerWrite(out NativeArray<T> frameSnapshot)
+        private static bool TryAcquireFrameSnapshotForOwnerWrite(out NativeArray<T> frameSnapshot)
         {
             frameSnapshot = default;
-            if (_frameSnapshotVault == null || _frameSnapshotHandle.BufferID == 0u)
+            IDataVault snapshotVault = _frameSnapshotVault;
+            if (snapshotVault == null || _frameSnapshotHandle.BufferID == 0u || _frameSnapshotActiveWriteVault != null)
                 return false;
 
-            if (_frameSnapshotVault.TryResolveHandle(in _frameSnapshotHandle, out frameSnapshot) &&
-                frameSnapshot.IsCreated)
-            {
-                if (_frameSnapshotCount > frameSnapshot.Length)
-                    _frameSnapshotCount = frameSnapshot.Length;
+            if (TryAcquireFrameSnapshotWriteLock(snapshotVault, in _frameSnapshotHandle, out frameSnapshot))
                 return true;
-            }
 
             if (_frameSnapshotBufferId != BufferID.Unknown &&
-                _frameSnapshotVault.TryGetGenerationHandle<T>(_frameSnapshotBufferId, out VaultGenerationHandle<T> refreshedHandle))
+                snapshotVault.TryGetGenerationHandle<T>(_frameSnapshotBufferId, out VaultGenerationHandle<T> refreshedHandle))
             {
                 _frameSnapshotHandle = refreshedHandle;
-                if (_frameSnapshotVault.TryResolveHandle(in _frameSnapshotHandle, out frameSnapshot) &&
-                    frameSnapshot.IsCreated)
-                {
-                    if (_frameSnapshotCount > frameSnapshot.Length)
-                        _frameSnapshotCount = frameSnapshot.Length;
+                if (TryAcquireFrameSnapshotWriteLock(snapshotVault, in _frameSnapshotHandle, out frameSnapshot))
                     return true;
-                }
             }
 
             _frameSnapshotCount = 0;
             return false;
+        }
+
+        private static bool TryAcquireFrameSnapshotWriteLock(
+            IDataVault snapshotVault,
+            in VaultGenerationHandle<T> handle,
+            out NativeArray<T> frameSnapshot)
+        {
+            frameSnapshot = default;
+            if (snapshotVault == null ||
+                !snapshotVault.TryAcquireWriteLock(in handle, SystemID.CoreDataVault, out frameSnapshot))
+            {
+                return false;
+            }
+
+            bool ownershipTransferred = false;
+            try
+            {
+                if (frameSnapshot.IsCreated)
+                {
+                    if (_frameSnapshotCount > frameSnapshot.Length)
+                        _frameSnapshotCount = frameSnapshot.Length;
+
+                    ownershipTransferred = true;
+                    _frameSnapshotActiveWriteHandle = handle;
+                    _frameSnapshotActiveWriteVault = snapshotVault;
+                    return true;
+                }
+
+                frameSnapshot = default;
+                return false;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                    snapshotVault.ReleaseWriteLock(in handle, SystemID.CoreDataVault);
+            }
+        }
+
+        private static void ReleaseFrameSnapshotOwnerWrite()
+        {
+            IDataVault snapshotVault = _frameSnapshotActiveWriteVault;
+            if (snapshotVault == null)
+                return;
+
+            VaultGenerationHandle<T> snapshotHandle = _frameSnapshotActiveWriteHandle;
+            _frameSnapshotActiveWriteVault = null;
+            _frameSnapshotActiveWriteHandle = default;
+            if (snapshotHandle.BufferID != 0u)
+                snapshotVault.ReleaseWriteLock(in snapshotHandle, SystemID.CoreDataVault);
         }
 
         private static bool TryFindFrameSnapshotVaultForBootstrap(out IDataVault vault)

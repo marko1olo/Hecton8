@@ -19,7 +19,7 @@ namespace Hecton8.Physiology
     /// Vault-backed survival metabolism runtime. SlowTick schedules pure Burst kernels; LateFrameTick reclaims the fence.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed unsafe partial class ShinobuMetabolismRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
+    public sealed unsafe partial class ShinobuMetabolismRuntime : MonoBehaviour, IColdTickable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener, IDisposable
     {
         private static int s_x001ShinobuMetabolismRuntimeSignalPushDropCount;
         private const SystemID OwnerSystem = SystemID.GameplayPlayer;
@@ -74,16 +74,22 @@ namespace Hecton8.Physiology
             MutationGuardBit(ShinobuMetabolismConstants.MetabolismSuitThermalProfilesBuffer) |
             MutationGuardBit(ShinobuMetabolismConstants.MetabolismSuitProfileIndicesBuffer);
         private static readonly ulong BiologicalProfileImportMutationGuardMask =
-            MutationGuardBit(ShinobuMetabolismConstants.MetabolismCsvScratchBuffer) |
             MutationGuardBit(ShinobuMetabolismConstants.MetabolismSpeciesRulesBuffer);
         private static readonly ulong SuitProfileImportMutationGuardMask =
-            MutationGuardBit(ShinobuMetabolismConstants.MetabolismCsvScratchBuffer) |
             MutationGuardBit(ShinobuMetabolismConstants.MetabolismSuitThermalProfilesBuffer);
         private static readonly ulong TuningMutationGuardMask =
             MutationGuardBit(ShinobuMetabolismConstants.MetabolismTuningBuffer);
+        private static readonly ulong SuitProfileIndexMutationGuardMask =
+            MutationGuardBit(ShinobuMetabolismConstants.MetabolismSuitProfileIndicesBuffer);
         private static readonly ulong SuitProfileSelectionMutationGuardMask =
             MutationGuardBit(ShinobuMetabolismConstants.MetabolismSuitProfileIndicesBuffer) |
             MutationGuardBit(ShinobuMetabolismConstants.MetabolismSuitThermalProfilesBuffer);
+#if UNITY_EDITOR
+        private static readonly byte[] s_csvImportScratch = new byte[ShinobuMetabolismConstants.CsvMaxBytes];
+        private static readonly MetabolicSpeciesRuleDTO[] s_speciesRuleImportScratch = new MetabolicSpeciesRuleDTO[ShinobuMetabolismConstants.MaxSpeciesRules];
+        private static readonly MetabolicSuitThermalProfileDTO[] s_suitProfileImportScratch = new MetabolicSuitThermalProfileDTO[ShinobuMetabolismConstants.MaxSuitThermalProfiles];
+        private static int s_csvImportScratchBusy;
+#endif
 
         [Header("Runtime Capacity")]
         [Tooltip("Maximum living-entity metabolism rows owned by this runtime.")]
@@ -137,6 +143,7 @@ namespace Hecton8.Physiology
         private MetabolismShaderGlobalsDTO _lastShaderGlobals;
         private MetabolicTelemetryEntry _latestTelemetry;
         private MetabolicDetailTelemetryEntry _latestDetailTelemetry;
+        private MetabolicTelemetryEntry _pendingShaderGlobalsTelemetry;
 #if UNITY_EDITOR
         private string _csvPath;
         private string _suitCsvPath;
@@ -149,6 +156,7 @@ namespace Hecton8.Physiology
         private int _pendingTelemetryIndex = -1;
         private int _scheduledCount;
         private uint _simulationFrameCounter;
+        private bool _registeredColdTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
@@ -161,6 +169,8 @@ namespace Hecton8.Physiology
         private bool _shaderGlobalsInitialized;
         private bool _thermalGridReadbackHeld;
         private bool _supportsConstantBufferCold;
+        private bool _vaultRepairRequested;
+        private bool _pendingShaderGlobals;
         private int _shaderWriteIndex;
 
         private void Awake()
@@ -196,18 +206,8 @@ namespace Hecton8.Physiology
             TryRegisterHotSwapListener();
             RebindColdServices();
             EnsureShaderGlobalsBuffers();
-
-            if (EnsureVaultState())
-            {
-                InitializeDefaultVaultContents();
-#if UNITY_EDITOR
-                if (loadCsvProfilesOnEnable)
-                    TryLoadBiologicalProfilesCsv();
-                if (loadSuitThermalProfilesOnEnable)
-                    TryLoadSuitThermalProfilesCsv();
-#endif
-                TryRegisterTicks();
-            }
+            PrepareRuntimeStateCold(loadEditorProfiles: true);
+            TryRegisterTicks();
         }
 
         private void Start()
@@ -216,8 +216,8 @@ namespace Hecton8.Physiology
                 return;
 
             RebindColdServices();
-            if (EnsureVaultState())
-                TryRegisterTicks();
+            PrepareRuntimeStateCold(loadEditorProfiles: false);
+            TryRegisterTicks();
         }
 
         private void OnDisable()
@@ -260,11 +260,9 @@ namespace Hecton8.Physiology
                 ClearCachedHandles();
                 _defaultsInitialized = false;
                 _autopsyDumped = false;
-                if (_dataVault != null && EnsureVaultState())
-                {
-                    InitializeDefaultVaultContents();
-                    TryRegisterTicks();
-                }
+                _vaultRepairRequested = true;
+                PrepareRuntimeStateCold(loadEditorProfiles: false);
+                TryRegisterTicks();
 
                 return;
             }
@@ -286,8 +284,11 @@ namespace Hecton8.Physiology
                 return;
 
             IDataVault vault = _dataVault;
-            if (vault == null || !EnsureVaultState())
+            if (vault == null || !HasVaultStateReady())
+            {
+                _vaultRepairRequested = true;
                 return;
+            }
 
             float slowDeltaSeconds = ResolveSlowTickDeltaSeconds();
             if (slowDeltaSeconds <= 0f)
@@ -457,6 +458,19 @@ namespace Hecton8.Physiology
         public void LateFrameTick()
         {
             TryFinalizeFrameJobNoWait();
+            FlushPendingShaderGlobalsVisualSync();
+        }
+
+        public void ColdTick()
+        {
+            if (!Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            if (!_vaultRepairRequested && HasVaultStateReady())
+                return;
+
+            PrepareRuntimeStateCold(loadEditorProfiles: false);
+            TryRegisterTicks();
         }
 
         /// <summary>
@@ -557,53 +571,55 @@ namespace Hecton8.Physiology
             if (vault == null || !EnsureVaultState())
                 return false;
 
-            if (!vault.TryAcquireMutationGuard(BiologicalProfileImportMutationGuardMask))
-            {
+            if (System.Threading.Interlocked.CompareExchange(ref s_csvImportScratchBusy, 1, 0) != 0)
                 return false;
-            }
 
             try
             {
-                if (!TryOpenMetabolismVaultBuffer(
-                        vault,
-                        in _csvScratchHandle,
-                        ShinobuMetabolismConstants.MetabolismCsvScratchBuffer,
-                        ShinobuMetabolismConstants.CsvMaxBytes,
-                        out NativeArray<byte> scratch) ||
-                    !TryOpenMetabolismVaultBuffer(
-                        vault,
-                        in _speciesRuleHandle,
-                        ShinobuMetabolismConstants.MetabolismSpeciesRulesBuffer,
-                        ShinobuMetabolismConstants.MaxSpeciesRules,
-                        out NativeArray<MetabolicSpeciesRuleDTO> rules))
+                if (!File.Exists(_csvPath))
+                    return false;
+
+                int bytesRead = ReadCsvBytesCold(_csvPath, s_csvImportScratch, ShinobuMetabolismConstants.CsvMaxBytes);
+                if (bytesRead <= 0)
+                    return false;
+
+                int parsed = ParseBiologicalProfilesCsv(
+                    s_csvImportScratch.AsSpan(0, bytesRead),
+                    s_speciesRuleImportScratch);
+                if (parsed <= 0)
+                    return true;
+
+                if (!vault.TryAcquireMutationGuard(BiologicalProfileImportMutationGuardMask))
                 {
                     return false;
                 }
 
-                if (!scratch.IsCreated || !rules.IsCreated || scratch.Length <= 0 || rules.Length <= 0)
-                    return false;
-
-                if (!File.Exists(_csvPath))
-                    return false;
-
-                int maxBytes = math.min(scratch.Length, ShinobuMetabolismConstants.CsvMaxBytes);
-                if (maxBytes <= 0)
-                    return false;
-
-                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                Span<byte> buffer = new Span<byte>(scratchPtr, maxBytes);
-                using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                try
                 {
-                    long boundedBytes = stream.Length < maxBytes ? stream.Length : maxBytes;
-                    int byteCount = boundedBytes > int.MaxValue ? int.MaxValue : (int)boundedBytes;
-                    if (byteCount <= 0)
+                    if (!TryOpenMetabolismVaultBuffer(
+                            vault,
+                            in _speciesRuleHandle,
+                            ShinobuMetabolismConstants.MetabolismSpeciesRulesBuffer,
+                            ShinobuMetabolismConstants.MaxSpeciesRules,
+                            out NativeArray<MetabolicSpeciesRuleDTO> rules))
+                    {
+                        return false;
+                    }
+
+                    if (!rules.IsCreated || rules.Length <= 0)
                         return false;
 
-                    int read = stream.Read(buffer.Slice(0, byteCount));
-                    if (read <= 0)
-                        return false;
-
-                    ParseBiologicalProfilesCsv(buffer.Slice(0, read), rules);
+                    int copyCount = math.min(parsed, rules.Length);
+                    int byteCount = copyCount * UnsafeUtility.SizeOf<MetabolicSpeciesRuleDTO>();
+                    void* destination = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rules);
+                    fixed (MetabolicSpeciesRuleDTO* source = s_speciesRuleImportScratch)
+                    {
+                        UnsafeUtility.MemCpy(destination, source, byteCount);
+                    }
+                }
+                finally
+                {
+                    vault.ReleaseMutationGuard(BiologicalProfileImportMutationGuardMask);
                 }
 
                 return true;
@@ -618,7 +634,7 @@ namespace Hecton8.Physiology
             }
             finally
             {
-                vault.ReleaseMutationGuard(BiologicalProfileImportMutationGuardMask);
+                System.Threading.Volatile.Write(ref s_csvImportScratchBusy, 0);
             }
         }
 
@@ -634,54 +650,58 @@ namespace Hecton8.Physiology
             if (vault == null || !EnsureVaultState())
                 return false;
 
-            if (!vault.TryAcquireMutationGuard(SuitProfileImportMutationGuardMask))
-            {
+            if (System.Threading.Interlocked.CompareExchange(ref s_csvImportScratchBusy, 1, 0) != 0)
                 return false;
-            }
 
             try
             {
-                if (!TryOpenMetabolismVaultBuffer(
-                        vault,
-                        in _csvScratchHandle,
-                        ShinobuMetabolismConstants.MetabolismCsvScratchBuffer,
-                        ShinobuMetabolismConstants.CsvMaxBytes,
-                        out NativeArray<byte> scratch) ||
-                    !TryOpenMetabolismVaultBuffer(
-                        vault,
-                        in _suitProfileHandle,
-                        ShinobuMetabolismConstants.MetabolismSuitThermalProfilesBuffer,
-                        ShinobuMetabolismConstants.MaxSuitThermalProfiles,
-                        out NativeArray<MetabolicSuitThermalProfileDTO> suitProfiles))
-                {
-                    return false;
-                }
-
-                if (!scratch.IsCreated || !suitProfiles.IsCreated || scratch.Length <= 0 || suitProfiles.Length <= 0)
-                    return false;
-
                 if (!File.Exists(_suitCsvPath))
                     return false;
 
-                int maxBytes = math.min(scratch.Length, ShinobuMetabolismConstants.CsvMaxBytes);
-                if (maxBytes <= 0)
+                int bytesRead = ReadCsvBytesCold(_suitCsvPath, s_csvImportScratch, ShinobuMetabolismConstants.CsvMaxBytes);
+                if (bytesRead <= 0)
                     return false;
 
-                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                Span<byte> buffer = new Span<byte>(scratchPtr, maxBytes);
-                using (FileStream stream = new FileStream(_suitCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                int parsed = ParseSuitThermalProfilesCsv(
+                    s_csvImportScratch.AsSpan(0, bytesRead),
+                    s_suitProfileImportScratch);
+                if (parsed <= 0)
+                    return false;
+
+                if (!vault.TryAcquireMutationGuard(SuitProfileImportMutationGuardMask))
                 {
-                    long boundedBytes = stream.Length < maxBytes ? stream.Length : maxBytes;
-                    int byteCount = boundedBytes > int.MaxValue ? int.MaxValue : (int)boundedBytes;
-                    if (byteCount <= 0)
-                        return false;
-
-                    int read = stream.Read(buffer.Slice(0, byteCount));
-                    if (read <= 0)
-                        return false;
-
-                    return ParseSuitThermalProfilesCsv(buffer.Slice(0, read), suitProfiles) > 0;
+                    return false;
                 }
+
+                try
+                {
+                    if (!TryOpenMetabolismVaultBuffer(
+                            vault,
+                            in _suitProfileHandle,
+                            ShinobuMetabolismConstants.MetabolismSuitThermalProfilesBuffer,
+                            ShinobuMetabolismConstants.MaxSuitThermalProfiles,
+                            out NativeArray<MetabolicSuitThermalProfileDTO> suitProfiles))
+                    {
+                        return false;
+                    }
+
+                    if (!suitProfiles.IsCreated || suitProfiles.Length <= 0)
+                        return false;
+
+                    int copyCount = math.min(s_suitProfileImportScratch.Length, suitProfiles.Length);
+                    int byteCount = copyCount * UnsafeUtility.SizeOf<MetabolicSuitThermalProfileDTO>();
+                    void* destination = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(suitProfiles);
+                    fixed (MetabolicSuitThermalProfileDTO* source = s_suitProfileImportScratch)
+                    {
+                        UnsafeUtility.MemCpy(destination, source, byteCount);
+                    }
+                }
+                finally
+                {
+                    vault.ReleaseMutationGuard(SuitProfileImportMutationGuardMask);
+                }
+
+                return true;
             }
             catch (IOException)
             {
@@ -693,7 +713,20 @@ namespace Hecton8.Physiology
             }
             finally
             {
-                vault.ReleaseMutationGuard(SuitProfileImportMutationGuardMask);
+                System.Threading.Volatile.Write(ref s_csvImportScratchBusy, 0);
+            }
+        }
+
+        private static int ReadCsvBytesCold(string path, byte[] scratch, int maxBytes)
+        {
+            if (scratch == null || scratch.Length <= 0 || maxBytes <= 0)
+                return 0;
+
+            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                long boundedLength = stream.Length < maxBytes ? stream.Length : maxBytes;
+                int byteCount = boundedLength > scratch.Length ? scratch.Length : (int)boundedLength;
+                return byteCount > 0 ? stream.Read(scratch, 0, byteCount) : 0;
             }
         }
 #endif
@@ -825,7 +858,7 @@ namespace Hecton8.Physiology
                 return false;
 
             IDataVault vault = _dataVault;
-            if (vault == null || !vault.TryAcquireMutationGuard(SuitProfileSelectionMutationGuardMask))
+            if (vault == null || !vault.TryAcquireMutationGuard(SuitProfileIndexMutationGuardMask))
                 return false;
 
             try
@@ -847,7 +880,7 @@ namespace Hecton8.Physiology
             }
             finally
             {
-                vault.ReleaseMutationGuard(SuitProfileSelectionMutationGuardMask);
+                vault.ReleaseMutationGuard(SuitProfileIndexMutationGuardMask);
             }
         }
 
@@ -1007,9 +1040,24 @@ namespace Hecton8.Physiology
             }
 
             if (publishShaderGlobals)
-                PublishShaderGlobals(in shaderTelemetry);
+                QueueShaderGlobalsVisualSync(in shaderTelemetry);
             if (publishSignals)
                 PublishStagedSignals(vault, stagedSignalCount);
+        }
+
+        private void QueueShaderGlobalsVisualSync(in MetabolicTelemetryEntry telemetry)
+        {
+            _pendingShaderGlobalsTelemetry = telemetry;
+            _pendingShaderGlobals = true;
+        }
+
+        private void FlushPendingShaderGlobalsVisualSync()
+        {
+            if (!_pendingShaderGlobals)
+                return;
+
+            _pendingShaderGlobals = false;
+            PublishShaderGlobals(in _pendingShaderGlobalsTelemetry);
         }
 
         private void PublishStagedSignals(IDataVault vault, int scheduledCount)
@@ -1180,6 +1228,61 @@ namespace Hecton8.Physiology
                        entityCapacity,
                        NativeArrayOptions.UninitializedMemory,
                        out _);
+        }
+
+        private void PrepareRuntimeStateCold(bool loadEditorProfiles)
+        {
+            if (_dataVault == null)
+            {
+                _vaultRepairRequested = true;
+                return;
+            }
+
+            EnsureShaderGlobalsBuffers();
+            if (!EnsureVaultState())
+            {
+                _vaultRepairRequested = true;
+                return;
+            }
+
+            InitializeDefaultVaultContents();
+#if UNITY_EDITOR
+            if (loadEditorProfiles)
+            {
+                if (loadCsvProfilesOnEnable)
+                    TryLoadBiologicalProfilesCsv();
+                if (loadSuitThermalProfilesOnEnable)
+                    TryLoadSuitThermalProfilesCsv();
+            }
+#endif
+            _vaultRepairRequested = !HasVaultStateReady();
+        }
+
+        private bool HasVaultStateReady()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !_defaultsInitialized)
+            {
+                return false;
+            }
+
+            return TryResolveBuffers(
+                vault,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _,
+                out _);
         }
 
         private static int ResolvePhysiologySignalCapacity(int entityCount)
@@ -1730,17 +1833,41 @@ namespace Hecton8.Physiology
 
         private void TryRegisterTicks()
         {
+            if (!_registeredColdTick)
+                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+
+            if (!HasVaultStateReady())
+                return;
+
             if (!_registeredSlowTick)
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
 
             if (!_registeredSlowTick || !_registeredLateFrame)
-                TryUnregisterTicks();
+            {
+                if (_registeredSlowTick)
+                {
+                    GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+                    _registeredSlowTick = false;
+                }
+
+                if (_registeredLateFrame)
+                {
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                    _registeredLateFrame = false;
+                }
+            }
         }
 
         private void TryUnregisterTicks()
         {
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
+                _registeredColdTick = false;
+            }
+
             if (_registeredSlowTick)
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
@@ -1937,7 +2064,17 @@ namespace Hecton8.Physiology
         }
 
 #if UNITY_EDITOR
-        private void ParseBiologicalProfilesCsv(ReadOnlySpan<byte> bytes, NativeArray<MetabolicSpeciesRuleDTO> rules)
+        private static int ParseBiologicalProfilesCsv(ReadOnlySpan<byte> bytes, NativeArray<MetabolicSpeciesRuleDTO> rules)
+        {
+            if (!rules.IsCreated || rules.Length <= 0)
+                return 0;
+
+            return ParseBiologicalProfilesCsv(
+                bytes,
+                new Span<MetabolicSpeciesRuleDTO>(NativeArrayUnsafeUtility.GetUnsafePtr(rules), rules.Length));
+        }
+
+        private static int ParseBiologicalProfilesCsv(ReadOnlySpan<byte> bytes, Span<MetabolicSpeciesRuleDTO> rules)
         {
             int cursor = 0;
             int writeIndex = 0;
@@ -1954,9 +2091,21 @@ namespace Hecton8.Physiology
                 if (TryParseSpeciesRuleLine(bytes.Slice(lineStart, lineEnd - lineStart), out MetabolicSpeciesRuleDTO rule))
                     rules[writeIndex++] = ShinobuMetabolismJobMath.SanitizeRule(rule);
             }
+
+            return writeIndex;
         }
 
         private static int ParseSuitThermalProfilesCsv(ReadOnlySpan<byte> bytes, NativeArray<MetabolicSuitThermalProfileDTO> profiles)
+        {
+            if (!profiles.IsCreated || profiles.Length <= 0)
+                return 0;
+
+            return ParseSuitThermalProfilesCsv(
+                bytes,
+                new Span<MetabolicSuitThermalProfileDTO>(NativeArrayUnsafeUtility.GetUnsafePtr(profiles), profiles.Length));
+        }
+
+        private static int ParseSuitThermalProfilesCsv(ReadOnlySpan<byte> bytes, Span<MetabolicSuitThermalProfileDTO> profiles)
         {
             int cursor = 0;
             int writeIndex = 0;

@@ -164,7 +164,9 @@ namespace Hecton8.Core
             if (_listenerCount <= 0)
                 return;
 
-            EnsureTypedSignalLaneConfigured();
+            if (!_typedSignalLaneConfigured)
+                return;
+
             ReadOnlySpan<ScalabilityChangedEvent> snapshot =
                 global::Hecton8.Core.Contracts.Signals.SignalBus<ScalabilityChangedEvent>.GetFrameSnapshot();
             int count = snapshot.Length;

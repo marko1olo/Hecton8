@@ -54,7 +54,7 @@ Source-backed snapshot for agent onboarding:
 - Enabled build-spine scenes: `00_BOOTSTRAP`, `01_MAIN_MENU`, `01_ORBIT`, `02_HECTON_WORLD`.
 - New-game route: `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`.
 - Authority drift: `AGENTS.md` still contains older no-orbit scene-flow wording. Do not change the scene route from this baseline alone; follow `Docs/ARCHITECTURE/PROJECT_RUNTIME_TOPOLOGY.md` and require owner/integrator decision.
-- First-party asmdef count under `Assets/_Project`: `167`.
+- First-party asmdef count under `Assets/_Project`: `168` in the 2026-05-29 static filesystem check.
 - URP package: `com.unity.render-pipelines.universal` `17.4.0`.
 - Data Monolith payload is present at the target path and is `1,064,384` bytes in the 2026-05-28 static filesystem check.
 

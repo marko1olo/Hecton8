@@ -293,40 +293,53 @@ namespace Hecton8.Core.Contracts.Physics
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveHitFraction(float hitDistance, float sweepDistance, float skinWidth)
         {
-            float denominator = math.max(HectonPhysicsContract.FluidDistanceEpsilon, sweepDistance + math.max(0f, skinWidth));
-            return math.saturate(hitDistance * math.rcp(denominator));
+            float safeHitDistance = SanitizeNonNegative(hitDistance);
+            float safeSweepDistance = SanitizeNonNegative(sweepDistance);
+            float safeSkinWidth = SanitizeNonNegative(skinWidth);
+            float denominator = math.max(HectonPhysicsContract.FluidDistanceEpsilon, safeSweepDistance + safeSkinWidth);
+            return math.saturate(safeHitDistance * math.rcp(denominator));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveRollbackDistance(float hitDistance, float sweepDistance, float skinWidth)
         {
+            float safeSweepDistance = SanitizeNonNegative(sweepDistance);
             float hitFraction = ResolveHitFraction(hitDistance, sweepDistance, skinWidth);
-            return math.max(0f, sweepDistance * math.max(0f, hitFraction - RollbackFractionBias));
+            return safeSweepDistance * math.max(0f, hitFraction - RollbackFractionBias);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 NormalizeOrFallback(float3 value, float3 fallback)
         {
+            float3 safeFallback = SanitizeFiniteFloat3(fallback, new float3(0f, 1f, 0f));
             if (!math.all(math.isfinite(value)))
-                return fallback;
+                return safeFallback;
 
             float lengthSq = math.lengthsq(value);
-            if (lengthSq <= MinVectorMagnitudeSq)
-                return fallback;
+            if (!(lengthSq <= float.MaxValue && lengthSq > MinVectorMagnitudeSq))
+                return safeFallback;
 
-            return value * math.rsqrt(math.max(lengthSq, MinVectorMagnitudeSq));
+            return value * math.rsqrt(lengthSq);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 ProjectOnCollisionPlane(float3 velocity, float3 unitNormal)
         {
-            return velocity - (math.dot(velocity, unitNormal) * unitNormal);
+            float3 safeVelocity = SanitizeFiniteFloat3(velocity, float3.zero);
+            float3 safeNormal = NormalizeOrFallback(unitNormal, float3.zero);
+            float normalLengthSq = math.lengthsq(safeNormal);
+            if (normalLengthSq <= MinVectorMagnitudeSq)
+                return safeVelocity;
+
+            return safeVelocity - (math.dot(safeVelocity, safeNormal) * safeNormal);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float KineticEnergy(float mass, float velocityMagnitudeSq)
         {
-            return 0.5f * math.max(HectonPhysicsContract.DeterministicInvMillimeterScale, mass) * math.max(0f, velocityMagnitudeSq);
+            float safeMass = math.max(HectonPhysicsContract.DeterministicInvMillimeterScale, SanitizeNonNegative(mass));
+            float safeVelocityMagnitudeSq = SanitizeNonNegative(velocityMagnitudeSq);
+            return 0.5f * safeMass * safeVelocityMagnitudeSq;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -341,6 +354,18 @@ namespace Hecton8.Core.Contracts.Physics
             float3 primary = NormalizeOrFallback(primaryNormal, new float3(0f, 1f, 0f));
             float3 candidate = NormalizeOrFallback(candidateNormal, primary);
             return math.dot(primary, candidate) <= CornerNormalDotThreshold;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SanitizeNonNegative(float value)
+        {
+            return value <= float.MaxValue && value >= 0f ? value : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 SanitizeFiniteFloat3(float3 value, float3 fallback)
+        {
+            return math.all(math.isfinite(value)) ? value : fallback;
         }
     }
 }

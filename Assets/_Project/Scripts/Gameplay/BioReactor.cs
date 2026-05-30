@@ -56,7 +56,20 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton/Gameplay/Bio Reactor")]
     public sealed class BioReactor : MonoBehaviour, IPowerComponent, ITickable, IUpdatable, ILateFrameTickable, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
+        private const int ActiveReactorRegistryCapacity = 128;
         private static int s_x001BioReactorSignalPushDropCount;
+        private static readonly BioReactor[] s_activeReactors = new BioReactor[ActiveReactorRegistryCapacity];
+        private static int s_activeReactorCount;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            for (int i = 0; i < s_activeReactorCount; i++)
+                s_activeReactors[i] = null;
+
+            s_activeReactorCount = 0;
+            s_x001BioReactorSignalPushDropCount = 0;
+        }
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -407,6 +420,13 @@ namespace Hecton8.Gameplay
 
         private int ActiveFuelCount => _fuelItems != null ? math.max(0, _fuelItems.Count - _fuelHeadIndex) : 0;
 
+        internal static int ActiveReactorCount => s_activeReactorCount;
+
+        internal static BioReactor GetActiveReactorAt(int index)
+        {
+            return index >= 0 && index < s_activeReactorCount ? s_activeReactors[index] : null;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
@@ -430,6 +450,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             RefreshColdRegistryReferences();
+            RegisterActiveReactor();
             InteractableRegistry.RegisterTree(this);
             LocalizationEvents.RegisterLanguageListener(this);
             TryRegister();
@@ -440,6 +461,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            UnregisterActiveReactor();
             InteractableRegistry.InvalidateTree(this);
             LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregisterHotSwap();
@@ -448,9 +470,40 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            UnregisterActiveReactor();
             InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwap();
             TryUnregister();
+        }
+
+        private void RegisterActiveReactor()
+        {
+            for (int i = 0; i < s_activeReactorCount; i++)
+            {
+                if (ReferenceEquals(s_activeReactors[i], this))
+                    return;
+            }
+
+            if (s_activeReactorCount >= s_activeReactors.Length)
+                return;
+
+            s_activeReactors[s_activeReactorCount] = this;
+            s_activeReactorCount++;
+        }
+
+        private void UnregisterActiveReactor()
+        {
+            for (int i = s_activeReactorCount - 1; i >= 0; i--)
+            {
+                if (!ReferenceEquals(s_activeReactors[i], this))
+                    continue;
+
+                int lastIndex = s_activeReactorCount - 1;
+                s_activeReactors[i] = s_activeReactors[lastIndex];
+                s_activeReactors[lastIndex] = null;
+                s_activeReactorCount--;
+                return;
+            }
         }
 
         private void TryRegister()

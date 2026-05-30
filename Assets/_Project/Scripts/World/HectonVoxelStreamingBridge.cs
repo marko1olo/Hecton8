@@ -86,6 +86,9 @@ namespace Hecton8.World
         private readonly long[] _pendingDespawnKeys = new long[MaxRuntimeVolumeCapacity];
         private int _pendingDespawnKeyCount;
         private Unity.Collections.FixedList512Bytes<long> _pendingChunkFadeKeys;
+        // COLD ALLOC: Renderer/Material[32] - renderer metadata resolved at spawn completion, not in Tick/SlowTick/LateFrameTick.
+        private readonly Renderer[] _pendingChunkFadeRenderers = new Renderer[MaxPendingChunkFadeCapacity];
+        private readonly Material[] _pendingChunkFadeMaterials = new Material[MaxPendingChunkFadeCapacity];
         private static readonly int ChunkDissolveFadeId = Shader.PropertyToID("_ChunkDissolveFade");
         private const uint ChunkFadeRendererMissingWarningHash = 0xD0B2923Bu;
         private const uint ChunkFadeMaterialMissingWarningHash = 0xBBEEF2CDu;
@@ -104,6 +107,7 @@ namespace Hecton8.World
         private bool _hotSwapListenerRegistered;
         private float _chunkFadeDeltaAccumulator;
         private CancellationTokenSource _lifetimeCancellation;
+        private IObjectPoolService _objectPool;
 
         private void Awake()
         {
@@ -193,6 +197,7 @@ namespace Hecton8.World
         public void LateFrameTick()
         {
             FlushPendingDespawns();
+            FlushPendingChunkFadeRegistrations();
             if (_chunkFadeDeltaAccumulator > 0f)
             {
                 float dt = _chunkFadeDeltaAccumulator;
@@ -206,7 +211,6 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
-            FlushPendingChunkFadeRegistrations();
             RebuildDesiredRequests();
             CancelStalePendingRequests();
             DespawnStaleVolumes();
@@ -462,6 +466,25 @@ namespace Hecton8.World
                 return;
             }
 
+            Renderer renderer = null;
+            if (_objectPool == null ||
+                !_objectPool.TryGetPooledRootRenderer(volume, out renderer) ||
+                renderer == null)
+            {
+                PublishChunkFadeWarning(ChunkFadeRendererMissingWarningHash, key, 1f);
+                return;
+            }
+
+            Material material = renderer.sharedMaterial;
+            if (material == null || !material.HasProperty(ChunkDissolveFadeId))
+            {
+                PublishChunkFadeWarning(ChunkFadeMaterialMissingWarningHash, key, 1f);
+                return;
+            }
+
+            int pendingIndex = _pendingChunkFadeKeys.Length;
+            _pendingChunkFadeRenderers[pendingIndex] = renderer;
+            _pendingChunkFadeMaterials[pendingIndex] = material;
             _pendingChunkFadeKeys.AddNoResize(key);
         }
 
@@ -472,24 +495,23 @@ namespace Hecton8.World
             {
                 long key = _pendingChunkFadeKeys[i];
                 if (TryGetActiveVolume(key, out GameObject volume))
-                    RegisterChunkFadeImmediate(key, volume);
+                    RegisterChunkFadeImmediate(key, volume, _pendingChunkFadeRenderers[i], _pendingChunkFadeMaterials[i]);
             }
 
             ClearPendingChunkFadeRegistrations();
         }
 
-        private void RegisterChunkFadeImmediate(long key, GameObject volume)
+        private void RegisterChunkFadeImmediate(long key, GameObject volume, Renderer renderer, Material material)
         {
             if (volume == null || chunkFadeInDuration <= 0.0001f)
                 return;
 
-            if (!volume.TryGetComponent(out Renderer renderer) || renderer == null)
+            if (renderer == null)
             {
                 PublishChunkFadeWarning(ChunkFadeRendererMissingWarningHash, key, 1f);
                 return;
             }
 
-            Material material = renderer.sharedMaterial;
             if (material == null || !material.HasProperty(ChunkDissolveFadeId))
             {
                 PublishChunkFadeWarning(ChunkFadeMaterialMissingWarningHash, key, 1f);
@@ -682,6 +704,7 @@ namespace Hecton8.World
             WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
             WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            _objectPool ??= GlobalRegistry.ObjectPoolService;
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
@@ -782,6 +805,10 @@ namespace Hecton8.World
                     ReleaseChunkFadeMaterialPool();
                     if (isActiveAndEnabled)
                         EnsureChunkFadeMaterialPool();
+                    return;
+
+                case GlobalRegistryServiceSlot.ObjectPool:
+                    _objectPool = currentService as IObjectPoolService;
                     return;
 
                 case GlobalRegistryServiceSlot.Player:
@@ -1156,6 +1183,13 @@ namespace Hecton8.World
 
         private void ClearPendingChunkFadeRegistrations()
         {
+            int pendingCount = _pendingChunkFadeKeys.Length;
+            if (pendingCount > 0)
+            {
+                System.Array.Clear(_pendingChunkFadeRenderers, 0, pendingCount);
+                System.Array.Clear(_pendingChunkFadeMaterials, 0, pendingCount);
+            }
+
             _pendingChunkFadeKeys.Clear();
         }
 

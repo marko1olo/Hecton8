@@ -216,6 +216,8 @@ namespace Hecton8.Core
         private static int _hardwareEyeTextureWidth;
         private static int _hardwareEyeTextureHeight;
         private static int _nextRefreshSampleFrame;
+        private static float _pendingRefreshRateRequestHz;
+        private static bool _hasPendingRefreshRateRequest;
         private static Vector4 _lastFoveatedParams = Vector4.positiveInfinity;
         private static Vector4 _lastFoveatedCenterRadius = Vector4.positiveInfinity;
         private static Vector4 _lastNearClipDitherParams = Vector4.positiveInfinity;
@@ -271,6 +273,8 @@ namespace Hecton8.Core
             _hardwareEyeTextureWidth = 0;
             _hardwareEyeTextureHeight = 0;
             _nextRefreshSampleFrame = 0;
+            _pendingRefreshRateRequestHz = 0f;
+            _hasPendingRefreshRateRequest = false;
             _lastFoveatedParams = Vector4.positiveInfinity;
             _lastFoveatedCenterRadius = Vector4.positiveInfinity;
             _lastNearClipDitherParams = Vector4.positiveInfinity;
@@ -303,6 +307,14 @@ namespace Hecton8.Core
 
         internal static void RefreshFrameState(int frame)
         {
+            if (!_isXRActive)
+                _hasCachedHeadAup = false;
+
+            PublishStaticShaderState();
+        }
+
+        internal static void RefreshPlatformStateCold(int frame)
+        {
             bool active = XRSettings.enabled && XRSettings.isDeviceActive;
             bool wasActive = _isXRActive;
             if (active && frame >= _nextRefreshSampleFrame)
@@ -313,6 +325,9 @@ namespace Hecton8.Core
             else if (!active)
             {
                 _refreshRateHz = DefaultXRRefreshRateHz;
+                _nextRefreshSampleFrame = frame;
+                _pendingRefreshRateRequestHz = 0f;
+                _hasPendingRefreshRateRequest = false;
             }
 
             _isXRActive = active;
@@ -321,10 +336,9 @@ namespace Hecton8.Core
 
             if (!_isXRActive)
                 _hasCachedHeadAup = false;
-            else if (!_hasCachedHeadAup)
-                SlowTickHeadAupCache();
 
-            PublishStaticShaderState();
+            if (_isXRActive && _hasPendingRefreshRateRequest)
+                TryApplyDisplayRefreshRateRequestCold(_pendingRefreshRateRequestHz, frame);
         }
 
         internal static float ResolveDispatcherDeltaTime(float measuredDeltaTime)
@@ -406,6 +420,23 @@ namespace Hecton8.Core
                 return false;
             }
 
+            _pendingRefreshRateRequestHz = targetRefreshRateHz;
+            _hasPendingRefreshRateRequest = true;
+            return true;
+        }
+
+        private static bool TryApplyDisplayRefreshRateRequestCold(float targetRefreshRateHz, int frame)
+        {
+            if (!_isXRActive ||
+                !math.isfinite(targetRefreshRateHz) ||
+                targetRefreshRateHz < MinimumXRRefreshRateHz ||
+                targetRefreshRateHz > MaximumXRRefreshRateHz)
+            {
+                _pendingRefreshRateRequestHz = 0f;
+                _hasPendingRefreshRateRequest = false;
+                return false;
+            }
+
             _displaySubsystems.Clear();
             SubsystemManager.GetSubsystems(_displaySubsystems);
             bool requested = false;
@@ -425,7 +456,9 @@ namespace Hecton8.Core
                     Application.targetFrameRate = frameRate;
 
                 _refreshRateHz = targetRefreshRateHz;
-                _nextRefreshSampleFrame = SystemDispatcher.CurrentFrameIndex + RefreshSampleIntervalFrames;
+                _nextRefreshSampleFrame = frame + RefreshSampleIntervalFrames;
+                _pendingRefreshRateRequestHz = 0f;
+                _hasPendingRefreshRateRequest = false;
                 InvalidateShaderStateCache();
             }
 

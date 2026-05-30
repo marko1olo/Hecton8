@@ -44,8 +44,8 @@ namespace Hecton8.World.Biomes
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public struct BiomeBoundarySdfSampleJob : IJob
         {
-            [ReadOnly, NoAlias] public NativeArray<byte> GlobalBiomeMap;
-            [ReadOnly, NoAlias] public NativeArray<uint> BiomeHashMap;
+            [ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly GlobalBiomeMap;
+            [ReadOnly, NoAlias] public NativeArray<uint>.ReadOnly BiomeHashMap;
             [WriteOnly, NoAlias] public NativeArray<BiomeBoundarySdfResult> Result;
 
             public BiomeBoundarySdfSettings Settings;

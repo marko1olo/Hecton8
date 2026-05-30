@@ -38,18 +38,19 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T GetAt(int index)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if ((uint)index >= (uint)_count)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (!_indexErrorLogged)
                 {
                     Hecton8.Core.H8Debug.LogError(
                         $"[RegistryBucket<{typeof(T).Name}>] Index {index} outside live count {_count}.");
                     _indexErrorLogged = true;
                 }
+#endif
                 return null;
             }
-#endif
+
             return _items[index];
         }
 

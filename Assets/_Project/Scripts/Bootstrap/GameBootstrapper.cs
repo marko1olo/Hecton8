@@ -561,9 +561,11 @@ namespace Hecton8.Bootstrap
         private bool _shaderWarmupTelemetryReady;
         private int _shaderWarmupTelemetryCursor;
         private int _shaderWarmupDumpQueued;
-        private byte[] _shaderWarmupDumpScratch;
+        // COLD ALLOC: byte[19200] - fatal shader warmup black-box snapshot - owner: GameBootstrapper
+        private readonly byte[] _shaderWarmupDumpScratch = new byte[BootstrapShaderWarmupDumpBytes];
         private string _shaderWarmupDumpPath;
         private string _shaderWarmupDumpTempPath;
+        private bool _shaderWarmupDumpPathCacheAttempted;
         private int _shaderWarmupDumpByteCount;
         // COLD ALLOC: BootstrapDependencyNode[bootstrap-node-count] - cached Kahn topological service execution order - owner: GameBootstrapper
         private readonly BootstrapDependencyNode[] _bootstrapExecutionOrder = new BootstrapDependencyNode[(int)BootstrapDependencyNode.Count];
@@ -1328,6 +1330,7 @@ namespace Hecton8.Bootstrap
             GlobalRegistry.RegisterBootstrapperRuntime(this);
             s_activeRuntimeInstance = this;
             RuntimeShaderReferenceCatalog.Register(runtimeShaderReferenceCatalog);
+            CacheBootstrapShaderWarmupDumpPathCold();
 
             if (Application.isPlaying)
             {
@@ -3749,12 +3752,11 @@ namespace Hecton8.Bootstrap
                 0,
                 0L);
 
-            string absolutePath = ResolveBootstrapShaderWarmupDumpPath();
-            string tempPath = ResolveBootstrapShaderWarmupTempDumpPath(absolutePath);
-            HectonPersistentPathPolicy.EnsureParentDirectory(absolutePath);
-
-            if (_shaderWarmupDumpScratch == null || _shaderWarmupDumpScratch.Length < BootstrapShaderWarmupDumpBytes)
-                _shaderWarmupDumpScratch = new byte[BootstrapShaderWarmupDumpBytes]; // COLD ALLOC: byte[19200] - fatal shader warmup black-box snapshot - owner: GameBootstrapper
+            CacheBootstrapShaderWarmupDumpPathCold();
+            string absolutePath = _shaderWarmupDumpPath;
+            string tempPath = _shaderWarmupDumpTempPath;
+            if (string.IsNullOrEmpty(absolutePath) || string.IsNullOrEmpty(tempPath))
+                return;
 
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null ||
@@ -3853,6 +3855,9 @@ namespace Hecton8.Bootstrap
                 return;
             }
 
+            if (!TryEnsureBootstrapShaderWarmupDumpDirectoryCold(path))
+                return;
+
             fixed (byte* source = scratch)
             {
                 if (!AsyncWriteManager.WriteAll(tempPath, source, byteCount, out _))
@@ -3860,6 +3865,65 @@ namespace Hecton8.Bootstrap
             }
 
             TryPromoteBootstrapShaderWarmupDump(tempPath, path);
+        }
+
+        private void CacheBootstrapShaderWarmupDumpPathCold()
+        {
+            if (_shaderWarmupDumpPathCacheAttempted)
+                return;
+
+            _shaderWarmupDumpPathCacheAttempted = true;
+            try
+            {
+                string absolutePath = ResolveBootstrapShaderWarmupDumpPath();
+                _shaderWarmupDumpPath = absolutePath;
+                _shaderWarmupDumpTempPath = ResolveBootstrapShaderWarmupTempDumpPath(absolutePath);
+            }
+            catch (ArgumentException)
+            {
+                _shaderWarmupDumpPath = string.Empty;
+                _shaderWarmupDumpTempPath = string.Empty;
+            }
+            catch (IOException)
+            {
+                _shaderWarmupDumpPath = string.Empty;
+                _shaderWarmupDumpTempPath = string.Empty;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _shaderWarmupDumpPath = string.Empty;
+                _shaderWarmupDumpTempPath = string.Empty;
+            }
+            catch (NotSupportedException)
+            {
+                _shaderWarmupDumpPath = string.Empty;
+                _shaderWarmupDumpTempPath = string.Empty;
+            }
+        }
+
+        private static bool TryEnsureBootstrapShaderWarmupDumpDirectoryCold(string finalPath)
+        {
+            try
+            {
+                HectonPersistentPathPolicy.EnsureParentDirectoryCold(finalPath);
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
         }
 
         private static string ResolveBootstrapShaderWarmupDumpPath()

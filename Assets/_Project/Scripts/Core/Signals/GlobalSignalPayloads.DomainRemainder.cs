@@ -1791,7 +1791,8 @@ namespace Hecton8.Core.Contracts.Signals
         public const int LowTierFrameSignals = 16;
         public const uint LaneHash = 2577695098u; // FNV32("HullRepairedSignal")
         public const byte CompletedFlag = 1 << 0;
-        public const byte LowTierVisualOnlyFlag = 1 << 1;
+        public const byte SurvivalPressureVisualOnlyFlag = 1 << 1;
+        public const byte LowTierVisualOnlyFlag = SurvivalPressureVisualOnlyFlag;
 
         [FieldOffset(0)] public AbsoluteUniversePosition HitAup;
         [FieldOffset(48)] public int RoomId;
@@ -1799,6 +1800,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(56)] public uint Frame;
         [FieldOffset(60)] public byte DentIndex;
         [FieldOffset(61)] public byte DentsRepairedCount;
+        [FieldOffset(62)] public byte QualityWeightQ8;
         [FieldOffset(62)] public byte QualityTier;
         [FieldOffset(63)] public byte Flags;
     }
@@ -1812,7 +1814,8 @@ namespace Hecton8.Core.Contracts.Signals
         public const int LowTierFrameSignals = 16;
         public const uint LaneHash = 3041159082u; // FNV32("BaseModuleCompromisedSignal")
         public const ushort MaxDeformationFlag = 1 << 0;
-        public const ushort LowTierVisualOnlyFlag = 1 << 1;
+        public const ushort SurvivalPressureVisualOnlyFlag = 1 << 1;
+        public const ushort LowTierVisualOnlyFlag = SurvivalPressureVisualOnlyFlag;
 
         [FieldOffset(0)] public float3 ModuleCenter;
         [FieldOffset(12)] public float Stress01;
@@ -1825,6 +1828,7 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(40)] public ushort SourceId;
         [FieldOffset(42)] public ushort Flags;
         [FieldOffset(44)] public byte StressIndex;
+        [FieldOffset(45)] public byte QualityWeightQ8;
         [FieldOffset(45)] public byte QualityTier;
         [FieldOffset(46)] public ushort Reserved0;
         [FieldOffset(48)] private ulong _padTail0;

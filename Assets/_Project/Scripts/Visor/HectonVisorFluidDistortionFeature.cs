@@ -23,7 +23,7 @@ namespace Hecton8.Visor
     /// <summary>
     /// Fullscreen visor droplet and leak distortion driven by the active player wet-lens and hull-stress signals.
     /// </summary>
-    public sealed class HectonVisorFluidDistortionFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
+    public sealed class HectonVisorFluidDistortionFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable
     {
         private const float ThermalDistortionCullStartSpeedMetersPerSecond = 12f;
         private const float ThermalDistortionCullEndSpeedMetersPerSecond = 15f;
@@ -44,11 +44,7 @@ namespace Hecton8.Visor
         private const uint BlackBoxVersion = 1u;
         private const uint BlackBoxFlagPlayerCamera = 1u << 0;
         private const uint BlackBoxFlagVisualActive = 1u << 1;
-        private const uint BlackBoxFlagQualityPressure = 1u << 2;
-        private const uint BlackBoxFlagHomeostasisFallback = 1u << 3;
         private const uint BlackBoxFlagNonFiniteInput = 1u << 4;
-        private const uint BlackBoxFlagThermalMotionCull = 1u << 5;
-        private const uint BlackBoxFlagVisualOverkill = 1u << 6;
         private const string BlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1335_VisorFluidRefraction.bin";
 
 #if UNITY_EDITOR
@@ -172,13 +168,13 @@ namespace Hecton8.Visor
             [System.Runtime.InteropServices.FieldOffset(46)]
             public ushort CameraPixelHeight;
             [System.Runtime.InteropServices.FieldOffset(48)]
-            private byte _pad0;
+            public byte QualityPressureQ8;
             [System.Runtime.InteropServices.FieldOffset(49)]
-            private byte _pad1;
+            public byte HomeostasisFallbackQ8;
             [System.Runtime.InteropServices.FieldOffset(50)]
-            private byte _pad2;
+            public byte ThermalMotionCullQ8;
             [System.Runtime.InteropServices.FieldOffset(51)]
-            private byte _pad3;
+            public byte VisualOverkillQ8;
             [System.Runtime.InteropServices.FieldOffset(52)]
             private byte _pad4;
             [System.Runtime.InteropServices.FieldOffset(53)]
@@ -250,6 +246,8 @@ namespace Hecton8.Visor
             private uint _lensThreadGroupSizeX;
             private uint _lensThreadGroupSizeY;
             private bool _hasVisorFluidGlobals;
+            private bool _supportsSetConstantBuffer;
+            private bool _supportsComputeShaders;
             private const uint MaxKernelThreadProduct = 256u;
             private const int MaxDispatchGroupsPerDimension = 65535;
 
@@ -257,6 +255,20 @@ namespace Hecton8.Visor
             {
                 profilingSampler = _profilingSampler;
                 requiresIntermediateTexture = true;
+            }
+
+            public void SetGraphicsCapabilitiesCold(bool supportsSetConstantBuffer, bool supportsComputeShaders)
+            {
+                _supportsSetConstantBuffer = supportsSetConstantBuffer;
+                _supportsComputeShaders = supportsComputeShaders;
+                if (!_supportsSetConstantBuffer)
+                {
+                    Dispose();
+                    return;
+                }
+
+                if (!_supportsComputeShaders)
+                    ReleaseLensComputeGlobalsBuffer();
             }
 
             public void Setup(FeatureSettings settings, Material material, RuntimeState runtimeState)
@@ -386,20 +398,19 @@ namespace Hecton8.Visor
             public bool PrewarmVisorFluidGlobalsBuffer()
             {
                 bool fluidReady = EnsureVisorFluidGlobalsBuffer(allowAllocation: true);
-                bool computeReady = !SystemInfo.supportsComputeShaders || EnsureLensComputeGlobalsBuffer(allowAllocation: true);
+                bool computeReady = !_supportsComputeShaders || EnsureLensComputeGlobalsBuffer(allowAllocation: true);
                 return fluidReady && computeReady;
             }
 
             private bool EnsureVisorFluidGlobalsBuffer(bool allowAllocation)
             {
-                if (!SystemInfo.supportsSetConstantBuffer)
+                if (!_supportsSetConstantBuffer)
                 {
                     Dispose();
                     return false;
                 }
 
-                if (_visorFluidGlobalsBufferA != null && _visorFluidGlobalsBufferA.IsValid() &&
-                    _visorFluidGlobalsBufferB != null && _visorFluidGlobalsBufferB.IsValid())
+                if (HasVisorFluidGlobalsBuffer())
                     return true;
 
                 if (!allowAllocation)
@@ -413,9 +424,16 @@ namespace Hecton8.Visor
                 return _visorFluidGlobalsBufferA.IsValid() && _visorFluidGlobalsBufferB.IsValid();
             }
 
+            private bool HasVisorFluidGlobalsBuffer()
+            {
+                return _supportsSetConstantBuffer &&
+                    _visorFluidGlobalsBufferA != null && _visorFluidGlobalsBufferA.IsValid() &&
+                    _visorFluidGlobalsBufferB != null && _visorFluidGlobalsBufferB.IsValid();
+            }
+
             private bool UpdateVisorFluidGlobals(FeatureSettings settings, RuntimeState runtimeState, bool lensMaskActive, float lensMaskBlend)
             {
-                if (!EnsureVisorFluidGlobalsBuffer(allowAllocation: false))
+                if (!HasVisorFluidGlobalsBuffer())
                     return false;
 
                 float effectIntensity = Sanitize01(runtimeState.EffectIntensity);
@@ -521,14 +539,13 @@ namespace Hecton8.Visor
 
             private bool EnsureLensComputeGlobalsBuffer(bool allowAllocation)
             {
-                if (!SystemInfo.supportsSetConstantBuffer || !SystemInfo.supportsComputeShaders)
+                if (!_supportsSetConstantBuffer || !_supportsComputeShaders)
                 {
                     ReleaseLensComputeGlobalsBuffer();
                     return false;
                 }
 
-                if (_lensComputeGlobalsBufferA != null && _lensComputeGlobalsBufferA.IsValid() &&
-                    _lensComputeGlobalsBufferB != null && _lensComputeGlobalsBufferB.IsValid())
+                if (HasLensComputeGlobalsBuffer())
                     return true;
 
                 if (!allowAllocation)
@@ -539,6 +556,14 @@ namespace Hecton8.Visor
                 _lensComputeGlobalsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Constant, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, LensComputeGlobalsStrideBytes);
                 _lensComputeGlobalsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Constant, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, LensComputeGlobalsStrideBytes);
                 return _lensComputeGlobalsBufferA.IsValid() && _lensComputeGlobalsBufferB.IsValid();
+            }
+
+            private bool HasLensComputeGlobalsBuffer()
+            {
+                return _supportsSetConstantBuffer &&
+                    _supportsComputeShaders &&
+                    _lensComputeGlobalsBufferA != null && _lensComputeGlobalsBufferA.IsValid() &&
+                    _lensComputeGlobalsBufferB != null && _lensComputeGlobalsBufferB.IsValid();
             }
 
             private void ReleaseLensComputeGlobalsBuffer()
@@ -559,7 +584,7 @@ namespace Hecton8.Visor
             private bool UpdateLensComputeGlobals(in RuntimeState runtimeState, float lensMaskBlend, out GraphicsBuffer globalsBuffer)
             {
                 globalsBuffer = null;
-                if (!EnsureLensComputeGlobalsBuffer(allowAllocation: false))
+                if (!HasLensComputeGlobalsBuffer())
                     return false;
 
                 LensComputeGlobalsDTO globals = new LensComputeGlobalsDTO(
@@ -642,7 +667,7 @@ namespace Hecton8.Visor
             {
                 lensMaskTexture = default;
                 lensMaskBlend = ResolveLensMaskBlend(in _runtimeState);
-                if (!SystemInfo.supportsComputeShaders ||
+                if (!_supportsComputeShaders ||
                     _lensComputeShader == null ||
                     _lensKernelIndex < 0 ||
                     lensMaskBlend <= 0.001f)
@@ -869,21 +894,37 @@ namespace Hecton8.Visor
         private IPlayerRuntimeContext _playerContext;
         private IFluidSim _fluidSimulation;
         private VaultGenerationHandle<VisorRefractionTelemetryEntry> _blackBoxHandle;
+        private Vector4 _cachedDiegeticLensState;
+        private Vector4 _cachedDiegeticLensParams0;
+        private Vector4 _cachedDiegeticLensParams1;
+        private Vector4 _cachedDiegeticLensParams2;
+        private float _cachedRainIntensity;
+        private float _cachedWaterDensitySignal;
+        private float _cachedAmbientLight01;
+        private int _cachedGraphicsMemoryMb;
         private uint _blackBoxVaultGeneration;
+        private uint _cachedPresentationTelemetryFlags;
         private bool _blackBoxHandleOwned;
         private bool _blackBoxDumped;
         private bool _blackBoxHotSwapRegistered;
+        private bool _supportsSetConstantBuffer;
+        private bool _supportsComputeShaders;
+        private bool _lateFrameRegistered;
 
         private void OnEnable()
         {
+            CacheGraphicsCapabilitiesCold();
+            TryRegisterLateFrameTickable();
             TryRegisterBlackBoxHotSwapListener();
             BindBlackBoxVaultForLifecycle(GlobalRegistry.DataVault);
             EnsureBlackBoxLeaseCold();
             CacheRenderDependenciesCold();
+            CachePresentationGlobalsLate();
         }
 
         private void OnDisable()
         {
+            TryUnregisterLateFrameTickable();
             ReleaseBlackBoxLease();
             TryUnregisterBlackBoxHotSwapListener();
         }
@@ -899,11 +940,14 @@ namespace Hecton8.Visor
 #endif
 
             _pass ??= new VisorFluidPass();
+            CacheGraphicsCapabilitiesCold();
             _pass.PrewarmVisorFluidGlobalsBuffer();
+            TryRegisterLateFrameTickable();
             TryRegisterBlackBoxHotSwapListener();
             BindBlackBoxVaultForLifecycle(GlobalRegistry.DataVault);
             EnsureBlackBoxLeaseCold();
             CacheRenderDependenciesCold();
+            CachePresentationGlobalsLate();
             Shader shader = settings != null ? settings.shader : null;
             if (shader == null)
             {
@@ -942,6 +986,7 @@ namespace Hecton8.Visor
             _playerContext = null;
             _fluidSimulation = null;
             ReleaseBlackBoxLease();
+            TryUnregisterLateFrameTickable();
             TryUnregisterBlackBoxHotSwapListener();
         }
 
@@ -965,7 +1010,23 @@ namespace Hecton8.Visor
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.FluidSimulation)
+            {
                 _fluidSimulation = currentService as IFluidSim;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregisterLateFrameTickable();
+                if (currentService != null)
+                    TryRegisterLateFrameTickable();
+            }
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            CachePresentationGlobalsLate();
         }
 
         private bool TryBuildRuntimeState(
@@ -974,7 +1035,7 @@ namespace Hecton8.Visor
             out RuntimeState runtimeState)
         {
             runtimeState = default;
-            uint telemetryFlags = 0u;
+            uint telemetryFlags = _cachedPresentationTelemetryFlags;
             if (renderCamera == null || settings == null)
                 return false;
 
@@ -995,10 +1056,10 @@ namespace Hecton8.Visor
             FlagIfNonFinite(rawHullStress, ref telemetryFlags);
             float wetness = Sanitize01(rawWetness);
             float hullStress = Sanitize01(rawHullStress);
-            Vector4 rawLensState = Shader.GetGlobalVector(ShaderConstants.DiegeticLensStateId);
-            Vector4 rawLensParams0 = Shader.GetGlobalVector(ShaderConstants.DiegeticLensParams0Id);
-            Vector4 rawLensParams1 = Shader.GetGlobalVector(ShaderConstants.DiegeticLensParams1Id);
-            Vector4 rawLensParams2 = Shader.GetGlobalVector(ShaderConstants.DiegeticLensParams2Id);
+            Vector4 rawLensState = _cachedDiegeticLensState;
+            Vector4 rawLensParams0 = _cachedDiegeticLensParams0;
+            Vector4 rawLensParams1 = _cachedDiegeticLensParams1;
+            Vector4 rawLensParams2 = _cachedDiegeticLensParams2;
             FlagIfNonFinite(rawLensState, ref telemetryFlags);
             FlagIfNonFinite(rawLensParams0, ref telemetryFlags);
             FlagIfNonFinite(rawLensParams1, ref telemetryFlags);
@@ -1036,7 +1097,7 @@ namespace Hecton8.Visor
             float dustContribution = 0f;
             if (dustStrength > 0.001f && ambientDustResponse > 0.001f)
             {
-                float rawAmbientLight = ResolveAmbientLight01();
+                float rawAmbientLight = _cachedAmbientLight01;
                 FlagIfNonFinite(rawAmbientLight, ref telemetryFlags);
                 ambientLight01 = Sanitize01(rawAmbientLight);
                 dustContribution = math.saturate(ambientLight01 * dustStrength * ambientDustResponse);
@@ -1047,7 +1108,7 @@ namespace Hecton8.Visor
                 math.saturate((hullStress - HullStressVisorContributionStart01) * HullStressVisorContributionInvRange) *
                 Sanitize01(settings.hullStressContribution));
             float effectIntensity = math.saturate(math.max(math.max(math.max(wetness, hullContribution), dustContribution), lensContribution));
-            float rawRainIntensity = Shader.GetGlobalFloat(ShaderConstants.RainIntensityId);
+            float rawRainIntensity = _cachedRainIntensity;
             FlagIfNonFinite(rawRainIntensity, ref telemetryFlags);
             float rainIntensity = math.saturate(math.max(Sanitize01(rawRainIntensity), lensSurfaceWash * 0.35f));
 
@@ -1185,10 +1246,10 @@ namespace Hecton8.Visor
             return new Vector4(air, water, denseWater, glass);
         }
 
-        private static float ResolveHardwareQualityPressure01(FeatureSettings settings)
+        private float ResolveHardwareQualityPressure01(FeatureSettings settings)
         {
             int thresholdMb = settings != null ? math.max(256, settings.minimumQualityVideoMemoryMb) : 2048;
-            float graphicsMemoryMb = SystemInfo.graphicsMemorySize;
+            float graphicsMemoryMb = _cachedGraphicsMemoryMb;
             if (!math.isfinite(graphicsMemoryMb) || graphicsMemoryMb <= 0f)
                 return 0f;
 
@@ -1237,9 +1298,59 @@ namespace Hecton8.Visor
                 _fluidSimulation = GlobalRegistry.FluidSimulation;
         }
 
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsSetConstantBuffer = SystemInfo.supportsSetConstantBuffer;
+            _supportsComputeShaders = SystemInfo.supportsComputeShaders;
+            _cachedGraphicsMemoryMb = SystemInfo.graphicsMemorySize;
+            _pass?.SetGraphicsCapabilitiesCold(_supportsSetConstantBuffer, _supportsComputeShaders);
+        }
+
+        private void CachePresentationGlobalsLate()
+        {
+            uint telemetryFlags = 0u;
+            _cachedDiegeticLensState = Shader.GetGlobalVector(ShaderConstants.DiegeticLensStateId);
+            _cachedDiegeticLensParams0 = Shader.GetGlobalVector(ShaderConstants.DiegeticLensParams0Id);
+            _cachedDiegeticLensParams1 = Shader.GetGlobalVector(ShaderConstants.DiegeticLensParams1Id);
+            _cachedDiegeticLensParams2 = Shader.GetGlobalVector(ShaderConstants.DiegeticLensParams2Id);
+            _cachedRainIntensity = Shader.GetGlobalFloat(ShaderConstants.RainIntensityId);
+            _cachedWaterDensitySignal = Shader.GetGlobalFloat(ShaderConstants.WaterDensitySignalId);
+            _cachedAmbientLight01 = ResolveAmbientLight01();
+
+            FlagIfNonFinite(_cachedDiegeticLensState, ref telemetryFlags);
+            FlagIfNonFinite(_cachedDiegeticLensParams0, ref telemetryFlags);
+            FlagIfNonFinite(_cachedDiegeticLensParams1, ref telemetryFlags);
+            FlagIfNonFinite(_cachedDiegeticLensParams2, ref telemetryFlags);
+            FlagIfNonFinite(_cachedRainIntensity, ref telemetryFlags);
+            FlagIfNonFinite(_cachedWaterDensitySignal, ref telemetryFlags);
+            FlagIfNonFinite(_cachedAmbientLight01, ref telemetryFlags);
+            _cachedPresentationTelemetryFlags = telemetryFlags;
+        }
+
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_lateFrameRegistered ||
+                !Application.isPlaying ||
+                GlobalRegistry.Dispatcher == null)
+            {
+                return;
+            }
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _lateFrameRegistered = false;
+        }
+
         private float ResolveWaterDensitySignal01(ref uint telemetryFlags)
         {
-            float globalSignal = Shader.GetGlobalFloat(ShaderConstants.WaterDensitySignalId);
+            float globalSignal = _cachedWaterDensitySignal;
             FlagIfNonFinite(globalSignal, ref telemetryFlags);
             if (math.isfinite(globalSignal) && globalSignal > 0.0001f)
                 return math.saturate(globalSignal);
@@ -1294,14 +1405,6 @@ namespace Hecton8.Visor
             uint flags = BlackBoxFlagPlayerCamera | runtimeState.TelemetryFlags;
             if (runtimeState.EffectIntensity > 0.001f || runtimeState.RainIntensity > 0.001f)
                 flags |= BlackBoxFlagVisualActive;
-            if (runtimeState.QualityPressure01 > 0.001f)
-                flags |= BlackBoxFlagQualityPressure;
-            if (runtimeState.HomeostasisFallback01 > 0.5f)
-                flags |= BlackBoxFlagHomeostasisFallback;
-            if (runtimeState.ThermalMotionCull01 > 0.5f)
-                flags |= BlackBoxFlagThermalMotionCull;
-            if (runtimeState.VisualOverkill01 > 0.001f)
-                flags |= BlackBoxFlagVisualOverkill;
 
             VisorRefractionTelemetryEntry entry = default;
             entry.FrameIndex = frame >= 0 ? (uint)frame : 0u;
@@ -1317,6 +1420,10 @@ namespace Hecton8.Visor
             entry.CameraPixelHeight = ClampUShort(renderCamera != null ? renderCamera.pixelHeight : 0);
             entry.VaultGeneration = _blackBoxVaultGeneration;
             entry.QualityWeightQ16 = EncodeQualityQ16(runtimeState.QualityWeight01);
+            entry.QualityPressureQ8 = EncodeUnitQ8(runtimeState.QualityPressure01);
+            entry.HomeostasisFallbackQ8 = EncodeUnitQ8(runtimeState.HomeostasisFallback01);
+            entry.ThermalMotionCullQ8 = EncodeUnitQ8(runtimeState.ThermalMotionCull01);
+            entry.VisualOverkillQ8 = EncodeUnitQ8(runtimeState.VisualOverkill01);
 
             if (!TryWriteBlackBoxEntry(frame, in entry, out int blackBoxLength))
                 return;
@@ -1527,7 +1634,9 @@ namespace Hecton8.Visor
             hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.Wetness)));
             hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.HullStress)));
             hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.WaterDensitySignal01)));
+            hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.HomeostasisFallback01)));
             hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.QualityPressure01)));
+            hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.ThermalMotionCull01)));
             hash = MixHash(hash, math.asuint(Sanitize01(runtimeState.VisualOverkill01)));
             hash = MixHash(hash, EncodeQualityQ16(runtimeState.QualityWeight01));
             Vector3 velocity = SanitizeVector(runtimeState.LocalVelocity);
@@ -1540,6 +1649,11 @@ namespace Hecton8.Visor
         private static uint EncodeQualityQ16(float qualityWeight01)
         {
             return (uint)math.round(Sanitize01(qualityWeight01) * 65535f);
+        }
+
+        private static byte EncodeUnitQ8(float value01)
+        {
+            return (byte)math.round(Sanitize01(value01) * 255f);
         }
 
         private static uint MixHash(uint hash, uint value)
@@ -1673,6 +1787,10 @@ namespace Hecton8.Visor
             BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(40, 4), entry.QualityWeightQ16);
             BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(44, 2), entry.CameraPixelWidth);
             BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(46, 2), entry.CameraPixelHeight);
+            destination[48] = entry.QualityPressureQ8;
+            destination[49] = entry.HomeostasisFallbackQ8;
+            destination[50] = entry.ThermalMotionCullQ8;
+            destination[51] = entry.VisualOverkillQ8;
         }
 
         private static void WriteFloatLittleEndian(Span<byte> destination, float value)

@@ -32,7 +32,8 @@ namespace Hecton8.Core.Memory.Editor
                 BlockMutationGateField.SetValue(vault, 1);
                 try
                 {
-                    vault.TryAcquireWriteLock(in handle, Owner, out NativeArray<int> warmup);
+                    if (vault.TryAcquireWriteLock(in handle, Owner, out NativeArray<int> warmup))
+                        vault.ReleaseWriteLock(in handle, Owner);
 
                     long beforeBytes = GC.GetAllocatedBytesForCurrentThread();
                     bool allFailed = true;

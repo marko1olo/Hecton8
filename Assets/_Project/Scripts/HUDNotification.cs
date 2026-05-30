@@ -91,6 +91,7 @@ namespace Hecton8.UI
         private bool _isShowing;
         private VaultGenerationHandle<NotificationRequest> _queueHandle;
         private IDataVault _dataVault;
+        private IDataVault _queueWriteVault;
         private int _queueCount;
         private int _queueCapacity;
         private uint _currentMessageHash;
@@ -839,6 +840,9 @@ namespace Hecton8.UI
         private bool TryAcquireQueueWrite(out NativeArray<NotificationRequest> queue)
         {
             queue = default;
+            if (_queueWriteVault != null)
+                return false;
+
             IDataVault vault = _dataVault;
             if (vault == null || !IsHudQueueHandle(in _queueHandle))
             {
@@ -859,6 +863,7 @@ namespace Hecton8.UI
                 if (!queue.IsCreated)
                     return false;
 
+                _queueWriteVault = vault;
                 releaseOnExit = false;
                 return true;
             }
@@ -871,7 +876,8 @@ namespace Hecton8.UI
 
         private void ReleaseQueueWrite()
         {
-            IDataVault vault = _dataVault;
+            IDataVault vault = _queueWriteVault;
+            _queueWriteVault = null;
             if (vault != null && IsHudQueueHandle(in _queueHandle))
                 vault.ReleaseWriteLock(in _queueHandle, VaultOwnerSystemId);
         }
@@ -886,10 +892,12 @@ namespace Hecton8.UI
 
         private void ReleaseQueue(IDataVault vault)
         {
+            ReleaseQueueWrite();
             if (vault != null && IsHudQueueHandle(in _queueHandle))
                 vault.ReleaseBuffer(in _queueHandle);
 
             _queueHandle = default;
+            _queueWriteVault = null;
             _queueCapacity = 0;
             _queueCount = 0;
         }

@@ -407,7 +407,7 @@ namespace Hecton8.Atmosphere
 
             CacheDataVaultCold();
             CachePlayerRuntimeContext(Hecton8.Core.GlobalRegistry.Player);
-            TryResolveDependencies(true);
+            TryResolveDependenciesCold(true);
             InitializeRuntimeStateIfNeeded();
         }
 
@@ -422,7 +422,7 @@ namespace Hecton8.Atmosphere
             TryRegisterHotSwapListener();
             HectonFloatingOrigin.RegisterListener(this);
             TryRegisterTickManagers();
-            TryResolveDependencies(true);
+            TryResolveDependenciesCold(true);
             RefreshPlayerMovementSubscription();
             InitializeRuntimeStateIfNeeded();
             SampleLocalRainExposure();
@@ -504,7 +504,7 @@ namespace Hecton8.Atmosphere
 
         public void SlowTick()
         {
-            TryResolveDependencies(true);
+            TryResolveDependenciesHot(true);
             CacheOceanDefaults();
             InitializeRuntimeStateIfNeeded();
             SampleLocalRainExposure();
@@ -609,7 +609,7 @@ namespace Hecton8.Atmosphere
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
             {
                 CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
-                RefreshPlayerMovementReference();
+                RefreshPlayerMovementReferenceCold();
                 RefreshPlayerMovementSubscription();
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
@@ -639,7 +639,7 @@ namespace Hecton8.Atmosphere
             _ = previousService;
         }
 
-        private void TryResolveDependencies(bool force)
+        private void TryResolveDependenciesCold(bool force)
         {
             if (!Application.isPlaying)
                 return;
@@ -653,8 +653,8 @@ namespace Hecton8.Atmosphere
             CacheFluidRuntimeCold();
             CacheOceanKinematicsServiceCold();
             CacheAudioRuntimeCold();
-            RefreshPlayerMovementReference();
-            RefreshSceneOwnedReferences();
+            RefreshPlayerMovementReferenceCold();
+            RefreshSceneOwnedReferencesCold();
             RefreshOceanKinematicsBinding();
 
             if (weatherVfxRig == null)
@@ -664,16 +664,47 @@ namespace Hecton8.Atmosphere
             CacheOceanDefaults();
         }
 
-        private void RefreshPlayerMovementReference()
+        private void TryResolveDependenciesHot(bool force)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (!force && now < _nextResolveTime)
+                return;
+
+            _nextResolveTime = now + ResolveRetryInterval;
+
+            RefreshPlayerMovementReferenceHot();
+            RefreshSceneOwnedReferencesHot();
+            RefreshOceanKinematicsBinding();
+            RefreshPlayerMovementSubscription();
+            CacheOceanDefaults();
+        }
+
+        private void RefreshPlayerMovementReferenceHot()
         {
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext != null && playerContext.PlayerMovement != null)
             {
                 playerMovement = playerContext.PlayerMovement;
                 _playerTransform = playerContext.PlayerTransform;
-                _playerBuoyancy = null;
-                if (_playerTransform != null)
-                    _playerTransform.TryGetComponent(out _playerBuoyancy);
+                _playerBuoyancy = playerContext.PlayerBuoyancyAirState;
+                return;
+            }
+
+            _playerTransform = playerMovement != null ? playerMovement.transform : null;
+            _playerBuoyancy = null;
+        }
+
+        private void RefreshPlayerMovementReferenceCold()
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null && playerContext.PlayerMovement != null)
+            {
+                playerMovement = playerContext.PlayerMovement;
+                _playerTransform = playerContext.PlayerTransform;
+                _playerBuoyancy = playerContext.PlayerBuoyancyAirState;
                 return;
             }
 
@@ -731,7 +762,20 @@ namespace Hecton8.Atmosphere
             _audioRuntime = GlobalRegistry.Audio;
         }
 
-        private void RefreshSceneOwnedReferences()
+        private void RefreshSceneOwnedReferencesHot()
+        {
+            if (_playerTransform != null)
+            {
+                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+                if (stormVisorController == null || !stormVisorController.transform.IsChildOf(_playerTransform))
+                    stormVisorController = playerContext != null ? playerContext.VisorController : null;
+
+                if (stormFlashlight == null || !stormFlashlight.transform.IsChildOf(_playerTransform))
+                    stormFlashlight = playerContext != null ? playerContext.Flashlight : null;
+            }
+        }
+
+        private void RefreshSceneOwnedReferencesCold()
         {
             if (underwaterVisuals == null)
                 TryGetComponent(out underwaterVisuals);
@@ -785,9 +829,11 @@ namespace Hecton8.Atmosphere
 
             _subscribedPlayerMovement = target;
             _playerTransform = _subscribedPlayerMovement != null ? _subscribedPlayerMovement.transform : null;
-            _playerBuoyancy = null;
-            if (_playerTransform != null)
-                _playerTransform.TryGetComponent(out _playerBuoyancy);
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            _playerBuoyancy = playerContext != null &&
+                              ReferenceEquals(playerContext.PlayerMovement, _subscribedPlayerMovement)
+                ? playerContext.PlayerBuoyancyAirState
+                : null;
         }
 
         private void CacheOceanDefaults()

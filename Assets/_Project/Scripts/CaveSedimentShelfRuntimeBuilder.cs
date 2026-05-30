@@ -8,10 +8,51 @@ namespace Hecton8.Caves
     internal static class CaveSedimentShelfRuntimeBuilder
     {
         private const string ShelfRootName = "_SedimentShelves";
-        private static readonly string[] _ShelfNames = CreateNameCache("Shelf_", 20); // COLD ALLOC: bounded shelf child names.
+        private const int MaxShelfCount = 20;
+        private static readonly string[] _ShelfNames = CreateNameCache("Shelf_", MaxShelfCount); // COLD ALLOC: bounded shelf child names.
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
         private static MaterialPropertyBlock _ShelfPropertyBlock;
+
+        public static Transform Prewarm(Transform parent)
+        {
+            if (parent == null)
+                return null;
+
+            Transform root = GetOrCreateShelfRoot(parent);
+            for (int i = 0; i < MaxShelfCount; i++)
+            {
+                if (i < root.childCount)
+                {
+                    WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisual(
+                        root.GetChild(i).gameObject,
+                        PrimitiveType.Cube,
+                        GetCachedName(i),
+                        Vector3.zero,
+                        Quaternion.identity,
+                        Vector3.one);
+                    continue;
+                }
+
+                Renderer renderer = WorldGeneratedPrimitiveFactory.CreatePrimitiveVisual(
+                    root,
+                    PrimitiveType.Cube,
+                    GetCachedName(i),
+                    Vector3.zero,
+                    Quaternion.identity,
+                    Vector3.one);
+                if (renderer != null)
+                    renderer.gameObject.SetActive(false);
+            }
+
+            DisableUnusedChildren(root, 0);
+            return root;
+        }
+
+        public static void PrewarmSharedResources()
+        {
+            _ = GetShelfPropertyBlock();
+        }
 
         public static void Build(
             Transform parent,
@@ -24,6 +65,30 @@ namespace Hecton8.Caves
                 return;
 
             Transform shelfRoot = GetOrCreateShelfRoot(parent);
+            BuildPrepared(shelfRoot, volume, preset, config, globalIntensity, createMissing: true);
+        }
+
+        public static void BuildPrepared(
+            Transform shelfRoot,
+            HectonVoxelVolume volume,
+            CavePreset preset,
+            SedimentShelfConfig config,
+            float globalIntensity)
+        {
+            BuildPrepared(shelfRoot, volume, preset, config, globalIntensity, createMissing: false);
+        }
+
+        private static void BuildPrepared(
+            Transform shelfRoot,
+            HectonVoxelVolume volume,
+            CavePreset preset,
+            SedimentShelfConfig config,
+            float globalIntensity,
+            bool createMissing)
+        {
+            if (shelfRoot == null || volume == null || config == null || !config.enabled)
+                return;
+
             if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, preset, out Bounds volumeBounds))
             {
                 DisableUnusedChildren(shelfRoot, 0);
@@ -72,7 +137,8 @@ namespace Hecton8.Caves
                     localPosition,
                     localRotation,
                     localScale,
-                    shelfMaterial);
+                    shelfMaterial,
+                    createMissing);
                 ApplyShelfVisuals(shelfRenderer, config);
             }
 
@@ -85,14 +151,15 @@ namespace Hecton8.Caves
             Vector3 localPosition,
             Quaternion localRotation,
             Vector3 localScale,
-            Material material)
+            Material material,
+            bool createMissing)
         {
             string name = GetCachedName(shelfIndex);
             if (shelfIndex < root.childCount)
             {
                 Transform existing = root.GetChild(shelfIndex);
                 ActivateTransform(existing);
-                return WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisual(
+                return WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisualHot(
                     existing.gameObject,
                     PrimitiveType.Cube,
                     name,
@@ -101,6 +168,9 @@ namespace Hecton8.Caves
                     localScale,
                     material);
             }
+
+            if (!createMissing)
+                return null;
 
             return WorldGeneratedPrimitiveFactory.CreatePrimitiveVisual(
                 root,
@@ -145,7 +215,7 @@ namespace Hecton8.Caves
             Bounds volumeBounds,
             float globalIntensity)
         {
-            int maxCount = Mathf.Clamp(config.maxCount, 0, 20);
+            int maxCount = Mathf.Clamp(config.maxCount, 0, MaxShelfCount);
             if (maxCount <= 0)
                 return 0;
 
@@ -164,7 +234,8 @@ namespace Hecton8.Caves
 
         private static Material ResolveShelfMaterial(HectonVoxelVolume volume)
         {
-            if (volume != null && volume.TryGetComponent(out MeshRenderer renderer))
+            MeshRenderer renderer = volume != null ? volume.CachedMeshRenderer : null;
+            if (renderer != null)
                 return renderer.sharedMaterial;
 
             return null;

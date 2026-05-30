@@ -20,6 +20,7 @@ namespace Hecton8.Construction
     {
         private static readonly int GlobalHatchLockStatesId = Shader.PropertyToID("_GlobalHatchLockStates");
         private static readonly int GlobalHatchLockParamsId = Shader.PropertyToID("_GlobalHatchLockParams");
+        private static readonly System.Threading.WaitCallback HatchBlackBoxDumpWorkerCallback = RunHatchBlackBoxDumpWorker;
         private const ulong HatchTelemetryDumpMutationGuardMask =
             (1UL << ((int)BufferID.Shinobu343HatchTelemetryRing & 31)) |
             (1UL << ((int)BufferID.Shinobu343HatchTelemetryCursor & 31));
@@ -35,7 +36,6 @@ namespace Hecton8.Construction
         private VaultGenerationHandle<uint> _hatchTelemetryCursorHandle;
         private VaultGenerationHandle<HatchTuningDTO> _hatchTuningHandle;
         private VaultGenerationHandle<HatchHardwareProfileDTO> _hatchProfilesHandle;
-        private VaultGenerationHandle<byte> _hatchCsvScratchHandle;
         private VaultGenerationHandle<FluidCompartmentDTO> _hatchMockFluidCompartmentsHandle;
         private VaultGenerationHandle<FluidCompartmentDTO> _hatchFluidCompartmentsHandle;
         private VaultGenerationHandle<StructuralIntegrityStateDTO> _hatchStructuralStatesHandle;
@@ -66,6 +66,11 @@ namespace Hecton8.Construction
         private long _hatchProfilesCsvLastWriteTicks;
         private string _hatchDumpPath;
         private string _hatchProfilesCsvPath;
+        private string _hatchTelemetryDumpPathSnapshot;
+        private readonly HatchTelemetryEntry[] _hatchTelemetryDumpSnapshot = new HatchTelemetryEntry[HatchLockConstants.TelemetryFrameCount];
+        private int _hatchTelemetryDumpSnapshotCount;
+        private int _hatchTelemetryDumpInFlight;
+        private uint _hatchTelemetryDumpSnapshotCursor;
         private GraphicsBuffer _hatchShaderStateBufferA;
         private GraphicsBuffer _hatchShaderStateBufferB;
 
@@ -149,20 +154,13 @@ namespace Hecton8.Construction
             if (vault == null || !runtime.EnsureHatchLockVaultState(vault, runtime.ResolveHatchCapacity(), allowDefaultProfileLoad: false))
                 return false;
 
-            if (!TryAcquireWriteLane(vault, in runtime._hatchProfilesHandle, BufferID.Shinobu343HatchProfiles, 1, out NativeArray<HatchHardwareProfileDTO> profiles))
+            Span<HatchHardwareProfileDTO> profileScratch = stackalloc HatchHardwareProfileDTO[HatchLockConstants.ProfileCapacity];
+            int parsed = ParseHatchProfiles(csv, profileScratch);
+            if (parsed <= 0)
                 return false;
 
-            int parsed;
-            try
-            {
-                parsed = ParseHatchProfiles(csv, profiles);
-                if (parsed <= 0)
-                    return false;
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in runtime._hatchProfilesHandle, OwnerSystemId);
-            }
+            if (!runtime.TryCommitHatchProfiles(vault, profileScratch.Slice(0, parsed)))
+                return false;
 
             runtime._hatchProfileRowCount = parsed;
             runtime._hatchProfileCsvLoaded = true;
@@ -220,8 +218,6 @@ namespace Hecton8.Construction
                 _hatchTuningHandle = vault.EnsureGenerationHandle<HatchTuningDTO>(BufferID.Shinobu343HatchTuning, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             if (!IsBulkheadVaultHandle(in _hatchProfilesHandle, BufferID.Shinobu343HatchProfiles))
                 _hatchProfilesHandle = vault.EnsureGenerationHandle<HatchHardwareProfileDTO>(BufferID.Shinobu343HatchProfiles, HatchLockConstants.ProfileCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!IsBulkheadVaultHandle(in _hatchCsvScratchHandle, BufferID.Shinobu343HatchCsvScratch))
-                _hatchCsvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.Shinobu343HatchCsvScratch, HatchLockConstants.CsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
             if (!IsBulkheadVaultHandle(in _hatchMockFluidCompartmentsHandle, BufferID.Shinobu343HatchMockFluidCompartments))
                 _hatchMockFluidCompartmentsHandle = vault.EnsureGenerationHandle<FluidCompartmentDTO>(
                     BufferID.Shinobu343HatchMockFluidCompartments,
@@ -264,30 +260,32 @@ namespace Hecton8.Construction
             }
 
             TryBindHatchExternalHandles(vault);
-            bool cursorLocked = false;
-            bool tuningLocked = false;
-            try
+            if (!_hatchDefaultsInitialized)
             {
-                if (!_hatchDefaultsInitialized)
+                if (!TryAcquireWriteLane(vault, in _hatchTelemetryCursorHandle, BufferID.Shinobu343HatchTelemetryCursor, 1, out NativeArray<uint> cursor))
+                    return false;
+
+                try
                 {
-                    if (!TryAcquireWriteLane(vault, in _hatchTelemetryCursorHandle, BufferID.Shinobu343HatchTelemetryCursor, 1, out NativeArray<uint> cursor))
-                        return false;
-                    cursorLocked = true;
                     cursor[0] = 0u;
                     _hatchDefaultsInitialized = true;
                 }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _hatchTelemetryCursorHandle, OwnerSystemId);
+                }
+            }
 
-                if (!TryAcquireWriteLane(vault, in _hatchTuningHandle, BufferID.Shinobu343HatchTuning, 1, out NativeArray<HatchTuningDTO> tuning))
-                    return false;
-                tuningLocked = true;
+            if (!TryAcquireWriteLane(vault, in _hatchTuningHandle, BufferID.Shinobu343HatchTuning, 1, out NativeArray<HatchTuningDTO> tuning))
+                return false;
+
+            try
+            {
                 WriteHatchTuningRow(tuning, profiles, _hatchProfileRowCount, safeCapacity, ResolveBulkheadQualityWeight());
             }
             finally
             {
-                if (tuningLocked)
-                    vault.ReleaseWriteLock(in _hatchTuningHandle, OwnerSystemId);
-                if (cursorLocked)
-                    vault.ReleaseWriteLock(in _hatchTelemetryCursorHandle, OwnerSystemId);
+                vault.ReleaseWriteLock(in _hatchTuningHandle, OwnerSystemId);
             }
 #if UNITY_EDITOR
             if (allowDefaultProfileLoad && !_hatchProfileCsvLoaded && !_hatchProfileCsvLoadAttempted)
@@ -755,11 +753,19 @@ namespace Hecton8.Construction
             if (vault == null ||
                 _hatchTelemetryHandle.Generation == 0u ||
                 _hatchTelemetryCursorHandle.Generation == 0u ||
-                !vault.TryAcquireMutationGuard(HatchTelemetryDumpMutationGuardMask))
+                string.IsNullOrEmpty(_hatchDumpPath) ||
+                System.Threading.Interlocked.CompareExchange(ref _hatchTelemetryDumpInFlight, 1, 0) != 0)
             {
                 return;
             }
 
+            if (!vault.TryAcquireMutationGuard(HatchTelemetryDumpMutationGuardMask))
+            {
+                System.Threading.Volatile.Write(ref _hatchTelemetryDumpInFlight, 0);
+                return;
+            }
+
+            bool queued = false;
             try
             {
                 if (!IsBulkheadVaultHandle(in _hatchTelemetryHandle, BufferID.Shinobu343HatchTelemetryRing) ||
@@ -784,42 +790,82 @@ namespace Hecton8.Construction
                 if ((entry.Flags & HatchTelemetryFlags.DumpRequested) == 0u)
                     return;
 
+                int telemetryCount = math.min(telemetry.Length, _hatchTelemetryDumpSnapshot.Length);
+                for (int i = 0; i < telemetryCount; i++)
+                    _hatchTelemetryDumpSnapshot[i] = telemetry[i];
+
+                _hatchTelemetryDumpPathSnapshot = _hatchDumpPath;
+                _hatchTelemetryDumpSnapshotCursor = cursorValue;
+                _hatchTelemetryDumpSnapshotCount = telemetryCount;
                 _lastHatchDumpAttemptTelemetryCursor = cursorValue;
-                if (TryDumpHatchBlackBox(telemetry, cursorValue))
-                    _lastHatchDumpedTelemetryCursor = cursorValue;
+                queued = true;
             }
             finally
             {
                 vault.ReleaseMutationGuard(HatchTelemetryDumpMutationGuardMask);
+                if (!queued)
+                    System.Threading.Volatile.Write(ref _hatchTelemetryDumpInFlight, 0);
+            }
+
+            if (!System.Threading.ThreadPool.QueueUserWorkItem(HatchBlackBoxDumpWorkerCallback, this))
+            {
+                System.Threading.Volatile.Write(ref _hatchTelemetryDumpInFlight, 0);
             }
         }
 
-        private bool TryDumpHatchBlackBox(NativeArray<HatchTelemetryEntry> telemetry, uint cursor)
+        private static void RunHatchBlackBoxDumpWorker(object state)
         {
-            if (!telemetry.IsCreated || telemetry.Length == 0 || string.IsNullOrEmpty(_hatchDumpPath))
+            if (state is BulkheadContainmentRuntime runtime)
+                runtime.WriteHatchBlackBoxDumpWorker();
+        }
+
+        private void WriteHatchBlackBoxDumpWorker()
+        {
+            try
+            {
+                uint cursor = _hatchTelemetryDumpSnapshotCursor;
+                int telemetryCount = _hatchTelemetryDumpSnapshotCount;
+                string dumpPath = _hatchTelemetryDumpPathSnapshot;
+                if (TryDumpHatchBlackBox(_hatchTelemetryDumpSnapshot, telemetryCount, cursor, dumpPath))
+                    _lastHatchDumpedTelemetryCursor = cursor;
+            }
+            finally
+            {
+                System.Threading.Volatile.Write(ref _hatchTelemetryDumpInFlight, 0);
+            }
+        }
+
+        private bool TryDumpHatchBlackBox(HatchTelemetryEntry[] telemetry, int telemetryCount, uint cursor, string dumpPath)
+        {
+            if (telemetry == null ||
+                telemetryCount <= 0 ||
+                telemetryCount > telemetry.Length ||
+                string.IsNullOrEmpty(dumpPath))
+            {
                 return false;
+            }
 
             const int telemetryDumpEntryBytes = 64;
             if (UnsafeUtility.SizeOf<HatchTelemetryEntry>() != telemetryDumpEntryBytes)
                 return false;
 
-            string dumpDirectory = Path.GetDirectoryName(_hatchDumpPath);
+            string dumpDirectory = Path.GetDirectoryName(dumpPath);
             if (string.IsNullOrEmpty(dumpDirectory))
                 return false;
 
             try
             {
                 Directory.CreateDirectory(dumpDirectory);
-                using FileStream stream = new FileStream(_hatchDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
+                using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
                 Span<byte> header = stackalloc byte[16];
                 WriteUInt(header, 0, HatchLockConstants.DumpMagic);
                 WriteUInt(header, 4, cursor);
-                WriteUInt(header, 8, (uint)telemetry.Length);
+                WriteUInt(header, 8, (uint)telemetryCount);
                 WriteUInt(header, 12, telemetryDumpEntryBytes);
                 stream.Write(header);
 
                 Span<byte> entryBytes = stackalloc byte[telemetryDumpEntryBytes];
-                for (int i = 0; i < telemetry.Length; i++)
+                for (int i = 0; i < telemetryCount; i++)
                 {
                     HatchTelemetryEntry entry = telemetry[i];
                     WriteHatchTelemetryEntry(entryBytes, in entry);
@@ -861,10 +907,6 @@ namespace Hecton8.Construction
             if (vault == null || string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            if (!TryAcquireWriteLane(vault, in _hatchProfilesHandle, BufferID.Shinobu343HatchProfiles, 1, out NativeArray<HatchHardwareProfileDTO> profiles))
-                return false;
-
-            bool scratchLocked = false;
             try
             {
                 FileInfo info = new FileInfo(path);
@@ -873,26 +915,25 @@ namespace Hecton8.Construction
                 if (!forceReload && _hatchProfileCsvLoaded && info.LastWriteTimeUtc.Ticks == _hatchProfilesCsvLastWriteTicks)
                     return false;
 
-                if (!TryAcquireWriteLane(vault, in _hatchCsvScratchHandle, BufferID.Shinobu343HatchCsvScratch, 1, out NativeArray<byte> scratch))
-                    return false;
-
-                scratchLocked = true;
-
                 int byteCount = (int)info.Length;
-                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
+                Span<byte> csvScratch = stackalloc byte[HatchLockConstants.CsvScratchBytes];
                 using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 int totalRead = 0;
                 while (totalRead < byteCount)
                 {
-                    Span<byte> span = new Span<byte>(scratchPtr + totalRead, byteCount - totalRead);
+                    Span<byte> span = csvScratch.Slice(totalRead, byteCount - totalRead);
                     int read = stream.Read(span);
                     if (read <= 0)
                         break;
                     totalRead += read;
                 }
 
-                int parsed = totalRead == byteCount ? ParseHatchProfiles(new ReadOnlySpan<byte>(scratchPtr, totalRead), profiles) : 0;
+                Span<HatchHardwareProfileDTO> profileScratch = stackalloc HatchHardwareProfileDTO[HatchLockConstants.ProfileCapacity];
+                int parsed = totalRead == byteCount ? ParseHatchProfiles(csvScratch.Slice(0, totalRead), profileScratch) : 0;
                 if (parsed <= 0)
+                    return false;
+
+                if (!TryCommitHatchProfiles(vault, profileScratch.Slice(0, parsed)))
                     return false;
 
                 _hatchProfileRowCount = parsed;
@@ -906,15 +947,29 @@ namespace Hecton8.Construction
             {
                 return false;
             }
+        }
+
+        private bool TryCommitHatchProfiles(IDataVault vault, ReadOnlySpan<HatchHardwareProfileDTO> stagedProfiles)
+        {
+            if (vault == null || stagedProfiles.Length <= 0)
+                return false;
+
+            if (!TryAcquireWriteLane(vault, in _hatchProfilesHandle, BufferID.Shinobu343HatchProfiles, stagedProfiles.Length, out NativeArray<HatchHardwareProfileDTO> profiles))
+                return false;
+
+            try
+            {
+                for (int i = 0; i < stagedProfiles.Length; i++)
+                    profiles[i] = stagedProfiles[i];
+                return true;
+            }
             finally
             {
-                if (scratchLocked)
-                    vault.ReleaseWriteLock(in _hatchCsvScratchHandle, OwnerSystemId);
                 vault.ReleaseWriteLock(in _hatchProfilesHandle, OwnerSystemId);
             }
         }
 
-        private static int ParseHatchProfiles(ReadOnlySpan<byte> csv, NativeArray<HatchHardwareProfileDTO> profiles)
+        private static int ParseHatchProfiles(ReadOnlySpan<byte> csv, Span<HatchHardwareProfileDTO> profiles)
         {
             int count = 0;
             int index = 0;
@@ -980,7 +1035,6 @@ namespace Hecton8.Construction
                 ReleaseVaultHandle(vault, ref _hatchTelemetryCursorHandle, BufferID.Shinobu343HatchTelemetryCursor);
                 ReleaseVaultHandle(vault, ref _hatchTuningHandle, BufferID.Shinobu343HatchTuning);
                 ReleaseVaultHandle(vault, ref _hatchProfilesHandle, BufferID.Shinobu343HatchProfiles);
-                ReleaseVaultHandle(vault, ref _hatchCsvScratchHandle, BufferID.Shinobu343HatchCsvScratch);
                 ReleaseVaultHandle(vault, ref _hatchMockFluidCompartmentsHandle, BufferID.Shinobu343HatchMockFluidCompartments);
             }
 
@@ -989,7 +1043,6 @@ namespace Hecton8.Construction
             _hatchTelemetryCursorHandle = default;
             _hatchTuningHandle = default;
             _hatchProfilesHandle = default;
-            _hatchCsvScratchHandle = default;
             _hatchMockFluidCompartmentsHandle = default;
             _hatchFluidCompartmentsHandle = default;
             _hatchStructuralStatesHandle = default;

@@ -48,8 +48,8 @@ namespace Hecton8.Core.Editor
 
             if (profileHandle.BufferID == 0u ||
                 inputHandle.BufferID == 0u ||
-                !vault.TryResolveHandle(in profileHandle, out NativeArray<InputProfileDTO> profileBuffer) ||
-                !vault.TryResolveHandle(in inputHandle, out NativeArray<InputStateDTO> inputBuffer) ||
+                !vault.TryReadOnlyHandle(in profileHandle, out NativeArray<InputProfileDTO>.ReadOnly profileBuffer) ||
+                !vault.TryReadOnlyHandle(in inputHandle, out NativeArray<InputStateDTO>.ReadOnly inputBuffer) ||
                 profileBuffer.Length <= 0 ||
                 inputBuffer.Length <= 0)
             {
@@ -70,7 +70,7 @@ namespace Hecton8.Core.Editor
             mockCollision = EditorGUILayout.Toggle("Mock Collision Pulse", mockCollision);
             profile.Flags = mockCollision ? profile.Flags | 1u : profile.Flags & ~1u;
             if (EditorGUI.EndChangeCheck())
-                profileBuffer[0] = profile;
+                WriteProfile(vault, in profileHandle, in profile);
 
             Rect curveRect = GUILayoutUtility.GetRect(position.width - 20f, 120f);
             DrawCurvePreview(curveRect, profile);
@@ -78,6 +78,28 @@ namespace Hecton8.Core.Editor
             InputStateDTO state = inputBuffer[0];
             Rect oscilloscopeRect = GUILayoutUtility.GetRect(GridSize, GridSize);
             DrawOscilloscope(oscilloscopeRect, profile, state);
+        }
+
+        private static void WriteProfile(
+            IDataVault vault,
+            in VaultGenerationHandle<InputProfileDTO> profileHandle,
+            in InputProfileDTO profile)
+        {
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in profileHandle, SystemID.CoreDeterminism, out NativeArray<InputProfileDTO> profileBuffer))
+            {
+                return;
+            }
+
+            try
+            {
+                if (profileBuffer.IsCreated && profileBuffer.Length > 0)
+                    profileBuffer[0] = profile;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in profileHandle, SystemID.CoreDeterminism);
+            }
         }
 
         private static void DrawCurvePreview(Rect rect, InputProfileDTO profile)

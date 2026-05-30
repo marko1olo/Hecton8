@@ -1,9 +1,7 @@
 using System;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Memory;
-using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
@@ -508,6 +506,7 @@ namespace Hecton8.Animation.FaunaProcedural
             return exponent < 0 ? value / scale : value * scale;
         }
     }
+#endif
 
     public static class ProceduralBoneSanitizer
     {
@@ -544,106 +543,4 @@ namespace Hecton8.Animation.FaunaProcedural
             return math.isfinite(value) && value > 0f ? value : fallback;
         }
     }
-
-    public static class ProceduralBoneBlackBox
-    {
-        public static bool TryDumpTelemetry(
-            string projectRoot,
-            NativeArray<ProceduralBoneTelemetryEntry> telemetryRing,
-            NativeArray<int> telemetryCursor)
-        {
-            if (!ProceduralBoneBlenderLayout.Validate() ||
-                !telemetryRing.IsCreated ||
-                telemetryRing.Length < ProceduralBoneBlenderConstants.TelemetryCapacity ||
-                !telemetryCursor.IsCreated ||
-                telemetryCursor.Length <= 0)
-            {
-                return false;
-            }
-
-            try
-            {
-                string root = projectRoot == null || projectRoot.Length == 0 ? "." : projectRoot;
-                string path = Path.Combine(root, ProceduralBoneBlenderConstants.DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (directory != null && directory.Length != 0)
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    int cursor = telemetryCursor[0];
-                    writer.Write(0x414E494D53484E42UL);
-                    writer.Write(1u);
-                    writer.Write(ProceduralBoneBlenderConstants.TelemetryEntryBytes);
-                    writer.Write(ProceduralBoneBlenderConstants.TelemetryCapacity);
-                    writer.Write(cursor);
-                    int start = cursor >= ProceduralBoneBlenderConstants.TelemetryCapacity
-                        ? PositiveModulo(cursor - ProceduralBoneBlenderConstants.TelemetryCapacity, telemetryRing.Length)
-                        : 0;
-
-                    for (int i = 0; i < ProceduralBoneBlenderConstants.TelemetryCapacity; i++)
-                    {
-                        int sourceIndex = PositiveModulo(start + i, telemetryRing.Length);
-                        WriteEntry(writer, telemetryRing[sourceIndex]);
-                    }
-                }
-
-                return true;
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                return false;
-            }
-            catch (ObjectDisposedException)
-            {
-                return false;
-            }
-        }
-
-        private static int PositiveModulo(int value, int length)
-        {
-            int safeLength = Math.Max(1, length);
-            int result = value % safeLength;
-            return result < 0 ? result + safeLength : result;
-        }
-
-        private static void WriteEntry(BinaryWriter writer, ProceduralBoneTelemetryEntry entry)
-        {
-            writer.Write(entry.Frame);
-            writer.Write(entry.ActiveSkeletons);
-            writer.Write(entry.MatricesComputed);
-            writer.Write(entry.MatrixUploadCount);
-            writer.Write(entry.KinematicComputeTimeMs);
-            writer.Write(entry.StateHash);
-            writer.Write(entry.Flags);
-            writer.Write(entry.GlobalQualityWeight);
-            writer.Write(entry.MaxWaveSpeed);
-            writer.Write(entry.AverageActiveBones);
-            writer.Write(entry.InvalidMathCount);
-            writer.Write(entry.CulledSkeletons);
-            WriteFloat3(writer, entry.LastRootLocal);
-            writer.Write(entry._pad0);
-        }
-
-        private static void WriteFloat3(BinaryWriter writer, float3 value)
-        {
-            writer.Write(value.x);
-            writer.Write(value.y);
-            writer.Write(value.z);
-        }
-    }
-#endif
 }

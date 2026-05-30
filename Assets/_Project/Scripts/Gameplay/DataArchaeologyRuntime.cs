@@ -809,7 +809,9 @@ namespace Hecton8.Gameplay
             if (_hologramCount <= 0)
                 return;
 
-            EnsureReconstructionResources();
+            if (!AreReconstructionResourcesReady())
+                return;
+
             Mesh mesh = _resolvedReconstructionMesh != null ? _resolvedReconstructionMesh : reconstructionMesh;
             Material material = reconstructionMaterial != null ? reconstructionMaterial : _runtimeMaterial;
             if (mesh == null || material == null)
@@ -874,6 +876,7 @@ namespace Hecton8.Gameplay
         {
             CacheRegistryServicesCold();
             EnsureNativeState();
+            EnsureReconstructionResources();
             TryRegisterHotSwapListener();
             RegisterOriginShiftListener();
             TryRegisterRuntime();
@@ -1188,6 +1191,12 @@ namespace Hecton8.Gameplay
 
             if (reconstructionMaterial != null)
                 reconstructionMaterial.enableInstancing = true;
+        }
+
+        private bool AreReconstructionResourcesReady()
+        {
+            return (_resolvedReconstructionMesh != null || reconstructionMesh != null) &&
+                   (reconstructionMaterial != null || _runtimeMaterial != null);
         }
 
         private bool TryGetScanState(uint hash, out byte state)

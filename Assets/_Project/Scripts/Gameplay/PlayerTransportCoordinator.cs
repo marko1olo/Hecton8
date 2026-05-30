@@ -39,13 +39,13 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            ResolveReferences();
+            ResolveReferencesCold();
             PublishActiveTransportLifecycleChanged();
         }
 
         private void OnEnable()
         {
-            ResolveReferences();
+            ResolveReferencesCold();
             TryRegisterHotSwapListener();
             TryRegister();
             PublishActiveTransportLifecycleChanged();
@@ -53,7 +53,7 @@ namespace Hecton8.Gameplay
 
         private void Start()
         {
-            ResolveReferences();
+            ResolveReferencesCold();
             TryRegisterHotSwapListener();
             TryRegister();
         }
@@ -332,6 +332,17 @@ namespace Hecton8.Gameplay
 
         private void ResolveReferences()
         {
+            if (playerToolManager == null)
+            {
+                IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+                if (runtimeContext != null)
+                    playerToolManager = runtimeContext.ToolManager;
+            }
+        }
+
+        private void ResolveReferencesCold()
+        {
+            ResolveReferences();
             if (playerToolManager == null)
                 gameObject.TryGetComponent(out playerToolManager);
         }

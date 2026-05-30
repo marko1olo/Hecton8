@@ -137,6 +137,7 @@ namespace Hecton8.Progression
         private ISaveService _saveService;
         private IPDALogbookService _logbookManager;
         private ILocalizationTextReadModel _localization;
+        private IPlayerRuntimeContext _cachedPlayerContext;
 
         /// <inheritdoc />
         public int SavePriority => 206;
@@ -152,22 +153,22 @@ namespace Hecton8.Progression
         private void OnEnable()
         {
             TryRegisterHotSwapListener();
-            ResolveOwnersCold();
+            CacheOwnersCold();
             CacheAdvisoryNotifications();
             TryRegisterWithTickManager();
             TryRegisterWithSaveManager();
-            RebindOwnerSubscriptions();
+            RebindOwnerSubscriptionsFromCachedOwners();
             InventoryEvents.Register(this);
             BaseIntegrityEvents.Register(this);
         }
 
         private void Start()
         {
-            ResolveOwnersCold();
+            CacheOwnersCold();
             CacheAdvisoryNotifications();
             TryRegisterWithTickManager();
             TryRegisterWithSaveManager();
-            RebindOwnerSubscriptions();
+            RebindOwnerSubscriptionsFromCachedOwners();
         }
 
         private void OnDisable()
@@ -236,7 +237,7 @@ namespace Hecton8.Progression
         {
             ProcessSessionLifecycleSignals();
 
-            if (!ResolveOwnersHot())
+            if (!HasCachedOwnersHot())
                 return;
 
             ConsumeSurvivalDeathSignal();
@@ -425,7 +426,7 @@ namespace Hecton8.Progression
         private void HandleGameLoaded()
         {
             RefreshAdvisoryNotifications();
-            RebindOwnerSubscriptions();
+            RebindOwnerSubscriptionsFromCachedOwners();
         }
 
         private void HandlePlayerSpawned(in SessionLifecycleSignal signal)
@@ -434,12 +435,12 @@ namespace Hecton8.Progression
             if (signal.PlayerEntityId == 0ul || signal.PlayerEntityId != ownerEntityId)
                 return;
 
-            RebindOwnerSubscriptions();
+            RebindOwnerSubscriptionsFromCachedOwners();
         }
 
-        private void RebindOwnerSubscriptions()
+        private void RebindOwnerSubscriptionsFromCachedOwners()
         {
-            ResolveOwnersCold();
+            CacheSurvivalFromPlayerContext();
             RefreshSurvivalSignalBinding();
         }
 
@@ -449,15 +450,18 @@ namespace Hecton8.Progression
             _lastSurvivalDeathSignalSequence = 0;
         }
 
-        private bool ResolveOwnersHot()
+        private bool HasCachedOwnersHot()
         {
             return _survivalSystem != null;
         }
 
-        private bool ResolveOwnersCold()
+        private bool CacheOwnersCold()
         {
             if (_survivalSystem == null)
                 TryGetComponent(out _survivalSystem);
+
+            _cachedPlayerContext = GlobalRegistry.Player;
+            CacheSurvivalFromPlayerContext();
 
             if (_saveService == null)
                 _saveService = GlobalRegistry.Save;
@@ -465,6 +469,14 @@ namespace Hecton8.Progression
             _localization = Hecton8.Core.GlobalRegistry.LocalizationText;
 
             return _survivalSystem != null;
+        }
+
+        private void CacheSurvivalFromPlayerContext()
+        {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            HectonSurvivalSystem survivalSystem = playerContext != null ? playerContext.SurvivalSystem : null;
+            if (survivalSystem != null)
+                _survivalSystem = survivalSystem;
         }
 
         private void RefreshSurvivalSignalBinding()
@@ -867,6 +879,10 @@ namespace Hecton8.Progression
                     UnregisterFromSaveManager();
                     _saveService = currentService as ISaveService;
                     TryRegisterWithSaveManager();
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                    RebindOwnerSubscriptionsFromCachedOwners();
                     break;
                 case GlobalRegistryServiceSlot.PDALogbook:
                     _logbookManager = currentService as IPDALogbookService;

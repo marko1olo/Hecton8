@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Threading;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -19,10 +21,14 @@ namespace Hecton8.Core
 
         // COLD ALLOC: Dictionary<int,BudgetRecord>[32] - persistent native allocation budget registry - owner: MemoryBudgetTracker
         private static readonly Dictionary<int, BudgetRecord> _records = new Dictionary<int, BudgetRecord>(32);
+        private const int OwnerCollisionProbeLimit = 16;
+        private const int GateSpinLimit = 128;
+        private static int _recordGate;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            _recordGate = 0;
             _records.Clear();
         }
 
@@ -32,6 +38,7 @@ namespace Hecton8.Core
                 return;
 
             int ownerKey = StableHash(ownerName);
+            bool shouldWarn = false;
             BudgetRecord record = new BudgetRecord
             {
                 OwnerName = ownerName,
@@ -40,23 +47,41 @@ namespace Hecton8.Core
                 WarningIssued = false
             };
 
-            if (_records.TryGetValue(ownerKey, out BudgetRecord existing))
-                record.WarningIssued = existing.WarningIssued;
+            if (!TryEnterRecordGate())
+                return;
 
-            bool exceededBudget = record.TotalBytes > record.BudgetBytes;
-            if (exceededBudget && !record.WarningIssued)
+            try
             {
-                record.WarningIssued = true;
+                if (!TryResolveRecordSlotLocked(ownerName, ownerKey, out ownerKey, out BudgetRecord existing, out bool hasExisting))
+                    return;
+
+                if (hasExisting)
+                    record.WarningIssued = existing.WarningIssued;
+
+                bool exceededBudget = record.TotalBytes > record.BudgetBytes;
+                if (exceededBudget && !record.WarningIssued)
+                {
+                    record.WarningIssued = true;
+                    shouldWarn = true;
+                }
+                else if (!exceededBudget)
+                {
+                    record.WarningIssued = false;
+                }
+
+                _records[ownerKey] = record;
+            }
+            finally
+            {
+                ExitRecordGate();
+            }
+
+            if (shouldWarn)
+            {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogWarning("[MemoryBudgetTracker] Persistent native budget exceeded.");
 #endif
             }
-            else if (!exceededBudget)
-            {
-                record.WarningIssued = false;
-            }
-
-            _records[ownerKey] = record;
         }
 
         public static void Unregister(string ownerName)
@@ -64,7 +89,19 @@ namespace Hecton8.Core
             if (string.IsNullOrEmpty(ownerName))
                 return;
 
-            _records.Remove(StableHash(ownerName));
+            if (!TryEnterRecordGate())
+                return;
+
+            try
+            {
+                int ownerKey = StableHash(ownerName);
+                if (TryResolveRecordSlotLocked(ownerName, ownerKey, out ownerKey, out _, out bool hasExisting) && hasExisting)
+                    _records.Remove(ownerKey);
+            }
+            finally
+            {
+                ExitRecordGate();
+            }
         }
 
         public static int ResolveExponentialCapacity(int currentCapacity, int requiredCapacity, int minimumCapacity)
@@ -100,5 +137,77 @@ namespace Hecton8.Core
             }
         }
 
+        private static bool TryResolveRecordSlotLocked(
+            string ownerName,
+            int baseKey,
+            out int ownerKey,
+            out BudgetRecord existing,
+            out bool hasExisting)
+        {
+            int firstFreeKey = 0;
+            bool hasFreeKey = false;
+
+            for (int probe = 0; probe <= OwnerCollisionProbeLimit; probe++)
+            {
+                int candidateKey = ResolveProbeKey(baseKey, probe);
+                if (_records.TryGetValue(candidateKey, out existing))
+                {
+                    if (string.Equals(existing.OwnerName, ownerName, StringComparison.Ordinal))
+                    {
+                        ownerKey = candidateKey;
+                        hasExisting = true;
+                        return true;
+                    }
+
+                    continue;
+                }
+
+                if (!hasFreeKey)
+                {
+                    firstFreeKey = candidateKey;
+                    hasFreeKey = true;
+                }
+            }
+
+            if (hasFreeKey)
+            {
+                ownerKey = firstFreeKey;
+                existing = default;
+                hasExisting = false;
+                return true;
+            }
+
+            ownerKey = 0;
+            existing = default;
+            hasExisting = false;
+            return false;
+        }
+
+        private static int ResolveProbeKey(int baseKey, int probe)
+        {
+            if (probe <= 0)
+                return baseKey;
+
+            const int probeStep = unchecked((int)0x9E3779B9u);
+            return unchecked(baseKey + (probe * probeStep));
+        }
+
+        private static bool TryEnterRecordGate()
+        {
+            for (int spin = 0; spin < GateSpinLimit; spin++)
+            {
+                if (Interlocked.CompareExchange(ref _recordGate, 1, 0) == 0)
+                    return true;
+
+                Thread.SpinWait(1 + spin);
+            }
+
+            return false;
+        }
+
+        private static void ExitRecordGate()
+        {
+            Volatile.Write(ref _recordGate, 0);
+        }
     }
 }

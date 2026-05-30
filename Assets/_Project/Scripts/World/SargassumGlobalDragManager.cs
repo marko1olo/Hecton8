@@ -856,6 +856,7 @@ namespace Hecton8.World
         private DisruptionZoneState[] _disruptionZones;
         private ScavengerHostState[] _scavengerHosts;
         private ExternalScavengerSiteState[] _externalScavengerSites;
+        private Matrix4x4[] _scavengerMatrixStaging;
         private VaultGenerationHandle<Matrix4x4> _scavengerMatricesHandle;
         private GraphicsBuffer _scavengerMatrixBufferA;
         private GraphicsBuffer _scavengerMatrixBufferB;
@@ -920,6 +921,7 @@ namespace Hecton8.World
         private bool _serviceRegistered;
         private bool _densityBuildScheduled;
         private bool _densityBuildSourcesLocked;
+        private IDataVault _densityBuildSourcesWriteVault;
         private int _pendingDensityTrackedInstances;
         private Bounds _pendingDensityFieldBounds;
         private bool _pendingDensityFieldBoundsInitialized;
@@ -937,6 +939,7 @@ namespace Hecton8.World
         private bool _dynamicTexturesUploadDirty;
         private bool _nestedRenderRequested;
         private bool _nestedAttachmentRebuildRequested;
+        private bool _visualResourceRepairRequested = true;
 
         private static SargassumGlobalDragManager s_activeRuntimeInstance;
 
@@ -1630,9 +1633,9 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
-            RefreshColdRegistryDependencies();
             RefreshRenderLayerCache();
             ResolveBridge();
+            EnsureVisualResourcesForSlowTick();
             RebuildDensityField();
             _debrisPetrificationDrainRequested = true;
             _collapseZoneEvaluationRequested = true;
@@ -1647,6 +1650,9 @@ namespace Hecton8.World
         public void LateFrameTick()
         {
             CompleteDensityFieldBuildIfReady();
+            if (!HasVisualResourcesReadyForLateFrame())
+                _visualResourceRepairRequested = true;
+
             if (_debrisPetrificationDrainRequested)
             {
                 ProcessDebrisPetrificationTimers();
@@ -1659,23 +1665,58 @@ namespace Hecton8.World
             }
             if (_dynamicTextureRefreshRequested)
             {
-                RefreshDynamicTextures(_dynamicTextureRefreshIncrementRevision);
-                _dynamicTextureRefreshRequested = false;
-                _dynamicTextureRefreshIncrementRevision = false;
+                if (HasDensityTextureResourcesReady())
+                {
+                    RefreshDynamicTextures(_dynamicTextureRefreshIncrementRevision);
+                    _dynamicTextureRefreshRequested = false;
+                    _dynamicTextureRefreshIncrementRevision = false;
+                }
+                else
+                {
+                    _visualResourceRepairRequested = true;
+                }
             }
             ApplyDynamicTexturesIfDirty();
             FlushShaderGlobals();
-            if (_nestedAttachmentRebuildRequested)
+            if (_nestedAttachmentRebuildRequested && HasNestedAttachmentStorageReady())
             {
                 RebuildNestedAttachments();
                 _nestedAttachmentRebuildRequested = false;
             }
-            if (_nestedRenderRequested)
+            else if (_nestedAttachmentRebuildRequested)
+            {
+                _visualResourceRepairRequested = true;
+            }
+
+            if (_nestedRenderRequested && HasScavengerRenderResourcesReady())
             {
                 UpdateScavengerHosts(_pendingNestedRenderDeltaTime);
                 RenderNestedAttachmentsAndScavengers(_pendingNestedRenderDeltaTime);
                 _nestedRenderRequested = false;
             }
+            else if (_nestedRenderRequested)
+            {
+                _visualResourceRepairRequested = true;
+            }
+        }
+
+        private void EnsureVisualResourcesForSlowTick()
+        {
+            if (!_visualResourceRepairRequested && HasVisualResourcesReadyForLateFrame())
+                return;
+
+            ResolveActiveNestingPrototypes();
+            EnsureNestedAttachmentStorage();
+            CreateDensityTexture();
+            EnsureScavengerRenderResources();
+            _visualResourceRepairRequested = !HasVisualResourcesReadyForLateFrame();
+        }
+
+        private bool HasVisualResourcesReadyForLateFrame()
+        {
+            return HasDensityTextureResourcesReady() &&
+                   HasNestedAttachmentStorageReady() &&
+                   HasScavengerRenderResourcesReady();
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -1960,10 +2001,8 @@ namespace Hecton8.World
 
         private void ResolveBridge()
         {
-            if (mapMagicVegetationBridge != null)
-                return;
-
-            mapMagicVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (mapMagicVegetationBridge == null)
+                _nestedAttachmentRebuildRequested = true;
         }
 
         private void ApplyRuntimeOffsetToCachedState(Vector3 runtimeOffset)
@@ -2263,10 +2302,14 @@ namespace Hecton8.World
 
         private bool EnsureScavengerMatrixCapacity(int requiredCount)
         {
+            int capacity = Mathf.Max(1, requiredCount);
+            if (_scavengerMatrixStaging == null || _scavengerMatrixStaging.Length < capacity)
+                _scavengerMatrixStaging = new Matrix4x4[capacity];
+
             return EnsureVaultBuffer(
                 ref _scavengerMatricesHandle,
                 ScavengerMatricesBufferId,
-                Mathf.Max(1, requiredCount),
+                capacity,
                 NativeArrayOptions.UninitializedMemory);
         }
 
@@ -2324,13 +2367,12 @@ namespace Hecton8.World
             if (!_densityBuildSourcesLocked)
                 return;
 
-            ReleaseVaultWrite(in _densityBuildSourcesHandle);
-            _densityBuildSourcesLocked = false;
-        }
+            IDataVault vault = _densityBuildSourcesWriteVault;
+            _densityBuildSourcesWriteVault = null;
+            if (vault != null && IsVaultHandleCreated(in _densityBuildSourcesHandle))
+                vault.ReleaseWriteLock(in _densityBuildSourcesHandle, VaultOwnerSystemId);
 
-        private void ReleaseVaultWrite<T>(in VaultGenerationHandle<T> handle) where T : struct
-        {
-            _dataVault?.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+            _densityBuildSourcesLocked = false;
         }
 
         private void ReleaseVaultBuffer<T>(ref VaultGenerationHandle<T> handle) where T : struct
@@ -2929,7 +2971,12 @@ namespace Hecton8.World
 
         private void RebuildNestedAttachments()
         {
-            EnsureNestedAttachmentStorage();
+            if (!HasNestedAttachmentStorageReady())
+            {
+                ClearNestedAttachments();
+                return;
+            }
+
             ClearNestedAttachments();
 
             if (!_hasFieldData ||
@@ -3041,6 +3088,33 @@ namespace Hecton8.World
             }
             // COLD ALLOC: NestedAttachmentState[capacity] - persistent trapped-debris state for cut-release simulation - owner: SargassumGlobalDragManager
             _nestedAttachmentStates = new NestedAttachmentState[requiredCapacity];
+        }
+
+        private bool HasNestedAttachmentStorageReady()
+        {
+            int prototypeCount = _activeNestingPrototypes != null ? _activeNestingPrototypes.Length : 0;
+            int requiredCapacity = Mathf.Clamp(maxNestedAttachmentCount, 4, 128);
+            if (_nestedMatricesByPrototype == null ||
+                _nestedMatrixCounts == null ||
+                _nestedAttachmentStates == null ||
+                _nestedMatricesByPrototype.Length != prototypeCount ||
+                _nestedMatrixCounts.Length != prototypeCount ||
+                _nestedPrototypeCapacity != requiredCapacity ||
+                _nestedAttachmentStates.Length < requiredCapacity)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < prototypeCount; i++)
+            {
+                if (_nestedMatricesByPrototype[i] == null ||
+                    _nestedMatricesByPrototype[i].Length < requiredCapacity)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private void ReleaseNestedAttachmentStorage()
@@ -3384,6 +3458,34 @@ namespace Hecton8.World
                     vault.ReleaseWriteLock(in _scavengerBatchMetadataHandle, VaultOwnerSystemId);
                 }
             }
+
+            Mesh activeMesh = scavengerMesh != null ? scavengerMesh : _fallbackScavengerMesh;
+            Material activeMaterial = PrepareScavengerBrgMaterialCold();
+            SyncScavengerBatchRegistration(activeMesh, activeMaterial);
+        }
+
+        private bool HasScavengerRenderResourcesReady()
+        {
+            int requiredCapacity = Mathf.Max(1, _scavengerInstanceCapacity);
+            if (_scavengerHosts == null ||
+                _externalScavengerSites == null ||
+                _scavengerMatrixBufferA == null ||
+                _scavengerMatrixBufferB == null ||
+                _scavengerMatrixBufferA.count < requiredCapacity ||
+                _scavengerMatrixBufferB.count < requiredCapacity ||
+                _scavengerBatchRendererGroup == null ||
+                _scavengerBatchHandleBuffer == null)
+            {
+                return false;
+            }
+
+            Mesh activeMesh = scavengerMesh != null ? scavengerMesh : _fallbackScavengerMesh;
+            Material sourceMaterial = scavengerMaterial != null ? scavengerMaterial : _fallbackScavengerMaterial;
+            return activeMesh != null &&
+                   sourceMaterial != null &&
+                   _scavengerBrgMaterial != null &&
+                   _scavengerBrgMaterialSource == sourceMaterial &&
+                   IsScavengerBatchRegistrationReady(activeMesh, _scavengerBrgMaterial);
         }
 
         private void ReleaseScavengerBuffers()
@@ -3395,6 +3497,7 @@ namespace Hecton8.World
             _boundScavengerMatrixBuffer = null;
             _boundScavengerMatrixMaterial = null;
             _scavengerMatrixUploadIndex = 0;
+            _scavengerMatrixStaging = null;
             ReleaseVaultBuffer(ref _scavengerMatricesHandle);
         }
 
@@ -3498,7 +3601,14 @@ namespace Hecton8.World
                 return;
             }
 
-            EnsureScavengerRenderResources();
+            if (!HasScavengerRenderResourcesReady())
+            {
+                _debugScavengerHostCount = 0;
+                _debugScavengerInstanceCount = 0;
+                _debugScavengerBounds = default;
+                UploadScavengerInstances(0);
+                return;
+            }
 
             int writeHostIndex = 0;
             int matrixCount = 0;
@@ -3509,23 +3619,8 @@ namespace Hecton8.World
             float consumeDurationInv = 1f / math.max(0.1f, scavengerConsumeDuration);
             float externalSiteDurationInv = 1f / math.max(0.1f, externalScavengerSiteDuration);
             int maxScavengersPerHost = math.max(1, scavengersPerHost);
-
-            IDataVault vault = _dataVault;
-            if (vault == null ||
-                vault.IsCompactionFenceActive ||
-                !IsVaultHandleCreated(in _scavengerMatricesHandle) ||
-                !vault.TryAcquireWriteLock(in _scavengerMatricesHandle, VaultOwnerSystemId, out NativeArray<Matrix4x4> scavengerMatrices))
-            {
-                _debugScavengerHostCount = 0;
-                _debugScavengerInstanceCount = 0;
-                _debugScavengerBounds = default;
-                UploadScavengerInstances(0);
-                return;
-            }
-
-            try
-            {
-            if (!scavengerMatrices.IsCreated || scavengerMatrices.Length < _scavengerInstanceCapacity)
+            Matrix4x4[] scavengerMatrixStaging = _scavengerMatrixStaging;
+            if (scavengerMatrixStaging == null || scavengerMatrixStaging.Length < _scavengerInstanceCapacity)
             {
                 _debugScavengerHostCount = 0;
                 _debugScavengerInstanceCount = 0;
@@ -3573,8 +3668,8 @@ namespace Hecton8.World
 
                         float scale = LerpClamped(scavengerScaleMin, scavengerScaleMax, scaleHash);
                         Matrix4x4 matrix = BuildScavengerCardinalMatrix(positionWS, orbitPhase01, scale);
-                        if (matrixCount < scavengerMatrices.Length)
-                            scavengerMatrices[matrixCount] = matrix;
+                        if (matrixCount < scavengerMatrixStaging.Length)
+                            scavengerMatrixStaging[matrixCount] = matrix;
                         matrixCount++;
 
                         EncapsulateRadius(positionWS, math.max(0.1f, scale * 1.4f), ref boundsMin, ref boundsMax, ref boundsInitialized);
@@ -3617,8 +3712,8 @@ namespace Hecton8.World
 
                         float scale = LerpClamped(scavengerScaleMin, scavengerScaleMax, scaleHash) * LerpClamped(0.7f, 1f, 1f - life01);
                         Matrix4x4 matrix = BuildScavengerCardinalMatrix(positionWS, orbitPhase01, scale);
-                        if (matrixCount < scavengerMatrices.Length)
-                            scavengerMatrices[matrixCount] = matrix;
+                        if (matrixCount < scavengerMatrixStaging.Length)
+                            scavengerMatrixStaging[matrixCount] = matrix;
                         matrixCount++;
 
                         EncapsulateRadius(positionWS, math.max(0.1f, scale * 1.4f), ref boundsMin, ref boundsMax, ref boundsInitialized);
@@ -3640,11 +3735,50 @@ namespace Hecton8.World
 
             _activeScavengerHostCount = writeHostIndex;
             _activeExternalScavengerSiteCount = writeExternalSiteIndex;
+
+            if (!TryPublishScavengerMatrices(scavengerMatrixStaging, matrixCount))
+            {
+                _debugScavengerHostCount = 0;
+                _debugScavengerInstanceCount = 0;
+                _debugScavengerBounds = default;
+                _scavengerDrawBounds = default;
+                UploadScavengerInstances(0);
+                return;
+            }
+
             _debugScavengerHostCount = writeHostIndex + writeExternalSiteIndex;
             _debugScavengerInstanceCount = matrixCount;
             _scavengerDrawBounds = boundsInitialized ? BuildBoundsFromMinMax(boundsMin, boundsMax) : default;
             _debugScavengerBounds = _scavengerDrawBounds;
-            UploadScavengerInstances(matrixCount, scavengerMatrices);
+            UploadScavengerInstances(matrixCount);
+        }
+
+        private bool TryPublishScavengerMatrices(Matrix4x4[] stagedMatrices, int matrixCount)
+        {
+            if (matrixCount <= 0)
+                return true;
+
+            if (stagedMatrices == null || stagedMatrices.Length < matrixCount)
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsVaultHandleCreated(in _scavengerMatricesHandle) ||
+                !vault.TryAcquireWriteLock(in _scavengerMatricesHandle, VaultOwnerSystemId, out NativeArray<Matrix4x4> scavengerMatrices))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!scavengerMatrices.IsCreated || scavengerMatrices.Length < matrixCount)
+                    return false;
+
+                for (int i = 0; i < matrixCount; i++)
+                    scavengerMatrices[i] = stagedMatrices[i];
+
+                return true;
             }
             finally
             {
@@ -3652,12 +3786,24 @@ namespace Hecton8.World
             }
         }
 
-        private void UploadScavengerInstances(int instanceCount, NativeArray<Matrix4x4> scavengerMatrices = default)
+        private bool TryReadScavengerMatrices(out NativeArray<Matrix4x4>.ReadOnly scavengerMatrices)
         {
-            if (instanceCount > 0 && !scavengerMatrices.IsCreated)
-                return;
+            scavengerMatrices = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsVaultHandleCreated(in _scavengerMatricesHandle) &&
+                   vault.TryReadOnlyHandle(in _scavengerMatricesHandle, out scavengerMatrices) &&
+                   scavengerMatrices.IsCreated &&
+                   scavengerMatrices.Length >= _scavengerInstanceCapacity;
+        }
+
+        private void UploadScavengerInstances(int instanceCount)
+        {
             if (instanceCount > 0)
             {
+                if (!TryReadScavengerMatrices(out NativeArray<Matrix4x4>.ReadOnly scavengerMatrices))
+                    return;
+
                 GraphicsBuffer writeBuffer = ResolveScavengerMatrixWriteBuffer();
                 if (writeBuffer == null)
                     return;
@@ -3687,8 +3833,10 @@ namespace Hecton8.World
                 return;
 
             Mesh activeMesh = scavengerMesh != null ? scavengerMesh : _fallbackScavengerMesh;
-            Material activeMaterial = EnsureScavengerBrgMaterial();
+            Material activeMaterial = GetPreparedScavengerBrgMaterial();
             if (activeMesh == null || activeMaterial == null)
+                return;
+            if (!IsScavengerBatchRegistrationReady(activeMesh, activeMaterial))
                 return;
 
             if (!ReferenceEquals(_boundScavengerMatrixMaterial, activeMaterial) ||
@@ -3699,7 +3847,6 @@ namespace Hecton8.World
                 _boundScavengerMatrixBuffer = _activeScavengerMatrixBuffer;
             }
 
-            SyncScavengerBatchRegistration(activeMesh, activeMaterial);
             SyncScavengerBatchBuffer(_activeScavengerMatrixBuffer);
             if (!_scavengerDrawBoundsRegistered ||
                 _registeredScavengerDrawBounds.center != _scavengerDrawBounds.center ||
@@ -3711,7 +3858,7 @@ namespace Hecton8.World
             }
         }
 
-        private Material EnsureScavengerBrgMaterial()
+        private Material PrepareScavengerBrgMaterialCold()
         {
             Material sourceMaterial = scavengerMaterial != null ? scavengerMaterial : _fallbackScavengerMaterial;
             if (sourceMaterial == null)
@@ -3730,6 +3877,28 @@ namespace Hecton8.World
             _scavengerBrgMaterialSource = sourceMaterial;
             _ownsScavengerBrgMaterial = true;
             return _scavengerBrgMaterial;
+        }
+
+        private Material GetPreparedScavengerBrgMaterial()
+        {
+            Material sourceMaterial = scavengerMaterial != null ? scavengerMaterial : _fallbackScavengerMaterial;
+            if (sourceMaterial == null ||
+                _scavengerBrgMaterial == null ||
+                _scavengerBrgMaterialSource != sourceMaterial)
+            {
+                return null;
+            }
+
+            return _scavengerBrgMaterial;
+        }
+
+        private bool IsScavengerBatchRegistrationReady(Mesh activeMesh, Material activeMaterial)
+        {
+            return _scavengerBatchRendererGroup != null &&
+                   _registeredScavengerMesh == activeMesh &&
+                   _registeredScavengerMaterial == activeMaterial &&
+                   !_scavengerBatchMeshId.Equals(default) &&
+                   !_scavengerBatchMaterialId.Equals(default);
         }
 
         private void ReleaseScavengerBrgMaterial()
@@ -4188,6 +4357,12 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.Physics:
                     _physicsService = currentService as IPhysicsService;
                     break;
+                case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
+                    mapMagicVegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                    _nestedAttachmentRebuildRequested = true;
+                    _dynamicTextureRefreshRequested = true;
+                    _dynamicTextureRefreshIncrementRevision = true;
+                    break;
                 case GlobalRegistryServiceSlot.DataVault:
                     if (_densityBuildSourcesLocked)
                     {
@@ -4213,6 +4388,7 @@ namespace Hecton8.World
             _cutManager = GlobalRegistry.SargassumCut;
             _objectPoolService = GlobalRegistry.ObjectPoolService;
             _physicsService = GlobalRegistry.Physics;
+            mapMagicVegetationBridge = GlobalRegistry.MapMagicVegetation;
             _saveService = GlobalRegistry.Save;
         }
 
@@ -4704,11 +4880,7 @@ namespace Hecton8.World
 
         private void RefreshDynamicTextures(bool incrementRevision)
         {
-            CreateDensityTexture();
-            if (_densityFieldTexture == null ||
-                _densityTextureRaw == null ||
-                _sinkFieldTexture == null ||
-                _sinkTextureRaw == null)
+            if (!HasDensityTextureResourcesReady())
             {
                 return;
             }
@@ -4767,6 +4939,22 @@ namespace Hecton8.World
             _sinkFieldTexture.LoadRawTextureData(_sinkTextureRaw);
             _dynamicTexturesUploadDirty = true;
             _debugMaxSinkDepth = maxSinkDepthWS;
+        }
+
+        private bool HasDensityTextureResourcesReady()
+        {
+            int resolution = Mathf.Clamp(densityTextureResolution, 64, 256);
+            int texelCount = resolution * resolution;
+            return _densityFieldTexture != null &&
+                   _densityFieldTexture.width == resolution &&
+                   _densityFieldTexture.height == resolution &&
+                   _densityTextureRaw != null &&
+                   _densityTextureRaw.Length == texelCount &&
+                   _sinkFieldTexture != null &&
+                   _sinkFieldTexture.width == resolution &&
+                   _sinkFieldTexture.height == resolution &&
+                   _sinkTextureRaw != null &&
+                   _sinkTextureRaw.Length == texelCount;
         }
 
         private void QueueDynamicTextureRefresh(bool incrementRevision)

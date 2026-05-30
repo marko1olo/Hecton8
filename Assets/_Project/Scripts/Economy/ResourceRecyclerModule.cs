@@ -64,6 +64,8 @@ namespace Hecton8.Economy
         [SerializeField] private int _debugBufferedItemCount;
 
         private PowerNode _powerNode;
+        private IPlayerInventoryService _inventoryService;
+        private IResourceScarcityReadModel _scarcityReadModel;
         private PlayerInventory _cachedInventory;
         private bool _registered;
         private bool _hasPower = true;
@@ -117,7 +119,10 @@ namespace Hecton8.Economy
         {
             InteractableRegistry.RegisterTree(this);
             if (Application.isPlaying)
+            {
+                CacheRuntimeServicesCold();
                 GlobalRegistry.TryRegisterHotSwapListener(this);
+            }
 
             RegisterModuleInstance();
             BaseLogisticsNetwork.RegisterRecycler(this, _powerNode);
@@ -283,19 +288,28 @@ namespace Hecton8.Economy
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
-                return;
-
-            if (currentService == null)
+            switch (serviceSlot)
             {
-                _registered = false;
-                return;
-            }
+                case GlobalRegistryServiceSlot.PlayerInventory:
+                    _inventoryService = currentService as IPlayerInventoryService;
+                    _cachedInventory = ResolveCachedInventory(_inventoryService);
+                    break;
+                case GlobalRegistryServiceSlot.ResourceScarcityRuntime:
+                    _scarcityReadModel = currentService as IResourceScarcityReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        _registered = false;
+                        return;
+                    }
 
-            if (isActiveAndEnabled)
-            {
-                TryUnregister();
-                TryRegister();
+                    if (isActiveAndEnabled)
+                    {
+                        TryUnregister();
+                        TryRegister();
+                    }
+                    break;
             }
         }
 
@@ -324,10 +338,7 @@ namespace Hecton8.Economy
             if (_cachedInventory != null)
                 return _cachedInventory;
 
-            IPlayerInventoryService inventoryService = Hecton8.Core.GlobalRegistry.PlayerInventory;
-            if (inventoryService != null && inventoryService.IsInitialized)
-                _cachedInventory = inventoryService.Inventory;
-
+            _cachedInventory = ResolveCachedInventory(_inventoryService);
             return _cachedInventory;
         }
 
@@ -504,15 +515,29 @@ namespace Hecton8.Economy
             return math.max(1f, recycleDurationSeconds * categoryScale * yieldScale);
         }
 
-        private static float ResolvePowerMultiplier(ItemData sourceItem, int yieldUnits)
+        private float ResolvePowerMultiplier(ItemData sourceItem, int yieldUnits)
         {
             float scarcityScale = 1f;
-            IResourceScarcityReadModel director = GlobalRegistry.ResourceScarcityReadModel;
+            IResourceScarcityReadModel director = _scarcityReadModel;
             if (director != null && sourceItem != null)
                 scarcityScale = Mathf.Max(1f, director.GetIngredientMultiplier(sourceItem.PersistentHashId));
 
             float yieldScale = math.lerp(1f, 1.35f, math.saturate((yieldUnits - 1) / 5f));
             return scarcityScale * yieldScale;
+        }
+
+        private void CacheRuntimeServicesCold()
+        {
+            _inventoryService = GlobalRegistry.PlayerInventory;
+            _cachedInventory = ResolveCachedInventory(_inventoryService);
+            _scarcityReadModel = GlobalRegistry.ResourceScarcityReadModel;
+        }
+
+        private static PlayerInventory ResolveCachedInventory(IPlayerInventoryService inventoryService)
+        {
+            return inventoryService != null && inventoryService.IsInitialized
+                ? inventoryService.Inventory
+                : null;
         }
 
         private void NotifyGridBalanceChanged()

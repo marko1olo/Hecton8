@@ -93,15 +93,23 @@ namespace Hecton8.World
 
             int cacheWidth = cacheTexture.width;
             int cacheHeight = cacheTexture.height;
-            UnityEngine.Rendering.AsyncGPUReadback.Request(cacheTexture, 0, TextureFormat.RGBA32, request =>
+            NativeArray<Color32> readbackPixels = new NativeArray<Color32>(
+                cacheWidth * cacheHeight,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+            UnityEngine.Rendering.AsyncGPUReadbackRequest readbackRequest = UnityEngine.Rendering.AsyncGPUReadback.RequestIntoNativeArray(
+                ref readbackPixels,
+                cacheTexture,
+                0,
+                TextureFormat.RGBA32,
+                request =>
             {
-                if (request.hasError)
-                    return;
-
                 NativeArray<byte> pngBytes = default;
                 try
                 {
-                    NativeArray<Color32> readbackPixels = request.GetData<Color32>();
+                    if (request.hasError)
+                        return;
+
                     pngBytes = ImageConversion.EncodeNativeArrayToPNG(
                         readbackPixels,
                         GraphicsFormat.R8G8B8A8_UNorm,
@@ -120,9 +128,19 @@ namespace Hecton8.World
                 {
                     if (pngBytes.IsCreated)
                         pngBytes.Dispose();
+
+                    if (readbackPixels.IsCreated)
+                        readbackPixels.Dispose();
                 }
             });
-            return true;
+
+            if (!readbackRequest.hasError)
+                return true;
+
+            if (readbackPixels.IsCreated)
+                readbackPixels.Dispose();
+
+            return false;
 #else
             return false;
 #endif

@@ -37,7 +37,7 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
             return;
 #endif
 
-        AutoResolveReferences(force: true);
+        AutoResolveReferencesCold();
         TryRegisterHotSwapListener();
         RegisterTick();
     }
@@ -62,51 +62,60 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
 
     public void Tick(float deltaTime)
     {
-        AutoResolveReferences(force: false);
+        RefreshReferencesFromRegistries();
     }
 
-    private void AutoResolveReferences(bool force)
+    private void AutoResolveReferencesCold()
     {
-        if (!force && _referencesResolved && primaryHud != null && canvasOverlay != null && hudCamera != null)
+        Transform preferredRoot = ResolveCachedRoot();
+
+        if (primaryHud == null)
+            TryGetComponent(out primaryHud);
+
+        if (canvasOverlay == null)
+            TryGetComponent(out canvasOverlay);
+
+        if (hudCamera == null)
+            TryGetComponent(out hudCamera);
+
+        ResolveMissingReferencesFromRegistries(preferredRoot);
+        _referencesResolved = primaryHud != null && canvasOverlay != null && hudCamera != null;
+    }
+
+    private void RefreshReferencesFromRegistries()
+    {
+        if (_referencesResolved && primaryHud != null && canvasOverlay != null && hudCamera != null)
             return;
 
         float now = Application.isPlaying ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
-        if (!force && now < _nextAutoResolveAt)
+        if (now < _nextAutoResolveAt)
             return;
 
         _nextAutoResolveAt = now + AutoResolveRetryInterval;
         Transform preferredRoot = ResolveCachedRoot();
+        ResolveMissingReferencesFromRegistries(preferredRoot);
+        _referencesResolved = primaryHud != null && canvasOverlay != null && hudCamera != null;
+    }
 
+    private void ResolveMissingReferencesFromRegistries(Transform preferredRoot)
+    {
         if (primaryHud == null)
         {
-            TryGetComponent(out primaryHud);
-            if (primaryHud == null)
-            {
-                HectonSuitHUD_v4.CopyActiveHudsTo(s_hudResolveBuffer);
-                primaryHud = FindHudForRoot(s_hudResolveBuffer, preferredRoot);
-                s_hudResolveBuffer.Clear();
-            }
+            HectonSuitHUD_v4.CopyActiveHudsTo(s_hudResolveBuffer);
+            primaryHud = FindHudForRoot(s_hudResolveBuffer, preferredRoot);
+            s_hudResolveBuffer.Clear();
         }
 
         if (canvasOverlay == null)
-        {
-            TryGetComponent(out canvasOverlay);
-            if (canvasOverlay == null)
-            {
-                canvasOverlay = FindOverlayForRoot(preferredRoot);
-            }
-        }
+            canvasOverlay = FindOverlayForRoot(preferredRoot);
 
         if (hudCamera == null)
         {
-            TryGetComponent(out hudCamera);
             if (hudCamera == null && primaryHud != null)
                 hudCamera = primaryHud.HudCamera;
             if (hudCamera == null && canvasOverlay != null)
                 hudCamera = canvasOverlay.ProjectionCamera;
         }
-
-        _referencesResolved = primaryHud != null && canvasOverlay != null && hudCamera != null;
     }
 
     private Transform ResolveCachedRoot()

@@ -829,6 +829,8 @@ namespace Hecton8.World
         private const BufferID FloraDefensiveSporeTemplateMaskBufferId = (BufferID)71659;
         private const BufferID FloraBloodKelpTemplateMaskBufferId = (BufferID)71660;
         private const BufferID FloraGhostWeedTemplateMaskBufferId = (BufferID)71661;
+        private const ulong FloraOceanFlowSampleMutationGuardMask = (1UL << 7) | (1UL << 8);
+        private const ulong FloraAllelopathicTemplateMutationGuardMask = (1UL << 12) | (1UL << 13);
         private const BufferID FloraSurfaceCascadePhaseSeedsBufferId = (BufferID)71662;
         private const BufferID FloraUnderwaterCascadePhaseSeedsBufferId = (BufferID)71663;
         private const BufferID FloraSurfaceCascadeEventsBufferId = (BufferID)71664;
@@ -1604,6 +1606,17 @@ namespace Hecton8.World
         private VaultGenerationHandle<int> _underwaterReactiveFloraHandlesHandle;
         private VaultGenerationHandle<int> _reactiveFloraQueryHandlesHandle;
         private VaultGenerationHandle<FloraMemoryTelemetryEntry> _floraMemoryTelemetryHandle;
+        private IDataVault _parasiteNodesWriteVault;
+        private IDataVault _cascadeReactiveTemplateMaskWriteVault;
+        private IDataVault _defensiveSporeBurstTemplateMaskWriteVault;
+        private IDataVault _surfaceCascadePhaseSeedsWriteVault;
+        private IDataVault _underwaterCascadePhaseSeedsWriteVault;
+        private IDataVault _surfaceCascadeEventsWriteVault;
+        private IDataVault _underwaterCascadeEventsWriteVault;
+        private IDataVault _surfaceReactiveFloraHandlesWriteVault;
+        private IDataVault _underwaterReactiveFloraHandlesWriteVault;
+        private IDataVault _reactiveFloraQueryHandlesWriteVault;
+        private IDataVault _floraMemoryTelemetryWriteVault;
         private int _surfaceReactiveFloraHandleCount;
         private int _underwaterReactiveFloraHandleCount;
         private int _floraMemoryTelemetryCursor;
@@ -1746,7 +1759,7 @@ namespace Hecton8.World
             _wakeTrailRuntimeResolution = ResolveWakeTrailResolutionForQualityWeight(_wakeTrailQualityMilli * 0.001f);
             _supportsWakeTrailComputeCold = SystemInfo.supportsComputeShaders;
             RefreshVegetationBridgeCold();
-            _destructibleOrganicManager = ResolveDestructibleOrganicManager();
+            _destructibleOrganicManager = ResolveDestructibleOrganicManagerCold();
             _toxicSporeStableHashId = string.IsNullOrWhiteSpace(_toxicSporeStableId) ? 0 : LocHash.Compute(_toxicSporeStableId);
             _thermalTubewormStableHashId = string.IsNullOrWhiteSpace(_thermalTubewormStableId) ? 0 : LocHash.Compute(_thermalTubewormStableId);
             _bloodKelpAllelopathyStableHashId = string.IsNullOrWhiteSpace(_bloodKelpAllelopathyStableId) ? 0 : LocHash.Compute(_bloodKelpAllelopathyStableId);
@@ -2079,10 +2092,11 @@ namespace Hecton8.World
         public void SlowTick()
         {
             RefreshCachedSubmarineContext();
+            FlushWakeTrailResourceRefreshSlow();
             ScheduleWakeDecayJob();
 
             if (_vegetationBridge == null || _vegetationBridgeResolveRequested)
-                RefreshVegetationBridgeCold();
+                RefreshVegetationBridgeFromCachedService();
 
             RefreshModuleParasiteState(FloraSlowTickDeltaSeconds);
             Transform runtimePlayerTransform = ResolveRuntimePlayerTransform();
@@ -2092,7 +2106,7 @@ namespace Hecton8.World
                 ClearToxicSporeHazard();
 
             if (_destructibleOrganicManager == null)
-                _destructibleOrganicManager = ResolveDestructibleOrganicManager();
+                RefreshDestructibleOrganicManagerFromRuntime();
 
             if (_vegetationBridge == null)
                 return;
@@ -2514,6 +2528,21 @@ namespace Hecton8.World
             return null;
         }
 
+        private void RefreshVegetationBridgeFromCachedService()
+        {
+            HectonMapMagicVegetationBridge bridge = _vegetationBridgeOverride != null
+                ? _vegetationBridgeOverride
+                : _vegetationBridge;
+            if (bridge == null)
+            {
+                _vegetationBridgeResolveRequested = false;
+                return;
+            }
+
+            _vegetationBridge = bridge;
+            _vegetationBridgeResolveRequested = false;
+        }
+
         private void RefreshVegetationBridgeCold()
         {
             HectonMapMagicVegetationBridge bridge = ResolveVegetationBridge();
@@ -2527,7 +2556,7 @@ namespace Hecton8.World
             _vegetationBridgeResolveRequested = false;
         }
 
-        private DestructibleOrganicManager ResolveDestructibleOrganicManager()
+        private DestructibleOrganicManager ResolveDestructibleOrganicManagerCold()
         {
             if (_destructibleOrganicManagerOverride != null)
                 return _destructibleOrganicManagerOverride;
@@ -2537,6 +2566,13 @@ namespace Hecton8.World
                 return directManager;
 
             return DestructibleOrganicManager.ActiveRuntimeInstance;
+        }
+
+        private void RefreshDestructibleOrganicManagerFromRuntime()
+        {
+            _destructibleOrganicManager = _destructibleOrganicManagerOverride != null
+                ? _destructibleOrganicManagerOverride
+                : DestructibleOrganicManager.ActiveRuntimeInstance;
         }
 
         private void EnsureSedimentParticleSystem()
@@ -2805,6 +2841,14 @@ namespace Hecton8.World
             if (!_wakeTrailResourceRefreshRequested)
                 return;
 
+            QueueWakeTrailGlobals();
+        }
+
+        private void FlushWakeTrailResourceRefreshSlow()
+        {
+            if (!_wakeTrailResourceRefreshRequested)
+                return;
+
             _wakeTrailResourceRefreshRequested = false;
             ReleaseWakeTrailResources();
             CreateWakeTrailResources();
@@ -2846,7 +2890,7 @@ namespace Hecton8.World
 
             IFluidSurfaceCurrentReadModel fluidReadModel = _fluidReadModel;
             float waterLevel = fluidReadModel != null ? fluidReadModel.WaterLevel : DefaultVegetationWaterLevel;
-            Vector3 currentVector = ResolveGlobalOceanFlow(samplePositionWS, fluidReadModel);
+            Vector3 currentVector = SampleGlobalOceanFlow(samplePositionWS, fluidReadModel);
             _lastVegetationCurrentVector = IsFiniteVector3(currentVector) ? currentVector : Vector3.zero;
             float currentStrength = EstimateLength3D(currentVector);
             float currentNoiseScale = fluidReadModel != null && fluidReadModel.EnablePhantomCurrent ? fluidReadModel.CurrentNoiseScale : 0f;
@@ -5263,7 +5307,7 @@ namespace Hecton8.World
         private void RebuildToxicSporeTemplateMaskColdFromCurrentBridge()
         {
             if (_vegetationBridge == null)
-                _vegetationBridge = ResolveVegetationBridge();
+                RefreshVegetationBridgeFromCachedService();
 
             FloraDataTemplate[] floraTemplates = _vegetationBridge != null ? _vegetationBridge.FloraTemplates : null;
             int templateCount = floraTemplates != null ? floraTemplates.Length : 0;
@@ -5439,7 +5483,7 @@ namespace Hecton8.World
         private void RefreshAllelopathicTemplateMasks(bool force)
         {
             if (_vegetationBridge == null)
-                _vegetationBridge = ResolveVegetationBridge();
+                RefreshVegetationBridgeFromCachedService();
 
             FloraDataTemplate[] floraTemplates = _vegetationBridge != null ? _vegetationBridge.FloraTemplates : null;
             int templateCount = floraTemplates != null ? floraTemplates.Length : 0;
@@ -5460,7 +5504,7 @@ namespace Hecton8.World
         private void RebuildAllelopathicTemplateMasksColdFromCurrentBridge()
         {
             if (_vegetationBridge == null)
-                _vegetationBridge = ResolveVegetationBridge();
+                RefreshVegetationBridgeFromCachedService();
 
             FloraDataTemplate[] floraTemplates = _vegetationBridge != null ? _vegetationBridge.FloraTemplates : null;
             int templateCount = floraTemplates != null ? floraTemplates.Length : 0;
@@ -5495,24 +5539,32 @@ namespace Hecton8.World
                 return;
             }
 
-            if (!TryAcquireFloraVaultWriteBuffer(
-                    ref _allelopathicBloodKelpTemplateMaskHandle,
-                    FloraBloodKelpTemplateMaskBufferId,
-                    templateCount,
-                    out NativeArray<byte> bloodKelpTemplateMask) ||
-                !TryAcquireFloraVaultWriteBuffer(
-                    ref _allelopathicGhostWeedTemplateMaskHandle,
-                    FloraGhostWeedTemplateMaskBufferId,
-                    templateCount,
-                    out NativeArray<byte> ghostWeedTemplateMask))
+            IDataVault dataVault = _wakeDataVault;
+            if (dataVault == null ||
+                dataVault.IsCompactionFenceActive ||
+                !dataVault.TryAcquireMutationGuard(FloraAllelopathicTemplateMutationGuardMask))
             {
-                ReleaseFloraVaultWriteLock(in _allelopathicBloodKelpTemplateMaskHandle);
-                ReleaseFloraVaultWriteLock(in _allelopathicGhostWeedTemplateMaskHandle);
                 return;
             }
 
             try
             {
+                if (!TryResolveFloraVaultBuffer(
+                        dataVault,
+                        in _allelopathicBloodKelpTemplateMaskHandle,
+                        FloraBloodKelpTemplateMaskBufferId,
+                        templateCount,
+                        out NativeArray<byte> bloodKelpTemplateMask) ||
+                    !TryResolveFloraVaultBuffer(
+                        dataVault,
+                        in _allelopathicGhostWeedTemplateMaskHandle,
+                        FloraGhostWeedTemplateMaskBufferId,
+                        templateCount,
+                        out NativeArray<byte> ghostWeedTemplateMask))
+                {
+                    return;
+                }
+
                 for (int i = 0; i < templateCount; i++)
                 {
                     bloodKelpTemplateMask[i] = 0;
@@ -5532,8 +5584,7 @@ namespace Hecton8.World
             }
             finally
             {
-                ReleaseFloraVaultWriteLock(in _allelopathicGhostWeedTemplateMaskHandle);
-                ReleaseFloraVaultWriteLock(in _allelopathicBloodKelpTemplateMaskHandle);
+                dataVault.ReleaseMutationGuard(FloraAllelopathicTemplateMutationGuardMask);
             }
         }
 
@@ -5599,7 +5650,7 @@ namespace Hecton8.World
             _parasiteNodeCount = 0;
 
             if (_vegetationBridge == null)
-                _vegetationBridge = ResolveVegetationBridge();
+                RefreshVegetationBridgeFromCachedService();
 
             ScanActiveModuleParasites(underwater: true);
             ScanActiveModuleParasites(underwater: false);
@@ -6102,7 +6153,7 @@ namespace Hecton8.World
             uint toolCapabilityMask)
         {
             if (_destructibleOrganicManager == null)
-                _destructibleOrganicManager = ResolveDestructibleOrganicManager();
+                RefreshDestructibleOrganicManagerFromRuntime();
 
             if (_destructibleOrganicManager == null)
                 return false;
@@ -6270,10 +6321,21 @@ namespace Hecton8.World
             module = null;
             Transform current = start;
             int depth = 0;
+            int activeModuleCount = BaseModule.ActiveModuleCount;
             while (current != null && depth < MaxModuleParentResolveDepth)
             {
-                if (current.TryGetComponent(out module))
-                    return module != null;
+                for (int i = 0; i < activeModuleCount; i++)
+                {
+                    BaseModule candidate = BaseModule.GetActiveModuleAt(i);
+                    if (candidate == null || !candidate.isActiveAndEnabled)
+                        continue;
+
+                    if (candidate.transform == current)
+                    {
+                        module = candidate;
+                        return true;
+                    }
+                }
 
                 current = current.parent;
                 depth++;
@@ -6871,6 +6933,7 @@ namespace Hecton8.World
             if (!TryAcquireRegisteredReactiveFloraHandles(underwater, out NativeArray<int> registeredHandles))
                 return;
 
+            bool registeredHandlesReleased = false;
             try
             {
                 int registeredHandleCount = underwater ? _underwaterReactiveFloraHandleCount : _surfaceReactiveFloraHandleCount;
@@ -6942,6 +7005,9 @@ namespace Hecton8.World
                     _surfaceReactiveFloraHandleCount = registeredHandleCount;
                 }
 
+                ReleaseRegisteredReactiveFloraHandlesWriteLock(underwater);
+                registeredHandlesReleased = true;
+
                 if (!EnsureCascadePhaseSeedResources(underwater, safeCount))
                     return;
 
@@ -6957,7 +7023,8 @@ namespace Hecton8.World
             }
             finally
             {
-                ReleaseRegisteredReactiveFloraHandlesWriteLock(underwater);
+                if (!registeredHandlesReleased)
+                    ReleaseRegisteredReactiveFloraHandlesWriteLock(underwater);
             }
         }
 
@@ -6970,6 +7037,7 @@ namespace Hecton8.World
             if (spatialHash == null || !TryAcquireReactiveFloraQueryHandles(out NativeArray<int> queryHandles))
                 return;
 
+            bool queryHandlesReleased = false;
             try
             {
                 NativeArray<Matrix4x4> matrices;
@@ -7061,6 +7129,10 @@ namespace Hecton8.World
                     _cascadePropagationRadius,
                     ReactiveFloraKindMask,
                     queryHandles);
+
+                ReleaseReactiveFloraQueryHandlesWriteLock();
+                queryHandlesReleased = true;
+
                 if (!RegisterCascadeEvent(underwater, sourcePositionWS, simulationTime))
                     return;
 
@@ -7079,7 +7151,8 @@ namespace Hecton8.World
             }
             finally
             {
-                ReleaseReactiveFloraQueryHandlesWriteLock();
+                if (!queryHandlesReleased)
+                    ReleaseReactiveFloraQueryHandlesWriteLock();
             }
         }
 
@@ -7127,22 +7200,30 @@ namespace Hecton8.World
             NativeArray<HectonVegetationInstanceData> metadata,
             int count)
         {
-            if (!TryAcquireCascadePhaseSeeds(underwater, count, out NativeArray<float> phaseSeeds) ||
-                !TryAcquireCascadeEvents(underwater, out NativeArray<FloraCascadeEventPayload> cascadeEvents) ||
+            if (HasPendingCascadePhaseSeedJob(underwater) ||
                 !TryResolveCascadeReactiveTemplateMask(out NativeArray<byte> cascadeReactiveTemplateMask))
-            {
-                ReleaseCascadeEventsWriteLock(underwater);
-                ReleaseCascadePhaseSeedsWriteLock(underwater);
                 return;
-            }
 
             int eventCount = underwater ? _underwaterCascadeEventCount : _surfaceCascadeEventCount;
-            if (HasPendingCascadePhaseSeedJob(underwater))
+            if (!TryAcquireCascadeEvents(underwater, out NativeArray<FloraCascadeEventPayload> cascadeEvents))
+                return;
+
+            try
+            {
+                CompactCascadeEvents(cascadeEvents, ref eventCount, GetCurrentSimulationTimeSeconds(), _cascadeReleaseDurationSeconds);
+                if (underwater)
+                    _underwaterCascadeEventCount = eventCount;
+                else
+                    _surfaceCascadeEventCount = eventCount;
+            }
+            finally
             {
                 ReleaseCascadeEventsWriteLock(underwater);
-                ReleaseCascadePhaseSeedsWriteLock(underwater);
-                return;
             }
+
+            if (HasPendingCascadePhaseSeedJob(underwater) ||
+                !TryAcquireCascadePhaseSeeds(underwater, count, out NativeArray<float> phaseSeeds))
+                return;
 
             try
             {
@@ -7153,12 +7234,6 @@ namespace Hecton8.World
                 if (safeCount <= 0)
                     return;
 
-                CompactCascadeEvents(cascadeEvents, ref eventCount, GetCurrentSimulationTimeSeconds(), _cascadeReleaseDurationSeconds);
-                if (underwater)
-                    _underwaterCascadeEventCount = eventCount;
-                else
-                    _surfaceCascadeEventCount = eventCount;
-
                 if (eventCount <= 0)
                 {
                     ClearCascadePhaseSeeds(phaseSeeds, safeCount);
@@ -7166,12 +7241,15 @@ namespace Hecton8.World
                     return;
                 }
 
+                if (!TryResolveCascadeEvents(underwater, out NativeArray<FloraCascadeEventPayload> cascadeEventsRead))
+                    return;
+
                 PopulateCascadePhaseSeedsJob job = new PopulateCascadePhaseSeedsJob
                 {
                     Matrices = matrices,
                     Metadata = metadata,
                     ReactiveTemplateMask = cascadeReactiveTemplateMask,
-                    Events = cascadeEvents,
+                    Events = cascadeEventsRead,
                     EventCount = eventCount,
                     PropagationSpeedMetersPerSecond = _cascadePropagationSpeed,
                     InactiveSeed = InactiveCascadeSeed,
@@ -7181,7 +7259,6 @@ namespace Hecton8.World
             }
             finally
             {
-                ReleaseCascadeEventsWriteLock(underwater);
                 ReleaseCascadePhaseSeedsWriteLock(underwater);
             }
         }
@@ -7478,7 +7555,7 @@ namespace Hecton8.World
         private void RebuildCascadeTemplateMaskColdFromCurrentBridge()
         {
             if (_vegetationBridge == null)
-                _vegetationBridge = ResolveVegetationBridge();
+                RefreshVegetationBridgeFromCachedService();
 
             CacheStableHashIds(_cascadeReactiveStableIds, ref _cascadeReactiveStableHashIds);
             FloraDataTemplate[] floraTemplates = _vegetationBridge != null ? _vegetationBridge.FloraTemplates : null;
@@ -7549,7 +7626,7 @@ namespace Hecton8.World
         private void RebuildDefensiveSporeBurstTemplateMaskColdFromCurrentBridge()
         {
             if (_vegetationBridge == null)
-                _vegetationBridge = ResolveVegetationBridge();
+                RefreshVegetationBridgeFromCachedService();
 
             CacheStableHashIds(_defensiveSporeBurstStableIds, ref _defensiveSporeBurstStableHashIds);
             FloraDataTemplate[] floraTemplates = _vegetationBridge != null ? _vegetationBridge.FloraTemplates : null;
@@ -7982,38 +8059,42 @@ namespace Hecton8.World
             Shader.SetGlobalVector(_PlayerFloraInteractionParamsId, _pendingPlayerFloraInteractionParams);
         }
 
-        private Vector3 ResolveGlobalOceanFlow(Vector3 samplePositionWS, IFluidSurfaceCurrentReadModel fluidReadModel)
+        private Vector3 SampleGlobalOceanFlow(Vector3 samplePositionWS, IFluidSurfaceCurrentReadModel fluidReadModel)
         {
             IHectonOceanKinematics provider = _oceanKinematicsProvider;
+            IDataVault dataVault = _wakeDataVault;
             if (provider != null &&
                 provider.IsAvailable &&
-                TryAcquireFloraVaultWriteBuffer(
-                    ref _oceanFlowSamplePositionsHandle,
-                    FloraOceanFlowSamplePositionsBufferId,
-                    1,
-                    out NativeArray<Vector3> oceanFlowSamplePositions) &&
-                TryAcquireFloraVaultWriteBuffer(
-                    ref _oceanFlowSampleResultsHandle,
-                    FloraOceanFlowSampleResultsBufferId,
-                    1,
-                    out NativeArray<Vector3> oceanFlowSampleResults))
+                dataVault != null &&
+                !dataVault.IsCompactionFenceActive &&
+                dataVault.TryAcquireMutationGuard(FloraOceanFlowSampleMutationGuardMask))
             {
                 try
                 {
+                    if (!TryResolveFloraVaultBuffer(
+                            dataVault,
+                            in _oceanFlowSamplePositionsHandle,
+                            FloraOceanFlowSamplePositionsBufferId,
+                            1,
+                            out NativeArray<Vector3> oceanFlowSamplePositions) ||
+                        !TryResolveFloraVaultBuffer(
+                            dataVault,
+                            in _oceanFlowSampleResultsHandle,
+                            FloraOceanFlowSampleResultsBufferId,
+                            1,
+                            out NativeArray<Vector3> oceanFlowSampleResults))
+                    {
+                        return fluidReadModel != null ? fluidReadModel.CurrentVector : Vector3.zero;
+                    }
+
                     oceanFlowSamplePositions[0] = samplePositionWS;
                     if (provider.GetSurfaceFlow(oceanFlowSamplePositions, 1, 1f, oceanFlowSampleResults))
                         return oceanFlowSampleResults[0];
                 }
                 finally
                 {
-                    ReleaseFloraVaultWriteLock(in _oceanFlowSampleResultsHandle);
-                    ReleaseFloraVaultWriteLock(in _oceanFlowSamplePositionsHandle);
+                    dataVault.ReleaseMutationGuard(FloraOceanFlowSampleMutationGuardMask);
                 }
-            }
-            else
-            {
-                ReleaseFloraVaultWriteLock(in _oceanFlowSampleResultsHandle);
-                ReleaseFloraVaultWriteLock(in _oceanFlowSamplePositionsHandle);
             }
 
             return fluidReadModel != null ? fluidReadModel.CurrentVector : Vector3.zero;
@@ -8064,6 +8145,22 @@ namespace Hecton8.World
             QueueWakeTrailGlobals();
         }
 
+        private bool HasWakeTrailResourcesReady()
+        {
+            return !_wakeTrailResourceRefreshRequested &&
+                   !_wakeTrailDisabled &&
+                   _supportsWakeTrailComputeCold &&
+                   _wakeTrailRead != null &&
+                   _wakeTrailWrite != null &&
+                   _wakeTrailSimulationCompute != null &&
+                   _wakeTrailSimulationKernel >= 0 &&
+                   _wakeTrailThreadGroupSizeX > 0 &&
+                   _wakeTrailThreadGroupSizeY > 0 &&
+                   _wakeTrailStampCommandBufferA != null &&
+                   _wakeTrailStampCommandBufferB != null &&
+                   _activeWakeTrailStampCommandBuffer != null;
+        }
+
         private void ReleaseWakeTrailResources()
         {
             ReleaseWakeTrailTexture(ref _wakeTrailRead);
@@ -8096,10 +8193,9 @@ namespace Hecton8.World
                 return;
 
             _hasActiveSubmarineWake = false;
-            CreateWakeTrailResources();
-            if (_wakeTrailRead == null || _wakeTrailWrite == null || _wakeTrailSimulationCompute == null ||
-                _wakeTrailStampCommandBufferA == null || _wakeTrailStampCommandBufferB == null)
+            if (!HasWakeTrailResourcesReady())
             {
+                _wakeTrailResourceRefreshRequested = true;
                 QueueWakeTrailGlobals();
                 return;
             }
@@ -8430,7 +8526,7 @@ namespace Hecton8.World
 
         private void PublishWakeTrailGlobals()
         {
-            if (_wakeTrailDisabled || _wakeTrailRead == null)
+            if (_wakeTrailDisabled || _wakeTrailResourceRefreshRequested || _wakeTrailRead == null)
             {
                 Shader.SetGlobalFloat(_WakeTrailActiveId, 0f);
                 Shader.SetGlobalFloat(_ShallowWaterFieldActiveId, 0f);
@@ -8723,6 +8819,11 @@ namespace Hecton8.World
 
             if (_constructionParasiteGraph == null)
                 _constructionParasiteGraph = GlobalRegistry.ConstructionParasiteGraph;
+
+            if (_vegetationBridge == null)
+                _vegetationBridge = _vegetationBridgeOverride != null
+                    ? _vegetationBridgeOverride
+                    : GlobalRegistry.MapMagicVegetation;
 
             if (_saveService == null)
                 _saveService = GlobalRegistry.Save;
@@ -9364,6 +9465,27 @@ namespace Hecton8.World
                 out cascadeEvents);
         }
 
+        private bool TryResolveCascadeEvents(bool underwater, out NativeArray<FloraCascadeEventPayload> cascadeEvents)
+        {
+            cascadeEvents = default;
+            if (underwater)
+            {
+                return TryResolveFloraVaultBuffer(
+                    _wakeDataVault,
+                    in _underwaterCascadeEventsHandle,
+                    FloraUnderwaterCascadeEventsBufferId,
+                    1,
+                    out cascadeEvents);
+            }
+
+            return TryResolveFloraVaultBuffer(
+                _wakeDataVault,
+                in _surfaceCascadeEventsHandle,
+                FloraSurfaceCascadeEventsBufferId,
+                1,
+                out cascadeEvents);
+        }
+
         private bool TryAcquireCascadePhaseSeeds(bool underwater, int requiredLength, out NativeArray<float> phaseSeeds)
         {
             int safeLength = math.clamp(requiredLength, 1, CascadePhaseSeedCapacity);
@@ -9462,41 +9584,50 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (dataVault.IsCompactionFenceActive)
+            bool releaseOnFailure = true;
+            try
             {
-                dataVault.ReleaseWriteLock(in handle, SystemID.Vfx);
-                RecordFloraMemoryTelemetry(
-                    FloraMemoryTelemetryEventWriteLock,
-                    bufferId,
-                    handle.Generation,
-                    requiredLength,
-                    buffer.IsCreated ? buffer.Length : 0,
-                    FloraMemoryTelemetryCompactionFenceFlag);
-                buffer = default;
-                return false;
-            }
+                if (dataVault.IsCompactionFenceActive)
+                {
+                    RecordFloraMemoryTelemetry(
+                        FloraMemoryTelemetryEventWriteLock,
+                        bufferId,
+                        handle.Generation,
+                        requiredLength,
+                        buffer.IsCreated ? buffer.Length : 0,
+                        FloraMemoryTelemetryCompactionFenceFlag);
+                    buffer = default;
+                    return false;
+                }
 
-            if (!buffer.IsCreated || buffer.Length < requiredLength)
+                if (!buffer.IsCreated || buffer.Length < requiredLength)
+                {
+                    RecordFloraMemoryTelemetry(
+                        FloraMemoryTelemetryEventWriteLock,
+                        bufferId,
+                        handle.Generation,
+                        requiredLength,
+                        buffer.IsCreated ? buffer.Length : 0,
+                        FloraMemoryTelemetryInvalidBufferFlag);
+                    buffer = default;
+                    return false;
+                }
+
+                _floraMemoryConsecutiveFailureCount = 0;
+                SetFloraWriteVault(bufferId, dataVault);
+                releaseOnFailure = false;
+                return true;
+            }
+            finally
             {
-                dataVault.ReleaseWriteLock(in handle, SystemID.Vfx);
-                RecordFloraMemoryTelemetry(
-                    FloraMemoryTelemetryEventWriteLock,
-                    bufferId,
-                    handle.Generation,
-                    requiredLength,
-                    buffer.IsCreated ? buffer.Length : 0,
-                    FloraMemoryTelemetryInvalidBufferFlag);
-                buffer = default;
-                return false;
+                if (releaseOnFailure)
+                    dataVault.ReleaseWriteLock(in handle, SystemID.Vfx);
             }
-
-            _floraMemoryConsecutiveFailureCount = 0;
-            return true;
         }
 
         private void ReleaseFloraVaultWriteLock<T>(in VaultGenerationHandle<T> handle) where T : struct
         {
-            IDataVault dataVault = _wakeDataVault;
+            IDataVault dataVault = TakeFloraWriteVault(handle.BufferID);
             if (dataVault == null || handle.Generation == 0u)
                 return;
 
@@ -9505,6 +9636,7 @@ namespace Hecton8.World
 
         private void ReleaseFloraVaultBuffer<T>(ref VaultGenerationHandle<T> handle) where T : struct
         {
+            ClearFloraWriteVault(handle.BufferID);
             IDataVault dataVault = _wakeDataVault;
             if (dataVault != null && handle.Generation != 0u)
                 dataVault.ReleaseBuffer(in handle);
@@ -9531,19 +9663,129 @@ namespace Hecton8.World
                 return false;
 
             bool telemetryLockAcquired = dataVault.TryAcquireWriteLock(in _floraMemoryTelemetryHandle, SystemID.Vfx, out telemetry);
-            if (!telemetryLockAcquired ||
-                dataVault.IsCompactionFenceActive ||
-                !telemetry.IsCreated ||
-                telemetry.Length < FloraMemoryTelemetryCapacity)
-            {
-                if (telemetryLockAcquired)
-                    dataVault.ReleaseWriteLock(in _floraMemoryTelemetryHandle, SystemID.Vfx);
-
-                telemetry = default;
+            if (!telemetryLockAcquired)
                 return false;
+
+            bool ownershipTransferred = false;
+            try
+            {
+                if (dataVault.IsCompactionFenceActive ||
+                    !telemetry.IsCreated ||
+                    telemetry.Length < FloraMemoryTelemetryCapacity)
+                {
+                    telemetry = default;
+                    return false;
+                }
+
+                _floraMemoryTelemetryWriteVault = dataVault;
+                ownershipTransferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                    dataVault.ReleaseWriteLock(in _floraMemoryTelemetryHandle, SystemID.Vfx);
+            }
+        }
+
+        private void SetFloraWriteVault(BufferID bufferId, IDataVault dataVault)
+        {
+            switch (bufferId)
+            {
+                case FloraParasiteNodesBufferId:
+                    _parasiteNodesWriteVault = dataVault;
+                    return;
+                case FloraCascadeReactiveTemplateMaskBufferId:
+                    _cascadeReactiveTemplateMaskWriteVault = dataVault;
+                    return;
+                case FloraDefensiveSporeTemplateMaskBufferId:
+                    _defensiveSporeBurstTemplateMaskWriteVault = dataVault;
+                    return;
+                case FloraSurfaceCascadePhaseSeedsBufferId:
+                    _surfaceCascadePhaseSeedsWriteVault = dataVault;
+                    return;
+                case FloraUnderwaterCascadePhaseSeedsBufferId:
+                    _underwaterCascadePhaseSeedsWriteVault = dataVault;
+                    return;
+                case FloraSurfaceCascadeEventsBufferId:
+                    _surfaceCascadeEventsWriteVault = dataVault;
+                    return;
+                case FloraUnderwaterCascadeEventsBufferId:
+                    _underwaterCascadeEventsWriteVault = dataVault;
+                    return;
+                case FloraSurfaceReactiveHandlesBufferId:
+                    _surfaceReactiveFloraHandlesWriteVault = dataVault;
+                    return;
+                case FloraUnderwaterReactiveHandlesBufferId:
+                    _underwaterReactiveFloraHandlesWriteVault = dataVault;
+                    return;
+                case FloraReactiveQueryHandlesBufferId:
+                    _reactiveFloraQueryHandlesWriteVault = dataVault;
+                    return;
+                case FloraMemoryTelemetryBufferId:
+                    _floraMemoryTelemetryWriteVault = dataVault;
+                    return;
+            }
+        }
+
+        private IDataVault TakeFloraWriteVault(uint bufferId)
+        {
+            BufferID resolvedBufferId = unchecked((BufferID)(int)bufferId);
+            IDataVault dataVault = null;
+            switch (resolvedBufferId)
+            {
+                case FloraParasiteNodesBufferId:
+                    dataVault = _parasiteNodesWriteVault;
+                    _parasiteNodesWriteVault = null;
+                    return dataVault;
+                case FloraCascadeReactiveTemplateMaskBufferId:
+                    dataVault = _cascadeReactiveTemplateMaskWriteVault;
+                    _cascadeReactiveTemplateMaskWriteVault = null;
+                    return dataVault;
+                case FloraDefensiveSporeTemplateMaskBufferId:
+                    dataVault = _defensiveSporeBurstTemplateMaskWriteVault;
+                    _defensiveSporeBurstTemplateMaskWriteVault = null;
+                    return dataVault;
+                case FloraSurfaceCascadePhaseSeedsBufferId:
+                    dataVault = _surfaceCascadePhaseSeedsWriteVault;
+                    _surfaceCascadePhaseSeedsWriteVault = null;
+                    return dataVault;
+                case FloraUnderwaterCascadePhaseSeedsBufferId:
+                    dataVault = _underwaterCascadePhaseSeedsWriteVault;
+                    _underwaterCascadePhaseSeedsWriteVault = null;
+                    return dataVault;
+                case FloraSurfaceCascadeEventsBufferId:
+                    dataVault = _surfaceCascadeEventsWriteVault;
+                    _surfaceCascadeEventsWriteVault = null;
+                    return dataVault;
+                case FloraUnderwaterCascadeEventsBufferId:
+                    dataVault = _underwaterCascadeEventsWriteVault;
+                    _underwaterCascadeEventsWriteVault = null;
+                    return dataVault;
+                case FloraSurfaceReactiveHandlesBufferId:
+                    dataVault = _surfaceReactiveFloraHandlesWriteVault;
+                    _surfaceReactiveFloraHandlesWriteVault = null;
+                    return dataVault;
+                case FloraUnderwaterReactiveHandlesBufferId:
+                    dataVault = _underwaterReactiveFloraHandlesWriteVault;
+                    _underwaterReactiveFloraHandlesWriteVault = null;
+                    return dataVault;
+                case FloraReactiveQueryHandlesBufferId:
+                    dataVault = _reactiveFloraQueryHandlesWriteVault;
+                    _reactiveFloraQueryHandlesWriteVault = null;
+                    return dataVault;
+                case FloraMemoryTelemetryBufferId:
+                    dataVault = _floraMemoryTelemetryWriteVault;
+                    _floraMemoryTelemetryWriteVault = null;
+                    return dataVault;
             }
 
-            return true;
+            return null;
+        }
+
+        private void ClearFloraWriteVault(uint bufferId)
+        {
+            TakeFloraWriteVault(bufferId);
         }
 
         private bool TryResolveFloraMemoryTelemetryReadOnly(out NativeArray<FloraMemoryTelemetryEntry>.ReadOnly telemetry)
@@ -9991,6 +10233,12 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.AtmosphereRuntime:
                     _atmosphereReadModel = currentService as IAtmosphereReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
+                    _vegetationBridge = _vegetationBridgeOverride != null
+                        ? _vegetationBridgeOverride
+                        : currentService as HectonMapMagicVegetationBridge;
+                    _vegetationBridgeResolveRequested = false;
                     break;
                 case GlobalRegistryServiceSlot.Logistics:
                     _constructionParasiteGraph = currentService as IConstructionParasiteGraphService;

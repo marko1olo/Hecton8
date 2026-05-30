@@ -58,6 +58,8 @@ namespace Hecton8.World
         /// Singleton instance. Null if not initialized.
         /// </summary>
         private static CullingManager s_activeRuntimeInstance;
+        public static CullingManager Instance => s_activeRuntimeInstance;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {

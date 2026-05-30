@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Determinism;
@@ -107,8 +108,13 @@ namespace Hecton8.Animation.KineticCharacter
         private bool _globalGpuSkinningPublished;
         private bool _disposed;
         private bool _dumpedFault;
+        private readonly KineticAnimationTelemetryEntry[] _blackBoxDumpSnapshot = new KineticAnimationTelemetryEntry[KineticCharacterAnimatorConstants.TelemetryCapacity];
+        private int _blackBoxDumpSnapshotCount;
+        private int _blackBoxDumpInFlight;
+        private string _blackBoxDumpRootCold;
 
         private static KineticCharacterAnimatorRuntime _activeRuntimeInstance;
+        private static readonly WaitCallback s_blackBoxDumpWorker = WriteBlackBoxDumpWorker;
 
         public static bool TryGetActiveRuntimeInstance(out KineticCharacterAnimatorRuntime runtime)
         {
@@ -556,6 +562,7 @@ namespace Hecton8.Animation.KineticCharacter
             IDataVault currentVault = currentService is IDataVault nextVault ? nextVault : null;
             IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : null;
             BindDataVaultForLifecycle(currentVault, previousVault);
+            TryEnsureBlackBoxDumpRootCold();
             ClearGpuSkinningBinding();
             if (_dataVault != null)
             {
@@ -669,6 +676,7 @@ namespace Hecton8.Animation.KineticCharacter
         private void RefreshColdDependencies()
         {
             CacheDataVaultCold();
+            TryEnsureBlackBoxDumpRootCold();
             if (_cameraTransform == null)
             {
                 Camera camera = GetComponentInChildren<Camera>();
@@ -1219,17 +1227,153 @@ namespace Hecton8.Animation.KineticCharacter
 
         private void DumpBlackBoxOnce()
         {
+            if (_dumpedFault || Volatile.Read(ref _blackBoxDumpInFlight) != 0)
+                return;
+
             IDataVault vault = _dataVault;
             if (vault == null)
                 return;
 
+            if (_blackBoxDumpRootCold == null || _blackBoxDumpRootCold.Length == 0)
+                return;
+
+            Volatile.Write(ref _blackBoxDumpInFlight, 1);
             if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.TelemetryRing, in _telemetryHandle, 1, out NativeArray<KineticAnimationTelemetryEntry> telemetry) ||
                 !TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.TelemetryCursor, in _telemetryCursorHandle, 1, out NativeArray<int> cursor))
             {
+                Volatile.Write(ref _blackBoxDumpInFlight, 0);
                 return;
             }
 
-            _dumpedFault = KineticCharacterBlackBox.TryDumpTelemetry(ResolveProjectRoot(), telemetry, cursor);
+            if (!TryStageBlackBoxDumpSnapshot(telemetry, cursor))
+            {
+                Volatile.Write(ref _blackBoxDumpInFlight, 0);
+                return;
+            }
+
+            try
+            {
+                if (ThreadPool.QueueUserWorkItem(s_blackBoxDumpWorker, this))
+                {
+                    _dumpedFault = true;
+                    return;
+                }
+            }
+            catch (NotSupportedException)
+            {
+            }
+
+            Volatile.Write(ref _blackBoxDumpInFlight, 0);
+        }
+
+        private bool TryStageBlackBoxDumpSnapshot(
+            NativeArray<KineticAnimationTelemetryEntry> telemetryRing,
+            NativeArray<int> telemetryCursor)
+        {
+            if (!telemetryRing.IsCreated ||
+                telemetryRing.Length < KineticCharacterAnimatorConstants.TelemetryCapacity ||
+                !telemetryCursor.IsCreated ||
+                telemetryCursor.Length <= 0)
+            {
+                return false;
+            }
+
+            int cursor = telemetryCursor[0];
+            int start = cursor >= KineticCharacterAnimatorConstants.TelemetryCapacity
+                ? KineticCharacterMath.PositiveModulo(cursor - KineticCharacterAnimatorConstants.TelemetryCapacity, telemetryRing.Length)
+                : 0;
+            for (int i = 0; i < KineticCharacterAnimatorConstants.TelemetryCapacity; i++)
+            {
+                int sourceIndex = KineticCharacterMath.PositiveModulo(start + i, telemetryRing.Length);
+                _blackBoxDumpSnapshot[i] = telemetryRing[sourceIndex];
+            }
+
+            _blackBoxDumpSnapshotCount = KineticCharacterAnimatorConstants.TelemetryCapacity;
+            return true;
+        }
+
+        private static void WriteBlackBoxDumpWorker(object state)
+        {
+            KineticCharacterAnimatorRuntime runtime = state as KineticCharacterAnimatorRuntime;
+            if (runtime == null)
+                return;
+
+            try
+            {
+                runtime.TryWriteBlackBoxSnapshotCold();
+            }
+            finally
+            {
+                Volatile.Write(ref runtime._blackBoxDumpInFlight, 0);
+            }
+        }
+
+        private bool TryWriteBlackBoxSnapshotCold()
+        {
+            if (!KineticCharacterAnimatorLayout.Validate() ||
+                _blackBoxDumpSnapshot == null ||
+                _blackBoxDumpSnapshotCount < KineticCharacterAnimatorConstants.TelemetryCapacity)
+            {
+                return false;
+            }
+
+            try
+            {
+                string root = _blackBoxDumpRootCold;
+                if (root == null || root.Length == 0)
+                    root = ".";
+
+                string path = Path.Combine(root, KineticCharacterAnimatorConstants.DumpRelativePath);
+                string directory = Path.GetDirectoryName(path);
+                if (directory != null && directory.Length != 0)
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    for (int i = 0; i < KineticCharacterAnimatorConstants.TelemetryCapacity; i++)
+                        WriteBlackBoxEntry(writer, _blackBoxDumpSnapshot[i]);
+                }
+
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
+        }
+
+        private static void WriteBlackBoxEntry(BinaryWriter writer, KineticAnimationTelemetryEntry entry)
+        {
+            writer.Write(entry.RootSectorX);
+            writer.Write(entry.RootSectorY);
+            writer.Write(entry.RootSectorZ);
+            writer.Write(entry.RootLocal.x);
+            writer.Write(entry.RootLocal.y);
+            writer.Write(entry.RootLocal.z);
+            writer.Write(entry.Frame);
+            writer.Write(entry.BonesEvaluated);
+            writer.Write(entry.AverageIkIterations);
+            writer.Write(entry.CpuTimeMicroseconds);
+            writer.Write(entry.StateHash);
+            writer.Write(entry.Flags);
+            writer.Write(entry.GlobalQualityWeight);
         }
 
         private bool UploadMatricesToGpu()
@@ -1467,10 +1611,33 @@ namespace Hecton8.Animation.KineticCharacter
             buffer = null;
         }
 
-        private static string ResolveProjectRoot()
+        private bool TryEnsureBlackBoxDumpRootCold()
         {
+            if (_blackBoxDumpRootCold != null && _blackBoxDumpRootCold.Length != 0)
+                return true;
+
             string dataPath = Application.dataPath;
-            return string.IsNullOrEmpty(dataPath) ? "." : Path.GetFullPath(Path.Combine(dataPath, ".."));
+            if (dataPath == null || dataPath.Length == 0)
+            {
+                _blackBoxDumpRootCold = ".";
+                return true;
+            }
+
+            try
+            {
+                _blackBoxDumpRootCold = Path.GetFullPath(Path.Combine(dataPath, ".."));
+                return _blackBoxDumpRootCold.Length != 0;
+            }
+            catch (ArgumentException)
+            {
+                _blackBoxDumpRootCold = ".";
+                return true;
+            }
+            catch (NotSupportedException)
+            {
+                _blackBoxDumpRootCold = ".";
+                return true;
+            }
         }
 
         private void OnDrawGizmosSelected()

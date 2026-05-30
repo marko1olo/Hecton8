@@ -181,6 +181,13 @@ namespace Hecton8.Construction
             }
         }
 
+        internal static int ActiveNodeCount => _activeNodeCount;
+
+        internal static LogisticsPipeNode GetActiveNodeAt(int index)
+        {
+            return index >= 0 && index < _activeNodeCount ? _activeNodes[index] : null;
+        }
+
         internal static bool TryRunSlowTick(LogisticsPipeNode requester)
         {
             if (requester == null)

@@ -45,6 +45,13 @@ namespace Hecton8.Economy
         private const string DefaultDirectiveDescriptionFallback =
             "Recovered stock is below Atlas-6 operating threshold. Harvest additional critical stock to stabilize fabrication reserves.";
         private static readonly int _TitaniumDirectiveHashId = LocHash.Compute(DefaultTitaniumDirectiveItemId);
+        private static IResourceScarcityReadModel s_activeReadModel;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_activeReadModel = null;
+        }
 
         [Serializable]
 #pragma warning disable 0649 // Unity serializes scarcity directive definitions from authoring data.
@@ -241,8 +248,16 @@ namespace Hecton8.Economy
         /// </summary>
         public static float ResolveCraftPowerMultiplier(RecipeData recipe)
         {
-            ResourceScarcityDirector runtime = GlobalRegistry.ResourceScarcity;
-            return runtime != null ? runtime.GetCraftPowerMultiplier(recipe) : 1f;
+            IResourceScarcityReadModel scarcityReadModel = s_activeReadModel;
+            return scarcityReadModel != null ? scarcityReadModel.GetCraftPowerMultiplier(recipe) : 1f;
+        }
+
+        /// <summary>
+        /// Returns the current scarcity multiplier from an explicitly supplied scarcity owner.
+        /// </summary>
+        public static float ResolveCraftPowerMultiplier(RecipeData recipe, IResourceScarcityReadModel scarcityReadModel)
+        {
+            return scarcityReadModel != null ? scarcityReadModel.GetCraftPowerMultiplier(recipe) : 1f;
         }
 
         /// <summary>
@@ -927,6 +942,8 @@ namespace Hecton8.Economy
 
             GlobalRegistry.RegisterResourceScarcityRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.ResourceScarcity, this);
+            if (_serviceRegistered)
+                s_activeReadModel = this;
         }
 
         private void TryUnregisterService()
@@ -936,6 +953,8 @@ namespace Hecton8.Economy
 
             GlobalRegistry.UnregisterResourceScarcityRuntime(this);
             _serviceRegistered = false;
+            if (ReferenceEquals(s_activeReadModel, this))
+                s_activeReadModel = null;
         }
 
         private void CacheRegistryServicesCold()

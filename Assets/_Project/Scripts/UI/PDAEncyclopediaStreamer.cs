@@ -161,6 +161,7 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/PDA Encyclopedia Streamer")]
     public sealed unsafe class PDAEncyclopediaStreamer :
         MonoBehaviour,
+        ISlowTickable,
         ILateFrameTickable,
         IPDAEventListener,
         IGlobalRegistryHotSwapListener
@@ -256,6 +257,7 @@ namespace Hecton8.UI
         private BabelDictionaryStore _babelStore;
         private bool _ownsBabelStore;
         private bool _registeredLateFrame;
+        private bool _registeredSlowTick;
         private bool _registeredPdaEvents;
         private bool _registeredHotSwap;
         private bool _vaultReady;
@@ -278,6 +280,7 @@ namespace Hecton8.UI
         private float _charAccumulator;
         private uint _lastFaultHash;
         private uint _activeUtf8SourceFlags;
+        private bool _blackBoxDumpQueued;
 
         private void Awake()
         {
@@ -317,6 +320,7 @@ namespace Hecton8.UI
             UnregisterDispatcherLanes();
             UnregisterPdaEvents();
             TryUnregisterHotSwapListener();
+            FlushQueuedBlackBoxDump();
             _coldBootstrapAttempted = false;
             _vaultReady = false;
             _playerContext = null;
@@ -443,7 +447,12 @@ namespace Hecton8.UI
             RecordTelemetry(charsRenderedThisFrame, decodeTicks, canvasTicks);
 
             if (_lastFaultHash != 0u || HasInvalidNumbers(quality, decodeTicks, canvasTicks, decodedThisFrame))
-                DumpBlackBox();
+                QueueBlackBoxDump();
+        }
+
+        public void SlowTick()
+        {
+            FlushQueuedBlackBoxDump();
         }
 
         public void OnPDAEvent(in PDAEventPayload payload)
@@ -2088,6 +2097,9 @@ namespace Hecton8.UI
 
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterDispatcherLanes()
@@ -2096,6 +2108,12 @@ namespace Hecton8.UI
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = false;
             }
         }
 
@@ -2225,10 +2243,27 @@ namespace Hecton8.UI
             }
         }
 
+        private void QueueBlackBoxDump()
+        {
+            _blackBoxDumpQueued = true;
+        }
+
+        private void FlushQueuedBlackBoxDump()
+        {
+            if (!_blackBoxDumpQueued)
+                return;
+
+            _blackBoxDumpQueued = false;
+            DumpBlackBox();
+        }
+
         private void DumpBlackBox()
         {
             if (!EnsureVaultBuffers())
+            {
+                _blackBoxDumpQueued = true;
                 return;
+            }
 
             string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             string directory = Path.Combine(root, "Docs", "AgentLogs");

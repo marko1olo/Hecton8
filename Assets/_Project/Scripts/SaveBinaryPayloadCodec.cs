@@ -1179,10 +1179,10 @@ namespace Hecton8.SaveSystem
         {
             if (data != null &&
                 data.hasInventoryShadowPayload &&
-                data.inventoryShadowPayload.IsCreated &&
+                data.inventoryShadowPayload != null &&
                 data.inventoryShadowPayloadLength > 0)
             {
-                return writer.WriteNativeBytes(data.inventoryShadowPayload, data.inventoryShadowPayloadLength);
+                return writer.WriteManagedBytes(data.inventoryShadowPayload, data.inventoryShadowPayloadLength);
             }
 
             return WriteInventory(ref writer, data != null ? data.inventory : default);
@@ -3869,6 +3869,35 @@ namespace Hecton8.SaveSystem
                     Error = "Native shadow payload copy exceeded the raw buffer ceiling.";
                     UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryPayloadCodec));
                     return false;
+                }
+
+                _cursor += safeByteCount;
+                return true;
+            }
+
+            public bool WriteManagedBytes(byte[] source, int byteCount)
+            {
+                if (source == null)
+                {
+                    Error = "Managed source buffer is not initialized.";
+                    return false;
+                }
+
+                int safeByteCount = Math.Clamp(byteCount, 0, source.Length);
+                if (safeByteCount <= 0)
+                    return true;
+
+                if (!TryReserve(safeByteCount))
+                    return false;
+
+                fixed (byte* sourcePtr = source)
+                {
+                    if (!UnsafeMemoryCopyGuard.TryMemCpy(_buffer + _cursor, _capacity - _cursor, sourcePtr, safeByteCount))
+                    {
+                        Error = "Managed shadow payload copy exceeded the raw buffer ceiling.";
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryPayloadCodec));
+                        return false;
+                    }
                 }
 
                 _cursor += safeByteCount;

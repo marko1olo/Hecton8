@@ -25,6 +25,8 @@ AA commercial product — Master Grade, enterprise-level, visually premium.
 - Runtime context services publish once from their owner phase. Consumers read immutable snapshots, cached owner interfaces, or cached DataVault handles. Multi-consumer pull-and-sync is rejected.
 - `GlobalRegistry` is cold identity and dependency injection only. No hot polling. Cache dependencies during bootstrap, `OnRegister`, `OnDependencyInject`, or owner initialization.
 - `SignalBus<T>` is the first-party hot broadcast path. `GlobalSignals` direct queues are legacy or documented bridge lanes only. `HectonEventBus` is mod/API/cold managed isolation only.
+- New first-party gameplay traffic must not introduce direct `NativeQueue<T>` or `GlobalSignals` routes; retained bridge queues need owner, drain phase, max frame budget, overflow policy, and telemetry counter.
+- Gameplay-truth `SignalBus<T>` lanes must declare deterministic application order, coalescing, or overflow policy before they mutate authority state.
 - `GlobalDataVault` is not a global dictionary or mutable heap. Allocate/grow/resolve ownership in cold setup or owned swap windows; hot paths use generation-checked handles and fixed snapshots only.
 - `GlobalDataVault.TryGetLatestCreated()` is allowed only for bootstrap, editor diagnostics, crash/postmortem, or explicitly documented core fallback. Domain runtime code must not use it as normal fallback authority.
 - Burst/Jobs are correct only when the work is batched, data-local, and completed by dispatcher-owned completion windows. Tiny jobs, noisy schedule/complete loops, same-frame readbacks, and hidden `.Complete()` calls require profiler proof or are rejected.
@@ -673,6 +675,8 @@ Response format: What was wrong ? What I did ? In-game result ? What was verifie
 [REQ] Use GraphicsBuffer.LockBufferForWrite with UnsafeUtility.MemCpy for all GPU updates.
 [REQ] Double-buffering for all GPU data is MANDATORY. While the GPU reads Buffer A, the CPU writes to Buffer B.
 [FORBID] Uploading data that hasn't changed. Use dirty-flags at the page level. If you waste PCIe bandwidth, you are killing the MX350.
+[REQ] Hot CPU->GPU uploads must claim a per-frame byte budget and use dirty pages/ranges; full-buffer uploads require all-dirty proof or cold-path fallback justification.
+[FORBID] Synchronous GPU readback (`GetData`) in runtime hot paths; use delayed `AsyncGPUReadback` only for documented telemetry/query lanes.
 [RULE] INTERFACE IMMUTABILITY: During a batch run, changing existing public method signatures in Hecton8.Core.Contracts is FORBIDDEN. If a signature change is vital, you must mark it in Rationale.md and implement a Legacy Wrapper. Interfaces can only be expanded, not mutated, until the next batch.
 [RULE] SIGNAL DISCIPLINE: You are FORBIDDEN from creating a new EventID for a single-use interaction. Use owner interfaces/cached GlobalRegistry dependency for direct queries. Typed SignalBus lanes are for first-party decoupled BROADCASTS. HectonEventBus is mod/API/cold only.
 [RULE] ATOMIC FILE DELETION

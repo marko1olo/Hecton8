@@ -154,7 +154,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            NativeArray<ushort> readbackData = state.HeightReadbackRequest.GetData<ushort>();
+            NativeArray<ushort> readbackData = state.HeightReadbackData;
             if (!readbackData.IsCreated || readbackData.Length < pendingBuffer.HeightSampleCount)
             {
                 state.HeightReadbackPending = false;
@@ -411,7 +411,9 @@ namespace Hecton8.World
             if (state == null || terrainData == null)
                 return false;
 
-            RefreshTerrainTextureCaches(state, terrainData);
+            if (!TryRefreshTerrainTextureCachesHot(state, terrainData))
+                return true;
+
             CaptureTileCacheSignature(
                 state.AlphamapTextureCache,
                 state.HeightTextureCache,

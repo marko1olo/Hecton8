@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -54,6 +55,12 @@ namespace Hecton8.AI.Ambient
         private const ushort TelemetryFlagPendingDebris = 1 << 3;
         private const uint AmbientStateHeadlightReactiveFlag = AmbientBiotaState.FlagHeadlightReactive;
         private const string AgentDumpFileName = "Dump_13AI.bin";
+        private static readonly AmbientBiotaTelemetryEntry[] s_blackBoxDumpSnapshot =
+            new AmbientBiotaTelemetryEntry[BlackBoxFrameCount]; // COLD ALLOC: fixed ambient blackbox dump snapshot, owner: AMBIENT_BIOTA_DIRECTOR
+        private static readonly WaitCallback s_blackBoxDumpWorker = WriteBlackBoxDumpWorker;
+        private static int s_blackBoxDumpCursor;
+        private static int s_blackBoxDumpCount;
+        private static int s_blackBoxDumpInFlight;
         private static readonly int BiotaInstancesShaderId = Shader.PropertyToID("_HectonBiotaInstances");
         private static readonly int BiotaCapacityShaderId = Shader.PropertyToID("_HectonBiotaCapacity");
         private static readonly int BiotaActiveCountShaderId = Shader.PropertyToID("_HectonBiotaActiveCount");
@@ -173,6 +180,12 @@ namespace Hecton8.AI.Ambient
         private bool _jobPending;
         private bool _jobBuffersPinned;
         private IDataVault _jobBufferGuardVault;
+        private int[] _macroSlotScratch;
+        private int[] _macroSlotMarkScratch;
+        private AbsoluteUniversePosition[] _macroAupScratch;
+        private float4[] _macroVelocityScratch;
+        private AmbientBiotaState[] _macroStateScratch;
+        private int _macroSlotMarkGeneration;
         private bool _pendingDebrisDrainActive;
         private bool _blackBoxDumped;
         private bool _gpuPayloadDirty = true;
@@ -227,6 +240,7 @@ namespace Hecton8.AI.Ambient
             TryUnregisterHotSwapListener();
             ReleaseGraphicsResources();
             ReleaseBiotaRuntimeMaterial();
+            ReleaseMacroScratch();
             ReleaseVaultHandles(_vault);
             ClearVaultHandles();
             _vault = null;
@@ -429,9 +443,45 @@ namespace Hecton8.AI.Ambient
                 return false;
 
             RefreshBiomeSignalState();
+            if (!TryResolveBiotaBuffers(out _, out _, out NativeArray<AmbientBiotaState> stageStates))
+                return false;
+
+            int safeCapacity = math.min(_capacity, stageStates.Length);
+            if (!HasMacroScratchCapacity(safeCapacity))
+                return false;
+
+            int safeSwarmCount = math.min(swarmCount, swarms.Length);
+            float radiusMeters = math.max(8f, radiusMetersQ);
+            float macroQualityWeight01 = ResolveMacroVisualQualityWeight01(in centerAup, qualityByte, systemStress01);
+            byte spawnQualityByte = EncodeMacroVisualQualitySignalByte(macroQualityWeight01);
+            float macroSurvivalPressure01 = math.max(
+                1f - SmoothStep01(macroQualityWeight01),
+                SmoothStep01(math.saturate((systemStress01 - 0.62f) * math.rcp(0.38f))));
+            uint frameIndex = _frameIndex;
+            int requestedCount;
+            int invalidCount;
+            int stagedCount = StageMacroHydrationScratch(
+                stageStates,
+                swarms,
+                safeCapacity,
+                safeSwarmCount,
+                in centerAup,
+                radiusMeters,
+                frameIndex,
+                baseSpeciesId,
+                lifetimeSeconds,
+                macroQualityWeight01,
+                macroSurvivalPressure01,
+                systemStress01,
+                out requestedCount,
+                out invalidCount);
+            if (stagedCount <= 0)
+                return false;
+
             if (!TryAcquireAmbientMutationGuard(MacroMutationGuardMask, out IDataVault guardVault))
                 return false;
 
+            int committedCount = 0;
             try
             {
                 if (!TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<float4> velocities, out NativeArray<AmbientBiotaState> states) ||
@@ -440,62 +490,43 @@ namespace Hecton8.AI.Ambient
                     return false;
                 }
 
-                ClearMacroCounters(counters);
-                int safeSwarmCount = math.min(swarmCount, swarms.Length);
-                float radiusMeters = math.max(8f, radiusMetersQ);
-                float macroQualityWeight01 = ResolveMacroVisualQualityWeight01(in centerAup, qualityByte, systemStress01);
-                byte spawnQualityByte = EncodeMacroVisualQualitySignalByte(macroQualityWeight01);
-                float macroSurvivalPressure01 = math.max(
-                    1f - SmoothStep01(macroQualityWeight01),
-                    SmoothStep01(math.saturate((systemStress01 - 0.62f) * math.rcp(0.38f))));
-                AmbientBiotaMacroHydrationJob hydrationJob = new AmbientBiotaMacroHydrationJob
-                {
-                    Aups = aups,
-                    Velocities = velocities,
-                    States = states,
-                    Swarms = swarms,
-                    Counters = counters,
-                    CenterAup = centerAup,
-                    RadiusMeters = radiusMeters,
-                    LifetimeSeconds = lifetimeSeconds,
-                    Capacity = _capacity,
-                    SwarmCount = safeSwarmCount,
-                    BaseSpeciesId = baseSpeciesId,
-                    Seed = MacroHydrationSeedSalt,
-                    FrameIndex = _frameIndex,
-                    CurrentBiomeHash = _currentBiomeHash,
-                    QualityWeight01 = macroQualityWeight01,
-                    SurvivalPressure01 = macroSurvivalPressure01,
-                    SystemStress01 = math.saturate(systemStress01)
-                };
-
-                hydrationJob.Execute();
-                _frameIndex++;
-                spawnedBoidCount = counters[0];
-                if (spawnedBoidCount <= 0)
-                    return false;
-
-                RecountActiveBiota(states);
-                _gpuPayloadDirty = true;
-                EntitySpawnSignal spawnSignal = new EntitySpawnSignal
-                {
-                    PositionAup = centerAup,
-                    SourceHash = MacroHydrationSeedSalt,
-                    SpawnedCount = (ushort)math.clamp(spawnedBoidCount, 0, ushort.MaxValue),
-                    RequestedCount = (ushort)math.clamp(counters[1], 0, ushort.MaxValue),
-                    EntityKind = EntitySpawnSignal.KindEcology,
-                    QualityWeightQ8 = spawnQualityByte,
-                    Flags = EntitySpawnSignal.FlagEcology,
-                    SurvivalPressureQ8 = EncodeMacroSurvivalPressureSignalByte(macroSurvivalPressure01),
-                    Frame = _frameIndex
-                };
-                SignalBus<EntitySpawnSignal>.TryPushTracked(in spawnSignal, ref s_x001AmbientBiotaDirectorSignalPushDropCount);
-                return true;
+                committedCount = CommitMacroHydrationScratch(
+                    aups,
+                    velocities,
+                    states,
+                    counters,
+                    stagedCount,
+                    requestedCount,
+                    invalidCount);
             }
             finally
             {
                 ReleaseAmbientMutationGuard(guardVault, MacroMutationGuardMask);
             }
+
+            _frameIndex = frameIndex + 1u;
+            spawnedBoidCount = committedCount;
+            if (spawnedBoidCount <= 0)
+                return false;
+
+            if (TryResolveBiotaStateBuffer(out NativeArray<AmbientBiotaState> recountStates))
+                RecountActiveBiota(recountStates);
+
+            _gpuPayloadDirty = true;
+            EntitySpawnSignal spawnSignal = new EntitySpawnSignal
+            {
+                PositionAup = centerAup,
+                SourceHash = MacroHydrationSeedSalt,
+                SpawnedCount = (ushort)math.clamp(spawnedBoidCount, 0, ushort.MaxValue),
+                RequestedCount = (ushort)math.clamp(requestedCount, 0, ushort.MaxValue),
+                EntityKind = EntitySpawnSignal.KindEcology,
+                QualityWeightQ8 = spawnQualityByte,
+                Flags = EntitySpawnSignal.FlagEcology,
+                SurvivalPressureQ8 = EncodeMacroSurvivalPressureSignalByte(macroSurvivalPressure01),
+                Frame = _frameIndex
+            };
+            SignalBus<EntitySpawnSignal>.TryPushTracked(in spawnSignal, ref s_x001AmbientBiotaDirectorSignalPushDropCount);
+            return true;
         }
 
         public bool TryPackMacroHydratedBiota(
@@ -510,9 +541,23 @@ namespace Hecton8.AI.Ambient
             if (_jobPending)
                 return false;
 
+            if (!TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> stageAups, out _, out NativeArray<AmbientBiotaState> stageStates))
+                return false;
+
+            int safeCapacity = math.min(_capacity, math.min(stageAups.Length, stageStates.Length));
+            if (!HasMacroScratchCapacity(safeCapacity))
+                return false;
+
+            float radiusMeters = math.max(8f, radiusMetersQ);
+            double radiusSq = (double)radiusMeters * radiusMeters;
+            int stagedCount = StageMacroDehydrationSlots(stageAups, stageStates, safeCapacity, in centerAup, radiusSq);
+            if (stagedCount <= 0)
+                return false;
+
             if (!TryAcquireAmbientMutationGuard(MacroMutationGuardMask, out IDataVault guardVault))
                 return false;
 
+            int committedCount = 0;
             try
             {
                 if (!TryResolveBiotaBuffers(out NativeArray<AbsoluteUniversePosition> aups, out NativeArray<float4> velocities, out NativeArray<AmbientBiotaState> states) ||
@@ -521,33 +566,330 @@ namespace Hecton8.AI.Ambient
                     return false;
                 }
 
-                ClearMacroCounters(counters);
-                float radiusMeters = math.max(8f, radiusMetersQ);
-                AmbientBiotaMacroDehydrationJob dehydrationJob = new AmbientBiotaMacroDehydrationJob
-                {
-                    Aups = aups,
-                    Velocities = velocities,
-                    States = states,
-                    Counters = counters,
-                    CenterAup = centerAup,
-                    RadiusSq = (double)radiusMeters * radiusMeters,
-                    Capacity = _capacity
-                };
-
-                dehydrationJob.Execute();
-                releasedBoidCount = counters[0];
-                if (releasedBoidCount <= 0)
-                    return false;
-
-                biomassValue = math.saturate(releasedBoidCount * math.rcp((float)MacroVisualBoidsPerBiomassUnit));
-                RecountActiveBiota(states);
-                _gpuPayloadDirty = true;
-                return biomassValue > 0f;
+                committedCount = CommitMacroDehydrationSlots(
+                    aups,
+                    velocities,
+                    states,
+                    counters,
+                    stagedCount,
+                    in centerAup,
+                    radiusSq);
             }
             finally
             {
                 ReleaseAmbientMutationGuard(guardVault, MacroMutationGuardMask);
             }
+
+            releasedBoidCount = committedCount;
+            if (releasedBoidCount <= 0)
+                return false;
+
+            biomassValue = math.saturate(releasedBoidCount * math.rcp((float)MacroVisualBoidsPerBiomassUnit));
+            if (TryResolveBiotaStateBuffer(out NativeArray<AmbientBiotaState> recountStates))
+                RecountActiveBiota(recountStates);
+            _gpuPayloadDirty = true;
+            return biomassValue > 0f;
+        }
+
+        private int StageMacroHydrationScratch(
+            NativeArray<AmbientBiotaState> states,
+            NativeArray<MacroSwarm> swarms,
+            int safeCapacity,
+            int safeSwarmCount,
+            in AbsoluteUniversePosition centerAup,
+            float radiusMeters,
+            uint frameIndex,
+            ushort baseSpeciesId,
+            float lifetimeSeconds,
+            float macroQualityWeight01,
+            float macroSurvivalPressure01,
+            float systemStress01,
+            out int requested,
+            out int invalid)
+        {
+            requested = 0;
+            invalid = 0;
+            if (!states.IsCreated ||
+                !swarms.IsCreated ||
+                safeCapacity <= 0 ||
+                safeSwarmCount <= 0)
+            {
+                return 0;
+            }
+
+            float radius = math.max(8f, radiusMeters);
+            float survivalPressure01 = math.saturate(math.select(1f, macroSurvivalPressure01, math.isfinite(macroSurvivalPressure01)));
+            float qualityWeight01 = math.saturate(math.select(1f, macroQualityWeight01, math.isfinite(macroQualityWeight01)));
+            float visualBudget01 = math.saturate(SmoothStep01(qualityWeight01) * (1f - survivalPressure01 * 0.75f));
+            float visualScale = math.lerp(1f, 0.5f, SmoothStep01(math.saturate((systemStress01 - MacroHydrationStressCullThreshold01) * math.rcp(0.3f))));
+            int staged = 0;
+            int searchStart = 0;
+            int stageGeneration = BeginMacroSlotStageGeneration(safeCapacity);
+
+            for (int swarmIndex = 0; swarmIndex < safeSwarmCount && staged < safeCapacity; swarmIndex++)
+            {
+                MacroSwarm swarm = swarms[swarmIndex];
+                if (!IsValidMacroSwarmForHydration(in swarm))
+                {
+                    invalid++;
+                    continue;
+                }
+
+                int swarmBudget = math.clamp(
+                    (int)math.ceil(math.saturate(swarm.BiomassValue) * MacroVisualBoidsPerBiomassUnit * visualScale),
+                    1,
+                    MacroVisualBoidsPerBiomassUnit);
+                requested += swarmBudget;
+
+                for (int spawnedForSwarm = 0; spawnedForSwarm < swarmBudget && staged < safeCapacity; spawnedForSwarm++)
+                {
+                    int slot = FindInactiveMacroStagingSlot(states, safeCapacity, ref searchStart, stageGeneration);
+                    if (slot < 0)
+                        break;
+
+                    uint hash = Hash32(MacroHydrationSeedSalt ^ _currentBiomeHash ^ swarm.HashId ^ ((uint)slot * 747796405u) ^ ((uint)spawnedForSwarm * 2891336453u) ^ frameIndex);
+                    double3 offset = ResolveMacroHydrationSpawnOffset(hash, radius, visualBudget01);
+                    if (!IsFinite(offset))
+                    {
+                        invalid++;
+                        continue;
+                    }
+
+                    AbsoluteUniversePosition aup = OffsetAup(in centerAup, offset);
+                    if (!IsFiniteAup(in aup))
+                    {
+                        invalid++;
+                        continue;
+                    }
+
+                    float3 velocity = ResolveMacroHydrationSpawnVelocity(hash, visualBudget01);
+                    _macroSlotMarkScratch[slot] = stageGeneration;
+                    _macroSlotScratch[staged] = slot;
+                    _macroAupScratch[staged] = aup;
+                    _macroVelocityScratch[staged] = new float4(velocity, ((hash >> 8) & 255u) * (1f / 255f));
+                    _macroStateScratch[staged] = new AmbientBiotaState
+                    {
+                        StateFlags = AmbientBiotaState.FlagActive |
+                                     AmbientBiotaState.FlagMacroHydrated,
+                        StableHash = hash,
+                        SpeciesId = (ushort)(baseSpeciesId + 8 + (Hash32(hash ^ _currentBiomeHash) & 7u)),
+                        BucketId = (ushort)(hash & BucketMask),
+                        AgeSeconds = 0f,
+                        LifetimeSeconds = math.max(1f, lifetimeSeconds * math.lerp(0.8f, 1.6f, ((hash >> 16) & 255u) * (1f / 255f))),
+                        ScaleMeters = math.lerp(0.08f, math.lerp(0.26f, 0.42f, visualBudget01), ((hash >> 24) & 255u) * (1f / 255f)),
+                        Emission01 = math.saturate(ResolveBiomeEmissionBias(_currentBiomeHash, hash) + swarm.BiomassValue * 0.6f),
+                        Reserved = 0u
+                    };
+                    staged++;
+                }
+            }
+
+            return staged;
+        }
+
+        private int CommitMacroHydrationScratch(
+            NativeArray<AbsoluteUniversePosition> aups,
+            NativeArray<float4> velocities,
+            NativeArray<AmbientBiotaState> states,
+            NativeArray<int> counters,
+            int stagedCount,
+            int requested,
+            int invalid)
+        {
+            ClearMacroCounters(counters);
+            int safeCapacity = math.min(_capacity, math.min(aups.Length, math.min(velocities.Length, states.Length)));
+            int safeCount = math.min(stagedCount, math.min(safeCapacity, _macroSlotScratch.Length));
+            int spawned = 0;
+            int rejected = 0;
+            for (int i = 0; i < safeCount; i++)
+            {
+                int slot = _macroSlotScratch[i];
+                if ((uint)slot >= (uint)safeCapacity)
+                {
+                    rejected++;
+                    continue;
+                }
+
+                AmbientBiotaState current = states[slot];
+                if ((current.StateFlags & AmbientBiotaState.FlagActive) != 0u)
+                {
+                    rejected++;
+                    continue;
+                }
+
+                aups[slot] = _macroAupScratch[i];
+                velocities[slot] = _macroVelocityScratch[i];
+                states[slot] = _macroStateScratch[i];
+                spawned++;
+            }
+
+            if (counters.IsCreated && counters.Length >= MacroHydrationCounterCount)
+            {
+                counters[0] = spawned;
+                counters[1] = requested;
+                counters[2] = math.max(0, requested - spawned);
+                counters[3] = invalid + rejected;
+            }
+
+            return spawned;
+        }
+
+        private int StageMacroDehydrationSlots(
+            NativeArray<AbsoluteUniversePosition> aups,
+            NativeArray<AmbientBiotaState> states,
+            int safeCapacity,
+            in AbsoluteUniversePosition centerAup,
+            double radiusSq)
+        {
+            if (!aups.IsCreated || !states.IsCreated || safeCapacity <= 0)
+                return 0;
+
+            int staged = 0;
+            for (int i = 0; i < safeCapacity && staged < _macroSlotScratch.Length; i++)
+            {
+                AmbientBiotaState state = states[i];
+                if ((state.StateFlags & (AmbientBiotaState.FlagActive | AmbientBiotaState.FlagMacroHydrated)) !=
+                    (AmbientBiotaState.FlagActive | AmbientBiotaState.FlagMacroHydrated))
+                {
+                    continue;
+                }
+
+                AbsoluteUniversePosition sampleAup = aups[i];
+                double3 delta = DeltaMeters(in sampleAup, in centerAup);
+                double distSq = math.dot(delta, delta);
+                if (!math.isfinite(distSq) || distSq > radiusSq)
+                    continue;
+
+                _macroSlotScratch[staged++] = i;
+            }
+
+            return staged;
+        }
+
+        private int CommitMacroDehydrationSlots(
+            NativeArray<AbsoluteUniversePosition> aups,
+            NativeArray<float4> velocities,
+            NativeArray<AmbientBiotaState> states,
+            NativeArray<int> counters,
+            int stagedCount,
+            in AbsoluteUniversePosition centerAup,
+            double radiusSq)
+        {
+            ClearMacroCounters(counters);
+            int safeCapacity = math.min(_capacity, math.min(aups.Length, math.min(velocities.Length, states.Length)));
+            int safeCount = math.min(stagedCount, math.min(safeCapacity, _macroSlotScratch.Length));
+            int released = 0;
+            uint hash = 2166136261u;
+            for (int i = 0; i < safeCount; i++)
+            {
+                int slot = _macroSlotScratch[i];
+                if ((uint)slot >= (uint)safeCapacity)
+                    continue;
+
+                AmbientBiotaState state = states[slot];
+                if ((state.StateFlags & (AmbientBiotaState.FlagActive | AmbientBiotaState.FlagMacroHydrated)) !=
+                    (AmbientBiotaState.FlagActive | AmbientBiotaState.FlagMacroHydrated))
+                {
+                    continue;
+                }
+
+                AbsoluteUniversePosition sampleAup = aups[slot];
+                double3 delta = DeltaMeters(in sampleAup, in centerAup);
+                double distSq = math.dot(delta, delta);
+                if (!math.isfinite(distSq) || distSq > radiusSq)
+                    continue;
+
+                hash = Hash32(hash ^ state.StableHash);
+                states[slot] = default;
+                aups[slot] = default;
+                velocities[slot] = default;
+                released++;
+            }
+
+            if (counters.IsCreated && counters.Length >= MacroHydrationCounterCount)
+            {
+                counters[0] = released;
+                counters[1] = unchecked((int)hash);
+            }
+
+            return released;
+        }
+
+        private int FindInactiveMacroStagingSlot(
+            NativeArray<AmbientBiotaState> states,
+            int safeCapacity,
+            ref int searchStart,
+            int stageGeneration)
+        {
+            for (int scanned = 0; scanned < safeCapacity; scanned++)
+            {
+                int index = searchStart + scanned;
+                if (index >= safeCapacity)
+                    index -= safeCapacity;
+
+                AmbientBiotaState state = states[index];
+                if ((state.StateFlags & AmbientBiotaState.FlagActive) != 0u ||
+                    _macroSlotMarkScratch[index] == stageGeneration)
+                {
+                    continue;
+                }
+
+                searchStart = index + 1;
+                if (searchStart >= safeCapacity)
+                    searchStart = 0;
+                return index;
+            }
+
+            return -1;
+        }
+
+        private int BeginMacroSlotStageGeneration(int safeCapacity)
+        {
+            _macroSlotMarkGeneration++;
+            if (_macroSlotMarkGeneration != 0)
+                return _macroSlotMarkGeneration;
+
+            int length = math.min(safeCapacity, _macroSlotMarkScratch.Length);
+            for (int i = 0; i < length; i++)
+                _macroSlotMarkScratch[i] = 0;
+
+            _macroSlotMarkGeneration = 1;
+            return _macroSlotMarkGeneration;
+        }
+
+        private static bool IsValidMacroSwarmForHydration(in MacroSwarm swarm)
+        {
+            return swarm.HashId != 0u &&
+                   math.isfinite(swarm.BiomassValue) &&
+                   math.isfinite(swarm.Speed) &&
+                   math.all(math.isfinite(swarm.CurrentSectorAup)) &&
+                   swarm.BiomassValue > 0.0001f;
+        }
+
+        private static double3 ResolveMacroHydrationSpawnOffset(uint hash, float radius, float visualBudget01)
+        {
+            float normA = (hash & 65535u) * (1f / 65535f);
+            float normB = ((hash >> 10) & 1023u) * (1f / 1023f);
+            float normC = ((hash >> 20) & 1023u) * (1f / 1023f);
+            float angle = normA * TwoPi;
+            float triangle = 1f - math.abs(normC * 2f - 1f);
+            float radial = math.lerp(radius, math.lerp(radius * 0.18f, radius * 0.82f, normB), visualBudget01);
+            float survivalVertical = (triangle - 0.5f) * 8f;
+            float precisionVertical = math.lerp((normC - 0.5f) * 18f, -math.lerp(3f, 18f, normC), visualBudget01);
+            float verticalBias = math.lerp(survivalVertical, precisionVertical, visualBudget01);
+            return new double3(
+                CosPolynomial7(angle) * radial,
+                verticalBias,
+                SinPolynomial7(angle) * radial);
+        }
+
+        private static float3 ResolveMacroHydrationSpawnVelocity(uint hash, float visualBudget01)
+        {
+            float scalar = math.lerp(0.08f, 0.18f, visualBudget01);
+            return new float3(
+                (((hash >> 3) & 255u) * (1f / 255f) - 0.5f) * scalar,
+                (((hash >> 11) & 255u) * (1f / 255f)) * scalar,
+                (((hash >> 19) & 255u) * (1f / 255f) - 0.5f) * scalar);
         }
 
         private void CacheDependencies()
@@ -763,6 +1105,9 @@ namespace Hecton8.AI.Ambient
             if (!ready)
                 return false;
 
+            if (!EnsureMacroScratchCapacity(desiredCapacity))
+                return false;
+
             if (capacityChanged)
             {
                 ResetCapacityDependentRuntimeState();
@@ -859,6 +1204,59 @@ namespace Hecton8.AI.Ambient
             _pendingDebrisDrainActive = false;
             _gpuPayloadDirty = true;
             _indirectArgsCapacity = -1;
+        }
+
+        private bool EnsureMacroScratchCapacity(int desiredCapacity)
+        {
+            if (desiredCapacity <= 0)
+                return false;
+
+            if (_macroSlotScratch != null &&
+                _macroSlotMarkScratch != null &&
+                _macroAupScratch != null &&
+                _macroVelocityScratch != null &&
+                _macroStateScratch != null &&
+                _macroSlotScratch.Length >= desiredCapacity &&
+                _macroSlotMarkScratch.Length >= desiredCapacity &&
+                _macroAupScratch.Length >= desiredCapacity &&
+                _macroVelocityScratch.Length >= desiredCapacity &&
+                _macroStateScratch.Length >= desiredCapacity)
+            {
+                return true;
+            }
+
+            _macroSlotScratch = new int[desiredCapacity]; // COLD ALLOC: owner-local macro staging slots, no per-call GC, owner: AMBIENT_BIOTA_DIRECTOR
+            _macroSlotMarkScratch = new int[desiredCapacity]; // COLD ALLOC: generation marks prevent duplicate slot staging, owner: AMBIENT_BIOTA_DIRECTOR
+            _macroAupScratch = new AbsoluteUniversePosition[desiredCapacity]; // COLD ALLOC: staged AUP writes outside Vault guard, owner: AMBIENT_BIOTA_DIRECTOR
+            _macroVelocityScratch = new float4[desiredCapacity]; // COLD ALLOC: staged velocity writes outside Vault guard, owner: AMBIENT_BIOTA_DIRECTOR
+            _macroStateScratch = new AmbientBiotaState[desiredCapacity]; // COLD ALLOC: staged state writes outside Vault guard, owner: AMBIENT_BIOTA_DIRECTOR
+            _macroSlotMarkGeneration = 0;
+            return true;
+        }
+
+        private bool HasMacroScratchCapacity(int requiredCapacity)
+        {
+            return requiredCapacity > 0 &&
+                   _macroSlotScratch != null &&
+                   _macroSlotMarkScratch != null &&
+                   _macroAupScratch != null &&
+                   _macroVelocityScratch != null &&
+                   _macroStateScratch != null &&
+                   _macroSlotScratch.Length >= requiredCapacity &&
+                   _macroSlotMarkScratch.Length >= requiredCapacity &&
+                   _macroAupScratch.Length >= requiredCapacity &&
+                   _macroVelocityScratch.Length >= requiredCapacity &&
+                   _macroStateScratch.Length >= requiredCapacity;
+        }
+
+        private void ReleaseMacroScratch()
+        {
+            _macroSlotScratch = null;
+            _macroSlotMarkScratch = null;
+            _macroAupScratch = null;
+            _macroVelocityScratch = null;
+            _macroStateScratch = null;
+            _macroSlotMarkGeneration = 0;
         }
 
         private bool TryResolveBiotaBuffers(
@@ -984,7 +1382,7 @@ namespace Hecton8.AI.Ambient
                 return;
 
             _jobBuffersPinned = false;
-            IDataVault vault = _jobBufferGuardVault ?? _vault;
+            IDataVault vault = _jobBufferGuardVault;
             _jobBufferGuardVault = null;
             if (vault == null)
                 return;
@@ -1857,6 +2255,7 @@ namespace Hecton8.AI.Ambient
             if (!TryAcquireAmbientMutationGuard(TelemetryMutationGuardMask, out IDataVault guardVault))
                 return;
 
+            bool queueBlackBoxDump = false;
             try
             {
                 if (!TryResolveTelemetryBuffers(out NativeArray<AmbientBiotaTelemetryEntry> ring, out NativeArray<int> cursor))
@@ -1885,17 +2284,59 @@ namespace Hecton8.AI.Ambient
 
                 if ((_lastTelemetryFlags & TelemetryFlagFaultSanitized) != 0 && !_blackBoxDumped)
                 {
-                    DumpBlackBox(ring, index);
-                    _blackBoxDumped = true;
+                    queueBlackBoxDump = TryStageBlackBoxDump(ring, index);
                 }
             }
             finally
             {
                 ReleaseAmbientMutationGuard(guardVault, TelemetryMutationGuardMask);
             }
+
+            if (queueBlackBoxDump)
+                _blackBoxDumped = QueueStagedBlackBoxDump();
         }
 
-        private static void DumpBlackBox(NativeArray<AmbientBiotaTelemetryEntry> ring, int cursor)
+        private static bool TryStageBlackBoxDump(NativeArray<AmbientBiotaTelemetryEntry> ring, int cursor)
+        {
+            if (!ring.IsCreated ||
+                Interlocked.CompareExchange(ref s_blackBoxDumpInFlight, 1, 0) != 0)
+            {
+                return false;
+            }
+
+            int count = math.min(ring.Length, BlackBoxFrameCount);
+            for (int i = 0; i < count; i++)
+                s_blackBoxDumpSnapshot[i] = ring[i];
+
+            s_blackBoxDumpCursor = cursor;
+            s_blackBoxDumpCount = count;
+            return true;
+        }
+
+        private static bool QueueStagedBlackBoxDump()
+        {
+            if (!ThreadPool.QueueUserWorkItem(s_blackBoxDumpWorker))
+            {
+                Interlocked.Exchange(ref s_blackBoxDumpInFlight, 0);
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void WriteBlackBoxDumpWorker(object state)
+        {
+            try
+            {
+                TryWriteBlackBoxSnapshotCold();
+            }
+            finally
+            {
+                Interlocked.Exchange(ref s_blackBoxDumpInFlight, 0);
+            }
+        }
+
+        private static void TryWriteBlackBoxSnapshotCold()
         {
             string dumpPath = BuildAgentDumpPath();
             if (dumpPath == null || dumpPath.Length == 0)
@@ -1911,11 +2352,11 @@ namespace Hecton8.AI.Ambient
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(DirectorSourceHash);
-                    writer.Write(ring.Length);
-                    writer.Write(cursor);
-                    for (int i = 0; i < ring.Length; i++)
+                    writer.Write(s_blackBoxDumpCount);
+                    writer.Write(s_blackBoxDumpCursor);
+                    for (int i = 0; i < s_blackBoxDumpCount; i++)
                     {
-                        AmbientBiotaTelemetryEntry entry = ring[i];
+                        AmbientBiotaTelemetryEntry entry = s_blackBoxDumpSnapshot[i];
                         writer.Write(entry.CenterAup.GridX);
                         writer.Write(entry.CenterAup.GridY);
                         writer.Write(entry.CenterAup.GridZ);
@@ -1961,218 +2402,6 @@ namespace Hecton8.AI.Ambient
             [FieldOffset(52)] public uint StableHash;
             [FieldOffset(56)] public uint SpeciesBucket;
             [FieldOffset(60)] public uint Reserved;
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        private struct AmbientBiotaMacroHydrationJob : IJob
-        {
-            [NoAlias] public NativeArray<AbsoluteUniversePosition> Aups;
-            [NoAlias] public NativeArray<float4> Velocities;
-            [NoAlias] public NativeArray<AmbientBiotaState> States;
-            [ReadOnly, NoAlias] public NativeArray<MacroSwarm> Swarms;
-            [NoAlias] public NativeArray<int> Counters;
-            public AbsoluteUniversePosition CenterAup;
-            public float RadiusMeters;
-            public float LifetimeSeconds;
-            public int Capacity;
-            public int SwarmCount;
-            public ushort BaseSpeciesId;
-            public uint Seed;
-            public uint FrameIndex;
-            public uint CurrentBiomeHash;
-            public float QualityWeight01;
-            public float SurvivalPressure01;
-            public float SystemStress01;
-
-            public void Execute()
-            {
-                int safeCapacity = math.min(Capacity, math.min(Aups.Length, math.min(Velocities.Length, States.Length)));
-                int safeSwarmCount = math.min(SwarmCount, Swarms.Length);
-                if (safeCapacity <= 0 || safeSwarmCount <= 0)
-                    return;
-
-                float radius = math.max(8f, RadiusMeters);
-                float survivalPressure01 = math.saturate(math.select(1f, SurvivalPressure01, math.isfinite(SurvivalPressure01)));
-                float qualityWeight01 = math.saturate(math.select(1f, QualityWeight01, math.isfinite(QualityWeight01)));
-                float visualBudget01 = math.saturate(SmoothStep01(qualityWeight01) * (1f - survivalPressure01 * 0.75f));
-                float visualScale = math.lerp(1f, 0.5f, SmoothStep01(math.saturate((SystemStress01 - MacroHydrationStressCullThreshold01) * math.rcp(0.3f))));
-                int spawned = 0;
-                int requested = 0;
-                int invalid = 0;
-                int searchStart = 0;
-
-                for (int swarmIndex = 0; swarmIndex < safeSwarmCount; swarmIndex++)
-                {
-                    MacroSwarm swarm = Swarms[swarmIndex];
-                    if (!IsValidSwarm(in swarm))
-                    {
-                        invalid++;
-                        continue;
-                    }
-
-                    int swarmBudget = math.clamp(
-                        (int)math.ceil(math.saturate(swarm.BiomassValue) * MacroVisualBoidsPerBiomassUnit * visualScale),
-                        1,
-                        MacroVisualBoidsPerBiomassUnit);
-                    requested += swarmBudget;
-
-                    for (int spawnedForSwarm = 0; spawnedForSwarm < swarmBudget; spawnedForSwarm++)
-                    {
-                        int slot = FindInactiveSlot(safeCapacity, ref searchStart);
-                        if (slot < 0)
-                            break;
-
-                        uint hash = Hash32(Seed ^ CurrentBiomeHash ^ swarm.HashId ^ ((uint)slot * 747796405u) ^ ((uint)spawnedForSwarm * 2891336453u) ^ FrameIndex);
-                        double3 offset = ResolveSpawnOffset(hash, radius, visualBudget01);
-                        if (!IsFinite(offset))
-                        {
-                            invalid++;
-                            continue;
-                        }
-
-                        AbsoluteUniversePosition aup = OffsetAup(in CenterAup, offset);
-                        if (!IsFiniteAup(in aup))
-                        {
-                            invalid++;
-                            continue;
-                        }
-
-                        float3 velocity = ResolveSpawnVelocity(hash, visualBudget01);
-                        Velocities[slot] = new float4(velocity, ((hash >> 8) & 255u) * (1f / 255f));
-                        Aups[slot] = aup;
-                        States[slot] = new AmbientBiotaState
-                        {
-                            StateFlags = AmbientBiotaState.FlagActive |
-                                         AmbientBiotaState.FlagMacroHydrated,
-                            StableHash = hash,
-                            SpeciesId = (ushort)(BaseSpeciesId + 8 + (Hash32(hash ^ CurrentBiomeHash) & 7u)),
-                            BucketId = (ushort)(hash & BucketMask),
-                            AgeSeconds = 0f,
-                            LifetimeSeconds = math.max(1f, LifetimeSeconds * math.lerp(0.8f, 1.6f, ((hash >> 16) & 255u) * (1f / 255f))),
-                            ScaleMeters = math.lerp(0.08f, math.lerp(0.26f, 0.42f, visualBudget01), ((hash >> 24) & 255u) * (1f / 255f)),
-                            Emission01 = math.saturate(ResolveBiomeEmissionBias(CurrentBiomeHash, hash) + swarm.BiomassValue * 0.6f),
-                            Reserved = 0u
-                        };
-                        spawned++;
-                    }
-                }
-
-                if (Counters.IsCreated && Counters.Length >= MacroHydrationCounterCount)
-                {
-                    Counters[0] = spawned;
-                    Counters[1] = requested;
-                    Counters[2] = math.max(0, requested - spawned);
-                    Counters[3] = invalid;
-                }
-            }
-
-            private int FindInactiveSlot(int safeCapacity, ref int searchStart)
-            {
-                for (int scanned = 0; scanned < safeCapacity; scanned++)
-                {
-                    int index = searchStart + scanned;
-                    if (index >= safeCapacity)
-                        index -= safeCapacity;
-
-                    AmbientBiotaState state = States[index];
-                    if ((state.StateFlags & AmbientBiotaState.FlagActive) != 0u)
-                        continue;
-
-                    searchStart = index + 1;
-                    if (searchStart >= safeCapacity)
-                        searchStart = 0;
-                    return index;
-                }
-
-                return -1;
-            }
-
-            private static bool IsValidSwarm(in MacroSwarm swarm)
-            {
-                return swarm.HashId != 0u &&
-                       math.isfinite(swarm.BiomassValue) &&
-                       math.isfinite(swarm.Speed) &&
-                       math.all(math.isfinite(swarm.CurrentSectorAup)) &&
-                       swarm.BiomassValue > 0.0001f;
-            }
-
-            private static double3 ResolveSpawnOffset(uint hash, float radius, float visualBudget01)
-            {
-                float normA = (hash & 65535u) * (1f / 65535f);
-                float normB = ((hash >> 10) & 1023u) * (1f / 1023f);
-                float normC = ((hash >> 20) & 1023u) * (1f / 1023f);
-                float angle = normA * TwoPi;
-                float triangle = 1f - math.abs(normC * 2f - 1f);
-                float radial = math.lerp(radius, math.lerp(radius * 0.18f, radius * 0.82f, normB), visualBudget01);
-                float survivalVertical = (triangle - 0.5f) * 8f;
-                float precisionVertical = math.lerp((normC - 0.5f) * 18f, -math.lerp(3f, 18f, normC), visualBudget01);
-                float verticalBias = math.lerp(survivalVertical, precisionVertical, visualBudget01);
-                return new double3(
-                    CosPolynomial7(angle) * radial,
-                    verticalBias,
-                    SinPolynomial7(angle) * radial);
-            }
-
-            private static float3 ResolveSpawnVelocity(uint hash, float visualBudget01)
-            {
-                float scalar = math.lerp(0.08f, 0.18f, visualBudget01);
-                return new float3(
-                    (((hash >> 3) & 255u) * (1f / 255f) - 0.5f) * scalar,
-                    (((hash >> 11) & 255u) * (1f / 255f)) * scalar,
-                    (((hash >> 19) & 255u) * (1f / 255f) - 0.5f) * scalar);
-            }
-
-            private static float SmoothStep01(float value)
-            {
-                float saturated = math.saturate(value);
-                return saturated * saturated * (3f - 2f * saturated);
-            }
-        }
-
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-        private struct AmbientBiotaMacroDehydrationJob : IJob
-        {
-            [NoAlias] public NativeArray<AbsoluteUniversePosition> Aups;
-            [NoAlias] public NativeArray<float4> Velocities;
-            [NoAlias] public NativeArray<AmbientBiotaState> States;
-            [NoAlias] public NativeArray<int> Counters;
-            public AbsoluteUniversePosition CenterAup;
-            public double RadiusSq;
-            public int Capacity;
-
-            public void Execute()
-            {
-                int safeCapacity = math.min(Capacity, math.min(Aups.Length, math.min(Velocities.Length, States.Length)));
-                int released = 0;
-                uint hash = 2166136261u;
-                for (int i = 0; i < safeCapacity; i++)
-                {
-                    AmbientBiotaState state = States[i];
-                    if ((state.StateFlags & (AmbientBiotaState.FlagActive | AmbientBiotaState.FlagMacroHydrated)) !=
-                        (AmbientBiotaState.FlagActive | AmbientBiotaState.FlagMacroHydrated))
-                    {
-                        continue;
-                    }
-
-                    AbsoluteUniversePosition sampleAup = Aups[i];
-                    double3 delta = DeltaMeters(in sampleAup, in CenterAup);
-                    double distSq = math.dot(delta, delta);
-                    if (!math.isfinite(distSq) || distSq > RadiusSq)
-                        continue;
-
-                    hash = Hash32(hash ^ state.StableHash);
-                    States[i] = default;
-                    Aups[i] = default;
-                    Velocities[i] = default;
-                    released++;
-                }
-
-                if (Counters.IsCreated && Counters.Length >= MacroHydrationCounterCount)
-                {
-                    Counters[0] = released;
-                    Counters[1] = unchecked((int)hash);
-                }
-            }
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]

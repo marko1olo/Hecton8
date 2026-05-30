@@ -13,6 +13,8 @@ namespace Hecton8.Core
     {
         private static int s_x001InstanceCullingServiceRegistryBridgeSignalPushDropCount;
         private const int OverloadVisibleThreshold = 50000;
+        private const int MinTelemetryDrainPerFrame = 2;
+        private const int MaxTelemetryDrainPerFrame = 16;
         private const uint SourceHash = 0xC0111A90u;
 
         [SerializeField]
@@ -72,8 +74,11 @@ namespace Hecton8.Core
             if (service == null)
                 return;
 
-            while (service.TryConsumeTelemetry(out InstanceCullingTelemetry telemetry))
+            int drainLimit = ResolveTelemetryDrainLimit();
+            int drained = 0;
+            while (drained < drainLimit && service.TryConsumeTelemetry(out InstanceCullingTelemetry telemetry))
             {
+                drained++;
                 if (telemetry.VisibleInstances <= OverloadVisibleThreshold || telemetry.Frame == _lastOverloadFrame)
                     continue;
 
@@ -91,6 +96,15 @@ namespace Hecton8.Core
                 };
                 SignalBus<CullingOverloadSignal>.TryPushTracked(in signal, ref s_x001InstanceCullingServiceRegistryBridgeSignalPushDropCount);
             }
+        }
+
+        private static int ResolveTelemetryDrainLimit()
+        {
+            float quality = Mathf.Clamp01(HomeostasisBrain.GlobalQualityWeight);
+            float smoothQuality = quality * quality * (3f - 2f * quality);
+            return Mathf.Max(
+                MinTelemetryDrainPerFrame,
+                Mathf.RoundToInt(Mathf.Lerp(MinTelemetryDrainPerFrame, MaxTelemetryDrainPerFrame, smoothQuality)));
         }
 
         private bool ResolveService()

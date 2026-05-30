@@ -961,6 +961,8 @@ namespace Hecton8.Gameplay
         private const int MaxAppendageIterations = 12;
         private const string NativeMemoryOwner = nameof(ContextualPhysicalIkRig);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const string NativeMemoryRegistrationFailureMessage = "NativeMemorySentinel registration failed for persistent ContextualPhysicalIkRig buffer.";
+        private const string NativeMemoryRestoreFailureMessage = "NativeMemorySentinel restore failed after ContextualPhysicalIkRig native disposal fault.";
         private const float MaxAcceptedOriginShiftMeters = 10000.0f;
         private const float MaxAcceptedOriginShiftMetersSq = MaxAcceptedOriginShiftMeters * MaxAcceptedOriginShiftMeters;
         private static readonly float3 Float3Forward = new float3(0.0f, 0.0f, 1.0f);
@@ -3016,86 +3018,74 @@ namespace Hecton8.Gameplay
                 try
                 {
 
-                    StreamHandles = new NativeArray<TransformStreamHandle>(
+                    StreamHandles = CreatePersistentNativeArray<TransformStreamHandle>(
                         totalHandleCount,
-                        Allocator.Persistent,
+                        nameof(StreamHandles),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<TransformStreamHandle>[dynamic] - sequential cached stream handles for contextual IK bones - owner: RigNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(StreamHandles, NativeMemoryOwner, nameof(StreamHandles), NativeMemoryLifetime);
 
-                    TwoBoneSetups = new NativeArray<ContextualPhysicalIkTwoBoneSetup>(
+                    TwoBoneSetups = CreatePersistentNativeArray<ContextualPhysicalIkTwoBoneSetup>(
                         4,
-                        Allocator.Persistent,
+                        nameof(TwoBoneSetups),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTwoBoneSetup>[4] - fixed humanoid limb solve descriptors - owner: RigNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(TwoBoneSetups, NativeMemoryOwner, nameof(TwoBoneSetups), NativeMemoryLifetime);
 
                 if (validAppendageChainCount > 0)
                 {
-                    AppendageChainRuntimes = new NativeArray<ContextualPhysicalIkAppendageChainRuntime>(
+                    AppendageChainRuntimes = CreatePersistentNativeArray<ContextualPhysicalIkAppendageChainRuntime>(
                         validAppendageChainCount,
-                        Allocator.Persistent,
+                        nameof(AppendageChainRuntimes),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkAppendageChainRuntime>[dynamic] - appendage FABRIK descriptors - owner: RigNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(AppendageChainRuntimes, NativeMemoryOwner, nameof(AppendageChainRuntimes), NativeMemoryLifetime);
 
-                    AppendageSegmentLengths = new NativeArray<float>(
+                    AppendageSegmentLengths = CreatePersistentNativeArray<float>(
                         totalAppendageLengthCount,
-                        Allocator.Persistent,
+                        nameof(AppendageSegmentLengths),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[dynamic] - appendage segment lengths - owner: RigNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(AppendageSegmentLengths, NativeMemoryOwner, nameof(AppendageSegmentLengths), NativeMemoryLifetime);
 
-                    AppendageTargets = new NativeArray<ContextualPhysicalIkAppendageTarget>(
+                    AppendageTargets = CreatePersistentNativeArray<ContextualPhysicalIkAppendageTarget>(
                         validAppendageChainCount,
-                        Allocator.Persistent,
+                        nameof(AppendageTargets),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkAppendageTarget>[dynamic] - appendage target positions and weights - owner: RigNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(AppendageTargets, NativeMemoryOwner, nameof(AppendageTargets), NativeMemoryLifetime);
 
-                    AppendageScratchPositions = new NativeArray<float3>(
+                    AppendageScratchPositions = CreatePersistentNativeArray<float3>(
                         totalAppendageScratchCount,
-                        Allocator.Persistent,
+                        nameof(AppendageScratchPositions),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[dynamic] - appendage FABRIK scratch positions - owner: RigNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(AppendageScratchPositions, NativeMemoryOwner, nameof(AppendageScratchPositions), NativeMemoryLifetime);
                 }
 
                 if (hasValidSpineChain)
                 {
-                    SpineChainRuntimes = new NativeArray<ContextualPhysicalIkSpineChainRuntime>(
+                    SpineChainRuntimes = CreatePersistentNativeArray<ContextualPhysicalIkSpineChainRuntime>(
                         1,
-                        Allocator.Persistent,
+                        nameof(SpineChainRuntimes),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkSpineChainRuntime>[1] - spline spine chain descriptor - owner: RigNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(SpineChainRuntimes, NativeMemoryOwner, nameof(SpineChainRuntimes), NativeMemoryLifetime);
 
-                    SpineTargets = new NativeArray<float3>(
+                    SpineTargets = CreatePersistentNativeArray<float3>(
                         SpineTargetCountPerChain,
-                        Allocator.Persistent,
+                        nameof(SpineTargets),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[3] - chest/head spline targets - owner: RigNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(SpineTargets, NativeMemoryOwner, nameof(SpineTargets), NativeMemoryLifetime);
                 }
 
                 if (validSecondaryChainCount > 0)
                 {
-                    SecondaryChainRuntimes = new NativeArray<ContextualPhysicalIkSecondaryChainRuntime>(
+                    SecondaryChainRuntimes = CreatePersistentNativeArray<ContextualPhysicalIkSecondaryChainRuntime>(
                         validSecondaryChainCount,
-                        Allocator.Persistent,
+                        nameof(SecondaryChainRuntimes),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkSecondaryChainRuntime>[dynamic] - secondary motion chain descriptors - owner: RigNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(SecondaryChainRuntimes, NativeMemoryOwner, nameof(SecondaryChainRuntimes), NativeMemoryLifetime);
 
-                    SecondaryStates = new NativeArray<ContextualPhysicalIkSecondaryState>(
+                    SecondaryStates = CreatePersistentNativeArray<ContextualPhysicalIkSecondaryState>(
                         totalSecondaryStateCount,
-                        Allocator.Persistent,
+                        nameof(SecondaryStates),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkSecondaryState>[dynamic] - secondary motion positions and velocities - owner: RigNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(SecondaryStates, NativeMemoryOwner, nameof(SecondaryStates), NativeMemoryLifetime);
                 }
 
-                CachedLocalPoseStates = new NativeArray<ContextualPhysicalIkCachedPoseState>(
+                CachedLocalPoseStates = CreatePersistentNativeArray<ContextualPhysicalIkCachedPoseState>(
                     totalHandleCount,
-                    Allocator.Persistent,
+                    nameof(CachedLocalPoseStates),
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkCachedPoseState>[dynamic] - cached limb and appendage local pose states - owner: RigNativeBufferSet
-                NativeMemorySentinel.RegisterNativeArray(CachedLocalPoseStates, NativeMemoryOwner, nameof(CachedLocalPoseStates), NativeMemoryLifetime);
 
-                    MuscleBulgeOutput = new NativeArray<float>(
+                    MuscleBulgeOutput = CreatePersistentNativeArray<float>(
                         1,
-                        Allocator.Persistent,
+                        nameof(MuscleBulgeOutput),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - previous-frame muscle tension signal - owner: RigNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(MuscleBulgeOutput, NativeMemoryOwner, nameof(MuscleBulgeOutput), NativeMemoryLifetime);
                 }
                 catch
                 {
@@ -3209,6 +3199,30 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private static NativeArray<T> CreatePersistentNativeArray<T>(
+            int length,
+            string sentinelLabel,
+            NativeArrayOptions options) where T : struct
+        {
+            NativeArray<T> array = default;
+            try
+            {
+                array = new NativeArray<T>(length, Allocator.Persistent, options);
+                int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel, NativeMemoryLifetime);
+                if (registrationId <= 0)
+                    throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
+
+                return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+        }
+
         private static void DisposeNativeArray<T>(ref NativeArray<T> array, string sentinelLabel = null) where T : struct
         {
             if (!array.IsCreated)
@@ -3222,27 +3236,31 @@ namespace Hecton8.Gameplay
                 array.Dispose();
                 array = default;
             }
-            catch
+            catch (Exception exception)
             {
-                TryRestoreNativeSentinelRecord(array, sentinelUnregistered, sentinelLabel);
+                RestoreNativeSentinelRecordOrThrow(array, sentinelUnregistered, sentinelLabel, exception);
                 throw;
             }
         }
 
-        private static void TryRestoreNativeSentinelRecord<T>(
+        private static void RestoreNativeSentinelRecordOrThrow<T>(
             NativeArray<T> array,
             bool sentinelUnregistered,
-            string sentinelLabel) where T : struct
+            string sentinelLabel,
+            Exception disposalException) where T : struct
         {
             if (!sentinelUnregistered || !array.IsCreated)
                 return;
 
             try
             {
-                NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel ?? nameof(DisposeNativeArray), NativeMemoryLifetime);
+                int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel ?? nameof(DisposeNativeArray), NativeMemoryLifetime);
+                if (registrationId <= 0)
+                    throw new InvalidOperationException(NativeMemoryRestoreFailureMessage, disposalException);
             }
-            catch
+            catch (Exception restoreException)
             {
+                throw new AggregateException(NativeMemoryRestoreFailureMessage, disposalException, restoreException);
             }
         }
 

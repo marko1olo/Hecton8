@@ -211,6 +211,8 @@ namespace Hecton8.Gameplay
             _physicsService = GlobalRegistry.Physics;
             ResolveHeavyTowWinch();
             ResolvePlayerMovement();
+            EnsureTracer();
+            GetTracerMaterial();
             _feedbackCooldownRemaining = 0f;
             _tracerShaderTime = 0f;
             TryRegisterLateFrameTick();
@@ -223,6 +225,8 @@ namespace Hecton8.Gameplay
             _physicsService = GlobalRegistry.Physics;
             ResolveHeavyTowWinch();
             ResolvePlayerMovement();
+            EnsureTracer();
+            GetTracerMaterial();
             InvalidateAssessmentCache();
         }
 
@@ -630,6 +634,15 @@ namespace Hecton8.Gameplay
             _tracerPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - harpoon tracer GPU bindings - owner: HarpoonLauncherTool
         }
 
+        private bool HasTracerReady()
+        {
+            return s_tracerMaterial != null &&
+                   _tracerPositionBuffer != null &&
+                   _tracerTensionBuffer != null &&
+                   _tracerDrawParamsBuffer != null &&
+                   _tracerPropertyBlock != null;
+        }
+
         private Material GetTracerMaterial()
         {
             if (s_tracerMaterial != null)
@@ -665,12 +678,11 @@ namespace Hecton8.Gameplay
             if (!_tracerActive || _tracerTimer <= 0f)
                 return;
 
-            Material material = GetTracerMaterial();
-            if (material == null)
+            if (!HasTracerReady())
                 return;
 
-            EnsureTracer();
-            if (_tracerPositionBuffer == null || _tracerTensionBuffer == null || _tracerDrawParamsBuffer == null)
+            Material material = s_tracerMaterial;
+            if (material == null)
                 return;
 
             Vector3 start = IsFinite(_tracerStartPoint) ? _tracerStartPoint : Vector3.zero;

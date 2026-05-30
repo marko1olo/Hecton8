@@ -515,6 +515,58 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void ArWaypointLabels_UseHashLengthCacheAndSpanTmpSink()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/ARWaypointOverlay.cs"));
+            string contracts = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/Core/GlobalRegistryContracts.cs"));
+            string narrative = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/HectonNarrativeDirector.cs"));
+            string applyLabel = ExtractMethodBody(source, "private void ApplyLabelText(");
+            string copyLabel = ExtractMethodBody(source, "private static int CopyLabelToBuffer(");
+            string copyLabelBank = ExtractMethodBody(source, "private static int CopyLabelToBuffer(ReadOnlySpan<char> value, char[] destination, int destinationOffset, int capacity)");
+
+            StringAssert.DoesNotContain("public string CachedLabel;", source);
+            StringAssert.DoesNotContain("public string Label;", source);
+            StringAssert.DoesNotContain("runtimeWaypoint.Label =", source);
+            StringAssert.DoesNotContain("externalWaypoint.Label =", source);
+            StringAssert.DoesNotContain("string.Equals(slot.CachedLabel", source);
+            StringAssert.Contains("public uint LabelHash;", source);
+            StringAssert.Contains("public int LabelOffset;", source);
+            StringAssert.Contains("public int LabelLength;", source);
+            StringAssert.Contains("public uint LabelRevision;", source);
+            StringAssert.Contains("public int LabelSlotIndex;", source);
+            StringAssert.Contains("public bool HasLabel;", source);
+            StringAssert.Contains("public uint CachedLabelHash;", source);
+            StringAssert.Contains("public int CachedLabelLength;", source);
+            StringAssert.Contains("public int CachedLabelSlotIndex;", source);
+            StringAssert.Contains("public uint CachedLabelRevision;", source);
+            StringAssert.Contains("private readonly char[] _externalWaypointLabelBuffer = new char[MaxExternalWaypoints * MaximumLabelCharacters];", source);
+            StringAssert.Contains("private int CopyExternalLabelToBank(int waypointIndex, ReadOnlySpan<char> value)", source);
+            StringAssert.Contains("private void ApplyLabelText(TextMeshProUGUI label, ReadOnlySpan<char> value)", source);
+            StringAssert.Contains("private static int CopyLabelToBuffer(ReadOnlySpan<char> value, char[] destination)", source);
+            StringAssert.Contains("private static int CopyLabelToBuffer(ReadOnlySpan<char> value, char[] destination, int destinationOffset, int capacity)", source);
+            StringAssert.Contains("private static uint ResolveLabelHash(ReadOnlySpan<char> label)", source);
+            StringAssert.Contains("private static int ResolveRenderedLabelLength(int sourceLength)", source);
+            StringAssert.Contains("runtimeWaypoint.LabelHash = externalWaypoint.HasLabel ? externalWaypoint.LabelHash : DefaultExternalLabelHash;", source);
+            StringAssert.Contains("runtimeWaypoint.HasLabel = externalWaypoint.HasLabel;", source);
+            StringAssert.Contains("runtimeWaypoint.LabelSlotIndex = i;", source);
+            StringAssert.Contains("runtimeWaypoint.LabelRevision = externalWaypoint.LabelRevision;", source);
+            StringAssert.Contains("slot.CachedLabelSlotIndex != waypoint.LabelSlotIndex", source);
+            StringAssert.Contains("slot.CachedLabelRevision != waypoint.LabelRevision", source);
+            StringAssert.Contains("externalWaypoint.LabelRevision = labelRevision;", source);
+            StringAssert.Contains("if (waypoint.HasLabel &&", source);
+            StringAssert.Contains("labelSpan = new ReadOnlySpan<char>(_externalWaypointLabelBuffer, waypoint.LabelOffset, waypoint.LabelLength);", source);
+            StringAssert.DoesNotContain("LabelHash != 0u", source);
+            StringAssert.DoesNotContain("string.IsNullOrEmpty(externalWaypoint.Label)", source);
+            StringAssert.Contains("void SetWaypoint(int id, Transform target, uint labelHash, ReadOnlySpan<char> label, Color color);", contracts);
+            StringAssert.Contains("void SetWaypoint(int id, Vector3 worldPosition, uint labelHash, ReadOnlySpan<char> label, Color color);", contracts);
+            StringAssert.Contains("NarrativeWaypointLabelHash", narrative);
+            StringAssert.Contains("NarrativeWaypointLabel.AsSpan()", narrative);
+            StringAssert.Contains("label.SetCharArray(_labelCharBuffer, 0, length);", applyLabel);
+            StringAssert.DoesNotContain("string.IsNullOrEmpty", copyLabel);
+            StringAssert.DoesNotContain("string.IsNullOrEmpty", copyLabelBank);
+        }
+
+        [Test]
         public void VehicleSubOsButtonKinematics_HoldsOnlyOneDataVaultWriteLockPerHelper()
         {
             string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs"));
@@ -617,6 +669,25 @@ namespace Hecton8.Tests.Editor
             AssertWriteAcquireHelperTransfersLockOnSuccessOnly(
                 File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/VR/OpenXRManualOverrideLever.cs")),
                 "private bool TryAcquireBlackBoxWriteBuffer(");
+            AssertWriteAcquireHelperTransfersLockOnSuccessOnly(
+                File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs")),
+                "private static bool TryAcquireVaultWriteBuffer<T>(");
+        }
+
+        [Test]
+        public void TopographicalSonarTelemetryCursor_AdvancesOnlyAfterCursorVaultWrite()
+        {
+            string source = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs"));
+            string body = ExtractMethodBody(source, "private void WriteTelemetry(uint flags)");
+
+            int ringWrite = body.IndexOf("telemetry[index] = entry;");
+            int cursorWrite = body.IndexOf("cursor[0] = nextIndex;");
+            int localAdvance = body.IndexOf("_telemetryWriteIndex = nextIndex;");
+
+            Assert.GreaterOrEqual(ringWrite, 0);
+            Assert.Greater(cursorWrite, ringWrite);
+            Assert.Greater(localAdvance, cursorWrite);
+            StringAssert.DoesNotContain("cursor[0] = _telemetryWriteIndex;", body);
         }
 
         [Test]

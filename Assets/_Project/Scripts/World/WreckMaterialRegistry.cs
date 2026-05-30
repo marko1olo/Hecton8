@@ -179,7 +179,7 @@ namespace Hecton8.World
                     return false;
                 }
 
-                if (!PrepareUploadResources())
+                if (!HasUploadResourcesReady(_matrixCount))
                 {
                     _uploadedInstanceCount = 0;
                     return false;
@@ -245,10 +245,19 @@ namespace Hecton8.World
 
                 EnsureMatrixBufferCapacity(preparedInstanceCapacity);
                 EnsureAgeBufferCapacity(preparedInstanceCapacity);
+                SyncBatchRegistration();
                 return _matrixBufferA != null &&
                        _matrixBufferB != null &&
                        _ageBufferA != null &&
                        _ageBufferB != null;
+            }
+
+            public bool HasUploadResourcesReady(int instanceCount)
+            {
+                return _batchRendererGroup != null &&
+                       _runtimeMaterial != null &&
+                       HasMatrixBufferCapacity(instanceCount) &&
+                       HasAgeBufferCapacity(instanceCount);
             }
 
             private bool TryCullVisibleSubset(
@@ -371,7 +380,9 @@ namespace Hecton8.World
                 if (_batchRendererGroup == null || _runtimeMaterial == null)
                     return false;
 
-                EnsureMatrixBufferCapacity(uploadCount);
+                if (!HasMatrixBufferCapacity(uploadCount))
+                    return false;
+
                 GraphicsBuffer matrixWriteBuffer = _uploadBufferIndex == 0 ? _matrixBufferA : _matrixBufferB;
                 if (matrixWriteBuffer == null)
                     return false;
@@ -601,6 +612,15 @@ namespace Hecton8.World
                 _registeredBatchBuffer = null;
             }
 
+            private bool HasMatrixBufferCapacity(int instanceCount)
+            {
+                int required = RoundUpPowerOfTwo(instanceCount);
+                return _matrixBufferA != null &&
+                       _matrixBufferA.count >= required &&
+                       _matrixBufferB != null &&
+                       _matrixBufferB.count >= required;
+            }
+
             private void EnsureAgeBufferCapacity(int instanceCount)
             {
                 int required = RoundUpPowerOfTwo(instanceCount);
@@ -620,6 +640,15 @@ namespace Hecton8.World
                 _ageBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float>(required); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(instanceCount)] A - wreck module age metadata upload buffer - owner: WreckMaterialRegistry
                 _ageBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float>(required); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(instanceCount)] B - wreck module age metadata upload buffer - owner: WreckMaterialRegistry
                 _activeAgeBuffer = _ageBufferA;
+            }
+
+            private bool HasAgeBufferCapacity(int instanceCount)
+            {
+                int required = RoundUpPowerOfTwo(instanceCount);
+                return _ageBufferA != null &&
+                       _ageBufferA.count >= required &&
+                       _ageBufferB != null &&
+                       _ageBufferB.count >= required;
             }
 
             private static int RoundUpPowerOfTwo(int value)
@@ -782,6 +811,7 @@ namespace Hecton8.World
         private bool _hotSwapListenerRegistered;
         private IDataVault _dataVault;
         private VaultGenerationHandle<MetadataValue> _batchMetadataHandle;
+        private IDataVault _batchMetadataWriteVault;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private bool _pdaSignalLatched;
         private bool _hasCachedFrustumState;
@@ -841,6 +871,9 @@ namespace Hecton8.World
 
         public void SlowTick()
         {
+            CacheRegistryServicesCold();
+            EnsureFrustumScratch();
+
             if (!_hasPublishedWreck)
             {
                 _visibilityUploadRequested = false;
@@ -850,6 +883,7 @@ namespace Hecton8.World
             }
 
             _visibilityUploadRequested = true;
+            PrepareUploadResourcesForContent(_moduleBatches != null ? _moduleBatches.Length : 0);
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
             {
                 RefreshRuntimeTickRegistration();
@@ -900,8 +934,6 @@ namespace Hecton8.World
 
             if (_originShiftUploadRequested)
                 FlushOriginShiftUploads();
-
-            RefreshRuntimeTickRegistration();
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
@@ -1232,7 +1264,12 @@ namespace Hecton8.World
                 return false;
             }
 
-            EnsureFrustumScratch();
+            if (!HasFrustumScratchReady())
+            {
+                _hasCachedFrustumState = false;
+                return false;
+            }
+
             Transform cameraTransform = cullCamera.transform;
             Vector3 cameraPosition = cameraTransform.position;
             Quaternion cameraRotation = cameraTransform.rotation;
@@ -1312,11 +1349,6 @@ namespace Hecton8.World
                 if (playerTransform != null)
                     _playerTransform = playerTransform;
             }
-
-            if (_playerTransform == null)
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
-            if (_playerTransform != null)
-                _viewCamera = ComponentReferenceUtility.ResolveOwnedComponent<Camera>(_playerTransform);
 
             return _viewCamera;
         }
@@ -1450,6 +1482,7 @@ namespace Hecton8.World
             IDataVault vault = CacheDataVaultCold();
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
+                _batchMetadataWriteVault != null ||
                 !EnsureBatchMetadataBuffer() ||
                 vault.IsCompactionFenceActive)
                 return false;
@@ -1457,21 +1490,32 @@ namespace Hecton8.World
             if (!vault.TryAcquireWriteLock(in _batchMetadataHandle, WreckBrgVaultOwner, out batchMetadata))
                 return false;
 
-            if (vault.IsCompactionFenceActive ||
-                !batchMetadata.IsCreated ||
-                batchMetadata.Length < WreckBrgMetadataCount)
+            bool keepLock = false;
+            try
             {
-                ReleaseBatchMetadataWriteLock();
+                if (!vault.IsCompactionFenceActive &&
+                    batchMetadata.IsCreated &&
+                    batchMetadata.Length >= WreckBrgMetadataCount)
+                {
+                    _batchMetadataWriteVault = vault;
+                    keepLock = true;
+                    return true;
+                }
+
                 batchMetadata = default;
                 return false;
             }
-
-            return true;
+            finally
+            {
+                if (!keepLock)
+                    vault.ReleaseWriteLock(in _batchMetadataHandle, WreckBrgVaultOwner);
+            }
         }
 
         private void ReleaseBatchMetadataWriteLock()
         {
-            IDataVault vault = _dataVault;
+            IDataVault vault = _batchMetadataWriteVault;
+            _batchMetadataWriteVault = null;
             if (vault == null || _batchMetadataHandle.BufferID == 0u)
                 return;
 
@@ -1480,6 +1524,7 @@ namespace Hecton8.World
 
         private void ReleaseBatchMetadataBuffer()
         {
+            ReleaseBatchMetadataWriteLock();
             IDataVault vault = _dataVault;
             if (vault != null && _batchMetadataHandle.BufferID != 0u)
                 vault.ReleaseBuffer(in _batchMetadataHandle);
@@ -1632,14 +1677,17 @@ namespace Hecton8.World
             if (_playerRuntimeContext == null)
                 _playerRuntimeContext = GlobalRegistry.Player;
 
-            if (_playerRuntimeContext == null)
-                return;
-
-            if (_playerTransform == null)
+            if (_playerRuntimeContext != null && _playerTransform == null)
                 _playerTransform = _playerRuntimeContext.PlayerTransform;
 
-            if (_viewCamera == null)
+            if (_playerRuntimeContext != null && _viewCamera == null)
                 _viewCamera = _playerRuntimeContext.PlayerCamera;
+
+            if (_playerTransform == null)
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
+
+            if (_viewCamera == null && _playerTransform != null)
+                _viewCamera = ComponentReferenceUtility.ResolveOwnedComponent<Camera>(_playerTransform);
         }
 
         private void ClearCachedRegistryServices()
@@ -1667,6 +1715,14 @@ namespace Hecton8.World
 
             if (_frustumPlanes == null || _frustumPlanes.Length != FrustumPlaneCount)
                 _frustumPlanes = new float4[FrustumPlaneCount]; // COLD ALLOC: float4[6] - managed camera-frustum snapshot copied into per-batch publish tests - owner: WreckMaterialRegistry
+        }
+
+        private bool HasFrustumScratchReady()
+        {
+            return _frustumPlaneCache != null &&
+                   _frustumPlaneCache.Length == FrustumPlaneCount &&
+                   _frustumPlanes != null &&
+                   _frustumPlanes.Length == FrustumPlaneCount;
         }
 
         private void ResetAllBatches()

@@ -80,6 +80,7 @@ namespace Hecton8.Gameplay
         private const int RepairBlackBoxFrameCount = 300;
         private const int RepairBlackBoxEntrySizeBytes = 64;
         private const string RepairBlackBoxDumpPath = "Docs/AgentLogs/Dump_SHINOBU_224_RepairTool.bin";
+        private static readonly System.Threading.WaitCallback RepairBlackBoxDumpWorkerCallback = RunRepairBlackBoxDumpWorker;
         private static readonly ulong HullDentsMutationGuardMask = MutationGuardBit(BufferID.HullDents);
         private static readonly ulong RepairBlackBoxMutationGuardMask = MutationGuardBit(BufferID.RepairToolBlackBox);
         private const byte RepairBlackBoxFlagEquipped = 1 << 0;
@@ -253,6 +254,9 @@ namespace Hecton8.Gameplay
         private bool _ownsRepairBlackBoxBuffer;
         private bool _repairBlackBoxDumpedThisFault;
         private bool _repairBlackBoxDumpPending;
+        private readonly RepairToolBlackBoxEntry[] _repairBlackBoxDumpSnapshot = new RepairToolBlackBoxEntry[RepairBlackBoxFrameCount]; // COLD ALLOC: managed fault-dump snapshot - owner: RepairTool
+        private int _repairBlackBoxDumpInFlight;
+        private uint _repairBlackBoxDumpFrame;
         private readonly char[] _integrityDiagnosticBuffer = new char[24]; // COLD ALLOC: char[24] — repair-tool floating integrity diagnostic buffer — owner: RepairTool
 
         // ══════════════════════════════════════════════════════════
@@ -1477,9 +1481,7 @@ namespace Hecton8.Gameplay
             float safeIntensity01 = math.isfinite(intensity01) ? math.saturate(intensity01) : 0f;
             float quality01 = ResolveRepairQualityWeight();
             ushort sparkQuantity = ResolveRepairSparkQuantity(safeIntensity01, quality01);
-            byte flags = (byte)(
-                DebrisSpawnSignal.FlagToolSparks |
-                (DebrisSpawnSignal.FlagComputeShard * (ResolveRepairQualityCurve(quality01) > 0.0001f ? 1 : 0)));
+            byte flags = (byte)(DebrisSpawnSignal.FlagToolSparks | DebrisSpawnSignal.FlagComputeShard);
 
             if (!TryResolveAupFromPlayerPose(worldPoint, out AbsoluteUniversePosition sparkAup))
                 return;
@@ -1854,6 +1856,18 @@ namespace Hecton8.Gameplay
             return true;
         }
 
+        private bool TryReadOnlyRepairBlackBox(
+            IDataVault vault,
+            out NativeArray<RepairToolBlackBoxEntry>.ReadOnly blackBox)
+        {
+            blackBox = default;
+            return vault != null &&
+                   IsRepairBlackBoxHandle(in _repairBlackBoxHandle) &&
+                   vault.TryReadOnlyHandle(in _repairBlackBoxHandle, out blackBox) &&
+                   blackBox.IsCreated &&
+                   blackBox.Length >= RepairBlackBoxFrameCount;
+        }
+
         private void ReleaseVaultState()
         {
             FlushPendingRepairBlackBoxDump();
@@ -1947,31 +1961,37 @@ namespace Hecton8.Gameplay
             if (invalid)
                 flags |= RepairBlackBoxFlagInvalidMath;
 
+            int index = (int)(frame % RepairBlackBoxFrameCount);
+            byte battery255 = (byte)math.clamp(
+                (int)math.round(math.saturate(ResolveModularBatteryNormalized()) * 255f),
+                0,
+                255);
+            RepairToolBlackBoxEntry entry = default;
+            entry.HitAup = invalid ? default : hitAup;
+            entry.Frame = frame;
+            entry.StateHash = BuildRepairBlackBoxStateHash(activeDentCount, touchedDentCount, repairedDentCount, flags);
+            entry.ActiveDentCount = (ushort)math.clamp(activeDentCount, 0, ushort.MaxValue);
+            entry.TouchedDentCount = (ushort)math.clamp(touchedDentCount, 0, ushort.MaxValue);
+            entry.RepairedDentCount = (byte)math.clamp(repairedDentCount, 0, byte.MaxValue);
+            entry.Battery255 = battery255;
+            entry.Flags = flags;
+            entry.Reserved0 = 0;
+
             if (!vault.TryAcquireMutationGuard(RepairBlackBoxMutationGuardMask))
+            {
+                GlobalTelemetryBus.PublishUnityLogFault(
+                    RepairBlackBoxDumpFaultHash,
+                    unchecked((uint)(int)BufferID.RepairToolBlackBox),
+                    2u);
                 return;
+            }
 
             try
             {
                 if (!TryResolveRepairBlackBox(vault, out NativeArray<RepairToolBlackBoxEntry> blackBox, allowEnsure: false))
                     return;
 
-                int index = (int)(frame % RepairBlackBoxFrameCount);
-                byte battery255 = (byte)math.clamp(
-                    (int)math.round(math.saturate(ResolveModularBatteryNormalized()) * 255f),
-                    0,
-                    255);
-                blackBox[index] = new RepairToolBlackBoxEntry
-                {
-                    HitAup = invalid ? default : hitAup,
-                    Frame = frame,
-                    StateHash = BuildRepairBlackBoxStateHash(activeDentCount, touchedDentCount, repairedDentCount, flags),
-                    ActiveDentCount = (ushort)math.clamp(activeDentCount, 0, ushort.MaxValue),
-                    TouchedDentCount = (ushort)math.clamp(touchedDentCount, 0, ushort.MaxValue),
-                    RepairedDentCount = (byte)math.clamp(repairedDentCount, 0, byte.MaxValue),
-                    Battery255 = battery255,
-                    Flags = flags,
-                    Reserved0 = 0
-                };
+                blackBox[index] = entry;
             }
             finally
             {
@@ -2004,51 +2024,30 @@ namespace Hecton8.Gameplay
         {
             if (vault == null || !EnsureRepairBlackBoxHandle(vault))
                 return false;
-            if (!vault.TryAcquireMutationGuard(RepairBlackBoxMutationGuardMask))
-                return false;
+            if (System.Threading.Interlocked.CompareExchange(ref _repairBlackBoxDumpInFlight, 1, 0) != 0)
+                return true;
 
+            bool queued = false;
             try
             {
-                if (!TryResolveRepairBlackBox(vault, out NativeArray<RepairToolBlackBoxEntry> blackBox, allowEnsure: false))
+                if (!TryReadOnlyRepairBlackBox(vault, out NativeArray<RepairToolBlackBoxEntry>.ReadOnly blackBox))
                     return false;
 
                 int entrySize = UnsafeUtility.SizeOf<RepairToolBlackBoxEntry>();
                 if (entrySize != RepairBlackBoxEntrySizeBytes)
                     return false;
 
-                string path = Path.Combine(Application.dataPath, "..", RepairBlackBoxDumpPath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+                for (int i = 0; i < RepairBlackBoxFrameCount; i++)
+                    _repairBlackBoxDumpSnapshot[i] = blackBox[i];
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                _repairBlackBoxDumpFrame = _repairBlackBoxFrame;
+                if (!System.Threading.ThreadPool.QueueUserWorkItem(RepairBlackBoxDumpWorkerCallback, this))
                 {
-                    writer.Write(RepairBlackBoxFrameCount);
-                    writer.Write(entrySize);
-                    writer.Write(_repairBlackBoxFrame);
-                    for (int i = 0; i < RepairBlackBoxFrameCount; i++)
-                    {
-                        RepairToolBlackBoxEntry entry = blackBox[i];
-                        writer.Write(entry.HitAup.GridX);
-                        writer.Write(entry.HitAup.GridY);
-                        writer.Write(entry.HitAup.GridZ);
-                        writer.Write(entry.HitAup.LocalX);
-                        writer.Write(entry.HitAup.LocalY);
-                        writer.Write(entry.HitAup.LocalZ);
-                        writer.Write(0f);
-                        writer.Write(0UL);
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.ActiveDentCount);
-                        writer.Write(entry.TouchedDentCount);
-                        writer.Write(entry.RepairedDentCount);
-                        writer.Write(entry.Battery255);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.Reserved0);
-                    }
+                    GlobalTelemetryBus.PublishUnityLogFault(RepairBlackBoxDumpFaultHash, 0u, 2u);
+                    return false;
                 }
 
+                queued = true;
                 return true;
             }
             catch (Exception)
@@ -2058,7 +2057,67 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                vault.ReleaseMutationGuard(RepairBlackBoxMutationGuardMask);
+                if (!queued)
+                    System.Threading.Volatile.Write(ref _repairBlackBoxDumpInFlight, 0);
+            }
+        }
+
+        private static void RunRepairBlackBoxDumpWorker(object state)
+        {
+            if (state is RepairTool repairTool)
+                repairTool.WriteRepairBlackBoxDumpWorker();
+        }
+
+        private void WriteRepairBlackBoxDumpWorker()
+        {
+            try
+            {
+                WriteRepairBlackBoxSnapshotCold(_repairBlackBoxDumpSnapshot, _repairBlackBoxDumpFrame);
+            }
+            catch (Exception)
+            {
+                GlobalTelemetryBus.PublishUnityLogFault(RepairBlackBoxDumpFaultHash, 0u, 1u);
+            }
+            finally
+            {
+                System.Threading.Volatile.Write(ref _repairBlackBoxDumpInFlight, 0);
+            }
+        }
+
+        private static void WriteRepairBlackBoxSnapshotCold(RepairToolBlackBoxEntry[] snapshot, uint frame)
+        {
+            int entrySize = UnsafeUtility.SizeOf<RepairToolBlackBoxEntry>();
+            string path = Path.Combine(Application.dataPath, "..", RepairBlackBoxDumpPath);
+            string directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                writer.Write(RepairBlackBoxFrameCount);
+                writer.Write(entrySize);
+                writer.Write(frame);
+                for (int i = 0; i < RepairBlackBoxFrameCount; i++)
+                {
+                    RepairToolBlackBoxEntry entry = snapshot[i];
+                    writer.Write(entry.HitAup.GridX);
+                    writer.Write(entry.HitAup.GridY);
+                    writer.Write(entry.HitAup.GridZ);
+                    writer.Write(entry.HitAup.LocalX);
+                    writer.Write(entry.HitAup.LocalY);
+                    writer.Write(entry.HitAup.LocalZ);
+                    writer.Write(0f);
+                    writer.Write(0UL);
+                    writer.Write(entry.Frame);
+                    writer.Write(entry.StateHash);
+                    writer.Write(entry.ActiveDentCount);
+                    writer.Write(entry.TouchedDentCount);
+                    writer.Write(entry.RepairedDentCount);
+                    writer.Write(entry.Battery255);
+                    writer.Write(entry.Flags);
+                    writer.Write(entry.Reserved0);
+                }
             }
         }
 
@@ -2120,11 +2179,8 @@ namespace Hecton8.Gameplay
                 return;
 
             float quality01 = ResolveRepairQualityWeight();
-            byte qualityWeightByte = ResolveRepairQualityWeightByte();
-            int lowVisualProxy = ResolveRepairQualityCurve(quality01) <= 0.0001f ? 1 : 0;
-            byte flags = (byte)(
-                HullRepairedSignal.CompletedFlag |
-                (HullRepairedSignal.LowTierVisualOnlyFlag * lowVisualProxy));
+            byte qualityWeightQ8 = ResolveRepairQualityWeightByte();
+            byte flags = HullRepairedSignal.CompletedFlag;
 
             HullRepairedSignal signal = new HullRepairedSignal
             {
@@ -2134,7 +2190,7 @@ namespace Hecton8.Gameplay
                 Frame = NextHullRepairSignalFrame(),
                 DentIndex = (byte)math.clamp(dentIndex, 0, 255),
                 DentsRepairedCount = (byte)math.clamp(repairedDentCount, 0, 255),
-                QualityTier = qualityWeightByte,
+                QualityWeightQ8 = qualityWeightQ8,
                 Flags = flags
             };
             SignalBus<HullRepairedSignal>.TryPushTracked(in signal, ref s_x001RepairToolSignalPushDropCount);

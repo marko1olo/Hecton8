@@ -131,7 +131,7 @@ namespace Hecton8.Core.Contracts.Fluids
             if (!math.all(math.isfinite(value)))
                 return float3.zero;
 
-            float maxSafe = math.max(0f, maxMagnitude);
+            float maxSafe = math.isfinite(maxMagnitude) ? math.max(0f, maxMagnitude) : 0f;
             float lengthSq = math.lengthsq(value);
             if (lengthSq <= maxSafe * maxSafe || lengthSq <= 0.000001f)
                 return value;

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Hecton8.Bootstrap;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
@@ -57,9 +56,12 @@ namespace Hecton8.Core
         }
 
         private static readonly int _AupJitterMaskId = Shader.PropertyToID("_AupJitterMask");
-        private const int OriginShiftListenerCapacity = 128;
-        private static readonly ListenerSlot[] _originShiftListeners = new ListenerSlot[OriginShiftListenerCapacity]; // COLD ALLOC: ListenerSlot[128] - non-scene origin-shift listeners - owner: HectonFloatingOrigin
+        private const int OriginShiftListenerCapacity = 1024;
+        private static readonly ListenerSlot[] _originShiftListeners = new ListenerSlot[OriginShiftListenerCapacity]; // COLD ALLOC: ListenerSlot[1024] - registered origin-shift listeners - owner: HectonFloatingOrigin
         private static int _originShiftListenerCount;
+        private const int OriginShiftParticleSystemCapacity = 4096;
+        private static readonly ParticleSystem[] _originShiftParticleSystems = new ParticleSystem[OriginShiftParticleSystemCapacity]; // COLD ALLOC: ParticleSystem[4096] - scene-discovered world-space particle rebase registry - owner: HectonFloatingOrigin
+        private static int _originShiftParticleSystemCount;
         private const int PrecisionWatchdogIntervalFrames = 300;
         private const int ShiftStabilityWatchdogFrames = 1200;
         private const float PrecisionWatchdogSafeRadiusMeters = HectonPhysicsContract.AupSectorSizeMetersFloat;
@@ -144,7 +146,7 @@ namespace Hecton8.Core
         [Tooltip("Distance from (0,0,0) that triggers a shift.")]
         [SerializeField] private float _threshold = 4000f;
 
-        [Tooltip("Object to follow (normally Player). If null, resolves via GameBootstrapper.")]
+        [Tooltip("Object to follow (normally Player). If null, resolves from cached player runtime context.")]
         [SerializeField] private Transform _anchor;
 
         /// <summary>Cumulative absolute-universe offset committed since startup.</summary>
@@ -331,6 +333,7 @@ namespace Hecton8.Core
             _lastShiftEvent = default;
             s_activeRuntime = null;
             ClearOriginShiftListeners();
+            ClearOriginShiftParticleSystems();
             HectonShaderGlobalDataVaultBridge.ResetAupShaderGlobals();
             HectonXRRuntimeState.ResetShaderGlobals();
         }
@@ -549,12 +552,14 @@ namespace Hecton8.Core
             EnsureDriftCheckBuffers();
             PublishGlobalOffsets();
             SubscribeSceneEvents();
+            SynchronizeLoadedSceneOriginShiftRegistries();
         }
 
         private void OnEnable()
         {
             TryRegisterHotSwapListener();
             TryRegister();
+            SynchronizeLoadedSceneOriginShiftRegistries();
             MarkShiftTargetsDirty();
             TryPrepareShiftTargets();
         }
@@ -628,6 +633,7 @@ namespace Hecton8.Core
                 }
 
                 ClearOriginShiftListeners();
+                ClearOriginShiftParticleSystems();
                 GlobalRegistry.UnregisterFloatingOriginRuntime(this);
             }
         }
@@ -649,6 +655,7 @@ namespace Hecton8.Core
             EnsureDriftCheckBuffers();
             PublishGlobalOffsets();
             SubscribeSceneEvents();
+            SynchronizeLoadedSceneOriginShiftRegistries();
             TryRegister();
             MarkShiftTargetsDirty();
             TryPrepareShiftTargets();
@@ -1175,16 +1182,8 @@ namespace Hecton8.Core
 
             if (totalLoadedScenes > 0)
             {
-                int sceneCount = SceneManager.sceneCount;
-                for (int sceneIndex = 0; sceneIndex < sceneCount; sceneIndex++)
-                {
-                    Scene scene = SceneManager.GetSceneAt(sceneIndex);
-                    if (!scene.IsValid() || !scene.isLoaded)
-                        continue;
-
-                    await BroadcastOriginShiftForSceneAsync(scene, shiftData, cancellationToken);
-                    Interlocked.Increment(ref _lastShiftSceneReadyCount);
-                }
+                await BroadcastSceneOriginShiftListenersAsync(shiftData, cancellationToken);
+                Interlocked.Exchange(ref _lastShiftSceneReadyCount, totalLoadedScenes);
             }
 
             await BroadcastNonSceneOriginShiftListenersAsync(shiftData, cancellationToken);
@@ -1200,33 +1199,30 @@ namespace Hecton8.Core
             }
         }
 
-        private async Awaitable BroadcastOriginShiftForSceneAsync(Scene scene, OriginShiftEventData shiftData, CancellationToken cancellationToken)
+        private async Awaitable BroadcastSceneOriginShiftListenersAsync(OriginShiftEventData shiftData, CancellationToken cancellationToken)
         {
-            _sceneRootObjects.Clear();
-            scene.GetRootGameObjects(_sceneRootObjects);
-            for (int rootIndex = 0; rootIndex < _sceneRootObjects.Count; rootIndex++)
+            for (int i = _originShiftListenerCount - 1; i >= 0; i--)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                GameObject rootObject = _sceneRootObjects[rootIndex];
-                if (rootObject == null)
+                IOriginShiftListener listener = _originShiftListeners[i].Listener;
+                if (listener == null)
+                {
+                    RemoveOriginShiftListenerAt(i);
+                    continue;
+                }
+
+                UnityEngine.Object unityListener = listener as UnityEngine.Object;
+                if (!ReferenceEquals(unityListener, null) && unityListener == null)
+                {
+                    RemoveOriginShiftListenerAt(i);
+                    continue;
+                }
+
+                if (!IsSceneResidentOriginShiftListener(listener))
                     continue;
 
-                _sceneComponentScratch.Clear();
-                rootObject.GetComponentsInChildren(true, _sceneComponentScratch);
-                for (int componentIndex = 0; componentIndex < _sceneComponentScratch.Count; componentIndex++)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    IOriginShiftListener listener = _sceneComponentScratch[componentIndex] as IOriginShiftListener;
-                    if (listener == null)
-                        continue;
-
-                    RegisterListener(listener);
-                    await DispatchOriginShiftListenerAsync(listener, shiftData, cancellationToken);
-                }
+                await DispatchOriginShiftListenerAsync(listener, shiftData, cancellationToken);
             }
-
-            _sceneComponentScratch.Clear();
-            _sceneRootObjects.Clear();
         }
 
         private void QueueParticleSystemRebase(in OriginShiftEventData shiftData)
@@ -1241,31 +1237,17 @@ namespace Hecton8.Core
             if (!IsFiniteVector(shiftOffset) || VectorLengthSq(shiftOffset) <= 0.0001f)
                 return;
 
-            int sceneCount = SceneManager.sceneCount;
-            for (int sceneIndex = 0; sceneIndex < sceneCount; sceneIndex++)
+            for (int i = _originShiftParticleSystemCount - 1; i >= 0; i--)
             {
-                Scene scene = SceneManager.GetSceneAt(sceneIndex);
-                if (!scene.IsValid() || !scene.isLoaded)
-                    continue;
-
-                _sceneRootObjects.Clear();
-                scene.GetRootGameObjects(_sceneRootObjects);
-                for (int rootIndex = 0; rootIndex < _sceneRootObjects.Count; rootIndex++)
+                ParticleSystem particleSystem = _originShiftParticleSystems[i];
+                if (particleSystem == null)
                 {
-                    GameObject rootObject = _sceneRootObjects[rootIndex];
-                    if (rootObject == null)
-                        continue;
-
-                    _sceneParticleSystemScratch.Clear();
-                    rootObject.GetComponentsInChildren(true, _sceneParticleSystemScratch);
-                    int particleSystemCount = _sceneParticleSystemScratch.Count;
-                    for (int particleSystemIndex = 0; particleSystemIndex < particleSystemCount; particleSystemIndex++)
-                        RebaseParticleSystemForOriginShift(_sceneParticleSystemScratch[particleSystemIndex], shiftOffset);
+                    RemoveOriginShiftParticleSystemAt(i);
+                    continue;
                 }
-            }
 
-            _sceneParticleSystemScratch.Clear();
-            _sceneRootObjects.Clear();
+                RebaseParticleSystemForOriginShift(particleSystem, shiftOffset);
+            }
         }
 
         private void RebaseParticleSystemForOriginShift(ParticleSystem particleSystem, Vector3 shiftOffset)
@@ -1373,6 +1355,54 @@ namespace Hecton8.Core
             _originShiftListenerCount = 0;
         }
 
+        private static bool TryRegisterOriginShiftParticleSystem(ParticleSystem particleSystem)
+        {
+            if (particleSystem == null)
+                return false;
+
+            for (int i = 0; i < _originShiftParticleSystemCount; i++)
+            {
+                if (ReferenceEquals(_originShiftParticleSystems[i], particleSystem))
+                    return false;
+            }
+
+            if (_originShiftParticleSystemCount >= _originShiftParticleSystems.Length)
+                return false;
+
+            _originShiftParticleSystems[_originShiftParticleSystemCount] = particleSystem;
+            _originShiftParticleSystemCount++;
+            return true;
+        }
+
+        private static void RemoveOriginShiftParticleSystemAt(int index)
+        {
+            if ((uint)index >= (uint)_originShiftParticleSystemCount)
+                return;
+
+            int lastIndex = _originShiftParticleSystemCount - 1;
+            _originShiftParticleSystems[index] = _originShiftParticleSystems[lastIndex];
+            _originShiftParticleSystems[lastIndex] = null;
+            _originShiftParticleSystemCount = lastIndex;
+        }
+
+        private static void CompactOriginShiftParticleSystems()
+        {
+            for (int i = _originShiftParticleSystemCount - 1; i >= 0; i--)
+            {
+                ParticleSystem particleSystem = _originShiftParticleSystems[i];
+                if (particleSystem == null)
+                    RemoveOriginShiftParticleSystemAt(i);
+            }
+        }
+
+        private static void ClearOriginShiftParticleSystems()
+        {
+            for (int i = 0; i < _originShiftParticleSystemCount; i++)
+                _originShiftParticleSystems[i] = null;
+
+            _originShiftParticleSystemCount = 0;
+        }
+
         private struct ListenerSlot
         {
             public IOriginShiftListener Listener;
@@ -1448,8 +1478,9 @@ namespace Hecton8.Core
             Interlocked.Exchange(ref _lastShiftSceneReadyCount, totalCount);
         }
 
-        private void SynchronizeLoadedSceneOriginShiftListeners()
+        private void SynchronizeLoadedSceneOriginShiftRegistries()
         {
+            CompactOriginShiftParticleSystems();
             int sceneCount = SceneManager.sceneCount;
             for (int sceneIndex = 0; sceneIndex < sceneCount; sceneIndex++)
             {
@@ -1457,6 +1488,21 @@ namespace Hecton8.Core
                 if (!scene.IsValid() || !scene.isLoaded)
                     continue;
 
+                SynchronizeSceneOriginShiftRegistries(scene);
+            }
+
+            _sceneComponentScratch.Clear();
+            _sceneParticleSystemScratch.Clear();
+            _sceneRootObjects.Clear();
+        }
+
+        private void SynchronizeSceneOriginShiftRegistries(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+                return;
+
+            try
+            {
                 _sceneRootObjects.Clear();
                 scene.GetRootGameObjects(_sceneRootObjects);
                 for (int rootIndex = 0; rootIndex < _sceneRootObjects.Count; rootIndex++)
@@ -1472,11 +1518,20 @@ namespace Hecton8.Core
                         if (_sceneComponentScratch[componentIndex] is IOriginShiftListener listener)
                             RegisterListener(listener);
                     }
+
+                    _sceneParticleSystemScratch.Clear();
+                    rootObject.GetComponentsInChildren(true, _sceneParticleSystemScratch);
+                    int particleSystemCount = _sceneParticleSystemScratch.Count;
+                    for (int particleSystemIndex = 0; particleSystemIndex < particleSystemCount; particleSystemIndex++)
+                        TryRegisterOriginShiftParticleSystem(_sceneParticleSystemScratch[particleSystemIndex]);
                 }
             }
-
-            _sceneComponentScratch.Clear();
-            _sceneRootObjects.Clear();
+            finally
+            {
+                _sceneComponentScratch.Clear();
+                _sceneParticleSystemScratch.Clear();
+                _sceneRootObjects.Clear();
+            }
         }
 
         private void UpdateCriticalEntityTrackers()
@@ -1926,12 +1981,17 @@ namespace Hecton8.Core
 
             _anchorResolveTimer = AnchorResolveCooldown;
 
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            IPlayerRuntimeContext playerRuntimeContext = _playerRuntimeContext ?? PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (playerRuntimeContext != null && playerRuntimeContext.PlayerTransform != null)
             {
-                _anchor = playerTransform;
-                _anchor.TryGetComponent(out _anchorRigidbody);
+                _playerRuntimeContext = playerRuntimeContext;
+                _anchor = playerRuntimeContext.PlayerTransform;
+                _anchorRigidbody = playerRuntimeContext.PlayerRigidbody;
                 _hasPreviousAnchorPosition = TryGetTransformWorldPosition(_anchor, out _previousAnchorPosition);
+                return;
             }
+
+            _anchorRigidbody = null;
         }
 
         private void RefreshThresholdCache()
@@ -2124,6 +2184,7 @@ namespace Hecton8.Core
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             _shiftTargetsDirty = true;
+            SynchronizeSceneOriginShiftRegistries(scene);
             QueuePendingLoadedScene(scene);
         }
 
@@ -2131,12 +2192,14 @@ namespace Hecton8.Core
         {
             _shiftTargetsDirty = true;
             RemovePendingLoadedScene(scene);
+            CompactOriginShiftParticleSystems();
             TryPrepareShiftTargets();
         }
 
         private void HandleActiveSceneChanged(Scene previousScene, Scene newScene)
         {
             _shiftTargetsDirty = true;
+            SynchronizeSceneOriginShiftRegistries(newScene);
             TryPrepareShiftTargets();
         }
 

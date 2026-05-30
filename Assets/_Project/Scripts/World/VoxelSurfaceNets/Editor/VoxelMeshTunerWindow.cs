@@ -43,7 +43,7 @@ namespace Hecton8.World.VoxelSurfaceNets.Editor
             }
 
             if (!_hasHandles || !_handles.IsCreated())
-                _hasHandles = VoxelSurfaceNetsVault.TryResolve(vault, out _handles);
+                _hasHandles = VoxelSurfaceNetsVault.TryEnsure(vault, out _handles);
 
             if (_hasHandles && EditorApplication.timeSinceStartup >= _nextCsvPollTime)
             {
@@ -53,7 +53,7 @@ namespace Hecton8.World.VoxelSurfaceNets.Editor
 
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("Resolve Vault", GUILayout.Height(24)))
-                _hasHandles = VoxelSurfaceNetsVault.TryResolve(vault, out _handles);
+                _hasHandles = VoxelSurfaceNetsVault.TryEnsure(vault, out _handles);
 
             if (GUILayout.Button("Load CSV", GUILayout.Height(24)) && _hasHandles)
                 VoxelSurfaceNetsVault.TryLoadCsvOverrides(vault, ref _handles, ProjectRoot());
@@ -120,7 +120,7 @@ namespace Hecton8.World.VoxelSurfaceNets.Editor
                 return;
 
             if (!_hasHandles || !_handles.IsCreated())
-                _hasHandles = VoxelSurfaceNetsVault.TryResolve(vault, out _handles);
+                _hasHandles = VoxelSurfaceNetsVault.TryEnsure(vault, out _handles);
 
             if (!_hasHandles ||
                 !VoxelSurfaceNetsVault.TryResolveViews(vault, ref _handles, out VoxelSurfaceNetsVaultBuffers buffers) ||

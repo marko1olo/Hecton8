@@ -175,6 +175,7 @@ namespace Hecton8.Gameplay
         private Transform _cachedTransform;
         private bool _registered;
         private bool _hotSwapRegistered;
+        private bool _localReferenceProbeCompleted;
         private bool _breachActive;
         private bool _shortCircuitActive;
         private bool _toxicityHazardRegistered;
@@ -237,7 +238,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            ResolveReferences();
+            ResolveReferencesCold();
             CacheRegistryServicesCold();
             _combatDamageTargetId = CombatDamageRuntime.ResolveTargetId(gameObject);
             _toxicityHazardId = unchecked((int)(EntityId.ToULong(GetEntityId()) ^ (uint)ToxicHazardIdSalt));
@@ -253,7 +254,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            ResolveReferences();
+            ResolveReferencesCold();
             CacheRegistryServicesCold();
             ToolEffectEvents.Register(this);
             TryRegister();
@@ -276,6 +277,7 @@ namespace Hecton8.Gameplay
             ClearCachedRegistryServices();
             _stepAccumulator = 0f;
             _damageReceivers.Clear();
+            _localReferenceProbeCompleted = false;
             UpdateDiagnostics();
         }
 
@@ -291,6 +293,7 @@ namespace Hecton8.Gameplay
             ClearCachedRegistryServices();
             _stepAccumulator = 0f;
             _damageReceivers.Clear();
+            _localReferenceProbeCompleted = false;
         }
 
         /// <summary>
@@ -300,7 +303,7 @@ namespace Hecton8.Gameplay
         {
             TryRegisterCombatDamageTarget();
             TryFlushCombatDamageSync();
-            ResolveReferences();
+            ResolveReferencesCached();
             if (_baseModule == null)
                 return;
 
@@ -632,16 +635,25 @@ namespace Hecton8.Gameplay
                 radiusScale);
         }
 
-        private void ResolveReferences()
+        private void ResolveReferencesCached()
         {
             if (_cachedTransform == null)
                 _cachedTransform = transform;
+        }
 
-            if (_baseModule == null)
+        private void ResolveReferencesCold()
+        {
+            ResolveReferencesCached();
+
+            bool canProbeLocalComponents = !_localReferenceProbeCompleted;
+            if (_baseModule == null && canProbeLocalComponents)
                 TryGetComponent(out _baseModule);
 
-            if (_powerNode == null)
+            if (_powerNode == null && canProbeLocalComponents)
                 TryGetComponent(out _powerNode);
+
+            if (canProbeLocalComponents)
+                _localReferenceProbeCompleted = true;
         }
 
         private void CacheRegistryServicesCold()
@@ -719,7 +731,7 @@ namespace Hecton8.Gameplay
             if (_combatDamageRegistered || !Application.isPlaying)
                 return;
 
-            ResolveReferences();
+            ResolveReferencesCached();
             if (_combatDamageTargetId == 0)
                 _combatDamageTargetId = CombatDamageRuntime.ResolveTargetId(gameObject);
 

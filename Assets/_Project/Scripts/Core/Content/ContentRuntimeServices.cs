@@ -70,8 +70,11 @@ namespace Hecton8.Core.Content
         [FieldOffset(8)] public byte SiltWakeLayers;
         [FieldOffset(9)] public byte SaltCrystalLayers;
         [FieldOffset(10)] public byte HullDentOctaves;
-        [FieldOffset(11)] public byte Reserved0;
-        [FieldOffset(12)] public int Reserved1;
+        [FieldOffset(11)] public byte VisualFeatureWeightQ8;
+        [FieldOffset(12)] public byte PomWeightQ8;
+        [FieldOffset(13)] public byte SiltWakeWeightQ8;
+        [FieldOffset(14)] public byte HullDentWeightQ8;
+        [FieldOffset(15)] public byte SaltCrystalWeightQ8;
     }
 
     /// <summary>
@@ -649,6 +652,8 @@ namespace Hecton8.Core.Content
         private const uint AupCleanupFlag = 1u << 1;
         private const uint HologramFlag = 1u << 2;
         private const uint NonFiniteFlag = 1u << 3;
+        private const int AupCleanupPendingReleaseBudget = 2;
+        private const int VramInterceptPendingReleaseBudget = 2;
         private const uint VramLedgerOwnerHash = 0xC0A77A57u;
         private const ulong BlackBoxMagic = 0x484543544F4E3800UL;
         private const ulong ContentPendingLoadMutationGuardMask = 1UL << 53;
@@ -697,6 +702,8 @@ namespace Hecton8.Core.Content
         private bool _registeredLateFrame;
         private bool _registeredSlowTick;
         private bool _pendingContentVisualSyncTick;
+        private bool _pendingAupCleanup;
+        private bool _pendingVramIntercept;
         private bool _registeredHotSwap;
         private bool _vfxPrewarmStarted;
         private bool _blackBoxDumpedThisSession;
@@ -783,14 +790,16 @@ namespace Hecton8.Core.Content
             _pendingContentVisualSyncTick = false;
             uint flags = 0u;
             TickPendingLoads(ref flags);
-            TickAupShiftCleanup(ref flags);
-            TickVramIntercept(ref flags);
+            QueueAupShiftCleanup(ref flags);
+            QueueVramIntercept(ref flags);
             WriteTelemetry(flags);
         }
 
         public void SlowTick()
         {
             TickVfxPrewarm();
+            FlushAupShiftCleanup();
+            FlushVramIntercept();
         }
 
         public bool RegisterBundleAcquire(uint hash)
@@ -1243,7 +1252,7 @@ namespace Hecton8.Core.Content
                 _pendingLoadTargets[i] = null;
         }
 
-        private void TickAupShiftCleanup(ref uint flags)
+        private void QueueAupShiftCleanup(ref uint flags)
         {
             if (SignalBusRegistry.SystemStress01 <= 0.8f)
                 return;
@@ -1252,13 +1261,23 @@ namespace Hecton8.Core.Content
             if (shifts.Length == 0)
                 return;
 
+            _pendingAupCleanup = true;
+            flags |= AupCleanupFlag;
+        }
+
+        private void FlushAupShiftCleanup()
+        {
+            if (!_pendingAupCleanup)
+                return;
+
+            _pendingAupCleanup = false;
             IAssetLifecyclePressureSink governor = _assetLifecycle;
             if (governor != null)
             {
                 governor.SetHeapSanitizerBlindFrameWindow(true, 0f);
                 try
                 {
-                    governor.ForceDrainPendingReleaseQueue();
+                    governor.DrainPendingReleaseQueueBudgeted(AupCleanupPendingReleaseBudget);
                     governor.EvictLowestPriorityUnusedAssets(2, AssetPriorityTierCodes.Tier5DistantHlod);
                 }
                 finally
@@ -1266,12 +1285,28 @@ namespace Hecton8.Core.Content
                     governor.SetHeapSanitizerBlindFrameWindow(false, 0f);
                 }
             }
-
-            flags |= AupCleanupFlag;
         }
 
-        private void TickVramIntercept(ref uint flags)
+        private void QueueVramIntercept(ref uint flags)
         {
+            IVramBudgetReadModel monitor = _vramMonitor;
+            if (monitor == null)
+                return;
+
+            long projectedBytes = monitor.TotalVRAMBytes + _bundleRefs.EstimateResidentBytes();
+            if (projectedBytes <= HardVramCeilingBytes)
+                return;
+
+            _pendingVramIntercept = true;
+            flags |= VramInterceptFlag;
+        }
+
+        private void FlushVramIntercept()
+        {
+            if (!_pendingVramIntercept)
+                return;
+
+            _pendingVramIntercept = false;
             IVramBudgetReadModel monitor = _vramMonitor;
             if (monitor == null)
                 return;
@@ -1303,7 +1338,7 @@ namespace Hecton8.Core.Content
                 governor.SetHeapSanitizerVramPanicWindow(true, 0f);
                 try
                 {
-                    governor.ForceDrainPendingReleaseQueue();
+                    governor.DrainPendingReleaseQueueBudgeted(VramInterceptPendingReleaseBudget);
                     governor.EvictLowestPriorityUnusedAssets(1, AssetPriorityTierCodes.Tier5DistantHlod);
                 }
                 finally
@@ -1311,8 +1346,6 @@ namespace Hecton8.Core.Content
                     governor.SetHeapSanitizerVramPanicWindow(false, 0f);
                 }
             }
-
-            flags |= VramInterceptFlag;
         }
 
         private void TickVfxPrewarm()
@@ -1905,28 +1938,9 @@ namespace Hecton8.Core.Content
             vault.ReleaseMutationGuard(ContentPendingLoadMutationGuardMask);
         }
 
-        private unsafe bool TryResolveExistingTelemetryPointer(
-            out ContentAuthorityTelemetryEntry* telemetry,
-            out int* cursor)
-        {
-            telemetry = null;
-            cursor = null;
-
-            if (!TryResolveExistingTelemetryBuffers(
-                    out NativeArray<ContentAuthorityTelemetryEntry> telemetryBuffer,
-                    out NativeArray<int> cursorBuffer))
-            {
-                return false;
-            }
-
-            telemetry = (ContentAuthorityTelemetryEntry*)telemetryBuffer.GetUnsafePtr();
-            cursor = (int*)cursorBuffer.GetUnsafePtr();
-            return telemetry != null && cursor != null;
-        }
-
-        private bool TryResolveExistingTelemetryBuffers(
-            out NativeArray<ContentAuthorityTelemetryEntry> telemetry,
-            out NativeArray<int> cursor)
+        private bool TryReadExistingTelemetryBuffers(
+            out NativeArray<ContentAuthorityTelemetryEntry>.ReadOnly telemetry,
+            out NativeArray<int>.ReadOnly cursor)
         {
             telemetry = default;
             cursor = default;
@@ -1934,11 +1948,9 @@ namespace Hecton8.Core.Content
             return vault != null &&
                    _telemetryHandle.BufferID != 0u &&
                    _telemetryCursorHandle.BufferID != 0u &&
-                   vault.TryResolveHandle(in _telemetryHandle, out telemetry) &&
-                   telemetry.IsCreated &&
+                   vault.TryReadOnlyHandle(in _telemetryHandle, out telemetry) &&
                    telemetry.Length >= TelemetryCapacity &&
-                   vault.TryResolveHandle(in _telemetryCursorHandle, out cursor) &&
-                   cursor.IsCreated &&
+                   vault.TryReadOnlyHandle(in _telemetryCursorHandle, out cursor) &&
                    cursor.Length >= 1;
         }
 
@@ -1965,19 +1977,21 @@ namespace Hecton8.Core.Content
             }
         }
 
-        private unsafe void DumpBlackBox()
+        private void DumpBlackBox()
         {
             if (_blackBoxDumpedThisSession)
                 return;
 
-            if (!TryResolveExistingTelemetryPointer(out ContentAuthorityTelemetryEntry* telemetry, out int* cursorPtr))
+            if (!TryReadExistingTelemetryBuffers(
+                    out NativeArray<ContentAuthorityTelemetryEntry>.ReadOnly telemetry,
+                    out NativeArray<int>.ReadOnly cursorBuffer))
                 return;
 
             string path = _blackBoxDumpPath;
             if (string.IsNullOrEmpty(path))
                 return;
 
-            int cursor = *cursorPtr;
+            int cursor = cursorBuffer[0];
             if ((uint)cursor >= TelemetryCapacity)
                 cursor = 0;
 
@@ -1995,12 +2009,12 @@ namespace Hecton8.Core.Content
                 _blackBoxDumpedThisSession = true;
         }
 
-        private static unsafe bool TryWriteBlackBox(
+        private static bool TryWriteBlackBox(
             string path,
-            ContentAuthorityTelemetryEntry* telemetry,
+            NativeArray<ContentAuthorityTelemetryEntry>.ReadOnly telemetry,
             int cursor)
         {
-            if (string.IsNullOrEmpty(path) || telemetry == null)
+            if (string.IsNullOrEmpty(path) || telemetry.Length < TelemetryCapacity)
                 return false;
 
             try
@@ -2279,6 +2293,8 @@ namespace Hecton8.Core.Content
             _registeredLateFrame = false;
             _registeredSlowTick = false;
             _pendingContentVisualSyncTick = false;
+            _pendingAupCleanup = false;
+            _pendingVramIntercept = false;
         }
 
         private void TryRegisterHotSwap()
@@ -2406,6 +2422,15 @@ namespace Hecton8.Core.Content
         public const uint DearLieOneDimensionalLut = 1u << 16;
         public const uint DearLieTriangleNoise = 1u << 17;
         public const uint DearLieDotProductVision = 1u << 18;
+        private const uint ContinuousVisualFeatureMask =
+            VisualFeatureSaltCrystals |
+            VisualFeatureVolumetricSiltWake |
+            VisualFeatureProceduralHullDents |
+            VisualFeatureRaymarchDetail |
+            VisualFeatureParallaxOcclusion16Tap |
+            DearLieOneDimensionalLut |
+            DearLieTriangleNoise |
+            DearLieDotProductVision;
 
         public static bool CanDownload(ContentTier tier)
         {
@@ -2500,36 +2525,36 @@ namespace Hecton8.Core.Content
         private static ContentVisualFeatureBudget ResolveVisualBudgetForWeight(float visualWeight01)
         {
             float weight = Smooth01(visualWeight01);
+            float pomWeight = SmoothRange01(0.28f, 1f, weight);
+            float hullDentWeight = SmoothRange01(0.48f, 1f, weight);
+            float siltWakeWeight = SmoothRange01(0.18f, 1f, weight);
+            float saltCrystalWeight = SmoothRange01(0.12f, 1f, weight);
             return new ContentVisualFeatureBudget
             {
-                FeatureMask = ResolveVisualFeatureMaskForWeight(weight),
+                FeatureMask = ResolveVisualFeatureMask(),
                 MaxParticles = (ushort)RoundLerpInt(512f, 16384f, weight, 512, 16384),
                 RaymarchSteps = (byte)RoundLerpInt(8f, 64f, weight, 8, 64),
-                PomTaps = (byte)RoundLerpInt(0f, 16f, SmoothRange01(0.28f, 1f, weight), 0, 16),
+                PomTaps = (byte)RoundLerpInt(0f, 16f, pomWeight, 0, 16),
                 SiltWakeLayers = (byte)RoundLerpInt(1f, 4f, weight, 1, 4),
                 SaltCrystalLayers = (byte)RoundLerpInt(1f, 3f, weight, 1, 3),
-                HullDentOctaves = (byte)RoundLerpInt(1f, 4f, SmoothRange01(0.48f, 1f, weight), 1, 4)
+                HullDentOctaves = (byte)RoundLerpInt(1f, 4f, hullDentWeight, 1, 4),
+                VisualFeatureWeightQ8 = EncodeUnitQ8(weight),
+                PomWeightQ8 = EncodeUnitQ8(pomWeight),
+                SiltWakeWeightQ8 = EncodeUnitQ8(siltWakeWeight),
+                HullDentWeightQ8 = EncodeUnitQ8(hullDentWeight),
+                SaltCrystalWeightQ8 = EncodeUnitQ8(saltCrystalWeight)
             };
         }
 
-        private static uint ResolveVisualFeatureMaskForWeight(float visualWeight01)
+        private static uint ResolveVisualFeatureMask()
         {
-            uint mask = DearLieOneDimensionalLut |
-                        DearLieTriangleNoise |
-                        DearLieDotProductVision;
+            return ContinuousVisualFeatureMask;
+        }
 
-            if (visualWeight01 >= 0.18f)
-                mask |= VisualFeatureSaltCrystals;
-            if (visualWeight01 >= 0.34f)
-                mask |= VisualFeatureVolumetricSiltWake;
-            if (visualWeight01 >= 0.52f)
-                mask |= VisualFeatureProceduralHullDents;
-            if (visualWeight01 >= 0.64f)
-                mask |= VisualFeatureRaymarchDetail;
-            if (visualWeight01 >= 0.78f)
-                mask |= VisualFeatureParallaxOcclusion16Tap;
-
-            return mask;
+        private static byte EncodeUnitQ8(float value)
+        {
+            float safe = math.saturate(math.isfinite(value) ? value : 0f);
+            return (byte)math.round(safe * 255f);
         }
 
         private static int RoundLerpInt(float min, float max, float weight01, int floor, int ceiling)

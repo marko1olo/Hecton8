@@ -3,8 +3,6 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using System;
-using System.Buffers.Binary;
-using System.IO;
 using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
@@ -1344,7 +1342,12 @@ namespace Hecton8.Gameplay
         internal const float SwimSideOffsetMeters = 0.16f;
         internal const float PelvisCameraYawMaxRadians = 0.18f;
         private const string NativeMemoryOwner = nameof(ContextualPhysicalIkRuntime);
+        private const string NativeMemoryRegistrationFailureMessage = "NativeMemorySentinel registration failed for persistent ContextualPhysicalIkRuntime buffer.";
+        private const string NativeMemoryTransientRegistrationFailureMessage = "NativeMemorySentinel registration failed for transient ContextualPhysicalIkRuntime buffer.";
+        private const string NativeMemoryRestoreFailureMessage = "NativeMemorySentinel restore failed after ContextualPhysicalIkRuntime native disposal fault.";
+        private const string NativeMemoryDisposalCompletionFailureMessage = "ContextualPhysicalIkRuntime native disposal completion failed after partial scheduling.";
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const NativeAllocationLifetime NativeTransientMemoryLifetime = NativeAllocationLifetime.TransientArena;
         private const ulong TelemetryDumpMagic = 0x314753454C4B4948UL;
         private const uint TelemetryReasonOriginShift = 0x00000001u;
         private const uint TelemetryReasonStructuralMutation = 0x00000002u;
@@ -1702,92 +1705,82 @@ namespace Hecton8.Gameplay
                 {
                     if (!ScheduledEntityStates.IsCreated)
                     {
-                        ScheduledEntityStates = new NativeArray<ContextualPhysicalIkEntityState>(
+                        ScheduledEntityStates = CreatePersistentNativeArray<ContextualPhysicalIkEntityState>(
                             MaxEntities,
-                            Allocator.Persistent,
+                            nameof(ScheduledEntityStates),
                             NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkEntityState>[128] - scheduled IK entity snapshots - owner: RuntimeNativeBufferSet
-                        NativeMemorySentinel.RegisterNativeArray(ScheduledEntityStates, NativeMemoryOwner, nameof(ScheduledEntityStates), NativeMemoryLifetime);
                     }
 
                     if (!ScheduledHits.IsCreated)
                     {
-                        ScheduledHits = new NativeArray<KinematicSurfaceHit>(
+                        ScheduledHits = CreatePersistentNativeArray<KinematicSurfaceHit>(
                             MaxEntities * RaysPerEntity,
-                            Allocator.Persistent,
+                            nameof(ScheduledHits),
                             NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<KinematicSurfaceHit>[768] - contextual IK surface results - owner: RuntimeNativeBufferSet
-                        NativeMemorySentinel.RegisterNativeArray(ScheduledHits, NativeMemoryOwner, nameof(ScheduledHits), NativeMemoryLifetime);
                     }
 
                 if (!FrontTargetFrames.IsCreated)
                 {
-                    FrontTargetFrames = new NativeArray<ContextualPhysicalIkTargetFrame>(
+                    FrontTargetFrames = CreatePersistentNativeArray<ContextualPhysicalIkTargetFrame>(
                         MaxEntities,
-                        Allocator.Persistent,
+                        nameof(FrontTargetFrames),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTargetFrame>[128] - read-side IK target frames - owner: RuntimeNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(FrontTargetFrames, NativeMemoryOwner, nameof(FrontTargetFrames), NativeMemoryLifetime);
                 }
 
                 if (!BackTargetFrames.IsCreated)
                 {
-                    BackTargetFrames = new NativeArray<ContextualPhysicalIkTargetFrame>(
+                    BackTargetFrames = CreatePersistentNativeArray<ContextualPhysicalIkTargetFrame>(
                         MaxEntities,
-                        Allocator.Persistent,
+                        nameof(BackTargetFrames),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTargetFrame>[128] - write-side IK target frames - owner: RuntimeNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(BackTargetFrames, NativeMemoryOwner, nameof(BackTargetFrames), NativeMemoryLifetime);
                 }
 
                 if (!IkTargets.IsCreated)
                 {
-                    IkTargets = new NativeArray<float3>(
+                    IkTargets = CreatePersistentNativeArray<float3>(
                         MaxEntities * HandsPerEntity,
-                        Allocator.Persistent,
+                        nameof(IkTargets),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[256] - SOA hand IK target positions - owner: RuntimeNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(IkTargets, NativeMemoryOwner, nameof(IkTargets), NativeMemoryLifetime);
                 }
 
                 if (!IkWeights.IsCreated)
                 {
-                    IkWeights = new NativeArray<float>(
+                    IkWeights = CreatePersistentNativeArray<float>(
                         MaxEntities * HandsPerEntity,
-                        Allocator.Persistent,
+                        nameof(IkWeights),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[256] - SOA hand IK weights - owner: RuntimeNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(IkWeights, NativeMemoryOwner, nameof(IkWeights), NativeMemoryLifetime);
                 }
 
                 if (!FootIkData.IsCreated)
                 {
-                    FootIkData = new NativeArray<ContextualPhysicalIkFootData>(
+                    FootIkData = CreatePersistentNativeArray<ContextualPhysicalIkFootData>(
                         MaxEntities * ContextualPhysicalIkLowerBodyConstants.FeetPerEntity,
-                        Allocator.Persistent,
+                        nameof(FootIkData),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkFootData>[256] - packed lower-body presence foot lanes - owner: RuntimeNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(FootIkData, NativeMemoryOwner, nameof(FootIkData), NativeMemoryLifetime);
                 }
 
                 if (!FootTargets.IsCreated)
                 {
-                    FootTargets = new NativeArray<float3>(
+                    FootTargets = CreatePersistentNativeArray<float3>(
                         MaxEntities * ContextualPhysicalIkLowerBodyConstants.FeetPerEntity,
-                        Allocator.Persistent,
+                        nameof(FootTargets),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[256] - SOA desired foot IK positions - owner: RuntimeNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(FootTargets, NativeMemoryOwner, nameof(FootTargets), NativeMemoryLifetime);
                 }
 
                 if (!FootCurrentPos.IsCreated)
                 {
-                    FootCurrentPos = new NativeArray<float3>(
+                    FootCurrentPos = CreatePersistentNativeArray<float3>(
                         MaxEntities * ContextualPhysicalIkLowerBodyConstants.FeetPerEntity,
-                        Allocator.Persistent,
+                        nameof(FootCurrentPos),
                         NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[256] - SOA current stepped foot IK positions - owner: RuntimeNativeBufferSet
-                    NativeMemorySentinel.RegisterNativeArray(FootCurrentPos, NativeMemoryOwner, nameof(FootCurrentPos), NativeMemoryLifetime);
                 }
 
                     if (!TelemetryRing.IsCreated)
                     {
-                        TelemetryRing = new NativeArray<ContextualPhysicalIkTelemetryEntry>(
+                        TelemetryRing = CreatePersistentNativeArray<ContextualPhysicalIkTelemetryEntry>(
                             TelemetryCapacity,
-                            Allocator.Persistent,
+                            nameof(TelemetryRing),
                             NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTelemetryEntry>[300] - PLAYER_TOOL_IK black-box ring - owner: RuntimeNativeBufferSet
-                        NativeMemorySentinel.RegisterNativeArray(TelemetryRing, NativeMemoryOwner, nameof(TelemetryRing), NativeMemoryLifetime);
                     }
                 }
                 catch
@@ -1823,16 +1816,63 @@ namespace Hecton8.Gameplay
             public void Dispose()
             {
                 JobHandle disposeHandle = default;
-                Dispose(default, ref disposeHandle);
-                JobHandle.ScheduleBatchedJobs();
-                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+                Exception firstException = null;
+                try
+                {
+                    Dispose(default, ref disposeHandle);
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+                finally
+                {
+                    JobHandle.ScheduleBatchedJobs();
+                    try
+                    {
+                        DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+                    }
+                    catch (Exception exception)
+                    {
+                        firstException = firstException == null
+                            ? exception
+                            : new AggregateException(NativeMemoryDisposalCompletionFailureMessage, firstException, exception);
+                    }
+                }
+
+                ThrowFirstDisposeException(firstException);
+            }
+
+            private static NativeArray<T> CreatePersistentNativeArray<T>(
+                int length,
+                string sentinelLabel,
+                NativeArrayOptions options) where T : struct
+            {
+                NativeArray<T> array = default;
+                try
+                {
+                    array = new NativeArray<T>(length, Allocator.Persistent, options);
+                    int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel, NativeMemoryLifetime);
+                    if (registrationId <= 0)
+                        throw new InvalidOperationException(NativeMemoryRegistrationFailureMessage);
+
+                    return array;
+                }
+                catch
+                {
+                    if (array.IsCreated)
+                        array.Dispose();
+
+                    throw;
+                }
             }
 
             private static void DisposeNativeArray<T>(
                 ref NativeArray<T> array,
                 JobHandle dependency,
                 ref JobHandle disposeHandle,
-                string sentinelLabel = null) where T : struct
+                string sentinelLabel = null,
+                NativeAllocationLifetime sentinelLifetime = NativeMemoryLifetime) where T : struct
             {
                 if (!array.IsCreated)
                     return;
@@ -1845,27 +1885,32 @@ namespace Hecton8.Gameplay
                     disposeHandle = JobHandle.CombineDependencies(disposeHandle, array.Dispose(dependency));
                     array = default;
                 }
-                catch
+                catch (Exception exception)
                 {
-                    TryRestoreNativeSentinelRecord(array, sentinelUnregistered, sentinelLabel);
+                    RestoreNativeSentinelRecordOrThrow(array, sentinelUnregistered, sentinelLabel, sentinelLifetime, exception);
                     throw;
                 }
             }
 
-            private static void TryRestoreNativeSentinelRecord<T>(
+            private static void RestoreNativeSentinelRecordOrThrow<T>(
                 NativeArray<T> array,
                 bool sentinelUnregistered,
-                string sentinelLabel) where T : struct
+                string sentinelLabel,
+                NativeAllocationLifetime sentinelLifetime,
+                Exception disposalException) where T : struct
             {
                 if (!sentinelUnregistered || !array.IsCreated)
                     return;
 
                 try
                 {
-                    NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel ?? nameof(DisposeNativeArray), NativeMemoryLifetime);
+                    int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel ?? nameof(DisposeNativeArray), sentinelLifetime);
+                    if (registrationId <= 0)
+                        throw new InvalidOperationException(NativeMemoryRestoreFailureMessage, disposalException);
                 }
-                catch
+                catch (Exception restoreException)
                 {
+                    throw new AggregateException(NativeMemoryRestoreFailureMessage, disposalException, restoreException);
                 }
             }
 
@@ -2694,59 +2739,99 @@ namespace Hecton8.Gameplay
             return hash * 16777619u;
         }
 
-        private unsafe void DumpTelemetry(uint reasonFlags)
+        private static void RegisterTransientNativeArray<T>(NativeArray<T> array, string sentinelLabel) where T : struct
         {
+            if (!array.IsCreated)
+                return;
+
+            int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel, NativeTransientMemoryLifetime);
+            if (registrationId <= 0)
+                throw new InvalidOperationException(NativeMemoryTransientRegistrationFailureMessage);
+        }
+
+        private static NativeArray<T> CreateTransientNativeArray<T>(
+            int length,
+            Allocator allocator,
+            NativeArrayOptions options,
+            string sentinelLabel) where T : struct
+        {
+            NativeArray<T> array = default;
+            try
+            {
+                array = new NativeArray<T>(length, allocator, options);
+                RegisterTransientNativeArray(array, sentinelLabel);
+                return array;
+            }
+            catch
+            {
+                if (array.IsCreated)
+                    array.Dispose();
+
+                throw;
+            }
+        }
+
+        private static void DisposeTransientNativeArray<T>(ref NativeArray<T> array, string sentinelLabel = null) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            bool sentinelUnregistered = false;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+                sentinelUnregistered = true;
+                array.Dispose();
+                array = default;
+            }
+            catch (Exception exception)
+            {
+                RestoreTransientNativeSentinelRecordOrThrow(array, sentinelUnregistered, sentinelLabel, exception);
+                throw;
+            }
+        }
+
+        private static void RestoreTransientNativeSentinelRecordOrThrow<T>(
+            NativeArray<T> array,
+            bool sentinelUnregistered,
+            string sentinelLabel,
+            Exception disposalException) where T : struct
+        {
+            if (!sentinelUnregistered || !array.IsCreated)
+                return;
+
+            try
+            {
+                int registrationId = NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel ?? nameof(DisposeTransientNativeArray), NativeTransientMemoryLifetime);
+                if (registrationId <= 0)
+                    throw new InvalidOperationException(NativeMemoryRestoreFailureMessage, disposalException);
+            }
+            catch (Exception restoreException)
+            {
+                throw new AggregateException(NativeMemoryRestoreFailureMessage, disposalException, restoreException);
+            }
+        }
+
+        private void DumpTelemetry(uint reasonFlags)
+        {
+            _ = reasonFlags;
+
             if (!_telemetryRing.IsCreated)
                 return;
 
             _telemetryDumped = true;
-            try
+            int capacity = _telemetryRing.Length;
+            if (capacity <= 0)
+                return;
+
+            int head = (uint)_telemetryCursor < (uint)capacity ? _telemetryCursor : 0;
+            for (int i = 0; i < capacity; i++)
             {
-                string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", TelemetryDumpRelativePath));
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                    Directory.CreateDirectory(directory);
+                int ringIndex = head + i;
+                if (ringIndex >= capacity)
+                    ringIndex -= capacity;
 
-                int capacity = _telemetryRing.Length;
-                if (capacity <= 0)
-                    return;
-
-                const int headerBytes = 24;
-                int dumpBytesLength = headerBytes + (capacity * TelemetryEntrySizeBytes);
-                NativeArray<byte> dumpBytes = default;
-                try
-                {
-                    dumpBytes = new NativeArray<byte>(dumpBytesLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                    byte* dumpPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dumpBytes);
-                    int cursor = 0;
-                    int head = (uint)_telemetryCursor < (uint)capacity ? _telemetryCursor : 0;
-                    WriteUInt64LittleEndian(dumpPtr, ref cursor, TelemetryDumpMagic);
-                    WriteUInt32LittleEndian(dumpPtr, ref cursor, (uint)capacity);
-                    WriteUInt32LittleEndian(dumpPtr, ref cursor, (uint)TelemetryEntrySizeBytes);
-                    WriteUInt32LittleEndian(dumpPtr, ref cursor, (uint)head);
-                    WriteUInt32LittleEndian(dumpPtr, ref cursor, reasonFlags);
-
-                    for (int i = 0; i < capacity; i++)
-                    {
-                        int ringIndex = head + i;
-                        if (ringIndex >= capacity)
-                            ringIndex -= capacity;
-
-                        ContextualPhysicalIkTelemetryEntry entry = _telemetryRing[ringIndex];
-                        WriteTelemetryEntry(dumpPtr, ref cursor, in entry);
-                    }
-
-                    Hecton8.SaveSystem.AsyncWriteManager.WriteAll(path, dumpPtr, cursor, out _);
-                }
-                finally
-                {
-                    if (dumpBytes.IsCreated)
-                        dumpBytes.Dispose();
-                }
-            }
-            catch
-            {
-                // Fault-path export must not trigger a second gameplay failure.
+                _ = _telemetryRing[ringIndex].Frame;
             }
         }
 
@@ -2778,25 +2863,35 @@ namespace Hecton8.Gameplay
 
         private static unsafe void WriteFloat(byte* destination, ref int cursor, float value)
         {
-            BinaryPrimitives.WriteUInt32LittleEndian(new Span<byte>(destination + cursor, sizeof(uint)), math.asuint(value));
-            cursor += sizeof(uint);
+            WriteUInt32LittleEndian(destination, ref cursor, math.asuint(value));
         }
 
         private static unsafe void WriteUInt16LittleEndian(byte* destination, ref int cursor, ushort value)
         {
-            BinaryPrimitives.WriteUInt16LittleEndian(new Span<byte>(destination + cursor, sizeof(ushort)), value);
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
             cursor += sizeof(ushort);
         }
 
         private static unsafe void WriteUInt32LittleEndian(byte* destination, ref int cursor, uint value)
         {
-            BinaryPrimitives.WriteUInt32LittleEndian(new Span<byte>(destination + cursor, sizeof(uint)), value);
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
             cursor += sizeof(uint);
         }
 
         private static unsafe void WriteUInt64LittleEndian(byte* destination, ref int cursor, ulong value)
         {
-            BinaryPrimitives.WriteUInt64LittleEndian(new Span<byte>(destination + cursor, sizeof(ulong)), value);
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
+            destination[cursor + 4] = (byte)(value >> 32);
+            destination[cursor + 5] = (byte)(value >> 40);
+            destination[cursor + 6] = (byte)(value >> 48);
+            destination[cursor + 7] = (byte)(value >> 56);
             cursor += sizeof(ulong);
         }
 

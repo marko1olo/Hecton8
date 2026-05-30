@@ -154,6 +154,26 @@ namespace Hecton8.Core
             public NativeArray<FoveatedSimulationTelemetryEntry> TelemetryRing;
         }
 
+        private struct FoveatedImportanceJobBuffers
+        {
+            public NativeArray<float3> ScorePositions;
+            public NativeArray<float3> EntityAups;
+            public NativeArray<float> ImportanceScores;
+            public NativeArray<byte> TickRateCodes;
+            public NativeArray<byte> InsideFrustumFlags;
+            public NativeArray<byte> EntitySimTiers;
+            public NativeArray<float> DistancesMeters;
+        }
+
+        private struct FoveatedImportanceReadBuffers
+        {
+            public NativeArray<float>.ReadOnly ImportanceScores;
+            public NativeArray<byte>.ReadOnly TickRateCodes;
+            public NativeArray<byte>.ReadOnly InsideFrustumFlags;
+            public NativeArray<byte>.ReadOnly EntitySimTiers;
+            public NativeArray<float>.ReadOnly DistancesMeters;
+        }
+
         private const int ImportanceScoreBatchSize = 32;
         private const int MaxTargets = 512;
         private const float CenterTickIntervalSeconds = 1.0f / 60.0f;
@@ -501,7 +521,7 @@ namespace Hecton8.Core
         {
             TryCompleteFrameJobsInternal(forceComplete: false);
             AdvanceFoveatedClock(frameDeltaTime);
-            if (!TryResolveNativeBuffers(out _))
+            if (!TryReadNativeBuffersReady())
                 return;
 
             ConsumeAupShiftSignals();
@@ -875,7 +895,7 @@ namespace Hecton8.Core
             if (!TryPinImportanceJobBuffers())
                 return;
 
-            if (!TryResolveNativeBuffers(out FoveatedNativeBuffers buffers))
+            if (!TryOpenImportanceJobBuffersForOwner(out FoveatedImportanceJobBuffers buffers))
             {
                 ReleaseImportanceJobBufferLocks();
                 return;
@@ -918,7 +938,7 @@ namespace Hecton8.Core
 
         private void ApplyImportanceResults()
         {
-            if (!TryResolveNativeBuffers(out FoveatedNativeBuffers buffers))
+            if (!TryReadImportanceResultBuffers(out FoveatedImportanceReadBuffers buffers))
                 return;
 
             _tier0Count = 0;
@@ -1209,7 +1229,7 @@ namespace Hecton8.Core
 
         private void DumpTelemetryBlackBoxOnce()
         {
-            if (_blackBoxDumped || !TryResolveTelemetryRing(out NativeArray<FoveatedSimulationTelemetryEntry> telemetryRing))
+            if (_blackBoxDumped || !TryReadTelemetryRing(out NativeArray<FoveatedSimulationTelemetryEntry>.ReadOnly telemetryRing))
                 return;
 
             _blackBoxDumped = true;
@@ -1389,30 +1409,56 @@ namespace Hecton8.Core
             return true;
         }
 
-        private bool TryResolveNativeBuffers(out FoveatedNativeBuffers buffers)
+        private bool TryOpenImportanceJobBuffersForOwner(out FoveatedImportanceJobBuffers buffers)
         {
             buffers = default;
             IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            return TryResolveVaultArray(vault, FoveatedScorePositionsBufferId, in _jobScorePositionsHandle, MaxTargets, out buffers.ScorePositions) &&
-                   TryResolveVaultArray(vault, FoveatedEntityAupsBufferId, in _jobEntityAupsHandle, MaxTargets, out buffers.EntityAups) &&
-                   TryResolveVaultArray(vault, FoveatedImportanceScoresBufferId, in _jobImportanceScoresHandle, MaxTargets, out buffers.ImportanceScores) &&
-                   TryResolveVaultArray(vault, FoveatedTickRateCodesBufferId, in _jobTickRateCodesHandle, MaxTargets, out buffers.TickRateCodes) &&
-                   TryResolveVaultArray(vault, FoveatedInsideFrustumFlagsBufferId, in _jobInsideFrustumFlagsHandle, MaxTargets, out buffers.InsideFrustumFlags) &&
-                   TryResolveVaultArray(vault, FoveatedEntitySimTiersBufferId, in _jobEntitySimTiersHandle, MaxTargets, out buffers.EntitySimTiers) &&
-                   TryResolveVaultArray(vault, FoveatedDistancesMetersBufferId, in _jobDistancesMetersHandle, MaxTargets, out buffers.DistancesMeters) &&
-                   TryResolveVaultArray(vault, FoveatedFromPositionsBufferId, in _jobFromPositionsHandle, MaxTargets, out buffers.FromPositions) &&
-                   TryResolveVaultArray(vault, FoveatedToPositionsBufferId, in _jobToPositionsHandle, MaxTargets, out buffers.ToPositions) &&
-                   TryResolveVaultArray(vault, FoveatedAlphasBufferId, in _jobAlphasHandle, MaxTargets, out buffers.Alphas) &&
-                   TryResolveVaultArray(vault, FoveatedTelemetryRingBufferId, in _telemetryRingHandle, TelemetryCapacity, out buffers.TelemetryRing);
+            return TryOpenVaultArrayForOwner(vault, FoveatedScorePositionsBufferId, in _jobScorePositionsHandle, MaxTargets, out buffers.ScorePositions) &&
+                   TryOpenVaultArrayForOwner(vault, FoveatedEntityAupsBufferId, in _jobEntityAupsHandle, MaxTargets, out buffers.EntityAups) &&
+                   TryOpenVaultArrayForOwner(vault, FoveatedImportanceScoresBufferId, in _jobImportanceScoresHandle, MaxTargets, out buffers.ImportanceScores) &&
+                   TryOpenVaultArrayForOwner(vault, FoveatedTickRateCodesBufferId, in _jobTickRateCodesHandle, MaxTargets, out buffers.TickRateCodes) &&
+                   TryOpenVaultArrayForOwner(vault, FoveatedInsideFrustumFlagsBufferId, in _jobInsideFrustumFlagsHandle, MaxTargets, out buffers.InsideFrustumFlags) &&
+                   TryOpenVaultArrayForOwner(vault, FoveatedEntitySimTiersBufferId, in _jobEntitySimTiersHandle, MaxTargets, out buffers.EntitySimTiers) &&
+                   TryOpenVaultArrayForOwner(vault, FoveatedDistancesMetersBufferId, in _jobDistancesMetersHandle, MaxTargets, out buffers.DistancesMeters);
         }
 
-        private bool TryResolveTelemetryRing(out NativeArray<FoveatedSimulationTelemetryEntry> telemetryRing)
+        private bool TryReadNativeBuffersReady()
         {
             IDataVault vault = _dataVault;
-            return TryResolveVaultArray(vault, FoveatedTelemetryRingBufferId, in _telemetryRingHandle, TelemetryCapacity, out telemetryRing);
+            return TryReadVaultArray(vault, FoveatedScorePositionsBufferId, in _jobScorePositionsHandle, MaxTargets, out _) &&
+                   TryReadVaultArray(vault, FoveatedEntityAupsBufferId, in _jobEntityAupsHandle, MaxTargets, out _) &&
+                   TryReadVaultArray(vault, FoveatedImportanceScoresBufferId, in _jobImportanceScoresHandle, MaxTargets, out _) &&
+                   TryReadVaultArray(vault, FoveatedTickRateCodesBufferId, in _jobTickRateCodesHandle, MaxTargets, out _) &&
+                   TryReadVaultArray(vault, FoveatedInsideFrustumFlagsBufferId, in _jobInsideFrustumFlagsHandle, MaxTargets, out _) &&
+                   TryReadVaultArray(vault, FoveatedEntitySimTiersBufferId, in _jobEntitySimTiersHandle, MaxTargets, out _) &&
+                   TryReadVaultArray(vault, FoveatedDistancesMetersBufferId, in _jobDistancesMetersHandle, MaxTargets, out _) &&
+                   TryReadVaultArray(vault, FoveatedFromPositionsBufferId, in _jobFromPositionsHandle, MaxTargets, out _) &&
+                   TryReadVaultArray(vault, FoveatedToPositionsBufferId, in _jobToPositionsHandle, MaxTargets, out _) &&
+                   TryReadVaultArray(vault, FoveatedAlphasBufferId, in _jobAlphasHandle, MaxTargets, out _) &&
+                   TryReadVaultArray(vault, FoveatedTelemetryRingBufferId, in _telemetryRingHandle, TelemetryCapacity, out _);
+        }
+
+        private bool TryReadImportanceResultBuffers(out FoveatedImportanceReadBuffers buffers)
+        {
+            buffers = default;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            return TryReadVaultArray(vault, FoveatedImportanceScoresBufferId, in _jobImportanceScoresHandle, MaxTargets, out buffers.ImportanceScores) &&
+                   TryReadVaultArray(vault, FoveatedTickRateCodesBufferId, in _jobTickRateCodesHandle, MaxTargets, out buffers.TickRateCodes) &&
+                   TryReadVaultArray(vault, FoveatedInsideFrustumFlagsBufferId, in _jobInsideFrustumFlagsHandle, MaxTargets, out buffers.InsideFrustumFlags) &&
+                   TryReadVaultArray(vault, FoveatedEntitySimTiersBufferId, in _jobEntitySimTiersHandle, MaxTargets, out buffers.EntitySimTiers) &&
+                   TryReadVaultArray(vault, FoveatedDistancesMetersBufferId, in _jobDistancesMetersHandle, MaxTargets, out buffers.DistancesMeters);
+        }
+
+        private bool TryReadTelemetryRing(out NativeArray<FoveatedSimulationTelemetryEntry>.ReadOnly telemetryRing)
+        {
+            IDataVault vault = _dataVault;
+            return TryReadVaultArray(vault, FoveatedTelemetryRingBufferId, in _telemetryRingHandle, TelemetryCapacity, out telemetryRing);
         }
 
         private bool TryWriteScorePositionsForImportanceJob()
@@ -1479,13 +1525,13 @@ namespace Hecton8.Core
 
         private bool TryValidateImportanceJobBuffers(IDataVault vault)
         {
-            return TryResolveVaultArray(vault, FoveatedScorePositionsBufferId, in _jobScorePositionsHandle, MaxTargets, out _) &&
-                   TryResolveVaultArray(vault, FoveatedEntityAupsBufferId, in _jobEntityAupsHandle, MaxTargets, out _) &&
-                   TryResolveVaultArray(vault, FoveatedImportanceScoresBufferId, in _jobImportanceScoresHandle, MaxTargets, out _) &&
-                   TryResolveVaultArray(vault, FoveatedTickRateCodesBufferId, in _jobTickRateCodesHandle, MaxTargets, out _) &&
-                   TryResolveVaultArray(vault, FoveatedInsideFrustumFlagsBufferId, in _jobInsideFrustumFlagsHandle, MaxTargets, out _) &&
-                   TryResolveVaultArray(vault, FoveatedEntitySimTiersBufferId, in _jobEntitySimTiersHandle, MaxTargets, out _) &&
-                   TryResolveVaultArray(vault, FoveatedDistancesMetersBufferId, in _jobDistancesMetersHandle, MaxTargets, out _);
+            return TryReadVaultArray(vault, FoveatedScorePositionsBufferId, in _jobScorePositionsHandle, MaxTargets, out _) &&
+                   TryReadVaultArray(vault, FoveatedEntityAupsBufferId, in _jobEntityAupsHandle, MaxTargets, out _) &&
+                   TryReadVaultArray(vault, FoveatedImportanceScoresBufferId, in _jobImportanceScoresHandle, MaxTargets, out _) &&
+                   TryReadVaultArray(vault, FoveatedTickRateCodesBufferId, in _jobTickRateCodesHandle, MaxTargets, out _) &&
+                   TryReadVaultArray(vault, FoveatedInsideFrustumFlagsBufferId, in _jobInsideFrustumFlagsHandle, MaxTargets, out _) &&
+                   TryReadVaultArray(vault, FoveatedEntitySimTiersBufferId, in _jobEntitySimTiersHandle, MaxTargets, out _) &&
+                   TryReadVaultArray(vault, FoveatedDistancesMetersBufferId, in _jobDistancesMetersHandle, MaxTargets, out _);
         }
 
         private void ReleaseImportanceJobBufferLocks()
@@ -1493,7 +1539,7 @@ namespace Hecton8.Core
             if (!_importanceJobBuffersLocked)
                 return;
 
-            IDataVault vault = _importanceJobGuardVault ?? _dataVault;
+            IDataVault vault = _importanceJobGuardVault;
             if (vault != null)
                 vault.ReleaseMutationGuard(ImportanceJobMutationGuardMask);
 
@@ -1520,7 +1566,7 @@ namespace Hecton8.Core
                 handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystemId, options);
             }
 
-            if (TryResolveVaultArray(vault, bufferId, in handle, requiredLength, out array))
+            if (TryOpenVaultArrayForOwner(vault, bufferId, in handle, requiredLength, out array))
             {
                 return true;
             }
@@ -1532,7 +1578,7 @@ namespace Hecton8.Core
             }
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystemId, options);
-            if (TryResolveVaultArray(vault, bufferId, in handle, requiredLength, out array))
+            if (TryOpenVaultArrayForOwner(vault, bufferId, in handle, requiredLength, out array))
                 return true;
 
             ReleaseVaultHandle(vault, bufferId, ref handle);
@@ -1540,7 +1586,7 @@ namespace Hecton8.Core
             return false;
         }
 
-        private static bool TryResolveVaultArray<T>(
+        private static bool TryOpenVaultArrayForOwner<T>(
             IDataVault vault,
             BufferID bufferId,
             in VaultGenerationHandle<T> handle,
@@ -1552,6 +1598,22 @@ namespace Hecton8.Core
                    requiredLength > 0 &&
                    IsFoveatedVaultHandle(in handle, bufferId) &&
                    vault.TryResolveHandle(in handle, out array) &&
+                   array.IsCreated &&
+                   array.Length >= requiredLength;
+        }
+
+        private static bool TryReadVaultArray<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly array) where T : struct
+        {
+            array = default;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   IsFoveatedVaultHandle(in handle, bufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out array) &&
                    array.IsCreated &&
                    array.Length >= requiredLength;
         }

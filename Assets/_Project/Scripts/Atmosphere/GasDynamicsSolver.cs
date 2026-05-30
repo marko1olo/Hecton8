@@ -213,6 +213,7 @@ namespace Hecton8.Atmosphere
         private bool _registeredRegistry;
         private bool _registeredHotSwap;
         private bool _telemetryRingLocked;
+        private IDataVault _telemetryRingStepVault;
         private uint _stateWriteLockMask;
         private IDataVault _stateWriteMutationGuardVault;
         private ulong _stateWriteMutationGuardMask;
@@ -1720,6 +1721,7 @@ namespace Hecton8.Atmosphere
                 }
 
                 _telemetryRingLocked = true;
+                _telemetryRingStepVault = vault;
                 ownershipTransferred = true;
                 return true;
             }
@@ -1843,13 +1845,14 @@ namespace Hecton8.Atmosphere
             if (!_telemetryRingLocked)
                 return;
 
-            IDataVault vault = _dataVault;
+            IDataVault vault = _telemetryRingStepVault;
             if (vault != null &&
                 IsOwnedGasLane(in _telemetryRingHandle, BufferID.GasDynamicsTelemetryRing))
             {
                 vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere);
             }
 
+            _telemetryRingStepVault = null;
             _telemetryRingLocked = false;
         }
 

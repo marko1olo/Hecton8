@@ -143,6 +143,7 @@ namespace Hecton8.World
         private bool _pendingDataVaultRebind;
         private bool _distributionRulesLoaded;
         private int _lockedVaultBufferMask;
+        private IDataVault _lockedVaultGuardVault;
         private GeologyIndirectArgsDTO _pendingIndirectArgsGpu;
         private int _oreCapacity;
         private int _depletionWordCount;
@@ -1290,6 +1291,7 @@ namespace Hecton8.World
             _hzbMetaHandle = default;
             _dataVault = null;
             _lockedVaultBufferMask = 0;
+            _lockedVaultGuardVault = null;
             _depletionCacheInitialized = false;
         }
 
@@ -1546,6 +1548,7 @@ namespace Hecton8.World
             }
 
             _lockedVaultBufferMask = locked;
+            _lockedVaultGuardVault = vault;
             return true;
         }
 
@@ -1566,6 +1569,7 @@ namespace Hecton8.World
             }
 
             _lockedVaultBufferMask = locked;
+            _lockedVaultGuardVault = vault;
             return true;
         }
 
@@ -1589,6 +1593,7 @@ namespace Hecton8.World
             }
 
             _lockedVaultBufferMask = locked;
+            _lockedVaultGuardVault = vault;
             return true;
         }
 
@@ -1692,14 +1697,17 @@ namespace Hecton8.World
         private void UnlockVaultWriteBuffers()
         {
             int locked = _lockedVaultBufferMask;
+            IDataVault vault = _lockedVaultGuardVault;
             _lockedVaultBufferMask = 0;
+            _lockedVaultGuardVault = null;
             if (locked != 0)
-                _dataVault?.ReleaseMutationGuard(unchecked((uint)locked));
+                vault?.ReleaseMutationGuard(unchecked((uint)locked));
         }
 
         private void UnlockVaultWriteBuffers(IDataVault vault, int locked)
         {
             _lockedVaultBufferMask = 0;
+            _lockedVaultGuardVault = null;
             if (locked != 0)
                 vault?.ReleaseMutationGuard(unchecked((uint)locked));
         }

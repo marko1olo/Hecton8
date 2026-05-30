@@ -57,6 +57,9 @@ namespace Hecton8.Gameplay
         [SerializeField] private PlayerInventory playerInventory;
         [Tooltip("Optional coordinator used to suppress handheld tools while mounted transport owns the player.")]
         [SerializeField] private PlayerTransportCoordinator playerTransportCoordinator;
+        [Tooltip("Forward probe distance for zero-GC field loadout advice published before UI late-frame presentation.")]
+        [SerializeField] private float fieldLoadoutAdviceRange = 18f;
+        [SerializeField] private LayerMask fieldLoadoutAdviceMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Header("── Tool Prefabs (sloty 1-4) ──────────────────")]
         [Tooltip("Prefaby instrumentov, privyazannye k knopkam 1-4. " +
@@ -174,9 +177,13 @@ namespace Hecton8.Gameplay
         private IToolDurabilityService _toolDurability;
         private ISubmarineRuntimeContext _submarineRuntimeContext;
         private bool _hotSwapListenerRegistered;
+        private FieldLoadoutAdvisor.ForwardLoadoutSnapshot _cachedFieldLoadoutAdvice;
+        private bool _cachedFieldLoadoutAdviceValid;
+        private float _nextFieldLoadoutAdviceRefreshAt = float.NegativeInfinity;
 
         private const float BatterySiphonLockoutSeconds = 1.5f;
         private const float BatteryDeadThreshold01 = 0.0001f;
+        private const float FieldLoadoutAdviceRefreshInterval = 0.35f;
         private const string StandardBatteryPersistentId = "Comp_BatteryCell";
         private const string HighCapacityBatteryPersistentId = "Comp_HighCapacityCell";
         private static readonly int _standardBatteryHashId = LocHash.Compute(StandardBatteryPersistentId);
@@ -266,6 +273,7 @@ namespace Hecton8.Gameplay
             UnsubscribeModuleStatusEvents();
             ClearInteriorCarrierCache();
             TryUnregisterHotSwapListener();
+            ClearCachedFieldLoadoutAdvice();
 
             // Despavnim tekuschiy instrument pri otklyuchenii menedzhera
             _flushingToolLifecyclePresentation = true;
@@ -426,6 +434,7 @@ namespace Hecton8.Gameplay
             _flushingToolLifecyclePresentation = false;
             FlushPendingHandAnchorPose();
             FlushPendingToolPose();
+            RefreshFieldLoadoutAdviceForVisualSync();
         }
 
         /// <summary>
@@ -696,12 +705,51 @@ namespace Hecton8.Gameplay
             return true;
         }
 
+        public bool TryGetCachedFieldLoadoutPresetName(out string presetName)
+        {
+            presetName = null;
+            return _cachedFieldLoadoutAdviceValid &&
+                   FieldLoadoutAdvisor.TryGetPresetName(_cachedFieldLoadoutAdvice.PresetId, out presetName);
+        }
+
+        public bool TryGetCachedFieldLoadoutAdvice(out FieldLoadoutAdvisor.LoadoutAdvice advice)
+        {
+            advice = default;
+            if (!_cachedFieldLoadoutAdviceValid)
+                return false;
+
+            if (!FieldLoadoutAdvisor.TryGetPresetName(_cachedFieldLoadoutAdvice.PresetId, out string presetName) ||
+                !FieldLoadoutAdvisor.TryGetPresetSummary(_cachedFieldLoadoutAdvice.PresetId, out string summary))
+            {
+                return false;
+            }
+
+            advice = new FieldLoadoutAdvisor.LoadoutAdvice(presetName, summary);
+            return true;
+        }
+
         public GameObject GetAssignedToolPrefab(int slotIndex)
         {
             if (toolPrefabs == null || slotIndex < 0 || slotIndex >= toolPrefabs.Length)
                 return null;
 
             return toolPrefabs[slotIndex];
+        }
+
+        public bool TryGetAssignedToolDataReadModel(int slotIndex, out IPlayerToolDataReadModel tool)
+        {
+            tool = GetAssignedToolPrefabComponent(slotIndex);
+            return tool != null;
+        }
+
+        public bool TryGetToolDataReadModelForPrefab(GameObject prefab, out IPlayerToolDataReadModel tool)
+        {
+            tool = null;
+            if (!TryGetCachedToolForPrefab(prefab, out PlayerTool cachedTool))
+                return false;
+
+            tool = cachedTool;
+            return tool != null;
         }
 
         private void PublishToolLoadoutChanged(byte reason)
@@ -1343,6 +1391,36 @@ namespace Hecton8.Gameplay
             interactionState.TransportBoost01 = transportBoost01;
             interactionState.Flags = flags;
             _runtimeContext.PublishInteractionState(in interactionState);
+        }
+
+        private void RefreshFieldLoadoutAdviceForVisualSync()
+        {
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (now < _nextFieldLoadoutAdviceRefreshAt)
+                return;
+
+            _nextFieldLoadoutAdviceRefreshAt = now + FieldLoadoutAdviceRefreshInterval;
+            Transform origin = transform;
+            if (FieldLoadoutAdvisor.TryBuildForwardSnapshot(
+                    origin,
+                    fieldLoadoutAdviceRange,
+                    fieldLoadoutAdviceMask,
+                    out FieldLoadoutAdvisor.ForwardLoadoutSnapshot snapshot))
+            {
+                _cachedFieldLoadoutAdvice = snapshot;
+                _cachedFieldLoadoutAdviceValid = true;
+                return;
+            }
+
+            _cachedFieldLoadoutAdvice = default;
+            _cachedFieldLoadoutAdviceValid = false;
+        }
+
+        private void ClearCachedFieldLoadoutAdvice()
+        {
+            _cachedFieldLoadoutAdvice = default;
+            _cachedFieldLoadoutAdviceValid = false;
+            _nextFieldLoadoutAdviceRefreshAt = float.NegativeInfinity;
         }
 
         private void SubscribeModuleStatusEvents()

@@ -18,7 +18,7 @@ namespace Hecton8.Visor
     /// <summary>
     /// Health-critical fullscreen retina distortion pass driven by the player heartbeat cadence.
     /// </summary>
-        public sealed class HectonRetinaDistortionFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
+        public sealed class HectonRetinaDistortionFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable
         {
             private const int RetinaGlobalsStrideBytes = 32;
             private const int RetinaSurvivalGraphicsMemoryMb = 1536;
@@ -74,6 +74,7 @@ namespace Hecton8.Visor
             public float Critical01;
             public float HeartbeatBpm;
             public float Narcosis01;
+            public float RetinaQualityWeight;
         }
 
         private sealed class RetinaDistortionPass : ScriptableRenderPass
@@ -97,6 +98,7 @@ namespace Hecton8.Visor
             private RetinaGlobalsDTO _lastRetinaGlobals;
             private int _retinaGlobalsWriteIndex;
             private bool _hasRetinaGlobals;
+            private bool _supportsSetConstantBuffer;
 
             public RetinaDistortionPass()
             {
@@ -117,6 +119,13 @@ namespace Hecton8.Visor
             public bool PrepareResources()
             {
                 return EnsureRetinaGlobalsBuffer();
+            }
+
+            public void SetGraphicsCapabilitiesCold(bool supportsSetConstantBuffer)
+            {
+                _supportsSetConstantBuffer = supportsSetConstantBuffer;
+                if (!_supportsSetConstantBuffer)
+                    Dispose();
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -211,7 +220,7 @@ namespace Hecton8.Visor
 
             private bool EnsureRetinaGlobalsBuffer()
             {
-                if (!SystemInfo.supportsSetConstantBuffer)
+                if (!_supportsSetConstantBuffer)
                 {
                     Dispose();
                     return false;
@@ -253,7 +262,7 @@ namespace Hecton8.Visor
                 float drive01 = math.max(critical01, narcosis01);
                 float health01 = math.saturate(runtimeState.Health01);
                 float heartbeatBpm = math.max(1f, runtimeState.HeartbeatBpm);
-                float retinaQualityWeight = ResolveRetinaRuntimeQualityWeight(SystemInfo.graphicsMemorySize);
+                float retinaQualityWeight = math.saturate(runtimeState.RetinaQualityWeight);
                 RetinaOffsetBudget offsetBudget = ResolveRetinaOffsetBudget(
                     math.max(0f, settings.maxChromaticOffset),
                     math.max(0f, settings.maxDistortionOffset),
@@ -313,7 +322,7 @@ namespace Hecton8.Visor
 
             private bool HasRetinaGlobalsBuffer()
             {
-                if (!SystemInfo.supportsSetConstantBuffer)
+                if (!_supportsSetConstantBuffer)
                     return false;
 
                 if (_retinaGlobalsBufferA == null || !_retinaGlobalsBufferA.IsValid() ||
@@ -376,7 +385,20 @@ namespace Hecton8.Visor
         private RetinaDistortionPass _pass;
         private Material _material;
         private IPlayerRuntimeContext _cachedPlayerContext;
+        private float _cachedNarcosis01;
+        private float _cachedRetinaRuntimeQualityWeight = 1f;
+        private int _cachedGraphicsMemoryMb;
         private bool _hotSwapRegistered;
+        private bool _lateFrameRegistered;
+        private bool _supportsSetConstantBuffer;
+
+        private void OnEnable()
+        {
+            CacheGraphicsCapabilitiesCold();
+            TryRegisterLateFrameTickable();
+            TryRegisterHotSwapListener();
+            CachePresentationGlobalsLate();
+        }
 
         /// <inheritdoc />
         public override void Create()
@@ -396,9 +418,12 @@ namespace Hecton8.Visor
             }
 
             RecreateMaterial(ref _material, shader);
+            CacheGraphicsCapabilitiesCold();
             _pass.PrepareResources();
+            TryRegisterLateFrameTickable();
             TryRegisterHotSwapListener();
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            CachePresentationGlobalsLate();
         }
 
         /// <inheritdoc />
@@ -422,6 +447,7 @@ namespace Hecton8.Visor
             CoreUtils.Destroy(_material);
             _material = null;
             _cachedPlayerContext = null;
+            TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
         }
 
@@ -431,12 +457,42 @@ namespace Hecton8.Visor
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
                 _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregisterLateFrameTickable();
+                if (currentService != null)
+                    TryRegisterLateFrameTickable();
+            }
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            CachePresentationGlobalsLate();
         }
 
         private void OnDisable()
         {
+            TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsSetConstantBuffer = SystemInfo.supportsSetConstantBuffer;
+            _cachedGraphicsMemoryMb = SystemInfo.graphicsMemorySize;
+            _pass?.SetGraphicsCapabilitiesCold(_supportsSetConstantBuffer);
+        }
+
+        private void CachePresentationGlobalsLate()
+        {
+            _cachedNarcosis01 = math.saturate(Shader.GetGlobalFloat(ShaderConstants.NarcosisId));
+            _cachedRetinaRuntimeQualityWeight = ResolveRetinaRuntimeQualityWeight(_cachedGraphicsMemoryMb);
         }
 
         private bool TryBuildRuntimeState(
@@ -453,7 +509,7 @@ namespace Hecton8.Visor
             if (playerCamera == null || !ReferenceEquals(renderCamera, playerCamera))
                 return false;
 
-            float narcosis01 = math.saturate(Shader.GetGlobalFloat(ShaderConstants.NarcosisId));
+            float narcosis01 = _cachedNarcosis01;
             float threshold = math.clamp(settings.healthThreshold01, 0.01f, 0.35f);
             bool hasHealth = UIStateStore.TryReadValue(UIValueSlotId.Health01, out UIValueSlot healthSlot);
             float health01 = hasHealth ? math.saturate(healthSlot.Value) : 1f;
@@ -471,6 +527,7 @@ namespace Hecton8.Visor
             runtimeState.Critical01 = drive01;
             runtimeState.HeartbeatBpm = math.lerp(baseBpm, criticalBpm, drive01);
             runtimeState.Narcosis01 = narcosis01;
+            runtimeState.RetinaQualityWeight = _cachedRetinaRuntimeQualityWeight;
             return true;
         }
 
@@ -489,6 +546,23 @@ namespace Hecton8.Visor
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapRegistered = false;
+        }
+
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_lateFrameRegistered)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _lateFrameRegistered = false;
         }
 
         internal static RetinaOffsetBudget ResolveRetinaOffsetBudget(

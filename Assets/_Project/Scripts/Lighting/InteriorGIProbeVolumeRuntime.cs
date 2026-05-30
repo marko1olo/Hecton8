@@ -336,7 +336,14 @@ namespace Hecton8.Lighting
             TryRegisterHotSwapListener();
             EnsureNativeState();
             if (_nativeReady && enableGpuUpload)
-                EnsureGpuBuffers(MaxCellCount);
+                EnsureGpuBuffersCold(MaxCellCount);
+#if UNITY_EDITOR
+            if (_nativeReady && enableCsvOverridePolling)
+            {
+                _csvReloadRequested = true;
+                TryReloadCsvOverrides();
+            }
+#endif
             TryRegister();
         }
 
@@ -396,23 +403,16 @@ namespace Hecton8.Lighting
 
         public void SlowTick()
         {
-#if UNITY_EDITOR
-            if (!_nativeReady)
-                EnsureNativeState();
+            _gpuUploadPending &= !enableGpuUpload || HasGpuBuffersReady(MaxCellCount);
 
+#if UNITY_EDITOR
             if (!_nativeReady || _scheduledBootClear || _simulationJobActive)
                 return;
 
             if (!enableCsvOverridePolling)
                 return;
 
-            _csvPollTimer -= 0.1f;
-            if (_csvPollTimer > 0f)
-                return;
-
-            _csvPollTimer = 2.0f;
-            _csvReloadRequested = true;
-            TryReloadCsvOverrides();
+            _csvReloadRequested = false;
 #endif
         }
 
@@ -1465,7 +1465,9 @@ namespace Hecton8.Lighting
             if (activeCount <= 0)
                 return;
 
-            EnsureGpuBuffers(MaxCellCount);
+            if (!HasGpuBuffersReady(MaxCellCount))
+                return;
+
             GraphicsBuffer target = _gpuProbeWriteIndex == 0 ? _probeBufferA : _probeBufferB;
             if (target == null || target.count < activeCount)
                 return;
@@ -1498,10 +1500,18 @@ namespace Hecton8.Lighting
             _visualDirty = false;
         }
 
-        private void EnsureGpuBuffers(int requiredCount)
+        private bool HasGpuBuffersReady(int requiredCount)
         {
             int safeCount = math.clamp(requiredCount, 1, MaxCellCount);
-            if (_gpuProbeCapacity >= safeCount && _probeBufferA != null && _probeBufferB != null)
+            return _gpuProbeCapacity >= safeCount &&
+                   _probeBufferA != null &&
+                   _probeBufferB != null;
+        }
+
+        private void EnsureGpuBuffersCold(int requiredCount)
+        {
+            int safeCount = math.clamp(requiredCount, 1, MaxCellCount);
+            if (HasGpuBuffersReady(safeCount))
                 return;
 
             ReleaseGpuBuffers();

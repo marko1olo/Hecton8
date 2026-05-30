@@ -132,7 +132,12 @@ namespace Hecton8.AI
 
         internal static bool TryReadSlot(int slot, out FaunaTier1LodProxyEntry entry)
         {
-            EnsureInitialized();
+            if (!_initialized)
+            {
+                entry = default;
+                return false;
+            }
+
             if ((uint)slot >= MaxTier1ProxyCount || _occupied[slot] == 0)
             {
                 entry = default;
@@ -145,8 +150,7 @@ namespace Hecton8.AI
 
         internal static int CopyActiveEntries(NativeArray<FaunaTier1LodProxyEntry> destination)
         {
-            EnsureInitialized();
-            if (!destination.IsCreated || destination.Length <= 0 || _activeCount <= 0)
+            if (!_initialized || !destination.IsCreated || destination.Length <= 0 || _activeCount <= 0)
                 return 0;
 
             int written = 0;

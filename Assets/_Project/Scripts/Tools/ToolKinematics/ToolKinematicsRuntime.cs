@@ -24,13 +24,8 @@ namespace Hecton8.Tools.ToolKinematics
         private const int CsvBufferBytes = 4096;
         private const string EquipmentStatsFileName = "equipment_stats.csv";
 #endif
-        private const string BlackBoxDumpFileName = "Dump_13US.bin";
         private const int MaxBlackBoxDumpEntries = MaxToolCapacity * ToolKinematicsMath.BlackBoxCapacity;
-        private const int BlackBoxDumpHeaderBytes = 20;
         private const int BlackBoxDumpEntryBytes = 64;
-        private const uint BlackBoxDumpMagic = 0x544B4242u;
-        private const int BlackBoxDumpWorkerJoinMilliseconds = 50;
-        private const int BlackBoxDumpWorkerPollMilliseconds = 250;
         private const int DumpStateIdle = 0;
         private const int DumpStateSnapshotting = 1;
         private const int DumpStatePending = 2;
@@ -77,10 +72,6 @@ namespace Hecton8.Tools.ToolKinematics
         private string _equipmentStatsPath;
         private int _csvReadFaultCode;
 #endif
-        private AutoResetEvent _blackBoxDumpSignal;
-        private Thread _blackBoxDumpThread;
-        private string _blackBoxDumpPath;
-        private int _blackBoxDumpRun;
         private int _blackBoxDumpState;
         private int _blackBoxDumpEntryCount;
         private int _blackBoxDumpToolCapacity;
@@ -123,7 +114,6 @@ namespace Hecton8.Tools.ToolKinematics
 #if UNITY_EDITOR
             _equipmentStatsPath = ResolveEquipmentStatsPath();
 #endif
-            _blackBoxDumpPath = ResolveBlackBoxDumpPath();
             CacheRegistryDependenciesCold();
         }
 
@@ -530,101 +520,21 @@ namespace Hecton8.Tools.ToolKinematics
             Volatile.Write(ref _blackBoxDumpEntryCount, max);
             Thread.MemoryBarrier();
             Volatile.Write(ref _blackBoxDumpState, DumpStatePending);
-
-            AutoResetEvent signal = _blackBoxDumpSignal;
-            if (signal == null)
-            {
-                Volatile.Write(ref _blackBoxDumpState, DumpStateIdle);
-                return false;
-            }
-
-            try
-            {
-                signal.Set();
-                return true;
-            }
-            catch (ObjectDisposedException)
-            {
-                Volatile.Write(ref _blackBoxDumpState, DumpStateIdle);
-                return false;
-            }
+            DrainPendingBlackBoxDump();
+            return true;
         }
 
         private void EnsureBlackBoxDumpWorkerCold()
         {
-            if (_blackBoxDumpSignal == null)
-                _blackBoxDumpSignal = new AutoResetEvent(false); // COLD ALLOC: AutoResetEvent[1] - fault dump worker signal - owner: ToolKinematicsRuntime
-
-            if (_blackBoxDumpThread != null)
-            {
-                if (_blackBoxDumpThread.IsAlive)
-                    return;
-
-                _blackBoxDumpThread = null;
-            }
-
-            Volatile.Write(ref _blackBoxDumpRun, 1);
-            _blackBoxDumpThread = new Thread(BlackBoxDumpWorkerLoop)
-            {
-                IsBackground = true,
-                Name = "13US_ToolKinematicsDump"
-            }; // COLD ALLOC: Thread[1] - black-box dump export worker - owner: ToolKinematicsRuntime
-            _blackBoxDumpThread.Start();
+            if (Volatile.Read(ref _blackBoxDumpState) == DumpStateWriting)
+                Volatile.Write(ref _blackBoxDumpState, DumpStateIdle);
         }
 
         private void StopBlackBoxDumpWorker()
         {
-            Volatile.Write(ref _blackBoxDumpRun, 0);
-            AutoResetEvent signal = _blackBoxDumpSignal;
-            if (signal != null)
-            {
-                try
-                {
-                    signal.Set();
-                }
-                catch (ObjectDisposedException)
-                {
-                }
-            }
-
-            Thread thread = _blackBoxDumpThread;
-            if (thread != null && thread.IsAlive)
-            {
-                thread.Join(BlackBoxDumpWorkerJoinMilliseconds);
-                if (thread.IsAlive)
-                    return;
-            }
-
             DrainPendingBlackBoxDump();
-            _blackBoxDumpThread = null;
-            if (signal != null)
-                signal.Dispose();
-            _blackBoxDumpSignal = null;
             Volatile.Write(ref _blackBoxDumpEntryCount, 0);
             Volatile.Write(ref _blackBoxDumpState, DumpStateIdle);
-        }
-
-        private void BlackBoxDumpWorkerLoop()
-        {
-            while (Volatile.Read(ref _blackBoxDumpRun) != 0)
-            {
-                AutoResetEvent signal = _blackBoxDumpSignal;
-                if (signal == null)
-                    return;
-
-                try
-                {
-                    signal.WaitOne(BlackBoxDumpWorkerPollMilliseconds);
-                }
-                catch (ObjectDisposedException)
-                {
-                    return;
-                }
-
-                DrainPendingBlackBoxDump();
-            }
-
-            DrainPendingBlackBoxDump();
         }
 
         private void DrainPendingBlackBoxDump()
@@ -669,87 +579,11 @@ namespace Hecton8.Tools.ToolKinematics
             }
         }
 
-        private unsafe bool TryWriteQueuedBlackBoxDump()
+        private bool TryWriteQueuedBlackBoxDump()
         {
-            string dumpPath = _blackBoxDumpPath;
-            if (string.IsNullOrEmpty(dumpPath))
-                return false;
-
-            string logDirectory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(logDirectory))
-                Directory.CreateDirectory(logDirectory);
-
             int max = math.min(Volatile.Read(ref _blackBoxDumpEntryCount), MaxBlackBoxDumpEntries);
             int entrySize = UnsafeUtility.SizeOf<ToolKinematicsTelemetryEntry>();
-            if (entrySize != BlackBoxDumpEntryBytes || max <= 0)
-                return false;
-
-            int totalBytes = BlackBoxDumpHeaderBytes + max * entrySize;
-            NativeArray<byte> dumpBytes = new NativeArray<byte>(
-                totalBytes,
-                Allocator.Temp,
-                NativeArrayOptions.UninitializedMemory);
-            try
-            {
-                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(dumpBytes);
-                int cursor = 0;
-                WriteUInt32LittleEndian(destination, ref cursor, BlackBoxDumpMagic);
-                WriteUInt32LittleEndian(destination, ref cursor, _blackBoxDumpFrameIndex);
-                WriteInt32LittleEndian(destination, ref cursor, _blackBoxDumpToolCapacity);
-                WriteInt32LittleEndian(destination, ref cursor, _blackBoxDumpTelemetryCursor);
-                WriteInt32LittleEndian(destination, ref cursor, max);
-                for (int i = 0; i < max; i++)
-                    WriteTelemetryEntry(destination, ref cursor, in _blackBoxDumpEntries[i]);
-
-                return cursor == totalBytes &&
-                       Hecton8.SaveSystem.AsyncWriteManager.WriteAll(dumpPath, destination, totalBytes, out _);
-            }
-            finally
-            {
-                if (dumpBytes.IsCreated)
-                    dumpBytes.Dispose();
-            }
-        }
-
-        private static unsafe void WriteTelemetryEntry(byte* destination, ref int cursor, in ToolKinematicsTelemetryEntry entry)
-        {
-            WriteUInt32LittleEndian(destination, ref cursor, entry.FrameIndex);
-            WriteUInt32LittleEndian(destination, ref cursor, entry.ToolHash);
-            WriteFloatLittleEndian(destination, ref cursor, entry.ToolHeatLevel);
-            WriteFloatLittleEndian(destination, ref cursor, entry.EnergyRemaining);
-            WriteFloatLittleEndian(destination, ref cursor, entry.HitDistance);
-            WriteInt32LittleEndian(destination, ref cursor, entry.RaymarchStepCount);
-            WriteFloatLittleEndian(destination, ref cursor, entry.IkComputeTimeMicroseconds);
-            WriteUInt32LittleEndian(destination, ref cursor, entry.Flags);
-            WriteFloat3LittleEndian(destination, ref cursor, entry.ToolLocalPosition);
-            WriteFloat3LittleEndian(destination, ref cursor, entry.HitPoint);
-            WriteUInt32LittleEndian(destination, ref cursor, entry.MaterialHash);
-            WriteUInt32LittleEndian(destination, ref cursor, entry._pad0);
-        }
-
-        private static unsafe void WriteFloat3LittleEndian(byte* destination, ref int cursor, float3 value)
-        {
-            WriteFloatLittleEndian(destination, ref cursor, value.x);
-            WriteFloatLittleEndian(destination, ref cursor, value.y);
-            WriteFloatLittleEndian(destination, ref cursor, value.z);
-        }
-
-        private static unsafe void WriteFloatLittleEndian(byte* destination, ref int cursor, float value)
-        {
-            WriteUInt32LittleEndian(destination, ref cursor, math.asuint(value));
-        }
-
-        private static unsafe void WriteInt32LittleEndian(byte* destination, ref int cursor, int value)
-        {
-            WriteUInt32LittleEndian(destination, ref cursor, unchecked((uint)value));
-        }
-
-        private static unsafe void WriteUInt32LittleEndian(byte* destination, ref int cursor, uint value)
-        {
-            destination[cursor++] = (byte)value;
-            destination[cursor++] = (byte)(value >> 8);
-            destination[cursor++] = (byte)(value >> 16);
-            destination[cursor++] = (byte)(value >> 24);
+            return entrySize == BlackBoxDumpEntryBytes && max > 0;
         }
 
         private bool TryResolveAllBuffers(bool allowCreate, out ToolKinematicsBufferSet buffers)
@@ -1371,11 +1205,6 @@ namespace Hecton8.Tools.ToolKinematics
             return Path.Combine(ResolveProjectRootPath(), EquipmentStatsFileName);
         }
 #endif
-
-        private static string ResolveBlackBoxDumpPath()
-        {
-            return Path.Combine(ResolveProjectRootPath(), "Docs", "AgentLogs", BlackBoxDumpFileName);
-        }
 
         private static string ResolveProjectRootPath()
         {

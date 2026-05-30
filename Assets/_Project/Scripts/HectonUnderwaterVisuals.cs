@@ -76,6 +76,7 @@ namespace Hecton8.Environment
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4000)]
     public sealed class HectonUnderwaterVisuals : MonoBehaviour,
+        Hecton8.Core.IColdTickable,
         Hecton8.Core.ISlowTickable,
         Hecton8.Core.ILateFrameTickable,
         Hecton8.Core.IRenderable,
@@ -186,6 +187,7 @@ namespace Hecton8.Environment
         private float _hudFogDownsampledLuminance01;
         private float _nextHudFogLuminanceReadbackTime;
         private RenderTexture _hudFogLuminanceTexture;
+        private HudFogLuminanceReadbackOwner _hudFogLuminanceReadback;
         private int _hudFogLuminanceKernel = -1;
         private int _hudFogLuminanceThreadGroupSizeX;
         private int _hudFogLuminanceThreadGroupSizeY;
@@ -202,6 +204,11 @@ namespace Hecton8.Environment
         private float _photophobiaRecoverUntilUnscaledTime;
         private Vector4 _photophobiaFieldOriginScale;
         private float _gpuBubbleExhaleImpulse01;
+
+        private struct HudFogLuminanceReadbackOwner
+        {
+            public NativeArray<float> Data;
+        }
         private bool _supportsComputeShadersCold;
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
@@ -888,6 +895,7 @@ namespace Hecton8.Environment
         private bool _giRelaySurfaceEmissionActive;
 
         private bool _registeredRenderable;
+        private bool _registeredColdTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
         private bool _registeredHotSwapListener;
@@ -1520,7 +1528,7 @@ namespace Hecton8.Environment
             EnsureRuntimeVisualOwners();
             EnsureGameplayCameraStackEnabled();
 
-            if (!_registeredSlowTick || !_registeredLateFrameTick)
+            if (!_registeredColdTick || !_registeredSlowTick || !_registeredLateFrameTick)
                 TryRegisterTickManagers();
 
             if (!_physicsEngineLookupAttempted)
@@ -1557,16 +1565,7 @@ namespace Hecton8.Environment
                 BiomeMatrixEvents.Unregister(this);
                 SoundscapeEvents.Unregister(this);
 
-                if (_registeredSlowTick)
-                {
-                    GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-                    _registeredSlowTick = false;
-                }
-                if (_registeredLateFrameTick)
-                {
-                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                    _registeredLateFrameTick = false;
-                }
+                UnregisterTickManagers();
             }
 #if UNITY_EDITOR
             else
@@ -1651,6 +1650,7 @@ namespace Hecton8.Environment
                 TryUnregisterHotSwapListener();
                 MapMagicBiomeEvents.Unregister(this);
                 BiomeMatrixEvents.Unregister(this);
+                UnregisterTickManagers();
                 if (GlobalRegistry.UnderwaterVisuals == this)
                     GlobalRegistry.UnregisterUnderwaterVisualsRuntime(this);
             }
@@ -2095,17 +2095,22 @@ namespace Hecton8.Environment
         //  ISlowTickable.SlowTick Ã¢â‚¬â€ 2Hz
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
-        public void SlowTick()
+        public void ColdTick()
         {
             if (Application.isPlaying)
             {
                 ResolveRuntimeServiceCachesOnColdCadence();
                 ResolveRuntimeVisualOwnersOnColdCadence();
-                ResolvePlayerCamera();
-                ResolveMainCamera();
-                ResolveSunVisualTransform();
-                WarnIfRuntimeReferencesStillMissing();
+                EnsureHudFogLuminanceResources(allowAllocate: true);
+                if (enableFlashlightPhotophobiaField)
+                    EnsurePhotophobiaFieldResources(allowAllocate: true);
             }
+        }
+
+        public void SlowTick()
+        {
+            if (Application.isPlaying)
+                WarnIfRuntimeReferencesStillMissing();
 
             if (playerCamera == null) return;
 
@@ -5665,8 +5670,7 @@ namespace Hecton8.Environment
             if (sourceTexture == null || sourceTexture.width <= 0 || sourceTexture.height <= 0)
                 return;
 
-            EnsureHudFogLuminanceResources(allowAllocate: false);
-            if (!_hudFogLuminanceReady || _hudFogLuminanceTexture == null || _hudFogReadbackPending)
+            if (!HasHudFogLuminanceResourcesReady() || _hudFogReadbackPending)
                 return;
 
             float now = ResolvePresentationClockSeconds();
@@ -5690,8 +5694,13 @@ namespace Hecton8.Environment
                     1f / math.max(1f, sourceTexture.height)));
             hudFogLuminanceCompute.Dispatch(_hudFogLuminanceKernel, groupsX, groupsY, 1);
 
-            _hudFogReadbackPending = true;
-            AsyncGPUReadback.Request(_hudFogLuminanceTexture, 0, s_HudFogLuminanceReadbackCompleted);
+            EnsureHudFogLuminanceReadbackData();
+            AsyncGPUReadbackRequest request = AsyncGPUReadback.RequestIntoNativeArray(
+                ref _hudFogLuminanceReadback.Data,
+                _hudFogLuminanceTexture,
+                0,
+                s_HudFogLuminanceReadbackCompleted);
+            _hudFogReadbackPending = !request.hasError;
         }
 
         private void EnsureHudFogLuminanceResources(bool allowAllocate = true)
@@ -5771,13 +5780,29 @@ namespace Hecton8.Environment
             _hudFogLuminanceReady = true;
         }
 
+        private bool HasHudFogLuminanceResourcesReady()
+        {
+            return _hudFogLuminanceReady &&
+                   _hudFogLuminanceTexture != null &&
+                   _hudFogLuminanceKernel >= 0 &&
+                   _hudFogLuminanceThreadGroupSizeX > 0 &&
+                   _hudFogLuminanceThreadGroupSizeY > 0;
+        }
+
         private void ReleaseHudFogLuminanceResources()
         {
+            if (_hudFogReadbackPending)
+            {
+                // BLOCKING_SYNC_POINT: teardown only; do not release the luminance texture while readback owns it.
+                AsyncGPUReadback.WaitAllRequests();
+            }
+
             _hudFogReadbackPending = false;
             _hudFogLuminanceReady = false;
             _hudFogLuminanceKernel = -1;
             _hudFogLuminanceThreadGroupSizeX = 0;
             _hudFogLuminanceThreadGroupSizeY = 0;
+            DisposeHudFogLuminanceReadbackData();
 
             if (_hudFogLuminanceTexture == null)
                 return;
@@ -5797,12 +5822,35 @@ namespace Hecton8.Environment
             if (request.hasError)
                 return;
 
-            NativeArray<float> luminance = request.GetData<float>();
+            NativeArray<float> luminance = instance._hudFogLuminanceReadback.Data;
             if (!luminance.IsCreated || luminance.Length <= 0)
                 return;
 
             float resolved = luminance[0];
             instance._hudFogDownsampledLuminance01 = math.isfinite(resolved) ? math.saturate(resolved) : 0f;
+        }
+
+        private void EnsureHudFogLuminanceReadbackData()
+        {
+            if (_hudFogLuminanceReadback.Data.IsCreated && _hudFogLuminanceReadback.Data.Length >= 1)
+                return;
+
+            DisposeHudFogLuminanceReadbackData();
+            _hudFogLuminanceReadback.Data = new NativeArray<float>(
+                1,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - async HUD fog luminance readback target - owner: HectonUnderwaterVisuals
+            NativeMemorySentinel.RegisterNativeArray(_hudFogLuminanceReadback.Data, nameof(HectonUnderwaterVisuals), "_hudFogLuminanceReadbackData", NativeAllocationLifetime.Scene);
+        }
+
+        private void DisposeHudFogLuminanceReadbackData()
+        {
+            if (_hudFogLuminanceReadback.Data.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_hudFogLuminanceReadback.Data);
+                _hudFogLuminanceReadback.Data.Dispose();
+                _hudFogLuminanceReadback.Data = default;
+            }
         }
 
         private void UpdateFlashlightPhotophobiaField(float deltaTime)
@@ -5874,8 +5922,7 @@ namespace Hecton8.Environment
                 return;
             }
 
-            EnsurePhotophobiaFieldResources(allowAllocate: false);
-            if (!_photophobiaFieldReady || _photophobiaFieldTextureA == null || _photophobiaFieldTextureB == null)
+            if (!HasPhotophobiaFieldResourcesReady())
             {
                 Shader.SetGlobalVector(_HectonPhotophobiaFieldStateId, Vector4.zero);
                 return;
@@ -5981,6 +6028,16 @@ namespace Hecton8.Environment
             }
 
             _photophobiaFieldReady = true;
+        }
+
+        private bool HasPhotophobiaFieldResourcesReady()
+        {
+            return _photophobiaFieldReady &&
+                   _photophobiaFieldTextureA != null &&
+                   _photophobiaFieldTextureB != null &&
+                   _photophobiaFieldKernel >= 0 &&
+                   _photophobiaFieldThreadGroupSizeX > 0 &&
+                   _photophobiaFieldThreadGroupSizeY > 0;
         }
 
         private bool TryResolveComputeKernel(ComputeShader compute, string kernelName, out int kernelIndex)
@@ -7105,9 +7162,6 @@ namespace Hecton8.Environment
                     }
                 }
 
-                if (editorPreviewCamera == null)
-                    editorPreviewCamera = ResolveRuntimeMainCamera();
-
                 if (editorPreviewCamera != null)
                     return math.max(0f, ResolveWaterLevel() - editorPreviewCamera.transform.position.y);
 
@@ -7451,6 +7505,10 @@ namespace Hecton8.Environment
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
+            if (!_registeredColdTick)
+            {
+                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
+            }
             if (!_registeredSlowTick)
             {
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
@@ -7458,6 +7516,25 @@ namespace Hecton8.Environment
             if (!_registeredLateFrameTick)
             {
                 _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            }
+        }
+
+        private void UnregisterTickManagers()
+        {
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _registeredColdTick = false;
+            }
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
             }
         }
 

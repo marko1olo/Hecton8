@@ -36,7 +36,7 @@ No runtime code was edited by `DOC_ROOT_ARCH_AUDIT`. This section records static
 | Enabled scene spine | `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD` | `ProjectSettings/EditorBuildSettings.asset` |
 | First 20 route docs | New game uses `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`; load-game resume may enter `02_HECTON_WORLD` directly | `FIRST_20_MINUTES_VERTICAL_SLICE_CONTRACT.md`, `FIRST_20_MINUTES_ROUTE_BRIEF.md` |
 | Scene authority drift | `AGENTS.md` still carries older no-orbit scene-flow wording; static source/docs include `01_ORBIT`; owner/integrator decision required before changing route doctrine | `AGENTS.md`, `ProjectSettings/EditorBuildSettings.asset`, `PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md` |
-| First-party asmdefs | `167` under `Assets/_Project` | static filesystem count |
+| First-party asmdefs | `168` under `Assets/_Project` | 2026-05-29 static filesystem count |
 | Data Monolith payload | present, `1,064,384` bytes | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
 | Data Monolith scoped validator | `PASS`; `files=2`; `structs=32`; `mb=1.0495`; `seconds=0.491846`; Python schema/payload proof only | `../Reports/DOC_ROOT_ARCH_AUDIT_h8bin_validator_narrow_20260528.json` |
 | Source topology doc | Added current project topology, source owner spine, route map, and verification gaps | `PROJECT_RUNTIME_TOPOLOGY.md` |
@@ -46,7 +46,7 @@ No runtime code was edited by `DOC_ROOT_ARCH_AUDIT`. This section records static
 | Black-box doctrine sync | 300-frame rings; `Dump_*.bin` primary; `.h8dump` legacy | `../Actual Domains of Project.txt`, `../PROJECT_ATLAS.md` |
 | Index updates | Root and architecture read orders now surface topology, boot, dispatch, first route, and platform proof ladder | `../README.md`, `README.md`, `../PROJECT_BASELINE.md`, `../HECTON8_GLOBAL_ARCHITECTURE_MAP.md`, `../HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md` |
 | Atlas stub cleanup | `observedAssemblyCount = 83` is compatibility-only; current count lives in topology/generated graph | `../PROJECT_ATLAS.md` |
-| Dependency graph regeneration | `BuildArchitectureAtlas.py` regenerated graph markdown/json/cache; graph reports `220` asmdefs scanned, `167` first-party asmdefs under `Assets/_Project` | `../Generated/DEPENDENCY_GRAPH.md`, `../Generated/DEPENDENCY_GRAPH.json`, `../Generated/DEPENDENCY_GRAPH.cache.json` |
+| Dependency graph regeneration | `BuildArchitectureAtlas.py` regenerated graph markdown/json/cache; graph reports `220` asmdefs scanned, `167` first-party asmdefs under `Assets/_Project`; graph count is stale against the 2026-05-29 filesystem count of `168` until regenerated | `../Generated/DEPENDENCY_GRAPH.md`, `../Generated/DEPENDENCY_GRAPH.json`, `../Generated/DEPENDENCY_GRAPH.cache.json` |
 | AtlasCheck | `ATLAS_CHECK_PASS references=5807` | `python Tools/AtlasCheck.py` |
 | H-Phi atlas | `PROJECT_ATLAS_HPHI.md` is absent; `HectonPhiStaticAudit.py --no-fail` timed out after 300 seconds before producing it | no proof artifact; see `../Generated/README.md` |
 | Structure validation | `pass=true`; activeDocCount `704`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0`; encodingWithoutUtf8Sig `0` | `../Reports/DOC_STRUCTURE_VALIDATION_X_012.json` |

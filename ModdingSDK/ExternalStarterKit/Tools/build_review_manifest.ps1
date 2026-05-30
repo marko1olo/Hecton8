@@ -4,10 +4,13 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'strict_json_io.ps1')
 
 $MaxReviewFiles = 256
 $MaxReviewFileBytes = 4194304
 $MaxReviewTotalBytes = 33554432
+$MaxManifestJsonBytes = 65536
+$ReservedTopLevelFolders = @('Content','Docs','Generated','Graphs','Locales','Reference','Reports','Schemas','Tables','Tools','.vscode')
 
 function Fail([string]$Message) {
     Write-Error ('[H8MOD_REVIEW_MANIFEST] ' + $Message)
@@ -24,14 +27,68 @@ function Join-StarterPath([string]$BasePath, [string]$RelativePath) {
     return $current
 }
 
-if ([System.IO.Path]::IsPathRooted($Output)) {
-    Fail 'Output path must be relative to the starter kit root.'
+function Assert-StandardReviewOutput([string]$RelativePath) {
+    if ([string]::IsNullOrWhiteSpace($RelativePath)) {
+        Fail 'Output path is required.'
+    }
+    if ([System.IO.Path]::IsPathRooted($RelativePath)) {
+        Fail 'Output path must be relative to the starter kit root.'
+    }
+
+    $normalized = $RelativePath.Replace('\','/')
+    if ($normalized.StartsWith('../') -or $normalized.Contains('/../') -or
+        -not $normalized.Equals('Reports/review_manifest.json', [System.StringComparison]::Ordinal)) {
+        Fail 'Output path must be exactly Reports/review_manifest.json.'
+    }
+    return $normalized
 }
 
-$normalizedOutput = $Output.Replace('\','/')
-if ($normalizedOutput.StartsWith('../') -or $normalizedOutput.Contains('/../') -or -not $normalizedOutput.StartsWith('Reports/')) {
-    Fail 'Output path must stay under Reports/.'
+function Test-ReservedTopLevelCaseVariant([string]$RelativePath) {
+    $normalized = $RelativePath.Replace('\','/')
+    $slash = $normalized.IndexOf('/')
+    if ($slash -lt 0) {
+        $topLevel = $normalized
+    } else {
+        $topLevel = $normalized.Substring(0, $slash)
+    }
+
+    foreach ($reservedName in $ReservedTopLevelFolders) {
+        if ([string]::Equals($topLevel, $reservedName, [System.StringComparison]::OrdinalIgnoreCase) -and
+            -not [string]::Equals($topLevel, $reservedName, [System.StringComparison]::Ordinal)) {
+            return $true
+        }
+    }
+
+    return $false
 }
+
+function Test-ReviewOutputPath([string]$RelativePath) {
+    return $RelativePath.StartsWith('Generated/', [System.StringComparison]::Ordinal) -or
+        $RelativePath.StartsWith('Reports/', [System.StringComparison]::Ordinal)
+}
+
+function Read-JsonFile([string]$Path, [string]$Label, [long]$MaxBytes) {
+    try {
+        return Read-H8JsonFileCapped $Path $Label $MaxBytes
+    } catch {
+        Fail $_.Exception.Message
+    }
+}
+
+function Invoke-RequiredTool([scriptblock]$Invocation, [string]$Step) {
+    $global:LASTEXITCODE = 0
+    & $Invocation | Out-Host
+    $toolSucceeded = $?
+    $toolExitCode = $global:LASTEXITCODE
+    if ($toolExitCode -ne 0) {
+        exit $toolExitCode
+    }
+    if (-not $toolSucceeded) {
+        Fail ($Step + ' failed.')
+    }
+}
+
+$normalizedOutput = Assert-StandardReviewOutput $Output
 
 $rootFull = (Resolve-Path -LiteralPath $Root).Path
 $validator = Join-StarterPath $rootFull 'Tools/validate_structure.ps1'
@@ -39,24 +96,22 @@ if (-not (Test-Path -LiteralPath $validator -PathType Leaf)) {
     Fail 'Missing Tools/validate_structure.ps1.'
 }
 
-& $validator -Root $rootFull | Out-Host
+Invoke-RequiredTool { & $validator -Root $rootFull } 'starter validation'
 
 $rootPrefix = $rootFull.TrimEnd([System.IO.Path]::DirectorySeparatorChar, [System.IO.Path]::AltDirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
-$excludePrefixes = @('Generated/','Reports/')
 $files = New-Object 'System.Collections.Generic.List[object]'
+$seenReviewPaths = [System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::Ordinal)
+$seenReviewCaseFoldPaths = [System.Collections.Generic.Dictionary[string,bool]]::new([System.StringComparer]::OrdinalIgnoreCase)
 $totalBytes = [long]0
 
 Get-ChildItem -LiteralPath $rootFull -Recurse -File | ForEach-Object {
     $fullPath = [System.IO.Path]::GetFullPath($_.FullName)
     $relative = $fullPath.Substring($rootPrefix.Length).Replace('\','/')
-    $excluded = $false
-    foreach ($prefix in $excludePrefixes) {
-        if ($relative.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-            $excluded = $true
-            break
-        }
+    if (Test-ReservedTopLevelCaseVariant $relative) {
+        Fail ('Reserved starter top-level folder casing mismatch in review source: ' + $relative)
     }
 
+    $excluded = Test-ReviewOutputPath $relative
     if (-not $excluded) {
         if ($files.Count -ge $MaxReviewFiles) {
             Fail ('Review manifest source file limit exceeded: ' + $MaxReviewFiles)
@@ -68,6 +123,11 @@ Get-ChildItem -LiteralPath $rootFull -Recurse -File | ForEach-Object {
         if ($totalBytes -gt $MaxReviewTotalBytes) {
             Fail ('Review manifest total byte limit exceeded: ' + $MaxReviewTotalBytes)
         }
+        if ($seenReviewPaths.ContainsKey($relative) -or $seenReviewCaseFoldPaths.ContainsKey($relative)) {
+            Fail ('Review manifest source path duplicate or case-fold duplicate: ' + $relative)
+        }
+        $seenReviewPaths[$relative] = $true
+        $seenReviewCaseFoldPaths[$relative] = $true
         $hash = Get-FileHash -LiteralPath $fullPath -Algorithm SHA256
         [void]$files.Add([pscustomobject][ordered]@{
             Path = $relative
@@ -78,8 +138,8 @@ Get-ChildItem -LiteralPath $rootFull -Recurse -File | ForEach-Object {
 }
 
 $orderedFiles = @($files | Sort-Object -Property Path)
-$authoring = Get-Content -Raw -LiteralPath (Join-StarterPath $rootFull 'mod.h8manifest.json') | ConvertFrom-Json
-$runtime = Get-Content -Raw -LiteralPath (Join-StarterPath $rootFull 'mod.json') | ConvertFrom-Json
+$authoring = Read-JsonFile (Join-StarterPath $rootFull 'mod.h8manifest.json') 'mod.h8manifest.json' $MaxManifestJsonBytes
+$runtime = Read-JsonFile (Join-StarterPath $rootFull 'mod.json') 'mod.json' $MaxManifestJsonBytes
 $manifest = [pscustomobject][ordered]@{
     Schema = 'hecton8.external_review_manifest.v1'
     Runtime = 'envelope-only'

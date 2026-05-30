@@ -85,12 +85,17 @@ namespace Hecton8.Tests.Editor
         public void DataMonolithTelemetryWrites_DoNotHoldNestedDataVaultWriteLocks()
         {
             string arena = ReadProjectFile("Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs");
+            string acquireArena = ExtractMethod(arena, "private static bool TryAcquireArenaWriteView");
             string reserve = ExtractMethod(arena, "private static bool TryReserveTelemetrySlot");
             string write = ExtractMethod(arena, "private static bool TryWriteTelemetryEntry");
             string record = ExtractMethod(arena, "private static void RecordTelemetry");
 
             Assert.IsFalse(arena.Contains("TryAcquireTelemetryWriteViews", StringComparison.Ordinal));
             Assert.IsFalse(arena.Contains("ReleaseTelemetryWriteViews", StringComparison.Ordinal));
+            Assert.AreEqual(1, CountToken(acquireArena, "TryAcquireWriteLock("));
+            StringAssert.Contains("bool lockTransferred = false;", acquireArena);
+            StringAssert.Contains("finally", acquireArena);
+            StringAssert.Contains("if (!lockTransferred)", acquireArena);
             Assert.AreEqual(1, CountToken(reserve, "TryAcquireWriteLock("));
             Assert.AreEqual(1, CountToken(write, "TryAcquireWriteLock("));
             Assert.AreEqual(0, CountToken(record, "TryAcquireWriteLock("));
@@ -100,6 +105,52 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("finally", write);
             StringAssert.Contains("if (!ReleaseWriteLockWithRetry(vault, in _telemetryHandle, SystemID.CoreDataVault))", write);
             StringAssert.Contains("return written;", write);
+
+            AssertWriteLockReleasedInFinally(ExtractMethod(arena, "private static unsafe bool TryLoadWholeFileIntoArena"));
+            AssertWriteLockReleasedInFinally(ExtractMethodAfter(arena, "public static unsafe bool TryInitializeFromMemory(", "IDataVault vault"));
+            AssertWriteLockReleasedInFinally(ExtractMethod(arena, "private static unsafe bool TryInitializeFromAndroidStreamingAssets"));
+            AssertWriteLockReleasedInFinally(ExtractMethod(arena, "private static unsafe bool TryLoadWholeNativeFileIntoArena"));
+        }
+
+        [Test]
+        public void DataMonolithResidentBytes_CommitsOnlyAfterSuccessfulRead()
+        {
+            string arena = ReadProjectFile("Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs");
+
+            AssertResidentBytesCommittedAfterRead(
+                ExtractMethod(arena, "private static bool TryInitializeFromFile("),
+                "if (!TryLoadWholeFileIntoArena",
+                "_residentBlobBytes = blobBytes;",
+                "if (!TryValidateResidentArena");
+
+            AssertResidentBytesCommittedAfterRead(
+                ExtractMethodAfter(arena, "public static unsafe bool TryInitializeFromMemory(", "IDataVault vault"),
+                "if (!copied || !writeLockReleased)",
+                "_residentBlobBytes = sourceBytes;",
+                "if (!TryValidateResidentArena");
+
+            AssertResidentBytesCommittedAfterRead(
+                ExtractMethod(arena, "private static unsafe bool TryInitializeFromAndroidStreamingAssets"),
+                "if (!loaded || !writeLockReleased)",
+                "_residentBlobBytes = blobBytes;",
+                "if (!TryValidateResidentArena");
+
+            AssertResidentBytesCommittedAfterRead(
+                ExtractMethod(arena, "private static unsafe bool TryInitializeFromWindowsPlayerStreamingAssets"),
+                "if (!TryLoadWholeNativeFileIntoArena",
+                "_residentBlobBytes = blobBytes;",
+                "if (!TryValidateResidentArena");
+        }
+
+        [Test]
+        public void DataMonolithNullTerminatedLocalizationApis_FailClosedWithoutTerminator()
+        {
+            string arena = ReadProjectFile("Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs");
+            string readText = ExtractMethod(arena, "public static unsafe bool TryReadLocalizedText(uint utf8Offset, Span<char> destination");
+            string readSpan = ExtractMethod(arena, "public static unsafe bool TryGetLocalizedUtf8Span(uint utf8Offset, out ReadOnlySpan<byte> utf8Bytes");
+
+            AssertNullTerminatedAccessorFailsClosed(readText);
+            AssertNullTerminatedAccessorFailsClosed(readSpan);
         }
 
         private static string ReadProjectFile(string relativePath)
@@ -116,6 +167,29 @@ namespace Hecton8.Tests.Editor
             int start = source.IndexOf(signature, StringComparison.Ordinal);
             Assert.GreaterOrEqual(start, 0, signature);
 
+            return ExtractMethodAt(source, signature, start);
+        }
+
+        private static string ExtractMethodAfter(string source, string signature, string requiredHeaderToken)
+        {
+            int start = source.IndexOf(signature, StringComparison.Ordinal);
+            while (start >= 0)
+            {
+                int brace = source.IndexOf('{', start);
+                Assert.GreaterOrEqual(brace, 0, signature);
+                string header = source.Substring(start, brace - start);
+                if (header.Contains(requiredHeaderToken, StringComparison.Ordinal))
+                    return ExtractMethodAt(source, signature, start);
+
+                start = source.IndexOf(signature, start + signature.Length, StringComparison.Ordinal);
+            }
+
+            Assert.Fail("Could not extract method body: " + signature + " / " + requiredHeaderToken);
+            return string.Empty;
+        }
+
+        private static string ExtractMethodAt(string source, string signature, int start)
+        {
             int brace = source.IndexOf('{', start);
             Assert.GreaterOrEqual(brace, 0, signature);
 
@@ -134,6 +208,42 @@ namespace Hecton8.Tests.Editor
 
             Assert.Fail("Could not extract method body: " + signature);
             return string.Empty;
+        }
+
+        private static void AssertResidentBytesCommittedAfterRead(
+            string source,
+            string readFailureToken,
+            string assignmentToken,
+            string validationToken)
+        {
+            int readFailureIndex = source.IndexOf(readFailureToken, StringComparison.Ordinal);
+            int assignmentIndex = source.IndexOf(assignmentToken, StringComparison.Ordinal);
+            int validationIndex = source.IndexOf(validationToken, StringComparison.Ordinal);
+
+            Assert.GreaterOrEqual(readFailureIndex, 0, readFailureToken);
+            Assert.GreaterOrEqual(assignmentIndex, 0, assignmentToken);
+            Assert.GreaterOrEqual(validationIndex, 0, validationToken);
+            Assert.Greater(assignmentIndex, readFailureIndex, assignmentToken);
+            Assert.Less(assignmentIndex, validationIndex, assignmentToken);
+        }
+
+        private static void AssertNullTerminatedAccessorFailsClosed(string source)
+        {
+            StringAssert.Contains("bool foundTerminator = false;", source);
+            StringAssert.Contains("if (locPtr[offset + byteLength] == 0)", source);
+            StringAssert.Contains("foundTerminator = true;", source);
+            StringAssert.Contains("if (!foundTerminator || byteLength <= 0)", source);
+        }
+
+        private static void AssertWriteLockReleasedInFinally(string source)
+        {
+            int acquireIndex = source.IndexOf("TryAcquireArenaWriteView", StringComparison.Ordinal);
+            int finallyIndex = source.IndexOf("finally", acquireIndex, StringComparison.Ordinal);
+            int releaseIndex = source.IndexOf("ReleaseArenaWriteView()", acquireIndex, StringComparison.Ordinal);
+
+            Assert.GreaterOrEqual(acquireIndex, 0, "TryAcquireArenaWriteView");
+            Assert.Greater(finallyIndex, acquireIndex, "finally");
+            Assert.Greater(releaseIndex, finallyIndex, "ReleaseArenaWriteView()");
         }
 
         private static int CountToken(string source, string token)

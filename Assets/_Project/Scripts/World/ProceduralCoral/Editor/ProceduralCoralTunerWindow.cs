@@ -122,7 +122,7 @@ namespace Hecton8.World.ProceduralCoral.Editor
                 return;
             }
 
-            _hasHandles = ProceduralCoralVault.TryResolve(vault, out _handles);
+            _hasHandles = ProceduralCoralVault.TryEnsure(vault, out _handles);
             if (_hasHandles && ProceduralCoralVault.TryGetTuning(vault, ref _handles, out CoralTuningDTO tuning))
                 SetFieldsWithoutNotify(tuning);
 

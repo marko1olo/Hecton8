@@ -56,6 +56,13 @@ namespace Hecton8.Input
         private bool _serviceShuttingDown;
         private bool _serviceShutdownComplete;
         internal static InputManager ActiveRuntimeInstance { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeForSubsystemRegistration()
+        {
+            ActiveRuntimeInstance = null;
+        }
+
         // COLD ALLOC: string[36] — cached single-character binding labels — owner: InputManager
         private static readonly string[] SingleCharacterBindingLabels =
         {

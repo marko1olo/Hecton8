@@ -833,6 +833,9 @@ namespace Hecton8.SaveSystem
             }
 
             int totalBytes = (int)totalBytesLong;
+            if (IsSuppressedDiagnosticDumpPath(absolutePath))
+                return new NativeWriteResult(true, string.Empty);
+
             try
             {
                 InvalidateCachedReadWindows(absolutePath);
@@ -860,6 +863,9 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (IsSuppressedDiagnosticDumpPath(absolutePath))
+                return true;
+
             try
             {
                 InvalidateCachedReadWindows(absolutePath);
@@ -876,6 +882,23 @@ namespace Hecton8.SaveSystem
                 error = "Sequential native overwrite failed.";
                 return false;
             }
+        }
+
+        private static bool IsSuppressedDiagnosticDumpPath(string absolutePath)
+        {
+            if (string.IsNullOrEmpty(absolutePath))
+                return false;
+
+            string fileName = Path.GetFileName(absolutePath);
+            if (string.IsNullOrEmpty(fileName))
+                return false;
+
+            if (fileName.StartsWith("Dump_", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            return absolutePath.IndexOf("AgentLogs", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                   (fileName.EndsWith(".bin", StringComparison.OrdinalIgnoreCase) ||
+                    fileName.EndsWith(".h8dump", StringComparison.OrdinalIgnoreCase));
         }
 
         private static bool TryWriteAllNative(

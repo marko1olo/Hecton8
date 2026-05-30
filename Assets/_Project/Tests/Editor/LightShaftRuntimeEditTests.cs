@@ -51,6 +51,26 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void LightShaftTelemetryStoresQualityPressureAsQ8()
+        {
+            string path = Path.Combine(
+                Application.dataPath,
+                "_Project/Scripts/Lighting/Shafts/ScreenSpaceLightShaftRuntime.cs");
+            string source = File.ReadAllText(path);
+            string lateFrameBlock = ExtractMethodBlock(source, "public void LateFrameTick()");
+            string recordBlock = ExtractMethodBlock(source, "private void RecordTelemetry(");
+            string dumpBlock = ExtractMethodBlock(source, "private void DumpBlackbox(");
+
+            Assert.That(source, Does.Not.Contain("TelemetryFlagQualityPressure"));
+            Assert.That(lateFrameBlock, Does.Not.Contain("_qualityPressure01 > 0.001f"));
+            Assert.That(source, Does.Contain("[FieldOffset(33)]"));
+            Assert.That(source, Does.Contain("public byte QualityPressureQ8;"));
+            Assert.That(source, Does.Contain("private static byte EncodeQualityPressureQ8(float qualityPressure01)"));
+            Assert.That(recordBlock, Does.Contain("QualityPressureQ8 = EncodeQualityPressureQ8(_qualityPressure01)"));
+            Assert.That(dumpBlock, Does.Contain("writer.Write(entry.QualityPressureQ8);"));
+        }
+
+        [Test]
         public void DynamicPointLightRuntimeHotPathsDoNotAllocateVaultStorage()
         {
             string path = Path.Combine(

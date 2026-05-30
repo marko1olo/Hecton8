@@ -1230,6 +1230,17 @@ namespace Hecton8.World
         private const BufferID WreckGeneratorRenderWorldMatricesBufferId = BufferID.WreckGeneratorRenderWorldMatrices;
         private const BufferID WreckGeneratorRenderModuleIdsBufferId = BufferID.WreckGeneratorRenderModuleIds;
         private const BufferID WreckGeneratorRenderAgesBufferId = BufferID.WreckGeneratorRenderAges;
+        private static readonly ulong WreckGeneratorRenderPayloadMutationGuardMask =
+            WreckVaultMutationGuardBit(WreckGeneratorRenderWorldMatricesBufferId) |
+            WreckVaultMutationGuardBit(WreckGeneratorRenderModuleIdsBufferId) |
+            WreckVaultMutationGuardBit(WreckGeneratorRenderAgesBufferId);
+        private static readonly ulong WreckGeneratorPlacementRenderPayloadMutationGuardMask =
+            WreckVaultMutationGuardBit(WreckGeneratorAllPlacementsBufferId) |
+            WreckGeneratorRenderPayloadMutationGuardMask;
+        private static readonly ulong WreckGeneratorDebrisBuildMutationGuardMask =
+            WreckVaultMutationGuardBit(WreckGeneratorDebrisRecordsBufferId) |
+            WreckVaultMutationGuardBit(WreckGeneratorDebrisSpatialKeysBufferId) |
+            WreckVaultMutationGuardBit(WreckGeneratorDebrisClustersBufferId);
         private static readonly int _wreckEmergencyFlickerId = Shader.PropertyToID("_HectonWreckEmergencyFlicker");
         private static readonly int _wreckEmergencyPhaseId = Shader.PropertyToID("_HectonWreckEmergencyPhase");
         private static readonly WreckSiteVoronoiGateParameters DefaultWreckSiteGateParameters =
@@ -1261,6 +1272,7 @@ namespace Hecton8.World
         private struct VaultArrayBuffer<T> where T : struct
         {
             private IDataVault _vault;
+            private IDataVault _writeLockVault;
             private VaultGenerationHandle<T> _handle;
             private int _length;
 
@@ -1270,6 +1282,7 @@ namespace Hecton8.World
             public void Bind(IDataVault vault, VaultGenerationHandle<T> handle, int length)
             {
                 _vault = vault;
+                _writeLockVault = null;
                 _handle = handle;
                 _length = math.max(0, length);
             }
@@ -1300,11 +1313,12 @@ namespace Hecton8.World
 
             public bool TrySet(int index, in T value)
             {
+                IDataVault vault = _vault;
                 if ((uint)index >= (uint)_length ||
-                    _vault == null ||
+                    vault == null ||
                     _handle.BufferID == 0u ||
-                    _vault.IsCompactionFenceActive ||
-                    !_vault.TryAcquireWriteLock(in _handle, WreckVaultOwner, out NativeArray<T> buffer))
+                    vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _handle, WreckVaultOwner, out NativeArray<T> buffer))
                 {
                     return false;
                 }
@@ -1313,7 +1327,7 @@ namespace Hecton8.World
                 {
                     if (!buffer.IsCreated ||
                         buffer.Length < _length ||
-                        _vault.IsCompactionFenceActive)
+                        vault.IsCompactionFenceActive)
                     {
                         return false;
                     }
@@ -1323,37 +1337,51 @@ namespace Hecton8.World
                 }
                 finally
                 {
-                    _vault.ReleaseWriteLock(in _handle, WreckVaultOwner);
+                    vault.ReleaseWriteLock(in _handle, WreckVaultOwner);
                 }
             }
 
             public bool TryLockForWrite(out NativeArray<T> buffer)
             {
                 buffer = default;
-                if (_vault == null ||
+                IDataVault vault = _vault;
+                if (vault == null ||
+                    _writeLockVault != null ||
                     _handle.BufferID == 0u ||
-                    _vault.IsCompactionFenceActive ||
-                    !_vault.TryAcquireWriteLock(in _handle, WreckVaultOwner, out buffer))
+                    vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _handle, WreckVaultOwner, out buffer))
                 {
                     return false;
                 }
 
-                if (!buffer.IsCreated ||
-                    buffer.Length < _length ||
-                    _vault.IsCompactionFenceActive)
+                bool ownershipTransferred = false;
+                try
                 {
-                    _vault.ReleaseWriteLock(in _handle, WreckVaultOwner);
-                    buffer = default;
-                    return false;
-                }
+                    if (!buffer.IsCreated ||
+                        buffer.Length < _length ||
+                        vault.IsCompactionFenceActive)
+                    {
+                        buffer = default;
+                        return false;
+                    }
 
-                return true;
+                    _writeLockVault = vault;
+                    ownershipTransferred = true;
+                    return true;
+                }
+                finally
+                {
+                    if (!ownershipTransferred)
+                        vault.ReleaseWriteLock(in _handle, WreckVaultOwner);
+                }
             }
 
             public void ReleaseWriteLock()
             {
-                if (_vault != null && _handle.BufferID != 0u)
-                    _vault.ReleaseWriteLock(in _handle, WreckVaultOwner);
+                IDataVault vault = _writeLockVault;
+                _writeLockVault = null;
+                if (vault != null && _handle.BufferID != 0u)
+                    vault.ReleaseWriteLock(in _handle, WreckVaultOwner);
             }
 
             public bool TryGet(int index, out T value)
@@ -1368,6 +1396,7 @@ namespace Hecton8.World
 
             public void Dispose()
             {
+                ReleaseWriteLock();
                 if (_vault != null && _handle.BufferID != 0u)
                     _vault.ReleaseBuffer(in _handle);
 
@@ -2599,9 +2628,14 @@ namespace Hecton8.World
 
         private bool TryLockWreckVaultBuffer(BufferID bufferId)
         {
+            return TryLockWreckVaultBuffers(WreckVaultMutationGuardBit(bufferId));
+        }
+
+        private bool TryLockWreckVaultBuffers(ulong guardMask)
+        {
             IDataVault vault = _dataVault;
-            ulong guardMask = WreckVaultMutationGuardBit(bufferId);
             if (vault == null ||
+                guardMask == 0UL ||
                 vault.IsCompactionFenceActive ||
                 _wreckVaultBufferGuardHeld ||
                 !vault.TryAcquireMutationGuard(guardMask))
@@ -2615,13 +2649,17 @@ namespace Hecton8.World
             if (!vault.IsCompactionFenceActive)
                 return true;
 
-            UnlockWreckVaultBuffer(bufferId);
+            UnlockWreckVaultBuffers(guardMask);
             return false;
         }
 
         private void UnlockWreckVaultBuffer(BufferID bufferId)
         {
-            ulong guardMask = WreckVaultMutationGuardBit(bufferId);
+            UnlockWreckVaultBuffers(WreckVaultMutationGuardBit(bufferId));
+        }
+
+        private void UnlockWreckVaultBuffers(ulong guardMask)
+        {
             if (!_wreckVaultBufferGuardHeld || _wreckVaultBufferGuardMask != guardMask)
                 return;
 
@@ -2633,7 +2671,7 @@ namespace Hecton8.World
             if (!_wreckVaultBufferGuardHeld)
                 return;
 
-            IDataVault vault = _wreckVaultBufferGuardVault ?? _dataVault;
+            IDataVault vault = _wreckVaultBufferGuardVault;
             if (vault != null)
                 vault.ReleaseMutationGuard(_wreckVaultBufferGuardMask);
 
@@ -3042,68 +3080,51 @@ namespace Hecton8.World
             }
 
             uint failureCode = 0u;
-            bool matricesLockHeld = false;
-            bool moduleIdsLockHeld = false;
-            bool agesLockHeld = false;
             bool shouldPublishSnapshot = false;
-            try
+
+            if (!TryLockWreckVaultBuffers(WreckGeneratorRenderPayloadMutationGuardMask))
             {
-                NativeArray<Matrix4x4> worldMatrices = default;
-                NativeArray<byte> moduleIds = default;
-                NativeArray<float> ages = default;
-                if (!_renderWorldMatrices.TryLockForWrite(out worldMatrices))
-                {
-                    failureCode = 56u;
-                }
-                else if (!_renderModuleIds.TryLockForWrite(out moduleIds))
-                {
-                    matricesLockHeld = true;
-                    failureCode = 57u;
-                }
-                else if (!_renderAges.TryLockForWrite(out ages))
-                {
-                    matricesLockHeld = true;
-                    moduleIdsLockHeld = true;
-                    failureCode = 58u;
-                }
-                else
-                {
-                    matricesLockHeld = true;
-                    moduleIdsLockHeld = true;
-                    agesLockHeld = true;
-                    var job = new BuildWreckScatterMatricesJob
-                    {
-                        WorldMatrices = worldMatrices,
-                        ModuleIds = moduleIds,
-                        Ages = ages,
-                        CenterAup = centerAup,
-                        RuntimeOrigin = new float3(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z),
-                        ModuleCount = moduleCount,
-                        ScatterRadiusMeters = math.max(0f, brgScatterRadiusMeters),
-                        ScatterVerticalMeters = math.max(0f, brgScatterVerticalMeters),
-                        ScatterYawEnabled = brgScatterYawDegrees > 0.001f ? 1 : 0,
-                        MinScale = math.max(0.05f, brgFragmentMinScale),
-                        MaxScale = math.max(math.max(0.05f, brgFragmentMinScale), brgFragmentMaxScale),
-                        Seed = seed
-                    };
-
-                    for (int index = 0; index < fragmentCount; index++)
-                        job.Execute(index);
-
-                    if (!TryCopyRenderPayloadSnapshot(worldMatrices, moduleIds, ages, fragmentCount))
-                        failureCode = 61u;
-                    else
-                        shouldPublishSnapshot = true;
-                }
+                failureCode = 56u;
             }
-            finally
+            else
             {
-                if (agesLockHeld)
-                    _renderAges.ReleaseWriteLock();
-                if (moduleIdsLockHeld)
-                    _renderModuleIds.ReleaseWriteLock();
-                if (matricesLockHeld)
-                    _renderWorldMatrices.ReleaseWriteLock();
+                try
+                {
+                    if (!_renderWorldMatrices.TryResolve(out NativeArray<Matrix4x4> worldMatrices))
+                        failureCode = 56u;
+                    else if (!_renderModuleIds.TryResolve(out NativeArray<byte> moduleIds))
+                        failureCode = 57u;
+                    else if (!_renderAges.TryResolve(out NativeArray<float> ages))
+                        failureCode = 58u;
+                    else
+                    {
+                        BuildWreckScatterMatricesJob job = default;
+                        job.WorldMatrices = worldMatrices;
+                        job.ModuleIds = moduleIds;
+                        job.Ages = ages;
+                        job.CenterAup = centerAup;
+                        job.RuntimeOrigin = math.float3(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z);
+                        job.ModuleCount = moduleCount;
+                        job.ScatterRadiusMeters = math.max(0f, brgScatterRadiusMeters);
+                        job.ScatterVerticalMeters = math.max(0f, brgScatterVerticalMeters);
+                        job.ScatterYawEnabled = brgScatterYawDegrees > 0.001f ? 1 : 0;
+                        job.MinScale = math.max(0.05f, brgFragmentMinScale);
+                        job.MaxScale = math.max(math.max(0.05f, brgFragmentMinScale), brgFragmentMaxScale);
+                        job.Seed = seed;
+
+                        for (int index = 0; index < fragmentCount; index++)
+                            job.Execute(index);
+
+                        if (!TryCopyRenderPayloadSnapshot(worldMatrices, moduleIds, ages, fragmentCount))
+                            failureCode = 61u;
+                        else
+                            shouldPublishSnapshot = true;
+                    }
+                }
+                finally
+                {
+                    UnlockWreckVaultBuffers(WreckGeneratorRenderPayloadMutationGuardMask);
+                }
             }
 
             if (failureCode == 0u && shouldPublishSnapshot)
@@ -3183,84 +3204,57 @@ namespace Hecton8.World
             }
 
             uint failureCode = 0u;
-            bool placementLockHeld = false;
-            bool matricesLockHeld = false;
-            bool moduleIdsLockHeld = false;
-            bool agesLockHeld = false;
             bool shouldPublishSnapshot = false;
 
-            if (!TryLockWreckVaultBuffer(WreckGeneratorAllPlacementsBufferId))
+            if (!TryLockWreckVaultBuffers(WreckGeneratorPlacementRenderPayloadMutationGuardMask))
             {
                 failureCode = 60u;
             }
             else
             {
-                placementLockHeld = true;
                 try
                 {
                     if (!_allPlacements.TryResolve(out NativeArray<WreckModulePlacement> placementView))
                     {
                         failureCode = 22u;
                     }
-                    else if (!_renderWorldMatrices.TryLockForWrite(out NativeArray<Matrix4x4> worldMatrices))
+                    else if (!_renderWorldMatrices.TryResolve(out NativeArray<Matrix4x4> worldMatrices))
                     {
                         failureCode = 56u;
                     }
+                    else if (!_renderModuleIds.TryResolve(out NativeArray<byte> moduleIds))
+                    {
+                        failureCode = 57u;
+                    }
+                    else if (!_renderAges.TryResolve(out NativeArray<float> ages))
+                    {
+                        failureCode = 58u;
+                    }
                     else
                     {
-                        matricesLockHeld = true;
-                        if (!_renderModuleIds.TryLockForWrite(out NativeArray<byte> moduleIds))
-                        {
-                            failureCode = 57u;
-                        }
+                        BuildWreckRenderPayloadJob job = default;
+                        job.Placements = placementView;
+                        job.WorldMatrices = worldMatrices;
+                        job.ModuleIds = moduleIds;
+                        job.Ages = ages;
+                        job.CenterAup = centerAup;
+                        job.RuntimeOrigin = math.float3(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z);
+                        job.ScatterRadiusMeters = wreckMaterialRegistry != null ? math.max(0f, brgScatterRadiusMeters) : 0f;
+                        job.ScatterVerticalMeters = wreckMaterialRegistry != null ? math.max(0f, brgScatterVerticalMeters) : 0f;
+                        job.ScatterYawEnabled = wreckMaterialRegistry != null && brgScatterYawDegrees > 0.001f ? 1 : 0;
+                        job.Seed = seed;
+                        for (int index = 0; index < placementCount; index++)
+                            job.Execute(index);
+
+                        if (!TryCopyRenderPayloadSnapshot(worldMatrices, moduleIds, ages, placementCount))
+                            failureCode = 62u;
                         else
-                        {
-                            moduleIdsLockHeld = true;
-                            if (!_renderAges.TryLockForWrite(out NativeArray<float> ages))
-                            {
-                                failureCode = 58u;
-                            }
-                            else
-                            {
-                                agesLockHeld = true;
-                                var job = new BuildWreckRenderPayloadJob
-                                {
-                                    Placements = placementView,
-                                    WorldMatrices = worldMatrices,
-                                    ModuleIds = moduleIds,
-                                    Ages = ages,
-                                    CenterAup = centerAup,
-                                    RuntimeOrigin = new float3(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z),
-                                    ScatterRadiusMeters = wreckMaterialRegistry != null ? math.max(0f, brgScatterRadiusMeters) : 0f,
-                                    ScatterVerticalMeters = wreckMaterialRegistry != null ? math.max(0f, brgScatterVerticalMeters) : 0f,
-                                    ScatterYawEnabled = wreckMaterialRegistry != null && brgScatterYawDegrees > 0.001f ? 1 : 0,
-                                    Seed = seed
-                                };
-                                for (int index = 0; index < placementCount; index++)
-                                    job.Execute(index);
-
-                                UnlockWreckVaultBuffer(WreckGeneratorAllPlacementsBufferId);
-                                placementLockHeld = false;
-
-                                if (!TryCopyRenderPayloadSnapshot(worldMatrices, moduleIds, ages, placementCount))
-                                    failureCode = 62u;
-                                else
-                                    shouldPublishSnapshot = true;
-                            }
-                        }
+                            shouldPublishSnapshot = true;
                     }
                 }
                 finally
                 {
-                    if (placementLockHeld)
-                        UnlockWreckVaultBuffer(WreckGeneratorAllPlacementsBufferId);
-
-                    if (agesLockHeld)
-                        _renderAges.ReleaseWriteLock();
-                    if (moduleIdsLockHeld)
-                        _renderModuleIds.ReleaseWriteLock();
-                    if (matricesLockHeld)
-                        _renderWorldMatrices.ReleaseWriteLock();
+                    UnlockWreckVaultBuffers(WreckGeneratorPlacementRenderPayloadMutationGuardMask);
                 }
             }
 
@@ -3576,7 +3570,7 @@ namespace Hecton8.World
                 return;
             }
 
-            if (instance.TryGetComponent(out PickupItem pickup))
+            if (pool.TryGetPooledComponent(instance, out PickupItem pickup))
             {
                 if (!CommitPendingDebrisPickupSpawned(in spawn, 64u))
                 {
@@ -3865,25 +3859,32 @@ namespace Hecton8.World
             float horizontalX = math.max(1f, extents.x);
             float horizontalZ = math.max(1f, extents.z);
             float vertical = math.max(0.25f, extents.y);
-            if (!_debrisRecords.TryLockForWrite(out NativeArray<WreckDebrisRecord> debrisRecords))
+            if (!TryLockWreckVaultBuffers(WreckGeneratorDebrisBuildMutationGuardMask))
             {
                 WriteBlackBoxTelemetry(WreckTelemetryFailureHash, center, 53u, budget, 0f);
                 return;
             }
 
-            bool spatialKeysLocked = false;
-            bool clustersLocked = false;
             bool hasDeferredFailureTelemetry = false;
             uint deferredFailureFlags = 0u;
             float deferredFailureValue0 = 0f;
             float deferredFailureValue1 = 0f;
             Vector3 deferredFailurePosition = center;
+            NativeArray<WreckDebrisRecord> debrisRecords = default;
             NativeArray<int> spatialKeys = default;
             NativeArray<WreckDebrisCluster> clusters = default;
             try
             {
                 bool canBuild = true;
-                if (!_debrisSpatialKeys.TryLockForWrite(out spatialKeys))
+                if (!_debrisRecords.TryResolve(out debrisRecords))
+                {
+                    hasDeferredFailureTelemetry = true;
+                    deferredFailureFlags = 53u;
+                    deferredFailureValue0 = budget;
+                    canBuild = false;
+                }
+
+                if (canBuild && !_debrisSpatialKeys.TryResolve(out spatialKeys))
                 {
                     hasDeferredFailureTelemetry = true;
                     deferredFailureFlags = 54u;
@@ -3891,21 +3892,16 @@ namespace Hecton8.World
                     canBuild = false;
                 }
 
-                if (canBuild)
+                if (canBuild && !_debrisClusters.TryResolve(out clusters))
                 {
-                    spatialKeysLocked = true;
-                    if (!_debrisClusters.TryLockForWrite(out clusters))
-                    {
-                        hasDeferredFailureTelemetry = true;
-                        deferredFailureFlags = 56u;
-                        deferredFailureValue0 = budget;
-                        canBuild = false;
-                    }
+                    hasDeferredFailureTelemetry = true;
+                    deferredFailureFlags = 56u;
+                    deferredFailureValue0 = budget;
+                    canBuild = false;
                 }
 
                 if (canBuild)
                 {
-                    clustersLocked = true;
                     if (debrisRecords.Length < budget || spatialKeys.Length < budget || clusters.Length < MaxDebrisClusters)
                     {
                         int minimumLength = math.min(math.min(debrisRecords.Length, spatialKeys.Length), clusters.Length);
@@ -3980,13 +3976,7 @@ namespace Hecton8.World
             }
             finally
             {
-                if (clustersLocked)
-                    _debrisClusters.ReleaseWriteLock();
-
-                if (spatialKeysLocked)
-                    _debrisSpatialKeys.ReleaseWriteLock();
-
-                _debrisRecords.ReleaseWriteLock();
+                UnlockWreckVaultBuffers(WreckGeneratorDebrisBuildMutationGuardMask);
             }
 
             if (hasDeferredFailureTelemetry)

@@ -195,9 +195,18 @@ namespace Hecton8.Physics
         public static void SetCurrentWaterVolume(FluidCompartmentDTO* basePtr, int index, float value)
         {
             ref FluidCompartmentDTO dto = ref ElementRef(basePtr, index);
-            dto.CurrentWaterVolume = value;
-            dto.WaterLevelHeight01 = dto.MaxWaterVolume > HabitatFluidIncursionConstants.WaterEpsilonM3
-                ? math.saturate(value * math.rcp(dto.MaxWaterVolume))
+            bool validCurrent = math.isfinite(value) & value >= 0f;
+            bool validMax = math.isfinite(dto.MaxWaterVolume) & dto.MaxWaterVolume >= 0f;
+            float safeMaxVolume = validMax ? dto.MaxWaterVolume : 0f;
+            float safeCurrentVolume = validCurrent ? value : 0f;
+            if (safeMaxVolume > HabitatFluidIncursionConstants.WaterEpsilonM3)
+                safeCurrentVolume = math.min(safeCurrentVolume, safeMaxVolume);
+
+            dto.Flags |= math.select(0u, FluidCompartmentFlags.NonFinite, !(validCurrent & validMax));
+            dto.MaxWaterVolume = safeMaxVolume;
+            dto.CurrentWaterVolume = safeCurrentVolume;
+            dto.WaterLevelHeight01 = safeMaxVolume > HabitatFluidIncursionConstants.WaterEpsilonM3
+                ? math.saturate(safeCurrentVolume * math.rcp(safeMaxVolume))
                 : 0f;
         }
     }

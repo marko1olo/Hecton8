@@ -182,3 +182,50 @@ Cinematic cheats used: no new simulation. Corrosion remains a 5-second frost-tic
 Verification: `git diff --check -- Assets/_Project/Scripts/PlayerInventory.cs` reports only LF-to-CRLF notice. Braces are 619/619. Salinity helper scan covers 10 methods with 0 lookup/string/LINQ/foreach hits. Two `new` text hits are struct initializers: `ItemSalinityCorrosionJob` and `ToolAcousticSignal`.
 
 Exact microseconds saved: runtime 0 claimed. Initial CPU/compiler throttle samples blocked the rebuild: 65 percent with 1 blocking compiler, 100 percent with 2 blocking compilers, then 57 percent with 1 blocking compiler. The gate later opened at CPU 29 percent with 0 blocking `dotnet/csc` processes; `dotnet build .\Assembly-CSharp.csproj -nologo -v:minimal /m:1 /p:UseSharedCompilation=false --no-restore` then succeeded with 0 warnings and 0 errors in 22.55 seconds. The editor route was also rebuilt at CPU 21 percent with 0 blocking `dotnet/csc` processes; `dotnet build .\Assembly-CSharp-Editor.csproj -nologo -v:minimal /m:1 /p:UseSharedCompilation=false --no-restore` succeeded with 0 warnings and 0 errors in 23.57 seconds.
+## 2026-05-29 Gerstner / Visor / Scavenge Compile Closeout
+
+What was wrong: current dotnet attempts surfaced `AnalyticalGerstnerWaveRuntime` stale guard/parser errors, then transient parallel-edit snapshots in `HectonVolumetricParticulateFogFeature` and `ScavengePopulator`.
+What was done: `AnalyticalGerstnerWaveRuntime` now releases `ColdBootMutationGuardMask` directly and stages CSV through fixed editor scratch arrays; `WaveSpectrumProfileCsvParser` now supports `Span<WaveSpectrumProfileDTO>`. Visor/scavenge missing-method errors were rechecked against current source and cleared by rebuilding stable snapshots rather than adding duplicate shims.
+Cinematic Cheats used: Gerstner remains packed profile waves instead of physical water; Visor fog keeps continuous proxy/raymarch/light-count scaling; Scavenge defers transform/despawn presentation to `LateFrameTick`.
+Exact Microseconds saved: 0 claimed without Unity profiler proof. Final compile proof cost: about 496,290,000 us for `Hecton8.Core`, `Hecton8.Editor`, and all four `Assembly-CSharp*` routes.
+Verification: final builds all report 0 warnings and 0 errors. Static scan over 20 hot methods in the touched/key files reports 0 hot registry/component lookups, 0 `string.Format`, 0 `.ToString()`, 0 LINQ marker, and 0 `foreach`; all hot `new` text hits were verified as struct/job/DTO value-type construction.
+
+## 2026-05-29 Sargassum Cut Hot Lookup Closeout
+
+What was wrong: `SargassumCutManager.ResolveDependencies()` could reach `Transform.TryGetComponent(out _playerToolManager)` from `RegisterExternalCut()` and `SlowTick()`, making a component lookup fallback reachable from runtime service/tick paths.
+What was done: `ResolveDependencies(bool allowComponentLookup = false)` now gates component lookup. `RegisterExternalCut()` and `SlowTick()` pass `false`; cold registry/bootstrap routes pass `true`. `Tick()` and `LateFrameTick()` remain lookup-free.
+Cinematic Cheats used: none added. The existing cut-mask/debris/damage-volume fake stays intact; no physical sargassum simulation or low/high binary branch was introduced.
+Exact Microseconds saved: 0 claimed without Unity profiler proof. Static proof for `RegisterExternalCut`, `Tick`, `SlowTick`, and `LateFrameTick`: 0 lookup, 0 reference-constructor `new` text, 0 `string.Format`, 0 `.ToString()`, 0 LINQ, 0 `foreach`. `Assembly-CSharp.csproj` built with 0 warnings and 0 errors in 20.66 seconds.
+Compilation throttle note: CPU stayed 90/99 percent after waits, but active compiler process count was 0. One narrow build was launched with `/m:1`, `--no-restore`, and `UseSharedCompilation=false` under the user's explicit permission to compile under load.
+
+## 2026-05-29 Core Build Graph / Terrain Counter Closeout
+
+What was wrong: `Hecton8.Core.csproj` hit MSB4006 through a transitive project-reference copy cycle involving `MoreMountains.Tools.csproj`; once bypassed, `TerrainChunkPagerRuntime` exposed `MissingFileCount` uint/int assignment drift. `ModuloSimulationBucketer.ClearEntityState` also released a mutation guard through current `_dataVault`, not necessarily the exact vault that acquired it.
+What was done: Added Core-only `DisableTransitiveProjectReferences=true`; `ClearEntityState` now stores and releases the exact guard vault in `finally`; `TerrainChunkPagerRuntime` local `missingFileCount` is `uint`, matching the explicit telemetry DTO fields.
+Cinematic Cheats used: none added. No water, terrain, or gameplay simulation behavior changed.
+Exact Microseconds saved: runtime 0 claimed. Verification: all-runtime hot scan 1800 files/2143 hot methods/0 forbidden hits; changed-file hot scan 5 methods/0 hits; `Hecton8.Core.csproj` 0 warnings/0 errors; `Assembly-CSharp.csproj` 0 warnings/0 errors.
+Compilation throttle note: strict CPU-under-50 was not met; CPU samples were 100/88/65/93/85/97/100/87/60/59. No active compiler process was present before launches, and builds used `/m:1 --no-restore UseSharedCompilation=false` under the user's explicit under-load permission.
+
+## 2026-05-29 GlobalPhysics Write-Lock Closeout
+
+What was wrong: `GlobalPhysicsStateManager.VaultBufferBinding<T>.TryAcquireWriteLock` could acquire a DataVault write lock without a validation-failure `finally`; invalid acquired buffers were not released inside the wrapper before returning failure.
+What was done: The wrapper now validates `buffer.IsCreated && buffer.Length >= RequiredLength` before setting `WriteLockVault` and `WriteLockHeld`. If validation fails, `finally` releases the exact `dataVault` that granted the lock.
+Cinematic Cheats used: none added. Physics behavior and presentation are unchanged.
+Exact Microseconds saved: runtime 0 claimed. Verification: `GlobalPhysicsStateManager.cs` braces 493/493; file hot scan 2 hot methods/0 forbidden hits; `Assembly-CSharp.csproj` build succeeded with 0 warnings and 0 errors in 26.83 seconds.
+Compilation throttle note: one `Hecton8.slnx` attempt under user under-load permission timed out after 904 seconds and was stopped after command-line confirmation. No compiler errors were captured from that attempt. The post-patch targeted build ran with CPU 99/94 percent and no active compiler process before launch, using `/m:1 --no-restore UseSharedCompilation=false`.
+
+## 2026-05-29 WFC Lease / Core Compile Closeout
+
+What was wrong: `WfcOutpostGridRegistry.ReleaseGridLease` released live grid leases through current `GlobalRegistry.DataVault`, not the exact slot-owning vault. Fresh Core builds also exposed `ProceduralWreckGenerator.cs(2643)` stale `bufferId` scope and ambiguous late-frame dispatcher calls in `ConnectionSplineBatchRenderer`.
+What was done: Added `_slotVaults` per WFC grid slot and routed slot resolution/release through that cached vault. Replaced the wreck stale unlock call with `UnlockWreckVaultBuffers(guardMask)`. Cast late-frame dispatcher register/unregister calls to `(ILateFrameTickable)this`.
+Cinematic Cheats used: none added. No WFC generation, wreck simulation, or spline visual behavior was expanded.
+Exact Microseconds saved: runtime 0 claimed. Verification: changed-file diff check reports only LF-to-CRLF warnings; WFC braces 46/46, Wreck 634/634, ConnectionSpline 102/102; `Hecton8.Core.csproj` built with 0 warnings and 0 errors in 2:00.97; `Assembly-CSharp.csproj` built with 0 warnings and 0 errors in 27.33 seconds.
+Compilation throttle note: CPU samples before these targeted builds were 77/60/79/96/91 with no active compiler process. Builds were single-target `/m:1 --no-restore UseSharedCompilation=false` under the user's explicit under-load permission; no orphan compiler process remained after checks.
+
+## 2026-05-30 DataVault Lock Flattening Closeout
+
+What was wrong: `MetaCampaignService`, `BiomeBoundarySdfRuntime`, and `SolarPowerGenerationRuntime` write-lock wrappers relied on manual invalid-buffer release branches instead of a strict validation-transfer `finally`. `TetherInstance.UpdateVerletVisualUpload` held the visual positions write lock while calling `UploadVisualGpuBuffers`, which acquires the GPU points write lock.
+What was done: Added `keepLock` transfer guards to the MetaCampaign variables/rules/black-box writers, Biome telemetry writer, and Solar panel-state writer. Solar now rejects duplicate live panel-state write views. `TetherInstance` now captures `_dataVaultCableWriteVault`, rejects nested cable write acquisition, releases through that exact vault, and defers both fallback and Verlet GPU upload until after visual locks/guards are released.
+Cinematic Cheats used: none added. Tether stays a visual spline/catenary fake with deferred GPU upload; no extra physical rope simulation and no binary quality switch.
+Exact Microseconds saved: runtime 0 claimed without Unity profiler proof. Verification: `git diff --check` on the four files reports only LF-to-CRLF warnings; braces Tether 399/399, Solar 172/172, MetaCampaign 159/159, BiomeBoundary 92/92; changed-file hot scan reports 0 forbidden lookup/string/LINQ/foreach/Complete hits; `Assembly-CSharp.csproj` built with 0 warnings and 0 errors in 23.03 seconds.
+Compilation throttle note: A concurrent stale `dotnet build Hecton8.slnx` PID 53404, parent PowerShell PID 61680, was stopped because source changed during it and it could not be valid proof. CPU samples before the one fresh targeted build were 94/56/77 with no active compiler process; the build used `/m:1 --no-restore UseSharedCompilation=false` under the user's explicit under-load permission. No compiler process remained afterward.

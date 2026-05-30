@@ -60,7 +60,6 @@ namespace Hecton8.VFX.Debris
         private const uint DebrisBlackBoxDumpMagic = 0x44584656u; // "VFXD" little-endian
         private const uint ActiveCountTelemetryHash = 0x43444252u; // CDBR
         private const uint InvalidStateFlag = 1u;
-        private const uint QualityPressureTelemetryFlag = 1u << 1;
         private const uint SdfActiveFlag = 1u << 2;
         private const uint FlowActiveFlag = 1u << 3;
         private const uint StressRecycleFlag = 1u << 4;
@@ -204,6 +203,7 @@ namespace Hecton8.VFX.Debris
         private bool _pendingDebrisUpload;
         private bool _insideDebrisVisualSync;
         private bool _coldSupportsComputeShaders;
+        private bool _fallbackRenderResourceRepairRequested;
         private float _pendingVisualDeltaTime;
         private float _pendingVisualQualityPressure01;
         private int _pendingVisualActiveCapacity;
@@ -418,6 +418,7 @@ namespace Hecton8.VFX.Debris
             RefreshMissingRegistryServicesIfNeeded();
             RefreshAbyssalFlowOverrideGlobalsCold();
             RefreshGlobalSdfCacheCold();
+            FlushFallbackRenderResourceRepairSlow();
 
             if (!_gpuReady || !IsGpuStateValid())
                 TryEnsureGpuState();
@@ -1735,8 +1736,8 @@ namespace Hecton8.VFX.Debris
             if (_ownedMesh != null)
                 return _ownedMesh;
 
-            _ownedMesh = BuildOctahedronMesh();
-            return _ownedMesh;
+            QueueFallbackRenderResourceRepair();
+            return null;
         }
 
         private bool TryResolveDrawMesh(out Mesh mesh, out Vector4 drawArgsBase)
@@ -1771,6 +1772,7 @@ namespace Hecton8.VFX.Debris
                 _ownedMesh = BuildOctahedronMesh();
 
             EnsureOwnedMaterial();
+            _fallbackRenderResourceRepairRequested = false;
         }
 
         private void EnsureOwnedMaterial()
@@ -1831,8 +1833,41 @@ namespace Hecton8.VFX.Debris
 
         private Material ResolveMaterial()
         {
-            EnsureFallbackRenderResources();
+            if (debrisMaterial != null)
+            {
+                if (_ownedMaterial != null && ReferenceEquals(_ownedMaterialSource, debrisMaterial))
+                    return _ownedMaterial;
+
+                QueueFallbackRenderResourceRepair();
+                return null;
+            }
+
+            if (_ownedMaterialSource != null)
+            {
+                QueueFallbackRenderResourceRepair();
+                return null;
+            }
+
+            if (_ownedMaterial == null && !_materialFallbackAttempted)
+            {
+                QueueFallbackRenderResourceRepair();
+                return null;
+            }
+
             return _ownedMaterial;
+        }
+
+        private void QueueFallbackRenderResourceRepair()
+        {
+            _fallbackRenderResourceRepairRequested = true;
+        }
+
+        private void FlushFallbackRenderResourceRepairSlow()
+        {
+            if (!_fallbackRenderResourceRepairRequested)
+                return;
+
+            EnsureFallbackRenderResources();
         }
 
         private void DestroyOwnedMaterial()
@@ -2104,13 +2139,13 @@ namespace Hecton8.VFX.Debris
 
             _lastTelemetryFrame = frame;
             uint flags = (uint)math.max(0, jobState[JobStateFlagsIndex]);
-            flags |= qualityPressure01 >= 0.75f ? QualityPressureTelemetryFlag : 0u;
+            byte qualityPressureQ8 = EncodeQualityPressureQ8(qualityPressure01);
             flags |= _lastSdfActive ? SdfActiveFlag : 0u;
             flags |= _lastFlowActive ? FlowActiveFlag : 0u;
             flags |= _lastWakeActive ? WakeActiveFlag : 0u;
             flags |= _cachedSystemStress01 > StressRecycleThreshold01 ? StressRecycleFlag : 0u;
             float3 appliedAupShift = _lastAppliedAupShift;
-            uint hash = BuildTelemetryHash(_activeMirrorCount, queuedCarves, injectedParticles, flags, appliedAupShift);
+            uint hash = BuildTelemetryHash(_activeMirrorCount, queuedCarves, injectedParticles, flags, qualityPressureQ8, appliedAupShift);
             blackBox[_blackBoxCursor] = new CarveDebrisTelemetryEntry
             {
                 FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
@@ -2119,7 +2154,8 @@ namespace Hecton8.VFX.Debris
                 InjectedParticles = injectedParticles,
                 Flags = flags,
                 StateHash = hash,
-                AppliedAupShift = appliedAupShift
+                AppliedAupShift = appliedAupShift,
+                QualityPressureQ8 = qualityPressureQ8
             };
             _blackBoxCursor = (_blackBoxCursor + 1) % blackBox.Length;
 
@@ -2133,13 +2169,19 @@ namespace Hecton8.VFX.Debris
             _lastAppliedAupShift = default;
         }
 
-        private static uint BuildTelemetryHash(int activeCount, int queuedCarves, int injectedParticles, uint flags, float3 appliedAupShift)
+        private static byte EncodeQualityPressureQ8(float qualityPressure01)
+        {
+            return (byte)math.clamp((int)math.round(math.saturate(qualityPressure01) * 255f), 0, 255);
+        }
+
+        private static uint BuildTelemetryHash(int activeCount, int queuedCarves, int injectedParticles, uint flags, byte qualityPressureQ8, float3 appliedAupShift)
         {
             uint hash = 2166136261u;
             hash = (hash ^ (uint)activeCount) * 16777619u;
             hash = (hash ^ (uint)queuedCarves) * 16777619u;
             hash = (hash ^ (uint)injectedParticles) * 16777619u;
             hash = (hash ^ flags) * 16777619u;
+            hash = (hash ^ qualityPressureQ8) * 16777619u;
             uint3 shiftBits = math.asuint(appliedAupShift);
             hash = (hash ^ shiftBits.x) * 16777619u;
             hash = (hash ^ shiftBits.y) * 16777619u;
@@ -2206,6 +2248,7 @@ namespace Hecton8.VFX.Debris
             _cachedGlobalSdfInvDoubleHalfExtents = Vector4.zero;
             _cachedGlobalSdfActive = 0f;
             _nextGlobalSdfRefreshFrame = 0;
+            _fallbackRenderResourceRepairRequested = false;
             _nextMissingRegistryRefreshFrame = 0;
             _qualityPressure01 = 0f;
             _visualOverkill01 = 1f;
@@ -2562,6 +2605,9 @@ namespace Hecton8.VFX.Debris
 
             [FieldOffset(24)]
             public float3 AppliedAupShift;
+
+            [FieldOffset(36)]
+            public byte QualityPressureQ8;
 
             [FieldOffset(36)]
             private uint _pad0;

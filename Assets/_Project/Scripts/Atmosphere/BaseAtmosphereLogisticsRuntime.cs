@@ -17,7 +17,7 @@ using UnityEngine;
 
 namespace Hecton8.Atmosphere
 {
-    public sealed unsafe class BaseAtmosphereLogisticsRuntime : IGlobalRegistryHotSwapListener
+    public sealed unsafe class BaseAtmosphereLogisticsRuntime : IGlobalRegistryHotSwapListener, IColdTickable
     {
         private const uint SystemHash = 0x53483232u; // SH22
         private const SystemID OwnerSystemId = SystemID.HabitatAtmosphere;
@@ -67,6 +67,7 @@ namespace Hecton8.Atmosphere
         private readonly SimulationPhaseSystem _simulationPhase;
         private readonly PostSimulationPhaseSystem _postSimulationPhase;
         private readonly VisualSyncPhaseSystem _visualSyncPhase;
+        private readonly AtmosphereTelemetryEntry[] _dumpSnapshot = new AtmosphereTelemetryEntry[AtmosphereLogisticsConstants.TelemetryRingCapacity];
 
         private IDataVault _vault;
         private IDataVault _pendingVault;
@@ -78,11 +79,13 @@ namespace Hecton8.Atmosphere
         private bool _registeredSimulation;
         private bool _registeredPostSimulation;
         private bool _registeredVisualSync;
+        private bool _registeredColdTick;
         private bool _vaultInitialized;
         private bool _layoutChecked;
         private bool _layoutValid;
         private bool _defaultsInitialized;
         private bool _simulationScheduled;
+        private bool _vaultRepairRequested;
         private bool _jobBuffersPinned;
         private bool _dumpWrittenThisFault;
         private uint _lastDispatcherFrame;
@@ -95,6 +98,7 @@ namespace Hecton8.Atmosphere
         private int _lastNodeCount;
         private int _lastIterations;
         private int _lastMicros;
+        private int _dumpSnapshotCount;
 #if UNITY_EDITOR
         private DateTime _csvLastWriteUtc;
 #endif
@@ -317,6 +321,7 @@ namespace Hecton8.Atmosphere
                 lowTierFrameSignals: ReactorDamageSignal.LowTierFrameSignals,
                 laneHash: ReactorDamageSignal.LaneHash);
             SignalBus<ReactorDamageSignal>.EnsureInitialized();
+            PrepareRuntimeStateCold();
             RegisterDispatcherPhases();
             Application.quitting -= ShutdownActive;
             Application.quitting += ShutdownActive;
@@ -359,10 +364,18 @@ namespace Hecton8.Atmosphere
                 _registeredPostSimulation = true;
             if (!_registeredVisualSync && GlobalRegistry.TryRegisterDispatcherSystem(_visualSyncPhase))
                 _registeredVisualSync = true;
+            if (!_registeredColdTick && GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment))
+                _registeredColdTick = true;
         }
 
         private void UnregisterDispatcherPhases()
         {
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _registeredColdTick = false;
+            }
+
             if (_registeredPreSimulation)
             {
                 GlobalRegistry.UnregisterDispatcherSystem(_preSimulationPhase);
@@ -402,8 +415,22 @@ namespace Hecton8.Atmosphere
 
         private IDataVault ResolveVault()
         {
-            ApplyPendingVaultRebindIfSafe();
             return _vault;
+        }
+
+        public void ColdTick()
+        {
+            if (_shutdown)
+                return;
+
+            ApplyPendingVaultRebindIfSafe();
+            if (!_vaultRepairRequested && HasVaultStateReady())
+                return;
+
+            if (_simulationScheduled || _jobBuffersPinned)
+                return;
+
+            PrepareRuntimeStateCold();
         }
 
         private void TryRegisterHotSwapListener()
@@ -457,6 +484,7 @@ namespace Hecton8.Atmosphere
             _defaultsInitialized = false;
             _layoutChecked = false;
             _layoutValid = false;
+            _vaultRepairRequested = true;
         }
 
         private void ReleaseVaultHandles(IDataVault vault)
@@ -584,12 +612,24 @@ namespace Hecton8.Atmosphere
         private void PreSimulationTick(in DispatcherTimingDTO timing)
         {
             IDataVault vault = ResolveVault();
-            if (vault == null || !EnsureVaultState(vault))
+            if (vault == null || !HasVaultStateReady())
+            {
+                _vaultRepairRequested = true;
                 return;
+            }
 
-            ApplyQualityAndEditorTuning(vault, in timing);
-            IngestPlayerBreathingSignals(vault);
-            IngestExternalGasSignals(vault);
+            if (!vault.TryAcquireMutationGuard(AtmosphereJobMutationGuardMask))
+                return;
+            try
+            {
+                ApplyQualityAndEditorTuning(vault, in timing);
+                IngestPlayerBreathingSignals(vault);
+                IngestExternalGasSignals(vault);
+            }
+            finally
+            {
+                vault.ReleaseMutationGuard(AtmosphereJobMutationGuardMask);
+            }
 #if UNITY_EDITOR
             if ((_lastDispatcherFrame & (CsvPollCadenceFrames - 1)) == 0u)
                 MonitorGasProfileCsv(vault);
@@ -609,8 +649,11 @@ namespace Hecton8.Atmosphere
             }
 
             IDataVault vault = ResolveVault();
-            if (vault == null || !EnsureVaultState(vault))
+            if (vault == null || !HasVaultStateReady())
+            {
+                _vaultRepairRequested = true;
                 return dependsOn;
+            }
 
             _lastDispatcherFrame = context.Frame;
             if (!TryPinJobBuffers(vault))
@@ -807,6 +850,7 @@ namespace Hecton8.Atmosphere
 
             _simulationScheduled = false;
             _lastMicros = ElapsedMicroseconds(_jobScheduleTimestamp);
+            bool writeDumpAfterRelease = false;
             if (Resolve(in _telemetry, AtmosphereLogisticsBufferIds.TelemetryRing, out NativeArray<AtmosphereTelemetryEntry> telemetry) &&
                 Resolve(in _counters, AtmosphereLogisticsBufferIds.Counters, out NativeArray<AtmosphereGraphCountersDTO> counters) &&
                 telemetry.Length > 0 && counters.Length > 0)
@@ -823,12 +867,14 @@ namespace Hecton8.Atmosphere
                 _lastMaxToxin01 = entry.MaxToxin01;
                 _lastNodeCount = entry.NodeCount;
                 if ((entry.FaultFlags & AtmosphereFaultFlags.NaNDetected) != 0u && !_dumpWrittenThisFault)
-                    WriteDump(vault);
+                    writeDumpAfterRelease = TryStageDumpSnapshot(telemetry);
                 if ((entry.FaultFlags & AtmosphereFaultFlags.NaNDetected) == 0u)
                     _dumpWrittenThisFault = false;
             }
 
             ReleaseJobBufferPins();
+            if (writeDumpAfterRelease)
+                WriteDumpSnapshot();
         }
 
         private void CompleteSimulationForLifecycle()
@@ -843,6 +889,15 @@ namespace Hecton8.Atmosphere
 
         private void VisualSyncTick(in DispatcherTimingDTO timing)
         {
+            if (_simulationScheduled)
+                return;
+
+            if (!HasVaultStateReady())
+            {
+                _vaultRepairRequested = true;
+                return;
+            }
+
             if (Resolve(in _shaderPayload, AtmosphereLogisticsBufferIds.ShaderPayload, out NativeArray<AtmosphereShaderPayloadDTO> payload) && payload.Length > 0)
             {
                 AtmosphereShaderPayloadDTO scalar = payload[0];
@@ -891,9 +946,37 @@ namespace Hecton8.Atmosphere
             }
 
             if (!_defaultsInitialized || !_layoutValid)
-                GenerateEmergencyMockTopology(vault);
+            {
+                if (!vault.TryAcquireMutationGuard(AtmosphereJobMutationGuardMask))
+                    return false;
+
+                try
+                {
+                    GenerateEmergencyMockTopology(vault);
+                }
+                finally
+                {
+                    vault.ReleaseMutationGuard(AtmosphereJobMutationGuardMask);
+                }
+            }
 
             return _vaultInitialized;
+        }
+
+        private void PrepareRuntimeStateCold()
+        {
+            IDataVault vault = _vault;
+            bool ready = vault != null && EnsureVaultState(vault);
+            _vaultRepairRequested = !ready;
+        }
+
+        private bool HasVaultStateReady()
+        {
+            IDataVault vault = _vault;
+            return vault != null &&
+                _vaultInitialized &&
+                _defaultsInitialized &&
+                TryValidateSimulationBuffers(vault);
         }
 
         private void GenerateEmergencyMockTopology(IDataVault vault)
@@ -1306,7 +1389,7 @@ namespace Hecton8.Atmosphere
 
         private bool TryPinJobBuffers(IDataVault vault)
         {
-            ReleaseJobBufferPins();
+            ReleaseJobBufferPins(applyPendingRebind: false);
             if (vault == null || vault.IsCompactionFenceActive || !TryValidateSimulationBuffers(vault))
                 return false;
 
@@ -1357,30 +1440,45 @@ namespace Hecton8.Atmosphere
                 out _);
         }
 
-        private void ReleaseJobBufferPins()
+        private void ReleaseJobBufferPins(bool applyPendingRebind = true)
         {
             if (!_jobBuffersPinned)
             {
                 _jobGuardVault = null;
-                ApplyPendingVaultRebindIfSafe();
+                if (applyPendingRebind)
+                    ApplyPendingVaultRebindIfSafe();
                 return;
             }
 
-            IDataVault vault = _jobGuardVault ?? _vault;
+            IDataVault vault = _jobGuardVault;
             if (vault != null)
                 vault.ReleaseMutationGuard(AtmosphereJobMutationGuardMask);
 
             _jobGuardVault = null;
             _jobBuffersPinned = false;
-            ApplyPendingVaultRebindIfSafe();
+            if (applyPendingRebind)
+                ApplyPendingVaultRebindIfSafe();
         }
 
-        private void WriteDump(IDataVault vault)
+        private bool TryStageDumpSnapshot(NativeArray<AtmosphereTelemetryEntry> telemetry)
         {
-            if (!Resolve(in _telemetry, AtmosphereLogisticsBufferIds.TelemetryRing, out NativeArray<AtmosphereTelemetryEntry> telemetry) || telemetry.Length == 0)
+            if (!telemetry.IsCreated || telemetry.Length == 0)
+                return false;
+
+            int count = math.min(telemetry.Length, _dumpSnapshot.Length);
+            for (int i = 0; i < count; i++)
+                _dumpSnapshot[i] = telemetry[i];
+            _dumpSnapshotCount = count;
+            _dumpWrittenThisFault = true;
+            return true;
+        }
+
+        private void WriteDumpSnapshot()
+        {
+            int count = math.min(_dumpSnapshotCount, _dumpSnapshot.Length);
+            if (count <= 0)
                 return;
 
-            _dumpWrittenThisFault = true;
             string directory = Path.GetDirectoryName(_dumpPath);
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
@@ -1388,10 +1486,10 @@ namespace Hecton8.Atmosphere
             using BinaryWriter writer = new BinaryWriter(stream);
             writer.Write(0x4847415332323144UL); // HGAS221D
             writer.Write(1);
-            writer.Write(telemetry.Length);
-            for (int i = 0; i < telemetry.Length; i++)
+            writer.Write(count);
+            for (int i = 0; i < count; i++)
             {
-                AtmosphereTelemetryEntry entry = telemetry[i];
+                AtmosphereTelemetryEntry entry = _dumpSnapshot[i];
                 writer.Write(entry.StateHash);
                 writer.Write(entry.AverageOxygen01);
                 writer.Write(entry.MaxCarbonDioxide01);

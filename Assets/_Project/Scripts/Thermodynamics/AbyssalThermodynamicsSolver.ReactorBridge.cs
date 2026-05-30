@@ -134,10 +134,8 @@ namespace Hecton8.Thermodynamics
             baseTuningArray[0] = BuildDefaultNuclearReactorTuning();
             SeedDefaultReactorProfiles(profileArray, profileCountArray);
             SeedDefaultNuclearReactorProfiles(nuclearProfileArray, nuclearProfileCountArray);
-            string directory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs"));
-            Directory.CreateDirectory(directory);
-            _reactorDumpPath = Path.Combine(directory, "Dump_SHINOBU_342_legacy.bin");
-            _baseReactorDumpPath = Path.Combine(directory, "Dump_SHINOBU_342.bin");
+            _reactorDumpPath = string.Empty;
+            _baseReactorDumpPath = string.Empty;
             TryLoadReactorProfilesCold();
             TryLoadNuclearReactorProfilesCold();
 
@@ -355,7 +353,7 @@ namespace Hecton8.Thermodynamics
                 AirlockStateDTO* airlocks;
                 int airlockCount;
                 ReleaseReactorSharedLocks();
-                ResolveOptionalReactorIntegrationPointers(
+                AcquireOptionalReactorIntegrationPointers(
                     out powerNodes,
                     out powerNodeCount,
                     out fluidCompartments,
@@ -526,7 +524,7 @@ namespace Hecton8.Thermodynamics
             return math.lerp(tuning.MaxTickIntervalSeconds, tuning.MinTickIntervalSeconds, quality);
         }
 
-        private unsafe void ResolveOptionalReactorIntegrationPointers(
+        private unsafe void AcquireOptionalReactorIntegrationPointers(
             out PowerNodeDTO* powerNodes,
             out int powerNodeCount,
             out FluidCompartmentDTO* fluidCompartments,
@@ -577,29 +575,37 @@ namespace Hecton8.Thermodynamics
 
             _reactorSharedGuardVault = vault;
             _reactorSharedGuardMask = guardMask;
-            if (hasPower &&
-                TryResolveOptionalSharedBuffer(vault, in powerHandle, out NativeArray<PowerNodeDTO> powerArray))
+            bool guardTransferred = false;
+            try
             {
-                powerNodes = (PowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(powerArray);
-                powerNodeCount = powerArray.Length;
-            }
+                if (hasPower &&
+                    TryResolveOptionalSharedBuffer(vault, in powerHandle, out NativeArray<PowerNodeDTO> powerArray))
+                {
+                    powerNodes = (PowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(powerArray);
+                    powerNodeCount = powerArray.Length;
+                }
 
-            if (hasFluid &&
-                TryResolveOptionalSharedBuffer(vault, in fluidHandle, out NativeArray<FluidCompartmentDTO> fluidArray))
+                if (hasFluid &&
+                    TryResolveOptionalSharedBuffer(vault, in fluidHandle, out NativeArray<FluidCompartmentDTO> fluidArray))
+                {
+                    fluidCompartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(fluidArray);
+                    fluidCompartmentCount = fluidArray.Length;
+                }
+
+                if (hasAirlock &&
+                    TryResolveOptionalSharedBuffer(vault, in airlockHandle, out NativeArray<AirlockStateDTO> airlockArray))
+                {
+                    airlocks = (AirlockStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(airlockArray);
+                    airlockCount = airlockArray.Length;
+                }
+
+                guardTransferred = powerNodes != null || fluidCompartments != null || airlocks != null;
+            }
+            finally
             {
-                fluidCompartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(fluidArray);
-                fluidCompartmentCount = fluidArray.Length;
+                if (!guardTransferred)
+                    ReleaseReactorSharedLocks();
             }
-
-            if (hasAirlock &&
-                TryResolveOptionalSharedBuffer(vault, in airlockHandle, out NativeArray<AirlockStateDTO> airlockArray))
-            {
-                airlocks = (AirlockStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(airlockArray);
-                airlockCount = airlockArray.Length;
-            }
-
-            if (powerNodes == null && fluidCompartments == null && airlocks == null)
-                ReleaseReactorSharedLocks();
         }
 
         private static bool TryGetOptionalSharedHandle<T>(
@@ -636,7 +642,7 @@ namespace Hecton8.Thermodynamics
             if (guardMask == 0UL)
                 return;
 
-            IDataVault vault = _reactorSharedGuardVault ?? _vault;
+            IDataVault vault = _reactorSharedGuardVault;
             _reactorSharedGuardVault = null;
             _reactorSharedGuardMask = 0UL;
             vault?.ReleaseMutationGuard(guardMask);
@@ -942,8 +948,9 @@ namespace Hecton8.Thermodynamics
 
         private static void WriteReactorDumpFile(string path, void* ring, long bytes)
         {
-            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-            stream.Write(new ReadOnlySpan<byte>((byte*)ring, checked((int)bytes)));
+            _ = path;
+            _ = ring;
+            _ = bytes;
         }
 
         private void UploadReactorVisualScalar()

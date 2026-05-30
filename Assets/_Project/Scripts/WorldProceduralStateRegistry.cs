@@ -46,6 +46,12 @@ namespace Hecton8.World
 
         internal static WorldProceduralStateRegistry ActiveRuntimeInstance { get; private set; }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeForSubsystemRegistration()
+        {
+            ActiveRuntimeInstance = null;
+        }
+
         public event Action PlacementStateChanged;
 
         public int SavePriority => 55;

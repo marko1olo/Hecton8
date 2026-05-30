@@ -344,32 +344,41 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (!vault.IsCompactionFenceActive &&
-                buffer.IsCreated &&
-                buffer.Length >= requiredLength)
+            bool releaseOnFailure = true;
+            try
             {
-                return true;
-            }
+                if (!vault.IsCompactionFenceActive &&
+                    buffer.IsCreated &&
+                    buffer.Length >= requiredLength)
+                {
+                    releaseOnFailure = false;
+                    return true;
+                }
 
-            bool fenceActiveAfterLock = vault.IsCompactionFenceActive;
-            vault.ReleaseWriteLock(in handle, VegetationMemorySovereigntyConstants.OwnerSystemId);
-            RecordVegetationMemoryTelemetry(
-                bufferId,
-                handle.Generation,
-                requiredLength,
-                buffer.IsCreated ? buffer.Length : 0,
-                0,
-                0f,
-                fenceActiveAfterLock
-                    ? VegetationMemoryTelemetryCode.CompactionFenceActive
-                    : VegetationMemoryTelemetryCode.VaultResolveFailed,
-                VegetationMemoryTelemetryPhase.Defrag,
-                fenceActiveAfterLock
-                    ? VegetationMemorySovereigntyConstants.FlagCompactionFence
-                    : VegetationMemorySovereigntyConstants.FlagStaleHandle,
-                default);
-            buffer = default;
-            return false;
+                bool fenceActiveAfterLock = vault.IsCompactionFenceActive;
+                RecordVegetationMemoryTelemetry(
+                    bufferId,
+                    handle.Generation,
+                    requiredLength,
+                    buffer.IsCreated ? buffer.Length : 0,
+                    0,
+                    0f,
+                    fenceActiveAfterLock
+                        ? VegetationMemoryTelemetryCode.CompactionFenceActive
+                        : VegetationMemoryTelemetryCode.VaultResolveFailed,
+                    VegetationMemoryTelemetryPhase.Defrag,
+                    fenceActiveAfterLock
+                        ? VegetationMemorySovereigntyConstants.FlagCompactionFence
+                        : VegetationMemorySovereigntyConstants.FlagStaleHandle,
+                    default);
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnFailure)
+                    vault.ReleaseWriteLock(in handle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
         }
 
         private bool TryReadVegetationMemoryBuffer<T>(

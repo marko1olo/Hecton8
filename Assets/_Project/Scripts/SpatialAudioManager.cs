@@ -539,6 +539,9 @@ namespace Hecton8.Audio
         private static readonly ulong AcousticPortalScratchMutationGuardMask =
             AudioVaultMutationGuardBit(SpatialAudioPortalOpenSetBufferId) |
             AudioVaultMutationGuardBit(SpatialAudioPortalClosedSetBufferId);
+        private static readonly ulong AcousticPortalPathMutationGuardMask =
+            AcousticPortalWorkMutationGuardMask |
+            AcousticPortalScratchMutationGuardMask;
         private const BufferID SpatialAudioPreviousVelocityAupsBufferId = BufferID.SpatialAudioPreviousVelocityAups;
         private const BufferID SpatialAudioPreviousVelocityAupFramesBufferId = BufferID.SpatialAudioPreviousVelocityAupFrames;
         private static readonly ulong PreviousVelocityAupMutationGuardMask =
@@ -1379,6 +1382,9 @@ namespace Hecton8.Audio
         private IDataVault _virtualVoiceSortBuffersLockVault;
         private IDataVault _acousticOcclusionBuffersLockVault;
         private IDataVault _acousticOcclusionSdfSnapshotGuardVault;
+        private IDataVault _previousVelocityAupGuardVault;
+        private IDataVault _acousticPortalWorkGuardVault;
+        private IDataVault _acousticPortalScratchGuardVault;
         private bool _virtualVoiceSortScheduled;
         private bool _acousticOcclusionScheduled;
         private bool _acousticMaterialRowsLockedForOcclusion;
@@ -4785,19 +4791,6 @@ namespace Hecton8.Audio
 
         private IFoveatedSimulationDirector ResolveFoveatedSimulationDirector()
         {
-            int frame = SystemDispatcher.CurrentFrameIndex;
-            IFoveatedSimulationDirector director = _foveatedSimulationDirector;
-            if (director != null && frame < _foveatedDirectorResolveFrame)
-                return director;
-
-            if (frame < _foveatedDirectorResolveFrame)
-                return director;
-
-            _foveatedDirectorResolveFrame = frame + SpatialAudioRegistryRetryFrames;
-            IFoveatedSimulationDirector resolvedDirector = GlobalRegistry.FoveatedSimulationDirector;
-            if (resolvedDirector != null || director == null)
-                _foveatedSimulationDirector = resolvedDirector;
-
             return _foveatedSimulationDirector;
         }
 
@@ -4836,6 +4829,7 @@ namespace Hecton8.Audio
             _acousticZoneResolveFrame = nextResolveFrame;
             _surfaceWeatherResolveFrame = nextResolveFrame;
             _foveatedDirectorResolveFrame = nextResolveFrame;
+            ResolveListenerTransformCold();
         }
 
         private void CacheReboundAudioRuntimeService(GlobalRegistryServiceSlot serviceSlot, object currentService)
@@ -4847,6 +4841,7 @@ namespace Hecton8.Audio
                     IPlayerRuntimeContext playerContext = currentService as IPlayerRuntimeContext;
                     _cachedPlayerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
                     _playerRuntimeContextResolveFrame = nextResolveFrame;
+                    ResolveListenerTransformCold();
                     break;
                 case GlobalRegistryServiceSlot.PlayerMovementContracts:
                     _listenerPlayerMovementTrauma = currentService as IPlayerMovementTraumaSink;
@@ -4995,63 +4990,23 @@ namespace Hecton8.Audio
 
         private IPlayerRuntimeContext ResolvePlayerRuntimeContext()
         {
-            int frame = SystemDispatcher.CurrentFrameIndex;
             IPlayerRuntimeContext playerContext = _cachedPlayerRuntimeContext;
-            if (playerContext != null && playerContext.IsInitialized && frame < _playerRuntimeContextResolveFrame)
-                return playerContext;
-
-            if (frame < _playerRuntimeContextResolveFrame)
-                return null;
-
-            _playerRuntimeContextResolveFrame = frame + SpatialAudioRegistryRetryFrames;
-            playerContext = GlobalRegistry.Player;
-            _cachedPlayerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
-            return _cachedPlayerRuntimeContext;
+            return playerContext != null && playerContext.IsInitialized ? playerContext : null;
         }
 
         private IWeatherService ResolveWeatherService()
         {
-            int frame = SystemDispatcher.CurrentFrameIndex;
             IWeatherService weatherService = _cachedWeatherService;
-            if (weatherService != null && weatherService.IsInitialized && frame < _weatherServiceResolveFrame)
-                return weatherService;
-
-            if (frame < _weatherServiceResolveFrame)
-                return null;
-
-            _weatherServiceResolveFrame = frame + SpatialAudioRegistryRetryFrames;
-            weatherService = GlobalRegistry.Weather;
-            _cachedWeatherService = weatherService != null && weatherService.IsInitialized ? weatherService : null;
-            return _cachedWeatherService;
+            return weatherService != null && weatherService.IsInitialized ? weatherService : null;
         }
 
         private IAcousticZoneReadModel ResolveAcousticZone()
         {
-            int frame = SystemDispatcher.CurrentFrameIndex;
-            IAcousticZoneReadModel acousticZone = _cachedAcousticZone;
-            if (acousticZone != null && frame < _acousticZoneResolveFrame)
-                return acousticZone;
-
-            if (frame < _acousticZoneResolveFrame)
-                return null;
-
-            _acousticZoneResolveFrame = frame + SpatialAudioRegistryRetryFrames;
-            _cachedAcousticZone = GlobalRegistry.AcousticZoneReadModel;
             return _cachedAcousticZone;
         }
 
         private ISurfaceWeatherReadModel ResolveSurfaceWeatherDirector()
         {
-            int frame = SystemDispatcher.CurrentFrameIndex;
-            ISurfaceWeatherReadModel surfaceWeather = _cachedSurfaceWeatherDirector;
-            if (surfaceWeather != null && frame < _surfaceWeatherResolveFrame)
-                return surfaceWeather;
-
-            if (frame < _surfaceWeatherResolveFrame)
-                return null;
-
-            _surfaceWeatherResolveFrame = frame + SpatialAudioRegistryRetryFrames;
-            _cachedSurfaceWeatherDirector = GlobalRegistry.SurfaceWeatherReadModel;
             return _cachedSurfaceWeatherDirector;
         }
 
@@ -6758,36 +6713,55 @@ namespace Hecton8.Audio
                 return _listenerTransform;
 
             IPlayerRuntimeContext playerContext = ResolvePlayerRuntimeContext();
-            if (playerContext != null)
+            if (playerContext == null)
             {
-                Camera playerCamera = playerContext.PlayerCamera;
-                if (playerCamera != null)
-                {
-                    _listenerTransform = playerCamera.transform;
-                    return _listenerTransform;
-                }
+                _listenerTransform = null;
+                return null;
+            }
 
-                GameObject playerObject = playerContext.PlayerObject;
-                if (playerObject != null)
-                {
-                    if (playerObject.TryGetComponent(out AudioListener playerListener))
-                    {
-                        _listenerTransform = playerListener.transform;
-                        return _listenerTransform;
-                    }
-
-                    AudioListener ownedPlayerListener =
-                        ComponentReferenceUtility.ResolveOwnedComponent<AudioListener>(playerObject.transform);
-                    if (ownedPlayerListener != null)
-                    {
-                        _listenerTransform = ownedPlayerListener.transform;
-                        return _listenerTransform;
-                    }
-                }
+            Camera playerCamera = playerContext.PlayerCamera;
+            if (playerCamera != null)
+            {
+                _listenerTransform = playerCamera.transform;
+                return _listenerTransform;
             }
 
             _listenerTransform = null;
-            return _listenerTransform;
+            return null;
+        }
+
+        private void ResolveListenerTransformCold()
+        {
+            IPlayerRuntimeContext playerContext = _cachedPlayerRuntimeContext;
+            if (playerContext == null || !playerContext.IsInitialized)
+            {
+                _listenerTransform = null;
+                return;
+            }
+
+            Camera playerCamera = playerContext.PlayerCamera;
+            if (playerCamera != null)
+            {
+                _listenerTransform = playerCamera.transform;
+                return;
+            }
+
+            GameObject playerObject = playerContext.PlayerObject;
+            if (playerObject == null)
+            {
+                _listenerTransform = null;
+                return;
+            }
+
+            if (playerObject.TryGetComponent(out AudioListener playerListener))
+            {
+                _listenerTransform = playerListener.transform;
+                return;
+            }
+
+            AudioListener ownedPlayerListener =
+                ComponentReferenceUtility.ResolveOwnedComponent<AudioListener>(playerObject.transform);
+            _listenerTransform = ownedPlayerListener != null ? ownedPlayerListener.transform : null;
         }
 
         private bool TryResolveListenerFrame(
@@ -6913,23 +6887,6 @@ namespace Hecton8.Audio
                         listenerAup = OffsetAupLocal(in currentAup, listenerRuntimePosition - rootRuntimePosition);
                         return true;
                     }
-                }
-            }
-
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
-                IsPlayerOwnedListener(listener, runtimeContext.PlayerTransform, runtimeContext.PlayerObject, runtimeContext.PlayerCamera) &&
-                (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
-            {
-                if (TryResolveXrCachedHeadAup(listenerRuntimePosition, out listenerAup))
-                    return true;
-
-                AbsoluteUniversePosition predictedAup = runtimeContext.MovementState.PredictedAup;
-                Vector3 rootRuntimePosition = predictedAup.ToRuntimeFloat3();
-                if (IsFinite(rootRuntimePosition))
-                {
-                    listenerAup = OffsetAupLocal(in predictedAup, listenerRuntimePosition - rootRuntimePosition);
-                    return true;
                 }
             }
 
@@ -8509,25 +8466,36 @@ namespace Hecton8.Audio
         {
             buffer = default;
             IDataVault vault = _dataVault;
-            bool lockAcquired =
-                vault != null &&
-                !vault.IsCompactionFenceActive &&
-                requiredLength > 0 &&
-                IsAudioVaultHandle(in handle, bufferId, SystemID.Audio) &&
-                vault.TryAcquireWriteLock(in handle, SystemID.Audio, out buffer);
-
-            if (!lockAcquired ||
+            if (vault == null ||
                 vault.IsCompactionFenceActive ||
-                !buffer.IsCreated ||
-                buffer.Length < requiredLength)
+                requiredLength <= 0 ||
+                !IsAudioVaultHandle(in handle, bufferId, SystemID.Audio) ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.Audio, out buffer))
             {
-                if (lockAcquired)
-                    vault.ReleaseWriteLock(in handle, SystemID.Audio);
-                buffer = default;
                 return false;
             }
 
-            return true;
+            bool releaseOnFailure = true;
+            try
+            {
+                if (vault.IsCompactionFenceActive ||
+                    !buffer.IsCreated ||
+                    buffer.Length < requiredLength)
+                {
+                    return false;
+                }
+
+                releaseOnFailure = false;
+                return true;
+            }
+            finally
+            {
+                if (releaseOnFailure)
+                {
+                    vault.ReleaseWriteLock(in handle, SystemID.Audio);
+                    buffer = default;
+                }
+            }
         }
 
         private void ReleaseAudioVaultWriteBuffer<T>(
@@ -8591,6 +8559,7 @@ namespace Hecton8.Audio
                 }
 
                 guardHeld = false;
+                _previousVelocityAupGuardVault = vault;
                 return true;
             }
             finally
@@ -8602,7 +8571,10 @@ namespace Hecton8.Audio
 
         private void ReleasePreviousVelocityAupBuffers()
         {
-            _dataVault?.ReleaseMutationGuard(PreviousVelocityAupMutationGuardMask);
+            IDataVault vault = _previousVelocityAupGuardVault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(PreviousVelocityAupMutationGuardMask);
+            _previousVelocityAupGuardVault = null;
         }
 
         private void ResetPreviousVelocityAupState()
@@ -8679,7 +8651,7 @@ namespace Hecton8.Audio
 
         private void ReleaseVirtualVoiceSortBufferLocks()
         {
-            IDataVault vault = _virtualVoiceSortBuffersLockVault ?? _dataVault;
+            IDataVault vault = _virtualVoiceSortBuffersLockVault;
             bool releaseSortGuard =
                 _virtualVoiceSelectionsLockedForSort ||
                 _virtualVoiceSortKeyPoolLockedForSort ||
@@ -8707,7 +8679,7 @@ namespace Hecton8.Audio
         {
             ReleaseAcousticOcclusionSdfSnapshotLock();
 
-            IDataVault vault = _acousticOcclusionBuffersLockVault ?? _dataVault;
+            IDataVault vault = _acousticOcclusionBuffersLockVault;
             bool releaseOcclusionGuard =
                 _acousticDspOutputPoolLockedForOcclusion ||
                 _acousticSelectedPreviousAupPoolLockedForOcclusion ||
@@ -8732,7 +8704,7 @@ namespace Hecton8.Audio
             if (!_acousticOcclusionSdfSnapshotGuardHeld)
                 return;
 
-            IDataVault vault = _acousticOcclusionSdfSnapshotGuardVault ?? _dataVault;
+            IDataVault vault = _acousticOcclusionSdfSnapshotGuardVault;
             if (vault != null)
                 vault.ReleaseMutationGuard(AcousticOcclusionSdfSnapshotMutationGuardMask);
 
@@ -8745,7 +8717,7 @@ namespace Hecton8.Audio
             if (!locked)
                 return;
 
-            IDataVault vault = _acousticOcclusionSdfSnapshotGuardVault ?? _dataVault;
+            IDataVault vault = _acousticOcclusionSdfSnapshotGuardVault;
             if (vault != null)
                 vault.ReleaseMutationGuard(AcousticOcclusionSdfSnapshotMutationGuardMask);
 
@@ -8759,7 +8731,7 @@ namespace Hecton8.Audio
             if (!_acousticMaterialRowsLockedForOcclusion)
                 return;
 
-            IDataVault vault = _acousticMaterialRowsLockVault ?? _dataVault;
+            IDataVault vault = _acousticMaterialRowsLockVault;
             if (vault != null &&
                 IsAudioVaultHandle(
                     in _acousticMaterialRowsHandle,
@@ -8917,7 +8889,7 @@ namespace Hecton8.Audio
             states = default;
 
             IDataVault vault = _dataVault;
-            if (vault == null || !vault.TryAcquireMutationGuard(AcousticPortalWorkMutationGuardMask))
+            if (vault == null || !vault.TryAcquireMutationGuard(AcousticPortalPathMutationGuardMask))
             {
                 WriteAcousticPortalFailureBlackBox(
                     BufferID.SpatialAudioPortalNodes,
@@ -9035,18 +9007,22 @@ namespace Hecton8.Audio
                 }
 
                 guardHeld = false;
+                _acousticPortalWorkGuardVault = vault;
                 return true;
             }
             finally
             {
                 if (guardHeld)
-                    vault.ReleaseMutationGuard(AcousticPortalWorkMutationGuardMask);
+                    vault.ReleaseMutationGuard(AcousticPortalPathMutationGuardMask);
             }
         }
 
         private void ReleaseAcousticPortalWorkBuffers()
         {
-            _dataVault?.ReleaseMutationGuard(AcousticPortalWorkMutationGuardMask);
+            IDataVault vault = _acousticPortalWorkGuardVault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(AcousticPortalPathMutationGuardMask);
+            _acousticPortalWorkGuardVault = null;
         }
 
         private bool TryAcquireAcousticPortalScratchSets(
@@ -9055,7 +9031,9 @@ namespace Hecton8.Audio
         {
             openSet = default;
             closedSet = default;
-            IDataVault vault = _dataVault;
+            IDataVault pathGuardVault = _acousticPortalWorkGuardVault;
+            bool usingPathGuard = pathGuardVault != null;
+            IDataVault vault = usingPathGuard ? pathGuardVault : _dataVault;
             if (vault == null)
             {
                 WriteAcousticPortalFailureBlackBox(SpatialAudioPortalOpenSetBufferId, 0u, AcousticPortalFailureHandleInvalid);
@@ -9080,7 +9058,7 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            if (!vault.TryAcquireMutationGuard(AcousticPortalScratchMutationGuardMask))
+            if (!usingPathGuard && !vault.TryAcquireMutationGuard(AcousticPortalScratchMutationGuardMask))
             {
                 WriteAcousticPortalFailureBlackBox(
                     SpatialAudioPortalOpenSetBufferId,
@@ -9089,7 +9067,7 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            bool guardHeld = true;
+            bool guardHeld = !usingPathGuard;
             try
             {
                 if (!TryOpenAudioVaultBuffer(
@@ -9124,6 +9102,8 @@ namespace Hecton8.Audio
                 }
 
                 guardHeld = false;
+                if (!usingPathGuard)
+                    _acousticPortalScratchGuardVault = vault;
                 return true;
             }
             finally
@@ -9135,7 +9115,10 @@ namespace Hecton8.Audio
 
         private void ReleaseAcousticPortalScratchSets()
         {
-            _dataVault?.ReleaseMutationGuard(AcousticPortalScratchMutationGuardMask);
+            IDataVault vault = _acousticPortalScratchGuardVault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(AcousticPortalScratchMutationGuardMask);
+            _acousticPortalScratchGuardVault = null;
         }
 
         private static int GenerateEmergencyMockAcoustics(NativeArray<AcousticMaterialCoefficientDTO> rows)
@@ -9356,6 +9339,9 @@ namespace Hecton8.Audio
             _acousticSelectedPreviousAupPoolLockedForOcclusion = false;
             _acousticDspOutputPoolLockedForOcclusion = false;
             _acousticOcclusionBuffersLockVault = null;
+            _previousVelocityAupGuardVault = null;
+            _acousticPortalWorkGuardVault = null;
+            _acousticPortalScratchGuardVault = null;
         }
 
         private void InitializeTelemetryCaches()

@@ -2130,7 +2130,8 @@ namespace Hecton8.Physics
                 !TryAcquireForcePacketBufferWriteLock(
                     in _backPacketBufferHandle,
                     BufferID.PhysicsForceCommandBack,
-                    out NativeArray<ForcePacket> backPackets))
+                    out NativeArray<ForcePacket> backPackets,
+                    out IDataVault backPacketsVault))
             {
                 ReportForcePacketSaturationWarningIfNeeded(saturationMessage);
                 return false;
@@ -2149,7 +2150,7 @@ namespace Hecton8.Physics
             }
             finally
             {
-                ReleaseForcePacketBufferWriteLock(in _backPacketBufferHandle);
+                ReleaseForcePacketBufferWriteLock(backPacketsVault, in _backPacketBufferHandle);
             }
         }
 
@@ -2560,7 +2561,8 @@ namespace Hecton8.Physics
             if (!TryAcquireByteBufferWriteLock(
                     in _validationMaskBufferHandle,
                     BufferID.PhysicsForceValidationMask,
-                    out NativeArray<byte> validationMask))
+                    out NativeArray<byte> validationMask,
+                    out IDataVault validationMaskVault))
             {
                 _frontBufferValidationReady = false;
                 _frontCount = 0;
@@ -2581,13 +2583,14 @@ namespace Hecton8.Physics
             }
             finally
             {
-                ReleaseByteBufferWriteLock(in _validationMaskBufferHandle);
+                ReleaseByteBufferWriteLock(validationMaskVault, in _validationMaskBufferHandle);
             }
 
             if (!TryAcquireForcePacketBufferWriteLock(
                     in _frontPacketBufferHandle,
                     BufferID.PhysicsForceCommandFront,
-                    out NativeArray<ForcePacket> frontPackets))
+                    out NativeArray<ForcePacket> frontPackets,
+                    out IDataVault frontPacketsVault))
             {
                 ClearForcePacketApplyScratch(applyCount);
                 _frontBufferValidationReady = false;
@@ -2606,13 +2609,14 @@ namespace Hecton8.Physics
             }
             finally
             {
-                ReleaseForcePacketBufferWriteLock(in _frontPacketBufferHandle);
+                ReleaseForcePacketBufferWriteLock(frontPacketsVault, in _frontPacketBufferHandle);
             }
 
             if (TryAcquireByteBufferWriteLock(
                     in _validationMaskBufferHandle,
                     BufferID.PhysicsForceValidationMask,
-                    out validationMask))
+                    out validationMask,
+                    out validationMaskVault))
             {
                 try
                 {
@@ -2620,7 +2624,7 @@ namespace Hecton8.Physics
                 }
                 finally
                 {
-                    ReleaseByteBufferWriteLock(in _validationMaskBufferHandle);
+                    ReleaseByteBufferWriteLock(validationMaskVault, in _validationMaskBufferHandle);
                 }
             }
 
@@ -3299,7 +3303,8 @@ namespace Hecton8.Physics
             if (TryAcquireForcePacketBufferWriteLock(
                     in _frontPacketBufferHandle,
                     BufferID.PhysicsForceCommandFront,
-                    out NativeArray<ForcePacket> frontPackets))
+                    out NativeArray<ForcePacket> frontPackets,
+                    out IDataVault frontPacketsVault))
             {
                 try
                 {
@@ -3307,7 +3312,7 @@ namespace Hecton8.Physics
                 }
                 finally
                 {
-                    ReleaseForcePacketBufferWriteLock(in _frontPacketBufferHandle);
+                    ReleaseForcePacketBufferWriteLock(frontPacketsVault, in _frontPacketBufferHandle);
                 }
             }
 
@@ -3392,7 +3397,7 @@ namespace Hecton8.Physics
 
         private void ClearForcePacketBuffer(ref VaultGenerationHandle<ForcePacket> handle, BufferID bufferId)
         {
-            if (!TryAcquireForcePacketBufferWriteLock(in handle, bufferId, out NativeArray<ForcePacket> buffer))
+            if (!TryAcquireForcePacketBufferWriteLock(in handle, bufferId, out NativeArray<ForcePacket> buffer, out IDataVault writeVault))
                 return;
 
             try
@@ -3401,13 +3406,13 @@ namespace Hecton8.Physics
             }
             finally
             {
-                ReleaseForcePacketBufferWriteLock(in handle);
+                ReleaseForcePacketBufferWriteLock(writeVault, in handle);
             }
         }
 
         private void ClearByteBuffer(ref VaultGenerationHandle<byte> handle, BufferID bufferId)
         {
-            if (!TryAcquireByteBufferWriteLock(in handle, bufferId, out NativeArray<byte> buffer))
+            if (!TryAcquireByteBufferWriteLock(in handle, bufferId, out NativeArray<byte> buffer, out IDataVault writeVault))
                 return;
 
             try
@@ -3416,16 +3421,18 @@ namespace Hecton8.Physics
             }
             finally
             {
-                ReleaseByteBufferWriteLock(in handle);
+                ReleaseByteBufferWriteLock(writeVault, in handle);
             }
         }
 
         private bool TryAcquireForcePacketBufferWriteLock(
             in VaultGenerationHandle<ForcePacket> handle,
             BufferID bufferId,
-            out NativeArray<ForcePacket> buffer)
+            out NativeArray<ForcePacket> buffer,
+            out IDataVault writeVault)
         {
             buffer = default;
+            writeVault = null;
             IDataVault dataVault = _dataVault;
             if (dataVault == null ||
                 !IsPhysicsVaultHandle(in handle, bufferId) ||
@@ -3434,20 +3441,34 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            if (buffer.IsCreated && buffer.Length >= MaxQueuedPackets)
-                return true;
+            bool ownershipTransferred = false;
+            try
+            {
+                if (buffer.IsCreated && buffer.Length >= MaxQueuedPackets)
+                {
+                    writeVault = dataVault;
+                    ownershipTransferred = true;
+                    return true;
+                }
 
-            dataVault.ReleaseWriteLock(in handle, OwnerSystemId);
-            buffer = default;
-            return false;
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                    dataVault.ReleaseWriteLock(in handle, OwnerSystemId);
+            }
         }
 
         private bool TryAcquireByteBufferWriteLock(
             in VaultGenerationHandle<byte> handle,
             BufferID bufferId,
-            out NativeArray<byte> buffer)
+            out NativeArray<byte> buffer,
+            out IDataVault writeVault)
         {
             buffer = default;
+            writeVault = null;
             IDataVault dataVault = _dataVault;
             if (dataVault == null ||
                 !IsPhysicsVaultHandle(in handle, bufferId) ||
@@ -3456,22 +3477,34 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            if (buffer.IsCreated && buffer.Length >= MaxQueuedPackets)
-                return true;
+            bool ownershipTransferred = false;
+            try
+            {
+                if (buffer.IsCreated && buffer.Length >= MaxQueuedPackets)
+                {
+                    writeVault = dataVault;
+                    ownershipTransferred = true;
+                    return true;
+                }
 
-            dataVault.ReleaseWriteLock(in handle, OwnerSystemId);
-            buffer = default;
-            return false;
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                    dataVault.ReleaseWriteLock(in handle, OwnerSystemId);
+            }
         }
 
-        private void ReleaseForcePacketBufferWriteLock(in VaultGenerationHandle<ForcePacket> handle)
+        private static void ReleaseForcePacketBufferWriteLock(IDataVault dataVault, in VaultGenerationHandle<ForcePacket> handle)
         {
-            _dataVault?.ReleaseWriteLock(in handle, OwnerSystemId);
+            dataVault?.ReleaseWriteLock(in handle, OwnerSystemId);
         }
 
-        private void ReleaseByteBufferWriteLock(in VaultGenerationHandle<byte> handle)
+        private static void ReleaseByteBufferWriteLock(IDataVault dataVault, in VaultGenerationHandle<byte> handle)
         {
-            _dataVault?.ReleaseWriteLock(in handle, OwnerSystemId);
+            dataVault?.ReleaseWriteLock(in handle, OwnerSystemId);
         }
 
         private bool TryAcquireValidationScheduleBufferGuard(
@@ -3551,7 +3584,7 @@ namespace Hecton8.Physics
             if (!_validationScheduleGuardHeld)
                 return;
 
-            IDataVault dataVault = _validationScheduleGuardVault ?? _dataVault;
+            IDataVault dataVault = _validationScheduleGuardVault;
             _validationScheduleGuardVault = null;
             _validationScheduleGuardHeld = false;
             if (dataVault != null)
@@ -3849,11 +3882,11 @@ namespace Hecton8.Physics
                 return;
             }
 
-            bool frontLocked = TryAcquireForcePacketBufferWriteLock(
-                in _frontPacketBufferHandle,
-                BufferID.PhysicsForceCommandFront,
-                out NativeArray<ForcePacket> frontPackets);
-            if (!frontLocked)
+            if (!TryGetExistingVaultBuffer(
+                    ref _frontPacketBufferHandle,
+                    BufferID.PhysicsForceCommandFront,
+                    MaxQueuedPackets,
+                    out NativeArray<ForcePacket> frontPackets))
             {
                 ReleaseValidationScheduleBufferGuard();
                 _frontBufferValidationReady = false;
@@ -3886,7 +3919,6 @@ namespace Hecton8.Physics
             }
             finally
             {
-                ReleaseForcePacketBufferWriteLock(in _frontPacketBufferHandle);
                 if (!scheduled)
                     ReleaseValidationScheduleBufferGuard();
             }

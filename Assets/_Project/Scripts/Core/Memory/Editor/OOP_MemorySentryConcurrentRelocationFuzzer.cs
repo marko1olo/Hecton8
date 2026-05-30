@@ -643,7 +643,7 @@ namespace Hecton8.Core.Memory.Editor
                     Interlocked.Increment(ref state.PinJobPasses);
                     RecordTelemetry(state, slot.BufferId, FuzzerOperation.PinJob, 0u);
                     ForceCompactionPulse(state, FuzzerOperation.PinJob);
-                    handle.Complete();
+                    Hecton8.Core.DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
 
                     if (state.JobFailures[failureIndex] != 0)
                     {

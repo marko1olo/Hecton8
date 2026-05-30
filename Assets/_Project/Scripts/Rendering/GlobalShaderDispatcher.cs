@@ -100,9 +100,7 @@ namespace Hecton8.Core
             (1UL << ((int)BufferID.SubmarineFluidExteriorThermalCenters & 31)) |
             (1UL << ((int)BufferID.SubmarineFluidExteriorThermalTemperatures & 31)) |
             (1UL << ((int)BufferID.SubmarineFluidExteriorThermalLifetimes & 31));
-        private const uint DumpMagic = 0x43424652u; // CBFR
         private const uint TelemetryFlagVaultUnavailable = 1u << 2;
-        private const string DumpFileName = "Dump_13KRA.bin";
         private const uint PhysiologyVisualHoldFrames = 24u;
 #if UNITY_EDITOR
         private const int CsvScratchBytes = 4096;
@@ -329,7 +327,7 @@ namespace Hecton8.Core
             long startTicks = Stopwatch.GetTimestamp();
             HectonShaderGlobalDataVaultBridge.SetVisualSyncDispatcherActive(false);
 
-            if (!TryEnsureCommandBuffer(allowAllocation: false))
+            if (!HasCommandBufferReady())
                 return;
 
             if (!ValidateLayouts())
@@ -338,7 +336,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            if (!EnsureShaderGlobalSlotsRuntime(out IDataVault vault, allowAllocation: false))
+            if (!TryResolveShaderGlobalSlotsRuntime(out IDataVault vault))
                 return;
 
             GenerateEmergencyMockShaderGlobalsNoIo(vault);
@@ -600,6 +598,12 @@ namespace Hecton8.Core
             return EnsureShaderGlobalSlots(vault, allowAllocation);
         }
 
+        private bool TryResolveShaderGlobalSlotsRuntime(out IDataVault vault)
+        {
+            vault = _vault;
+            return TryResolvePreparedShaderGlobalSlots(vault);
+        }
+
         private static bool EnsureShaderGlobalSlots(out IDataVault vault, bool allowAllocation)
         {
             vault = GlobalRegistry.DataVault;
@@ -607,6 +611,31 @@ namespace Hecton8.Core
         }
 
         private static bool EnsureShaderGlobalSlots(IDataVault vault, bool allowAllocation)
+        {
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (TryResolvePreparedShaderGlobalSlots(vault))
+                return true;
+
+            if (!allowAllocation || vault.IsAllocationLocked)
+                return false;
+
+            VaultGenerationHandle<float4> allocated = vault.EnsureGenerationHandle<float4>(
+                BufferID.ShaderGlobalState,
+                RequiredShaderGlobalSlots,
+                SystemID.GraphicsScalability,
+                NativeArrayOptions.ClearMemory);
+            if (!TryResolveShaderSlotsHandle(vault, in allocated, out _))
+                return false;
+
+            s_shaderSlotsHandle = allocated;
+            s_cachedVault = vault;
+            HectonShaderGlobalDataVaultBridge.BindPreparedShaderGlobalSlots(vault);
+            return true;
+        }
+
+        private static bool TryResolvePreparedShaderGlobalSlots(IDataVault vault)
         {
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
@@ -627,21 +656,7 @@ namespace Hecton8.Core
                 return true;
             }
 
-            if (!allowAllocation || vault.IsAllocationLocked)
-                return false;
-
-            VaultGenerationHandle<float4> allocated = vault.EnsureGenerationHandle<float4>(
-                BufferID.ShaderGlobalState,
-                RequiredShaderGlobalSlots,
-                SystemID.GraphicsScalability,
-                NativeArrayOptions.ClearMemory);
-            if (!TryResolveShaderSlotsHandle(vault, in allocated, out _))
-                return false;
-
-            s_shaderSlotsHandle = allocated;
-            s_cachedVault = vault;
-            HectonShaderGlobalDataVaultBridge.BindPreparedShaderGlobalSlots(vault);
-            return true;
+            return false;
         }
 
         private static void InvalidateShaderGlobalSlotCache()
@@ -706,6 +721,11 @@ namespace Hecton8.Core
             {
                 name = "H8 Global Shader Variables"
             };
+            return s_commandBuffer != null;
+        }
+
+        private static bool HasCommandBufferReady()
+        {
             return s_commandBuffer != null;
         }
 
@@ -1074,15 +1094,22 @@ namespace Hecton8.Core
                 float target = math.saturate(math.isfinite(state.TargetRenderScale01) ? state.TargetRenderScale01 : current);
                 float stress = math.saturate(math.isfinite(state.SystemStress01) ? state.SystemStress01 : 0f);
                 float quality = math.saturate(math.isfinite(state.GlobalQualityWeight01) ? state.GlobalQualityWeight01 : 1f);
-                float fallbackOverkill = Smooth01(math.saturate((quality - 0.78f) * 4.5454545f));
+                float fallbackOverkill = ResolveVisualOverkillWeight01(quality);
                 float overkill = math.saturate(math.isfinite(state.VisualOverkill01) ? state.VisualOverkill01 : fallbackOverkill);
                 return new Vector4(current > 0f ? current : 1f, target > 0f ? target : current, stress, overkill);
             }
 
             float fallbackStress = math.saturate(HomeostasisBrain.SystemHealthIndex01);
             float quality01 = ResolveGlobalQualityWeight01();
-            float overkill01 = Smooth01(math.saturate((quality01 - 0.78f) * 4.5454545f));
+            float overkill01 = ResolveVisualOverkillWeight01(quality01);
             return new Vector4(1f, 1f, fallbackStress, overkill01);
+        }
+
+        private static float ResolveVisualOverkillWeight01(float quality01)
+        {
+            float quality = math.saturate(math.isfinite(quality01) ? quality01 : 0f);
+            float cubicBias = quality * quality * math.lerp(0.5f, 1f, quality);
+            return Smooth01(cubicBias);
         }
 
         private float ResolveGlobalQualityWeight01()
@@ -1175,7 +1202,7 @@ namespace Hecton8.Core
 
         private void RecordTelemetry(IDataVault vault, float dispatchMicroseconds, uint keywordCount, uint flags)
         {
-            if (!EnsureShaderGlobalSlotsRuntime(out IDataVault currentVault, allowAllocation: false))
+            if (!TryResolveShaderGlobalSlotsRuntime(out IDataVault currentVault))
                 return;
 
             if (!ReferenceEquals(vault, currentVault))
@@ -1212,78 +1239,25 @@ namespace Hecton8.Core
                 return;
 
             _dumpedOverBudget = true;
-            string projectRoot = BuildProjectRootPathCold();
-            if (string.IsNullOrEmpty(projectRoot))
-                return;
 
-            string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
             Span<float4> telemetrySnapshot = stackalloc float4[TelemetryCapacity];
             telemetrySnapshot.Clear();
             int telemetryCursor = _telemetryCursor;
-            if (!EnsureShaderGlobalSlotsRuntime(out IDataVault vault, allowAllocation: false))
-            {
-                TryWriteTelemetryDump(directory, DumpFileName, telemetrySnapshot, telemetryCursor, reasonFlags | TelemetryFlagVaultUnavailable);
-                return;
-            }
-
-            if (!vault.TryAcquireMutationGuard(ShaderGlobalStateMutationGuardMask))
-            {
-                TryWriteTelemetryDump(directory, DumpFileName, telemetrySnapshot, telemetryCursor, reasonFlags | TelemetryFlagVaultUnavailable);
-                return;
-            }
-
             bool copiedTelemetry = false;
-            try
+            if (TryReadCachedShaderGlobalSlots(out NativeArray<float4>.ReadOnly slots) &&
+                slots.Length >= TelemetrySlotStart + TelemetryCapacity)
             {
-                if (!TryResolveShaderGlobalSlotsLocked(vault, out NativeArray<float4> slots) ||
-                    !slots.IsCreated ||
-                    slots.Length < TelemetrySlotStart + TelemetryCapacity)
-                {
-                    reasonFlags |= TelemetryFlagVaultUnavailable;
-                }
-                else
-                {
-                    for (int i = 0; i < TelemetryCapacity; i++)
-                        telemetrySnapshot[i] = slots[TelemetrySlotStart + i];
-                    telemetryCursor = _telemetryCursor;
-                    copiedTelemetry = true;
-                }
-            }
-            finally
-            {
-                vault.ReleaseMutationGuard(ShaderGlobalStateMutationGuardMask);
+                for (int i = 0; i < TelemetryCapacity; i++)
+                    telemetrySnapshot[i] = slots[TelemetrySlotStart + i];
+                telemetryCursor = _telemetryCursor;
+                copiedTelemetry = true;
             }
 
             if (!copiedTelemetry)
                 reasonFlags |= TelemetryFlagVaultUnavailable;
-            TryWriteTelemetryDump(directory, DumpFileName, telemetrySnapshot, telemetryCursor, reasonFlags);
-        }
-
-        private static void TryWriteTelemetryDump(string directory, string fileName, ReadOnlySpan<float4> telemetrySnapshot, int telemetryCursor, uint reasonFlags)
-        {
-            string path = Path.Combine(directory, fileName);
-            try
-            {
-                Directory.CreateDirectory(directory);
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                writer.Write(DumpMagic);
-                writer.Write(TelemetryCapacity);
-                writer.Write(telemetryCursor);
-                writer.Write(reasonFlags);
-                for (int i = 0; i < TelemetryCapacity; i++)
-                {
-                    float4 entry = telemetrySnapshot[i];
-                    writer.Write(entry.x);
-                    writer.Write(entry.y);
-                    writer.Write(entry.z);
-                    writer.Write(entry.w);
-                }
-            }
-            catch (Exception exception)
-            {
-                Hecton8.Core.H8Debug.LogWarning("[GlobalShaderDispatcher] Failed CBuffer telemetry dump: " + exception.Message);
-            }
+            _ = telemetrySnapshot.Length;
+            _ = telemetryCursor;
+            _ = reasonFlags;
         }
 
 #if UNITY_EDITOR

@@ -15,6 +15,46 @@ namespace Hecton8.Caves
         private static readonly int _EmissionColorId = Shader.PropertyToID("_EmissionColor");
         private static MaterialPropertyBlock _GrowthPropertyBlock;
 
+        public static Transform Prewarm(Transform parent)
+        {
+            if (parent == null)
+                return null;
+
+            Transform root = GetOrCreateRoot(parent);
+            for (int i = 0; i < MaxGrowthCount; i++)
+            {
+                if (i < root.childCount)
+                {
+                    WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisual(
+                        root.GetChild(i).gameObject,
+                        PrimitiveType.Capsule,
+                        GetCachedName(i),
+                        Vector3.zero,
+                        Quaternion.identity,
+                        Vector3.one);
+                    continue;
+                }
+
+                Renderer renderer = WorldGeneratedPrimitiveFactory.CreatePrimitiveVisual(
+                    root,
+                    PrimitiveType.Capsule,
+                    GetCachedName(i),
+                    Vector3.zero,
+                    Quaternion.identity,
+                    Vector3.one);
+                if (renderer != null)
+                    renderer.gameObject.SetActive(false);
+            }
+
+            DisableUnusedChildren(root, 0);
+            return root;
+        }
+
+        public static void PrewarmSharedResources()
+        {
+            _ = GetGrowthPropertyBlock();
+        }
+
         public static void Build(
             Transform parent,
             HectonVoxelVolume volume,
@@ -25,10 +65,34 @@ namespace Hecton8.Caves
             if (parent == null || volume == null || config == null || !config.enabled)
                 return;
 
+            Transform growthRoot = GetOrCreateRoot(parent);
+            BuildPrepared(growthRoot, volume, preset, config, globalIntensity, createMissing: true);
+        }
+
+        public static void BuildPrepared(
+            Transform growthRoot,
+            HectonVoxelVolume volume,
+            CavePreset preset,
+            WallGrowthConfig config,
+            float globalIntensity)
+        {
+            BuildPrepared(growthRoot, volume, preset, config, globalIntensity, createMissing: false);
+        }
+
+        private static void BuildPrepared(
+            Transform growthRoot,
+            HectonVoxelVolume volume,
+            CavePreset preset,
+            WallGrowthConfig config,
+            float globalIntensity,
+            bool createMissing)
+        {
+            if (growthRoot == null || volume == null || config == null || !config.enabled)
+                return;
+
             if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, preset, out Bounds volumeBounds))
                 return;
 
-            Transform growthRoot = GetOrCreateRoot(parent);
             Material growthMaterial = ResolveGrowthMaterial(volume);
             int growthCount = ResolveGrowthCount(preset, volumeBounds, config, globalIntensity);
 
@@ -41,7 +105,8 @@ namespace Hecton8.Caves
                     growthMaterial,
                     config,
                     globalIntensity,
-                    volume.caveKey != 0L ? volume.caveKey : ComputeFallbackSeed(volume.transform.position, preset));
+                    volume.caveKey != 0L ? volume.caveKey : ComputeFallbackSeed(volume.transform.position, preset),
+                    createMissing);
                 ApplyGrowthVisuals(growthRenderer, config, globalIntensity);
             }
 
@@ -55,7 +120,8 @@ namespace Hecton8.Caves
             Material growthMaterial,
             WallGrowthConfig config,
             float globalIntensity,
-            long runtimeSeed)
+            long runtimeSeed,
+            bool createMissing)
         {
             string name = GetCachedName(index);
             bool ceilingBias = Hash01(runtimeSeed, index, 11) > 0.55f;
@@ -85,7 +151,7 @@ namespace Hecton8.Caves
             {
                 Transform existing = root.GetChild(index);
                 ActivateTransform(existing);
-                return WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisual(
+                return WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisualHot(
                     existing.gameObject,
                     PrimitiveType.Capsule,
                     name,
@@ -94,6 +160,9 @@ namespace Hecton8.Caves
                     localScale,
                     growthMaterial);
             }
+
+            if (!createMissing)
+                return null;
 
             return WorldGeneratedPrimitiveFactory.CreatePrimitiveVisual(
                 root,
@@ -155,7 +224,8 @@ namespace Hecton8.Caves
 
         private static Material ResolveGrowthMaterial(HectonVoxelVolume volume)
         {
-            if (volume != null && volume.TryGetComponent(out MeshRenderer renderer))
+            MeshRenderer renderer = volume != null ? volume.CachedMeshRenderer : null;
+            if (renderer != null)
                 return renderer.sharedMaterial;
 
             return null;

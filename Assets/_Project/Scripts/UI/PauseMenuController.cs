@@ -27,6 +27,12 @@ namespace Hecton8.UI
         internal static PauseMenuController ActiveRuntimeInstance { get; private set; }
         private const string PauseMenuRootName = "PauseMenu_Root";
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeForSubsystemRegistration()
+        {
+            ActiveRuntimeInstance = null;
+        }
+
         private enum PauseSection
         {
             Main = 0,

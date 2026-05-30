@@ -7,6 +7,9 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class WorldProceduralProxyInstance : MonoBehaviour, IPoolable
     {
+        private static readonly Dictionary<GameObject, WorldProceduralProxyInstance> s_instanceCache =
+            new Dictionary<GameObject, WorldProceduralProxyInstance>(2048);
+
         private const string ScatterLayerGroundLabel = "Ground";
         private const string ScatterLayerClusterLabel = "Cluster";
         private const string ScatterLayerStructureLabel = "Structure";
@@ -82,6 +85,10 @@ namespace Hecton8.World
         private bool _cullingRegistered;
         private bool _poolManaged;
         private Transform _generatedGeologyRoot;
+        private bool _runtimeComponentCacheReady;
+        private bool _runtimeComponentCacheDirty = true;
+        private bool _optimizationRegistrationDirty = true;
+        private bool _collisionStateDirty = true;
 
         // COLD ALLOC: List<LODGroup>[4] — runtime child LOD scan buffer — owner: WorldProceduralProxyInstance
         private readonly List<LODGroup> _lodGroupBuffer = new List<LODGroup>(4);
@@ -102,6 +109,8 @@ namespace Hecton8.World
         public bool UsesGenerativeGeology => usesGenerativeGeology;
         public WorldStreamingLayer ActiveStreamingLayer => streamingLayer;
         public string PlacementSource => placementSource;
+        public bool HasPendingOptimizationRegistration =>
+            _optimizationRegistrationDirty || _runtimeComponentCacheDirty || _collisionStateDirty;
         public WorldChunkCoordinate ChunkCoord => new WorldChunkCoordinate(chunkX, chunkZ);
         public bool HasMacroZone => hasMacroZone;
         public WorldMacroZoneCoordinate MacroZoneCoord => new WorldMacroZoneCoordinate(macroZoneX, macroZoneZ);
@@ -114,19 +123,55 @@ namespace Hecton8.World
         public float CompositionPotential => compositionPotential;
         public bool IsGeneratedGeologyApplied => generatedGeologyApplied;
 
+        public static bool TryGetCached(GameObject instance, out WorldProceduralProxyInstance proxy)
+        {
+            if (instance != null &&
+                s_instanceCache.TryGetValue(instance, out proxy) &&
+                proxy != null)
+            {
+                return true;
+            }
+
+            proxy = null;
+            return false;
+        }
+
+        private void Awake()
+        {
+            s_instanceCache[gameObject] = this;
+            RefreshRuntimeComponentCachesCold();
+            MarkOptimizationRegistrationDirty(componentTopologyChanged: false);
+        }
+
         private void OnEnable()
         {
-            RefreshOptimizationRegistration();
+            s_instanceCache[gameObject] = this;
+            MarkOptimizationRegistrationDirty(componentTopologyChanged: false);
         }
 
         private void OnDisable()
         {
+            RemoveFromInstanceCache();
             UnregisterOptimizationRegistration();
         }
 
         private void OnDestroy()
         {
+            RemoveFromInstanceCache();
             UnregisterOptimizationRegistration();
+        }
+
+        private void RemoveFromInstanceCache()
+        {
+            GameObject owner = gameObject;
+            if (owner == null)
+                return;
+
+            if (s_instanceCache.TryGetValue(owner, out WorldProceduralProxyInstance cached) &&
+                ReferenceEquals(cached, this))
+            {
+                s_instanceCache.Remove(owner);
+            }
         }
 
         private static string ResolveScatterLayerLabel(WorldPrefabFamilyProfile family)
@@ -225,7 +270,7 @@ namespace Hecton8.World
             hasMacroZone = false;
             macroZoneX = 0;
             macroZoneZ = 0;
-            RefreshOptimizationRegistration();
+            MarkOptimizationRegistrationDirty(componentTopologyChanged: true);
         }
 
         public void ConfigureScatter(
@@ -307,7 +352,7 @@ namespace Hecton8.World
             hasMacroZone = configuredHasMacroZone;
             macroZoneX = configuredMacroZoneCoord.x;
             macroZoneZ = configuredMacroZoneCoord.z;
-            ApplyCollisionState();
+            MarkOptimizationRegistrationDirty(componentTopologyChanged: true);
         }
 
         public void SetPoolManaged(bool poolManaged)
@@ -344,7 +389,7 @@ namespace Hecton8.World
         /// </summary>
         public void OnSpawn()
         {
-            RefreshOptimizationRegistration();
+            MarkOptimizationRegistrationDirty(componentTopologyChanged: false);
         }
 
         /// <summary>
@@ -364,22 +409,51 @@ namespace Hecton8.World
         {
             scatterSyncSignature = syncSignature;
             generatedGeologyApplied = geologyApplied;
-            RefreshOptimizationRegistration();
+            MarkOptimizationRegistrationDirty(componentTopologyChanged: true);
         }
 
-        private void RefreshOptimizationRegistration()
+        public void RefreshOptimizationRegistrationCold()
         {
             if (!isActiveAndEnabled)
                 return;
 
-            RefreshLodRegistration();
-            RefreshCullingRegistration();
+            if (_runtimeComponentCacheDirty || !_runtimeComponentCacheReady)
+                RefreshRuntimeComponentCachesCold();
+
+            if (_collisionStateDirty)
+                ApplyCollisionStateFromCache();
+
+            if (_optimizationRegistrationDirty)
+            {
+                RefreshLodRegistrationFromCache();
+                RefreshCullingRegistrationCold();
+                _optimizationRegistrationDirty = false;
+            }
         }
 
-        private void ApplyCollisionState()
+        private void MarkOptimizationRegistrationDirty(bool componentTopologyChanged)
         {
+            if (componentTopologyChanged)
+                _runtimeComponentCacheDirty = true;
+
+            _optimizationRegistrationDirty = true;
+            _collisionStateDirty = true;
+        }
+
+        private void RefreshRuntimeComponentCachesCold()
+        {
+            _lodGroupBuffer.Clear();
             _colliderBuffer.Clear();
+            gameObject.GetComponentsInChildren(true, _lodGroupBuffer);
             gameObject.GetComponentsInChildren(true, _colliderBuffer);
+            _runtimeComponentCacheReady = true;
+            _runtimeComponentCacheDirty = false;
+        }
+
+        private void ApplyCollisionStateFromCache()
+        {
+            if (!_runtimeComponentCacheReady)
+                return;
 
             for (int i = 0; i < _colliderBuffer.Count; i++)
             {
@@ -387,11 +461,13 @@ namespace Hecton8.World
                 if (current != null)
                     current.enabled = collisionEnabled;
             }
+
+            _collisionStateDirty = false;
         }
 
-        private void RefreshLodRegistration()
+        private void RefreshLodRegistrationFromCache()
         {
-            LODSystemManager manager = GlobalRegistry.LODSystem;
+            LODSystemManager manager = LODSystemManager.Instance;
             if (manager == null)
             {
                 UnregisterLodGroups();
@@ -404,9 +480,6 @@ namespace Hecton8.World
                 UnregisterLodGroups();
                 _lodSystemManager = manager;
             }
-
-            _lodGroupBuffer.Clear();
-            gameObject.GetComponentsInChildren(true, _lodGroupBuffer);
 
             for (int i = _registeredLodGroups.Count - 1; i >= 0; i--)
             {
@@ -431,9 +504,9 @@ namespace Hecton8.World
             }
         }
 
-        private void RefreshCullingRegistration()
+        private void RefreshCullingRegistrationCold()
         {
-            CullingManager manager = GlobalRegistry.Culling;
+            CullingManager manager = CullingManager.Instance;
             if (manager == null)
             {
                 UnregisterCulling();

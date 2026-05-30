@@ -45,6 +45,13 @@ namespace Hecton8.Ecosystem
         public const uint CarrionTelemetryFlagNaN = 1u << 0;
         public const uint CarrionTelemetryFlagOverBudget = 1u << 1;
         public const uint CarrionTelemetryFlagOverflow = 1u << 2;
+        private static readonly ulong CarrionProfileCsvMutationGuardMask =
+            MutationGuardBit(BufferID.ShinobuCarrionProfiles);
+#if UNITY_EDITOR
+        private static readonly byte[] s_carrionCsvImportScratch = new byte[CarrionCsvScratchBytes];
+        private static readonly CarrionDecayProfileDTO[] s_carrionProfileImportScratch = new CarrionDecayProfileDTO[CarrionProfileCapacity];
+        private static int s_carrionCsvImportScratchBusy;
+#endif
 
         private VaultGenerationHandle<CarrionStateDTO> _carrionStateHandle;
         private VaultGenerationHandle<CarrionDeathSignalDTO> _carrionDeathIngressHandle;
@@ -62,6 +69,7 @@ namespace Hecton8.Ecosystem
         private int _carrionDeathSignalGeneration;
         private int _carrionTelemetryCursor;
         private int _lastCarrionTelemetrySlot;
+        private IDataVault _carrionJobGuardVault;
         private bool _carrionInitialized;
         private bool _carrionJobLocksHeld;
         private bool _carrionProfilesLoadedCold;
@@ -389,32 +397,30 @@ namespace Hecton8.Ecosystem
             }
 
             bool tuningOpened = TryOpenReadVaultBuffer(vault, in _carrionTuningHandle, out NativeArray<CarrionTuningDTO>.ReadOnly tuningArray);
-            if (!TryOpenReadVaultBuffer(vault, in _carrionCountersHandle, out NativeArray<CarrionRuntimeCountersDTO>.ReadOnly countersRead))
-                return;
-
             CarrionTuningDTO tuning = tuningOpened
                 ? CarrionDecayMath.SanitizeTuning(tuningArray[0], tuningArray[0].GridOriginAup)
                 : CarrionDecayMath.CreateDefaultTuning(ResolveGridOriginAup());
-            CarrionRuntimeCountersDTO counter = countersRead[0];
-            int pending = math.clamp(counter.DeathIngressCount, 0, CarrionDeathIngressCapacity);
-            int writeCursor = CarrionDecayMath.PositiveModulo(counter.DeathIngressWriteCursor, CarrionDeathIngressCapacity);
-            int accepted = 0;
-            uint overflow = counter.OverflowCount;
 
-            bool deathLocked = false;
+            if (!vault.TryAcquireMutationGuard(CarrionDeathIngressMutationGuardMask))
+                return;
+
             try
             {
-                if (!vault.TryAcquireWriteLock(in _carrionDeathIngressHandle, SystemID.AIEcology, out NativeArray<CarrionDeathSignalDTO> ingress))
-                {
-                    return;
-                }
-
-                deathLocked = true;
-                if (!ingress.IsCreated ||
+                if (!vault.TryResolveHandle(in _carrionCountersHandle, out NativeArray<CarrionRuntimeCountersDTO> counters) ||
+                    !vault.TryResolveHandle(in _carrionDeathIngressHandle, out NativeArray<CarrionDeathSignalDTO> ingress) ||
+                    !counters.IsCreated ||
+                    counters.Length <= 0 ||
+                    !ingress.IsCreated ||
                     ingress.Length < CarrionDeathIngressCapacity)
                 {
                     return;
                 }
+
+                CarrionRuntimeCountersDTO counter = counters[0];
+                int pending = math.clamp(counter.DeathIngressCount, 0, CarrionDeathIngressCapacity);
+                int writeCursor = CarrionDecayMath.PositiveModulo(counter.DeathIngressWriteCursor, CarrionDeathIngressCapacity);
+                int accepted = 0;
+                uint overflow = counter.OverflowCount;
 
                 for (int i = 0; i < snapshot.Length; i++)
                 {
@@ -450,80 +456,17 @@ namespace Hecton8.Ecosystem
                     };
                     accepted++;
                 }
+
+                counter.DeathIngressWriteCursor = (writeCursor + accepted) % CarrionDeathIngressCapacity;
+                counter.DeathIngressCount = pending + accepted;
+                counter.OverflowCount = overflow;
+                counter.Flags = overflow != 0u ? counter.Flags | CarrionTelemetryFlagOverflow : counter.Flags;
+                counters[0] = counter;
+                _carrionDeathSignalGeneration = generation;
             }
             finally
             {
-                if (deathLocked)
-                    vault.ReleaseWriteLock(in _carrionDeathIngressHandle, SystemID.AIEcology);
-            }
-
-            bool countersLocked = false;
-            bool rollbackIngress = false;
-            try
-            {
-                if (!vault.TryAcquireWriteLock(in _carrionCountersHandle, SystemID.AIEcology, out NativeArray<CarrionRuntimeCountersDTO> counters))
-                {
-                    rollbackIngress = true;
-                }
-                else
-                {
-                    countersLocked = true;
-                    if (!counters.IsCreated ||
-                        counters.Length <= 0)
-                    {
-                        rollbackIngress = true;
-                    }
-                    else
-                    {
-                        counter.DeathIngressWriteCursor = (writeCursor + accepted) % CarrionDeathIngressCapacity;
-                        counter.DeathIngressCount = pending + accepted;
-                        counter.OverflowCount = overflow;
-                        counter.Flags = overflow != 0u ? counter.Flags | CarrionTelemetryFlagOverflow : counter.Flags;
-                        counters[0] = counter;
-                        _carrionDeathSignalGeneration = generation;
-                    }
-                }
-            }
-            finally
-            {
-                if (countersLocked)
-                    vault.ReleaseWriteLock(in _carrionCountersHandle, SystemID.AIEcology);
-            }
-
-            if (rollbackIngress)
-                ClearCarrionDeathIngressRange(vault, writeCursor, accepted);
-        }
-
-        private void ClearCarrionDeathIngressRange(IDataVault vault, int writeCursor, int count)
-        {
-            if (vault == null || count <= 0)
-                return;
-
-            bool deathLocked = false;
-            try
-            {
-                if (!vault.TryAcquireWriteLock(in _carrionDeathIngressHandle, SystemID.AIEcology, out NativeArray<CarrionDeathSignalDTO> ingress))
-                    return;
-
-                deathLocked = true;
-                if (!ingress.IsCreated ||
-                    ingress.Length < CarrionDeathIngressCapacity)
-                {
-                    return;
-                }
-
-                int safeCount = math.min(count, CarrionDeathIngressCapacity);
-                int cursor = CarrionDecayMath.PositiveModulo(writeCursor, CarrionDeathIngressCapacity);
-                for (int i = 0; i < safeCount; i++)
-                {
-                    int slot = (cursor + i) % CarrionDeathIngressCapacity;
-                    ingress[slot] = default;
-                }
-            }
-            finally
-            {
-                if (deathLocked)
-                    vault.ReleaseWriteLock(in _carrionDeathIngressHandle, SystemID.AIEcology);
+                vault.ReleaseMutationGuard(CarrionDeathIngressMutationGuardMask);
             }
         }
 
@@ -535,6 +478,7 @@ namespace Hecton8.Ecosystem
                 return false;
 
             _carrionJobLocksHeld = true;
+            _carrionJobGuardVault = vault;
             return true;
         }
 
@@ -544,7 +488,8 @@ namespace Hecton8.Ecosystem
                 return;
 
             _carrionJobLocksHeld = false;
-            IDataVault vault = _vault;
+            IDataVault vault = _carrionJobGuardVault;
+            _carrionJobGuardVault = null;
             if (vault != null)
                 vault.ReleaseMutationGuard(CarrionJobMutationGuardMask);
         }
@@ -811,90 +756,107 @@ namespace Hecton8.Ecosystem
             if (lastWriteUtc.Ticks == _carrionCsvTimestampTicks)
                 return true;
 
-            if (!IsMatchingVaultHandle(in _carrionCsvScratchHandle, BufferID.ShinobuCarrionCsvScratch) ||
-                !IsMatchingVaultHandle(in _carrionProfileHandle, BufferID.ShinobuCarrionProfiles))
+            if (!IsMatchingVaultHandle(in _carrionProfileHandle, BufferID.ShinobuCarrionProfiles))
             {
                 return false;
             }
 
-            int bytesRead = 0;
-            bool scratchLocked = false;
+            int bytesRead;
+            int parsed;
+            if (System.Threading.Interlocked.CompareExchange(ref s_carrionCsvImportScratchBusy, 1, 0) != 0)
+                return false;
+
             try
             {
-                if (!vault.TryAcquireWriteLock(in _carrionCsvScratchHandle, SystemID.AIEcology, out NativeArray<byte> scratch))
-                    return false;
-
-                scratchLocked = true;
-                if (!scratch.IsCreated ||
-                    scratch.Length <= 0)
+                try
                 {
+                    bytesRead = ReadCsvBytesCold(path, s_carrionCsvImportScratch, CarrionCsvScratchBytes);
+                    if (bytesRead <= 0)
+                        return false;
+
+                    parsed = CarrionDecayCsvParser.ParseProfiles(
+                        s_carrionCsvImportScratch.AsSpan(0, bytesRead),
+                        s_carrionProfileImportScratch);
+                    if (parsed <= 0)
+                        return false;
+                }
+                catch (IOException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+                    return false;
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+                    return false;
+                }
+                catch (NotSupportedException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
                     return false;
                 }
 
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                if (!vault.TryAcquireMutationGuard(CarrionProfileCsvMutationGuardMask))
+                    return false;
+
+                try
                 {
-                    int maxBytes = math.min(scratch.Length, CarrionCsvScratchBytes);
-                    bytesRead = stream.Read(new Span<byte>(NativeArrayUnsafeUtility.GetUnsafePtr(scratch), maxBytes));
-                }
-            }
-            finally
-            {
-                if (scratchLocked)
-                    vault.ReleaseWriteLock(in _carrionCsvScratchHandle, SystemID.AIEcology);
-            }
+                    if (!vault.TryResolveHandle(in _carrionProfileHandle, out NativeArray<CarrionDecayProfileDTO> profiles) ||
+                        !profiles.IsCreated ||
+                        profiles.Length < CarrionProfileCapacity)
+                    {
+                        return false;
+                    }
 
-            bool profilesLocked = false;
-            try
-            {
-                if (!TryOpenReadVaultBuffer(vault, in _carrionCsvScratchHandle, bytesRead, out NativeArray<byte>.ReadOnly scratchRead))
-                    return false;
+                    fixed (CarrionDecayProfileDTO* source = s_carrionProfileImportScratch)
+                    {
+                        UnsafeUtility.MemCpy(
+                            NativeArrayUnsafeUtility.GetUnsafePtr(profiles),
+                            source,
+                            CarrionProfileCapacity * UnsafeUtility.SizeOf<CarrionDecayProfileDTO>());
+                    }
 
-                if (!vault.TryAcquireWriteLock(in _carrionProfileHandle, SystemID.AIEcology, out NativeArray<CarrionDecayProfileDTO> profiles))
-                    return false;
-
-                profilesLocked = true;
-                if (!profiles.IsCreated ||
-                    profiles.Length < CarrionProfileCapacity)
-                {
-                    return false;
-                }
-
-                if (bytesRead <= 0)
-                    return false;
-
-                int parsed = CarrionDecayCsvParser.ParseProfiles(
-                    new ReadOnlySpan<byte>(scratchRead.GetUnsafeReadOnlyPtr(), bytesRead),
-                    profiles);
-                if (parsed > 0)
-                {
                     _carrionCsvTimestampTicks = lastWriteUtc.Ticks;
                     return true;
                 }
-            }
-            catch (IOException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
-            }
-            catch (ArgumentException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
-            }
-            catch (NotSupportedException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
-            }
-            catch (InvalidOperationException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+                catch (IOException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+                }
+                catch (ArgumentException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+                }
+                catch (NotSupportedException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+                }
+                catch (InvalidOperationException)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(0x43333134u, CarrionRouteHash, 0f);
+                }
+                finally
+                {
+                    vault.ReleaseMutationGuard(CarrionProfileCsvMutationGuardMask);
+                }
             }
             finally
             {
-                if (profilesLocked)
-                    vault.ReleaseWriteLock(in _carrionProfileHandle, SystemID.AIEcology);
+                System.Threading.Volatile.Write(ref s_carrionCsvImportScratchBusy, 0);
             }
 
             return false;
@@ -945,6 +907,7 @@ namespace Hecton8.Ecosystem
             _carrionProfilesLoadedCold = false;
             _carrionProfilesLoadAttemptedCold = false;
             _carrionJobLocksHeld = false;
+            _carrionJobGuardVault = null;
         }
 
         private void ResetCarrionHandlesNoRelease()
@@ -967,6 +930,7 @@ namespace Hecton8.Ecosystem
             _carrionProfilesLoadedCold = false;
             _carrionProfilesLoadAttemptedCold = false;
             _carrionJobLocksHeld = false;
+            _carrionJobGuardVault = null;
         }
     }
 
@@ -1794,13 +1758,22 @@ namespace Hecton8.Ecosystem
     #if UNITY_EDITOR
     public static class CarrionDecayCsvParser
     {
-        public static int ParseProfiles(ReadOnlySpan<byte> bytes, NativeArray<CarrionDecayProfileDTO> profiles)
+        public static unsafe int ParseProfiles(ReadOnlySpan<byte> bytes, NativeArray<CarrionDecayProfileDTO> profiles)
         {
             if (!profiles.IsCreated || profiles.Length <= 0)
                 return 0;
 
-            for (int i = 0; i < profiles.Length; i++)
-                profiles[i] = default;
+            return ParseProfiles(
+                bytes,
+                new Span<CarrionDecayProfileDTO>(NativeArrayUnsafeUtility.GetUnsafePtr(profiles), profiles.Length));
+        }
+
+        public static int ParseProfiles(ReadOnlySpan<byte> bytes, Span<CarrionDecayProfileDTO> profiles)
+        {
+            if (profiles.Length <= 0)
+                return 0;
+
+            profiles.Clear();
 
             int cursor = 0;
             int count = 0;

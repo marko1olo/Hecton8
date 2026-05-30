@@ -297,65 +297,8 @@ namespace Hecton8.AI.Ecosystem
 
         private static unsafe void DumpFlockingBlackBox(NativeArray<FlockingTelemetryEntry> telemetry, int cursor)
         {
-            try
-            {
-                string root = BuildProjectRootForIo();
-                string path = Path.Combine(root, FlockingDumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (directory != null && directory.Length != 0 && !Directory.Exists(directory))
-                    Directory.CreateDirectory(directory);
-
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    int capacity = telemetry.Length;
-                    int written = math.max(0, cursor);
-                    int dumpCount = math.min(capacity, written);
-                    int start = written < capacity ? 0 : cursor % capacity;
-                    writer.Write(FlockingDumpMagic);
-                    writer.Write(FlockingDumpVersion);
-                    writer.Write(capacity);
-                    writer.Write(dumpCount);
-                    writer.Write(cursor);
-                    writer.Write(start);
-                    writer.Write(UnsafeUtility.SizeOf<FlockingTelemetryEntry>());
-                    writer.Flush();
-
-                    FlockingTelemetryEntry* ptr = (FlockingTelemetryEntry*)telemetry.GetUnsafeReadOnlyPtr();
-                    int firstCount = math.min(dumpCount, capacity - start);
-                    WriteFlockingEntrySegment(stream, ptr, start, firstCount);
-                    WriteFlockingEntrySegment(stream, ptr, 0, dumpCount - firstCount);
-                }
-            }
-            catch (IOException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x464C444Du, SourceHash, 0f);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x464C444Du, SourceHash, 0f);
-            }
-            catch (ArgumentException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x464C444Du, SourceHash, 0f);
-            }
-            catch (NotSupportedException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x464C444Du, SourceHash, 0f);
-            }
-            catch (InvalidOperationException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x464C444Du, SourceHash, 0f);
-            }
-        }
-
-        private static unsafe void WriteFlockingEntrySegment(FileStream stream, FlockingTelemetryEntry* ptr, int start, int count)
-        {
-            if (count <= 0)
-                return;
-
-            ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>(ptr + start, count * UnsafeUtility.SizeOf<FlockingTelemetryEntry>());
-            stream.Write(bytes);
+            _ = telemetry;
+            _ = cursor;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

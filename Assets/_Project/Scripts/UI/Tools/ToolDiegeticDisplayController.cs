@@ -57,7 +57,7 @@ namespace Hecton8.UI.Tools
         [SerializeField] private TMP_Text _secondaryLabel;
         [Tooltip("Renderer for the physical emissive tool screen.")]
         [SerializeField] private Renderer _screenRenderer;
-        [Tooltip("Texture used when quality pressure disables the render-texture camera.")]
+        [Tooltip("Texture used when the render-texture route is unavailable or the tool screen is not renderable.")]
         [SerializeField] private Texture _fallbackEmissiveTexture;
 
         [Header("Filtering")]
@@ -167,6 +167,7 @@ namespace Hecton8.UI.Tools
             _renderRequested = true;
             _notRenderableSeconds = 0f;
             ResolveQualityImmediate();
+            CacheRenderTexturePoolCold();
             TryRegisterHotSwapListener();
             TryRegisterSlowTickable();
             TryRegisterLateFrameTickable();
@@ -176,6 +177,7 @@ namespace Hecton8.UI.Tools
 
         private void Start()
         {
+            CacheRenderTexturePoolCold();
             TryRegisterHotSwapListener();
             TryRegisterSlowTickable();
             TryRegisterLateFrameTickable();
@@ -327,6 +329,7 @@ namespace Hecton8.UI.Tools
         public void SlowTick()
         {
             QueueQualityCandidate(HomeostasisBrain.GlobalQualityWeight);
+            FlushPendingRenderTextureResourceState();
         }
 
         public void LateFrameTick()
@@ -340,6 +343,7 @@ namespace Hecton8.UI.Tools
                 return;
 
             bool hasPresentationCommit = _pendingPresentationCommit;
+            bool releaseRenderTexture = _pendingReleaseRenderTexture;
             if (_pendingStateRefresh || _stateDirty)
             {
                 _pendingStateRefresh = false;
@@ -349,25 +353,18 @@ namespace Hecton8.UI.Tools
             if (!hasPresentationCommit)
                 return;
 
-            bool ensureRenderTexture = _pendingEnsureRenderTexture;
-            bool releaseRenderTexture = _pendingReleaseRenderTexture;
             bool applyScreenTexture = _pendingApplyScreenTexture;
-            bool useRenderTexture = _pendingUseRenderTexture;
+            bool useRenderTexture = _pendingUseRenderTexture && !releaseRenderTexture;
             bool fallbackActive = _pendingFallbackActive;
-            bool renderThisFrame = _pendingRenderThisFrame;
+            bool renderThisFrame = _pendingRenderThisFrame && !releaseRenderTexture;
 
             _pendingPresentationCommit = false;
-            _pendingEnsureRenderTexture = false;
-            _pendingReleaseRenderTexture = false;
             _pendingApplyScreenTexture = false;
             _pendingUseRenderTexture = false;
             _pendingFallbackActive = false;
             _pendingRenderThisFrame = false;
 
-            if (releaseRenderTexture)
-                ReleaseRenderTexture();
-
-            if (ensureRenderTexture && _renderTexture == null)
+            if (releaseRenderTexture || _renderTexture == null)
             {
                 useRenderTexture = false;
                 fallbackActive = true;
@@ -559,7 +556,7 @@ namespace Hecton8.UI.Tools
 
             Span<char> span = _primaryBuffer.AsSpan();
             int cursor = 0;
-            bool compactTitle = _fallbackActive || _qualityFallback01 >= 0.66f;
+            bool compactTitle = _fallbackActive;
             if (compactTitle ||
                 !TryResolveScannerTitle(artifactHash, span, out cursor) ||
                 cursor <= 0)
@@ -657,7 +654,7 @@ namespace Hecton8.UI.Tools
             if (_poolUnavailableFallback && _poolRetrySeconds > 0f)
                 return;
 
-            IRenderTexturePoolService pool = CacheRenderTexturePoolCold();
+            IRenderTexturePoolService pool = _cachedRenderTexturePool;
             if (pool == null)
             {
                 _poolUnavailableFallback = true;
@@ -819,8 +816,16 @@ namespace Hecton8.UI.Tools
             bool renderThisFrame)
         {
             _pendingPresentationCommit = true;
-            _pendingEnsureRenderTexture |= ensureRenderTexture;
-            _pendingReleaseRenderTexture |= releaseRenderTexture;
+            if (releaseRenderTexture)
+            {
+                _pendingReleaseRenderTexture = true;
+                _pendingEnsureRenderTexture = false;
+            }
+            else if (ensureRenderTexture)
+            {
+                _pendingEnsureRenderTexture = true;
+            }
+
             _pendingApplyScreenTexture |= applyScreenTexture;
             _pendingUseRenderTexture = useRenderTexture;
             _pendingFallbackActive = fallbackActive;
@@ -928,6 +933,24 @@ namespace Hecton8.UI.Tools
             _renderRequested = true;
         }
 
+        private void FlushPendingRenderTextureResourceState()
+        {
+            bool releaseRenderTexture = _pendingReleaseRenderTexture;
+            bool ensureRenderTexture = _pendingEnsureRenderTexture && !releaseRenderTexture;
+
+            _pendingReleaseRenderTexture = false;
+            _pendingEnsureRenderTexture = false;
+
+            if (releaseRenderTexture)
+            {
+                ReleaseRenderTexture();
+                return;
+            }
+
+            if (ensureRenderTexture)
+                EnsureRenderTexture();
+        }
+
         private void QueueQualityCandidate(float qualityWeight01)
         {
             if (!_qualityInitialized)
@@ -959,7 +982,7 @@ namespace Hecton8.UI.Tools
 
         private bool ResolveRequestedFallback()
         {
-            return _qualityFallback01 >= 0.75f || _poolUnavailableFallback;
+            return _poolUnavailableFallback;
         }
 
         private void TryRegisterSlowTickable()

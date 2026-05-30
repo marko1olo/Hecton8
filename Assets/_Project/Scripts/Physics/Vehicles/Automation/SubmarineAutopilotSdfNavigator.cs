@@ -1401,7 +1401,7 @@ namespace Hecton8.Vehicles.Automation
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Physics/Vehicles/Submarine Autopilot SDF Navigator")]
-    public unsafe sealed class SubmarineAutopilotSdfNavigator : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public unsafe sealed class SubmarineAutopilotSdfNavigator : MonoBehaviour, IFixedTickable, IPostFixedTickable, IColdTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
 #if UNITY_EDITOR
         private const long MaxCsvBytes = SubmarineAutopilotConstants.CsvScratchBytes;
@@ -1465,6 +1465,7 @@ namespace Hecton8.Vehicles.Automation
         private bool _initPending;
         private bool _registeredFixed;
         private bool _registeredPostFixed;
+        private bool _registeredCold;
         private bool _registeredSlow;
         private bool _registeredHotSwap;
         private bool _buffersReady;
@@ -1505,6 +1506,7 @@ namespace Hecton8.Vehicles.Automation
             WarmCoreBlackboxRoute();
             _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             _registeredPostFixed = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
+            _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
             _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
@@ -1519,12 +1521,15 @@ namespace Hecton8.Vehicles.Automation
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             if (_registeredPostFixed)
                 GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+            if (_registeredCold)
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
             if (_registeredSlow)
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             if (_registeredHotSwap)
                 GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredFixed = false;
             _registeredPostFixed = false;
+            _registeredCold = false;
             _registeredSlow = false;
             _registeredHotSwap = false;
             _coreBlackboxWarmed = false;
@@ -1562,7 +1567,7 @@ namespace Hecton8.Vehicles.Automation
                 return;
             }
 
-            if (!EnsureVaultBuffers())
+            if (!HasVaultBuffersReady())
                 return;
 
             if (!_initialized)
@@ -1597,6 +1602,15 @@ namespace Hecton8.Vehicles.Automation
 #endif
         }
 
+        public void ColdTick()
+        {
+            if (!Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            if (!_buffersLocked && !_solverPending && !_initPending)
+                EnsureVaultBuffers();
+        }
+
         public bool TryWriteTargetAup(int submarineIndex, double3 targetAup, float speed)
         {
             if (!_buffersReady || _dataVault == null || _buffersLocked || (uint)submarineIndex >= (uint)vehicleCapacity || _solverPending || _initPending)
@@ -1607,7 +1621,8 @@ namespace Hecton8.Vehicles.Automation
                     in _autopilotHandle,
                     SubmarineAutopilotVaultRoute.AutopilotStates,
                     math.clamp(vehicleCapacity, 1, SubmarineAutopilotConstants.MaxVehicles),
-                    out NativeArray<AutopilotStateDTO> states))
+                    out NativeArray<AutopilotStateDTO> states,
+                    out IDataVault statesWriteVault))
                 return false;
 
             try
@@ -1621,7 +1636,7 @@ namespace Hecton8.Vehicles.Automation
             }
             finally
             {
-                ReleaseAutopilotVaultWrite(_dataVault, in _autopilotHandle);
+                ReleaseAutopilotVaultWrite(statesWriteVault, in _autopilotHandle);
             }
         }
 
@@ -1638,7 +1653,8 @@ namespace Hecton8.Vehicles.Automation
                     in _autopilotHandle,
                     SubmarineAutopilotVaultRoute.AutopilotStates,
                     math.clamp(vehicleCapacity, 1, SubmarineAutopilotConstants.MaxVehicles),
-                    out NativeArray<AutopilotStateDTO> states))
+                    out NativeArray<AutopilotStateDTO> states,
+                    out IDataVault statesWriteVault))
                 return false;
 
             try
@@ -1651,7 +1667,7 @@ namespace Hecton8.Vehicles.Automation
             }
             finally
             {
-                ReleaseAutopilotVaultWrite(_dataVault, in _autopilotHandle);
+                ReleaseAutopilotVaultWrite(statesWriteVault, in _autopilotHandle);
             }
         }
 
@@ -1803,7 +1819,8 @@ namespace Hecton8.Vehicles.Automation
                     in _tuningHandle,
                     SubmarineAutopilotVaultRoute.AutopilotTuning,
                     1,
-                    out NativeArray<AutopilotTuningDTO> tuningBuffer))
+                    out NativeArray<AutopilotTuningDTO> tuningBuffer,
+                    out IDataVault tuningWriteVault))
                 return false;
 
             try
@@ -1815,7 +1832,7 @@ namespace Hecton8.Vehicles.Automation
             }
             finally
             {
-                ReleaseAutopilotVaultWrite(_dataVault, in _tuningHandle);
+                ReleaseAutopilotVaultWrite(tuningWriteVault, in _tuningHandle);
             }
         }
 
@@ -1927,6 +1944,14 @@ namespace Hecton8.Vehicles.Automation
             return false;
         }
 
+        private bool HasVaultBuffersReady()
+        {
+            int capacity = math.clamp(vehicleCapacity, 1, SubmarineAutopilotConstants.MaxVehicles);
+            return _buffersReady &&
+                   _resolvedVehicleCapacity == capacity &&
+                   AreVaultHandlesReady(capacity);
+        }
+
         private bool AreVaultHandlesReady(int capacity)
         {
             return
@@ -1980,10 +2005,12 @@ namespace Hecton8.Vehicles.Automation
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> buffer)
+            out NativeArray<T> buffer,
+            out IDataVault writeVault)
             where T : struct
         {
             buffer = default;
+            writeVault = null;
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
                 requiredLength <= 0 ||
@@ -2006,6 +2033,7 @@ namespace Hecton8.Vehicles.Automation
                     return false;
 
                 lockAcquired = false;
+                writeVault = vault;
                 return true;
             }
             finally
@@ -2116,7 +2144,7 @@ namespace Hecton8.Vehicles.Automation
 
         private void WriteColdDefaults()
         {
-            if (TryAcquireAutopilotVaultWrite(_dataVault, in _tuningHandle, SubmarineAutopilotVaultRoute.AutopilotTuning, 1, out NativeArray<AutopilotTuningDTO> tuning))
+            if (TryAcquireAutopilotVaultWrite(_dataVault, in _tuningHandle, SubmarineAutopilotVaultRoute.AutopilotTuning, 1, out NativeArray<AutopilotTuningDTO> tuning, out IDataVault tuningWriteVault))
             {
                 try
                 {
@@ -2124,11 +2152,11 @@ namespace Hecton8.Vehicles.Automation
                 }
                 finally
                 {
-                    ReleaseAutopilotVaultWrite(_dataVault, in _tuningHandle);
+                    ReleaseAutopilotVaultWrite(tuningWriteVault, in _tuningHandle);
                 }
             }
 
-            if (TryAcquireAutopilotVaultWrite(_dataVault, in _telemetryCursorHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor, 1, out NativeArray<uint> cursor))
+            if (TryAcquireAutopilotVaultWrite(_dataVault, in _telemetryCursorHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor, 1, out NativeArray<uint> cursor, out IDataVault cursorWriteVault))
             {
                 try
                 {
@@ -2136,11 +2164,11 @@ namespace Hecton8.Vehicles.Automation
                 }
                 finally
                 {
-                    ReleaseAutopilotVaultWrite(_dataVault, in _telemetryCursorHandle);
+                    ReleaseAutopilotVaultWrite(cursorWriteVault, in _telemetryCursorHandle);
                 }
             }
 
-            if (TryAcquireAutopilotVaultWrite(_dataVault, in _handlingProfileHandle, SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles, SubmarineAutopilotConstants.HandlingProfileCapacity, out NativeArray<AutopilotHandlingProfileDTO> profileBuffer))
+            if (TryAcquireAutopilotVaultWrite(_dataVault, in _handlingProfileHandle, SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles, SubmarineAutopilotConstants.HandlingProfileCapacity, out NativeArray<AutopilotHandlingProfileDTO> profileBuffer, out IDataVault profileWriteVault))
             {
                 try
                 {
@@ -2149,7 +2177,7 @@ namespace Hecton8.Vehicles.Automation
                 }
                 finally
                 {
-                    ReleaseAutopilotVaultWrite(_dataVault, in _handlingProfileHandle);
+                    ReleaseAutopilotVaultWrite(profileWriteVault, in _handlingProfileHandle);
                 }
             }
         }
@@ -2226,7 +2254,8 @@ namespace Hecton8.Vehicles.Automation
                     in _tuningHandle,
                     SubmarineAutopilotVaultRoute.AutopilotTuning,
                     1,
-                    out NativeArray<AutopilotTuningDTO> tuningBuffer))
+                    out NativeArray<AutopilotTuningDTO> tuningBuffer,
+                    out IDataVault tuningWriteVault))
             {
                 return false;
             }
@@ -2241,7 +2270,7 @@ namespace Hecton8.Vehicles.Automation
             }
             finally
             {
-                ReleaseAutopilotVaultWrite(_dataVault, in _tuningHandle);
+                ReleaseAutopilotVaultWrite(tuningWriteVault, in _tuningHandle);
             }
         }
 
@@ -2471,7 +2500,7 @@ namespace Hecton8.Vehicles.Automation
             if (!_buffersLocked && _scheduledMutationGuardMask == 0UL)
                 return;
 
-            IDataVault vault = _scheduledMutationGuardVault ?? _dataVault;
+            IDataVault vault = _scheduledMutationGuardVault;
             ulong guardMask = _scheduledMutationGuardMask;
             _scheduledMutationGuardVault = null;
             _scheduledMutationGuardMask = 0UL;

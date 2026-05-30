@@ -768,14 +768,7 @@ namespace Hecton8.PDA
         private HectonSurvivalSystem ResolveSurvivalSystem()
         {
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            if (playerContext != null &&
-                playerContext.PlayerObject != null &&
-                playerContext.PlayerObject.TryGetComponent(out HectonSurvivalSystem survivalSystem))
-            {
-                return survivalSystem;
-            }
-
-            return null;
+            return playerContext != null ? playerContext.SurvivalSystem : null;
         }
 
         private void CacheRegistryServicesCold()

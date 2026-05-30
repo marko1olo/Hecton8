@@ -261,9 +261,9 @@ namespace Hecton8.Core
             if (vault == null)
                 return false;
 
-            if (!TryResolveRequired(vault, in runtime._runtimeStateHandle, RuntimeStateCount, out NativeArray<MemorySentinelRuntimeStateDTO> runtimeArray))
+            if (!TryReadRequired(vault, in runtime._runtimeStateHandle, RuntimeStateCount, out NativeArray<MemorySentinelRuntimeStateDTO>.ReadOnly runtimeArray))
                 return false;
-            TryResolveRequired(vault, in runtime._telemetryHandle, MemorySentinelConstants.TelemetryCapacity, out NativeArray<MemorySentinelTelemetryEntry> telemetry);
+            TryReadRequired(vault, in runtime._telemetryHandle, MemorySentinelConstants.TelemetryCapacity, out NativeArray<MemorySentinelTelemetryEntry>.ReadOnly telemetry);
 
             MemorySentinelRuntimeStateDTO state = runtimeArray[0];
             MemorySentinelTelemetryEntry last = default;
@@ -522,6 +522,21 @@ namespace Hecton8.Core
                    handle.BufferID != 0u &&
                    handle.Generation != 0u &&
                    vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryReadRequired<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   handle.BufferID != 0u &&
+                   handle.Generation != 0u &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
         }
@@ -1148,11 +1163,17 @@ namespace Hecton8.Core
             if (!_targetBufferGuardHeld)
                 return;
 
-            IDataVault vault = _targetBufferGuardVault ?? _dataVault;
+            IDataVault vault = _targetBufferGuardVault;
             ulong guardMask = _targetBufferGuardMask;
             _targetBufferGuardVault = null;
             _targetBufferGuardMask = 0UL;
             _targetBufferGuardHeld = false;
+
+            if (vault == null)
+            {
+                _lastTelemetryFlags |= TelemetryFlagFatal;
+                return;
+            }
 
             if (vault != null && guardMask != 0UL)
                 vault.ReleaseMutationGuard(guardMask);
@@ -1324,8 +1345,11 @@ namespace Hecton8.Core
             }
 
             byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(rollback) + target.RollbackByteOffset;
-            UnsafeUtility.MemCpy((void*)target.TargetMemoryPointer, source, target.ByteLength);
-            return true;
+            return UnsafeMemoryCopyGuard.SafeCopy(
+                (void*)target.TargetMemoryPointer,
+                target.ByteLength,
+                source,
+                target.ByteLength);
         }
 
         private void CopyTargetToRollback(NativeArray<byte> rollback, in MemorySentinelTargetDTO target)
@@ -1341,7 +1365,11 @@ namespace Hecton8.Core
             }
 
             byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rollback) + target.RollbackByteOffset;
-            UnsafeUtility.MemCpy(destination, (void*)target.TargetMemoryPointer, target.ByteLength);
+            UnsafeMemoryCopyGuard.SafeCopy(
+                destination,
+                target.ByteLength,
+                (void*)target.TargetMemoryPointer,
+                target.ByteLength);
         }
 
         private void ApplyHashDeltasFromSignals(IDataVault vault, uint frame)
@@ -1631,7 +1659,7 @@ namespace Hecton8.Core
 
         private uint ResolveTelemetryCadence(IDataVault vault)
         {
-            if (!TryResolveRequired(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<MemorySentinelRuntimeStateDTO> runtimeArray))
+            if (!TryReadRequired(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<MemorySentinelRuntimeStateDTO>.ReadOnly runtimeArray))
                 return 0u;
 
             return (uint)math.max(0, runtimeArray[0].ValidationCadenceFrames);
@@ -1639,7 +1667,7 @@ namespace Hecton8.Core
 
         private void DumpBlackBox(IDataVault vault)
         {
-            if (!TryResolveRequired(vault, in _telemetryHandle, MemorySentinelConstants.TelemetryCapacity, out NativeArray<MemorySentinelTelemetryEntry> telemetry))
+            if (!TryReadRequired(vault, in _telemetryHandle, MemorySentinelConstants.TelemetryCapacity, out NativeArray<MemorySentinelTelemetryEntry>.ReadOnly telemetry))
                 return;
 
             string projectRoot = Directory.GetCurrentDirectory();
@@ -1660,7 +1688,7 @@ namespace Hecton8.Core
                 header.LastBytesHashed = _lastBytesHashed;
                 stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<MemorySentinelDumpHeader>()));
 
-                byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                byte* source = (byte*)telemetry.GetUnsafeReadOnlyPtr();
                 int entrySize = UnsafeUtility.SizeOf<MemorySentinelTelemetryEntry>();
                 int start = (_lastTelemetryIndex + 1) % telemetry.Length;
                 for (int offset = 0; offset < telemetry.Length; offset++)

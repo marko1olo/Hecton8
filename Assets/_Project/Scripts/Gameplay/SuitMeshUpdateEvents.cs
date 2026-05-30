@@ -119,9 +119,15 @@ namespace Hecton8.Gameplay
         private static NativeQueue<SuitMeshUpdateSignal> _nextFrameSignals;
         private static int _pendingSignalCount;
         private static int _nextFrameSignalCount;
+        private static int _droppedSignalCount;
         private static bool _isDispatching;
 
+        // BRIDGE CONTRACT: owner: SuitMeshUpdateEvents; drain phase: SystemDispatcher LateUpdate/VISUAL_SYNC flush;
+        // max frame budget/capacity: PendingCapacity; overflow policy: fail-fast/drop newest via false return, next-frame prevents same-frame reentrancy; telemetry counter: DroppedCount.
+
         public static int PendingCount => _pendingSignalCount + _nextFrameSignalCount;
+
+        public static int DroppedCount => _droppedSignalCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -130,6 +136,7 @@ namespace Hecton8.Gameplay
             DisposeQueue(ref _nextFrameSignals, nameof(_nextFrameSignals));
             _pendingSignalCount = 0;
             _nextFrameSignalCount = 0;
+            _droppedSignalCount = 0;
             _isDispatching = false;
             _listeners.Clear();
         }
@@ -160,7 +167,10 @@ namespace Hecton8.Gameplay
 
             EnsureInitialized();
             if (_pendingSignalCount + _nextFrameSignalCount >= PendingCapacity)
+            {
+                _droppedSignalCount++;
                 return false;
+            }
 
             if (_isDispatching)
             {

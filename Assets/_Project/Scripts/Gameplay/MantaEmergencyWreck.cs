@@ -433,6 +433,12 @@ namespace Hecton8.Gameplay
                 _physicsService = GlobalRegistry.Physics;
         }
 
+        private void CachePassiveServicesOnly()
+        {
+            if (_physicsService == null)
+                _physicsService = GlobalRegistry.Physics;
+        }
+
         private void EnsureRigidbody()
         {
             if (_rigidbody != null)
@@ -605,7 +611,7 @@ namespace Hecton8.Gameplay
 
         private void HydrateFromResidency(int slotIndex, in ResidencyState state, Vector3 runtimePosition)
         {
-            CachePassiveReferences();
+            CachePassiveServicesOnly();
             EnsureRigidbody();
             if (_rigidbody == null)
             {

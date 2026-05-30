@@ -459,7 +459,7 @@ namespace Hecton8.Gameplay
             if (!_handIkJobGuardHeld)
                 return;
 
-            IDataVault vault = _handIkJobGuardVault ?? _dataVault;
+            IDataVault vault = _handIkJobGuardVault;
             _handIkJobGuardVault = null;
             _handIkJobGuardHeld = false;
             if (vault != null)

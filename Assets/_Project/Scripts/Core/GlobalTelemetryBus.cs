@@ -1,6 +1,4 @@
 using System;
-using System.Globalization;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -84,16 +82,9 @@ namespace Hecton8.Core
         private const uint DistanceSquaredHash = 0x44535121u; // "DSQ!"
         private const float DrainIntervalSeconds = 60f;
         private const int SnapshotCopyBudgetPerLateFrame = 128;
-        private const string ExportFolderName = "Telemetry";
-        private const string BinaryExtension = ".h8dump";
-        private const string ExportTimestampFormat = "yyyyMMdd_HHmmss_fffffff";
-        private const string TelemetryFileNamePrefix = "telemetry_";
-        private const int ExportTimestampCharCount = 23;
-        private const int ExportWorkerJoinMilliseconds = 250;
         private const int ExportRequestNone = 0;
         private const int ExportRequestPrepared = 1;
         private const int ExportRequestEmergency = 2;
-        private const string ExportThreadName = "H8.TelemetryExport";
         public const float BytesToMegabytes = 0.000000953674f;
 
         private static NativeRingBuffer<TelemetryEvent> _ringBuffer;
@@ -106,8 +97,6 @@ namespace Hecton8.Core
         private static int _mainThreadId = Thread.CurrentThread.ManagedThreadId;
         private static int _pendingEventCount;
         private static int _pendingByteCount;
-        private static string _pendingBinaryPath;
-        private static string _pendingTelemetryDirectory;
         private static long _pendingGeneratedUtcTicks;
         private static bool _snapshotInProgress;
         private static long _snapshotStartIndex;
@@ -116,13 +105,8 @@ namespace Hecton8.Core
         private static long _nativeCopyByteCount;
         private static int _nativeCopyOperationCount;
         private static int _pendingExportRequest;
-        private static int _exportStopRequested;
-        private static AutoResetEvent _exportSignal;
-        private static Thread _exportThread;
         // COLD ALLOC: object[1] — first-use native telemetry buffer initialization gate — owner: GlobalTelemetryBus
         private static readonly object _initGate = new object();
-        // COLD ALLOC: object[1] - dedicated telemetry export worker lifecycle gate - owner: GlobalTelemetryBus
-        private static readonly object _exportThreadGate = new object();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -144,7 +128,6 @@ namespace Hecton8.Core
         private static void DisposeStaticState()
         {
             DisposeBlackboxState();
-            StopExportThread();
             lock (_initGate)
             {
                 bool snapshotCopyInProgress = _snapshotInProgress;
@@ -169,7 +152,7 @@ namespace Hecton8.Core
                     _exportInFlight = 0;
                     _mmfWriteInProgress = 0;
                     _pendingExportRequest = ExportRequestNone;
-                    ClearPendingExportState(clearDirectory: true);
+                    ClearPendingExportState();
                 }
             }
 
@@ -491,7 +474,7 @@ namespace Hecton8.Core
         public static void PublishMemoryBreachEvent(uint contextHash, float currentMegabytes)
         {
             Publish(TelemetryEventType.MemoryBreach, contextHash, 0u, math.max(0f, currentMegabytes), default);
-            RequestBlackboxMmfFlushAsync();
+            RequestBlackboxEmergencyDumpAsync(contextHash == 0u ? BlackboxEmergencyFlushHash : contextHash);
         }
 
         /// <summary>
@@ -638,8 +621,7 @@ namespace Hecton8.Core
 
             if (!_ringBuffer.IsCreated ||
                 !_snapshotBuffer.IsCreated ||
-                !_exportScratch.IsCreated ||
-                string.IsNullOrEmpty(_pendingTelemetryDirectory))
+                !_exportScratch.IsCreated)
             {
                 return;
             }
@@ -648,11 +630,7 @@ namespace Hecton8.Core
                 return;
 
             Volatile.Write(ref _pendingExportRequest, ExportRequestEmergency);
-            if (!SignalExportThread())
-            {
-                Volatile.Write(ref _pendingExportRequest, ExportRequestNone);
-                Interlocked.Exchange(ref _exportInFlight, 0);
-            }
+            DrainPendingExportRequest();
         }
 
         /// <summary>
@@ -682,8 +660,7 @@ namespace Hecton8.Core
 
             if (!_ringBuffer.IsCreated ||
                 !_snapshotBuffer.IsCreated ||
-                !_exportScratch.IsCreated ||
-                string.IsNullOrEmpty(_pendingTelemetryDirectory))
+                !_exportScratch.IsCreated)
             {
                 return false;
             }
@@ -692,14 +669,8 @@ namespace Hecton8.Core
                 return false;
 
             Volatile.Write(ref _pendingExportRequest, ExportRequestEmergency);
-            if (SignalExportThread())
-            {
-                return true;
-            }
-
-            Volatile.Write(ref _pendingExportRequest, ExportRequestNone);
-            Interlocked.Exchange(ref _exportInFlight, 0);
-            return false;
+            DrainPendingExportRequest();
+            return true;
 #endif
         }
 
@@ -715,11 +686,13 @@ namespace Hecton8.Core
             if (totalWritten <= 0)
                 return false;
 
-            CopySnapshotUnbounded(writeCursor - totalWritten, totalWritten);
+            if (!CopySnapshotUnbounded(writeCursor - totalWritten, totalWritten))
+                return false;
+
             if (!PrepareExportState(totalWritten, DateTime.UtcNow.Ticks))
                 return false;
 
-            return WritePreparedExportToMmf();
+            return CommitPreparedExportInMemory();
         }
 
         private static void Publish(
@@ -761,8 +734,7 @@ namespace Hecton8.Core
         {
             if (_ringBuffer.IsCreated &&
                 _snapshotBuffer.IsCreated &&
-                _exportScratch.IsCreated &&
-                !string.IsNullOrEmpty(_pendingTelemetryDirectory))
+                _exportScratch.IsCreated)
             {
                 return;
             }
@@ -803,10 +775,6 @@ namespace Hecton8.Core
                         NativeAllocationLifetime.Session);
                 }
 
-                if (string.IsNullOrEmpty(_pendingTelemetryDirectory))
-                    _pendingTelemetryDirectory = HectonPersistentPathPolicy.CombineDirectory(ExportFolderName);
-
-                StartExportThread();
                 EnsureBlackboxInitialized();
             }
         }
@@ -868,7 +836,11 @@ namespace Hecton8.Core
 
             int remaining = _snapshotTotalCount - _snapshotCopiedCount;
             int copyCount = math.min(remaining, SnapshotCopyBudgetPerLateFrame);
-            _ringBuffer.CopyRange(_snapshotStartIndex + _snapshotCopiedCount, copyCount, _snapshotBuffer, _snapshotCopiedCount);
+            if (!_ringBuffer.TryCopyRange(_snapshotStartIndex + _snapshotCopiedCount, copyCount, _snapshotBuffer, _snapshotCopiedCount))
+            {
+                AbortPendingSnapshotCopy();
+                return;
+            }
 
             _snapshotCopiedCount += copyCount;
             if (_snapshotCopiedCount < _snapshotTotalCount)
@@ -877,9 +849,9 @@ namespace Hecton8.Core
             CompleteSnapshotCopy();
         }
 
-        private static void CopySnapshotUnbounded(long startIndex, int totalCount)
+        private static bool CopySnapshotUnbounded(long startIndex, int totalCount)
         {
-            _ringBuffer.CopyRange(startIndex, totalCount, _snapshotBuffer);
+            return _ringBuffer.TryCopyRange(startIndex, totalCount, _snapshotBuffer);
         }
 
         private static void CompleteSnapshotCopy()
@@ -897,12 +869,7 @@ namespace Hecton8.Core
                 _snapshotTotalCount = 0;
                 _snapshotCopiedCount = 0;
                 Volatile.Write(ref _pendingExportRequest, ExportRequestPrepared);
-                if (!SignalExportThread())
-                {
-                    Volatile.Write(ref _pendingExportRequest, ExportRequestNone);
-                    ClearPendingExportState();
-                    Interlocked.Exchange(ref _exportInFlight, 0);
-                }
+                DrainPendingExportRequest();
             }
             catch (Exception)
             {
@@ -965,125 +932,6 @@ namespace Hecton8.Core
             }
         }
 
-        private static bool SignalExportThread()
-        {
-            if (!StartExportThread())
-                return false;
-
-            AutoResetEvent exportSignal = Volatile.Read(ref _exportSignal);
-            if (exportSignal == null)
-                return false;
-
-            try
-            {
-                exportSignal.Set();
-                return true;
-            }
-            catch (ObjectDisposedException)
-            {
-                return false;
-            }
-        }
-
-        private static bool StartExportThread()
-        {
-            lock (_exportThreadGate)
-            {
-                if (_exportThread != null)
-                {
-                    if (_exportThread.IsAlive)
-                        return true;
-
-                    _exportSignal?.Dispose();
-                    _exportSignal = null;
-                    _exportThread = null;
-                }
-
-                try
-                {
-                    Volatile.Write(ref _exportStopRequested, 0);
-                    // COLD ALLOC: AutoResetEvent[1] - persistent telemetry export wake signal - owner: GlobalTelemetryBus
-                    _exportSignal = new AutoResetEvent(false);
-                    // COLD ALLOC: Thread[1] - dedicated .h8dump writer - owner: GlobalTelemetryBus
-                    _exportThread = new Thread(RunExportThread)
-                    {
-                        IsBackground = true,
-                        Name = ExportThreadName,
-                        Priority = HectonThreadPriorityPolicy.Resolve(HectonThreadRole.BackgroundIo)
-                    };
-                    _exportThread.Start();
-                    return true;
-                }
-                catch (Exception)
-                {
-                    _exportSignal?.Dispose();
-                    _exportSignal = null;
-                    _exportThread = null;
-                    return false;
-                }
-            }
-        }
-
-        private static void StopExportThread()
-        {
-            Thread exportThread;
-            AutoResetEvent exportSignal;
-            lock (_exportThreadGate)
-            {
-                exportThread = _exportThread;
-                exportSignal = _exportSignal;
-                if (exportThread == null)
-                {
-                    exportSignal?.Dispose();
-                    _exportSignal = null;
-                    Volatile.Write(ref _exportStopRequested, 0);
-                    return;
-                }
-
-                Volatile.Write(ref _exportStopRequested, 1);
-                exportSignal?.Set();
-            }
-
-            if (!ReferenceEquals(Thread.CurrentThread, exportThread))
-                exportThread.Join(ExportWorkerJoinMilliseconds);
-
-            lock (_exportThreadGate)
-            {
-                if (ReferenceEquals(_exportThread, exportThread))
-                    _exportThread = null;
-
-                if (ReferenceEquals(_exportSignal, exportSignal))
-                    _exportSignal = null;
-
-                exportSignal?.Dispose();
-                Volatile.Write(ref _exportStopRequested, 0);
-            }
-        }
-
-        private static void RunExportThread()
-        {
-            while (true)
-            {
-                AutoResetEvent exportSignal = Volatile.Read(ref _exportSignal);
-                if (exportSignal == null)
-                    return;
-
-                try
-                {
-                    exportSignal.WaitOne();
-                }
-                catch (ObjectDisposedException)
-                {
-                    return;
-                }
-
-                DrainPendingExportRequest();
-
-                if (Volatile.Read(ref _exportStopRequested) != 0)
-                    return;
-            }
-        }
-
         private static void DrainPendingExportRequest()
         {
             int request = Volatile.Read(ref _pendingExportRequest);
@@ -1095,7 +943,7 @@ namespace Hecton8.Core
                 if (request == ExportRequestEmergency)
                     TryEmergencyFlushLocked();
                 else if (request == ExportRequestPrepared)
-                    WritePreparedExportToMmf();
+                    CommitPreparedExportInMemory();
             }
             finally
             {
@@ -1113,16 +961,13 @@ namespace Hecton8.Core
             }
         }
 
-        private static bool WritePreparedExportToMmf()
+        private static bool CommitPreparedExportInMemory()
         {
             if (Interlocked.CompareExchange(ref _mmfWriteInProgress, 1, 0) != 0)
                 return false;
 
             try
             {
-                string telemetryDirectory = _pendingTelemetryDirectory;
-                if (string.IsNullOrEmpty(telemetryDirectory))
-                    return false;
                 if (!_exportScratch.IsCreated)
                     return false;
 
@@ -1135,40 +980,7 @@ namespace Hecton8.Core
                     return false;
                 }
 
-                Directory.CreateDirectory(telemetryDirectory);
-                DateTime generatedUtc = _pendingGeneratedUtcTicks > 0L
-                    ? new DateTime(_pendingGeneratedUtcTicks, DateTimeKind.Utc)
-                    : DateTime.UtcNow;
-
-                _pendingBinaryPath = BuildTelemetryBinaryPath(telemetryDirectory, generatedUtc);
-
-                if (!string.IsNullOrEmpty(_pendingBinaryPath))
-                {
-                    using (FileStream stream = new FileStream(
-                               _pendingBinaryPath,
-                               FileMode.Create,
-                               FileAccess.Write,
-                               FileShare.Read))
-                    {
-                        unsafe
-                        {
-                            byte* exportPtr = (byte*)_exportScratch.GetUnsafeReadOnlyPtr();
-                            stream.Write(new ReadOnlySpan<byte>(exportPtr, pendingByteCount));
-                        }
-
-                        stream.Flush();
-                    }
-                }
-
                 return true;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-            catch (IOException)
-            {
-                return false;
             }
             catch (Exception)
             {
@@ -1180,51 +992,11 @@ namespace Hecton8.Core
             }
         }
 
-        private static void ClearPendingExportState(bool clearDirectory = false)
+        private static void ClearPendingExportState()
         {
             _pendingEventCount = 0;
             _pendingByteCount = 0;
-            _pendingBinaryPath = null;
-            if (clearDirectory)
-                _pendingTelemetryDirectory = null;
             _pendingGeneratedUtcTicks = 0L;
-        }
-
-        private static string BuildTelemetryBinaryPath(string telemetryDirectory, DateTime generatedUtc)
-        {
-            int directoryLength = telemetryDirectory.Length;
-            bool needsSeparator =
-                directoryLength > 0 &&
-                telemetryDirectory[directoryLength - 1] != Path.DirectorySeparatorChar &&
-                telemetryDirectory[directoryLength - 1] != Path.AltDirectorySeparatorChar;
-            int pathLength =
-                directoryLength +
-                (needsSeparator ? 1 : 0) +
-                TelemetryFileNamePrefix.Length +
-                ExportTimestampCharCount +
-                BinaryExtension.Length;
-
-            return string.Create(
-                pathLength,
-                (Directory: telemetryDirectory, Timestamp: generatedUtc, NeedsSeparator: needsSeparator),
-                (span, state) =>
-                {
-                    int cursor = 0;
-                    state.Directory.AsSpan().CopyTo(span);
-                    cursor += state.Directory.Length;
-                    if (state.NeedsSeparator)
-                        span[cursor++] = Path.DirectorySeparatorChar;
-
-                    TelemetryFileNamePrefix.AsSpan().CopyTo(span.Slice(cursor));
-                    cursor += TelemetryFileNamePrefix.Length;
-
-                    Span<char> timestampSpan = span.Slice(cursor, ExportTimestampCharCount);
-                    if (!state.Timestamp.TryFormat(timestampSpan, out int _, ExportTimestampFormat.AsSpan(), CultureInfo.InvariantCulture))
-                        timestampSpan.Fill('0');
-                    cursor += ExportTimestampCharCount;
-
-                    BinaryExtension.AsSpan().CopyTo(span.Slice(cursor));
-                });
         }
     }
 }

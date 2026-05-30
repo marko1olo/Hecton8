@@ -12,6 +12,104 @@ namespace Hecton8.World
     /// </summary>
     internal sealed class ScatterInstancingService
     {
+        private readonly Dictionary<GameObject, GPUInstancerPrefabPrototype> _prototypeByPrefab =
+            new Dictionary<GameObject, GPUInstancerPrefabPrototype>(128);
+        private readonly HashSet<GameObject> _nonGpuiPrefabs = new HashSet<GameObject>();
+        private bool _supportsVendorGpuInstancerCompute;
+
+        public ScatterInstancingService()
+        {
+            RefreshPlatformCapabilitiesCold();
+        }
+
+        public void RefreshPlatformCapabilitiesCold()
+        {
+            _supportsVendorGpuInstancerCompute = SystemInfo.supportsComputeShaders;
+        }
+
+        public void PrewarmFamilyPrototypeCacheCold(WorldPrefabFamilyProfile family)
+        {
+            if (family == null ||
+                family.variants == null ||
+                family.variants.Length == 0 ||
+                !IsFloraGpuiEligibleFamily(family))
+            {
+                return;
+            }
+
+            for (int i = 0; i < family.variants.Length; i++)
+                PrewarmVariantPrototypeCacheCold(family.variants[i]);
+        }
+
+        public void PrewarmVariantPrototypeCacheCold(WorldPrefabFamilyProfile.VariantEntry runtimeVariant)
+        {
+            GameObject prefab = runtimeVariant != null ? runtimeVariant.prefab : null;
+            if (prefab == null ||
+                _prototypeByPrefab.ContainsKey(prefab) ||
+                _nonGpuiPrefabs.Contains(prefab))
+            {
+                return;
+            }
+
+            if (prefab.TryGetComponent(out GPUInstancerPrefab gpuiPrefab) &&
+                gpuiPrefab != null &&
+                gpuiPrefab.prefabPrototype != null)
+            {
+                _prototypeByPrefab[prefab] = gpuiPrefab.prefabPrototype;
+                return;
+            }
+
+            _nonGpuiPrefabs.Add(prefab);
+        }
+
+        public void PrewarmFamilyAggregationStorageCold(
+            WorldPrefabFamilyProfile family,
+            List<GPUInstancerPrefabPrototype> knownPrototypes,
+            Dictionary<GPUInstancerPrefabPrototype, Matrix4x4[]> matricesByPrototype,
+            Dictionary<GPUInstancerPrefabPrototype, int> counts,
+            Dictionary<GPUInstancerPrefabPrototype, int> bufferCapacities,
+            int requiredCapacity)
+        {
+            if (family == null ||
+                family.variants == null ||
+                family.variants.Length == 0 ||
+                !IsFloraGpuiEligibleFamily(family))
+            {
+                return;
+            }
+
+            for (int i = 0; i < family.variants.Length; i++)
+            {
+                PrewarmVariantAggregationStorageCold(
+                    family.variants[i],
+                    knownPrototypes,
+                    matricesByPrototype,
+                    counts,
+                    bufferCapacities,
+                    requiredCapacity);
+            }
+        }
+
+        public void PrewarmVariantAggregationStorageCold(
+            WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
+            List<GPUInstancerPrefabPrototype> knownPrototypes,
+            Dictionary<GPUInstancerPrefabPrototype, Matrix4x4[]> matricesByPrototype,
+            Dictionary<GPUInstancerPrefabPrototype, int> counts,
+            Dictionary<GPUInstancerPrefabPrototype, int> bufferCapacities,
+            int requiredCapacity)
+        {
+            if (!TryResolveCachedPrototype(runtimeVariant, out GPUInstancerPrefabPrototype prototype))
+                return;
+
+            EnsurePrototypeAggregationStorageCold(
+                prototype,
+                knownPrototypes,
+                matricesByPrototype,
+                counts,
+                bufferCapacities,
+                requiredCapacity);
+        }
+
         public void ResetAggregation(
             List<GPUInstancerPrefabPrototype> knownPrototypes,
             Dictionary<GPUInstancerPrefabPrototype, int> counts,
@@ -53,25 +151,17 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (!matricesByPrototype.TryGetValue(prototype, out Matrix4x4[] matrices))
+            if (!matricesByPrototype.TryGetValue(prototype, out Matrix4x4[] matrices) ||
+                matrices == null ||
+                matrices.Length <= 0)
             {
-                matrices = ArrayPool<Matrix4x4>.Shared.Rent(64); // COLD ALLOC: Matrix4x4[64] - pooled GPUI flora prototype buffer - owner: ScatterInstancingService
-                matricesByPrototype.Add(prototype, matrices);
-                counts.Add(prototype, 0);
-                bufferCapacities.Add(prototype, 0);
-                knownPrototypes.Add(prototype);
+                return true;
             }
 
-            int count = counts[prototype];
+            if (!counts.TryGetValue(prototype, out int count))
+                return true;
             if (count >= matrices.Length)
-            {
-                int newCapacity = Mathf.NextPowerOfTwo(count + 1);
-                Matrix4x4[] expanded = ArrayPool<Matrix4x4>.Shared.Rent(newCapacity); // COLD ALLOC: Matrix4x4[newCapacity] - GPUI flora prototype buffer growth - owner: ScatterInstancingService
-                Array.Copy(matrices, 0, expanded, 0, count);
-                ArrayPool<Matrix4x4>.Shared.Return(matrices, clearArray: false);
-                matrices = expanded;
-                matricesByPrototype[prototype] = matrices;
-            }
+                return true;
 
             matrices[count] = ScatterGPUIBackend.BuildOriginRelativeMatrix(
                 placement.Position,
@@ -199,7 +289,7 @@ namespace Hecton8.World
             }
         }
 
-        private static bool ShouldUseFloraGpuiPath(
+        private bool ShouldUseFloraGpuiPath(
             GPUInstancerPrefabManager manager,
             WorldProceduralScatterDirector.ScatterPlacement placement,
             WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
@@ -216,9 +306,7 @@ namespace Hecton8.World
             }
 
             WorldPrefabFamilyProfile family = placement.Family;
-            if (family == null ||
-                (family.proceduralDomain != WorldPrefabFamilyProfile.ProceduralDomain.Kelp &&
-                 family.proceduralDomain != WorldPrefabFamilyProfile.ProceduralDomain.Coral))
+            if (!IsFloraGpuiEligibleFamily(family))
             {
                 return false;
             }
@@ -226,17 +314,79 @@ namespace Hecton8.World
             if (family.expectsCollision || family.expectsInteraction)
                 return false;
 
-            GameObject prefab = runtimeVariant != null ? runtimeVariant.prefab : null;
-            if (prefab == null || !prefab.TryGetComponent(out GPUInstancerPrefab gpuiPrefab))
-                return false;
-
-            prototype = gpuiPrefab.prefabPrototype;
-            return prototype != null;
+            return TryResolveCachedPrototype(runtimeVariant, out prototype);
         }
 
-        private static bool CanUseVendorGpuInstancerCompute()
+        private static bool IsFloraGpuiEligibleFamily(WorldPrefabFamilyProfile family)
         {
-            return SystemInfo.supportsComputeShaders;
+            return family != null &&
+                   (family.proceduralDomain == WorldPrefabFamilyProfile.ProceduralDomain.Kelp ||
+                    family.proceduralDomain == WorldPrefabFamilyProfile.ProceduralDomain.Coral);
+        }
+
+        private bool TryResolveCachedPrototype(
+            WorldPrefabFamilyProfile.VariantEntry runtimeVariant,
+            out GPUInstancerPrefabPrototype prototype)
+        {
+            GameObject prefab = runtimeVariant != null ? runtimeVariant.prefab : null;
+            if (prefab != null && _prototypeByPrefab.TryGetValue(prefab, out prototype))
+                return prototype != null;
+
+            prototype = null;
+            return false;
+        }
+
+        private bool CanUseVendorGpuInstancerCompute()
+        {
+            return _supportsVendorGpuInstancerCompute;
+        }
+
+        private static void EnsurePrototypeAggregationStorageCold(
+            GPUInstancerPrefabPrototype prototype,
+            List<GPUInstancerPrefabPrototype> knownPrototypes,
+            Dictionary<GPUInstancerPrefabPrototype, Matrix4x4[]> matricesByPrototype,
+            Dictionary<GPUInstancerPrefabPrototype, int> counts,
+            Dictionary<GPUInstancerPrefabPrototype, int> bufferCapacities,
+            int requiredCapacity)
+        {
+            if (prototype == null ||
+                knownPrototypes == null ||
+                matricesByPrototype == null ||
+                counts == null ||
+                bufferCapacities == null)
+            {
+                return;
+            }
+
+            int safeCapacity = Mathf.NextPowerOfTwo(Mathf.Clamp(requiredCapacity, 1, 4096));
+            if (matricesByPrototype.TryGetValue(prototype, out Matrix4x4[] matrices) &&
+                matrices != null &&
+                matrices.Length >= safeCapacity)
+            {
+                if (!knownPrototypes.Contains(prototype))
+                    knownPrototypes.Add(prototype);
+                if (!counts.ContainsKey(prototype))
+                    counts.Add(prototype, 0);
+                if (!bufferCapacities.ContainsKey(prototype))
+                    bufferCapacities.Add(prototype, 0);
+                return;
+            }
+
+            Matrix4x4[] expanded = ArrayPool<Matrix4x4>.Shared.Rent(safeCapacity); // COLD ALLOC: Matrix4x4[safeCapacity] - prewarmed GPUI flora prototype matrix buffer - owner: ScatterInstancingService
+            if (matrices != null)
+            {
+                int existingCount = counts.TryGetValue(prototype, out int count) ? Mathf.Min(count, matrices.Length) : 0;
+                Array.Copy(matrices, 0, expanded, 0, Mathf.Min(existingCount, expanded.Length));
+                ArrayPool<Matrix4x4>.Shared.Return(matrices, clearArray: false);
+            }
+
+            matricesByPrototype[prototype] = expanded;
+            if (!knownPrototypes.Contains(prototype))
+                knownPrototypes.Add(prototype);
+            if (!counts.ContainsKey(prototype))
+                counts.Add(prototype, 0);
+            if (!bufferCapacities.ContainsKey(prototype))
+                bufferCapacities.Add(prototype, 0);
         }
 
         private static void AccumulateInstancingBounds(

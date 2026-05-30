@@ -1,6 +1,7 @@
 using System;
 #if UNITY_EDITOR
 using System.IO;
+using System.Threading;
 #endif
 using System.Runtime.CompilerServices;
 using Hecton8.Core;
@@ -16,7 +17,7 @@ namespace Hecton8.Physics.Vehicles
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Physics/Vehicle Component Damage Router")]
-    public unsafe sealed class VehicleComponentDamageRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public unsafe sealed class VehicleComponentDamageRuntime : MonoBehaviour, IFixedTickable, IPostFixedTickable, IColdTickable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         private const int MinimumQualityHazardSignals = 8;
         private const int MaxGridWidth = 32;
@@ -36,16 +37,15 @@ namespace Hecton8.Physics.Vehicles
             MutationGuardBit(VehicleDamageConstants.TelemetryRingBuffer) |
             MutationGuardBit(VehicleDamageConstants.TelemetryCursorBuffer);
 #if UNITY_EDITOR
-        private static readonly ulong CsvImportMutationGuardMask =
-            MutationGuardBit(VehicleDamageConstants.CsvScratchBuffer) |
-            MutationGuardBit(VehicleDamageConstants.GridWriteBuffer) |
-            MutationGuardBit(VehicleDamageConstants.GridReadBuffer) |
-            MutationGuardBit(VehicleDamageConstants.TuningBuffer);
+        private static readonly ulong CsvGridWriteMutationGuardMask = MutationGuardBit(VehicleDamageConstants.GridWriteBuffer);
+        private static readonly ulong CsvGridReadMutationGuardMask = MutationGuardBit(VehicleDamageConstants.GridReadBuffer);
+        private static readonly ulong CsvTuningMutationGuardMask = MutationGuardBit(VehicleDamageConstants.TuningBuffer);
+        private static readonly byte[] s_csvImportBytes = new byte[VehicleDamageConstants.CsvScratchBytes];
+        private static readonly VehicleGridCellDTO[] s_csvGridScratch = new VehicleGridCellDTO[MaxGridWidth * MaxGridHeight * MaxGridDepth];
+        private static int s_csvImportScratchBusy;
 #endif
         private static readonly ulong EditorTuningMutationGuardMask = MutationGuardBit(VehicleDamageConstants.TuningBuffer);
-        private static readonly ulong BlackboxReadMutationGuardMask =
-            MutationGuardBit(VehicleDamageConstants.StateReadBuffer) |
-            MutationGuardBit(VehicleDamageConstants.TelemetryRingBuffer);
+        private static readonly ulong BlackboxReadMutationGuardMask = MutationGuardBit(VehicleDamageConstants.StateReadBuffer);
 
         [Header("Damage Grid")]
         [SerializeField, Range(2, MaxGridWidth)] private int gridWidth = VehicleDamageConstants.DefaultGridWidth;
@@ -95,9 +95,11 @@ namespace Hecton8.Physics.Vehicles
         private JobHandle _damageHandle;
         private bool _damagePending;
         private bool _buffersLocked;
+        private IDataVault _damageGuardVault;
         private bool _buffersReady;
         private bool _registeredFixed;
         private bool _registeredPostFixed;
+        private bool _registeredCold;
         private bool _registeredLate;
         private bool _registeredSlow;
         private bool _registeredHotSwapListener;
@@ -319,7 +321,9 @@ namespace Hecton8.Physics.Vehicles
                     GridRead = gridRead,
                     StateWrite = stateWrite,
                     StateRead = stateRead,
-                    CellCount = _cellCount
+                    CellCount = _cellCount,
+                    GridWriteCapacity = _cellCount,
+                    GridReadCapacity = _cellCount
                 };
 
                 _damageHandle = publishJob.Schedule(dependency);
@@ -354,6 +358,15 @@ namespace Hecton8.Physics.Vehicles
 
         public void SlowTick()
         {
+            if (!_buffersReady)
+                return;
+        }
+
+        public void ColdTick()
+        {
+            if (!Application.isPlaying || !isActiveAndEnabled)
+                return;
+
             EnsureDataVault();
             if (!_damagePending && !_buffersLocked)
                 EnsureVaultBuffers(forceReinitialize: false);
@@ -385,6 +398,8 @@ namespace Hecton8.Physics.Vehicles
                 _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             if (!_registeredPostFixed)
                 _registeredPostFixed = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
+            if (!_registeredCold)
+                _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
             if (!_registeredLate)
                 _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             if (!_registeredSlow)
@@ -397,6 +412,8 @@ namespace Hecton8.Physics.Vehicles
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             if (_registeredPostFixed)
                 GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+            if (_registeredCold)
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
             if (_registeredLate)
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             if (_registeredSlow)
@@ -404,6 +421,7 @@ namespace Hecton8.Physics.Vehicles
 
             _registeredFixed = false;
             _registeredPostFixed = false;
+            _registeredCold = false;
             _registeredLate = false;
             _registeredSlow = false;
         }
@@ -515,7 +533,7 @@ namespace Hecton8.Physics.Vehicles
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool TryResolveArray<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        private bool TryOpenArrayForOwner<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
             return _dataVault != null &&
@@ -525,10 +543,10 @@ namespace Hecton8.Physics.Vehicles
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool TryGetLocalPointer<T>(in VaultGenerationHandle<T> handle, out void* pointer) where T : struct
+        private bool TryOpenLocalPointerForOwner<T>(in VaultGenerationHandle<T> handle, out void* pointer) where T : struct
         {
             pointer = null;
-            if (!TryResolveArray(in handle, out NativeArray<T> buffer))
+            if (!TryOpenArrayForOwner(in handle, out NativeArray<T> buffer))
                 return false;
 
             pointer = NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
@@ -605,9 +623,9 @@ namespace Hecton8.Physics.Vehicles
                 if (!locked)
                     return;
 
-                if (!TryGetLocalPointer(in _gridWriteHandle, out void* writePtr) ||
-                    !TryGetLocalPointer(in _gridReadHandle, out void* readPtr) ||
-                    !TryResolveArray(in _tuningHandle, out NativeArray<VehicleDamageTuningDTO> tuningArray))
+                if (!TryOpenLocalPointerForOwner(in _gridWriteHandle, out void* writePtr) ||
+                    !TryOpenLocalPointerForOwner(in _gridReadHandle, out void* readPtr) ||
+                    !TryOpenArrayForOwner(in _tuningHandle, out NativeArray<VehicleDamageTuningDTO> tuningArray))
                 {
                     return;
                 }
@@ -627,26 +645,20 @@ namespace Hecton8.Physics.Vehicles
 
                 InitializeVehicleGridJob initRead = initWrite;
                 initRead.Cells = read;
-                JobHandle writeHandle = initWrite.Schedule(_cellCount, VehicleDamageConstants.JobBatchSize);
-                JobHandle readHandle = initRead.Schedule(_cellCount, VehicleDamageConstants.JobBatchSize, writeHandle);
-                DispatcherJobFence.BeginPostFixedSwapWindow();
-                try
+                for (int i = 0; i < _cellCount; i++)
                 {
-                    DispatcherJobFence.TryComplete(ref readHandle, forceComplete: true);
-                }
-                finally
-                {
-                    DispatcherJobFence.EndPostFixedSwapWindow();
+                    initWrite.Execute(i);
+                    initRead.Execute(i);
                 }
 
-                TryResolveArray(in _stateWriteHandle, out NativeArray<VehicleDamageStateDTO> stateWrite);
-                TryResolveArray(in _stateReadHandle, out NativeArray<VehicleDamageStateDTO> stateRead);
+                TryOpenArrayForOwner(in _stateWriteHandle, out NativeArray<VehicleDamageStateDTO> stateWrite);
+                TryOpenArrayForOwner(in _stateReadHandle, out NativeArray<VehicleDamageStateDTO> stateRead);
                 if (stateWrite.IsCreated)
                     stateWrite[0] = BuildDefaultState();
                 if (stateRead.IsCreated)
                     stateRead[0] = BuildDefaultState();
 
-                TryResolveArray(in _telemetryCursorHandle, out NativeArray<uint> cursor);
+                TryOpenArrayForOwner(in _telemetryCursorHandle, out NativeArray<uint> cursor);
                 if (cursor.IsCreated)
                     cursor[0] = 0u;
             }
@@ -844,15 +856,15 @@ namespace Hecton8.Physics.Vehicles
             tuning = default;
             signalArray = default;
 
-            if (!TryGetLocalPointer(in _gridWriteHandle, out void* gridWritePtr) ||
-                !TryGetLocalPointer(in _gridReadHandle, out void* gridReadPtr) ||
-                !TryResolveArray(in _signalHandle, out signalArray) ||
-                !TryGetLocalPointer(in _mockSignalHandle, out void* mockSignalsPtr) ||
-                !TryGetLocalPointer(in _stateWriteHandle, out void* stateWritePtr) ||
-                !TryGetLocalPointer(in _stateReadHandle, out void* stateReadPtr) ||
-                !TryResolveArray(in _telemetryHandle, out telemetry) ||
-                !TryResolveArray(in _telemetryCursorHandle, out telemetryCursor) ||
-                !TryResolveArray(in _tuningHandle, out tuning))
+            if (!TryOpenLocalPointerForOwner(in _gridWriteHandle, out void* gridWritePtr) ||
+                !TryOpenLocalPointerForOwner(in _gridReadHandle, out void* gridReadPtr) ||
+                !TryOpenArrayForOwner(in _signalHandle, out signalArray) ||
+                !TryOpenLocalPointerForOwner(in _mockSignalHandle, out void* mockSignalsPtr) ||
+                !TryOpenLocalPointerForOwner(in _stateWriteHandle, out void* stateWritePtr) ||
+                !TryOpenLocalPointerForOwner(in _stateReadHandle, out void* stateReadPtr) ||
+                !TryOpenArrayForOwner(in _telemetryHandle, out telemetry) ||
+                !TryOpenArrayForOwner(in _telemetryCursorHandle, out telemetryCursor) ||
+                !TryOpenArrayForOwner(in _tuningHandle, out tuning))
             {
                 return false;
             }
@@ -869,32 +881,40 @@ namespace Hecton8.Physics.Vehicles
 
         private bool LockDamageBuffers()
         {
-            if (_buffersLocked || _dataVault == null)
+            if (_buffersLocked)
                 return _buffersLocked;
 
-            if (!_dataVault.TryAcquireMutationGuard(DamageMutationGuardMask))
+            IDataVault vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(DamageMutationGuardMask))
                 return false;
 
+            _damageGuardVault = vault;
             _buffersLocked = true;
             return true;
         }
 
         private void UnlockDamageBuffers()
         {
-            if (!_buffersLocked || _dataVault == null)
+            if (!_buffersLocked)
+            {
+                _damageGuardVault = null;
                 return;
+            }
 
-            _dataVault.ReleaseMutationGuard(DamageMutationGuardMask);
+            IDataVault vault = _damageGuardVault;
+            _damageGuardVault = null;
             _buffersLocked = false;
+            vault?.ReleaseMutationGuard(DamageMutationGuardMask);
         }
 
 #if UNITY_EDITOR
         private bool TryLoadCsvLayout()
         {
-            if (!_buffersReady || _dataVault == null || !File.Exists(_csvPath))
+            IDataVault vault = _dataVault;
+            if (!_buffersReady || vault == null || !File.Exists(_csvPath))
                 return false;
 
-            bool guardAcquired = false;
+            bool scratchAcquired = false;
             try
             {
                 FileInfo info = new FileInfo(_csvPath);
@@ -905,36 +925,40 @@ namespace Hecton8.Physics.Vehicles
                 if (info.Length <= 0L || info.Length > VehicleDamageConstants.CsvScratchBytes)
                     return false;
 
-                if (!_dataVault.TryAcquireMutationGuard(CsvImportMutationGuardMask))
+                if (Interlocked.CompareExchange(ref s_csvImportScratchBusy, 1, 0) != 0)
                     return false;
-                guardAcquired = true;
+                scratchAcquired = true;
 
-                TryResolveArray(in _csvScratchHandle, out NativeArray<byte> scratch);
-                TryResolveArray(in _gridWriteHandle, out NativeArray<VehicleGridCellDTO> gridWrite);
-                TryResolveArray(in _gridReadHandle, out NativeArray<VehicleGridCellDTO> gridRead);
-                TryResolveArray(in _tuningHandle, out NativeArray<VehicleDamageTuningDTO> tuning);
-                if (!scratch.IsCreated || !gridWrite.IsCreated || !gridRead.IsCreated || !tuning.IsCreated)
+                int cellCount = math.min(_cellCount, s_csvGridScratch.Length);
+                if (cellCount <= 0 || !TryStageCsvGridScratch(s_csvGridScratch, cellCount))
                     return false;
 
-                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
-                Span<byte> bytes = new Span<byte>(scratchPtr, (int)info.Length);
+                Span<byte> bytes = s_csvImportBytes.AsSpan(0, (int)info.Length);
+                int read;
                 using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
-                    int read = stream.Read(bytes);
-                    ReadOnlySpan<byte> csv = bytes.Slice(0, read);
-                    int applied = VehicleComponentLayoutCsvParser.Apply(csv, gridWrite, gridWidth, gridHeight, gridDepth);
-                    if (applied <= 0)
-                        return false;
+                    read = stream.Read(bytes);
                 }
 
-                for (int i = 0; i < math.min(gridWrite.Length, gridRead.Length); i++)
-                    gridRead[i] = gridWrite[i];
+                if (read <= 0)
+                    return false;
 
-                VehicleDamageTuningDTO current = tuning[0];
-                current.SourceHash = VehicleDamageConstants.SourceHashCsv;
-                current.Flags &= ~VehicleDamageConstants.TuningFlagRuntimeSerialized;
-                current.Flags |= VehicleDamageConstants.TuningFlagCsvLayout;
-                tuning[0] = current;
+                int applied = VehicleComponentLayoutCsvParser.Apply(
+                    bytes.Slice(0, read),
+                    s_csvGridScratch.AsSpan(0, cellCount),
+                    gridWidth,
+                    gridHeight,
+                    gridDepth);
+                if (applied <= 0)
+                    return false;
+
+                if (!TryCommitCsvGrid(in _gridWriteHandle, CsvGridWriteMutationGuardMask, s_csvGridScratch, cellCount))
+                    return false;
+                if (!TryCommitCsvGrid(in _gridReadHandle, CsvGridReadMutationGuardMask, s_csvGridScratch, cellCount))
+                    return false;
+                if (!TryCommitCsvTuning())
+                    return false;
+
                 _csvLoaded = true;
                 _csvStampUtcTicks = stamp;
                 return true;
@@ -949,15 +973,175 @@ namespace Hecton8.Physics.Vehicles
             }
             finally
             {
-                if (guardAcquired)
-                    _dataVault.ReleaseMutationGuard(CsvImportMutationGuardMask);
+                if (scratchAcquired)
+                    Volatile.Write(ref s_csvImportScratchBusy, 0);
             }
+        }
+
+        private bool TryStageCsvGridScratch(VehicleGridCellDTO[] scratch, int cellCount)
+        {
+            if (scratch == null || cellCount <= 0 || cellCount > scratch.Length)
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault != null &&
+                IsHandleValid(in _gridReadHandle) &&
+                vault.TryReadOnlyHandle(in _gridReadHandle, out NativeArray<VehicleGridCellDTO>.ReadOnly gridRead) &&
+                gridRead.Length >= cellCount)
+            {
+                for (int i = 0; i < cellCount; i++)
+                    scratch[i] = gridRead[i];
+                return true;
+            }
+
+            VehicleDamageTuningDTO tuning = BuildTuning();
+            for (int i = 0; i < cellCount; i++)
+                scratch[i] = BuildDefaultGridCell(i, in tuning);
+            return true;
+        }
+
+        private bool TryCommitCsvGrid(
+            in VaultGenerationHandle<VehicleGridCellDTO> handle,
+            ulong guardMask,
+            VehicleGridCellDTO[] source,
+            int cellCount)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || source == null || cellCount <= 0 || cellCount > source.Length)
+                return false;
+
+            bool guardAcquired = false;
+            try
+            {
+                if (!vault.TryAcquireMutationGuard(guardMask))
+                    return false;
+                guardAcquired = true;
+
+                if (!TryOpenArrayForOwner(in handle, out NativeArray<VehicleGridCellDTO> target) ||
+                    target.Length < cellCount)
+                {
+                    return false;
+                }
+
+                fixed (VehicleGridCellDTO* sourcePtr = source)
+                {
+                    long byteCount = (long)cellCount * UnsafeUtility.SizeOf<VehicleGridCellDTO>();
+                    if (!UnsafeMemoryCopyGuard.SafeCopy(
+                            NativeArrayUnsafeUtility.GetUnsafePtr(target),
+                            (long)target.Length * UnsafeUtility.SizeOf<VehicleGridCellDTO>(),
+                            sourcePtr,
+                            byteCount))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            finally
+            {
+                if (guardAcquired)
+                    vault.ReleaseMutationGuard(guardMask);
+            }
+        }
+
+        private bool TryCommitCsvTuning()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            bool guardAcquired = false;
+            try
+            {
+                if (!vault.TryAcquireMutationGuard(CsvTuningMutationGuardMask))
+                    return false;
+                guardAcquired = true;
+
+                if (!TryOpenArrayForOwner(in _tuningHandle, out NativeArray<VehicleDamageTuningDTO> tuning) ||
+                    tuning.Length <= 0)
+                {
+                    return false;
+                }
+
+                VehicleDamageTuningDTO current = tuning[0];
+                if (current.SourceHash == 0u)
+                    current = BuildTuning();
+
+                current.SourceHash = VehicleDamageConstants.SourceHashCsv;
+                current.Flags &= ~VehicleDamageConstants.TuningFlagRuntimeSerialized;
+                current.Flags |= VehicleDamageConstants.TuningFlagCsvLayout;
+                tuning[0] = current;
+                return true;
+            }
+            finally
+            {
+                if (guardAcquired)
+                    vault.ReleaseMutationGuard(CsvTuningMutationGuardMask);
+            }
+        }
+
+        private static VehicleGridCellDTO BuildDefaultGridCell(int index, in VehicleDamageTuningDTO tuning)
+        {
+            int width = math.max(1, tuning.GridWidth);
+            int height = math.max(1, tuning.GridHeight);
+            int depth = math.max(1, tuning.GridDepth);
+            int x;
+            int y;
+            int z;
+            DecodeGridIndex(index, width, height, out x, out y, out z);
+
+            bool outer = x == 0 || y == 0 || z == 0 || x == width - 1 || y == height - 1 || z == depth - 1;
+            uint component = ResolveDefaultGridComponentHash(x, y, z, width, height, depth);
+            uint flags = math.select(0u, VehicleDamageConstants.CellFlagOuterHull, outer);
+            if (component == VehicleDamageConstants.ComponentEngine)
+                flags |= VehicleDamageConstants.CellFlagEngineCritical | VehicleDamageConstants.CellFlagFlammable;
+            else if (component == VehicleDamageConstants.ComponentBallast)
+                flags |= VehicleDamageConstants.CellFlagBallastCritical;
+            else if (component == VehicleDamageConstants.ComponentSensors)
+                flags |= VehicleDamageConstants.CellFlagSensorCritical;
+            else if (component == VehicleDamageConstants.ComponentPower)
+                flags |= VehicleDamageConstants.CellFlagFlammable;
+
+            VehicleGridCellDTO cell = default;
+            cell.Integrity01 = 1f;
+            cell.ComponentHash = component;
+            cell.StatusFlags = flags;
+            cell.ArmorValue = math.max(0.01f, tuning.BaseArmor * math.select(1f, 1.3f, outer));
+            return cell;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void DecodeGridIndex(int index, int width, int height, out int x, out int y, out int z)
+        {
+            int layer = width * height;
+            z = index / layer;
+            int rem = index - (z * layer);
+            y = rem / width;
+            x = rem - (y * width);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ResolveDefaultGridComponentHash(int x, int y, int z, int width, int height, int depth)
+        {
+            int aftStart = (depth * 5) / 8;
+            int bowSensors = depth / 4;
+            if (z >= aftStart && y <= (height * 2) / 3)
+                return VehicleDamageConstants.ComponentEngine;
+            if (y <= height / 3 && z > bowSensors && z < aftStart)
+                return VehicleDamageConstants.ComponentBallast;
+            if (z <= bowSensors || y >= (height * 2) / 3)
+                return VehicleDamageConstants.ComponentSensors;
+            if (x == width / 2 || x == (width / 2) - 1)
+                return VehicleDamageConstants.ComponentPower;
+            return VehicleDamageConstants.ComponentHull;
         }
 #endif
 
         private bool DumpBlackBoxIfFaulted()
         {
-            if (_dumpWritten || _dataVault == null || !IsHandleValid(in _stateReadHandle) || !IsHandleValid(in _telemetryHandle))
+            IDataVault vault = _dataVault;
+            if (_dumpWritten || vault == null || !IsHandleValid(in _stateReadHandle))
                 return false;
 
             if (!_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
@@ -969,22 +1153,18 @@ namespace Hecton8.Physics.Vehicles
             uint stateHash = 0u;
             try
             {
-                if (!_dataVault.TryAcquireMutationGuard(BlackboxReadMutationGuardMask))
+                if (!vault.TryAcquireMutationGuard(BlackboxReadMutationGuardMask))
                     return false;
                 guardAcquired = true;
 
-                if (!TryResolveArray(in _stateReadHandle, out NativeArray<VehicleDamageStateDTO> stateRead) ||
-                    stateRead.Length <= 0 ||
-                    !TryResolveArray(in _telemetryHandle, out NativeArray<VehicleDamageTelemetryEntry> telemetry))
+                if (!TryOpenArrayForOwner(in _stateReadHandle, out NativeArray<VehicleDamageStateDTO> stateRead) ||
+                    stateRead.Length <= 0)
                 {
                     return false;
                 }
 
                 VehicleDamageStateDTO state = ElementReadOnlyRef(stateRead, 0);
                 if ((state.Flags & VehicleDamageConstants.StateFlagFatalNan) == 0u)
-                    return false;
-
-                if (!telemetry.IsCreated)
                     return false;
 
                 faulted = true;
@@ -994,7 +1174,7 @@ namespace Hecton8.Physics.Vehicles
             finally
             {
                 if (guardAcquired)
-                    _dataVault.ReleaseMutationGuard(BlackboxReadMutationGuardMask);
+                    vault.ReleaseMutationGuard(BlackboxReadMutationGuardMask);
             }
 
             if (!faulted)
@@ -1148,17 +1328,18 @@ namespace Hecton8.Physics.Vehicles
         /// </summary>
         public bool TryWriteEditorTuning(string propertyName, float value)
         {
-            if (_damagePending || _buffersLocked || _dataVault == null || !IsHandleValid(in _tuningHandle))
+            IDataVault vault = _dataVault;
+            if (_damagePending || _buffersLocked || vault == null || !IsHandleValid(in _tuningHandle))
                 return false;
 
             bool guardAcquired = false;
             try
             {
-                if (!_dataVault.TryAcquireMutationGuard(EditorTuningMutationGuardMask))
+                if (!vault.TryAcquireMutationGuard(EditorTuningMutationGuardMask))
                     return false;
                 guardAcquired = true;
 
-                if (!TryResolveArray(in _tuningHandle, out NativeArray<VehicleDamageTuningDTO> tuningArray) ||
+                if (!TryOpenArrayForOwner(in _tuningHandle, out NativeArray<VehicleDamageTuningDTO> tuningArray) ||
                     tuningArray.Length <= 0)
                     return false;
 
@@ -1198,7 +1379,7 @@ namespace Hecton8.Physics.Vehicles
             finally
             {
                 if (guardAcquired)
-                    _dataVault.ReleaseMutationGuard(EditorTuningMutationGuardMask);
+                    vault.ReleaseMutationGuard(EditorTuningMutationGuardMask);
             }
         }
 
@@ -1260,7 +1441,7 @@ namespace Hecton8.Physics.Vehicles
             if (!drawDamageGizmos || _damagePending || _dataVault == null || !IsHandleValid(in _gridReadHandle))
                 return;
 
-            TryResolveArray(in _gridReadHandle, out NativeArray<VehicleGridCellDTO> cells);
+            TryOpenArrayForOwner(in _gridReadHandle, out NativeArray<VehicleGridCellDTO> cells);
             if (!cells.IsCreated || cells.Length <= 0)
                 return;
 

@@ -6,7 +6,8 @@ namespace Hecton8.Caves
     {
         public static bool TryResolveLocalVolumeBounds(HectonVoxelVolume volume, CavePreset preset, out Bounds bounds)
         {
-            if (volume != null && volume.TryGetComponent(out MeshFilter meshFilter))
+            MeshFilter meshFilter = volume != null ? volume.CachedMeshFilter : null;
+            if (meshFilter != null)
             {
                 Mesh sharedMesh = meshFilter.sharedMesh;
                 if (sharedMesh != null && sharedMesh.bounds.size.sqrMagnitude > 0.01f)

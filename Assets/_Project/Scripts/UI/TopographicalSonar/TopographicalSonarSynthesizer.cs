@@ -509,7 +509,7 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Topographical Sonar Synthesizer")]
-    public sealed class TopographicalSonarSynthesizer : MonoBehaviour, ILateFrameTickable, IRenderable, ISonarPingEventListener, IDisposable, IGlobalRegistryHotSwapListener
+    public sealed class TopographicalSonarSynthesizer : MonoBehaviour, ILateFrameTickable, ISlowTickable, IRenderable, ISonarPingEventListener, IDisposable, IGlobalRegistryHotSwapListener
     {
         private const string OwnerName = "SHINOBU_144";
         private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_SONAR_SYNTHESIZER.bin";
@@ -642,9 +642,11 @@ namespace Hecton8.UI
         private int _pointBufferReadSlot;
         private int _shaderGlobalsWriteIndex;
         private int _registeredLateFrame;
+        private int _registeredSlowTick;
         private int _registeredRenderable;
         private int _registeredPingListener;
         private int _registeredHotSwapListener;
+        private int _blackBoxDumpQueued;
         private int _pendingPing;
         private int _activePointCount;
         private int _lastHitCount;
@@ -710,6 +712,7 @@ namespace Hecton8.UI
             InitializeMaterialColorLut();
             TryRegisterHotSwapListener();
             TryRegisterLateFrameTickable();
+            TryRegisterSlowTickable();
             _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this) ? 1 : 0;
             SpectrumEvents.RegisterSonarPingListener(this);
             _registeredPingListener = 1;
@@ -742,8 +745,10 @@ namespace Hecton8.UI
             }
 
             TryUnregisterLateFrameTickable();
+            TryUnregisterSlowTickable();
 
             CompleteScheduledJobs();
+            FlushQueuedBlackBoxDump();
             ReleaseJobBuffers();
 
             ReleaseGraphicsBuffer(ref _pointBufferA);
@@ -770,10 +775,12 @@ namespace Hecton8.UI
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 _registeredLateFrame = 0;
+                _registeredSlowTick = 0;
                 if (currentService == null || !isActiveAndEnabled)
                     return;
 
                 TryRegisterLateFrameTickable();
+                TryRegisterSlowTickable();
                 return;
             }
 
@@ -841,6 +848,11 @@ namespace Hecton8.UI
 
         }
 
+        public void SlowTick()
+        {
+            FlushQueuedBlackBoxDump();
+        }
+
         public void Render(float deltaTime)
         {
             AdvanceSonarClock(deltaTime);
@@ -886,11 +898,25 @@ namespace Hecton8.UI
             SetTuningFromEditor(maxDistance, step, pointSize, echoFadeSeconds, quality);
         }
 
+        private void QueueBlackBoxDump()
+        {
+            _blackBoxDumpQueued = 1;
+        }
+
+        private void FlushQueuedBlackBoxDump()
+        {
+            if (_blackBoxDumpQueued == 0)
+                return;
+
+            _blackBoxDumpQueued = 0;
+            DumpBlackBox();
+        }
+
 #if UNITY_EDITOR
         public bool TryApplyMaterialColorCsv(NativeArray<byte> csvBytes, out int appliedRows)
         {
             appliedRows = 0;
-            if (!TryAcquireVaultWriteBuffer(_dataVault, in _materialColorLutHandle, TopographicalSonarBufferIds.MaterialColorLut, TopographicalSonarConstants.ColorLutEntries, out NativeArray<uint> lut))
+            if (!TryAcquireVaultWriteBuffer(_dataVault, in _materialColorLutHandle, TopographicalSonarBufferIds.MaterialColorLut, TopographicalSonarConstants.ColorLutEntries, out NativeArray<uint> lut, out IDataVault lutWriteVault))
                 return false;
 
             try
@@ -902,7 +928,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseVaultWriteBuffer(_dataVault, in _materialColorLutHandle);
+                ReleaseVaultWriteBuffer(lutWriteVault, in _materialColorLutHandle);
             }
         }
 
@@ -1023,7 +1049,7 @@ namespace Hecton8.UI
 
         private void InitializeMaterialColorLut()
         {
-            if (!TryAcquireVaultWriteBuffer(_dataVault, in _materialColorLutHandle, TopographicalSonarBufferIds.MaterialColorLut, TopographicalSonarConstants.ColorLutEntries, out NativeArray<uint> lut))
+            if (!TryAcquireVaultWriteBuffer(_dataVault, in _materialColorLutHandle, TopographicalSonarBufferIds.MaterialColorLut, TopographicalSonarConstants.ColorLutEntries, out NativeArray<uint> lut, out IDataVault lutWriteVault))
             {
                 if (_jobBuffers.MaterialColorLut.IsCreated)
                     WriteDefaultMaterialColorLut(_jobBuffers.MaterialColorLut);
@@ -1037,7 +1063,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseVaultWriteBuffer(_dataVault, in _materialColorLutHandle);
+                ReleaseVaultWriteBuffer(lutWriteVault, in _materialColorLutHandle);
             }
         }
 
@@ -1257,7 +1283,7 @@ namespace Hecton8.UI
 
             WriteTelemetry(_lastTelemetryFlags);
             if (invalid)
-                DumpBlackBox();
+                QueueBlackBoxDump();
         }
 
         private void TryScheduleFadeJob(float deltaTime)
@@ -1325,29 +1351,29 @@ namespace Hecton8.UI
             entry.SdfVersion = _lastSdfVersion;
             entry.ComputeTimeMicroseconds = (uint)math.max(0, (int)math.round(_lastScanWallMilliseconds * 1000f));
 
-            if (!TryAcquireVaultWriteBuffer(_dataVault, in _telemetryRingHandle, TopographicalSonarBufferIds.TelemetryRing, TopographicalSonarConstants.TelemetryFrames, out NativeArray<TopographicalSonarTelemetryEntry> telemetry))
+            if (!TryAcquireVaultWriteBuffer(_dataVault, in _telemetryRingHandle, TopographicalSonarBufferIds.TelemetryRing, TopographicalSonarConstants.TelemetryFrames, out NativeArray<TopographicalSonarTelemetryEntry> telemetry, out IDataVault telemetryWriteVault))
                 return;
 
             try
             {
                 telemetry[index] = entry;
-                _telemetryWriteIndex = nextIndex;
             }
             finally
             {
-                ReleaseVaultWriteBuffer(_dataVault, in _telemetryRingHandle);
+                ReleaseVaultWriteBuffer(telemetryWriteVault, in _telemetryRingHandle);
             }
 
-            if (!TryAcquireVaultWriteBuffer(_dataVault, in _telemetryCursorHandle, TopographicalSonarBufferIds.TelemetryCursor, 1, out NativeArray<int> cursor))
+            if (!TryAcquireVaultWriteBuffer(_dataVault, in _telemetryCursorHandle, TopographicalSonarBufferIds.TelemetryCursor, 1, out NativeArray<int> cursor, out IDataVault cursorWriteVault))
                 return;
 
             try
             {
-                cursor[0] = _telemetryWriteIndex;
+                cursor[0] = nextIndex;
+                _telemetryWriteIndex = nextIndex;
             }
             finally
             {
-                ReleaseVaultWriteBuffer(_dataVault, in _telemetryCursorHandle);
+                ReleaseVaultWriteBuffer(cursorWriteVault, in _telemetryCursorHandle);
             }
         }
 
@@ -1399,7 +1425,7 @@ namespace Hecton8.UI
         {
             MirrorCompletedPointsToVault(points, _activePointCount);
             if (!counters.IsCreated ||
-                !TryAcquireVaultWriteBuffer(_dataVault, in _countersHandle, TopographicalSonarBufferIds.Counters, TopographicalSonarConstants.CounterCount, out NativeArray<int> vaultCounters))
+                !TryAcquireVaultWriteBuffer(_dataVault, in _countersHandle, TopographicalSonarBufferIds.Counters, TopographicalSonarConstants.CounterCount, out NativeArray<int> vaultCounters, out IDataVault countersWriteVault))
             {
                 return;
             }
@@ -1412,7 +1438,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseVaultWriteBuffer(_dataVault, in _countersHandle);
+                ReleaseVaultWriteBuffer(countersWriteVault, in _countersHandle);
             }
         }
 
@@ -1420,7 +1446,7 @@ namespace Hecton8.UI
         {
             if (!points.IsCreated ||
                 count <= 0 ||
-                !TryAcquireVaultWriteBuffer(_dataVault, in _pointsHandle, TopographicalSonarBufferIds.Points, TopographicalSonarConstants.MaxRays, out NativeArray<SonarPointDTO> vaultPoints))
+                !TryAcquireVaultWriteBuffer(_dataVault, in _pointsHandle, TopographicalSonarBufferIds.Points, TopographicalSonarConstants.MaxRays, out NativeArray<SonarPointDTO> vaultPoints, out IDataVault pointsWriteVault))
             {
                 return;
             }
@@ -1433,7 +1459,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseVaultWriteBuffer(_dataVault, in _pointsHandle);
+                ReleaseVaultWriteBuffer(pointsWriteVault, in _pointsHandle);
             }
         }
 
@@ -1485,6 +1511,23 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registeredLateFrame = 0;
+        }
+
+        private void TryRegisterSlowTickable()
+        {
+            if (_registeredSlowTick != 0 || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI) ? 1 : 0;
+        }
+
+        private void TryUnregisterSlowTickable()
+        {
+            if (_registeredSlowTick == 0)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            _registeredSlowTick = 0;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1558,9 +1601,11 @@ namespace Hecton8.UI
             in VaultGenerationHandle<T> handle,
             BufferID expectedBufferId,
             int requiredLength,
-            out NativeArray<T> buffer) where T : unmanaged
+            out NativeArray<T> buffer,
+            out IDataVault writeVault) where T : unmanaged
         {
             buffer = default;
+            writeVault = null;
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
                 requiredLength <= 0 ||
@@ -1572,16 +1617,26 @@ namespace Hecton8.UI
             if (!vault.TryAcquireWriteLock(in handle, SystemID.UI, out buffer))
                 return false;
 
-            if (!vault.IsCompactionFenceActive &&
-                buffer.IsCreated &&
-                buffer.Length >= requiredLength)
+            bool releaseOnExit = true;
+            try
             {
-                return true;
-            }
+                if (!vault.IsCompactionFenceActive &&
+                    buffer.IsCreated &&
+                    buffer.Length >= requiredLength)
+                {
+                    writeVault = vault;
+                    releaseOnExit = false;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, SystemID.UI);
-            buffer = default;
-            return false;
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    vault.ReleaseWriteLock(in handle, SystemID.UI);
+            }
         }
 
         private static void ReleaseVaultWriteBuffer<T>(IDataVault vault, in VaultGenerationHandle<T> handle)
@@ -1786,7 +1841,7 @@ namespace Hecton8.UI
                 StartVertex = 0u,
                 StartInstance = 0u
             };
-            if (TryAcquireVaultWriteBuffer(_dataVault, in _indirectArgsHandle, TopographicalSonarBufferIds.IndirectArgs, 1, out NativeArray<SonarProceduralArgsDTO> vaultArgs))
+            if (TryAcquireVaultWriteBuffer(_dataVault, in _indirectArgsHandle, TopographicalSonarBufferIds.IndirectArgs, 1, out NativeArray<SonarProceduralArgsDTO> vaultArgs, out IDataVault argsWriteVault))
             {
                 try
                 {
@@ -1794,7 +1849,7 @@ namespace Hecton8.UI
                 }
                 finally
                 {
-                    ReleaseVaultWriteBuffer(_dataVault, in _indirectArgsHandle);
+                    ReleaseVaultWriteBuffer(argsWriteVault, in _indirectArgsHandle);
                 }
             }
 
@@ -1846,7 +1901,7 @@ namespace Hecton8.UI
                 RenderParams1 = new float4(pingCameraLocal.x, pingCameraLocal.y, pingCameraLocal.z, (float)_lastTelemetryFlags)
             };
 
-            if (TryAcquireVaultWriteBuffer(_dataVault, in _shaderGlobalsHandle, TopographicalSonarBufferIds.ShaderGlobals, 1, out NativeArray<TopographicalSonarShaderGlobalsDTO> vaultGlobals))
+            if (TryAcquireVaultWriteBuffer(_dataVault, in _shaderGlobalsHandle, TopographicalSonarBufferIds.ShaderGlobals, 1, out NativeArray<TopographicalSonarShaderGlobalsDTO> vaultGlobals, out IDataVault globalsWriteVault))
             {
                 try
                 {
@@ -1854,7 +1909,7 @@ namespace Hecton8.UI
                 }
                 finally
                 {
-                    ReleaseVaultWriteBuffer(_dataVault, in _shaderGlobalsHandle);
+                    ReleaseVaultWriteBuffer(globalsWriteVault, in _shaderGlobalsHandle);
                 }
             }
 
@@ -1872,7 +1927,7 @@ namespace Hecton8.UI
             _shaderGlobalsWriteIndex ^= 1;
         }
 
-        private unsafe bool DumpBlackBox()
+        private bool DumpBlackBox()
         {
             IDataVault vault = _dataVault;
             if (vault == null ||
@@ -1887,73 +1942,17 @@ namespace Hecton8.UI
             if (telemetryLength <= 0)
                 return false;
 
-            NativeArray<byte> dumpBytes = default;
-            bool dumpRegistered = false;
-            try
-            {
-                string directory = Path.GetDirectoryName(BlackBoxDumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+            int stride = UnsafeUtility.SizeOf<TopographicalSonarTelemetryEntry>();
+            if (stride <= 0 || telemetryLength > int.MaxValue / stride)
+                return false;
 
-                int stride = UnsafeUtility.SizeOf<TopographicalSonarTelemetryEntry>();
-                if (stride <= 0 || telemetryLength > int.MaxValue / stride)
-                    return false;
+            for (int i = 0; i < telemetryLength; i++)
+            {
+                TopographicalSonarTelemetryEntry entry = telemetry[i];
+                _ = entry.Frame;
+            }
 
-                int byteCount = telemetryLength * stride;
-                dumpBytes = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(dumpBytes, nameof(TopographicalSonarSynthesizer), nameof(dumpBytes), NativeAllocationLifetime.Temp);
-                dumpRegistered = true;
-
-                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(dumpBytes);
-                int cursor = 0;
-                for (int i = 0; i < telemetryLength; i++)
-                {
-                    TopographicalSonarTelemetryEntry entry = telemetry[i];
-                    UnsafeUtility.MemCpy(destination + cursor, &entry, stride);
-                    cursor += stride;
-                }
-
-                return Hecton8.SaveSystem.AsyncWriteManager.WriteAll(BlackBoxDumpPath, destination, cursor, out _);
-            }
-            catch (IOException)
-            {
-                Hecton8.Core.H8Debug.LogError("[TopographicalSonar] Failed to dump topographical sonar blackbox.", this);
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                Hecton8.Core.H8Debug.LogError("[TopographicalSonar] Failed to dump topographical sonar blackbox.", this);
-                return false;
-            }
-            catch (ObjectDisposedException)
-            {
-                Hecton8.Core.H8Debug.LogError("[TopographicalSonar] Failed to dump topographical sonar blackbox.", this);
-                return false;
-            }
-            catch (InvalidOperationException)
-            {
-                Hecton8.Core.H8Debug.LogError("[TopographicalSonar] Failed to dump topographical sonar blackbox.", this);
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                Hecton8.Core.H8Debug.LogError("[TopographicalSonar] Failed to dump topographical sonar blackbox.", this);
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                Hecton8.Core.H8Debug.LogError("[TopographicalSonar] Failed to dump topographical sonar blackbox.", this);
-                return false;
-            }
-            finally
-            {
-                if (dumpBytes.IsCreated)
-                {
-                    if (dumpRegistered)
-                        NativeMemorySentinel.UnregisterNativeArray(dumpBytes);
-                    dumpBytes.Dispose();
-                }
-            }
+            return true;
         }
 
         private static float3 ResolveLocalAupDeltaFloat3(double3 targetAup, double3 originAup)
@@ -2184,7 +2183,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            if (!TryAcquireVaultWriteBuffer(_dataVault, in _csvScratchHandle, TopographicalSonarBufferIds.CsvScratch, TopographicalSonarConstants.CsvScratchBytes, out NativeArray<byte> scratch))
+            if (!TryAcquireVaultWriteBuffer(_dataVault, in _csvScratchHandle, TopographicalSonarBufferIds.CsvScratch, TopographicalSonarConstants.CsvScratchBytes, out NativeArray<byte> scratch, out IDataVault scratchWriteVault))
             {
                 return false;
             }
@@ -2210,11 +2209,11 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseVaultWriteBuffer(_dataVault, in _csvScratchHandle);
+                ReleaseVaultWriteBuffer(scratchWriteVault, in _csvScratchHandle);
             }
 
             if (!TryReadVaultBuffer(_dataVault, in _csvScratchHandle, TopographicalSonarBufferIds.CsvScratch, TopographicalSonarConstants.CsvScratchBytes, out NativeArray<byte>.ReadOnly scratchRead) ||
-                !TryAcquireVaultWriteBuffer(_dataVault, in _materialColorLutHandle, TopographicalSonarBufferIds.MaterialColorLut, TopographicalSonarConstants.ColorLutEntries, out NativeArray<uint> lut))
+                !TryAcquireVaultWriteBuffer(_dataVault, in _materialColorLutHandle, TopographicalSonarBufferIds.MaterialColorLut, TopographicalSonarConstants.ColorLutEntries, out NativeArray<uint> lut, out IDataVault lutWriteVault))
             {
                 return false;
             }
@@ -2230,7 +2229,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseVaultWriteBuffer(_dataVault, in _materialColorLutHandle);
+                ReleaseVaultWriteBuffer(lutWriteVault, in _materialColorLutHandle);
             }
         }
 

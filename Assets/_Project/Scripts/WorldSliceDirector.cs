@@ -10,6 +10,14 @@ namespace Hecton8.World
         private const int MaxSliceAnchorSnapshotCount = 64;
 
         internal static WorldSliceDirector ActiveRuntimeInstance { get; private set; }
+        internal static event System.Action<WorldSliceDirector> ActiveRuntimeInstanceChanged;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeForSubsystemRegistration()
+        {
+            ActiveRuntimeInstance = null;
+            ActiveRuntimeInstanceChanged = null;
+        }
 
         [Header("References")]
         [SerializeField] private Transform playerTransform;
@@ -45,7 +53,7 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            ActiveRuntimeInstance = this;
+            PublishActiveRuntimeInstance();
             CachePlayerContextCold();
             ResolvePlayer();
             RefreshChunkProfileScales();
@@ -79,7 +87,22 @@ namespace Hecton8.World
             TryUnregister();
 
             if (ActiveRuntimeInstance == this)
-                ActiveRuntimeInstance = null;
+                ClearActiveRuntimeInstance();
+        }
+
+        private void PublishActiveRuntimeInstance()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                return;
+
+            ActiveRuntimeInstance = this;
+            ActiveRuntimeInstanceChanged?.Invoke(this);
+        }
+
+        private void ClearActiveRuntimeInstance()
+        {
+            ActiveRuntimeInstance = null;
+            ActiveRuntimeInstanceChanged?.Invoke(null);
         }
 
         private void TryRegister()

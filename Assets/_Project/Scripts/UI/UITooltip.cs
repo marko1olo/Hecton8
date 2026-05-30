@@ -72,6 +72,12 @@ namespace Hecton8.UI
         public ServiceHeartbeatState HeartbeatState => _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
         public bool IsServiceReady => _runtimeRegistered;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeForSubsystemRegistration()
+        {
+            s_activeRuntime = null;
+        }
+
         // ══════════════════════════════════════════════════════════
         // LIFECYCLE
         // ══════════════════════════════════════════════════════════

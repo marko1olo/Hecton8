@@ -32,7 +32,7 @@ namespace Hecton8.Lighting.Shafts
         [FieldOffset(32)]
         public byte Flags;
         [FieldOffset(33)]
-        public byte _pad0;
+        public byte QualityPressureQ8;
         [FieldOffset(34)]
         public ushort _pad1;
         [FieldOffset(36)]
@@ -61,7 +61,6 @@ namespace Hecton8.Lighting.Shafts
         private const float CameraRetrySeconds = 0.75f;
         private const uint NaNFallbackWarningHash = 0x4C534E41u;
         private const uint RuntimeContextHash = 0x4C534654u;
-        private const byte TelemetryFlagQualityPressure = 1 << 0;
         private const byte TelemetryFlagLoadShed = 1 << 1;
         private const byte TelemetryFlagNoCamera = 1 << 2;
         private const byte TelemetryFlagNaN = 1 << 3;
@@ -152,7 +151,7 @@ namespace Hecton8.Lighting.Shafts
                 if (_renderCamera == null)
                     ResolveRenderCamera();
 
-                byte flags = _qualityPressure01 > 0.001f ? TelemetryFlagQualityPressure : (byte)0;
+                byte flags = 0;
                 if (_loadShedTimer > 0f)
                     flags |= TelemetryFlagLoadShed;
                 if (_renderCamera == null)
@@ -786,7 +785,8 @@ namespace Hecton8.Lighting.Shafts
                 PrimaryIntensity = primary.Intensity,
                 Soot01 = _soot01,
                 Brownout01 = _brownout01,
-                Flags = flags
+                Flags = flags,
+                QualityPressureQ8 = EncodeQualityPressureQ8(_qualityPressure01)
             };
 
             _telemetryWriteIndex++;
@@ -818,8 +818,16 @@ namespace Hecton8.Lighting.Shafts
                     writer.Write(entry.Soot01);
                     writer.Write(entry.Brownout01);
                     writer.Write(entry.Flags);
+                    writer.Write(entry.QualityPressureQ8);
                 }
             }
+        }
+
+        private static byte EncodeQualityPressureQ8(float qualityPressure01)
+        {
+            float finitePressure = math.isfinite(qualityPressure01) ? qualityPressure01 : 0f;
+            int q8 = (int)math.round(math.saturate(finitePressure) * 255f);
+            return (byte)math.clamp(q8, 0, 255);
         }
 
         private float ResolveBrownoutStutter()

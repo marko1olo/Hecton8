@@ -178,7 +178,7 @@ namespace Hecton8.World
             CacheRegistryServicesCold();
             EnsureStorage();
             EnsureRenderingResources(false);
-            _drawPropertyBlock = MaterialPropertyBlockRegistry.GetOrCreateLegacyBlock(this);
+            _drawPropertyBlock = MaterialPropertyBlockRegistry.AcquireLegacyBlock(this);
             _previousGlobalDriftOffset = ResolveGlobalDriftOffset();
             _fluidDecalClockSeconds = 0f;
         }
@@ -188,7 +188,7 @@ namespace Hecton8.World
             CacheRegistryServicesCold();
             EnsureStorage();
             EnsureRenderingResources(false);
-            _drawPropertyBlock = MaterialPropertyBlockRegistry.GetOrCreateLegacyBlock(this);
+            _drawPropertyBlock = MaterialPropertyBlockRegistry.AcquireLegacyBlock(this);
             HectonFloatingOrigin.RegisterListener(this);
             TryRegisterHotSwapListener();
             TryRegisterService();

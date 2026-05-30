@@ -26,7 +26,9 @@ namespace Hecton8.World
         private const uint PortableMaxComputeThreadsPerGroup = 256u;
         private const int FrustumPlaneCount = 6;
         private const int VisibleCountReadbackFrameStride = 60;
+        private const int IndirectArgsElementCount = 5;
         private const int IndirectArgsInstanceCountIndex = 1;
+        private const int IndirectArgsReadbackByteCount = sizeof(uint) * IndirectArgsElementCount;
         private const int ScatterBoundsLutCount = 16;
         private const int SargassumDensityBinCount = 64;
         private const int BiomeHeatmapResolution = 256;
@@ -336,9 +338,16 @@ namespace Hecton8.World
         private int _lastFoveatedGridResolution;
         private bool _hasFoveatedVisibilitySnapshot;
         private AsyncGPUReadbackRequest _visibleCountReadbackRequest;
+        private VisibleCountReadbackOwner _visibleCountReadback;
         private bool _visibleCountReadbackPending;
+        private bool _visibleCountReadbackRepairRequested;
         private bool _hasUploadedScatterBounds;
         private Vector4 _lastUploadedScatterBounds;
+
+        private struct VisibleCountReadbackOwner
+        {
+            public NativeArray<uint> Data;
+        }
         private Texture2D _biomeHeatmapTexture;
         private byte[] _biomeHeatmapUpload;
         private int _biomeHeatmapBlobBytes = -1;
@@ -351,6 +360,7 @@ namespace Hecton8.World
         private uint _lastCurrentBiomeHash;
         private VaultGenerationHandle<ScatterTelemetryEntry> _scatterTelemetryRingHandle;
         private IDataVault _dataVault;
+        private IDataVault _scatterTelemetryWriteVault;
         private int _scatterTelemetryCursor;
         private bool _scatterTelemetryDumped;
         private double2 _scatterAupGenerationOffsetXZDouble;
@@ -673,12 +683,13 @@ namespace Hecton8.World
 
             _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight01();
             RefreshCameraDepthTextureSnapshotCold();
-            TryEnsureBiomeHeatmapTexture();
-            EnsureResources();
-            EnsureModInstanceResources();
+            if (_biomeHeatmapUpload != null && _biomeHeatmapTexture != null)
+                TryEnsureBiomeHeatmapTexture();
 
-            if (!IsExactVaultHandle(in _scatterTelemetryRingHandle, ScatterTelemetryRingBufferId))
-                EnsureScatterTelemetryResources();
+            FlushVisibleCountReadbackRepairSlow();
+
+            if (!HasScatterRuntimeResourcesReady() || !IsExactVaultHandle(in _scatterTelemetryRingHandle, ScatterTelemetryRingBufferId))
+                return;
         }
 
         /// <summary>
@@ -1521,6 +1532,7 @@ namespace Hecton8.World
 
         private void ReleaseScatterTelemetryResources()
         {
+            ReleaseScatterTelemetryRingWrite();
             ReleaseVaultHandle(_dataVault, ref _scatterTelemetryRingHandle);
             _scatterTelemetryCursor = 0;
             _scatterTelemetryDumped = false;
@@ -1804,6 +1816,7 @@ namespace Hecton8.World
             telemetryRing = default;
             IDataVault vault = _dataVault;
             if (vault == null ||
+                _scatterTelemetryWriteVault != null ||
                 !IsExactVaultHandle(in _scatterTelemetryRingHandle, ScatterTelemetryRingBufferId) ||
                 !vault.TryAcquireWriteLock(in _scatterTelemetryRingHandle, VaultOwnerSystemId, out telemetryRing))
             {
@@ -1817,6 +1830,7 @@ namespace Hecton8.World
                     return false;
 
                 handedOff = true;
+                _scatterTelemetryWriteVault = vault;
                 return true;
             }
             finally
@@ -1831,7 +1845,8 @@ namespace Hecton8.World
 
         private void ReleaseScatterTelemetryRingWrite()
         {
-            IDataVault vault = _dataVault;
+            IDataVault vault = _scatterTelemetryWriteVault;
+            _scatterTelemetryWriteVault = null;
             if (vault != null && IsExactVaultHandle(in _scatterTelemetryRingHandle, ScatterTelemetryRingBufferId))
                 vault.ReleaseWriteLock(in _scatterTelemetryRingHandle, VaultOwnerSystemId);
         }
@@ -1910,6 +1925,9 @@ namespace Hecton8.World
 
         private void ReleaseResources()
         {
+            CompletePendingVisibleCountReadbackForRelease();
+            DisposeVisibleCountReadbackData();
+
             ReleaseBuffer(ref _instanceBuffer);
             ReleaseBuffer(ref _visibleIndicesBuffer);
             ReleaseBuffer(ref _visibilityCacheBuffer);
@@ -1938,7 +1956,6 @@ namespace Hecton8.World
             _depthPyramidInvalidatedFrame = -1;
             _scatterFrameIndex = 0;
             _hasFoveatedVisibilitySnapshot = false;
-            _visibleCountReadbackPending = false;
             _hasUploadedScatterBounds = false;
             _lastUploadedScatterBounds = Vector4.zero;
             _hasCurrentBiomeColor = false;
@@ -2021,11 +2038,10 @@ namespace Hecton8.World
                     return;
 
                 _visibleCountReadbackPending = false;
-                if (!_visibleCountReadbackRequest.hasError)
+                if (!_visibleCountReadbackRequest.hasError && _visibleCountReadback.Data.IsCreated)
                 {
-                    NativeArray<uint> argsData = _visibleCountReadbackRequest.GetData<uint>();
-                    _debugVisibleCount = argsData.Length > IndirectArgsInstanceCountIndex
-                        ? (int)math.min(argsData[IndirectArgsInstanceCountIndex], (uint)int.MaxValue)
+                    _debugVisibleCount = _visibleCountReadback.Data.Length > IndirectArgsInstanceCountIndex
+                        ? (int)math.min(_visibleCountReadback.Data[IndirectArgsInstanceCountIndex], (uint)int.MaxValue)
                         : 0;
                 }
 
@@ -2035,8 +2051,83 @@ namespace Hecton8.World
             if (_argsBuffer == null || (frameIndex % VisibleCountReadbackFrameStride) != 0)
                 return;
 
-            _visibleCountReadbackRequest = AsyncGPUReadback.Request(_argsBuffer);
-            _visibleCountReadbackPending = true;
+            if (!HasVisibleCountReadbackData())
+            {
+                QueueVisibleCountReadbackRepair();
+                return;
+            }
+
+            _visibleCountReadbackRequest = AsyncGPUReadback.RequestIntoNativeArray(
+                ref _visibleCountReadback.Data,
+                _argsBuffer,
+                IndirectArgsReadbackByteCount,
+                0,
+                null);
+            _visibleCountReadbackPending = !_visibleCountReadbackRequest.hasError;
+            if (!_visibleCountReadbackPending)
+                _visibleCountReadbackRequest = default;
+        }
+
+        private bool EnsureVisibleCountReadbackData()
+        {
+            if (HasVisibleCountReadbackData())
+                return true;
+
+            if (_visibleCountReadbackPending)
+                return false;
+
+            DisposeVisibleCountReadbackData();
+            _visibleCountReadback.Data = new NativeArray<uint>(
+                IndirectArgsElementCount,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(_visibleCountReadback.Data, nameof(GPUScatterDirector), "_visibleCountReadbackData", NativeAllocationLifetime.Scene);
+            _visibleCountReadbackRepairRequested = false;
+            return true;
+        }
+
+        private bool HasVisibleCountReadbackData()
+        {
+            return _visibleCountReadback.Data.IsCreated && _visibleCountReadback.Data.Length >= IndirectArgsElementCount;
+        }
+
+        private void QueueVisibleCountReadbackRepair()
+        {
+            _visibleCountReadbackRepairRequested = true;
+        }
+
+        private void FlushVisibleCountReadbackRepairSlow()
+        {
+            if (!_visibleCountReadbackRepairRequested && HasVisibleCountReadbackData())
+                return;
+
+            if (_argsBuffer == null || _visibleCountReadbackPending)
+                return;
+
+            EnsureVisibleCountReadbackData();
+        }
+
+        private void CompletePendingVisibleCountReadbackForRelease()
+        {
+            if (!_visibleCountReadbackPending)
+                return;
+
+            if (!_visibleCountReadbackRequest.done)
+                _visibleCountReadbackRequest.WaitForCompletion();
+
+            _visibleCountReadbackPending = false;
+            _visibleCountReadbackRequest = default;
+        }
+
+        private void DisposeVisibleCountReadbackData()
+        {
+            _visibleCountReadbackRepairRequested = false;
+            if (_visibleCountReadback.Data.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_visibleCountReadback.Data);
+                _visibleCountReadback.Data.Dispose();
+                _visibleCountReadback.Data = default;
+            }
         }
 
 #if UNITY_EDITOR

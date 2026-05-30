@@ -338,7 +338,8 @@ namespace Hecton8.Core
 
         public void Tick(float deltaTime)
         {
-            EnsureInitialized();
+            if (!AreTickListsReady())
+                return;
 
             float dt = deltaTime;
             float slowTickDt = dt;
@@ -357,30 +358,34 @@ namespace Hecton8.Core
 #endif
 
             _tickables.BeginIteration();
-
-            int count = _tickables.Count;
-
-            for (int i = 0; i < count; i++)
+            try
             {
-                ITickable item = _tickables.GetAt(i);
+                int count = _tickables.Count;
 
-                if (item == null)
+                for (int i = 0; i < count; i++)
                 {
-                    _tickables.Remove(item);
-                    continue;
-                }
+                    ITickable item = _tickables.GetAt(i);
+
+                    if (item == null)
+                    {
+                        _tickables.Remove(item);
+                        continue;
+                    }
 
                 // ── Auto-Cleanup: "fake null" (unichtozhennyy MonoBehaviour) ──
-                if (item is UnityEngine.Object obj && obj == null)
-                {
-                    _tickables.Remove(item);
-                    continue;
+                    if (item is UnityEngine.Object obj && obj == null)
+                    {
+                        _tickables.Remove(item);
+                        continue;
+                    }
+
+                    item.Tick(dt);
                 }
-
-                item.Tick(dt);
             }
-
-            _tickables.EndIteration();
+            finally
+            {
+                _tickables.EndIteration();
+            }
             ProcessSlowTickIfNeeded(slowTickDt);
 
 #if UNITY_EDITOR
@@ -407,7 +412,8 @@ namespace Hecton8.Core
 
         public void FixedTick(float fixedDeltaTime)
         {
-            EnsureInitialized();
+            if (!AreTickListsReady())
+                return;
 #if UNITY_EDITOR
             FixedUpdateHeapLockGuard.Begin();
             try
@@ -417,30 +423,34 @@ namespace Hecton8.Core
             float fdt = fixedDeltaTime;
 
             _fixedTickables.BeginIteration();
-
-            int count = _fixedTickables.Count;
-
-            for (int i = 0; i < count; i++)
+            try
             {
-                IFixedTickable item = _fixedTickables.GetAt(i);
+                int count = _fixedTickables.Count;
 
-                if (item == null)
+                for (int i = 0; i < count; i++)
                 {
-                    _fixedTickables.Remove(item);
-                    continue;
-                }
+                    IFixedTickable item = _fixedTickables.GetAt(i);
+
+                    if (item == null)
+                    {
+                        _fixedTickables.Remove(item);
+                        continue;
+                    }
 
                 // ── Auto-Cleanup: "fake null" (unichtozhennyy MonoBehaviour) ──
-                if (item is UnityEngine.Object obj && obj == null)
-                {
-                    _fixedTickables.Remove(item);
-                    continue;
+                    if (item is UnityEngine.Object obj && obj == null)
+                    {
+                        _fixedTickables.Remove(item);
+                        continue;
+                    }
+
+                    item.FixedTick(fdt);
                 }
-
-                item.FixedTick(fdt);
             }
-
-            _fixedTickables.EndIteration();
+            finally
+            {
+                _fixedTickables.EndIteration();
+            }
 
 #if UNITY_EDITOR
             _debugFixedCount = _fixedTickables.Count;
@@ -480,8 +490,7 @@ namespace Hecton8.Core
         private void ExecuteSlowTick()
         {
             _slowTickables.BeginIteration();
-
-            int count = _slowTickables.Count;
+            int count = 0;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!_loggedFirstSlowTickExecution && enableSlowTickProfiling)
                 _loggedFirstSlowTickExecution = true;
@@ -495,32 +504,39 @@ namespace Hecton8.Core
             if (profileSlowTick)
                 ResetSlowTickProfilerFrame();
 
-            for (int i = 0; i < count; i++)
+            try
             {
-                ISlowTickable item = _slowTickables.GetAt(i);
+                count = _slowTickables.Count;
 
-                if (item == null)
+                for (int i = 0; i < count; i++)
                 {
-                    _slowTickables.Remove(item);
-                    continue;
-                }
+                    ISlowTickable item = _slowTickables.GetAt(i);
 
-                if (item is UnityEngine.Object obj && obj == null)
-                {
-                    _slowTickables.Remove(item);
-                    continue;
-                }
+                    if (item == null)
+                    {
+                        _slowTickables.Remove(item);
+                        continue;
+                    }
 
-                long itemStartTimestamp = profileSlowTick ? Stopwatch.GetTimestamp() : 0L;
-                item.SlowTick();
-                if (profileSlowTick)
-                {
-                    long itemEndTimestamp = Stopwatch.GetTimestamp();
-                    RecordSlowTickSample(item, itemEndTimestamp - itemStartTimestamp);
+                    if (item is UnityEngine.Object obj && obj == null)
+                    {
+                        _slowTickables.Remove(item);
+                        continue;
+                    }
+
+                    long itemStartTimestamp = profileSlowTick ? Stopwatch.GetTimestamp() : 0L;
+                    item.SlowTick();
+                    if (profileSlowTick)
+                    {
+                        long itemEndTimestamp = Stopwatch.GetTimestamp();
+                        RecordSlowTickSample(item, itemEndTimestamp - itemStartTimestamp);
+                    }
                 }
             }
-
-            _slowTickables.EndIteration();
+            finally
+            {
+                _slowTickables.EndIteration();
+            }
 
             if (profileSlowTick)
             {
@@ -794,6 +810,13 @@ namespace Hecton8.Core
         ///   • Swap-remove: O(1) udalenie bez sdviga massiva.
         ///   • Spiski pereispolzuyutsya — Clear() ne allotsiruet.
         /// </summary>
+        private bool AreTickListsReady()
+        {
+            return _tickables != null &&
+                _fixedTickables != null &&
+                _slowTickables != null;
+        }
+
         private void EnsureInitialized()
         {
             if (_tickables == null)

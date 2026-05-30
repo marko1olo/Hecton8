@@ -458,6 +458,7 @@ namespace Hecton8.Gameplay
         private bool _hasWaterSource;
         private bool _isOperating;
         private bool _registered;
+        private SystemDispatcher _cachedDispatcher;
         private int _oxygenPipeNodeIndex = -1;
         private float _pendingPipeOxygenUnits;
         private ISubmarineAtmosphereRoomMutationSink _atmosphereSystem;
@@ -639,6 +640,8 @@ namespace Hecton8.Gameplay
                 _pipeGraphService = GlobalRegistry.FluidPipeGraph;
             if (_oceanKinematicsService == null)
                 _oceanKinematicsService = GlobalRegistry.OceanKinematics;
+            if (_cachedDispatcher == null)
+                _cachedDispatcher = GlobalRegistry.Dispatcher;
         }
 
         internal static int ActiveElectrolysisCount => s_activeModules.Count;
@@ -963,15 +966,16 @@ namespace Hecton8.Gameplay
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
+                _cachedDispatcher = currentService as SystemDispatcher;
                 _registered = false;
                 if (currentService != null && isActiveAndEnabled)
                     TryStartRuntimeLifecycle();
             }
         }
 
-        private static bool CanUseRuntimeDispatcher()
+        private bool CanUseRuntimeDispatcher()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || _cachedDispatcher == null)
                 return false;
 
 #if UNITY_EDITOR

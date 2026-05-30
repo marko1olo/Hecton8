@@ -13,7 +13,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("")]
-    public sealed class ConnectionSplineBatchRenderer : MonoBehaviour, IConnectionSplineBatchRendererService, IServiceHeartbeat, IServiceShutdown, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public sealed class ConnectionSplineBatchRenderer : MonoBehaviour, IConnectionSplineBatchRendererService, IServiceHeartbeat, IServiceShutdown, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const int DefaultBatchCapacity = 100;
         private const int MaxRenderedLinksPerBatch = 64;
@@ -81,6 +81,7 @@ namespace Hecton8.Core
         }
 
         private bool _registeredLateFrameTick;
+        private bool _registeredSlowTick;
         private bool _lateFrameTickDormant;
         private bool _dispatcherAvailable;
         private bool _registeredOriginShiftListener;
@@ -225,6 +226,7 @@ namespace Hecton8.Core
         private void OnDisable()
         {
             TryUnregisterOriginShiftListener();
+            TryUnregisterSlowTickable();
             TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
         }
@@ -238,9 +240,10 @@ namespace Hecton8.Core
                 return;
 
             _dispatcherAvailable = currentService != null;
+            TryUnregisterSlowTickable();
             TryUnregisterLateFrameTickable();
             if (_dispatcherAvailable && isActiveAndEnabled)
-                RefreshLateFrameTickRegistration();
+                EnsureRuntimeRegistrations();
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -264,7 +267,25 @@ namespace Hecton8.Core
 
             TryRegisterHotSwapListener();
             TryRegisterOriginShiftListener();
+            TryRegisterSlowTickable();
             RefreshLateFrameTickRegistration();
+        }
+
+        private void TryRegisterSlowTickable()
+        {
+            if (_registeredSlowTick || !Application.isPlaying || !_dispatcherAvailable)
+                return;
+
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterSlowTickable()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            _registeredSlowTick = false;
         }
 
         private void TryRegisterLateFrameTickable()
@@ -272,7 +293,7 @@ namespace Hecton8.Core
             if (_registeredLateFrameTick || !_dispatcherAvailable)
                 return;
 
-            _registeredLateFrameTick = SystemDispatcher.Register(this, PriorityLayer.Environment);
+            _registeredLateFrameTick = SystemDispatcher.Register((ILateFrameTickable)this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterLateFrameTickable()
@@ -280,7 +301,7 @@ namespace Hecton8.Core
             if (!_registeredLateFrameTick)
                 return;
 
-            SystemDispatcher.Unregister(this, PriorityLayer.Environment);
+            SystemDispatcher.Unregister((ILateFrameTickable)this, PriorityLayer.Environment);
             _registeredLateFrameTick = false;
             _lateFrameTickDormant = false;
         }
@@ -380,6 +401,25 @@ namespace Hecton8.Core
                 _lateFrameTickDormant = true;
         }
 
+        public void SlowTick()
+        {
+            for (int batchIndex = 0; batchIndex < _batches.Length; batchIndex++)
+            {
+                BatchState batch = _batches[batchIndex];
+                if (batch == null)
+                    continue;
+
+                int linkCount = math.min(batch.Registrations.Count, MaxRenderedLinksPerBatch);
+                if (linkCount <= 0)
+                    continue;
+
+                if (HasBatchCapacity(batch, linkCount))
+                    continue;
+
+                batch.Dirty = false;
+            }
+        }
+
         internal static void FlushVisualSyncShaderState()
         {
             if (!s_logisticsPathHighlightDirty)
@@ -405,6 +445,7 @@ namespace Hecton8.Core
                 return;
 
             TryUnregisterOriginShiftListener();
+            TryUnregisterSlowTickable();
             TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
 
@@ -440,7 +481,7 @@ namespace Hecton8.Core
                 MaterialColorDirty = false
             };
 
-            EnsureBatchCapacity(batch, MaxRenderedLinksPerBatch);
+            EnsureBatchCapacityCold(batch, MaxRenderedLinksPerBatch);
             _batches[index] = batch;
         }
 
@@ -678,8 +719,11 @@ namespace Hecton8.Core
             if (linkCount <= 0)
                 return;
 
-            if (!EnsureBatchCapacity(batch, linkCount))
+            if (!HasBatchCapacity(batch, linkCount))
+            {
+                batch.Dirty = true;
                 return;
+            }
 
             int writeIndex = 0;
             float3 minBounds = new float3(float.MaxValue, float.MaxValue, float.MaxValue);
@@ -856,16 +900,29 @@ namespace Hecton8.Core
             batch.Dirty = true;
         }
 
-        private static bool EnsureBatchCapacity(BatchState batch, int linkCapacity)
+        private static bool HasBatchCapacity(BatchState batch, int linkCapacity)
         {
             int safeLinkCapacity = math.max(1, linkCapacity);
-            EnsureArrayCapacity(ref batch.Descriptors, safeLinkCapacity);
-            EnsureArrayCapacity(ref batch.InstanceData, safeLinkCapacity);
-            EnsureInstanceBufferCapacity(batch, safeLinkCapacity);
-            return batch.InstanceBuffer != null;
+            return batch != null &&
+                   batch.Descriptors.IsCreated &&
+                   batch.Descriptors.Length >= safeLinkCapacity &&
+                   batch.InstanceData.IsCreated &&
+                   batch.InstanceData.Length >= safeLinkCapacity &&
+                   batch.InstanceBuffer != null &&
+                   batch.InstanceBuffer.IsValid() &&
+                   batch.InstanceBuffer.count >= safeLinkCapacity;
         }
 
-        private static void EnsureArrayCapacity(ref NativeArray<SplineDescriptor> array, int requiredLength)
+        private static bool EnsureBatchCapacityCold(BatchState batch, int linkCapacity)
+        {
+            int safeLinkCapacity = math.max(1, linkCapacity);
+            EnsureArrayCapacityCold(ref batch.Descriptors, safeLinkCapacity);
+            EnsureArrayCapacityCold(ref batch.InstanceData, safeLinkCapacity);
+            EnsureInstanceBufferCapacityCold(batch, safeLinkCapacity);
+            return HasBatchCapacity(batch, safeLinkCapacity);
+        }
+
+        private static void EnsureArrayCapacityCold(ref NativeArray<SplineDescriptor> array, int requiredLength)
         {
             if (array.IsCreated && array.Length >= requiredLength)
                 return;
@@ -880,7 +937,7 @@ namespace Hecton8.Core
             NativeMemorySentinel.RegisterNativeArray(array, nameof(ConnectionSplineBatchRenderer), nameof(BatchState.Descriptors), NativeAllocationLifetime.Session);
         }
 
-        private static void EnsureArrayCapacity(ref NativeArray<FlexiblePipeInstanceGpuData> array, int requiredLength)
+        private static void EnsureArrayCapacityCold(ref NativeArray<FlexiblePipeInstanceGpuData> array, int requiredLength)
         {
             if (array.IsCreated && array.Length >= requiredLength)
                 return;
@@ -895,9 +952,9 @@ namespace Hecton8.Core
             NativeMemorySentinel.RegisterNativeArray(array, nameof(ConnectionSplineBatchRenderer), nameof(BatchState.InstanceData), NativeAllocationLifetime.Session);
         }
 
-        private static void EnsureInstanceBufferCapacity(BatchState batch, int requiredLength)
+        private static void EnsureInstanceBufferCapacityCold(BatchState batch, int requiredLength)
         {
-            if (batch.InstanceBuffer != null && batch.InstanceBuffer.count >= requiredLength)
+            if (batch.InstanceBuffer != null && batch.InstanceBuffer.IsValid() && batch.InstanceBuffer.count >= requiredLength)
                 return;
 
             ReleaseBuffer(ref batch.InstanceBuffer);

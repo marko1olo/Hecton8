@@ -15,6 +15,46 @@ namespace Hecton8.Caves
         private static readonly int _EmissionColorId = Shader.PropertyToID("_EmissionColor");
         private static MaterialPropertyBlock _RemnantPropertyBlock;
 
+        public static Transform Prewarm(Transform parent)
+        {
+            if (parent == null)
+                return null;
+
+            Transform root = GetOrCreateRoot(parent);
+            for (int i = 0; i < MaxRemnantCount; i++)
+            {
+                if (i < root.childCount)
+                {
+                    WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisual(
+                        root.GetChild(i).gameObject,
+                        PrimitiveType.Cube,
+                        GetCachedName(i),
+                        Vector3.zero,
+                        Quaternion.identity,
+                        Vector3.one);
+                    continue;
+                }
+
+                Renderer renderer = WorldGeneratedPrimitiveFactory.CreatePrimitiveVisual(
+                    root,
+                    PrimitiveType.Cube,
+                    GetCachedName(i),
+                    Vector3.zero,
+                    Quaternion.identity,
+                    Vector3.one);
+                if (renderer != null)
+                    renderer.gameObject.SetActive(false);
+            }
+
+            DisableAll(root);
+            return root;
+        }
+
+        public static void PrewarmSharedResources()
+        {
+            _ = GetRemnantPropertyBlock();
+        }
+
         public static void Build(
             Transform parent,
             HectonVoxelVolume volume,
@@ -25,16 +65,40 @@ namespace Hecton8.Caves
             if (parent == null || volume == null || preset == null || config == null || !config.enabled)
                 return;
 
+            Transform remnantRoot = GetOrCreateRoot(parent);
+            BuildPrepared(remnantRoot, volume, preset, config, globalIntensity, createMissing: true);
+        }
+
+        public static void BuildPrepared(
+            Transform remnantRoot,
+            HectonVoxelVolume volume,
+            CavePreset preset,
+            ServiceRemnantConfig config,
+            float globalIntensity)
+        {
+            BuildPrepared(remnantRoot, volume, preset, config, globalIntensity, createMissing: false);
+        }
+
+        private static void BuildPrepared(
+            Transform remnantRoot,
+            HectonVoxelVolume volume,
+            CavePreset preset,
+            ServiceRemnantConfig config,
+            float globalIntensity,
+            bool createMissing)
+        {
+            if (remnantRoot == null || volume == null || preset == null || config == null || !config.enabled)
+                return;
+
             if (config.ruinLinkedOnly && !preset.isRuinLinked)
             {
-                DisableAll(parent.Find(RemnantRootName));
+                DisableAll(remnantRoot);
                 return;
             }
 
             if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, preset, out Bounds volumeBounds))
                 return;
 
-            Transform remnantRoot = GetOrCreateRoot(parent);
             Material remnantMaterial = ResolveRemnantMaterial(volume);
             long runtimeSeed = volume.caveKey != 0L ? volume.caveKey : ComputeFallbackSeed(volume.transform.position, preset);
             int remnantCount = ResolveRemnantCount(preset, volumeBounds, config, globalIntensity);
@@ -48,7 +112,8 @@ namespace Hecton8.Caves
                     remnantMaterial,
                     runtimeSeed,
                     config,
-                    globalIntensity);
+                    globalIntensity,
+                    createMissing);
                 ApplyRemnantVisuals(renderer, config, runtimeSeed, i);
             }
 
@@ -62,7 +127,8 @@ namespace Hecton8.Caves
             Material remnantMaterial,
             long runtimeSeed,
             ServiceRemnantConfig config,
-            float globalIntensity)
+            float globalIntensity,
+            bool createMissing)
         {
             string name = GetCachedName(index);
             bool cylindrical = Hash01(runtimeSeed, index, 11) > 0.45f;
@@ -89,7 +155,7 @@ namespace Hecton8.Caves
             {
                 Transform existing = root.GetChild(index);
                 ActivateTransform(existing);
-                return WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisual(
+                return WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisualHot(
                     existing.gameObject,
                     primitiveType,
                     name,
@@ -98,6 +164,9 @@ namespace Hecton8.Caves
                     localScale,
                     remnantMaterial);
             }
+
+            if (!createMissing)
+                return null;
 
             return WorldGeneratedPrimitiveFactory.CreatePrimitiveVisual(
                 root,
@@ -170,7 +239,8 @@ namespace Hecton8.Caves
 
         private static Material ResolveRemnantMaterial(HectonVoxelVolume volume)
         {
-            if (volume != null && volume.TryGetComponent(out MeshRenderer renderer))
+            MeshRenderer renderer = volume != null ? volume.CachedMeshRenderer : null;
+            if (renderer != null)
                 return renderer.sharedMaterial;
 
             return null;

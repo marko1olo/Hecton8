@@ -61,6 +61,8 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            CacheRegistryServicesCold();
+            RefreshColdReferences();
             RefreshVolumeCache();
             CaptureLiveBaselines();
         }
@@ -69,13 +71,19 @@ namespace Hecton8.World
         {
             RenderSettingsLifecycleGuard.Acquire(this);
             CacheRegistryServicesCold();
+            RefreshColdReferences();
             TryRegisterHotSwapListener();
             TryRegister();
-            TryResolveViewerReferences();
             RefreshVolumeCache();
             CaptureLiveBaselines();
             ResolveTargetOcclusion();
             ApplyOcclusionImmediate(_targetOcclusion);
+        }
+
+        private void Start()
+        {
+            RefreshColdReferences();
+            RefreshVolumeCache();
         }
 
         private void OnDisable()
@@ -100,7 +108,11 @@ namespace Hecton8.World
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
-                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+            {
+                RebindViewerReferencesFromPlayerContext(
+                    previousService as IPlayerRuntimeContext,
+                    currentService as IPlayerRuntimeContext);
+            }
             else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 _registeredSlowTickable = false;
@@ -155,7 +167,6 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
-            TryResolveViewerReferences();
             RefreshVolumeCache();
             ResolveTargetOcclusion();
         }
@@ -187,25 +198,68 @@ namespace Hecton8.World
             }
         }
 
-        private void TryResolveViewerReferences()
+        private void RefreshColdReferences()
         {
+            if (_worldCaveDirector == null)
+                WorldRuntimeReferenceUtility.TryResolveWorldCaveDirector(ref _worldCaveDirector);
+
             if (viewerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref viewerTransform);
 
-            if (viewerCamera == null)
-            {
-                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-                if (playerContext != null && playerContext.PlayerCamera != null)
-                    viewerCamera = playerContext.PlayerCamera;
-            }
-
-            if (viewerCamera == null && viewerTransform != null)
-                viewerTransform.TryGetComponent(out viewerCamera);
+            RefreshViewerReferencesFromCachedContext();
+            RefreshViewerCameraFromTransformCold();
 
             if (viewerTransform == null && viewerCamera != null)
                 viewerTransform = viewerCamera.transform;
 
             _debugHasViewer = viewerTransform != null || viewerCamera != null;
+        }
+
+        private void RefreshViewerReferencesFromCachedContext()
+        {
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext == null)
+                return;
+
+            if (viewerTransform == null && playerContext.PlayerTransform != null)
+                viewerTransform = playerContext.PlayerTransform;
+
+            if (viewerCamera == null && playerContext.PlayerCamera != null)
+                viewerCamera = playerContext.PlayerCamera;
+        }
+
+        private void RebindViewerReferencesFromPlayerContext(
+            IPlayerRuntimeContext previousContext,
+            IPlayerRuntimeContext currentContext)
+        {
+            if (previousContext != null)
+            {
+                if (previousContext.PlayerTransform != null &&
+                    ReferenceEquals(viewerTransform, previousContext.PlayerTransform))
+                {
+                    viewerTransform = null;
+                }
+
+                if (previousContext.PlayerCamera != null &&
+                    ReferenceEquals(viewerCamera, previousContext.PlayerCamera))
+                {
+                    viewerCamera = null;
+                }
+            }
+
+            _cachedPlayerContext = currentContext;
+            RefreshViewerReferencesFromCachedContext();
+
+            if (viewerTransform == null && viewerCamera != null)
+                viewerTransform = viewerCamera.transform;
+
+            _debugHasViewer = viewerTransform != null || viewerCamera != null;
+        }
+
+        private void RefreshViewerCameraFromTransformCold()
+        {
+            if (viewerCamera == null && viewerTransform != null)
+                viewerTransform.TryGetComponent(out viewerCamera);
         }
 
         private void CacheRegistryServicesCold()
@@ -232,7 +286,6 @@ namespace Hecton8.World
 
         private void RefreshVolumeCache()
         {
-            WorldRuntimeReferenceUtility.TryResolveWorldCaveDirector(ref _worldCaveDirector);
             if (_worldCaveDirector != null)
             {
                 _volumeBufferCount = _worldCaveDirector.CopyActiveVolumesTo(_volumeBuffer);

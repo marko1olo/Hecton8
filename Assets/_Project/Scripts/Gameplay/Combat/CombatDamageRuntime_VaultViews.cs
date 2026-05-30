@@ -158,10 +158,11 @@ namespace Hecton8.Gameplay
 
             public bool TryAcquire()
             {
-                if (_vault == null || _mask == 0UL)
+                IDataVault vault = _vault;
+                if (vault == null || _mask == 0UL)
                     return false;
 
-                if (!_vault.TryAcquireMutationGuard(_mask))
+                if (!vault.TryAcquireMutationGuard(_mask))
                     return false;
 
                 _acquired = true;

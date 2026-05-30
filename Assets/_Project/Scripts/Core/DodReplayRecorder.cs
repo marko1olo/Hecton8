@@ -446,6 +446,12 @@ namespace Hecton8.Core
             return recorderObject.AddComponent<DodReplayRecorder>();
         }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _activeRecorder = null;
+        }
+
         /// <summary>
         /// Requests an immediate full-state dump for a numeric fault.
         /// </summary>
@@ -763,7 +769,9 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
-            _activeRecorder = this;
+            if (!EnsureSingletonOwnership())
+                return;
+
             Initialize();
             RegisterInputHook();
             TryRegisterHotSwapListener();
@@ -783,6 +791,19 @@ namespace Hecton8.Core
         private void OnDestroy()
         {
             ShutdownForLifecycle();
+        }
+
+        private bool EnsureSingletonOwnership()
+        {
+            DodReplayRecorder activeRecorder = _activeRecorder;
+            if (activeRecorder != null && !ReferenceEquals(activeRecorder, this))
+            {
+                Destroy(gameObject);
+                return false;
+            }
+
+            _activeRecorder = this;
+            return true;
         }
 
         private void ShutdownForLifecycle()

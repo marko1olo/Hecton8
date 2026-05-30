@@ -24,7 +24,7 @@ namespace Hecton8.Visor
     /// <summary>
     /// Unified fullscreen visor post pass for damage chroma, heat haze, pressure warp, crack reveal, dirt, stress, hypoxia, and blood edge tint.
     /// </summary>
-    public sealed partial class HectonVisorUberPostFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable
+    public sealed partial class HectonVisorUberPostFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable, ISlowTickable
     {
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/HectonVisorUberPost.shader";
@@ -60,6 +60,9 @@ namespace Hecton8.Visor
         private const string AestheticCsvFileName = "noir_aesthetic_profiles.csv";
         private static readonly ICameraHistoryReadAccess.HistoryRequestDelegate s_requestRawColorHistory =
             RequestRawColorHistory;
+        private static readonly ulong AestheticCsvMutationGuardMask =
+            UberVisorMutationGuardBit(ReconstructionCsvScratchVaultId) |
+            UberVisorMutationGuardBit(ReconstructionProfileVaultId);
 
         [Serializable]
         private sealed partial class FeatureSettings
@@ -109,8 +112,9 @@ namespace Hecton8.Visor
             [Tooltip("Single-axis chromatic reconstruction offset.")]
             [Range(0f, 0.012f)] public float reconstructionChromaticStrength = 0.0025f;
 
-            [Tooltip("GlobalQualityWeight threshold where visual overkill reaches full shader budget.")]
-            [Range(0f, 1f)] public float visualOverkillThreshold = 0.84f;
+            [FormerlySerializedAs("visualOverkillThreshold")]
+            [Tooltip("Continuous response curve shaping visual-overkill shader budget.")]
+            [Range(0f, 1f)] public float visualOverkillResponse = 0.84f;
 
             [Tooltip("Editor/debug split view. Left half raw, right half reconstructed.")]
             public bool reconstructionAbSplit = false;
@@ -607,10 +611,10 @@ namespace Hecton8.Visor
                 Texture blueNoiseTexture = _settings.blueNoiseTexture != null ? _settings.blueNoiseTexture : Texture2D.grayTexture;
                 Texture vrComfortMaskTexture = _settings.vrComfortMaskTexture != null ? _settings.vrComfortMaskTexture : Texture2D.grayTexture;
 
-                RTHandle crackHandle = EnsureStaticPostTextureHandle(crackTexture, ref _boundCrackTexture, ref _crackTextureHandle);
-                RTHandle lensDirtHandle = EnsureStaticPostTextureHandle(lensDirtTexture, ref _boundLensDirtTexture, ref _lensDirtTextureHandle);
-                RTHandle blueNoiseHandle = EnsureStaticPostTextureHandle(blueNoiseTexture, ref _boundBlueNoiseTexture, ref _blueNoiseTextureHandle);
-                RTHandle vrComfortMaskHandle = EnsureStaticPostTextureHandle(vrComfortMaskTexture, ref _boundVrComfortMaskTexture, ref _vrComfortMaskTextureHandle);
+                RTHandle crackHandle = GetStaticPostTextureHandle(crackTexture, _boundCrackTexture, _crackTextureHandle);
+                RTHandle lensDirtHandle = GetStaticPostTextureHandle(lensDirtTexture, _boundLensDirtTexture, _lensDirtTextureHandle);
+                RTHandle blueNoiseHandle = GetStaticPostTextureHandle(blueNoiseTexture, _boundBlueNoiseTexture, _blueNoiseTextureHandle);
+                RTHandle vrComfortMaskHandle = GetStaticPostTextureHandle(vrComfortMaskTexture, _boundVrComfortMaskTexture, _vrComfortMaskTextureHandle);
                 if (crackHandle == null ||
                     lensDirtHandle == null ||
                     blueNoiseHandle == null ||
@@ -627,6 +631,33 @@ namespace Hecton8.Visor
                        lensDirtTextureHandle.IsValid() &&
                        blueNoiseTextureHandle.IsValid() &&
                        vrComfortMaskTextureHandle.IsValid();
+            }
+
+            public void PrepareStaticPostTextureHandlesCold(FeatureSettings settings)
+            {
+                if (settings == null)
+                    return;
+
+                Texture crackTexture = settings.crackTexture != null ? settings.crackTexture : Texture2D.blackTexture;
+                Texture lensDirtTexture = settings.lensDirtTexture != null ? settings.lensDirtTexture : Texture2D.whiteTexture;
+                Texture blueNoiseTexture = settings.blueNoiseTexture != null ? settings.blueNoiseTexture : Texture2D.grayTexture;
+                Texture vrComfortMaskTexture = settings.vrComfortMaskTexture != null ? settings.vrComfortMaskTexture : Texture2D.grayTexture;
+
+                EnsureStaticPostTextureHandle(crackTexture, ref _boundCrackTexture, ref _crackTextureHandle);
+                EnsureStaticPostTextureHandle(lensDirtTexture, ref _boundLensDirtTexture, ref _lensDirtTextureHandle);
+                EnsureStaticPostTextureHandle(blueNoiseTexture, ref _boundBlueNoiseTexture, ref _blueNoiseTextureHandle);
+                EnsureStaticPostTextureHandle(vrComfortMaskTexture, ref _boundVrComfortMaskTexture, ref _vrComfortMaskTextureHandle);
+            }
+
+            private static RTHandle GetStaticPostTextureHandle(
+                Texture texture,
+                Texture boundTexture,
+                RTHandle handle)
+            {
+                if (texture == null || handle == null)
+                    return null;
+
+                return ReferenceEquals(boundTexture, texture) ? handle : null;
             }
 
             private static RTHandle EnsureStaticPostTextureHandle(
@@ -746,7 +777,7 @@ namespace Hecton8.Visor
         private static float s_editorTemporalHistoryWeight01 = 0.62f;
         private static float s_editorSharpeningClamp01 = 0.68f;
         private static float s_editorFilmGrainStrength01 = 0.035f;
-        private static float s_editorVisualOverkillThreshold01 = 0.84f;
+        private static float s_editorVisualOverkillResponse01 = 0.84f;
         private static float s_editorMockRenderScale01 = 0.5f;
         private static float s_editorMockQualityWeight01 = 0.35f;
 
@@ -756,7 +787,7 @@ namespace Hecton8.Visor
             float temporalHistoryWeight01,
             float sharpeningClamp01,
             float filmGrainStrength01,
-            float visualOverkillThreshold01,
+            float visualOverkillResponse01,
             bool abSplit,
             bool mockScaleActive,
             float mockRenderScale01,
@@ -767,7 +798,7 @@ namespace Hecton8.Visor
             s_editorTemporalHistoryWeight01 = math.clamp(temporalHistoryWeight01, 0f, 0.96f);
             s_editorSharpeningClamp01 = math.saturate(sharpeningClamp01);
             s_editorFilmGrainStrength01 = math.clamp(filmGrainStrength01, 0f, 0.16f);
-            s_editorVisualOverkillThreshold01 = math.saturate(visualOverkillThreshold01);
+            s_editorVisualOverkillResponse01 = math.saturate(visualOverkillResponse01);
             s_editorAbSplit = abSplit;
             s_editorMockScaleActive = mockScaleActive;
             s_editorMockRenderScale01 = math.clamp(mockRenderScale01, 0.3f, 1f);
@@ -873,6 +904,18 @@ namespace Hecton8.Visor
         private bool _cachedDepthlessTBDR;
         private bool _depthlessTBDRPlatformClassified;
         private bool _depthlessTBDRPlatformCandidate;
+        private bool _supportsReconstructionConstantBuffer;
+        private float _cachedAmbientPressureAtm = 1f;
+        private float _cachedLocalTemperature;
+        private float _cachedPlayerStress01;
+        private float _cachedFrequencyTuningError01;
+        private float _cachedVrComfortVignette01;
+        private Vector4 _cachedVrComfortJerkState;
+        private Vector4 _cachedInternalWaterlineRuntime;
+        private float _cachedInternalWaterlineY = float.NegativeInfinity;
+        private Vector4 _cachedInternalWaterlineDistortion;
+        private float _cachedLightShaftActiveCount;
+        private float _cachedHypoxiaSignal01;
         private ICameraHistoryReadAccess _rawColorHistoryReadAccess;
         private Camera _rawColorHistoryCamera;
         private bool _rawColorHistoryRequestRegistered;
@@ -893,11 +936,12 @@ namespace Hecton8.Visor
 #endif
 
             RefreshNoirCachedDependenciesCold();
-            RefreshDepthlessTBDRPlatformCandidate();
+            CachePlatformCapabilitiesCold(settings);
             TryRegisterHotSwapListener();
 
             // COLD ALLOC: VisorUberPostPass[1] - reused ScriptableRenderPass instance - owner: HectonVisorUberPostFeature
             _pass ??= new VisorUberPostPass();
+            _pass.PrepareStaticPostTextureHandlesCold(settings);
             EnsureNoirPassCold();
             Shader shader = settings != null ? settings.shader : null;
             Shader reconstructionShader = settings != null && !settings.deepSeaNoirUnifiedPass ? settings.reconstructionShader : null;
@@ -921,6 +965,7 @@ namespace Hecton8.Visor
                 if (settings.loadNoirColorCsv)
                     TryLoadNoirColorCsvCold();
 #endif
+                TryRegisterSlowTickable();
                 TryRegisterLateFrameTickable();
                 return;
             }
@@ -933,6 +978,7 @@ namespace Hecton8.Visor
             if (settings != null && settings.loadAestheticCsv)
                 TryLoadAestheticCsvCold();
 #endif
+            TryRegisterSlowTickable();
             TryRegisterLateFrameTickable();
         }
 
@@ -975,7 +1021,7 @@ namespace Hecton8.Visor
             }
 
             Camera renderCamera = renderingData.cameraData.camera;
-            float memoryQualityPressureFloor01 = ResolveMemoryQualityPressureFloor01(settings);
+            float memoryQualityPressureFloor01 = ResolveMemoryQualityPressureFloor01();
             if (!TryBuildRuntimeState(renderCamera, settings, memoryQualityPressureFloor01, out RuntimeState runtimeState))
             {
                 ClearRawColorHistoryRequest();
@@ -1115,6 +1161,7 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         protected override void Dispose(bool disposing)
         {
+            TryUnregisterSlowTickable();
             TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
             ClearRawColorHistoryRequest();
@@ -1191,7 +1238,7 @@ namespace Hecton8.Visor
 
         private bool EnsureReconstructionConstantsBufferCold()
         {
-            if (!SystemInfo.supportsSetConstantBuffer)
+            if (!_supportsReconstructionConstantBuffer)
             {
                 _reconstructionConstantsBufferA?.Release();
                 _reconstructionConstantsBufferA = null;
@@ -1230,7 +1277,7 @@ namespace Hecton8.Visor
 
         private bool IsReconstructionConstantsBufferReady()
         {
-            return SystemInfo.supportsSetConstantBuffer &&
+            return _supportsReconstructionConstantBuffer &&
                    _reconstructionConstantsBufferA != null &&
                    _reconstructionConstantsBufferB != null &&
                    _reconstructionConstantsBufferA.IsValid() &&
@@ -1414,7 +1461,7 @@ namespace Hecton8.Visor
             float grainSetting = currentSettings != null ? currentSettings.filmGrainStrength : 0.035f;
             float vignetteSetting = currentSettings != null ? currentSettings.reconstructionVignetteStrength : 0.32f;
             float chromaticSetting = currentSettings != null ? currentSettings.reconstructionChromaticStrength : 0.0025f;
-            float overkillThresholdSetting = currentSettings != null ? currentSettings.visualOverkillThreshold : 0.84f;
+            float overkillResponseSetting = currentSettings != null ? currentSettings.visualOverkillResponse : 0.84f;
             float mockJitterPixels = -1f;
             float mockTemporalStress01 = 0f;
 
@@ -1443,7 +1490,7 @@ namespace Hecton8.Visor
                 temporalSetting = math.clamp(s_editorTemporalHistoryWeight01, 0f, 0.96f);
                 sharpeningSetting = math.saturate(s_editorSharpeningClamp01);
                 grainSetting = math.clamp(s_editorFilmGrainStrength01, 0f, 0.16f);
-                overkillThresholdSetting = math.saturate(s_editorVisualOverkillThreshold01);
+                overkillResponseSetting = math.saturate(s_editorVisualOverkillResponse01);
             }
 #endif
 
@@ -1472,8 +1519,9 @@ namespace Hecton8.Visor
                                math.lerp(0.85f, 1.2f, dearLie01);
             float chromatic01 = chromaticSetting *
                                 math.lerp(2.2f, 0.35f, quality01);
-            float threshold = math.clamp(overkillThresholdSetting, 0.001f, 0.999f);
-            float overkill01 = math.max(visualOverkill01, Smooth01(math.saturate((quality01 - threshold) * math.rcp(1f - threshold))));
+            float overkill01 = math.max(
+                visualOverkill01,
+                ResolveCompatibilityVisualOverkillWeight01(quality01, overkillResponseSetting));
             float temporalAvailability01 = rawColorHistoryAvailable ? 1f : 0f;
             float temporalMotionScale = temporalAvailability01 *
                                         Smooth01(math.saturate((quality01 - 0.42f) * 1.7241379f)) *
@@ -1820,6 +1868,11 @@ namespace Hecton8.Visor
             BinaryPrimitives.WriteInt32LittleEndian(destination, BitConverter.SingleToInt32Bits(value));
         }
 
+        private static ulong UberVisorMutationGuardBit(BufferID bufferId)
+        {
+            return 1UL << ((int)bufferId & 31);
+        }
+
 #if UNITY_EDITOR
         private bool TryLoadAestheticCsvCold()
         {
@@ -1845,9 +1898,7 @@ namespace Hecton8.Visor
                 Span<NoirAestheticProfileDTO> parsedProfiles = stackalloc NoirAestheticProfileDTO[AestheticProfileCapacity];
                 int parsed = ParseAestheticCsv(csvBytes.Slice(0, read), parsedProfiles);
 
-                NativeArray<byte> scratch = default;
-                if (vault.IsCompactionFenceActive ||
-                    !vault.TryAcquireWriteLock(in _csvScratchHandle, SystemID.GraphicsScalability, out scratch))
+                if (!vault.TryAcquireMutationGuard(AestheticCsvMutationGuardMask))
                 {
                     _aestheticCsvLoadAttempted = false;
                     return false;
@@ -1855,34 +1906,22 @@ namespace Hecton8.Visor
 
                 try
                 {
-                    if (!scratch.IsCreated || scratch.Length <= 0)
+                    if (!vault.TryResolveHandle(in _csvScratchHandle, out NativeArray<byte> scratch) ||
+                        !vault.TryResolveHandle(in _aestheticProfileHandle, out NativeArray<NoirAestheticProfileDTO> profiles) ||
+                        !scratch.IsCreated ||
+                        scratch.Length <= 0 ||
+                        !profiles.IsCreated ||
+                        profiles.Length <= 0)
+                    {
                         return false;
+                    }
 
                     CopyBytesToNativeArray(csvBytes.Slice(0, read), scratch);
-                }
-                finally
-                {
-                    vault.ReleaseWriteLock(in _csvScratchHandle, SystemID.GraphicsScalability);
-                }
-
-                NativeArray<NoirAestheticProfileDTO> profiles = default;
-                if (vault.IsCompactionFenceActive ||
-                    !vault.TryAcquireWriteLock(in _aestheticProfileHandle, SystemID.GraphicsScalability, out profiles))
-                {
-                    _aestheticCsvLoadAttempted = false;
-                    return false;
-                }
-
-                try
-                {
-                    if (!profiles.IsCreated || profiles.Length <= 0)
-                        return false;
-
                     CopyAestheticProfilesToNativeArray(parsedProfiles, parsed, profiles);
                 }
                 finally
                 {
-                    vault.ReleaseWriteLock(in _aestheticProfileHandle, SystemID.GraphicsScalability);
+                    vault.ReleaseMutationGuard(AestheticCsvMutationGuardMask);
                 }
 
                 CacheAestheticProfileSnapshot(parsedProfiles, parsed);
@@ -2161,6 +2200,14 @@ namespace Hecton8.Visor
             return value * value * (3f - 2f * value);
         }
 
+        private static float ResolveCompatibilityVisualOverkillWeight01(float quality01, float response01)
+        {
+            float quality = Sanitize01(quality01);
+            float response = math.saturate(response01);
+            float curve = quality * quality * math.lerp(0.5f, 1f, quality);
+            return Smooth01(math.saturate(curve * math.lerp(0.65f, 1.35f, response)));
+        }
+
         private static float SanitizePositive(float value, float fallback)
         {
             return math.isfinite(value) && value > 0f ? value : fallback;
@@ -2295,7 +2342,7 @@ namespace Hecton8.Visor
 
             float healthFraction = 1f;
             float oxygen01 = 1f;
-            float ambientPressure = math.max(1f, SanitizeFinite(Shader.GetGlobalFloat(ShaderConstants.AmbientPressureGlobalId), 1f));
+            float ambientPressure = math.max(1f, SanitizeFinite(_cachedAmbientPressureAtm, 1f));
             if (UIStateStore.IsInitialized)
             {
                 if (UIStateStore.TryReadValue(UIValueSlotId.Health01, out UIValueSlot healthSlot))
@@ -2308,18 +2355,22 @@ namespace Hecton8.Visor
                     ambientPressure = math.max(1f, SanitizeFinite(pressureSlot.Value, ambientPressure));
             }
 
-            float localTemperature = SanitizeFinite(Shader.GetGlobalFloat(ShaderConstants.LocalTemperatureGlobalId), 0f);
-            float globalStress = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.PlayerStressGlobalId));
-            float frequencyTuningError01 = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.FrequencyTuningErrorGlobalId));
-            float vrComfortVignette01 = math.max(
-                Sanitize01(Shader.GetGlobalFloat(ShaderConstants.VrComfortVignette01Id)),
-                Sanitize01(Shader.GetGlobalFloat(ShaderConstants.SomaticComfortVignetteId)));
-            Vector4 vrComfortJerkState = SanitizeVrComfortJerkState(Shader.GetGlobalVector(ShaderConstants.VrComfortJerkStateId));
+            float localTemperature = _cachedLocalTemperature;
+            float globalStress = _cachedPlayerStress01;
+            float frequencyTuningError01 = _cachedFrequencyTuningError01;
+            float vrComfortVignette01 = _cachedVrComfortVignette01;
+            Vector4 vrComfortJerkState = _cachedVrComfortJerkState;
             float qualityPressure01 = ResolveQualityPressure01(memoryQualityPressureFloor01);
-            Vector4 internalWaterlineParams = ResolveInternalWaterlineParams(renderCamera, settings);
-            Vector4 internalWaterlineDistortion = ResolveInternalWaterlineDistortion(qualityPressure01);
+            Vector4 internalWaterlineParams = ResolveInternalWaterlineParams(
+                renderCamera,
+                settings,
+                _cachedInternalWaterlineRuntime,
+                _cachedInternalWaterlineY);
+            Vector4 internalWaterlineDistortion = ResolveInternalWaterlineDistortion(
+                qualityPressure01,
+                _cachedInternalWaterlineDistortion);
             bool depthlessTBDR = ResolveDepthlessTBDRPath();
-            float lightShaftActiveCount = math.max(0f, SanitizeFinite(Shader.GetGlobalVector(ShaderConstants.LightShaftParamsId).x, 0f));
+            float lightShaftActiveCount = _cachedLightShaftActiveCount;
 
             float visualBudget01 = 1f - qualityPressure01;
             float bulletTimeVisual01 = Sanitize01(SimulationSignalRoute.BulletTimeVisualIntensity01) * visualBudget01;
@@ -2327,7 +2378,7 @@ namespace Hecton8.Visor
             float playerStress = math.saturate(math.max(frequencyTuningError01, math.max(globalStress, math.max(hullStress, 1f - healthFraction))));
             playerStress = math.max(playerStress, math.max(bulletTimeVisual01, pressureSurge01 * 0.5f));
             float hypoxia = math.max(
-                Sanitize01(Shader.GetGlobalFloat(ShaderConstants.HypoxiaSignalGlobalId)),
+                _cachedHypoxiaSignal01,
                 ResolveHypoxiaFromOxygen(oxygen01, settings.hypoxiaSafeOxygen01));
             uint statusMask = contextStatusMask;
 
@@ -2370,15 +2421,17 @@ namespace Hecton8.Visor
             return true;
         }
 
-        private static Vector4 ResolveInternalWaterlineParams(Camera renderCamera, FeatureSettings settings)
+        private static Vector4 ResolveInternalWaterlineParams(
+            Camera renderCamera,
+            FeatureSettings settings,
+            Vector4 runtime,
+            float waterlineY)
         {
-            Vector4 runtime = Shader.GetGlobalVector(ShaderConstants.InternalWaterlineRuntimeId);
             float active01 = Sanitize01(runtime.x);
             float droplets01 = Sanitize01(runtime.z);
             if ((active01 <= 0.001f && droplets01 <= 0.001f) || renderCamera == null || settings == null)
                 return Vector4.zero;
 
-            float waterlineY = SanitizeFinite(Shader.GetGlobalFloat(ShaderConstants.InternalWaterlineYId), float.NegativeInfinity);
             if (active01 <= 0.001f || !math.isfinite(waterlineY))
                 return new Vector4(0f, 0f, 0f, droplets01);
 
@@ -2437,9 +2490,8 @@ namespace Hecton8.Visor
                 pitchY * math.saturate(settings.internalWaterlinePitchScale));
         }
 
-        private static Vector4 ResolveInternalWaterlineDistortion(float qualityPressure01)
+        private static Vector4 ResolveInternalWaterlineDistortion(float qualityPressure01, Vector4 distortion)
         {
-            Vector4 distortion = Shader.GetGlobalVector(ShaderConstants.InternalWaterlineDistortionId);
             qualityPressure01 = Sanitize01(qualityPressure01);
             float visualBudget01 = 1f - qualityPressure01;
             return new Vector4(
@@ -2509,27 +2561,15 @@ namespace Hecton8.Visor
                 out statusMask);
         }
 
-        private float ResolveMemoryQualityPressureFloor01(FeatureSettings currentSettings)
+        private float ResolveMemoryQualityPressureFloor01()
         {
-            int thresholdMb = currentSettings != null ? math.max(256, currentSettings.minimumQualityVideoMemoryMb) : 2048;
-            if (_cachedMinimumQualityThresholdMb == thresholdMb)
-                return _cachedMemoryQualityPressureFloor01;
-
-            _cachedGraphicsMemoryMb = SystemInfo.graphicsMemorySize;
-            _cachedMinimumQualityThresholdMb = thresholdMb;
-            float memoryMb = math.max(1f, _cachedGraphicsMemoryMb);
-            float softCeilingMb = thresholdMb * 1.25f;
-            float softRangeMb = math.max(1f, thresholdMb * 0.5f);
-            float memoryShortage01 = Smooth01(math.saturate((softCeilingMb - memoryMb) * math.rcp(softRangeMb)));
-            float memoryKnown01 = math.saturate((float)_cachedGraphicsMemoryMb);
-            _cachedMemoryQualityPressureFloor01 = 0.25f * memoryKnown01 * memoryShortage01;
             return _cachedMemoryQualityPressureFloor01;
         }
 
         private bool ResolveDepthlessTBDRPath()
         {
             if (!_depthlessTBDRPlatformClassified)
-                RefreshDepthlessTBDRPlatformCandidate();
+                return false;
 
             int frame = NoirFrameToIndex(ResolveNoirFrameId());
             if (_cachedDepthlessTBDRFrame == frame)
@@ -2545,6 +2585,43 @@ namespace Hecton8.Visor
             _depthlessTBDRPlatformCandidate = IsQuestVulkanDepthlessCandidate();
             _depthlessTBDRPlatformClassified = true;
             _cachedDepthlessTBDRFrame = int.MinValue;
+        }
+
+        private void CachePlatformCapabilitiesCold(FeatureSettings currentSettings)
+        {
+            _supportsReconstructionConstantBuffer = SystemInfo.supportsSetConstantBuffer;
+            RefreshMemoryQualityPressureFloorCold(currentSettings);
+            RefreshDepthlessTBDRPlatformCandidate();
+        }
+
+        private void RefreshMemoryQualityPressureFloorCold(FeatureSettings currentSettings)
+        {
+            int thresholdMb = currentSettings != null ? math.max(256, currentSettings.minimumQualityVideoMemoryMb) : 2048;
+            _cachedGraphicsMemoryMb = SystemInfo.graphicsMemorySize;
+            _cachedMinimumQualityThresholdMb = thresholdMb;
+            float memoryMb = math.max(1f, _cachedGraphicsMemoryMb);
+            float softCeilingMb = thresholdMb * 1.25f;
+            float softRangeMb = math.max(1f, thresholdMb * 0.5f);
+            float memoryShortage01 = Smooth01(math.saturate((softCeilingMb - memoryMb) * math.rcp(softRangeMb)));
+            float memoryKnown01 = math.saturate((float)_cachedGraphicsMemoryMb);
+            _cachedMemoryQualityPressureFloor01 = 0.25f * memoryKnown01 * memoryShortage01;
+        }
+
+        private void CachePresentationGlobalsLate()
+        {
+            _cachedAmbientPressureAtm = math.max(1f, SanitizeFinite(Shader.GetGlobalFloat(ShaderConstants.AmbientPressureGlobalId), 1f));
+            _cachedLocalTemperature = SanitizeFinite(Shader.GetGlobalFloat(ShaderConstants.LocalTemperatureGlobalId), 0f);
+            _cachedPlayerStress01 = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.PlayerStressGlobalId));
+            _cachedFrequencyTuningError01 = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.FrequencyTuningErrorGlobalId));
+            _cachedVrComfortVignette01 = math.max(
+                Sanitize01(Shader.GetGlobalFloat(ShaderConstants.VrComfortVignette01Id)),
+                Sanitize01(Shader.GetGlobalFloat(ShaderConstants.SomaticComfortVignetteId)));
+            _cachedVrComfortJerkState = SanitizeVrComfortJerkState(Shader.GetGlobalVector(ShaderConstants.VrComfortJerkStateId));
+            _cachedInternalWaterlineRuntime = Shader.GetGlobalVector(ShaderConstants.InternalWaterlineRuntimeId);
+            _cachedInternalWaterlineY = SanitizeFinite(Shader.GetGlobalFloat(ShaderConstants.InternalWaterlineYId), float.NegativeInfinity);
+            _cachedInternalWaterlineDistortion = Shader.GetGlobalVector(ShaderConstants.InternalWaterlineDistortionId);
+            _cachedLightShaftActiveCount = math.max(0f, SanitizeFinite(Shader.GetGlobalVector(ShaderConstants.LightShaftParamsId).x, 0f));
+            _cachedHypoxiaSignal01 = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.HypoxiaSignalGlobalId));
         }
 
         private static bool IsQuestVulkanDepthlessCandidate()

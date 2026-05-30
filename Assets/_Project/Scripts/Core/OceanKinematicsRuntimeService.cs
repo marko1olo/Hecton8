@@ -50,6 +50,9 @@ namespace Hecton8.Core
         public static OceanKinematicsRuntimeService EnsureRuntimeInstance()
         {
             OceanKinematicsRuntimeService runtime = GlobalRegistry.OceanKinematicsRuntime;
+            if (runtime == null)
+                runtime = GlobalRegistry.OceanKinematics as OceanKinematicsRuntimeService;
+
             if (runtime != null)
                 return runtime;
 
@@ -64,6 +67,10 @@ namespace Hecton8.Core
         {
             if (_isInitialized)
             {
+                EnsureSingletonOwnership();
+                if (GlobalRegistry.OceanKinematicsRuntime != this)
+                    return;
+
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterService();
@@ -124,6 +131,10 @@ namespace Hecton8.Core
         {
             if (_isInitialized)
             {
+                EnsureSingletonOwnership();
+                if (GlobalRegistry.OceanKinematicsRuntime != this)
+                    return;
+
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterService();
@@ -216,6 +227,9 @@ namespace Hecton8.Core
         private void EnsureSingletonOwnership()
         {
             OceanKinematicsRuntimeService runtime = GlobalRegistry.OceanKinematicsRuntime;
+            if (runtime == null)
+                runtime = GlobalRegistry.OceanKinematics as OceanKinematicsRuntimeService;
+
             if (runtime != null && runtime != this)
             {
                 Destroy(gameObject);
@@ -335,6 +349,10 @@ namespace Hecton8.Core
         private void TryRegisterService()
         {
             if (_registeredService)
+                return;
+
+            IHectonOceanKinematicsService registeredService = GlobalRegistry.OceanKinematics;
+            if (registeredService != null && !ReferenceEquals(registeredService, this))
                 return;
 
             GlobalRegistry.RegisterOceanKinematicsService(this);

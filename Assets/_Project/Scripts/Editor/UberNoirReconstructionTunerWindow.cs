@@ -19,7 +19,7 @@ namespace Hecton8.Editor
         private Slider _temporalHistory;
         private Slider _sharpeningClamp;
         private Slider _grainIntensity;
-        private Slider _overkillThreshold;
+        private Slider _overkillResponse;
         private Slider _mockScale;
         private Slider _mockQuality;
         private Toggle _overrideToggle;
@@ -52,12 +52,12 @@ namespace Hecton8.Editor
             _temporalHistory = CreateSlider("Temporal History", 0f, 0.96f, 0.62f);
             _sharpeningClamp = CreateSlider("Sharpening Clamp", 0f, 1f, 0.68f);
             _grainIntensity = CreateSlider("Grain Intensity", 0f, 0.16f, 0.035f);
-            _overkillThreshold = CreateSlider("Overkill Threshold", 0f, 1f, 0.84f);
+            _overkillResponse = CreateSlider("Overkill Response", 0f, 1f, 0.84f);
             root.Add(_bilateralRadius);
             root.Add(_temporalHistory);
             root.Add(_sharpeningClamp);
             root.Add(_grainIntensity);
-            root.Add(_overkillThreshold);
+            root.Add(_overkillResponse);
 
             _abSplitToggle = new Toggle("A/B Split");
             _abSplitToggle.RegisterValueChangedCallback(_ => ApplyOverride());
@@ -121,7 +121,7 @@ namespace Hecton8.Editor
                 _temporalHistory.value,
                 _sharpeningClamp.value,
                 _grainIntensity.value,
-                _overkillThreshold.value,
+                _overkillResponse.value,
                 _abSplitToggle != null && _abSplitToggle.value,
                 _mockToggle != null && _mockToggle.value,
                 _mockScale.value,

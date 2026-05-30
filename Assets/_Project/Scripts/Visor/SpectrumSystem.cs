@@ -3091,7 +3091,7 @@ namespace Hecton8.Visor
             [System.Runtime.InteropServices.FieldOffset(24)]
             public uint Flags;
             [System.Runtime.InteropServices.FieldOffset(28)]
-            private byte _pad0;
+            public byte QualityWeightQ8;
             [System.Runtime.InteropServices.FieldOffset(29)]
             private byte _pad1;
             [System.Runtime.InteropServices.FieldOffset(30)]
@@ -3727,7 +3727,8 @@ namespace Hecton8.Visor
                 entry.ActiveRingCount = _activeSonarGeoPingCount;
                 entry.PrimaryRadius = primary.w;
                 entry.PrimaryCenter = MakeFloat3(primary.x, primary.y, primary.z);
-                entry.Flags = ResolveActiveSonarGeoQualityWeight() <= 0.15f ? 1u : 0u;
+                entry.Flags = 0u;
+                entry.QualityWeightQ8 = EncodeActiveSonarGeoQualityWeightQ8(ResolveActiveSonarGeoQualityWeight());
                 telemetryRing[index] = entry;
             }
             finally
@@ -3849,7 +3850,13 @@ namespace Hecton8.Visor
             WriteFloatLittleEndian(destination.Slice(16, 4), entry.PrimaryCenter.y);
             WriteFloatLittleEndian(destination.Slice(20, 4), entry.PrimaryCenter.z);
             BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(24, 4), entry.Flags);
-            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(28, 4), 0u);
+            destination[28] = entry.QualityWeightQ8;
+        }
+
+        private static byte EncodeActiveSonarGeoQualityWeightQ8(float qualityWeight01)
+        {
+            float quality = math.isfinite(qualityWeight01) ? math.saturate(qualityWeight01) : 0.5f;
+            return (byte)math.clamp((int)math.round(quality * byte.MaxValue), 0, byte.MaxValue);
         }
 
         private static void WriteFloatLittleEndian(Span<byte> destination, float value)

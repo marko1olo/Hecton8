@@ -245,6 +245,7 @@ namespace Hecton8.Construction
         /// </summary>
         private List<GameObject> _spawnedModules;
         private List<BaseModule> _spawnedBaseModules;
+        private List<HabitatGraphModuleRegistration> _spawnedHabitatGraphModules;
         private HabitatGraphManager _habitatGraphManager;
         private bool _tickRegistered;
         private bool _lateFrameTickRegistered;
@@ -472,6 +473,9 @@ namespace Hecton8.Construction
             if (_spawnedBaseModules == null)
                 _spawnedBaseModules = new List<BaseModule>(capacity); // COLD ALLOC: List<BaseModule>[initialCapacity] - cached BaseModule registry for hot-path construction consumers - owner: ConstructionManager
 
+            if (_spawnedHabitatGraphModules == null)
+                _spawnedHabitatGraphModules = new List<HabitatGraphModuleRegistration>(capacity); // COLD ALLOC: List<HabitatGraphModuleRegistration>[initialCapacity] - cached habitat graph module references - owner: ConstructionManager
+
             if (_habitatGraphManager == null)
                 _habitatGraphManager = new HabitatGraphManager(capacity, _cachedDataVault); // COLD ALLOC: HabitatGraphManager[1] - persistent placed-module CSR adjacency owner - owner: ConstructionManager
             else
@@ -675,15 +679,19 @@ namespace Hecton8.Construction
         public void RegisterModule(GameObject module)
         {
             if (module == null) return;
-            if (_spawnedModules == null || _spawnedBaseModules == null)
+            if (_spawnedModules == null || _spawnedBaseModules == null || _spawnedHabitatGraphModules == null)
                 EnsureRuntimeStorage();
-            if (_spawnedModules == null || _spawnedBaseModules == null)
+            if (_spawnedModules == null || _spawnedBaseModules == null || _spawnedHabitatGraphModules == null)
                 return;
 
             // Guard: duplicate module reference.
             if (ContainsRef(module)) return;
-            bool shouldAddBaseModule = module.TryGetComponent(out BaseModule baseModule) && !ContainsBaseModuleRef(baseModule);
+            module.TryGetComponent(out BaseModule baseModule);
+            module.TryGetComponent(out ModuleMarker marker);
+            module.TryGetComponent(out TransitionHatchMeshState hatchMeshState);
+            bool shouldAddBaseModule = baseModule != null && !ContainsBaseModuleRef(baseModule);
             if (_spawnedModules.Count >= _spawnedModules.Capacity ||
+                _spawnedHabitatGraphModules.Count >= _spawnedHabitatGraphModules.Capacity ||
                 (shouldAddBaseModule && _spawnedBaseModules.Count >= _spawnedBaseModules.Capacity))
             {
                 return;
@@ -691,6 +699,7 @@ namespace Hecton8.Construction
 
             // Add to runtime registry.
             _spawnedModules.Add(module);
+            _spawnedHabitatGraphModules.Add(new HabitatGraphModuleRegistration(module, marker, baseModule, hatchMeshState));
             if (shouldAddBaseModule)
                 _spawnedBaseModules.Add(baseModule);
 
@@ -972,15 +981,7 @@ namespace Hecton8.Construction
 
         private static int CaptureModuleHashId(BaseModule module)
         {
-            if (module != null &&
-                module.TryGetComponent(out ModuleMarker marker) &&
-                marker != null &&
-                marker.Data != null)
-            {
-                return marker.Data.ModuleHashId;
-            }
-
-            return 0;
+            return module != null ? module.CachedModuleHashId : 0;
         }
 
         private void PublishHabitatConstructionSignal(GameObject module, byte operation, byte flags)
@@ -988,13 +989,8 @@ namespace Hecton8.Construction
             if (module == null || !Application.isPlaying)
                 return;
 
-            uint moduleHash = 0u;
-            if (module.TryGetComponent(out ModuleMarker marker) &&
-                marker != null &&
-                marker.Data != null)
-            {
-                moduleHash = unchecked((uint)marker.Data.ModuleHashId);
-            }
+            BaseModule baseModule = ResolveRegisteredBaseModule(module);
+            uint moduleHash = baseModule != null ? unchecked((uint)CaptureModuleHashId(baseModule)) : 0u;
 
             int moduleIndex = ResolveRegisteredModuleIndex(module);
             AbsoluteUniversePosition positionAup = TryResolveAupFromRuntimeOrigin(module.transform.position, out AbsoluteUniversePosition resolvedPositionAup)
@@ -1204,16 +1200,7 @@ namespace Hecton8.Construction
             if (module == null)
                 return null;
 
-            if (module.TryGetComponent(out ModuleMarker marker) &&
-                marker != null &&
-                marker.Data != null)
-            {
-                return marker.Data;
-            }
-
             int moduleHashId = CaptureModuleHashId(module);
-            if (moduleHashId == 0 && module.ModuleTemplate != null)
-                moduleHashId = Hecton.Localization.LocHash.Compute(module.ModuleTemplate.PersistentId);
 
             return catalog != null ? catalog.FindDataByHashId(moduleHashId) : null;
         }
@@ -2345,6 +2332,7 @@ namespace Hecton8.Construction
 
             _spawnedModules.Clear();
             _spawnedBaseModules.Clear();
+            _spawnedHabitatGraphModules.Clear();
             RefreshHabitatGraph();
 
             UpdateDiagnostics();
@@ -2959,6 +2947,22 @@ namespace Hecton8.Construction
             return false;
         }
 
+        private BaseModule ResolveRegisteredBaseModule(GameObject module)
+        {
+            if (module == null || _spawnedBaseModules == null)
+                return null;
+
+            int count = _spawnedBaseModules.Count;
+            for (int i = 0; i < count; i++)
+            {
+                BaseModule baseModule = _spawnedBaseModules[i];
+                if (baseModule != null && ReferenceEquals(baseModule.gameObject, module))
+                    return baseModule;
+            }
+
+            return null;
+        }
+
         /// <summary>
         /// Swap-remove: O(1) deletion without shifting the full array.
         /// Module order is intentionally not stable in this registry.
@@ -2970,6 +2974,7 @@ namespace Hecton8.Construction
             {
                 if (ReferenceEquals(_spawnedModules[i], module))
                 {
+                    RemoveHabitatGraphModule(module);
                     int last = count - 1;
                     _spawnedModules[i] = _spawnedModules[last];
                     _spawnedModules.RemoveAt(last);
@@ -2978,12 +2983,62 @@ namespace Hecton8.Construction
             }
         }
 
+        private void RemoveHabitatGraphModule(GameObject module)
+        {
+            if (module == null || _spawnedHabitatGraphModules == null)
+                return;
+
+            int count = _spawnedHabitatGraphModules.Count;
+            for (int i = 0; i < count; i++)
+            {
+                if (!ReferenceEquals(_spawnedHabitatGraphModules[i].ModuleObject, module))
+                    continue;
+
+                int last = count - 1;
+                _spawnedHabitatGraphModules[i] = _spawnedHabitatGraphModules[last];
+                _spawnedHabitatGraphModules.RemoveAt(last);
+                return;
+            }
+        }
+
+        private void RemoveHabitatGraphModuleAtModuleIndex(int moduleIndex)
+        {
+            if (_spawnedHabitatGraphModules == null ||
+                (uint)moduleIndex >= (uint)_spawnedModules.Count)
+            {
+                return;
+            }
+
+            GameObject module = _spawnedModules[moduleIndex];
+            if (module != null)
+                RemoveHabitatGraphModule(module);
+            else
+                PurgeNullHabitatGraphModules();
+        }
+
+        private void PurgeNullHabitatGraphModules()
+        {
+            if (_spawnedHabitatGraphModules == null)
+                return;
+
+            for (int i = _spawnedHabitatGraphModules.Count - 1; i >= 0; i--)
+            {
+                if (_spawnedHabitatGraphModules[i].ModuleObject != null)
+                    continue;
+
+                int last = _spawnedHabitatGraphModules.Count - 1;
+                _spawnedHabitatGraphModules[i] = _spawnedHabitatGraphModules[last];
+                _spawnedHabitatGraphModules.RemoveAt(last);
+            }
+        }
+
         private void RemoveBaseModule(GameObject module)
         {
             if (module == null || _spawnedBaseModules == null)
                 return;
 
-            if (!module.TryGetComponent(out BaseModule baseModule))
+            BaseModule baseModule = ResolveRegisteredBaseModule(module);
+            if (baseModule == null)
                 return;
 
             int count = _spawnedBaseModules.Count;
@@ -3009,6 +3064,7 @@ namespace Hecton8.Construction
             {
                 if (_spawnedModules[i] == null)
                 {
+                    RemoveHabitatGraphModuleAtModuleIndex(i);
                     int last = _spawnedModules.Count - 1;
                     _spawnedModules[i] = _spawnedModules[last];
                     _spawnedModules.RemoveAt(last);
@@ -3016,7 +3072,10 @@ namespace Hecton8.Construction
             }
 
             if (_spawnedBaseModules == null)
+            {
+                PurgeNullHabitatGraphModules();
                 return;
+            }
 
             for (int i = _spawnedBaseModules.Count - 1; i >= 0; i--)
             {
@@ -3027,6 +3086,8 @@ namespace Hecton8.Construction
                 _spawnedBaseModules[i] = _spawnedBaseModules[last];
                 _spawnedBaseModules.RemoveAt(last);
             }
+
+            PurgeNullHabitatGraphModules();
         }
 
         // -----------------------------------------------------------------------------
@@ -3428,7 +3489,7 @@ namespace Hecton8.Construction
         {
             PurgeNullEntries();
 
-            int count = _spawnedModules.Count;
+            int count = _spawnedBaseModules != null ? _spawnedBaseModules.Count : 0;
             if (count <= 0)
                 return;
 
@@ -3439,8 +3500,8 @@ namespace Hecton8.Construction
             for (int offset = 0; offset < count; offset++)
             {
                 int index = (startIndex + offset) % count;
-                GameObject moduleObject = _spawnedModules[index];
-                if (moduleObject == null || !moduleObject.TryGetComponent(out BaseModule module))
+                BaseModule module = _spawnedBaseModules[index];
+                if (module == null)
                     continue;
 
                 if (!TryEvaluateAmbientAccidentRisk(module, out float risk))
@@ -3537,12 +3598,9 @@ namespace Hecton8.Construction
 
         private static string CaptureModuleSource(BaseModule module)
         {
-            if (module != null && module.TryGetComponent(out ModuleMarker marker) && marker.Data != null)
-            {
-                string moduleName = marker.Data.moduleName;
-                if (!string.IsNullOrWhiteSpace(moduleName))
-                    return moduleName;
-            }
+            string moduleName = module != null ? module.CachedModuleDisplayName : null;
+            if (!string.IsNullOrWhiteSpace(moduleName))
+                return moduleName;
 
             return "BASE";
         }
@@ -3568,13 +3626,13 @@ namespace Hecton8.Construction
 
         private void RefreshHabitatGraph()
         {
-            if (_habitatGraphManager == null || _spawnedModules == null)
+            if (_habitatGraphManager == null || _spawnedHabitatGraphModules == null)
             {
                 _habitatGraphDirty = false;
                 return;
             }
 
-            _habitatGraphManager.Rebuild(_spawnedModules);
+            _habitatGraphManager.Rebuild(_spawnedHabitatGraphModules);
             _habitatGraphDirty = false;
         }
 

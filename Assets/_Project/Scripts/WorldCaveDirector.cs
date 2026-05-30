@@ -23,11 +23,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Caves;
 using Hecton8.Environment;
 using UnityEngine;
-using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 
 using CurrentVolume = global::Hecton8.Physics.CurrentVolume;
@@ -63,6 +62,10 @@ namespace Hecton8.World
         }
 
         private const int ActiveCaveKeyCapacity = 32;
+        private const int CandidateBufferCapacity = 8;
+        private const int PendingCaveSpawnCapacity = 16;
+        private const int PendingCaveKeyBufferCapacity = 16;
+        private const int RuntimePresetSlotCapacity = ActiveCaveKeyCapacity + PendingCaveSpawnCapacity;
         private const int EntranceMarkerNameCapacity = 32;
         private const int ThermalGeyserNameCapacity = 32;
         private const float CaveEvaluationIntervalSeconds = 2f;
@@ -87,53 +90,91 @@ namespace Hecton8.World
             private Color _cachedGlowColor;
             private bool _hasGradient;
 
-            internal Gradient ResolveGradient(Color glowColor)
+            internal void Prewarm()
             {
                 if (_gradient == null)
                     _gradient = new Gradient();
+            }
+
+            internal bool TryResolveGradient(Color glowColor, out Gradient gradient)
+            {
+                gradient = _gradient;
+                if (gradient == null)
+                    return false;
 
                 if (_hasGradient && _cachedGlowColor == glowColor)
-                    return _gradient;
+                    return true;
 
                 _colorKeys[0] = new GradientColorKey(glowColor, 0f);
                 _colorKeys[1] = new GradientColorKey(Color.clear, 1f);
                 _alphaKeys[0] = new GradientAlphaKey(0.6f, 0f);
                 _alphaKeys[1] = new GradientAlphaKey(0f, 1f);
-                _gradient.SetKeys(_colorKeys, _alphaKeys);
+                gradient.SetKeys(_colorKeys, _alphaKeys);
                 _cachedGlowColor = glowColor;
                 _hasGradient = true;
-                return _gradient;
+                return true;
             }
         }
 
-        private sealed class PendingCaveSpawnState : IDisposable
+        private readonly struct PendingCaveSpawnState
         {
-            public CancellationTokenSource Cancellation;
-
-            public void Dispose()
+            public PendingCaveSpawnState(int version)
             {
-                if (Cancellation == null)
-                    return;
-
-                Cancellation.Dispose();
-                Cancellation = null;
+                Version = version;
             }
+
+            public readonly int Version;
         }
 
         private readonly struct PendingCaveVisualSync
         {
-            public PendingCaveVisualSync(long caveKey, CavePreset preset, Vector3 position, uint seed)
+            public PendingCaveVisualSync(long caveKey, CavePreset preset)
             {
                 CaveKey = caveKey;
                 Preset = preset;
-                Position = position;
-                Seed = seed;
             }
 
             public readonly long CaveKey;
             public readonly CavePreset Preset;
-            public readonly Vector3 Position;
-            public readonly uint Seed;
+        }
+
+        private struct CaveEntranceMarkerRuntimeState
+        {
+            public GameObject GameObject;
+            public Transform Transform;
+            public Light Light;
+            public ParticleSystem Particles;
+        }
+
+        private struct ThermalGeyserRuntimeState
+        {
+            public GameObject GameObject;
+            public Transform Transform;
+            public CurrentVolume CurrentVolume;
+            public ThermalGeyser Geyser;
+        }
+
+        private sealed class CaveVisualRuntimeState
+        {
+            public CaveEntranceMarkerRuntimeState[] EntranceMarkers;
+            public Transform EntranceMarkerRoot;
+            public Transform EntranceQualityRoot;
+            public Transform DressingRoot;
+            public Transform WallGrowthRoot;
+            public Transform GlowingTissueRoot;
+            public Transform ServiceRemnantRoot;
+            public Transform SedimentShelfRoot;
+            public Transform BioRootsRoot;
+            public Transform ThermalGeyserRoot;
+            public GameObject EntranceQualityObject;
+            public SphereCollider EntranceQualityCollider;
+            public Light EntranceQualityLight;
+            public CaveBioRootsGenerator BioRootsGenerator;
+            public ThermalGeyserRuntimeState[] ThermalGeysers;
+            public GameObject FungiObject;
+            public Transform FungiTransform;
+            public ParticleSystem FungiParticles;
+            public DeepFungiParticleCache FungiCache;
         }
 
         private struct CachedBiomeRuntimeContext
@@ -171,16 +212,24 @@ namespace Hecton8.World
         private bool _registeredLateFrame;
         private readonly HashSet<long> _activeCaveKeys = new HashSet<long>(ActiveCaveKeyCapacity);
         private readonly Dictionary<long, CaveInstance> _caveInstances = new Dictionary<long, CaveInstance>(32);
-        private readonly Dictionary<long, PendingCaveSpawnState> _pendingCaveSpawns = new Dictionary<long, PendingCaveSpawnState>(16);
+        private readonly Dictionary<long, PendingCaveSpawnState> _pendingCaveSpawns = new Dictionary<long, PendingCaveSpawnState>(PendingCaveSpawnCapacity);
         private readonly Dictionary<long, CaveEntranceHint[]> _caveEntranceHints = new Dictionary<long, CaveEntranceHint[]>(32); // COLD ALLOC: cached entrance hints for field sampling, capped by active caves.
-        private readonly List<Vector3> _candidateBuffer = new List<Vector3>(8); // COLD ALLOC: buffered cave candidates, capped by maxCavesPerBiome.
-        private readonly List<long> _staleCaveKeyBuffer = new List<long>(16); // COLD ALLOC: stale cave cleanup buffer, capped by active cave count around player.
-        private readonly List<long> _pendingCaveKeyBuffer = new List<long>(16); // COLD ALLOC: buffered pending cave keys for deterministic cancel/cleanup without mutating dictionaries during enumeration.
+        private readonly Dictionary<long, CaveVisualRuntimeState> _caveVisualRuntimeStates = new Dictionary<long, CaveVisualRuntimeState>(32); // COLD ALLOC: per-cave visual component cache keyed by cave id.
+        private readonly List<Vector3> _candidateBuffer = new List<Vector3>(CandidateBufferCapacity); // COLD ALLOC: buffered cave candidates, capped by CandidateBufferCapacity.
+        private readonly List<long> _staleCaveKeyBuffer = new List<long>(ActiveCaveKeyCapacity); // COLD ALLOC: stale cave cleanup buffer, capped by active cave count around player.
+        private readonly List<long> _pendingCaveKeyBuffer = new List<long>(PendingCaveKeyBufferCapacity); // COLD ALLOC: buffered pending cave keys for deterministic cancel/cleanup without mutating dictionaries during enumeration.
         private readonly List<PendingCaveVisualSync> _pendingCaveVisualSyncs = new List<PendingCaveVisualSync>(16); // COLD ALLOC: visual-sync cave dressing queue.
+        private readonly CavePreset[] _runtimePresetPool = new CavePreset[RuntimePresetSlotCapacity]; // COLD ALLOC: per cave preset slots, no shared mutable template references.
+        private readonly CaveStructureType[][] _runtimePresetStructureTypes3 = new CaveStructureType[RuntimePresetSlotCapacity][]; // COLD ALLOC: exact-length structure type storage for 3-type biome presets.
+        private readonly CaveStructureType[][] _runtimePresetStructureTypes5 = new CaveStructureType[RuntimePresetSlotCapacity][]; // COLD ALLOC: exact-length structure type storage for 5-type biome presets.
+        private readonly long[] _runtimePresetKeys = new long[RuntimePresetSlotCapacity]; // COLD ALLOC: cave key bound to each preset slot.
+        private readonly bool[] _runtimePresetSlotUsed = new bool[RuntimePresetSlotCapacity]; // COLD ALLOC: slot occupancy flags.
         private CachedBiomeRuntimeContext _cachedBiomeRuntimeContext;
         private float _lastEvaluationTime = float.NegativeInfinity;
         private CancellationTokenSource _lifetimeCancellation;
+        private int _pendingSpawnVersion;
         private int _entranceHintVersion;
+        private bool _runtimePresetPoolReady;
         private static readonly int _CrustIntensityId = Shader.PropertyToID("_CrustIntensity");
         private static readonly int _CrustColorId = Shader.PropertyToID("_CrustColor");
         private static readonly int _CrustRoughnessId = Shader.PropertyToID("_CrustRoughness");
@@ -219,6 +268,14 @@ namespace Hecton8.World
         private static readonly CavePreset _GenericPresetTemplate = CreateBiomePresetTemplate(CaveBiomePresetKind.Generic);
 
         internal static WorldCaveDirector ActiveRuntimeInstance { get; private set; }
+        internal static event Action<WorldCaveDirector> ActiveRuntimeInstanceChanged;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeForSubsystemRegistration()
+        {
+            ActiveRuntimeInstance = null;
+            ActiveRuntimeInstanceChanged = null;
+        }
 
         /// <summary>Represents an active cave instance in the world.</summary>
         public struct CaveInstance
@@ -232,18 +289,26 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            ActiveRuntimeInstance = this;
+            PublishActiveRuntimeInstance();
 
             if (_CaveSurfacePropertyBlock == null)
                 _CaveSurfacePropertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: shared cave-surface block for dressing overlays.
 
-            ResolveReferences();
+            WorldGeneratedPrimitiveFactory.PrewarmPrimitiveResources();
+            CaveWallGrowthRuntimeBuilder.PrewarmSharedResources();
+            CaveGlowingTissueRuntimeBuilder.PrewarmSharedResources();
+            CaveServiceRemnantRuntimeBuilder.PrewarmSharedResources();
+            CaveSedimentShelfRuntimeBuilder.PrewarmSharedResources();
+            EnsureRuntimePresetPool();
+            RefreshColdReferences();
             UpdateDiagnostics();
         }
 
         private void OnEnable()
         {
             EnsureLifetimeCancellation();
+            EnsureRuntimePresetPool();
+            RefreshColdReferences();
             if (Application.isPlaying)
                 GlobalRegistry.TryRegisterHotSwapListener(this);
 
@@ -252,6 +317,8 @@ namespace Hecton8.World
 
         private void Start()
         {
+            EnsureRuntimePresetPool();
+            RefreshColdReferences();
             TryRegister();
 
             EvaluateCaveSpawns();
@@ -272,7 +339,22 @@ namespace Hecton8.World
             GlobalRegistry.TryUnregisterHotSwapListener(this);
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
-                ActiveRuntimeInstance = null;
+                ClearActiveRuntimeInstance();
+        }
+
+        private void PublishActiveRuntimeInstance()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                return;
+
+            ActiveRuntimeInstance = this;
+            ActiveRuntimeInstanceChanged?.Invoke(this);
+        }
+
+        private void ClearActiveRuntimeInstance()
+        {
+            ActiveRuntimeInstance = null;
+            ActiveRuntimeInstanceChanged?.Invoke(null);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -280,20 +362,37 @@ namespace Hecton8.World
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
-                return;
-
-            if (currentService == null)
+            switch (serviceSlot)
             {
-                _registeredToTickManager = false;
-                _registeredLateFrame = false;
-                return;
-            }
+                case GlobalRegistryServiceSlot.Player:
+                    RebindPlayerTransform(previousService as IPlayerRuntimeContext, currentService as IPlayerRuntimeContext);
+                    return;
+                case GlobalRegistryServiceSlot.BiomeMatrixRuntime:
+                    biomeMatrixDirector = currentService as BiomeMatrixDirector;
+                    UpdateDiagnostics();
+                    return;
+                case GlobalRegistryServiceSlot.VoxelEngineRuntime:
+                    voxelEngine = currentService as HectonVoxelEngine;
+                    UpdateDiagnostics();
+                    return;
+                case GlobalRegistryServiceSlot.MapMagicRuntime:
+                    mapMagicBridge = currentService as MapMagicBridge;
+                    UpdateDiagnostics();
+                    return;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        _registeredToTickManager = false;
+                        _registeredLateFrame = false;
+                        return;
+                    }
 
-            if (isActiveAndEnabled)
-            {
-                TryUnregister();
-                TryRegister();
+                    if (isActiveAndEnabled)
+                    {
+                        TryUnregister();
+                        TryRegister();
+                    }
+                    return;
             }
         }
 
@@ -336,7 +435,7 @@ namespace Hecton8.World
 
         private void EvaluateCaveSpawns()
         {
-            if (!ResolveReferences())
+            if (!HasRequiredReferences())
                 return;
 
             float evaluationTime = ResolveCaveEvaluationTimeSeconds();
@@ -413,7 +512,7 @@ namespace Hecton8.World
             if (rng.NextFloat() > spawnChance)
                 return _candidateBuffer;
 
-            int requestedCount = Mathf.Max(1, maxCavesPerBiome);
+            int requestedCount = Mathf.Clamp(maxCavesPerBiome, 1, _candidateBuffer.Capacity);
             int candidateCount = rng.NextInt(1, requestedCount + 1);
             float minDistance = Mathf.Clamp(Mathf.Max(24f, minCaveSpacing), 12f, searchRadius - 1f);
             if (zone != null && zone.RouteCritical)
@@ -435,7 +534,7 @@ namespace Hecton8.World
                     candidatePos.y = terrainHeight - 5f; // Slightly below surface for cave entrance
                 }
 
-                if (!IsCandidateTooClose(candidatePos, minDistance))
+                if (!IsCandidateTooClose(candidatePos, minDistance) && _candidateBuffer.Count < _candidateBuffer.Capacity)
                     _candidateBuffer.Add(candidatePos);
             }
 
@@ -452,14 +551,20 @@ namespace Hecton8.World
             if (_activeCaveKeys.Contains(caveKey) || _pendingCaveSpawns.ContainsKey(caveKey))
                 return;
 
-            if (voxelEngine == null)
+            if (_activeCaveKeys.Count >= ActiveCaveKeyCapacity ||
+                _pendingCaveSpawns.Count >= PendingCaveSpawnCapacity)
+            {
+                return;
+            }
+
+            HectonVoxelEngine activeVoxelEngine = voxelEngine;
+            if (activeVoxelEngine == null)
             {
                 LogMissingVoxelEngine();
                 return;
             }
 
-            CavePreset preset = GetCavePresetForBiome(biomeFamily);
-            if (preset == null)
+            if (!TryAcquireRuntimePreset(caveKey, biomeFamily, out CavePreset preset))
                 return;
 
             PendingCaveSpawnState pendingState = CreatePendingSpawnState();
@@ -467,10 +572,11 @@ namespace Hecton8.World
             _debugPendingCaves = _pendingCaveSpawns.Count;
 
             uint seed = unchecked((uint)caveKey);
-            _ = SpawnCaveAsync(caveKey, position, preset, seed, pendingState);
+            _ = SpawnCaveAsync(activeVoxelEngine, caveKey, position, preset, seed, pendingState);
         }
 
         private async Awaitable SpawnCaveAsync(
+            HectonVoxelEngine activeVoxelEngine,
             long caveKey,
             Vector3 position,
             CavePreset preset,
@@ -478,34 +584,35 @@ namespace Hecton8.World
             PendingCaveSpawnState pendingState)
         {
             GameObject caveVolume = null;
-            CancellationToken token = pendingState != null && pendingState.Cancellation != null
-                ? pendingState.Cancellation.Token
+            bool activated = false;
+            CancellationToken token = _lifetimeCancellation != null
+                ? _lifetimeCancellation.Token
                 : default;
 
             try
             {
-                if (voxelEngine == null)
+                if (activeVoxelEngine == null)
                     return;
 
-                caveVolume = await voxelEngine.GenerateVolumeAsync(position, seed, preset, lodLevel: 0, ct: token);
+                caveVolume = await activeVoxelEngine.GenerateVolumeAsync(position, seed, preset, lodLevel: 0, ct: token);
                 if (caveVolume == null)
                 {
                     LogNoGeometry(position);
                     return;
                 }
 
-                if (!caveVolume.TryGetComponent(out HectonVoxelVolume voxelVolume))
+                if (!activeVoxelEngine.TryGetRegisteredVolumeComponent(caveVolume, out HectonVoxelVolume voxelVolume))
                 {
-                    CleanupSpawnedVolume(caveVolume);
+                    CleanupSpawnedVolume(activeVoxelEngine, caveVolume);
                     LogCaveSpawnFailure(position, "Generated cave volume did not include HectonVoxelVolume.");
                     return;
                 }
 
                 if (!isActiveAndEnabled ||
                     !_pendingCaveSpawns.TryGetValue(caveKey, out PendingCaveSpawnState currentState) ||
-                    !ReferenceEquals(currentState, pendingState))
+                    currentState.Version != pendingState.Version)
                 {
-                    CleanupSpawnedVolume(caveVolume);
+                    CleanupSpawnedVolume(activeVoxelEngine, caveVolume);
                     return;
                 }
 
@@ -522,9 +629,11 @@ namespace Hecton8.World
                 instance.volume.generationPosition = position;
                 instance.volume.preset = preset;
 
+                CacheEntranceHints(caveKey, instance.volume.Entrances);
                 _caveInstances[caveKey] = instance;
                 _activeCaveKeys.Add(caveKey);
-                QueueCaveVisualSync(caveKey, preset, position, seed);
+                activated = true;
+                QueueCaveVisualSync(caveKey, preset);
                 LogCaveGenerated(position);
             }
             catch (OperationCanceledException)
@@ -533,22 +642,56 @@ namespace Hecton8.World
             catch (Exception exception)
             {
                 if (caveVolume != null)
-                    CleanupSpawnedVolume(caveVolume);
+                    CleanupSpawnedVolume(activeVoxelEngine, caveVolume);
 
                 LogCaveSpawnFailure(position, exception.Message);
             }
             finally
             {
                 CompletePendingSpawn(caveKey, pendingState);
+                if (!activated)
+                    ReleaseRuntimePreset(caveKey);
                 RefreshCaveLifecycleState();
                 UpdateDiagnostics();
             }
         }
 
-        private CavePreset GetCavePresetForBiome(HectonBiomeFamilyProfile biomeFamily)
+        private bool TryAcquireRuntimePreset(long caveKey, HectonBiomeFamilyProfile biomeFamily, out CavePreset preset)
         {
+            preset = null;
+            if (!_runtimePresetPoolReady)
+                return false;
+
             RefreshBiomeRuntimeContext(biomeFamily);
-            return ResolveBiomePresetTemplate(_cachedBiomeRuntimeContext.PresetKind);
+            CavePreset template = ResolveBiomePresetTemplate(_cachedBiomeRuntimeContext.PresetKind);
+            if (template == null)
+                return false;
+
+            for (int i = 0; i < _runtimePresetPool.Length; i++)
+            {
+                if (!_runtimePresetSlotUsed[i] || _runtimePresetKeys[i] != caveKey)
+                    continue;
+
+                preset = _runtimePresetPool[i];
+                return preset != null;
+            }
+
+            for (int i = 0; i < _runtimePresetPool.Length; i++)
+            {
+                if (_runtimePresetSlotUsed[i])
+                    continue;
+
+                CavePreset slot = _runtimePresetPool[i];
+                if (slot == null || !TryCopyRuntimePreset(template, slot, i))
+                    return false;
+
+                _runtimePresetKeys[i] = caveKey;
+                _runtimePresetSlotUsed[i] = true;
+                preset = slot;
+                return true;
+            }
+
+            return false;
         }
 
         private static CaveBiomePresetKind ResolveBiomePresetKind(string biomeId)
@@ -702,14 +845,141 @@ namespace Hecton8.World
             return preset;
         }
 
+        private void EnsureRuntimePresetPool()
+        {
+            if (_runtimePresetPoolReady)
+                return;
+
+            for (int i = 0; i < _runtimePresetPool.Length; i++)
+            {
+                if (_runtimePresetPool[i] == null)
+                    _runtimePresetPool[i] = new CavePreset();
+
+                if (_runtimePresetStructureTypes3[i] == null)
+                    _runtimePresetStructureTypes3[i] = new CaveStructureType[3];
+
+                if (_runtimePresetStructureTypes5[i] == null)
+                    _runtimePresetStructureTypes5[i] = new CaveStructureType[5];
+            }
+
+            _runtimePresetPoolReady = true;
+        }
+
+        private bool TryCopyRuntimePreset(CavePreset source, CavePreset target, int slotIndex)
+        {
+            if (source == null ||
+                target == null ||
+                slotIndex < 0 ||
+                slotIndex >= _runtimePresetPool.Length)
+            {
+                return false;
+            }
+
+            target.presetName = source.presetName;
+            target.presetType = source.presetType;
+            target.gridDimension = source.gridDimension;
+            target.voxelSize = source.voxelSize;
+            target.minRooms = source.minRooms;
+            target.maxRooms = source.maxRooms;
+            target.minRoomRadius = source.minRoomRadius;
+            target.maxRoomRadius = source.maxRoomRadius;
+            target.verticalShaftChance = source.verticalShaftChance;
+            target.flatHallChance = source.flatHallChance;
+            target.creviceChance = source.creviceChance;
+            target.verticalSpread = source.verticalSpread;
+            target.maxDepth = source.maxDepth;
+            target.minTunnelRadius = source.minTunnelRadius;
+            target.maxTunnelRadius = source.maxTunnelRadius;
+            target.tallTunnelChance = source.tallTunnelChance;
+            target.wideTunnelChance = source.wideTunnelChance;
+            target.tunnelWarpAmount = source.tunnelWarpAmount;
+            target.extraConnectionChance = source.extraConnectionChance;
+            target.minEntrances = source.minEntrances;
+            target.maxEntrances = source.maxEntrances;
+            target.entranceRadius = source.entranceRadius;
+            target.entranceFunnelLength = source.entranceFunnelLength;
+            target.warpFrequency = source.warpFrequency;
+            target.warpAmplitude = source.warpAmplitude;
+            target.warpOctaves = source.warpOctaves;
+            target.wallNoiseFrequency = source.wallNoiseFrequency;
+            target.wallNoiseAmplitude = source.wallNoiseAmplitude;
+            target.wallNoiseOctaves = source.wallNoiseOctaves;
+            target.wallNoiseLacunarity = source.wallNoiseLacunarity;
+            target.wallNoisePersistence = source.wallNoisePersistence;
+            target.terraceFrequency = source.terraceFrequency;
+            target.terraceAmplitude = source.terraceAmplitude;
+            target.terraceSharpness = source.terraceSharpness;
+            target.globalBlendK = source.globalBlendK;
+            target.sealMargin = source.sealMargin;
+            target.floorFlatness = source.floorFlatness;
+            target.spawnContext = source.spawnContext;
+            target.enableStructures = source.enableStructures;
+            target.maxStructures = source.maxStructures;
+            target.structureDensity = source.structureDensity;
+            target.hazardLevel = source.hazardLevel;
+            target.moodLevel = source.moodLevel;
+            target.isRuinLinked = source.isRuinLinked;
+
+            CaveStructureType[] sourceTypes = source.allowedStructureTypes;
+            if (sourceTypes == null || sourceTypes.Length == 0)
+            {
+                target.allowedStructureTypes = Array.Empty<CaveStructureType>();
+                return true;
+            }
+
+            CaveStructureType[] targetTypes;
+            if (sourceTypes.Length == 3)
+            {
+                targetTypes = _runtimePresetStructureTypes3[slotIndex];
+            }
+            else if (sourceTypes.Length == 5)
+            {
+                targetTypes = _runtimePresetStructureTypes5[slotIndex];
+            }
+            else
+            {
+                return false;
+            }
+
+            for (int i = 0; i < sourceTypes.Length; i++)
+                targetTypes[i] = sourceTypes[i];
+
+            target.allowedStructureTypes = targetTypes;
+            return true;
+        }
+
+        private void ReleaseRuntimePreset(long caveKey)
+        {
+            for (int i = 0; i < _runtimePresetSlotUsed.Length; i++)
+            {
+                if (!_runtimePresetSlotUsed[i] || _runtimePresetKeys[i] != caveKey)
+                    continue;
+
+                _runtimePresetSlotUsed[i] = false;
+                _runtimePresetKeys[i] = 0L;
+                return;
+            }
+        }
+
         private long GenerateCaveKey(Vector3 position, HectonBiomeFamilyProfile biomeFamily)
         {
             RefreshBiomeRuntimeContext(biomeFamily);
+            return ComposeCaveKey(position, _cachedBiomeRuntimeContext.FamilyHash);
+        }
 
-            // Deterministic key based on position and biome
+        private static long GenerateCaveKeyPure(Vector3 position, HectonBiomeFamilyProfile biomeFamily)
+        {
+            if (biomeFamily == null)
+                return 0L;
+
+            string familyId = biomeFamily.familyId ?? string.Empty;
+            return ComposeCaveKey(position, Hecton.Localization.LocHash.Compute(familyId));
+        }
+
+        private static long ComposeCaveKey(Vector3 position, int biomeHash)
+        {
             int x = Mathf.FloorToInt(position.x / 100f);
             int z = Mathf.FloorToInt(position.z / 100f);
-            int biomeHash = _cachedBiomeRuntimeContext.FamilyHash;
 
             return ((long)x << 32) | ((long)z << 16) | (uint)biomeHash;
         }
@@ -721,7 +991,12 @@ namespace Hecton8.World
             _staleCaveKeyBuffer.Clear();
             Dictionary<long, CaveInstance>.Enumerator caveEnumerator = _caveInstances.GetEnumerator();
             while (caveEnumerator.MoveNext())
+            {
+                if (_staleCaveKeyBuffer.Count >= _staleCaveKeyBuffer.Capacity)
+                    break;
+
                 _staleCaveKeyBuffer.Add(caveEnumerator.Current.Key);
+            }
 
             for (int i = 0; i < _staleCaveKeyBuffer.Count; i++)
                 RemoveTrackedCave(_staleCaveKeyBuffer[i], despawnOwnedVolume: true);
@@ -729,41 +1004,44 @@ namespace Hecton8.World
             UpdateDiagnostics();
         }
 
-        private bool ResolveReferences()
+        private void RefreshColdReferences()
         {
-            bool resolved = true;
-
             if (playerTransform == null)
-            {
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
-                resolved &= playerTransform != null;
-            }
 
             if (biomeMatrixDirector == null)
-            {
                 WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
-                resolved &= biomeMatrixDirector != null;
-            }
 
             if (worldZoneDirector == null)
-            {
                 WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref worldZoneDirector);
-                resolved &= worldZoneDirector != null;
-            }
 
             if (voxelEngine == null)
-            {
                 WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
-                resolved &= voxelEngine != null;
-            }
 
             if (mapMagicBridge == null)
-            {
                 WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
-                resolved &= mapMagicBridge != null;
-            }
+        }
 
-            return resolved;
+        private bool HasRequiredReferences()
+        {
+            return playerTransform != null &&
+                biomeMatrixDirector != null &&
+                worldZoneDirector != null &&
+                voxelEngine != null &&
+                mapMagicBridge != null;
+        }
+
+        private void RebindPlayerTransform(IPlayerRuntimeContext previousContext, IPlayerRuntimeContext currentContext)
+        {
+            Transform previousTransform = previousContext != null ? previousContext.PlayerTransform : null;
+            if (playerTransform != null && previousTransform != null && ReferenceEquals(playerTransform, previousTransform))
+                playerTransform = null;
+
+            Transform currentTransform = currentContext != null ? currentContext.PlayerTransform : null;
+            if (currentTransform != null)
+                playerTransform = currentTransform;
+
+            UpdateDiagnostics();
         }
 
         private void UpdateDiagnostics()
@@ -782,31 +1060,58 @@ namespace Hecton8.World
 
             _debugCurrentZone = worldZoneDirector != null && worldZoneDirector.CurrentZone != null
                 ? worldZoneDirector.CurrentZone.ZoneLabel : "None";
-            _debugReady = ResolveReferences();
+            _debugReady = HasRequiredReferences();
         }
 
         // Public API for other systems
         public bool TryGetCaveAt(Vector3 position, out CaveInstance cave)
         {
             cave = default;
-            if (biomeMatrixDirector == null || biomeMatrixDirector.CurrentFamilyProfile == null)
+            HectonBiomeFamilyProfile biomeFamily = biomeMatrixDirector != null
+                ? biomeMatrixDirector.CurrentFamilyProfile
+                : null;
+            if (biomeFamily == null)
                 return false;
 
-            long key = GenerateCaveKey(position, biomeMatrixDirector.CurrentFamilyProfile);
+            long key = GenerateCaveKeyPure(position, biomeFamily);
             if (!_caveInstances.TryGetValue(key, out cave))
                 return false;
 
             if (IsTrackedVolumeAlive(key, cave.volume))
                 return true;
 
-            RemoveTrackedCave(key);
             cave = default;
             return false;
         }
 
+        [Obsolete("Use CopyActiveCavesTo with caller-owned storage. IEnumerable access is cold/API-only.")]
         public IEnumerable<CaveInstance> GetActiveCaves()
         {
             return _caveInstances.Values;
+        }
+
+        public int CopyActiveCavesTo(CaveInstance[] buffer)
+        {
+            if (buffer == null || buffer.Length <= 0)
+                return 0;
+
+            int writeCount = 0;
+            Dictionary<long, CaveInstance>.Enumerator enumerator = _caveInstances.GetEnumerator();
+            while (enumerator.MoveNext() && writeCount < buffer.Length)
+            {
+                KeyValuePair<long, CaveInstance> pair = enumerator.Current;
+                CaveInstance instance = pair.Value;
+                if (instance.isActive == 0 || !IsTrackedVolumeAlive(pair.Key, instance.volume))
+                    continue;
+
+                buffer[writeCount] = instance;
+                writeCount++;
+            }
+
+            for (int i = writeCount; i < buffer.Length; i++)
+                buffer[i] = default;
+
+            return writeCount;
         }
 
         internal int EntranceHintVersion => _entranceHintVersion;
@@ -898,95 +1203,63 @@ namespace Hecton8.World
             return writeCount;
         }
 
-        private void SpawnEntranceVisualCues(CaveInstance instance, CavePreset preset, Vector3 position, uint seed)
+        private void SpawnEntranceVisualCues(CaveInstance instance)
         {
             if (instance.volume == null)
                 return;
 
-            // Generate cave graph to get entrance positions
-            float volumeHalfExtent = preset.VolumeCoverage * 0.5f;
-            float terrainHeight = position.y; // Approximate
+            CaveEntrance[] entrances = instance.volume.Entrances;
+            if (entrances == null || entrances.Length <= 0)
+                return;
 
-            if (!CaveGraphGenerator.TryMeasure(
-                    seed,
-                    preset,
-                    position,
-                    terrainHeight,
-                    volumeHalfExtent,
-                    out CaveGraphGenerator.CaveGraphCounts counts))
+            if (!_caveVisualRuntimeStates.TryGetValue(instance.key, out CaveVisualRuntimeState visualState) ||
+                visualState == null ||
+                visualState.EntranceMarkers == null)
             {
                 return;
             }
 
-            var nodes = new NativeArray<CaveNode>(counts.Nodes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            var tunnels = new NativeArray<CaveTunnel>(counts.Tunnels, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            var entrances = new NativeArray<CaveEntrance>(counts.Entrances, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            var structures = new NativeArray<CaveStructure>(counts.Structures, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-
-            try
-            {
-                if (!CaveGraphGenerator.TryFill(
-                        seed,
-                        preset,
-                        position,
-                        terrainHeight,
-                        volumeHalfExtent,
-                        nodes,
-                        tunnels,
-                        entrances,
-                        structures,
-                        out CaveGraphGenerator.CaveGraphCounts filledCounts) ||
-                    filledCounts.Nodes != counts.Nodes ||
-                    filledCounts.Tunnels != counts.Tunnels ||
-                    filledCounts.Entrances != counts.Entrances ||
-                    filledCounts.Structures != counts.Structures)
-                {
-                    return;
-                }
-
-                Transform markerRoot = instance.volume.GetOrCreateRuntimeRoot("_EntranceMarkers");
-                int usedMarkerCount = 0;
-
-                // Spawn visual cues at entrance positions
-                for (int i = 0; i < entrances.Length; i++)
-                {
-                    CaveEntrance entrance = entrances[i];
-                    SpawnEntranceMarker(markerRoot, usedMarkerCount, entrance.surfacePosition, entrance.inwardDirection, instance);
-                    usedMarkerCount++;
-                }
-
-                CacheEntranceHints(instance.key, entrances);
-
-                DisableUnusedChildren(markerRoot, usedMarkerCount);
-            }
-            finally
-            {
-                // Dispose temp arrays
-                if (nodes.IsCreated) nodes.Dispose();
-                if (tunnels.IsCreated) tunnels.Dispose();
-                if (entrances.IsCreated) entrances.Dispose();
-                if (structures.IsCreated) structures.Dispose();
-            }
-        }
-
-        private void SpawnEntranceMarker(Transform markerRoot, int markerIndex, Vector3 position, Vector3 inwardDirection, CaveInstance instance)
-        {
+            Transform markerRoot = ActivateCachedRoot(visualState.EntranceMarkerRoot);
             if (markerRoot == null)
                 return;
 
-            // Spawn a simple visual marker (light or particle system) at entrance
-            Transform markerTransform = markerIndex < markerRoot.childCount
-                ? markerRoot.GetChild(markerIndex)
-                : null;
-            string markerName = GetCachedEntranceMarkerName(markerIndex);
-            GameObject marker = markerTransform != null
-                ? markerTransform.gameObject
-                : new GameObject(markerName);
-            if (markerTransform == null)
+            int usedMarkerCount = 0;
+
+            for (int i = 0; i < entrances.Length; i++)
             {
-                markerTransform = marker.transform;
-                markerTransform.SetParent(markerRoot, false);
+                CaveEntrance entrance = entrances[i];
+                SpawnEntranceMarker(visualState, markerRoot, usedMarkerCount, entrance.surfacePosition, entrance.inwardDirection, instance);
+                usedMarkerCount++;
             }
+
+            DisableUnusedChildren(markerRoot, usedMarkerCount);
+        }
+
+        private void SpawnEntranceMarker(
+            CaveVisualRuntimeState visualState,
+            Transform markerRoot,
+            int markerIndex,
+            Vector3 position,
+            Vector3 inwardDirection,
+            CaveInstance instance)
+        {
+            if (markerRoot == null || visualState == null || visualState.EntranceMarkers == null)
+                return;
+
+            CaveEntranceMarkerRuntimeState[] markerStates = visualState.EntranceMarkers;
+            if ((uint)markerIndex >= (uint)markerStates.Length)
+                return;
+
+            // Spawn a simple visual marker (light or particle system) at entrance
+            ref CaveEntranceMarkerRuntimeState markerState = ref markerStates[markerIndex];
+            Transform markerTransform = markerState.Transform;
+            string markerName = GetCachedEntranceMarkerName(markerIndex);
+            if (markerTransform == null)
+                return;
+
+            GameObject marker = markerState.GameObject;
+            if (marker == null)
+                return;
 
             marker.name = markerName;
             markerTransform.position = position + Vector3.up * 0.5f; // Slightly above ground
@@ -1017,16 +1290,20 @@ namespace Hecton8.World
             }
 
             // Add a light for visibility
-            if (!marker.TryGetComponent(out Light entranceLight))
-                entranceLight = marker.AddComponent<Light>();
+            Light entranceLight = markerState.Light;
+            if (entranceLight == null)
+                return;
+
             entranceLight.type = LightType.Point;
             entranceLight.color = lightColor;
             entranceLight.intensity = 1f + mood * 2f; // Brighter for active caves
             entranceLight.range = 4f + hazard * 2f; // Wider for dangerous caves
 
             // Add particle system for atmospheric effect
-            if (!marker.TryGetComponent(out ParticleSystem ps))
-                ps = marker.AddComponent<ParticleSystem>();
+            ParticleSystem ps = markerState.Particles;
+            if (ps == null)
+                return;
+
             var main = ps.main;
             main.startSize = 0.05f + mood * 0.15f;
             main.startSpeed = 0.2f + mood * 0.8f;
@@ -1046,9 +1323,23 @@ namespace Hecton8.World
             colorOverLifetime.color = ResolveEntranceMarkerGradient(instance.preset.spawnContext, lightColor);
         }
 
-        private void QueueCaveVisualSync(long caveKey, CavePreset preset, Vector3 position, uint seed)
+        private void QueueCaveVisualSync(long caveKey, CavePreset preset)
         {
-            _pendingCaveVisualSyncs.Add(new PendingCaveVisualSync(caveKey, preset, position, seed));
+            for (int i = 0; i < _pendingCaveVisualSyncs.Count; i++)
+            {
+                if (_pendingCaveVisualSyncs[i].CaveKey != caveKey)
+                    continue;
+
+                _pendingCaveVisualSyncs[i] = new PendingCaveVisualSync(caveKey, preset);
+                if (Application.isPlaying && !_registeredLateFrame)
+                    _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+                return;
+            }
+
+            if (_pendingCaveVisualSyncs.Count >= _pendingCaveVisualSyncs.Capacity)
+                return;
+
+            _pendingCaveVisualSyncs.Add(new PendingCaveVisualSync(caveKey, preset));
             if (Application.isPlaying && !_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
@@ -1069,12 +1360,30 @@ namespace Hecton8.World
                     continue;
                 }
 
-                SpawnEntranceVisualCues(instance, pending.Preset, pending.Position, pending.Seed);
+                if (!EnsureCaveVisualRuntimeState(pending.CaveKey, instance.volume, pending.Preset))
+                    continue;
+
+                SpawnEntranceVisualCues(instance);
                 ApplyEntranceQualityPass(instance, pending.Preset);
                 InitializeCaveDressingLayer(instance, pending.Preset);
             }
 
             _pendingCaveVisualSyncs.Clear();
+        }
+
+        private bool EnsureCaveVisualRuntimeState(long caveKey, HectonVoxelVolume volume, CavePreset preset)
+        {
+            if (_caveVisualRuntimeStates.TryGetValue(caveKey, out CaveVisualRuntimeState visualState) &&
+                visualState != null)
+            {
+                return true;
+            }
+
+            if (volume == null)
+                return false;
+
+            PrepareCaveVisualRuntimeState(caveKey, volume, preset, volume.Entrances);
+            return _caveVisualRuntimeStates.TryGetValue(caveKey, out visualState) && visualState != null;
         }
 
         private void ApplyEntranceQualityPass(CaveInstance instance, CavePreset preset)
@@ -1085,26 +1394,36 @@ namespace Hecton8.World
             // 3. Ensure entrance seams are clean (no floating geometry)
 
             if (instance.volume == null) return;
+            if (!_caveVisualRuntimeStates.TryGetValue(instance.key, out CaveVisualRuntimeState visualState) ||
+                visualState == null)
+            {
+                return;
+            }
 
             // Create an entrance quality marker for in-game logic
-            Transform entranceQualityRoot = instance.volume.GetOrCreateRuntimeRoot("_EntranceQualityZone");
+            Transform entranceQualityRoot = ActivateCachedRoot(visualState.EntranceQualityRoot);
             if (entranceQualityRoot == null)
                 return;
 
-            GameObject entranceQualityGO = entranceQualityRoot.gameObject;
+            GameObject entranceQualityGO = visualState.EntranceQualityObject;
+            if (entranceQualityGO == null)
+                return;
+
             entranceQualityRoot.localPosition = Vector3.zero;
             entranceQualityRoot.localRotation = Quaternion.identity;
             entranceQualityRoot.localScale = Vector3.one;
 
             // Add collider as "quality zone" marker
-            if (!entranceQualityGO.TryGetComponent(out SphereCollider sphereCollider))
-                sphereCollider = entranceQualityGO.AddComponent<SphereCollider>();
+            SphereCollider sphereCollider = visualState.EntranceQualityCollider;
+            if (sphereCollider == null)
+                return;
             sphereCollider.radius = preset.entranceRadius * 2f;
             sphereCollider.isTrigger = true;
 
             // Add light glow aura at entrance for safe zone feel
-            if (!entranceQualityGO.TryGetComponent(out Light entranceGlow))
-                entranceGlow = entranceQualityGO.AddComponent<Light>();
+            Light entranceGlow = visualState.EntranceQualityLight;
+            if (entranceGlow == null)
+                return;
             entranceGlow.type = LightType.Point;
             entranceGlow.color = new Color(0.8f, 0.7f, 0.5f); // warm safety glow
             entranceGlow.intensity = 0.5f;
@@ -1125,8 +1444,15 @@ namespace Hecton8.World
             // Get dressing config for this cave type
             CaveDressingConfig dressingConfig = CaveDressingConfig.GetConfigForContext(preset.spawnContext);
 
-            // Create dressing layer parent
-            Transform dressingRoot = GetOrCreateDressingRoot(instance.volume.transform);
+            if (!_caveVisualRuntimeStates.TryGetValue(instance.key, out CaveVisualRuntimeState visualState) ||
+                visualState == null)
+            {
+                return;
+            }
+
+            Transform dressingRoot = ActivateCachedRoot(visualState.DressingRoot);
+            if (dressingRoot == null)
+                return;
 
             // Apply mineral crust if enabled
             if (dressingConfig.mineralCrust.enabled)
@@ -1147,7 +1473,7 @@ namespace Hecton8.World
             // Spawn sediment shelves if enabled
             if (dressingConfig.sedimentShelves.enabled)
             {
-                SpawnSedimentShelves(dressingRoot.gameObject, instance, dressingConfig);
+                SpawnSedimentShelves(instance, dressingConfig);
             }
 
             if (dressingConfig.serviceRemnants.enabled)
@@ -1175,7 +1501,8 @@ namespace Hecton8.World
         private void ApplyMineralCrustToVolume(HectonVoxelVolume volume, MineralCrustConfig config)
         {
             // Apply mineral crust as material property block to the cave mesh
-            if (!volume.TryGetComponent(out MeshRenderer meshRenderer)) return;
+            MeshRenderer meshRenderer = volume != null ? volume.CachedMeshRenderer : null;
+            if (meshRenderer == null) return;
 
             _CaveSurfacePropertyBlock.Clear();
             meshRenderer.GetPropertyBlock(_CaveSurfacePropertyBlock);
@@ -1193,9 +1520,14 @@ namespace Hecton8.World
             if (instance.volume == null || dressingConfig == null)
                 return;
 
-            Transform dressingRoot = GetOrCreateDressingRoot(instance.volume.transform);
-            CaveWallGrowthRuntimeBuilder.Build(
-                dressingRoot,
+            if (!_caveVisualRuntimeStates.TryGetValue(instance.key, out CaveVisualRuntimeState visualState) ||
+                visualState == null)
+            {
+                return;
+            }
+
+            CaveWallGrowthRuntimeBuilder.BuildPrepared(
+                visualState.WallGrowthRoot,
                 instance.volume,
                 instance.preset,
                 dressingConfig.wallGrowth,
@@ -1207,9 +1539,14 @@ namespace Hecton8.World
             if (instance.volume == null || dressingConfig == null)
                 return;
 
-            Transform dressingRoot = GetOrCreateDressingRoot(instance.volume.transform);
-            CaveGlowingTissueRuntimeBuilder.Build(
-                dressingRoot,
+            if (!_caveVisualRuntimeStates.TryGetValue(instance.key, out CaveVisualRuntimeState visualState) ||
+                visualState == null)
+            {
+                return;
+            }
+
+            CaveGlowingTissueRuntimeBuilder.BuildPrepared(
+                visualState.GlowingTissueRoot,
                 instance.volume,
                 instance.preset,
                 dressingConfig.glowingTissue,
@@ -1221,9 +1558,14 @@ namespace Hecton8.World
             if (instance.volume == null || dressingConfig == null)
                 return;
 
-            Transform dressingRoot = GetOrCreateDressingRoot(instance.volume.transform);
-            CaveServiceRemnantRuntimeBuilder.Build(
-                dressingRoot,
+            if (!_caveVisualRuntimeStates.TryGetValue(instance.key, out CaveVisualRuntimeState visualState) ||
+                visualState == null)
+            {
+                return;
+            }
+
+            CaveServiceRemnantRuntimeBuilder.BuildPrepared(
+                visualState.ServiceRemnantRoot,
                 instance.volume,
                 instance.preset,
                 dressingConfig.serviceRemnants,
@@ -1235,20 +1577,19 @@ namespace Hecton8.World
             if (instance.volume == null || dressingConfig == null || dressingConfig.bioRoots == null)
                 return;
 
-            Transform dressingRoot = GetOrCreateDressingRoot(instance.volume.transform);
-            if (dressingRoot == null)
-                return;
-
-            Transform rootsTransform = dressingRoot.Find("_CaveBioRoots");
-            GameObject rootsObject = rootsTransform != null ? rootsTransform.gameObject : new GameObject("_CaveBioRoots");
-            if (rootsTransform == null)
+            if (!_caveVisualRuntimeStates.TryGetValue(instance.key, out CaveVisualRuntimeState visualState) ||
+                visualState == null)
             {
-                rootsTransform = rootsObject.transform;
-                rootsTransform.SetParent(dressingRoot, false);
+                return;
             }
 
-            if (!rootsObject.TryGetComponent(out CaveBioRootsGenerator generator))
-                generator = rootsObject.AddComponent<CaveBioRootsGenerator>();
+            Transform rootsTransform = ActivateCachedRoot(visualState.BioRootsRoot);
+            if (rootsTransform == null)
+                return;
+
+            CaveBioRootsGenerator generator = visualState.BioRootsGenerator;
+            if (generator == null)
+                return;
 
             generator.Configure(instance.volume, instance.preset, dressingConfig.bioRoots, dressingConfig.globalIntensity);
         }
@@ -1261,37 +1602,36 @@ namespace Hecton8.World
             ThermalGeyserConfig geyserConfig = dressingConfig.thermalGeysers;
             int maxGeyserCount = Mathf.Clamp(geyserConfig.maxCount, 0, ThermalGeyserNameCapacity);
             int geyserCount = Mathf.Clamp(Mathf.RoundToInt(maxGeyserCount * Mathf.Clamp01(dressingConfig.globalIntensity)), 0, maxGeyserCount);
-            Transform dressingRoot = GetOrCreateDressingRoot(instance.volume.transform);
-            if (dressingRoot == null)
-                return;
-
-            Transform geyserRoot = dressingRoot.Find("_ThermalGeysers");
-            GameObject geyserRootObject = geyserRoot != null ? geyserRoot.gameObject : new GameObject("_ThermalGeysers");
-            if (geyserRoot == null)
+            if (!_caveVisualRuntimeStates.TryGetValue(instance.key, out CaveVisualRuntimeState visualState) ||
+                visualState == null ||
+                visualState.ThermalGeysers == null)
             {
-                geyserRoot = geyserRootObject.transform;
-                geyserRoot.SetParent(dressingRoot, false);
+                return;
             }
+
+            Transform geyserRoot = ActivateCachedRoot(visualState.ThermalGeyserRoot);
+            if (geyserRoot == null)
+                return;
 
             for (int geyserIndex = 0; geyserIndex < geyserCount; geyserIndex++)
             {
+                if ((uint)geyserIndex >= (uint)visualState.ThermalGeysers.Length)
+                    break;
+
                 string geyserName = GetCachedThermalGeyserName(geyserIndex);
-                Transform geyserTransform = geyserIndex < geyserRoot.childCount
-                    ? geyserRoot.GetChild(geyserIndex)
-                    : geyserRoot.Find(geyserName);
-                GameObject geyserObject = geyserTransform != null ? geyserTransform.gameObject : new GameObject(geyserName);
+                ref ThermalGeyserRuntimeState geyserState = ref visualState.ThermalGeysers[geyserIndex];
+                Transform geyserTransform = geyserState.Transform;
                 if (geyserTransform == null)
-                {
-                    geyserTransform = geyserObject.transform;
-                    geyserTransform.SetParent(geyserRoot, false);
-                }
+                    continue;
+
+                GameObject geyserObject = geyserState.GameObject;
+                if (geyserObject == null)
+                    continue;
+
                 geyserObject.name = geyserName;
-
-                if (!geyserObject.TryGetComponent(out CurrentVolume currentVolume))
-                    currentVolume = geyserObject.AddComponent<CurrentVolume>();
-
-                if (!geyserObject.TryGetComponent(out ThermalGeyser geyser))
-                    geyser = geyserObject.AddComponent<ThermalGeyser>();
+                ThermalGeyser geyser = geyserState.Geyser;
+                if (geyser == null)
+                    continue;
 
                 geyserTransform.localPosition = ResolveThermalGeyserLocalPosition(instance.volume, instance.preset, geyserIndex);
                 geyserTransform.localRotation = Quaternion.identity;
@@ -1331,13 +1671,18 @@ namespace Hecton8.World
             return (hash & 0x00FFFFFFu) * (1f / 16777215f);
         }
 
-        private void SpawnSedimentShelves(GameObject parent, CaveInstance instance, CaveDressingConfig dressingConfig)
+        private void SpawnSedimentShelves(CaveInstance instance, CaveDressingConfig dressingConfig)
         {
-            if (parent == null || instance.volume == null || dressingConfig == null)
+            if (instance.volume == null || dressingConfig == null)
                 return;
+            if (!_caveVisualRuntimeStates.TryGetValue(instance.key, out CaveVisualRuntimeState visualState) ||
+                visualState == null)
+            {
+                return;
+            }
 
-            CaveSedimentShelfRuntimeBuilder.Build(
-                parent.transform,
+            CaveSedimentShelfRuntimeBuilder.BuildPrepared(
+                visualState.SedimentShelfRoot,
                 instance.volume,
                 instance.preset,
                 dressingConfig.sedimentShelves,
@@ -1351,13 +1696,19 @@ namespace Hecton8.World
 
             if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(instance.volume, instance.preset, out Bounds volumeBounds))
                 return;
-
-            Transform fungiTransform = parent.transform.Find("_DeepFungi");
-            GameObject fungiGO = fungiTransform != null ? fungiTransform.gameObject : new GameObject("_DeepFungi");
-            if (fungiTransform == null)
+            if (!_caveVisualRuntimeStates.TryGetValue(instance.key, out CaveVisualRuntimeState visualState) ||
+                visualState == null)
             {
-                fungiTransform = fungiGO.transform;
-                fungiTransform.SetParent(parent.transform, false);
+                return;
+            }
+
+            Transform fungiTransform = visualState.FungiTransform;
+            GameObject fungiGO = visualState.FungiObject;
+            if (fungiTransform == null)
+                return;
+            else if (fungiGO != null && !fungiGO.activeSelf)
+            {
+                fungiGO.SetActive(true);
             }
 
             float verticalBias = Mathf.Clamp01(config.verticalBias);
@@ -1375,8 +1726,9 @@ namespace Hecton8.World
 
             fungiTransform.localPosition = emissionCenter;
 
-            if (!fungiGO.TryGetComponent(out ParticleSystem ps))
-                ps = fungiGO.AddComponent<ParticleSystem>();
+            ParticleSystem ps = visualState.FungiParticles;
+            if (ps == null)
+                return;
 
             var main = ps.main;
             main.startSize = new ParticleSystem.MinMaxCurve(config.particleSize * 0.5f, config.particleSize * 1.5f);
@@ -1395,35 +1747,23 @@ namespace Hecton8.World
 
             var colorOverLifetime = ps.colorOverLifetime;
             colorOverLifetime.enabled = true;
-            if (!fungiGO.TryGetComponent(out DeepFungiParticleCache fungiCache))
-                fungiCache = fungiGO.AddComponent<DeepFungiParticleCache>();
-            colorOverLifetime.color = fungiCache.ResolveGradient(config.glowColor);
-
-            if (ps.TryGetComponent(out ParticleSystemRenderer renderer))
-            {
-                renderer.renderMode = ParticleSystemRenderMode.Billboard;
-            }
+            DeepFungiParticleCache fungiCache = visualState.FungiCache;
+            if (fungiCache == null)
+                return;
+            if (!fungiCache.TryResolveGradient(config.glowColor, out Gradient fungiGradient))
+                return;
+            colorOverLifetime.color = fungiGradient;
         }
 
-        private static Transform GetOrCreateDressingRoot(Transform volumeRoot)
+        private static Transform ActivateCachedRoot(Transform root)
         {
-            if (volumeRoot == null)
+            if (root == null)
                 return null;
 
-            if (volumeRoot.TryGetComponent(out HectonVoxelVolume volume))
-                return volume.GetOrCreateRuntimeRoot("_CaveDressing");
+            if (!root.gameObject.activeSelf)
+                root.gameObject.SetActive(true);
 
-            Transform dressingRoot = volumeRoot.Find("_CaveDressing");
-            if (dressingRoot == null)
-            {
-                GameObject dressingRootObject = new GameObject("_CaveDressing");
-                dressingRoot = dressingRootObject.transform;
-                dressingRoot.SetParent(volumeRoot, false);
-            }
-
-            if (!dressingRoot.gameObject.activeSelf)
-                dressingRoot.gameObject.SetActive(true);
-            return dressingRoot;
+            return root;
         }
 
         private static void DisableUnusedChildren(Transform root, int usedChildCount)
@@ -1507,6 +1847,9 @@ namespace Hecton8.World
                 if (IsTrackedVolumeAlive(pair.Key, instance.volume))
                     continue;
 
+                if (_staleCaveKeyBuffer.Count >= _staleCaveKeyBuffer.Capacity)
+                    break;
+
                 _staleCaveKeyBuffer.Add(pair.Key);
             }
 
@@ -1542,13 +1885,236 @@ namespace Hecton8.World
 
             _caveInstances.Remove(caveKey);
             _activeCaveKeys.Remove(caveKey);
+            _caveVisualRuntimeStates.Remove(caveKey);
+            ReleaseRuntimePreset(caveKey);
             if (_caveEntranceHints.Remove(caveKey))
                 _entranceHintVersion = _entranceHintVersion == int.MaxValue ? 1 : _entranceHintVersion + 1;
         }
 
-        private void CacheEntranceHints(long caveKey, NativeArray<CaveEntrance> entrances)
+        private void PrepareCaveVisualRuntimeState(long caveKey, HectonVoxelVolume volume, CavePreset preset, CaveEntrance[] entrances)
         {
-            if (entrances.Length <= 0)
+            int entranceCount = entrances != null ? entrances.Length : 0;
+            Transform entranceMarkerRoot = CreateOrActivateRuntimeRoot(volume, "_EntranceMarkers");
+            Transform entranceQualityRoot = CreateOrActivateRuntimeRoot(volume, "_EntranceQualityZone");
+            Transform dressingRoot = CreateOrActivateRuntimeRoot(volume, "_CaveDressing");
+            CaveDressingConfig dressingConfig = ResolveDressingConfig(preset);
+            CaveVisualRuntimeState visualState = new CaveVisualRuntimeState
+            {
+                EntranceMarkerRoot = entranceMarkerRoot,
+                EntranceQualityRoot = entranceQualityRoot,
+                DressingRoot = dressingRoot,
+                BioRootsRoot = CreateOrActivateChildRoot(dressingRoot, "_CaveBioRoots"),
+                ThermalGeyserRoot = CreateOrActivateChildRoot(dressingRoot, "_ThermalGeysers"),
+                WallGrowthRoot = dressingConfig != null && dressingConfig.wallGrowth != null && dressingConfig.wallGrowth.enabled
+                    ? CaveWallGrowthRuntimeBuilder.Prewarm(dressingRoot)
+                    : null,
+                GlowingTissueRoot = dressingConfig != null && dressingConfig.glowingTissue != null && dressingConfig.glowingTissue.enabled
+                    ? CaveGlowingTissueRuntimeBuilder.Prewarm(dressingRoot)
+                    : null,
+                ServiceRemnantRoot = dressingConfig != null && dressingConfig.serviceRemnants != null && dressingConfig.serviceRemnants.enabled
+                    ? CaveServiceRemnantRuntimeBuilder.Prewarm(dressingRoot)
+                    : null,
+                SedimentShelfRoot = dressingConfig != null && dressingConfig.sedimentShelves != null && dressingConfig.sedimentShelves.enabled
+                    ? CaveSedimentShelfRuntimeBuilder.Prewarm(dressingRoot)
+                    : null,
+                EntranceMarkers = entranceCount > 0
+                    ? new CaveEntranceMarkerRuntimeState[entranceCount]
+                    : Array.Empty<CaveEntranceMarkerRuntimeState>(),
+                ThermalGeysers = new ThermalGeyserRuntimeState[ThermalGeyserNameCapacity]
+            };
+
+            PrepareEntranceMarkerRuntimeState(visualState, entranceCount);
+            PrepareEntranceQualityRuntimeState(visualState);
+            PrepareOptionalDressingRuntimeState(visualState, dressingConfig);
+            _caveVisualRuntimeStates[caveKey] = visualState;
+        }
+
+        private static CaveDressingConfig ResolveDressingConfig(CavePreset preset)
+        {
+            SpawnContext spawnContext = preset != null ? preset.spawnContext : SpawnContext.CaveShallow;
+            return CaveDressingConfig.GetConfigForContext(spawnContext);
+        }
+
+        private static Transform CreateOrActivateRuntimeRoot(HectonVoxelVolume volume, string childName)
+        {
+            if (volume == null)
+                return null;
+
+            return volume.GetOrCreateRuntimeRoot(childName);
+        }
+
+        private static Transform CreateOrActivateChildRoot(Transform parent, string childName)
+        {
+            if (parent == null || string.IsNullOrEmpty(childName))
+                return null;
+
+            Transform child = parent.Find(childName);
+            if (child != null)
+                return ActivateCachedRoot(child);
+
+            GameObject childObject = new GameObject(childName);
+            child = childObject.transform;
+            child.SetParent(parent, false);
+            return child;
+        }
+
+        private static void PrepareEntranceMarkerRuntimeState(CaveVisualRuntimeState visualState, int entranceCount)
+        {
+            if (visualState == null || visualState.EntranceMarkerRoot == null || visualState.EntranceMarkers == null)
+                return;
+
+            for (int i = 0; i < entranceCount; i++)
+            {
+                ref CaveEntranceMarkerRuntimeState markerState = ref visualState.EntranceMarkers[i];
+                string markerName = GetCachedEntranceMarkerName(i);
+                Transform markerTransform = i < visualState.EntranceMarkerRoot.childCount
+                    ? visualState.EntranceMarkerRoot.GetChild(i)
+                    : null;
+                GameObject markerObject;
+                if (markerTransform != null)
+                {
+                    markerObject = markerTransform.gameObject;
+                    markerObject.name = markerName;
+                }
+                else
+                {
+                    markerObject = new GameObject(markerName);
+                    markerTransform = markerObject.transform;
+                    markerTransform.SetParent(visualState.EntranceMarkerRoot, false);
+                }
+
+                markerState.GameObject = markerObject;
+                markerState.Transform = markerTransform;
+                markerState.Light = markerObject.TryGetComponent(out Light markerLight)
+                    ? markerLight
+                    : markerObject.AddComponent<Light>();
+                markerState.Particles = markerObject.TryGetComponent(out ParticleSystem particles)
+                    ? particles
+                    : markerObject.AddComponent<ParticleSystem>();
+                markerObject.SetActive(false);
+            }
+
+            for (int childIndex = entranceCount; childIndex < visualState.EntranceMarkerRoot.childCount; childIndex++)
+            {
+                Transform child = visualState.EntranceMarkerRoot.GetChild(childIndex);
+                if (child != null && child.gameObject.activeSelf)
+                    child.gameObject.SetActive(false);
+            }
+        }
+
+        private static void PrepareEntranceQualityRuntimeState(CaveVisualRuntimeState visualState)
+        {
+            if (visualState == null || visualState.EntranceQualityRoot == null)
+                return;
+
+            GameObject entranceQualityObject = visualState.EntranceQualityRoot.gameObject;
+            visualState.EntranceQualityObject = entranceQualityObject;
+            visualState.EntranceQualityCollider = entranceQualityObject.TryGetComponent(out SphereCollider entranceCollider)
+                ? entranceCollider
+                : entranceQualityObject.AddComponent<SphereCollider>();
+            visualState.EntranceQualityLight = entranceQualityObject.TryGetComponent(out Light entranceLight)
+                ? entranceLight
+                : entranceQualityObject.AddComponent<Light>();
+        }
+
+        private static void PrepareOptionalDressingRuntimeState(CaveVisualRuntimeState visualState, CaveDressingConfig dressingConfig)
+        {
+            if (visualState == null)
+                return;
+
+            if (dressingConfig == null)
+                return;
+
+            CaveWallGrowthRuntimeBuilder.PrewarmSharedResources();
+            CaveGlowingTissueRuntimeBuilder.PrewarmSharedResources();
+            CaveServiceRemnantRuntimeBuilder.PrewarmSharedResources();
+            CaveSedimentShelfRuntimeBuilder.PrewarmSharedResources();
+
+            if (dressingConfig.bioRoots != null && dressingConfig.bioRoots.enabled && visualState.BioRootsRoot != null)
+            {
+                GameObject rootsObject = visualState.BioRootsRoot.gameObject;
+                visualState.BioRootsGenerator = rootsObject.TryGetComponent(out CaveBioRootsGenerator generator)
+                    ? generator
+                    : rootsObject.AddComponent<CaveBioRootsGenerator>();
+            }
+
+            if (dressingConfig.thermalGeysers != null &&
+                dressingConfig.thermalGeysers.enabled &&
+                visualState.ThermalGeyserRoot != null &&
+                visualState.ThermalGeysers != null)
+            {
+                ThermalGeyserConfig geyserConfig = dressingConfig.thermalGeysers;
+                int maxGeyserCount = Mathf.Clamp(geyserConfig.maxCount, 0, ThermalGeyserNameCapacity);
+                for (int geyserIndex = 0; geyserIndex < maxGeyserCount; geyserIndex++)
+                {
+                    ref ThermalGeyserRuntimeState geyserState = ref visualState.ThermalGeysers[geyserIndex];
+                    string geyserName = GetCachedThermalGeyserName(geyserIndex);
+                    Transform geyserTransform = geyserIndex < visualState.ThermalGeyserRoot.childCount
+                        ? visualState.ThermalGeyserRoot.GetChild(geyserIndex)
+                        : null;
+                    GameObject geyserObject;
+                    if (geyserTransform != null)
+                    {
+                        geyserObject = geyserTransform.gameObject;
+                        geyserObject.name = geyserName;
+                    }
+                    else
+                    {
+                        geyserObject = new GameObject(geyserName);
+                        geyserTransform = geyserObject.transform;
+                        geyserTransform.SetParent(visualState.ThermalGeyserRoot, false);
+                    }
+
+                    geyserState.GameObject = geyserObject;
+                    geyserState.Transform = geyserTransform;
+                    geyserState.CurrentVolume = geyserObject.TryGetComponent(out CurrentVolume currentVolume)
+                        ? currentVolume
+                        : geyserObject.AddComponent<CurrentVolume>();
+                    geyserState.Geyser = geyserObject.TryGetComponent(out ThermalGeyser geyser)
+                        ? geyser
+                        : geyserObject.AddComponent<ThermalGeyser>();
+                    geyserObject.SetActive(false);
+                }
+
+                for (int childIndex = maxGeyserCount; childIndex < visualState.ThermalGeyserRoot.childCount; childIndex++)
+                {
+                    Transform child = visualState.ThermalGeyserRoot.GetChild(childIndex);
+                    if (child != null && child.gameObject.activeSelf)
+                        child.gameObject.SetActive(false);
+                }
+            }
+
+            if (dressingConfig.deepFungi != null && dressingConfig.deepFungi.enabled && visualState.DressingRoot != null)
+            {
+                Transform fungiTransform = visualState.DressingRoot.Find("_DeepFungi");
+                GameObject fungiObject;
+                if (fungiTransform != null)
+                {
+                    fungiObject = fungiTransform.gameObject;
+                }
+                else
+                {
+                    fungiObject = new GameObject("_DeepFungi");
+                    fungiTransform = fungiObject.transform;
+                    fungiTransform.SetParent(visualState.DressingRoot, false);
+                }
+
+                visualState.FungiObject = fungiObject;
+                visualState.FungiTransform = fungiTransform;
+                visualState.FungiParticles = fungiObject.TryGetComponent(out ParticleSystem fungiParticles)
+                    ? fungiParticles
+                    : fungiObject.AddComponent<ParticleSystem>();
+                visualState.FungiCache = fungiObject.TryGetComponent(out DeepFungiParticleCache fungiCache)
+                    ? fungiCache
+                    : fungiObject.AddComponent<DeepFungiParticleCache>();
+                visualState.FungiCache.Prewarm();
+                fungiObject.SetActive(false);
+            }
+        }
+
+        private void CacheEntranceHints(long caveKey, CaveEntrance[] entrances)
+        {
+            if (entrances == null || entrances.Length <= 0)
             {
                 if (_caveEntranceHints.Remove(caveKey))
                     _entranceHintVersion = _entranceHintVersion == int.MaxValue ? 1 : _entranceHintVersion + 1;
@@ -1652,10 +2218,8 @@ namespace Hecton8.World
 
         private PendingCaveSpawnState CreatePendingSpawnState()
         {
-            return new PendingCaveSpawnState
-            {
-                Cancellation = new CancellationTokenSource()
-            };
+            _pendingSpawnVersion = _pendingSpawnVersion == int.MaxValue ? 1 : _pendingSpawnVersion + 1;
+            return new PendingCaveSpawnState(_pendingSpawnVersion);
         }
 
         private CancellationTokenSource EnsureLifetimeCancellation()
@@ -1681,43 +2245,44 @@ namespace Hecton8.World
             _pendingCaveKeyBuffer.Clear();
             Dictionary<long, PendingCaveSpawnState>.Enumerator pendingEnumerator = _pendingCaveSpawns.GetEnumerator();
             while (pendingEnumerator.MoveNext())
+            {
+                if (_pendingCaveKeyBuffer.Count >= _pendingCaveKeyBuffer.Capacity)
+                    break;
+
                 _pendingCaveKeyBuffer.Add(pendingEnumerator.Current.Key);
+            }
 
             for (int i = 0; i < _pendingCaveKeyBuffer.Count; i++)
             {
                 long caveKey = _pendingCaveKeyBuffer[i];
-                if (!_pendingCaveSpawns.TryGetValue(caveKey, out PendingCaveSpawnState state))
-                    continue;
-
-                if (state != null && state.Cancellation != null)
-                    state.Cancellation.Cancel();
-
-                state?.Dispose();
                 _pendingCaveSpawns.Remove(caveKey);
             }
 
-            _debugPendingCaves = 0;
+            _debugPendingCaves = _pendingCaveSpawns.Count;
         }
 
         private void CompletePendingSpawn(long caveKey, PendingCaveSpawnState pendingState)
         {
             if (_pendingCaveSpawns.TryGetValue(caveKey, out PendingCaveSpawnState currentState) &&
-                ReferenceEquals(currentState, pendingState))
+                currentState.Version == pendingState.Version)
             {
                 _pendingCaveSpawns.Remove(caveKey);
             }
-
-            pendingState?.Dispose();
         }
 
         private void CleanupSpawnedVolume(GameObject caveVolume)
         {
+            CleanupSpawnedVolume(voxelEngine, caveVolume);
+        }
+
+        private void CleanupSpawnedVolume(HectonVoxelEngine ownerVoxelEngine, GameObject caveVolume)
+        {
             if (caveVolume == null)
                 return;
 
-            if (voxelEngine != null)
+            if (ownerVoxelEngine != null)
             {
-                voxelEngine.DespawnVolume(caveVolume);
+                ownerVoxelEngine.DespawnVolume(caveVolume);
                 return;
             }
 

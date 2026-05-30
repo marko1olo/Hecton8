@@ -71,7 +71,7 @@ namespace Hecton8.World
     /// </remarks>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-150)] // Run before gameplay systems
-    public sealed class LODSystemManager : MonoBehaviour, ITickable, ILateFrameTickable, ISaveable, IGlobalRegistryHotSwapListener
+    public sealed class LODSystemManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, ISaveable, IGlobalRegistryHotSwapListener
     {
         private const float CameraResolveRetryInterval = 1f;
         private const int MaxHotPathLODGroupsPerFrame = 64;
@@ -134,6 +134,7 @@ namespace Hecton8.World
         private float[] _lodGroupSquaredDistances;
 
         private bool _registered;
+        private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _saveRegistered;
@@ -152,6 +153,7 @@ namespace Hecton8.World
         private float _runtimeQualityWeight01 = 0.62f;
         private float _lastAppliedLodBias = -1f;
         private float _lastAppliedMathLodWeight = -1f;
+        private float _pendingMathLodWeight = -1f;
         private float _emergencyLodBias = -1f;
         private float _lodRuntimeClockSeconds;
         private float _nextNullCleanupTime;
@@ -162,6 +164,7 @@ namespace Hecton8.World
         private int _nextLODPerformanceWarningFrame;
         private int _lastFrameTransitionCount;
         private bool _qualityVisualSyncDirty;
+        private bool _mathLodVisualSyncDirty;
         private bool _registeredHotSwapListener;
 
         private float _lodSystemCPUTime;
@@ -223,6 +226,7 @@ namespace Hecton8.World
             _nextNullCleanupTime = 0f;
             TryResolveMainCamera();
             ApplyQualityPreset(_qualityPreset);
+            FlushQualityPolicySlow();
 
             TryRegisterSaveParticipant();
 
@@ -238,6 +242,7 @@ namespace Hecton8.World
             TryRegisterSaveParticipant();
             InvalidateViewerAupCache();
             EnsureDistanceScratchAllocated();
+            FlushQualityPolicySlow();
             TryRegisterService();
             TryRegister();
         }
@@ -277,6 +282,12 @@ namespace Hecton8.World
                 _lodGroupSquaredDistances = new float[MaxHotPathLODGroupsPerFrame];
         }
 
+        private bool HasDistanceScratchReady()
+        {
+            return _lodGroupSquaredDistances != null &&
+                   _lodGroupSquaredDistances.Length >= MaxHotPathLODGroupsPerFrame;
+        }
+
         private void ReleaseDistanceScratch()
         {
             _lodGroupSquaredDistances = null;
@@ -284,16 +295,25 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || _dispatcher == null)
+            if (!Application.isPlaying || _dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (!_slowTickRegistered)
+                _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             if (!_lateFrameRegistered)
                 _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
+            if (_slowTickRegistered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _slowTickRegistered = false;
+            }
+
             if (_lateFrameRegistered)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -485,8 +505,13 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
-            FlushQualityVisualSync();
+            FlushQualityShaderVisualSync();
             ApplyLODTransitions();
+        }
+
+        public void SlowTick()
+        {
+            FlushQualityPolicySlow();
         }
 
         private void AdvanceLodRuntimeClock(float deltaTime)
@@ -644,7 +669,7 @@ namespace Hecton8.World
 
         public float ApplyEmergencyLODBiasStrike()
         {
-            float current = _lastAppliedLodBias > 0f ? _lastAppliedLodBias : QualitySettings.lodBias;
+            float current = _lastAppliedLodBias > 0f ? _lastAppliedLodBias : _defaultLODBias;
             float next = math.max(0.35f, current - 0.1f);
             if (next < current)
             {
@@ -672,7 +697,12 @@ namespace Hecton8.World
         {
             if (_registeredLODGroups.Count == 0) return;
 
-            EnsureDistanceScratchAllocated();
+            if (!HasDistanceScratchReady())
+            {
+                _scheduledLODGroupBatchCount = 0;
+                return;
+            }
+
             Vector3 cameraPosition = _cameraTransform != null ? _cameraTransform.position : Vector3.zero;
             int count = ResolveHotPathLODGroupBatchCount();
             if (_lodHotPathCursor >= _registeredLODGroups.Count)
@@ -883,11 +913,13 @@ namespace Hecton8.World
             QualitySettings.lodBias = _defaultLODBias;
             _lastAppliedLodBias = _defaultLODBias;
             _lastAppliedMathLodWeight = -1f;
+            _pendingMathLodWeight = -1f;
             _emergencyLodBias = -1f;
             _qualityVisualSyncDirty = false;
+            _mathLodVisualSyncDirty = false;
         }
 
-        private void FlushQualityVisualSync()
+        private void FlushQualityPolicySlow()
         {
             float qualityWeight01 = ResolveActiveQualityWeight01();
             float targetBias = ResolveLODBiasFromQualityWeight(qualityWeight01);
@@ -910,11 +942,24 @@ namespace Hecton8.World
                 _lastAppliedLodBias = targetBias;
             }
 
-            if (_lastAppliedMathLodWeight < 0f || math.abs(_lastAppliedMathLodWeight - qualityWeight01) > 0.0001f)
+            if (_lastAppliedMathLodWeight < 0f ||
+                math.abs(_lastAppliedMathLodWeight - qualityWeight01) > 0.0001f ||
+                math.abs(_pendingMathLodWeight - qualityWeight01) > 0.0001f)
             {
-                DistanceMath.PushShaderMathLod(qualityWeight01);
-                _lastAppliedMathLodWeight = qualityWeight01;
+                _pendingMathLodWeight = qualityWeight01;
+                _mathLodVisualSyncDirty = true;
             }
+        }
+
+        private void FlushQualityShaderVisualSync()
+        {
+            if (!_mathLodVisualSyncDirty)
+                return;
+
+            float qualityWeight01 = math.saturate(math.select(0f, _pendingMathLodWeight, math.isfinite(_pendingMathLodWeight)));
+            DistanceMath.PushShaderMathLod(qualityWeight01);
+            _lastAppliedMathLodWeight = qualityWeight01;
+            _mathLodVisualSyncDirty = false;
         }
 
         private void TryRegisterImpostorCandidate(LODGroup lodGroup)

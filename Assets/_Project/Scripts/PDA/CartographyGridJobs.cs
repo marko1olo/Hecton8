@@ -629,7 +629,7 @@ namespace Hecton8.Cartography
         private static int telemetryDumpLength;
         private static string telemetryDumpPath = string.Empty;
 
-        public static bool TryResolve(IDataVault vault, out CartographyVaultHandles handles)
+        public static bool TryEnsure(IDataVault vault, out CartographyVaultHandles handles)
         {
             handles = default;
             if (vault == null)

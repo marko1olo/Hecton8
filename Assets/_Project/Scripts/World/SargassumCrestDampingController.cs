@@ -162,6 +162,9 @@ namespace Hecton8.World
         private void Awake()
         {
             SanitizeSettings();
+#if UNITY_EDITOR
+            TryAutoAssignFacadeComputeCold();
+#endif
             CacheGraphicsCapabilitiesCold();
             CacheRegistryServicesCold();
             DisableLegacyInputs();
@@ -172,6 +175,9 @@ namespace Hecton8.World
         private void OnEnable()
         {
             SanitizeSettings();
+#if UNITY_EDITOR
+            TryAutoAssignFacadeComputeCold();
+#endif
             CacheGraphicsCapabilitiesCold();
             TryRegisterHotSwapListener();
             CacheRegistryServicesCold();
@@ -249,6 +255,7 @@ namespace Hecton8.World
         {
             ResolveDependencies();
             QueueLegacyInputDisable();
+            EnsureFacadeResources();
             QueueFacadeRefresh(force: true);
         }
 
@@ -268,7 +275,7 @@ namespace Hecton8.World
                 bool force = _facadeRefreshForce;
                 _facadeRefreshRequested = false;
                 _facadeRefreshForce = false;
-                RefreshFacadeTextures(force, allowAllocate: false);
+                RefreshFacadeTexturesCached(force);
             }
 
             if (!_facadeGlobalsDirty)
@@ -368,6 +375,43 @@ namespace Hecton8.World
             QueueFacadeGlobals(active: true);
         }
 
+        private void RefreshFacadeTexturesCached(bool force)
+        {
+            if (dragManager == null)
+            {
+                QueueFacadeGlobals(active: false);
+                return;
+            }
+
+            if (!dragManager.TryGetDensityFieldTexture(out Texture2D densityTexture, out Vector4 densityWorldRect) || densityTexture == null)
+            {
+                _activeDensityTexture = null;
+                _activeDensityWorldRect = Vector4.zero;
+                _activeCutMaskWorldRect = Vector4.zero;
+                _activeFieldRevision = dragManager.FieldRevision;
+                QueueFacadeGlobals(active: false);
+                return;
+            }
+
+            if (!HasFacadeResourcesFor(densityTexture.width, densityTexture.height))
+            {
+                QueueFacadeGlobals(active: false);
+                return;
+            }
+
+            RenderTexture cutMaskTexture = null;
+            Vector4 cutMaskWorldRect = Vector4.zero;
+            bool cutMaskAvailable = cutManager != null && cutManager.TryGetCutMask(out cutMaskTexture, out cutMaskWorldRect);
+            _activeDensityTexture = densityTexture;
+            _activeDensityWorldRect = densityWorldRect;
+            _activeCutMaskWorldRect = cutMaskAvailable ? cutMaskWorldRect : Vector4.zero;
+            _activeDriftOffset = dragManager.GlobalDriftOffset;
+            _activeFieldRevision = dragManager.FieldRevision;
+
+            DispatchFacadeBake(densityTexture, cutMaskTexture, densityWorldRect, cutMaskWorldRect, cutMaskAvailable);
+            QueueFacadeGlobals(active: true);
+        }
+
         private void DispatchFacadeBake(
             Texture densityTexture,
             Texture cutMaskTexture,
@@ -378,9 +422,6 @@ namespace Hecton8.World
             if (_waveDampingMask == null || _oilFilmMask == null || densityTexture == null)
                 return;
 
-#if UNITY_EDITOR
-            TryAutoAssignFacadeCompute();
-#endif
             if (!ReferenceEquals(_facadeBakeCompute, facadeBakeComputeOverride))
             {
                 _facadeBakeCompute = facadeBakeComputeOverride;
@@ -499,6 +540,25 @@ namespace Hecton8.World
             _debugWaveFacadeResolution = _waveDampingMask != null ? _waveDampingMask.width : 0;
             _debugOilFacadeResolution = _oilFilmMask != null ? _oilFilmMask.width : 0;
             return _waveDampingMask != null && _oilFilmMask != null;
+        }
+
+        private bool HasFacadeResourcesFor(int width, int height)
+        {
+            int facadeWidth = ResolveFacadeResolutionDimension(width);
+            int facadeHeight = ResolveFacadeResolutionDimension(height);
+            if (_waveDampingMask == null ||
+                _oilFilmMask == null ||
+                _waveDampingMask.width != facadeWidth ||
+                _waveDampingMask.height != facadeHeight ||
+                _oilFilmMask.width != facadeWidth ||
+                _oilFilmMask.height != facadeHeight)
+            {
+                return false;
+            }
+
+            _debugWaveFacadeResolution = _waveDampingMask.width;
+            _debugOilFacadeResolution = _oilFilmMask.width;
+            return true;
         }
 
         private static int ResolveFacadeResolutionDimension(int sourceDimension)
@@ -634,7 +694,7 @@ namespace Hecton8.World
         }
 
 #if UNITY_EDITOR
-        private void TryAutoAssignFacadeCompute()
+        private void TryAutoAssignFacadeComputeCold()
         {
             if (facadeBakeComputeOverride == null)
                 facadeBakeComputeOverride = AssetDatabase.LoadAssetAtPath<ComputeShader>(FacadeComputeAssetPath);
@@ -804,7 +864,7 @@ namespace Hecton8.World
         private void OnValidate()
         {
             SanitizeSettings();
-            TryAutoAssignFacadeCompute();
+            TryAutoAssignFacadeComputeCold();
         }
 #endif
     }

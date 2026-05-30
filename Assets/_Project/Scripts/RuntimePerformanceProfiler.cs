@@ -31,7 +31,7 @@ namespace Hecton8.Dev
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Dev/Runtime Performance Profiler")]
-    public sealed class RuntimePerformanceProfiler : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed class RuntimePerformanceProfiler : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int RecorderCapacity = 1;
         private const int RendererOwnershipAuditRootCapacity = 512;
@@ -40,6 +40,17 @@ namespace Hecton8.Dev
         private const string AutoBootstrapObjectName = "__DEV_RuntimePerformanceProfiler";
         private const string BootstrapSceneName = "00_BOOTSTRAP";
         private const string DefaultGameplaySceneName = "02_HECTON_WORLD";
+        private const string DriverTraceUpdateMessage = "source=Update";
+        private const string DriverTraceTickMessage = "source=Tick";
+        private const string HeartbeatTraceMessage = "runtime heartbeat";
+        private const string RuntimeWindowTraceMessage = "runtime window";
+        private const string RuntimeBudgetTraceMessage = "runtime budget exceeded";
+        private const string RuntimeFrozenTraceMessage = "reason=fallback-frozen";
+        private const string RuntimeFrozenSummaryTraceMessage = "reason=fallback-frozen-summary";
+        private const string RuntimeFrozenThresholdTraceMessage = "reason=fallback-frozen-threshold";
+        private const string RuntimeFrozenRecoveredTraceMessage = "reason=fallback-recovered";
+        private const string RuntimeVramBudgetTraceMessage = "VRAM OVER BUDGET";
+        private const string SceneSnapshotTraceMessage = "scene snapshot";
 #if UNITY_EDITOR
         private const int MaxDirtyPlayRetryAttempts = 3;
         private const int FrozenFallbackStallWarningWindowThreshold = 5;
@@ -203,6 +214,7 @@ namespace Hecton8.Dev
         private IVramBudgetReadModel _cachedVramMonitor;
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrame;
         private bool _registeredHotSwapListener;
         private float _sampleElapsed;
         private float _peakFrameTimeMs;
@@ -452,7 +464,7 @@ namespace Hecton8.Dev
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             RuntimeDiagnosticsTrace.WriteEvent(
                 "runtime.lifecycle",
-                $"on-enable id={GetEntityId()} scene={SceneManager.GetActiveScene().name} tick={_registeredTick} slow={_registeredSlowTick}");
+                $"on-enable id={GetEntityId()} scene={SceneManager.GetActiveScene().name} tick={_registeredTick} slow={_registeredSlowTick} late={_registeredLateFrame}");
 #endif
             if (startProfilingOnEnable)
                 StartProfiling();
@@ -466,12 +478,12 @@ namespace Hecton8.Dev
             if (!IsActiveRuntimeOwner())
                 return;
 
-            if (_registeredTick && _registeredSlowTick)
+            if (_registeredTick && _registeredSlowTick && _registeredLateFrame)
                 return;
 
             RegisterWithTickManager();
 
-            if ((!_registeredTick || !_registeredSlowTick) && _debugProfilingActive)
+            if ((!_registeredTick || !_registeredSlowTick || !_registeredLateFrame) && _debugProfilingActive)
                 Hecton8.Core.H8Debug.LogError("[RuntimeProfiler] GameTickManager registration failed.", this);
         }
 
@@ -705,13 +717,10 @@ namespace Hecton8.Dev
 
         public void Tick(float deltaTime)
         {
-            float sampleDeltaTime = deltaTime > 0f ? deltaTime : SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             if (!_debugProfilingActive)
-            {
-                PumpPendingRuntimeRoutes(sampleDeltaTime);
                 return;
-            }
 
+            float sampleDeltaTime = deltaTime > 0f ? deltaTime : SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             DriveSampling(sampleDeltaTime, false);
         }
 
@@ -722,7 +731,6 @@ namespace Hecton8.Dev
 
             UpdateWorldDiagnostics();
             UpdateVRAMDiagnostics();
-            FlushPendingRendererOwnershipAudit();
             _debugPeakFrameTimeMs = _peakFrameTimeMs;
             _debugPeakMainThreadMs = _peakMainThreadMs;
             _debugPeakGcAllocBytes = _peakGcAllocBytes;
@@ -770,6 +778,18 @@ namespace Hecton8.Dev
             {
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
             }
+
+            if (!_registeredLateFrame)
+            {
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+            }
+        }
+
+        public void LateFrameTick()
+        {
+            float sampleDeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            PumpPendingRuntimeRoutes(sampleDeltaTime);
+            FlushPendingRendererOwnershipAudit();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -817,6 +837,12 @@ namespace Hecton8.Dev
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
                 _registeredSlowTick = false;
+            }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                _registeredLateFrame = false;
             }
         }
 
@@ -967,7 +993,7 @@ namespace Hecton8.Dev
                 _loggedFirstDrive = true;
                 RuntimeDiagnosticsTrace.WriteEvent(
                     "runtime.driver",
-                    $"source={_debugLastDriveSource} frame={currentFrame} dt={effectiveDeltaTime:0.0000} active={_debugProfilingActive}");
+                    usingFallbackUpdate ? DriverTraceUpdateMessage : DriverTraceTickMessage);
             }
 
             if (RuntimeDiagnosticsTrace.IsActive && realtimeNow >= _nextDriveHeartbeatTime)
@@ -975,11 +1001,8 @@ namespace Hecton8.Dev
                 _nextDriveHeartbeatTime = realtimeNow + 2f;
                 RuntimeDiagnosticsTrace.WriteEvent(
                     "runtime.heartbeat",
-                    $"scene={SceneManager.GetActiveScene().name} frame={currentFrame} source={_debugLastDriveSource} dt={effectiveDeltaTime:0.0000} elapsed={_sampleElapsed:0.0000} active={_debugProfilingActive}");
+                    HeartbeatTraceMessage);
             }
-
-            UpdatePendingSceneSnapshot(effectiveDeltaTime);
-            UpdatePendingAutoStart(effectiveDeltaTime);
 
             if (_suppressSamplingForCurrentScene)
                 return;
@@ -1021,10 +1044,7 @@ namespace Hecton8.Dev
                 if (_invalidFrozenWindowCount == FrozenFallbackStallWarningWindowThreshold && !EditorApplication.isPaused)
                 {
                     FlushSuppressedFrozenFallbackSkips();
-                    RuntimeDiagnosticsTrace.WriteEvent(
-                        "runtime.stall",
-                        $"reason=fallback-frozen-threshold scene={SceneManager.GetActiveScene().name} " +
-                        $"frozenCount={_invalidFrozenWindowCount} frameDelta={_debugLastWindowFrameDelta}");
+                    RuntimeDiagnosticsTrace.WriteEvent("runtime.stall", RuntimeFrozenThresholdTraceMessage);
                 }
 #endif
 
@@ -1035,90 +1055,13 @@ namespace Hecton8.Dev
             FlushSuppressedFrozenFallbackSkips();
             if (recoveredFrozenWindowCount > 0)
             {
-                RuntimeDiagnosticsTrace.WriteEvent(
-                    "runtime.resume",
-                    $"reason=fallback-recovered scene={SceneManager.GetActiveScene().name} " +
-                    $"frozenCount={recoveredFrozenWindowCount} suppressed={recoveredSuppressedFrozenSkipCount} " +
-                    $"window={_debugWindowCount} cadence={_debugLastWindowCadence} frameDelta={_debugLastWindowFrameDelta}");
+                RuntimeDiagnosticsTrace.WriteEvent("runtime.resume", RuntimeFrozenRecoveredTraceMessage);
             }
 
             _invalidFrozenWindowCount = 0;
             _loggedPausedFrozenFallback = false;
 
-            _reportBuilder.Clear();
-            _reportBuilder.Append("[RuntimeProfiler] window=")
-                .Append(_debugWindowCount)
-                .Append(" cadence=")
-                .Append(_debugLastWindowCadence)
-                .Append(" frameDelta=")
-                .Append(_debugLastWindowFrameDelta)
-                .Append(" frame=")
-                .Append(_peakFrameTimeMs.ToString("0.00"))
-                .Append("ms main=")
-                .Append(_peakMainThreadMs.ToString("0.00"))
-                .Append("ms gc=")
-                .Append(_peakGcAllocBytes)
-                .Append("B mem=")
-                .Append(_peakSystemMemoryMb.ToString("0.0"))
-                .Append("MB setPass=")
-                .Append(_peakSetPassCalls)
-                .Append(" batches=")
-                .Append(_peakBatches)
-                .Append(" geoBindings=")
-                .Append(_debugGeoBindings)
-                .Append(" geoRoots=")
-                .Append(_debugGeoGeneratedRoots)
-                .Append(" geoRenderers=")
-                .Append(_debugGeoGeneratedRenderers)
-                .Append(" geoVoxels=")
-                .Append(_debugGeoVoxelVolumes)
-                .Append(" geoVoxelColliders=")
-                .Append(_debugGeoVoxelColliders)
-                .Append(" scatterDispatch=")
-                .Append(_peakScatterDispatchMs.ToString("0.00"))
-                .Append("ms scatterBegin=")
-                .Append(_peakScatterSamplingBeginMs.ToString("0.00"))
-                .Append("ms scatterInputs=")
-                .Append(_peakScatterSamplingBuildInputsMs.ToString("0.00"))
-                .Append("ms scatterSchedule=")
-                .Append(_peakScatterSamplingScheduleMs.ToString("0.00"))
-                .Append("ms scatterProcess=")
-                .Append(_peakScatterProcessingTotalMs.ToString("0.00"))
-                .Append("ms scatterCells=")
-                .Append(_peakScatterProcessingCellsMs.ToString("0.00"))
-                .Append("ms scatterRescue=")
-                .Append(_peakScatterProcessingRescueMs.ToString("0.00"))
-                .Append("ms scatterRestore=")
-                .Append(_peakScatterProcessingRestoreMs.ToString("0.00"))
-                .Append("ms scatterReconcile=")
-                .Append(_peakScatterReconcileTotalMs.ToString("0.00"))
-                .Append("ms scatterCleanup=")
-                .Append(_peakScatterReconcileCleanupMs.ToString("0.00"))
-                .Append("ms scatterSpawn=")
-                .Append(_peakScatterReconcileSpawnMs.ToString("0.00"))
-                .Append("ms scatterFauna=")
-                .Append(_peakScatterReconcileFaunaMs.ToString("0.00"))
-                .Append("ms shadowSchedule=")
-                .Append(_peakScatterBackendShadowScheduleMs.ToString("0.00"))
-                .Append("ms shadowPump=")
-                .Append(_peakScatterBackendShadowPumpMs.ToString("0.00"))
-                .Append("ms");
-
-            if (_hasScatterSnapshot)
-            {
-                _reportBuilder.Append(" scatterTotal=")
-                    .Append(_debugLastScatterTotalMs.ToString("0.00"))
-                    .Append("ms scatterSample=")
-                    .Append(_debugLastScatterSamplingMs.ToString("0.00"))
-                    .Append("ms scatterRebuildReason=")
-                    .Append(string.IsNullOrWhiteSpace(_lastScatterSnapshot.Reason) ? "None" : _lastScatterSnapshot.Reason)
-                    .Append(" scatterZone=")
-                    .Append(string.IsNullOrWhiteSpace(_lastScatterSnapshot.Zone) ? "None" : _lastScatterSnapshot.Zone)
-                    .Append(" scatterPattern=")
-                    .Append(string.IsNullOrWhiteSpace(_lastScatterSnapshot.Pattern) ? "None" : _lastScatterSnapshot.Pattern);
-            }
-
-            _debugLastReport = _reportBuilder.ToString();
+            _debugLastReport = _debugLastWindowExceededBudget ? RuntimeBudgetTraceMessage : RuntimeWindowTraceMessage;
             RuntimeDiagnosticsTrace.WriteEvent("runtime", _debugLastReport);
 
             bool shouldLogWindow = logEveryWindow;
@@ -1240,26 +1183,7 @@ namespace Hecton8.Dev
 
             _nextFrozenFallbackTraceTime = realtimeNow + 10f;
 
-            _reportBuilder.Clear();
-            _reportBuilder.Append("reason=fallback-frozen window=")
-                .Append(_debugWindowCount + 1)
-                .Append(" frozenCount=")
-                .Append(_invalidFrozenWindowCount)
-                .Append(" scene=")
-                .Append(SceneManager.GetActiveScene().name)
-                .Append(" frameDelta=")
-                .Append(_debugLastWindowFrameDelta);
-
-            if (_suppressedFrozenFallbackSkipCount > 0)
-            {
-                _reportBuilder.Append(" suppressed=")
-                    .Append(_suppressedFrozenFallbackSkipCount);
-            }
-
-            if (isPaused)
-                _reportBuilder.Append(" paused=true");
-
-            RuntimeDiagnosticsTrace.WriteEvent("runtime.skip", _reportBuilder.ToString());
+            RuntimeDiagnosticsTrace.WriteEvent("runtime.skip", RuntimeFrozenTraceMessage);
             _suppressedFrozenFallbackSkipCount = 0;
         }
 
@@ -1268,10 +1192,7 @@ namespace Hecton8.Dev
             if (_suppressedFrozenFallbackSkipCount <= 0 || !RuntimeDiagnosticsTrace.IsActive)
                 return;
 
-            RuntimeDiagnosticsTrace.WriteEvent(
-                "runtime.skip",
-                $"reason=fallback-frozen-summary count={_suppressedFrozenFallbackSkipCount} " +
-                $"scene={SceneManager.GetActiveScene().name}");
+            RuntimeDiagnosticsTrace.WriteEvent("runtime.skip", RuntimeFrozenSummaryTraceMessage);
             _suppressedFrozenFallbackSkipCount = 0;
         }
 
@@ -1351,12 +1272,12 @@ namespace Hecton8.Dev
 
             if (textureOverBudget || rtOverBudget || totalOverBudget)
             {
-                _debugLastVRAMWarning = $"VRAM OVER BUDGET: Tex={textureOverBudget} RT={rtOverBudget} Total={totalOverBudget}";
+                _debugLastVRAMWarning = RuntimeVramBudgetTraceMessage;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (logBudgetViolations)
                 {
                     if (TryConsumeBudgetWarningCooldown(ref _nextVramWarningLogTime))
-                        Hecton8.Core.H8Debug.LogWarning($"[RuntimeProfiler] {_debugLastVRAMWarning} | Texture: {_debugLastTextureMB:0.0} MB | RT: {_debugLastRenderTextureMB:0.0} MB | Total: {_debugLastTotalVRAMMB:0.0} MB");
+                        Hecton8.Core.H8Debug.LogWarning(RuntimeVramBudgetTraceMessage);
                 }
 #endif
             }
@@ -1553,7 +1474,7 @@ namespace Hecton8.Dev
                 _pendingAutoStartDelay = 0.5f;
                 _pendingAutoStartNewGame = true;
                 _pendingAutoStartDueRealtime = (Application.isPlaying ? Time.realtimeSinceStartup : 0f) + _pendingAutoStartDelay;
-                _debugPendingAutoStart = $"{autoStartMainMenuSceneName}@retry";
+                _debugPendingAutoStart = "retry";
                 RuntimeDiagnosticsTrace.WriteEvent("menu.auto_start", "retry reason=MainMenuControllerMissing");
                 return;
             }
@@ -1932,52 +1853,7 @@ namespace Hecton8.Dev
         private void CaptureSceneSnapshot(string sceneName, string reason)
         {
             UpdateWorldDiagnostics();
-            _reportBuilder.Clear();
-            _reportBuilder.Append("scene=")
-                .Append(string.IsNullOrWhiteSpace(sceneName) ? "Unknown" : sceneName)
-                .Append(" reason=")
-                .Append(string.IsNullOrWhiteSpace(reason) ? "runtime" : reason)
-                .Append(" frame=")
-                .Append(_debugLastFrameTimeMs.ToString("0.00"))
-                .Append("ms main=")
-                .Append(_debugLastMainThreadMs.ToString("0.00"))
-                .Append("ms gc=")
-                .Append(_debugLastGcAllocBytes)
-                .Append("B mem=")
-                .Append(_debugLastSystemMemoryMb.ToString("0.0"))
-                .Append("MB setPass=")
-                .Append(_debugLastSetPassCalls)
-                .Append(" batches=")
-                .Append(_debugLastBatches)
-                .Append(" scatter=")
-                .Append(_debugLastScatterTotalMs.ToString("0.00"))
-                .Append("ms scatterSampling=")
-                .Append(_debugLastScatterSamplingMs.ToString("0.00"))
-                .Append("ms scatterRescue=")
-                .Append(_debugLastScatterRescueMs.ToString("0.00"))
-                .Append("ms scatterRestore=")
-                .Append(_debugLastScatterRestoreMs.ToString("0.00"))
-                .Append("ms scatterReconcile=")
-                .Append(_debugLastScatterReconcileMs.ToString("0.00"))
-                .Append("ms shadowSchedule=")
-                .Append(_debugLastScatterShadowScheduleMs.ToString("0.00"))
-                .Append("ms shadowPump=")
-                .Append(_debugLastScatterShadowPumpMs.ToString("0.00"))
-                .Append("ms");
-
-            if (_hasScatterSnapshot)
-            {
-                _reportBuilder.Append(" reasonLabel=")
-                    .Append(string.IsNullOrWhiteSpace(_lastScatterSnapshot.Reason) ? "None" : _lastScatterSnapshot.Reason)
-                    .Append(" zone=")
-                    .Append(string.IsNullOrWhiteSpace(_lastScatterSnapshot.Zone) ? "None" : _lastScatterSnapshot.Zone)
-                    .Append(" biome=")
-                    .Append(string.IsNullOrWhiteSpace(_lastScatterSnapshot.Biome) ? "None" : _lastScatterSnapshot.Biome)
-                    .Append(" pattern=")
-                    .Append(string.IsNullOrWhiteSpace(_lastScatterSnapshot.Pattern) ? "None" : _lastScatterSnapshot.Pattern);
-            }
-
-            _debugLastSceneSnapshot = _reportBuilder.ToString();
+            _debugLastSceneSnapshot = SceneSnapshotTraceMessage;
             _debugPendingSceneSnapshot = "None";
             RuntimeDiagnosticsTrace.WriteEvent("scene.snapshot", _debugLastSceneSnapshot);
         }

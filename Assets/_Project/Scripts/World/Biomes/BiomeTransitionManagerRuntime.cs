@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -97,6 +98,12 @@ namespace Hecton8.World.Biomes
         private float _filteredQualityWeight;
         private bool _qualityFilterInitialized;
         private AbsoluteUniversePositionBlit128 _lastPlayerAup;
+        private readonly BiomeTransitionTelemetryEntry[] _blackBoxDumpSnapshot = new BiomeTransitionTelemetryEntry[BiomeTransitionConstants.TelemetryCapacity];
+        private int _blackBoxDumpSnapshotCount;
+        private int _blackBoxDumpInFlight;
+        private string _blackBoxDumpRootCold;
+
+        private static readonly WaitCallback s_blackBoxDumpWorker = WriteBlackBoxDumpWorker;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -110,6 +117,7 @@ namespace Hecton8.World.Biomes
                 return;
 
             CacheGraphicsCapabilitiesCold();
+            EnsureShaderPayloadBuffersCold();
             ResolveColdDependencies();
             EnsureVaultBuffers();
         }
@@ -120,6 +128,7 @@ namespace Hecton8.World.Biomes
                 return;
 
             CacheGraphicsCapabilitiesCold();
+            EnsureShaderPayloadBuffersCold();
             TryRegisterHotSwapListener();
             ResolveColdDependencies();
             EnsureVaultBuffers();
@@ -456,6 +465,8 @@ namespace Hecton8.World.Biomes
         {
             if (!Application.isPlaying)
                 return;
+
+            TryEnsureBlackBoxDumpRootCold();
 
             if (_vault == null || !_vaultReady)
             {
@@ -1070,7 +1081,7 @@ namespace Hecton8.World.Biomes
                 return;
             }
 
-            if (!EnsureShaderPayloadBuffers())
+            if (!AreShaderPayloadBuffersReady())
                 return;
 
             GraphicsBuffer writeBuffer = ResolveNextShaderPayloadBuffer();
@@ -1095,10 +1106,17 @@ namespace Hecton8.World.Biomes
                 BiomeTransitionConstants.ShaderPayloadStrideBytes);
         }
 
+        private void EnsureShaderPayloadBuffersCold()
+        {
+            if (_coldSupportsSetConstantBuffer)
+                EnsureShaderPayloadBuffers();
+            else
+                ReleaseShaderPayloadBuffers();
+        }
+
         private bool EnsureShaderPayloadBuffers()
         {
-            if (_shaderPayloadBufferA != null && _shaderPayloadBufferA.IsValid() &&
-                _shaderPayloadBufferB != null && _shaderPayloadBufferB.IsValid())
+            if (AreShaderPayloadBuffersReady())
             {
                 return true;
             }
@@ -1121,6 +1139,14 @@ namespace Hecton8.World.Biomes
             if (!valid)
                 ReleaseShaderPayloadBuffers();
             return valid;
+        }
+
+        private bool AreShaderPayloadBuffersReady()
+        {
+            return _shaderPayloadBufferA != null &&
+                   _shaderPayloadBufferA.IsValid() &&
+                   _shaderPayloadBufferB != null &&
+                   _shaderPayloadBufferB.IsValid();
         }
 
         private GraphicsBuffer ResolveNextShaderPayloadBuffer()
@@ -1260,17 +1286,136 @@ namespace Hecton8.World.Biomes
 
         private void DumpBlackBox()
         {
-            if (_vault == null)
+            IDataVault vault = _vault;
+            if (vault == null)
                 return;
 
-            if (!TryResolveBiomeVaultBuffer(_vault, ref _telemetryHandle, BufferID.BiomeTransitionTelemetryRing, OwnerSystem, BiomeTransitionConstants.TelemetryCapacity, out NativeArray<BiomeTransitionTelemetryEntry> telemetry))
+            if (Volatile.Read(ref _blackBoxDumpInFlight) != 0)
                 return;
 
-            int cursor = TryResolveBiomeVaultBuffer(_vault, ref _countersHandle, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out NativeArray<BiomeTransitionCounterDTO> counters)
+            if (_blackBoxDumpRootCold == null || _blackBoxDumpRootCold.Length == 0)
+                return;
+
+            if (!TryReadBiomeVaultBuffer(vault, in _telemetryHandle, BufferID.BiomeTransitionTelemetryRing, OwnerSystem, BiomeTransitionConstants.TelemetryCapacity, out NativeArray<BiomeTransitionTelemetryEntry>.ReadOnly telemetry))
+                return;
+
+            int cursor = TryReadBiomeVaultBuffer(vault, in _countersHandle, BufferID.BiomeTransitionCounters, OwnerSystem, 1, out NativeArray<BiomeTransitionCounterDTO>.ReadOnly counters)
                 ? counters[0].TelemetryCursor
                 : 0;
-            TryDumpTelemetry(telemetry.AsReadOnly(), cursor, ProjectRoot(), BlackBoxDumpPath);
+
+            Volatile.Write(ref _blackBoxDumpInFlight, 1);
+            if (!TryStageBlackBoxDumpSnapshot(telemetry, cursor))
+            {
+                Volatile.Write(ref _blackBoxDumpInFlight, 0);
+                return;
+            }
+
+            bool queued = false;
+            try
+            {
+                queued = ThreadPool.QueueUserWorkItem(s_blackBoxDumpWorker, this);
+            }
+            catch (NotSupportedException)
+            {
+                queued = false;
+            }
+
+            if (!queued)
+                Volatile.Write(ref _blackBoxDumpInFlight, 0);
+
             GlobalTelemetryBus.PublishPerformanceWarning(NonFiniteStateHash, RuntimeContextHash, 1f);
+        }
+
+        private bool TryStageBlackBoxDumpSnapshot(
+            NativeArray<BiomeTransitionTelemetryEntry>.ReadOnly telemetry,
+            int cursor)
+        {
+            if (!telemetry.IsCreated || telemetry.Length <= 0)
+                return false;
+
+            BiomeTransitionTelemetryEntry[] snapshot = _blackBoxDumpSnapshot;
+            if (snapshot == null || snapshot.Length < BiomeTransitionConstants.TelemetryCapacity)
+                return false;
+
+            int count = math.min(telemetry.Length, snapshot.Length);
+            int start = math.clamp(cursor, 0, math.max(0, count - 1));
+            for (int i = 0; i < count; i++)
+            {
+                int index = start + i;
+                if (index >= count)
+                    index -= count;
+
+                snapshot[i] = telemetry[index];
+            }
+
+            _blackBoxDumpSnapshotCount = count;
+            return true;
+        }
+
+        private static void WriteBlackBoxDumpWorker(object state)
+        {
+            BiomeTransitionManagerRuntime runtime = state as BiomeTransitionManagerRuntime;
+            if (runtime == null)
+                return;
+
+            try
+            {
+                runtime.TryWriteBlackBoxSnapshotCold();
+            }
+            finally
+            {
+                Volatile.Write(ref runtime._blackBoxDumpInFlight, 0);
+            }
+        }
+
+        private bool TryWriteBlackBoxSnapshotCold()
+        {
+            int count = _blackBoxDumpSnapshotCount;
+            if (count <= 0)
+                return false;
+
+            string root = _blackBoxDumpRootCold;
+            if (root == null || root.Length == 0)
+                return false;
+
+            try
+            {
+                string fullPath = Path.Combine(root, BlackBoxDumpPath);
+                string directory = Path.GetDirectoryName(fullPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                using FileStream stream = File.Open(fullPath, FileMode.Create, FileAccess.Write, FileShare.Read);
+                Span<byte> record = stackalloc byte[BiomeTransitionConstants.TelemetryStrideBytes];
+                for (int i = 0; i < count; i++)
+                {
+                    record.Clear();
+                    WriteTelemetryRecordLittleEndian(record, in _blackBoxDumpSnapshot[i]);
+                    stream.Write(record);
+                }
+
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
         }
 
         private void OnDrawGizmos()
@@ -1348,6 +1493,23 @@ namespace Hecton8.World.Biomes
         private static string ProjectRoot()
         {
             return Application.dataPath.Substring(0, Application.dataPath.Length - "/Assets".Length);
+        }
+
+        private bool TryEnsureBlackBoxDumpRootCold()
+        {
+            try
+            {
+                _blackBoxDumpRootCold = ProjectRoot();
+                return _blackBoxDumpRootCold != null && _blackBoxDumpRootCold.Length > 0;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
         }
 
         public static bool TryReloadCsvFromEditor()

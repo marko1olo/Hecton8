@@ -194,7 +194,11 @@ namespace Hecton8.Gameplay
         private static int _nextFrameInteractionSignalCount;
         private static int _pendingToolDepletedSignalCount;
         private static int _nextFrameToolDepletedSignalCount;
+        private static int _droppedSignalCount;
         private static bool _isDispatching;
+
+        // BRIDGE CONTRACT: owner: PlayerSignalEvents; drain phase: SystemDispatcher LateUpdate/VISUAL_SYNC flush;
+        // max frame budget/capacity: fixed per-lane capacities above; overflow policy: fail-fast/drop newest via false return, next-frame prevents same-frame reentrancy; telemetry counter: DroppedCount.
 
         /// <summary>
         /// Number of player signal payloads waiting for the LateUpdate flush lane.
@@ -211,6 +215,9 @@ namespace Hecton8.Gameplay
                     + _nextFrameToolDepletedSignalCount;
             }
         }
+
+        /// <summary>Number of bounded player-signal enqueue refusals since subsystem registration.</summary>
+        public static int DroppedCount => _droppedSignalCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -263,6 +270,7 @@ namespace Hecton8.Gameplay
             _nextFrameInteractionSignalCount = 0;
             _pendingToolDepletedSignalCount = 0;
             _nextFrameToolDepletedSignalCount = 0;
+            _droppedSignalCount = 0;
             _isDispatching = false;
             _listeners.Clear();
         }
@@ -338,7 +346,10 @@ namespace Hecton8.Gameplay
 
             EnsureInitialized();
             if (_pendingTraumaHudSignalCount + _nextFrameTraumaHudSignalCount >= PendingTraumaHudCapacity)
+            {
+                _droppedSignalCount++;
                 return false;
+            }
 
             if (_isDispatching)
             {
@@ -371,7 +382,10 @@ namespace Hecton8.Gameplay
 
             EnsureInitialized();
             if (_pendingInteractionSignalCount + _nextFrameInteractionSignalCount >= PendingInteractionSignalCapacity)
+            {
+                _droppedSignalCount++;
                 return false;
+            }
 
             if (_isDispatching)
             {
@@ -404,7 +418,10 @@ namespace Hecton8.Gameplay
 
             EnsureInitialized();
             if (_pendingToolDepletedSignalCount + _nextFrameToolDepletedSignalCount >= PendingToolDepletedCapacity)
+            {
+                _droppedSignalCount++;
                 return false;
+            }
 
             if (_isDispatching)
             {

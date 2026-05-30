@@ -459,7 +459,7 @@ namespace Hecton8.Core
             if (_coldContextSyncRequested)
             {
                 _coldContextSyncRequested = false;
-                SyncPlayerContext();
+                SyncPlayerContextWithoutColdLookups();
             }
         }
 
@@ -612,7 +612,23 @@ namespace Hecton8.Core
             _syncInProgress = true;
             try
             {
-                SyncPlayerContextInternal();
+                SyncPlayerContextColdInternal();
+            }
+            finally
+            {
+                _syncInProgress = false;
+            }
+        }
+
+        private void SyncPlayerContextWithoutColdLookups()
+        {
+            if (_syncInProgress)
+                return;
+
+            _syncInProgress = true;
+            try
+            {
+                SyncPlayerContextInternalNoColdLookups();
             }
             finally
             {
@@ -650,7 +666,7 @@ namespace Hecton8.Core
             }
         }
 
-        private void SyncPlayerContextInternal()
+        private void SyncPlayerContextColdInternal()
         {
             GameObject currentPlayerObject = BootstrapState.CurrentPlayerObject != null ? BootstrapState.CurrentPlayerObject : _playerRootOverride;
             if (ReferenceEquals(_playerObject, currentPlayerObject) &&
@@ -658,13 +674,56 @@ namespace Hecton8.Core
                 (_hudNotification != null || !Application.isPlaying))
             {
                 if (_dynamicContextReferencesEnabled)
-                    RefreshDynamicContextReferences(allowColdComponentLookup: false);
+                    RefreshDynamicContextReferencesHot();
                 PublishMovementSnapshot();
                 return;
             }
 
             _playerObject = currentPlayerObject;
             _playerTransform = _playerObject != null ? _playerObject.transform : null;
+            ClearPlayerComponentReferencesForRebind();
+
+            if (_playerObject != null)
+            {
+                PlayerKinematicsRuntime.EnsureOnPlayerRoot(_playerObject);
+                _playerObject.TryGetComponent(out _playerMovement);
+                _playerObject.TryGetComponent(out _playerBuoyancyAirState);
+                _playerObject.TryGetComponent(out _playerRigidbody);
+                _playerObject.TryGetComponent(out _survivalSystem);
+                _playerObject.TryGetComponent(out _playerHealth);
+                _playerObject.TryGetComponent(out _toolManager);
+                _playerObject.TryGetComponent(out _inventory);
+                _playerObject.TryGetComponent(out _playerTransportCoordinator);
+                _playerObject.TryGetComponent(out _traumaDispatcher);
+                _playerObject.TryGetComponent(out _playerPda);
+                _playerObject.TryGetComponent(out _playerCollider);
+
+                CachePlayerHierarchyReferencesCold();
+                if (_dynamicContextReferencesEnabled)
+                    RefreshDynamicContextReferencesCold();
+            }
+
+            SyncRuntimeContextAndPublish();
+        }
+
+        private void SyncPlayerContextInternalNoColdLookups()
+        {
+            GameObject currentPlayerObject = BootstrapState.CurrentPlayerObject != null ? BootstrapState.CurrentPlayerObject : _playerRootOverride;
+            if (!ReferenceEquals(_playerObject, currentPlayerObject) || _playerTransform == null)
+            {
+                _playerObject = currentPlayerObject;
+                _playerTransform = _playerObject != null ? _playerObject.transform : null;
+                ClearPlayerComponentReferencesForRebind();
+            }
+
+            if (_dynamicContextReferencesEnabled)
+                RefreshDynamicContextReferencesHot();
+
+            SyncRuntimeContextAndPublish();
+        }
+
+        private void ClearPlayerComponentReferencesForRebind()
+        {
             _playerMovement = null;
             _playerBuoyancyAirState = null;
             _playerRigidbody = null;
@@ -685,27 +744,10 @@ namespace Hecton8.Core
             _handAnchor = null;
             _playerCollider = null;
             _runtimeContext.Clear();
+        }
 
-            if (_playerObject != null)
-            {
-                PlayerKinematicsRuntime.EnsureOnPlayerRoot(_playerObject);
-                _playerObject.TryGetComponent(out _playerMovement);
-                _playerObject.TryGetComponent(out _playerBuoyancyAirState);
-                _playerObject.TryGetComponent(out _playerRigidbody);
-                _playerObject.TryGetComponent(out _survivalSystem);
-                _playerObject.TryGetComponent(out _playerHealth);
-                _playerObject.TryGetComponent(out _toolManager);
-                _playerObject.TryGetComponent(out _inventory);
-                _playerObject.TryGetComponent(out _playerTransportCoordinator);
-                _playerObject.TryGetComponent(out _traumaDispatcher);
-                _playerObject.TryGetComponent(out _playerPda);
-                _playerObject.TryGetComponent(out _playerCollider);
-
-                CachePlayerHierarchyReferencesCold();
-                if (_dynamicContextReferencesEnabled)
-                    RefreshDynamicContextReferences(allowColdComponentLookup: true);
-            }
-
+        private void SyncRuntimeContextAndPublish()
+        {
             if (_underwaterVisuals == null)
                 _underwaterVisuals = HectonUnderwaterVisuals.ActiveRuntimeInstance;
 
@@ -964,12 +1006,9 @@ namespace Hecton8.Core
                 _playerPda = PlayerPDA.ActiveRuntimeInstance;
         }
 
-        private void RefreshDynamicContextReferences(bool allowColdComponentLookup)
+        private void RefreshDynamicContextReferencesCold()
         {
             RefreshDynamicContextReferencesHot();
-
-            if (!allowColdComponentLookup)
-                return;
 
             if (_playerMovement != null)
             {

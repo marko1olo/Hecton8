@@ -925,6 +925,13 @@ namespace Hecton8.World
             DisposeTileNativeCacheBuffer(ref state.SecondaryCacheBuffer);
             ReleaseVegetationMemoryBuffer(ref state.TerrainHoleMaskHandle);
             ReleaseTileNativeCacheSlot(state);
+            if (state.HeightReadbackPending && !state.HeightReadbackRequest.done)
+            {
+                // BLOCKING_SYNC_POINT: teardown only; tile height texture/readback data must outlive in-flight AsyncGPUReadback.
+                AsyncGPUReadback.WaitAllRequests();
+            }
+
+            DisposeTileHeightReadbackData(state);
             state.ActiveCacheBufferIndex = 0;
             state.PendingCacheBufferIndex = 0;
             state.HeightReadbackPending = false;

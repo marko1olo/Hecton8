@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -15,6 +16,55 @@ namespace Hecton8.World
             "Plane",
             "Quad"
         };
+        private static readonly Dictionary<int, PrimitiveRuntimeState> _RuntimeStates = new Dictionary<int, PrimitiveRuntimeState>(2048); // COLD ALLOC: generated primitive component cache for visual-sync reuse.
+
+        private struct PrimitiveRuntimeState
+        {
+            public MeshFilter Filter;
+            public MeshRenderer Renderer;
+        }
+
+        public static void PrewarmPrimitiveResources()
+        {
+            TryGetPrimitiveResources(PrimitiveType.Sphere, out _, out _);
+            TryGetPrimitiveResources(PrimitiveType.Capsule, out _, out _);
+            TryGetPrimitiveResources(PrimitiveType.Cylinder, out _, out _);
+            TryGetPrimitiveResources(PrimitiveType.Cube, out _, out _);
+            TryGetPrimitiveResources(PrimitiveType.Plane, out _, out _);
+            TryGetPrimitiveResources(PrimitiveType.Quad, out _, out _);
+        }
+
+        public static Renderer ConfigurePrimitiveVisualHot(
+            GameObject primitive,
+            PrimitiveType primitiveType,
+            string name,
+            Vector3 localPosition,
+            Quaternion localRotation,
+            Vector3 localScale,
+            Material overrideMaterial = null)
+        {
+            if (primitive == null ||
+                !TryGetPrimitiveResourcesHot(primitiveType, out Mesh mesh, out Material defaultMaterial) ||
+                !_RuntimeStates.TryGetValue(primitive.GetInstanceID(), out PrimitiveRuntimeState state) ||
+                state.Filter == null ||
+                state.Renderer == null)
+            {
+                return null;
+            }
+
+            return ConfigurePrimitiveVisual(primitive, primitiveType, name, localPosition, localRotation, localScale, overrideMaterial, mesh, defaultMaterial, state.Filter, state.Renderer);
+        }
+
+        public static GameObject CreateCachedPrimitiveShell(Transform parent, string name)
+        {
+            GameObject primitive = new GameObject(string.IsNullOrEmpty(name) ? "PrimitiveShell" : name);
+            primitive.transform.SetParent(parent, false);
+            MeshFilter filter = primitive.AddComponent<MeshFilter>();
+            MeshRenderer renderer = primitive.AddComponent<MeshRenderer>();
+            RegisterPrimitiveRuntimeState(primitive, filter, renderer);
+            primitive.SetActive(false);
+            return primitive;
+        }
 
         public static Renderer CreatePrimitiveVisual(
             Transform parent,
@@ -57,6 +107,21 @@ namespace Hecton8.World
             return _CachedNames[index];
         }
 
+        private static bool TryGetPrimitiveResourcesHot(PrimitiveType primitiveType, out Mesh mesh, out Material material)
+        {
+            int index = (int)primitiveType;
+            if ((uint)index >= (uint)_CachedMeshes.Length)
+            {
+                mesh = null;
+                material = null;
+                return false;
+            }
+
+            mesh = _CachedMeshes[index];
+            material = _CachedMaterials[index];
+            return mesh != null;
+        }
+
         private static bool TryGetPrimitiveResources(PrimitiveType primitiveType, out Mesh mesh, out Material material)
         {
             int index = (int)primitiveType;
@@ -88,6 +153,18 @@ namespace Hecton8.World
             return mesh != null;
         }
 
+        private static void RegisterPrimitiveRuntimeState(GameObject primitive, MeshFilter filter, MeshRenderer renderer)
+        {
+            if (primitive == null || filter == null || renderer == null)
+                return;
+
+            _RuntimeStates[primitive.GetInstanceID()] = new PrimitiveRuntimeState
+            {
+                Filter = filter,
+                Renderer = renderer
+            };
+        }
+
         private static Renderer ConfigurePrimitiveVisual(
             GameObject primitive,
             PrimitiveType primitiveType,
@@ -99,18 +176,35 @@ namespace Hecton8.World
             Mesh mesh,
             Material defaultMaterial)
         {
+            if (!primitive.TryGetComponent(out MeshFilter filter))
+                filter = primitive.AddComponent<MeshFilter>();
+
+            if (!primitive.TryGetComponent(out MeshRenderer renderer))
+                renderer = primitive.AddComponent<MeshRenderer>();
+
+            RegisterPrimitiveRuntimeState(primitive, filter, renderer);
+            return ConfigurePrimitiveVisual(primitive, primitiveType, name, localPosition, localRotation, localScale, overrideMaterial, mesh, defaultMaterial, filter, renderer);
+        }
+
+        private static Renderer ConfigurePrimitiveVisual(
+            GameObject primitive,
+            PrimitiveType primitiveType,
+            string name,
+            Vector3 localPosition,
+            Quaternion localRotation,
+            Vector3 localScale,
+            Material overrideMaterial,
+            Mesh mesh,
+            Material defaultMaterial,
+            MeshFilter filter,
+            MeshRenderer renderer)
+        {
             primitive.name = string.IsNullOrEmpty(name) ? GetPrimitiveName(primitiveType) : name;
 
             Transform primitiveTransform = primitive.transform;
             primitiveTransform.localPosition = localPosition;
             primitiveTransform.localRotation = localRotation;
             primitiveTransform.localScale = localScale;
-
-            if (!primitive.TryGetComponent(out MeshFilter filter))
-                filter = primitive.AddComponent<MeshFilter>();
-
-            if (!primitive.TryGetComponent(out MeshRenderer renderer))
-                renderer = primitive.AddComponent<MeshRenderer>();
 
             filter.sharedMesh = mesh;
             renderer.sharedMaterial = overrideMaterial != null ? overrideMaterial : defaultMaterial;

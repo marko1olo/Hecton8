@@ -28,6 +28,7 @@ namespace Hecton8.Gameplay
         private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _registered;
         private bool _hotSwapListenerRegistered;
+        private bool _localReferenceProbeCompleted;
         private float _toolUsePulseTimer;
         private float _toolUsePulseAmplitude;
         private float _referenceRefreshTimer;
@@ -51,14 +52,14 @@ namespace Hecton8.Gameplay
         {
             _cachedTransform = transform;
             CacheRegistryServicesCold();
-            ResolveReferences();
+            ResolveReferencesCold();
         }
 
         private void OnEnable()
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
-            ResolveReferences();
+            ResolveReferencesCold();
             RefreshObservedToolReference();
             ConsumeObservedToolUsePulse();
             TryRegister();
@@ -67,7 +68,7 @@ namespace Hecton8.Gameplay
         private void Start()
         {
             CacheRegistryServicesCold();
-            ResolveReferences();
+            ResolveReferencesCold();
             RefreshObservedToolReference();
             TryRegister();
         }
@@ -99,7 +100,7 @@ namespace Hecton8.Gameplay
                 _referenceRefreshTimer -= math.max(0f, dt);
                 if (_referenceRefreshTimer <= 0f)
                 {
-                    ResolveReferences();
+                    ResolveReferencesFromRuntimeContext();
                     _referenceRefreshTimer = ReferenceRefreshInterval;
                 }
             }
@@ -188,7 +189,7 @@ namespace Hecton8.Gameplay
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
         }
 
-        private void ResolveReferences()
+        private void ResolveReferencesFromRuntimeContext()
         {
             if (_cachedTransform == null)
                 _cachedTransform = transform;
@@ -198,20 +199,26 @@ namespace Hecton8.Gameplay
             if (_playerMovement == null && playerContext != null)
                 _playerMovement = playerContext.PlayerMovement;
 
-            if (_playerMovement == null)
+            if (_playerToolManager == null && playerContext != null)
+                _playerToolManager = playerContext.ToolManager;
+        }
+
+        private void ResolveReferencesCold()
+        {
+            ResolveReferencesFromRuntimeContext();
+
+            bool canProbeLocalComponents = !_localReferenceProbeCompleted;
+            if (_playerMovement == null && canProbeLocalComponents)
                 _cachedTransform.TryGetComponent(out _playerMovement);
 
-            if (_playerFlashlight == null)
+            if (_playerFlashlight == null && canProbeLocalComponents)
                 _cachedTransform.TryGetComponent(out _playerFlashlight);
 
-            if (_playerTransportCoordinator == null)
+            if (_playerTransportCoordinator == null && canProbeLocalComponents)
                 _cachedTransform.TryGetComponent(out _playerTransportCoordinator);
 
-            if (_playerToolManager == null)
-            {
-                if (playerContext != null)
-                    _playerToolManager = playerContext.ToolManager;
-            }
+            if (canProbeLocalComponents)
+                _localReferenceProbeCompleted = true;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -224,7 +231,7 @@ namespace Hecton8.Gameplay
 
             _cachedPlayerContext = currentService as IPlayerRuntimeContext;
             if (_playerMovement == null || _playerToolManager == null)
-                ResolveReferences();
+                ResolveReferencesFromRuntimeContext();
         }
 
         private void TryRegisterHotSwapListener()

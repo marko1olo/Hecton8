@@ -44,6 +44,7 @@ namespace Hecton8.Power
 
         private const BufferID GridSlotBase = (BufferID)731620;
         private static readonly VaultGenerationHandle<byte>[] _gridSlots = new VaultGenerationHandle<byte>[DataVaultExemptGridSlotCount];
+        private static readonly IDataVault[] _slotVaults = new IDataVault[DataVaultExemptGridSlotCount];
         // COLD ALLOC: WfcOutpostGridDescriptor[4] - registered WFC grid descriptors - owner: WfcOutpostGridRegistry
         private static readonly WfcOutpostGridDescriptor[] _descriptors = new WfcOutpostGridDescriptor[SlotCount];
         // COLD ALLOC: uint[4] - stable WFC grid handles - owner: WfcOutpostGridRegistry
@@ -56,10 +57,12 @@ namespace Hecton8.Power
         {
             for (int i = 0; i < SlotCount; i++)
             {
-                if (_gridSlots[i].BufferID != 0u && TryResolveVault(out IDataVault vault))
+                IDataVault vault = _slotVaults[i];
+                if (_gridSlots[i].BufferID != 0u && vault != null)
                     vault.ReleaseBuffer(in _gridSlots[i]);
 
                 _gridSlots[i] = default;
+                _slotVaults[i] = null;
                 _descriptors[i] = default;
                 _handles[i] = 0u;
             }
@@ -94,11 +97,10 @@ namespace Hecton8.Power
             if (slot < 0)
                 slot = ReserveSlot();
 
-            if (!EnsureSlot(slot, out NativeArray<byte> destination))
+            if (!EnsureSlot(slot, out IDataVault vault, out NativeArray<byte> destination))
                 return false;
 
-            if (!TryResolveVault(out IDataVault vault) ||
-                vault.IsCompactionFenceActive ||
+            if (vault.IsCompactionFenceActive ||
                 !vault.TryAcquireMutationGuard(ResolveSlotMutationGuardMask(slot)))
             {
                 return false;
@@ -163,7 +165,7 @@ namespace Hecton8.Power
                    descriptor.FloorHeightMeters >= 1f;
         }
 
-        public static bool TryGetGrid(uint handle, out WfcOutpostGridLease lease)
+        public static bool TryAcquireGridLease(uint handle, out WfcOutpostGridLease lease)
         {
             lease = default;
             for (int i = 0; i < SlotCount; i++)
@@ -171,7 +173,7 @@ namespace Hecton8.Power
                 if (_handles[i] != handle)
                     continue;
 
-                if (!TryResolveVault(out IDataVault vault) ||
+                if (!TryResolveSlotVault(i, out IDataVault vault) ||
                     vault.IsCompactionFenceActive)
                 {
                     return false;
@@ -182,15 +184,25 @@ namespace Hecton8.Power
                     !vault.TryAcquireMutationGuard(ResolveSlotMutationGuardMask(i)))
                     return false;
 
-                if (!TryResolveSlot(vault, i, out NativeArray<byte> cells) ||
-                    _handles[i] != handle)
+                ulong guardMask = ResolveSlotMutationGuardMask(i);
+                bool leaseIssued = false;
+                try
                 {
-                    vault.ReleaseMutationGuard(ResolveSlotMutationGuardMask(i));
-                    return false;
-                }
+                    if (!TryResolveSlot(vault, i, out NativeArray<byte> cells) ||
+                        _handles[i] != handle)
+                    {
+                        return false;
+                    }
 
-                lease = new WfcOutpostGridLease(in _descriptors[i], cells, bufferId, LogisticsGridSystemId);
-                return true;
+                    lease = new WfcOutpostGridLease(in _descriptors[i], cells, bufferId, LogisticsGridSystemId);
+                    leaseIssued = true;
+                    return true;
+                }
+                finally
+                {
+                    if (!leaseIssued)
+                        vault.ReleaseMutationGuard(guardMask);
+                }
             }
 
             return false;
@@ -210,7 +222,7 @@ namespace Hecton8.Power
                 return;
             }
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _slotVaults[slot];
             if (vault == null)
                 return;
 
@@ -224,7 +236,7 @@ namespace Hecton8.Power
                 if (_handles[i] != handle)
                     continue;
 
-                if (!TryResolveVault(out IDataVault vault) ||
+                if (!TryResolveSlotVault(i, out IDataVault vault) ||
                     vault.IsCompactionFenceActive ||
                     !vault.TryAcquireMutationGuard(ResolveSlotMutationGuardMask(i)))
                 {
@@ -278,16 +290,17 @@ namespace Hecton8.Power
             return slot;
         }
 
-        private static bool EnsureSlot(int slot, out NativeArray<byte> cells)
+        private static bool EnsureSlot(int slot, out IDataVault vault, out NativeArray<byte> cells)
         {
+            vault = null;
             cells = default;
             if ((uint)slot >= SlotCount)
                 return false;
 
-            if (TryResolveSlot(slot, out cells))
+            if (TryResolveSlotVault(slot, out vault) && TryResolveSlot(vault, slot, out cells))
                 return true;
 
-            if (!TryResolveVault(out IDataVault vault))
+            if (!TryResolveVault(out vault))
                 return false;
 
             _gridSlots[slot] = vault.EnsureGenerationHandle<byte>(
@@ -295,6 +308,7 @@ namespace Hecton8.Power
                 WfcOutpostGridConstants.MaxCellCount,
                 LogisticsGridSystemId,
                 NativeArrayOptions.ClearMemory);
+            _slotVaults[slot] = vault;
             return TryResolveSlot(vault, slot, out cells);
         }
 
@@ -316,7 +330,7 @@ namespace Hecton8.Power
         private static bool TryResolveSlot(int slot, out NativeArray<byte> cells)
         {
             cells = default;
-            return TryResolveVault(out IDataVault vault) && TryResolveSlot(vault, slot, out cells);
+            return TryResolveSlotVault(slot, out IDataVault vault) && TryResolveSlot(vault, slot, out cells);
         }
 
         private static bool TryResolveSlot(IDataVault vault, int slot, out NativeArray<byte> cells)
@@ -360,6 +374,23 @@ namespace Hecton8.Power
         {
             vault = GlobalRegistry.DataVault;
             return vault != null && !vault.IsCompactionFenceActive;
+        }
+
+        private static bool TryResolveSlotVault(int slot, out IDataVault vault)
+        {
+            vault = default;
+            if ((uint)slot >= SlotCount)
+                return false;
+
+            vault = _slotVaults[slot];
+            if (vault != null)
+                return true;
+
+            if (!TryResolveVault(out vault))
+                return false;
+
+            _slotVaults[slot] = vault;
+            return true;
         }
 
         private static uint NextHandle(int slot)

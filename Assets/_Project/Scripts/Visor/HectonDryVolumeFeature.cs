@@ -14,7 +14,7 @@ namespace Hecton8.Visor
     /// <summary>
     /// Restores pre-underwater color inside first-party dry interiors, then applies the underwater noir resolve after post-processing.
     /// </summary>
-    public sealed class HectonDryVolumeFeature : ScriptableRendererFeature
+    public sealed class HectonDryVolumeFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable
     {
 #if UNITY_EDITOR
         private const string StencilWriteShaderPath = "Assets/_Project/Art/Shaders/Hecton_DryVolumeStencil.shader";
@@ -139,6 +139,7 @@ namespace Hecton8.Visor
             private Material _stencilWriteMaterial;
             private Material _restoreMaterial;
             private Material _clearMaterial;
+            private Texture _oceanCameraColorTexture;
 
             public DryRestorePass()
             {
@@ -150,12 +151,14 @@ namespace Hecton8.Visor
                 FeatureSettings settings,
                 Material stencilWriteMaterial,
                 Material restoreMaterial,
-                Material clearMaterial)
+                Material clearMaterial,
+                Texture oceanCameraColorTexture)
             {
                 _settings = settings;
                 _stencilWriteMaterial = stencilWriteMaterial;
                 _restoreMaterial = restoreMaterial;
                 _clearMaterial = clearMaterial;
+                _oceanCameraColorTexture = oceanCameraColorTexture;
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
@@ -169,7 +172,7 @@ namespace Hecton8.Visor
                     _clearMaterial == null ||
                     HectonDryVolumeStencilSource.ActiveSourceCount <= 0 ||
                     IsUnsupportedCamera(frameData) ||
-                    !TryReadOceanCameraColorTexture(out Texture oceanCameraColorTexture))
+                    _oceanCameraColorTexture == null)
                 {
                     return;
                 }
@@ -187,7 +190,7 @@ namespace Hecton8.Visor
 
                 _stencilWriteMaterial.SetFloat(ShaderConstants.StencilRefId, _settings.stencilRef);
                 _restoreMaterial.SetFloat(ShaderConstants.StencilRefId, _settings.stencilRef);
-                _restoreMaterial.SetTexture(ShaderConstants.OceanCameraColorTextureId, oceanCameraColorTexture);
+                _restoreMaterial.SetTexture(ShaderConstants.OceanCameraColorTextureId, _oceanCameraColorTexture);
 
                 using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<StencilPassData>(
                            "Hecton Dry Volume Stencil",
@@ -368,13 +371,6 @@ namespace Hecton8.Visor
             internal static readonly int OceanCameraColorTextureId = Shader.PropertyToID("_OceanCameraColorTexture");
         }
 
-        private static bool TryReadOceanCameraColorTexture(out Texture texture)
-        {
-            IOceanVisualBridge bridge = OceanVisualBridgeRegistry.Active;
-            texture = bridge != null ? Shader.GetGlobalTexture(bridge.CameraColorTextureId) : null;
-            return texture != null;
-        }
-
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
 
         private DryRestorePass _restorePass;
@@ -382,6 +378,16 @@ namespace Hecton8.Visor
         private Material _stencilWriteMaterial;
         private Material _restoreMaterial;
         private Material _clearMaterial;
+        private Texture _cachedOceanCameraColorTexture;
+        private bool _hotSwapRegistered;
+        private bool _lateFrameRegistered;
+
+        private void OnEnable()
+        {
+            TryRegisterLateFrameTickable();
+            TryRegisterHotSwapListener();
+            CachePresentationGlobalsLate();
+        }
 
         /// <inheritdoc />
         public override void Create()
@@ -405,6 +411,9 @@ namespace Hecton8.Visor
             RecreateMaterial(ref _stencilWriteMaterial, stencilWriteShader);
             RecreateMaterial(ref _restoreMaterial, restoreShader);
             RecreateMaterial(ref _clearMaterial, clearShader);
+            TryRegisterLateFrameTickable();
+            TryRegisterHotSwapListener();
+            CachePresentationGlobalsLate();
         }
 
         /// <inheritdoc />
@@ -424,7 +433,7 @@ namespace Hecton8.Visor
             if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection)
                 return;
 
-            _restorePass.Setup(settings, _stencilWriteMaterial, _restoreMaterial, _clearMaterial);
+            _restorePass.Setup(settings, _stencilWriteMaterial, _restoreMaterial, _clearMaterial, _cachedOceanCameraColorTexture);
             _resolvePass.Setup(settings, _stencilWriteMaterial, _restoreMaterial, _clearMaterial);
             renderer.EnqueuePass(_restorePass);
             renderer.EnqueuePass(_resolvePass);
@@ -439,6 +448,73 @@ namespace Hecton8.Visor
             _stencilWriteMaterial = null;
             _restoreMaterial = null;
             _clearMaterial = null;
+            _cachedOceanCameraColorTexture = null;
+            TryUnregisterLateFrameTickable();
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            TryUnregisterLateFrameTickable();
+            if (currentService != null)
+                TryRegisterLateFrameTickable();
+        }
+
+        public void LateFrameTick()
+        {
+            CachePresentationGlobalsLate();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterLateFrameTickable();
+            TryUnregisterHotSwapListener();
+        }
+
+        private void CachePresentationGlobalsLate()
+        {
+            IOceanVisualBridge bridge = OceanVisualBridgeRegistry.Active;
+            _cachedOceanCameraColorTexture = bridge != null ? Shader.GetGlobalTexture(bridge.CameraColorTextureId) : null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_lateFrameRegistered)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _lateFrameRegistered = false;
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

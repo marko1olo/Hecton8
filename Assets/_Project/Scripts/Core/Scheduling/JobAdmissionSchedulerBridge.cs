@@ -13,6 +13,12 @@ namespace Hecton8.Core.Scheduling
         /// <summary>Current registered admission service, or null before bootstrap.</summary>
         public static IJobAdmissionService Service => Volatile.Read(ref _service);
 
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            Volatile.Write(ref _service, null);
+        }
+
         /// <summary>Binds the bootstrap-owned admission service.</summary>
         /// <param name="service">Service instance.</param>
         public static void SetService(IJobAdmissionService service)
@@ -24,7 +30,7 @@ namespace Hecton8.Core.Scheduling
             if (ReferenceEquals(current, service))
                 return;
 
-            Interlocked.CompareExchange(ref _service, service, null);
+            Interlocked.Exchange(ref _service, service);
         }
 
         /// <summary>Clears the bridge when the owning service shuts down.</summary>

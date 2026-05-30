@@ -208,11 +208,12 @@ namespace Hecton8.Physics.KCC.Editor
                 HydrodynamicKccTuningDTO tuning = BuildTuning();
                 int profileCount = TryLoadProfiles(profiles);
 
-                new HydrodynamicKccRuntime.GenerateMockTestGeometryJob
+                JobHandle geometryHandle = new HydrodynamicKccRuntime.GenerateMockTestGeometryJob
                 {
                     Sdf = sdf,
                     Info = sdfInfo
-                }.Schedule().Complete();
+                }.Schedule();
+                DispatcherJobFence.TryComplete(ref geometryHandle, forceComplete: true);
 
                 Initialize(states, smokeStates, profiles, profileCount, safePhantomCount, sectorOrigin, tuning);
                 SeedResultAndDrift(results, drift, sectorOrigin);
@@ -247,8 +248,8 @@ namespace Hecton8.Physics.KCC.Editor
                     SimulationTickDelta = HydrodynamicKccRuntime.KccSmokeFixedDeltaTime,
                     Seed = HydrodynamicKccRuntime.KccSmokeSourceHash
                 }.Schedule();
-                simulationHandle.Complete();
-                new HydrodynamicKccRuntime.VerifyCollisionEscapeJob
+                DispatcherJobFence.TryComplete(ref simulationHandle, forceComplete: true);
+                JobHandle verifyHandle = new HydrodynamicKccRuntime.VerifyCollisionEscapeJob
                 {
                     PositionHistory = history,
                     Sdf = sdf,
@@ -257,13 +258,15 @@ namespace Hecton8.Physics.KCC.Editor
                     SdfInfo = sdfInfo,
                     EntityCount = safePhantomCount,
                     FrameCount = frameCount
-                }.Schedule().Complete();
-                new HydrodynamicKccRuntime.AnalyzePrecisionDriftJob
+                }.Schedule();
+                DispatcherJobFence.TryComplete(ref verifyHandle, forceComplete: true);
+                JobHandle precisionHandle = new HydrodynamicKccRuntime.AnalyzePrecisionDriftJob
                 {
                     DriftProbe = drift,
                     Results = results,
                     FrameCount = frameCount
-                }.Schedule().Complete();
+                }.Schedule();
+                DispatcherJobFence.TryComplete(ref precisionHandle, forceComplete: true);
 
                 long elapsedTicks = Stopwatch.GetTimestamp() - startTicks;
                 long allocatedAfter = GC.GetAllocatedBytesForCurrentThread();
@@ -567,7 +570,7 @@ namespace Hecton8.Physics.KCC.Editor
                 if (!_finalHandle.IsCompleted)
                     return false;
 
-                _finalHandle.Complete();
+                DispatcherJobFence.TryComplete(ref _finalHandle, forceComplete: true);
                 FinalizeCompletedRun(elapsedTicks, GC.GetAllocatedBytesForCurrentThread() - _allocatedBefore);
                 return true;
             }
@@ -579,7 +582,7 @@ namespace Hecton8.Physics.KCC.Editor
 
                 if (!IsDone && !_finalizeAttempted)
                 {
-                    _finalHandle.Complete();
+                    DispatcherJobFence.TryComplete(ref _finalHandle, forceComplete: true);
                     long elapsedTicks = Stopwatch.GetTimestamp() - _startTicks;
                     FinalizeCompletedRun(elapsedTicks, GC.GetAllocatedBytesForCurrentThread() - _allocatedBefore);
                 }
@@ -677,10 +680,17 @@ namespace Hecton8.Physics.KCC.Editor
                     telemetry.Length,
                     SystemID.Physics,
                     NativeArrayOptions.UninitializedMemory);
-                Require(vault.TryResolveHandle(in handle, out NativeArray<HydrodynamicKccRuntime.KccSmokeTelemetryEntry> snapshot), "Failed to resolve retained telemetry snapshot.");
-                Require(snapshot.Length >= telemetry.Length, "Retained telemetry snapshot shorter than source telemetry.");
-                for (int i = 0; i < telemetry.Length; i++)
-                    snapshot[i] = telemetry[i];
+                Require(vault.TryAcquireWriteLock(in handle, SystemID.Physics, out NativeArray<HydrodynamicKccRuntime.KccSmokeTelemetryEntry> snapshot), "Failed to acquire retained telemetry snapshot write lock.");
+                try
+                {
+                    Require(snapshot.Length >= telemetry.Length, "Retained telemetry snapshot shorter than source telemetry.");
+                    for (int i = 0; i < telemetry.Length; i++)
+                        snapshot[i] = telemetry[i];
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in handle, SystemID.Physics);
+                }
 
                 s_lastVault = vault;
                 s_lastTelemetryHandle = handle;
@@ -758,7 +768,7 @@ namespace Hecton8.Physics.KCC.Editor
             double3 sectorOrigin,
             HydrodynamicKccTuningDTO tuning)
         {
-            new HydrodynamicKccRuntime.InitializeSmokePhantomsJob
+            JobHandle initializeHandle = new HydrodynamicKccRuntime.InitializeSmokePhantomsJob
             {
                 States = states,
                 SmokeStates = smokeStates,
@@ -766,7 +776,8 @@ namespace Hecton8.Physics.KCC.Editor
                 ProfileCount = profileCount,
                 SectorOriginAup = sectorOrigin,
                 Tuning = tuning
-            }.Schedule(phantomCount, 32).Complete();
+            }.Schedule(phantomCount, 32);
+            DispatcherJobFence.TryComplete(ref initializeHandle, forceComplete: true);
         }
 
         private static void SeedResultAndDrift(
@@ -804,7 +815,7 @@ namespace Hecton8.Physics.KCC.Editor
             double3 sectorOrigin,
             int entityCount)
         {
-            new HydrodynamicKccRuntime.EvaluateHeadlessKccFrameLoopJob
+            JobHandle warmupHandle = new HydrodynamicKccRuntime.EvaluateHeadlessKccFrameLoopJob
             {
                 States = states,
                 Inputs = inputs,
@@ -826,7 +837,8 @@ namespace Hecton8.Physics.KCC.Editor
                 FrameCount = 16,
                 SimulationTickDelta = HydrodynamicKccRuntime.KccSmokeFixedDeltaTime,
                 Seed = 0xA551u
-            }.Schedule().Complete();
+            }.Schedule();
+            DispatcherJobFence.TryComplete(ref warmupHandle, forceComplete: true);
         }
 
         private static HydrodynamicKccRuntime.KccSmokeVoxelSdfInfoDTO BuildSdfInfo(double3 sectorOrigin)

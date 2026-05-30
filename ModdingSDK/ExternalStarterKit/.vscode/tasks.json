@@ -111,6 +111,14 @@
       "group": "test"
     },
     {
+      "label": "HECTON-8: doctor package readiness",
+      "type": "shell",
+      "command": "${config:hecton8.powerShellExecutable}",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "h8mod.ps1", "-Action", "doctor"],
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
       "label": "HECTON-8: list dependencies",
       "type": "shell",
       "command": "${config:hecton8.powerShellExecutable}",

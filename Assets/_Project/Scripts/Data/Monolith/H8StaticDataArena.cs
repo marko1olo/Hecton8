@@ -516,7 +516,7 @@ namespace Hecton8.Data
             }
 
             AdoptVaultForLoad(vault);
-            if (!TryGetExistingBlobLength(absolutePath, out long blobLength, out status))
+            if (!TryProbeExistingBlobLength(absolutePath, out long blobLength, out status))
             {
                 if (status == H8DataBlobLoadStatus.Missing)
                 {
@@ -557,8 +557,7 @@ namespace Hecton8.Data
                 return false;
             }
 
-            _residentBlobBytes = blobBytes;
-            if (!TryReadWholeFileIntoArena(absolutePath, blobBytes, inheritedPathFlags, out status))
+            if (!TryLoadWholeFileIntoArena(absolutePath, blobBytes, inheritedPathFlags, out status))
             {
                 RecordTelemetry(status, _lastReadTicks, _lastReadTicks, _lastReadPathFlags);
                 DumpTelemetry(status);
@@ -566,6 +565,7 @@ namespace Hecton8.Data
                 return false;
             }
 
+            _residentBlobBytes = blobBytes;
             if (!TryValidateResidentArena(expectedWorldSeed, expectedAppVersionHash, out status))
             {
                 RecordTelemetry(status, _lastReadTicks, _lastReadTicks, _lastReadPathFlags);
@@ -583,7 +583,7 @@ namespace Hecton8.Data
             return true;
         }
 
-        private static bool TryGetExistingBlobLength(
+        private static bool TryProbeExistingBlobLength(
             string absolutePath,
             out long blobLength,
             out H8DataBlobLoadStatus status)
@@ -726,7 +726,6 @@ namespace Hecton8.Data
                 if (arena.Length >= sourceBytes)
                 {
                     byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(arena);
-                    _residentBlobBytes = sourceBytes;
                     copied = UnsafeMemoryCopyGuard.TryMemCpy(destination, sourceBytes, source, sourceBytes);
                 }
             }
@@ -744,6 +743,7 @@ namespace Hecton8.Data
                 return false;
             }
 
+            _residentBlobBytes = sourceBytes;
             if (!TryValidateResidentArena(expectedWorldSeed, expectedAppVersionHash, out status))
             {
                 RecordTelemetry(status, 0L, 0L, 0u);
@@ -1262,10 +1262,19 @@ namespace Hecton8.Data
             int offset = (int)utf8Offset;
             int maxBytes = (int)_directory.LocalizationBytes - offset;
             int byteLength = 0;
-            while (byteLength < maxBytes && locPtr[offset + byteLength] != 0)
-                byteLength++;
+            bool foundTerminator = false;
+            while (byteLength < maxBytes)
+            {
+                if (locPtr[offset + byteLength] == 0)
+                {
+                    foundTerminator = true;
+                    break;
+                }
 
-            if (byteLength <= 0)
+                byteLength++;
+            }
+
+            if (!foundTerminator || byteLength <= 0)
                 return false;
 
             ref byte firstUtf8Byte = ref UnsafeUtility.ArrayElementAsRef<byte>(locPtr + offset, 0);
@@ -1459,10 +1468,19 @@ namespace Hecton8.Data
             int offset = (int)utf8Offset;
             int maxBytes = (int)_directory.LocalizationBytes - offset;
             int byteLength = 0;
-            while (byteLength < maxBytes && locPtr[offset + byteLength] != 0)
-                byteLength++;
+            bool foundTerminator = false;
+            while (byteLength < maxBytes)
+            {
+                if (locPtr[offset + byteLength] == 0)
+                {
+                    foundTerminator = true;
+                    break;
+                }
 
-            if (byteLength <= 0)
+                byteLength++;
+            }
+
+            if (!foundTerminator || byteLength <= 0)
                 return false;
 
             ref byte firstUtf8Byte = ref UnsafeUtility.ArrayElementAsRef<byte>(locPtr + offset, 0);
@@ -1844,7 +1862,7 @@ namespace Hecton8.Data
         }
 
 #if !UNITY_WEBGL || UNITY_EDITOR
-        private static unsafe bool TryReadWholeFileIntoArena(string absolutePath, int expectedBytes, uint inheritedPathFlags, out H8DataBlobLoadStatus status)
+        private static unsafe bool TryLoadWholeFileIntoArena(string absolutePath, int expectedBytes, uint inheritedPathFlags, out H8DataBlobLoadStatus status)
         {
             status = H8DataBlobLoadStatus.None;
             long readStart = Stopwatch.GetTimestamp();
@@ -2231,7 +2249,6 @@ namespace Hecton8.Data
                         if (arena.Length >= blobBytes)
                         {
                             byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(arena);
-                            _residentBlobBytes = blobBytes;
                             loaded = H8_LoadAssetToPointer(javaVm, assetManager, assetName, destination, blobBytes);
                         }
                     }
@@ -2251,6 +2268,7 @@ namespace Hecton8.Data
                         return false;
                     }
 
+                    _residentBlobBytes = blobBytes;
                     _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
                     _lastReadPathFlags = pathFlags;
                     if (!TryValidateResidentArena(expectedWorldSeed, expectedAppVersionHash, out status))
@@ -2419,8 +2437,7 @@ namespace Hecton8.Data
                 return false;
             }
 
-            _residentBlobBytes = blobBytes;
-            if (!TryReadWholeNativeFileIntoArena(path, blobBytes, out status))
+            if (!TryLoadWholeNativeFileIntoArena(path, blobBytes, out status))
             {
                 RecordTelemetry(status, _lastReadTicks, _lastReadTicks, _lastReadPathFlags);
                 DumpTelemetry(status);
@@ -2428,6 +2445,7 @@ namespace Hecton8.Data
                 return false;
             }
 
+            _residentBlobBytes = blobBytes;
             if (!TryValidateResidentArena(expectedWorldSeed, expectedAppVersionHash, out status))
             {
                 RecordTelemetry(status, _lastReadTicks, _lastReadTicks, _lastReadPathFlags);
@@ -2528,7 +2546,7 @@ namespace Hecton8.Data
             return ok && byteLength >= 0L;
         }
 
-        private static unsafe bool TryReadWholeNativeFileIntoArena(char* path, int expectedBytes, out H8DataBlobLoadStatus status)
+        private static unsafe bool TryLoadWholeNativeFileIntoArena(char* path, int expectedBytes, out H8DataBlobLoadStatus status)
         {
             status = H8DataBlobLoadStatus.None;
             long readStart = Stopwatch.GetTimestamp();
@@ -2898,12 +2916,23 @@ namespace Hecton8.Data
                 return false;
             }
 
-            if (arena.IsCreated)
-                return true;
+            bool lockTransferred = false;
+            try
+            {
+                if (!arena.IsCreated)
+                    return false;
 
-            ReleaseWriteLockWithRetry(vault, in _arenaHandle, SystemID.CoreDataVault);
-            arena = default;
-            return false;
+                lockTransferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!lockTransferred)
+                {
+                    ReleaseWriteLockWithRetry(vault, in _arenaHandle, SystemID.CoreDataVault);
+                    arena = default;
+                }
+            }
         }
 
         private static bool ReleaseArenaWriteView()

@@ -177,7 +177,8 @@ namespace Hecton8.World
 
             public void PushOverwrite(in T value)
             {
-                if (_vault == null ||
+                IDataVault vault = _vault;
+                if (vault == null ||
                     _itemsHandle.Generation == 0u)
                 {
                     return;
@@ -187,7 +188,7 @@ namespace Hecton8.World
                 bool locked = false;
                 try
                 {
-                    if (!_vault.TryAcquireWriteLock(in _itemsHandle, SystemID.WorldSargassum, out items))
+                    if (!vault.TryAcquireWriteLock(in _itemsHandle, SystemID.WorldSargassum, out items))
                         return;
 
                     locked = true;
@@ -203,7 +204,7 @@ namespace Hecton8.World
                 finally
                 {
                     if (locked)
-                        _vault.ReleaseWriteLock(in _itemsHandle, SystemID.WorldSargassum);
+                        vault.ReleaseWriteLock(in _itemsHandle, SystemID.WorldSargassum);
                 }
             }
 
@@ -813,6 +814,7 @@ namespace Hecton8.World
         private const int LatchStatsWakeVelZIndex = 13;
         private const int LatchStatsElementCount = 14;
         private const int LatchStatsStride = sizeof(int);
+        private const int LatchStatsReadbackByteCount = LatchStatsElementCount * LatchStatsStride;
         private const float LatchStatsQuantize = 2048f;
         private const float WakeStatsQuantize = 1024f;
         private const int WakeMinimumFleeBoids = 20;
@@ -1664,6 +1666,7 @@ namespace Hecton8.World
         private VaultGenerationHandle<float4> _boidSensoryThreatsHandle;
         private VaultGenerationHandle<BoidSensoryBlackBoxEntry> _boidSensoryBlackBoxHandle;
         private VaultGenerationHandle<uint> _threatGridUploadHandle;
+        private uint[] _threatGridUploadSnapshot;
         private GraphicsBuffer _boidsBufferA;
         private GraphicsBuffer _boidsBufferB;
         private GraphicsBuffer _boidIndirectArgsBuffer;
@@ -1813,10 +1816,17 @@ namespace Hecton8.World
         private Vector3 _reportedWakeFlowDirectionWS;
         private float _parasiteLatchReadbackTimer;
         private bool _parasiteLatchReadbackPending;
+        private bool _parasiteLatchReadbackRepairRequested;
         private AsyncGPUReadbackRequest _parasiteLatchReadbackRequest;
+        private ParasiteLatchReadbackOwner _parasiteLatchReadback;
         private float _leviathanThreatLevel;
         private Vector3 _leviathanHotspotWS;
         private int _leviathanPathNodeCount;
+
+        private struct ParasiteLatchReadbackOwner
+        {
+            public NativeArray<int> Data;
+        }
         private Vector3 _leviathanHeadPositionWS;
         private Vector3 _leviathanHeadForwardWS = Vector3.forward;
         private Vector3 _leviathanHeadVelocityWS;
@@ -1983,6 +1993,7 @@ namespace Hecton8.World
             _debugBoidFlashlightThreatRadius = 0f;
             _parasiteLatchReadbackTimer = 0f;
             _parasiteLatchReadbackPending = false;
+            _parasiteLatchReadbackRepairRequested = false;
             _reportedParasiteCenterOfMassLS = Vector3.zero;
             _reportedParasiteHarvesterPullWS = Vector3.zero;
             _reportedWakeFleeCount = 0;
@@ -2304,6 +2315,7 @@ namespace Hecton8.World
         {
             RefreshRenderLayerCache();
             RefreshRenderScaleCache();
+            FlushParasiteLatchReadbackRepairSlow();
             if (_statisticalPopulationActive)
             {
                 float statisticalCameraDistanceSq = RefreshCameraDistanceSq();
@@ -2713,6 +2725,7 @@ namespace Hecton8.World
             buffersChanged |= EnsureGpuWriteRawBuffer(ref _latchStatsBuffer, ref _latchStatsBufferRawTarget, LatchStatsElementCount, LatchStatsStride);
             buffersChanged |= EnsureGpuWriteRawBuffer(ref _pbdCorrectionBuffer, ref _pbdCorrectionBufferRawTarget, boidCount * PbdCorrectionScalarCount, PbdCorrectionRawStride);
             buffersChanged |= EnsureBuffer(ref _threatGridBuffer, ThreatGridMaxCellCount, ThreatGridStride);
+            EnsureThreatGridUploadSnapshotCold();
             buffersChanged |= EnsureBuffer(ref _threatVoxelBuffer, 1, ThreatVoxelStride);
             buffersChanged |= EnsureGpuWriteRawBuffer(ref _spatialGridCountBuffer, ref _spatialGridCountBufferRawTarget, SpatialGridMaxCellCount, SpatialGridCountStride);
             buffersChanged |= EnsureGpuWriteBuffer(ref _spatialGridCellBuffer, SpatialGridMaxCellCount * SpatialGridMaxBoidsPerCell, SpatialGridCellEntryStride);
@@ -3167,6 +3180,14 @@ namespace Hecton8.World
             }
 
             bool uploadLocked = false;
+            bool uploadReady = false;
+            uint[] uploadSnapshot = _threatGridUploadSnapshot;
+            if (uploadSnapshot == null || uploadSnapshot.Length < cellCount)
+            {
+                ResetThreatGridSnapshot();
+                return;
+            }
+
             try
             {
                 if (!vault.TryAcquireWriteLock(in _threatGridUploadHandle, SystemID.WorldSargassum, out NativeArray<uint> threatGridUpload))
@@ -3184,20 +3205,38 @@ namespace Hecton8.World
                 }
 
                 for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
-                    threatGridUpload[cellIndex] = threatGrid[cellIndex];
+                {
+                    uint packedThreat = threatGrid[cellIndex];
+                    threatGridUpload[cellIndex] = packedThreat;
+                    uploadSnapshot[cellIndex] = packedThreat;
+                }
 
-                GraphicsBufferUploadUtility.UploadNativeArray(_threatGridBuffer, threatGridUpload, cellCount);
-                _threatGridCellCount = cellCount;
-                _threatGridResolution = gridResolution;
-                _threatGridCenterWS = gridCenter;
-                _threatGridCellSizeWS = math.max(cellSize, ThreatVoxelCellEpsilon);
-                _threatGridDataValid = true;
+                uploadReady = true;
             }
             finally
             {
                 if (uploadLocked)
                     vault.ReleaseWriteLock(in _threatGridUploadHandle, SystemID.WorldSargassum);
             }
+
+            if (!uploadReady)
+                return;
+
+            GraphicsBufferUploadUtility.UploadArray(_threatGridBuffer, uploadSnapshot, cellCount);
+            _threatGridCellCount = cellCount;
+            _threatGridResolution = gridResolution;
+            _threatGridCenterWS = gridCenter;
+            _threatGridCellSizeWS = math.max(cellSize, ThreatVoxelCellEpsilon);
+            _threatGridDataValid = true;
+        }
+
+        private void EnsureThreatGridUploadSnapshotCold()
+        {
+            if (_threatGridUploadSnapshot != null && _threatGridUploadSnapshot.Length >= ThreatGridMaxCellCount)
+                return;
+
+            // COLD ALLOC: uint[ThreatGridMaxCellCount] - threat-grid GPU upload snapshot copied under DataVault lock and consumed after release - owner: SargassumMicroFaunaBoids
+            _threatGridUploadSnapshot = new uint[ThreatGridMaxCellCount];
         }
 
         private static bool EnsureBuffer(ref GraphicsBuffer buffer, int count, int stride)
@@ -3473,6 +3512,7 @@ namespace Hecton8.World
                 _parasiteLatchReadbackPending = false;
                 _parasiteLatchReadbackRequest = default;
             }
+            _parasiteLatchReadbackRepairRequested = false;
 
             _activeBoidCount = 0;
             _debugActiveBoidCount = 0;
@@ -3655,6 +3695,11 @@ namespace Hecton8.World
 
         private void BuildStatisticalRematerializedSpawnSet(int rematerializedCount)
         {
+            bool buildGrazingAnchors = false;
+            Vector3 grazingCenter = Vector3.zero;
+            float grazingRadiusMeters = 0f;
+            int grazingRematerializedCount = 0;
+
             if (!TryAcquireSargassumWriteLock(
                     in _boidStateHandle,
                     BufferID.SargassumBoidState,
@@ -3696,12 +3741,18 @@ namespace Hecton8.World
                     };
                 }
 
-                BuildStatisticalGrazingAnchors(center, radius, safeRematerializedCount);
+                grazingCenter = center;
+                grazingRadiusMeters = radius;
+                grazingRematerializedCount = safeRematerializedCount;
+                buildGrazingAnchors = true;
             }
             finally
             {
                 ReleaseSargassumWriteLock(in _boidStateHandle);
             }
+
+            if (buildGrazingAnchors)
+                BuildStatisticalGrazingAnchors(grazingCenter, grazingRadiusMeters, grazingRematerializedCount);
         }
 
         private void BuildStatisticalGrazingAnchors(Vector3 center, float radius, int rematerializedCount)
@@ -3895,6 +3946,9 @@ namespace Hecton8.World
         {
             _debugFormationBeaconCount = 0;
             _debugFormationObstacleCount = 0;
+            bool harvestObstacles = false;
+            Vector3 obstacleHarvestOrigin = Vector3.zero;
+
             if (!TryAcquireSargassumWriteLock(
                     in _formationBeaconsHandle,
                     BufferID.SargassumFormationBeacons,
@@ -3972,12 +4026,18 @@ namespace Hecton8.World
                 if (formationCount <= 0)
                     return;
 
-                RefreshStaticObstacleCache();
-                HarvestFormationObstacles(origin);
+                obstacleHarvestOrigin = origin;
+                harvestObstacles = true;
             }
             finally
             {
                 ReleaseSargassumWriteLock(in _formationBeaconsHandle);
+            }
+
+            if (harvestObstacles)
+            {
+                RefreshStaticObstacleCache();
+                HarvestFormationObstacles(obstacleHarvestOrigin);
             }
         }
 
@@ -5021,6 +5081,16 @@ namespace Hecton8.World
                 return 0;
             }
 
+            int resultThreatCount = 0;
+            bool recordBlackBox = false;
+            float4 submarineThreatSnapshot = float4.zero;
+            float4 flashlightThreatSnapshot = float4.zero;
+            float4 pingThreatASnapshot = float4.zero;
+            float4 pingThreatBSnapshot = float4.zero;
+            float4 pingThreatCSnapshot = float4.zero;
+            uint sensoryAnomalyHash = 0u;
+            int sensoryThreatFlags = ResolveBoidSensoryThreatFlags(hibernation01);
+
             try
             {
                 ClearBoidSensoryStaticThreatSlots(boidSensoryThreats);
@@ -5034,10 +5104,11 @@ namespace Hecton8.World
                 ConsumeSubmarineLightSignals(playerAupPosition, playerForward);
                 UpdateFlashlightSensoryThreat(boidSensoryThreats, simulationDt, playerAupPosition, playerForward, hibernation01);
                 ConsumeBoidSensoryAcousticPingSignals(boidSensoryThreats);
-                uint sensoryAnomalyHash = SanitizeBoidSensoryThreatSlots(boidSensoryThreats);
+                sensoryAnomalyHash = SanitizeBoidSensoryThreatSlots(boidSensoryThreats);
 
                 int activeThreatCount = ResolveActiveBoidSensoryThreatCount(boidSensoryThreats);
                 _activeBoidSensoryThreatCount = activeThreatCount;
+                resultThreatCount = activeThreatCount;
                 uint uploadHash = HashBoidSensoryThreatUpload(boidSensoryThreats);
                 if (MarkBoidSensoryThreatUploadDirty(uploadHash))
                 {
@@ -5047,18 +5118,33 @@ namespace Hecton8.World
                         PredatorAupBufferCapacity);
                 }
 
-                RecordBoidSensoryBlackBox(
-                    boidSensoryThreats,
-                    activeThreatCount,
-                    simulationLodTier,
-                    ResolveBoidSensoryThreatFlags(hibernation01),
-                    sensoryAnomalyHash);
-                return activeThreatCount;
+                submarineThreatSnapshot = ReadBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatSlotSubmarine);
+                flashlightThreatSnapshot = ReadBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatSlotFlashlight);
+                pingThreatASnapshot = ReadBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatFirstPingSlot);
+                pingThreatBSnapshot = ReadBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatFirstPingSlot + 1);
+                pingThreatCSnapshot = ReadBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatLastPingSlot);
+                recordBlackBox = true;
             }
             finally
             {
                 ReleaseSargassumWriteLock(in _boidSensoryThreatsHandle);
             }
+
+            if (recordBlackBox)
+            {
+                RecordBoidSensoryBlackBox(
+                    submarineThreatSnapshot,
+                    flashlightThreatSnapshot,
+                    pingThreatASnapshot,
+                    pingThreatBSnapshot,
+                    pingThreatCSnapshot,
+                    resultThreatCount,
+                    simulationLodTier,
+                    sensoryThreatFlags,
+                    sensoryAnomalyHash);
+            }
+
+            return resultThreatCount;
         }
 
         private void ClearBoidSensoryStaticThreatSlots(NativeArray<float4> boidSensoryThreats)
@@ -6534,6 +6620,8 @@ namespace Hecton8.World
             }
 
             bool emitFallbackAfterRelease = false;
+            uint telemetrySourceAfterRelease = sourceId;
+            int resultCount = 0;
             try
             {
                 if (_activeBoidCount <= 0)
@@ -6574,14 +6662,9 @@ namespace Hecton8.World
                     _fieldExtents = new Vector3(WhaleFallScavengerRadiusMeters * 1.35f, 2f, WhaleFallScavengerRadiusMeters * 1.35f);
                     _renderBounds = new Bounds(_fieldCenter, _fieldExtents * 2f);
                     _debugRenderBounds = _renderBounds;
-                    RegisterPredatorFearBurst(
-                        centerWS,
-                        Vector3.forward,
-                        WhaleFallScavengerRadiusMeters,
-                        ResolveWhaleFallScavengerFearDuration(hibernation01),
-                        ResolveWhaleFallScavengerFearAmount(hibernation01));
-                    RecordFoodChainTelemetry(FoodChainTelemetryFlagWhaleFall, centerWS, safeSourceId, 0u);
-                    return visualCount;
+                    emitFallbackAfterRelease = true;
+                    telemetrySourceAfterRelease = safeSourceId;
+                    resultCount = visualCount;
                 }
             }
             finally
@@ -6594,13 +6677,13 @@ namespace Hecton8.World
                 RegisterPredatorFearBurst(
                     centerWS,
                     Vector3.forward,
-                    WhaleFallScavengerRadiusMeters,
-                    ResolveWhaleFallScavengerFearDuration(hibernation01),
-                    ResolveWhaleFallScavengerFearAmount(hibernation01));
-                RecordFoodChainTelemetry(FoodChainTelemetryFlagWhaleFall, centerWS, sourceId, 0u);
+                        WhaleFallScavengerRadiusMeters,
+                        ResolveWhaleFallScavengerFearDuration(hibernation01),
+                        ResolveWhaleFallScavengerFearAmount(hibernation01));
+                RecordFoodChainTelemetry(FoodChainTelemetryFlagWhaleFall, centerWS, telemetrySourceAfterRelease, 0u);
             }
 
-            return 0;
+            return resultCount;
         }
 
         private static int ResolveWhaleFallScavengerVisualCount(int safeActiveCount, float hibernation01)
@@ -6872,7 +6955,11 @@ namespace Hecton8.World
         }
 
         private void RecordBoidSensoryBlackBox(
-            NativeArray<float4> boidSensoryThreats,
+            float4 submarineThreat,
+            float4 flashlightThreat,
+            float4 pingThreatA,
+            float4 pingThreatB,
+            float4 pingThreatC,
             int activeThreatCount,
             SimulationLodTier simulationLodTier,
             int sensoryThreatFlags,
@@ -6887,11 +6974,6 @@ namespace Hecton8.World
 
             try
             {
-                float4 submarineThreat = ReadBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatSlotSubmarine);
-                float4 flashlightThreat = ReadBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatSlotFlashlight);
-                float4 pingThreatA = ReadBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatFirstPingSlot);
-                float4 pingThreatB = ReadBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatFirstPingSlot + 1);
-                float4 pingThreatC = ReadBoidSensoryThreatSlot(boidSensoryThreats, SensoryThreatLastPingSlot);
                 float4 acousticPingRadii = new float4(
                     pingThreatA.w,
                     pingThreatB.w,
@@ -7491,7 +7573,7 @@ namespace Hecton8.World
                 _parasiteLatchReadbackPending = false;
                 if (!_parasiteLatchReadbackRequest.hasError)
                 {
-                    var latchData = _parasiteLatchReadbackRequest.GetData<int>();
+                    NativeArray<int> latchData = _parasiteLatchReadback.Data;
                     bool hasCompleteLatchStats = latchData.Length >= LatchStatsElementCount;
                     _reportedLatchedDroneCount = latchData.Length > LatchStatsLatchedCountIndex
                         ? math.clamp(latchData[LatchStatsLatchedCountIndex], 0, _activeBoidCount)
@@ -7521,8 +7603,8 @@ namespace Hecton8.World
                     }
 
                     _debugLatchedDroneCount = _reportedLatchedDroneCount;
-                        _debugParasiteCenterOfMassLS = _reportedParasiteCenterOfMassLS;
-                        _debugParasiteHarvesterPullWS = _reportedParasiteHarvesterPullWS;
+                    _debugParasiteCenterOfMassLS = _reportedParasiteCenterOfMassLS;
+                    _debugParasiteHarvesterPullWS = _reportedParasiteHarvesterPullWS;
 
                     _reportedWakeFleeCount = hasCompleteLatchStats
                         ? math.clamp(latchData[LatchStatsWakeCountIndex], 0, _activeBoidCount)
@@ -7608,9 +7690,73 @@ namespace Hecton8.World
                 return;
             }
 
-            _parasiteLatchReadbackRequest = AsyncGPUReadback.Request(_latchStatsBuffer);
-            _parasiteLatchReadbackPending = true;
+            if (!HasParasiteLatchReadbackData())
+            {
+                QueueParasiteLatchReadbackRepair();
+                return;
+            }
+
+            _parasiteLatchReadbackRequest = AsyncGPUReadback.RequestIntoNativeArray(
+                ref _parasiteLatchReadback.Data,
+                _latchStatsBuffer,
+                LatchStatsReadbackByteCount,
+                0,
+                null);
+            _parasiteLatchReadbackPending = !_parasiteLatchReadbackRequest.hasError;
             _parasiteLatchReadbackTimer = ResolveLatchStatsReadbackInterval(hibernation01);
+            if (!_parasiteLatchReadbackPending)
+                _parasiteLatchReadbackRequest = default;
+        }
+
+        private bool EnsureParasiteLatchReadbackData()
+        {
+            if (HasParasiteLatchReadbackData())
+                return true;
+
+            if (_parasiteLatchReadbackPending)
+                return false;
+
+            DisposeParasiteLatchReadbackData();
+            _parasiteLatchReadback.Data = new NativeArray<int>(
+                LatchStatsElementCount,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(_parasiteLatchReadback.Data, nameof(SargassumMicroFaunaBoids), "_parasiteLatchReadbackData", NativeAllocationLifetime.Scene);
+            _parasiteLatchReadbackRepairRequested = false;
+            return true;
+        }
+
+        private bool HasParasiteLatchReadbackData()
+        {
+            return _parasiteLatchReadback.Data.IsCreated &&
+                   _parasiteLatchReadback.Data.Length >= LatchStatsElementCount;
+        }
+
+        private void QueueParasiteLatchReadbackRepair()
+        {
+            _parasiteLatchReadbackRepairRequested = true;
+        }
+
+        private void FlushParasiteLatchReadbackRepairSlow()
+        {
+            if (!_parasiteLatchReadbackRepairRequested && HasParasiteLatchReadbackData())
+                return;
+
+            if (_latchStatsBuffer == null || _parasiteLatchReadbackPending)
+                return;
+
+            EnsureParasiteLatchReadbackData();
+        }
+
+        private void DisposeParasiteLatchReadbackData()
+        {
+            _parasiteLatchReadbackRepairRequested = false;
+            if (_parasiteLatchReadback.Data.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_parasiteLatchReadback.Data);
+                _parasiteLatchReadback.Data.Dispose();
+                _parasiteLatchReadback.Data = default;
+            }
         }
 
         private void ApplyParasiteEnvironmentalDrag()
@@ -8434,6 +8580,7 @@ namespace Hecton8.World
             ReleaseBuffer(ref _latchStatsBuffer);
             ReleaseBuffer(ref _pbdCorrectionBuffer);
             ReleaseBuffer(ref _threatGridBuffer);
+            _threatGridUploadSnapshot = null;
             ReleaseBuffer(ref _threatVoxelBuffer);
             ReleaseBuffer(ref _spatialGridCountBuffer);
             ReleaseBuffer(ref _spatialGridCellBuffer);
@@ -8470,6 +8617,7 @@ namespace Hecton8.World
             }
 
             _parasiteLatchReadbackTimer = 0f;
+            DisposeParasiteLatchReadbackData();
             ReleaseBuffers();
             ResetComputeKernelBindings();
             _boundBoidCompute = null;

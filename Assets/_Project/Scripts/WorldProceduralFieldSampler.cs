@@ -17,7 +17,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4037)]
-    public sealed class WorldProceduralFieldSampler : MonoBehaviour, IBiomeMatrixEventListener, IBiomePhysicsInfluenceReadModel
+    public sealed class WorldProceduralFieldSampler : MonoBehaviour, IBiomeMatrixEventListener, IBiomePhysicsInfluenceReadModel, IGlobalRegistryHotSwapListener
     {
         private const string PatternLabelSedimentResources = "SedimentResources";
         private const string PatternLabelFertileShallows = "FertileShallows";
@@ -662,6 +662,9 @@ namespace Hecton8.World
         private JobHandle _lastSamplingJobHandle;
         private bool _hasPendingSamplingJob;
         private bool _samplingJobBuffersPinned;
+        private bool _hotSwapRegistered;
+        private bool _worldZoneListenerRegistered;
+        private bool _worldCaveListenerRegistered;
 
         private static WorldProceduralFieldSampler s_activeRuntimeInstance;
 
@@ -2169,11 +2172,14 @@ namespace Hecton8.World
 #if UNITY_EDITOR
             EnsureAssemblyReloadHook();
 #endif
+            RefreshColdReferences(force: true);
         }
 
         private void OnEnable()
         {
             PublishActiveRuntimeInstance();
+            RegisterRuntimeDependencyListeners();
+            RefreshColdReferences(force: true);
             BiomeMatrixEvents.Register(this);
             _isDataDirty = true;
 #if UNITY_EDITOR
@@ -2184,6 +2190,7 @@ namespace Hecton8.World
         private void OnDisable()
         {
             BiomeMatrixEvents.Unregister(this);
+            UnregisterRuntimeDependencyListeners();
             ClearActiveRuntimeInstance();
             CompletePendingSamplingJobForBarrier();
             DisposeBurstData();
@@ -2198,6 +2205,7 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             BiomeMatrixEvents.Unregister(this);
+            UnregisterRuntimeDependencyListeners();
             CompletePendingSamplingJobForBarrier();
             DisposeBurstData();
             ReleaseBiomeInfluenceGraphicsBuffer();
@@ -2871,8 +2879,7 @@ namespace Hecton8.World
         public void PrepareBurstData()
         {
             CompletePendingSamplingJobForBarrier();
-            ResolveReferences();
-            WorldRuntimeReferenceUtility.TryResolveWorldCaveDirector(ref _worldCaveDirector);
+            RefreshCachedDependencyDiagnostics();
             EnsureNoiseLookupTable();
 
             int activeAnchorVersion = WorldZoneAnchor.ActiveAnchorVersion;
@@ -5243,7 +5250,7 @@ namespace Hecton8.World
             caveEntranceHints = default;
             noiseLookupTable = default;
 
-            IDataVault vault = _samplingJobGuardVault ?? _dataVault;
+            IDataVault vault = _samplingJobGuardVault;
             if (_samplingJobBuffersPinned)
             {
                 if (vault != null &&
@@ -5328,7 +5335,7 @@ namespace Hecton8.World
             if (!_samplingJobBuffersPinned)
                 return;
 
-            IDataVault vault = _samplingJobGuardVault ?? _dataVault;
+            IDataVault vault = _samplingJobGuardVault;
             if (vault != null)
                 vault.ReleaseMutationGuard(SamplingJobMutationGuardMask);
 
@@ -5647,13 +5654,103 @@ namespace Hecton8.World
             _seafloorHeightCacheCount = 0;
         }
 
-        private void ResolveReferences(bool force = false)
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Player:
+                    RebindPlayerContext(previousService as IPlayerRuntimeContext, currentService as IPlayerRuntimeContext);
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicRuntime:
+                    mapMagicBridge = currentService as MapMagicBridge;
+                    ClearSeafloorHeightCache();
+                    _isDataDirty = true;
+                    break;
+                case GlobalRegistryServiceSlot.BiomeMatrixRuntime:
+                    biomeMatrixDirector = currentService as BiomeMatrixDirector;
+                    ClearSeafloorHeightCache();
+                    _isDataDirty = true;
+                    break;
+            }
+
+            RefreshCachedDependencyDiagnostics();
+        }
+
+        private void RegisterRuntimeDependencyListeners()
+        {
+            if (!_hotSwapRegistered && Application.isPlaying)
+                _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+
+            if (!_worldZoneListenerRegistered)
+            {
+                WorldZoneDirector.ActiveRuntimeInstanceChanged += HandleWorldZoneDirectorChanged;
+                _worldZoneListenerRegistered = true;
+            }
+
+            if (!_worldCaveListenerRegistered)
+            {
+                WorldCaveDirector.ActiveRuntimeInstanceChanged += HandleWorldCaveDirectorChanged;
+                _worldCaveListenerRegistered = true;
+            }
+        }
+
+        private void UnregisterRuntimeDependencyListeners()
+        {
+            if (_hotSwapRegistered)
+            {
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
+                _hotSwapRegistered = false;
+            }
+
+            if (_worldZoneListenerRegistered)
+            {
+                WorldZoneDirector.ActiveRuntimeInstanceChanged -= HandleWorldZoneDirectorChanged;
+                _worldZoneListenerRegistered = false;
+            }
+
+            if (_worldCaveListenerRegistered)
+            {
+                WorldCaveDirector.ActiveRuntimeInstanceChanged -= HandleWorldCaveDirectorChanged;
+                _worldCaveListenerRegistered = false;
+            }
+        }
+
+        private void HandleWorldZoneDirectorChanged(WorldZoneDirector director)
+        {
+            worldZoneDirector = director;
+            ClearSeafloorHeightCache();
+            _isDataDirty = true;
+            RefreshCachedDependencyDiagnostics();
+        }
+
+        private void HandleWorldCaveDirectorChanged(WorldCaveDirector director)
+        {
+            _worldCaveDirector = director;
+            _lastCaveEntranceHintVersion = -1;
+            _isDataDirty = true;
+            RefreshCachedDependencyDiagnostics();
+        }
+
+        private void RebindPlayerContext(IPlayerRuntimeContext previousContext, IPlayerRuntimeContext currentContext)
+        {
+            if (previousContext != null && ReferenceEquals(playerTransform, previousContext.PlayerTransform))
+                playerTransform = null;
+
+            if (currentContext != null && playerTransform == null)
+                playerTransform = currentContext.PlayerTransform;
+
+            ClearSeafloorHeightCache();
+            _isDataDirty = true;
+        }
+
+        private void RefreshColdReferences(bool force = false)
         {
             if (!force && !NeedsAutoResolve())
             {
-                _debugBridgeReady = true;
-                _debugZoneDirectorReady = true;
-                _debugBiomeDirectorReady = true;
+                RefreshCachedDependencyDiagnostics();
                 return;
             }
 
@@ -5664,17 +5761,42 @@ namespace Hecton8.World
             _nextAutoResolveAttemptTime = now + math.max(0f, autoResolveRetryInterval);
 
             if (playerTransform == null)
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+                if (playerTransform == null)
+                    WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+            }
 
             if (mapMagicBridge == null)
-                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
+            {
+                mapMagicBridge = GlobalRegistry.MapMagic;
+                if (mapMagicBridge == null)
+                    WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
+            }
 
             if (worldZoneDirector == null)
-                WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref worldZoneDirector);
+            {
+                worldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;
+                if (worldZoneDirector == null)
+                    WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref worldZoneDirector);
+            }
 
             if (biomeMatrixDirector == null)
-                WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
+            {
+                biomeMatrixDirector = GlobalRegistry.BiomeMatrix;
+                if (biomeMatrixDirector == null)
+                    WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
+            }
 
+            if (_worldCaveDirector == null)
+                _worldCaveDirector = WorldCaveDirector.ActiveRuntimeInstance;
+
+            RefreshCachedDependencyDiagnostics();
+        }
+
+        private void RefreshCachedDependencyDiagnostics()
+        {
             _debugBridgeReady = mapMagicBridge != null;
             _debugZoneDirectorReady = worldZoneDirector != null;
             _debugBiomeDirectorReady = biomeMatrixDirector != null;

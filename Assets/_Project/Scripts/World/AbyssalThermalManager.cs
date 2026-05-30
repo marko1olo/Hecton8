@@ -682,6 +682,7 @@ namespace Hecton8.World
         private ISubmarineRuntimeContext _submarineRuntimeContext;
         private IPhysicsService _physicsService;
         private IGasDynamicsSolver _gasDynamics;
+        private IPdaCorrosionPresentationSink _pdaCorrosionPresentationSink;
         private VoxelDeltaProcessor _voxelDeltaProcessor;
         private IDamageReceiver _playerThermalDamageReceiver;
         private Transform _playerThermalDamageTransform;
@@ -1068,6 +1069,7 @@ namespace Hecton8.World
             EnsureBuffers();
             ClearHazardSources();
             RebuildVentField();
+            PrepareThermalMapResourcesCold();
         }
 
         private void OnEnable()
@@ -1083,6 +1085,7 @@ namespace Hecton8.World
             EnsureCableVisuals();
             EnsureBuffers();
             RebuildVentField();
+            PrepareThermalMapResourcesCold();
             TryRegister();
         }
 
@@ -1288,8 +1291,15 @@ namespace Hecton8.World
             CacheVoxelDeltaProcessorCold();
             ApplySeismicSignalEruptionScalar();
             AdvancePassiveCrystallizationCooldowns(0.5f);
+            EnsureStorage();
             SyncPersistentThermalVents();
             RebuildVentField();
+            PrepareThermalMapResourcesCold();
+            EnsureBuffers();
+            if (_forceVentBufferUpload)
+                UploadVentBuffer();
+            if (_forceParticleReset)
+                ResetParticles();
             ApplyThermalInfiltrationToBaseModules(0.5f);
             QueueVentBoundaryCrystallizationSamples();
             ScheduleCrystallizationJobIfNeeded();
@@ -2522,7 +2532,12 @@ namespace Hecton8.World
                     return;
                 }
 
-                EnsureThermalMapBuffers();
+                if (!HasThermalMapBuffersReady())
+                {
+                    PublishThermalMapMetadata(active: false);
+                    return;
+                }
+
                 if (_thermalMapIdleCleared)
                 {
                     PublishThermalMapMetadata(active: false);
@@ -2551,7 +2566,12 @@ namespace Hecton8.World
             }
 
             _thermalMapIdleCleared = false;
-            EnsureThermalMapBuffers();
+            if (!HasThermalMapBuffersReady())
+            {
+                PublishThermalMapMetadata(active: false);
+                return;
+            }
+
             if (_thermalMapDiffusionSlicesCompleted <= 0)
             {
                 _thermalColdTickAccumulator += Mathf.Max(0f, deltaSeconds);
@@ -2657,7 +2677,8 @@ namespace Hecton8.World
             if (!TryAcquireThermalMapWriteBuffer(
                     in _thermalMapSourceCelsiusHandle,
                     ThermalMapSourceCelsiusBufferId,
-                    out NativeArray<float> sourceCelsius))
+                    out NativeArray<float> sourceCelsius,
+                    out IDataVault sourceCelsiusWriteVault))
             {
                 return;
             }
@@ -2702,7 +2723,7 @@ namespace Hecton8.World
             }
             finally
             {
-                _dataVault?.ReleaseWriteLock(in _thermalMapSourceCelsiusHandle, ThermalVaultOwnerSystem);
+                sourceCelsiusWriteVault.ReleaseWriteLock(in _thermalMapSourceCelsiusHandle, ThermalVaultOwnerSystem);
             }
         }
 
@@ -2711,7 +2732,8 @@ namespace Hecton8.World
             if (!TryAcquireThermalMapWriteBuffer(
                     in _thermalMapInsulation01Handle,
                     ThermalMapInsulationBufferId,
-                    out NativeArray<float> insulationBuffer))
+                    out NativeArray<float> insulationBuffer,
+                    out IDataVault insulationWriteVault))
             {
                 return;
             }
@@ -2735,7 +2757,7 @@ namespace Hecton8.World
             }
             finally
             {
-                _dataVault?.ReleaseWriteLock(in _thermalMapInsulation01Handle, ThermalVaultOwnerSystem);
+                insulationWriteVault.ReleaseWriteLock(in _thermalMapInsulation01Handle, ThermalVaultOwnerSystem);
             }
         }
 
@@ -2808,7 +2830,7 @@ namespace Hecton8.World
             if (_thermalMapTextureUploadedVersion == _thermalMapVersion)
                 return;
 
-            if (!EnsureThermalMapTexture())
+            if (!HasThermalMapTextureReady())
             {
                 Shader.SetGlobalFloat(_ThermalMapActiveId, 0f);
                 BindInactiveThermalMapTexture();
@@ -2821,18 +2843,23 @@ namespace Hecton8.World
             _thermalMapTextureUploadedVersion = _thermalMapVersion;
         }
 
-        private bool EnsureThermalMapTexture()
+        private bool HasThermalMapTextureReady()
+        {
+            return _thermalMapTexture != null;
+        }
+
+        private void PrepareThermalMapTextureCold()
         {
             if (_thermalMapTexture != null)
-                return true;
+                return;
 
             if (_thermalMapTextureFormatRejected)
-                return false;
+                return;
 
             if (!_supportsThermalMapTextureCold)
             {
                 _thermalMapTextureFormatRejected = true;
-                return false;
+                return;
             }
 
             _thermalMapTexture = new Texture2D(ThermalMapResolution, ThermalMapResolution, TextureFormat.RFloat, false, true)
@@ -2842,7 +2869,6 @@ namespace Hecton8.World
                 filterMode = FilterMode.Bilinear,
                 wrapMode = TextureWrapMode.Clamp
             }; // COLD ALLOC: Texture2D[32x32 RFloat] - GPU-visible center-slice thermal Celsius field for shader/VFX sampling - owner: AbyssalThermalManager
-            return true;
         }
 
         private void BindInactiveThermalMapTexture()
@@ -3153,6 +3179,38 @@ namespace Hecton8.World
             }
         }
 
+        private void PrepareThermalMapResourcesCold()
+        {
+            if (!UsesThermalGrid())
+            {
+                DisposeThermalMapBuffers();
+                return;
+            }
+
+            if (_activeVentCount > 0 || _thermalMapJobActive || HasThermalMapStorage())
+                EnsureThermalMapBuffers();
+
+            if (_activeVentCount > 0)
+                PrepareThermalMapTextureCold();
+        }
+
+        private bool HasThermalMapBuffersReady()
+        {
+            IDataVault vault = _dataVault;
+            return UsesThermalGrid() &&
+                   vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   HasThermalVaultBuffer(vault, in _thermalMapReadCelsiusHandle, ThermalMapReadCelsiusBufferId, ThermalMapCellCount) &&
+                   HasThermalVaultBuffer(vault, in _thermalMapWriteCelsiusHandle, ThermalMapWriteCelsiusBufferId, ThermalMapCellCount) &&
+                   HasThermalVaultBuffer(vault, in _thermalMapSourceCelsiusHandle, ThermalMapSourceCelsiusBufferId, ThermalMapCellCount) &&
+                   HasThermalVaultBuffer(vault, in _thermalMapInsulation01Handle, ThermalMapInsulationBufferId, ThermalMapCellCount) &&
+                   _thermalMapScratch.IsWriteScratchReady(ThermalMapCellCount) &&
+                   _thermalMapVisualCelsius != null &&
+                   _thermalMapVisualCelsius.Length == ThermalMapPlaneCellCount &&
+                   _thermalGridRleRuns != null &&
+                   _thermalGridRleRuns.Length == ThermalGridSaveRleCapacity;
+        }
+
         private void DisposeThermalMapBuffers()
         {
             CompleteThermalMapJobIfReady(forceComplete: true);
@@ -3164,7 +3222,7 @@ namespace Hecton8.World
             }
 
             _thermalMapDisposePending = false;
-            IDataVault thermalMapVault = _thermalMapReadbackGuardVault ?? _dataVault;
+            IDataVault thermalMapVault = _thermalMapReadbackGuardHeld ? _thermalMapReadbackGuardVault : _dataVault;
             ReleaseThermalMapReadbackGuard();
             ReleaseThermalFloatBuffer(thermalMapVault, ref _thermalMapReadCelsiusHandle, ThermalMapReadCelsiusBufferId);
             ReleaseThermalFloatBuffer(thermalMapVault, ref _thermalMapWriteCelsiusHandle, ThermalMapWriteCelsiusBufferId);
@@ -3287,9 +3345,11 @@ namespace Hecton8.World
         private bool TryAcquireThermalMapWriteBuffer(
             in VaultGenerationHandle<float> handle,
             BufferID bufferId,
-            out NativeArray<float> buffer)
+            out NativeArray<float> buffer,
+            out IDataVault writeVault)
         {
             buffer = default;
+            writeVault = null;
             IDataVault vault = _dataVault;
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
@@ -3299,16 +3359,26 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (!vault.IsCompactionFenceActive &&
-                buffer.IsCreated &&
-                buffer.Length >= ThermalMapCellCount)
+            bool ownershipTransferred = false;
+            try
             {
-                return true;
-            }
+                if (!vault.IsCompactionFenceActive &&
+                    buffer.IsCreated &&
+                    buffer.Length >= ThermalMapCellCount)
+                {
+                    writeVault = vault;
+                    ownershipTransferred = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, ThermalVaultOwnerSystem);
-            buffer = default;
-            return false;
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                    vault.ReleaseWriteLock(in handle, ThermalVaultOwnerSystem);
+            }
         }
 
         private bool FillThermalMapBuffer(
@@ -3316,7 +3386,7 @@ namespace Hecton8.World
             BufferID bufferId,
             float value)
         {
-            if (!TryAcquireThermalMapWriteBuffer(in handle, bufferId, out NativeArray<float> buffer))
+            if (!TryAcquireThermalMapWriteBuffer(in handle, bufferId, out NativeArray<float> buffer, out IDataVault writeVault))
                 return false;
 
             try
@@ -3326,7 +3396,7 @@ namespace Hecton8.World
             }
             finally
             {
-                _dataVault?.ReleaseWriteLock(in handle, ThermalVaultOwnerSystem);
+                writeVault.ReleaseWriteLock(in handle, ThermalVaultOwnerSystem);
             }
         }
 
@@ -3335,7 +3405,7 @@ namespace Hecton8.World
             BufferID destinationBufferId)
         {
             if (!_thermalMapScratch.IsWriteScratchReady(ThermalMapCellCount) ||
-                !TryAcquireThermalMapWriteBuffer(in destinationHandle, destinationBufferId, out NativeArray<float> destination))
+                !TryAcquireThermalMapWriteBuffer(in destinationHandle, destinationBufferId, out NativeArray<float> destination, out IDataVault destinationWriteVault))
             {
                 return false;
             }
@@ -3347,7 +3417,7 @@ namespace Hecton8.World
             }
             finally
             {
-                _dataVault?.ReleaseWriteLock(in destinationHandle, ThermalVaultOwnerSystem);
+                destinationWriteVault.ReleaseWriteLock(in destinationHandle, ThermalVaultOwnerSystem);
             }
         }
 
@@ -3383,7 +3453,7 @@ namespace Hecton8.World
             if (!_thermalMapReadbackGuardHeld)
                 return;
 
-            IDataVault vault = _thermalMapReadbackGuardVault ?? _dataVault;
+            IDataVault vault = _thermalMapReadbackGuardVault;
             if (vault != null)
                 vault.ReleaseMutationGuard(ThermalMapReadbackMutationGuardMask);
 
@@ -3650,6 +3720,7 @@ namespace Hecton8.World
             _submarineRuntimeContext = GlobalRegistry.Submarine;
             _physicsService = GlobalRegistry.Physics;
             _gasDynamics = GlobalRegistry.GasDynamics;
+            _pdaCorrosionPresentationSink = GlobalRegistry.PdaCorrosionPresentationSink;
             if (cutManager == null)
                 cutManager = SargassumCutManager.Instance;
             if (_simulationBucketer == null)
@@ -3701,6 +3772,9 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.GasDynamicsRuntime:
                     _gasDynamics = currentService as IGasDynamicsSolver;
+                    break;
+                case GlobalRegistryServiceSlot.LocalizationRuntime:
+                    _pdaCorrosionPresentationSink = currentService as IPdaCorrosionPresentationSink;
                     break;
                 case GlobalRegistryServiceSlot.SargassumCutRuntime:
                     cutManager = currentService as SargassumCutManager;
@@ -3979,6 +4053,51 @@ namespace Hecton8.World
             return recreated;
         }
 
+        private bool HasVentBufferRingReady()
+        {
+            if (_ventBuffers == null ||
+                _ventBuffers.Length != VentBufferRingSize ||
+                _ventBufferFences == null ||
+                _ventBufferFences.Length != VentBufferRingSize ||
+                _ventBufferFenceArmed == null ||
+                _ventBufferFenceArmed.Length != VentBufferRingSize)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < VentBufferRingSize; i++)
+            {
+                if (!IsBufferReady<ThermalVentGpuData>(_ventBuffers[i], MaxVentCapacity))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private bool HasVentUploadStorageReady()
+        {
+            return _ventStates != null &&
+                   _ventStates.Length == MaxVentCapacity &&
+                   _ventGpuData != null &&
+                   _ventGpuData.Length == MaxVentCapacity &&
+                   _lastUploadedVentGpuData != null &&
+                   _lastUploadedVentGpuData.Length == MaxVentCapacity &&
+                   HasVentBufferRingReady();
+        }
+
+        private bool HasParticleResetStorageReady()
+        {
+            return _ventStates != null &&
+                   _ventStates.Length == MaxVentCapacity &&
+                   _lastSeededVentStates != null &&
+                   _lastSeededVentStates.Length == MaxVentCapacity &&
+                   _initialParticles != null &&
+                   _initialParticles.Length == smokeParticleCount &&
+                   IsBufferReady<AshParticleData>(_particleBufferA, smokeParticleCount) &&
+                   IsBufferReady<AshParticleData>(_particleBufferB, smokeParticleCount) &&
+                   IsBufferReady<AshParticleData>(_particleUploadStagingBuffer, smokeParticleCount);
+        }
+
         private void EnsureCableVisuals()
         {
             if (_bioCableVisuals == null)
@@ -4046,6 +4165,14 @@ namespace Hecton8.World
             ReleaseBuffer(ref _particleUploadStagingBuffer);
             _particleUploadStagingBuffer = GraphicsBufferUploadUtility.CreateStructuredUploadStagingBuffer<AshParticleData>(safeCount);
             return _particleUploadStagingBuffer != null;
+        }
+
+        private static bool IsBufferReady<T>(GraphicsBuffer buffer, int count) where T : struct
+        {
+            int safeCount = Mathf.Max(1, count);
+            return buffer != null &&
+                   buffer.count == safeCount &&
+                   buffer.stride == UnsafeUtility.SizeOf<T>();
         }
 
         private bool TryResolveBlackSmokeKernel()
@@ -4653,8 +4780,9 @@ namespace Hecton8.World
 
         private void UploadVentBuffer()
         {
-            EnsureStorage();
-            EnsureVentBufferRing();
+            if (!HasVentUploadStorageReady())
+                return;
+
             BuildVentGpuUploadData();
             if (!_hasSmokeData || _activeVentCount <= 0 || !RequiresVentBufferUpload())
                 return;
@@ -4671,11 +4799,7 @@ namespace Hecton8.World
 
         private void ResetParticles()
         {
-            EnsureStorage();
-            EnsureGpuWriteBuffer<AshParticleData>(ref _particleBufferA, smokeParticleCount);
-            EnsureGpuWriteBuffer<AshParticleData>(ref _particleBufferB, smokeParticleCount);
-            EnsureParticleUploadStagingBuffer(smokeParticleCount);
-            if (_initialParticles == null || _particleBufferA == null || _particleBufferB == null || _particleUploadStagingBuffer == null)
+            if (!HasParticleResetStorageReady())
                 return;
 
             if (!CanRewriteParticleBuffers())
@@ -5015,8 +5139,7 @@ namespace Hecton8.World
             if (hitPlayerTransport)
             {
                 mantaScooter.ApplyEmpDisruption(empMisfireDuration);
-                IPdaCorrosionPresentationSink corrosionSink = Hecton8.Core.GlobalRegistry.PdaCorrosionPresentationSink;
-                corrosionSink?.RequestExternalPdaCorrosion(1f, empPdaCorrosionDuration);
+                _pdaCorrosionPresentationSink?.RequestExternalPdaCorrosion(1f, empPdaCorrosionDuration);
             }
 
             TriggerEmpChainReaction(nest.SourceVentIndex, nest.PositionWS);

@@ -129,6 +129,8 @@ namespace Hecton8.Graphics.Culling
         private bool _initialized;
         private bool _usesVaultStorage;
         private bool _csvPathDirty = true;
+        private bool _isMobileTbdrCold;
+        private bool _shouldRunEarlyZRadixSortCold;
 
         private void Awake()
         {
@@ -165,6 +167,7 @@ namespace Hecton8.Graphics.Culling
             _hardVertexCap = TBDRHardwareBudgetMath.ClampVisibleVertexCap(_limits.Quest3MaxVisibleVertices);
             _transparentQuadLimit = (int)math.max(1u, _limits.TransparentQuadLimit);
             _frustumSqueezeAngle = math.clamp(_limits.FrustumSqueezeDegrees, 0f, 15f);
+            CacheHardwarePipelineSnapshotCold();
 
             ref TBDRVertexBudgetVault vault = ref Vault;
             vault = new TBDRVertexBudgetVault(_dataVault, 1, 1, 4, TelemetryCapacity);
@@ -264,7 +267,7 @@ namespace Hecton8.Graphics.Culling
                 Instances = _buffers.MockVisibleInstances
             }.Schedule(instanceCount, 64, handle);
 
-            if (TBDRHardwarePipelineSwitch.ShouldRunEarlyZRadixSort())
+            if (_shouldRunEarlyZRadixSortCold)
             {
                 handle = new EarlyZRadixSortJob
                 {
@@ -315,7 +318,7 @@ namespace Hecton8.Graphics.Culling
                 warning.CulledInstanceCount > 0u ? 1u : 0u,
                 _lastSortMs,
                 budget.TilePressure,
-                TBDRHardwarePipelineSwitch.IsMobileTBDR() ? 1u : 0u);
+                _isMobileTbdrCold ? 1u : 0u);
             PushShaderBudgetGlobals(in budget, in warning);
         }
 
@@ -431,6 +434,12 @@ namespace Hecton8.Graphics.Culling
             return math.clamp(_frustumSqueezeAngle * stress, 0f, _frustumSqueezeAngle);
         }
 
+        private void CacheHardwarePipelineSnapshotCold()
+        {
+            _isMobileTbdrCold = TBDRHardwarePipelineSwitch.IsMobileTBDR();
+            _shouldRunEarlyZRadixSortCold = _isMobileTbdrCold || TBDRHardwarePipelineSwitch.ShouldRunEarlyZRadixSort();
+        }
+
         public void Dispose()
         {
             if (!_initialized)
@@ -458,6 +467,8 @@ namespace Hecton8.Graphics.Culling
             _csvPathDirty = true;
             _lastSortedCount = 0;
             _lastSortMs = 0f;
+            _isMobileTbdrCold = false;
+            _shouldRunEarlyZRadixSortCold = false;
         }
 
         private string ResolveGpuBudgetCsvPath()

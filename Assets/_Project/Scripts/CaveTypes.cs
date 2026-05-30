@@ -895,7 +895,11 @@ namespace Hecton8.Caves
         /// </summary>
         public CavePreset Clone()
         {
-            return (CavePreset)MemberwiseClone();
+            CavePreset clone = (CavePreset)MemberwiseClone();
+            if (allowedStructureTypes != null)
+                clone.allowedStructureTypes = (CaveStructureType[])allowedStructureTypes.Clone();
+
+            return clone;
         }
     }
 

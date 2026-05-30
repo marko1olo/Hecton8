@@ -508,17 +508,23 @@ namespace Hecton8.Core.Data
                 {
                     BabelBuildEntry buildEntry = entries[i];
                     int byteCount = Encoding.UTF8.GetBytes(buildEntry.Text, 0, buildEntry.Text.Length, bytes, buildEntry.Offset);
+                    int indexEntryOffset = indexOffset + (i * UnsafeUtility.SizeOf<BabelIndexDTO>());
                     BabelIndexDTO entry = new BabelIndexDTO
                     {
                         StringHash = buildEntry.Hash,
                         ByteOffset = (uint)buildEntry.Offset,
                         ByteLength = (uint)byteCount
                     };
-                    WriteStruct(basePtr + indexOffset + (i * UnsafeUtility.SizeOf<BabelIndexDTO>()), in entry);
+                    if (!WriteStruct(basePtr + indexEntryOffset, totalBytes - indexEntryOffset, in entry))
+                        return Fail("Babel index entry write exceeded output buffer.");
                 }
 
                 for (int i = 0; i < btreeNodes.Length; i++)
-                    WriteStruct(basePtr + btreeOffset + (i * UnsafeUtility.SizeOf<BTreeNodeDTO>()), in btreeNodes[i]);
+                {
+                    int nodeOffset = btreeOffset + (i * UnsafeUtility.SizeOf<BTreeNodeDTO>());
+                    if (!WriteStruct(basePtr + nodeOffset, totalBytes - nodeOffset, in btreeNodes[i]))
+                        return Fail("Babel B-tree node write exceeded output buffer.");
+                }
 
                 uint crc = H8Crc32.Compute(new ReadOnlySpan<byte>(
                     bytes,
@@ -536,7 +542,8 @@ namespace Hecton8.Core.Data
                     PayloadCrc32 = crc,
                     Flags = H8StaticDataFormat.LittleEndianFlag | H8StaticDataFormat.CacheBTreeFlag
                 };
-                WriteStruct(basePtr, in header);
+                if (!WriteStruct(basePtr, totalBytes, in header))
+                    return Fail("Babel header write exceeded output buffer.");
                 AtomicWrite(outputPath, bytes);
                 return new H8DataBakeResult
                 {
@@ -590,10 +597,18 @@ namespace Hecton8.Core.Data
             fixed (byte* basePtr = bytes)
             {
                 for (int i = 0; i < lookupEntries.Length; i++)
-                    WriteStruct(basePtr + lookupOffset + (i * lookupEntrySize), in lookupEntries[i]);
+                {
+                    int lookupEntryOffset = lookupOffset + (i * lookupEntrySize);
+                    if (!WriteStruct(basePtr + lookupEntryOffset, bytes.Length - lookupEntryOffset, in lookupEntries[i]))
+                        return Fail("Static data lookup entry write exceeded output buffer.");
+                }
 
                 for (int i = 0; i < btreeNodes.Length; i++)
-                    WriteStruct(basePtr + btreeOffset + (i * UnsafeUtility.SizeOf<BTreeNodeDTO>()), in btreeNodes[i]);
+                {
+                    int nodeOffset = btreeOffset + (i * UnsafeUtility.SizeOf<BTreeNodeDTO>());
+                    if (!WriteStruct(basePtr + nodeOffset, bytes.Length - nodeOffset, in btreeNodes[i]))
+                        return Fail("Static data B-tree node write exceeded output buffer.");
+                }
 
                 for (int i = 0; i < records.Count; i++)
                 {
@@ -602,16 +617,20 @@ namespace Hecton8.Core.Data
                     switch (pending.RecordType)
                     {
                         case H8StaticDataFormat.RecordTypeItem:
-                            WriteStruct(destination, in pending.Item);
+                            if (!WriteStruct(destination, bytes.Length - lookupEntries[i].Offset, in pending.Item))
+                                return Fail("Static item record write exceeded output buffer.");
                             break;
                         case H8StaticDataFormat.RecordTypeEconomy:
-                            WriteStruct(destination, in pending.Economy);
+                            if (!WriteStruct(destination, bytes.Length - lookupEntries[i].Offset, in pending.Economy))
+                                return Fail("Static economy record write exceeded output buffer.");
                             break;
                         case H8StaticDataFormat.RecordTypePhysics:
-                            WriteStruct(destination, in pending.Physics);
+                            if (!WriteStruct(destination, bytes.Length - lookupEntries[i].Offset, in pending.Physics))
+                                return Fail("Static physics record write exceeded output buffer.");
                             break;
                         case H8StaticDataFormat.RecordTypeFauna:
-                            WriteStruct(destination, in pending.Fauna);
+                            if (!WriteStruct(destination, bytes.Length - lookupEntries[i].Offset, in pending.Fauna))
+                                return Fail("Static fauna record write exceeded output buffer.");
                             break;
                     }
                 }
@@ -638,7 +657,8 @@ namespace Hecton8.Core.Data
                     Flags = H8StaticDataFormat.LittleEndianFlag | H8StaticDataFormat.CacheBTreeFlag,
                     SchemaHash = H8StaticDataFormat.SchemaHash
                 };
-                WriteStruct(basePtr, in header);
+                if (!WriteStruct(basePtr, bytes.Length, in header))
+                    return Fail("Static data header write exceeded output buffer.");
                 AtomicWrite(outputPath, bytes);
                 return new H8DataBakeResult
                 {
@@ -739,10 +759,10 @@ namespace Hecton8.Core.Data
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void WriteStruct<T>(byte* destination, in T value) where T : unmanaged
+        private static bool WriteStruct<T>(byte* destination, long destinationBytes, in T value) where T : unmanaged
         {
             T local = value;
-            UnsafeUtility.MemCpy(destination, &local, UnsafeUtility.SizeOf<T>());
+            return UnsafeMemoryCopyGuard.SafeCopy(destination, destinationBytes, &local, UnsafeUtility.SizeOf<T>());
         }
 
         private static int AlignOffsetWithRepair(int offset, ref int repairCount)

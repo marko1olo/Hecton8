@@ -15,6 +15,46 @@ namespace Hecton8.Caves
         private static readonly int _EmissionColorId = Shader.PropertyToID("_EmissionColor");
         private static MaterialPropertyBlock _TissuePropertyBlock;
 
+        public static Transform Prewarm(Transform parent)
+        {
+            if (parent == null)
+                return null;
+
+            Transform root = GetOrCreateRoot(parent);
+            for (int i = 0; i < MaxTissueCount; i++)
+            {
+                if (i < root.childCount)
+                {
+                    WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisual(
+                        root.GetChild(i).gameObject,
+                        PrimitiveType.Quad,
+                        GetCachedName(i),
+                        Vector3.zero,
+                        Quaternion.identity,
+                        Vector3.one);
+                    continue;
+                }
+
+                Renderer renderer = WorldGeneratedPrimitiveFactory.CreatePrimitiveVisual(
+                    root,
+                    PrimitiveType.Quad,
+                    GetCachedName(i),
+                    Vector3.zero,
+                    Quaternion.identity,
+                    Vector3.one);
+                if (renderer != null)
+                    renderer.gameObject.SetActive(false);
+            }
+
+            DisableUnusedChildren(root, 0);
+            return root;
+        }
+
+        public static void PrewarmSharedResources()
+        {
+            _ = GetTissuePropertyBlock();
+        }
+
         public static void Build(
             Transform parent,
             HectonVoxelVolume volume,
@@ -25,10 +65,34 @@ namespace Hecton8.Caves
             if (parent == null || volume == null || config == null || !config.enabled)
                 return;
 
+            Transform tissueRoot = GetOrCreateRoot(parent);
+            BuildPrepared(tissueRoot, volume, preset, config, globalIntensity, createMissing: true);
+        }
+
+        public static void BuildPrepared(
+            Transform tissueRoot,
+            HectonVoxelVolume volume,
+            CavePreset preset,
+            GlowingTissueConfig config,
+            float globalIntensity)
+        {
+            BuildPrepared(tissueRoot, volume, preset, config, globalIntensity, createMissing: false);
+        }
+
+        private static void BuildPrepared(
+            Transform tissueRoot,
+            HectonVoxelVolume volume,
+            CavePreset preset,
+            GlowingTissueConfig config,
+            float globalIntensity,
+            bool createMissing)
+        {
+            if (tissueRoot == null || volume == null || config == null || !config.enabled)
+                return;
+
             if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, preset, out Bounds volumeBounds))
                 return;
 
-            Transform tissueRoot = GetOrCreateRoot(parent);
             Material tissueMaterial = ResolveTissueMaterial(volume);
             long runtimeSeed = volume.caveKey != 0L ? volume.caveKey : ComputeFallbackSeed(volume.transform.position, preset);
             int tissueCount = ResolveTissueCount(preset, volumeBounds, config, globalIntensity);
@@ -42,7 +106,8 @@ namespace Hecton8.Caves
                     tissueMaterial,
                     runtimeSeed,
                     config,
-                    globalIntensity);
+                    globalIntensity,
+                    createMissing);
                 ApplyTissueVisuals(renderer, config, globalIntensity, runtimeSeed, i);
             }
 
@@ -56,7 +121,8 @@ namespace Hecton8.Caves
             Material tissueMaterial,
             long runtimeSeed,
             GlowingTissueConfig config,
-            float globalIntensity)
+            float globalIntensity,
+            bool createMissing)
         {
             string name = GetCachedName(index);
             bool ceilingBias = Hash01(runtimeSeed, index, 11) > 0.35f;
@@ -85,7 +151,7 @@ namespace Hecton8.Caves
             {
                 Transform existing = root.GetChild(index);
                 ActivateTransform(existing);
-                return WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisual(
+                return WorldGeneratedPrimitiveFactory.ConfigurePrimitiveVisualHot(
                     existing.gameObject,
                     PrimitiveType.Quad,
                     name,
@@ -94,6 +160,9 @@ namespace Hecton8.Caves
                     localScale,
                     tissueMaterial);
             }
+
+            if (!createMissing)
+                return null;
 
             return WorldGeneratedPrimitiveFactory.CreatePrimitiveVisual(
                 root,
@@ -157,7 +226,8 @@ namespace Hecton8.Caves
 
         private static Material ResolveTissueMaterial(HectonVoxelVolume volume)
         {
-            if (volume != null && volume.TryGetComponent(out MeshRenderer renderer))
+            MeshRenderer renderer = volume != null ? volume.CachedMeshRenderer : null;
+            if (renderer != null)
                 return renderer.sharedMaterial;
 
             return null;

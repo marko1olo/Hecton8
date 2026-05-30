@@ -1358,6 +1358,8 @@ namespace Hecton8.Core
             float impactSpeedMetersPerSecond,
             Rigidbody secondaryBody = null);
 
+        bool TryResolveImpactAudioMaterialId(Rigidbody body, out byte materialId);
+
         void RegisterImpactListener(IPhysicsImpactEventListener listener);
 
         void UnregisterImpactListener(IPhysicsImpactEventListener listener);
@@ -2322,9 +2324,19 @@ namespace Hecton8.Core
         void SetWaypoint(int id, Transform target, string label, Color color);
 
         /// <summary>
+        /// Register or refresh an external waypoint bound to a transform target using caller-owned text identity.
+        /// </summary>
+        void SetWaypoint(int id, Transform target, uint labelHash, ReadOnlySpan<char> label, Color color);
+
+        /// <summary>
         /// Register or refresh an external waypoint bound to a runtime-space position.
         /// </summary>
         void SetWaypoint(int id, Vector3 worldPosition, string label, Color color);
+
+        /// <summary>
+        /// Register or refresh an external waypoint bound to a runtime-space position using caller-owned text identity.
+        /// </summary>
+        void SetWaypoint(int id, Vector3 worldPosition, uint labelHash, ReadOnlySpan<char> label, Color color);
 
         /// <summary>
         /// Remove a previously registered external waypoint.
@@ -5458,6 +5470,11 @@ namespace Hecton8.Core
         /// Samples terrain height from an Absolute Universe Position.
         /// </summary>
         bool TryGetHeightAUP(Vector3 absoluteUniversePosition, out float height);
+
+        /// <summary>
+        /// Samples terrain height from a canonical Absolute Universe Position without float-compressing X/Z first.
+        /// </summary>
+        bool TryGetHeightAUP(in AbsoluteUniversePosition absoluteUniversePosition, out float height);
 
         /// <summary>
         /// Samples terrain height from an Absolute Universe Position encoded as float3.

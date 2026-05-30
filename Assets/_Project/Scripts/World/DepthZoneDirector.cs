@@ -383,6 +383,7 @@ namespace Hecton8.World
         private uint _pendingDiscoveryHash;
         private DepthZoneProfile _pendingLogZone;
         private float _pendingLogDepth;
+        private IPlayerRuntimeContext _playerRuntimeContext;
         private IQuestSystem _questSystem;
         private SuitUpgradeManager _suitUpgradeManager;
         private IFirstHourReadModel _firstHourDirector;
@@ -425,7 +426,6 @@ namespace Hecton8.World
             RebuildZoneMessageCache();
 
             LocalizationEvents.RegisterLanguageListener(this);
-            ResolveSurvivalSystem();
         }
 
         private void OnDisable()
@@ -453,10 +453,10 @@ namespace Hecton8.World
 
         public void SlowTick()
         {
-            if (survivalSystem == null && !ResolveSurvivalSystem())
+            if (survivalSystem == null)
                 return;
 
-            if (survivalSystem == null || zones == null || zones.Length == 0)
+            if (zones == null || zones.Length == 0)
                 return;
 
             float depth = survivalSystem.Depth;
@@ -612,18 +612,25 @@ namespace Hecton8.World
             return firstHourDirector.IsFirstHourMilestoneComplete((int)FirstHourMilestone.Orientation);
         }
 
-        private bool ResolveSurvivalSystem()
+        private bool ResolveSurvivalSystemCold()
         {
             if (survivalSystem != null)
                 return true;
 
-            if (!BootstrapState.TryGetCurrentPlayerTransform(out Transform playerTransform) ||
-                playerTransform == null)
-            {
-                return false;
-            }
+            return TryCacheSurvivalSystemFromPlayerContext(_playerRuntimeContext);
+        }
 
-            return playerTransform.TryGetComponent(out survivalSystem);
+        private bool TryCacheSurvivalSystemFromPlayerContext(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null)
+                return survivalSystem != null;
+
+            HectonSurvivalSystem contextSurvivalSystem = playerContext.SurvivalSystem;
+            if (contextSurvivalSystem == null)
+                return survivalSystem != null;
+
+            survivalSystem = contextSurvivalSystem;
+            return true;
         }
 
         private void RebuildZoneMessageCache()
@@ -922,11 +929,26 @@ namespace Hecton8.World
                     _localizationText = currentService as ILocalizationTextReadModel;
                     RebuildZoneMessageCache();
                     break;
+                case GlobalRegistryServiceSlot.Player:
+                    IPlayerRuntimeContext previousPlayerContext = previousService as IPlayerRuntimeContext;
+                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    if (_playerRuntimeContext != null)
+                    {
+                        survivalSystem = _playerRuntimeContext.SurvivalSystem;
+                    }
+                    else if (previousPlayerContext != null && ReferenceEquals(survivalSystem, previousPlayerContext.SurvivalSystem))
+                    {
+                        survivalSystem = null;
+                    }
+
+                    break;
             }
         }
 
         private void CacheRegistryServicesCold()
         {
+            _playerRuntimeContext = GlobalRegistry.Player;
+            ResolveSurvivalSystemCold();
             _questSystem = GlobalRegistry.QuestSystem;
             _suitUpgradeManager = GlobalRegistry.SuitUpgrades;
             _firstHourDirector = GlobalRegistry.FirstHourReadModel;

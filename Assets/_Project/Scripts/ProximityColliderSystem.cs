@@ -29,7 +29,6 @@
 // ============================================================================
 
 using Hecton8.Core;
-using Hecton8.Bootstrap;
 using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
@@ -99,6 +98,7 @@ namespace Hecton8.Core
         private VaultGenerationHandle<byte> _jobResultsHandle;
         private VaultGenerationHandle<byte> _prevStatusHandle;
         private IDataVault _dataVault;
+        private IDataVault _positionWriteVault;
         private IDataVault _jobBufferGuardVault;
         private IObjectPoolService _objectPool;
 
@@ -898,7 +898,7 @@ namespace Hecton8.Core
         private bool TryAcquirePositionWriteBuffer(out NativeArray<float3> positions)
         {
             positions = default;
-            if (_jobBuffersLocked || !EnsureProximityVaultBuffers(_pointCount))
+            if (_jobBuffersLocked || _positionWriteVault != null || !EnsureProximityVaultBuffers(_pointCount))
                 return false;
 
             IDataVault vault = _dataVault;
@@ -909,17 +909,32 @@ namespace Hecton8.Core
                 return false;
             }
 
-            if (positions.IsCreated && positions.Length >= _pointCount)
-                return true;
+            bool keepLock = false;
+            try
+            {
+                if (positions.IsCreated && positions.Length >= _pointCount)
+                {
+                    _positionWriteVault = vault;
+                    keepLock = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in _positionsHandle, VaultOwnerSystemId);
-            positions = default;
-            return false;
+                return false;
+            }
+            finally
+            {
+                if (!keepLock)
+                {
+                    vault.ReleaseWriteLock(in _positionsHandle, VaultOwnerSystemId);
+                    positions = default;
+                }
+            }
         }
 
         private void ReleasePositionWriteBuffer()
         {
-            IDataVault vault = _dataVault;
+            IDataVault vault = _positionWriteVault;
+            _positionWriteVault = null;
             if (vault != null && IsExactVaultHandle(in _positionsHandle, PositionsBufferId))
                 vault.ReleaseWriteLock(in _positionsHandle, VaultOwnerSystemId);
         }
@@ -1037,7 +1052,7 @@ namespace Hecton8.Core
             if (!_jobBuffersLocked)
                 return;
 
-            IDataVault vault = _jobBufferGuardVault ?? _dataVault;
+            IDataVault vault = _jobBufferGuardVault;
             vault?.ReleaseMutationGuard(_jobMutationGuardMask);
             _jobBufferGuardVault = null;
             _jobBuffersLocked = false;
@@ -1050,6 +1065,7 @@ namespace Hecton8.Core
 
         private void ReleaseProximityBuffers(IDataVault vault)
         {
+            ReleasePositionWriteBuffer();
             ReleaseJobBufferLocks();
             ReleaseProximityVaultHandle(vault, ref _positionsHandle, PositionsBufferId);
             ReleaseProximityVaultHandle(vault, ref _jobResultsHandle, JobResultsBufferId);
@@ -1121,7 +1137,9 @@ namespace Hecton8.Core
             if (playerTransform != null)
                 return;
 
-            GameBootstrapper.TryGetCurrentPlayerTransform(out playerTransform);
+            IPlayerRuntimeContext playerRuntimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (playerRuntimeContext != null)
+                playerTransform = playerRuntimeContext.PlayerTransform;
         }
 
         /// <summary>

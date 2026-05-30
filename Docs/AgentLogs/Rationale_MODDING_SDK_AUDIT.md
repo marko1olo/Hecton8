@@ -1214,3 +1214,255 @@ Rejected Alternatives: Runtime probing was rejected because diagnosis must be sa
 Scalability potential: Low tier authors get a deterministic no-Unity command that explains why local mods will not load. Middle tier authors get the same explanation through the Unity Workbench. High tier can add conflict dashboards over the same JSON graph. Ultra tier can add signed dependency manifests, package marketplace compatibility previews, and visual loader timelines without changing runtime truth ownership.
 
 Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is offline SDK diagnosis only. It reduces failed local boot/debug loops and does not touch runtime loader allocation strategy, FutureCommandEnvelope layout, HectonEventBus isolation, SignalBus lanes, GlobalRegistry routes, GlobalDataVault ownership, save identity, Burst/jobs, telemetry, or continuous GlobalQualityWeight behavior.
+
+## Decision 102 - Dependency editing must be a first-class authoring contract
+
+Problem: Schema 109 could diagnose dependency graph ordering, duplicates, missing dependencies, and cycles, but an external author still had no safe interface to edit package dependencies. Manual edits can desync `mod.h8manifest.json` from `mod.json`, introduce self-dependencies, duplicate IDs, bad filesystem names, or break JSON automation with stray validation text.
+
+Solution: Add `Tools/configure_dependencies.ps1` as the single no-Unity dependency editor and expose it through root `h8mod.ps1 -Action dependencies`, VS Code tasks, the Unity External Starter Kit Workbench Dependency Contract panel, SDK Hub template routing, local validator checks, schema revision 110, static validator gates, docs, runtime playbook, review manifest, and submission zip. The tool validates canonical IDs, max 32 dependencies, duplicate/self rejection, authoring/runtime parity, rollback-on-failure, and clean `hecton8.dependencies.v1` JSON. Nested validation captures all streams with `*>&1` so machine output remains parseable.
+
+Rejected Alternatives: Hand-editing JSON was rejected because it leaves no rollback or parity proof. Runtime activation or managed dependency loading was rejected because public ingress remains envelope-only and lacks sandbox/save/hot-lane proof. A Unity-only editor was rejected because the public starter kit must work for random internet authors using only the copied folder, VS Code, and PowerShell/pwsh.
+
+Scalability potential: Low tier authors use one CLI command or VS Code task with no Unity install. Middle tier authors use the Workbench over the same root launcher. High tier can add dependency graph previews and package conflict panels over the same JSON schema. Ultra tier can add marketplace compatibility, signed package dependencies, and visual loader timelines without changing runtime truth ownership.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is offline SDK authoring only. It prevents invalid dependency metadata before loader discovery and does not touch FutureCommandEnvelope layout, HectonEventBus isolation, SignalBus lanes, GlobalRegistry routes, GlobalDataVault ownership, save identity, Burst/jobs, telemetry, rendering, or continuous GlobalQualityWeight behavior.
+
+## Decision 103 - Package readiness must be a read-only doctor, not another mutating helper
+
+Problem: After dependency editing, local install, and local Mods diagnosis, a copied starter author still had no single safe answer for package handoff readiness. They had to infer structure validity, review manifest freshness, source drift, and submission zip freshness from separate tools and timestamps.
+
+Solution: Add `Tools/run_doctor.ps1` as a read-only no-Unity doctor exposed through `h8mod.ps1 -Action doctor`, VS Code, Workbench, SDK Hub template generation, local validator checks, schema revision 111, docs, runtime playbook, review manifest, and submission zip. The doctor runs validation, parses authoring/runtime/content files, hashes current source files against `Reports/review_manifest.json`, checks `Generated/<mod-id>_submission.zip`, reports exact next actions, and exits nonzero only for invalid structure. Schema/static validation proves the tool is bounded and does not call write cmdlets.
+
+Rejected Alternatives: Auto-running prepare/submission from the doctor was rejected because a readiness probe must not mutate review artifacts. A Unity-only inspector was rejected because random external authors must work from a copied starter folder, VS Code, and PowerShell/pwsh. Runtime managed DLL/Harmony/BepInEx activation was rejected because public runtime ingress remains envelope-only and lacks sandbox/save/hot-lane proof.
+
+Scalability potential: Low tier authors get one command or VS Code task with no Unity. Middle tier authors get the same route in the Unity Workbench. High tier can add a structured readiness dashboard over the doctor JSON. Ultra tier can add signed package validation, visual diff, conflict simulation, and marketplace preflight without changing runtime truth ownership.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is offline SDK/readiness tooling only. It prevents stale package handoff before loader discovery and does not touch FutureCommandEnvelope layout, HectonEventBus isolation, SignalBus lanes, GlobalRegistry routes, GlobalDataVault ownership, save identity, Burst/jobs, telemetry, rendering, or continuous GlobalQualityWeight behavior.
+
+## Decision 104 - Package doctor must verify archive contents, not just timestamps
+
+Problem: Schema 111 gave public authors one `doctor` command, but its submission check only proved that `Generated/<mod-id>_submission.zip` existed and was not older than `Reports/review_manifest.json`. A corrupted or manually edited zip could pass timestamp freshness while containing changed source, duplicate entries, `Generated/` payloads, or unreviewed files.
+
+Solution: Extend `Tools/run_doctor.ps1` with bounded read-only zip inspection. It opens the archive through `System.IO.Compression.ZipFile.OpenRead`, caps inspection at 300 entries and 4194304 bytes per entry, verifies every reviewed source file plus `Reports/review_manifest.json` against byte/SHA-256 expectations, rejects duplicate/unsafe/unreviewed entries, reports explicit counters, and never extracts or mutates package files. Schema revision 112 and the static validator now record `ExternalStarterKitDoctorVerifiesSubmissionZipContents` and `ExternalStarterKitDoctorRejectsUnsafeZipEntries`.
+
+Rejected Alternatives: Extracting the zip to a temp folder was rejected because readiness checks must avoid extra filesystem state and cleanup risk. Trusting `build_submission_package.ps1` was rejected because the handoff artifact can be manually edited after build. Runtime install probing was rejected because public runtime ingress remains envelope-only and no managed/content activation is granted.
+
+Scalability potential: Low tier authors get deterministic no-Unity package handoff proof from one CLI/VS Code task. Middle tier authors get the same proof through Workbench. High tier can add visual archive diff and package marketplace preflight over the same JSON fields. Ultra tier can add signatures and signed dependency compatibility without changing runtime truth ownership.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is offline SDK/package verification only. It prevents bad archives before loader discovery and does not touch FutureCommandEnvelope layout, HectonEventBus isolation, SignalBus lanes, GlobalRegistry routes, GlobalDataVault ownership, save identity, Burst/jobs, telemetry, rendering, or continuous GlobalQualityWeight behavior.
+
+## Decision 105 - Unity Workbench must show archive integrity, not only package freshness
+
+Problem: Schema 112 made the no-Unity package doctor verify submission zip contents, but the Unity External Starter Kit Workbench still summarized only package path, bytes, write time, and timestamp freshness against `Reports/review_manifest.json`. A random Unity-side modder could see a "current" package without seeing whether the zip entries still match the review hash contract.
+
+Solution: Extend `ExternalStarterKitWorkbenchWindow.LoadSubmissionSummary()` with bounded read-only zip inspection. The Workbench now opens `Generated/<mod-id>_submission.zip` as a read-only `ZipArchive`, caps inspection at 300 entries and 4194304 bytes per entry, rejects unsafe `Generated/` and non-manifest `Reports/` entries, verifies every reviewed source entry plus `Reports/review_manifest.json` by byte count and SHA-256, and displays `Zip integrity: verified/invalid` with missing/changed/extra/unsafe/duplicate counters. Schema revision 113 and `Validate_Mod_API_Static.ps1` now require this Workbench integrity display.
+
+Rejected Alternatives: Calling `Tools/run_doctor.ps1` on every repaint was rejected because Workbench status refresh must stay responsive and avoid process churn. Extracting the zip to disk was rejected because editor diagnostics should not create cleanup obligations. Runtime package activation was rejected because public UGC ingress remains envelope-only and this is authoring evidence only.
+
+Scalability potential: Low tier authors get the same package proof in Unity without running a separate shell. Middle tier users can use the Workbench panel as the normal handoff dashboard. High and Ultra tiers can add signed package metadata, visual archive diff, or marketplace preflight on the same review-manifest route without changing runtime truth ownership.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. Editor cost is bounded and only paid when the Workbench refreshes submission status; no Tick, FixedUpdate, LateFrameTick, Execute, GlobalRegistry hot poll, SignalBus hot lane, GlobalDataVault route, save identity, Burst/job, telemetry, rendering, or GlobalQualityWeight path changed.
+
+## Decision 106 - Workbench zip proof must be case-exact and manifest-capped
+
+Problem: Schema 113 Workbench integrity used ordinal-ignore-case dictionaries for reviewed paths and zip entries. That could accept `readme.md` for `README.md` on Windows and let a handoff package fail on case-sensitive platforms. The Workbench also read `Reports/review_manifest.json` before enforcing a byte cap and trusted malformed review hash rows too late.
+
+Solution: Make Workbench package proof case-exact with `StringComparer.Ordinal`, keep a separate ordinal-ignore-case set only to reject case-fold duplicates, require exact `Reports/review_manifest.json` casing, cap review manifest pre-read at 1048576 bytes, and reject invalid SHA-256, negative byte counts, and oversized review rows before matching zip entries. Schema revision 114 and the static validator now require those guards.
+
+Rejected Alternatives: Path normalization was rejected because it hides non-portable package bugs. Accepting Windows case-insensitive behavior was rejected because public starter submissions must be portable. Spawning the doctor from Workbench was rejected because editor status refresh must not depend on shell process churn.
+
+Scalability potential: Low tier authors get deterministic package proof without Unity runtime activation. Middle tier gets the same proof in the Workbench. High tier can add visual archive diff on the same exact-path contract. Ultra tier can add signatures and marketplace preflight without changing runtime truth ownership.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. Editor cost stays bounded by entry and byte caps; no Tick, FixedUpdate, LateFrameTick, Execute, GlobalRegistry, SignalBus, GlobalDataVault, save, Burst/job, rendering, telemetry, or GlobalQualityWeight path changed.
+
+## Decision 107 - No-Unity package doctor must share the case-exact handoff contract
+
+Problem: The Unity Workbench used case-exact package integrity after schema 114, but the copied public starter doctor still lower-cased review/zip paths and matched `Reports/review_manifest.json` case-insensitively. A modder using only VS Code/PowerShell could ship a zip that passes on Windows and fails on a case-sensitive platform or marketplace verifier.
+
+Solution: Move `Tools/run_doctor.ps1` to the same exact-path contract as the Workbench. Reviewed source paths and zip entries now use ordinal dictionaries; ordinal-ignore-case maps are used only to reject case-fold duplicates. The doctor requires exact `Reports/review_manifest.json` casing, caps manifest pre-read at 1048576 bytes, rejects malformed SHA-256/negative/oversized review rows before matching, and exposes duplicate/invalid review counters in the readiness JSON.
+
+Rejected Alternatives: Windows-style path normalization was rejected because it hides portable package defects. A Unity-only proof was rejected because external mod authors must be able to validate a copied starter kit with no Unity install. Extracting archives to disk was rejected because the doctor is a read-only package verifier and should not create cleanup or orphan-process risk.
+
+Scalability potential: Low tier authors get deterministic CLI/VS Code proof with no Unity and no runtime activation. Middle tier authors get the same contract through Workbench. High tier can add archive diff and dependency compatibility views over the same exact-path data. Ultra tier can add signed packages and marketplace preflight without changing FutureCommandEnvelope, HectonEventBus isolation, save identity, or runtime truth ownership.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. This is offline SDK/package verification only. It adds bounded authoring-time archive and manifest checks, not Tick/FixedUpdate/LateFrameTick/Execute work; no GlobalRegistry hot poll, GetComponent hot lookup, DataVault write-lock route, Burst/job dispatcher window, presentation phase, telemetry buffer, rendering, or continuous GlobalQualityWeight behavior changed.
+
+## Decision 108 - Package builders must not be looser than the package doctor
+
+Problem: After schema 115, the no-Unity doctor and Unity Workbench were case-exact, but the public package builders still used case-insensitive prefix checks and a default PowerShell hashtable for entry tracking. That allowed `reports/`, `generated/`, `.ZIP`, or case-fold duplicate source paths to pass or collapse during package creation, then fail later in the stricter doctor or on case-sensitive platforms.
+
+Solution: Make the review manifest builder require exact `Reports/review_manifest.json`, use ordinal source-path tracking, and reject duplicate/case-fold duplicate source paths before hashing. Make the submission package builder require exact review output, exact `Generated/` prefix, lower-case `.zip`, validate review byte/SHA-256 rows, use ordinal source-entry tracking, and reject case-fold duplicates before zip write. Replace stale embedded C# review/submission generator string builders in the SDK Hub with checked-in template reads so future refreshes use the same reviewed tools.
+
+Rejected Alternatives: Let the doctor catch builder mistakes later was rejected because the handoff artifact should be born valid. Case normalization was rejected because it hides portability defects. Adding runtime loader tolerance was rejected because runtime UGC ingress remains envelope-only and package authoring must not alter save, asset, SignalBus, GlobalRegistry, or DataVault authority.
+
+Scalability potential: Low tier authors get deterministic package creation from PowerShell/VS Code without Unity. Middle tier authors get the same contract through the Workbench. High tier can layer archive diff UI over exact review rows. Ultra tier can add signatures and marketplace package validation without changing runtime truth ownership.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. This is offline SDK/package-authoring only. It adds bounded string/hash checks during prepare/submission and removes no runtime cycles; no Tick, FixedUpdate, LateFrameTick, Execute, GlobalRegistry hot lookup, GetComponent lookup, DataVault write lock, Burst/job, presentation transfer, rendering, telemetry, save identity, or continuous GlobalQualityWeight path changed.
+
+## Decision 109 - Starter reserved folders must be exact-case, not Windows-local aliases
+
+Problem: Schema 116 made package entries case-exact, but the starter root still had a Windows portability hole. `reports/`, `generated/`, or other reserved top-level folder case variants could be accepted by local tools or treated as normal source on a case-insensitive filesystem, then fail on case-sensitive platforms, marketplace verification, or copied CI environments.
+
+Solution: Require exact starter path casing in `validate_structure.ps1`, reject reserved top-level folder case variants in validator/review/submission/doctor paths, require exact `Reports/review_manifest.json`, exact `Generated/`, lower-case `.zip`, and lower-case SHA-256. The Workbench reports reserved folder case variants before package handoff. Schema 117 and static validation now gate these markers.
+
+Rejected Alternatives: Path normalization was rejected because it hides non-portable package defects. Allowing Windows aliases and relying on doctor failure was rejected because the public SDK should produce valid artifacts, not delayed surprises. Runtime loader tolerance was rejected because runtime UGC ingress remains envelope-only and package authoring must not change save authority, SignalBus lanes, GlobalRegistry routes, DataVault ownership, or asset trust.
+
+Scalability potential: Low tier authors get deterministic PowerShell/VS Code validation with no Unity install. Middle tier authors see the same problem in the Workbench. High tier can add archive diff and dependency compatibility over exact paths. Ultra tier can add signed marketplace preflight without changing runtime truth ownership.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. This is offline SDK/editor-only hardening; no Tick, FixedUpdate, LateFrameTick, Execute, GlobalRegistry hot lookup, GetComponent lookup, DataVault write lock, Burst/job, presentation transfer, rendering, telemetry, save identity, or GlobalQualityWeight path changed.
+
+## Decision 110 - Local install and diagnosis must not be weaker than submission proof
+
+Problem: The public no-Unity local install and local Mods diagnosis route was still weaker than review/submission/doctor. `install_local_mod.ps1` accepted non-standard `ReviewOutput` casing because PowerShell `-ne` is case-insensitive by default, and both local install and diagnosis could accept uppercase SHA-256 proof because `-match` and `-ne` are case-insensitive unless explicitly case-sensitive. Diagnosis also treated invalid review proof as a warning while the package remained boundary-disabled instead of invalid.
+
+Solution: Move local install and local diagnosis onto exact review proof. Use `-cmatch` for lowercase SHA-256 shape, `-cne` for exact path/hash comparison, require exact `Reports/review_manifest.json` before prepare in local install, reject reserved top-level folder case variants, reject duplicate and case-fold duplicate review paths, validate byte rows before hashing, and mark missing or invalid local review proof as `INVALID` in diagnosis. Schema 118, runtime playbook, and modding docs now gate this proof.
+
+Rejected Alternatives: PowerShell default comparison operators were rejected because they are case-insensitive and silently weaken lowercase/hash contracts. Letting package doctor catch local defects later was rejected because `install-local` and `diagnose-local` are the exact route random external authors use before testing discovery. Runtime loader tolerance was rejected because runtime UGC ingress remains envelope-only and this change must not create managed DLL execution, loose content loading, SignalBus authority, GlobalRegistry hot polling, DataVault ownership, or save identity changes.
+
+Scalability potential: Low tier authors get deterministic PowerShell/VS Code local install and diagnosis with no Unity project. Middle tier authors get the same proof through the Workbench. High tier can add a local Mods diff UI over exact review rows. Ultra tier can add signatures or marketplace provenance checks over the same exact lowercase review proof without changing runtime truth ownership.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. This is offline SDK/package diagnosis only. It adds bounded string/hash checks and dictionary lookups during authoring commands; no Tick, FixedUpdate, LateFrameTick, Execute, GlobalRegistry hot lookup, GetComponent lookup, DataVault write lock, Burst/job, presentation transfer, rendering, telemetry, save identity, or continuous GlobalQualityWeight path changed.
+
+## Decision 111 - Snippet helpers must be as strict as package handoff proof
+
+Problem: The public starter snippet helpers were easier to misuse than the later package proof lane. A random external author could generate or apply snippets with whitespace-normalized paths, wrong extensions, alternate data stream style colons, empty path segments, oversized JSON inputs, or non-portable asset paths. That makes the "easy authoring" route weaker than `doctor`, `submission`, and local diagnosis.
+
+Solution: Move graph/settings/locale/asset snippet creation and apply tools onto a strict starter-relative contract. Generated snippets must be exact `Generated/*.json`; apply inputs are size-capped before JSON parse; graph `ParametersJson` is capped at 8192 chars; asset paths must stay under `Content/Assets/` without rooted paths, colons, empty segments, dot segments, or dot-dot segments. Schema 119, static validation, docs, runtime playbook, review manifest, and submission zip now prove the contract.
+
+Rejected Alternatives: Runtime loader tolerance was rejected because runtime UGC ingress remains envelope-only and should not compensate for bad authoring files. Trimming or normalizing paths was rejected because it hides non-portable Windows-local mistakes. A Unity-only editor guard was rejected because random modders must be able to work from the copied starter folder with PowerShell/pwsh and VS Code.
+
+Scalability potential: Low tier authors get fail-closed CLI/VS Code tools with no Unity project and no large file reads. Middle tier authors get the same contract through the Workbench and starter docs. High tier can add visual snippet editors over the same JSON caps. Ultra tier can add marketplace preflight, signed snippet packs, and richer authoring previews without changing runtime truth ownership.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. This is offline SDK authoring only. It adds bounded string/path checks and file-size checks to PowerShell tools; no Tick, FixedUpdate, LateFrameTick, Execute, GlobalRegistry hot lookup, GetComponent lookup, DataVault write lock, Burst/job, presentation transfer, rendering, telemetry, save identity, or continuous GlobalQualityWeight path changed.
+
+## Decision 112 - Core starter tools must share snippet bounded-read and path portability rules
+
+Problem: Schema 119 made snippet tools strict, but root validator and core public starter tools still had weaker external JSON/text ingestion. `validate_structure.ps1`, identity/dependency/manifest/review/prepare/submission/install/diagnose/doctor paths could parse external files without the same upfront byte caps, and manual `Content/assets.h8manifest.json` path validation was looser than the asset snippet helper.
+
+Solution: Add byte caps before parsing every external JSON/text file in the core starter toolchain, including manifests, graph, asset manifest, settings, locale, schema files, capability docs, review manifests, and doctor inputs. Make manual asset manifest paths use the same portable contract as asset snippets: exact `Content/Assets/`, no rooted paths, no colons, no empty segments, no dot segments, no dot-dot segments. Add schema revision 120 and static fail-closed probes for oversized root manifest and non-portable manual asset path.
+
+Rejected Alternatives: Relying on later package doctor was rejected because authors need immediate failure at the tool they invoked. Trimming or normalizing paths was rejected because it hides Windows-only mistakes. Runtime loader tolerance was rejected because runtime UGC ingress remains envelope-only and must not compensate for malformed authoring files.
+
+Scalability potential: Low tier authors get bounded no-Unity PowerShell/VS Code tooling that does not allocate huge JSON objects. Middle tier gets the same contract through starter docs and Workbench routes. High tier can layer visual editors over the same capped files. Ultra tier can add marketplace preflight and signed packages without changing FutureCommandEnvelope, HectonEventBus isolation, SignalBus lanes, GlobalRegistry routes, DataVault ownership, save identity, Burst/jobs, rendering, telemetry, or continuous GlobalQualityWeight behavior.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. Authoring-time risk is reduced by rejecting oversized or non-portable files before JSON object creation; no Tick, FixedUpdate, LateFrameTick, Execute, GlobalRegistry hot lookup, GetComponent lookup, DataVault write lock, Burst/job, presentation transfer, rendering, telemetry, save identity, or continuous GlobalQualityWeight path changed.
+
+## Decision 113 - Unity Workbench previews must cap external starter files before parsing
+
+Problem: Schema 120 moved the no-Unity starter toolchain onto bounded JSON/text reads, but `ExternalStarterKitWorkbenchWindow` still parsed starter files with direct `File.ReadAllText`. A random external modder could hand-edit or paste a huge `Graphs/main.h8graph.json`, `Tables/settings.h8table.json`, `Content/assets.h8manifest.json`, `Locales/en.h8loc.json`, or `Reports/review_manifest.json` and make the Unity Workbench allocate/freeze before the CLI validator ever helped.
+
+Solution: Add a single Workbench preview read gate: `ReadTextFileCapped` plus `ReadJsonFileCapped<T>`. Authoring manifests are capped at `65536` bytes, graph/settings/content manifests at `262144`, locale drafts at `2097152`, opcode references and review manifests at `1048576`. The Workbench now uses those helpers for manifest, graph, settings, locale, asset, budget, identity, and review-summary previews, while opcode enumeration checks file length before `File.ReadLines`.
+
+Rejected Alternatives: Keeping one generic 1 MB authoring-data cap was rejected because graph/settings/content manifests need tighter editor preview bounds and locale drafts need a larger bounded ceiling. Delegating all preview validation to `Tools/validate_structure.ps1` was rejected because Workbench refreshes and previews must fail before parsing. Runtime loader tolerance was rejected because this is public SDK authoring UI, not runtime UGC activation.
+
+Scalability potential: Low tier authors get a Unity Workbench that fails oversized starter files before big allocations. Middle tier authors keep readable settings/content/locale previews without shell commands. High tier can add visual diff over the same capped preview snapshots. Ultra tier can add marketplace preflight and signed package review over the same bounded file contract without changing FutureCommandEnvelope, HectonEventBus isolation, SignalBus lanes, GlobalRegistry routes, DataVault ownership, save identity, Burst/jobs, rendering, telemetry, or continuous GlobalQualityWeight behavior.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. Editor-side failure happens before large JSON object creation; APEX scans found no touched C# phase methods, no hot `GlobalRegistry.Get<T>()`, no non-`Try` `GetComponent`, and no DataVault write-lock route introduced.
+
+## Decision 114 - Workbench preview caps must be enforced during the read
+
+Problem: Schema 121 capped Unity Workbench preview reads before parsing, but the helper still used `FileInfo.Length` followed by `File.ReadAllText`. A copied starter file could grow between the pre-size check and the managed full read, leaving a TOCTOU window and preserving a raw unbounded read primitive in the public editor path.
+
+Solution: Replace Workbench `File.ReadAllText` with a streaming hard-cap read. `ReadTextFileCapped` now validates the cap, allocates exactly `byteLimit + 1`, reads through `File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)` in 8192-byte chunks, throws immediately when `totalBytes > byteLimit`, and only then decodes UTF-8 for `ReadJsonFileCapped<T>`. Schema 122 and static validation require zero Workbench `File.ReadAllText` matches.
+
+Rejected Alternatives: Keeping the `FileInfo.Length` pre-check was rejected because it proves only the old file size. Calling the CLI validator from Workbench preview was rejected because authoring UI refresh must not spawn processes or leave orphaned tools. Runtime loader tolerance was rejected because the public modding boundary remains envelope-only and this problem is editor ingestion.
+
+Scalability potential: Low tier authors get bounded Unity Workbench previews that fail before huge managed reads. Middle tier keeps readable graph/settings/content/locale/review previews. High tier can add visual diff over the same capped string snapshots. Ultra tier can add marketplace preflight or signed package preview without changing runtime truth ownership, FutureCommandEnvelope, HectonEventBus isolation, SignalBus lanes, GlobalRegistry routes, DataVault ownership, save identity, Burst/jobs, rendering, telemetry, or continuous GlobalQualityWeight behavior.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. Editor-side risk is reduced by eliminating the raw full-file read and enforcing the cap while bytes are entering memory. APEX proof for this pass found 0 hot lookup violations, 0 touched phase methods, 0 production DataVault write-lock violations, and no compile launch under a closed CPU/compiler gate.
+
+## Decision 115 - Workbench preview decoding must reject invalid UTF-8 before JSON parsing
+
+Problem: Schema 122 enforced byte caps during Unity Workbench preview reads, but `Encoding.UTF8.GetString` can decode malformed bytes with replacement fallback. That means an external starter file with invalid UTF-8 could reach `JsonUtility` with substituted characters instead of failing at the ingestion boundary.
+
+Solution: Add a strict editor-only decoder route. `ExternalStarterKitWorkbenchWindow` now uses `new UTF8Encoding(false, true)` through `StrictUtf8NoBom.GetString(bytes, 0, totalBytes)` and converts `DecoderFallbackException` into `InvalidDataException` with the file label. Schema 123 and static validation require this strict UTF-8 proof.
+
+Rejected Alternatives: Post-parse validation was rejected because it decodes bad bytes before the failure point. Allowing replacement fallback was rejected because it hides corrupted authoring files from random external modders. Routing preview through a CLI process was rejected because Workbench preview refresh must not spawn parser processes or create orphan process risk.
+
+Scalability potential: Low tier authors get deterministic fail-closed previews for broken text files without large memory reads. Middle tier keeps the Workbench path aligned with no-Unity JSON/text contracts. High tier can add visual diff and encoding diagnostics over the same strict byte snapshot. Ultra tier can add signed package preflight without changing runtime truth ownership, FutureCommandEnvelope, HectonEventBus isolation, SignalBus lanes, GlobalRegistry routes, DataVault ownership, save identity, Burst/jobs, rendering, telemetry, or continuous GlobalQualityWeight behavior.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. This is an editor-only SDK ingestion guard. APEX proof found 0 hot lookup violations, 0 touched phase methods, 0 production DataVault write-lock violations, and no compile launch under a closed CPU/compiler gate.
+
+## Decision 116 - Copied no-Unity tools need the same strict byte ingestion as Workbench
+
+Problem: Schema 123 hardened Unity Workbench strict UTF-8 preview reads, but copied public starter PowerShell tools still owned separate JSON/text/opcode reads. A random external modder using VS Code or PowerShell could feed invalid UTF-8 or oversized text into the CLI route and get tolerant decoding or inconsistent byte-cap semantics.
+
+Solution: Add shared `Tools/strict_json_io.ps1`. The helper streams under a hard byte cap, reads in 8192-byte chunks with `FileShare.ReadWrite`, decodes using `new UTF8Encoding(false, true)`, rejects `DecoderFallbackException`, and only then calls `ConvertFrom-Json`. Core tools, snippet apply/create tools, local install/diagnosis, doctor, package builders, and opcode-list tooling now route through that helper. Unity Hub copies the helper, `validate_structure.ps1` requires it, schema 124 and static validation gate helper tokens, adoption, docs, and zero `Get-Content` under starter tools.
+
+Rejected Alternatives: Per-script duplicate readers were rejected because they would drift again. `FileInfo.Length` plus full read was rejected because it leaves TOCTOU and large managed-read behavior. Workbench-only hardening was rejected because the no-Unity starter is the main route for public modders. Runtime loader tolerance was rejected because mod ingress remains envelope-only and authoring tools must fail before bad data reaches runtime contracts.
+
+Scalability potential: Low tier authors get deterministic no-Unity validation without Unity or large managed file reads. Middle tier keeps the same strict contract in Workbench and CLI. High tier can add visual diff or richer authoring UI over capped strict strings. Ultra tier can add marketplace signing and package provenance over the same ingestion helper without changing FutureCommandEnvelope, HectonEventBus isolation, SignalBus lanes, GlobalRegistry routes, DataVault ownership, save identity, Burst/jobs, rendering, telemetry, or continuous GlobalQualityWeight behavior.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. Authoring memory is bounded by `MaxBytes + 1` plus 8192-byte read chunks per file. APEX proof found 0 hot lookup violations, no touched timing phase route, no new DataVault write-lock acquisition, and no compile launch under a closed CPU/compiler gate.
+
+## Decision 117 - Root launcher capability guide must use the same strict reader as tools
+
+Problem: The copied starter tools used shared strict capped UTF-8 ingestion, but the root `h8mod.ps1 -Action capabilities` convenience route could still become a weaker first-contact path for external modders. A corrupted or oversized `Docs/capabilities.md` should fail at the same boundary as tool JSON/text files.
+
+Solution: Route root capability output through `Tools/strict_json_io.ps1` with `Read-H8TextFileCapped` and a 262144-byte cap. The Unity Hub fallback root launcher generator emits the same dependency on the checked-in strict helper. Schema 125 and static validation now gate this source contract.
+
+Rejected Alternatives: Duplicating a root-only strict reader was rejected because duplicated ingestion logic already caused drift. Leaving the root action as a raw convenience wrapper was rejected because random modders use root actions before learning the deeper tool tree. Runtime loader tolerance was rejected because this is SDK authoring ingress, not runtime activation.
+
+Scalability potential: Low tier authors get deterministic PowerShell output with no Unity and no oversized text read. Middle tier keeps CLI and Workbench behavior aligned. High tier can add richer capability rendering over the same capped text route. Ultra tier can add signed SDK help packs without changing runtime truth ownership, FutureCommandEnvelope, HectonEventBus isolation, SignalBus lanes, GlobalRegistry routes, DataVault ownership, save identity, Burst/jobs, rendering, telemetry, or continuous GlobalQualityWeight behavior.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. Authoring memory is capped by the shared strict reader. APEX proof found 0 hot lookup violations, no touched timing phase route, no new DataVault write-lock acquisition, and no compile launch under a closed CPU/compiler gate.
+
+## Decision 118 - Submission package timestamp must preserve doctor freshness invariant
+
+Problem: After a public `h8mod.ps1 -Action submission` run, the generated zip could keep a filesystem timestamp older than the newly written `Reports/review_manifest.json` because the builder copied a temporary archive over the final path. The package bytes were valid, but `doctor` correctly treated the zip as stale against the fresh review proof, creating a bad random-modder workflow.
+
+Solution: After final copy, `build_submission_package.ps1` compares the output zip `LastWriteTimeUtc` with the review manifest `LastWriteTimeUtc` and advances the zip to one second after the review when needed. Schema 126, docs, runtime playbook, and static validation now require this freshness handoff.
+
+Rejected Alternatives: Weakening doctor freshness checks was rejected because stale packages are a real marketplace/discovery risk. Asking authors to rerun commands was rejected because the starter's one-shot submission path must be born valid. Runtime loader tolerance was rejected because runtime UGC remains envelope-only and must not compensate for authoring/package defects.
+
+Scalability potential: Low tier authors can build and diagnose a submission from PowerShell without manual timestamp repair. Middle tier gets the same proof through Workbench and starter docs. High tier can layer archive diff and dependency compatibility on the fresh review/submission pair. Ultra tier can add signatures and marketplace provenance over the same invariant without changing runtime truth ownership.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. This is offline SDK/package-authoring only. The cost is one file metadata comparison and conditional timestamp write after archive copy; no Tick, FixedUpdate, LateFrameTick, Execute, GlobalRegistry hot lookup, GetComponent lookup, DataVault write lock, Burst/job, presentation transfer, rendering, telemetry, save identity, or continuous GlobalQualityWeight path changed.
+
+## Decision 119 - Unity Hub executable starter scripts must fail closed when checked-in templates are missing
+
+Problem: `CreateExternalStarterKit` preferred checked-in starter files but still supplied C# embedded fallback factories for root `h8mod.ps1` and public `Tools/*.ps1` scripts. If a checked-in executable template was deleted or missed during an integration, the Hub could silently regenerate stale fallback PowerShell that did not necessarily share the strict capped UTF-8 ingestion contract. That creates a second public SDK toolchain for random external modders.
+
+Solution: Route root `h8mod.ps1` and every public `Tools/*.ps1` writer through `BuildStarterKitToolFromTemplate`. That path copies the checked-in template when present and emits a fail-closed missing-template script when absent. Docs, manifests, schemas, and VS Code files keep bounded C# fallbacks because they are non-executable scaffolding. Schema 127 and static validation now reject `BuildStarterKitTemplateFile("h8mod.ps1")` and `BuildStarterKitTemplateFile("Tools/*.ps1")` drift while requiring `BuildStarterKitToolFromTemplate(...)` for the root launcher and all 21 public tools.
+
+Rejected Alternatives: Updating every stale C# embedded script body was rejected because duplicate executable sources will drift again. Throwing from starter generation was rejected because it would break non-destructive refresh of other missing starter files; fail-closed scripts give authors a concrete local error. Runtime loader tolerance was rejected because this is SDK authoring ingress, not runtime UGC activation.
+
+Scalability potential: Low tier authors get one deterministic no-Unity toolchain instead of divergent fallback scripts. Middle tier keeps Unity Workbench and CLI aligned to the same checked-in template set. High tier can add richer authoring UI over the same files. Ultra tier can add marketplace signing and provenance without changing FutureCommandEnvelope, HectonEventBus isolation, SignalBus lanes, GlobalRegistry routes, DataVault ownership, save identity, Burst/jobs, rendering, telemetry, or continuous GlobalQualityWeight behavior.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. Editor generation changes string source selection only; no Tick, FixedUpdate, LateFrameTick, Execute, GlobalRegistry hot lookup, GetComponent lookup, DataVault write lock, Burst/job, presentation transfer, rendering, telemetry, save identity, or continuous GlobalQualityWeight path changed. Build was attempted once only after the gate opened, returned `exit=-1` without compiler diagnostics, and left no `dotnet`, `csc`, or `VBCSCompiler` process alive.
+
+## Decision 120 - Hub executable fallback bodies must not survive template-only routing
+
+Problem: Schema 127 forced root/tool starter scripts through checked-in templates, but the Hub source still retained several large embedded executable fallback bodies for root `h8mod.ps1`, validator, identity, prepare, opcode listing, settings snippet, and locale snippet generation. Even if current call sites used templates, those stale bodies were a future regression route and kept old PowerShell contracts in C#.
+
+Solution: Remove the executable fallback bodies and make the remaining builder methods one-line `BuildStarterKitToolFromTemplate(...)` shims. Keep bounded C# fallbacks only for non-executable docs/manifests/schemas/VS Code scaffolding. Update schema 128 and static validation so root/tool executable content is proven from checked-in starter templates, while old fallback body tokens fail the audit.
+
+Rejected Alternatives: Keeping the bodies as backup was rejected because duplicate executable sources already drifted and are too easy to revive. Throwing from the Hub was rejected because non-destructive starter refresh still benefits from fail-closed missing-template scripts. Runtime loader tolerance was rejected because this is SDK authoring ingress, not runtime UGC activation.
+
+Scalability potential: Low tier authors get one deterministic no-Unity toolchain with no hidden stale generator path. Middle tier keeps Unity Workbench and CLI templates aligned. High tier can add visual authoring over the same checked-in scripts. Ultra tier can add marketplace signing/provenance without changing runtime truth ownership, FutureCommandEnvelope, HectonEventBus isolation, SignalBus lanes, GlobalRegistry routes, DataVault ownership, save identity, Burst/jobs, rendering, telemetry, or continuous GlobalQualityWeight behavior.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. This pass changed editor/package source selection only; no Tick, FixedUpdate, LateFrameTick, Execute, GlobalRegistry hot lookup, GetComponent lookup, DataVault write lock, Burst/job, presentation transfer, rendering, telemetry, save identity, or continuous GlobalQualityWeight path changed. Build was deferred because the gate was closed at `CPU=64.69` with active `dotnet:54640` already running the throttled `Hecton8.slnx` build.
+
+## Decision 121 - Starter doctor and root launcher must preserve readiness exit semantics
+
+Problem: The public no-Unity starter could report a non-ready package as shell success. `Tools/run_doctor.ps1` returned exit `0` for `Status=needs_review`, and root `h8mod.ps1` collapsed delegated tool exits because it inspected `$?` before preserving `$LASTEXITCODE`. Random external modders using VS Code tasks, CI, or PowerShell could ship a stale or changed package while automation saw green.
+
+Solution: Make `run_doctor.ps1` fail closed by readiness: `ready=0`, `needs_review=2`, `invalid=1`. Make `Complete-StarterTool` capture `$?` and `$global:LASTEXITCODE` immediately after the child tool returns, then preserve any nonzero child exit code. Schema 130, static validation, starter docs, contract docs, runtime playbook, and Mod API spec now gate both facts.
+
+Rejected Alternatives: Parsing JSON status in every caller was rejected because shell exit status is the public automation contract. Collapsing all non-ready states to `1` was rejected because authors and CI need to distinguish review-needed drift from structurally invalid packages. Weakening doctor freshness checks was rejected because stale package proof is a real SDK handoff defect.
+
+Scalability potential: Low tier authors get deterministic no-Unity package checks in PowerShell and VS Code. Middle tier can bind the same exit codes to editor UI and local install preflight. High tier can wire the same readiness semantics into CI or marketplace upload gates. Ultra tier can add signing/provenance over the same `ready=0`, `needs_review=2`, `invalid=1` shell contract without changing runtime truth ownership, FutureCommandEnvelope, HectonEventBus isolation, SignalBus lanes, GlobalRegistry routes, DataVault ownership, save identity, Burst/jobs, rendering, telemetry, or continuous GlobalQualityWeight behavior.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. This is offline SDK/package-authoring only. It removes false-positive package automation with no Tick, FixedUpdate, LateFrameTick, Execute, GlobalRegistry hot lookup, GetComponent lookup, DataVault write lock, Burst/job, presentation transfer, rendering, telemetry, save identity, or continuous GlobalQualityWeight path changed. Build was deferred because active `csc:16432` and `dotnet:54464` were present.
+
+## Decision 122 - Nested starter parent tools must preserve child exit codes
+
+Problem: Schema 130 fixed doctor readiness exits and root launcher delegation, but nested parent scripts still invoked required child tools through direct PowerShell pipelines. A child script could `exit 7`, the parent could continue after `& child.ps1 | Out-Host`, and shell automation would see parent exit `0`. That kept a false-green route for random external modders using composite commands instead of the root launcher.
+
+Solution: Add immediate child-status capture to every nested parent route. `create_first_mod.ps1` and `install_local_mod.ps1` now capture `$?` and `$global:LASTEXITCODE` immediately after each child invocation and pass both into typed completion. `build_review_manifest.ps1`, `prepare_mod.ps1`, `build_submission_package.ps1`, and `set_mod_identity.ps1` now use `Invoke-RequiredTool`, reset `$LASTEXITCODE`, invoke the child, capture status immediately, and `exit $toolExitCode` on any child failure. Schema 131 and static validation now make this contract source-verifiable.
+
+Rejected Alternatives: Requiring authors or CI to parse JSON output was rejected because process exit is the public automation contract. Collapsing every nested child failure to `1` was rejected because readiness and validator codes carry useful meaning. Leaving root-only protection was rejected because composite starter tools are the ergonomic route for first-time modders and must not hide child failures.
+
+Scalability potential: Low tier authors get deterministic no-Unity PowerShell workflows without Unity startup or manual diagnosis. Middle tier can bind the same exact exits into VS Code tasks and local install preflight. High tier can run package checks in CI without custom output parsing. Ultra tier can add signing, marketplace provenance, and richer review dashboards over the same exact child-exit contract without changing runtime truth ownership, FutureCommandEnvelope, HectonEventBus isolation, SignalBus lanes, GlobalRegistry routes, DataVault ownership, save identity, Burst/jobs, rendering, telemetry, or continuous GlobalQualityWeight behavior.
+
+Hardware Impact: Runtime gain on i3/MX350 is 0 us/frame. This is offline SDK/package-authoring only. The cost is one immediate `$?`/`$LASTEXITCODE` capture per child tool call. Current pass edited no C# files, introduced no Tick/FixedUpdate/LateFrameTick/Execute route, introduced no presentation transfer, and introduced no DataVault write-lock acquisition. Build was not launched because the pass was script/docs only and the sampled CPU gate was closed at `CPU=99`.

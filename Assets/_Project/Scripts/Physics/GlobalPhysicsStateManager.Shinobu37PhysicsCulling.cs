@@ -661,17 +661,7 @@ namespace Hecton8.Physics
 
         private PhysicsCullingTuningDTO GenerateEmergencyMockRadii()
         {
-            PhysicsCullingTuningDTO tuning = new PhysicsCullingTuningDTO
-            {
-                DebrisWakeRadiusMeters = PhysicsCullingDefaultDebrisWakeRadiusMeters,
-                VehicleWakeRadiusMeters = PhysicsCullingDefaultVehicleWakeRadiusMeters,
-                FrustumClampDistanceMeters = PhysicsCullingDefaultFrustumClampDistanceMeters,
-                HysteresisDelaySeconds = PhysicsCullingDefaultHysteresisSeconds,
-                SpatialCellSizeMeters = PhysicsCullingSpatialCellSizeMeters,
-                MockShockwaveRadiusMeters = ImpactWakeMaximumRadiusMeters,
-                Flags = 1u
-            };
-
+            PhysicsCullingTuningDTO tuning = DefaultPhysicsCullingTuning();
             if (_physicsCullingTuning.IsCreated)
                 _physicsCullingTuning[0] = tuning;
 
@@ -1033,8 +1023,14 @@ namespace Hecton8.Physics
 
         private PhysicsCullingTuningDTO ResolvePhysicsCullingTuning()
         {
-            InitializePhysicsCullingTuningIfNeeded();
-            return _physicsCullingTuning.IsCreated ? _physicsCullingTuning[0] : new PhysicsCullingTuningDTO
+            return _physicsCullingTuning.IsCreated && _physicsCullingTuningInitialized
+                ? _physicsCullingTuning[0]
+                : DefaultPhysicsCullingTuning();
+        }
+
+        private static PhysicsCullingTuningDTO DefaultPhysicsCullingTuning()
+        {
+            return new PhysicsCullingTuningDTO
             {
                 DebrisWakeRadiusMeters = PhysicsCullingDefaultDebrisWakeRadiusMeters,
                 VehicleWakeRadiusMeters = PhysicsCullingDefaultVehicleWakeRadiusMeters,
@@ -1642,9 +1638,9 @@ namespace Hecton8.Physics
 
         public bool TryGetPhysicsCullingTuning(out PhysicsCullingTuningDTO tuning)
         {
-            if (_physicsCullingTuning.IsCreated)
+            if (_physicsCullingTuning.IsCreated && _physicsCullingTuningInitialized)
             {
-                tuning = ResolvePhysicsCullingTuning();
+                tuning = _physicsCullingTuning[0];
                 return true;
             }
 

@@ -9,8 +9,8 @@ namespace Hecton8.World.Terrain
     public struct HybridTerrainSeamPlanNative
     {
         // Terrain-local meters. The applier subtracts the terrain AUP before casting to float to avoid 100km jitter.
-        public float3 RuntimeContactPosition;
-        public float3 RuntimeVoxelCenter;
+        public float3 TerrainLocalContactPosition;
+        public float3 TerrainLocalVoxelCenter;
         public float3 VoxelSize;
         public float SeamBlendRadius;
         public float TerrainBlendWeight;
@@ -126,7 +126,7 @@ namespace Hecton8.World.Terrain
             for (int i = 0; i < Plans.Length; i++)
             {
                 HybridTerrainSeamPlanNative plan = Plans[i];
-                float2 delta = new float2(localTerrainX - plan.RuntimeContactPosition.x, localTerrainZ - plan.RuntimeContactPosition.z);
+                float2 delta = new float2(localTerrainX - plan.TerrainLocalContactPosition.x, localTerrainZ - plan.TerrainLocalContactPosition.z);
                 float effectiveRadius = math.max(2f, plan.SeamBlendRadius + 2f);
                 float distanceSq = math.lengthsq(delta);
                 float effectiveRadiusSq = effectiveRadius * effectiveRadius;
@@ -219,13 +219,13 @@ namespace Hecton8.World.Terrain
             }
 
             float contactBias = math.max(plan.SuggestedTerrainCut, plan.SeamBlendRadius * 0.08f);
-            return plan.RuntimeContactPosition.y - contactBias;
+            return plan.TerrainLocalContactPosition.y - contactBias;
         }
 
         private static float SampleAnalyticSdf(float3 position, in HybridTerrainSeamPlanNative plan)
         {
             float3 halfSize = math.max(plan.VoxelSize * 0.5f, new float3(0.25f, 0.25f, 0.25f));
-            float3 normalized = (position - plan.RuntimeVoxelCenter) * math.rcp(halfSize);
+            float3 normalized = (position - plan.TerrainLocalVoxelCenter) * math.rcp(halfSize);
             float dominantScale = math.cmin(halfSize);
             return (HybridTerrainSeamMath.LengthFromSq(math.lengthsq(normalized)) - 1f) * dominantScale;
         }

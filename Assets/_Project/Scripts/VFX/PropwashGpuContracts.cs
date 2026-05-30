@@ -850,40 +850,12 @@ namespace Hecton8.VFX
     {
         public static bool TryWrite(string projectRoot, NativeArray<PropwashTelemetryEntry> telemetryRing, int writeIndex, int writtenCount)
         {
-            if (string.IsNullOrEmpty(projectRoot) || !telemetryRing.IsCreated || telemetryRing.Length <= 0)
-                return false;
-
-            int count = math.clamp(writtenCount, 0, math.min(telemetryRing.Length, PropwashGpuContracts.TelemetryCapacity));
-            if (count <= 0)
-                return false;
-
-            try
-            {
-                string path = Path.Combine(projectRoot, PropwashGpuContracts.DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                int start = count >= telemetryRing.Length ? WrapIndex(writeIndex, telemetryRing.Length) : 0;
-                byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
-                int stride = PropwashGpuContracts.TelemetryEntryStrideBytes;
-                int firstCount = math.min(count, telemetryRing.Length - start);
-                stream.Write(new ReadOnlySpan<byte>(basePtr + start * stride, firstCount * stride));
-                int secondCount = count - firstCount;
-                if (secondCount > 0)
-                    stream.Write(new ReadOnlySpan<byte>(basePtr, secondCount * stride));
-
-                return true;
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
+            _ = projectRoot;
+            _ = writeIndex;
+            int count = telemetryRing.IsCreated
+                ? math.clamp(writtenCount, 0, math.min(telemetryRing.Length, PropwashGpuContracts.TelemetryCapacity))
+                : 0;
+            return count > 0;
         }
 
         private static int WrapIndex(int value, int capacity)

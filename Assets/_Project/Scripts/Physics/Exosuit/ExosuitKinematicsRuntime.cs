@@ -192,9 +192,6 @@ namespace Hecton8.Physics.Exosuit
         private VaultGenerationHandle<MechHapticSignalDTO> _hapticHandle;
         private VaultGenerationHandle<SiltExplosionSignal> _siltHandle;
         private VaultGenerationHandle<ExosuitAcousticEchoTap> _acousticHandle;
-#if UNITY_EDITOR
-        private VaultGenerationHandle<byte> _csvScratchHandle;
-#endif
 
         private JobHandle _jobHandle;
         private long _jobStartTimestamp;
@@ -443,7 +440,7 @@ namespace Hecton8.Physics.Exosuit
             return handle.BufferID != 0u && handle.SystemID == (uint)SystemID.Physics;
         }
 
-        private bool TryResolveBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
+        private bool TryOpenBufferForOwner<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
             where T : struct
         {
             buffer = default;
@@ -469,7 +466,7 @@ namespace Hecton8.Physics.Exosuit
             where T : struct
         {
             buffer = default;
-            IDataVault vault = _jobGuardedVault ?? _dataVault;
+            IDataVault vault = _jobGuardedVault;
             return _jobBuffersLocked &&
                    vault != null &&
                    IsHandleCreated(in handle) &&
@@ -479,7 +476,7 @@ namespace Hecton8.Physics.Exosuit
                    buffer.Length > 0;
         }
 
-        private static bool TryResolveJobBuffer<T>(
+        private static bool TryOpenJobBufferForOwner<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
             BufferID expectedBufferId,
@@ -513,9 +510,6 @@ namespace Hecton8.Physics.Exosuit
             ReleaseVaultBuffer(vault, ref _hapticHandle);
             ReleaseVaultBuffer(vault, ref _siltHandle);
             ReleaseVaultBuffer(vault, ref _acousticHandle);
-#if UNITY_EDITOR
-            ReleaseVaultBuffer(vault, ref _csvScratchHandle);
-#endif
             _buffersInitialized = false;
 #if UNITY_EDITOR
             _coldCsvApplied = false;
@@ -578,9 +572,6 @@ namespace Hecton8.Physics.Exosuit
             _hapticHandle = vault.EnsureGenerationHandle<MechHapticSignalDTO>(BufferID.ShinobuExosuitHapticSignals, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
             _siltHandle = vault.EnsureGenerationHandle<SiltExplosionSignal>(BufferID.ShinobuExosuitSiltSignals, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
             _acousticHandle = vault.EnsureGenerationHandle<ExosuitAcousticEchoTap>(BufferID.ShinobuExosuitAcousticTaps, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
-#if UNITY_EDITOR
-            _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.ShinobuExosuitCsvScratch, CsvScratchCapacity, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
-#endif
             ExosuitKinematicAuthority.Bind(vault, in _inputHandle);
             return true;
         }
@@ -593,19 +584,19 @@ namespace Hecton8.Physics.Exosuit
 
             try
             {
-                if (!TryResolveBuffer(in _stateHandle, out NativeArray<ExosuitStateDTO> stateBuffer) ||
-                    !TryResolveBuffer(in _tuningHandle, out NativeArray<ExosuitTuningDTO> tuningBuffer) ||
-                    !TryResolveBuffer(in _inputHandle, out NativeArray<ExosuitFrameInputDTO> inputBuffer) ||
-                    !TryResolveBuffer(in _terrainHandle, out NativeArray<MockTerrainSDF> terrainBuffer) ||
-                    !TryResolveBuffer(in _flowHandle, out NativeArray<MockFlowField> flowBuffer) ||
-                    !TryResolveBuffer(in _crushDepthHandle, out NativeArray<MockCrushDepthSignal> crushBuffer) ||
-                    !TryResolveBuffer(in _outputHandle, out NativeArray<ExosuitSolverOutput> outputBuffer) ||
-                    !TryResolveBuffer(in _screenHandle, out NativeArray<ExoScreenDTO> screenBuffer) ||
-                    !TryResolveBuffer(in _hapticHandle, out NativeArray<MechHapticSignalDTO> hapticBuffer) ||
-                    !TryResolveBuffer(in _siltHandle, out NativeArray<SiltExplosionSignal> siltBuffer) ||
-                    !TryResolveBuffer(in _acousticHandle, out NativeArray<ExosuitAcousticEchoTap> acousticBuffer) ||
-                    !TryResolveBuffer(in _telemetryCursorHandle, out NativeArray<int> cursorBuffer) ||
-                    !TryResolveBuffer(in _footstepAccumulatorHandle, out NativeArray<float> footstepBuffer))
+                if (!TryOpenBufferForOwner(in _stateHandle, out NativeArray<ExosuitStateDTO> stateBuffer) ||
+                    !TryOpenBufferForOwner(in _tuningHandle, out NativeArray<ExosuitTuningDTO> tuningBuffer) ||
+                    !TryOpenBufferForOwner(in _inputHandle, out NativeArray<ExosuitFrameInputDTO> inputBuffer) ||
+                    !TryOpenBufferForOwner(in _terrainHandle, out NativeArray<MockTerrainSDF> terrainBuffer) ||
+                    !TryOpenBufferForOwner(in _flowHandle, out NativeArray<MockFlowField> flowBuffer) ||
+                    !TryOpenBufferForOwner(in _crushDepthHandle, out NativeArray<MockCrushDepthSignal> crushBuffer) ||
+                    !TryOpenBufferForOwner(in _outputHandle, out NativeArray<ExosuitSolverOutput> outputBuffer) ||
+                    !TryOpenBufferForOwner(in _screenHandle, out NativeArray<ExoScreenDTO> screenBuffer) ||
+                    !TryOpenBufferForOwner(in _hapticHandle, out NativeArray<MechHapticSignalDTO> hapticBuffer) ||
+                    !TryOpenBufferForOwner(in _siltHandle, out NativeArray<SiltExplosionSignal> siltBuffer) ||
+                    !TryOpenBufferForOwner(in _acousticHandle, out NativeArray<ExosuitAcousticEchoTap> acousticBuffer) ||
+                    !TryOpenBufferForOwner(in _telemetryCursorHandle, out NativeArray<int> cursorBuffer) ||
+                    !TryOpenBufferForOwner(in _footstepAccumulatorHandle, out NativeArray<float> footstepBuffer))
                 {
                     return false;
                 }
@@ -657,7 +648,7 @@ namespace Hecton8.Physics.Exosuit
 
         private uint WriteFrameInputs()
         {
-            if (!TryResolveBuffer(in _screenHandle, out NativeArray<ExoScreenDTO> screenBuffer))
+            if (!TryOpenBufferForOwner(in _screenHandle, out NativeArray<ExoScreenDTO> screenBuffer))
                 return _scheduledFrame;
 
             IDataVault vault = _dataVault;
@@ -666,11 +657,11 @@ namespace Hecton8.Physics.Exosuit
 
             try
             {
-                if (!TryResolveBuffer(in _tuningHandle, out NativeArray<ExosuitTuningDTO> tuningBuffer) ||
-                    !TryResolveBuffer(in _inputHandle, out NativeArray<ExosuitFrameInputDTO> inputBuffer) ||
-                    !TryResolveBuffer(in _terrainHandle, out NativeArray<MockTerrainSDF> terrainBuffer) ||
-                    !TryResolveBuffer(in _flowHandle, out NativeArray<MockFlowField> flowBuffer) ||
-                    !TryResolveBuffer(in _crushDepthHandle, out NativeArray<MockCrushDepthSignal> crushBuffer))
+                if (!TryOpenBufferForOwner(in _tuningHandle, out NativeArray<ExosuitTuningDTO> tuningBuffer) ||
+                    !TryOpenBufferForOwner(in _inputHandle, out NativeArray<ExosuitFrameInputDTO> inputBuffer) ||
+                    !TryOpenBufferForOwner(in _terrainHandle, out NativeArray<MockTerrainSDF> terrainBuffer) ||
+                    !TryOpenBufferForOwner(in _flowHandle, out NativeArray<MockFlowField> flowBuffer) ||
+                    !TryOpenBufferForOwner(in _crushDepthHandle, out NativeArray<MockCrushDepthSignal> crushBuffer))
                 {
                     return _scheduledFrame;
                 }
@@ -820,12 +811,25 @@ namespace Hecton8.Physics.Exosuit
             _jobScheduled = false;
             float elapsedMs = ResolveElapsedJobMs();
             bool budgetExceeded = elapsedMs > 0.1f;
+            bool telemetryDumpStaged = false;
+            float telemetryDumpScalar = 0.0f;
+            uint telemetryDumpStateHash = 0u;
+            try
+            {
+                PatchLastTelemetryElapsed(elapsedMs, budgetExceeded);
+                if (budgetExceeded)
+                    telemetryDumpStaged = TryStageTelemetryDumpBuffer(out telemetryDumpScalar, out telemetryDumpStateHash);
+                if (EmitReadbackSignals() && !telemetryDumpStaged)
+                    telemetryDumpStaged = TryStageTelemetryDumpBuffer(out telemetryDumpScalar, out telemetryDumpStateHash);
+            }
+            finally
+            {
+                UnlockJobBuffers();
+            }
+
             JobAdmissionScheduleExtensions.ReportAdmittedJobCompleted<ExosuitKinematicIntegrationJob>(JobAdmissionLane.Lane0_Critical, elapsedMs);
-            PatchLastTelemetryElapsed(elapsedMs, budgetExceeded);
-            if (budgetExceeded)
-                DumpTelemetryBuffer();
-            EmitReadbackSignals();
-            UnlockJobBuffers();
+            if (telemetryDumpStaged)
+                PublishTelemetryDump(telemetryDumpScalar, telemetryDumpStateHash);
         }
 
         private float ResolveElapsedJobMs()
@@ -884,14 +888,16 @@ namespace Hecton8.Physics.Exosuit
             PatchLastTelemetryFlags(ExosuitStateFlags.SignalDrop);
         }
 
-        private void EmitReadbackSignals()
+        private bool EmitReadbackSignals()
         {
-            if (!TryResolveBuffer(in _outputHandle, out NativeArray<ExosuitSolverOutput> outputBuffer) ||
-                !TryResolveBuffer(in _stateHandle, out NativeArray<ExosuitStateDTO> stateBuffer))
-                return;
+            if (!TryOpenBufferForOwner(in _outputHandle, out NativeArray<ExosuitSolverOutput> outputBuffer) ||
+                !TryOpenBufferForOwner(in _stateHandle, out NativeArray<ExosuitStateDTO> stateBuffer))
+                return false;
 
             ExosuitSolverOutput output = outputBuffer[0];
             ExosuitStateDTO state = stateBuffer[0];
+            bool dumpRequested = (output.Flags & ExosuitSolverOutput.FlagFault) != 0u ||
+                                 (state.Flags & ExosuitStateFlags.NaNDetected) != 0u;
 
             if ((output.Flags & ExosuitSolverOutput.FlagHaptic) != 0u)
                 EmitHaptics(output.Frame);
@@ -899,16 +905,12 @@ namespace Hecton8.Physics.Exosuit
                 EmitSilt();
             if ((output.Flags & ExosuitSolverOutput.FlagAcousticTap) != 0u)
                 EmitAcoustic();
-            if ((output.Flags & ExosuitSolverOutput.FlagFault) != 0u ||
-                (state.Flags & ExosuitStateFlags.NaNDetected) != 0u)
-            {
-                DumpTelemetryBuffer();
-            }
+            return dumpRequested;
         }
 
         private void EmitHaptics(uint frame)
         {
-            if (!TryResolveBuffer(in _hapticHandle, out NativeArray<MechHapticSignalDTO> haptics))
+            if (!TryOpenBufferForOwner(in _hapticHandle, out NativeArray<MechHapticSignalDTO> haptics))
                 return;
 
             MechHapticSignalDTO mech = haptics[0];
@@ -937,7 +939,7 @@ namespace Hecton8.Physics.Exosuit
 
         private void EmitSilt()
         {
-            if (TryResolveBuffer(in _siltHandle, out NativeArray<SiltExplosionSignal> siltBuffer) &&
+            if (TryOpenBufferForOwner(in _siltHandle, out NativeArray<SiltExplosionSignal> siltBuffer) &&
                 siltBuffer[0].Intensity01 > 0.0f)
             {
                 SiltExplosionSignal silt = siltBuffer[0];
@@ -953,7 +955,7 @@ namespace Hecton8.Physics.Exosuit
 
         private void EmitAcoustic()
         {
-            if (TryResolveBuffer(in _acousticHandle, out NativeArray<ExosuitAcousticEchoTap> acousticBuffer) &&
+            if (TryOpenBufferForOwner(in _acousticHandle, out NativeArray<ExosuitAcousticEchoTap> acousticBuffer) &&
                 acousticBuffer[0].Intensity01 > 0.0f)
             {
                 ExosuitAcousticEchoTap tap = acousticBuffer[0];
@@ -1019,20 +1021,20 @@ namespace Hecton8.Physics.Exosuit
             bool guardTransferred = false;
             try
             {
-                if (!TryResolveJobBuffer(vault, in _stateHandle, BufferID.ShinobuExosuitState, out state) ||
-                    !TryResolveJobBuffer(vault, in _inputHandle, BufferID.ShinobuExosuitFrameInput, out input) ||
-                    !TryResolveJobBuffer(vault, in _tuningHandle, BufferID.ShinobuExosuitTuning, out tuning) ||
-                    !TryResolveJobBuffer(vault, in _terrainHandle, BufferID.ShinobuExosuitMockTerrainSdf, out terrain) ||
-                    !TryResolveJobBuffer(vault, in _flowHandle, BufferID.ShinobuExosuitMockFlowField, out flow) ||
-                    !TryResolveJobBuffer(vault, in _crushDepthHandle, BufferID.ShinobuExosuitMockCrushDepth, out crushDepth) ||
-                    !TryResolveJobBuffer(vault, in _outputHandle, BufferID.ShinobuExosuitSolverOutput, out output) ||
-                    !TryResolveJobBuffer(vault, in _screenHandle, BufferID.ShinobuExosuitScreenDto, out screen) ||
-                    !TryResolveJobBuffer(vault, in _telemetryHandle, BufferID.ShinobuExosuitTelemetryRing, out telemetry) ||
-                    !TryResolveJobBuffer(vault, in _telemetryCursorHandle, BufferID.ShinobuExosuitTelemetryCursor, out telemetryCursor) ||
-                    !TryResolveJobBuffer(vault, in _footstepAccumulatorHandle, BufferID.ShinobuExosuitFootstepAccumulator, out footstepAccumulator) ||
-                    !TryResolveJobBuffer(vault, in _hapticHandle, BufferID.ShinobuExosuitHapticSignals, out haptics) ||
-                    !TryResolveJobBuffer(vault, in _siltHandle, BufferID.ShinobuExosuitSiltSignals, out silt) ||
-                    !TryResolveJobBuffer(vault, in _acousticHandle, BufferID.ShinobuExosuitAcousticTaps, out acoustic) ||
+                if (!TryOpenJobBufferForOwner(vault, in _stateHandle, BufferID.ShinobuExosuitState, out state) ||
+                    !TryOpenJobBufferForOwner(vault, in _inputHandle, BufferID.ShinobuExosuitFrameInput, out input) ||
+                    !TryOpenJobBufferForOwner(vault, in _tuningHandle, BufferID.ShinobuExosuitTuning, out tuning) ||
+                    !TryOpenJobBufferForOwner(vault, in _terrainHandle, BufferID.ShinobuExosuitMockTerrainSdf, out terrain) ||
+                    !TryOpenJobBufferForOwner(vault, in _flowHandle, BufferID.ShinobuExosuitMockFlowField, out flow) ||
+                    !TryOpenJobBufferForOwner(vault, in _crushDepthHandle, BufferID.ShinobuExosuitMockCrushDepth, out crushDepth) ||
+                    !TryOpenJobBufferForOwner(vault, in _outputHandle, BufferID.ShinobuExosuitSolverOutput, out output) ||
+                    !TryOpenJobBufferForOwner(vault, in _screenHandle, BufferID.ShinobuExosuitScreenDto, out screen) ||
+                    !TryOpenJobBufferForOwner(vault, in _telemetryHandle, BufferID.ShinobuExosuitTelemetryRing, out telemetry) ||
+                    !TryOpenJobBufferForOwner(vault, in _telemetryCursorHandle, BufferID.ShinobuExosuitTelemetryCursor, out telemetryCursor) ||
+                    !TryOpenJobBufferForOwner(vault, in _footstepAccumulatorHandle, BufferID.ShinobuExosuitFootstepAccumulator, out footstepAccumulator) ||
+                    !TryOpenJobBufferForOwner(vault, in _hapticHandle, BufferID.ShinobuExosuitHapticSignals, out haptics) ||
+                    !TryOpenJobBufferForOwner(vault, in _siltHandle, BufferID.ShinobuExosuitSiltSignals, out silt) ||
+                    !TryOpenJobBufferForOwner(vault, in _acousticHandle, BufferID.ShinobuExosuitAcousticTaps, out acoustic) ||
                     telemetry.Length < TelemetryCapacity)
                 {
                     return false;
@@ -1088,7 +1090,7 @@ namespace Hecton8.Physics.Exosuit
             if (!math.all(math.isfinite(localDouble)))
                 return false;
 
-            IDataVault vault = _jobGuardedVault ?? _dataVault;
+            IDataVault vault = _jobGuardedVault;
             if (!_jobBuffersLocked ||
                 vault == null ||
                 (_jobBufferGuardMask & VoxelSdfPayloadMutationGuardMask) != VoxelSdfPayloadMutationGuardMask)
@@ -1152,7 +1154,7 @@ namespace Hecton8.Physics.Exosuit
             if (!_jobBuffersLocked)
                 return;
 
-            IDataVault vault = _jobGuardedVault ?? _dataVault;
+            IDataVault vault = _jobGuardedVault;
             ulong guardMask = _jobBufferGuardMask != 0UL ? _jobBufferGuardMask : JobMutationGuardMask;
             if (vault != null)
                 vault.ReleaseMutationGuard(guardMask);
@@ -1176,7 +1178,6 @@ namespace Hecton8.Physics.Exosuit
 
             IDataVault vault = _dataVault;
             if (vault == null ||
-                !IsHandleCreated(in _csvScratchHandle) ||
                 !IsHandleCreated(in _tuningHandle) ||
                 !vault.TryReadOnlyHandle(in _tuningHandle, out NativeArray<ExosuitTuningDTO>.ReadOnly tuningRead) ||
                 tuningRead.Length <= 0)
@@ -1185,7 +1186,7 @@ namespace Hecton8.Physics.Exosuit
             }
 
             ExosuitTuningDTO tuning = tuningRead[0];
-            int csvByteCount = TryReadCsvTuningOverride(vault, ref tuning, out bool parsedTuning);
+            int csvByteCount = TryLoadCsvTuningOverride(ref tuning, out bool parsedTuning);
             if (csvByteCount <= 0)
             {
                 _lastCsvWriteTicks = writeTicks;
@@ -1203,27 +1204,15 @@ namespace Hecton8.Physics.Exosuit
                 _lastCsvWriteTicks = writeTicks;
         }
 
-        private int TryReadCsvTuningOverride(IDataVault vault, ref ExosuitTuningDTO tuning, out bool parsedTuning)
+        private int TryLoadCsvTuningOverride(ref ExosuitTuningDTO tuning, out bool parsedTuning)
         {
             parsedTuning = false;
-            if (vault == null ||
-                !vault.TryAcquireWriteLock(in _csvScratchHandle, SystemID.Physics, out NativeArray<byte> scratch))
-            {
-                return 0;
-            }
+            Span<byte> scratch = stackalloc byte[CsvScratchCapacity];
+            int csvByteCount = ReadCsvBytes(_csvPath, scratch);
+            if (csvByteCount > 0)
+                parsedTuning = ParseCsvIntoTuning(scratch.Slice(0, csvByteCount), ref tuning);
 
-            try
-            {
-                int csvByteCount = ReadCsvBytes(_csvPath, scratch);
-                if (csvByteCount > 0)
-                    parsedTuning = ParseCsvIntoTuning(scratch, csvByteCount, ref tuning);
-
-                return csvByteCount;
-            }
-            finally
-            {
-                vault.ReleaseWriteLock(in _csvScratchHandle, SystemID.Physics);
-            }
+            return csvByteCount;
         }
 
         private bool TryCommitCsvTuningOverride(IDataVault vault, in ExosuitTuningDTO tuning)
@@ -1257,26 +1246,24 @@ namespace Hecton8.Physics.Exosuit
             _coldCsvApplied = true;
         }
 
-        private static unsafe int ReadCsvBytes(string path, NativeArray<byte> scratch)
+        private static int ReadCsvBytes(string path, Span<byte> scratch)
         {
             int count = 0;
-            if (!scratch.IsCreated || scratch.Length <= 0)
+            if (scratch.Length <= 0)
                 return 0;
 
-            byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-            Span<byte> target = new Span<byte>(bytes, scratch.Length);
             using (FileStream stream = File.OpenRead(path))
             {
-                while (count < target.Length)
+                while (count < scratch.Length)
                 {
-                    int read = stream.Read(target.Slice(count));
+                    int read = stream.Read(scratch.Slice(count));
                     if (read <= 0)
                         break;
 
                     count += read;
                 }
 
-                if (count >= target.Length && stream.Position < stream.Length)
+                if (count >= scratch.Length && stream.Position < stream.Length)
                     return -count;
             }
 
@@ -1505,15 +1492,18 @@ namespace Hecton8.Physics.Exosuit
         }
 #endif
 
-        private void DumpTelemetryBuffer()
+        private bool TryStageTelemetryDumpBuffer(out float scalar, out uint stateHash)
         {
+            scalar = 0.0f;
+            stateHash = 0u;
+
             uint frame = _scheduledFrame;
             if (_lastDumpFrame == frame)
-                return;
+                return false;
 
-            if (!TryResolveBuffer(in _telemetryHandle, out NativeArray<ExosuitTelemetryEntry> telemetry) ||
-                !TryResolveBuffer(in _telemetryCursorHandle, out NativeArray<int> cursorBuffer))
-                return;
+            if (!TryOpenBufferForOwner(in _telemetryHandle, out NativeArray<ExosuitTelemetryEntry> telemetry) ||
+                !TryOpenBufferForOwner(in _telemetryCursorHandle, out NativeArray<int> cursorBuffer))
+                return false;
 
             _lastDumpFrame = frame;
 
@@ -1521,16 +1511,25 @@ namespace Hecton8.Physics.Exosuit
             if ((uint)cursor >= (uint)telemetry.Length)
                 cursor = 0;
 
-            if (!_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
-                return;
+            if (!_coreBlackboxWarmed)
+                return false;
 
             int latestIndex = cursor - 1;
             if (latestIndex < 0)
                 latestIndex = telemetry.Length - 1;
 
             ExosuitTelemetryEntry latest = telemetry[latestIndex];
-            float scalar = math.isfinite(latest.SolverComputeTimeMs) ? latest.SolverComputeTimeMs : 0f;
-            GlobalTelemetryBus.PushEvent(ExosuitFaultEventHash, scalar, latest.StateHash);
+            scalar = math.isfinite(latest.SolverComputeTimeMs) ? latest.SolverComputeTimeMs : 0f;
+            stateHash = latest.StateHash;
+            return true;
+        }
+
+        private static void PublishTelemetryDump(float scalar, uint stateHash)
+        {
+            if (GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
+                return;
+
+            GlobalTelemetryBus.PushEvent(ExosuitFaultEventHash, scalar, stateHash);
             _ = GlobalTelemetryBus.TryDumpBlackboxNow(ExosuitFaultDumpHash);
         }
 

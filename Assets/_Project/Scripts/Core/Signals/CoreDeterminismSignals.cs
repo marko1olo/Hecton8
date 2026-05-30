@@ -154,15 +154,15 @@ namespace Hecton8.Core
             return SignalBus<KccVelocitySignal>.TryPush(in sequenced);
         }
 
-        public static bool TryDequeueInput(out InputSignal signal) => TryReadLane(out signal);
+        public static bool TryDequeueInput(out InputSignal signal) => TryConsumeLane(out signal);
 
-        public static bool TryDequeueStateCorrection(out StateCorrectionSignal signal) => TryReadLane(out signal);
+        public static bool TryDequeueStateCorrection(out StateCorrectionSignal signal) => TryConsumeLane(out signal);
 
-        public static bool TryDequeueDesyncDetected(out DesyncDetectedSignal signal) => TryReadLane(out signal);
+        public static bool TryDequeueDesyncDetected(out DesyncDetectedSignal signal) => TryConsumeLane(out signal);
 
-        public static bool TryDequeueSyncFence(out SyncFenceSignal signal) => TryReadLane(out signal);
+        public static bool TryDequeueSyncFence(out SyncFenceSignal signal) => TryConsumeLane(out signal);
 
-        public static bool TryDequeueKccVelocity(out KccVelocitySignal signal) => TryReadLane(out signal);
+        public static bool TryDequeueKccVelocity(out KccVelocitySignal signal) => TryConsumeLane(out signal);
 
         public static bool TryGetLatestInput(out InputSignal signal)
         {
@@ -249,10 +249,15 @@ namespace Hecton8.Core
             _initialized = true;
         }
 
-        private static bool TryReadLane<T>(out T signal)
+        private static bool TryConsumeLane<T>(out T signal)
             where T : unmanaged, ISignal
         {
-            EnsureInitialized();
+            if (!_initialized)
+            {
+                signal = default;
+                return false;
+            }
+
             return SignalBus<T>.TryConsumeFrame(out signal);
         }
 

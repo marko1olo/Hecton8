@@ -28,6 +28,7 @@ namespace Hecton8.Environment
     public sealed class HectonMarineSnowRenderer : MonoBehaviour,
         ILateFrameTickable,
         ISlowTickable,
+        IColdTickable,
         IOriginShiftListener,
         IVehicleCommandSignalListener,
         IGlobalRegistryHotSwapListener,
@@ -601,6 +602,7 @@ namespace Hecton8.Environment
         private ulong _resolvedKillSwitchMask = ulong.MaxValue;
         private bool _registeredLateFrame;
         private bool _registeredSlowTick;
+        private bool _registeredColdTick;
         private bool _pendingVisualTickDirty;
         private float _pendingVisualTickDeltaTime;
         private bool _buffersReady;
@@ -858,6 +860,7 @@ namespace Hecton8.Environment
             EnsureCsvProfileBackgroundReader();
             TryRegisterLateFrame();
             TryRegisterSlowTick();
+            TryRegisterColdTick();
         }
 
         private void OnValidate()
@@ -886,6 +889,12 @@ namespace Hecton8.Environment
                 _registeredSlowTick = false;
             }
 
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _registeredColdTick = false;
+            }
+
             ReleaseBuffers();
             ClearNativeStateLease();
             _abyssalFlowGpuReadModel = null;
@@ -909,6 +918,12 @@ namespace Hecton8.Environment
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
+            }
+
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _registeredColdTick = false;
             }
 
             ClearNativeStateLease();
@@ -1064,6 +1079,12 @@ namespace Hecton8.Environment
                             _registeredSlowTick = false;
                         }
 
+                        if (_registeredColdTick)
+                        {
+                            GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                            _registeredColdTick = false;
+                        }
+
                         _tickDispatcher = tickDispatcher;
                     }
 
@@ -1072,6 +1093,7 @@ namespace Hecton8.Environment
                     {
                         TryRegisterLateFrame();
                         TryRegisterSlowTick();
+                        TryRegisterColdTick();
                     }
                     break;
                 case GlobalRegistryServiceSlot.FluidRuntime:
@@ -1173,6 +1195,17 @@ namespace Hecton8.Environment
         }
 
         public void SlowTick()
+        {
+            if (!enabled || marineSnowCompute == null || marineSnowMaterial == null || !HasCachedTargetCamera())
+                return;
+
+            if (!_buffersReady)
+                return;
+
+            _externalGpuBindingsDirty = true;
+        }
+
+        public void ColdTick()
         {
             CacheGraphicsCapabilitySnapshotCold();
             ResolveTargetCameraCold();
@@ -1772,8 +1805,8 @@ namespace Hecton8.Environment
                 WakeStrength = math.max(0.01f, vehicleWakeStrength),
                 Result = vehicleWakeJobResult
             };
-            // One-row presentation result is consumed immediately through Burst's IJob.Run route.
-            job.Run();
+            // One-row presentation result is consumed immediately; direct Execute avoids a synchronous Job API wrapper in visual sync.
+            job.Execute();
 
             VehicleWakeJobResult result = vehicleWakeJobResult[0];
             if ((result.Flags & 1u) == 0u)
@@ -1825,7 +1858,7 @@ namespace Hecton8.Environment
                 GlobalQualityWeight = quality,
                 ProfileHash = PropwashGpuContracts.DefaultWakeProfileHash
             };
-            job.Run();
+            job.Execute();
 
             UploadPropwashEventGpuBuffer(propwashEvents, propwashCursor[0]);
         }
@@ -2378,7 +2411,7 @@ namespace Hecton8.Environment
                     CurlStrength = ResolveFlowParams().z
                 };
                 // Dear Lie flow proxy: one DTO row feeds shader globals immediately.
-                mockFlowJob.Run();
+                mockFlowJob.Execute();
                 _cachedMockFlowField = mockFlowField[0];
             }
 
@@ -2400,7 +2433,7 @@ namespace Hecton8.Environment
                     Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId)
                 };
                 // Emergency mock is a tiny immediate ring write; scheduling would require a same-frame fence.
-                propwashJob.Run();
+                propwashJob.Execute();
                 UploadPropwashEventGpuBuffer(propwashEvents, propwashCursor[0]);
             }
             else
@@ -2424,7 +2457,7 @@ namespace Hecton8.Environment
                     ActiveCount = activeCount
                 };
                 // Mock wake field is a visual fake uploaded immediately; keep it off the Job System.
-                mockWakeJob.Run();
+                mockWakeJob.Execute();
 
                 UploadMockWakeGpuBuffers(wakes, activeCount);
             }
@@ -2474,7 +2507,7 @@ namespace Hecton8.Environment
                 ProfileHash = PropwashGpuContracts.DefaultWakeProfileHash
             };
             // Consumes the existing VFX WakeSources route; no Physics/KCC sibling dependency is introduced.
-            job.Run();
+            job.Execute();
 
             PropwashRingCursorDTO after = propwashCursor[0];
             if (after.WriteCursor != before.WriteCursor ||
@@ -2597,6 +2630,16 @@ namespace Hecton8.Environment
                 return;
 
             _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryRegisterColdTick()
+        {
+            if (_registeredColdTick)
+                return;
+            if (!Application.isPlaying || !_dispatcherReady)
+                return;
+
+            _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
         }
 
         private void EnsureBuffers()

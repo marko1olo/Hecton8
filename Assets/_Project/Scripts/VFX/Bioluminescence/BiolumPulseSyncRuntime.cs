@@ -179,6 +179,7 @@ namespace Hecton8.VFX.Bioluminescence
     [AddComponentMenu("Hecton8/VFX/Bioluminescence/Pulse Sync Runtime")]
     public sealed class BiolumPulseSyncRuntime : MonoBehaviour,
         ILateFrameTickable,
+        IColdTickable,
         IGlobalRegistryHotSwapListener,
         IGlobalRegistryHotSwapRefListener,
         IDisposable
@@ -265,6 +266,24 @@ namespace Hecton8.VFX.Bioluminescence
         private static readonly ulong SpeciesTuningGuardMask =
             BiolumMutationGuardBit(BufferID.BiolumSpeciesTuning);
 
+        private static readonly ulong PulseStateGuardMask =
+            BiolumMutationGuardBit(BiolumPulseStateBufferId);
+
+        private static readonly ulong GlowBootstrapGuardMask =
+            BiolumMutationGuardBit(BufferID.BiolumGlowStates) |
+            BiolumMutationGuardBit(BufferID.BiolumGlowAupOrigins) |
+            BiolumMutationGuardBit(BufferID.BiolumSyncPulses) |
+            BiolumMutationGuardBit(BufferID.BiolumSyncPulseAges) |
+            MockWeatherGuardMask |
+            MockPredatorGuardMask |
+            MockDamageGuardMask |
+            SpeciesTuningGuardMask;
+
+        private static readonly ulong MockLightingStateGuardMask =
+            PulseStateGuardMask |
+            MockWeatherGuardMask |
+            MockPredatorGuardMask;
+
         private static readonly ulong BlackBoxDumpScratchGuardMask =
             BiolumMutationGuardBit(BiolumBlackBoxDumpScratchBufferId);
 
@@ -326,6 +345,7 @@ namespace Hecton8.VFX.Bioluminescence
         private int _lastGlobalSurvivalVitalsSequence;
         private byte _pendingTelemetryFlags;
         private bool _registeredLateFrame;
+        private bool _registeredColdTick;
         private bool _registeredHotSwap;
         private bool _stateJobScheduled;
         private bool _mockGlowsInitialized;
@@ -334,6 +354,7 @@ namespace Hecton8.VFX.Bioluminescence
         private bool _forceSchedule = true;
         private bool _profilesLoaded;
         private bool _runtimeClaimHeld;
+        private bool _vaultRepairRequested;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetRuntimeClaim()
@@ -396,6 +417,7 @@ namespace Hecton8.VFX.Bioluminescence
             if (!_mockGlowsInitialized)
                 GenerateEmergencyMockGlows();
             GenerateMockLightingState();
+            TryRegisterColdTick();
             TryRegisterLateFrame();
             EvaluateColdStartStates();
             UploadShaderGlobals(forceStateArray: true);
@@ -405,6 +427,7 @@ namespace Hecton8.VFX.Bioluminescence
         private void OnDisable()
         {
             TryUnregisterLateFrame();
+            TryUnregisterColdTick();
 
             TryUnregisterHotSwapListener();
             CompleteScheduledJobForTeardown();
@@ -429,7 +452,7 @@ namespace Hecton8.VFX.Bioluminescence
         {
             using (_tickMarker.Auto())
             {
-                if (!HasVaultBuffers() && !TryRefreshExistingVaultHandlesForOwnerSwap())
+                if (!HasVaultBuffersOrRequestColdRepair())
                     return;
 
                 float dt = SanitizeDelta(deltaTime);
@@ -470,7 +493,7 @@ namespace Hecton8.VFX.Bioluminescence
             {
                 AdvancePresentationFrame(SystemDispatcher.CurrentFrameDeltaTime);
 
-                if (!HasVaultBuffers() && !TryRefreshExistingVaultHandlesForOwnerSwap())
+                if (!HasVaultBuffersOrRequestColdRepair())
                     return;
 
                 if (!CompleteScheduledJobAndPublish())
@@ -478,9 +501,24 @@ namespace Hecton8.VFX.Bioluminescence
             }
         }
 
+        public void ColdTick()
+        {
+            if (!_runtimeClaimHeld || _disposed || _dataVault == null)
+                return;
+
+            if (!_vaultRepairRequested && HasVaultBuffers())
+                return;
+
+            if (_stateJobScheduled)
+                return;
+
+            RepairVaultBuffersCold();
+        }
+
         public void Dispose()
         {
             TryUnregisterLateFrame();
+            TryUnregisterColdTick();
             CompleteScheduledJobForTeardown();
             TryUnregisterHotSwapListener();
             bool dumpWorkerStopped = StopBlackBoxDumpWorker();
@@ -933,6 +971,16 @@ namespace Hecton8.VFX.Bioluminescence
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
+        private void TryRegisterColdTick()
+        {
+            if (_registeredColdTick)
+                return;
+            if (_tickDispatcher == null)
+                return;
+
+            _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
+        }
+
         private void TryUnregisterLateFrame()
         {
             if (!_registeredLateFrame)
@@ -940,6 +988,15 @@ namespace Hecton8.VFX.Bioluminescence
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             _registeredLateFrame = false;
+        }
+
+        private void TryUnregisterColdTick()
+        {
+            if (!_registeredColdTick)
+                return;
+
+            GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+            _registeredColdTick = false;
         }
 
         private void TryRegisterHotSwapListener()
@@ -989,11 +1046,13 @@ namespace Hecton8.VFX.Bioluminescence
                     if (!ReferenceEquals(_tickDispatcher, tickDispatcher))
                     {
                         TryUnregisterLateFrame();
+                        TryUnregisterColdTick();
                         _tickDispatcher = tickDispatcher;
                     }
 
                     if (_tickDispatcher != null)
                     {
+                        TryRegisterColdTick();
                         TryRegisterLateFrame();
                     }
                     break;
@@ -1086,9 +1145,35 @@ namespace Hecton8.VFX.Bioluminescence
                    HasBiolumVaultBuffer(vault, in _blackBoxDumpScratchHandle, BiolumBlackBoxDumpScratchBufferId, BlackBoxDumpByteCount);
         }
 
-        private bool TryRefreshExistingVaultHandlesForOwnerSwap()
+        private bool HasVaultBuffersOrRequestColdRepair()
         {
-            return EnsureVaultBuffers();
+            if (HasVaultBuffers())
+                return true;
+
+            _vaultRepairRequested = true;
+            return false;
+        }
+
+        private void RepairVaultBuffersCold()
+        {
+            if (!EnsureVaultBuffers())
+            {
+                _vaultRepairRequested = true;
+                return;
+            }
+
+            EnsureBlackBoxDumpWorker();
+
+            if (!_profilesLoaded)
+                LoadProfilesFromDiskOrDefaults();
+
+            if (!_mockGlowsInitialized)
+                GenerateEmergencyMockGlows();
+
+            GenerateMockLightingState();
+            EvaluateColdStartStates();
+            _forceSchedule = true;
+            _vaultRepairRequested = !HasVaultBuffers();
         }
 
         private void ReleaseVaultHandlesOnly(IDataVault vault, bool invalidateProfiles)
@@ -1282,61 +1367,71 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || !HasVaultBuffers())
                 return;
 
-            if (!TryResolveBiolumVaultBuffer(vault, in _glowStatesHandle, BufferID.BiolumGlowStates, MaxGlowInstances, out NativeArray<GlowStateDTO> glowStates) ||
-                !TryResolveBiolumVaultBuffer(vault, in _glowAupOriginsHandle, BufferID.BiolumGlowAupOrigins, MaxGlowInstances, out NativeArray<double3> aupOrigins) ||
-                !TryResolveBiolumVaultBuffer(vault, in _speciesTuningHandle, BufferID.BiolumSpeciesTuning, MaxSpeciesTuningCount, out NativeArray<BiolumSpeciesTuningDTO> speciesTuning) ||
-                !TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weatherSignal) ||
-                !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<BiolumMockPredatorProximitySignal> predatorSignal) ||
-                !TryResolveBiolumVaultBuffer(vault, in _mockDamageSignalHandle, BufferID.BiolumMockDamageSignal, 1, out NativeArray<BiolumMockCombatDamageSignal> damageSignal) ||
-                !TryResolveBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, out NativeArray<SyncPulseDTO> pulses) ||
-                !TryResolveBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, out NativeArray<float> pulseAges))
-            {
-                return;
-            }
-
-            SeedSpeciesTuning(speciesTuning);
-
-            weatherSignal[0] = new MockWeatherSignal
-            {
-                AmbientLightLevel = 0.08f,
-                O2Level01 = 1f,
-                SystemHealthIndex01 = 0.25f,
-                CurrentBiomeHash = HashAscii32("ABYSS_NEON")
-            };
-            predatorSignal[0] = default;
-            damageSignal[0] = default;
-            for (int i = 0; i < SyncPulseCapacity; i++)
-            {
-                pulses[i] = default;
-                pulseAges[i] = 99f;
-            }
-
-            int speciesCount = math.min(MaxSpeciesTuningCount, speciesTuning.Length);
-            int activeCount = math.min(MaxGlowInstances, math.min(glowStates.Length, aupOrigins.Length));
-            if (speciesCount <= 0 || activeCount <= 0)
+            if (!TryAcquireBiolumGuard(vault, GlowBootstrapGuardMask))
                 return;
 
-            for (int i = 0; i < activeCount; i++)
+            try
             {
-                int speciesIndex = i % speciesCount;
-                BiolumSpeciesTuningDTO species = speciesTuning[speciesIndex];
-                float phase = math.frac((i * 0.754877666f) + (speciesIndex * 0.037f));
-                ref GlowStateDTO state = ref GetGlowStateRef(glowStates, i);
-                state.PackedColor = species.PackedColor;
-                state.Phase = phase;
-                state.Frequency = species.Frequency;
-                state.SpeciesHash = species.SpeciesHash;
+                if (!TryResolveBiolumVaultBuffer(vault, in _glowStatesHandle, BufferID.BiolumGlowStates, MaxGlowInstances, out NativeArray<GlowStateDTO> glowStates) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _glowAupOriginsHandle, BufferID.BiolumGlowAupOrigins, MaxGlowInstances, out NativeArray<double3> aupOrigins) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _speciesTuningHandle, BufferID.BiolumSpeciesTuning, MaxSpeciesTuningCount, out NativeArray<BiolumSpeciesTuningDTO> speciesTuning) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weatherSignal) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<BiolumMockPredatorProximitySignal> predatorSignal) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _mockDamageSignalHandle, BufferID.BiolumMockDamageSignal, 1, out NativeArray<BiolumMockCombatDamageSignal> damageSignal) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _syncPulsesHandle, BufferID.BiolumSyncPulses, SyncPulseCapacity, out NativeArray<SyncPulseDTO> pulses) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _syncPulseAgesHandle, BufferID.BiolumSyncPulseAges, SyncPulseCapacity, out NativeArray<float> pulseAges))
+                {
+                    return;
+                }
 
-                int x = i % 250;
-                int z = i / 250;
-                double jitterX = ((int)(DeterministicHash((uint)i) & 1023u) - 512) * 0.00625;
-                double jitterZ = ((int)((DeterministicHash((uint)i ^ 0xA341316Cu) >> 10) & 1023u) - 512) * 0.00625;
-                aupOrigins[i] = new double3((x - 125) * 1.35 + jitterX, -220.0 - (speciesIndex & 7) * 0.75, (z - 100) * 1.35 + jitterZ);
+                SeedSpeciesTuning(speciesTuning);
+
+                weatherSignal[0] = new MockWeatherSignal
+                {
+                    AmbientLightLevel = 0.08f,
+                    O2Level01 = 1f,
+                    SystemHealthIndex01 = 0.25f,
+                    CurrentBiomeHash = HashAscii32("ABYSS_NEON")
+                };
+                predatorSignal[0] = default;
+                damageSignal[0] = default;
+                for (int i = 0; i < SyncPulseCapacity; i++)
+                {
+                    pulses[i] = default;
+                    pulseAges[i] = 99f;
+                }
+
+                int speciesCount = math.min(MaxSpeciesTuningCount, speciesTuning.Length);
+                int activeCount = math.min(MaxGlowInstances, math.min(glowStates.Length, aupOrigins.Length));
+                if (speciesCount <= 0 || activeCount <= 0)
+                    return;
+
+                for (int i = 0; i < activeCount; i++)
+                {
+                    int speciesIndex = i % speciesCount;
+                    BiolumSpeciesTuningDTO species = speciesTuning[speciesIndex];
+                    float phase = math.frac((i * 0.754877666f) + (speciesIndex * 0.037f));
+                    ref GlowStateDTO state = ref GetGlowStateRef(glowStates, i);
+                    state.PackedColor = species.PackedColor;
+                    state.Phase = phase;
+                    state.Frequency = species.Frequency;
+                    state.SpeciesHash = species.SpeciesHash;
+
+                    int x = i % 250;
+                    int z = i / 250;
+                    double jitterX = ((int)(DeterministicHash((uint)i) & 1023u) - 512) * 0.00625;
+                    double jitterZ = ((int)((DeterministicHash((uint)i ^ 0xA341316Cu) >> 10) & 1023u) - 512) * 0.00625;
+                    aupOrigins[i] = new double3((x - 125) * 1.35 + jitterX, -220.0 - (speciesIndex & 7) * 0.75, (z - 100) * 1.35 + jitterZ);
+                }
+
+                _activeSyncPulseCount = 0;
+                _activeGlowingInstanceCount = activeCount;
+                _mockGlowsInitialized = true;
             }
-
-            _activeSyncPulseCount = 0;
-            _activeGlowingInstanceCount = activeCount;
-            _mockGlowsInitialized = true;
+            finally
+            {
+                ReleaseBiolumGuard(vault, GlowBootstrapGuardMask);
+            }
         }
 
         private void GenerateMockLightingState()
@@ -1345,26 +1440,36 @@ namespace Hecton8.VFX.Bioluminescence
             if (vault == null || !HasVaultBuffers())
                 return;
 
-            if (!TryResolveBiolumVaultBuffer(vault, in _pulseStateHandle, BiolumPulseStateBufferId, 1, out NativeArray<BiolumPulseStateDTO> pulseState) ||
-                !TryResolveBiolumVaultBuffer(vault, in _profileFloatsHandle, BufferID.BiolumProfileFloats, ProfileFloatCount, out NativeArray<float> profileFloats) ||
-                !TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weather) ||
-                !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<BiolumMockPredatorProximitySignal> predator))
-            {
+            if (!TryAcquireBiolumGuard(vault, MockLightingStateGuardMask))
                 return;
-            }
 
-            GenerateMockLightingStateJob job = new GenerateMockLightingStateJob
+            try
             {
-                PulseState = pulseState,
-                ProfileFloats = profileFloats,
-                WeatherSignal = weather,
-                PredatorSignal = predator,
-                AupReference = new double3(_aupOriginOffset.x, _aupOriginOffset.y, _aupOriginOffset.z),
-                GlobalQualityWeight = _globalQualityWeight
-            };
-            // Cold mock seed: keep the job system/Burst route visible without scheduling a tiny hot-path job.
-            job.Run();
-            CopyPulseStateToManagedBuffer();
+                if (!TryResolveBiolumVaultBuffer(vault, in _pulseStateHandle, BiolumPulseStateBufferId, 1, out NativeArray<BiolumPulseStateDTO> pulseState) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _profileFloatsHandle, BufferID.BiolumProfileFloats, ProfileFloatCount, out NativeArray<float> profileFloats) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _mockWeatherSignalHandle, BufferID.BiolumMockWeatherSignal, 1, out NativeArray<MockWeatherSignal> weather) ||
+                    !TryResolveBiolumVaultBuffer(vault, in _mockPredatorSignalHandle, BufferID.BiolumMockPredatorSignal, 1, out NativeArray<BiolumMockPredatorProximitySignal> predator))
+                {
+                    return;
+                }
+
+                GenerateMockLightingStateJob job = new GenerateMockLightingStateJob
+                {
+                    PulseState = pulseState,
+                    ProfileFloats = profileFloats,
+                    WeatherSignal = weather,
+                    PredatorSignal = predator,
+                    AupReference = new double3(_aupOriginOffset.x, _aupOriginOffset.y, _aupOriginOffset.z),
+                    GlobalQualityWeight = _globalQualityWeight
+                };
+                // Cold mock seed: keep the job system/Burst route visible without scheduling a tiny hot-path job.
+                job.Run();
+                CopyPulseStateToManagedBuffer();
+            }
+            finally
+            {
+                ReleaseBiolumGuard(vault, MockLightingStateGuardMask);
+            }
         }
 
         private static unsafe ref GlowStateDTO GetGlowStateRef(NativeArray<GlowStateDTO> states, int index)
@@ -1448,7 +1553,9 @@ namespace Hecton8.VFX.Bioluminescence
 
         private void LoadProfilesFromDiskOrDefaults()
         {
-            if (!TryAcquireProfileBuffer(out IDataVault vault, out NativeArray<float> profileFloats, allowEnsure: true))
+            Span<byte> profileBytes = stackalloc byte[ProfileByteCount];
+            int totalBytesRead = TryReadColdProfileBytes(profileBytes);
+            if (!TryAcquireProfileBufferCold(out IDataVault vault, out NativeArray<float> profileFloats))
                 return;
 
             try
@@ -1456,39 +1563,13 @@ namespace Hecton8.VFX.Bioluminescence
                 SeedDefaultProfiles(profileFloats);
                 _profileSourceHash = ProfileFallbackHash;
 
-                string path = BuildColdProfilePath();
-                if (string.IsNullOrEmpty(path))
+                if (totalBytesRead > 0)
                 {
-                    _profilesLoaded = true;
-                    return;
-                }
-
-                try
-                {
-                    Span<byte> profileBytes = stackalloc byte[ProfileByteCount];
-                    int totalBytesRead = 0;
-                    using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, ProfileByteCount, FileOptions.SequentialScan))
-                    {
-                        while (totalBytesRead < ProfileByteCount)
-                        {
-                            int bytesRead = stream.Read(profileBytes.Slice(totalBytesRead));
-                            if (bytesRead <= 0)
-                                break;
-
-                            totalBytesRead += bytesRead;
-                        }
-                    }
-
                     int readableFloats = math.min(ProfileFloatCount, totalBytesRead >> 2);
                     for (int i = 0; i < readableFloats; i++)
                         profileFloats[i] = SanitizeProfileFloat(ReadFloatLittleEndian(profileBytes, i << 2), i);
 
                     _profileSourceHash = ProfileBinaryHash;
-                }
-                catch (Exception)
-                {
-                    SeedDefaultProfiles(profileFloats);
-                    _profileSourceHash = ProfileFallbackHash;
                 }
 
                 _profilesLoaded = true;
@@ -1496,6 +1577,35 @@ namespace Hecton8.VFX.Bioluminescence
             finally
             {
                 ReleaseBiolumGuard(vault, ProfileFloatsGuardMask);
+            }
+        }
+
+        private static int TryReadColdProfileBytes(Span<byte> profileBytes)
+        {
+            string path = BuildColdProfilePath();
+            if (string.IsNullOrEmpty(path))
+                return 0;
+
+            try
+            {
+                int totalBytesRead = 0;
+                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, ProfileByteCount, FileOptions.SequentialScan))
+                {
+                    while (totalBytesRead < ProfileByteCount)
+                    {
+                        int bytesRead = stream.Read(profileBytes.Slice(totalBytesRead));
+                        if (bytesRead <= 0)
+                            break;
+
+                        totalBytesRead += bytesRead;
+                    }
+                }
+
+                return totalBytesRead;
+            }
+            catch (Exception)
+            {
+                return 0;
             }
         }
 
@@ -1550,12 +1660,29 @@ namespace Hecton8.VFX.Bioluminescence
             return false;
         }
 
-        private bool TryAcquireProfileBuffer(out IDataVault vault, out NativeArray<float> profileFloats, bool allowEnsure = false)
+        private bool TryAcquireProfileBufferCold(out IDataVault vault, out NativeArray<float> profileFloats)
         {
             profileFloats = default;
             vault = _dataVault;
-            bool ready = allowEnsure ? EnsureVaultBuffers() : HasVaultBuffers();
-            if (vault == null || !ready)
+            if (vault == null || !EnsureVaultBuffers())
+                return false;
+
+            if (!TryAcquireBiolumGuard(vault, ProfileFloatsGuardMask))
+                return false;
+
+            if (TryResolveBiolumVaultBuffer(vault, in _profileFloatsHandle, BufferID.BiolumProfileFloats, ProfileFloatCount, out profileFloats))
+                return true;
+
+            ReleaseBiolumGuard(vault, ProfileFloatsGuardMask);
+            profileFloats = default;
+            return false;
+        }
+
+        private bool TryAcquireProfileBuffer(out IDataVault vault, out NativeArray<float> profileFloats)
+        {
+            profileFloats = default;
+            vault = _dataVault;
+            if (vault == null || !HasVaultBuffers())
                 return false;
 
             if (!TryAcquireBiolumGuard(vault, ProfileFloatsGuardMask))

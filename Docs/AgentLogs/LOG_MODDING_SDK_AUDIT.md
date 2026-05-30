@@ -2756,3 +2756,649 @@ Evidence:
 - PASS: full `Docs/Modding/Validate_Mod_API_Static.ps1` with `Status PASS`, schema revision 109, recursive diagnosis and dependency graph flags true. Visible `Fail` lines were expected negative fail-closed probes.
 - PASS: scoped `git diff --check`, trailing whitespace scan, and hot lookup scan over ModdingAPI/ModdingSDK C#.
 - DEFERRED: targeted editor build by throttle; CPU 52.46 percent and active dotnet process.
+
+## Pass 87 - Schema 110 Dependency Authoring UX And JSON Purity
+
+What was wrong:
+- The SDK could diagnose dependency graphs, but external authors did not have a first-class, no-Unity dependency editor.
+- Manual dependency edits could desync `mod.h8manifest.json` and `mod.json`, accept duplicates, accept self-dependencies, or drift from loader-compatible IDs.
+- Dependency write validation emitted `Write-Host` text from the nested validator into `-Json` output, which broke automation parsing.
+
+What was done:
+- Added `Tools/configure_dependencies.ps1` as the bounded dependency editor for `list`, `add`, `remove`, and `clear`.
+- Routed dependency editing through `h8mod.ps1 -Action dependencies`, VS Code tasks, Workbench Dependency Contract controls, SDK Hub checked-in template routing, local validator checks, schema revision 110, static validator flags, starter docs, file contract, SDK plan, product blueprint, runtime playbook, review manifest, and submission zip.
+- Fixed nested dependency validation with `*>&1` capture so `-Json` returns only the `hecton8.dependencies.v1` payload.
+- Regenerated `Reports/review_manifest.json` and `Generated/com.example.starter_submission.zip`.
+
+Cinematic Cheats used:
+- None. This is offline SDK authoring and packaging UX, not visual simulation.
+
+Exact Microseconds saved:
+- Runtime frame savings: 0 us/frame.
+- Authoring/debug cost removed: dependency list/add/remove/clear, parity, duplicate rejection, self-dependency rejection, and JSON automation are one root launcher path instead of manual manifest surgery.
+- Build CPU saved: initial compile gate deferred at CPU 77.23 percent; one targeted editor build launched only after CPU dropped to 48.47 percent with no compiler process or Unity lock.
+
+Evidence:
+- PASS: PowerShell parser scan for dependency helper, starter validator, root launcher, and static validator.
+- PASS: JSON parse for schema, starter manifests, VS Code tasks, and dependency manifest schemas.
+- PASS: `h8mod.ps1 -Action validate`.
+- PASS: temp-copy external author flow proved dependency list/add/remove/clear, manifest parity, duplicate rejection, self-dependency rejection, and final validation.
+- PASS: root launcher JSON purity for `dependencies`, `diagnose-local`, and `opcodes-json`.
+- PASS: review manifest includes `Tools/configure_dependencies.ps1`, runtime `envelope-only`, source file count 42, no generated/report source entries.
+- PASS: submission zip includes `Tools/configure_dependencies.ps1` and `Reports/review_manifest.json`, 43 entries, no `Generated/*`.
+- PASS: full `Docs/Modding/Validate_Mod_API_Static.ps1` with `Status PASS`, schema revision 110, dependency Workbench/tool/root launcher/VS Code flags true. Visible `Fail` lines were expected negative fail-closed probes.
+- PASS: `git diff --check`, text trailing whitespace scan, hot lookup scan over 30 ModdingAPI/ModdingSDK C# files, and runtime DataVault method-window write-lock scan over 26 ModdingAPI C# files.
+- DEFERRED then PASS: first compile gate deferred at CPU 77.23 percent with no compiler process and no Unity lock. Second gate opened at CPU 48.47 percent with no `dotnet`, `csc`, `VBCSCompiler`, `MSBuild`, or Unity lock; `dotnet build Assembly-CSharp-Editor.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` completed with 0 warnings, 0 errors, 31.00s, followed by `dotnet build-server shutdown`.
+
+## Pass 88 - Schema 111 Package Doctor UX
+
+What was wrong:
+- External authors could create first mods, edit dependencies, install local discovery copies, and diagnose local Mods folders, but still had no single read-only readiness answer for structure validity, review manifest freshness, source drift, and submission zip freshness.
+- Manual timestamp/hash inspection is not a public SDK workflow and invites stale handoff packages.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/Tools/run_doctor.ps1` with schema `hecton8.starter_doctor.v1`.
+- Routed it through `h8mod.ps1 -Action doctor`, VS Code task `HECTON-8: doctor package readiness`, Workbench `Run Package Doctor`, and SDK Hub checked-in template generation/fallbacks.
+- Extended the local starter validator to require `Tools/run_doctor.ps1`, the root doctor route, the VS Code doctor task, and capability guide text for review/submission freshness.
+- Updated `Docs/Modding/Signal_Schema.json` to schema revision 111 and added doctor proof fields for Workbench, root launcher, VS Code task, read-only tool contract, and static snapshot.
+- Updated modding docs, runtime playbook, file contract, starter README/tool README/capabilities, review manifest, and submission zip.
+
+Cinematic Cheats used:
+- None. This is offline SDK/readiness tooling, not runtime simulation or visual presentation.
+
+Exact Microseconds saved:
+- Runtime frame savings: 0 us/frame.
+- Authoring/debug cost removed: one doctor route replaces manual structure/review/hash/zip freshness inspection before handoff.
+- Build CPU saved: no `dotnet build` was launched while CPU was 62.8, 92.96, 87.03, or 79.09 percent. One targeted editor build launched only after CPU dropped to 45.35 percent with no compiler process or Unity lock.
+
+Evidence:
+- PASS: PowerShell parser scan for `Tools/run_doctor.ps1`, `h8mod.ps1`, `Tools/validate_structure.ps1`, and `Docs/Modding/Validate_Mod_API_Static.ps1`.
+- PASS: JSON parse for schema, VS Code tasks, and starter manifests.
+- PASS: `h8mod.ps1 -Action validate`.
+- PASS: doctor JSON before prepare reported `needs_review`, stale review/submission, and exact prepare/submission next actions.
+- PASS: `h8mod.ps1 -Action prepare` and `h8mod.ps1 -Action submission`.
+- PASS: doctor JSON after submission reported `ready`, `Review=fresh`, `Submission=present`, `IssueCount=0`, `SourceFiles=43`.
+- PASS: review manifest includes `Tools/run_doctor.ps1`, runtime `envelope-only`, source file count 43, no generated/report source entries.
+- PASS: submission zip has 44 entries, includes `Tools/run_doctor.ps1` and `Reports/review_manifest.json`, no `Generated/*`.
+- PASS: full `Docs/Modding/Validate_Mod_API_Static.ps1` with `Status PASS`, schema revision 111, doctor Workbench/tool/root launcher/VS Code flags true. Visible `Fail` lines were expected negative fail-closed probes.
+- PASS: `git diff --check`, text trailing whitespace scan, hot lookup grep/context scan, and `FutureCommandSandboxValidator.cs` DataVault write-lock method-window scan.
+- DEFERRED then PASS: targeted `dotnet build` first deferred by strict throttle; gate samples showed CPU 62.8, 92.96, 87.03, and 79.09 percent, with active `csc`/`dotnet` on the early samples and no Unity lockfile. Final gate opened at CPU 45.35 percent with no `dotnet`, `csc`, `VBCSCompiler`, `MSBuild`, or Unity lock; `dotnet build Assembly-CSharp-Editor.csproj -nologo -clp:ErrorsOnly -maxcpucount:1` completed with 0 warnings, 0 errors, 24.14s, followed by `dotnet build-server shutdown` and no remaining compiler processes.
+## Pass 89 - Schema 112 Submission Zip Integrity Doctor
+
+What was wrong:
+- `Tools/run_doctor.ps1` proved submission zip presence and timestamp freshness, but not archive contents.
+- A public author could hand off a zip with tampered source entries, duplicate entries, unsafe paths, `Generated/` payloads, or files absent from `Reports/review_manifest.json` and still see freshness as acceptable.
+
+What was done:
+- Extended `ModdingSDK/ExternalStarterKit/Tools/run_doctor.ps1` with read-only zip content verification.
+- Added bounded inspection constants: 300 zip entries, 4194304 bytes per entry.
+- Verified every reviewed source file and `Reports/review_manifest.json` inside the zip by byte count and SHA-256.
+- Reported `IntegrityStatus`, `ZipEntryCount`, `CheckedEntryCount`, `ExtraEntryCount`, `MissingEntryCount`, `ChangedEntryCount`, `UnsafeEntryCount`, and `DuplicateEntryCount` under `Submission`.
+- Rejected unsafe, duplicate, unreviewed, missing, and changed entries without extracting or mutating the zip.
+- Updated schema revision 112, static validator gates, runtime playbook evidence, starter validator capability text, starter docs, SDK docs, product blueprint, file contract, and static closure docs.
+- Regenerated `Reports/review_manifest.json` and `Generated/com.example.starter_submission.zip`.
+
+Cinematic Cheats used:
+- No runtime simulation. This is an offline package proof that keeps runtime ingress envelope-only.
+- Read-only archive stream hashing replaces extract-and-diff filesystem work.
+
+Exact Microseconds saved:
+- Runtime: 0 us/frame; no gameplay path changed.
+- Authoring failure-loop savings: one doctor command catches corrupted handoff zips before local install or review upload.
+
+Verification:
+- Parser PASS for touched PowerShell files.
+- JSON parse PASS for schema/tasks/manifests.
+- `h8mod.ps1 -Action validate` PASS.
+- Fresh doctor PASS: `Status=ready`, `Integrity=verified`, `ZipEntryCount=44`, `CheckedEntryCount=44`, `IssueCount=0`.
+- Corrupted temp zip PASS: changed `README.md` and unsafe `Generated/evil.txt` produced `Submission=invalid`, `Changed=1`, `Unsafe=1`.
+- Temp cleanup PASS.
+- Full static validator PASS: schema revision 112 and new doctor flags true.
+- Hygiene PASS: `git diff --check` no whitespace errors, trailing whitespace scan over touched-domain text files PASS.
+- APEX hot lookup scan PASS: no `GlobalRegistry.Get<T>()`, only cold `TryGetComponent` calls in `ModWorldPersistenceManager`.
+- DataVault scan PASS: no method holds more than one write lock; all acquisition windows have `finally` plus `ReleaseWriteLock`.
+- Build PASS: one targeted `dotnet build Assembly-CSharp-Editor.csproj -nologo -clp:ErrorsOnly -maxcpucount:1`, 0 warnings, 0 errors, 29.00s.
+- Build server shutdown completed; an unrelated `Hecton8.Core.csproj` build from another parent process remained active and was not terminated.
+
+## Pass 90 - Schema 113 Workbench Submission Zip Integrity
+
+What was wrong:
+- The doctor could prove submission zip contents, but Unity Workbench still exposed only package path, byte size, write time, and freshness against `Reports/review_manifest.json`.
+- A Unity-side modder could see a current handoff artifact without seeing whether archive entries actually matched review hashes.
+
+What was done:
+- Extended `ExternalStarterKitWorkbenchWindow.LoadSubmissionSummary()` with read-only archive verification.
+- Added bounded Workbench caps: 300 zip entries and 4194304 bytes per entry.
+- Verified every reviewed source entry plus `Reports/review_manifest.json` by byte count and SHA-256.
+- Rejected unsafe paths, duplicate entries, extra unreviewed entries, missing entries, changed entries, `Generated/`, and non-manifest `Reports/` entries.
+- Surfaced `Zip integrity: verified/invalid` plus missing/changed/extra/unsafe/duplicate counters in the Submission Package panel warning state.
+- Updated schema revision 113, static validator gates, runtime playbook, README, Mod API static closure, SDK authoring plan, product blueprint, file contract, and SDK Hub fallback strings.
+
+Cinematic Cheats used:
+- No runtime simulation.
+- In-editor read-only stream hashing replaces shell process churn and extract-to-disk diffing.
+
+Exact Microseconds saved:
+- Runtime: 0 us/frame; no runtime mod API, SignalBus, GlobalRegistry, GlobalDataVault, save, Burst/job, rendering, telemetry, or GlobalQualityWeight path changed.
+- Editor CPU saved: no per-repaint process spawn; integrity runs inside the Workbench refresh path with bounded entry/byte caps.
+- Build CPU protected: compile gate waited through CPU 53-100 percent and active compiler processes, then ran one targeted build only when CPU was 18 percent and no compiler/Unity lock existed.
+
+Verification:
+- Parser PASS for `Docs/Modding/Validate_Mod_API_Static.ps1`.
+- JSON PASS for schema revision 113 and Workbench zip integrity fields.
+- Full static validator PASS: schema revision 113, `ExternalStarterKitWorkbenchShowsSubmissionZipIntegrity=True`.
+- Hygiene PASS: `git diff --check` no whitespace errors, trailing whitespace scan PASS.
+- APEX hot lookup scan PASS: no `GlobalRegistry.Get<T>()` or `GetComponent()` inside `Tick`, `FixedUpdate`, `LateFrameTick`, or `Execute`; only cold `TryGetComponent` paths remain in `ModWorldPersistenceManager`.
+- DataVault scan PASS: no method holds more than one write lock; acquisition windows retain `finally` plus `ReleaseWriteLock`.
+- Build PASS: one targeted `dotnet build Assembly-CSharp-Editor.csproj -nologo -clp:ErrorsOnly -maxcpucount:1`, 0 warnings, 0 errors, 26.90s.
+- Build server shutdown PASS: no `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild` processes remained.
+
+## Pass 91 - Schema 114 Workbench Case-Exact Zip Integrity
+
+What was wrong:
+- Workbench submission zip proof used case-insensitive dictionaries for reviewed paths and archive entries.
+- A package could pass in the Windows editor while containing path casing that fails on case-sensitive platforms.
+- `Reports/review_manifest.json` was parsed before a Workbench-side byte cap, and malformed review rows were not explicitly counted as invalid package proof.
+
+What was done:
+- Changed Workbench expected-entry and zip-entry maps to case-exact `StringComparer.Ordinal`.
+- Added case-fold duplicate detection for review paths and zip entries without using case-insensitive matching as truth.
+- Required exact `Reports/review_manifest.json` casing for safe archive entries.
+- Added `MaxSubmissionIntegrityReviewManifestBytes = 1048576` before review manifest read.
+- Added SHA-256 hex validation and invalid review row rejection for negative bytes, oversized bytes, and malformed hashes.
+- Updated schema revision 114, static validator gates, runtime playbook, README, Mod API static closure, SDK authoring plan, product blueprint, and starter file contract.
+
+Cinematic Cheats used:
+- No runtime simulation.
+- Exact path/hash proof in the editor replaces platform-dependent runtime discovery surprises.
+
+Exact Microseconds saved:
+- Runtime: 0 us/frame; no runtime mod API, SignalBus, GlobalRegistry, GlobalDataVault, save, Burst/job, rendering, telemetry, or GlobalQualityWeight path changed.
+- Editor CPU bounded: 300 zip entries, 4194304 bytes per entry, 1048576-byte review manifest cap.
+- Build CPU protected: compile gate waited through active foreign builds and high CPU, then ran one targeted editor build only after CPU fell below 50 percent and no compiler/Unity lock existed.
+
+Verification:
+- Parser PASS for `Docs/Modding/Validate_Mod_API_Static.ps1`.
+- JSON PASS for schema revision 114 and case-exact Workbench zip integrity fields.
+- Full static validator PASS: schema revision 114, `ExternalStarterKitWorkbenchUsesCaseExactSubmissionZipIntegrity=True`.
+- Hygiene PASS: `git diff --check` no whitespace errors, trailing whitespace scan PASS.
+- APEX hot lookup scan PASS: no `GlobalRegistry.Get<T>()` or non-`Try` `GetComponent()` inside `Tick`, `FixedUpdate`, `LateFrameTick`, or `Execute`.
+- DataVault scan PASS: no method holds more than one write lock; acquisition windows retain `finally` plus `ReleaseWriteLock`.
+- Build PASS: one targeted `dotnet build Assembly-CSharp-Editor.csproj -nologo -clp:ErrorsOnly -maxcpucount:1`, 0 warnings, 0 errors, 20.65s.
+- Build server shutdown PASS: no `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild` processes remained.
+
+## Pass 92 - Schema 115 No-Unity Doctor Case-Exact Zip Integrity
+
+What was wrong:
+- The public copied starter doctor accepted submission zip paths case-insensitively after the Unity Workbench had moved to exact portable package proof.
+- A VS Code/PowerShell author could ship a zip that passes on Windows but fails on case-sensitive platforms or marketplace validation.
+- Doctor review-manifest parsing lacked the same pre-read cap and explicit invalid review row counters now required by the Workbench proof path.
+
+What was done:
+- Updated `ModdingSDK/ExternalStarterKit/Tools/run_doctor.ps1` to use case-exact ordinal dictionaries for reviewed paths and zip entries.
+- Kept case-fold maps only to reject duplicate paths that differ by casing.
+- Required exact `Reports/review_manifest.json` casing.
+- Added a 1048576-byte review manifest pre-read cap.
+- Added SHA-256 hex validation plus negative/oversized byte rejection for review rows before zip matching.
+- Added duplicate/invalid review counters to doctor readiness state.
+- Updated starter validation capability text, schema revision 115, static validator gates, runtime playbook, Mod API specification, SDK authoring plan, product blueprint, README files, capabilities docs, review manifest, and regenerated the starter submission package.
+
+Cinematic Cheats used:
+- No runtime simulation.
+- Exact offline archive proof replaces platform-dependent runtime/package discovery failures.
+
+Exact Microseconds saved:
+- Runtime: 0 us/frame; no runtime mod API, SignalBus, GlobalRegistry, GlobalDataVault, save, Burst/job, rendering, telemetry, presentation phase, or GlobalQualityWeight path changed.
+- Authoring CPU bounded: manifest pre-read 1048576 bytes, zip entry 4194304 bytes, zip entry count 300.
+- Build CPU protected: no `dotnet build` was launched while CPU exceeded 50 percent or foreign compiler processes were active.
+
+Verification:
+- Parser PASS for `run_doctor.ps1`, `validate_structure.ps1`, and `Validate_Mod_API_Static.ps1`.
+- JSON PASS for schema revision 115 and `externalStarterKitDoctorUsesCaseExactSubmissionZipIntegrity=True`.
+- Starter validate/prepare/submission/doctor PASS: clean package `Status=ready`, `Integrity=verified`, zero duplicate/invalid review records.
+- Zip inspection PASS: 44 entries, exact `Reports/review_manifest.json` present, lowercase manifest absent, no `Generated/*` entries.
+- Corrupt package simulation PASS: temp package with `readme.md` replacing `README.md` failed doctor as extra/missing and invalid integrity.
+- Full static validator PASS: schema revision 115, `ExternalStarterKitDoctorUsesCaseExactSubmissionZipIntegrity=True`; expected negative fail-closed probe lines exited 0 overall.
+- Hygiene PASS: `git diff --check` no whitespace errors, trailing whitespace scan PASS.
+- APEX hot lookup scan PASS: no `GlobalRegistry.Get<T>()` or non-`Try` `GetComponent()` inside `Tick`, `FixedUpdate`, `LateFrameTick`, or `Execute`.
+- DataVault scan PASS: no method holds more than one write lock; acquisition windows retain `finally` plus `ReleaseWriteLock`.
+- Build DEFERRED by mandatory throttle: CPU stayed above 50 percent or foreign compiler processes were active across 40 samples; final observed foreign `dotnet` PID 4592. No build was launched.
+
+## Pass 93 - Schema 116 Case-Exact Review/Submission Builders
+
+What was wrong:
+- The public review/submission builders were weaker than the case-exact doctor and Workbench.
+- `build_review_manifest.ps1` accepted nonstandard `Reports` casing and did not reject case-fold duplicate source paths before hashing.
+- `build_submission_package.ps1` used a case-insensitive PowerShell hashtable and case-insensitive prefix/extension checks, so reviewed entries could collapse or produce packages that later failed the doctor on exact paths.
+- SDK Hub still carried stale embedded C# string builders for these tools, creating a future drift vector if checked-in templates were missing.
+
+What was done:
+- `build_review_manifest.ps1` now requires exact `Reports/review_manifest.json`, tracks source paths with `StringComparer.Ordinal`, and rejects duplicate/case-fold duplicate paths before hash generation.
+- `build_submission_package.ps1` now requires exact `Reports/review_manifest.json`, exact `Generated/` prefix, lower-case `.zip`, validates review byte/SHA-256 rows, tracks entries with ordinal dictionaries, and rejects case-fold duplicate source entries before zip write.
+- `ModdingSdkHubWindow` now reads checked-in review/submission tool templates instead of maintaining stale embedded packer code.
+- Schema revision 116, static validator, runtime playbook, Mod API spec, SDK plans, starter README/capabilities, file contract, review manifest, and submission zip were updated.
+
+Cinematic Cheats used:
+- No runtime simulation.
+- Exact offline path/hash proof replaces platform-dependent runtime discovery failures.
+
+Exact Microseconds saved:
+- Runtime: 0 us/frame; no runtime mod API, SignalBus, GlobalRegistry, GlobalDataVault, save, Burst/job, rendering, telemetry, presentation phase, or GlobalQualityWeight path changed.
+- Authoring CPU remains bounded by existing review limits: 256 files, 4194304 bytes per source file, 33554432 total source bytes.
+- Build CPU protected: no `dotnet build` launched because CPU was 66 percent and a foreign `dotnet` compiler process was active.
+
+Verification:
+- Parser PASS for `build_review_manifest.ps1`, `build_submission_package.ps1`, and `Validate_Mod_API_Static.ps1`.
+- JSON PASS for schema revision 116.
+- Starter validate/prepare/submission/doctor PASS: clean package `ready`, `Integrity=verified`, `checked=44/44`.
+- Negative package builder probes PASS: wrong-cased `reports/`, `generated/`, and `.ZIP` were rejected on a temp copy.
+- Full static validator PASS: schema revision 116, `ExternalStarterKitReviewManifestRejectsCaseFoldSourceDuplicates=True`, `ExternalStarterKitSubmissionPackageUsesCaseExactSourceEntries=True`; expected negative fail-closed probe lines exited 0 overall.
+- APEX hot lookup scan PASS: no `GlobalRegistry.Get<T>()`, `GlobalRegistry.Get(...)`, or `GetComponent(...)` tokens in guarded modding source.
+- APEX phase scan PASS: pass-93 touched executable code has no presentation mutation tokens.
+- APEX lock scan PASS: pass-93 touched executable code has no DataVault write-lock route.
+- Hygiene PASS: `git diff --check` no whitespace errors, trailing whitespace scan PASS.
+- Build DEFERRED by mandatory throttle: CPU `66`, foreign `dotnet:37024`, no Unity lock. No build was launched.
+## 2026-05-29 - Schema 117 Reserved Folder Case Contract
+
+What was wrong: Schema 116 made package entries case-exact, but the starter folder contract still depended on Windows behavior. A public author could create `reports/` or `generated/`, use wrong-cased `Reports/review_manifest.json`, or produce a package proof with non-canonical SHA-256 casing. That is not portable and makes the SDK lie to authors on case-insensitive filesystems.
+
+What was done: `validate_structure.ps1`, `build_review_manifest.ps1`, `build_submission_package.ps1`, and `run_doctor.ps1` now reject reserved top-level folder case variants and require exact output paths. `ExternalStarterKitWorkbenchWindow.cs` reports reserved folder casing problems in the Unity authoring UI and uses the same exact source/submission path rules. `Validate_Mod_API_Static.ps1`, `Signal_Schema.json`, runtime playbook, modding specs, SDK plan, product blueprint, file contract, and starter docs moved to schema 117 with exact-case and lower-case SHA-256 proof flags.
+
+Cinematic Cheats used: no runtime simulation, no loader tolerance, no background parser loop. The fix is a cold authoring-time path proof: cheap exact-string checks and bounded manifest/package validation before any game runtime authority is touched.
+
+Exact Microseconds saved: 0 us/frame runtime; no runtime frame path changed. Authoring checks add bounded cold-path work only during validate/prepare/submission/doctor/Workbench refresh and prevent invalid package handoff before runtime discovery.
+
+Verification: PowerShell AST parser PASS for changed tools and static validator; schema JSON PASS at revision 117; clean starter validate/prepare/submission/doctor PASS with `Integrity=verified` and `checked=44/44`; negative probes failed closed for wrong `reports/`, wrong review output casing, wrong submission review path, and wrong `generated/`; full static validator PASS schema 117; hot lookup scan PASS; phase scan PASS; DataVault write-lock scan PASS; trailing whitespace PASS; `git diff --check` PASS with line-ending warnings only.
+
+Compile throttle: targeted editor build was not launched. Build gate sampled CPU `82.96`, foreign compiler process `dotnet:20592`, Unity lock absent. Launching `dotnet build` would violate the project throttle rule.
+
+## 2026-05-29 - Schema 118 Local Install/Diagnosis Review Proof
+
+What was wrong: The no-Unity local discovery installer and local Mods diagnosis were weaker than the review/submission/doctor proof. PowerShell default `-match` and `-ne` are case-insensitive, so uppercase SHA-256 and wrong-cased review output could pass checks that were documented as lowercase/exact. Diagnosis also left invalid local review proof as a warning instead of marking the package invalid.
+
+What was done: `install_local_mod.ps1` now validates exact `Reports/review_manifest.json` before prepare, uses `-cmatch` for lowercase SHA-256 shape, uses `-cne` for exact path/hash checks, rejects reserved top-level folder case variants, validates byte rows, and rejects duplicate or case-fold duplicate review entries. `diagnose_local_mods.ps1` now applies the same exact lowercase proof, rejects duplicate/case-fold duplicate review rows, and marks missing or invalid local review proof as `INVALID`. Schema revision 118, static validator, runtime playbook, Mod API spec, SDK plan, product blueprint, file contract, and starter docs were updated.
+
+Cinematic Cheats used: no runtime simulation. The fix is a cold authoring-time exact-string/hash proof that prevents bad local discovery copies from reaching runtime testing.
+
+Exact Microseconds saved: 0 us/frame runtime; no runtime frame path changed. Authoring checks add bounded dictionary/string/hash validation only during install-local and diagnose-local.
+
+Verification: PowerShell AST parser PASS for changed tools and static validator; schema JSON PASS at revision 118; clean validate/prepare/submission/doctor/temp install-local/temp diagnose-local PASS with `ReviewStatus=ok`, `InvalidCount=0`, `BoundaryDisabledCount=1`; negative probes failed closed for wrong `reports/review_manifest.json`, uppercase SHA-256 review proof, and duplicate review rows; full static validator PASS schema 118; hot lookup scan PASS; phase scan PASS; DataVault write-lock scan PASS; trailing whitespace PASS; `git diff --check` PASS with line-ending warnings only.
+
+Compile throttle: `dotnet build` was not launched. CPU/compiler gate sampled `cpu=20`, `compiler=none`, but this pass changed PowerShell/docs/schema/package artifacts only; syntax validation was in-memory PowerShell AST parser plus static validator, not compilation.
+## 2026-05-30 - MODDING_SDK_AUDIT - Schema 119 Snippet Authoring Contract
+
+What was wrong:
+- The no-Unity snippet authoring lane was weaker than the package doctor/install lane. `create_*_snippet.ps1` and `apply_*_snippet.ps1` accepted loose starter-relative paths, did not consistently require `Generated/*.json`, did not reject colon/empty path segments everywhere, allowed non-portable asset paths, and read snippet/target JSON without byte caps.
+- `create_graph_node_snippet.ps1` accepted unbounded `ParametersJson`, which is a bad SDK authoring surface for copied folders and CI scripts.
+
+What was done:
+- Hardened graph/settings/locale/asset snippet creation to exact starter-relative `Generated/*.json` outputs.
+- Hardened graph/settings/locale/asset snippet apply tools with strict starter-relative `.json` path gates and bounded JSON reads before parsing.
+- Hardened asset snippet path handling to reject rooted, colon, empty, dot, and dot-dot segments while staying under `Content/Assets/`.
+- Added graph `ParametersJson` cap at 8192 chars.
+- Advanced schema to 119 and extended static validation, docs, runtime playbook, starter README/tool README, review manifest, and submission zip.
+
+Cinematic cheats used:
+- No runtime simulation or presentation change. The cheap solution is authoring-time bounded validation, not runtime repair or loader tolerance.
+
+Exact microseconds saved:
+- Runtime frame cost: 0 us/frame.
+- Avoided runtime/editor stall class: oversized snippet/target JSON now fails before unbounded parse; starter doctor reports `SourceFiles=43`, `SourceBytes=335123`, `ZipEntryCount=44`, `CheckedEntryCount=44`, `IntegrityStatus=verified`.
+
+Verification:
+- Parser PASS for `Docs/Modding/Validate_Mod_API_Static.ps1` and all eight snippet create/apply tools.
+- Schema JSON PASS at revision 119 with strict snippet paths, bounded apply reads, portable asset paths, and graph parameter caps all `True`.
+- Full static validator PASS at schema 119. Expected negative probe `Fail` lines exited through the harness with process exit `0`.
+- Starter `validate`, `prepare`, `submission`, and `doctor -Json` PASS; package integrity verified.
+- APEX hot lookup scan over ModdingAPI/ModdingSDK C# found 0 hot `GlobalRegistry.Get<T>()`, `GlobalRegistry.Get(...)`, or non-`Try` `GetComponent(...)` violations.
+- APEX phase scan over touched executable files found 0 runtime phase tokens; no presentation deferral or simulation-transfer path changed.
+- APEX modding-domain DataVault scan found 0 write-lock violations; schema-119 executable changes are PowerShell authoring tools and introduce no DataVault write-lock route.
+- `git diff --check` PASS with line-ending warnings only. Trailing whitespace PASS.
+- `dotnet build` count for this pass: 0. Build was intentionally not launched because no C# compile input changed; syntax validation was PowerShell AST parser plus static validator.
+
+## 2026-05-30 - MODDING_SDK_AUDIT - Schema 120 Core Starter JSON Caps
+
+What was wrong:
+- The public starter's core tools were weaker than the snippet lane. Root validation and identity/dependency/manifest/review/prepare/submission/install/diagnose/doctor scripts could parse external JSON/text without the same upfront byte caps.
+- Manual `Content/assets.h8manifest.json` path validation was less strict than `create_asset_entry_snippet.ps1`, so a hand-edited asset manifest could carry Windows-only colon/segment mistakes that snippet authors could not create.
+- The new static negative probe initially exposed a harness bug: expected child `Fail` output redirected as stderr could be treated as a top-level validator error under `ErrorActionPreference=Stop`.
+
+What was done:
+- Added byte caps before external JSON/text parsing in `validate_structure.ps1`, `set_mod_identity.ps1`, `configure_dependencies.ps1`, `configure_manifest_contract.ps1`, `build_review_manifest.ps1`, `build_submission_package.ps1`, `prepare_mod.ps1`, `install_local_mod.ps1`, `diagnose_local_mods.ps1`, and `run_doctor.ps1`.
+- Hardened manual asset manifest path validation to exact `Content/Assets/`, no rooted paths, no colons, no empty segments, no dot segments, and no dot-dot segments.
+- Updated schema/docs/runtime playbook/starter docs to revision 120 and added static proof flags for bounded root validator reads, portable manual asset paths, and bounded core tool reads.
+- Fixed the static validator harness so expected fail-closed child process probes are asserted by exit code/output, not treated as validator crashes.
+
+Cinematic cheats used:
+- No runtime simulation or loader tolerance. Cheap authoring-time byte/path gates replace runtime repair and platform-dependent handoff behavior.
+
+Exact microseconds saved:
+- Runtime frame cost: 0 us/frame.
+- Authoring stall class reduced: oversized root/manifest/review/doctor JSON now fails before unbounded object creation. Starter doctor proof: `SourceFiles=43`, `SourceBytes=341645`, `ZipEntryCount=44`, `CheckedEntryCount=44`, `IntegrityStatus=verified`.
+
+Verification:
+- Parser PASS for `Docs/Modding/Validate_Mod_API_Static.ps1` and ten core starter scripts.
+- Schema JSON PASS at revision 120 with `ExternalStarterKitValidatorCapsRootJsonReads=True`, `ExternalStarterKitValidatorRejectsNonPortableAssetManifestPaths=True`, and `ExternalStarterKitCoreToolsUseBoundedJsonReads=True`.
+- Full static validator PASS at schema 120. Expected negative probe `Fail` lines exited through the harness with process exit `0`.
+- Starter `validate`, `prepare`, `submission`, and `doctor -Json` PASS; review `fresh`, submission `present`, package integrity `verified`, issues `0`.
+- APEX hot lookup scan over 33 modding-boundary C# files found 0 hot `GlobalRegistry.Get<T>()`, `GlobalRegistry.Get(...)`, or non-`Try` `GetComponent(...)` violations.
+- APEX phase scan over 21 touched SDK/static-validation scripts found 0 `Tick`, `FixedUpdate`, `LateFrameTick`, or `VISUAL_SYNC` tokens; no presentation deferral or simulation-transfer path changed.
+- APEX DataVault scan over 34 modding/FutureCommand/DataVault C# files found 0 multi-write-lock methods and 0 missing `finally` release windows.
+- `git diff --check` PASS with line-ending warnings only. Trailing whitespace PASS.
+- `dotnet build` count for this pass: 0. Build gate was closed at `CPU=94` with active `VBCSCompiler:45120`, and this pass changed PowerShell/docs/schema/package artifacts only.
+
+## 2026-05-30 - MODDING_SDK_AUDIT - Schema 121 Unity Workbench Bounded Preview Reads
+
+What was wrong:
+- No-Unity starter scripts were capped before JSON/text parsing, but the Unity External Starter Kit Workbench still used direct `File.ReadAllText` for public starter previews.
+- A copied starter folder from an internet modder could contain oversized graph/settings/content/locale/review files and make the Workbench allocate heavily or stall before showing a useful error.
+
+What was done:
+- Added Workbench capped preview helpers: `ReadTextFileCapped` and `ReadJsonFileCapped<T>`.
+- Replaced raw manifest, graph, settings, locale, content asset, review-summary, identity, and graph-budget preview reads with capped helpers.
+- Added file-length gates before opcode CSV enumeration.
+- Updated schema revision 121, static validation, README, Mod API specification, External Starter Kit file contract, and runtime playbook.
+
+Cinematic cheats used:
+- No runtime simulation. Cheap editor-time byte gates replace runtime tolerance and prevent bad authoring files from reaching package handoff.
+
+Exact microseconds saved:
+- Runtime frame cost: 0 us/frame.
+- Editor stall class reduced: oversized starter preview files now fail before unbounded JSON object creation. Caps: authoring manifest `65536`, graph/settings/content manifest `262144`, locale `2097152`, opcode/review manifest `1048576`.
+
+Verification:
+- Parser PASS for `Docs/Modding/Validate_Mod_API_Static.ps1`.
+- Schema JSON PASS at revision 121 with `starterWorkbenchUsesBoundedPreviewReads=True` and last static snapshot `externalStarterKitWorkbenchUsesBoundedPreviewReads=True`.
+- Full static validator PASS at schema 121. Expected negative probe `Fail` lines exited through the harness with process exit `0`.
+- Workbench source scan confirmed only `ReadTextFileCapped` contains `File.ReadAllText`; preview readers route through caps before parse.
+- C# lexical brace scan returned `CSharpLexicalBraceDepth=0`.
+- Touched C# phase scan returned `TouchedCSharpPhaseMethods=0`; no simulation-to-presentation transfer changed.
+- APEX hot lookup scan over 30 modding-boundary C# files found 0 hot `GlobalRegistry.Get<T>()`, `GlobalRegistry.Get(...)`, or non-`Try` `GetComponent(...)` violations.
+- APEX DataVault write-lock scan over 34 ModdingAPI/Core Memory files found `DataVaultWriteLockViolations=0`, `MethodsChecked=27`.
+- `git diff --check` PASS with line-ending warnings only.
+- `dotnet build` count for this pass: 0. Build gate sampled CPU `56`, then `97`, with no active compiler process; compile was throttled by project rule.
+
+## 2026-05-30 - MODDING_SDK_AUDIT - Schema 122 Workbench Streaming Capped Preview Reads
+
+What was wrong:
+- Schema 121 bounded Workbench previews before parse, but `ReadTextFileCapped` still used `File.ReadAllText` after a `FileInfo.Length` check.
+- That left a file-growth window and a raw full-file read primitive in the Unity authoring UI used by random external modders.
+
+What was done:
+- Replaced `File.ReadAllText` in `ExternalStarterKitWorkbenchWindow.ReadTextFileCapped` with streaming byte reads.
+- Enforced `byteLimit + 1` hard cap while reading in 8192-byte chunks through `File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)`.
+- Decoded UTF-8 only after the cap was proven; JSON preview parsing still routes through `ReadJsonFileCapped<T>`.
+- Updated schema revision 122, static validator, README, Mod API specification, External Starter Kit file contract, and runtime playbook.
+
+Cinematic cheats used:
+- No runtime simulation, no runtime loader tolerance, no process spawning from preview UI. Cheap editor-time capped streaming replaces unsafe full-file ingestion.
+
+Exact microseconds saved:
+- Runtime frame cost: 0 us/frame.
+- Editor stall class reduced: Workbench preview files now fail during byte ingestion instead of after a pre-size check and full managed read. Caps remain authoring manifest `65536`, graph/settings/content manifest `262144`, locale `2097152`, opcode/review manifest `1048576`.
+
+Verification:
+- Full static validator PASS at schema 122 with `ExternalStarterKitWorkbenchUsesStreamingCappedPreviewReads=True`.
+- Schema JSON PASS at revision 122 with `starterWorkbenchUsesStreamingCappedPreviewReads=True` and last static snapshot proof `True`.
+- PowerShell parser PASS for `Docs/Modding/Validate_Mod_API_Static.ps1`.
+- Workbench raw read scan returned `WorkbenchFileReadAllTextMatches=0`; streaming helper evidence includes shared `File.Open`, `ChunkBytes=8192`, `totalBytes > byteLimit`, and UTF-8 decode after cap.
+- C# lexical brace scan returned `CSharpLexicalBraceDepth=0`.
+- Touched C# phase scan returned `TouchedCSharpPhaseMethods=0`; no simulation-to-presentation transfer changed.
+- APEX hot lookup scan over 30 ModdingAPI/ModdingSDK C# files found `HotLookupViolations=0`.
+- Production APEX DataVault scan over 34 ModdingAPI/Core Memory C# files found `DataVaultWriteLockViolations=0`, `MethodsChecked=25`. Editor fuzzer/test hits were inspected as deliberate fail-closed probes and excluded from production ownership proof.
+- `git diff --check` PASS with line-ending warnings only.
+- `dotnet build` count for this pass: 0. Build gate was closed at `CPU=97` with active `dotnet:68252` already running a throttled `dotnet build Hecton8.slnx`; after one throttle interval it was still closed at `CPU=94` with no compiler process. Launching another compile would violate the project rule.
+
+## 2026-05-30 - MODDING_SDK_AUDIT - Schema 123 Workbench Strict UTF-8 Preview Reads
+
+What was wrong:
+- Schema 122 removed raw Workbench `File.ReadAllText` and enforced byte caps during streaming reads.
+- The decode step still used tolerant `Encoding.UTF8.GetString`, so malformed UTF-8 could become replacement characters before JSON parsing.
+
+What was done:
+- Added `StrictUtf8NoBom = new UTF8Encoding(false, true)` to `ExternalStarterKitWorkbenchWindow`.
+- Switched capped Workbench preview decode to `StrictUtf8NoBom.GetString(bytes, 0, totalBytes)`.
+- Converted `DecoderFallbackException` into labeled `InvalidDataException` so invalid starter text fails at the ingestion boundary.
+- Updated schema revision 123, static validator, README, Mod API specification, External Starter Kit file contract, and runtime playbook.
+
+Cinematic cheats used:
+- No runtime simulation and no spawned preview parser. Cheap editor-time strict byte decoding replaces tolerant text repair.
+
+Exact microseconds saved:
+- Runtime frame cost: 0 us/frame.
+- Editor failure class reduced: invalid starter JSON/text bytes now fail before `JsonUtility.FromJson` and before any authoring preview state is accepted.
+
+Verification:
+- Full static validator PASS at schema 123 with `ExternalStarterKitWorkbenchRejectsInvalidUtf8PreviewReads=True`.
+- Schema JSON PASS at revision 123 with `starterWorkbenchRejectsInvalidUtf8PreviewReads=True` and last static snapshot proof `True`.
+- PowerShell parser PASS for `Docs/Modding/Validate_Mod_API_Static.ps1`.
+- Workbench source scan confirmed `new UTF8Encoding(false, true)`, `StrictUtf8NoBom.GetString(bytes, 0, totalBytes)`, `DecoderFallbackException`, and `is not strict UTF-8`; Workbench still has zero `File.ReadAllText`.
+- C# lexical brace scan returned `CSharpLexicalBraceDepth=0`.
+- Touched C# phase scan returned `TouchedCSharpPhaseMethods=0`; no simulation-to-presentation transfer changed.
+- APEX hot lookup scan over 30 ModdingAPI/ModdingSDK C# files found `HotLookupViolations=0`.
+- Production APEX DataVault scan over 34 ModdingAPI/Core Memory C# files found `DataVaultWriteLockViolations=0`, `MethodsChecked=25`.
+- `git diff --check` PASS with line-ending warnings only.
+- `dotnet build` count for this pass: 0. Build gate was closed at `CPU=94` with active `dotnet:24832`, then `CPU=99` with the same active build after one throttle interval.
+
+## 2026-05-30 - MODDING_SDK_AUDIT - Schema 124 External Starter Shared Strict JSON IO
+
+What was wrong:
+- Schema 123 made Unity Workbench preview reads strict UTF-8, but the copied no-Unity starter tools still had their own raw/tolerant JSON, text, and opcode CSV reads.
+- That left the public VS Code/PowerShell path weaker than the Workbench path for invalid UTF-8, oversized files, and repeated reader logic.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/Tools/strict_json_io.ps1`.
+- Migrated starter JSON/text/opcode reads to `Read-H8TextFileCapped` and `Read-H8JsonFileCapped`.
+- Removed `Get-Content` use from starter `Tools/*.ps1`.
+- Updated Unity Hub starter generation so `Tools/strict_json_io.ps1` is copied into fresh starter kits.
+- Updated `validate_structure.ps1`, schema revision 124, static validator, README, Mod API specification, External Starter Kit file contract, starter README, tools README, and runtime playbook.
+
+Cinematic cheats used:
+- No runtime simulation and no runtime loader tolerance. Cheap offline byte/encoding gates replace permissive text repair and prevent bad authoring files from reaching package handoff.
+
+Exact microseconds saved:
+- Runtime frame cost: 0 us/frame.
+- Authoring failure class reduced: public no-Unity tools now reject oversized or malformed UTF-8 files before JSON object creation. Read cost is bounded by an 8192-byte stream chunk and `MaxBytes + 1` buffer.
+
+Verification:
+- PowerShell AST parser PASS for 22 starter/static-validation scripts.
+- `STARTER_TOOLS_NO_GET_CONTENT_PASS`.
+- `STRICT_UTF8_PROBE_PASS exit=1`.
+- Full static validator PASS at schema 124 with `ExternalStarterKitCoreToolsUseStreamingStrictUtf8JsonReads=True`.
+- Starter `validate`, `prepare`, `submission`, and `doctor` PASS; doctor reported `Status=ready`, `IntegrityStatus=verified`, `SourceFiles=44`, `ZipEntryCount=45`, `CheckedEntryCount=45`, `Issues=0`.
+- APEX hot lookup scan over 30 modding-boundary C# files found `HotLookupViolations=0`.
+- APEX phase scan: only touched C# file is `ModdingSdkHubWindow.cs`; no `Tick`, `FixedUpdate`, `LateFrameTick`, or `VISUAL_SYNC` route changed.
+- APEX DataVault proof: production write-lock route has one `TryAcquireWriteLock` acquisition and `try/finally` release; this pass introduced no DataVault write-lock acquisition.
+- `git diff --check` PASS with line-ending warnings only.
+- `dotnet build` count for this pass: 0. Build gate was closed at `CPU=100` with active `dotnet:7108`.
+
+## 2026-05-30 - MODDING_SDK_AUDIT - Schema 125 Root Launcher Strict Capability Guide Read
+
+What was wrong:
+- Shared strict IO covered copied starter tools, but root `h8mod.ps1 -Action capabilities` was still a weaker first-contact help path.
+- An oversized or malformed `Docs/capabilities.md` should not be decoded by a separate root helper path.
+
+What was done:
+- Added a 262144-byte capability-guide cap to root `h8mod.ps1`.
+- Root `capabilities` now dot-sources `Tools/strict_json_io.ps1` and reads `Docs/capabilities.md` through `Read-H8TextFileCapped`.
+- Updated Unity Hub fallback root launcher generation to emit the same strict helper route.
+- Updated schema revision 125, static validator, README, Mod API specification, External Starter Kit file contract, starter README, and runtime playbook.
+
+Cinematic cheats used:
+- No runtime simulation. Cheap offline capped strict text ingestion replaces permissive root help output.
+
+Exact microseconds saved:
+- Runtime frame cost: 0 us/frame.
+- Authoring failure class reduced: invalid or oversized capability docs now fail before tolerant decode or unbounded read.
+
+Verification:
+- PowerShell AST parser PASS for root launcher, shared helper, and static validator.
+- Schema JSON PASS at revision 125 with `externalStarterKitRootLauncherUsesStrictCapabilityGuideRead=True`.
+- Root `h8mod.ps1 -Action capabilities` emitted the guide through the strict route.
+- Strict invalid UTF-8 capability probe failed closed with exit code `1`.
+- APEX hot lookup scan over 30 modding-boundary C# files found `HotLookupViolations=0`.
+- APEX phase scan over touched C# found no phase methods and no simulation-to-presentation transfer.
+- Touched runtime DataVault scan found `touched_runtime_lock_hits=0`.
+
+## 2026-05-30 - MODDING_SDK_AUDIT - Schema 126 Submission Zip Timestamp Freshness
+
+What was wrong:
+- The public `h8mod.ps1 -Action submission` route could produce a valid zip whose filesystem timestamp was older than the freshly regenerated `Reports/review_manifest.json`.
+- `doctor` then correctly reported the submission as stale or needing review, which broke the promised one-shot external author workflow.
+
+What was done:
+- `Tools/build_submission_package.ps1` now refreshes the final output zip timestamp after copy when it is older than the review manifest.
+- Static validator now probes `ZipIsNotOlderThanReview` and requires `externalStarterKitSubmissionPackageRefreshesTimestampAfterReplace`.
+- Schema revision 126, docs, runtime playbook, Mod API specification, starter README, and generated starter review/submission artifacts were updated.
+
+Cinematic cheats used:
+- No runtime simulation, no runtime loader tolerance, no process loop. The fix is a single offline metadata invariant after package copy.
+
+Exact microseconds saved:
+- Runtime frame cost: 0 us/frame.
+- Authoring failure class removed: one-shot `submission` followed by `doctor` now returns ready instead of stale due to copied zip timestamps.
+
+Verification:
+- PowerShell AST parser PASS for `h8mod.ps1`, `Tools/build_submission_package.ps1`, `Tools/strict_json_io.ps1`, and `Docs/Modding/Validate_Mod_API_Static.ps1`.
+- Schema JSON PASS at revision 126 with root strict capability read and submission timestamp freshness flags in authoring audit and last static snapshot.
+- Full static validator PASS at schema 126 with `ExternalStarterKitRootLauncherUsesStrictCapabilityGuideRead=True`, `ExternalStarterKitSubmissionPackageRefreshesTimestampAfterReplace=True`, and `ExternalStarterKitSubmissionPackageToolPasses=True`. Expected fail-closed probe lines exited with process exit `0`.
+- Starter root `validate`, `submission`, and `doctor` PASS; doctor reported `Status=ready`, `Issues=0`, submission present, and review fresh.
+- Strict UTF-8 negative probe for root `capabilities` returned exit code `1`.
+- Raw-read scan under `ModdingSDK/ExternalStarterKit` found no `Get-Content`, `File.ReadAllText`, or `[System.IO.File]::ReadAllText` matches.
+- APEX hot lookup scan over 30 modding-boundary C# files found `HotLookupViolations=0`.
+- APEX phase scan over touched C# found no phase methods; no presentation deferral or simulation-to-presentation state transfer changed.
+- Touched runtime DataVault scan found `touched_runtime_lock_hits=0`; this pass introduced no DataVault write-lock acquisition. Existing DataVault routes in other domains were not modified.
+- `git diff --check` PASS with line-ending warnings only.
+- `dotnet build` count for this pass: 0. Build gate was closed at `CPU=97` with active `dotnet:56788`.
+
+## 2026-05-30 - MODDING_SDK_AUDIT - Schema 127 Hub Script Template Fail-Closed Route
+
+What was wrong:
+- Unity Hub starter generation still used C# embedded fallback factories for root `h8mod.ps1` and `Tools/*.ps1`.
+- If a checked-in executable starter template disappeared, the Hub could silently generate stale public PowerShell tooling instead of failing at the missing-template boundary.
+
+What was done:
+- Root `h8mod.ps1` and all public `Tools/*.ps1` writers now call `BuildStarterKitToolFromTemplate`.
+- Missing executable starter templates now produce fail-closed scripts instead of stale embedded script bodies.
+- Non-executable docs/manifests/schemas/VS Code files keep checked-in-template preference plus bounded C# fallbacks.
+- Schema revision 127, static validator, README, Mod API specification, External Starter Kit file contract, and runtime playbook now record `ExternalStarterKitHubScriptsRequireCheckedInTemplates`.
+- Rebuilt the public starter submission package so `doctor` returns ready after the schema/docs changes.
+
+Cinematic cheats used:
+- No runtime simulation, no runtime loader tolerance, no extra process loop. The fix is an editor/package-authoring source-route invariant that deletes a duplicate executable toolchain path.
+
+Exact microseconds saved:
+- Runtime frame cost: 0 us/frame.
+- Editor/source drift class removed: executable SDK scripts now have one checked-in owner and fail closed when that owner is missing.
+
+Verification:
+- PowerShell AST parser PASS for `Docs/Modding/Validate_Mod_API_Static.ps1`.
+- Schema JSON PASS at revision 127 with `externalStarterKitHubScriptsRequireCheckedInTemplates=True` in authoring audit and last static snapshot.
+- Hub route proof PASS: no `BuildStarterKitTemplateFile("h8mod.ps1")` or `BuildStarterKitTemplateFile("Tools/*.ps1")` remains; root launcher and 21 public tool scripts use `BuildStarterKitToolFromTemplate(...)`.
+- Full static validator PASS at schema 127 with `ExternalStarterKitHubScriptsRequireCheckedInTemplates=True`; expected fail-closed probe lines exited with process exit `0`.
+- Starter `submission` PASS and root `doctor -Json` reported `Status=ready`, `Issues=0`, `SubmissionStatus=present`.
+- Raw-read scan under `ModdingSDK/ExternalStarterKit` found no `Get-Content`, `File.ReadAllText`, or `[System.IO.File]::ReadAllText` matches.
+- APEX hot lookup scan over 30 modding-boundary C# files found `HotLookupViolations=0`.
+- APEX phase scan over touched C# found no `Tick`, `FixedUpdate`, `LateFrameTick`, `VISUAL_SYNC`, `VisualSync`, or `Execute` methods.
+- Touched DataVault scan found `data_vault_lock_hits=0`; no DataVault write-lock acquisition was introduced.
+- `git diff --check` PASS with line-ending warnings only.
+- `dotnet build` count for this pass: 1. Initial build gate was closed at `CPU=100` with active `dotnet:56788`; final gate later opened at `CPU=40.83` with no active compiler process, so one throttled `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1 --no-restore /p:UseSharedCompilation=false` was launched. It returned `exit=-1` with no compiler diagnostics after about 182 seconds. Post-build process check found `dotnet/csc/VBCSCompiler Count=0`, so no orphan compiler process remained.
+
+## 2026-05-30 - MODDING_SDK_AUDIT - Schema 128 Hub Executable Fallback Body Removal
+
+What was wrong:
+- Schema 127 made Hub write root/tool executable scripts through checked-in templates, but several embedded executable fallback bodies still remained in `ModdingSdkHubWindow.cs`.
+- Those bodies were dead today but dangerous: a future call-site regression could silently revive stale PowerShell tooling for random external modders.
+
+What was done:
+- Replaced root/tool executable fallback builder bodies with direct `BuildStarterKitToolFromTemplate(...)` shims for root launcher, validator, identity, prepare, opcode listing, settings snippet, and locale snippet scripts.
+- Updated static validation so script content proof comes from checked-in starter template sources, not C# fallback bodies.
+- Updated schema revision 128, contract index, Mod API specification, runtime playbook, External Starter Kit file contract, SDK blueprint, and starter submission artifacts.
+
+Cinematic cheats used:
+- No runtime simulation and no runtime loader tolerance. The fix deletes duplicate executable authoring code and keeps one checked-in script owner.
+
+Exact microseconds saved:
+- Runtime frame cost: 0 us/frame.
+- Editor drift class removed: stale executable fallback bodies can no longer become a hidden second SDK toolchain.
+
+Verification:
+- PowerShell AST parser PASS for `Docs/Modding/Validate_Mod_API_Static.ps1`.
+- Schema JSON PASS at revision 128 with `externalStarterKitHubExecutableFallbackBodiesRemoved=True` in authoring audit and last static snapshot.
+- Hub executable fallback token scan PASS: no old `H8MOD_*` fallback body markers or old `Get-Content` fallback body tokens remain in `ModdingSdkHubWindow.cs`.
+- Full static validator PASS at schema 128 with `ExternalStarterKitHubScriptsRequireCheckedInTemplates=True` and `ExternalStarterKitHubExecutableFallbackBodiesRemoved=True`; expected fail-closed probe lines exited with process exit `0`.
+- Starter `submission` PASS and root `doctor -Json` reported `Status=ready`, `Issues=0`, `IntegrityStatus=verified`, `SourceFiles=44`, `ZipEntryCount=45`, `CheckedEntryCount=45`.
+- Raw-read scan under `ModdingSDK/ExternalStarterKit` found no `Get-Content`, `File.ReadAllText`, or `[System.IO.File]::ReadAllText` matches.
+- APEX hot lookup scan over ModdingAPI/ModdingSDK C# found `HotLookupViolations=0`.
+- APEX touched phase scan found no `Tick`, `FixedUpdate`, `LateFrameTick`, `VISUAL_SYNC`, `VisualSync`, or `Execute` route.
+- APEX DataVault direct write-lock scan found `DataVaultWriteLockAcquisitions=6`, `DataVaultWriteLockViolations=0`; direct acquisitions release through `finally` before any next direct acquisition.
+- `git diff --check` PASS with line-ending warnings only.
+- `dotnet build` count for this pass: 0. Build gate was closed at `CPU=64.69` with active `dotnet:54640` already running `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1 --no-restore /p:UseSharedCompilation=false`.
+
+## 2026-05-30 - MODDING_SDK_AUDIT - Schema 130 Doctor Exit-Code Contract
+
+What was wrong:
+- Public starter `Tools/run_doctor.ps1` returned exit `0` for `Status=needs_review`.
+- Root `h8mod.ps1` delegated to child tools but could collapse nonzero child exits to `1`, losing the precise doctor readiness code.
+- Result: VS Code tasks, CI, and shell users could treat a changed or stale package as successful without parsing JSON.
+
+What was done:
+- `run_doctor.ps1` now exits `0` only for `ready`, `2` for `needs_review`, and `1` for `invalid`.
+- `h8mod.ps1` now captures `$?` and `$global:LASTEXITCODE` immediately after delegation and preserves child nonzero exit codes.
+- Schema revision 130 records both exit-code facts.
+- Static validator, runtime playbook, starter README, starter Tools README, External Starter Kit file contract, SDK blueprint, and Mod API specification now enforce and document the contract.
+- Real starter submission/review artifacts were regenerated and diagnosed as ready.
+
+Cinematic cheats used:
+- No runtime simulation and no runtime loader tolerance. The fix is a cold SDK automation contract: detect package drift at the authoring boundary and let shell automation fail without launching Unity.
+
+Exact microseconds saved:
+- Runtime frame cost: 0 us/frame.
+- Authoring false-green class removed: non-ready packages now stop VS Code/CI at process exit before install or marketplace handoff.
+
+Verification:
+- PowerShell AST parser PASS for `Docs/Modding/Validate_Mod_API_Static.ps1`, `ModdingSDK/ExternalStarterKit/h8mod.ps1`, and `ModdingSDK/ExternalStarterKit/Tools/run_doctor.ps1`.
+- Schema JSON PASS at revision 130 with `externalStarterKitDoctorFailsNonReadyExit=True` and `externalStarterKitRootLauncherPreservesToolExitCodes=True` in authoring audit and last static snapshot.
+- Full static validator PASS at schema 130 with `ExternalStarterKitDoctorFailsNonReadyExit=True` and `ExternalStarterKitRootLauncherPreservesToolExitCodes=True`; expected fail-closed probe lines exited with process exit `0`.
+- Negative copied-starter doctor probe PASS: after post-submission temp README drift, root `h8mod.ps1 -Action doctor -Json` returned `NEGATIVE_DOCTOR_EXIT=2`, `NEGATIVE_DOCTOR_STATUS=needs_review`, `NEGATIVE_DOCTOR_ISSUES=1`.
+- Real starter root `submission` and `doctor` PASS: `REAL_SUBMISSION_EXIT=0`, `REAL_DOCTOR_EXIT=0`, `REAL_DOCTOR_STATUS=ready`, `REAL_DOCTOR_ISSUES=0`, `REAL_DOCTOR_SOURCE_FILES=44`, `REAL_DOCTOR_ZIP_ENTRIES=45`, `REAL_DOCTOR_CHECKED_ENTRIES=45`.
+- Raw-read scan under `ModdingSDK/ExternalStarterKit` found `RawReadMatches=0`.
+- APEX hot lookup scan over 30 ModdingAPI/ModdingSDK C# files found `HotLookupViolations=0`.
+- Scoped phase scan found `CurrentPassScopedCSharpFiles=0`, `CurrentPassScopedPhaseHits=0`; no presentation deferral or simulation-to-presentation transfer changed.
+- APEX DataVault direct write-lock scan found `DataVaultWriteLockAcquisitions=6`, `DataVaultWriteLockViolations=0`.
+- `git diff --check` PASS with line-ending warnings only.
+- `dotnet build` count for this pass: 0. Build gate was deferred at `CPU=43.28` because active `csc:16432` and `dotnet:54464` were present.
+
+## 2026-05-30 - MODDING_SDK_AUDIT - Schema 131 Nested Starter Tool Exit-Code Propagation
+
+What was wrong:
+- Schema 130 fixed root `h8mod.ps1`, but nested parent tools still had a false-green route.
+- PowerShell child tools invoked through parent pipelines could `exit 7` while the parent script continued and exited `0`.
+- A random external modder using composite starter commands could miss validator, identity, review, prepare, submission, create, or install failures unless they manually inspected output.
+
+What was done:
+- `create_first_mod.ps1` and `install_local_mod.ps1` now pass immediately captured `$?` and `$global:LASTEXITCODE` into typed `Complete-Tool`.
+- `build_review_manifest.ps1`, `prepare_mod.ps1`, `build_submission_package.ps1`, and `set_mod_identity.ps1` now route required child calls through `Invoke-RequiredTool`.
+- `Invoke-RequiredTool` resets `$LASTEXITCODE`, invokes the child, captures `$?` and `$global:LASTEXITCODE` immediately, preserves exact nonzero child exit codes, and fails the parent if the pipeline itself failed.
+- Schema revision 131 records `externalStarterKitNestedToolsPreserveChildExitCodes=True`.
+- Static validator, runtime playbook, starter README, External Starter Kit file contract, Mod API specification, and modding README now enforce the same contract.
+
+Cinematic cheats used:
+- No runtime simulation and no runtime loader tolerance. The fix is a cold SDK automation guard: fail at the authoring tool boundary before Unity, local install, or package handoff.
+
+Exact microseconds saved:
+- Runtime frame cost: 0 us/frame.
+- Authoring false-green class removed: nested starter parent tools now stop on child process failure instead of letting automation continue.
+
+Verification:
+- PowerShell AST parser PASS for changed starter tools and `Docs/Modding/Validate_Mod_API_Static.ps1`.
+- Pre-fix negative probes reproduced the defect: nested review, set-identity, prepare, submission, first-mod, and install-local parent paths could hide child `exit 7`.
+- Post-fix negative probes PASS: `FIXED_REVIEW_EXIT=7`, `FIXED_SET_IDENTITY_EXIT=7`, `FIXED_PREPARE_EXIT=7`, `FIXED_SUBMISSION_EXIT=7`, `FIXED_FIRST_MOD_EXIT=7`, `FIXED_INSTALL_LOCAL_EXIT=7`.
+- Schema JSON PASS at revision `131` with `externalStarterKitNestedToolsPreserveChildExitCodes=True` in authoring audit and last static snapshot.
+- Full static validator PASS at schema 131 with `ExternalStarterKitNestedToolsPreserveChildExitCodes=True`; expected fail-closed probe lines exited with process exit `0`.
+- Real starter root `validate`, `submission`, and `doctor` PASS: `REAL_VALIDATE_EXIT=0`, `REAL_SUBMISSION_EXIT=0`, `REAL_DOCTOR_EXIT=0`, `REAL_DOCTOR_STATUS=ready`, `Issues=0`, `IntegrityStatus=verified`, `SourceFiles=44`, `ZipEntryCount=45`, `CheckedEntryCount=45`.
+- APEX hot lookup scan over 30 modding-boundary C# files found `HotLookupViolations=0`.
+- Current pass edited files `13`, missing files `0`, edited C# files `0`, phase route scope `0`, DataVault write-lock scope `0`; no presentation deferral, `LateFrameTick`, `VISUAL_SYNC`, simulation-to-presentation transfer, or DataVault lock route changed.
+- Source proof found typed `Complete-Tool`, immediate `$?`/`$LASTEXITCODE` capture, `Invoke-RequiredTool`, and `exit $toolExitCode` in the required tools.
+- Scoped `git diff --check` PASS with line-ending warnings only.
+- `dotnet build` count for this pass: 0. Current pass changed no C# and build gate was closed at `CPU=99`.

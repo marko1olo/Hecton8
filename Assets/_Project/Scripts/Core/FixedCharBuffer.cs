@@ -21,13 +21,20 @@ namespace Hecton8.Core
 
         public FixedCharBuffer(int size)
         {
-            _buffer = new char[size];
+            _buffer = size > 0 ? new char[size] : Array.Empty<char>();
             _cursor = 0;
         }
 
         public char[] Buffer => _buffer;
-        public int Length => _cursor;
-        public ReadOnlySpan<char> AsSpan() => _buffer != null ? _buffer.AsSpan(0, _cursor) : ReadOnlySpan<char>.Empty;
+        public int Length => ResolveSafeLength();
+        public ReadOnlySpan<char> AsSpan()
+        {
+            if (_buffer == null || _cursor <= 0)
+                return ReadOnlySpan<char>.Empty;
+
+            int safeLength = _cursor > _buffer.Length ? _buffer.Length : _cursor;
+            return _buffer.AsSpan(0, safeLength);
+        }
 
         public void Clear()
         {
@@ -36,20 +43,21 @@ namespace Hecton8.Core
 
         public bool Append(ReadOnlySpan<char> text)
         {
-            if (_buffer == null || _cursor + text.Length > _buffer.Length)
+            if (!TryGetRemainingSpan(text.Length, out Span<char> remaining))
                 return false;
 
-            text.CopyTo(_buffer.AsSpan(_cursor));
+            text.CopyTo(remaining);
             _cursor += text.Length;
             return true;
         }
 
         public bool Append(char value)
         {
-            if (_buffer == null || _cursor >= _buffer.Length)
+            if (!TryGetRemainingSpan(1, out Span<char> remaining))
                 return false;
 
-            _buffer[_cursor++] = value;
+            remaining[0] = value;
+            _cursor++;
             return true;
         }
 
@@ -60,22 +68,32 @@ namespace Hecton8.Core
 
         public bool AppendInt(int value)
         {
-            if (_buffer == null) return false;
+            if (!TryGetRemainingSpan(0, out Span<char> remaining)) return false;
 
-            return ZeroGCFormatter.FastIntToChars(value, _buffer.AsSpan(), ref _cursor);
+            int written = 0;
+            if (!ZeroGCFormatter.FastIntToChars(value, remaining, ref written))
+                return false;
+
+            _cursor += written;
+            return true;
         }
 
         public bool AppendFloat(float value, int decimals = 1)
         {
-            if (_buffer == null) return false;
+            if (!TryGetRemainingSpan(0, out Span<char> remaining)) return false;
 
-            return ZeroGCFormatter.FastFloatToChars(value, decimals, _buffer.AsSpan(), ref _cursor);
+            int written = 0;
+            if (!ZeroGCFormatter.FastFloatToChars(value, decimals, remaining, ref written))
+                return false;
+
+            _cursor += written;
+            return true;
         }
 
         public bool AppendTemplate(ReadOnlySpan<char> template, LocNumericArg arg0)
         {
-            if (_buffer == null) return false;
-            if (LocNumericBuffer.TryWrite(template, _buffer.AsSpan(_cursor), arg0, out int written))
+            if (!TryGetRemainingSpan(0, out Span<char> remaining)) return false;
+            if (LocNumericBuffer.TryWrite(template, remaining, arg0, out int written))
             {
                 _cursor += written;
                 return true;
@@ -85,8 +103,8 @@ namespace Hecton8.Core
 
         public bool AppendTemplate(ReadOnlySpan<char> template, LocNumericArg arg0, LocNumericArg arg1)
         {
-            if (_buffer == null) return false;
-            if (LocNumericBuffer.TryWrite(template, _buffer.AsSpan(_cursor), arg0, arg1, out int written))
+            if (!TryGetRemainingSpan(0, out Span<char> remaining)) return false;
+            if (LocNumericBuffer.TryWrite(template, remaining, arg0, arg1, out int written))
             {
                 _cursor += written;
                 return true;
@@ -96,8 +114,8 @@ namespace Hecton8.Core
 
         public bool AppendTemplate(ReadOnlySpan<char> template, LocNumericArg arg0, LocNumericArg arg1, LocNumericArg arg2)
         {
-            if (_buffer == null) return false;
-            if (LocNumericBuffer.TryWrite(template, _buffer.AsSpan(_cursor), arg0, arg1, arg2, out int written))
+            if (!TryGetRemainingSpan(0, out Span<char> remaining)) return false;
+            if (LocNumericBuffer.TryWrite(template, remaining, arg0, arg1, arg2, out int written))
             {
                 _cursor += written;
                 return true;
@@ -105,10 +123,33 @@ namespace Hecton8.Core
             return false;
         }
 
+        private bool TryGetRemainingSpan(int requiredLength, out Span<char> remaining)
+        {
+            remaining = default;
+            if (_buffer == null || requiredLength < 0 || _cursor < 0 || _cursor > _buffer.Length)
+                return false;
+
+            int remainingLength = _buffer.Length - _cursor;
+            if (requiredLength > remainingLength)
+                return false;
+
+            remaining = _buffer.AsSpan(_cursor, remainingLength);
+            return true;
+        }
+
+        private int ResolveSafeLength()
+        {
+            if (_buffer == null || _cursor <= 0)
+                return 0;
+
+            return _cursor > _buffer.Length ? _buffer.Length : _cursor;
+        }
+
         public override string ToString()
         {
-            if (_buffer == null || _cursor == 0) return string.Empty;
-            return new string(_buffer, 0, _cursor);
+            int safeLength = ResolveSafeLength();
+            if (safeLength == 0) return string.Empty;
+            return new string(_buffer, 0, safeLength);
         }
     }
 }

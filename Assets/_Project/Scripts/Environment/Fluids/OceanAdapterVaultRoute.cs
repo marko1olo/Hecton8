@@ -83,22 +83,30 @@ namespace Hecton8.Environment.Fluids
             if (vault == null)
                 return false;
 
-            if (!TryOpenExistingLane(
+            if (!TryAcquireExistingLaneWriteLock(
                     vault,
                     GlobalWaterLevelBufferID,
                     1,
+                    out VaultGenerationHandle<OceanGlobalWaterLevelDTO> handle,
                     out NativeArray<OceanGlobalWaterLevelDTO> buffer))
             {
                 return false;
             }
 
-            OceanGlobalWaterLevelDTO row = default;
-            row.WaterLevel = math.select(0f, waterLevel, math.isfinite(waterLevel));
-            row.GlobalQualityWeight = math.saturate(math.select(0f, globalQualityWeight, math.isfinite(globalQualityWeight)));
-            row.FrameIndex = frameIndex;
-            row.Flags = 1u;
-            buffer[0] = row;
-            return true;
+            try
+            {
+                OceanGlobalWaterLevelDTO row = default;
+                row.WaterLevel = math.select(0f, waterLevel, math.isfinite(waterLevel));
+                row.GlobalQualityWeight = math.saturate(math.select(0f, globalQualityWeight, math.isfinite(globalQualityWeight)));
+                row.FrameIndex = frameIndex;
+                row.Flags = 1u;
+                buffer[0] = row;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, OwnerSystem);
+            }
         }
 
         public static bool TryRecordTelemetry(
@@ -109,18 +117,26 @@ namespace Hecton8.Environment.Fluids
             if (vault == null)
                 return false;
 
-            if (!TryOpenExistingLane(
+            if (!TryAcquireExistingLaneWriteLock(
                     vault,
                     TelemetryRingBufferID,
                     TelemetryCapacity,
+                    out VaultGenerationHandle<OceanAdapterTelemetryEntry> handle,
                     out NativeArray<OceanAdapterTelemetryEntry> telemetry))
             {
                 return false;
             }
 
-            int index = (int)(frameIndex % (uint)telemetry.Length);
-            telemetry[index] = entry;
-            return true;
+            try
+            {
+                int index = (int)(frameIndex % (uint)telemetry.Length);
+                telemetry[index] = entry;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, OwnerSystem);
+            }
         }
 
         private static OceanAdapterVaultLane<T> AcquireLane<T>(
@@ -167,45 +183,54 @@ namespace Hecton8.Environment.Fluids
                    lane.Length > 0;
         }
 
-        private static bool TryOpenExistingLane<T>(
+        private static bool TryAcquireExistingLaneWriteLock<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
+            out VaultGenerationHandle<T> handle,
             out NativeArray<T> buffer) where T : struct
         {
+            handle = default;
             buffer = default;
             if (vault == null || requiredLength <= 0)
                 return false;
 
             uint expectedBufferId = unchecked((uint)(int)bufferId);
-            if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existing) ||
-                existing.BufferID != expectedBufferId ||
-                existing.Generation == 0u)
+            if (!vault.TryGetGenerationHandle<T>(bufferId, out handle) ||
+                handle.BufferID != expectedBufferId ||
+                handle.Generation == 0u)
                 return false;
 
             OceanAdapterVaultLane<T> lane = new OceanAdapterVaultLane<T>
             {
-                Handle = existing,
+                Handle = handle,
                 ExpectedBufferID = expectedBufferId,
                 Length = requiredLength
             };
 
-            return OpenLane(vault, in lane, out buffer);
-        }
-
-        private static bool OpenLane<T>(
-            IDataVault vault,
-            in OceanAdapterVaultLane<T> lane,
-            out NativeArray<T> buffer) where T : struct
-        {
-            buffer = default;
-            if (vault == null || !IsLaneBound(in lane))
+            if (!IsLaneBound(in lane))
                 return false;
 
-            if (!vault.TryResolveHandle(in lane.Handle, out buffer))
+            if (!vault.TryAcquireWriteLock(in handle, OwnerSystem, out buffer))
                 return false;
 
-            return buffer.IsCreated && buffer.Length >= lane.Length;
+            bool releaseOnFailure = true;
+            try
+            {
+                if (buffer.IsCreated && buffer.Length >= lane.Length)
+                {
+                    releaseOnFailure = false;
+                    return true;
+                }
+
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnFailure)
+                    vault.ReleaseWriteLock(in handle, OwnerSystem);
+            }
         }
     }
 }

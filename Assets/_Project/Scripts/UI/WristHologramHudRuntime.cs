@@ -96,13 +96,7 @@ namespace Hecton8.UI
         [FieldOffset(232)]
         public int QualityWeightQ8;
         [FieldOffset(236)]
-        private byte _pad236;
-        [FieldOffset(237)]
-        private byte _pad237;
-        [FieldOffset(238)]
-        private byte _pad238;
-        [FieldOffset(239)]
-        private byte _pad239;
+        public int MathLodPressureQ8;
         [FieldOffset(240)]
         private byte _pad240;
         [FieldOffset(241)]
@@ -262,7 +256,7 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Wrist Hologram HUD Runtime")]
-    public sealed unsafe partial class WristHologramHudRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed unsafe partial class WristHologramHudRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int StateCapacity = 1;
         private const int GlyphCapacity = 128;
@@ -291,7 +285,6 @@ namespace Hecton8.UI
 
         private const int StateFlagCulled = 1 << 0;
         private const int StateFlagPdaOpen = 1 << 1;
-        private const int StateFlagSurvivalMath = 1 << 2;
         private const int StateFlagJobOverBudget = 1 << 3;
         private const int StateFlagNaNDetected = 1 << 4;
         private const int StateFlagCsvLoaded = 1 << 5;
@@ -371,7 +364,9 @@ namespace Hecton8.UI
         private int _pdaQueueCount;
 
         private bool _registeredLateFrame;
+        private bool _registeredSlowTick;
         private bool _registeredHotSwapListener;
+        private bool _blackBoxDumpQueued;
         private bool _blackBoxDumped;
         private bool _csvLoaded;
         private bool _legacyMissing;
@@ -502,7 +497,7 @@ namespace Hecton8.UI
 
             if (EnsureNativeBuffers())
             {
-                if (TryAcquireWristHudVaultBuffer(in _stateHandle, BufferID.WristHudState, StateCapacity, out NativeArray<WristHudStateDTO> states))
+                if (TryAcquireWristHudVaultBuffer(in _stateHandle, BufferID.WristHudState, StateCapacity, out IDataVault stateWriteVault, out NativeArray<WristHudStateDTO> states))
                 {
                     try
                     {
@@ -516,9 +511,7 @@ namespace Hecton8.UI
                     }
                     finally
                     {
-                        IDataVault vault = _vault;
-                        if (vault != null)
-                            vault.ReleaseWriteLock(in _stateHandle, SystemID.UI);
+                        ReleaseWristHudVaultWriteBuffer(stateWriteVault, in _stateHandle, BufferID.WristHudState);
                     }
                 }
             }
@@ -538,7 +531,7 @@ namespace Hecton8.UI
             {
                 _csvLoaded = true;
                 _lastCsvWriteUtc = File.GetLastWriteTimeUtc(path);
-                if (TryAcquireWristHudVaultBuffer(in _stateHandle, BufferID.WristHudState, StateCapacity, out NativeArray<WristHudStateDTO> states))
+                if (TryAcquireWristHudVaultBuffer(in _stateHandle, BufferID.WristHudState, StateCapacity, out IDataVault stateWriteVault, out NativeArray<WristHudStateDTO> states))
                 {
                     try
                     {
@@ -548,9 +541,7 @@ namespace Hecton8.UI
                     }
                     finally
                     {
-                        IDataVault vault = _vault;
-                        if (vault != null)
-                            vault.ReleaseWriteLock(in _stateHandle, SystemID.UI);
+                        ReleaseWristHudVaultWriteBuffer(stateWriteVault, in _stateHandle, BufferID.WristHudState);
                     }
                 }
             }
@@ -595,6 +586,7 @@ namespace Hecton8.UI
         {
             TryUnregisterTickLanes();
             TryUnregisterHotSwapListener();
+            FlushQueuedBlackBoxDump();
             PdaProjectorOnDestroy();
             ReleaseGraphicsResources();
             DisposeNativeState();
@@ -641,10 +633,6 @@ namespace Hecton8.UI
                 ApplyMaterialColdState();
             }
 
-#if UNITY_EDITOR
-            PollCsvOverride(_lastHudDeltaTime);
-#endif
-
             if (_hudTextJobDirty)
             {
                 _hudTextJobDirty = false;
@@ -654,6 +642,14 @@ namespace Hecton8.UI
 
             UploadAndDraw();
             PdaProjectorLateFrameTick();
+        }
+
+        public void SlowTick()
+        {
+#if UNITY_EDITOR
+            PollCsvOverride(_lastHudDeltaTime);
+#endif
+            FlushQueuedBlackBoxDump();
         }
 
         private bool EnsureNativeBuffers()
@@ -798,8 +794,10 @@ namespace Hecton8.UI
             in VaultGenerationHandle<T> handle,
             BufferID expectedBufferId,
             int requiredLength,
+            out IDataVault writeVault,
             out NativeArray<T> buffer) where T : unmanaged
         {
+            writeVault = null;
             buffer = default;
             IDataVault vault = _vault;
             if (vault == null ||
@@ -819,6 +817,7 @@ namespace Hecton8.UI
                     buffer.Length >= requiredLength)
                 {
                     releaseOnExit = false;
+                    writeVault = vault;
                     return true;
                 }
 
@@ -832,6 +831,15 @@ namespace Hecton8.UI
                     buffer = default;
                 }
             }
+        }
+
+        private static void ReleaseWristHudVaultWriteBuffer<T>(
+            IDataVault writeVault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : unmanaged
+        {
+            if (writeVault != null && IsExactVaultHandle(in handle, expectedBufferId))
+                writeVault.ReleaseWriteLock(in handle, SystemID.UI);
         }
 
         private bool TryReadOnlyWristHudVaultBuffer<T>(
@@ -935,6 +943,9 @@ namespace Hecton8.UI
 
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTickLanes()
@@ -944,6 +955,12 @@ namespace Hecton8.UI
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
             }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = false;
+            }
         }
 
         private void SeedInitialState()
@@ -951,7 +968,7 @@ namespace Hecton8.UI
             if (!EnsureNativeBuffers())
                 return;
 
-            if (TryAcquireWristHudVaultBuffer(in _stateHandle, BufferID.WristHudState, StateCapacity, out NativeArray<WristHudStateDTO> states))
+            if (TryAcquireWristHudVaultBuffer(in _stateHandle, BufferID.WristHudState, StateCapacity, out IDataVault stateWriteVault, out NativeArray<WristHudStateDTO> states))
             {
                 try
                 {
@@ -963,6 +980,7 @@ namespace Hecton8.UI
                     state.PdaGridCenterAndCell.w = pdaGridCellSizeMeters;
                     state.CompassAndVitals.w = glitchMultiplier;
                     state.QualityWeightQ8 = EncodeQualityWeightQ8(_cachedQualityWeight01);
+                    state.MathLodPressureQ8 = EncodeUnitWeightQ8(ResolveMathLodPressure01(), 0f);
                     if (_legacyMissing)
                         state.Flags |= StateFlagLegacyMissing;
                     if (_csvLoaded)
@@ -971,9 +989,7 @@ namespace Hecton8.UI
                 }
                 finally
                 {
-                    IDataVault vault = _vault;
-                    if (vault != null)
-                        vault.ReleaseWriteLock(in _stateHandle, SystemID.UI);
+                    ReleaseWristHudVaultWriteBuffer(stateWriteVault, in _stateHandle, BufferID.WristHudState);
                 }
             }
 
@@ -1130,7 +1146,7 @@ namespace Hecton8.UI
             int count = math.min(_acousticTapScratchCount, _acousticTapScratch.Length);
             if (count <= 0)
                 return true;
-            if (!TryAcquireWristHudVaultBuffer(in _acousticTapHandle, BufferID.WristHudAcousticTaps, 1, out NativeArray<AcousticEchoTap> acousticTaps))
+            if (!TryAcquireWristHudVaultBuffer(in _acousticTapHandle, BufferID.WristHudAcousticTaps, 1, out IDataVault acousticWriteVault, out NativeArray<AcousticEchoTap> acousticTaps))
                 return false;
 
             try
@@ -1142,9 +1158,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                IDataVault vault = _vault;
-                if (vault != null && IsExactVaultHandle(in _acousticTapHandle, BufferID.WristHudAcousticTaps))
-                    vault.ReleaseWriteLock(in _acousticTapHandle, SystemID.UI);
+                ReleaseWristHudVaultWriteBuffer(acousticWriteVault, in _acousticTapHandle, BufferID.WristHudAcousticTaps);
             }
         }
 
@@ -1325,7 +1339,7 @@ namespace Hecton8.UI
             dumpBlackBox = (state.Flags & StateFlagNaNDetected) != 0;
 
             if (dumpBlackBox)
-                DumpBlackBoxOnce();
+                QueueBlackBoxDump();
         }
 
         private void PublishWristHudScratch(int activeQuadCount)
@@ -1346,7 +1360,7 @@ namespace Hecton8.UI
 
         private bool FlushWristHudStateScratch()
         {
-            if (!TryAcquireWristHudVaultBuffer(in _stateHandle, BufferID.WristHudState, StateCapacity, out NativeArray<WristHudStateDTO> states))
+            if (!TryAcquireWristHudVaultBuffer(in _stateHandle, BufferID.WristHudState, StateCapacity, out IDataVault stateWriteVault, out NativeArray<WristHudStateDTO> states))
                 return false;
 
             try
@@ -1356,9 +1370,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                IDataVault vault = _vault;
-                if (vault != null && IsExactVaultHandle(in _stateHandle, BufferID.WristHudState))
-                    vault.ReleaseWriteLock(in _stateHandle, SystemID.UI);
+                ReleaseWristHudVaultWriteBuffer(stateWriteVault, in _stateHandle, BufferID.WristHudState);
             }
         }
 
@@ -1366,7 +1378,7 @@ namespace Hecton8.UI
         {
             if (count <= 0)
                 return true;
-            if (!TryAcquireWristHudVaultBuffer(in _quadHandle, BufferID.WristHudQuads, 1, out NativeArray<WristHudQuadTransformDTO> quads))
+            if (!TryAcquireWristHudVaultBuffer(in _quadHandle, BufferID.WristHudQuads, 1, out IDataVault quadWriteVault, out NativeArray<WristHudQuadTransformDTO> quads))
                 return false;
 
             try
@@ -1378,9 +1390,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                IDataVault vault = _vault;
-                if (vault != null && IsExactVaultHandle(in _quadHandle, BufferID.WristHudQuads))
-                    vault.ReleaseWriteLock(in _quadHandle, SystemID.UI);
+                ReleaseWristHudVaultWriteBuffer(quadWriteVault, in _quadHandle, BufferID.WristHudQuads);
             }
         }
 
@@ -1388,7 +1398,7 @@ namespace Hecton8.UI
         {
             if ((uint)index >= TelemetryCapacity)
                 return false;
-            if (!TryAcquireWristHudVaultBuffer(in _telemetryHandle, BufferID.WristHudTelemetryRing, TelemetryCapacity, out NativeArray<WristHudTelemetryEntry> telemetry))
+            if (!TryAcquireWristHudVaultBuffer(in _telemetryHandle, BufferID.WristHudTelemetryRing, TelemetryCapacity, out IDataVault telemetryWriteVault, out NativeArray<WristHudTelemetryEntry> telemetry))
                 return false;
 
             try
@@ -1399,15 +1409,13 @@ namespace Hecton8.UI
             }
             finally
             {
-                IDataVault vault = _vault;
-                if (vault != null && IsExactVaultHandle(in _telemetryHandle, BufferID.WristHudTelemetryRing))
-                    vault.ReleaseWriteLock(in _telemetryHandle, SystemID.UI);
+                ReleaseWristHudVaultWriteBuffer(telemetryWriteVault, in _telemetryHandle, BufferID.WristHudTelemetryRing);
             }
         }
 
         private bool FlushWristHudCounterScratch()
         {
-            if (!TryAcquireWristHudVaultBuffer(in _counterHandle, BufferID.WristHudCounters, CounterCapacity, out NativeArray<uint> counters))
+            if (!TryAcquireWristHudVaultBuffer(in _counterHandle, BufferID.WristHudCounters, CounterCapacity, out IDataVault counterWriteVault, out NativeArray<uint> counters))
                 return false;
 
             try
@@ -1419,9 +1427,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                IDataVault vault = _vault;
-                if (vault != null && IsExactVaultHandle(in _counterHandle, BufferID.WristHudCounters))
-                    vault.ReleaseWriteLock(in _counterHandle, SystemID.UI);
+                ReleaseWristHudVaultWriteBuffer(counterWriteVault, in _counterHandle, BufferID.WristHudCounters);
             }
         }
 
@@ -1551,7 +1557,7 @@ namespace Hecton8.UI
         {
             _lastUploadCount = -1;
             _wristHudGpuUploadFaulted = true;
-            if (!TryAcquireWristHudVaultBuffer(in _stateHandle, BufferID.WristHudState, StateCapacity, out NativeArray<WristHudStateDTO> states))
+            if (!TryAcquireWristHudVaultBuffer(in _stateHandle, BufferID.WristHudState, StateCapacity, out IDataVault stateWriteVault, out NativeArray<WristHudStateDTO> states))
                 return;
 
             try
@@ -1562,9 +1568,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                IDataVault vault = _vault;
-                if (vault != null)
-                    vault.ReleaseWriteLock(in _stateHandle, SystemID.UI);
+                ReleaseWristHudVaultWriteBuffer(stateWriteVault, in _stateHandle, BufferID.WristHudState);
             }
         }
 
@@ -1573,7 +1577,7 @@ namespace Hecton8.UI
             if (!_wristHudGpuUploadFaulted)
                 return;
 
-            if (!TryAcquireWristHudVaultBuffer(in _stateHandle, BufferID.WristHudState, StateCapacity, out NativeArray<WristHudStateDTO> states))
+            if (!TryAcquireWristHudVaultBuffer(in _stateHandle, BufferID.WristHudState, StateCapacity, out IDataVault stateWriteVault, out NativeArray<WristHudStateDTO> states))
                 return;
 
             try
@@ -1585,9 +1589,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                IDataVault vault = _vault;
-                if (vault != null)
-                    vault.ReleaseWriteLock(in _stateHandle, SystemID.UI);
+                ReleaseWristHudVaultWriteBuffer(stateWriteVault, in _stateHandle, BufferID.WristHudState);
             }
         }
 
@@ -1640,7 +1642,7 @@ namespace Hecton8.UI
 
         private void GenerateMockFontAtlas()
         {
-            if (!TryAcquireWristHudVaultBuffer(in _fontAtlasHandle, BufferID.WristHudFontAtlas, GlyphCapacity, out NativeArray<WristHudFontGlyphDTO> fontAtlas))
+            if (!TryAcquireWristHudVaultBuffer(in _fontAtlasHandle, BufferID.WristHudFontAtlas, GlyphCapacity, out IDataVault fontWriteVault, out NativeArray<WristHudFontGlyphDTO> fontAtlas))
                 return;
 
             try
@@ -1667,9 +1669,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                IDataVault vault = _vault;
-                if (vault != null)
-                    vault.ReleaseWriteLock(in _fontAtlasHandle, SystemID.UI);
+                ReleaseWristHudVaultWriteBuffer(fontWriteVault, in _fontAtlasHandle, BufferID.WristHudFontAtlas);
             }
         }
 
@@ -1694,7 +1694,7 @@ namespace Hecton8.UI
                 }
 
                 if (metricsPath != null)
-                    TryReadBinaryFontMetrics(metricsPath);
+                    TryLoadBinaryFontMetrics(metricsPath);
                 if (palettePath != null)
                     TryReadBinaryPalette(palettePath);
             }
@@ -1740,7 +1740,7 @@ namespace Hecton8.UI
             return null;
         }
 
-        private bool TryReadBinaryFontMetrics(string path)
+        private bool TryLoadBinaryFontMetrics(string path)
         {
             if (!TryReadWholeFileIntoBuffer(path, _csvReadBuffer, out int byteCount))
                 return false;
@@ -1750,7 +1750,7 @@ namespace Hecton8.UI
             if (byteCount < recordSize)
                 return false;
 
-            if (!TryAcquireWristHudVaultBuffer(in _fontAtlasHandle, BufferID.WristHudFontAtlas, GlyphCapacity, out NativeArray<WristHudFontGlyphDTO> fontAtlas))
+            if (!TryAcquireWristHudVaultBuffer(in _fontAtlasHandle, BufferID.WristHudFontAtlas, GlyphCapacity, out IDataVault fontWriteVault, out NativeArray<WristHudFontGlyphDTO> fontAtlas))
                 return false;
 
             try
@@ -1781,9 +1781,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                IDataVault vault = _vault;
-                if (vault != null)
-                    vault.ReleaseWriteLock(in _fontAtlasHandle, SystemID.UI);
+                ReleaseWristHudVaultWriteBuffer(fontWriteVault, in _fontAtlasHandle, BufferID.WristHudFontAtlas);
             }
         }
 
@@ -1882,7 +1880,7 @@ namespace Hecton8.UI
             }
 
             if (!any ||
-                !TryAcquireWristHudVaultBuffer(in _fontAtlasHandle, BufferID.WristHudFontAtlas, GlyphCapacity, out NativeArray<WristHudFontGlyphDTO> fontAtlas))
+                !TryAcquireWristHudVaultBuffer(in _fontAtlasHandle, BufferID.WristHudFontAtlas, GlyphCapacity, out IDataVault fontWriteVault, out NativeArray<WristHudFontGlyphDTO> fontAtlas))
             {
                 return false;
             }
@@ -1899,9 +1897,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                IDataVault vault = _vault;
-                if (vault != null)
-                    vault.ReleaseWriteLock(in _fontAtlasHandle, SystemID.UI);
+                ReleaseWristHudVaultWriteBuffer(fontWriteVault, in _fontAtlasHandle, BufferID.WristHudFontAtlas);
             }
         }
 
@@ -2086,16 +2082,35 @@ namespace Hecton8.UI
         }
 #endif
 
+        private void QueueBlackBoxDump()
+        {
+            if (!_blackBoxDumped)
+                _blackBoxDumpQueued = true;
+        }
+
+        private void FlushQueuedBlackBoxDump()
+        {
+            if (!_blackBoxDumpQueued)
+                return;
+
+            _blackBoxDumpQueued = false;
+            DumpBlackBoxOnce();
+        }
+
         private void DumpBlackBoxOnce()
         {
             if (_blackBoxDumped ||
                 !TryReadWristHudState(0, out WristHudStateDTO state))
             {
+                _blackBoxDumpQueued = !_blackBoxDumped;
                 return;
             }
 
             if (!TryReadOnlyWristHudVaultBuffer(in _telemetryHandle, BufferID.WristHudTelemetryRing, TelemetryCapacity, out NativeArray<WristHudTelemetryEntry>.ReadOnly telemetry))
+            {
+                _blackBoxDumpQueued = true;
                 return;
+            }
 
             int entrySize = UnsafeUtility.SizeOf<WristHudTelemetryEntry>();
             int telemetryCapacity = telemetry.Length;
@@ -2353,7 +2368,13 @@ namespace Hecton8.UI
 
         private static int EncodeQualityWeightQ8(float qualityWeight01)
         {
-            return (int)math.round(math.saturate(math.select(1f, qualityWeight01, math.isfinite(qualityWeight01))) * 255f);
+            return EncodeUnitWeightQ8(qualityWeight01, 1f);
+        }
+
+        private static int EncodeUnitWeightQ8(float value01, float fallback01)
+        {
+            float safeValue = math.select(fallback01, value01, math.isfinite(value01));
+            return (int)math.round(math.saturate(safeValue) * 255f);
         }
 
         private void RefreshQualityPolicy()
@@ -2536,7 +2557,8 @@ namespace Hecton8.UI
                 float qualityWeight01 = math.saturate(math.select(1f, QualityWeight01, math.isfinite(QualityWeight01)));
                 float mathLodPressure01 = math.saturate(math.select(0f, MathLodPressure01, math.isfinite(MathLodPressure01)));
                 float visualBudget01 = math.saturate(SmoothStep01(qualityWeight01) * (1f - mathLodPressure01 * 0.75f));
-                state.QualityWeightQ8 = (int)math.round(qualityWeight01 * 255f);
+                state.QualityWeightQ8 = EncodeUnitWeightQ8(qualityWeight01, 1f);
+                state.MathLodPressureQ8 = EncodeUnitWeightQ8(mathLodPressure01, 0f);
                 state.LowColor = LowColor;
                 state.MidColor = MidColor;
                 state.DangerColor = DangerColor;
@@ -2546,10 +2568,7 @@ namespace Hecton8.UI
                 state.WristUpAndPressure = new float4(WristUp, Power01);
                 state.WristForwardAndRadiation = new float4(WristForward, Radiation01);
                 state.CompassAndVitals.w = GlitchMultiplier;
-                state.Flags &= ~(StateFlagCulled | StateFlagPdaOpen | StateFlagSurvivalMath | StateFlagNaNDetected);
-
-                if (mathLodPressure01 >= 0.75f)
-                    state.Flags |= StateFlagSurvivalMath;
+                state.Flags &= ~(StateFlagCulled | StateFlagPdaOpen | StateFlagNaNDetected);
 
                 float attentionDot = math.dot(HeadForward, WristNormal);
                 bool culled = attentionDot < AttentionDotThreshold;

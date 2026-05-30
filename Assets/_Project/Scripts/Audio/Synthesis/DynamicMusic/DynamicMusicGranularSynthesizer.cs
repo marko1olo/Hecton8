@@ -184,7 +184,7 @@ namespace Hecton8.Audio.Synthesis
     [DefaultExecutionOrder(-3880)]
     [RequireComponent(typeof(AudioSource))]
     [AddComponentMenu("Hecton8/Audio/Dynamic Music Granular Synthesizer")]
-    public sealed unsafe class DynamicMusicGranularSynthesizer : MonoBehaviour, IUpdatable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
+    public sealed unsafe class DynamicMusicGranularSynthesizer : MonoBehaviour, IColdTickable, IUpdatable, ILateFrameTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
         public const int VoiceCapacity = 128;
         public const int TelemetryCapacity = 300;
@@ -315,7 +315,7 @@ namespace Hecton8.Audio.Synthesis
         private int _nativeAllocated;
         private int _registeredUpdate;
         private int _registeredLateFrame;
-        private int _registeredSlowTick;
+        private int _registeredColdTick;
         private int _registeredHotSwap;
         private int _audioHostConfigDirty;
         private int _synthJobPending;
@@ -658,8 +658,8 @@ namespace Hecton8.Audio.Synthesis
                 _registeredUpdate = 1;
             if (GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment))
                 _registeredLateFrame = 1;
-            if (GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment))
-                _registeredSlowTick = 1;
+            if (GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment))
+                _registeredColdTick = 1;
             if (GlobalRegistry.TryRegisterHotSwapListener(this))
                 _registeredHotSwap = 1;
         }
@@ -678,11 +678,7 @@ namespace Hecton8.Audio.Synthesis
         public void Tick(float deltaTime)
         {
             if (Volatile.Read(ref _nativeAllocated) == 0)
-            {
-                EnsureVaultStorage();
-                if (Volatile.Read(ref _nativeAllocated) == 0)
-                    return;
-            }
+                return;
 
             if (Volatile.Read(ref _synthJobPending) != 0)
                 return;
@@ -710,8 +706,12 @@ namespace Hecton8.Audio.Synthesis
 
         public void SlowTick()
         {
+        }
+
+        public void ColdTick()
+        {
             if (Volatile.Read(ref _nativeAllocated) == 0)
-                return;
+                EnsureVaultStorage();
 
             TryRefreshScalabilityStateHandleCold();
             RefreshGlobalQualitySnapshotCold();
@@ -793,8 +793,8 @@ namespace Hecton8.Audio.Synthesis
                 _activeInstance = null;
             if (Interlocked.Exchange(ref _registeredHotSwap, 0) != 0)
                 GlobalRegistry.UnregisterHotSwapListener(this);
-            if (Interlocked.Exchange(ref _registeredSlowTick, 0) != 0)
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            if (Interlocked.Exchange(ref _registeredColdTick, 0) != 0)
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
             if (Interlocked.Exchange(ref _registeredLateFrame, 0) != 0)
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             if (Interlocked.Exchange(ref _registeredUpdate, 0) != 0)

@@ -54,7 +54,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, ILateFrameTickable, IOriginShiftListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IInitializable, IGlobalRegistryHotSwapListener, IPlayerMovementContracts, IPlayerKinematicsMovementRuntime, IPlayerCuttingTensionService, IPlayerHypoxiaPresentationSink
+    public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IColdTickable, ILateFrameTickable, IOriginShiftListener, ISargassumGlobalDragEventListener, ISonarPingEventListener, IInitializable, IGlobalRegistryHotSwapListener, IPlayerMovementContracts, IPlayerKinematicsMovementRuntime, IPlayerCuttingTensionService, IPlayerHypoxiaPresentationSink
     {
         private int _signalPushDropCount;
         [StructLayout(LayoutKind.Explicit, Size = 96)]
@@ -1556,6 +1556,7 @@ namespace Hecton8.Gameplay
 
         private bool _registeredTick;
         private bool _registeredFixedTick;
+        private bool _registeredColdTick;
         private bool _registeredLateFrameTick;
         private bool _registeredOriginShiftListener;
         private bool _registeredPlayerMovementContracts;
@@ -2702,6 +2703,11 @@ namespace Hecton8.Gameplay
             _playerKinematicsNativeState.EnsureCreated(_dataVault);
         }
 
+        private bool HasPlayerKinematicsNativeState()
+        {
+            return _playerKinematicsNativeState.IsCreated(_dataVault);
+        }
+
         private void EnsureCinematicFocusBlackBox()
         {
             if (TryResolveCinematicFocusBlackBox(out _))
@@ -2837,7 +2843,9 @@ namespace Hecton8.Gameplay
 
         private void WritePlayerKinematicsSnapshot(Vector3 position, Vector3 velocity, float3 intendedMovement)
         {
-            EnsurePlayerKinematicsNativeState();
+            if (!HasPlayerKinematicsNativeState())
+                return;
+
             float3 position3 = new float3(position.x, position.y, position.z);
             float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
             if (!math.all(math.isfinite(position3)) ||
@@ -2861,7 +2869,9 @@ namespace Hecton8.Gameplay
             if (fixedDeltaTime <= 0f)
                 return velocity;
 
-            EnsurePlayerKinematicsNativeState();
+            if (!HasPlayerKinematicsNativeState())
+                return velocity;
+
             WritePlayerKinematicsSnapshot(ResolveBodyRuntimePosition(), velocity, intendedMovement);
             if (!_playerKinematicsNativeState.TryResolveDragArrays(
                     _dataVault,
@@ -2986,7 +2996,7 @@ namespace Hecton8.Gameplay
             _pendingBrineFogHardClip = PlayerMovementBrineRuntimeSystem.ResolveFogHardClip(ResolveMovementQualityWeight01());
             _pendingBrineShaderGlobalsActive = true;
             _pendingBrineShaderGlobalsDirty = true;
-            TryRegisterLateFrameTickable();
+            MarkLateFramePresentationDirty();
         }
 
         private void PublishInactiveBrineShaderGlobals()
@@ -2996,7 +3006,7 @@ namespace Hecton8.Gameplay
             _pendingBrineFogHardClip = 0f;
             _pendingBrineShaderGlobalsActive = false;
             _pendingBrineShaderGlobalsDirty = true;
-            TryRegisterLateFrameTickable();
+            MarkLateFramePresentationDirty();
         }
 
         private void FlushBrineShaderGlobals()
@@ -3977,9 +3987,10 @@ namespace Hecton8.Gameplay
         private void RefreshRuntimeDependencyBindings()
         {
             BindInventoryLoadSource();
-            ResolvePlayerToolManager();
-            ResolvePlayerTransportCoordinator();
-            ResolveSwimPresentationController();
+            ResolvePlayerToolManagerCold();
+            ResolvePlayerTransportCoordinatorCold();
+            ResolveSwimPresentationControllerCold();
+            ResolveUnderwaterVisualsCold();
             ResolveInputManagerBinding();
             EnsurePlayerRuntimeSubsystems();
 
@@ -4182,8 +4193,8 @@ namespace Hecton8.Gameplay
             _resolvedPhysicalInteractionHandler = true;
             _resolvedHeavyTowWinch = true;
             CacheBaseCollisionProfile();
-            ResolvePlayerToolManager();
-            ResolvePlayerTransportCoordinator();
+            ResolvePlayerToolManagerCold();
+            ResolvePlayerTransportCoordinatorCold();
 
             _rb.interpolation = RigidbodyInterpolation.Interpolate;
             _rb.collisionDetectionMode = CollisionDetectionMode.Discrete;
@@ -4425,9 +4436,10 @@ namespace Hecton8.Gameplay
             if (_survivalSystem == null)
                 TryGetComponent(out _survivalSystem);
             BindInventoryLoadSource();
-            ResolvePlayerToolManager();
-            ResolvePlayerTransportCoordinator();
-            ResolveSwimPresentationController();
+            ResolvePlayerToolManagerCold();
+            ResolvePlayerTransportCoordinatorCold();
+            ResolveSwimPresentationControllerCold();
+            ResolveUnderwaterVisualsCold();
             ResolveInputManagerBinding();
             EnsurePlayerRuntimeSubsystems();
             EnsurePlayerKinematicsNativeState();
@@ -4635,6 +4647,12 @@ namespace Hecton8.Gameplay
             {
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
                 _registeredFixedTick = false;
+            }
+
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Player);
+                _registeredColdTick = false;
             }
 
             if (_registeredLateFrameTick)
@@ -4911,6 +4929,11 @@ namespace Hecton8.Gameplay
                 _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
             }
 
+            if (!_registeredColdTick)
+            {
+                _registeredColdTick = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Player);
+            }
+
             TryRegisterLateFrameTickable();
 
             if (!_registeredPlayerMovementContracts)
@@ -4935,9 +4958,36 @@ namespace Hecton8.Gameplay
             _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
+        private void MarkLateFramePresentationDirty()
+        {
+            // Late-frame ticking is lifecycle-registered; hot queues only mutate pending presentation state.
+        }
+
+        public void ColdTick()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            EnsurePlayerKinematicsNativeState();
+            EnsureCinematicFocusBlackBox();
+            RefreshCinematicFocusTierGateCold();
+        }
+
         private void ResolvePlayerToolManager()
         {
             if (_resolvedPlayerToolManager)
+                return;
+
+            IPlayerInventoryService playerInventoryService = _playerInventoryService;
+            if (playerInventoryService != null && playerInventoryService.ToolManager != null)
+                _playerToolManager = playerInventoryService.ToolManager;
+
+            _resolvedPlayerToolManager = true;
+        }
+
+        private void ResolvePlayerToolManagerCold()
+        {
+            if (_resolvedPlayerToolManager && _playerToolManager != null)
                 return;
 
             IPlayerInventoryService playerInventoryService = _playerInventoryService;
@@ -4953,6 +5003,14 @@ namespace Hecton8.Gameplay
         private void ResolvePlayerTransportCoordinator()
         {
             if (_resolvedPlayerTransportCoordinator)
+                return;
+
+            _resolvedPlayerTransportCoordinator = true;
+        }
+
+        private void ResolvePlayerTransportCoordinatorCold()
+        {
+            if (_resolvedPlayerTransportCoordinator && _playerTransportCoordinator != null)
                 return;
 
             TryGetComponent(out _playerTransportCoordinator);
@@ -5381,6 +5439,14 @@ namespace Hecton8.Gameplay
             if (_resolvedSwimPresentationController)
                 return;
 
+            _resolvedSwimPresentationController = true;
+        }
+
+        private void ResolveSwimPresentationControllerCold()
+        {
+            if (_resolvedSwimPresentationController && _swimPresentationController != null)
+                return;
+
             TryGetComponent(out _swimPresentationController);
             _resolvedSwimPresentationController = true;
         }
@@ -5643,12 +5709,6 @@ namespace Hecton8.Gameplay
 
         private bool IsHeavyCarryActive()
         {
-            if (!_resolvedPhysicalInteractionHandler)
-            {
-                TryGetComponent(out _physicalInteractionHandler);
-                _resolvedPhysicalInteractionHandler = true;
-            }
-
             return _physicalInteractionHandler != null && _physicalInteractionHandler.IsDraggingHeavyObject;
         }
 
@@ -5693,12 +5753,6 @@ namespace Hecton8.Gameplay
 
         private bool EnsureHeavyTowWinchRuntime()
         {
-            if (!_resolvedHeavyTowWinch)
-            {
-                TryGetComponent(out _heavyTowWinch);
-                _resolvedHeavyTowWinch = true;
-            }
-
             return _heavyTowWinch != null;
         }
 
@@ -6954,6 +7008,18 @@ namespace Hecton8.Gameplay
             if (playerSensoryService != null && playerSensoryService.UnderwaterVisuals != null)
                 _underwaterVisuals = playerSensoryService.UnderwaterVisuals;
 
+            _resolvedUnderwaterVisuals = true;
+        }
+
+        private void ResolveUnderwaterVisualsCold()
+        {
+            if (_resolvedUnderwaterVisuals && _underwaterVisuals != null)
+                return;
+
+            IPlayerSensoryService playerSensoryService = _playerSensoryRuntime;
+            if (playerSensoryService != null && playerSensoryService.UnderwaterVisuals != null)
+                _underwaterVisuals = playerSensoryService.UnderwaterVisuals;
+
             if (_underwaterVisuals == null)
                 _underwaterVisuals = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<HectonUnderwaterVisuals>(transform);
             _resolvedUnderwaterVisuals = true;
@@ -7251,7 +7317,7 @@ namespace Hecton8.Gameplay
                 Pitch = math.max(0.01f, pitch),
                 IsStatic2D = 0
             };
-            TryRegisterLateFrameTickable();
+            MarkLateFramePresentationDirty();
             return true;
         }
 
@@ -7278,7 +7344,7 @@ namespace Hecton8.Gameplay
                 Pitch = 1f,
                 IsStatic2D = 1
             };
-            TryRegisterLateFrameTickable();
+            MarkLateFramePresentationDirty();
             return true;
         }
 
@@ -7308,14 +7374,14 @@ namespace Hecton8.Gameplay
         {
             _pendingMovementAcousticSignal = signal;
             _pendingMovementAcousticSignalDirty = true;
-            TryRegisterLateFrameTickable();
+            MarkLateFramePresentationDirty();
         }
 
         private void QueueKccWallScrapeAcoustic(in AcousticPingSignal signal)
         {
             _pendingKccWallScrapeAcoustic = signal;
             _pendingKccWallScrapeAcousticDirty = true;
-            TryRegisterLateFrameTickable();
+            MarkLateFramePresentationDirty();
         }
 
         private void FlushQueuedFeedbackSignals()
@@ -7368,7 +7434,7 @@ namespace Hecton8.Gameplay
             _pendingWaterEntryFovCompress = math.max(_pendingWaterEntryFovCompress, math.max(0f, compress));
             _pendingWaterEntryFovDuration = math.max(_pendingWaterEntryFovDuration, math.max(0f, duration));
             _pendingWaterEntryFovImpulseDirty = true;
-            TryRegisterLateFrameTickable();
+            MarkLateFramePresentationDirty();
         }
 
         private void FlushWaterEntryFovImpulses()
@@ -7396,7 +7462,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _pendingCameraCollisionImpulse = math.max(_pendingCameraCollisionImpulse, speed);
-            TryRegisterLateFrameTickable();
+            MarkLateFramePresentationDirty();
         }
 
         private void QueueCameraEntanglementStrain(float intensity)
@@ -7406,7 +7472,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _pendingCameraEntanglementStrain = math.max(_pendingCameraEntanglementStrain, safeIntensity);
-            TryRegisterLateFrameTickable();
+            MarkLateFramePresentationDirty();
         }
 
         private void QueueCameraSonarPing(float intensity)
@@ -7416,7 +7482,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _pendingCameraSonarPing = math.max(_pendingCameraSonarPing, safeIntensity);
-            TryRegisterLateFrameTickable();
+            MarkLateFramePresentationDirty();
         }
 
         private void QueueCameraExternalRollImpulse(float signedRoll)
@@ -7431,7 +7497,7 @@ namespace Hecton8.Gameplay
                 _pendingCameraExternalRollImpulseDirty = true;
             }
 
-            TryRegisterLateFrameTickable();
+            MarkLateFramePresentationDirty();
         }
 
         private void FlushCameraJuiceImpulses()
@@ -7470,7 +7536,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _pendingBottomSiltBurstIntensity = math.max(_pendingBottomSiltBurstIntensity, safeIntensity);
-            TryRegisterLateFrameTickable();
+            MarkLateFramePresentationDirty();
         }
 
         private void FlushBottomSiltBurstVisuals()
@@ -8216,7 +8282,7 @@ namespace Hecton8.Gameplay
             _pendingVrComfortMotionSignal = motionSignal;
             _pendingVrComfortVignette01 = scalarVignette01;
             _pendingVrComfortShaderDirty = true;
-            TryRegisterLateFrameTickable();
+            MarkLateFramePresentationDirty();
 
             PublishVrComfortMaxVignetteTelemetry(scalarVignette01);
         }
@@ -8775,7 +8841,6 @@ namespace Hecton8.Gameplay
                 Vector3 bodyRuntimePosition = ResolveBodyRuntimePosition();
                 Vector3 authoritativeVelocity = ResolveAuthoritativeLinearVelocity(Vector3.zero);
                 _playerState.SyncKinematic(bodyRuntimePosition, authoritativeVelocity);
-                EnsurePlayerKinematicsNativeState();
                 _lastPlayerKinematicsIntendedMovement = ResolveRawInputIntentVector();
                 WritePlayerKinematicsSnapshot(bodyRuntimePosition, authoritativeVelocity, _lastPlayerKinematicsIntendedMovement);
                 _useFixedFrameSpatialCache = true;
@@ -9213,7 +9278,7 @@ namespace Hecton8.Gameplay
 
             if (ladder == null)
             {
-                if (!collider.TryGetComponent(out ladder) || ladder == null)
+                if (!ClimbableLadder.TryGetByColliderInstanceId(colliderInstanceId, out ladder) || ladder == null)
                 {
                     if (colliderInstanceId == _cachedLadderSnapColliderInstanceId)
                     {
@@ -11065,7 +11130,7 @@ namespace Hecton8.Gameplay
             ringPosition.y = EffectiveWaterSurfaceY;
             _pendingBreachSplashRingPosition = ringPosition;
             _pendingBreachSplashRingDirty = true;
-            TryRegisterLateFrameTickable();
+            MarkLateFramePresentationDirty();
         }
 
         private void QueueImpactBubbleBurst(ParticleSystem bubbleParticles, int bubbleCount)
@@ -11078,14 +11143,14 @@ namespace Hecton8.Gameplay
                 _pendingBreachBubbleCount = math.min(
                     MaxPendingImpactBubbleCount,
                     _pendingBreachBubbleCount + bubbleCount);
-                TryRegisterLateFrameTickable();
+                MarkLateFramePresentationDirty();
             }
             else if (ReferenceEquals(bubbleParticles, wipeoutBubbleParticles))
             {
                 _pendingWipeoutBubbleCount = math.min(
                     MaxPendingImpactBubbleCount,
                     _pendingWipeoutBubbleCount + bubbleCount);
-                TryRegisterLateFrameTickable();
+                MarkLateFramePresentationDirty();
             }
         }
 
@@ -12103,24 +12168,18 @@ namespace Hecton8.Gameplay
             _cachedFootstepAudioMaterialResolved = false;
         }
 
-        private static bool TryResolveImpactAudioMaterialId(Collider collider, out byte materialId)
+        private bool TryResolveImpactAudioMaterialId(Collider collider, out byte materialId)
         {
             materialId = 0;
             if (collider == null)
                 return false;
 
-            if (collider.TryGetComponent(out Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider directProvider))
-            {
-                materialId = directProvider.ImpactAudioMaterialId;
-                return true;
-            }
-
-            Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider parentProvider = collider.GetComponentInParent<Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider>();
-            if (parentProvider == null)
+            Rigidbody attachedBody = collider.attachedRigidbody;
+            IPhysicsStateEventService physicsStateEvents = _physicsStateEvents;
+            if (attachedBody == null || physicsStateEvents == null)
                 return false;
 
-            materialId = parentProvider.ImpactAudioMaterialId;
-            return true;
+            return physicsStateEvents.TryResolveImpactAudioMaterialId(attachedBody, out materialId);
         }
 
         private void EmitExosuitFootstepSeismicPing()

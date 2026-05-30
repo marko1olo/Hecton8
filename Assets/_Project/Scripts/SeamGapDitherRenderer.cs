@@ -48,6 +48,7 @@ namespace Hecton8.World
         [SerializeField] private Material seamDitherMaterial;
         [SerializeField] private CaveBiomeTemplate defaultBiomeTemplate;
         [SerializeField] private CaveBiomeTemplate[] biomeTemplates;
+        [SerializeField] private WorldGenerativeGeologyIntegrationDirector integrationDirector;
 
         [Header("Rendering")]
         [SerializeField, Min(8)] private int maxInstances = 512;
@@ -110,6 +111,7 @@ namespace Hecton8.World
         private readonly MaterialPropertyBlock _drawPropertyBlock = new MaterialPropertyBlock();
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IAmbientCurrentReadModel _ambientCurrentReadModel;
+        private HectonMapMagicVegetationBridge _vegetationBridge;
         private bool _registeredToDispatcher;
         private bool _registeredLateFrame;
         private int _pendingVisualInstanceCount;
@@ -130,21 +132,21 @@ namespace Hecton8.World
         private void Awake()
         {
             ResolveReferencesCold();
-            EnsureCpuCapacity();
-            EnsureQuadMesh();
+            EnsureRenderingResourcesCold();
         }
 
         private void OnEnable()
         {
             ResolveReferencesCold();
-            EnsureCpuCapacity();
-            EnsureQuadMesh();
+            EnsureRenderingResourcesCold();
             TryRegisterHotSwapListener();
             TryRegister();
         }
 
         private void Start()
         {
+            ResolveReferencesCold();
+            EnsureRenderingResourcesCold();
             TryRegister();
         }
 
@@ -267,16 +269,17 @@ namespace Hecton8.World
 
             CachePlayerRuntimeContext(GlobalRegistry.Player);
             _ambientCurrentReadModel = GlobalRegistry.AmbientCurrent;
+            _vegetationBridge = GlobalRegistry.MapMagicVegetation;
 
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+
+            if (integrationDirector == null)
+                WorldRuntimeReferenceUtility.TryResolveWorldGenerativeGeologyIntegrationDirector(ref integrationDirector);
         }
 
         private void ResolveReferencesFromCache()
         {
-            if (seamRegistry == null)
-                seamRegistry = SeamRegistry.ActiveRuntimeInstance;
-
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
             if (playerContext == null)
                 return;
@@ -328,6 +331,9 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.FluidRuntime:
                     _ambientCurrentReadModel = currentService as IAmbientCurrentReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
+                    _vegetationBridge = currentService as HectonMapMagicVegetationBridge;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _registeredToDispatcher = false;
@@ -385,14 +391,42 @@ namespace Hecton8.World
             if (seamRegistry == null || targetCamera == null)
                 return false;
 
+            return AreRenderingResourcesResident();
+        }
+
+        private void EnsureRenderingResourcesCold()
+        {
             EnsureCpuCapacity();
             EnsureQuadMesh();
-            EnsureBuffers();
+            ResolveMaterial();
+            if (Application.isPlaying)
+                EnsureBuffers();
+        }
+
+        private bool AreRenderingResourcesResident()
+        {
+            int requiredCapacity = Mathf.Clamp(maxInstances, 8, MaxMotesPerChunk);
             return _quadMesh != null &&
-                   ResolveMaterial() != null &&
+                   seamDitherMaterial != null &&
+                   _matrixUpload != null &&
+                   _matrixUpload.Length == requiredCapacity &&
+                   _colorUpload != null &&
+                   _colorUpload.Length == requiredCapacity &&
                    _activeMatrixBuffer != null &&
+                   _activeMatrixBuffer.count == requiredCapacity &&
                    _activeColorBuffer != null &&
-                   _activeArgsBuffer != null;
+                   _activeColorBuffer.count == requiredCapacity &&
+                   _activeArgsBuffer != null &&
+                   _matrixBufferA != null &&
+                   _matrixBufferA.count == requiredCapacity &&
+                   _matrixBufferB != null &&
+                   _matrixBufferB.count == requiredCapacity &&
+                   _colorBufferA != null &&
+                   _colorBufferA.count == requiredCapacity &&
+                   _colorBufferB != null &&
+                   _colorBufferB.count == requiredCapacity &&
+                   _argsBufferA != null &&
+                   _argsBufferB != null;
         }
 
         private void EnsureCpuCapacity()
@@ -635,7 +669,7 @@ namespace Hecton8.World
             if (!includeFloraRootMotes || maxFloraRootMotes <= 0 || instanceCount >= maxCount)
                 return instanceCount;
 
-            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge vegetationBridge = _vegetationBridge;
             if (vegetationBridge == null ||
                 !vegetationBridge.TryGetActiveUnderwaterNativePayload(
                     out NativeArray<Matrix4x4> matrices,
@@ -764,7 +798,7 @@ namespace Hecton8.World
 
         private CaveBiomeTemplate ResolveBiomeTemplate(long runtimeKey)
         {
-            WorldGenerativeGeologyIntegrationDirector integrationDirector = WorldGenerativeGeologyIntegrationDirector.ActiveRuntimeInstance;
+            WorldGenerativeGeologyIntegrationDirector integrationDirector = this.integrationDirector;
             if (integrationDirector != null && integrationDirector.TryGetPlan(runtimeKey, out WorldGenerativeGeologySeamPlan plan))
             {
                 string geologyProfileId = plan.geologyProfileId;

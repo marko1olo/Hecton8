@@ -530,10 +530,17 @@ namespace Hecton8.Audio
                 return;
 
             _transportCoordinatorLookupAttempted = true;
-            if (playerMovement != null && playerMovement.TryGetComponent(out playerTransportCoordinator))
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext == null)
                 return;
 
-            gameObject.TryGetComponent(out playerTransportCoordinator);
+            if (playerMovement == null)
+                playerMovement = runtimeContext.PlayerMovement;
+
+            if (playerToolManager == null)
+                playerToolManager = runtimeContext.ToolManager;
+
+            playerTransportCoordinator = runtimeContext.PlayerTransportCoordinator;
         }
 
         private void RefreshRuntimeAudioServicesCold()

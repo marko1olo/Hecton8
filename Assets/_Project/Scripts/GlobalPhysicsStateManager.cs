@@ -229,6 +229,7 @@ namespace Hecton8.Physics
             public int RequiredLength;
             public SystemID OwnerSystemId;
             private IDataVault CachedDataVault;
+            private IDataVault WriteLockVault;
             private bool WriteLockHeld;
 
             public VaultBufferBinding(BufferID bufferId, int requiredLength, SystemID ownerSystemId)
@@ -238,6 +239,7 @@ namespace Hecton8.Physics
                 RequiredLength = requiredLength;
                 OwnerSystemId = ownerSystemId;
                 CachedDataVault = null;
+                WriteLockVault = null;
                 WriteLockHeld = false;
             }
 
@@ -301,6 +303,7 @@ namespace Hecton8.Physics
                 if (WriteLockHeld)
                     ReleaseWriteLock();
                 Handle = default;
+                WriteLockVault = null;
                 WriteLockHeld = false;
             }
 
@@ -309,7 +312,14 @@ namespace Hecton8.Physics
                 buffer = default;
                 if (WriteLockHeld)
                 {
-                    buffer = ResolveExisting();
+                    IDataVault writeLockVault = WriteLockVault;
+                    if (writeLockVault == null)
+                    {
+                        WriteLockHeld = false;
+                        return false;
+                    }
+
+                    buffer = ResolveExisting(writeLockVault);
                     return buffer.IsCreated;
                 }
 
@@ -317,8 +327,28 @@ namespace Hecton8.Physics
                 if (dataVault == null || !IsHandleValid())
                     return false;
 
-                WriteLockHeld = dataVault.TryAcquireWriteLock(in Handle, OwnerSystemId, out buffer);
-                return WriteLockHeld;
+                if (!dataVault.TryAcquireWriteLock(in Handle, OwnerSystemId, out buffer))
+                    return false;
+
+                bool ownershipTransferred = false;
+                try
+                {
+                    if (buffer.IsCreated && buffer.Length >= RequiredLength)
+                    {
+                        WriteLockVault = dataVault;
+                        WriteLockHeld = true;
+                        ownershipTransferred = true;
+                        return true;
+                    }
+
+                    buffer = default;
+                    return false;
+                }
+                finally
+                {
+                    if (!ownershipTransferred)
+                        dataVault.ReleaseWriteLock(in Handle, OwnerSystemId);
+                }
             }
 
             public bool ReleaseWriteLock()
@@ -326,11 +356,12 @@ namespace Hecton8.Physics
                 if (!WriteLockHeld)
                     return false;
 
-                IDataVault dataVault = ResolveDataVault();
+                IDataVault dataVault = WriteLockVault;
                 bool released = dataVault != null &&
                     IsHandleValid() &&
                     dataVault.ReleaseWriteLock(in Handle, OwnerSystemId);
                 WriteLockHeld = false;
+                WriteLockVault = null;
                 if (!released)
                     return false;
 
@@ -819,6 +850,13 @@ namespace Hecton8.Physics
                 return;
 
             QueueKinematicImpactInternal(primaryBody, secondaryBody, point, normal, impactSpeedMetersPerSecond);
+        }
+
+        /// <inheritdoc />
+        bool IPhysicsStateEventService.TryResolveImpactAudioMaterialId(Rigidbody body, out byte materialId)
+        {
+            materialId = ResolveImpactAudioMaterialId(body);
+            return materialId != 0;
         }
 
         /// <inheritdoc />

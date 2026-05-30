@@ -73,6 +73,12 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryFormatFloat(float value, Span<char> destination, out int charsWritten)
         {
+            if (!TryWriteFiniteFloatFallback(value, destination, out charsWritten))
+                return false;
+
+            if (charsWritten != 0)
+                return true;
+
             return value.TryFormat(destination, out charsWritten, default, CultureInfo.InvariantCulture);
         }
 
@@ -153,9 +159,30 @@ namespace Hecton8.Core
             ReadOnlySpan<char> format,
             out int charsWritten)
         {
+            if (!TryWriteFiniteFloatFallback(value, destination, out charsWritten))
+                return false;
+
+            if (charsWritten != 0)
+                return true;
+
             return format.Length == 0
                 ? value.TryFormat(destination, out charsWritten, default, CultureInfo.InvariantCulture)
                 : value.TryFormat(destination, out charsWritten, format, CultureInfo.InvariantCulture);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryWriteFiniteFloatFallback(float value, Span<char> destination, out int charsWritten)
+        {
+            charsWritten = 0;
+            if (!float.IsNaN(value) && !float.IsInfinity(value))
+                return true;
+
+            if (destination.Length == 0)
+                return false;
+
+            destination[0] = '0';
+            charsWritten = 1;
+            return true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

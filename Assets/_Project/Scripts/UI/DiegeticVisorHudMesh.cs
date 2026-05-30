@@ -21,7 +21,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
-    public sealed class DiegeticVisorHudMesh : MonoBehaviour, ILateFrameTickable, IPlayerSignalEventListener, IDamageReceiver, IGlobalRegistryHotSwapListener
+    public sealed class DiegeticVisorHudMesh : MonoBehaviour, ISlowTickable, ILateFrameTickable, IPlayerSignalEventListener, IDamageReceiver, IGlobalRegistryHotSwapListener
     {
         private const int BlackBoxCapacity = 300;
         private const SystemID VaultOwnerSystemId = SystemID.UI;
@@ -74,8 +74,10 @@ namespace Hecton8.UI
         private IDataVault _dataVault;
         private int _blackBoxCursor;
         private bool _registeredLateFrame;
+        private bool _registeredSlowTick;
         private bool _hotSwapListenerRegistered;
         private bool _playerSignalRegistered;
+        private bool _blackBoxDumpQueued;
         private bool _blackBoxDumped;
         private bool _materialStateDirty;
         private bool _meshRebuildDirty;
@@ -121,6 +123,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            FlushQueuedBlackBoxDump();
             TryUnregisterHotSwapListener();
             TryUnregisterTick();
             if (_playerSignalRegistered)
@@ -137,6 +140,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            FlushQueuedBlackBoxDump();
             TryUnregisterHotSwapListener();
             TryUnregisterTick();
             DisposeBlackBox();
@@ -174,6 +178,11 @@ namespace Hecton8.UI
 
             _materialStateDirty = false;
             ApplyMaterialState();
+        }
+
+        public void SlowTick()
+        {
+            FlushQueuedBlackBoxDump();
         }
 
         public void OnTraumaHudSignal(in TraumaHudSignal signal)
@@ -542,7 +551,7 @@ namespace Hecton8.UI
                 !math.isfinite(_damageGlitch01) ||
                 !math.isfinite(_humidity01))
             {
-                DumpBlackBox();
+                QueueBlackBoxDump();
                 return;
             }
 
@@ -589,6 +598,9 @@ namespace Hecton8.UI
         {
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTick()
@@ -597,6 +609,12 @@ namespace Hecton8.UI
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
+            }
+
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+                _registeredSlowTick = false;
             }
 
             _materialStateDirty = false;
@@ -705,7 +723,7 @@ namespace Hecton8.UI
             Vector3 localPosition = transform.localPosition;
             if (!math.isfinite(localPosition.x) || !math.isfinite(localPosition.y) || !math.isfinite(localPosition.z))
             {
-                DumpBlackBox();
+                QueueBlackBoxDump();
                 return;
             }
 
@@ -746,6 +764,21 @@ namespace Hecton8.UI
             }
         }
 
+        private void QueueBlackBoxDump()
+        {
+            if (!_blackBoxDumped)
+                _blackBoxDumpQueued = true;
+        }
+
+        private void FlushQueuedBlackBoxDump()
+        {
+            if (!_blackBoxDumpQueued)
+                return;
+
+            _blackBoxDumpQueued = false;
+            DumpBlackBox();
+        }
+
         private void DumpBlackBox()
         {
             IDataVault vault = _dataVault;
@@ -753,10 +786,10 @@ namespace Hecton8.UI
                 vault == null ||
                 !IsBlackBoxHandle(in _blackBoxHandle))
             {
+                _blackBoxDumpQueued = !_blackBoxDumped;
                 return;
             }
 
-            _blackBoxDumped = true;
             try
             {
                 string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
@@ -774,12 +807,17 @@ namespace Hecton8.UI
                     for (int i = 0; i < BlackBoxCapacity; i++)
                     {
                         if (!TryReadBlackBoxEntry(vault, i, out DiegeticHudTelemetryEntry entry))
+                        {
+                            _blackBoxDumpQueued = true;
                             return;
+                        }
 
                         WriteDiegeticHudTelemetryEntry(row, in entry);
                         stream.Write(row);
                     }
                 }
+
+                _blackBoxDumped = true;
             }
             catch (IOException)
             {

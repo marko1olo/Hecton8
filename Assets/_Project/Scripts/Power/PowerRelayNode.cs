@@ -47,6 +47,7 @@ namespace Hecton8.Power
         private bool _registered;
         private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
+        private bool _localReferenceProbeCompleted;
         private bool _hasPower = true;
         private bool _cableVisualRefreshPending;
         private bool _cableVisualClearPending;
@@ -78,13 +79,14 @@ namespace Hecton8.Power
         private void Awake()
         {
             _cachedTransform = transform;
-            TryGetComponent(out _powerNode);
+            ResolveReferencesCold();
         }
 
         private void OnEnable()
         {
             TryRegisterHotSwapListener();
             TryRegister();
+            ResolveReferencesCold();
             RefreshRelayLinks(true);
         }
 
@@ -99,7 +101,8 @@ namespace Hecton8.Power
         {
             _hasPower = true;
             _debugHasPower = true;
-            ResolveReferences();
+            _localReferenceProbeCompleted = false;
+            ResolveReferencesCold();
             TryRegisterHotSwapListener();
             TryRegister();
             RefreshRelayLinks(true);
@@ -118,6 +121,7 @@ namespace Hecton8.Power
             _hasPower = true;
             _debugHasPower = true;
             _lastTopologyRevision = -1;
+            _localReferenceProbeCompleted = false;
         }
 
         private void OnDestroy()
@@ -157,7 +161,7 @@ namespace Hecton8.Power
                 return;
 
             _cableVisualRefreshPending = false;
-            ResolveReferences();
+            ResolveReferencesCached();
             if (_powerNode == null)
             {
                 ClearCableVisuals();
@@ -170,14 +174,20 @@ namespace Hecton8.Power
             RefreshCableVisuals(relayPosition, neighbors, neighborCount);
         }
 
-        private void ResolveReferences()
+        private void ResolveReferencesCached()
         {
             if (_cachedTransform == null)
                 _cachedTransform = transform;
+        }
 
-            if (_powerNode == null)
+        private void ResolveReferencesCold()
+        {
+            ResolveReferencesCached();
+
+            if (_powerNode == null && !_localReferenceProbeCompleted)
                 TryGetComponent(out _powerNode);
 
+            _localReferenceProbeCompleted = true;
         }
 
         private void TryRegister()
@@ -228,7 +238,7 @@ namespace Hecton8.Power
 
         private void RefreshRelayLinks(bool forceVisualRefresh)
         {
-            ResolveReferences();
+            ResolveReferencesCached();
 
             if (_powerNode == null)
             {
@@ -258,7 +268,7 @@ namespace Hecton8.Power
 
                 totalHalfCableLength += ResolvePresentationCableLengthApproxMeters(relayPosition, neighbor.transform) * 0.5f;
 
-                if (neighbor.TryGetComponent(out PowerRelayNode relayNeighbor) && relayNeighbor != null)
+                if (HasRelayPowerComponent(neighbor))
                     relayNeighborCount++;
             }
 
@@ -360,6 +370,22 @@ namespace Hecton8.Power
             for (int index = 0; index < count; index++)
             {
                 if (linkIds[index] == linkId)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool HasRelayPowerComponent(PowerNode node)
+        {
+            if (node == null || node.Components == null)
+                return false;
+
+            List<IPowerComponent> components = node.Components;
+            int count = components.Count;
+            for (int i = 0; i < count; i++)
+            {
+                if (components[i] is PowerRelayNode)
                     return true;
             }
 

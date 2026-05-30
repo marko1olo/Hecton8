@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core.Memory;
@@ -849,55 +848,4 @@ namespace Hecton8.Animation.KineticCharacter
     }
 
 #endif
-
-    public static class KineticCharacterBlackBox
-    {
-        public static bool TryDumpTelemetry(string projectRoot, NativeArray<KineticAnimationTelemetryEntry> telemetry, NativeArray<int> cursor)
-        {
-            if (!telemetry.IsCreated || telemetry.Length <= 0)
-                return false;
-
-            try
-            {
-                string root = string.IsNullOrEmpty(projectRoot) ? "." : projectRoot;
-                string path = Path.Combine(root, KineticCharacterAnimatorConstants.DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                int start = cursor.IsCreated && cursor.Length > 0
-                    ? KineticCharacterMath.PositiveModulo(cursor[0], telemetry.Length)
-                    : 0;
-                for (int i = 0; i < telemetry.Length; i++)
-                {
-                    KineticAnimationTelemetryEntry entry = telemetry[KineticCharacterMath.PositiveModulo(start + i, telemetry.Length)];
-                    writer.Write(entry.RootSectorX);
-                    writer.Write(entry.RootSectorY);
-                    writer.Write(entry.RootSectorZ);
-                    writer.Write(entry.RootLocal.x);
-                    writer.Write(entry.RootLocal.y);
-                    writer.Write(entry.RootLocal.z);
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.BonesEvaluated);
-                    writer.Write(entry.AverageIkIterations);
-                    writer.Write(entry.CpuTimeMicroseconds);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.GlobalQualityWeight);
-                }
-
-                return true;
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
-        }
-    }
 }

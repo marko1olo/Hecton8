@@ -7,6 +7,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'strict_json_io.ps1')
+
+$MaxSnippetJsonBytes = 65536
+$MaxLocaleJsonBytes = 2097152
 
 function Fail([string]$Message) {
     Write-Error ('[H8MOD_LOCALE_APPLY] ' + $Message)
@@ -36,17 +40,23 @@ function Resolve-StarterRelativePath([string]$RelativePath, [string]$RequiredPre
         Fail ($Label + ' is required.')
     }
 
-    $normalized = $RelativePath.Replace('\','/').Trim()
-    if ([System.IO.Path]::IsPathRooted($normalized)) {
+    $normalized = $RelativePath.Replace('\','/')
+    if ($normalized.Trim() -cne $normalized) {
+        Fail ($Label + ' must not contain leading or trailing whitespace.')
+    }
+    if ([System.IO.Path]::IsPathRooted($normalized) -or $normalized.StartsWith('/') -or $normalized.Contains(':')) {
         Fail ($Label + ' must be a starter-relative path.')
     }
-
-    if ($normalized.StartsWith('../') -or $normalized.Contains('/../') -or $normalized.Contains('..')) {
-        Fail ($Label + ' must not contain .. segments.')
+    foreach ($segment in ($normalized -split '/')) {
+        if ([string]::IsNullOrWhiteSpace($segment) -or $segment -eq '.' -or $segment -eq '..') {
+            Fail ($Label + ' must not contain empty, dot, or dot-dot path segments.')
+        }
     }
-
     if (-not $normalized.StartsWith($RequiredPrefix, [System.StringComparison]::Ordinal)) {
         Fail ($Label + ' must stay under ' + $RequiredPrefix)
+    }
+    if (-not $normalized.EndsWith('.json', [System.StringComparison]::Ordinal)) {
+        Fail ($Label + ' must end with .json.')
     }
 
     return [pscustomobject][ordered]@{
@@ -55,15 +65,11 @@ function Resolve-StarterRelativePath([string]$RelativePath, [string]$RequiredPre
     }
 }
 
-function Read-JsonFile([string]$Path, [string]$Label) {
-    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-        Fail ($Label + ' is missing: ' + $Path)
-    }
-
+function Read-JsonFile([string]$Path, [string]$Label, [long]$MaxBytes) {
     try {
-        return Get-Content -Raw -LiteralPath $Path | ConvertFrom-Json
+        return Read-H8JsonFileCapped $Path $Label $MaxBytes
     } catch {
-        Fail ($Label + ' is invalid JSON: ' + $_.Exception.Message)
+        Fail $_.Exception.Message
     }
 }
 
@@ -138,11 +144,11 @@ if ($targetPath.Relative -ne 'Locales/en.h8loc.json') {
     Fail 'Target must be Locales/en.h8loc.json for this tool.'
 }
 
-$snippetDocument = Read-JsonFile $snippetPath.Full 'Locale snippet'
+$snippetDocument = Read-JsonFile $snippetPath.Full 'Locale snippet' $MaxSnippetJsonBytes
 $snippetEntry = Get-LocaleSnippetEntry $snippetDocument
 $localeKey = Validate-CanonicalId ([string]$snippetEntry.Key) 'Locale key'
 $localeValue = Validate-LocaleValue ([string]$snippetEntry.Value)
-$locale = Read-JsonFile $targetPath.Full 'Locale table'
+$locale = Read-JsonFile $targetPath.Full 'Locale table' $MaxLocaleJsonBytes
 
 if ([string]$locale.Schema -ne 'hecton8.locale.draft.v1') {
     Fail 'Locales/en.h8loc.json Schema must be hecton8.locale.draft.v1.'
@@ -194,7 +200,7 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding $false
 try {
     $jsonText = ($document | ConvertTo-Json -Depth 16)
     [System.IO.File]::WriteAllText($tempPath, ($jsonText + [System.Environment]::NewLine), $utf8NoBom)
-    [void](Get-Content -Raw -LiteralPath $tempPath | ConvertFrom-Json)
+    [void](Read-H8JsonFileCapped $tempPath 'Written locale table' $MaxLocaleJsonBytes)
 
     Move-Item -LiteralPath $targetPath.Full -Destination $backupPath -Force
     Move-Item -LiteralPath $tempPath -Destination $targetPath.Full -Force

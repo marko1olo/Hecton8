@@ -965,7 +965,7 @@ namespace Hecton8.World
                 return;
             }
 
-            byte resultFlags = ResolveSurvivalSamplingPressureFlag(qualityWeight);
+            byte resultFlags = 0;
             float finalDistance = terrainDistance;
             float sdfDistance = InactiveDistanceSentinel;
             byte materialId = heightMaterial;
@@ -1046,7 +1046,7 @@ namespace Hecton8.World
             if (expensiveWeight <= 0.0001f)
             {
                 result.Normal = Float3(0f, 1f, 0f);
-                result.Flags |= (byte)((byte)GlobalWorldSamplerResultFlags.NormalEstimated | (byte)GlobalWorldSamplerResultFlags.SurvivalSamplingPressure);
+                result.Flags |= (byte)GlobalWorldSamplerResultFlags.NormalEstimated;
                 return;
             }
 
@@ -2138,14 +2138,6 @@ namespace Hecton8.World
             float quality = IsFinite(qualityWeight) ? math.saturate(qualityWeight) : DefaultQualityWeight;
             float ramp = math.saturate((quality - ExpensiveSamplingStartWeight) / (1f - ExpensiveSamplingStartWeight));
             return ramp * ramp * (3f - (2f * ramp));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static byte ResolveSurvivalSamplingPressureFlag(float qualityWeight)
-        {
-            return ResolveExpensiveSamplingWeight(qualityWeight) <= 0.0001f
-                ? (byte)GlobalWorldSamplerResultFlags.SurvivalSamplingPressure
-                : (byte)0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

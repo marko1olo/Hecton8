@@ -105,7 +105,6 @@ namespace Hecton8.VFX.Parasites
             vault.EnsureGenerationHandle<SwarmTelemetryEntry>(BufferID.ShinobuParasiteTelemetryRing, TelemetryCapacity, SystemID.Vfx, NativeArrayOptions.ClearMemory);
             vault.EnsureGenerationHandle<int>(BufferID.ShinobuParasiteTelemetryCursor, 1, SystemID.Vfx, NativeArrayOptions.ClearMemory);
             vault.EnsureGenerationHandle<ParasiteBehaviorProfileDTO>(BufferID.ShinobuParasiteProfiles, ProfileCapacity, SystemID.Vfx, NativeArrayOptions.ClearMemory);
-            vault.EnsureGenerationHandle<byte>(BufferID.ShinobuParasiteCsvScratch, CsvScratchBytes, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
             vault.EnsureGenerationHandle<ParasiteScannerSummaryDTO>(BufferID.ShinobuParasiteScannerSummary, ScannerSummaryCapacity, SystemID.Vfx, NativeArrayOptions.ClearMemory);
             vault.EnsureGenerationHandle<int>(BufferID.ShinobuParasiteProfileCount, 1, SystemID.Vfx, NativeArrayOptions.ClearMemory);
         }
@@ -232,13 +231,16 @@ namespace Hecton8.VFX.Parasites
             if (vault == null || bytes.Length <= 0)
                 return 0;
 
+            Span<ParasiteBehaviorProfileDTO> staged = stackalloc ParasiteBehaviorProfileDTO[ProfileCapacity];
+            int stagedCount = ParseProfilesFromCsv(bytes, staged);
+
             EnsureVaultBuffers(vault);
             if (!vault.TryAcquireMutationGuard(ProfileImportMutationGuardMask))
                 return 0;
 
             try
             {
-                return LoadProfilesFromCsvWithMutationGuardHeld(vault, bytes);
+                return CommitProfilesWithMutationGuardHeld(vault, staged.Slice(0, stagedCount));
             }
             finally
             {
@@ -246,29 +248,16 @@ namespace Hecton8.VFX.Parasites
             }
         }
 
-        internal static int LoadProfilesFromCsvWithMutationGuardHeld(IDataVault vault, ReadOnlySpan<byte> bytes)
+        private static int ParseProfilesFromCsv(ReadOnlySpan<byte> bytes, Span<ParasiteBehaviorProfileDTO> staged)
         {
-            if (vault == null || bytes.Length <= 0)
+            if (bytes.Length <= 0 || staged.Length <= 0)
                 return 0;
-
-            if (!vault.TryGetGenerationHandle(BufferID.ShinobuParasiteProfiles, out VaultGenerationHandle<ParasiteBehaviorProfileDTO> profileHandle) ||
-                !vault.TryGetGenerationHandle(BufferID.ShinobuParasiteProfileCount, out VaultGenerationHandle<int> countHandle))
-            {
-                return 0;
-            }
-
-            if (!vault.TryResolveHandle(in profileHandle, out NativeArray<ParasiteBehaviorProfileDTO> profiles) ||
-                !vault.TryResolveHandle(in countHandle, out NativeArray<int> profileCount) ||
-                !profiles.IsCreated ||
-                !profileCount.IsCreated)
-            {
-                return 0;
-            }
 
             int written = 0;
             int lineStart = 0;
             bool skippedHeader = false;
-            for (int i = 0; i <= bytes.Length && written < math.min(ProfileCapacity, profiles.Length); i++)
+            int capacity = math.min(ProfileCapacity, staged.Length);
+            for (int i = 0; i <= bytes.Length && written < capacity; i++)
             {
                 bool atEnd = i == bytes.Length;
                 if (!atEnd && bytes[i] != (byte)'\n')
@@ -291,10 +280,36 @@ namespace Hecton8.VFX.Parasites
 
                 if (TryParseProfileLine(line, out ParasiteBehaviorProfileDTO dto))
                 {
-                    profiles[written] = dto;
+                    staged[written] = dto;
                     written++;
                 }
             }
+
+            return written;
+        }
+
+        private static int CommitProfilesWithMutationGuardHeld(IDataVault vault, ReadOnlySpan<ParasiteBehaviorProfileDTO> staged)
+        {
+            if (vault == null)
+                return 0;
+
+            if (!vault.TryGetGenerationHandle(BufferID.ShinobuParasiteProfiles, out VaultGenerationHandle<ParasiteBehaviorProfileDTO> profileHandle) ||
+                !vault.TryGetGenerationHandle(BufferID.ShinobuParasiteProfileCount, out VaultGenerationHandle<int> countHandle))
+            {
+                return 0;
+            }
+
+            if (!vault.TryResolveHandle(in profileHandle, out NativeArray<ParasiteBehaviorProfileDTO> profiles) ||
+                !vault.TryResolveHandle(in countHandle, out NativeArray<int> profileCount) ||
+                !profiles.IsCreated ||
+                !profileCount.IsCreated)
+            {
+                return 0;
+            }
+
+            int written = math.min(staged.Length, math.min(ProfileCapacity, profiles.Length));
+            for (int i = 0; i < written; i++)
+                profiles[i] = staged[i];
 
             if (profileCount.Length > 0)
                 profileCount[0] = written;
@@ -302,28 +317,35 @@ namespace Hecton8.VFX.Parasites
             return written;
         }
 
-        public static bool TryWriteTelemetryDump(string projectRoot, NativeArray<SwarmTelemetryEntry> ring, int cursor)
+        public static bool TryWriteTelemetryDump(string projectRoot, SwarmTelemetryEntry[] ring, int count, int cursor)
         {
-            if (!ring.IsCreated || ring.Length <= 0)
+            if (ring == null || count <= 0)
+                return false;
+
+            int safeCount = math.min(math.min(count, ring.Length), TelemetryCapacity);
+            if (safeCount <= 0)
                 return false;
 
             string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
             string directory = Path.Combine(root, "Docs", "AgentLogs");
             Directory.CreateDirectory(directory);
             string path = Path.Combine(directory, "Dump_SHINOBU_313.bin");
-            byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
-            int bytes = ring.Length * UnsafeUtility.SizeOf<SwarmTelemetryEntry>();
+            int bytes = safeCount * UnsafeUtility.SizeOf<SwarmTelemetryEntry>();
             using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
             Span<byte> header = stackalloc byte[TelemetryDumpHeaderBytes];
             WriteUInt32LE(header, 0, TelemetryDumpMagic);
             WriteUInt32LE(header, 4, TelemetryDumpVersion);
             WriteUInt32LE(header, 8, (uint)TelemetryDumpHeaderBytes);
             WriteUInt32LE(header, 12, (uint)UnsafeUtility.SizeOf<SwarmTelemetryEntry>());
-            WriteUInt32LE(header, 16, (uint)ring.Length);
-            WriteUInt32LE(header, 20, (uint)math.clamp(cursor, 0, ring.Length - 1));
+            WriteUInt32LE(header, 16, (uint)safeCount);
+            WriteUInt32LE(header, 20, (uint)math.clamp(cursor, 0, safeCount - 1));
             WriteUInt32LE(header, 24, (uint)bytes);
             stream.Write(header);
-            stream.Write(new ReadOnlySpan<byte>(ptr, bytes));
+            fixed (SwarmTelemetryEntry* ptr = ring)
+            {
+                stream.Write(new ReadOnlySpan<byte>((byte*)ptr, bytes));
+            }
+
             return true;
         }
 

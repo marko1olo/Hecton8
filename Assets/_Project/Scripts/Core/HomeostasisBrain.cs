@@ -1,6 +1,4 @@
 using System;
-using System.Buffers.Binary;
-using System.IO;
 using System.Runtime.InteropServices;
 using AOT;
 using Hecton8.Core.Contracts;
@@ -8,6 +6,7 @@ using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -136,7 +135,7 @@ namespace Hecton8.Core
         private const float SequentialRecoveryShi = ScalabilityContract.HomeostasisSequentialRecoveryShi;
         private const long PersistentNativeBudgetBytes = ScalabilityContract.HomeostasisPersistentNativeBudgetBytes;
         private const string OwnerName = nameof(HomeostasisBrain);
-        private const string BlackBoxDumpFileName = "Dump_HARDWARE_THROTTLING_DIRECTOR.bin";
+        private const string BlackBoxDumpPath = "Docs/AgentLogs/Dump_HARDWARE_THROTTLING_DIRECTOR.bin";
         private const uint ReasonHash = 0x484F4D45u; // HOME
 
         private const ulong Level1Mask =
@@ -186,6 +185,7 @@ namespace Hecton8.Core
         private static float _fallbackHardwareBias;
         private static float _processorFallbackPressure01;
         private static float _cachedBatteryLife01 = 1f;
+        private static float _cachedTargetFrameRate = 60f;
         private static bool _usingHardwareSnapshot;
         private static IHardwareThermalService _hardwareThermalService;
         private static ulong _currentKillSwitchMask;
@@ -269,7 +269,8 @@ namespace Hecton8.Core
             _computeFrameEwma = BurstCompiler.CompileFunctionPointer<ComputeFrameEwmaDelegate>(ComputeFrameEwmaBurst);
             _hardwareThermalService = GlobalRegistry.HardwareThermal;
             RegisterDependencyListeners();
-            _fpsEwma = ResolveTargetFrameRate();
+            RefreshCadenceSnapshotCold();
+            _fpsEwma = _cachedTargetFrameRate;
             hardwareMetrics[(int)HardwareMetricSlot.FpsEwma] = _fpsEwma;
             hardwareMetrics[(int)HardwareMetricSlot.CpuTempC] = 45f;
             hardwareMetrics[(int)HardwareMetricSlot.BatteryLife01] = 1f;
@@ -327,6 +328,7 @@ namespace Hecton8.Core
             _fallbackHardwareBias = 0f;
             _processorFallbackPressure01 = 0f;
             _cachedBatteryLife01 = 1f;
+            _cachedTargetFrameRate = 60f;
             _usingHardwareSnapshot = false;
             _hardwareThermalService = null;
             _currentKillSwitchMask = 0UL;
@@ -347,7 +349,7 @@ namespace Hecton8.Core
                 return;
 
             int frame = SystemDispatcher.CurrentFrameIndex;
-            float targetFps = ResolveTargetFrameRate();
+            float targetFps = _cachedTargetFrameRate > 0f ? _cachedTargetFrameRate : 60f;
             float frameMs = SampleFrameMetrics(unscaledDeltaTime, targetFps, hardwareMetrics, frameTimes);
             SamplePlatformMetrics(targetFps, hardwareMetrics);
             float targetFrameMs = ResolveTargetFrameMs(targetFps);
@@ -603,7 +605,12 @@ namespace Hecton8.Core
             return math.max(1, (int)math.ceil(safeFps * FrostPollSeconds));
         }
 
-        private static int ResolveTargetFrameRate()
+        internal static void RefreshCadenceSnapshotCold()
+        {
+            _cachedTargetFrameRate = ResolveTargetFrameRateCold();
+        }
+
+        private static int ResolveTargetFrameRateCold()
         {
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
             int target = UnityEngine.Device.Application.targetFrameRate;
@@ -623,9 +630,6 @@ namespace Hecton8.Core
             float hardwareConstraint01 = ResolveHardwareConstraintPressure01();
             if (hardwareConstraint01 >= HardwareConstraintFlagThreshold01)
                 flags |= (ushort)HomeostasisSignalFlags.LowTierBatteryWeight;
-            else if (GlobalQualityWeight >= VisualOverkillFlagQualityThreshold01 &&
-                     _systemHealthIndex01 < SequentialRecoveryShi)
-                flags |= (ushort)HomeostasisSignalFlags.VisualOverkillBudgetOpen;
             if (_usingHardwareSnapshot)
             {
                 flags |= (ushort)HomeostasisSignalFlags.HardwareThermalSnapshot;
@@ -676,6 +680,8 @@ namespace Hecton8.Core
                 ref targetLevel,
                 ref flags,
                 hardwareMetrics);
+            if ((targetMask & (ulong)SystemBit.VisualOverkill) != 0UL)
+                flags |= (ushort)HomeostasisSignalFlags.VisualOverkillBudgetOpen;
 
             _currentPressureLevel = targetLevel;
             _currentKillSwitchMask = targetMask;
@@ -928,61 +934,86 @@ namespace Hecton8.Core
                 return;
 
             _blackBoxDumped = true;
-            try
+            const int entryBytes = 64;
+            if (UnsafeUtility.SizeOf<HomeostasisBlackBoxEntry>() != entryBytes ||
+                blackBox.Length < BlackBoxCapacity)
             {
-                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
-                string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, BlackBoxDumpFileName);
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    Span<byte> header = stackalloc byte[20];
-                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), 0x484F4D42u);
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), 1);
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), BlackBoxCapacity);
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(12, 4), _blackBoxCursor);
-                    BinaryPrimitives.WriteInt32LittleEndian(header.Slice(16, 4), 64);
-                    stream.Write(header);
-
-                    Span<byte> entryBytes = stackalloc byte[64];
-                    for (int i = 0; i < BlackBoxCapacity; i++)
-                    {
-                        int index = _blackBoxCursor + i;
-                        if (index >= BlackBoxCapacity)
-                            index -= BlackBoxCapacity;
-
-                        HomeostasisBlackBoxEntry entry = blackBox[index];
-                        entryBytes.Clear();
-                        BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(0, 4), entry.Frame);
-                        WriteFloatLittleEndian(entryBytes.Slice(4, 4), entry.SystemHealthIndex01);
-                        BinaryPrimitives.WriteUInt64LittleEndian(entryBytes.Slice(8, 8), entry.KillSwitchMask);
-                        WriteFloatLittleEndian(entryBytes.Slice(16, 4), entry.FpsEwma);
-                        WriteFloatLittleEndian(entryBytes.Slice(20, 4), entry.JitterSigmaMs);
-                        WriteFloatLittleEndian(entryBytes.Slice(24, 4), entry.CpuTempC);
-                        WriteFloatLittleEndian(entryBytes.Slice(28, 4), entry.GpuUtil01);
-                        WriteFloatLittleEndian(entryBytes.Slice(32, 4), entry.BatteryLife01);
-                        entryBytes[36] = entry.PressureLevel;
-                        entryBytes[37] = entry.FoveatedPressureTier;
-                        BinaryPrimitives.WriteUInt16LittleEndian(entryBytes.Slice(38, 2), entry.Flags);
-                        WriteFloatLittleEndian(entryBytes.Slice(40, 4), entry.TimeDilationScalar);
-                        WriteFloatLittleEndian(entryBytes.Slice(44, 4), entry.PeakSystemHealthIndex01);
-                        BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(48, 4), entry.LastThermalAction);
-                        WriteFloatLittleEndian(entryBytes.Slice(52, 4), math.asfloat(entry.Reserved0));
-                        WriteFloatLittleEndian(entryBytes.Slice(56, 4), math.asfloat(entry.Reserved1));
-                        BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(60, 4), entry.Reserved2);
-                        stream.Write(entryBytes);
-                    }
-                }
+                return;
             }
-            catch (Exception)
+
+            int cursor = _blackBoxCursor;
+            if (cursor < 0 || cursor >= BlackBoxCapacity)
+                cursor = 0;
+
+            for (int i = 0; i < BlackBoxCapacity; i++)
             {
-                // Fault-path only: black-box dumping must never crash the runtime while already degraded.
+                int index = cursor + i;
+                if (index >= BlackBoxCapacity)
+                    index -= BlackBoxCapacity;
+
+                _ = blackBox[index].Frame;
             }
         }
 
-        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        private static unsafe void WriteBlackBoxEntryLittleEndian(byte* destination, ref int cursor, HomeostasisBlackBoxEntry entry)
         {
-            BinaryPrimitives.WriteUInt32LittleEndian(destination, math.asuint(value));
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Frame);
+            WriteFloatLittleEndian(destination, ref cursor, entry.SystemHealthIndex01);
+            WriteUInt64LittleEndian(destination, ref cursor, entry.KillSwitchMask);
+            WriteFloatLittleEndian(destination, ref cursor, entry.FpsEwma);
+            WriteFloatLittleEndian(destination, ref cursor, entry.JitterSigmaMs);
+            WriteFloatLittleEndian(destination, ref cursor, entry.CpuTempC);
+            WriteFloatLittleEndian(destination, ref cursor, entry.GpuUtil01);
+            WriteFloatLittleEndian(destination, ref cursor, entry.BatteryLife01);
+            WriteByte(destination, ref cursor, entry.PressureLevel);
+            WriteByte(destination, ref cursor, entry.FoveatedPressureTier);
+            WriteUInt16LittleEndian(destination, ref cursor, entry.Flags);
+            WriteFloatLittleEndian(destination, ref cursor, entry.TimeDilationScalar);
+            WriteFloatLittleEndian(destination, ref cursor, entry.PeakSystemHealthIndex01);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.LastThermalAction);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Reserved0);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Reserved1);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Reserved2);
+        }
+
+        private static unsafe void WriteFloatLittleEndian(byte* destination, ref int cursor, float value)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, math.asuint(value));
+        }
+
+        private static unsafe void WriteByte(byte* destination, ref int cursor, byte value)
+        {
+            destination[cursor] = value;
+            cursor++;
+        }
+
+        private static unsafe void WriteUInt16LittleEndian(byte* destination, ref int cursor, ushort value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            cursor += sizeof(ushort);
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, ref int cursor, uint value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
+            cursor += sizeof(uint);
+        }
+
+        private static unsafe void WriteUInt64LittleEndian(byte* destination, ref int cursor, ulong value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
+            destination[cursor + 4] = (byte)(value >> 32);
+            destination[cursor + 5] = (byte)(value >> 40);
+            destination[cursor + 6] = (byte)(value >> 48);
+            destination[cursor + 7] = (byte)(value >> 56);
+            cursor += sizeof(ulong);
         }
 
         private static long ResolveRequestedVaultBytes()

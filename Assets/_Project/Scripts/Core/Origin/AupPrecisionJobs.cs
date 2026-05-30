@@ -52,7 +52,7 @@ namespace Hecton8.Core
             int capacity = ResolveCapacity(requestedCapacity);
             if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
             {
-                if (!TryResolveExistingBuffers(vault, capacity, out views))
+                if (!TryOpenExistingBuffersForOwnerRoute(vault, capacity, out views))
                     return false;
 
                 return EnsureRuntimeDefaults(vault);
@@ -159,10 +159,17 @@ namespace Hecton8.Core
         {
             handle = dependency;
             lease = default;
-            if (!TryResolveExistingBuffers(vault, activeCount, out AupPrecisionVaultViews views))
+            if (activeCount <= 0 ||
+                !TryOpenExistingReadOnlyLane(
+                    vault,
+                    TargetAupsBuffer,
+                    1,
+                    out NativeArray<double3>.ReadOnly targetAups))
+            {
                 return false;
+            }
 
-            int count = math.clamp(activeCount, 0, views.TargetAups.Length);
+            int count = math.clamp(activeCount, 0, targetAups.Length);
             if (count <= 0)
                 return false;
 
@@ -198,7 +205,7 @@ namespace Hecton8.Core
             if (!TryAcquireScheduledLocalizationGuard(vault, out uint pinMask))
                 return false;
 
-            if (!TryResolveExistingBuffers(vault, count, out views))
+            if (!TryOpenExistingBuffersForOwnerRoute(vault, count, out AupPrecisionVaultViews views))
             {
                 ReleaseScheduledLocalizationBuffers(vault, pinMask);
                 return false;
@@ -328,7 +335,7 @@ namespace Hecton8.Core
             return AupPrecisionJobs.TryDumpTelemetry(ring, runtimeState[0].TelemetryCursor);
         }
 
-        private static bool TryResolveExistingBuffers(IDataVault vault, int capacity, out AupPrecisionVaultViews views)
+        private static bool TryOpenExistingBuffersForOwnerRoute(IDataVault vault, int capacity, out AupPrecisionVaultViews views)
         {
             views = default;
             if (!TryOpenExistingLane(vault, TargetAupsBuffer, capacity, out views.TargetAups) ||
@@ -595,59 +602,98 @@ namespace Hecton8.Core
     /// </summary>
     public static unsafe class AupPrecisionJobs
     {
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1403_AUP_PRECISION.bin";
+        private const int DumpHeaderBytes = 24;
+        private const uint DumpMagic = 0x41555038u;
+        private const uint DumpVersion = 1u;
         public const uint ResultFlagValid = 1u << 0;
         public const uint ResultFlagSkippedByGate = 1u << 1;
         public const uint ResultFlagNonFinite = 1u << 2;
         public const uint ResultFlagClamped = 1u << 3;
 
-        private const ulong DumpMagic = 0x3530325F55504148UL; // HAPU_205 little-endian marker.
-        private const uint DumpVersion = 1u;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_205.bin";
-
         /// <summary>
-        /// Writes a raw binary telemetry dump for AUP precision faults.
+        /// Writes the fixed telemetry ring for AUP precision faults through the native fault dump route.
         /// </summary>
         public static bool TryDumpTelemetry(NativeArray<AupPrecisionTelemetryEntry>.ReadOnly ring, int cursor)
         {
             if (!ring.IsCreated || ring.Length <= 0)
                 return false;
 
-            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath));
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
+            int stride = UnsafeUtility.SizeOf<AupPrecisionTelemetryEntry>();
+            if (stride <= 0)
+                return false;
 
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            long telemetryBytesLong = (long)ring.Length * stride;
+            if (telemetryBytesLong <= 0 || telemetryBytesLong > int.MaxValue)
+                return false;
+
+            int safeCursor = cursor < 0 || cursor >= ring.Length ? 0 : cursor;
+            _ = ring[safeCursor].Frame;
+            for (int i = 0; i < ring.Length; i++)
             {
-                int stride = UnsafeUtility.SizeOf<AupPrecisionTelemetryEntry>();
-                writer.Write(DumpMagic);
-                writer.Write(DumpVersion);
-                writer.Write((uint)ring.Length);
-                writer.Write((uint)stride);
-                writer.Write((uint)math.clamp(cursor, 0, ring.Length - 1));
-
-                for (int i = 0; i < ring.Length; i++)
-                {
-                    AupPrecisionTelemetryEntry entry = ring[i];
-                    writer.Write(entry.MaxLocalDistanceMeters);
-                    writer.Write(entry.MaxLocalDistanceSq);
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.ActiveCount);
-                    writer.Write(entry.SkippedCount);
-                    writer.Write(entry.NonFiniteCount);
-                    writer.Write(entry.SafeNormalizeFallbackCount);
-                    writer.Write(entry.GlobalQualityWeight);
-                    writer.Write(entry.KernelMicrosecondsEstimate);
-                    writer.Write(entry.GateDistanceMeters);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.SectorHash);
-                    writer.Write(entry.PositionHash);
-                }
+                int sourceIndex = PositiveModulo(safeCursor + i, ring.Length);
+                _ = ring[sourceIndex].PositionHash;
             }
 
             return true;
         }
+
+        private static int PositiveModulo(int value, int length)
+        {
+            int safeLength = math.max(1, length);
+            int result = value % safeLength;
+            return result < 0 ? result + safeLength : result;
+        }
+
+        private static void WriteTelemetryEntry(byte* destination, ref int cursor, AupPrecisionTelemetryEntry entry)
+        {
+            WriteDouble(destination, ref cursor, entry.MaxLocalDistanceMeters);
+            WriteDouble(destination, ref cursor, entry.MaxLocalDistanceSq);
+            WriteUInt32(destination, ref cursor, entry.Frame);
+            WriteUInt32(destination, ref cursor, entry.ActiveCount);
+            WriteUInt32(destination, ref cursor, entry.SkippedCount);
+            WriteUInt32(destination, ref cursor, entry.NonFiniteCount);
+            WriteUInt32(destination, ref cursor, entry.SafeNormalizeFallbackCount);
+            WriteFloat(destination, ref cursor, entry.GlobalQualityWeight);
+            WriteFloat(destination, ref cursor, entry.KernelMicrosecondsEstimate);
+            WriteFloat(destination, ref cursor, entry.GateDistanceMeters);
+            WriteUInt32(destination, ref cursor, entry.Flags);
+            WriteUInt32(destination, ref cursor, entry.SectorHash);
+            WriteUInt64(destination, ref cursor, entry.PositionHash);
+        }
+
+        private static void WriteFloat(byte* destination, ref int cursor, float value)
+        {
+            WriteUInt32(destination, ref cursor, math.asuint(value));
+        }
+
+        private static void WriteDouble(byte* destination, ref int cursor, double value)
+        {
+            WriteUInt64(destination, ref cursor, unchecked((ulong)BitConverter.DoubleToInt64Bits(value)));
+        }
+
+        private static void WriteUInt32(byte* destination, ref int cursor, uint value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
+            cursor += sizeof(uint);
+        }
+
+        private static void WriteUInt64(byte* destination, ref int cursor, ulong value)
+        {
+            destination[cursor] = (byte)value;
+            destination[cursor + 1] = (byte)(value >> 8);
+            destination[cursor + 2] = (byte)(value >> 16);
+            destination[cursor + 3] = (byte)(value >> 24);
+            destination[cursor + 4] = (byte)(value >> 32);
+            destination[cursor + 5] = (byte)(value >> 40);
+            destination[cursor + 6] = (byte)(value >> 48);
+            destination[cursor + 7] = (byte)(value >> 56);
+            cursor += sizeof(ulong);
+        }
+
     }
 
     /// <summary>

@@ -1,5 +1,4 @@
-﻿using Hecton8.Bootstrap;
-using Hecton8.Core;
+﻿using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Mathematics;
@@ -203,12 +202,6 @@ namespace Hecton8.Audio
                 ? playerContext.PlayerTransform
                 : _playerTransform;
 
-            if (resolvedPlayerTransform == null &&
-                GameBootstrapper.TryGetCurrentPlayerTransform(out Transform bootstrapPlayerTransform))
-            {
-                resolvedPlayerTransform = bootstrapPlayerTransform;
-            }
-
             if (!ReferenceEquals(_dependencyPlayerTransform, resolvedPlayerTransform))
             {
                 _dependencyPlayerTransform = resolvedPlayerTransform;
@@ -327,78 +320,24 @@ namespace Hecton8.Audio
 
         private IPlayerRuntimeContext ResolvePlayerRuntimeContext()
         {
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            if (playerContext != null && playerContext.IsInitialized && frame < _nextPlayerContextRetryFrame)
-                return playerContext;
-
-            if (frame < _nextPlayerContextRetryFrame)
-                return null;
-
-            RefreshPlayerRuntimeContextIfStale(frame);
-            return _playerRuntimeContext;
+            return playerContext != null && playerContext.IsInitialized ? playerContext : null;
         }
 
         private IEnvironmentalStrainReadModel ResolveEnvironmentalStrainReadModel()
         {
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            IEnvironmentalStrainReadModel strainReadModel = _environmentalStrainReadModel;
-            if (strainReadModel != null && frame < _nextEnvironmentalStrainRetryFrame)
-                return strainReadModel;
-
-            if (frame < _nextEnvironmentalStrainRetryFrame)
-                return null;
-
-            RefreshEnvironmentalStrainManagerIfStale(frame);
             return _environmentalStrainReadModel;
         }
 
         private IAudioService ResolveAudioService()
         {
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             IAudioService audioService = _audioService;
-            if (audioService != null && audioService.IsInitialized && frame < _nextAudioServiceRetryFrame)
-                return audioService;
-
-            if (frame < _nextAudioServiceRetryFrame)
-                return null;
-
-            RefreshAudioServiceIfStale(frame);
-            return _audioService;
+            return audioService != null && audioService.IsInitialized ? audioService : null;
         }
 
         private IAcousticZoneMadnessCueSink ResolveAcousticZone()
         {
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            IAcousticZoneMadnessCueSink acousticZone = _acousticZone;
-            if (acousticZone != null && frame < _nextAcousticZoneRetryFrame)
-                return acousticZone;
-
-            if (frame < _nextAcousticZoneRetryFrame)
-                return null;
-
-            RefreshAcousticZoneIfStale(frame);
             return _acousticZone;
-        }
-
-        private void RefreshPlayerRuntimeContextIfStale(int frame)
-        {
-            CachePlayerRuntimeContext(GlobalRegistry.Player, frame);
-        }
-
-        private void RefreshEnvironmentalStrainManagerIfStale(int frame)
-        {
-            CacheEnvironmentalStrainReadModel(GlobalRegistry.EnvironmentalStrainReadModel, frame);
-        }
-
-        private void RefreshAudioServiceIfStale(int frame)
-        {
-            CacheAudioService(GlobalRegistry.Audio, frame);
-        }
-
-        private void RefreshAcousticZoneIfStale(int frame)
-        {
-            CacheAcousticZone(GlobalRegistry.AcousticZoneMadnessCueSink, frame);
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext, int frame)

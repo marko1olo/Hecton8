@@ -19,6 +19,9 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ApproximateLength(float3 value)
         {
+            if (!math.all(math.isfinite(value)))
+                return 0f;
+
             float3 absolute = math.abs(value);
             float maxAxis = math.max(absolute.x, math.max(absolute.y, absolute.z));
             float minAxis = math.min(absolute.x, math.min(absolute.y, absolute.z));
@@ -29,6 +32,9 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float FastTriangleWave01(float phase)
         {
+            if (!math.isfinite(phase))
+                return 0f;
+
             float wrapped = phase - math.floor(phase);
             return 1f - math.abs((wrapped * 2f) - 1f);
         }
@@ -42,6 +48,9 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float FastSin(float radians)
         {
+            if (!math.isfinite(radians))
+                return 0f;
+
             float wrapped = radians - (math.floor((radians + math.PI) * InvTwoPi) * TwoPi);
             return (FastSinA * wrapped) - (FastSinB * wrapped * math.abs(wrapped));
         }
@@ -55,10 +64,17 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static quaternion FastYawQuaternion(float radians)
         {
+            if (!math.isfinite(radians))
+                return quaternion.identity;
+
             float half = radians * 0.5f;
             float y = FastSin(half);
             float w = FastCos(half);
-            float invLength = math.rsqrt((y * y) + (w * w));
+            float lengthSq = (y * y) + (w * w);
+            if (!math.isfinite(lengthSq) || lengthSq <= MinimumQuaternionLengthSq)
+                return quaternion.identity;
+
+            float invLength = math.rsqrt(lengthSq);
             return new quaternion(0f, y * invLength, 0f, w * invLength);
         }
 
@@ -66,8 +82,11 @@ namespace Hecton8.Core
         public static quaternion NormalizeQuaternionOrIdentity(quaternion value)
         {
             float lengthSq = math.lengthsq(value.value);
+            if (!math.isfinite(lengthSq) || lengthSq <= MinimumQuaternionLengthSq)
+                return quaternion.identity;
+
             float4 normalized = value.value * math.rsqrt(math.max(lengthSq, MinimumQuaternionLengthSq));
-            return new quaternion(math.select(new float4(0f, 0f, 0f, 1f), normalized, lengthSq > MinimumQuaternionLengthSq));
+            return new quaternion(normalized);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -76,10 +95,14 @@ namespace Hecton8.Core
             float4 fromValue = from.value;
             float4 toValue = to.value;
             toValue = math.select(-toValue, toValue, math.dot(fromValue, toValue) >= 0f);
-            float4 blended = math.lerp(fromValue, toValue, math.saturate(t));
+            float safeT = math.isfinite(t) ? math.saturate(t) : 0f;
+            float4 blended = math.lerp(fromValue, toValue, safeT);
             float lengthSq = math.lengthsq(blended);
+            if (!math.isfinite(lengthSq) || lengthSq <= MinimumQuaternionLengthSq)
+                return quaternion.identity;
+
             float4 normalized = blended * math.rsqrt(math.max(lengthSq, MinimumQuaternionLengthSq));
-            return new quaternion(math.select(new float4(0f, 0f, 0f, 1f), normalized, lengthSq > MinimumQuaternionLengthSq));
+            return new quaternion(normalized);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -94,7 +117,7 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Quaternion FastNlerp(Quaternion from, Quaternion to, float t)
         {
-            float clampedT = math.saturate(t);
+            float clampedT = math.isfinite(t) ? math.saturate(t) : 0f;
             if (clampedT <= 0f)
                 return NormalizeQuaternionOrIdentity(from);
 

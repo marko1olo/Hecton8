@@ -200,7 +200,7 @@ namespace Hecton8.UI
     /// Vault-backed diegetic glitch runtime. It mutates owned unmanaged buffers and exports bridge-ready DTOs.
     /// </summary>
     [DisallowMultipleComponent]
-    public unsafe sealed class DiegeticGlitchSurgeonRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public unsafe sealed class DiegeticGlitchSurgeonRuntime : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         internal const int GlitchTableCapacity = 64;
         internal const int GlitchTableBufferIdRaw = 70901;
@@ -335,14 +335,17 @@ namespace Hecton8.UI
         private int _mockTextLength;
         private uint _frameIndex;
         private uint _lastFaultFlags;
+        private uint _queuedBlackBoxFaultFlags;
         private uint _lastTableHash;
         private uint _lastSeedBits;
         private int _stalledSeedFrames;
+        private bool _registeredSlowTick;
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
         private bool _nativeReady;
         private bool _jobScheduled;
         private bool _tableFallbackGenerated;
+        private bool _blackBoxDumpQueued;
         private bool _dumpWrittenForCurrentFault;
         private bool _pendingTuningWrite;
 #if UNITY_EDITOR
@@ -353,6 +356,7 @@ namespace Hecton8.UI
         private bool _pendingExternalLeaseRelease;
         private bool _pendingDisableTeardown;
         private bool _pendingVaultSwap;
+        private bool _nativeColdRepairRequested;
         private ExternalAsciiScrambleLease _pendingExternalLease;
         private IDataVault _pendingVaultAfterSwap;
         private float _pendingMasterIntensity;
@@ -373,6 +377,7 @@ namespace Hecton8.UI
         {
             _pendingDisableTeardown = false;
             _pendingVaultSwap = false;
+            _nativeColdRepairRequested = false;
             _pendingVaultAfterSwap = null;
             EnsureColdPaths();
             TryRegisterHotSwapListener();
@@ -401,12 +406,13 @@ namespace Hecton8.UI
                 return;
             }
 
-            FinishDisableTeardown();
-            UnregisterLateFrameCold();
+            FinishDisableTeardownAndUnregister();
         }
 
         private void OnDestroy()
         {
+            FlushQueuedBlackBoxDump();
+            UnregisterSlowTickCold();
             UnregisterLateFrameCold();
         }
 
@@ -540,16 +546,28 @@ namespace Hecton8.UI
             if (!ServicePendingExternalLeaseRelease() || _externalLeaseOutstanding)
                 return;
 
-            if (_pendingVaultSwap)
-                FinishPendingVaultSwap();
-
             if (_pendingDisableTeardown)
             {
-                FinishDisableTeardown();
+                FinishDisableTeardownAndUnregister();
+                return;
+            }
+
+            if (_pendingVaultSwap)
+            {
+                _nativeColdRepairRequested = true;
                 return;
             }
 
             PushShaderGlobals();
+        }
+
+        /// <summary>
+        /// Performs vault rebinding and native allocation outside visual sync.
+        /// </summary>
+        public void SlowTick()
+        {
+            ServiceNativeColdRepair();
+            FlushQueuedBlackBoxDump();
         }
 
         /// <summary>Writes editor slider values into the unmanaged vault tuning DTO.</summary>
@@ -575,7 +593,7 @@ namespace Hecton8.UI
         private void WriteTuningToVault(float master, float textRate, float matrixStrength, float ghostCount)
         {
             if (!_nativeReady ||
-                !TryAcquireGlitchVaultWriteBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer))
+                !TryAcquireGlitchVaultWriteBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out IDataVault tuningWriteVault, out NativeArray<GlitchTuningDTO> tuningBuffer))
             {
                 return;
             }
@@ -590,7 +608,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseGlitchVaultWriteBuffer(_vault, in _tuningHandle, TuningBufferId);
+                ReleaseGlitchVaultWriteBuffer(tuningWriteVault, in _tuningHandle, TuningBufferId);
             }
         }
 
@@ -599,7 +617,7 @@ namespace Hecton8.UI
         {
             deterministicSectorHash = sectorHash == 0u ? 0x5348494Eu : sectorHash;
             if (!_nativeReady ||
-                !TryAcquireGlitchVaultWriteBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer))
+                !TryAcquireGlitchVaultWriteBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out IDataVault tuningWriteVault, out NativeArray<GlitchTuningDTO> tuningBuffer))
             {
                 return;
             }
@@ -611,7 +629,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseGlitchVaultWriteBuffer(_vault, in _tuningHandle, TuningBufferId);
+                ReleaseGlitchVaultWriteBuffer(tuningWriteVault, in _tuningHandle, TuningBufferId);
             }
         }
 
@@ -927,7 +945,7 @@ namespace Hecton8.UI
                 !IsGlitchVaultHandle(in _glitchTableHandle, GlitchTableBufferId))
                 return;
 
-            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out NativeArray<byte> tableBuffer))
+            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out IDataVault tableWriteVault, out NativeArray<byte> tableBuffer))
                 return;
 
             try
@@ -940,7 +958,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseGlitchVaultWriteBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId);
+                ReleaseGlitchVaultWriteBuffer(tableWriteVault, in _glitchTableHandle, GlitchTableBufferId);
             }
 
 #if UNITY_EDITOR
@@ -1030,6 +1048,9 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
+            if (!_registeredSlowTick)
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
+
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
@@ -1060,6 +1081,7 @@ namespace Hecton8.UI
             {
                 if (currentService == null)
                 {
+                    _registeredSlowTick = false;
                     _registeredLateFrame = false;
                     return;
                 }
@@ -1081,6 +1103,7 @@ namespace Hecton8.UI
                 _pendingVaultSwap = true;
                 _pendingVaultAfterSwap = nextVault;
                 _nativeReady = false;
+                _nativeColdRepairRequested = true;
                 EnsureLateFrameDrainRegistered();
                 return;
             }
@@ -1111,6 +1134,7 @@ namespace Hecton8.UI
                 _pendingVaultSwap = true;
                 _pendingVaultAfterSwap = nextVault;
                 _nativeReady = false;
+                _nativeColdRepairRequested = true;
                 EnsureLateFrameDrainRegistered();
                 return;
             }
@@ -1239,6 +1263,25 @@ namespace Hecton8.UI
                    EnsureGlitchScratchPointer(ref _telemetryCursorScratch, 1, NativeArrayOptions.ClearMemory);
         }
 
+        private bool AreGlitchScratchResourcesReady()
+        {
+            return _stateScratch != null &&
+                   _glitchTableScratch != null &&
+                   _externalGlitchTableScratch != null &&
+                   _originalTextScratch != null &&
+                   _workTextScratch != null &&
+                   _textSpanScratch != null &&
+                   _corruptionSignalScratch != null &&
+                   _depthSignalScratch != null &&
+                   _breachSignalScratch != null &&
+                   _tuningScratch != null &&
+                   _quadScratch != null &&
+                   _radarBlipScratch != null &&
+                   _synthScratch != null &&
+                   _telemetryScratch != null &&
+                   _telemetryCursorScratch != null;
+        }
+
         private static bool EnsureGlitchScratchPointer<T>(
             ref T* buffer,
             int requiredLength,
@@ -1325,9 +1368,11 @@ namespace Hecton8.UI
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
+            out IDataVault writeVault,
             out NativeArray<T> buffer)
             where T : unmanaged
         {
+            writeVault = null;
             buffer = default;
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
@@ -1346,6 +1391,7 @@ namespace Hecton8.UI
                     buffer.Length >= requiredLength)
                 {
                     releaseOnExit = false;
+                    writeVault = vault;
                     return true;
                 }
 
@@ -1472,7 +1518,7 @@ namespace Hecton8.UI
 
         private bool TrySeedGlitchStateDefaults()
         {
-            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in _stateHandle, StateBufferId, 1, out NativeArray<GlitchStateDTO> stateBuffer))
+            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in _stateHandle, StateBufferId, 1, out IDataVault stateWriteVault, out NativeArray<GlitchStateDTO> stateBuffer))
                 return false;
 
             try
@@ -1485,13 +1531,13 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseGlitchVaultWriteBuffer(_vault, in _stateHandle, StateBufferId);
+                ReleaseGlitchVaultWriteBuffer(stateWriteVault, in _stateHandle, StateBufferId);
             }
         }
 
         private bool TrySeedGlitchTuningDefaults()
         {
-            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer))
+            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out IDataVault tuningWriteVault, out NativeArray<GlitchTuningDTO> tuningBuffer))
                 return false;
 
             try
@@ -1509,13 +1555,13 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseGlitchVaultWriteBuffer(_vault, in _tuningHandle, TuningBufferId);
+                ReleaseGlitchVaultWriteBuffer(tuningWriteVault, in _tuningHandle, TuningBufferId);
             }
         }
 
         private bool TrySeedGlitchTableDefaults()
         {
-            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out NativeArray<byte> glitchTableBuffer))
+            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out IDataVault tableWriteVault, out NativeArray<byte> glitchTableBuffer))
                 return false;
 
             try
@@ -1525,7 +1571,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseGlitchVaultWriteBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId);
+                ReleaseGlitchVaultWriteBuffer(tableWriteVault, in _glitchTableHandle, GlitchTableBufferId);
             }
         }
 
@@ -1546,7 +1592,7 @@ namespace Hecton8.UI
             ReadOnlySpan<char> source,
             int textLength)
         {
-            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in handle, bufferId, MockTextCapacity, out NativeArray<ushort> textBuffer))
+            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in handle, bufferId, MockTextCapacity, out IDataVault textWriteVault, out NativeArray<ushort> textBuffer))
                 return false;
 
             try
@@ -1556,7 +1602,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseGlitchVaultWriteBuffer(_vault, in handle, bufferId);
+                ReleaseGlitchVaultWriteBuffer(textWriteVault, in handle, bufferId);
             }
         }
 
@@ -1572,7 +1618,7 @@ namespace Hecton8.UI
 
         private void SeedMockQuads()
         {
-            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in _quadHandle, MockQuadBufferId, MockQuadCapacity, out NativeArray<GlitchQuadTransformDTO> quadBuffer))
+            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in _quadHandle, MockQuadBufferId, MockQuadCapacity, out IDataVault quadWriteVault, out NativeArray<GlitchQuadTransformDTO> quadBuffer))
             {
                 return;
             }
@@ -1593,13 +1639,13 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseGlitchVaultWriteBuffer(_vault, in _quadHandle, MockQuadBufferId);
+                ReleaseGlitchVaultWriteBuffer(quadWriteVault, in _quadHandle, MockQuadBufferId);
             }
         }
 
         private void SeedSynthParameters()
         {
-            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in _synthHandle, SynthParameterBufferId, SynthParameterCapacity, out NativeArray<GlitchSynthParametersDTO> synthBuffer))
+            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in _synthHandle, SynthParameterBufferId, SynthParameterCapacity, out IDataVault synthWriteVault, out NativeArray<GlitchSynthParametersDTO> synthBuffer))
             {
                 return;
             }
@@ -1620,7 +1666,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseGlitchVaultWriteBuffer(_vault, in _synthHandle, SynthParameterBufferId);
+                ReleaseGlitchVaultWriteBuffer(synthWriteVault, in _synthHandle, SynthParameterBufferId);
             }
         }
 
@@ -1752,7 +1798,7 @@ namespace Hecton8.UI
                 return false;
             }
 
-            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out NativeArray<byte> tableBuffer))
+            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out IDataVault tableWriteVault, out NativeArray<byte> tableBuffer))
             {
                 shouldRetry = _vault.IsCompactionFenceActive;
                 return false;
@@ -1780,7 +1826,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseGlitchVaultWriteBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId);
+                ReleaseGlitchVaultWriteBuffer(tableWriteVault, in _glitchTableHandle, GlitchTableBufferId);
             }
         }
 #endif
@@ -1835,7 +1881,7 @@ namespace Hecton8.UI
             if (!_nativeReady ||
                 _vault == null ||
                 _vault.IsCompactionFenceActive ||
-                !EnsureGlitchScratchResources())
+                !AreGlitchScratchResourcesReady())
             {
                 return false;
             }
@@ -1984,7 +2030,7 @@ namespace Hecton8.UI
         {
             if (source == null ||
                 count <= 0 ||
-                !TryAcquireGlitchVaultWriteBuffer(_vault, in handle, bufferId, count, out NativeArray<T> target))
+                !TryAcquireGlitchVaultWriteBuffer(_vault, in handle, bufferId, count, out IDataVault writeVault, out NativeArray<T> target))
             {
                 return false;
             }
@@ -1995,7 +2041,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseGlitchVaultWriteBuffer(_vault, in handle, bufferId);
+                ReleaseGlitchVaultWriteBuffer(writeVault, in handle, bufferId);
             }
         }
 
@@ -2071,9 +2117,26 @@ namespace Hecton8.UI
         {
             _pendingDisableTeardown = false;
             _pendingVaultSwap = false;
+            _nativeColdRepairRequested = false;
             _pendingVaultAfterSwap = null;
             BindDataVaultForLifecycle(null);
             ReleaseGlitchScratchResources();
+        }
+
+        private void FinishDisableTeardownAndUnregister()
+        {
+            FinishDisableTeardown();
+            UnregisterSlowTickCold();
+            UnregisterLateFrameCold();
+        }
+
+        private void UnregisterSlowTickCold()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            _registeredSlowTick = false;
         }
 
         private void UnregisterLateFrameCold()
@@ -2085,13 +2148,39 @@ namespace Hecton8.UI
             _registeredLateFrame = false;
         }
 
-        private void FinishPendingVaultSwap()
+        private void FinishPendingVaultSwapCold()
         {
             _pendingVaultSwap = false;
+            _nativeColdRepairRequested = false;
             IDataVault nextVault = _pendingVaultAfterSwap;
             _pendingVaultAfterSwap = null;
             BindDataVaultForLifecycle(nextVault);
             if (!_pendingDisableTeardown)
+                EnsureNativeResources();
+        }
+
+        private void ServiceNativeColdRepair()
+        {
+            if (_pendingDisableTeardown)
+                return;
+
+            if (_jobScheduled || _pendingExternalLeaseRelease || _externalLeaseOutstanding)
+            {
+                EnsureLateFrameDrainRegistered();
+                return;
+            }
+
+            if (_pendingVaultSwap)
+            {
+                FinishPendingVaultSwapCold();
+                return;
+            }
+
+            if (!_nativeColdRepairRequested)
+                return;
+
+            _nativeColdRepairRequested = false;
+            if (!_nativeReady)
                 EnsureNativeResources();
         }
 
@@ -2195,6 +2284,7 @@ namespace Hecton8.UI
                     in terminalStateHandle,
                     TerminalOsStateBridgeBufferId,
                     TerminalOsConstants.TerminalCapacity,
+                    out IDataVault terminalWriteVault,
                     out NativeArray<TerminalStateDTO> terminalStates))
             {
                 return false;
@@ -2215,7 +2305,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                ReleaseGlitchVaultWriteBuffer(vault, in terminalStateHandle, TerminalOsStateBridgeBufferId);
+                ReleaseGlitchVaultWriteBuffer(terminalWriteVault, in terminalStateHandle, TerminalOsStateBridgeBufferId);
             }
 
             return true;
@@ -2291,14 +2381,33 @@ namespace Hecton8.UI
             if (_dumpWrittenForCurrentFault)
                 return;
 
-            DumpBlackBox(faultFlags);
+            QueueBlackBoxDump(faultFlags);
             _dumpWrittenForCurrentFault = true;
+        }
+
+        private void QueueBlackBoxDump(uint faultFlags)
+        {
+            _queuedBlackBoxFaultFlags = faultFlags;
+            _blackBoxDumpQueued = true;
+        }
+
+        private void FlushQueuedBlackBoxDump()
+        {
+            if (!_blackBoxDumpQueued)
+                return;
+
+            uint faultFlags = _queuedBlackBoxFaultFlags;
+            _blackBoxDumpQueued = false;
+            DumpBlackBox(faultFlags);
         }
 
         private void DumpBlackBox(uint faultFlags)
         {
             if (!TryReadTelemetryCursorSnapshot(out uint cursor))
+            {
+                _blackBoxDumpQueued = true;
                 return;
+            }
 
             try
             {
@@ -2327,6 +2436,7 @@ namespace Hecton8.UI
                         if (!TryReadTelemetryDumpEntry(i, out DiegeticGlitchTelemetryEntry entry))
                         {
                             _lastFaultFlags |= FaultVaultUnavailable;
+                            _blackBoxDumpQueued = true;
                             return;
                         }
 

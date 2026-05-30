@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Collections;
@@ -89,6 +90,13 @@ namespace Hecton8.Animation.FaunaProcedural
         private bool _supportsConstantBufferBinding;
         private bool _disposed;
         private bool _dumpedFault;
+        private readonly ProceduralBoneTelemetryEntry[] _blackBoxDumpSnapshot = new ProceduralBoneTelemetryEntry[ProceduralBoneBlenderConstants.TelemetryCapacity];
+        private int _blackBoxDumpSnapshotCursor;
+        private int _blackBoxDumpSnapshotCount;
+        private int _blackBoxDumpInFlight;
+        private string _blackBoxDumpRootCold;
+
+        private static readonly WaitCallback s_blackBoxDumpWorker = WriteBlackBoxDumpWorker;
 
         private static ProceduralBoneBlenderRuntime _activeRuntimeInstance;
 
@@ -234,6 +242,7 @@ namespace Hecton8.Animation.FaunaProcedural
                 _activeRuntimeInstance = this;
 
             RefreshColdDependencies();
+            TryEnsureBlackBoxDumpRootCold();
             if (OpenOrAcquireVaultBuffersForOwnerRoute())
                 EnsureGraphicsBuffers();
             if (_seedEmergencyMockRig)
@@ -247,6 +256,7 @@ namespace Hecton8.Animation.FaunaProcedural
 
             CompletePendingSolverForTeardown();
             RefreshColdDependencies();
+            TryEnsureBlackBoxDumpRootCold();
             if (OpenOrAcquireVaultBuffersForOwnerRoute())
                 EnsureGraphicsBuffers();
             if (_seedEmergencyMockRig)
@@ -452,6 +462,7 @@ namespace Hecton8.Animation.FaunaProcedural
             IDataVault currentVault = currentService is IDataVault nextVault ? nextVault : null;
             IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : null;
             BindDataVaultForLifecycle(currentVault, previousVault);
+            TryEnsureBlackBoxDumpRootCold();
             if (OpenOrAcquireVaultBuffersForOwnerRoute())
                 EnsureGraphicsBuffers();
             if (_seedEmergencyMockRig)
@@ -849,22 +860,23 @@ namespace Hecton8.Animation.FaunaProcedural
         private bool FinishPendingSolverCompletion()
         {
             _solverScheduled = false;
+            bool shouldDumpFault = false;
             try
             {
                 _frameCounter++;
                 RefreshLatestTelemetrySnapshot();
                 _gpuUploadDirty = ShouldUploadMatrices();
-                if (!_dumpedFault && LatestTelemetryHasInvalidFlag())
-                {
-                    DumpBlackBoxOnce();
-                }
-
-                return true;
+                shouldDumpFault = !_dumpedFault && LatestTelemetryHasInvalidFlag();
             }
             finally
             {
                 ReleaseJobMutationGuard();
             }
+
+            if (shouldDumpFault)
+                DumpBlackBoxOnce();
+
+            return true;
         }
 
         private bool TryAcquireJobMutationGuardAndResolveBuffers(
@@ -938,7 +950,7 @@ namespace Hecton8.Animation.FaunaProcedural
 
         private void ReleaseJobMutationGuard()
         {
-            IDataVault vault = _jobBufferGuardVault ?? _dataVault;
+            IDataVault vault = _jobBufferGuardVault;
             if (vault == null || !_jobMutationGuardActive)
             {
                 _jobMutationGuardActive = false;
@@ -1027,17 +1039,191 @@ namespace Hecton8.Animation.FaunaProcedural
 
         private void DumpBlackBoxOnce()
         {
+            if (_dumpedFault || Volatile.Read(ref _blackBoxDumpInFlight) != 0)
+                return;
+
             IDataVault vault = _dataVault;
             if (vault == null)
                 return;
 
+            if (_blackBoxDumpRootCold == null || _blackBoxDumpRootCold.Length == 0)
+                return;
+
+            Volatile.Write(ref _blackBoxDumpInFlight, 1);
             if (!TryResolveOwnedVaultBuffer(vault, ProceduralBoneBlenderBufferIds.TelemetryRing, in _telemetryRingHandle, 1, out NativeArray<ProceduralBoneTelemetryEntry> telemetry) ||
                 !TryResolveOwnedVaultBuffer(vault, ProceduralBoneBlenderBufferIds.TelemetryCursor, in _telemetryCursorHandle, 1, out NativeArray<int> cursor))
             {
+                Volatile.Write(ref _blackBoxDumpInFlight, 0);
                 return;
             }
 
-            _dumpedFault = ProceduralBoneBlackBox.TryDumpTelemetry(BuildProjectRootForFaultDump(), telemetry, cursor);
+            if (!TryStageBlackBoxDumpSnapshot(telemetry, cursor))
+            {
+                Volatile.Write(ref _blackBoxDumpInFlight, 0);
+                return;
+            }
+
+            try
+            {
+                if (ThreadPool.QueueUserWorkItem(s_blackBoxDumpWorker, this))
+                {
+                    _dumpedFault = true;
+                    return;
+                }
+            }
+            catch (NotSupportedException)
+            {
+            }
+
+            Volatile.Write(ref _blackBoxDumpInFlight, 0);
+        }
+
+        private bool TryStageBlackBoxDumpSnapshot(
+            NativeArray<ProceduralBoneTelemetryEntry> telemetryRing,
+            NativeArray<int> telemetryCursor)
+        {
+            if (!telemetryRing.IsCreated ||
+                telemetryRing.Length < ProceduralBoneBlenderConstants.TelemetryCapacity ||
+                !telemetryCursor.IsCreated ||
+                telemetryCursor.Length <= 0)
+            {
+                return false;
+            }
+
+            int cursor = telemetryCursor[0];
+            int start = cursor >= ProceduralBoneBlenderConstants.TelemetryCapacity
+                ? ProceduralBoneMath.PositiveModulo(cursor - ProceduralBoneBlenderConstants.TelemetryCapacity, telemetryRing.Length)
+                : 0;
+            for (int i = 0; i < ProceduralBoneBlenderConstants.TelemetryCapacity; i++)
+            {
+                int sourceIndex = ProceduralBoneMath.PositiveModulo(start + i, telemetryRing.Length);
+                _blackBoxDumpSnapshot[i] = telemetryRing[sourceIndex];
+            }
+
+            _blackBoxDumpSnapshotCursor = cursor;
+            _blackBoxDumpSnapshotCount = ProceduralBoneBlenderConstants.TelemetryCapacity;
+            return true;
+        }
+
+        private static void WriteBlackBoxDumpWorker(object state)
+        {
+            ProceduralBoneBlenderRuntime runtime = state as ProceduralBoneBlenderRuntime;
+            if (runtime == null)
+                return;
+
+            try
+            {
+                runtime.TryWriteBlackBoxSnapshotCold();
+            }
+            finally
+            {
+                Volatile.Write(ref runtime._blackBoxDumpInFlight, 0);
+            }
+        }
+
+        private bool TryWriteBlackBoxSnapshotCold()
+        {
+            if (!ProceduralBoneBlenderLayout.Validate() ||
+                _blackBoxDumpSnapshot == null ||
+                _blackBoxDumpSnapshotCount < ProceduralBoneBlenderConstants.TelemetryCapacity)
+            {
+                return false;
+            }
+
+            try
+            {
+                string root = _blackBoxDumpRootCold;
+                if (root == null || root.Length == 0)
+                    root = ".";
+
+                string path = Path.Combine(root, ProceduralBoneBlenderConstants.DumpRelativePath);
+                string directory = Path.GetDirectoryName(path);
+                if (directory != null && directory.Length != 0)
+                    Directory.CreateDirectory(directory);
+
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(0x414E494D53484E42UL);
+                    writer.Write(1u);
+                    writer.Write(ProceduralBoneBlenderConstants.TelemetryEntryBytes);
+                    writer.Write(ProceduralBoneBlenderConstants.TelemetryCapacity);
+                    writer.Write(_blackBoxDumpSnapshotCursor);
+                    for (int i = 0; i < ProceduralBoneBlenderConstants.TelemetryCapacity; i++)
+                        WriteBlackBoxEntry(writer, _blackBoxDumpSnapshot[i]);
+                }
+
+                return true;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
+        }
+
+        private static void WriteBlackBoxEntry(BinaryWriter writer, ProceduralBoneTelemetryEntry entry)
+        {
+            writer.Write(entry.Frame);
+            writer.Write(entry.ActiveSkeletons);
+            writer.Write(entry.MatricesComputed);
+            writer.Write(entry.MatrixUploadCount);
+            writer.Write(entry.KinematicComputeTimeMs);
+            writer.Write(entry.StateHash);
+            writer.Write(entry.Flags);
+            writer.Write(entry.GlobalQualityWeight);
+            writer.Write(entry.MaxWaveSpeed);
+            writer.Write(entry.AverageActiveBones);
+            writer.Write(entry.InvalidMathCount);
+            writer.Write(entry.CulledSkeletons);
+            writer.Write(entry.LastRootLocal.x);
+            writer.Write(entry.LastRootLocal.y);
+            writer.Write(entry.LastRootLocal.z);
+            writer.Write(entry._pad0);
+        }
+
+        private bool TryEnsureBlackBoxDumpRootCold()
+        {
+            if (_blackBoxDumpRootCold != null && _blackBoxDumpRootCold.Length != 0)
+                return true;
+
+            string dataPath = Application.dataPath;
+            if (dataPath == null || dataPath.Length == 0)
+            {
+                _blackBoxDumpRootCold = ".";
+                return true;
+            }
+
+            try
+            {
+                _blackBoxDumpRootCold = Path.GetFullPath(Path.Combine(dataPath, ".."));
+                return _blackBoxDumpRootCold.Length != 0;
+            }
+            catch (ArgumentException)
+            {
+                _blackBoxDumpRootCold = ".";
+                return true;
+            }
+            catch (NotSupportedException)
+            {
+                _blackBoxDumpRootCold = ".";
+                return true;
+            }
         }
 
         private bool UploadMatricesToGpu()
@@ -1358,12 +1544,6 @@ namespace Hecton8.Animation.FaunaProcedural
             if (buffer.IsValid())
                 buffer.Release();
             buffer = null;
-        }
-
-        private static string BuildProjectRootForFaultDump()
-        {
-            string dataPath = Application.dataPath;
-            return dataPath == null || dataPath.Length == 0 ? "." : Path.GetFullPath(Path.Combine(dataPath, ".."));
         }
 
         private void OnDrawGizmosSelected()

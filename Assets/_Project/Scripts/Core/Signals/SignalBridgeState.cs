@@ -6,6 +6,9 @@ namespace Hecton8.Core
 {
     internal static class SignalBridgeState
     {
+        private const float MilliScale = 1000f;
+        private const float MaxMilliScalar = int.MaxValue / MilliScale;
+
         private static SurvivalVitalsChangedSignal s_latestSurvivalDeathSignal;
         private static int s_latestSurvivalDeathSignalSequence;
         private static int s_latestCraftingCompletedSignalSequence;
@@ -30,7 +33,7 @@ namespace Hecton8.Core
 
         public static void RecordTimeDilation(in TimeDilationSignal signal)
         {
-            Volatile.Write(ref s_timeDilationScalarMilli, (int)math.round(math.max(0f, signal.Scalar) * 1000f));
+            Volatile.Write(ref s_timeDilationScalarMilli, ToNonNegativeMilli(signal.Scalar, 1f));
             Volatile.Write(ref s_timeDilationSequence, unchecked((int)signal.Sequence));
         }
 
@@ -41,7 +44,7 @@ namespace Hecton8.Core
 
         public static void RecordBulletTimeVisual(in BulletTimeVisualSignal signal)
         {
-            Volatile.Write(ref s_bulletTimeVisualMilli, (int)math.round(math.saturate(signal.Intensity01) * 1000f));
+            Volatile.Write(ref s_bulletTimeVisualMilli, ToSaturatedMilli(signal.Intensity01));
         }
 
         public static CraftingCompletedSignal RecordCraftingCompleted(in CraftingCompletedSignal signal)
@@ -105,8 +108,24 @@ namespace Hecton8.Core
             if (amount <= 0)
                 return;
 
-            int next = unchecked(Volatile.Read(ref counter) + amount);
+            int current = Volatile.Read(ref counter);
+            int next = current > int.MaxValue - amount
+                ? int.MaxValue
+                : current + amount;
             Volatile.Write(ref counter, next);
+        }
+
+        private static int ToNonNegativeMilli(float value, float fallback)
+        {
+            float safeValue = math.isfinite(value) ? value : fallback;
+            safeValue = math.clamp(safeValue, 0f, MaxMilliScalar);
+            return (int)math.round(safeValue * MilliScale);
+        }
+
+        private static int ToSaturatedMilli(float value)
+        {
+            float safeValue = math.isfinite(value) ? math.saturate(value) : 0f;
+            return (int)math.round(safeValue * MilliScale);
         }
     }
 }

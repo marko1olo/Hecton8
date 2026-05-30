@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
@@ -21,13 +23,23 @@ namespace Hecton8.Editor.ModdingSDK
         private const int ToolSummaryLineCount = 16;
         private const int MaxFreshnessScanFiles = 512;
         private const int MaxGraphPreviewNodes = 256;
-        private const int MaxGraphPreviewBytes = 1048576;
+        private const long MaxAuthoringManifestPreviewBytes = 65536L;
+        private const long MaxGraphPreviewBytes = 262144L;
         private const int MaxAllowedOpcodePreviewRows = 512;
-        private const int MaxAllowedOpcodePreviewBytes = 1048576;
-        private const int MaxAuthoringDataPreviewBytes = 1048576;
+        private const long MaxAllowedOpcodePreviewBytes = 1048576L;
+        private const long MaxSettingsPreviewBytes = 262144L;
+        private const long MaxLocalePreviewBytes = 2097152L;
+        private const long MaxAssetManifestPreviewBytes = 262144L;
+        private const long MaxReviewManifestPreviewBytes = 1048576L;
         private const int MaxSettingsPreviewRows = 128;
         private const int MaxLocalePreviewStrings = 512;
         private const int MaxAssetPreviewEntries = 512;
+        private const int MaxSubmissionIntegrityEntries = 300;
+        private const long MaxSubmissionIntegrityEntryBytes = 4194304L;
+        private const long MaxSubmissionIntegrityReviewManifestBytes = 1048576L;
+        private const string SubmissionZipIntegrityVerifiedLabel = "Zip integrity: verified";
+        private const string SubmissionZipIntegrityInvalidLabel = "Zip integrity: invalid";
+        private static readonly UTF8Encoding StrictUtf8NoBom = new UTF8Encoding(false, true);
         private static readonly string[] RequiredStarterFiles =
         {
             "README.md",
@@ -64,6 +76,7 @@ namespace Hecton8.Editor.ModdingSDK
             "Tools/create_first_mod.ps1",
             "Tools/install_local_mod.ps1",
             "Tools/diagnose_local_mods.ps1",
+            "Tools/run_doctor.ps1",
             "Tools/create_asset_entry_snippet.ps1",
             "Tools/create_locale_entry_snippet.ps1",
             "Tools/create_graph_node_snippet.ps1",
@@ -74,6 +87,20 @@ namespace Hecton8.Editor.ModdingSDK
             "Tools/validate_structure.ps1",
             ".vscode/settings.json",
             ".vscode/tasks.json"
+        };
+        private static readonly string[] ReservedStarterTopLevelFolders =
+        {
+            "Content",
+            "Docs",
+            "Generated",
+            "Graphs",
+            "Locales",
+            "Reference",
+            "Reports",
+            "Schemas",
+            "Tables",
+            "Tools",
+            ".vscode"
         };
 
         private Vector2 _scrollPosition;
@@ -627,6 +654,9 @@ namespace Hecton8.Editor.ModdingSDK
 
                 if (GUILayout.Button("Validate Structure Only", GUILayout.Height(28f)))
                     RunStarterTool("Tools/validate_structure.ps1", string.Empty, true);
+
+                if (GUILayout.Button("Run Package Doctor", GUILayout.Height(28f)))
+                    RunPackageDoctor();
             }
 
             using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
@@ -639,6 +669,9 @@ namespace Hecton8.Editor.ModdingSDK
 
                 if (GUILayout.Button("Open Root Launcher", GUILayout.Height(28f)))
                     OpenRelativePath("ModdingSDK/ExternalStarterKit/h8mod.ps1");
+
+                if (GUILayout.Button("Open Doctor Tool", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Tools/run_doctor.ps1");
             }
             EditorGUI.EndDisabledGroup();
         }
@@ -868,6 +901,11 @@ namespace Hecton8.Editor.ModdingSDK
             RunStarterTool("Tools/diagnose_local_mods.ps1", arguments, false);
         }
 
+        private void RunPackageDoctor()
+        {
+            RunStarterTool("Tools/run_doctor.ps1", string.Empty, false);
+        }
+
         private void CreateOrRefreshStarterKit()
         {
             ModdingSdkHubWindow.CreateExternalStarterKit();
@@ -944,6 +982,7 @@ namespace Hecton8.Editor.ModdingSDK
             long totalBytes = 0L;
             DateTime newestWrite = DateTime.MinValue;
             StringBuilder details = new StringBuilder(512);
+            int reservedCaseVariantCount = CountReservedTopLevelCaseVariants(rootPath, details);
 
             for (int i = 0; i < RequiredStarterFiles.Length; i++)
             {
@@ -965,7 +1004,7 @@ namespace Hecton8.Editor.ModdingSDK
             }
 
             int missingCount = RequiredStarterFiles.Length - presentCount;
-            _starterHealthHasMissingFiles = missingCount > 0;
+            _starterHealthHasMissingFiles = missingCount > 0 || reservedCaseVariantCount > 0;
             StringBuilder summary = new StringBuilder(256);
             summary.Append("Required files: ").Append(presentCount).Append("/").Append(RequiredStarterFiles.Length);
             summary.AppendLine().Append("Starter bytes: ").Append(totalBytes);
@@ -975,6 +1014,8 @@ namespace Hecton8.Editor.ModdingSDK
                 summary.AppendLine().Append("Missing required files: ").Append(missingCount).Append(". Use Create/Refresh Starter Kit.");
             else
                 summary.AppendLine().Append("Missing required files: 0. Run Validate Structure Only for contract proof.");
+            if (reservedCaseVariantCount > 0)
+                summary.AppendLine().Append("Reserved folder casing mismatches: ").Append(reservedCaseVariantCount).Append(". Rename to exact starter contract casing.");
 
             _starterHealthSummary = summary.ToString();
             _starterHealthDetails = details.ToString();
@@ -1002,7 +1043,10 @@ namespace Hecton8.Editor.ModdingSDK
 
             try
             {
-                AuthoringManifest manifest = JsonUtility.FromJson<AuthoringManifest>(File.ReadAllText(authoringPath));
+                AuthoringManifest manifest = ReadJsonFileCapped<AuthoringManifest>(
+                    authoringPath,
+                    MaxAuthoringManifestPreviewBytes,
+                    "mod.h8manifest.json");
                 if (manifest == null)
                 {
                     _capabilityMatrixSummary = "Capability Matrix failed: mod.h8manifest.json parsed to null.";
@@ -1126,7 +1170,10 @@ namespace Hecton8.Editor.ModdingSDK
                     return;
                 }
 
-                GraphDocument graph = JsonUtility.FromJson<GraphDocument>(File.ReadAllText(graphPath));
+                GraphDocument graph = ReadJsonFileCapped<GraphDocument>(
+                    graphPath,
+                    MaxGraphPreviewBytes,
+                    "Graphs/main.h8graph.json");
                 if (graph == null)
                 {
                     _graphContractPreviewSummary = "Graph Contract Preview failed: graph JSON parsed to null.";
@@ -1283,14 +1330,309 @@ namespace Hecton8.Editor.ModdingSDK
                 else
                     builder.AppendLine().Append("Package freshness: current against review manifest.");
 
+                if (reviewExists)
+                {
+                    if (TryBuildSubmissionZipIntegritySummary(newestPackage.FullName, reviewPath, out string integritySummary, out bool integrityWarning))
+                    {
+                        builder.AppendLine().Append(integritySummary);
+                        _submissionWarning = staleAgainstReview || integrityWarning;
+                    }
+                    else
+                    {
+                        builder.AppendLine().Append(integritySummary);
+                        _submissionWarning = true;
+                    }
+                }
+                else
+                {
+                    _submissionWarning = true;
+                }
+
                 _submissionSummary = builder.ToString();
-                _submissionWarning = !reviewExists || staleAgainstReview;
             }
             catch (Exception exception)
             {
                 _submissionSummary = "Submission package status failed: " + exception.Message;
                 _submissionWarning = true;
             }
+        }
+
+        private static bool TryBuildSubmissionZipIntegritySummary(
+            string packagePath,
+            string reviewPath,
+            out string summary,
+            out bool warning)
+        {
+            warning = true;
+            try
+            {
+                FileInfo reviewFileInfo = new FileInfo(reviewPath);
+                if (reviewFileInfo.Length > MaxSubmissionIntegrityReviewManifestBytes)
+                {
+                    summary = SubmissionZipIntegrityInvalidLabel +
+                        ". Review manifest exceeds byte cap " + MaxSubmissionIntegrityReviewManifestBytes + ".";
+                    return true;
+                }
+
+                ReviewManifest review = ReadJsonFileCapped<ReviewManifest>(
+                    reviewPath,
+                    MaxReviewManifestPreviewBytes,
+                    "Reports/review_manifest.json");
+                if (review == null || review.Files == null)
+                {
+                    summary = "Zip integrity: unavailable. Review manifest has no Files array.";
+                    return false;
+                }
+
+                Dictionary<string, SubmissionExpectedEntry> expectedEntries =
+                    new Dictionary<string, SubmissionExpectedEntry>(review.Files.Length + 1, StringComparer.Ordinal);
+                Dictionary<string, bool> expectedCaseFoldPaths =
+                    new Dictionary<string, bool>(review.Files.Length + 1, StringComparer.OrdinalIgnoreCase);
+                int unsafeReviewPathCount = 0;
+                int duplicateReviewPathCount = 0;
+                int invalidReviewRecordCount = 0;
+                for (int i = 0; i < review.Files.Length; i++)
+                {
+                    ReviewFileEntry file = review.Files[i];
+                    string relativePath = NormalizeZipEntryPath(file != null ? file.Path : string.Empty);
+                    if (!IsSafeReviewedSourceZipEntry(relativePath))
+                    {
+                        unsafeReviewPathCount++;
+                        continue;
+                    }
+
+                    if (file.Bytes < 0L ||
+                        file.Bytes > MaxSubmissionIntegrityEntryBytes ||
+                        !IsSha256Hex(file.Sha256))
+                    {
+                        invalidReviewRecordCount++;
+                        continue;
+                    }
+
+                    if (expectedEntries.ContainsKey(relativePath) || expectedCaseFoldPaths.ContainsKey(relativePath))
+                    {
+                        duplicateReviewPathCount++;
+                        continue;
+                    }
+
+                    expectedEntries[relativePath] = new SubmissionExpectedEntry(
+                        relativePath,
+                        file.Bytes,
+                        (file.Sha256 ?? string.Empty).ToLowerInvariant());
+                    expectedCaseFoldPaths.Add(relativePath, true);
+                }
+
+                expectedEntries["Reports/review_manifest.json"] = new SubmissionExpectedEntry(
+                    "Reports/review_manifest.json",
+                    reviewFileInfo.Length,
+                    ComputeFileSha256(reviewPath));
+                expectedCaseFoldPaths["Reports/review_manifest.json"] = true;
+
+                int entryCount = 0;
+                int checkedCount = 0;
+                int missingCount = 0;
+                int changedCount = 0;
+                int extraCount = 0;
+                int unsafeEntryCount = 0;
+                int duplicateEntryCount = 0;
+                Dictionary<string, ZipArchiveEntry> zipEntries =
+                    new Dictionary<string, ZipArchiveEntry>(Math.Max(1, expectedEntries.Count), StringComparer.Ordinal);
+                Dictionary<string, bool> zipCaseFoldPaths =
+                    new Dictionary<string, bool>(Math.Max(1, expectedEntries.Count), StringComparer.OrdinalIgnoreCase);
+
+                using (FileStream packageStream = File.Open(packagePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (ZipArchive archive = new ZipArchive(packageStream, ZipArchiveMode.Read, false))
+                {
+                    for (int i = 0; i < archive.Entries.Count; i++)
+                    {
+                        ZipArchiveEntry entry = archive.Entries[i];
+                        if (entry == null ||
+                            string.IsNullOrWhiteSpace(entry.FullName) ||
+                            entry.FullName.EndsWith("/", StringComparison.Ordinal))
+                        {
+                            continue;
+                        }
+
+                        entryCount++;
+                        if (entryCount > MaxSubmissionIntegrityEntries)
+                            continue;
+
+                        string relativePath = NormalizeZipEntryPath(entry.FullName);
+                        if (!IsSafeSubmissionZipEntry(relativePath))
+                        {
+                            unsafeEntryCount++;
+                            continue;
+                        }
+
+                        if (zipEntries.ContainsKey(relativePath) || zipCaseFoldPaths.ContainsKey(relativePath))
+                        {
+                            duplicateEntryCount++;
+                            continue;
+                        }
+
+                        zipEntries.Add(relativePath, entry);
+                        zipCaseFoldPaths.Add(relativePath, true);
+                    }
+
+                    foreach (KeyValuePair<string, ZipArchiveEntry> entryPair in zipEntries)
+                    {
+                        if (!expectedEntries.ContainsKey(entryPair.Key))
+                            extraCount++;
+                    }
+
+                    foreach (KeyValuePair<string, SubmissionExpectedEntry> expectedPair in expectedEntries)
+                    {
+                        SubmissionExpectedEntry expected = expectedPair.Value;
+                        if (!zipEntries.TryGetValue(expected.Path, out ZipArchiveEntry entry))
+                        {
+                            missingCount++;
+                            continue;
+                        }
+
+                        if (entry.Length != expected.Bytes || entry.Length > MaxSubmissionIntegrityEntryBytes)
+                        {
+                            changedCount++;
+                            continue;
+                        }
+
+                        string entryHash = ComputeZipEntrySha256(entry);
+                        if (!string.Equals(entryHash, expected.Sha256, StringComparison.Ordinal))
+                        {
+                            changedCount++;
+                            continue;
+                        }
+
+                        checkedCount++;
+                    }
+                }
+
+                bool verified =
+                    unsafeReviewPathCount == 0 &&
+                    duplicateReviewPathCount == 0 &&
+                    invalidReviewRecordCount == 0 &&
+                    entryCount <= MaxSubmissionIntegrityEntries &&
+                    unsafeEntryCount == 0 &&
+                    duplicateEntryCount == 0 &&
+                    extraCount == 0 &&
+                    missingCount == 0 &&
+                    changedCount == 0;
+                warning = !verified;
+                summary = (verified ? SubmissionZipIntegrityVerifiedLabel : SubmissionZipIntegrityInvalidLabel) +
+                    ". Checked entries: " + checkedCount + "/" + entryCount +
+                    ". Missing=" + missingCount +
+                    " Changed=" + changedCount +
+                    " Extra=" + extraCount +
+                    " Unsafe=" + (unsafeEntryCount + unsafeReviewPathCount) +
+                    " Duplicate=" + (duplicateEntryCount + duplicateReviewPathCount) +
+                    " InvalidReview=" + invalidReviewRecordCount +
+                    ". Caps: entries " + MaxSubmissionIntegrityEntries +
+                    ", entry bytes " + MaxSubmissionIntegrityEntryBytes +
+                    ", review manifest bytes " + MaxSubmissionIntegrityReviewManifestBytes +
+                    ". Path match: case-exact.";
+                return true;
+            }
+            catch (Exception exception)
+            {
+                summary = "Zip integrity: failed. " + exception.Message;
+                warning = true;
+                return false;
+            }
+        }
+
+        private static bool IsSafeReviewedSourceZipEntry(string relativePath)
+        {
+            return IsSafeSubmissionZipEntry(relativePath) &&
+                   !relativePath.StartsWith("Reports/", StringComparison.Ordinal);
+        }
+
+        private static bool IsSafeSubmissionZipEntry(string relativePath)
+        {
+            if (string.IsNullOrWhiteSpace(relativePath))
+                return false;
+
+            if (Path.IsPathRooted(relativePath) || relativePath.StartsWith("/", StringComparison.Ordinal) || relativePath.Contains(":"))
+                return false;
+
+            if (relativePath.StartsWith("Generated/", StringComparison.Ordinal))
+                return false;
+
+            if (relativePath.StartsWith("Generated/", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            if (relativePath.StartsWith("Reports/", StringComparison.Ordinal) &&
+                !relativePath.Equals("Reports/review_manifest.json", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (relativePath.StartsWith("Reports/", StringComparison.OrdinalIgnoreCase) &&
+                !relativePath.StartsWith("Reports/", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            string[] segments = relativePath.Split('/');
+            for (int i = 0; i < segments.Length; i++)
+            {
+                string segment = segments[i];
+                if (string.IsNullOrWhiteSpace(segment) ||
+                    string.Equals(segment, ".", StringComparison.Ordinal) ||
+                    string.Equals(segment, "..", StringComparison.Ordinal))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static string NormalizeZipEntryPath(string path)
+        {
+            string normalized = (path ?? string.Empty).Replace('\\', '/');
+            while (normalized.StartsWith("/", StringComparison.Ordinal))
+                normalized = normalized.Substring(1);
+
+            return normalized;
+        }
+
+        private static bool IsSha256Hex(string hash)
+        {
+            if (hash == null || hash.Length != 64)
+                return false;
+
+            for (int i = 0; i < hash.Length; i++)
+            {
+                char c = hash[i];
+                bool digit = c >= '0' && c <= '9';
+                bool lower = c >= 'a' && c <= 'f';
+                if (!digit && !lower)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static string ComputeFileSha256(string path)
+        {
+            using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (SHA256 sha = SHA256.Create())
+                return ToLowerHex(sha.ComputeHash(stream));
+        }
+
+        private static string ComputeZipEntrySha256(ZipArchiveEntry entry)
+        {
+            using (Stream stream = entry.Open())
+            using (SHA256 sha = SHA256.Create())
+                return ToLowerHex(sha.ComputeHash(stream));
+        }
+
+        private static string ToLowerHex(byte[] hash)
+        {
+            StringBuilder builder = new StringBuilder(hash.Length * 2);
+            for (int i = 0; i < hash.Length; i++)
+                builder.Append(hash[i].ToString("x2", global::System.Globalization.CultureInfo.InvariantCulture));
+
+            return builder.ToString();
         }
 
         private void LoadAuthoringDataPreview()
@@ -1328,7 +1670,7 @@ namespace Hecton8.Editor.ModdingSDK
 
             try
             {
-                if (new FileInfo(settingsPath).Length > MaxAuthoringDataPreviewBytes)
+                if (new FileInfo(settingsPath).Length > MaxSettingsPreviewBytes)
                 {
                     _authoringDataPreviewSummary = "Authoring Data Preview unavailable: Tables/settings.h8table.json exceeds preview byte cap.";
                     _authoringDataPreviewDetails = string.Empty;
@@ -1336,7 +1678,7 @@ namespace Hecton8.Editor.ModdingSDK
                     return;
                 }
 
-                if (new FileInfo(localePath).Length > MaxAuthoringDataPreviewBytes)
+                if (new FileInfo(localePath).Length > MaxLocalePreviewBytes)
                 {
                     _authoringDataPreviewSummary = "Authoring Data Preview unavailable: Locales/en.h8loc.json exceeds preview byte cap.";
                     _authoringDataPreviewDetails = string.Empty;
@@ -1344,7 +1686,7 @@ namespace Hecton8.Editor.ModdingSDK
                     return;
                 }
 
-                if (new FileInfo(assetsPath).Length > MaxAuthoringDataPreviewBytes)
+                if (new FileInfo(assetsPath).Length > MaxAssetManifestPreviewBytes)
                 {
                     _authoringDataPreviewSummary = "Authoring Data Preview unavailable: Content/assets.h8manifest.json exceeds preview byte cap.";
                     _authoringDataPreviewDetails = string.Empty;
@@ -1352,9 +1694,19 @@ namespace Hecton8.Editor.ModdingSDK
                     return;
                 }
 
-                SettingsTableDocument settings = JsonUtility.FromJson<SettingsTableDocument>(File.ReadAllText(settingsPath));
-                LocaleDocument locale = JsonUtility.FromJson<LocaleDocument>(File.ReadAllText(localePath));
-                AssetManifestDocument assets = JsonUtility.FromJson<AssetManifestDocument>(File.ReadAllText(assetsPath));
+                SettingsTableDocument settings = ReadJsonFileCapped<SettingsTableDocument>(
+                    settingsPath,
+                    MaxSettingsPreviewBytes,
+                    "Tables/settings.h8table.json");
+                LocaleDocument locale = ReadJsonFileCapped<LocaleDocument>(
+                    localePath,
+                    MaxLocalePreviewBytes,
+                    "Locales/en.h8loc.json",
+                    out string localeJson);
+                AssetManifestDocument assets = ReadJsonFileCapped<AssetManifestDocument>(
+                    assetsPath,
+                    MaxAssetManifestPreviewBytes,
+                    "Content/assets.h8manifest.json");
                 SettingsRow[] rows = settings != null && settings.Rows != null ? settings.Rows : new SettingsRow[0];
                 AssetEntry[] assetEntries = assets != null && assets.Assets != null ? assets.Assets : new AssetEntry[0];
                 HashSet<string> settingIds = new HashSet<string>(StringComparer.Ordinal);
@@ -1490,7 +1842,7 @@ namespace Hecton8.Editor.ModdingSDK
                 }
 
                 ValidateLocaleStringsPreview(
-                    File.ReadAllText(localePath),
+                    localeJson,
                     details,
                     out localeStringCount,
                     out invalidLocaleKeys,
@@ -1533,12 +1885,22 @@ namespace Hecton8.Editor.ModdingSDK
             if (!File.Exists(authoringPath))
                 return -1;
 
-            AuthoringManifest manifest = JsonUtility.FromJson<AuthoringManifest>(File.ReadAllText(authoringPath));
+            AuthoringManifest manifest = ReadJsonFileCapped<AuthoringManifest>(
+                authoringPath,
+                MaxAuthoringManifestPreviewBytes,
+                "mod.h8manifest.json");
             return manifest != null && manifest.Budgets != null ? manifest.Budgets.MaxEnvelopesPerFrame : -1;
         }
 
         private static AllowedGraphOpcodeSet LoadAllowedGraphOpcodes(string allowedOpcodesPath)
         {
+            FileInfo allowedOpcodesInfo = new FileInfo(allowedOpcodesPath);
+            if (!allowedOpcodesInfo.Exists)
+                throw new FileNotFoundException("Reference/allowed_opcodes.csv is missing.", allowedOpcodesPath);
+
+            if (allowedOpcodesInfo.Length > MaxAllowedOpcodePreviewBytes)
+                throw new InvalidDataException("Reference/allowed_opcodes.csv exceeds preview byte cap " + MaxAllowedOpcodePreviewBytes + ".");
+
             AllowedGraphOpcodeSet result = new AllowedGraphOpcodeSet();
             int lineCount = 0;
             foreach (string line in File.ReadLines(allowedOpcodesPath))
@@ -1907,6 +2269,62 @@ namespace Hecton8.Editor.ModdingSDK
             return false;
         }
 
+        private static string ReadTextFileCapped(string path, long maxBytes, string label)
+        {
+            FileInfo info = new FileInfo(path);
+            if (!info.Exists)
+                throw new FileNotFoundException(label + " is missing.", path);
+
+            if (maxBytes <= 0L || maxBytes > int.MaxValue - 1L)
+                throw new InvalidDataException(label + " has invalid Workbench byte cap " + maxBytes + ".");
+
+            if (info.Length > maxBytes)
+                throw new InvalidDataException(label + " exceeds Workbench byte cap " + maxBytes + ".");
+
+            int byteLimit = (int)maxBytes;
+            byte[] bytes = new byte[byteLimit + 1];
+            int totalBytes = 0;
+            const int ChunkBytes = 8192;
+
+            using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                while (true)
+                {
+                    int remaining = bytes.Length - totalBytes;
+                    if (remaining <= 0)
+                        throw new InvalidDataException(label + " exceeds Workbench byte cap " + maxBytes + ".");
+
+                    int read = stream.Read(bytes, totalBytes, Math.Min(remaining, ChunkBytes));
+                    if (read == 0)
+                        break;
+
+                    totalBytes += read;
+                    if (totalBytes > byteLimit)
+                        throw new InvalidDataException(label + " exceeds Workbench byte cap " + maxBytes + ".");
+                }
+            }
+
+            try
+            {
+                return StrictUtf8NoBom.GetString(bytes, 0, totalBytes);
+            }
+            catch (DecoderFallbackException ex)
+            {
+                throw new InvalidDataException(label + " is not strict UTF-8.", ex);
+            }
+        }
+
+        private static T ReadJsonFileCapped<T>(string path, long maxBytes, string label)
+        {
+            return JsonUtility.FromJson<T>(ReadTextFileCapped(path, maxBytes, label));
+        }
+
+        private static T ReadJsonFileCapped<T>(string path, long maxBytes, string label, out string json)
+        {
+            json = ReadTextFileCapped(path, maxBytes, label);
+            return JsonUtility.FromJson<T>(json);
+        }
+
         private void LoadIdentity()
         {
             string authoringPath = ResolveProjectPath("ModdingSDK/ExternalStarterKit/mod.h8manifest.json");
@@ -1921,7 +2339,10 @@ namespace Hecton8.Editor.ModdingSDK
 
             try
             {
-                AuthoringManifest manifest = JsonUtility.FromJson<AuthoringManifest>(File.ReadAllText(authoringPath));
+                AuthoringManifest manifest = ReadJsonFileCapped<AuthoringManifest>(
+                    authoringPath,
+                    MaxAuthoringManifestPreviewBytes,
+                    "mod.h8manifest.json");
                 _modId = manifest.Id ?? string.Empty;
                 _displayName = manifest.DisplayName ?? string.Empty;
                 _author = manifest.Author ?? string.Empty;
@@ -1952,7 +2373,10 @@ namespace Hecton8.Editor.ModdingSDK
 
             try
             {
-                ReviewManifest review = JsonUtility.FromJson<ReviewManifest>(File.ReadAllText(reviewPath));
+                ReviewManifest review = ReadJsonFileCapped<ReviewManifest>(
+                    reviewPath,
+                    MaxReviewManifestPreviewBytes,
+                    "Reports/review_manifest.json");
                 ReviewIdentity identity = review.Identity ?? new ReviewIdentity();
                 StringBuilder builder = new StringBuilder(256);
                 builder.Append("Id: ").Append(!string.IsNullOrWhiteSpace(identity.Id) ? identity.Id : review.RootId);
@@ -2050,8 +2474,33 @@ namespace Hecton8.Editor.ModdingSDK
 
         private static bool IsReviewSourcePath(string relativePath)
         {
-            return !relativePath.StartsWith("Generated/", StringComparison.OrdinalIgnoreCase) &&
-                   !relativePath.StartsWith("Reports/", StringComparison.OrdinalIgnoreCase);
+            return !relativePath.StartsWith("Generated/", StringComparison.Ordinal) &&
+                   !relativePath.StartsWith("Reports/", StringComparison.Ordinal);
+        }
+
+        private static int CountReservedTopLevelCaseVariants(string rootPath, StringBuilder details)
+        {
+            if (!Directory.Exists(rootPath))
+                return 0;
+
+            int count = 0;
+            foreach (string directory in Directory.EnumerateDirectories(rootPath, "*", SearchOption.TopDirectoryOnly))
+            {
+                string name = Path.GetFileName(directory);
+                for (int i = 0; i < ReservedStarterTopLevelFolders.Length; i++)
+                {
+                    string expected = ReservedStarterTopLevelFolders[i];
+                    if (string.Equals(name, expected, StringComparison.OrdinalIgnoreCase) &&
+                        !string.Equals(name, expected, StringComparison.Ordinal))
+                    {
+                        count++;
+                        details.Append("CASE_MISMATCH ").Append(name).Append(" -> ").Append(expected).AppendLine();
+                        break;
+                    }
+                }
+            }
+
+            return count;
         }
 
         private void OpenSubmissionPackage()
@@ -2295,6 +2744,20 @@ namespace Hecton8.Editor.ModdingSDK
             return "\"" + (value ?? string.Empty).Replace("\"", "\\\"") + "\"";
         }
 
+        private readonly struct SubmissionExpectedEntry
+        {
+            public readonly string Path;
+            public readonly long Bytes;
+            public readonly string Sha256;
+
+            public SubmissionExpectedEntry(string path, long bytes, string sha256)
+            {
+                Path = path;
+                Bytes = bytes;
+                Sha256 = sha256;
+            }
+        }
+
         [Serializable]
         private sealed class AuthoringManifest
         {
@@ -2386,8 +2849,17 @@ namespace Hecton8.Editor.ModdingSDK
         {
             public string RootId = string.Empty;
             public ReviewIdentity Identity = new ReviewIdentity();
+            public ReviewFileEntry[] Files = new ReviewFileEntry[0];
             public int FileCount = 0;
             public long TotalBytes = 0L;
+        }
+
+        [Serializable]
+        private sealed class ReviewFileEntry
+        {
+            public string Path = string.Empty;
+            public long Bytes = 0L;
+            public string Sha256 = string.Empty;
         }
 
         [Serializable]

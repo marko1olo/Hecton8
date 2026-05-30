@@ -341,6 +341,7 @@ namespace Hecton8.AI.Cognition.Editor
             AssertOffset<ApexInfluenceNode>(nameof(ApexInfluenceNode.FractionalWeight01), 40);
             AssertOffset<ApexInfluenceNode>(nameof(ApexInfluenceNode.NodeIndex), 44);
             AssertOffset<ApexInfluenceNode>(nameof(ApexInfluenceNode.Flags), 48);
+            AssertOffset<ApexInfluenceNode>(nameof(ApexInfluenceNode.SurvivalNodeBudgetPressureQ8), 52);
             AssertOffset<ApexInfluenceNode>("_pad0", 52);
             AssertOffset<ApexInfluenceNode>("_pad1", 56);
             AssertOffset<ApexInfluenceNode>("_pad2", 60);
@@ -370,6 +371,7 @@ namespace Hecton8.AI.Cognition.Editor
             AssertOffset<ApexBrainOutputDTO>(nameof(ApexBrainOutputDTO.Slot), 152);
             AssertOffset<ApexBrainOutputDTO>(nameof(ApexBrainOutputDTO.Phase), 154);
             AssertOffset<ApexBrainOutputDTO>(nameof(ApexBrainOutputDTO.Flags), 155);
+            AssertOffset<ApexBrainOutputDTO>(nameof(ApexBrainOutputDTO.SurvivalNodeBudgetPressureQ8), 156);
             AssertOffset<ApexBrainOutputDTO>("_pad0", 156);
             AssertOffset<ApexBrainOutputDTO>("_pad1", 157);
             AssertOffset<ApexBrainOutputDTO>("_pad2", 158);

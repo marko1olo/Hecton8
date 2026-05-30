@@ -99,6 +99,7 @@ namespace Hecton8.Construction
         private byte[] _dumpBytes;
         private string _dumpPath;
         private ulong _activeMutationGuardMask;
+        private IDataVault _activeMutationGuardVault;
         private long _solverScheduleTimestamp;
         private uint _frameIndex;
         private int _dumpByteCount;
@@ -371,7 +372,7 @@ namespace Hecton8.Construction
             if (!_buffersReady)
                 return false;
 
-            if (!TryAcquireLocalDrainageMutationGuard(out ulong guardMask))
+            if (!TryAcquireLocalDrainageMutationGuard(out ulong guardMask, out IDataVault guardVault))
                 return false;
 
             try
@@ -382,7 +383,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                ReleaseLocalDrainageMutationGuard(guardMask);
+                ReleaseLocalDrainageMutationGuard(guardVault, guardMask);
             }
         }
 #endif
@@ -880,10 +881,12 @@ namespace Hecton8.Construction
             if (_activeMutationGuardMask != 0UL)
                 return true;
 
-            if (_vault == null || !_vault.TryAcquireMutationGuard(DrainageVaultMutationGuardMask))
+            IDataVault vault = _vault;
+            if (vault == null || !vault.TryAcquireMutationGuard(DrainageVaultMutationGuardMask))
                 return false;
 
             _activeMutationGuardMask = DrainageVaultMutationGuardMask;
+            _activeMutationGuardVault = vault;
             return true;
         }
 
@@ -892,16 +895,19 @@ namespace Hecton8.Construction
             return TryAcquireDrainageMutationGuard();
         }
 
-        private bool TryAcquireLocalDrainageMutationGuard(out ulong guardMask)
+        private bool TryAcquireLocalDrainageMutationGuard(out ulong guardMask, out IDataVault guardVault)
         {
             guardMask = 0UL;
-            if (_vault == null || _activeMutationGuardMask != 0UL)
+            guardVault = null;
+            IDataVault vault = _vault;
+            if (vault == null || _activeMutationGuardMask != 0UL)
                 return false;
 
-            if (!_vault.TryAcquireMutationGuard(DrainageVaultMutationGuardMask))
+            if (!vault.TryAcquireMutationGuard(DrainageVaultMutationGuardMask))
                 return false;
 
             guardMask = DrainageVaultMutationGuardMask;
+            guardVault = vault;
             return true;
         }
 
@@ -938,15 +944,17 @@ namespace Hecton8.Construction
         private void ReleaseDrainageMutationGuard()
         {
             ulong guardMask = _activeMutationGuardMask;
+            IDataVault vault = _activeMutationGuardVault;
             if (guardMask != 0UL)
-                _vault?.ReleaseMutationGuard(guardMask);
+                vault?.ReleaseMutationGuard(guardMask);
             _activeMutationGuardMask = 0UL;
+            _activeMutationGuardVault = null;
         }
 
-        private void ReleaseLocalDrainageMutationGuard(ulong guardMask)
+        private static void ReleaseLocalDrainageMutationGuard(IDataVault guardVault, ulong guardMask)
         {
             if (guardMask != 0UL)
-                _vault?.ReleaseMutationGuard(guardMask);
+                guardVault?.ReleaseMutationGuard(guardMask);
         }
 
         private void ResetFrameCounters(NativeArray<int> counters, int nodeCount, int edgeCount)
@@ -974,7 +982,7 @@ namespace Hecton8.Construction
 
         private void InitializeTuningIfNeeded()
         {
-            if (!TryAcquireLocalDrainageMutationGuard(out ulong guardMask))
+            if (!TryAcquireLocalDrainageMutationGuard(out ulong guardMask, out IDataVault guardVault))
                 return;
 
             try
@@ -991,7 +999,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                ReleaseLocalDrainageMutationGuard(guardMask);
+                ReleaseLocalDrainageMutationGuard(guardVault, guardMask);
             }
         }
 
@@ -1240,7 +1248,7 @@ namespace Hecton8.Construction
             if (_solverScheduled)
                 return false;
 
-            if (!TryAcquireLocalDrainageMutationGuard(out ulong guardMask))
+            if (!TryAcquireLocalDrainageMutationGuard(out ulong guardMask, out IDataVault guardVault))
                 return false;
 
             try
@@ -1256,7 +1264,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                ReleaseLocalDrainageMutationGuard(guardMask);
+                ReleaseLocalDrainageMutationGuard(guardVault, guardMask);
             }
         }
 
@@ -1480,6 +1488,7 @@ namespace Hecton8.Construction
             _solverHandle = default;
             _mockSeedHandle = default;
             _activeMutationGuardMask = 0UL;
+            _activeMutationGuardVault = null;
             _solverScheduleTimestamp = 0L;
             _frameIndex = 0u;
             _flowBufferWriteIndex = 0;

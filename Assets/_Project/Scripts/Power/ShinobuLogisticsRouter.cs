@@ -412,12 +412,12 @@ namespace Hecton8.Power
             _active = this;
 #if UNITY_EDITOR
             _csvPath = ResolveCsvPath();
+            TryReloadCsvOverridesWithGuard();
 #endif
         }
 
         public void SlowTick(float now)
         {
-            EnsureInitialized();
             if (!_initialized || _hasFatalLayoutFault)
                 return;
             if (!RefreshVaultAliases())
@@ -435,9 +435,6 @@ namespace Hecton8.Power
                 TryConsumeStateSignals();
                 TryConsumeDockingSignals();
                 RefreshHardwareCadence();
-#if UNITY_EDITOR
-                TryReloadCsvOverrides();
-#endif
 
                 if (!_hasGraph)
                     BuildEmergencyMockGraph();
@@ -1197,7 +1194,7 @@ namespace Hecton8.Power
                 return;
             }
 
-            if (WfcOutpostGridRegistry.TryGetGrid(latest.GridHandle, out WfcOutpostGridLease lease))
+            if (WfcOutpostGridRegistry.TryAcquireGridLease(latest.GridHandle, out WfcOutpostGridLease lease))
             {
                 try
                 {
@@ -1807,6 +1804,24 @@ namespace Hecton8.Power
         }
 
 #if UNITY_EDITOR
+        private void TryReloadCsvOverridesWithGuard()
+        {
+            if (!_initialized || _hasFatalLayoutFault)
+                return;
+
+            if (!TryAcquireRouterMutationGuard())
+                return;
+
+            try
+            {
+                TryReloadCsvOverrides();
+            }
+            finally
+            {
+                ReleaseRouterMutationGuard();
+            }
+        }
+
         private void TryReloadCsvOverrides()
         {
             string path = _csvPath;
@@ -1923,7 +1938,9 @@ namespace Hecton8.Power
                     index++;
             }
 
-            SetTuning(tuning);
+            tuning = SanitizeTuning(tuning);
+            _offlineTuning = tuning;
+            WriteNative(_tuning, 0, tuning);
             ParseComponentSpecs(length);
         }
 

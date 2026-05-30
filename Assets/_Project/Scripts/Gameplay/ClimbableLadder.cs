@@ -14,7 +14,19 @@ namespace Hecton8.Gameplay
     [RequireComponent(typeof(Collider))]
     public sealed class ClimbableLadder : MonoBehaviour, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
+        private const int ActiveLadderRegistryCapacity = 128;
         private const string DefaultInteractText = "Climb Ladder";
+        private static readonly ClimbableLadder[] s_activeLadders = new ClimbableLadder[ActiveLadderRegistryCapacity];
+        private static int s_activeLadderCount;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            for (int i = 0; i < s_activeLadderCount; i++)
+                s_activeLadders[i] = null;
+
+            s_activeLadderCount = 0;
+        }
 
         [Header("Transforms")]
         [Tooltip("Transform where player enters the ladder.")]
@@ -39,8 +51,10 @@ namespace Hecton8.Gameplay
 
         private Transform _transform;
         private Collider _collider;
+        private int _colliderInstanceId;
         private bool _isTransitioning;
         private bool _hotSwapRegistered;
+        private bool _registeredActiveLadder;
         private IAudioService _audioService;
         private ILocalizationTextReadModel _localizationManager;
         private const int InteractTextBufferCapacity = 96;
@@ -51,10 +65,32 @@ namespace Hecton8.Gameplay
         public Transform EntryPoint => entryPoint;
         public Transform ExitPoint => exitPoint;
 
+        internal static bool TryGetByColliderInstanceId(int colliderInstanceId, out ClimbableLadder ladder)
+        {
+            for (int i = 0; i < s_activeLadderCount; i++)
+            {
+                ClimbableLadder candidate = s_activeLadders[i];
+                if (candidate == null || candidate._colliderInstanceId == 0)
+                    continue;
+
+                if (candidate._colliderInstanceId != colliderInstanceId)
+                    continue;
+
+                ladder = candidate;
+                return true;
+            }
+
+            ladder = null;
+            return false;
+        }
+
         private void Awake()
         {
             _transform = transform;
             TryGetComponent(out _collider);
+            _colliderInstanceId = _collider != null
+                ? unchecked((int)EntityId.ToULong(_collider.GetEntityId()))
+                : 0;
 
             if (_collider != null)
             {
@@ -77,6 +113,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            RegisterActiveLadder();
             LocalizationEvents.RegisterLanguageListener(this);
             TryRegisterHotSwap();
             CacheRegistryServicesCold();
@@ -86,6 +123,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            UnregisterActiveLadder();
             InteractableRegistry.InvalidateTree(this);
             TryUnregisterHotSwap();
             LocalizationEvents.UnregisterLanguageListener(this);
@@ -93,7 +131,50 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            UnregisterActiveLadder();
             InteractableRegistry.InvalidateTree(this);
+        }
+
+        private void RegisterActiveLadder()
+        {
+            if (_registeredActiveLadder)
+                return;
+
+            for (int i = 0; i < s_activeLadderCount; i++)
+            {
+                if (ReferenceEquals(s_activeLadders[i], this))
+                {
+                    _registeredActiveLadder = true;
+                    return;
+                }
+            }
+
+            if (s_activeLadderCount >= s_activeLadders.Length)
+                return;
+
+            s_activeLadders[s_activeLadderCount] = this;
+            s_activeLadderCount++;
+            _registeredActiveLadder = true;
+        }
+
+        private void UnregisterActiveLadder()
+        {
+            if (!_registeredActiveLadder)
+                return;
+
+            for (int i = s_activeLadderCount - 1; i >= 0; i--)
+            {
+                if (!ReferenceEquals(s_activeLadders[i], this))
+                    continue;
+
+                int lastIndex = s_activeLadderCount - 1;
+                s_activeLadders[i] = s_activeLadders[lastIndex];
+                s_activeLadders[lastIndex] = null;
+                s_activeLadderCount--;
+                break;
+            }
+
+            _registeredActiveLadder = false;
         }
 
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)

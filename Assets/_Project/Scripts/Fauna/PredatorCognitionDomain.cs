@@ -2886,7 +2886,6 @@ namespace Hecton8.AI
 
         internal static bool TryGetApexCortexTuning(out ApexCortexTuningSnapshot snapshot)
         {
-            EnsureInitialized();
             return TryReadApexCortexTuningNoEnsure(out snapshot);
         }
 
@@ -2903,7 +2902,6 @@ namespace Hecton8.AI
 
         internal static bool TryGetMesofaunaTuning(out MesofaunaTuningDTO tuning)
         {
-            EnsureInitialized();
             tuning = default;
             if (!_mesofaunaTuning.IsCreated || _mesofaunaTuning.Length <= 0)
                 return false;
@@ -2948,7 +2946,6 @@ namespace Hecton8.AI
 
         internal static bool TryGetMesofaunaTelemetrySnapshot(out MesofaunaTelemetryEntry entry)
         {
-            EnsureInitialized();
             entry = default;
             if (!_mesofaunaTelemetryRing.IsCreated || _mesofaunaTelemetryRing.Length <= 0)
                 return false;
@@ -2962,7 +2959,6 @@ namespace Hecton8.AI
 
         internal static bool TryGetMesofaunaVisualSync(int slot, out MesofaunaVisualSyncDTO visual)
         {
-            EnsureInitialized();
             visual = default;
             if (!_mesofaunaVisualSync.IsCreated ||
                 slot < 0 ||
@@ -2977,7 +2973,6 @@ namespace Hecton8.AI
 
         internal static bool TryGetMesofaunaState(int slot, out MesofaunaStateDTO state)
         {
-            EnsureInitialized();
             state = default;
             if (!_mesofaunaStates.IsCreated ||
                 slot < 0 ||
@@ -3000,7 +2995,6 @@ namespace Hecton8.AI
 
         internal static bool TryGetMesofaunaSpeciesProfileCount(out int count)
         {
-            EnsureInitialized();
             count = 0;
             if (!_mesofaunaSpeciesProfileCount.IsCreated || _mesofaunaSpeciesProfileCount.Length <= 0)
                 return false;
@@ -3026,7 +3020,6 @@ namespace Hecton8.AI
                 return 0;
             }
 
-            EnsureInitialized();
             if (!_activeSlots.IsCreated ||
                 !_inputs.IsCreated ||
                 !_mesofaunaStates.IsCreated ||
@@ -3107,7 +3100,6 @@ namespace Hecton8.AI
                 return 0;
             }
 
-            EnsureInitialized();
             if (!_activeSlots.IsCreated || !_inputs.IsCreated || !_outputs.IsCreated || !_cores.IsCreated)
                 return 0;
 

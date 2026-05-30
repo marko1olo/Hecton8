@@ -110,6 +110,9 @@ namespace Hecton8.Biolum
         private AbsoluteUniversePosition _cachedZoneAup;
         private Vector3 _cachedZoneRuntimePosition;
         private bool _cachedZoneAupValid;
+        private Color _cachedSampleColor = Color.black;
+        private float _cachedSampleIntensity;
+        private float _cachedSampleRange;
         private double _biolumFallbackTimeSeconds;
         private float _biolumTickTime;
         private int _lastInvalidZoneInputFrame = -1;
@@ -152,6 +155,8 @@ namespace Hecton8.Biolum
             RegisterActiveZone(this);
             TryRegisterHotSwapListener();
             CacheRegistryServicesCold();
+            RefreshCachedAup();
+            RefreshSampleCache();
             EnsureTickRegistration();
             HectonBiolumManager manager = _cachedBiolumManager;
             if (manager != null)
@@ -265,6 +270,8 @@ namespace Hecton8.Biolum
             _debugTickInvocations++;
 #endif
             _biolumTickTime = ResolveBiolumTickTime(deltaTime);
+            RefreshCachedAup();
+            RefreshSampleCache();
             int frame = SystemDispatcher.CurrentFrameIndex;
             if (frame - _lastUpdateFrame < _updateInterval) return;
             _lastUpdateFrame = frame;
@@ -285,6 +292,7 @@ namespace Hecton8.Biolum
 
             _biolumVisualDirty = false;
             EvaluateBiolumState();
+            RefreshSampleCache();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugEvaluateInvocations++;
             _debugLastUpdatedFrame = _lastUpdateFrame;
@@ -305,7 +313,7 @@ namespace Hecton8.Biolum
         /// </summary>
         public Color SampleZoneColor()
         {
-            return GetBiolumColor();
+            return _cachedSampleColor;
         }
 
         /// <summary>
@@ -313,7 +321,7 @@ namespace Hecton8.Biolum
         /// </summary>
         public float SampleZoneIntensity()
         {
-            return GetBiolumIntensity();
+            return _cachedSampleIntensity;
         }
 
         /// <summary>
@@ -321,7 +329,7 @@ namespace Hecton8.Biolum
         /// </summary>
         public float SampleZoneRange()
         {
-            return GetBiolumRange();
+            return _cachedSampleRange;
         }
 
         /// <summary>
@@ -329,12 +337,7 @@ namespace Hecton8.Biolum
         /// </summary>
         public Vector3 GetZonePosition()
         {
-            Vector3 position = _cachedTransform != null ? _cachedTransform.position : transform.position;
-            if (MathGuard.IsFinite(position))
-                return position;
-
-            ReportInvalidZoneInput();
-            return Vector3.zero;
+            return MathGuard.IsFinite(_cachedZoneRuntimePosition) ? _cachedZoneRuntimePosition : Vector3.zero;
         }
 
         /// <summary>
@@ -342,24 +345,7 @@ namespace Hecton8.Biolum
         /// </summary>
         public AbsoluteUniversePosition GetZoneAup()
         {
-            Vector3 runtimePosition = GetZonePosition();
-            if (!_cachedZoneAupValid ||
-                (runtimePosition - _cachedZoneRuntimePosition).sqrMagnitude > AupRefreshDistanceSqr)
-            {
-                _cachedZoneRuntimePosition = runtimePosition;
-                if (TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition zoneAup))
-                {
-                    _cachedZoneAup = zoneAup;
-                    _cachedZoneAupValid = true;
-                }
-                else
-                {
-                    _cachedZoneAupValid = false;
-                    ReportInvalidZoneInput();
-                }
-            }
-
-            return _cachedZoneAup;
+            return _cachedZoneAupValid ? _cachedZoneAup : AbsoluteUniversePosition.Invalid();
         }
 
         /// <summary>
@@ -650,10 +636,48 @@ namespace Hecton8.Biolum
 
         private void RefreshCachedAup()
         {
-            _cachedZoneRuntimePosition = GetZonePosition();
-            _cachedZoneAupValid = TryResolveAupFromRuntimeOrigin(_cachedZoneRuntimePosition, out _cachedZoneAup);
-            if (!_cachedZoneAupValid)
+            Vector3 runtimePosition = SampleRuntimePositionForOwnerPhase();
+            if (!MathGuard.IsFinite(runtimePosition))
+            {
+                _cachedZoneRuntimePosition = Vector3.zero;
+                _cachedZoneAup = AbsoluteUniversePosition.Invalid();
+                _cachedZoneAupValid = false;
                 ReportInvalidZoneInput();
+                return;
+            }
+
+            bool shouldRefreshAup = !_cachedZoneAupValid ||
+                (runtimePosition - _cachedZoneRuntimePosition).sqrMagnitude > AupRefreshDistanceSqr;
+
+            _cachedZoneRuntimePosition = runtimePosition;
+            if (!shouldRefreshAup)
+                return;
+
+            _cachedZoneAupValid = TryResolveAupFromRuntimeOrigin(runtimePosition, out _cachedZoneAup);
+            if (!_cachedZoneAupValid)
+            {
+                _cachedZoneAup = AbsoluteUniversePosition.Invalid();
+                ReportInvalidZoneInput();
+            }
+        }
+
+        private void RefreshSampleCache()
+        {
+            _cachedSampleColor = SanitizeBiolumColor(GetBiolumColor());
+            _cachedSampleIntensity = SanitizeNonNegative(GetBiolumIntensity(), 0f);
+            _cachedSampleRange = SanitizeNonNegative(GetBiolumRange(), 0f);
+        }
+
+        private Vector3 SampleRuntimePositionForOwnerPhase()
+        {
+            Transform cached = _cachedTransform;
+            if (cached == null)
+            {
+                cached = transform;
+                _cachedTransform = cached;
+            }
+
+            return cached != null ? cached.position : Vector3.zero;
         }
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

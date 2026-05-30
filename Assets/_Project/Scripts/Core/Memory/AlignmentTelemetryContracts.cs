@@ -87,6 +87,9 @@ namespace Hecton8.Core.Memory
         private const int DumpVersion = 1;
         private const int DumpHeaderBytes = sizeof(ulong) + (sizeof(int) * 3);
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_204.bin";
+        private static readonly ulong TelemetryMutationGuardMask =
+            MutationGuardBit(BufferID.Arm64AlignmentTelemetryRing) |
+            MutationGuardBit(BufferID.Arm64AlignmentTelemetryCursor);
 
         private static VaultGenerationHandle<AlignmentTelemetryEntry> _ringHandle;
         private static VaultGenerationHandle<int> _cursorHandle;
@@ -106,43 +109,53 @@ namespace Hecton8.Core.Memory
             if (vault == null || !EnsureRing(vault))
                 return false;
 
-            if (!TryResolveRing(vault, out NativeArray<AlignmentTelemetryEntry> ring) ||
-                ring.Length == 0)
-            {
+            if (!TryAcquireTelemetryMutationGuard(vault))
                 return false;
-            }
 
-            if (!TryResolveCursor(vault, out NativeArray<int> cursorBuffer) ||
-                cursorBuffer.Length == 0)
+            try
             {
-                return false;
-            }
+                if (!TryReadRing(vault, out NativeArray<AlignmentTelemetryEntry>.ReadOnly ringView) ||
+                    ringView.Length == 0 ||
+                    !TryReadCursor(vault, out NativeArray<int>.ReadOnly cursorView) ||
+                    cursorView.Length == 0)
+                {
+                    return false;
+                }
 
-            int cursor = cursorBuffer[0];
-            if ((uint)cursor >= (uint)ring.Length)
-                cursor = 0;
+                int cursor = cursorView[0];
+                if ((uint)cursor >= (uint)ringView.Length)
+                    cursor = 0;
 
-            AlignmentTelemetryEntry entry = default;
-            entry.StructHash = structHash;
-            entry.OffendingAddress = offendingAddress;
-            entry.AupOrRuntimePosition = aupOrRuntimePosition;
-            entry.BufferID = (uint)bufferId;
-            entry.ByteOffset = byteOffset;
-            entry.Frame = frame;
-            entry.Flags = flags;
-            entry.Severity01 = math.saturate(math.isfinite(severity01) ? severity01 : 1f);
-            entry.StateHash = HashEntry(structHash, (uint)bufferId, byteOffset, frame, flags);
-            ring[cursor] = entry;
+                AlignmentTelemetryEntry entry = default;
+                entry.StructHash = structHash;
+                entry.OffendingAddress = offendingAddress;
+                entry.AupOrRuntimePosition = aupOrRuntimePosition;
+                entry.BufferID = (uint)bufferId;
+                entry.ByteOffset = byteOffset;
+                entry.Frame = frame;
+                entry.Flags = flags;
+                entry.Severity01 = math.saturate(math.isfinite(severity01) ? severity01 : 1f);
+                entry.StateHash = HashEntry(structHash, (uint)bufferId, byteOffset, frame, flags);
 
-            cursor++;
-            if (cursor >= ring.Length)
-                cursor = 0;
-            cursorBuffer[0] = cursor;
+                if (!TryWriteRingEntry(vault, cursor, in entry, ringView.Length))
+                    return false;
+
+                int nextCursor = cursor + 1;
+                if (nextCursor >= ringView.Length)
+                    nextCursor = 0;
+
+                if (!TryWriteCursor(vault, nextCursor))
+                    return false;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            TryWriteFaultHistory(ring.AsReadOnly(), cursorBuffer.AsReadOnly());
+                TryWriteFaultHistory(ringView, cursorView);
 #endif
-            return true;
+                return true;
+            }
+            finally
+            {
+                ReleaseTelemetryMutationGuard(vault);
+            }
         }
 
         public static bool TryGetNewestFault(IDataVault vault, out AlignmentTelemetryEntry entry)
@@ -236,9 +249,9 @@ namespace Hecton8.Core.Memory
         private static bool EnsureRing(IDataVault vault)
         {
             if (_ringVault == vault &&
-                TryResolveRing(vault, out NativeArray<AlignmentTelemetryEntry> existingRing) &&
+                TryReadRing(vault, out NativeArray<AlignmentTelemetryEntry>.ReadOnly existingRing) &&
                 existingRing.Length >= Capacity &&
-                TryResolveCursor(vault, out NativeArray<int> existingCursor) &&
+                TryReadCursor(vault, out NativeArray<int>.ReadOnly existingCursor) &&
                 existingCursor.Length > 0)
             {
                 return true;
@@ -270,22 +283,24 @@ namespace Hecton8.Core.Memory
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
 
-            _ringVault = vault;
-            if (!TryResolveRing(vault, out NativeArray<AlignmentTelemetryEntry> ring) ||
-                ring.Length < Capacity)
+            if (!TryAcquireTelemetryMutationGuard(vault))
             {
                 return false;
             }
 
-            if (!TryResolveCursor(vault, out NativeArray<int> cursor) ||
-                cursor.Length == 0)
+            try
             {
-                return false;
-            }
+                bool ready = TryClearRing(vault) &&
+                             TryWriteCursor(vault, 0);
+                if (ready)
+                    _ringVault = vault;
 
-            ClearRing(ring);
-            cursor[0] = 0;
-            return true;
+                return ready;
+            }
+            finally
+            {
+                ReleaseTelemetryMutationGuard(vault);
+            }
         }
 
         private static unsafe void ClearRing(NativeArray<AlignmentTelemetryEntry> ring)
@@ -301,13 +316,79 @@ namespace Hecton8.Core.Memory
                 (long)ring.Length * UnsafeUtility.SizeOf<AlignmentTelemetryEntry>());
         }
 
-        private static bool TryResolveRing(IDataVault vault, out NativeArray<AlignmentTelemetryEntry> ring)
+        private static bool TryClearRing(IDataVault vault)
         {
-            ring = default;
-            return vault != null &&
-                   _ringHandle.BufferID != 0u &&
-                   vault.TryResolveHandle(in _ringHandle, out ring) &&
-                   ring.IsCreated;
+            if (vault == null ||
+                _ringHandle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in _ringHandle, SystemID.CoreDiagnostics, out NativeArray<AlignmentTelemetryEntry> ring))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!ring.IsCreated || ring.Length < Capacity)
+                    return false;
+
+                ClearRing(ring);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _ringHandle, SystemID.CoreDiagnostics);
+            }
+        }
+
+        private static bool TryWriteRingEntry(
+            IDataVault vault,
+            int cursor,
+            in AlignmentTelemetryEntry entry,
+            int expectedLength)
+        {
+            if (vault == null ||
+                _ringHandle.BufferID == 0u ||
+                cursor < 0 ||
+                expectedLength <= 0 ||
+                !vault.TryAcquireWriteLock(in _ringHandle, SystemID.CoreDiagnostics, out NativeArray<AlignmentTelemetryEntry> ring))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!ring.IsCreated || ring.Length != expectedLength || (uint)cursor >= (uint)ring.Length)
+                    return false;
+
+                ring[cursor] = entry;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _ringHandle, SystemID.CoreDiagnostics);
+            }
+        }
+
+        private static bool TryWriteCursor(IDataVault vault, int cursor)
+        {
+            if (vault == null ||
+                _cursorHandle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in _cursorHandle, SystemID.CoreDiagnostics, out NativeArray<int> cursorBuffer))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!cursorBuffer.IsCreated || cursorBuffer.Length == 0)
+                    return false;
+
+                cursorBuffer[0] = cursor;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _cursorHandle, SystemID.CoreDiagnostics);
+            }
         }
 
         private static bool TryReadRing(IDataVault vault, out NativeArray<AlignmentTelemetryEntry>.ReadOnly ring)
@@ -319,15 +400,6 @@ namespace Hecton8.Core.Memory
                    ring.IsCreated;
         }
 
-        private static bool TryResolveCursor(IDataVault vault, out NativeArray<int> cursor)
-        {
-            cursor = default;
-            return vault != null &&
-                   _cursorHandle.BufferID != 0u &&
-                   vault.TryResolveHandle(in _cursorHandle, out cursor) &&
-                   cursor.IsCreated;
-        }
-
         private static bool TryReadCursor(IDataVault vault, out NativeArray<int>.ReadOnly cursor)
         {
             cursor = default;
@@ -335,6 +407,25 @@ namespace Hecton8.Core.Memory
                    _cursorHandle.BufferID != 0u &&
                    vault.TryReadOnlyHandle(in _cursorHandle, out cursor) &&
                    cursor.IsCreated;
+        }
+
+        private static bool TryAcquireTelemetryMutationGuard(IDataVault vault)
+        {
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryAcquireMutationGuard(TelemetryMutationGuardMask);
+        }
+
+        private static void ReleaseTelemetryMutationGuard(IDataVault vault)
+        {
+            if (vault != null)
+                vault.ReleaseMutationGuard(TelemetryMutationGuardMask);
+        }
+
+        private static ulong MutationGuardBit(BufferID bufferId)
+        {
+            int bitIndex = unchecked((int)((uint)(int)bufferId & 63u));
+            return 1UL << bitIndex;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

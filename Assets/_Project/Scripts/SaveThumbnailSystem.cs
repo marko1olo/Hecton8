@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Optimization;
@@ -24,6 +23,7 @@ namespace Hecton8.SaveSystem
         private static int s_x001SaveThumbnailSystemSignalPushDropCount;
         private const int Width = 256;
         private const int Height = 144;
+        private const int ReadbackByteLength = Width * Height * 4;
         private const string Extension = ".jpg";
         private const string LegacyExtension = ".png";
         private const int ThumbnailJpegQualitySurvival = 48;
@@ -57,8 +57,10 @@ namespace Hecton8.SaveSystem
                 uint slotHash,
                 CaptureStatus status,
                 int byteLength = 0,
-                uint byteHash = 0u)
+                uint byteHash = 0u,
+                int generation = 0)
             {
+                Generation = generation;
                 SequenceId = sequenceId;
                 OperationId = operationId;
                 SlotHash = slotHash;
@@ -69,6 +71,7 @@ namespace Hecton8.SaveSystem
                 IsTerminal = status != CaptureStatus.Queued && status != CaptureStatus.None ? (byte)1 : (byte)0;
             }
 
+            public readonly int Generation;
             public readonly int SequenceId;
             public readonly uint OperationId;
             public readonly uint SlotHash;
@@ -81,8 +84,9 @@ namespace Hecton8.SaveSystem
 
         public readonly struct CaptureCompletion
         {
-            public CaptureCompletion(int sequenceId, uint operationId, uint slotHash, int byteLength, uint byteHash, CaptureStatus status)
+            public CaptureCompletion(int sequenceId, uint operationId, uint slotHash, int byteLength, uint byteHash, CaptureStatus status, int generation = 0)
             {
+                Generation = generation;
                 SequenceId = sequenceId;
                 OperationId = operationId;
                 SlotHash = slotHash;
@@ -94,6 +98,7 @@ namespace Hecton8.SaveSystem
                     : (byte)0;
             }
 
+            public readonly int Generation;
             public readonly int SequenceId;
             public readonly uint OperationId;
             public readonly uint SlotHash;
@@ -107,6 +112,7 @@ namespace Hecton8.SaveSystem
         {
             public string SlotName;
             public Camera Camera;
+            public int Generation;
             public int SequenceId;
             public uint OperationId;
             public uint SlotHash;
@@ -114,13 +120,15 @@ namespace Hecton8.SaveSystem
 
         internal readonly struct RenderRequest
         {
-            public RenderRequest(Camera camera, int sequenceId)
+            public RenderRequest(Camera camera, int sequenceId, int generation)
             {
                 Camera = camera;
+                Generation = generation;
                 SequenceId = sequenceId;
             }
 
             public readonly Camera Camera;
+            public readonly int Generation;
             public readonly int SequenceId;
         }
 
@@ -140,6 +148,7 @@ namespace Hecton8.SaveSystem
         private static bool _hasLastCapturePose;
         private static Vector3 _lastCapturePosition;
         private static Quaternion _lastCaptureRotation;
+        private static int _lifetimeGeneration;
         private static int _requestSequence;
         private static NativeArray<byte> _readbackRgbaBuffer;
         private static NativeArray<Color32> _fallbackNoisePixels;
@@ -150,6 +159,8 @@ namespace Hecton8.SaveSystem
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            AdvanceLifetimeGeneration();
+            AsyncGPUReadback.WaitAllRequests();
             ClearCache();
             DisposeFallbackNoise();
             if (_thumbnailWriteInProgress)
@@ -202,10 +213,11 @@ namespace Hecton8.SaveSystem
         {
             uint slotHash = ComputeSlotHash(slotName);
             int sequenceId = NextSequenceId();
+            int generation = CurrentLifetimeGeneration();
             if (!SaveManager.TryResolveSafeSlotName(slotName, out slotName))
             {
-                CompleteRequest(new CaptureCompletion(sequenceId, operationId, slotHash, 0, 0u, CaptureStatus.Failed));
-                return new CaptureTicket(sequenceId, operationId, slotHash, CaptureStatus.Failed);
+                CompleteRequest(new CaptureCompletion(sequenceId, operationId, slotHash, 0, 0u, CaptureStatus.Failed, generation));
+                return new CaptureTicket(sequenceId, operationId, slotHash, CaptureStatus.Failed, generation: generation);
             }
 
             slotHash = ResolveSlotHash(slotName, slotIndex);
@@ -213,8 +225,8 @@ namespace Hecton8.SaveSystem
             if (_thumbnailWriteInProgress ||
                 !TryResolveCaptureCamera(overrideCamera, out Camera captureCamera))
             {
-                CompleteRequest(new CaptureCompletion(sequenceId, operationId, slotHash, 0, 0u, CaptureStatus.Failed));
-                return new CaptureTicket(sequenceId, operationId, slotHash, CaptureStatus.Failed);
+                CompleteRequest(new CaptureCompletion(sequenceId, operationId, slotHash, 0, 0u, CaptureStatus.Failed, generation));
+                return new CaptureTicket(sequenceId, operationId, slotHash, CaptureStatus.Failed, generation: generation);
             }
 
             if ((_hasPendingRequest && string.Equals(_pendingRequest.SlotName, slotName, StringComparison.OrdinalIgnoreCase)) ||
@@ -230,7 +242,7 @@ namespace Hecton8.SaveSystem
                         _pendingRequest = pending;
                     }
 
-                    return new CaptureTicket(pending.SequenceId, pending.OperationId, pending.SlotHash, CaptureStatus.Queued);
+                    return new CaptureTicket(pending.SequenceId, pending.OperationId, pending.SlotHash, CaptureStatus.Queued, generation: pending.Generation);
                 }
 
                 CaptureRequest inflight = _inflightRequest;
@@ -241,14 +253,20 @@ namespace Hecton8.SaveSystem
                     _inflightRequest = inflight;
                 }
 
-                return new CaptureTicket(inflight.SequenceId, inflight.OperationId, inflight.SlotHash, CaptureStatus.Queued);
+                return new CaptureTicket(inflight.SequenceId, inflight.OperationId, inflight.SlotHash, CaptureStatus.Queued, generation: inflight.Generation);
             }
 
             if (!HasCapturePoseChanged(captureCamera))
             {
                 TryGetExistingThumbnailStats(slotName, out int existingBytes, out uint existingHash);
-                CompleteRequest(new CaptureCompletion(sequenceId, operationId, slotHash, existingBytes, existingHash, CaptureStatus.ReusedExisting));
-                return new CaptureTicket(sequenceId, operationId, slotHash, CaptureStatus.ReusedExisting, existingBytes, existingHash);
+                CompleteRequest(new CaptureCompletion(sequenceId, operationId, slotHash, existingBytes, existingHash, CaptureStatus.ReusedExisting, generation));
+                return new CaptureTicket(sequenceId, operationId, slotHash, CaptureStatus.ReusedExisting, existingBytes, existingHash, generation);
+            }
+
+            if (!EnsureReadbackBufferCold(ReadbackByteLength))
+            {
+                CompleteRequest(new CaptureCompletion(sequenceId, operationId, slotHash, 0, 0u, CaptureStatus.Failed, generation));
+                return new CaptureTicket(sequenceId, operationId, slotHash, CaptureStatus.Failed, generation: generation);
             }
 
             ClearCacheEntry(slotName);
@@ -256,6 +274,7 @@ namespace Hecton8.SaveSystem
             {
                 SlotName = slotName,
                 Camera = captureCamera,
+                Generation = generation,
                 SequenceId = sequenceId,
                 OperationId = operationId,
                 SlotHash = slotHash
@@ -265,7 +284,7 @@ namespace Hecton8.SaveSystem
             _lastCaptureRotation = captureTransform.rotation;
             _hasLastCapturePose = true;
             _hasPendingRequest = true;
-            return new CaptureTicket(sequenceId, operationId, slotHash, CaptureStatus.Queued);
+            return new CaptureTicket(sequenceId, operationId, slotHash, CaptureStatus.Queued, generation: generation);
         }
 
         /// <summary>
@@ -276,32 +295,38 @@ namespace Hecton8.SaveSystem
             if (ticket.IsValid == 0)
                 return default;
 
-            if (TryGetCompletion(ticket.SequenceId, out CaptureCompletion completion))
+            if (!IsCurrentGeneration(ticket.Generation))
+                return new CaptureCompletion(ticket.SequenceId, ticket.OperationId, ticket.SlotHash, 0, 0u, CaptureStatus.Cancelled, ticket.Generation);
+
+            if (TryGetCompletion(ticket.Generation, ticket.SequenceId, out CaptureCompletion completion))
                 return completion;
 
             if (ticket.IsTerminal != 0)
-                return new CaptureCompletion(ticket.SequenceId, ticket.OperationId, ticket.SlotHash, ticket.ByteLength, ticket.ByteHash, ticket.InitialStatus);
+                return new CaptureCompletion(ticket.SequenceId, ticket.OperationId, ticket.SlotHash, ticket.ByteLength, ticket.ByteHash, ticket.InitialStatus, ticket.Generation);
 
             int startFrame = SystemDispatcher.CurrentFrameIndex;
-            while (!TryGetCompletion(ticket.SequenceId, out completion))
+            while (!TryGetCompletion(ticket.Generation, ticket.SequenceId, out completion))
             {
+                if (!IsCurrentGeneration(ticket.Generation))
+                    return new CaptureCompletion(ticket.SequenceId, ticket.OperationId, ticket.SlotHash, 0, 0u, CaptureStatus.Cancelled, ticket.Generation);
+
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    CaptureCompletion cancelled = new CaptureCompletion(ticket.SequenceId, ticket.OperationId, ticket.SlotHash, 0, 0u, CaptureStatus.Cancelled);
-                    ClearRequestIfMatching(ticket.SequenceId);
+                    CaptureCompletion cancelled = new CaptureCompletion(ticket.SequenceId, ticket.OperationId, ticket.SlotHash, 0, 0u, CaptureStatus.Cancelled, ticket.Generation);
+                    ClearRequestIfMatching(ticket.Generation, ticket.SequenceId);
                     CompleteRequest(cancelled);
                     return cancelled;
                 }
 
                 bool waitingForGpuSubmit =
-                    (_hasPendingRequest && _pendingRequest.SequenceId == ticket.SequenceId) ||
-                    (_hasInflightRequest && _inflightRequest.SequenceId == ticket.SequenceId);
+                    (_hasPendingRequest && _pendingRequest.Generation == ticket.Generation && _pendingRequest.SequenceId == ticket.SequenceId) ||
+                    (_hasInflightRequest && _inflightRequest.Generation == ticket.Generation && _inflightRequest.SequenceId == ticket.SequenceId);
 
                 if (SystemDispatcher.CurrentFrameIndex - startFrame > MaxCaptureWaitFrames)
                 {
-                    CaptureCompletion timedOut = new CaptureCompletion(ticket.SequenceId, ticket.OperationId, ticket.SlotHash, 0, 0u, CaptureStatus.TimedOut);
+                    CaptureCompletion timedOut = new CaptureCompletion(ticket.SequenceId, ticket.OperationId, ticket.SlotHash, 0, 0u, CaptureStatus.TimedOut, ticket.Generation);
                     if (waitingForGpuSubmit)
-                        ClearRequestIfMatching(ticket.SequenceId);
+                        ClearRequestIfMatching(ticket.Generation, ticket.SequenceId);
 
                     CompleteRequest(timedOut);
                     return timedOut;
@@ -313,8 +338,8 @@ namespace Hecton8.SaveSystem
                 }
                 catch (OperationCanceledException)
                 {
-                    CaptureCompletion cancelled = new CaptureCompletion(ticket.SequenceId, ticket.OperationId, ticket.SlotHash, 0, 0u, CaptureStatus.Cancelled);
-                    ClearRequestIfMatching(ticket.SequenceId);
+                    CaptureCompletion cancelled = new CaptureCompletion(ticket.SequenceId, ticket.OperationId, ticket.SlotHash, 0, 0u, CaptureStatus.Cancelled, ticket.Generation);
+                    ClearRequestIfMatching(ticket.Generation, ticket.SequenceId);
                     CompleteRequest(cancelled);
                     return cancelled;
                 }
@@ -329,7 +354,7 @@ namespace Hecton8.SaveSystem
                 renderCamera != null &&
                 ReferenceEquals(renderCamera, _pendingRequest.Camera))
             {
-                request = new RenderRequest(renderCamera, _pendingRequest.SequenceId);
+                request = new RenderRequest(renderCamera, _pendingRequest.SequenceId, _pendingRequest.Generation);
                 return true;
             }
 
@@ -337,14 +362,60 @@ namespace Hecton8.SaveSystem
             return false;
         }
 
-        internal static bool TrySubmitGpuReadback(int sequenceId)
+        internal static bool TrySubmitGpuReadback(int sequenceId, int generation)
         {
-            if (!_hasPendingRequest || _hasInflightRequest || _pendingRequest.SequenceId != sequenceId)
+            if (!IsCurrentGeneration(generation) ||
+                !_hasPendingRequest ||
+                _hasInflightRequest ||
+                _pendingRequest.Generation != generation ||
+                _pendingRequest.SequenceId != sequenceId)
+            {
                 return false;
+            }
 
             _inflightRequest = _pendingRequest;
             _hasInflightRequest = true;
             _hasPendingRequest = false;
+            return true;
+        }
+
+        internal static bool TryQueueGpuReadback(
+            CommandBuffer commandBuffer,
+            RenderTexture sourceTexture,
+            int sequenceId,
+            int generation)
+        {
+            if (commandBuffer == null ||
+                sourceTexture == null ||
+                !HasReadbackBufferReady(ReadbackByteLength) ||
+                !TrySubmitGpuReadback(sequenceId, generation))
+            {
+                return false;
+            }
+
+            commandBuffer.RequestAsyncReadbackIntoNativeArray(
+                ref _readbackRgbaBuffer,
+                sourceTexture,
+                0,
+                GraphicsFormat.R8G8B8A8_SRGB,
+                s_readbackCompleted);
+            return true;
+        }
+
+        internal static bool TryFailPendingRenderRequest(int sequenceId, int generation)
+        {
+            if (!IsCurrentGeneration(generation) ||
+                !_hasPendingRequest ||
+                _pendingRequest.Generation != generation ||
+                _pendingRequest.SequenceId != sequenceId)
+            {
+                return false;
+            }
+
+            CaptureRequest pending = _pendingRequest;
+            _pendingRequest = default;
+            _hasPendingRequest = false;
+            CompleteRequest(new CaptureCompletion(pending.SequenceId, pending.OperationId, pending.SlotHash, 0, 0u, CaptureStatus.Failed, pending.Generation));
             return true;
         }
 
@@ -355,7 +426,7 @@ namespace Hecton8.SaveSystem
                 CaptureRequest pending = _pendingRequest;
                 _pendingRequest = default;
                 _hasPendingRequest = false;
-                CompleteRequest(new CaptureCompletion(pending.SequenceId, pending.OperationId, pending.SlotHash, 0, 0u, CaptureStatus.Cancelled));
+                CompleteRequest(new CaptureCompletion(pending.SequenceId, pending.OperationId, pending.SlotHash, 0, 0u, CaptureStatus.Cancelled, pending.Generation));
             }
 
             if (_hasInflightRequest)
@@ -363,7 +434,7 @@ namespace Hecton8.SaveSystem
                 CaptureRequest inflight = _inflightRequest;
                 _inflightRequest = default;
                 _hasInflightRequest = false;
-                CompleteRequest(new CaptureCompletion(inflight.SequenceId, inflight.OperationId, inflight.SlotHash, 0, 0u, CaptureStatus.Cancelled));
+                CompleteRequest(new CaptureCompletion(inflight.SequenceId, inflight.OperationId, inflight.SlotHash, 0, 0u, CaptureStatus.Cancelled, inflight.Generation));
             }
         }
 
@@ -536,24 +607,19 @@ namespace Hecton8.SaveSystem
                 return true;
             }
 
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null)
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            if (playerCamera != null &&
+                playerCamera.isActiveAndEnabled &&
+                playerCamera.gameObject.activeInHierarchy)
             {
-                _cachedCaptureCamera = GlobalRegistry.Player != null && GlobalRegistry.Player.PlayerCamera != null
-                    ? GlobalRegistry.Player.PlayerCamera
-                    : ResolveCaptureCamera(playerTransform);
+                _cachedCaptureCamera = playerCamera;
+                captureCamera = playerCamera;
+                return true;
             }
 
-            captureCamera = _cachedCaptureCamera;
-            return captureCamera != null;
-        }
-
-        private static Camera ResolveCaptureCamera(Transform playerTransform)
-        {
-            if (playerTransform == null)
-                return null;
-
-            return playerTransform.TryGetComponent(out Camera captureCamera) ? captureCamera : null;
+            captureCamera = null;
+            return false;
         }
 
         private static bool HasCapturePoseChanged(Camera captureCamera)
@@ -579,9 +645,12 @@ namespace Hecton8.SaveSystem
             _inflightRequest = default;
             _hasInflightRequest = false;
 
+            if (!IsCurrentGeneration(inflightRequest.Generation))
+                return;
+
             if (!Application.isPlaying || inflightRequest.Camera == null)
             {
-                CompleteRequest(new CaptureCompletion(inflightRequest.SequenceId, inflightRequest.OperationId, inflightRequest.SlotHash, 0, 0u, CaptureStatus.Cancelled));
+                CompleteRequest(new CaptureCompletion(inflightRequest.SequenceId, inflightRequest.OperationId, inflightRequest.SlotHash, 0, 0u, CaptureStatus.Cancelled, inflightRequest.Generation));
                 return;
             }
 
@@ -590,28 +659,20 @@ namespace Hecton8.SaveSystem
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogError("[SaveThumbnailSystem] AsyncGPUReadback failed.");
 #endif
-                CompleteRequest(new CaptureCompletion(inflightRequest.SequenceId, inflightRequest.OperationId, inflightRequest.SlotHash, 0, 0u, CaptureStatus.Failed));
+                CompleteRequest(new CaptureCompletion(inflightRequest.SequenceId, inflightRequest.OperationId, inflightRequest.SlotHash, 0, 0u, CaptureStatus.Failed, inflightRequest.Generation));
                 return;
             }
 
-            int expectedLength = Width * Height * 4;
-            NativeArray<byte> readbackData = request.GetData<byte>();
-            if (!readbackData.IsCreated || readbackData.Length < expectedLength)
+            int expectedLength = ReadbackByteLength;
+            if (!HasReadbackBufferReady(expectedLength))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Hecton8.Core.H8Debug.LogError("[SaveThumbnailSystem] AsyncGPUReadback returned invalid thumbnail data.");
 #endif
-                CompleteRequest(new CaptureCompletion(inflightRequest.SequenceId, inflightRequest.OperationId, inflightRequest.SlotHash, 0, 0u, CaptureStatus.Failed));
+                CompleteRequest(new CaptureCompletion(inflightRequest.SequenceId, inflightRequest.OperationId, inflightRequest.SlotHash, 0, 0u, CaptureStatus.Failed, inflightRequest.Generation));
                 return;
             }
 
-            if (!EnsureReadbackBuffer(expectedLength))
-            {
-                CompleteRequest(new CaptureCompletion(inflightRequest.SequenceId, inflightRequest.OperationId, inflightRequest.SlotHash, 0, 0u, CaptureStatus.Failed));
-                return;
-            }
-
-            NativeArray<byte>.Copy(readbackData, _readbackRgbaBuffer, expectedLength);
             _thumbnailWriteInProgress = true;
             _ = PersistThumbnailAsync(inflightRequest, _readbackRgbaBuffer, Width, Height);
         }
@@ -619,10 +680,11 @@ namespace Hecton8.SaveSystem
         private static async Awaitable PersistThumbnailAsync(CaptureRequest request, NativeArray<byte> rgbaBytes, int width, int height)
         {
             string slotName = request.SlotName;
+            bool publishCompletion = true;
             if (!SaveManager.TryResolveSafeSlotName(slotName, out slotName))
             {
                 ReleaseWriteInProgress();
-                CompleteRequest(new CaptureCompletion(request.SequenceId, request.OperationId, request.SlotHash, 0, 0u, CaptureStatus.Failed));
+                CompleteRequest(new CaptureCompletion(request.SequenceId, request.OperationId, request.SlotHash, 0, 0u, CaptureStatus.Failed, request.Generation));
                 return;
             }
 
@@ -635,6 +697,12 @@ namespace Hecton8.SaveSystem
             try
             {
                 await Awaitable.BackgroundThreadAsync();
+                if (!IsCurrentGeneration(request.Generation))
+                {
+                    publishCompletion = false;
+                    TryDeleteFileBestEffort(tempPath);
+                    return;
+                }
 
                 string directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
@@ -686,23 +754,25 @@ namespace Hecton8.SaveSystem
                     }
                 }
 
+                if (!IsCurrentGeneration(request.Generation))
+                {
+                    publishCompletion = false;
+                    TryDeleteFileBestEffort(tempPath);
+                    return;
+                }
+
                 if (File.Exists(path))
                     File.Delete(path);
 
                 File.Move(tempPath, path);
                 await Awaitable.MainThreadAsync();
+                if (!IsCurrentGeneration(request.Generation))
+                    publishCompletion = false;
             }
             catch (Exception)
             {
                 finalStatus = CaptureStatus.Failed;
-                try
-                {
-                    if (File.Exists(tempPath))
-                        File.Delete(tempPath);
-                }
-                catch
-                {
-                }
+                TryDeleteFileBestEffort(tempPath);
 
                 await Awaitable.MainThreadAsync();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -717,10 +787,12 @@ namespace Hecton8.SaveSystem
                     request.SlotHash,
                     finalStatus == CaptureStatus.Completed ? encodedByteLength : 0,
                     finalStatus == CaptureStatus.Completed ? encodedByteHash : 0u,
-                    finalStatus);
+                    finalStatus,
+                    request.Generation);
 
                 ReleaseWriteInProgress();
-                CompleteRequest(completion);
+                if (publishCompletion && IsCurrentGeneration(request.Generation))
+                    CompleteRequest(completion);
             }
         }
 
@@ -734,9 +806,14 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private static bool EnsureReadbackBuffer(int byteLength)
+        private static bool HasReadbackBufferReady(int byteLength)
         {
-            if (_readbackRgbaBuffer.IsCreated && _readbackRgbaBuffer.Length >= byteLength)
+            return _readbackRgbaBuffer.IsCreated && _readbackRgbaBuffer.Length >= byteLength;
+        }
+
+        private static bool EnsureReadbackBufferCold(int byteLength)
+        {
+            if (HasReadbackBufferReady(byteLength))
                 return true;
 
             DisposeReadbackBuffer();
@@ -813,6 +890,28 @@ namespace Hecton8.SaveSystem
 
                 return _requestSequence;
             }
+        }
+
+        private static int CurrentLifetimeGeneration()
+        {
+            return _lifetimeGeneration != 0 ? _lifetimeGeneration : AdvanceLifetimeGeneration();
+        }
+
+        private static int AdvanceLifetimeGeneration()
+        {
+            unchecked
+            {
+                _lifetimeGeneration++;
+                if (_lifetimeGeneration == 0)
+                    _lifetimeGeneration = 1;
+
+                return _lifetimeGeneration;
+            }
+        }
+
+        private static bool IsCurrentGeneration(int generation)
+        {
+            return generation != 0 && generation == _lifetimeGeneration;
         }
 
         private static float ResolveThumbnailCaptureQualityWeight01()
@@ -913,6 +1012,9 @@ namespace Hecton8.SaveSystem
 
         private static void CompleteRequest(CaptureCompletion completion)
         {
+            if (!IsCurrentGeneration(completion.Generation))
+                return;
+
             StoreCompletion(completion);
             if (completion.OperationId != 0u)
                 PublishMetadataReady(completion);
@@ -926,12 +1028,12 @@ namespace Hecton8.SaveSystem
                 _completionHistoryWriteIndex = 0;
         }
 
-        private static bool TryGetCompletion(int sequenceId, out CaptureCompletion completion)
+        private static bool TryGetCompletion(int generation, int sequenceId, out CaptureCompletion completion)
         {
             for (int i = 0; i < s_completionHistory.Length; i++)
             {
                 completion = s_completionHistory[i];
-                if (completion.SequenceId == sequenceId)
+                if (completion.Generation == generation && completion.SequenceId == sequenceId)
                     return true;
             }
 
@@ -994,18 +1096,33 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        private static void ClearRequestIfMatching(int sequenceId)
+        private static void ClearRequestIfMatching(int generation, int sequenceId)
         {
-            if (_hasPendingRequest && _pendingRequest.SequenceId == sequenceId)
+            if (_hasPendingRequest && _pendingRequest.Generation == generation && _pendingRequest.SequenceId == sequenceId)
             {
                 _pendingRequest = default;
                 _hasPendingRequest = false;
             }
 
-            if (_hasInflightRequest && _inflightRequest.SequenceId == sequenceId)
+            if (_hasInflightRequest && _inflightRequest.Generation == generation && _inflightRequest.SequenceId == sequenceId)
             {
                 _inflightRequest = default;
                 _hasInflightRequest = false;
+            }
+        }
+
+        private static void TryDeleteFileBestEffort(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
             }
         }
 

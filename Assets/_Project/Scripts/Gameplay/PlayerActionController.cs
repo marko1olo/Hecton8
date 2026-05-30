@@ -184,7 +184,7 @@ namespace Hecton8.Gameplay
                 {
                     RemoveItemFromInventory(anchorX, anchorY);
                 }
-                ConsumableItem.TryConsumeWithoutAudio(item);
+                ConsumableItem.TryConsumeWithoutAudio(item, _survivalSystem);
                 PlayCompletionSound(item);
                 return true;
             }
@@ -262,6 +262,7 @@ namespace Hecton8.Gameplay
             if (_survivalSystem == null)
                 TryGetComponent(out _survivalSystem);
 
+            ConsumableItem.BindSurvivalSystemCold(_survivalSystem);
             TryRegister();
             TryRegisterService();
             TryRegisterHotSwap();
@@ -525,7 +526,7 @@ namespace Hecton8.Gameplay
                 {
                     RemoveItemFromInventory(anchorX, anchorY);
                 }
-                ConsumableItem.TryConsumeWithoutAudio(completedItem);
+                ConsumableItem.TryConsumeWithoutAudio(completedItem, _survivalSystem);
                 PlayCompletionSound(completedItem);
             }
 

@@ -401,6 +401,8 @@ namespace Hecton8.Caves
 
         private HectonVoxelEngine _engine;
         private VoxelDeltaProcessor _deltaProcessor;
+        private HectonMapMagicVegetationBridge _cachedVegetationBridge;
+        private DestructibleOrganicManager _cachedOrganicManager;
         private CaveNode[] _nodes = Array.Empty<CaveNode>();
         private CaveTunnel[] _tunnels = Array.Empty<CaveTunnel>();
         private CaveEntrance[] _entrances = Array.Empty<CaveEntrance>();
@@ -1559,7 +1561,7 @@ namespace Hecton8.Caves
             _terrainHoleHandles.Clear();
             _terrainHoleHandleCount = 0;
             _runtimeStamp++;
-            CacheRuntimeComponents();
+            CacheRuntimeComponentsCold();
             SetBakeState(VoxelBakeState.Idle);
 
             ToggleChildRoot(CaveDressingRootName, false);
@@ -1852,7 +1854,7 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
-        /// Drains a deferred staged collider mesh without publishing a new runtime PhysX mesh.
+        /// Publishes a staged collider mesh from the late-frame upload queue.
         /// </summary>
         internal bool CommitDeferredColliderChunkUpload(int index)
         {
@@ -1873,20 +1875,27 @@ namespace Hecton8.Caves
             }
 
             Mesh previousLiveMesh = _colliderChunkMeshes[index];
-            if (previousLiveMesh == null)
+            collider.enabled = false;
+            if (!ReferenceEquals(collider.sharedMesh, stagedMesh))
             {
-                collider.enabled = false;
-                collider.gameObject.SetActive(false);
+                collider.sharedMesh = null;
+                collider.sharedMesh = stagedMesh;
+            }
+
+            _colliderChunkMeshes[index] = stagedMesh;
+            if (ReferenceEquals(previousLiveMesh, stagedMesh))
+            {
+                _colliderChunkBakeMeshes[index] = null;
             }
             else
             {
-                collider.gameObject.SetActive(true);
-                collider.enabled = collider.sharedMesh != null;
+                if (previousLiveMesh != null)
+                    previousLiveMesh.Clear(false);
+                _colliderChunkBakeMeshes[index] = previousLiveMesh;
             }
 
-            if (!ReferenceEquals(stagedMesh, previousLiveMesh))
-                stagedMesh.Clear(false);
-
+            if (!collider.gameObject.activeSelf)
+                collider.gameObject.SetActive(true);
             DisableColliderChunkBakeProxy(index);
             RefreshBakePresentation();
             return true;
@@ -2133,7 +2142,7 @@ namespace Hecton8.Caves
             _rebuildQueued = false;
             _rebuildRunning = false;
             _runtimeStamp++;
-            CacheRuntimeComponents();
+            CacheRuntimeComponentsCold();
             SetBakeState(VoxelBakeState.Complete);
             RegisterPublishedVolume(this);
             InteractableRegistry.RegisterTree(this);
@@ -2399,12 +2408,23 @@ namespace Hecton8.Caves
                 return false;
             }
 
-            if (!vault.IsCompactionFenceActive)
-                return true;
+            bool keepGuard = false;
+            try
+            {
+                if (vault.IsCompactionFenceActive)
+                    return false;
 
-            vault.ReleaseMutationGuard(guardMask);
-            guardMask = 0UL;
-            return false;
+                keepGuard = true;
+                return true;
+            }
+            finally
+            {
+                if (!keepGuard)
+                {
+                    vault.ReleaseMutationGuard(guardMask);
+                    guardMask = 0UL;
+                }
+            }
         }
 
         private static void ReleasePublishedSonarPayloadWriteGuard(IDataVault vault, ulong guardMask)
@@ -2429,12 +2449,25 @@ namespace Hecton8.Caves
                 return false;
             }
 
-            if (!vault.IsCompactionFenceActive)
-                return true;
+            bool keepLock = false;
+            try
+            {
+                if (!vault.IsCompactionFenceActive)
+                {
+                    keepLock = true;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, SystemID.WorldStreaming);
-            buffer = default;
-            return false;
+                return false;
+            }
+            finally
+            {
+                if (!keepLock)
+                {
+                    vault.ReleaseWriteLock(in handle, SystemID.WorldStreaming);
+                    buffer = default;
+                }
+            }
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -3206,7 +3239,7 @@ namespace Hecton8.Caves
 
             float safeRadius = Mathf.Max(_voxelSize, radiusMeters);
             float safeBurnRadius = Mathf.Max(safeRadius, burnRadiusMeters);
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            DestructibleOrganicManager organicManager = _cachedOrganicManager;
             int acceptedSegments = 0;
             if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(this, preset, out Bounds localVolumeBounds))
                 return 0;
@@ -3808,7 +3841,7 @@ namespace Hecton8.Caves
             child.gameObject.SetActive(active);
         }
 
-        private void CacheRuntimeComponents()
+        private void CacheRuntimeComponentsCold()
         {
             if (_meshFilter == null)
                 TryGetComponent(out _meshFilter);
@@ -3831,7 +3864,8 @@ namespace Hecton8.Caves
 
         private void RefreshBakePresentation()
         {
-            CacheRuntimeComponents();
+            if (!Application.isPlaying)
+                CacheRuntimeComponentsCold();
 
             bool visualsStable = _bakeState == VoxelBakeState.Complete;
             bool collisionAllowed = _bakeState != VoxelBakeState.Idle;
@@ -3891,7 +3925,7 @@ namespace Hecton8.Caves
                 {
                     _rebuildQueued = false;
                     SetBakeState(VoxelBakeState.Baking);
-                    HectonVoxelEngine engine = _engine != null ? _engine : HectonVoxelEngine.ActiveRuntimeInstance;
+                    HectonVoxelEngine engine = _engine;
                     if (engine == null)
                         return;
 
@@ -3956,7 +3990,7 @@ namespace Hecton8.Caves
                 return;
             }
 
-            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            HectonMapMagicVegetationBridge vegetationBridge = _cachedVegetationBridge;
             if (vegetationBridge == null)
             {
                 _terrainHoleHandles.Clear();
@@ -3980,8 +4014,8 @@ namespace Hecton8.Caves
 
         private void OnEnable()
         {
-            CacheDataVaultCold();
-            _physicsService = GlobalRegistry.Physics;
+            CacheRegistryServicesCold();
+            CacheRuntimeComponentsCold();
             TryRegisterHotSwapListener();
             VoxelVolumeLeakSentinel.RegisterVolume(this);
             TryEnsurePublishedSonarVaultPayloadCapacity(_cachedDataVault);
@@ -4018,6 +4052,25 @@ namespace Hecton8.Caves
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.VoxelEngineRuntime)
+            {
+                if (_engine == null || ReferenceEquals(_engine, previousService))
+                    _engine = currentService as HectonVoxelEngine;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.MapMagicVegetationRuntime)
+            {
+                _cachedVegetationBridge = currentService as HectonMapMagicVegetationBridge;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DestructibleOrganicRuntime)
+            {
+                _cachedOrganicManager = currentService as DestructibleOrganicManager;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -4025,9 +4078,15 @@ namespace Hecton8.Caves
             TryEnsurePublishedSonarVaultPayloadCapacity(_cachedDataVault);
         }
 
-        private void CacheDataVaultCold()
+        private void CacheRegistryServicesCold()
         {
             _cachedDataVault = GlobalRegistry.DataVault;
+            _physicsService = GlobalRegistry.Physics;
+            if (_engine == null)
+                _engine = GlobalRegistry.VoxelEngine;
+
+            _cachedVegetationBridge = GlobalRegistry.MapMagicVegetation;
+            _cachedOrganicManager = GlobalRegistry.OrganicToolHits as DestructibleOrganicManager;
         }
 
         private void TryRegisterHotSwapListener()

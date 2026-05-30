@@ -1529,7 +1529,12 @@ namespace Hecton8.Scavenging
                     if (previousVault == null)
                         previousVault = _vault;
 
-                    ReleaseScavengingVaultHandles(previousVault);
+                    if (!ReleaseScavengingVaultHandles(previousVault))
+                    {
+                        _vaultReady = false;
+                        break;
+                    }
+
                     _vault = currentService as IDataVault;
                     InvalidateVaultHandles();
                     PrepareVaultCold();
@@ -1795,7 +1800,10 @@ namespace Hecton8.Scavenging
                 EnsureScavengingVaultBuffer(vault, ref _distributionAuditHandle, ScavengingLootOracleConstants.DistributionAuditBufferId, ScavengingLootOracleConstants.DefaultAuditCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
                 EnsureScavengingVaultBuffer(vault, ref _csvScratchHandle, ScavengingLootOracleConstants.CsvScratchBufferId, ScavengingLootOracleConstants.DefaultCsvScratchBytes, NativeArrayOptions.UninitializedMemory, out _);
             if (!_vaultReady)
-                ReleaseScavengingVaultHandles(vault);
+            {
+                if (ReleaseScavengingVaultHandles(vault))
+                    InvalidateVaultHandles();
+            }
 
             return _vaultReady;
         }
@@ -2020,7 +2028,12 @@ namespace Hecton8.Scavenging
                 return;
 
             ForceCompletePendingPublishForLifecycle();
-            ReleaseScavengingVaultHandles(_vault);
+            if (!ReleaseScavengingVaultHandles(_vault))
+            {
+                _vaultReady = false;
+                return;
+            }
+
             _vault = vault;
             InvalidateVaultHandles();
         }
@@ -2034,10 +2047,16 @@ namespace Hecton8.Scavenging
         private void ReleaseVaultBinding()
         {
             ForceCompletePendingPublishForLifecycle();
-            ReleaseScavengingVaultHandles(_vault);
+            bool released = ReleaseScavengingVaultHandles(_vault);
             DisposeSimulationNativeScratch();
-            _vault = null;
-            InvalidateVaultHandles();
+            if (released)
+            {
+                _vault = null;
+                InvalidateVaultHandles();
+                return;
+            }
+
+            _vaultReady = false;
         }
 
         private bool EnsureSimulationNativeScratchCold()
@@ -2069,12 +2088,14 @@ namespace Hecton8.Scavenging
             _activeLootTableVersion = 0u;
         }
 
-        private void ReleaseScavengingVaultHandles(IDataVault vault)
+        private bool ReleaseScavengingVaultHandles(IDataVault vault)
         {
-            ReleaseScavengingVaultHandle(vault, ref _lootEntriesHandle, ScavengingLootOracleConstants.LootEntriesBufferId);
-            ReleaseScavengingVaultHandle(vault, ref _biomeModifiersHandle, ScavengingLootOracleConstants.BiomeModifiersBufferId);
-            ReleaseScavengingVaultHandle(vault, ref _distributionAuditHandle, ScavengingLootOracleConstants.DistributionAuditBufferId);
-            ReleaseScavengingVaultHandle(vault, ref _csvScratchHandle, ScavengingLootOracleConstants.CsvScratchBufferId);
+            bool released = true;
+            released &= ReleaseScavengingVaultHandle(vault, ref _lootEntriesHandle, ScavengingLootOracleConstants.LootEntriesBufferId);
+            released &= ReleaseScavengingVaultHandle(vault, ref _biomeModifiersHandle, ScavengingLootOracleConstants.BiomeModifiersBufferId);
+            released &= ReleaseScavengingVaultHandle(vault, ref _distributionAuditHandle, ScavengingLootOracleConstants.DistributionAuditBufferId);
+            released &= ReleaseScavengingVaultHandle(vault, ref _csvScratchHandle, ScavengingLootOracleConstants.CsvScratchBufferId);
+            return released;
         }
 
         private static bool EnsureScavengingVaultBuffer<T>(
@@ -2086,11 +2107,11 @@ namespace Hecton8.Scavenging
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
-            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
-                return false;
-
             if (TryResolveScavengingVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
                 return true;
+
+            if (vault == null || vault.IsAllocationLocked || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystem, options);
             return TryResolveScavengingVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
@@ -2155,15 +2176,29 @@ namespace Hecton8.Scavenging
                    handle.Generation != 0u;
         }
 
-        private static void ReleaseScavengingVaultHandle<T>(
+        private static bool ReleaseScavengingVaultHandle<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId) where T : struct
         {
-            if (vault != null && IsScavengingVaultHandle(in handle, bufferId))
-                vault.ReleaseBuffer(in handle);
+            if (vault == null || !IsScavengingVaultHandle(in handle, bufferId))
+            {
+                handle = default;
+                return true;
+            }
+
+            if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!vault.ReleaseBuffer(in handle) &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
+                existing.IsCreated)
+            {
+                return false;
+            }
 
             handle = default;
+            return true;
         }
 
         private void TryRegisterHotSwapListener()

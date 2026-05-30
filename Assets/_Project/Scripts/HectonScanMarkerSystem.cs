@@ -120,6 +120,9 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             CachePlayerContextCold();
+            EnsureHudCamera();
+            EnsurePlayerTransform();
+            EnsureRuntimeResources();
             TryRegisterHotSwapListener();
             ScanEvents.Register(this);
             RegisterTick();
@@ -184,6 +187,7 @@ namespace Hecton8.Gameplay
 
             _cachedPlayerContext = currentService as IPlayerRuntimeContext;
             _cachedPlayerMovement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
+            RefreshPresentationReferencesFromCachedContext();
         }
 
         public void Tick(float deltaTime)
@@ -203,9 +207,12 @@ namespace Hecton8.Gameplay
             if (_activeMarkerMask == 0UL)
                 return;
 
-            EnsureHudCamera();
-            EnsurePlayerTransform();
-            EnsureRuntimeResources();
+            if (!RefreshPresentationReferencesFromCachedContext() ||
+                !AreRuntimeResourcesReady())
+            {
+                return;
+            }
+
             RenderMarkers();
         }
 
@@ -431,6 +438,25 @@ namespace Hecton8.Gameplay
                 GameBootstrapper.TryGetCurrentPlayerTransform(out _playerTransform);
         }
 
+        private bool RefreshPresentationReferencesFromCachedContext()
+        {
+            IPlayerRuntimeContext context = _cachedPlayerContext;
+            if (context != null)
+            {
+                if (_playerTransform == null)
+                    _playerTransform = context.PlayerTransform;
+
+                if (hudCamera == null)
+                {
+                    VisorHUDController visor = context.VisorController;
+                    if (visor != null)
+                        hudCamera = visor.HudCamera;
+                }
+            }
+
+            return hudCamera != null && _playerTransform != null;
+        }
+
         private void EnsureRuntimeResources()
         {
             if (_runtimeMarkerMesh == null)
@@ -453,6 +479,12 @@ namespace Hecton8.Gameplay
                 hideFlags = HideFlags.DontSave
             };
             _markerMaterialDirty = true;
+        }
+
+        private bool AreRuntimeResourcesReady()
+        {
+            return _runtimeMarkerMesh != null &&
+                   _runtimeMarkerMaterial != null;
         }
 
         private void RegisterTick()

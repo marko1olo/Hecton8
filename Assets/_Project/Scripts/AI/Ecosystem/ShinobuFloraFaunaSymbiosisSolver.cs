@@ -1891,73 +1891,16 @@ namespace Hecton8.AI.Ecosystem
 
         private static void DumpBlackBox(NativeArray<SymbiosisTelemetryEntry> telemetry, int cursor)
         {
-            try
-            {
-                string root = BuildProjectRootForIo();
-                WriteBlackBoxFile(Path.Combine(root, DumpRelativePath), telemetry, cursor);
-            }
-            catch (IOException)
-            {
+            _ = cursor;
+            if (!telemetry.IsCreated || telemetry.Length <= 0)
                 GlobalTelemetryBus.PublishPerformanceWarning(0x53364450u, SourceHash, 0f);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x53364450u, SourceHash, 0f);
-            }
-            catch (ArgumentException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x53364450u, SourceHash, 0f);
-            }
-            catch (NotSupportedException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x53364450u, SourceHash, 0f);
-            }
-            catch (InvalidOperationException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x53364450u, SourceHash, 0f);
-            }
         }
 
         private static void WriteBlackBoxFile(string path, NativeArray<SymbiosisTelemetryEntry> telemetry, int cursor)
         {
-            string directory = Path.GetDirectoryName(path);
-            if (directory != null && directory.Length != 0 && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-            using (BinaryWriter writer = new BinaryWriter(stream))
-            {
-                int capacity = telemetry.Length;
-                int dumpCount = math.min(capacity, math.max(0, cursor));
-                int start = cursor < capacity ? 0 : cursor % capacity;
-                writer.Write(DumpMagic);
-                writer.Write(DumpVersion);
-                writer.Write(capacity);
-                writer.Write(dumpCount);
-                writer.Write(cursor);
-                writer.Write(start);
-                writer.Write(UnsafeUtility.SizeOf<SymbiosisTelemetryEntry>());
-                for (int offset = 0; offset < dumpCount; offset++)
-                {
-                    SymbiosisTelemetryEntry entry = telemetry[(start + offset) % capacity];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.ActiveExchanges);
-                    writer.Write(entry.BiomassTransferred);
-                    writer.Write(entry.SolverComputeTimeMs);
-                    writer.Write(entry.OxygenEmitterCount);
-                    writer.Write(entry.ToxemiaCount);
-                    writer.Write(entry.CamouflageCount);
-                    writer.Write(entry.SeedCount);
-                    writer.Write(entry.AdherenceCount);
-                    writer.Write(entry.AcousticTapCount);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.InvalidMathCount);
-                    writer.Write(entry.OverflowCount);
-                    writer.Write(entry.Pad0);
-                    writer.Write(entry.Pad1);
-                }
-            }
+            _ = path;
+            _ = telemetry;
+            _ = cursor;
         }
 
         private static void ParseCsvOverrides(

@@ -877,7 +877,7 @@ namespace Hecton8.Systems.AI
                 return;
 
             long solveStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
-            RefreshRuntimeReferences(force: false);
+            RefreshRuntimeReferencesHot();
             DrainEntityDeathSignals();
             if (playerTransform == null)
                 return;
@@ -1599,7 +1599,7 @@ namespace Hecton8.Systems.AI
             if (!_predatorSpatialHashBuffersPinned)
                 return;
 
-            IDataVault vault = _predatorSpatialHashGuardVault ?? _dataVault;
+            IDataVault vault = _predatorSpatialHashGuardVault;
             vault?.ReleaseMutationGuard(_predatorSpatialHashMutationGuardMask);
             _predatorSpatialHashGuardVault = null;
             _predatorSpatialHashBuffersPinned = false;
@@ -1775,6 +1775,19 @@ namespace Hecton8.Systems.AI
                     playerTransform.TryGetComponent(out playerCamera);
             }
 
+            RefreshMetaCampaignService();
+        }
+
+        private void RefreshRuntimeReferencesHot()
+        {
+            if (_resolveRetryTimer > 0f)
+            {
+                _resolveRetryTimer -= SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+                return;
+            }
+
+            _resolveRetryTimer = 1f;
+            ApplyPlayerRuntimeContextReferences(_playerRuntimeContext, replaceExisting: false);
             RefreshMetaCampaignService();
         }
 

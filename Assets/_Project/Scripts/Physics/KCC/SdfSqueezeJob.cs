@@ -108,7 +108,7 @@ namespace Hecton8.Physics.KCC
                 return;
             }
 
-            float quality = 1f;
+            float quality = SanitizeQuality01(QualityWeight);
             float qualityCurve = Smooth01(quality);
             float sampleStepMeters = SdfSampleStepMeters * math.lerp(2.0f, 1.0f, qualityCurve);
             if (!TryResolveOpenSpaceNormal(
@@ -407,7 +407,7 @@ namespace Hecton8.Physics.KCC
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float SanitizeQuality01(float value)
         {
-            return math.saturate(math.select(1.0f, value, math.isfinite(value) & value > 0.0f));
+            return math.saturate(math.select(value, 1.0f, !math.isfinite(value)));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

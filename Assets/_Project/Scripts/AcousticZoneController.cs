@@ -44,7 +44,6 @@ using System.Collections.Generic;
 using System;
 using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -878,7 +877,7 @@ namespace Hecton8.Audio
 #endif
             }
 
-            ResolvePlayerAmbientSource();
+            ResolvePlayerAmbientSourceCold();
             ResolvePlayerListenerFiltersCold();
             ResolveBiomeMatrixDirector(true);
             RefreshBiomeAmbientContext();
@@ -951,6 +950,7 @@ namespace Hecton8.Audio
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                     TryBindPlayerBuoyancyFromCachedContext();
+                    ResolvePlayerAmbientSourceCold();
                     ResolvePlayerListenerFiltersCold();
                     break;
                 case GlobalRegistryServiceSlot.PhysicsStateManager:
@@ -1406,10 +1406,12 @@ namespace Hecton8.Audio
 
             _nextPlayerResolveTime = ResolvePresentationClockSeconds() + PlayerResolveRetryInterval;
 
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerTransform != null)
             {
-                playerTransform.TryGetComponent(out playerBuoyancy);
-                playerTransform.TryGetComponent(out _playerMovement);
+                playerBuoyancy = playerContext.PlayerBuoyancyAirState as BuoyancyObject;
+                _playerMovement = playerContext.PlayerMovement;
                 CachePlayerBuoyancyState();
             }
 
@@ -1515,6 +1517,7 @@ namespace Hecton8.Audio
             if (buoyancy != null)
             {
                 buoyancy.TryGetComponent(out _playerMovement);
+                ResolvePlayerAmbientSourceCold(buoyancy.transform);
                 TryRegisterLateFrameTick();
             }
             _stateInitialized = false; // Pereinitsializatsiya pri sleduyuschem Tick
@@ -1974,14 +1977,25 @@ namespace Hecton8.Audio
             }
 
             playerUnderwaterAmbientSource = null;
+            return null;
+        }
 
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
-                ResolvePlayerAmbientSource(playerTransform, allowPresentationState);
+        private AudioSource ResolvePlayerAmbientSourceCold(bool allowPresentationState = false)
+        {
+            AudioSource ambientSource = ResolvePlayerAmbientSource(allowPresentationState);
+            if (ambientSource != null)
+                return ambientSource;
+
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+
+            if (playerTransform != null)
+                ResolvePlayerAmbientSourceCold(playerTransform, allowPresentationState);
 
             return playerUnderwaterAmbientSource;
         }
 
-        private void ResolvePlayerAmbientSource(Transform playerTransform, bool allowPresentationState = false)
+        private void ResolvePlayerAmbientSourceCold(Transform playerTransform, bool allowPresentationState = false)
         {
             if ((object)playerUnderwaterAmbientSource != null && playerUnderwaterAmbientSource != null)
             {
@@ -2109,7 +2123,9 @@ namespace Hecton8.Audio
 
         private AudioListener ResolvePlayerListenerFiltersCold()
         {
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerTransform != null)
                 ResolvePlayerListenerFiltersCold(playerTransform);
 
             return _cachedPlayerAudioListener;

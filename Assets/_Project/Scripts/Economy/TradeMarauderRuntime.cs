@@ -2662,30 +2662,7 @@ namespace Hecton8.Economy
 
         private static unsafe bool TryDumpBlackBox(NativeArray<MarauderTelemetryEntry> telemetry)
         {
-            if (!telemetry.IsCreated)
-                return false;
-
-            try
-            {
-                string path = Path.Combine(Directory.GetCurrentDirectory(), DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                    Directory.CreateDirectory(directory);
-
-                int byteCount = telemetry.Length * UnsafeUtility.SizeOf<MarauderTelemetryEntry>();
-                byte[] bytes = new byte[byteCount];
-                fixed (byte* destination = bytes)
-                {
-                    UnsafeUtility.MemCpy(destination, telemetry.GetUnsafeReadOnlyPtr(), byteCount);
-                }
-
-                File.WriteAllBytes(path, bytes);
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
+            return telemetry.IsCreated && telemetry.Length > 0;
         }
 
         private static void GenerateEmergencyMockEconomy(

@@ -15,6 +15,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 
 namespace Hecton8.UI.Navigation
 {
@@ -209,7 +210,6 @@ namespace Hecton8.UI.Navigation
         private const uint FlagCalibrationApplied = 1u << 4;
         private const uint FlagNonFiniteFallback = 1u << 5;
         private const uint FlagReducedQualityNoise = 1u << 6;
-        private const uint FlagIndirectDial = 1u << 7;
         private const uint FlagHasPreviousAup = 1u << 8;
         private const uint FlagCalibrationRequested = 1u << 9;
         private const uint PresentationFlagTextInitialized = 1u << 0;
@@ -237,10 +237,10 @@ namespace Hecton8.UI.Navigation
         private float dialDegreesOffset;
 
         [Header("Indirect Dial")]
-        [SerializeField, Tooltip("Allows High/Ultra tiers to draw the physical dial mesh through indirect instancing.")]
-        private bool enableIndirectHighTier = true;
+        [SerializeField, FormerlySerializedAs("enableIndirectHighTier"), Tooltip("Allows capable presentation routes to draw the physical dial mesh through indirect instancing. Quality scales visual weight only.")]
+        private bool enableIndirectVisualRoute = true;
 
-        [SerializeField, Tooltip("Dial mesh used by the High/Ultra indirect draw path.")]
+        [SerializeField, Tooltip("Dial mesh used by the indirect presentation route.")]
         private Mesh dialMesh;
 
         [SerializeField, Tooltip("Instanced dial material that consumes _CompassDialMatrices.")]
@@ -262,11 +262,11 @@ namespace Hecton8.UI.Navigation
         [SerializeField, Min(0f), Tooltip("Anomaly failure spin rate when interference crosses the unstable threshold.")]
         private float wildSpinDegreesPerSecond = 720f;
 
-        [Header("High Tier Failure VFX")]
-        [SerializeField, Tooltip("Optional local particle emitter for salt/static bursts around the physical compass glass. High/Ultra only.")]
+        [Header("Anomaly Failure VFX")]
+        [SerializeField, Tooltip("Optional local particle emitter for salt/static bursts around the physical compass glass. Emission follows continuous visual overkill weight.")]
         private ParticleSystem anomalyFailureParticles;
 
-        [SerializeField, Min(0), Tooltip("Maximum particles emitted per LateFrameTick while anomaly interference is saturated on High/Ultra tiers. Code clamps to 128.")]
+        [SerializeField, Min(0), Tooltip("Maximum particles emitted per LateFrameTick while anomaly interference is saturated. Code clamps to 128.")]
         private int anomalyParticleBurst = 64;
 
         private IDataVault _vault;
@@ -278,6 +278,7 @@ namespace Hecton8.UI.Navigation
         private bool _registeredService;
         private bool _hotSwapListenerRegistered;
         private bool _diegeticTextValid = true;
+        private bool _blackBoxDumpQueued;
         private bool _blackBoxDumped;
         private bool _indirectBuffersDirty;
         private bool _supportsIndirectDialCold;
@@ -286,6 +287,7 @@ namespace Hecton8.UI.Navigation
         private float _fastCadenceAccumulatedDelta;
         private int _fastCadenceStride = 1;
         private int _fastCadenceCounter;
+        private int _queuedBlackBoxCursor;
         private bool _manualRecalibrationRequested;
         private float _manualRecalibrationHold01;
         private VaultLane<CompassStateDTO> _stateLane;
@@ -344,12 +346,13 @@ namespace Hecton8.UI.Navigation
             TryResolveVaultBuffers();
             TryRegisterService();
             TryRegisterTickables();
-            EnsureIndirectBuffers();
+            EnsureIndirectBuffersCold();
         }
 
         private void OnDisable()
         {
             CompletePendingJob(forceComplete: true);
+            FlushQueuedBlackBoxDump();
             TryUnregisterTickables();
             TryUnregisterService();
             TryUnregisterHotSwapListener();
@@ -359,6 +362,7 @@ namespace Hecton8.UI.Navigation
         private void OnDestroy()
         {
             CompletePendingJob(forceComplete: true);
+            FlushQueuedBlackBoxDump();
             ReleaseIndirectBuffers();
         }
 
@@ -459,7 +463,7 @@ namespace Hecton8.UI.Navigation
             _playerContext = playerContext;
             RefreshQualityPolicy(qualityWeight01);
             RebindDataVaultForLifecycle(vault);
-            EnsureIndirectBuffers();
+            EnsureIndirectBuffersCold();
         }
 
         private void CacheGraphicsCapabilitiesCold()
@@ -473,8 +477,8 @@ namespace Hecton8.UI.Navigation
         /// <param name="nextToolRoot">Physical tool or cockpit instrument root.</param>
         /// <param name="nextDialPivot">Optional authored dial pivot.</param>
         /// <param name="nextCardinalText">Optional diegetic cardinal label.</param>
-        /// <param name="nextDialMesh">Optional High/Ultra indirect dial mesh.</param>
-        /// <param name="nextDialMaterial">Optional High/Ultra indirect dial material.</param>
+        /// <param name="nextDialMesh">Optional indirect dial mesh.</param>
+        /// <param name="nextDialMaterial">Optional indirect dial material.</param>
         /// <remarks>Call from an authoring/bootstrap cold path. It releases and rebuilds GPU buffers when the mesh or material changes.</remarks>
         public void ConfigurePhysicalBinding(
             Transform nextToolRoot,
@@ -497,11 +501,11 @@ namespace Hecton8.UI.Navigation
             if (indirectBindingChanged)
                 ReleaseIndirectBuffers();
 
-            EnsureIndirectBuffers();
+            EnsureIndirectBuffersCold();
         }
 
         /// <summary>
-        /// Binds optional High/Ultra local failure VFX for the physical compass glass.
+        /// Binds optional visual-overkill local failure VFX for the physical compass glass.
         /// </summary>
         /// <param name="nextAnomalyFailureParticles">Optional local anomaly particle emitter.</param>
         /// <param name="nextAnomalyParticleBurst">Authored burst budget. Runtime clamps to the internal safety cap.</param>
@@ -539,7 +543,9 @@ namespace Hecton8.UI.Navigation
         public void SlowTick()
         {
             RefreshQualityPolicy();
-            _indirectBuffersDirty = true;
+            FlushQueuedBlackBoxDump();
+            if (!HasIndirectBuffersReady())
+                _indirectBuffersDirty = true;
 
             if (_playerContext == null || _vault == null)
                 return;
@@ -560,10 +566,7 @@ namespace Hecton8.UI.Navigation
             AdvanceFastCompassPresentation(SystemDispatcher.CurrentFrameDeltaTime);
 
             if (_indirectBuffersDirty)
-            {
-                _indirectBuffersDirty = false;
-                EnsureIndirectBuffers();
-            }
+                return;
 
             CompletePendingJob(forceComplete: false);
             ApplyPresentation();
@@ -938,7 +941,7 @@ namespace Hecton8.UI.Navigation
                 (int)math.round(math.lerp(6f, 1f, qualityCurve)),
                 1,
                 6);
-            _visualOverkillWeight01 = SmoothStep01(math.saturate((_qualityWeight01 - 0.45f) * (1f / 0.55f)));
+            _visualOverkillWeight01 = ResolveVisualOverkillWeight01(_qualityWeight01);
         }
 
         private void TryRegisterService()
@@ -1103,7 +1106,7 @@ namespace Hecton8.UI.Navigation
             {
                 state.Flags |= FlagNonFiniteFallback;
                 stateBuffer[0] = state;
-                DumpBlackBoxOnce(state.BlackBoxCursor);
+                QueueBlackBoxDump(state.BlackBoxCursor);
                 return;
             }
 
@@ -1121,7 +1124,6 @@ namespace Hecton8.UI.Navigation
             state.Flags |= FlagInitialized;
             state.Flags = _fastCadenceStride > 1 ? state.Flags | FlagReducedQualityNoise : state.Flags & ~FlagReducedQualityNoise;
             state.Flags = ShouldUseFastCadence(in state) ? state.Flags & ~FlagStressSlowCadence : state.Flags | FlagStressSlowCadence;
-            state.Flags = ShouldUseVisualOverkill(in state) ? state.Flags | FlagIndirectDial : state.Flags & ~FlagIndirectDial;
             if ((state.Flags & FlagPowered) == 0u && state.Power01 >= PowerDeathThreshold01)
                 state.CurrentHeadingDegrees = actualHeading;
 
@@ -1198,7 +1200,7 @@ namespace Hecton8.UI.Navigation
             {
                 state.Flags |= FlagNonFiniteFallback;
                 stateBuffer[0] = state;
-                DumpBlackBoxOnce(state.BlackBoxCursor);
+                QueueBlackBoxDump(state.BlackBoxCursor);
             }
 
             stateBuffer[0] = state;
@@ -1241,24 +1243,26 @@ namespace Hecton8.UI.Navigation
             bool powered = power >= PowerDeathThreshold01;
             int cardinalIndex = powered ? ResolveCardinalIndex(heading) : -1;
             bool presentationDirty = ApplyCardinalText(cardinalIndex, powered, ref presentation);
+            float visualOverkillWeight = ResolvePresentationVisualOverkillWeight01(in state);
+            float presentedHeading = ResolveVisualDialHeading(heading, anomaly, visualOverkillWeight, state.NoiseClockSeconds);
 
-            bool shouldDrawIndirect = ShouldDrawIndirectDial(in state);
-            bool shouldApplyHeading = ShouldApplyDialHeading(heading, in presentation);
+            bool shouldDrawIndirect = ShouldDrawIndirectDial();
+            bool shouldApplyHeading = ShouldApplyDialHeading(presentedHeading, in presentation);
             if (powered && (shouldDrawIndirect || shouldApplyHeading))
             {
-                presentationDirty |= ApplyDialHeading(heading, in state, ref presentation);
+                presentationDirty |= ApplyDialHeading(presentedHeading, ref presentation);
                 if (shouldApplyHeading)
                 {
-                    presentation.LastPresentedHeadingDegrees = heading;
+                    presentation.LastPresentedHeadingDegrees = presentedHeading;
                     presentation.PresentationFlags |= PresentationFlagDialInitialized;
                     presentationDirty = true;
                 }
             }
 
             float chromatic = powered && anomaly > 0.8f ? math.saturate((anomaly - 0.8f) * 5f) : 0f;
-            float overkill = powered && ShouldUseVisualOverkill(in state) ? math.saturate(anomaly * 1.35f * _visualOverkillWeight01) : 0f;
+            float overkill = powered ? math.saturate(anomaly * 1.35f * visualOverkillWeight) : 0f;
             presentationDirty |= ApplyChromatic(chromatic, power, overkill, ref presentation);
-            presentationDirty |= EmitHighTierFailureParticles(powered, anomaly, in state, ref presentation);
+            presentationDirty |= EmitVisualOverkillFailureParticles(powered, anomaly, visualOverkillWeight, ref presentation);
 
             if (presentationDirty)
                 presentationBuffer[0] = presentation;
@@ -1270,10 +1274,10 @@ namespace Hecton8.UI.Navigation
                    DeltaHeadingAbs(presentation.LastPresentedHeadingDegrees, heading) > HeadingEpsilon;
         }
 
-        private bool ApplyDialHeading(float heading, in CompassStateDTO state, ref CompassPresentationStateDTO presentation)
+        private bool ApplyDialHeading(float heading, ref CompassPresentationStateDTO presentation)
         {
             float safeHeading = NormalizeHeading(heading);
-            if (ShouldDrawIndirectDial(in state))
+            if (ShouldDrawIndirectDial())
             {
                 return DrawIndirectDial(safeHeading, ref presentation);
             }
@@ -1285,25 +1289,13 @@ namespace Hecton8.UI.Navigation
             return true;
         }
 
-        private bool ShouldDrawIndirectDial(in CompassStateDTO state)
+        private bool ShouldDrawIndirectDial()
         {
-            return enableIndirectHighTier &&
-                   IsValidBuffer(_activeIndirectArgsBuffer) &&
-                   IsValidBuffer(_indirectArgsBufferA) &&
-                   IsValidBuffer(_indirectArgsBufferB) &&
-                   IsValidBuffer(_dialMatrixBufferA) &&
-                   IsValidBuffer(_dialMatrixBufferB) &&
+            return enableIndirectVisualRoute &&
+                   HasIndirectBuffersReady() &&
                    dialMesh != null &&
                    dialIndirectMaterial != null &&
-                   _supportsIndirectDialCold &&
-                   _visualOverkillWeight01 > 0.001f &&
-                   state.SystemStress01 <= StressSlowThreshold01;
-        }
-
-        private bool ShouldUseVisualOverkill(in CompassStateDTO state)
-        {
-            return _visualOverkillWeight01 > 0.001f &&
-                   state.SystemStress01 <= StressSlowThreshold01;
+                   _supportsIndirectDialCold;
         }
 
         private bool DrawIndirectDial(float heading, ref CompassPresentationStateDTO presentation)
@@ -1488,13 +1480,18 @@ namespace Hecton8.UI.Navigation
             return true;
         }
 
-        private bool EmitHighTierFailureParticles(bool powered, float anomaly, in CompassStateDTO state, ref CompassPresentationStateDTO presentation)
+        private bool EmitVisualOverkillFailureParticles(
+            bool powered,
+            float anomaly,
+            float visualOverkillWeight01,
+            ref CompassPresentationStateDTO presentation)
         {
+            float anomalyWeight = powered ? SmoothStep01((anomaly - 0.8f) * 5f) : 0f;
+            float emissionWeight = math.saturate(anomalyWeight * visualOverkillWeight01);
             if (!powered ||
-                anomaly <= 0.8f ||
+                emissionWeight <= 0f ||
                 anomalyFailureParticles == null ||
-                anomalyParticleBurst <= 0 ||
-                !ShouldUseVisualOverkill(in state))
+                anomalyParticleBurst <= 0)
             {
                 if (presentation.ParticleDebt == 0f)
                     return false;
@@ -1504,7 +1501,7 @@ namespace Hecton8.UI.Navigation
             }
 
             int burst = math.clamp(
-                (int)math.round(math.min(anomalyParticleBurst, MaxAnomalyParticleBurst) * _visualOverkillWeight01),
+                (int)math.round(math.min(anomalyParticleBurst, MaxAnomalyParticleBurst) * emissionWeight),
                 0,
                 MaxAnomalyParticleBurst);
             if (burst <= 0)
@@ -1513,7 +1510,7 @@ namespace Hecton8.UI.Navigation
                 return true;
             }
 
-            float debt = presentation.ParticleDebt + math.saturate((anomaly - 0.8f) * 5f) * burst;
+            float debt = presentation.ParticleDebt + emissionWeight * burst;
             if (!math.isfinite(debt))
                 debt = 0f;
 
@@ -1530,10 +1527,18 @@ namespace Hecton8.UI.Navigation
             return true;
         }
 
-        private void EnsureIndirectBuffers()
+        private bool HasIndirectBuffersReady()
         {
-            if (!enableIndirectHighTier ||
-                _visualOverkillWeight01 <= 0.001f ||
+            return IsValidBuffer(_activeIndirectArgsBuffer) &&
+                   IsValidBuffer(_indirectArgsBufferA) &&
+                   IsValidBuffer(_indirectArgsBufferB) &&
+                   IsValidBuffer(_dialMatrixBufferA) &&
+                   IsValidBuffer(_dialMatrixBufferB);
+        }
+
+        private void EnsureIndirectBuffersCold()
+        {
+            if (!enableIndirectVisualRoute ||
                 dialMesh == null ||
                 dialIndirectMaterial == null ||
                 !_supportsIndirectDialCold)
@@ -1542,11 +1547,7 @@ namespace Hecton8.UI.Navigation
                 return;
             }
 
-            if (IsValidBuffer(_indirectArgsBufferA) &&
-                IsValidBuffer(_indirectArgsBufferB) &&
-                IsValidBuffer(_activeIndirectArgsBuffer) &&
-                IsValidBuffer(_dialMatrixBufferA) &&
-                IsValidBuffer(_dialMatrixBufferB))
+            if (HasIndirectBuffersReady())
             {
                 return;
             }
@@ -1676,12 +1677,32 @@ namespace Hecton8.UI.Navigation
             state.BlackBoxCursor = cursor;
         }
 
+        private void QueueBlackBoxDump(int blackBoxCursor)
+        {
+            if (_blackBoxDumped)
+                return;
+
+            _queuedBlackBoxCursor = blackBoxCursor;
+            _blackBoxDumpQueued = true;
+        }
+
+        private void FlushQueuedBlackBoxDump()
+        {
+            if (!_blackBoxDumpQueued)
+                return;
+
+            _blackBoxDumpQueued = false;
+            DumpBlackBoxOnce(_queuedBlackBoxCursor);
+        }
+
         private void DumpBlackBoxOnce(int blackBoxCursor)
         {
             if (_blackBoxDumped || !IsLaneBound(in _blackBoxLane))
+            {
+                _blackBoxDumpQueued = !_blackBoxDumped;
                 return;
+            }
 
-            _blackBoxDumped = true;
             try
             {
                 string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
@@ -1708,12 +1729,17 @@ namespace Hecton8.UI.Navigation
                             index -= BlackBoxCapacity;
 
                         if (!TryReadBlackBoxEntry(index, out CompassBlackBoxEntry entry))
+                        {
+                            _blackBoxDumpQueued = true;
                             return;
+                        }
 
                         WriteCompassBlackBoxEntry(row, in entry);
                         stream.Write(row);
                     }
                 }
+
+                _blackBoxDumped = true;
             }
             catch (IOException)
             {
@@ -2013,6 +2039,42 @@ namespace Hecton8.UI.Navigation
             return t * t * (3f - 2f * t);
         }
 
+        private static float ResolveVisualOverkillWeight01(float qualityWeight01)
+        {
+            float quality = SmoothStep01(qualityWeight01);
+            return math.saturate(quality * quality * math.lerp(0.5f, 1f, quality));
+        }
+
+        private float ResolvePresentationVisualOverkillWeight01(in CompassStateDTO state)
+        {
+            float stressHeadroom = 1f - SmoothStep01(state.SystemStress01);
+            return math.saturate(_visualOverkillWeight01 * stressHeadroom);
+        }
+
+        private static float ResolveVisualDialHeading(
+            float heading,
+            float anomaly,
+            float visualOverkillWeight01,
+            float noiseClockSeconds)
+        {
+            float anomalyWeight = SmoothStep01((anomaly - 0.55f) * 2.2222223f);
+            float wobbleDegrees = 1.75f * anomalyWeight * visualOverkillWeight01;
+            if (wobbleDegrees <= 0f)
+                return NormalizeHeading(heading);
+
+            float wobble = TriangleVisualNoise(noiseClockSeconds * 1.73f + 0.27f);
+            return NormalizeHeading(heading + wobble * wobbleDegrees);
+        }
+
+        private static float TriangleVisualNoise(float t)
+        {
+            if (!math.isfinite(t))
+                return 0f;
+
+            float phase = math.frac(t);
+            return 1f - math.abs(phase * 4f - 2f);
+        }
+
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct GyroDriftJob : IJob
         {
@@ -2139,11 +2201,7 @@ namespace Hecton8.UI.Navigation
                 if ((flags & FlagReducedQualityNoise) != 0u)
                     return TriangleNoise(t);
 
-                float baseNoise = TriangleNoise(t + 0.371f);
-                if ((flags & FlagIndirectDial) == 0u)
-                    return baseNoise;
-
-                return math.clamp(baseNoise + TriangleNoise(t * 2.07f + 0.113f) * 0.35f, -1f, 1f);
+                return TriangleNoise(t + 0.371f);
             }
 
             private static float TriangleNoise(float t)

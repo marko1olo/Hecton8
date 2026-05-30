@@ -17,7 +17,7 @@ namespace Hecton8.Visor
     /// <summary>
     /// Half-resolution compute-driven god ray solve with bilateral depth-aware composite.
     /// </summary>
-    public sealed class VolumetricLightFeature : ScriptableRendererFeature
+    public sealed class VolumetricLightFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener, ILateFrameTickable
     {
         private const string ComputeShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VolumetricLight.compute";
         private const string ProxyShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VolumetricLightProxy.shader";
@@ -240,6 +240,9 @@ namespace Hecton8.Visor
             private Vector4 _flashlightConeData;
             private float _flashlightActive;
             private float _flashlightVolumetricOpacity;
+            private Vector4 _hudFogPerturbation;
+            private float _fogScatteringCoeff;
+            private float _freezeFrameDither;
             private const uint MaxKernelThreadProduct = 256u;
             private const int MaxDispatchGroupsPerDimension = 65535;
 
@@ -260,6 +263,9 @@ namespace Hecton8.Visor
                 in Vector4 flashlightConeData,
                 float flashlightActive,
                 float flashlightVolumetricOpacity,
+                in Vector4 hudFogPerturbation,
+                float fogScatteringCoeff,
+                float freezeFrameDither,
                 Material proxyMaterial,
                 bool forceProxyOnly)
             {
@@ -280,6 +286,9 @@ namespace Hecton8.Visor
                 _flashlightConeData = flashlightConeData;
                 _flashlightActive = Mathf.Clamp01(flashlightActive);
                 _flashlightVolumetricOpacity = Mathf.Clamp01(flashlightVolumetricOpacity);
+                _hudFogPerturbation = hudFogPerturbation;
+                _fogScatteringCoeff = Mathf.Max(0f, fogScatteringCoeff);
+                _freezeFrameDither = freezeFrameDither;
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
@@ -390,8 +399,6 @@ namespace Hecton8.Visor
                     Mathf.Max(0f, _settings.scatterCoefficient),
                     Mathf.Clamp(_settings.anisotropy, -0.95f, 0.95f),
                     Mathf.Max(0f, _settings.intensity));
-                Vector4 hudFogPerturbation = Shader.GetGlobalVector(ShaderConstants.HudFogPerturbationId);
-                float fogScatteringCoeff = Shader.GetGlobalFloat(ShaderConstants.FogScatteringCoeffId);
                 Vector4 marchParams = new Vector4(
                     Mathf.Max(0.1f, _settings.maxRayDistance),
                     _settings.ResolveRaymarchSteps(),
@@ -424,10 +431,10 @@ namespace Hecton8.Visor
                     passData.flashlightActive = _flashlightActive;
                     passData.flashlightVolumetricOpacity = _flashlightVolumetricOpacity;
                     passData.scatteringParams = scatteringParams;
-                    passData.hudFogPerturbation = hudFogPerturbation;
+                    passData.hudFogPerturbation = _hudFogPerturbation;
                     passData.marchParams = marchParams;
                     passData.shadowParams = shadowParams;
-                    passData.fogScatteringCoeff = Mathf.Max(0f, fogScatteringCoeff);
+                    passData.fogScatteringCoeff = _fogScatteringCoeff;
                     passData.viewProjection = viewProjection;
 
                     builder.UseTexture(depthTexture, AccessFlags.Read);
@@ -475,7 +482,7 @@ namespace Hecton8.Visor
                     passData.flashlightColor = _flashlightColor;
                     passData.flashlightActive = _flashlightActive;
                     passData.flashlightVolumetricOpacity = _flashlightVolumetricOpacity;
-                    passData.freezeFrameDither = Shader.GetGlobalFloat(ShaderConstants.FreezeFrameDitherId);
+                    passData.freezeFrameDither = _freezeFrameDither;
                     passData.compositeParams = compositeParams;
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
@@ -543,7 +550,7 @@ namespace Hecton8.Visor
                     _settings.ResolveQualityWeight01(),
                     _settings.ResolveRenderScale(),
                     Mathf.Max(0.01f, _settings.bilateralDepthScale),
-                    Mathf.Max(0f, Shader.GetGlobalFloat(ShaderConstants.FogScatteringCoeffId)));
+                    _fogScatteringCoeff);
 
                 using (var builder = renderGraph.AddRasterRenderPass<ProxyPassData>(
                            "Hecton Volumetric Light Proxy Composite",
@@ -567,7 +574,7 @@ namespace Hecton8.Visor
                     passData.proxyParams = proxyParams;
                     passData.flashlightActive = _flashlightActive;
                     passData.flashlightVolumetricOpacity = _flashlightVolumetricOpacity;
-                    passData.freezeFrameDither = Shader.GetGlobalFloat(ShaderConstants.FreezeFrameDitherId);
+                    passData.freezeFrameDither = _freezeFrameDither;
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
@@ -705,6 +712,25 @@ namespace Hecton8.Visor
         private VolumetricLightPass _pass;
         private Material _proxyMaterial;
         private int _nextPerformanceWarningFrame;
+        private bool _supportsComputeShaders;
+        private bool _hotSwapRegistered;
+        private bool _lateFrameRegistered;
+        private Vector4 _cachedFlashlightPosition;
+        private Vector4 _cachedFlashlightDirection;
+        private Vector4 _cachedFlashlightColor;
+        private Vector4 _cachedFlashlightConeData;
+        private Vector4 _cachedHudFogPerturbation;
+        private float _cachedFlashlightActive;
+        private float _cachedFogScatteringCoeff;
+        private float _cachedFreezeFrameDither;
+
+        private void OnEnable()
+        {
+            CacheGraphicsCapabilitiesCold();
+            TryRegisterLateFrameTickable();
+            TryRegisterHotSwapListener();
+            CachePresentationGlobalsLate();
+        }
 
         /// <inheritdoc />
         public override void Create()
@@ -717,6 +743,7 @@ namespace Hecton8.Visor
 #endif
 
             _pass ??= new VolumetricLightPass();
+            CacheGraphicsCapabilitiesCold();
             Shader proxyShader = settings != null ? settings.proxyShader : null;
             if (proxyShader == null)
                 RuntimeShaderReferenceCatalog.TryGetVolumetricLightProxyShader(out proxyShader);
@@ -725,6 +752,9 @@ namespace Hecton8.Visor
                 proxyShader = Shader.Find("Hidden/Hecton8/VolumetricLightProxy");
 #endif
             RecreateMaterial(ref _proxyMaterial, proxyShader);
+            TryRegisterLateFrameTickable();
+            TryRegisterHotSwapListener();
+            CachePresentationGlobalsLate();
         }
 
         /// <inheritdoc />
@@ -737,7 +767,7 @@ namespace Hecton8.Visor
             }
 
             bool allowComputeVolumetrics = settings.computeShader != null &&
-                                           SystemInfo.supportsComputeShaders;
+                                           _supportsComputeShaders;
             bool forceProxyOnly = !allowComputeVolumetrics;
             if (forceProxyOnly && _proxyMaterial == null)
                 return;
@@ -763,11 +793,11 @@ namespace Hecton8.Visor
                 }
             }
 
-            Vector4 flashlightPosition = Shader.GetGlobalVector(ShaderConstants.FlashlightPositionId);
-            Vector4 flashlightDirection = Shader.GetGlobalVector(ShaderConstants.FlashlightDirectionId);
-            Vector4 flashlightColor = Shader.GetGlobalVector(ShaderConstants.FlashlightColorId);
-            Vector4 flashlightConeData = Shader.GetGlobalVector(ShaderConstants.FlashlightConeDataId);
-            float flashlightActive = Shader.GetGlobalFloat(ShaderConstants.FlashlightActiveId);
+            Vector4 flashlightPosition = _cachedFlashlightPosition;
+            Vector4 flashlightDirection = _cachedFlashlightDirection;
+            Vector4 flashlightColor = _cachedFlashlightColor;
+            Vector4 flashlightConeData = _cachedFlashlightConeData;
+            float flashlightActive = _cachedFlashlightActive;
             float flashlightHasCone = flashlightActive > 0.5f && flashlightColor.w > 0.001f && flashlightPosition.w > 0.1f
                 ? 1f
                 : 0f;
@@ -789,6 +819,9 @@ namespace Hecton8.Visor
                 flashlightConeData,
                 flashlightHasCone,
                 flashlightVolumetricOpacity,
+                _cachedHudFogPerturbation,
+                _cachedFogScatteringCoeff,
+                _cachedFreezeFrameDither,
                 _proxyMaterial,
                 forceProxyOnly);
             renderer.EnqueuePass(_pass);
@@ -841,6 +874,83 @@ namespace Hecton8.Visor
             _pass?.Dispose();
             CoreUtils.Destroy(_proxyMaterial);
             _proxyMaterial = null;
+            TryUnregisterLateFrameTickable();
+            TryUnregisterHotSwapListener();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
+                return;
+
+            TryUnregisterLateFrameTickable();
+            if (currentService != null)
+                TryRegisterLateFrameTickable();
+        }
+
+        public void LateFrameTick()
+        {
+            CachePresentationGlobalsLate();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterLateFrameTickable();
+            TryUnregisterHotSwapListener();
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsComputeShaders = SystemInfo.supportsComputeShaders;
+        }
+
+        private void CachePresentationGlobalsLate()
+        {
+            _cachedFlashlightPosition = Shader.GetGlobalVector(ShaderConstants.FlashlightPositionId);
+            _cachedFlashlightDirection = Shader.GetGlobalVector(ShaderConstants.FlashlightDirectionId);
+            _cachedFlashlightColor = Shader.GetGlobalVector(ShaderConstants.FlashlightColorId);
+            _cachedFlashlightConeData = Shader.GetGlobalVector(ShaderConstants.FlashlightConeDataId);
+            _cachedHudFogPerturbation = Shader.GetGlobalVector(ShaderConstants.HudFogPerturbationId);
+            _cachedFlashlightActive = Shader.GetGlobalFloat(ShaderConstants.FlashlightActiveId);
+            _cachedFogScatteringCoeff = Mathf.Max(0f, Shader.GetGlobalFloat(ShaderConstants.FogScatteringCoeffId));
+            _cachedFreezeFrameDither = Shader.GetGlobalFloat(ShaderConstants.FreezeFrameDitherId);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_lateFrameRegistered)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = false;
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

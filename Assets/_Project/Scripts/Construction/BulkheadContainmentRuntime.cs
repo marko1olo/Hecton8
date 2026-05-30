@@ -17,7 +17,7 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 namespace Hecton8.Construction
 {
     [DefaultExecutionOrder(-180)]
-    public sealed unsafe partial class BulkheadContainmentRuntime : MonoBehaviour, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed unsafe partial class BulkheadContainmentRuntime : MonoBehaviour, IColdTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const float DefaultPlayerRadiusMeters = 0.38f;
         private const float DefaultCloseSpeed = 2.4f;
@@ -29,6 +29,7 @@ namespace Hecton8.Construction
         private const float AuthoritativeQualityWeight = 1f;
         private const uint MockSeed = 0x53484E42u;
         private const SystemID OwnerSystemId = SystemID.Construction;
+        private const int BulkheadProfileCsvMaxBytes = 8192;
         private const ulong BulkheadProfileImportMutationGuardMask = 1UL << 58;
         private const ulong BulkheadTelemetryMutationGuardMask = 1UL << 59;
         private const ulong BulkheadRefreshMutationGuardMask = 1UL << 60;
@@ -112,7 +113,6 @@ namespace Hecton8.Construction
         private VaultGenerationHandle<uint> _telemetryCursorHandle;
         private VaultGenerationHandle<BulkheadCollisionResultDTO> _collisionResultsHandle;
         private VaultGenerationHandle<BulkheadProfileDTO> _profilesHandle;
-        private VaultGenerationHandle<byte> _csvScratchHandle;
         private VaultGenerationHandle<BulkheadStateDTO> _shaderUploadHandle;
         private VaultGenerationHandle<BulkheadContainmentIntentDTO> _intentRingHandle;
         private VaultGenerationHandle<BulkheadContainmentIntentControlDTO> _intentControlHandle;
@@ -125,6 +125,7 @@ namespace Hecton8.Construction
         private bool _registeredSimulation;
         private bool _registeredPostSimulation;
         private bool _registeredVisualSync;
+        private bool _registeredColdTick;
         private bool _registeredHotSwap;
         private bool _vaultRebindPending;
         private bool _vaultInitialized;
@@ -223,6 +224,11 @@ namespace Hecton8.Construction
             if (vault == null || !runtime.BootstrapVaultState(vault))
                 return false;
 
+            Span<BulkheadProfileDTO> profileScratch = stackalloc BulkheadProfileDTO[BulkheadContainmentConstants.ProfileCapacity];
+            int profileCount = ParseProfiles(csv, profileScratch);
+            if (profileCount <= 0)
+                return false;
+
             if (!vault.TryAcquireMutationGuard(BulkheadProfileImportMutationGuardMask))
                 return false;
 
@@ -236,7 +242,11 @@ namespace Hecton8.Construction
                     return false;
                 }
 
-                return ParseProfiles(csv, profiles) > 0;
+                int copyCount = math.min(profileCount, profiles.Length);
+                for (int i = 0; i < copyCount; i++)
+                    profiles[i] = profileScratch[i];
+
+                return copyCount > 0;
             }
             finally
             {
@@ -254,48 +264,28 @@ namespace Hecton8.Construction
             if (vault == null || !runtime.BootstrapVaultState(vault))
                 return false;
 
-            if (!vault.TryAcquireMutationGuard(BulkheadProfileImportMutationGuardMask))
-                return false;
-
             try
             {
-                if (!IsBulkheadVaultHandle(in runtime._profilesHandle, BufferID.Shinobu220BulkheadProfiles) ||
-                    !IsBulkheadVaultHandle(in runtime._csvScratchHandle, BufferID.Shinobu220BulkheadCsvScratch) ||
-                    !vault.TryResolveHandle(in runtime._profilesHandle, out NativeArray<BulkheadProfileDTO> profiles) ||
-                    !vault.TryResolveHandle(in runtime._csvScratchHandle, out NativeArray<byte> scratch) ||
-                    !profiles.IsCreated ||
-                    !scratch.IsCreated ||
-                    profiles.Length == 0 ||
-                    scratch.Length == 0)
-                {
-                    return false;
-                }
-
                 using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-                if (stream.Length <= 0L || stream.Length > scratch.Length)
+                if (stream.Length <= 0L || stream.Length > BulkheadProfileCsvMaxBytes)
                     return false;
 
                 int byteCount = (int)stream.Length;
-                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
+                Span<byte> csvScratch = stackalloc byte[BulkheadProfileCsvMaxBytes];
                 int totalRead = 0;
                 while (totalRead < byteCount)
                 {
-                    Span<byte> destination = new Span<byte>(scratchPtr + totalRead, byteCount - totalRead);
-                    int read = stream.Read(destination);
+                    int read = stream.Read(csvScratch.Slice(totalRead, byteCount - totalRead));
                     if (read <= 0)
                         break;
                     totalRead += read;
                 }
 
-                return totalRead == byteCount && ParseProfiles(new ReadOnlySpan<byte>(scratchPtr, totalRead), profiles) > 0;
+                return totalRead == byteCount && TryLoadProfilesFromCsvBytes(csvScratch.Slice(0, totalRead));
             }
             catch (Exception ex) when (IsColdStorageException(ex))
             {
                 return false;
-            }
-            finally
-            {
-                vault.ReleaseMutationGuard(BulkheadProfileImportMutationGuardMask);
             }
         }
 #endif
@@ -362,6 +352,8 @@ namespace Hecton8.Construction
                 _registeredPostSimulation = true;
             if (!_registeredVisualSync && GlobalRegistry.TryRegisterDispatcherSystem(_visualSyncPhase))
                 _registeredVisualSync = true;
+            if (!_registeredColdTick && GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment))
+                _registeredColdTick = true;
         }
 
         private void TryRegisterHotSwapListener()
@@ -394,6 +386,23 @@ namespace Hecton8.Construction
                 GlobalRegistry.UnregisterDispatcherSystem(_visualSyncPhase);
                 _registeredVisualSync = false;
             }
+            if (_registeredColdTick)
+            {
+                GlobalRegistry.UnregisterColdTickable(this, PriorityLayer.Environment);
+                _registeredColdTick = false;
+            }
+        }
+
+        public void ColdTick()
+        {
+            if (!Application.isPlaying || !isActiveAndEnabled || _shutdownStarted)
+                return;
+
+            if (_vaultRebindPending && !TryFlushPendingDataVaultRebind())
+                return;
+
+            if (uploadShaderBuffer && !HasGraphicsBuffersReady())
+                _shaderUploadDirty = true;
         }
 
         private void TryUnregisterHotSwapListener()
@@ -618,12 +627,23 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            if (buffer.IsCreated && buffer.Length >= requiredLength)
-                return true;
+            bool releaseOnFailure = true;
+            try
+            {
+                if (buffer.IsCreated && buffer.Length >= requiredLength)
+                {
+                    releaseOnFailure = false;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, OwnerSystemId);
-            buffer = default;
-            return false;
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnFailure)
+                    vault.ReleaseWriteLock(in handle, OwnerSystemId);
+            }
         }
 
         private bool TryFinalizeBulkheadJobsNoWait()
@@ -723,7 +743,6 @@ namespace Hecton8.Construction
                 ReleaseVaultHandle(vault, ref _telemetryCursorHandle, BufferID.Shinobu220BulkheadTelemetryCursor);
                 ReleaseVaultHandle(vault, ref _collisionResultsHandle, BufferID.Shinobu220BulkheadCollisionResults);
                 ReleaseVaultHandle(vault, ref _profilesHandle, BufferID.Shinobu220BulkheadProfiles);
-                ReleaseVaultHandle(vault, ref _csvScratchHandle, BufferID.Shinobu220BulkheadCsvScratch);
                 ReleaseVaultHandle(vault, ref _shaderUploadHandle, BufferID.Shinobu220BulkheadShaderUpload);
                 ReleaseVaultHandle(vault, ref _intentRingHandle, BufferID.Shinobu220BulkheadIntentRing);
                 ReleaseVaultHandle(vault, ref _intentControlHandle, BufferID.Shinobu220BulkheadIntentControl);
@@ -746,7 +765,6 @@ namespace Hecton8.Construction
             _telemetryCursorHandle = default;
             _collisionResultsHandle = default;
             _profilesHandle = default;
-            _csvScratchHandle = default;
             _shaderUploadHandle = default;
             _intentRingHandle = default;
             _intentControlHandle = default;
@@ -804,7 +822,6 @@ namespace Hecton8.Construction
                 _telemetryCursorHandle = vault.EnsureGenerationHandle<uint>(BufferID.Shinobu220BulkheadTelemetryCursor, 1, OwnerSystemId);
                 _collisionResultsHandle = vault.EnsureGenerationHandle<BulkheadCollisionResultDTO>(BufferID.Shinobu220BulkheadCollisionResults, 1, OwnerSystemId);
                 _profilesHandle = vault.EnsureGenerationHandle<BulkheadProfileDTO>(BufferID.Shinobu220BulkheadProfiles, BulkheadContainmentConstants.ProfileCapacity, OwnerSystemId);
-                _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.Shinobu220BulkheadCsvScratch, 8192, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
                 _shaderUploadHandle = vault.EnsureGenerationHandle<BulkheadStateDTO>(BufferID.Shinobu220BulkheadShaderUpload, BulkheadContainmentConstants.ShaderUploadCapacity, OwnerSystemId);
                 _intentRingHandle = vault.EnsureGenerationHandle<BulkheadContainmentIntentDTO>(BufferID.Shinobu220BulkheadIntentRing, BulkheadContainmentIntentBus.IntentCapacity, OwnerSystemId);
                 _intentControlHandle = vault.EnsureGenerationHandle<BulkheadContainmentIntentControlDTO>(BufferID.Shinobu220BulkheadIntentControl, 1, OwnerSystemId);
@@ -1205,7 +1222,7 @@ namespace Hecton8.Construction
             if (!TryFinalizeBulkheadJobsNoWait())
                 return;
 
-            if (_vaultRebindPending && !TryFlushPendingDataVaultRebind())
+            if (_vaultRebindPending)
             {
                 _preSimulationScheduled = false;
                 return;
@@ -1307,7 +1324,7 @@ namespace Hecton8.Construction
         private JobHandle ScheduleSimulation(in DispatcherTimingDTO timing, in DispatcherJobContext context, JobHandle dependsOn)
         {
             JobHandle dependency = _preSimulationScheduled ? JobHandle.CombineDependencies(dependsOn, _preSimulationHandle) : dependsOn;
-            if (_vaultRebindPending && !TryFlushPendingDataVaultRebind())
+            if (_vaultRebindPending)
                 return dependency;
 
             IDataVault vault = ResolveVault();
@@ -1646,7 +1663,6 @@ namespace Hecton8.Construction
         private void PostSimulationTick(in DispatcherTimingDTO timing)
         {
             TryFinalizeBulkheadJobsNoWait();
-            TryFlushPendingDataVaultRebind();
         }
 
         private void VisualSyncTick(in DispatcherTimingDTO timing)
@@ -1658,7 +1674,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            if (_vaultRebindPending && !TryFlushPendingDataVaultRebind())
+            if (_vaultRebindPending)
             {
                 DisableShaderGlobals();
                 return;
@@ -1680,7 +1696,9 @@ namespace Hecton8.Construction
                 return;
             }
 
-            if (vault == null || !RefreshVaultState(vault, refreshHatchLocks: false) || !EnsureGraphicsBuffers())
+            if (vault == null ||
+                !RefreshVaultState(vault, refreshHatchLocks: false) ||
+                !HasGraphicsBuffersReady())
             {
                 DisableShaderGlobals();
                 return;
@@ -1888,8 +1906,7 @@ namespace Hecton8.Construction
         {
             int stride = UnsafeUtility.SizeOf<BulkheadStateDTO>();
             int count = BulkheadContainmentConstants.ShaderUploadCapacity;
-            if (IsGraphicsBufferValid(_shaderStateBufferA, count, stride) &&
-                IsGraphicsBufferValid(_shaderStateBufferB, count, stride))
+            if (HasGraphicsBuffersReady())
             {
                 return true;
             }
@@ -1918,6 +1935,14 @@ namespace Hecton8.Construction
                 ReleaseGraphicsBuffers();
                 return false;
             }
+        }
+
+        private bool HasGraphicsBuffersReady()
+        {
+            int stride = UnsafeUtility.SizeOf<BulkheadStateDTO>();
+            int count = BulkheadContainmentConstants.ShaderUploadCapacity;
+            return IsGraphicsBufferValid(_shaderStateBufferA, count, stride) &&
+                   IsGraphicsBufferValid(_shaderStateBufferB, count, stride);
         }
 
         private static bool IsGraphicsBufferValid(GraphicsBuffer buffer, int count, int stride)
@@ -2100,7 +2125,7 @@ namespace Hecton8.Construction
         }
 
 #if UNITY_EDITOR
-        private static int ParseProfiles(ReadOnlySpan<byte> csv, NativeArray<BulkheadProfileDTO> profiles)
+        private static int ParseProfiles(ReadOnlySpan<byte> csv, Span<BulkheadProfileDTO> profiles)
         {
             int count = 0;
             int index = 0;

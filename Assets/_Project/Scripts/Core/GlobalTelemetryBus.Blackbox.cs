@@ -1,7 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.IO;
-using System.IO.MemoryMappedFiles;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -253,7 +251,6 @@ namespace Hecton8.Core
         private const int BlackboxEventCapacity = 4096;
         private const int BlackboxEventMask = BlackboxEventCapacity - 1;
         private const int BlackboxLoggingMaskCapacity = 64;
-        private const int BlackboxMmfFlushFrameCount = 150;
         private const int BlackboxWatchdogLaneCount = 64;
         private const int BlackboxWatchdogProbeMilliseconds = 500;
         private const int BlackboxWatchdogStaleProbeLimit = 4;
@@ -264,13 +261,6 @@ namespace Hecton8.Core
         private const int BlackboxMockPhysicsOffsetBytes = BlackboxSourcePayloadOffsetBytes + (BlackboxMaxSourceCount * BlackboxSourceStrideBytes);
         private const int BlackboxMockOriginOffsetBytes = BlackboxMockPhysicsOffsetBytes + BlackboxSourceStrideBytes;
         private const int BlackboxFrameStrideBytes = BlackboxMockOriginOffsetBytes + BlackboxSourceStrideBytes;
-        private const int BlackboxDumpTimestampCharCount = 23;
-        private const string BlackboxDumpTimestampFormat = "yyyyMMdd_HHmmss_fffffff";
-        private const string BlackboxMmfFileName = "SHINOBU_33_Blackbox_OldFrames.mmf";
-        private const string BlackboxMirrorFileName = "Dump_SHINOBU_33.bin";
-        private const string BlackboxDumpPrefix = "Dump_CRASH_";
-        private const string BlackboxDumpExtension = ".h8dump";
-        private const string BlackboxMmfThreadName = "H8.BlackboxMMF";
         private const string BlackboxWatchdogThreadName = "H8.BlackboxWatchdog";
         private const uint BlackboxDumpMagic = 0x4838444Du; // H8DM
         private const uint BlackboxDumpVersion = 1u;
@@ -281,14 +271,11 @@ namespace Hecton8.Core
         private const uint BlackboxSourceFlagFloatScan = 1u << 0;
         private const uint MockOriginTeleportFlag = 1u << 0;
         private const float AupJitterFatalDistanceSq = 500f * 500f;
-        private const int BlackboxMmfIdle = 0;
-        private const int BlackboxMmfQueued = 1;
-        private const int BlackboxMmfWriting = 2;
 
         private static IDataVault _blackboxBoundVault;
         private static IDataVault _blackboxVault;
         private static VaultGenerationHandle<byte> _blackboxBytesHandle;
-        private static VaultGenerationHandle<byte> _blackboxMmfScratchHandle;
+        private static VaultGenerationHandle<byte> _blackboxDumpScratchHandle;
         private static VaultGenerationHandle<byte> _blackboxDumpHeaderHandle;
         private static VaultGenerationHandle<TelemetryEventDTO> _blackboxEventsHandle;
         private static VaultGenerationHandle<BlackboxSourceSlot> _blackboxSourcesHandle;
@@ -305,9 +292,6 @@ namespace Hecton8.Core
         private static int _blackboxEventWriteCursor;
         private static int _blackboxSourceCount;
         private static int _blackboxDumpWritten;
-        private static int _blackboxMmfState;
-        private static int _blackboxMmfPendingBytes;
-        private static int _blackboxMmfStopRequested;
         private static int _blackboxWatchdogStopRequested;
         private static int _blackboxDeterminismExpectedArmed;
         private static long _blackboxExpectedDeterminismHash64;
@@ -319,15 +303,9 @@ namespace Hecton8.Core
         private static int _blackboxMockOriginWritten;
         private static bool _blackboxVaultBacked;
         private static bool _blackboxVaultGuardHeld;
-        private static string _blackboxAgentLogDirectory;
-        private static string _blackboxMmfPath;
-        private static Thread _blackboxMmfThread;
         private static Thread _blackboxWatchdogThread;
-        private static AutoResetEvent _blackboxMmfSignal;
         // COLD ALLOC: object[1] - SHINOBU blackbox native allocation and source registration gate - owner: GlobalTelemetryBus
         private static readonly object _blackboxGate = new object();
-        // COLD ALLOC: object[1] - SHINOBU MMF flusher lifecycle gate - owner: GlobalTelemetryBus
-        private static readonly object _blackboxMmfGate = new object();
         // COLD ALLOC: object[1] - SHINOBU crash dump writer serialization gate - owner: GlobalTelemetryBus
         private static readonly object _blackboxDumpGate = new object();
         // COLD ALLOC: object[1] - SHINOBU watchdog lifecycle gate - owner: GlobalTelemetryBus
@@ -371,7 +349,7 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool TryResolveBlackboxBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        private static bool TryOpenBlackboxBufferForOwner<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
             IDataVault vault = _blackboxVault;
@@ -380,6 +358,18 @@ namespace Hecton8.Core
                    handle.Generation != 0u &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool TryReadBlackboxBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _blackboxVault;
+            return vault != null &&
+                   handle.BufferID != 0u &&
+                   handle.Generation != 0u &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.Length > 0;
         }
 
         /// <summary>
@@ -398,13 +388,13 @@ namespace Hecton8.Core
             if (eventHash == 0u)
                 return;
 
-            if (!TryResolveBlackboxBuffer(in _blackboxEventsHandle, out NativeArray<TelemetryEventDTO> events))
+            if (!TryOpenBlackboxBufferForOwner(in _blackboxEventsHandle, out NativeArray<TelemetryEventDTO> events))
             {
                 if (Thread.CurrentThread.ManagedThreadId != _mainThreadId)
                     return;
 
                 EnsureBlackboxInitialized();
-                if (!TryResolveBlackboxBuffer(in _blackboxEventsHandle, out events))
+                if (!TryOpenBlackboxBufferForOwner(in _blackboxEventsHandle, out events))
                     return;
             }
 
@@ -446,7 +436,7 @@ namespace Hecton8.Core
             if (sourceHash == 0u || sourcePtr == null || payloadBytes <= 0 || payloadBytes > BlackboxSourceStrideBytes)
                 return false;
 
-            if (!TryResolveBlackboxBuffer(in _blackboxSourcesHandle, out NativeArray<BlackboxSourceSlot> sources))
+            if (!TryOpenBlackboxBufferForOwner(in _blackboxSourcesHandle, out NativeArray<BlackboxSourceSlot> sources))
             {
                 if (Thread.CurrentThread.ManagedThreadId != _mainThreadId)
                     return false;
@@ -454,7 +444,7 @@ namespace Hecton8.Core
                 EnsureBlackboxInitialized();
             }
 
-            if (!TryResolveBlackboxBuffer(in _blackboxSourcesHandle, out sources))
+            if (!TryOpenBlackboxBufferForOwner(in _blackboxSourcesHandle, out sources))
                 return false;
 
             lock (_blackboxGate)
@@ -494,7 +484,7 @@ namespace Hecton8.Core
         /// </summary>
         public static void UnregisterBlackboxSource(uint sourceHash)
         {
-            if (sourceHash == 0u || !TryResolveBlackboxBuffer(in _blackboxSourcesHandle, out NativeArray<BlackboxSourceSlot> sources))
+            if (sourceHash == 0u || !TryOpenBlackboxBufferForOwner(in _blackboxSourcesHandle, out NativeArray<BlackboxSourceSlot> sources))
                 return;
 
             lock (_blackboxGate)
@@ -515,26 +505,12 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Resolves an already-open raw view suitable for Burst job field injection.
-        /// This accessor is intentionally read-only with respect to service lifetime.
-        /// </summary>
-        internal static unsafe bool TryResolveBlackboxRingBufferView(out BlackboxRingBufferDTO dto)
-        {
-            dto = default;
-            if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes))
-                return false;
-
-            PopulateBlackboxRingBufferDto(ref dto, bytes);
-            return true;
-        }
-
-        /// <summary>
         /// Opens or initializes the raw ring view on the owner thread.
         /// </summary>
         internal static unsafe bool OpenOrInitializeBlackboxRingBufferView(out BlackboxRingBufferDTO dto)
         {
             dto = default;
-            if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes))
+            if (!TryOpenBlackboxBufferForOwner(in _blackboxBytesHandle, out NativeArray<byte> bytes))
             {
                 if (Thread.CurrentThread.ManagedThreadId != _mainThreadId)
                     return false;
@@ -542,7 +518,7 @@ namespace Hecton8.Core
                 EnsureBlackboxInitialized();
             }
 
-            if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out bytes))
+            if (!TryOpenBlackboxBufferForOwner(in _blackboxBytesHandle, out bytes))
                 return false;
 
             PopulateBlackboxRingBufferDto(ref dto, bytes);
@@ -626,7 +602,7 @@ namespace Hecton8.Core
         /// </summary>
         public static uint GetActiveLoggingMask(uint systemHash)
         {
-            if (systemHash == 0u || !TryResolveBlackboxBuffer(in _blackboxLoggingMasksHandle, out NativeArray<TelemetryLoggingMaskDTO> loggingMasks))
+            if (systemHash == 0u || !TryReadBlackboxBuffer(in _blackboxLoggingMasksHandle, out NativeArray<TelemetryLoggingMaskDTO>.ReadOnly loggingMasks))
                 return 0u;
 
             for (int i = 0; i < loggingMasks.Length; i++)
@@ -657,7 +633,7 @@ namespace Hecton8.Core
             if ((uint)lane >= BlackboxWatchdogLaneCount)
                 return;
 
-            if (!TryResolveBlackboxBuffer(in _blackboxWatchdogCountersHandle, out NativeArray<int> watchdogCounters))
+            if (!TryOpenBlackboxBufferForOwner(in _blackboxWatchdogCountersHandle, out NativeArray<int> watchdogCounters))
             {
                 if (Thread.CurrentThread.ManagedThreadId != _mainThreadId)
                     return;
@@ -665,8 +641,8 @@ namespace Hecton8.Core
                 EnsureBlackboxInitialized();
             }
 
-            if (!TryResolveBlackboxBuffer(in _blackboxWatchdogCountersHandle, out watchdogCounters) ||
-                !TryResolveBlackboxBuffer(in _blackboxWatchdogActiveHandle, out NativeArray<int> watchdogActive))
+            if (!TryOpenBlackboxBufferForOwner(in _blackboxWatchdogCountersHandle, out watchdogCounters) ||
+                !TryOpenBlackboxBufferForOwner(in _blackboxWatchdogActiveHandle, out NativeArray<int> watchdogActive))
                 return;
 
             unsafe
@@ -717,9 +693,6 @@ namespace Hecton8.Core
                 _blackboxSourceCount = 0;
                 _blackboxDumpWritten = 0;
                 _blackboxAppVersionHash = ComputeContextHash(Application.version);
-                _blackboxAgentLogDirectory = ResolveAgentLogDirectory();
-                _blackboxMmfPath = Path.Combine(_blackboxAgentLogDirectory, BlackboxMmfFileName);
-                StartBlackboxMmfThread();
                 StartBlackboxWatchdogThread();
             }
         }
@@ -733,17 +706,16 @@ namespace Hecton8.Core
             if (vault.IsAllocationLocked || vault.IsCompactionFenceActive)
                 return false;
 
-            int mmfFrames = math.min(BlackboxMmfFlushFrameCount, desiredFrameCount);
-            int mmfByteCount = mmfFrames * BlackboxFrameStrideBytes;
+            int dumpScratchByteCount = BlackboxDumpHeaderBytes + desiredFrameCount * BlackboxFrameStrideBytes;
 
             VaultGenerationHandle<byte> bytesHandle = vault.EnsureGenerationHandle<byte>(
                 BufferID.ShinobuCrashBlackboxBytes,
                 byteCount,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
-            VaultGenerationHandle<byte> mmfScratchHandle = vault.EnsureGenerationHandle<byte>(
+            VaultGenerationHandle<byte> dumpScratchHandle = vault.EnsureGenerationHandle<byte>(
                 BufferID.ShinobuCrashMmfScratch,
-                mmfByteCount,
+                dumpScratchByteCount,
                 SystemID.CoreDiagnostics,
                 NativeArrayOptions.UninitializedMemory);
             VaultGenerationHandle<byte> dumpHeaderHandle = vault.EnsureGenerationHandle<byte>(
@@ -793,7 +765,7 @@ namespace Hecton8.Core
                 NativeArrayOptions.ClearMemory);
 
             NativeArray<byte> bytes = default;
-            NativeArray<byte> mmfScratch = default;
+            NativeArray<byte> dumpScratch = default;
             NativeArray<byte> dumpHeader = default;
             NativeArray<TelemetryEventDTO> events = default;
             NativeArray<BlackboxSourceSlot> sources = default;
@@ -806,7 +778,7 @@ namespace Hecton8.Core
 
             bool resolved =
                 vault.TryResolveHandle(in bytesHandle, out bytes) &&
-                vault.TryResolveHandle(in mmfScratchHandle, out mmfScratch) &&
+                vault.TryResolveHandle(in dumpScratchHandle, out dumpScratch) &&
                 vault.TryResolveHandle(in dumpHeaderHandle, out dumpHeader) &&
                 vault.TryResolveHandle(in eventsHandle, out events) &&
                 vault.TryResolveHandle(in sourcesHandle, out sources) &&
@@ -819,7 +791,7 @@ namespace Hecton8.Core
 
             if (!resolved ||
                 !bytes.IsCreated || bytes.Length < byteCount ||
-                !mmfScratch.IsCreated || mmfScratch.Length < mmfByteCount ||
+                !dumpScratch.IsCreated || dumpScratch.Length < dumpScratchByteCount ||
                 !dumpHeader.IsCreated || dumpHeader.Length < BlackboxDumpHeaderBytes ||
                 !events.IsCreated || events.Length < BlackboxEventCapacity ||
                 !sources.IsCreated || sources.Length < BlackboxMaxSourceCount ||
@@ -831,7 +803,7 @@ namespace Hecton8.Core
                 !watchdogActive.IsCreated || watchdogActive.Length < BlackboxWatchdogLaneCount)
             {
                 TryReleaseBlackboxVaultBufferNoThrow(vault, in bytesHandle);
-                TryReleaseBlackboxVaultBufferNoThrow(vault, in mmfScratchHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in dumpScratchHandle);
                 TryReleaseBlackboxVaultBufferNoThrow(vault, in dumpHeaderHandle);
                 TryReleaseBlackboxVaultBufferNoThrow(vault, in eventsHandle);
                 TryReleaseBlackboxVaultBufferNoThrow(vault, in sourcesHandle);
@@ -846,7 +818,7 @@ namespace Hecton8.Core
 
             _blackboxVault = vault;
             _blackboxBytesHandle = bytesHandle;
-            _blackboxMmfScratchHandle = mmfScratchHandle;
+            _blackboxDumpScratchHandle = dumpScratchHandle;
             _blackboxDumpHeaderHandle = dumpHeaderHandle;
             _blackboxEventsHandle = eventsHandle;
             _blackboxSourcesHandle = sourcesHandle;
@@ -868,21 +840,21 @@ namespace Hecton8.Core
 
         private static unsafe void ClearBlackboxControlStateNoLock()
         {
-            if (TryResolveBlackboxBuffer(in _blackboxDumpHeaderHandle, out NativeArray<byte> dumpHeader))
+            if (TryOpenBlackboxBufferForOwner(in _blackboxDumpHeaderHandle, out NativeArray<byte> dumpHeader))
                 UnsafeUtility.MemClear(dumpHeader.GetUnsafePtr(), dumpHeader.Length);
-            if (TryResolveBlackboxBuffer(in _blackboxSourcesHandle, out NativeArray<BlackboxSourceSlot> sources))
+            if (TryOpenBlackboxBufferForOwner(in _blackboxSourcesHandle, out NativeArray<BlackboxSourceSlot> sources))
                 UnsafeUtility.MemClear(sources.GetUnsafePtr(), sources.Length * UnsafeUtility.SizeOf<BlackboxSourceSlot>());
-            if (TryResolveBlackboxBuffer(in _blackboxLoggingMasksHandle, out NativeArray<TelemetryLoggingMaskDTO> loggingMasks))
+            if (TryOpenBlackboxBufferForOwner(in _blackboxLoggingMasksHandle, out NativeArray<TelemetryLoggingMaskDTO> loggingMasks))
                 UnsafeUtility.MemClear(loggingMasks.GetUnsafePtr(), loggingMasks.Length * UnsafeUtility.SizeOf<TelemetryLoggingMaskDTO>());
-            if (TryResolveBlackboxBuffer(in _blackboxAtomicStateHandle, out NativeArray<int> atomicState))
+            if (TryOpenBlackboxBufferForOwner(in _blackboxAtomicStateHandle, out NativeArray<int> atomicState))
                 UnsafeUtility.MemClear(atomicState.GetUnsafePtr(), atomicState.Length * UnsafeUtility.SizeOf<int>());
-            if (TryResolveBlackboxBuffer(in _blackboxWatchdogCountersHandle, out NativeArray<int> watchdogCounters))
+            if (TryOpenBlackboxBufferForOwner(in _blackboxWatchdogCountersHandle, out NativeArray<int> watchdogCounters))
                 UnsafeUtility.MemClear(watchdogCounters.GetUnsafePtr(), watchdogCounters.Length * UnsafeUtility.SizeOf<int>());
-            if (TryResolveBlackboxBuffer(in _blackboxWatchdogSamplesHandle, out NativeArray<int> watchdogSamples))
+            if (TryOpenBlackboxBufferForOwner(in _blackboxWatchdogSamplesHandle, out NativeArray<int> watchdogSamples))
                 UnsafeUtility.MemClear(watchdogSamples.GetUnsafePtr(), watchdogSamples.Length * UnsafeUtility.SizeOf<int>());
-            if (TryResolveBlackboxBuffer(in _blackboxWatchdogStaleProbesHandle, out NativeArray<int> watchdogStaleProbes))
+            if (TryOpenBlackboxBufferForOwner(in _blackboxWatchdogStaleProbesHandle, out NativeArray<int> watchdogStaleProbes))
                 UnsafeUtility.MemClear(watchdogStaleProbes.GetUnsafePtr(), watchdogStaleProbes.Length * UnsafeUtility.SizeOf<int>());
-            if (TryResolveBlackboxBuffer(in _blackboxWatchdogActiveHandle, out NativeArray<int> watchdogActive))
+            if (TryOpenBlackboxBufferForOwner(in _blackboxWatchdogActiveHandle, out NativeArray<int> watchdogActive))
                 UnsafeUtility.MemClear(watchdogActive.GetUnsafePtr(), watchdogActive.Length * UnsafeUtility.SizeOf<int>());
         }
 
@@ -907,7 +879,7 @@ namespace Hecton8.Core
             if (vault != null)
             {
                 TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxBytesHandle);
-                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxMmfScratchHandle);
+                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxDumpScratchHandle);
                 TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxDumpHeaderHandle);
                 TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxEventsHandle);
                 TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxSourcesHandle);
@@ -951,7 +923,7 @@ namespace Hecton8.Core
         {
             _blackboxVault = null;
             _blackboxBytesHandle = default;
-            _blackboxMmfScratchHandle = default;
+            _blackboxDumpScratchHandle = default;
             _blackboxDumpHeaderHandle = default;
             _blackboxEventsHandle = default;
             _blackboxSourcesHandle = default;
@@ -973,7 +945,6 @@ namespace Hecton8.Core
         private static void DisposeBlackboxState()
         {
             StopBlackboxWatchdogThread();
-            StopBlackboxMmfThread();
             lock (_blackboxGate)
             {
                 DisposeBlackboxArraysNoLock();
@@ -985,25 +956,21 @@ namespace Hecton8.Core
                 _blackboxEventWriteCursor = 0;
                 _blackboxSourceCount = 0;
                 _blackboxDumpWritten = 0;
-                _blackboxMmfState = BlackboxMmfIdle;
-                _blackboxMmfPendingBytes = 0;
                 _blackboxWatchdogStopRequested = 0;
                 _blackboxDeterminismExpectedArmed = 0;
                 _blackboxExpectedDeterminismHash64 = 0L;
                 _blackboxLastDeterminismHash64 = 0L;
                 _blackboxMockPhysicsWritten = 0;
                 _blackboxMockOriginWritten = 0;
-                _blackboxAgentLogDirectory = null;
-                _blackboxMmfPath = null;
             }
         }
 
         private static void CommitBlackboxFrame()
         {
-            if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes))
+            if (!TryOpenBlackboxBufferForOwner(in _blackboxBytesHandle, out NativeArray<byte> bytes))
             {
                 EnsureBlackboxInitialized();
-                if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out bytes))
+                if (!TryOpenBlackboxBufferForOwner(in _blackboxBytesHandle, out bytes))
                     return;
             }
 
@@ -1071,7 +1038,7 @@ namespace Hecton8.Core
         private static unsafe void CopyBlackboxEventHashes(byte* destination)
         {
             uint* hashDestination = (uint*)destination;
-            if (!TryResolveBlackboxBuffer(in _blackboxEventsHandle, out NativeArray<TelemetryEventDTO> events))
+            if (!TryReadBlackboxBuffer(in _blackboxEventsHandle, out NativeArray<TelemetryEventDTO>.ReadOnly events))
             {
                 for (int i = 0; i < BlackboxHashHistoryCount; i++)
                     hashDestination[i] = 0u;
@@ -1094,7 +1061,7 @@ namespace Hecton8.Core
         private static unsafe bool CopyBlackboxSourcePayloads(byte* destination)
         {
             bool nonFinite = false;
-            bool hasSources = TryResolveBlackboxBuffer(in _blackboxSourcesHandle, out NativeArray<BlackboxSourceSlot> sources);
+            bool hasSources = TryReadBlackboxBuffer(in _blackboxSourcesHandle, out NativeArray<BlackboxSourceSlot>.ReadOnly sources);
             int sourceCount = hasSources ? math.min(_blackboxSourceCount, BlackboxMaxSourceCount) : 0;
             for (int i = 0; i < BlackboxMaxSourceCount; i++)
             {
@@ -1108,7 +1075,9 @@ namespace Hecton8.Core
                     continue;
 
                 int copyBytes = math.min(source.PayloadBytes, BlackboxSourceStrideBytes);
-                UnsafeUtility.MemCpy(target, source.SourcePtr, copyBytes);
+                if (!UnsafeMemoryCopyGuard.SafeCopy(target, BlackboxSourceStrideBytes, source.SourcePtr, copyBytes))
+                    continue;
+
                 if ((source.Flags & BlackboxSourceFlagFloatScan) != 0u &&
                     ContainsNonFiniteFloat(target, copyBytes))
                 {
@@ -1211,10 +1180,10 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
             return false;
 #else
-            if (!IsBlackboxBufferBound() || string.IsNullOrEmpty(_blackboxAgentLogDirectory))
+            if (!IsBlackboxBufferBound())
                 return false;
 
-            return WriteBlackboxDumpToPaths(fatalHash);
+            return CommitBlackboxDumpInMemory(fatalHash);
 #endif
         }
 
@@ -1231,84 +1200,72 @@ namespace Hecton8.Core
             if (!IsBlackboxBufferBound())
                 return false;
 
-            return WriteBlackboxDumpToPaths(fatalHash);
+            return CommitBlackboxDumpInMemory(fatalHash);
         }
 
-        private static bool WriteBlackboxDumpToPaths(uint fatalHash)
+        private static bool CommitBlackboxDumpInMemory(uint fatalHash)
         {
-            string directory = _blackboxAgentLogDirectory;
-            if (string.IsNullOrEmpty(directory))
-                return false;
-
             lock (_blackboxDumpGate)
             {
-                try
-                {
-                    if (!TryReadBlackboxFrameBounds(out int validFrames, out int activeFrames, out int writeIndex))
-                        return false;
+                if (!TryReadBlackboxFrameBounds(out int validFrames, out int activeFrames, out int writeIndex))
+                    return false;
 
-                    Directory.CreateDirectory(directory);
-                    DateTime generatedUtc = DateTime.UtcNow;
-                    string crashPath = BuildBlackboxDumpPath(directory, generatedUtc);
-                    int payloadBytes = WriteBlackboxDumpHeader(fatalHash, generatedUtc, validFrames, activeFrames);
-                    if (payloadBytes <= BlackboxDumpHeaderBytes)
-                        return false;
-
-                    bool wroteCrash = WriteBlackboxDumpFile(crashPath, validFrames, activeFrames, writeIndex);
-                    string mirrorPath = Path.Combine(directory, BlackboxMirrorFileName);
-                    bool wroteMirror = WriteBlackboxDumpFile(mirrorPath, validFrames, activeFrames, writeIndex);
-                    return wroteCrash || wroteMirror;
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    return false;
-                }
-                catch (IOException)
-                {
-                    return false;
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
+                int payloadBytes = WriteBlackboxDumpHeader(fatalHash, DateTime.UtcNow, validFrames, activeFrames);
+                return payloadBytes > BlackboxDumpHeaderBytes &&
+                       TryStageAndWriteBlackboxDump(validFrames, activeFrames, writeIndex, payloadBytes);
             }
         }
 
-        private static unsafe bool WriteBlackboxDumpFile(string path, int validFrames, int activeFrames, int writeIndex)
+        private static unsafe bool TryStageAndWriteBlackboxDump(int validFrames, int activeFrames, int writeIndex, int payloadBytes)
         {
-            if (string.IsNullOrEmpty(path) || validFrames <= 0 || activeFrames <= 0)
-                return false;
-            if (!TryResolveBlackboxBuffer(in _blackboxDumpHeaderHandle, out NativeArray<byte> dumpHeader) ||
-                !TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes))
+            if (validFrames <= 0 ||
+                activeFrames <= 0 ||
+                payloadBytes <= BlackboxDumpHeaderBytes ||
+                !TryReadBlackboxBuffer(in _blackboxDumpHeaderHandle, out NativeArray<byte>.ReadOnly dumpHeader) ||
+                !TryReadBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte>.ReadOnly bytes) ||
+                !TryOpenBlackboxBufferForOwner(in _blackboxDumpScratchHandle, out NativeArray<byte> dumpScratch) ||
+                dumpHeader.Length < BlackboxDumpHeaderBytes ||
+                dumpScratch.Length < payloadBytes)
             {
                 return false;
             }
 
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+            try
             {
-                byte* headerPtr = (byte*)dumpHeader.GetUnsafeReadOnlyPtr();
-                stream.Write(new ReadOnlySpan<byte>(headerPtr, BlackboxDumpHeaderBytes));
+                byte* destination = (byte*)dumpScratch.GetUnsafePtr();
+                byte* header = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(dumpHeader);
+                byte* sourceBase = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(bytes);
+                if (!UnsafeMemoryCopyGuard.SafeCopy(destination, BlackboxDumpHeaderBytes, header, BlackboxDumpHeaderBytes))
+                    return false;
 
-                byte* basePtr = (byte*)bytes.GetUnsafeReadOnlyPtr();
                 int oldestSlot = validFrames >= activeFrames ? writeIndex : 0;
                 for (int i = 0; i < validFrames; i++)
                 {
                     int slot = oldestSlot + i;
                     if (slot >= activeFrames)
                         slot -= activeFrames;
-                    byte* framePtr = basePtr + (slot * BlackboxFrameStrideBytes);
-                    stream.Write(new ReadOnlySpan<byte>(framePtr, BlackboxFrameStrideBytes));
+
+                    if (!UnsafeMemoryCopyGuard.SafeCopy(
+                        destination + BlackboxDumpHeaderBytes + (i * BlackboxFrameStrideBytes),
+                        BlackboxFrameStrideBytes,
+                        sourceBase + (slot * BlackboxFrameStrideBytes),
+                        BlackboxFrameStrideBytes))
+                    {
+                        return false;
+                    }
                 }
 
-                stream.Flush(true);
+                return true;
             }
-
-            return true;
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         private static unsafe int WriteBlackboxDumpHeader(uint fatalHash, DateTime generatedUtc, int validFrames, int activeFrames)
         {
-            if (!TryResolveBlackboxBuffer(in _blackboxDumpHeaderHandle, out NativeArray<byte> dumpHeader))
+            if (!TryOpenBlackboxBufferForOwner(in _blackboxDumpHeaderHandle, out NativeArray<byte> dumpHeader))
                 return 0;
 
             int payloadBytes = validFrames * BlackboxFrameStrideBytes;
@@ -1350,7 +1307,7 @@ namespace Hecton8.Core
             validFrames = 0;
             activeFrames = 0;
             writeIndex = 0;
-            if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes))
+            if (!TryReadBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte>.ReadOnly bytes))
                 return false;
 
             int bufferFrames = bytes.Length / BlackboxFrameStrideBytes;
@@ -1370,49 +1327,12 @@ namespace Hecton8.Core
             return true;
         }
 
-        private static string BuildBlackboxDumpPath(string directory, DateTime generatedUtc)
-        {
-            int directoryLength = directory.Length;
-            bool needsSeparator =
-                directoryLength > 0 &&
-                directory[directoryLength - 1] != Path.DirectorySeparatorChar &&
-                directory[directoryLength - 1] != Path.AltDirectorySeparatorChar;
-            int pathLength =
-                directoryLength +
-                (needsSeparator ? 1 : 0) +
-                BlackboxDumpPrefix.Length +
-                BlackboxDumpTimestampCharCount +
-                BlackboxDumpExtension.Length;
-
-            return string.Create(
-                pathLength,
-                (Directory: directory, Timestamp: generatedUtc, NeedsSeparator: needsSeparator),
-                (span, state) =>
-                {
-                    int cursor = 0;
-                    state.Directory.AsSpan().CopyTo(span);
-                    cursor += state.Directory.Length;
-                    if (state.NeedsSeparator)
-                        span[cursor++] = Path.DirectorySeparatorChar;
-
-                    BlackboxDumpPrefix.AsSpan().CopyTo(span.Slice(cursor));
-                    cursor += BlackboxDumpPrefix.Length;
-
-                    Span<char> timestampSpan = span.Slice(cursor, BlackboxDumpTimestampCharCount);
-                    if (!state.Timestamp.TryFormat(timestampSpan, out int _, BlackboxDumpTimestampFormat.AsSpan(), System.Globalization.CultureInfo.InvariantCulture))
-                        timestampSpan.Fill('0');
-                    cursor += BlackboxDumpTimestampCharCount;
-
-                    BlackboxDumpExtension.AsSpan().CopyTo(span.Slice(cursor));
-                });
-        }
-
         private static void SetCatastrophicFailure(uint fatalHash)
         {
             if (fatalHash == 0u)
                 fatalHash = BlackboxEmergencyFlushHash;
 
-            if (TryResolveBlackboxBuffer(in _blackboxAtomicStateHandle, out NativeArray<int> atomicState) &&
+            if (TryOpenBlackboxBufferForOwner(in _blackboxAtomicStateHandle, out NativeArray<int> atomicState) &&
                 atomicState.Length >= 2)
             {
                 try
@@ -1433,7 +1353,7 @@ namespace Hecton8.Core
 
         private static int ReadBlackboxAtomic(int index)
         {
-            if (!TryResolveBlackboxBuffer(in _blackboxAtomicStateHandle, out NativeArray<int> atomicState) ||
+            if (!TryReadBlackboxBuffer(in _blackboxAtomicStateHandle, out NativeArray<int>.ReadOnly atomicState) ||
                 (uint)index >= atomicState.Length)
                 return 0;
 
@@ -1441,7 +1361,8 @@ namespace Hecton8.Core
             {
                 unsafe
                 {
-                    return Volatile.Read(ref atomicState.GetUnsafePtrAsIntRef(index));
+                    int* state = (int*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(atomicState);
+                    return Volatile.Read(ref state[index]);
                 }
             }
             catch (Exception)
@@ -1463,227 +1384,6 @@ namespace Hecton8.Core
                 slowTick2Hz: true,
                 forceTimeDilation09: true,
                 reasonHash: fatalHash == 0u ? BlackboxEmergencyFlushHash : fatalHash);
-        }
-
-        private static void RequestBlackboxMmfFlushAsync()
-        {
-            if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes) ||
-                !TryResolveBlackboxBuffer(in _blackboxMmfScratchHandle, out NativeArray<byte> mmfScratch) ||
-                !bytes.IsCreated ||
-                !mmfScratch.IsCreated)
-            {
-                return;
-            }
-            if (Interlocked.CompareExchange(ref _blackboxMmfState, BlackboxMmfQueued, BlackboxMmfIdle) != BlackboxMmfIdle)
-                return;
-
-            bool queued = false;
-            try
-            {
-                int pendingBytes = CopyOldestFramesToMmfScratch();
-                if (pendingBytes <= 0)
-                    return;
-
-                Volatile.Write(ref _blackboxMmfPendingBytes, pendingBytes);
-                if (StartBlackboxMmfThread())
-                {
-                    AutoResetEvent signal = Volatile.Read(ref _blackboxMmfSignal);
-                    if (signal != null)
-                    {
-                        signal.Set();
-                        queued = true;
-                    }
-                }
-            }
-            finally
-            {
-                if (!queued)
-                    Volatile.Write(ref _blackboxMmfState, BlackboxMmfIdle);
-            }
-        }
-
-        private static unsafe int CopyOldestFramesToMmfScratch()
-        {
-            if (!TryReadBlackboxFrameBounds(out int validFrames, out int activeFrames, out int writeIndex))
-                return 0;
-            if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes) ||
-                !TryResolveBlackboxBuffer(in _blackboxMmfScratchHandle, out NativeArray<byte> mmfScratch))
-            {
-                return 0;
-            }
-
-            int frameCount = math.min(validFrames, mmfScratch.Length / BlackboxFrameStrideBytes);
-            if (frameCount <= 0)
-                return 0;
-
-            byte* sourceBase = (byte*)bytes.GetUnsafeReadOnlyPtr();
-            byte* destinationBase = (byte*)mmfScratch.GetUnsafePtr();
-            int oldestSlot = validFrames >= activeFrames ? writeIndex : 0;
-            for (int i = 0; i < frameCount; i++)
-            {
-                int slot = oldestSlot + i;
-                if (slot >= activeFrames)
-                    slot -= activeFrames;
-                UnsafeUtility.MemCpy(
-                    destinationBase + (i * BlackboxFrameStrideBytes),
-                    sourceBase + (slot * BlackboxFrameStrideBytes),
-                    BlackboxFrameStrideBytes);
-            }
-
-            return frameCount * BlackboxFrameStrideBytes;
-        }
-
-        private static bool StartBlackboxMmfThread()
-        {
-            lock (_blackboxMmfGate)
-            {
-                if (_blackboxMmfThread != null)
-                {
-                    if (_blackboxMmfThread.IsAlive)
-                        return Volatile.Read(ref _blackboxMmfStopRequested) == 0;
-
-                    _blackboxMmfSignal?.Dispose();
-                    _blackboxMmfSignal = null;
-                    _blackboxMmfThread = null;
-                }
-
-                try
-                {
-                    Volatile.Write(ref _blackboxMmfStopRequested, 0);
-                    // COLD ALLOC: AutoResetEvent[1] - SHINOBU MMF flush wake signal - owner: GlobalTelemetryBus
-                    _blackboxMmfSignal = new AutoResetEvent(false);
-                    // COLD ALLOC: Thread[1] - SHINOBU oldest-frame MMF flusher - owner: GlobalTelemetryBus
-                    _blackboxMmfThread = new Thread(RunBlackboxMmfThread)
-                    {
-                        IsBackground = true,
-                        Name = BlackboxMmfThreadName,
-                        Priority = HectonThreadPriorityPolicy.Resolve(HectonThreadRole.BackgroundIo)
-                    };
-                    _blackboxMmfThread.Start();
-                    return true;
-                }
-                catch (Exception)
-                {
-                    _blackboxMmfSignal?.Dispose();
-                    _blackboxMmfSignal = null;
-                    _blackboxMmfThread = null;
-                    return false;
-                }
-            }
-        }
-
-        private static void StopBlackboxMmfThread()
-        {
-            Thread thread;
-            AutoResetEvent signal;
-            lock (_blackboxMmfGate)
-            {
-                thread = _blackboxMmfThread;
-                signal = _blackboxMmfSignal;
-                if (thread == null)
-                {
-                    signal?.Dispose();
-                    _blackboxMmfSignal = null;
-                    Volatile.Write(ref _blackboxMmfStopRequested, 0);
-                    return;
-                }
-
-                Volatile.Write(ref _blackboxMmfStopRequested, 1);
-                signal?.Set();
-            }
-
-            if (!ReferenceEquals(Thread.CurrentThread, thread))
-                thread.Join();
-
-            lock (_blackboxMmfGate)
-            {
-                if (ReferenceEquals(_blackboxMmfThread, thread))
-                    _blackboxMmfThread = null;
-                if (ReferenceEquals(_blackboxMmfSignal, signal))
-                    _blackboxMmfSignal = null;
-
-                signal?.Dispose();
-                Volatile.Write(ref _blackboxMmfStopRequested, 0);
-            }
-        }
-
-        private static void RunBlackboxMmfThread()
-        {
-            while (Volatile.Read(ref _blackboxMmfStopRequested) == 0)
-            {
-                AutoResetEvent signal = Volatile.Read(ref _blackboxMmfSignal);
-                if (signal == null)
-                    return;
-
-                try
-                {
-                    signal.WaitOne();
-                }
-                catch (ObjectDisposedException)
-                {
-                    return;
-                }
-
-                if (Volatile.Read(ref _blackboxMmfStopRequested) != 0)
-                    return;
-
-                FlushMmfScratchToDisk();
-            }
-        }
-
-        private static unsafe void FlushMmfScratchToDisk()
-        {
-            if (Interlocked.CompareExchange(ref _blackboxMmfState, BlackboxMmfWriting, BlackboxMmfQueued) != BlackboxMmfQueued)
-                return;
-
-            try
-            {
-                int pendingBytes = Volatile.Read(ref _blackboxMmfPendingBytes);
-                string path = _blackboxMmfPath;
-                if (pendingBytes <= 0 ||
-                    string.IsNullOrEmpty(path) ||
-                    !TryResolveBlackboxBuffer(in _blackboxMmfScratchHandle, out NativeArray<byte> mmfScratch))
-                {
-                    return;
-                }
-
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-                using (FileStream stream = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
-                {
-                    stream.SetLength(pendingBytes);
-                    using (MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(stream, null, pendingBytes, MemoryMappedFileAccess.ReadWrite, HandleInheritability.None, false))
-                    using (MemoryMappedViewAccessor accessor = mappedFile.CreateViewAccessor(0L, pendingBytes, MemoryMappedFileAccess.Write))
-                    {
-                        byte* destination = null;
-                        accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref destination);
-                        try
-                        {
-                            byte* source = (byte*)mmfScratch.GetUnsafeReadOnlyPtr();
-                            UnsafeUtility.MemCpy(destination, source, pendingBytes);
-                        }
-                        finally
-                        {
-                            accessor.SafeMemoryMappedViewHandle.ReleasePointer();
-                        }
-                    }
-                }
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-            catch (IOException)
-            {
-            }
-            catch (Exception)
-            {
-            }
-            finally
-            {
-                Volatile.Write(ref _blackboxMmfPendingBytes, 0);
-                Volatile.Write(ref _blackboxMmfState, BlackboxMmfIdle);
-            }
         }
 
         private static bool StartBlackboxWatchdogThread()
@@ -1763,10 +1463,10 @@ namespace Hecton8.Core
 
         private static unsafe bool ProbeBlackboxWatchdog()
         {
-            if (!TryResolveBlackboxBuffer(in _blackboxWatchdogCountersHandle, out NativeArray<int> watchdogCounters) ||
-                !TryResolveBlackboxBuffer(in _blackboxWatchdogSamplesHandle, out NativeArray<int> watchdogSamples) ||
-                !TryResolveBlackboxBuffer(in _blackboxWatchdogStaleProbesHandle, out NativeArray<int> watchdogStaleProbes) ||
-                !TryResolveBlackboxBuffer(in _blackboxWatchdogActiveHandle, out NativeArray<int> watchdogActive))
+            if (!TryOpenBlackboxBufferForOwner(in _blackboxWatchdogCountersHandle, out NativeArray<int> watchdogCounters) ||
+                !TryOpenBlackboxBufferForOwner(in _blackboxWatchdogSamplesHandle, out NativeArray<int> watchdogSamples) ||
+                !TryOpenBlackboxBufferForOwner(in _blackboxWatchdogStaleProbesHandle, out NativeArray<int> watchdogStaleProbes) ||
+                !TryOpenBlackboxBufferForOwner(in _blackboxWatchdogActiveHandle, out NativeArray<int> watchdogActive))
             {
                 return false;
             }
@@ -1820,18 +1520,13 @@ namespace Hecton8.Core
             return ShinobuBlackboxHighFrameCount;
         }
 
-        private static string ResolveAgentLogDirectory()
-        {
-            return Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs"));
-        }
-
         private static void SetActiveLoggingMask(uint systemHash, uint mask)
         {
             if (systemHash == 0u)
                 return;
 
             EnsureBlackboxInitialized();
-            if (!TryResolveBlackboxBuffer(in _blackboxLoggingMasksHandle, out NativeArray<TelemetryLoggingMaskDTO> loggingMasks))
+            if (!TryOpenBlackboxBufferForOwner(in _blackboxLoggingMasksHandle, out NativeArray<TelemetryLoggingMaskDTO> loggingMasks))
                 return;
 
             for (int i = 0; i < loggingMasks.Length; i++)
@@ -1952,7 +1647,7 @@ namespace Hecton8.Core
         {
             if (destination == null ||
                 destination.Length <= 0 ||
-                !TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes))
+                !TryReadBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte>.ReadOnly bytes))
             {
                 return 0;
             }
@@ -1964,7 +1659,7 @@ namespace Hecton8.Core
             if (copyCount <= 0)
                 return 0;
 
-            byte* basePtr = (byte*)bytes.GetUnsafeReadOnlyPtr();
+            byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(bytes);
             int oldestSlot = validFrames >= activeFrames ? writeIndex : 0;
             int skip = validFrames - copyCount;
             for (int i = 0; i < copyCount; i++)
@@ -1993,7 +1688,7 @@ namespace Hecton8.Core
         {
             if (destination == null ||
                 destination.Length <= 0 ||
-                !TryResolveBlackboxBuffer(in _blackboxEventsHandle, out NativeArray<TelemetryEventDTO> events))
+                !TryReadBlackboxBuffer(in _blackboxEventsHandle, out NativeArray<TelemetryEventDTO>.ReadOnly events))
             {
                 return 0;
             }
@@ -2009,11 +1704,4 @@ namespace Hecton8.Core
 #endif
     }
 
-    internal static unsafe class BlackboxNativeArrayExtensions
-    {
-        public static ref int GetUnsafePtrAsIntRef(this NativeArray<int> array, int index)
-        {
-            return ref UnsafeUtility.AsRef<int>((int*)array.GetUnsafePtr() + index);
-        }
-    }
 }

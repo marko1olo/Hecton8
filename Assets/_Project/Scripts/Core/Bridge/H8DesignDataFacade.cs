@@ -33,6 +33,7 @@ namespace Hecton8.Core.Bridge
             [SerializeField] private float lastAppliedValue;
             [SerializeField] private uint lastAppliedFieldHash;
             [SerializeField] private int lastAppliedOffsetBytes;
+            [SerializeField] private bool lastAppliedEnabled;
 
             public bool Enabled => enabled;
             public string DisplayName => displayName;
@@ -67,6 +68,7 @@ namespace Hecton8.Core.Bridge
                 lastAppliedValue = value;
                 lastAppliedFieldHash = fieldHash;
                 lastAppliedOffsetBytes = offsetBytes;
+                lastAppliedEnabled = enabled;
             }
 
             public void ConfigureVisualDefaults(
@@ -122,11 +124,17 @@ namespace Hecton8.Core.Bridge
                 value = math.clamp(value, minValue, maxValue);
                 bool changed = !Mathf.Approximately(value, lastAppliedValue) ||
                     fieldHash != previousHash ||
-                    offsetBytes != previousOffset;
+                    offsetBytes != previousOffset ||
+                    enabled != lastAppliedEnabled;
+                return changed;
+            }
+
+            public void MarkApplied()
+            {
                 lastAppliedValue = value;
                 lastAppliedFieldHash = fieldHash;
                 lastAppliedOffsetBytes = offsetBytes;
-                return changed;
+                lastAppliedEnabled = enabled;
             }
 
             public H8DesignValueEntry ToValueEntry(bool designerOverride)
@@ -230,42 +238,73 @@ namespace Hecton8.Core.Bridge
 
         public bool SyncToVault(IDataVault vault, IMacroDatabaseService macroDatabase)
         {
+            return SyncToVault(vault, macroDatabase, allowAuthoringRepair: true, allowBufferGrowth: true);
+        }
+
+        internal bool SyncToVaultExistingBuffer(IDataVault vault, IMacroDatabaseService macroDatabase)
+        {
+            return SyncToVault(vault, macroDatabase, allowAuthoringRepair: false, allowBufferGrowth: false);
+        }
+
+        private bool SyncToVault(
+            IDataVault vault,
+            IMacroDatabaseService macroDatabase,
+            bool allowAuthoringRepair,
+            bool allowBufferGrowth)
+        {
             ushort flags = designerOverride ? (ushort)H8DesignValueFlags.DesignerOverride : (ushort)0;
-            return H8BridgeFacadeRuntime.SyncDesignData(this, vault, flags, macroDatabase);
+            bool synced = H8BridgeFacadeRuntime.SyncDesignData(
+                this,
+                vault,
+                flags,
+                macroDatabase,
+                allowAuthoringRepair,
+                allowBufferGrowth);
+            if (synced)
+                MarkRuntimeBindingsAppliedAfterSync(allowAuthoringRepair);
+
+            return synced;
         }
 
         public void RefreshValidationState()
         {
-            ValidateBindings(pushLive: false);
+            ValidateBindings(pushLive: false, allowAuthoringRepair: true);
         }
 
         internal int RefreshRuntimeBindingStateForSync()
         {
-            RefreshValidationState();
+            return RefreshRuntimeBindingStateForSync(allowAuthoringRepair: true);
+        }
+
+        internal int RefreshRuntimeBindingStateForSync(bool allowAuthoringRepair)
+        {
+            if (!ValidateBindings(pushLive: false, allowAuthoringRepair: allowAuthoringRepair))
+                return -1;
+
             return validationRuntimeBindingCount;
         }
 
         private void Reset()
         {
             EnsureDefaultBindings();
-            ValidateBindings(pushLive: false);
+            ValidateBindings(pushLive: false, allowAuthoringRepair: true);
         }
 
         private void OnValidate()
         {
-            ValidateBindings(pushLive: true);
+            ValidateBindings(pushLive: true, allowAuthoringRepair: true);
         }
 
         private void OnEnable()
         {
-            ValidateBindings(pushLive: false);
+            ValidateBindings(pushLive: false, allowAuthoringRepair: true);
         }
 
         [ContextMenu("Seed Default Design Bindings")]
         private void SeedDefaultBindings()
         {
             EnsureDefaultBindings();
-            ValidateBindings(pushLive: false);
+            ValidateBindings(pushLive: false, allowAuthoringRepair: true);
         }
 
         private void EnsureBindingList()
@@ -329,10 +368,17 @@ namespace Hecton8.Core.Bridge
             floatBindings.Add(saltCrystals);
         }
 
-        private void ValidateBindings(bool pushLive)
+        private bool ValidateBindings(bool pushLive, bool allowAuthoringRepair)
         {
-            EnsureBindingList();
             ResetValidationState();
+            if (floatBindings == null)
+            {
+                if (!allowAuthoringRepair)
+                    return false;
+
+                EnsureBindingList();
+            }
+
             if (facadeHash == 0u)
                 facadeHash = H8BridgeHashes.DesignFacade;
             if (oneDimensionalLutHash == 0u)
@@ -371,19 +417,39 @@ namespace Hecton8.Core.Bridge
             {
                 changed = true;
                 lastChangedFieldHash = H8BridgeHashes.BridgeHeartbeat;
-                lastAppliedBindingCount = floatBindings.Count;
             }
 
             if (!pushLive || !changed || !liveTuningEnabled || !Application.isPlaying)
-                return;
+                return true;
 
             if (!designerOverride && H8BridgeFacadeRuntime.LiveTuningBlockedByStress())
-                return;
+                return true;
 
             if (validationDuplicateFieldHashCount > 0)
-                return;
+                return true;
 
-            SyncToVault(GlobalRegistry.DataVault, GlobalRegistry.MacroDatabase);
+            H8BridgeLiveSyncScheduler.RequestDesignSync(this, GlobalRegistry.DataVault, GlobalRegistry.MacroDatabase);
+            return true;
+        }
+
+        private void MarkRuntimeBindingsAppliedAfterSync(bool allowAuthoringRepair)
+        {
+            if (floatBindings == null)
+            {
+                if (!allowAuthoringRepair)
+                    return;
+
+                EnsureBindingList();
+            }
+
+            for (int i = 0; i < floatBindings.Count; i++)
+            {
+                FloatBinding binding = floatBindings[i];
+                if (binding != null)
+                    binding.MarkApplied();
+            }
+
+            lastAppliedBindingCount = floatBindings.Count;
         }
 
         private void ResetValidationState()

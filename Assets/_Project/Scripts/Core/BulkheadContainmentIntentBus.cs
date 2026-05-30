@@ -217,20 +217,27 @@ namespace Hecton8.Core.Contracts
             if (vault == null ||
                 capacity == 0u ||
                 !HasBoundHandles() ||
-                !vault.TryResolveHandle(in s_intentsHandle, out NativeArray<BulkheadContainmentIntentDTO> intents))
+                !vault.TryAcquireWriteLock(in s_intentsHandle, OwnerSystemId, out NativeArray<BulkheadContainmentIntentDTO> intents))
             {
                 return false;
             }
 
-            if (!intents.IsCreated || intents.Length == 0)
-                return false;
+            try
+            {
+                if (!intents.IsCreated || intents.Length == 0)
+                    return false;
 
-            uint safeCapacity = (uint)math.min(capacity, intents.Length);
-            if (safeCapacity == 0u)
-                return false;
+                uint safeCapacity = (uint)math.min(capacity, intents.Length);
+                if (safeCapacity == 0u)
+                    return false;
 
-            intents[(int)(write % safeCapacity)] = intent;
-            return true;
+                intents[(int)(write % safeCapacity)] = intent;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in s_intentsHandle, OwnerSystemId);
+            }
         }
 
         private static bool TryPublishIntentControlGuarded(
@@ -239,16 +246,23 @@ namespace Hecton8.Core.Contracts
         {
             if (vault == null ||
                 !HasBoundHandles() ||
-                !vault.TryResolveHandle(in s_controlHandle, out NativeArray<BulkheadContainmentIntentControlDTO> controlRows))
+                !vault.TryAcquireWriteLock(in s_controlHandle, OwnerSystemId, out NativeArray<BulkheadContainmentIntentControlDTO> controlRows))
             {
                 return false;
             }
 
-            if (!controlRows.IsCreated || controlRows.Length == 0)
-                return false;
+            try
+            {
+                if (!controlRows.IsCreated || controlRows.Length == 0)
+                    return false;
 
-            controlRows[0] = control;
-            return true;
+                controlRows[0] = control;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in s_controlHandle, OwnerSystemId);
+            }
         }
 
         private static bool HasBoundHandles()

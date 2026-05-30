@@ -299,7 +299,7 @@ namespace Hecton8.Gameplay
             if (_activeHabitatManager == null || module == null)
                 return;
 
-            if (ReferenceEquals(_activeHabitatManager.GetComponent<BaseModule>(), module))
+            if (ReferenceEquals(_activeHabitatModule, module))
                 ClearHabitatBinding();
         }
 
@@ -678,9 +678,6 @@ namespace Hecton8.Gameplay
         {
             if (intervals <= 0)
                 return;
-
-            if (_playerHealth == null)
-                TryGetComponent(out _playerHealth);
 
             int targetId = _playerHealth != null
                 ? CombatDamageRuntime.ResolveTargetId(_playerHealth.gameObject)

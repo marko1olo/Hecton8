@@ -67,6 +67,9 @@ namespace Hecton8.Rendering.OceanSinglePass
             private uint _clearThreadGroupSizeY;
             private uint _accumulateThreadGroupSizeX;
             private uint _accumulateThreadGroupSizeY;
+            private ComputeShader _resolvedWakeCompute;
+            private bool _supportsComputeShadersCold;
+            private bool _resolvedSupportsComputeShaders;
             private const uint MaxKernelThreadProduct = 256u;
             private const int MaxDispatchGroupsPerDimension = 65535;
 
@@ -76,13 +79,20 @@ namespace Hecton8.Rendering.OceanSinglePass
                 requiresIntermediateTexture = false;
             }
 
-            public void Setup(FeatureSettings settings, Material depthMaterial)
+            public void Setup(FeatureSettings settings, Material depthMaterial, bool supportsComputeShadersCold)
             {
                 _settings = settings;
                 _depthMaterial = depthMaterial;
+                _supportsComputeShadersCold = supportsComputeShadersCold;
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingTransparents;
                 ConfigureInput(ScriptableRenderPassInput.Depth);
-                ResolveKernels();
+
+                ComputeShader wakeCompute = settings != null ? settings.wakeCompute : null;
+                if (!ReferenceEquals(_resolvedWakeCompute, wakeCompute) ||
+                    _resolvedSupportsComputeShaders != supportsComputeShadersCold)
+                {
+                    ResolveKernels(wakeCompute, supportsComputeShadersCold);
+                }
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -131,7 +141,7 @@ namespace Hecton8.Rendering.OceanSinglePass
                     hasShorelineFoam ? shorelineFoamCount : 0,
                     shorelineFoamRuntime);
 
-                if (SystemInfo.supportsComputeShaders &&
+                if (_supportsComputeShadersCold &&
                     _settings.wakeCompute != null &&
                     _clearWakeKernel >= 0 &&
                     _accumulateWakeKernel >= 0)
@@ -362,19 +372,26 @@ namespace Hecton8.Rendering.OceanSinglePass
                 }
             }
 
-            private void ResolveKernels()
+            private void ResolveKernels(ComputeShader wakeCompute, bool supportsComputeShaders)
             {
-                if (_settings == null || _settings.wakeCompute == null)
+                _resolvedWakeCompute = wakeCompute;
+                _resolvedSupportsComputeShaders = supportsComputeShaders;
+
+                if (!supportsComputeShaders || wakeCompute == null)
                 {
                     _clearWakeKernel = -1;
                     _accumulateWakeKernel = -1;
+                    _clearThreadGroupSizeX = 0u;
+                    _clearThreadGroupSizeY = 0u;
+                    _accumulateThreadGroupSizeX = 0u;
+                    _accumulateThreadGroupSizeY = 0u;
                     return;
                 }
 
-                _clearWakeKernel = ResolveKernel(_settings.wakeCompute, "ClearWake");
-                _accumulateWakeKernel = ResolveKernel(_settings.wakeCompute, "AccumulateWake");
-                if (!TryResolveThreadGroupSizes(_settings.wakeCompute, _clearWakeKernel, out _clearThreadGroupSizeX, out _clearThreadGroupSizeY) ||
-                    !TryResolveThreadGroupSizes(_settings.wakeCompute, _accumulateWakeKernel, out _accumulateThreadGroupSizeX, out _accumulateThreadGroupSizeY))
+                _clearWakeKernel = ResolveKernel(wakeCompute, "ClearWake");
+                _accumulateWakeKernel = ResolveKernel(wakeCompute, "AccumulateWake");
+                if (!TryResolveThreadGroupSizes(wakeCompute, _clearWakeKernel, out _clearThreadGroupSizeX, out _clearThreadGroupSizeY) ||
+                    !TryResolveThreadGroupSizes(wakeCompute, _accumulateWakeKernel, out _accumulateThreadGroupSizeX, out _accumulateThreadGroupSizeY))
                 {
                     _clearWakeKernel = -1;
                     _accumulateWakeKernel = -1;
@@ -387,7 +404,7 @@ namespace Hecton8.Rendering.OceanSinglePass
 
             private static int ResolveKernel(ComputeShader compute, string name)
             {
-                if (compute == null || !SystemInfo.supportsComputeShaders || !compute.HasKernel(name))
+                if (compute == null || !compute.HasKernel(name))
                     return -1;
 
                 int kernel = compute.FindKernel(name);
@@ -470,6 +487,7 @@ namespace Hecton8.Rendering.OceanSinglePass
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
         private SinglePassOceanPass _pass;
         private Material _depthMaterial;
+        private bool _supportsComputeShadersCold;
 
         public override void Create()
         {
@@ -486,6 +504,7 @@ namespace Hecton8.Rendering.OceanSinglePass
                 shader = Shader.Find("Hidden/Hecton8/OceanDepthFoam");
 #endif
             RecreateMaterial(ref _depthMaterial, shader);
+            CacheGraphicsCapabilitiesCold();
             _pass ??= new SinglePassOceanPass();
         }
 
@@ -500,7 +519,7 @@ namespace Hecton8.Rendering.OceanSinglePass
                 return;
             }
 
-            _pass.Setup(settings, _depthMaterial);
+            _pass.Setup(settings, _depthMaterial, _supportsComputeShadersCold);
             renderer.EnqueuePass(_pass);
         }
 
@@ -531,6 +550,11 @@ namespace Hecton8.Rendering.OceanSinglePass
 
             CoreUtils.Destroy(material);
             material = null;
+        }
+
+        private void CacheGraphicsCapabilitiesCold()
+        {
+            _supportsComputeShadersCold = SystemInfo.supportsComputeShaders;
         }
     }
 }

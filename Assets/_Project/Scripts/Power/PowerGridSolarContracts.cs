@@ -874,6 +874,8 @@ namespace Hecton8.Power
         private static VaultGenerationHandle<CelestialStateDTO> s_celestialStateReadHandle;
         private static VaultGenerationHandle<EnvironmentStateDTO> s_environmentStateHandle;
         private static JobHandle s_pendingHandle;
+        private static IDataVault s_jobMutationGuardVault;
+        private static IDataVault s_panelStateWriteVault;
         private static bool s_jobMutationGuardHeld;
         private static long s_scheduleTimestamp;
         private static uint s_frameIndex;
@@ -905,12 +907,15 @@ namespace Hecton8.Power
             if (s_pending)
                 ForceCompletePendingJobInPostSimulationWindow();
 
+            ReleasePanelStateWrite();
             UnlockJobBuffers();
             s_vault = null;
             s_handles = default;
             s_celestialStateReadHandle = default;
             s_environmentStateHandle = default;
             s_pendingHandle = default;
+            s_jobMutationGuardVault = null;
+            s_panelStateWriteVault = null;
             s_jobMutationGuardHeld = false;
             s_scheduleTimestamp = 0L;
             s_frameIndex = 0u;
@@ -960,9 +965,10 @@ namespace Hecton8.Power
             if (s_pending || !TryEnsure(SolarPowerGenerationConstants.DefaultPanelCapacity, SolarPowerGenerationConstants.DefaultPowerNodeCapacity))
                 return false;
 
+            IDataVault vault = s_vault;
             if ((uint)slot >= (uint)s_panelCapacity ||
-                s_vault == null ||
-                !s_vault.TryAcquireWriteLock(in s_handles.PanelStates, OwnerSystem, out NativeArray<SolarPanelStateDTO> states))
+                vault == null ||
+                !vault.TryAcquireWriteLock(in s_handles.PanelStates, OwnerSystem, out NativeArray<SolarPanelStateDTO> states))
             {
                 return false;
             }
@@ -978,7 +984,7 @@ namespace Hecton8.Power
             }
             finally
             {
-                s_vault.ReleaseWriteLock(in s_handles.PanelStates, OwnerSystem);
+                vault.ReleaseWriteLock(in s_handles.PanelStates, OwnerSystem);
             }
         }
 
@@ -986,25 +992,48 @@ namespace Hecton8.Power
         {
             states = default;
             if (s_pending ||
-                !TryEnsure(SolarPowerGenerationConstants.DefaultPanelCapacity, SolarPowerGenerationConstants.DefaultPowerNodeCapacity) ||
-                s_vault == null ||
-                !s_vault.TryAcquireWriteLock(in s_handles.PanelStates, OwnerSystem, out states))
+                s_panelStateWriteVault != null ||
+                !TryEnsure(SolarPowerGenerationConstants.DefaultPanelCapacity, SolarPowerGenerationConstants.DefaultPowerNodeCapacity))
             {
                 return false;
             }
 
-            if (states.IsCreated)
-                return true;
+            IDataVault vault = s_vault;
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in s_handles.PanelStates, OwnerSystem, out states))
+            {
+                return false;
+            }
 
-            s_vault.ReleaseWriteLock(in s_handles.PanelStates, OwnerSystem);
-            states = default;
-            return false;
+            bool keepLock = false;
+            try
+            {
+                if (states.IsCreated && states.Length >= s_panelCapacity)
+                {
+                    s_panelStateWriteVault = vault;
+                    keepLock = true;
+                    return true;
+                }
+
+                states = default;
+                return false;
+            }
+            finally
+            {
+                if (!keepLock)
+                {
+                    vault.ReleaseWriteLock(in s_handles.PanelStates, OwnerSystem);
+                    states = default;
+                }
+            }
         }
 
         public static void ReleasePanelStateWrite()
         {
-            if (s_vault != null && s_handles.PanelStates.BufferID != 0u)
-                s_vault.ReleaseWriteLock(in s_handles.PanelStates, OwnerSystem);
+            IDataVault vault = s_panelStateWriteVault;
+            s_panelStateWriteVault = null;
+            if (vault != null && s_handles.PanelStates.BufferID != 0u)
+                vault.ReleaseWriteLock(in s_handles.PanelStates, OwnerSystem);
         }
 
         public static bool TryClearPanelState(int slot)
@@ -1346,9 +1375,12 @@ namespace Hecton8.Power
         public static bool TryLoadProfilesFromCsv(ReadOnlySpan<byte> csvBytes, out int profileCount)
         {
             profileCount = 0;
-            if (!TryEnsure(SolarPowerGenerationConstants.DefaultPanelCapacity, SolarPowerGenerationConstants.DefaultPowerNodeCapacity) ||
-                s_vault == null ||
-                !s_vault.TryAcquireWriteLock(in s_handles.Profiles, OwnerSystem, out NativeArray<SolarProfileDTO> profiles))
+            if (!TryEnsure(SolarPowerGenerationConstants.DefaultPanelCapacity, SolarPowerGenerationConstants.DefaultPowerNodeCapacity))
+                return false;
+
+            IDataVault vault = s_vault;
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in s_handles.Profiles, OwnerSystem, out NativeArray<SolarProfileDTO> profiles))
             {
                 return false;
             }
@@ -1362,7 +1394,7 @@ namespace Hecton8.Power
             }
             finally
             {
-                s_vault.ReleaseWriteLock(in s_handles.Profiles, OwnerSystem);
+                vault.ReleaseWriteLock(in s_handles.Profiles, OwnerSystem);
             }
         }
 #endif
@@ -1439,7 +1471,7 @@ namespace Hecton8.Power
         private static bool TryAcquireVoxelSdfPayload(ref SolarConditionsDTO conditions, out NativeArray<byte>.ReadOnly voxelSdf)
         {
             voxelSdf = default;
-            IDataVault vault = s_vault;
+            IDataVault vault = s_jobMutationGuardVault ?? s_vault;
             if (vault == null || !s_jobMutationGuardHeld)
                 return false;
 
@@ -1492,6 +1524,7 @@ namespace Hecton8.Power
                 return false;
             }
 
+            s_jobMutationGuardVault = vault;
             s_jobMutationGuardHeld = true;
             return true;
         }
@@ -1499,10 +1532,15 @@ namespace Hecton8.Power
         private static void UnlockJobBuffers()
         {
             if (!s_jobMutationGuardHeld)
+            {
+                s_jobMutationGuardVault = null;
                 return;
+            }
 
-            s_vault?.ReleaseMutationGuard(JobMutationGuardMask);
+            IDataVault vault = s_jobMutationGuardVault;
+            s_jobMutationGuardVault = null;
             s_jobMutationGuardHeld = false;
+            vault?.ReleaseMutationGuard(JobMutationGuardMask);
         }
 
         private static void ForceCompletePendingJobInPostSimulationWindow()
@@ -1589,10 +1627,11 @@ namespace Hecton8.Power
 
         private static bool WriteConditionsRow(in SolarConditionsDTO conditions)
         {
+            IDataVault vault = s_vault;
             if (!s_buffersReady ||
                 s_pending ||
-                s_vault == null ||
-                !s_vault.TryAcquireWriteLock(in s_handles.Conditions, OwnerSystem, out NativeArray<SolarConditionsDTO> rows))
+                vault == null ||
+                !vault.TryAcquireWriteLock(in s_handles.Conditions, OwnerSystem, out NativeArray<SolarConditionsDTO> rows))
             {
                 return false;
             }
@@ -1608,7 +1647,7 @@ namespace Hecton8.Power
             }
             finally
             {
-                s_vault.ReleaseWriteLock(in s_handles.Conditions, OwnerSystem);
+                vault.ReleaseWriteLock(in s_handles.Conditions, OwnerSystem);
             }
         }
 

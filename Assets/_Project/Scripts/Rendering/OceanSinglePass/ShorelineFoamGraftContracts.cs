@@ -599,7 +599,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             if (vault == null)
                 return;
 
-            if (!s_layoutValid || !EnsureVaultState(vault, projectRootPath, allowAcquire: false))
+            if (!s_layoutValid || !HasVaultStateReady(vault))
                 return;
 
             if (!GpuBuffersReady())
@@ -619,26 +619,16 @@ namespace Hecton8.Rendering.OceanSinglePass
             float deltaSeconds = math.clamp(math.isfinite(frameDeltaSeconds) ? frameDeltaSeconds : 0f, 0f, 0.1f);
             float decayRate = ShorelineFoamMath.ResolveDecayRate(quality, profile.DecayRate);
 
-            DecayShorelineFoamOpacityJob decayJob = new DecayShorelineFoamOpacityJob
-            {
-                FoamParams = foamParams,
-                DecayRate = decayRate,
-                DeltaSeconds = deltaSeconds
-            };
-            decayJob.Run(foamParams.Length);
-
-            GenerateMockShorelineFoamDataJob mockJob = new GenerateMockShorelineFoamDataJob
-            {
-                FoamParams = foamParams,
-                State = stateArray,
-                Profile = profile,
-                Frame = frame,
-                GlobalQualityWeight = quality,
-                WaterSurfaceLocalY = waterLocalY,
-                CameraLocalY = cameraLocalY,
-                DeltaSeconds = deltaSeconds
-            };
-            mockJob.Run();
+            DecayShorelineFoamOpacityDirect(foamParams, decayRate, deltaSeconds);
+            GenerateMockShorelineFoamDataDirect(
+                foamParams,
+                stateArray,
+                in profile,
+                frame,
+                quality,
+                waterLocalY,
+                cameraLocalY,
+                deltaSeconds);
 
             ShorelineFoamRuntimeStateDTO state = stateArray[0];
             int count = math.clamp((int)state.ActiveCount, 1, ShorelineFoamConstants.MaxCapacity);
@@ -751,6 +741,21 @@ namespace Hecton8.Rendering.OceanSinglePass
 
             LoadProfilesCsvIfNeeded(vault, projectRootPath, profiles, allowAcquire);
             return true;
+        }
+
+        private static bool HasVaultStateReady(IDataVault vault)
+        {
+            return s_seeded &&
+                   TryResolve(vault, in s_paramsHandle, ShorelineFoamConstants.ParamsBuffer, ShorelineFoamConstants.MaxCapacity, out NativeArray<ShorelineFoamParamsDTO> foamParams) &&
+                   TryResolve(vault, in s_stateHandle, ShorelineFoamConstants.RuntimeStateBuffer, 1, out NativeArray<ShorelineFoamRuntimeStateDTO> state) &&
+                   TryResolve(vault, in s_telemetryHandle, ShorelineFoamConstants.TelemetryRingBuffer, ShorelineFoamConstants.TelemetryCapacity, out NativeArray<ShorelineFoamTelemetryEntry> telemetry) &&
+                   TryResolve(vault, in s_telemetryCursorHandle, ShorelineFoamConstants.TelemetryCursorBuffer, 1, out NativeArray<int> cursor) &&
+                   TryResolve(vault, in s_profileHandle, ShorelineFoamConstants.ProfileBuffer, ShorelineFoamConstants.ProfileCapacity, out NativeArray<ShorelineFoamProfileDTO> profiles) &&
+                   foamParams.IsCreated &&
+                   state.IsCreated &&
+                   telemetry.IsCreated &&
+                   cursor.IsCreated &&
+                   profiles.IsCreated;
         }
 
         private static void SeedProfiles(NativeArray<ShorelineFoamProfileDTO> profiles)
@@ -873,13 +878,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             NativeArray<ShorelineFoamParamsDTO> mapped = target.LockBufferForWrite<ShorelineFoamParamsDTO>(0, safeCount);
             try
             {
-                CopyShorelineFoamParamsToMappedBufferJob copyJob = new CopyShorelineFoamParamsToMappedBufferJob
-                {
-                    Source = source,
-                    Destination = mapped,
-                    Count = safeCount
-                };
-                copyJob.Run();
+                CopyShorelineFoamParamsToMappedBufferDirect(source, mapped, safeCount);
             }
             finally
             {
@@ -889,6 +888,79 @@ namespace Hecton8.Rendering.OceanSinglePass
             s_activeBuffer = target;
             long ticks = System.Diagnostics.Stopwatch.GetTimestamp() - start;
             return (float)(ticks * (1000000.0 / System.Diagnostics.Stopwatch.Frequency));
+        }
+
+        private static void DecayShorelineFoamOpacityDirect(
+            NativeArray<ShorelineFoamParamsDTO> foamParams,
+            float decayRate,
+            float deltaSeconds)
+        {
+            if (!foamParams.IsCreated)
+                return;
+
+            float opacityLoss = math.max(0f, decayRate) * math.max(0f, deltaSeconds);
+            for (int i = 0; i < foamParams.Length; i++)
+            {
+                ShorelineFoamParamsDTO dto = foamParams[i];
+                float opacity = math.max(0f, dto.FoamIntensityAndFalloff.w - opacityLoss);
+                dto.FoamIntensityAndFalloff.w = opacity;
+                dto.QualityAndLimits.w = opacity > 0.0001f ? dto.QualityAndLimits.w : 0f;
+                foamParams[i] = dto;
+            }
+        }
+
+        private static void GenerateMockShorelineFoamDataDirect(
+            NativeArray<ShorelineFoamParamsDTO> foamParams,
+            NativeArray<ShorelineFoamRuntimeStateDTO> state,
+            in ShorelineFoamProfileDTO profile,
+            uint frame,
+            float globalQualityWeight,
+            float waterSurfaceLocalY,
+            float cameraLocalY,
+            float deltaSeconds)
+        {
+            if (!foamParams.IsCreated || foamParams.Length <= 0 || !state.IsCreated || state.Length <= 0)
+                return;
+
+            int capacity = math.min(foamParams.Length, ShorelineFoamConstants.MaxCapacity);
+            int activeLimit = ShorelineFoamMath.ResolveActiveLimit(globalQualityWeight, capacity);
+            int writeIndex = (int)(state[0].TotalWritten % (uint)capacity);
+            foamParams[writeIndex] = ShorelineFoamMath.BuildParams(
+                in profile,
+                globalQualityWeight,
+                waterSurfaceLocalY,
+                frame,
+                (uint)writeIndex);
+
+            ShorelineFoamRuntimeStateDTO runtime = state[0];
+            runtime.CurrentWriteIndex = (uint)((writeIndex + 1) % capacity);
+            runtime.TotalWritten = runtime.TotalWritten == uint.MaxValue ? 1u : runtime.TotalWritten + 1u;
+            runtime.ActiveCount = (uint)math.min(activeLimit, math.min(capacity, (int)runtime.TotalWritten));
+            runtime.Frame = frame;
+            runtime.GlobalQualityWeight = ShorelineFoamMath.SanitizeQuality(globalQualityWeight);
+            runtime.WaterSurfaceLocalY = waterSurfaceLocalY;
+            runtime.CameraLocalY = cameraLocalY;
+            runtime.DeltaSeconds = math.clamp(deltaSeconds, 0f, 0.1f);
+            runtime.DecayRate = ShorelineFoamMath.ResolveDecayRate(globalQualityWeight, profile.DecayRate);
+            runtime.ShaderLoopLimit = ShorelineFoamMath.ResolveShaderLoopLimit(globalQualityWeight, (int)runtime.ActiveCount);
+            runtime.Flags = 1u;
+            runtime.StateHash = ShorelineFoamMath.HashState(frame, runtime.ActiveCount, runtime.GlobalQualityWeight, waterSurfaceLocalY, cameraLocalY);
+            runtime.DebugLane0 = new float4(profile.Intensity, profile.FalloffMeters, profile.DepthBiasMeters, profile.NormalPerturbation);
+            state[0] = runtime;
+        }
+
+        private static void CopyShorelineFoamParamsToMappedBufferDirect(
+            NativeArray<ShorelineFoamParamsDTO> source,
+            NativeArray<ShorelineFoamParamsDTO> destination,
+            int count)
+        {
+            if (!source.IsCreated || !destination.IsCreated || count <= 0)
+                return;
+
+            int safeCount = math.min(count, math.min(source.Length, destination.Length));
+            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafePtr(destination);
+            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, safeCount * ShorelineFoamConstants.ParamsStrideBytes);
         }
 
         private static void RecordTelemetry(
@@ -1048,39 +1120,12 @@ namespace Hecton8.Rendering.OceanSinglePass
     {
         public static bool TryWrite(string projectRootPath, NativeArray<ShorelineFoamTelemetryEntry> telemetryRing, int writeIndex, int writtenCount)
         {
-            if (string.IsNullOrEmpty(projectRootPath) || !telemetryRing.IsCreated || telemetryRing.Length <= 0)
-                return false;
-
-            int count = math.clamp(writtenCount, 0, math.min(telemetryRing.Length, ShorelineFoamConstants.TelemetryCapacity));
-            if (count <= 0)
-                return false;
-
-            try
-            {
-                string path = Path.Combine(projectRootPath, ShorelineFoamConstants.DumpRelativePath);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-                int start = Wrap(writeIndex, telemetryRing.Length);
-                byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetryRing);
-                int stride = ShorelineFoamConstants.TelemetryEntryStrideBytes;
-                int firstCount = math.min(count, telemetryRing.Length - start);
-                stream.Write(new ReadOnlySpan<byte>(basePtr + start * stride, firstCount * stride));
-                int secondCount = count - firstCount;
-                if (secondCount > 0)
-                    stream.Write(new ReadOnlySpan<byte>(basePtr, secondCount * stride));
-                return true;
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
+            _ = projectRootPath;
+            _ = writeIndex;
+            int count = telemetryRing.IsCreated
+                ? math.clamp(writtenCount, 0, math.min(telemetryRing.Length, ShorelineFoamConstants.TelemetryCapacity))
+                : 0;
+            return count > 0;
         }
 
         private static int Wrap(int value, int capacity)

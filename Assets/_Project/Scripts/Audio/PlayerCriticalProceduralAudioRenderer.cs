@@ -3,7 +3,6 @@ using System.IO;
 using System.Threading;
 using System.Runtime.InteropServices;
 using Hecton8.Audio.Echolocation;
-using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -2886,6 +2885,8 @@ namespace Hecton8.Audio
             RebuildAcousticOcclusionLayerMask();
             ResetReverbModelState();
             RefreshAudioConfiguration();
+            CacheColdRegistryReferences();
+            ResolveListenerReverbFilterCold();
             TryBindFromBootstrap();
         }
 
@@ -2897,7 +2898,8 @@ namespace Hecton8.Audio
             AcousticOcclusionUtility.AcquireRuntime();
             AudioSettings.OnAudioConfigurationChanged += HandleAudioConfigurationChanged;
             RefreshAudioQualityPolicyCold();
-            RefreshAudioRuntimeServicesCold();
+            CacheColdRegistryReferences();
+            ResolveListenerReverbFilterCold();
             TryRegisterHotSwapListener();
             TryRegisterPhysicsImpactListener();
             SpectrumEvents.RegisterSonarPingListener(this);
@@ -2991,10 +2993,7 @@ namespace Hecton8.Audio
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Audio)
-                return;
-
-            CacheAudioRuntimeService(currentService as IAudioService, Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
+            CacheRegistryServiceReference(serviceSlot, currentService);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -3016,10 +3015,7 @@ namespace Hecton8.Audio
                 return;
             }
 
-            if (serviceSlot != GlobalRegistryServiceSlot.Audio)
-                return;
-
-            CacheAudioRuntimeService(currentService as IAudioService, Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
+            CacheRegistryServiceReference(serviceSlot, currentService);
         }
 
         /// <summary>
@@ -3077,6 +3073,43 @@ namespace Hecton8.Audio
                 RefreshStructuralHullBinding();
             }
 
+        }
+
+        private void BindToPlayerRuntimeContext(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null || !playerContext.IsInitialized || playerContext.PlayerObject == null)
+                return;
+
+            PlayerTransportCoordinator previousCoordinator = playerTransportCoordinator;
+            _playerRuntimeContext = playerContext;
+            _boundPlayerObject = playerContext.PlayerObject;
+            _boundPlayerTransform = playerContext.PlayerTransform;
+            _playerContextLookupFrame = -4096;
+            _structuralHullLookupFrame = -4096;
+            _transportCoordinatorLookupFrame = -4096;
+            _boundPlayerRootEntityId = 0;
+
+            Transform playerRoot = _boundPlayerTransform != null ? _boundPlayerTransform.root : null;
+            if (playerRoot != null)
+                _boundPlayerRootEntityId = unchecked((int)EntityId.ToULong(playerRoot.GetEntityId()));
+
+            playerMovement = playerContext.PlayerMovement;
+            playerToolManager = playerContext.ToolManager;
+            playerTransportCoordinator = playerContext.PlayerTransportCoordinator;
+            _playerSurvivalSystem = playerContext.SurvivalSystem;
+            _playerHealth = playerContext.PlayerHealth;
+
+            if (!ReferenceEquals(previousCoordinator, playerTransportCoordinator))
+            {
+                if (previousCoordinator != null)
+                    previousCoordinator.ActiveTransportLifecycleChanged -= HandleActiveTransportLifecycleChanged;
+
+                SubscribeTransportCoordinator();
+            }
+            else
+            {
+                RefreshStructuralHullBinding();
+            }
         }
 
         private float ResolveBoundPlayerDistanceMeters(Vector3 runtimeWorldPosition)
@@ -4353,12 +4386,6 @@ namespace Hecton8.Audio
 
             _mapMagicBiomeFrame = frame;
             MapMagicBridge mapMagic = _mapMagicBridge;
-            if (mapMagic == null)
-            {
-                mapMagic = GlobalRegistry.MapMagic;
-                _mapMagicBridge = mapMagic;
-            }
-
             _cachedBiomeId = mapMagic != null ? mapMagic.CurrentBiomeID : 0;
             return _cachedBiomeId;
         }
@@ -4424,6 +4451,13 @@ namespace Hecton8.Audio
         }
 
         private void ResolveListenerReverbFilter()
+        {
+            EnsureReverbMixerBindings();
+            if (_reverbMixerBindingsValid || _listenerReverbFilter != null)
+                return;
+        }
+
+        private void ResolveListenerReverbFilterCold()
         {
             EnsureReverbMixerBindings();
             if (_reverbMixerBindingsValid || _listenerReverbFilter != null)
@@ -4974,38 +5008,13 @@ namespace Hecton8.Audio
         private ISpatialAudioListenerCaveReadModel ResolveSpatialAudioListenerCaveReadModel()
         {
             ISpatialAudioListenerCaveReadModel readModel = _spatialAudioListenerCaveReadModel;
-            if (readModel != null)
-                return readModel;
-
-            RefreshAudioRuntimeServicesIfStale();
-            return _spatialAudioListenerCaveReadModel;
+            return readModel;
         }
 
         private ISpatialAudioBinauralEmitterReadModel ResolveSpatialAudioBinauralEmitterReadModel()
         {
             ISpatialAudioBinauralEmitterReadModel readModel = _spatialAudioBinauralEmitterReadModel;
-            if (readModel != null)
-                return readModel;
-
-            RefreshAudioRuntimeServicesIfStale();
-            return _spatialAudioBinauralEmitterReadModel;
-        }
-
-        private void RefreshAudioRuntimeServicesCold()
-        {
-            CacheAudioRuntimeService(GlobalRegistry.Audio, Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
-        }
-
-        private void RefreshAudioRuntimeServicesIfStale()
-        {
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            if (frame >= _audioServiceLookupFrame &&
-                frame - _audioServiceLookupFrame < AudioServiceLookupRetryFrames)
-            {
-                return;
-            }
-
-            CacheAudioRuntimeService(GlobalRegistry.Audio, frame);
+            return readModel;
         }
 
         private void CacheAudioRuntimeService(IAudioService audioService, int frame)
@@ -5014,6 +5023,54 @@ namespace Hecton8.Audio
             _spatialAudioListenerCaveReadModel = isInitialized ? audioService as ISpatialAudioListenerCaveReadModel : null;
             _spatialAudioBinauralEmitterReadModel = isInitialized ? audioService as ISpatialAudioBinauralEmitterReadModel : null;
             _audioServiceLookupFrame = frame;
+        }
+
+        private void CacheColdRegistryReferences()
+        {
+            _mapMagicBridge = GlobalRegistry.MapMagic;
+            _ecosystemDirectorService = CacheReadyEcosystemDirector(GlobalRegistry.EcosystemDirector);
+            _playerRuntimeContext = CacheReadyPlayerRuntime(GlobalRegistry.Player);
+            if (_structuralHullReadModel == null)
+                _structuralHullReadModel = GlobalRegistry.SubmarineHullBreach;
+            CacheAudioRuntimeService(GlobalRegistry.Audio, Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
+        }
+
+        private void CacheRegistryServiceReference(GlobalRegistryServiceSlot serviceSlot, object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Audio:
+                    CacheAudioRuntimeService(currentService as IAudioService, Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicRuntime:
+                    _mapMagicBridge = currentService as MapMagicBridge;
+                    _mapMagicBiomeFrame = -4096;
+                    break;
+                case GlobalRegistryServiceSlot.Player:
+                    _playerRuntimeContext = CacheReadyPlayerRuntime(currentService as IPlayerRuntimeContext);
+                    if (_playerRuntimeContext != null)
+                        BindToPlayerRuntimeContext(_playerRuntimeContext);
+                    break;
+                case GlobalRegistryServiceSlot.EcosystemDirector:
+                    _ecosystemDirectorService = CacheReadyEcosystemDirector(currentService as IEcosystemDirectorService);
+                    _ecosystemDirectorLookupFrame = -4096;
+                    break;
+                case GlobalRegistryServiceSlot.SubmarineHullBreach:
+                    if (_activeTransportLifecycleOwner == null || _structuralHullReadModel == null)
+                        _structuralHullReadModel = currentService as ISubmarineHullBreachReadModel;
+                    _structuralHullLookupFrame = -4096;
+                    break;
+            }
+        }
+
+        private static IPlayerRuntimeContext CacheReadyPlayerRuntime(IPlayerRuntimeContext playerContext)
+        {
+            return playerContext != null && playerContext.IsInitialized ? playerContext : null;
+        }
+
+        private static IEcosystemDirectorService CacheReadyEcosystemDirector(IEcosystemDirectorService ecosystemDirector)
+        {
+            return ecosystemDirector != null && ecosystemDirector.IsInitialized ? ecosystemDirector : null;
         }
 
         private float ResolveKineticImpactWaterlineY()
@@ -5272,7 +5329,6 @@ namespace Hecton8.Audio
             _pendingStructuralStressHaptic.MotorMask = motorMask;
             _pendingStructuralStressHaptic.Channel = channel;
             _pendingStructuralStressHapticDirty = true;
-            TryRegister();
         }
 
         private void FlushQueuedStructuralStressHaptic()
@@ -7165,21 +7221,24 @@ namespace Hecton8.Audio
         private void HandleActiveTransportLifecycleChanged(IPlayerTransportLifecycleOwner lifecycleOwner)
         {
             _activeTransportLifecycleOwner = lifecycleOwner;
-            ResolveStructuralHullReadModel(lifecycleOwner);
+            ResolveStructuralHullReadModelCold(lifecycleOwner);
         }
 
         private void TryBindFromBootstrap()
         {
-            GameObject playerObject = GameBootstrapper.CurrentPlayerObject;
-            if (playerObject != null)
-            {
-                if (!ReferenceEquals(_boundPlayerObject, playerObject))
-                    BindToPlayer(playerObject);
-                return;
-            }
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext == null || !playerContext.IsInitialized)
+                playerContext = PlayerRuntimeContextService.ActiveRuntimeContext;
 
-            if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
-                BindToPlayer(playerTransform.gameObject);
+            if (playerContext == null || !playerContext.IsInitialized || playerContext.PlayerObject == null)
+                return;
+
+            if (!ReferenceEquals(_boundPlayerObject, playerContext.PlayerObject) ||
+                _boundPlayerTransform == null ||
+                playerMovement == null)
+            {
+                BindToPlayerRuntimeContext(playerContext);
+            }
         }
 
         private void TryRegister()
@@ -7292,6 +7351,24 @@ namespace Hecton8.Audio
 
         private void ResolveStructuralHullReadModel(IPlayerTransportLifecycleOwner lifecycleOwner)
         {
+            if (lifecycleOwner is ISubmarineHullBreachReadModel directReadModel)
+            {
+                _structuralHullReadModel = directReadModel;
+                return;
+            }
+
+            _structuralHullReadModel = null;
+            _structuralHullLookupFrame = -4096;
+        }
+
+        private void ResolveStructuralHullReadModelCold(IPlayerTransportLifecycleOwner lifecycleOwner)
+        {
+            if (lifecycleOwner is ISubmarineHullBreachReadModel directReadModel)
+            {
+                _structuralHullReadModel = directReadModel;
+                return;
+            }
+
             MonoBehaviour lifecycleBehaviour = lifecycleOwner as MonoBehaviour;
             if (lifecycleBehaviour != null && lifecycleBehaviour.TryGetComponent(out ISubmarineHullBreachReadModel readModel))
             {
@@ -10320,17 +10397,8 @@ namespace Hecton8.Audio
             if (playerContext != null && playerContext.IsInitialized)
                 return playerContext;
 
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            if (frame >= _playerContextLookupFrame &&
-                frame - _playerContextLookupFrame < AudioServiceLookupRetryFrames)
-            {
-                return null;
-            }
-
-            _playerContextLookupFrame = frame;
-            playerContext = GlobalRegistry.Player;
-            _playerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
-            return _playerRuntimeContext;
+            _playerRuntimeContext = null;
+            return null;
         }
 
         private IEcosystemDirectorService ResolveEcosystemDirectorService()
@@ -10339,17 +10407,8 @@ namespace Hecton8.Audio
             if (ecosystemDirector != null && ecosystemDirector.IsInitialized)
                 return ecosystemDirector;
 
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            if (frame >= _ecosystemDirectorLookupFrame &&
-                frame - _ecosystemDirectorLookupFrame < AudioServiceLookupRetryFrames)
-            {
-                return null;
-            }
-
-            _ecosystemDirectorLookupFrame = frame;
-            ecosystemDirector = GlobalRegistry.EcosystemDirector;
-            _ecosystemDirectorService = ecosystemDirector != null && ecosystemDirector.IsInitialized ? ecosystemDirector : null;
-            return _ecosystemDirectorService;
+            _ecosystemDirectorService = null;
+            return null;
         }
 
         private ISubmarineHullBreachReadModel ResolveSubmarineHullReadModel()
@@ -10358,16 +10417,7 @@ namespace Hecton8.Audio
             if (readModel != null)
                 return readModel;
 
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            if (frame >= _structuralHullLookupFrame &&
-                frame - _structuralHullLookupFrame < AudioServiceLookupRetryFrames)
-            {
-                return null;
-            }
-
-            _structuralHullLookupFrame = frame;
-            _structuralHullReadModel = GlobalRegistry.SubmarineHullBreach;
-            return _structuralHullReadModel;
+            return null;
         }
 
         private float ResolveStructuralHullStress01()
@@ -10545,19 +10595,11 @@ namespace Hecton8.Audio
             if (playerTransportCoordinator != null)
                 return true;
 
-            GameObject playerObject = _boundPlayerObject;
-            if (playerObject == null)
-                return false;
-
-            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
-            if (frame >= _transportCoordinatorLookupFrame &&
-                frame - _transportCoordinatorLookupFrame < TransportCoordinatorLookupRetryFrames)
-            {
-                return false;
-            }
-
-            _transportCoordinatorLookupFrame = frame;
-            if (!playerObject.TryGetComponent(out PlayerTransportCoordinator coordinator))
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            PlayerTransportCoordinator coordinator = playerContext != null && playerContext.IsInitialized
+                ? playerContext.PlayerTransportCoordinator
+                : null;
+            if (coordinator == null)
                 return false;
 
             playerTransportCoordinator = coordinator;

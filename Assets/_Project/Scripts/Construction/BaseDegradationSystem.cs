@@ -252,11 +252,11 @@ namespace Hecton8.Construction
                 _ruptureSyncStamp = 1u;
         }
 
-        internal static void SynchronizeNode(GameObject moduleObject, uint nodeId, LogisticsNodeFlags flags, Vector3 ruptureWorldPosition)
+        internal static void SynchronizeNode(BaseModule baseModule, uint nodeId, LogisticsNodeFlags flags, Vector3 ruptureWorldPosition)
         {
             bool isRuptured = (flags & LogisticsNodeFlags.Ruptured) != 0;
             bool hadPreviousState = _ruptureStates.TryGetValue(nodeId, out RuptureNodeState previousState);
-            int moduleRuntimeId = CaptureModuleRuntimeId(moduleObject);
+            int moduleRuntimeId = CaptureModuleRuntimeId(baseModule);
 
             if (!isRuptured)
             {
@@ -296,7 +296,7 @@ namespace Hecton8.Construction
             ConnectionSplineBatchRenderer.SetPipeNodeRuptured(nodeId, true);
 
             if (ruptureStateChanged)
-                DispatchRuptureEffects(moduleObject, ruptureWorldPosition);
+                DispatchRuptureEffects(baseModule, ruptureWorldPosition);
         }
 
         internal static void EndRuptureSync()
@@ -505,7 +505,7 @@ namespace Hecton8.Construction
             }
             else
             {
-                DispatchRuptureEffects(baseModule.gameObject, ruptureWorldPosition);
+                DispatchRuptureEffects(baseModule, ruptureWorldPosition);
             }
         }
 
@@ -521,9 +521,9 @@ namespace Hecton8.Construction
             return volume.ApplyParasiteCollapseBox(runtimeCenter, halfExtents);
         }
 
-        private static void DispatchRuptureEffects(GameObject moduleObject, Vector3 ruptureWorldPosition)
+        private static void DispatchRuptureEffects(BaseModule baseModule, Vector3 ruptureWorldPosition)
         {
-            if (moduleObject != null && moduleObject.TryGetComponent(out BaseModule baseModule))
+            if (baseModule != null)
             {
                 Vector3 localRupturePoint = baseModule.SetBreachVisualAnchor(ruptureWorldPosition);
                 baseModule.EmitHullBreachJet(localRupturePoint, DefaultPressureDelta);
@@ -585,9 +585,9 @@ namespace Hecton8.Construction
             return safeValue > 0f ? safeValue * math.rsqrt(safeValue) : 0f;
         }
 
-        private static int CaptureModuleRuntimeId(GameObject moduleObject)
+        private static int CaptureModuleRuntimeId(BaseModule baseModule)
         {
-            if (moduleObject == null || !moduleObject.TryGetComponent(out BaseModule baseModule))
+            if (baseModule == null)
                 return 0;
 
             return unchecked((int)EntityId.ToULong(baseModule.GetEntityId()));

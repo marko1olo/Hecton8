@@ -53,8 +53,6 @@ namespace Hecton8.UI
         [SerializeField] private int loadoutTabIndex = 1;
         [SerializeField] private bool holsterBeforeApplyingPreset = true;
         [SerializeField] private ToolLoadoutPreset[] loadoutPresets = new ToolLoadoutPreset[4];
-        [SerializeField] private float fieldAdviceRange = 18f;
-        [SerializeField] private LayerMask fieldAdviceMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         // ════════════════════════════════════════════════════════════
         //  CACHED FIELDS FOR ZERO-GC OPTIMIZATION
@@ -951,8 +949,7 @@ namespace Hecton8.UI
                     missing++;
             }
 
-            Transform origin = toolManager.transform;
-            if (FieldLoadoutAdvisor.TryBuildForwardAdvice(origin, fieldAdviceRange, fieldAdviceMask, out FieldLoadoutAdvisor.LoadoutAdvice advice))
+            if (toolManager.TryGetCachedFieldLoadoutAdvice(out FieldLoadoutAdvisor.LoadoutAdvice advice))
             {
                 recommendedPresetName = advice.PresetName;
                 recommendedPresetDirective = advice.Summary;
@@ -1054,8 +1051,7 @@ namespace Hecton8.UI
             if (toolManager == null)
                 return "UNKNOWN";
 
-            Transform origin = toolManager.transform;
-            return FieldLoadoutAdvisor.TryBuildForwardPresetName(origin, fieldAdviceRange, fieldAdviceMask, out string presetName)
+            return toolManager.TryGetCachedFieldLoadoutPresetName(out string presetName)
                 ? presetName
                 : "GENERAL";
         }
@@ -1065,8 +1061,7 @@ namespace Hecton8.UI
             if (toolManager == null)
                 return "No field loadout advice available.";
 
-            Transform origin = toolManager.transform;
-            return FieldLoadoutAdvisor.TryBuildForwardAdvice(origin, fieldAdviceRange, fieldAdviceMask, out FieldLoadoutAdvisor.LoadoutAdvice advice)
+            return toolManager.TryGetCachedFieldLoadoutAdvice(out FieldLoadoutAdvisor.LoadoutAdvice advice)
                 ? advice.Summary
                 : "No authored target in front of the diver. General-purpose expedition loadout remains valid.";
         }
@@ -1632,8 +1627,9 @@ namespace Hecton8.UI
             if (_prefabToolCacheCount >= PrefabToolCacheCapacity)
                 return;
 
-            if (!prefab.TryGetComponent(out IPlayerToolDataReadModel resolvedTool))
-                resolvedTool = null;
+            IPlayerToolDataReadModel resolvedTool = null;
+            if (toolManager != null)
+                toolManager.TryGetToolDataReadModelForPrefab(prefab, out resolvedTool);
 
             int index = _prefabToolCacheCount++;
             _prefabToolCacheIds[index] = prefabId;

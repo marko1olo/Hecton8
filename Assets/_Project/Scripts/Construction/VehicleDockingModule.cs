@@ -42,7 +42,7 @@ namespace Hecton8.Construction
         private const ushort DockTelemetryEntrySizeBytes = 128;
         private const int DockTelemetryDumpCooldownFrames = 30;
         private const int DockedCargoCrateCapacity = 16;
-        private const int DockedCargoTraversalCapacity = 64;
+        private const int DockCandidateCapacity = 4;
         private const ulong DockTelemetryMutationGuardMask =
             (1UL << ((int)BufferID.VehicleDockingTelemetryRing & 31)) |
             (1UL << ((int)BufferID.VehicleDockingTelemetryCursor & 31));
@@ -148,8 +148,6 @@ namespace Hecton8.Construction
 
         // COLD ALLOC: fixed cargo bridge array - bounded to avoid managed List growth during docking.
         private readonly StorageCrate[] _connectedCargoCrates = new StorageCrate[DockedCargoCrateCapacity];
-        // COLD ALLOC: fixed transform traversal stack - prevents component-query buffer growth.
-        private readonly Transform[] _cargoTraversalStack = new Transform[DockedCargoTraversalCapacity];
         private int _connectedCargoCrateCount;
         private Transform _cachedTransform;
         private Collider _triggerCollider;
@@ -163,6 +161,13 @@ namespace Hecton8.Construction
         private bool _isDocked;
         private IPlayerTransportLifecycleOwner _dockedTransport;
         private MonoBehaviour _dockedBehaviour;
+        private readonly IPlayerTransportLifecycleOwner[] _candidateOwners = new IPlayerTransportLifecycleOwner[DockCandidateCapacity];
+        private readonly MonoBehaviour[] _candidateBehaviours = new MonoBehaviour[DockCandidateCapacity];
+        private readonly Rigidbody[] _candidateBodies = new Rigidbody[DockCandidateCapacity];
+        private readonly VehicleMotor[] _candidateMotors = new VehicleMotor[DockCandidateCapacity];
+        private readonly ITransportDockControlLock[] _candidateDockLocks = new ITransportDockControlLock[DockCandidateCapacity];
+        private readonly IDockedExternalMassSink[] _candidateExternalMassSinks = new IDockedExternalMassSink[DockCandidateCapacity];
+        private int _candidateCount;
         private Transform _dockedTransform;
         private Rigidbody _dockedBody;
         private VehicleMotor _dockedVehicleMotor;
@@ -278,6 +283,7 @@ namespace Hecton8.Construction
             CacheFluidRuntime();
             CachePhysicsRoutes();
             HectonFloatingOrigin.RegisterListener(this);
+            RefreshDockingCandidatesFromRegistryCold();
             TryRegister();
         }
 
@@ -285,6 +291,7 @@ namespace Hecton8.Construction
         {
             HectonFloatingOrigin.UnregisterListener(this);
             ReleaseDockedTransport();
+            ClearDockingCandidates();
             TryUnregister();
             TryUnregisterHotSwapListener();
             DisposeDockTelemetry();
@@ -301,6 +308,7 @@ namespace Hecton8.Construction
 
         public void OnSpawn()
         {
+            ClearDockingCandidates();
             _hasPower = true;
             _debugHasPower = true;
             _activelyCharging = false;
@@ -317,6 +325,7 @@ namespace Hecton8.Construction
             CacheDockingAutopilotService();
             CacheFluidRuntime();
             CachePhysicsRoutes();
+            RefreshDockingCandidatesFromRegistryCold();
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
             TryRegister();
@@ -325,6 +334,7 @@ namespace Hecton8.Construction
         public void OnDespawn()
         {
             ReleaseDockedTransport();
+            ClearDockingCandidates();
             _hasPower = true;
             _debugHasPower = true;
             _activelyCharging = false;
@@ -345,7 +355,7 @@ namespace Hecton8.Construction
         public void Tick(float deltaTime)
         {
             RecordDockTelemetry();
-            RefreshDockingCandidatesFromRegistry();
+            RefreshDockingCandidatesFromCachedOverlap();
 
             if (_dockedTransport == null || _dockedBehaviour == null || !_isDocked)
             {
@@ -388,6 +398,16 @@ namespace Hecton8.Construction
 
             if (!hasPower)
                 _activelyCharging = false;
+        }
+
+        private void OnTriggerEnter(Collider other)
+        {
+            TryCacheDockingCandidate(other);
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            RemoveDockingCandidate(other);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -489,44 +509,241 @@ namespace Hecton8.Construction
             _hotSwapRegistered = false;
         }
 
-        private void RefreshDockingCandidatesFromRegistry()
+        private void RefreshDockingCandidatesFromCachedOverlap()
         {
             if (_dockedTransport != null || _dockingInProgress)
                 return;
 
-            for (int i = 0; i < PlayerTransportLifecycleRegistry.SlotCapacity; i++)
+            for (int i = 0; i < _candidateCount; i++)
             {
-                if (!PlayerTransportLifecycleRegistry.TryGetAt(i, out IPlayerTransportLifecycleOwner owner, out MonoBehaviour ownerBehaviour))
+                IPlayerTransportLifecycleOwner owner = _candidateOwners[i];
+                MonoBehaviour ownerBehaviour = _candidateBehaviours[i];
+                Rigidbody ownerBody = _candidateBodies[i];
+                if (owner == null || ownerBehaviour == null || !ownerBehaviour.gameObject.activeInHierarchy)
+                {
+                    RemoveDockingCandidateAt(i);
+                    i--;
                     continue;
+                }
 
-                if (!IsTransportInsideDockVolume(ownerBehaviour))
+                if (!IsTransportInsideDockVolume(ownerBehaviour, ownerBody))
+                {
+                    RemoveDockingCandidateAt(i);
+                    i--;
                     continue;
+                }
 
-                if (PassesDockingAcquisitionGate(ownerBehaviour))
+                if (PassesDockingAcquisitionGate(ownerBehaviour, ownerBody))
                 {
                     _lastRejectedDockColliderId = 0UL;
-                    DockTransport(owner, ownerBehaviour);
+                    DockTransport(
+                        owner,
+                        ownerBehaviour,
+                        ownerBody,
+                        _candidateMotors[i],
+                        _candidateDockLocks[i],
+                        _candidateExternalMassSinks[i]);
                     return;
                 }
             }
         }
 
-        private bool IsTransportInsideDockVolume(MonoBehaviour transportBehaviour)
+        private void TryCacheDockingCandidate(Collider other)
+        {
+            if (!TryResolveRegisteredDockingCandidate(
+                    other,
+                    out IPlayerTransportLifecycleOwner owner,
+                    out MonoBehaviour behaviour,
+                    out Rigidbody body,
+                    out VehicleMotor motor,
+                    out ITransportDockControlLock dockLock,
+                    out IDockedExternalMassSink externalMassSink))
+            {
+                return;
+            }
+
+            CacheDockingCandidate(owner, behaviour, body, motor, dockLock, externalMassSink);
+        }
+
+        private void RefreshDockingCandidatesFromRegistryCold()
+        {
+            for (int i = 0; i < PlayerTransportLifecycleRegistry.SlotCapacity; i++)
+            {
+                if (!PlayerTransportLifecycleRegistry.TryGetAt(
+                        i,
+                        out IPlayerTransportLifecycleOwner owner,
+                        out MonoBehaviour behaviour,
+                        out Rigidbody body,
+                        out VehicleMotor motor,
+                        out ITransportDockControlLock dockLock,
+                        out IDockedExternalMassSink externalMassSink))
+                {
+                    continue;
+                }
+
+                if (IsTransportInsideDockVolume(behaviour, body))
+                    CacheDockingCandidate(owner, behaviour, body, motor, dockLock, externalMassSink);
+            }
+        }
+
+        private void CacheDockingCandidate(
+            IPlayerTransportLifecycleOwner owner,
+            MonoBehaviour behaviour,
+            Rigidbody body,
+            VehicleMotor motor,
+            ITransportDockControlLock dockLock,
+            IDockedExternalMassSink externalMassSink)
+        {
+            if (owner == null || behaviour == null)
+                return;
+
+            for (int i = 0; i < _candidateCount; i++)
+            {
+                if (ReferenceEquals(_candidateOwners[i], owner) ||
+                    ReferenceEquals(_candidateBehaviours[i], behaviour))
+                {
+                    _candidateOwners[i] = owner;
+                    _candidateBehaviours[i] = behaviour;
+                    _candidateBodies[i] = body;
+                    _candidateMotors[i] = motor;
+                    _candidateDockLocks[i] = dockLock;
+                    _candidateExternalMassSinks[i] = externalMassSink;
+                    return;
+                }
+            }
+
+            if (_candidateCount >= DockCandidateCapacity)
+                return;
+
+            int index = _candidateCount;
+            _candidateCount++;
+            _candidateOwners[index] = owner;
+            _candidateBehaviours[index] = behaviour;
+            _candidateBodies[index] = body;
+            _candidateMotors[index] = motor;
+            _candidateDockLocks[index] = dockLock;
+            _candidateExternalMassSinks[index] = externalMassSink;
+        }
+
+        private void RemoveDockingCandidate(Collider other)
+        {
+            if (other == null)
+                return;
+
+            Rigidbody body = other.attachedRigidbody;
+            TryResolveRegisteredDockingCandidate(
+                other,
+                out IPlayerTransportLifecycleOwner owner,
+                out MonoBehaviour behaviour,
+                out _,
+                out _,
+                out _,
+                out _);
+
+            for (int i = 0; i < _candidateCount; i++)
+            {
+                bool ownerMatches = owner != null && ReferenceEquals(_candidateOwners[i], owner);
+                bool behaviourMatches = behaviour != null && ReferenceEquals(_candidateBehaviours[i], behaviour);
+                bool bodyMatches = body != null && ReferenceEquals(_candidateBodies[i], body);
+                if (!ownerMatches && !behaviourMatches && !bodyMatches)
+                    continue;
+
+                RemoveDockingCandidateAt(i);
+                return;
+            }
+        }
+
+        private void ClearDockingCandidates()
+        {
+            for (int i = 0; i < _candidateCount; i++)
+            {
+                _candidateOwners[i] = null;
+                _candidateBehaviours[i] = null;
+                _candidateBodies[i] = null;
+                _candidateMotors[i] = null;
+                _candidateDockLocks[i] = null;
+                _candidateExternalMassSinks[i] = null;
+            }
+
+            _candidateCount = 0;
+        }
+
+        private void RemoveDockingCandidateAt(int index)
+        {
+            if (index < 0 || index >= _candidateCount)
+                return;
+
+            int lastIndex = _candidateCount - 1;
+            _candidateOwners[index] = _candidateOwners[lastIndex];
+            _candidateBehaviours[index] = _candidateBehaviours[lastIndex];
+            _candidateBodies[index] = _candidateBodies[lastIndex];
+            _candidateMotors[index] = _candidateMotors[lastIndex];
+            _candidateDockLocks[index] = _candidateDockLocks[lastIndex];
+            _candidateExternalMassSinks[index] = _candidateExternalMassSinks[lastIndex];
+
+            _candidateOwners[lastIndex] = null;
+            _candidateBehaviours[lastIndex] = null;
+            _candidateBodies[lastIndex] = null;
+            _candidateMotors[lastIndex] = null;
+            _candidateDockLocks[lastIndex] = null;
+            _candidateExternalMassSinks[lastIndex] = null;
+            _candidateCount = lastIndex;
+        }
+
+        private static bool TryResolveRegisteredDockingCandidate(
+            Collider other,
+            out IPlayerTransportLifecycleOwner owner,
+            out MonoBehaviour behaviour,
+            out Rigidbody body,
+            out VehicleMotor motor,
+            out ITransportDockControlLock dockLock,
+            out IDockedExternalMassSink externalMassSink)
+        {
+            owner = null;
+            behaviour = null;
+            body = null;
+            motor = null;
+            dockLock = null;
+            externalMassSink = null;
+            if (other == null)
+                return false;
+
+            owner = other.GetComponentInParent<IPlayerTransportLifecycleOwner>();
+            behaviour = owner as MonoBehaviour;
+            if (owner == null || behaviour == null)
+            {
+                IPlayerTransportLifecycleResolver resolver = other.GetComponentInParent<IPlayerTransportLifecycleResolver>();
+                if (resolver != null && resolver.TryResolveTransportLifecycleOwner(out owner))
+                    behaviour = owner as MonoBehaviour;
+            }
+
+            return PlayerTransportLifecycleRegistry.TryGetRegistered(
+                owner,
+                behaviour,
+                out owner,
+                out behaviour,
+                out body,
+                out motor,
+                out dockLock,
+                out externalMassSink);
+        }
+
+        private bool IsTransportInsideDockVolume(MonoBehaviour transportBehaviour, Rigidbody transportBody)
         {
             if (transportBehaviour == null)
                 return false;
 
             return _triggerCollider != null &&
-                   TryResolveCandidatePose(transportBehaviour, out Vector3 candidatePosition, out _) &&
+                   TryResolveCandidatePose(transportBehaviour, transportBody, out Vector3 candidatePosition, out _) &&
                    _triggerVolume.Contains(_cachedTransform, candidatePosition);
         }
 
-        private bool PassesDockingAcquisitionGate(MonoBehaviour transportBehaviour)
+        private bool PassesDockingAcquisitionGate(MonoBehaviour transportBehaviour, Rigidbody transportBody)
         {
             if (transportBehaviour == null || !TryResolveDockAnchor(out Transform anchor))
                 return false;
 
-            if (!TryResolveCandidatePose(transportBehaviour, out Vector3 candidatePosition, out Quaternion candidateRotation))
+            if (!TryResolveCandidatePose(transportBehaviour, transportBody, out Vector3 candidatePosition, out Quaternion candidateRotation))
                 return false;
 
             if (RuntimeDistanceSq(candidatePosition, anchor.position) >= DockingAcquireDistanceSqMeters)
@@ -541,21 +758,17 @@ namespace Hecton8.Construction
             return math.isfinite(alignmentDot) && alignmentDot > DockingAcquireAlignmentDot;
         }
 
-        private static bool TryResolveCandidatePose(MonoBehaviour transportBehaviour, out Vector3 position, out Quaternion rotation)
+        private static bool TryResolveCandidatePose(MonoBehaviour transportBehaviour, Rigidbody transportBody, out Vector3 position, out Quaternion rotation)
         {
             position = Vector3.zero;
             rotation = Quaternion.identity;
             if (transportBehaviour == null)
                 return false;
 
-            Rigidbody candidateBody;
-            if (!transportBehaviour.TryGetComponent(out candidateBody))
-                ConstructionParentLookup.TryCaptureSelfOrParent(transportBehaviour, out candidateBody);
-
-            if (candidateBody != null)
+            if (transportBody != null)
             {
-                position = candidateBody.position;
-                rotation = candidateBody.rotation;
+                position = transportBody.position;
+                rotation = transportBody.rotation;
             }
             else
             {
@@ -567,7 +780,13 @@ namespace Hecton8.Construction
             return IsFiniteVector(position) && IsFiniteQuaternion(rotation);
         }
 
-        private void DockTransport(IPlayerTransportLifecycleOwner transportOwner, MonoBehaviour transportBehaviour)
+        private void DockTransport(
+            IPlayerTransportLifecycleOwner transportOwner,
+            MonoBehaviour transportBehaviour,
+            Rigidbody transportBody,
+            VehicleMotor transportMotor,
+            ITransportDockControlLock dockControlLock,
+            IDockedExternalMassSink externalMassSink)
         {
             if (transportOwner == null || transportBehaviour == null)
                 return;
@@ -578,10 +797,10 @@ namespace Hecton8.Construction
             _debugDockOccupied = true;
             _debugDockedTransportName = transportBehaviour.name;
 
-            CaptureDockedBody(transportBehaviour);
-            CaptureDockedVehicleMotor(transportBehaviour);
-            CaptureDockedExternalMassSink(transportBehaviour);
-            BeginDockingControlLock(transportBehaviour);
+            CaptureDockedBody(transportBody, transportBehaviour);
+            CaptureDockedVehicleMotor(transportMotor);
+            CaptureDockedExternalMassSink(externalMassSink);
+            BeginDockingControlLock(dockControlLock);
             _dockingElapsedSeconds = 0f;
             ResetDockingRuntimeCaches();
             CacheDockingTrajectory();
@@ -637,14 +856,13 @@ namespace Hecton8.Construction
             _debugDockedTransportName = string.Empty;
         }
 
-        private void CaptureDockedBody(MonoBehaviour transportBehaviour)
+        private void CaptureDockedBody(Rigidbody transportBody, MonoBehaviour transportBehaviour)
         {
             _dockedBody = null;
             if (transportBehaviour == null)
                 return;
 
-            if (!transportBehaviour.TryGetComponent(out _dockedBody))
-                ConstructionParentLookup.TryCaptureSelfOrParent(transportBehaviour, out _dockedBody);
+            _dockedBody = transportBody;
 
             if (_dockedBody == null)
                 return;
@@ -662,24 +880,14 @@ namespace Hecton8.Construction
             _dockedBody.interpolation = RigidbodyInterpolation.Interpolate;
         }
 
-        private void CaptureDockedVehicleMotor(MonoBehaviour transportBehaviour)
+        private void CaptureDockedVehicleMotor(VehicleMotor transportMotor)
         {
-            _dockedVehicleMotor = null;
-            if (transportBehaviour == null)
-                return;
-
-            if (!transportBehaviour.TryGetComponent(out _dockedVehicleMotor))
-                ConstructionParentLookup.TryCaptureSelfOrParent(transportBehaviour, out _dockedVehicleMotor);
+            _dockedVehicleMotor = transportMotor;
         }
 
-        private void CaptureDockedExternalMassSink(MonoBehaviour transportBehaviour)
+        private void CaptureDockedExternalMassSink(IDockedExternalMassSink externalMassSink)
         {
-            _dockedExternalMassSink = null;
-            if (transportBehaviour == null)
-                return;
-
-            ConstructionParentLookup.TryCaptureSelfOrParent(transportBehaviour, out _dockedExternalMassSink);
-
+            _dockedExternalMassSink = externalMassSink;
             PushDockedExternalMass();
         }
 
@@ -1340,13 +1548,12 @@ namespace Hecton8.Construction
             telemetryLength = 0;
             cursor = default;
             vault = null;
-            EnsureDockTelemetry();
             vault = _dataVault;
             if (vault == null ||
+                vault.IsCompactionFenceActive ||
                 !IsDockTelemetryHandle(in _dockTelemetryHandle, BufferID.VehicleDockingTelemetryRing) ||
                 !IsDockTelemetryHandle(in _dockTelemetryCursorHandle, BufferID.VehicleDockingTelemetryCursor))
             {
-                ClearDockTelemetryDescriptor();
                 return false;
             }
 
@@ -1367,7 +1574,6 @@ namespace Hecton8.Construction
                 {
                     telemetry = default;
                     cursor = default;
-                    ClearDockTelemetryDescriptor();
                     return false;
                 }
 
@@ -1946,14 +2152,9 @@ namespace Hecton8.Construction
             return new Quaternion(q.x, q.y, q.z, q.w);
         }
 
-        private void BeginDockingControlLock(MonoBehaviour transportBehaviour)
+        private void BeginDockingControlLock(ITransportDockControlLock dockControlLock)
         {
-            _mountedTransportLockOwner = null;
-            if (transportBehaviour == null)
-                return;
-
-            if (!transportBehaviour.TryGetComponent(out _mountedTransportLockOwner))
-                ConstructionParentLookup.TryCaptureSelfOrParent(transportBehaviour, out _mountedTransportLockOwner);
+            _mountedTransportLockOwner = dockControlLock;
 
             if (_mountedTransportLockOwner != null)
                 _mountedTransportLockOwner.BeginDockControlLock();
@@ -1979,43 +2180,22 @@ namespace Hecton8.Construction
             if (root == null)
                 return;
 
-            int stackCount = 1;
-            _cargoTraversalStack[0] = root;
-
-            try
+            int crateCount = StorageCrate.ActiveCrateCount;
+            for (int crateIndex = 0; crateIndex < crateCount && _connectedCargoCrateCount < DockedCargoCrateCapacity; crateIndex++)
             {
-                while (stackCount > 0 && _connectedCargoCrateCount < DockedCargoCrateCapacity)
+                StorageCrate crate = StorageCrate.GetActiveCrateAt(crateIndex);
+                Transform crateTransform = crate != null ? crate.CachedTransform : null;
+                if (crateTransform == null ||
+                    (!ReferenceEquals(crateTransform, root) && !crateTransform.IsChildOf(root)) ||
+                    IsDockedCargoConnected(crate) ||
+                    CrateHasExternalPowerGrid(crate))
                 {
-                    stackCount--;
-                    Transform current = _cargoTraversalStack[stackCount];
-                    _cargoTraversalStack[stackCount] = null;
-                    if (current == null)
-                        continue;
-
-                    if (current.TryGetComponent(out StorageCrate crate) &&
-                        crate != null &&
-                        !IsDockedCargoConnected(crate) &&
-                        !CrateHasExternalPowerGrid(crate))
-                    {
-                        BaseLogisticsNetwork.RegisterStorage(crate, _powerNode);
-                        _connectedCargoCrates[_connectedCargoCrateCount] = crate;
-                        _connectedCargoCrateCount++;
-                    }
-
-                    int childCount = current.childCount;
-                    for (int childIndex = childCount - 1; childIndex >= 0; childIndex--)
-                    {
-                        if (stackCount >= DockedCargoTraversalCapacity)
-                            return;
-
-                        _cargoTraversalStack[stackCount] = current.GetChild(childIndex);
-                        stackCount++;
-                    }
+                    continue;
                 }
-            }
-            finally
-            {
-                ClearCargoTraversalStack(stackCount);
+
+                BaseLogisticsNetwork.RegisterStorage(crate, _powerNode);
+                _connectedCargoCrates[_connectedCargoCrateCount] = crate;
+                _connectedCargoCrateCount++;
             }
         }
 
@@ -2035,23 +2215,8 @@ namespace Hecton8.Construction
             if (crate == null)
                 return true;
 
-            Transform cursor = crate.transform;
-            while (cursor != null)
-            {
-                if (cursor.TryGetComponent(out PowerNode node) && node != null && node.Grid != null)
-                    return true;
-
-                cursor = cursor.parent;
-            }
-
-            return false;
-        }
-
-        private void ClearCargoTraversalStack(int stackCount)
-        {
-            int safeCount = math.min(stackCount, _cargoTraversalStack.Length);
-            for (int i = 0; i < safeCount; i++)
-                _cargoTraversalStack[i] = null;
+            PowerNode node = crate.LogisticsPowerNode;
+            return node != null && node.Grid != null;
         }
 
         private void DisconnectDockedCargoCrates()

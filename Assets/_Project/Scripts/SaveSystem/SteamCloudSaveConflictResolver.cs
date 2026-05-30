@@ -1,5 +1,6 @@
 using System;
 using Hecton8.Core;
+using UnityEngine;
 
 namespace Hecton8.SaveSystem
 {
@@ -17,6 +18,14 @@ namespace Hecton8.SaveSystem
         private static Action<SteamCloudSaveChoice> _pendingResolver;
         private static SteamCloudSaveChoice _pendingSuggestedChoice;
         private static SteamCloudSaveChoice _pendingAlternateChoice;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetPendingResolverForSubsystemRegistration()
+        {
+            _pendingResolver = null;
+            _pendingSuggestedChoice = SteamCloudSaveChoice.None;
+            _pendingAlternateChoice = SteamCloudSaveChoice.None;
+        }
 
         public static SteamCloudSaveResolution Resolve(
             in SteamCloudSaveCandidate local,

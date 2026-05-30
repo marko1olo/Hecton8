@@ -93,8 +93,13 @@ function Resolve-AssetPath([string]$RelativePath, [string]$KindValue) {
     if ([System.IO.Path]::IsPathRooted($normalized)) {
         Fail 'Path must be starter-relative.'
     }
-    if ($normalized.StartsWith('../') -or $normalized.Contains('/../') -or $normalized.Contains('..')) {
-        Fail 'Path must not contain .. segments.'
+    if ($normalized.StartsWith('/') -or $normalized.Contains(':')) {
+        Fail 'Path must be a portable starter-relative path.'
+    }
+    foreach ($segment in ($normalized -split '/')) {
+        if ([string]::IsNullOrWhiteSpace($segment) -or $segment -eq '.' -or $segment -eq '..') {
+            Fail 'Path must not contain empty, dot, or dot-dot path segments.'
+        }
     }
     if (-not $normalized.StartsWith('Content/Assets/', [System.StringComparison]::Ordinal)) {
         Fail 'Path must stay under Content/Assets/.'
@@ -109,6 +114,34 @@ function Resolve-AssetPath([string]$RelativePath, [string]$KindValue) {
         Relative = $normalized
         Full = Join-StarterPath $Root $normalized
     }
+}
+
+function Test-StrictJsonRelativePath([string]$RelativePath, [string]$RequiredPrefix, [string]$Label) {
+    if ([string]::IsNullOrWhiteSpace($RelativePath)) {
+        Fail ($Label + ' is required.')
+    }
+
+    $normalized = $RelativePath.Replace('\','/')
+    if ($normalized.Trim() -cne $normalized) {
+        Fail ($Label + ' must not contain leading or trailing whitespace.')
+    }
+    if ([System.IO.Path]::IsPathRooted($normalized) -or $normalized.StartsWith('/') -or $normalized.Contains(':')) {
+        Fail ($Label + ' must be a starter-relative path.')
+    }
+    if (-not $normalized.StartsWith($RequiredPrefix, [System.StringComparison]::Ordinal)) {
+        Fail ($Label + ' must stay under ' + $RequiredPrefix)
+    }
+    if (-not $normalized.EndsWith('.json', [System.StringComparison]::Ordinal)) {
+        Fail ($Label + ' must end with .json.')
+    }
+
+    foreach ($segment in ($normalized -split '/')) {
+        if ([string]::IsNullOrWhiteSpace($segment) -or $segment -eq '.' -or $segment -eq '..') {
+            Fail ($Label + ' must not contain empty, dot, or dot-dot path segments.')
+        }
+    }
+
+    return $normalized
 }
 
 function Validate-Crc32Text([string]$Value) {
@@ -156,17 +189,7 @@ function Get-Crc32Hex([string]$FilePath) {
 }
 
 function Resolve-GeneratedOutputPath([string]$RelativePath) {
-    if ([string]::IsNullOrWhiteSpace($RelativePath)) {
-        Fail 'Output is required.'
-    }
-
-    $normalized = $RelativePath.Replace('\','/').Trim()
-    if ([System.IO.Path]::IsPathRooted($normalized)) {
-        Fail 'Output must be a starter-relative path under Generated/.'
-    }
-    if ($normalized.Contains('..') -or -not $normalized.StartsWith('Generated/', [System.StringComparison]::Ordinal)) {
-        Fail 'Output must stay under Generated/ and must not contain .. segments.'
-    }
+    $normalized = Test-StrictJsonRelativePath $RelativePath 'Generated/' 'Output'
 
     $directory = Join-StarterPath $Root 'Generated'
     if (-not (Test-Path -LiteralPath $directory -PathType Container)) {

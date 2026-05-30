@@ -169,12 +169,11 @@ namespace Hecton8.Core
             int drained = 0;
             while (drained < limit && _events.TryDequeue(out int eventId))
             {
+                int remaining = _counters[PendingCountIndex] - 1;
+                _counters[PendingCountIndex] = remaining > 0 ? remaining : 0;
                 callback.Invoke(eventId);
                 drained++;
             }
-
-            int remaining = pending - drained;
-            _counters[PendingCountIndex] = remaining > 0 ? remaining : 0;
             return drained;
         }
 

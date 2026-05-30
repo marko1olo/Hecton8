@@ -351,8 +351,10 @@ namespace Hecton8.Biolum
 
             if (_resourceRefreshRequested || _volumeA == null || _volumeB == null || _activePointBuffer == null || !HasValidKernelState())
             {
+                if (!HasRequiredResources())
+                    return;
+
                 _resourceRefreshRequested = false;
-                EnsureResources();
                 PublishGlobals();
             }
         }
@@ -733,6 +735,14 @@ namespace Hecton8.Biolum
                    IsPortableThreadGroup(_clearThreadGroupSizeX, _clearThreadGroupSizeY, _clearThreadGroupSizeZ) &&
                    IsPortableThreadGroup(_diffuseThreadGroupSizeX, _diffuseThreadGroupSizeY, _diffuseThreadGroupSizeZ) &&
                    IsPortableThreadGroup(_injectThreadGroupSizeX, _injectThreadGroupSizeY, _injectThreadGroupSizeZ);
+        }
+
+        private bool HasRequiredResources()
+        {
+            return _volumeA != null &&
+                   _volumeB != null &&
+                   _activePointBuffer != null &&
+                   HasValidKernelState();
         }
 
         private void ResetKernelState()

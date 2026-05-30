@@ -751,17 +751,24 @@ namespace Hecton8.Physics.Vehicles
         // In-place mutation was rejected because readers need a stable prior state. Managed publication was rejected
         // because the payload is Burst/rollback-facing.
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
-        // The invariant is two disjoint buffers: GridRead/StateRead are immutable inputs, GridWrite/StateWrite are the
-        // only outputs, and the caller chains this handle before exposing the new state.
+        // The invariant is two disjoint buffer pairs: GridWrite/StateWrite are completed producer outputs and
+        // GridRead/StateRead are publication buffers overwritten by this fenced job before readers observe them.
+        // Grid capacity is passed explicitly so a corrupt caller cannot turn the bulk publish copy into an overrun.
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleGridCellDTO* GridWrite;
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleGridCellDTO* GridRead;
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleDamageStateDTO* StateWrite;
         [NoAlias, NativeDisableUnsafePtrRestriction] public VehicleDamageStateDTO* StateRead;
         public int CellCount;
+        public int GridWriteCapacity;
+        public int GridReadCapacity;
 
         public void Execute()
         {
-            if (GridWrite != null && GridRead != null && CellCount > 0)
+            if (GridWrite != null &&
+                GridRead != null &&
+                CellCount > 0 &&
+                CellCount <= GridWriteCapacity &&
+                CellCount <= GridReadCapacity)
             {
                 long bytes = (long)CellCount * UnsafeUtility.SizeOf<VehicleGridCellDTO>();
                 UnsafeUtility.MemCpy(GridRead, GridWrite, bytes);

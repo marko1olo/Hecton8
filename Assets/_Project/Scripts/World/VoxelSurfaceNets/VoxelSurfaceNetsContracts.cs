@@ -53,7 +53,6 @@ namespace Hecton8.World.VoxelSurfaceNets
         public const BufferID Tuning = (BufferID)70785;
         public const BufferID TelemetryRing = (BufferID)70786;
         public const BufferID TelemetryCursor = (BufferID)70787;
-        public const BufferID CsvScratch = (BufferID)70788;
         public const BufferID SurfaceEdgeMasks = (BufferID)70789;
         public const BufferID RawDebugVertices = (BufferID)70790;
         public const BufferID ChunkAabbs = (BufferID)70791;

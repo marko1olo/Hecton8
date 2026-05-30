@@ -69,6 +69,7 @@ namespace Hecton8.Narrative
         private bool _registeredHotSwapListener;
         private bool _ordersScheduled;
         private ISaveService _saveService;
+        private ILocalizationTextReadModel _localizationText;
 
         // ----------------------------------------------------------
         //  ISaveable
@@ -95,6 +96,7 @@ namespace Hecton8.Narrative
                 return;
 
             _saveService = GlobalRegistry.Save;
+            _localizationText = GlobalRegistry.LocalizationText;
             TryRegisterHotSwapListener();
             TryRegister();
             TryRegisterSaveParticipant();
@@ -126,6 +128,8 @@ namespace Hecton8.Narrative
             _activeConflicts.Clear();
             _pendingTimers.Clear();
             _ordersScheduled = false;
+            _saveService = null;
+            _localizationText = null;
         }
 
         private void Start()
@@ -189,12 +193,16 @@ namespace Hecton8.Narrative
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Save)
+            if (serviceSlot == GlobalRegistryServiceSlot.Save)
+            {
+                TryUnregisterSaveParticipant();
+                _saveService = currentService as ISaveService;
+                TryRegisterSaveParticipant();
                 return;
+            }
 
-            TryUnregisterSaveParticipant();
-            _saveService = currentService as ISaveService;
-            TryRegisterSaveParticipant();
+            if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
+                _localizationText = (currentService as ILocalizationTextReadModel) ?? GlobalRegistry.LocalizationText;
         }
 
         private void TryRegisterHotSwapListener()
@@ -279,7 +287,26 @@ namespace Hecton8.Narrative
         // ----------------------------------------------------------
 
         public bool HasReceivedOrder(string orderId) => _receivedOrders.Contains(orderId);
-        public bool HasActiveConflict(string conflictId) => _activeConflicts.Contains(ComputeStableHash(conflictId));
+
+        public bool HasActiveConflict(string orderId)
+        {
+            if (string.IsNullOrEmpty(orderId))
+                return false;
+
+            uint legacyHash = ComputeStableHash(orderId);
+            if (legacyHash != 0u && _activeConflicts.Contains(legacyHash))
+                return true;
+
+            if (corporationData == null ||
+                !corporationData.TryGetOrder(orderId, out CorporateOrder order) ||
+                string.IsNullOrEmpty(order.conflictsWithOrderId))
+            {
+                return false;
+            }
+
+            uint conflictHash = ComputeConflictHash(orderId, order.conflictsWithOrderId);
+            return conflictHash != 0u && _activeConflicts.Contains(conflictHash);
+        }
 
         // ----------------------------------------------------------
         //  PRIVATE
@@ -320,10 +347,7 @@ namespace Hecton8.Narrative
             if (!string.IsNullOrEmpty(order.conflictsWithOrderId) &&
                 _receivedOrders.Contains(order.conflictsWithOrderId))
             {
-                uint conflictHash = ComputeConflictHash(orderId, order.conflictsWithOrderId);
-                if (conflictHash != 0u &&
-                    _activeConflicts.Count < OrderCapacity &&
-                    _activeConflicts.Add(conflictHash))
+                if (TryRegisterConflictForOrder(orderId, in order))
                 {
                     NotificationEvents.TryPushWarning(ResolveLocalizedSpan(
                         LocalizationKeys.CORP_ORDER_CONFLICT,
@@ -340,12 +364,54 @@ namespace Hecton8.Narrative
 #endif
         }
 
-        private static ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
+        private ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            ILocalizationTextReadModel manager = Hecton8.Core.GlobalRegistry.LocalizationText;
+            ILocalizationTextReadModel manager = _localizationText;
             return manager != null
                 ? manager.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())
                 : fallback.AsSpan();
+        }
+
+        private bool TryRegisterConflictForOrder(string orderId, in CorporateOrder order)
+        {
+            if (string.IsNullOrEmpty(orderId) ||
+                string.IsNullOrEmpty(order.conflictsWithOrderId) ||
+                !_receivedOrders.Contains(order.conflictsWithOrderId))
+            {
+                return false;
+            }
+
+            uint conflictHash = ComputeConflictHash(orderId, order.conflictsWithOrderId);
+            if (conflictHash == 0u || _activeConflicts.Contains(conflictHash))
+                return false;
+
+            if (_activeConflicts.Count >= OrderCapacity)
+                return false;
+
+            return _activeConflicts.Add(conflictHash);
+        }
+
+        private void RebuildActiveConflictsFromReceivedOrders()
+        {
+            _activeConflicts.Clear();
+            if (corporationData == null || corporationData.orders == null)
+                return;
+
+            CorporateOrder[] orders = corporationData.orders;
+            for (int i = 0; i < orders.Length; i++)
+            {
+                if (_activeConflicts.Count >= OrderCapacity)
+                    break;
+
+                CorporateOrder order = orders[i];
+                if (string.IsNullOrEmpty(order.orderId) ||
+                    !_receivedOrders.Contains(order.orderId))
+                {
+                    continue;
+                }
+
+                TryRegisterConflictForOrder(order.orderId, in order);
+            }
         }
 
         private static uint ComputeStableHash(string value)
@@ -419,6 +485,7 @@ namespace Hecton8.Narrative
         public void LoadFromSaveData(SaveData data)
         {
             _receivedOrders.Clear();
+            _activeConflicts.Clear();
             _pendingTimers.Clear();
             _ordersScheduled = true;
 
@@ -432,6 +499,8 @@ namespace Hecton8.Narrative
 
                     if (!string.IsNullOrEmpty(id)) _receivedOrders.Add(id);
                 }
+
+            RebuildActiveConflictsFromReceivedOrders();
 
             if (data.corporatePendingOrderIds != null && data.corporatePendingOrderTimers != null)
             {

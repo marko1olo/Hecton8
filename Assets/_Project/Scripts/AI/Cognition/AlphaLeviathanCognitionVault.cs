@@ -348,99 +348,15 @@ namespace Hecton8.AI.Cognition
         }
 
         /// <summary>
-        /// Cold crash-path dump of the Alpha Leviathan telemetry ring.
+        /// Cold fault acknowledgement for the Alpha Leviathan telemetry ring. Runtime disk dumps are forbidden.
         /// </summary>
         /// <param name="buffers">Resolved DataVault buffer views.</param>
-        /// <param name="projectRoot">Project root path. Pass `C:\hades\Hecton8` from the owner.</param>
-        /// <returns>True when a binary dump was written.</returns>
+        /// <param name="projectRoot">Ignored; retained for API compatibility with editor tools.</param>
+        /// <returns>True when the telemetry ring is present and retained in memory.</returns>
         public static bool TryDumpBlackBox(in AlphaLeviathanVaultBuffers buffers, string projectRoot)
         {
-            if (!buffers.TelemetryRing.IsCreated || buffers.TelemetryRing.Length <= 0)
-                return false;
-
-            string path = null;
-            string tempPath = null;
-            string agentTempPath = null;
-
-            try
-            {
-                string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
-                path = Path.Combine(root, "Docs", "AgentLogs", AgentDumpFileName);
-                tempPath = BuildAlphaLeviathanDumpTempPath(path);
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                TryDeleteFile(tempPath);
-
-                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(DumpMagic);
-                    writer.Write(DumpVersion);
-                    writer.Write(AlphaLeviathanStalkConstants.TelemetryFrames);
-                    writer.Write(AlphaLeviathanStalkConstants.MaxLeviathanSlots);
-                    writer.Write(buffers.TelemetryRing.Length);
-                    int cursor = ResolveTelemetryCursor(in buffers);
-                    writer.Write(cursor);
-
-                    for (int i = 0; i < buffers.TelemetryRing.Length; i++)
-                    {
-                        AlphaLeviathanTelemetryEntry entry = buffers.TelemetryRing[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.Slot);
-                        writer.Write(entry.Phase);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.DistanceToPlayerMeters);
-                        writer.Write(entry.FogRingDistanceMeters);
-                        writer.Write(entry.Position.x);
-                        writer.Write(entry.Position.y);
-                        writer.Write(entry.Position.z);
-                        writer.Write(entry.PlayerPosition.x);
-                        writer.Write(entry.PlayerPosition.y);
-                        writer.Write(entry.PlayerPosition.z);
-                        writer.Write(entry.DesiredDirection.x);
-                        writer.Write(entry.DesiredDirection.y);
-                        writer.Write(entry.DesiredDirection.z);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.LeviathanAgressivity01);
-                        writer.Write(entry.Reserved1);
-                    }
-                }
-
-                if (!TryPromoteDump(tempPath, path))
-                    return false;
-
-                string agentPath = Path.Combine(root, "Docs", "AgentLogs", Agent1300DumpFileName);
-                agentTempPath = BuildAlphaLeviathanDumpTempPath(agentPath);
-                TryDeleteFile(agentTempPath);
-                File.Copy(path, agentTempPath, true);
-                return TryPromoteDump(agentTempPath, agentPath);
-            }
-            catch (IOException)
-            {
-                TryDeleteFile(tempPath);
-                TryDeleteFile(agentTempPath);
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                TryDeleteFile(tempPath);
-                TryDeleteFile(agentTempPath);
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                TryDeleteFile(tempPath);
-                TryDeleteFile(agentTempPath);
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                TryDeleteFile(tempPath);
-                TryDeleteFile(agentTempPath);
-                return false;
-            }
+            _ = projectRoot;
+            return buffers.TelemetryRing.IsCreated && buffers.TelemetryRing.Length > 0;
         }
 
         /// <summary>
@@ -449,7 +365,7 @@ namespace Hecton8.AI.Cognition
         /// <param name="vault">GlobalDataVault service cached by the caller outside hot paths.</param>
         /// <param name="handles">Cached handles. Generations are refreshed on success.</param>
         /// <param name="projectRoot">Project root path. Pass `C:\hades\Hecton8` from the owner.</param>
-        /// <returns>True when a binary dump was written.</returns>
+        /// <returns>True when the telemetry ring is present and retained in memory.</returns>
         public static bool TryDumpBlackBox(
             IDataVault vault,
             ref AlphaLeviathanVaultHandles handles,
@@ -466,7 +382,7 @@ namespace Hecton8.AI.Cognition
         /// </summary>
         /// <param name="buffers">Resolved DataVault buffer views.</param>
         /// <param name="projectRoot">Project root path. Pass `C:\hades\Hecton8` from the owner.</param>
-        /// <returns>True when a fault was detected and a binary dump was written.</returns>
+        /// <returns>True when a fault was detected in the retained telemetry ring.</returns>
         public static bool TryDumpBlackBoxOnFault(in AlphaLeviathanVaultBuffers buffers, string projectRoot)
         {
             if (!buffers.TelemetryRing.IsCreated || buffers.TelemetryRing.Length <= 0)
@@ -476,7 +392,7 @@ namespace Hecton8.AI.Cognition
             {
                 AlphaLeviathanTelemetryEntry entry = buffers.TelemetryRing[i];
                 if ((entry.Flags & AlphaLeviathanTelemetryFlags.Fault) != 0)
-                    return TryDumpBlackBox(in buffers, projectRoot);
+                    return true;
             }
 
             return false;
@@ -488,7 +404,7 @@ namespace Hecton8.AI.Cognition
         /// <param name="buffers">Resolved DataVault buffer views.</param>
         /// <param name="frame">Global simulation frame that was written into telemetry.</param>
         /// <param name="projectRoot">Project root path. Pass `C:\hades\Hecton8` from the owner.</param>
-        /// <returns>True when the current frame contains a fault and a binary dump was written.</returns>
+        /// <returns>True when the current frame contains a fault in the retained telemetry ring.</returns>
         public static bool TryDumpBlackBoxOnFrameFault(in AlphaLeviathanVaultBuffers buffers, uint frame, string projectRoot)
         {
             if (!buffers.TelemetryRing.IsCreated || buffers.TelemetryRing.Length <= 0)
@@ -504,7 +420,7 @@ namespace Hecton8.AI.Cognition
             {
                 AlphaLeviathanTelemetryEntry entry = buffers.TelemetryRing[i];
                 if (entry.Frame == frame && (entry.Flags & AlphaLeviathanTelemetryFlags.Fault) != 0)
-                    return TryDumpBlackBox(in buffers, projectRoot);
+                    return true;
             }
 
             return false;
@@ -517,7 +433,7 @@ namespace Hecton8.AI.Cognition
         /// <param name="handles">Cached handles. Generations are refreshed on success.</param>
         /// <param name="frame">Global simulation frame that was written into telemetry.</param>
         /// <param name="projectRoot">Project root path. Pass `C:\hades\Hecton8` from the owner.</param>
-        /// <returns>True when the current frame contains a fault and a binary dump was written.</returns>
+        /// <returns>True when the current frame contains a fault in the retained telemetry ring.</returns>
         public static bool TryDumpBlackBoxOnFrameFault(
             IDataVault vault,
             ref AlphaLeviathanVaultHandles handles,
@@ -536,7 +452,7 @@ namespace Hecton8.AI.Cognition
         /// <param name="vault">GlobalDataVault service cached by the caller outside hot paths.</param>
         /// <param name="handles">Cached handles. Generations are refreshed on success.</param>
         /// <param name="projectRoot">Project root path. Pass `C:\hades\Hecton8` from the owner.</param>
-        /// <returns>True when a fault was detected and a binary dump was written.</returns>
+        /// <returns>True when a fault was detected in the retained telemetry ring.</returns>
         public static bool TryDumpBlackBoxOnFault(
             IDataVault vault,
             ref AlphaLeviathanVaultHandles handles,
@@ -627,63 +543,5 @@ namespace Hecton8.AI.Cognition
             return candidateFrame == currentFrame || unchecked(candidateFrame - currentFrame) < 0x80000000u;
         }
 
-        private static bool TryPromoteDump(string tempPath, string path)
-        {
-            try
-            {
-                if (File.Exists(path))
-                    File.Replace(tempPath, path, null);
-                else
-                    File.Move(tempPath, path);
-
-                return true;
-            }
-            catch (IOException)
-            {
-                TryDeleteFile(tempPath);
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                TryDeleteFile(tempPath);
-                return false;
-            }
-            catch (ArgumentException)
-            {
-                TryDeleteFile(tempPath);
-                return false;
-            }
-            catch (NotSupportedException)
-            {
-                TryDeleteFile(tempPath);
-                return false;
-            }
-        }
-
-        private static string BuildAlphaLeviathanDumpTempPath(string path)
-        {
-            return Path.ChangeExtension(path, ".bin.tmp");
-        }
-
-        private static void TryDeleteFile(string path)
-        {
-            try
-            {
-                if (File.Exists(path))
-                    File.Delete(path);
-            }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-            catch (ArgumentException)
-            {
-            }
-            catch (NotSupportedException)
-            {
-            }
-        }
     }
 }

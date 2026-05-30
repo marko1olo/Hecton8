@@ -70,6 +70,12 @@ namespace Hecton8.Core
             get { return _handAnchor; }
         }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveRuntimeInstance = null;
+        }
+
         /// <summary>
         /// Ensures a live runtime instance exists.
         /// </summary>
@@ -77,6 +83,12 @@ namespace Hecton8.Core
         {
             if (ActiveRuntimeInstance != null)
                 return ActiveRuntimeInstance;
+
+            if (GlobalRegistry.RegisteredPlayerInventory is PlayerInventoryManager registeredRuntime)
+            {
+                ActiveRuntimeInstance = registeredRuntime;
+                return registeredRuntime;
+            }
 
             GameObject runtimeRoot = new GameObject("[PlayerInventoryManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned player inventory/tooling service root - owner: PlayerInventoryManager
             return runtimeRoot.AddComponent<PlayerInventoryManager>();
@@ -87,6 +99,9 @@ namespace Hecton8.Core
         /// </summary>
         public void InitializeService()
         {
+            if (!EnsureSingletonOwnership())
+                return;
+
             if (_isInitialized)
             {
                 TryRegisterHotSwapListener();
@@ -113,8 +128,8 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
-            if (ActiveRuntimeInstance == null)
-                ActiveRuntimeInstance = this;
+            if (!EnsureSingletonOwnership())
+                return;
 
             if (_isInitialized)
             {
@@ -142,6 +157,22 @@ namespace Hecton8.Core
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
+        }
+
+        private bool EnsureSingletonOwnership()
+        {
+            PlayerInventoryManager runtime = ActiveRuntimeInstance;
+            if (runtime == null)
+                runtime = GlobalRegistry.RegisteredPlayerInventory as PlayerInventoryManager;
+
+            if (runtime != null && runtime != this)
+            {
+                Destroy(gameObject);
+                return false;
+            }
+
+            ActiveRuntimeInstance = this;
+            return true;
         }
 
         public void OnServiceShutdown()
@@ -307,6 +338,10 @@ namespace Hecton8.Core
         private void TryRegisterService()
         {
             if (_registeredService)
+                return;
+
+            IPlayerInventoryService registeredService = GlobalRegistry.RegisteredPlayerInventory;
+            if (registeredService != null && !ReferenceEquals(registeredService, this))
                 return;
 
             GlobalRegistry.RegisterPlayerInventoryService(this);

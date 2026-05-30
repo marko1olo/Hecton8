@@ -1077,10 +1077,11 @@ namespace Hecton8.World
 
         public bool TryWrite(int index, T value)
         {
-            if ((uint)index >= (uint)Length || _vault == null)
+            IDataVault vault = _vault;
+            if ((uint)index >= (uint)Length || vault == null)
                 return false;
 
-            bool locked = _vault.TryAcquireWriteLock(in _handle, _owner, out NativeArray<T> values);
+            bool locked = vault.TryAcquireWriteLock(in _handle, _owner, out NativeArray<T> values);
             if (!locked)
                 return false;
 
@@ -1094,16 +1095,17 @@ namespace Hecton8.World
             }
             finally
             {
-                _vault.ReleaseWriteLock(in _handle, _owner);
+                vault.ReleaseWriteLock(in _handle, _owner);
             }
         }
 
         public bool Clear()
         {
-            if (!IsCreated || _vault == null)
+            IDataVault vault = _vault;
+            if (!IsCreated || vault == null)
                 return false;
 
-            bool locked = _vault.TryAcquireWriteLock(in _handle, _owner, out NativeArray<T> values);
+            bool locked = vault.TryAcquireWriteLock(in _handle, _owner, out NativeArray<T> values);
             if (!locked)
                 return false;
 
@@ -1116,7 +1118,7 @@ namespace Hecton8.World
             }
             finally
             {
-                _vault.ReleaseWriteLock(in _handle, _owner);
+                vault.ReleaseWriteLock(in _handle, _owner);
             }
         }
 
@@ -1207,10 +1209,11 @@ namespace Hecton8.World
 
         public bool TryWrite(int index, T value)
         {
-            if ((uint)index >= (uint)Length || _vault == null)
+            IDataVault vault = _vault;
+            if ((uint)index >= (uint)Length || vault == null)
                 return false;
 
-            bool itemsLocked = _vault.TryAcquireWriteLock(in _itemsHandle, _owner, out NativeArray<T> items);
+            bool itemsLocked = vault.TryAcquireWriteLock(in _itemsHandle, _owner, out NativeArray<T> items);
             if (!itemsLocked)
                 return false;
 
@@ -1224,16 +1227,17 @@ namespace Hecton8.World
             }
             finally
             {
-                _vault.ReleaseWriteLock(in _itemsHandle, _owner);
+                vault.ReleaseWriteLock(in _itemsHandle, _owner);
             }
         }
 
         public bool Clear()
         {
-            if (_vault == null || _countHandle.BufferID == 0u)
+            IDataVault vault = _vault;
+            if (vault == null || _countHandle.BufferID == 0u)
                 return false;
 
-            bool countLocked = _vault.TryAcquireWriteLock(in _countHandle, _owner, out NativeArray<int> count);
+            bool countLocked = vault.TryAcquireWriteLock(in _countHandle, _owner, out NativeArray<int> count);
             if (!countLocked)
                 return false;
 
@@ -1249,23 +1253,24 @@ namespace Hecton8.World
             }
             finally
             {
-                _vault.ReleaseWriteLock(in _countHandle, _owner);
+                vault.ReleaseWriteLock(in _countHandle, _owner);
             }
         }
 
         public bool AddNoResize(T value)
         {
-            if (!IsCreated || _vault == null)
+            IDataVault vault = _vault;
+            if (!IsCreated || vault == null)
                 return false;
 
-            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            bool mutationGuarded = vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             if (!mutationGuarded)
                 return false;
 
             try
             {
-                if (!_vault.TryResolveHandle(in _itemsHandle, out NativeArray<T> items) ||
-                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                if (!vault.TryResolveHandle(in _itemsHandle, out NativeArray<T> items) ||
+                    !vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
                     count.Length <= 0)
                 {
                     return false;
@@ -1282,23 +1287,24 @@ namespace Hecton8.World
             finally
             {
                 if (mutationGuarded)
-                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+                    vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
         public void RemoveAtSwapBack(int index)
         {
-            if (!IsCreated || _vault == null)
+            IDataVault vault = _vault;
+            if (!IsCreated || vault == null)
                 return;
 
-            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            bool mutationGuarded = vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             if (!mutationGuarded)
                 return;
 
             try
             {
-                if (!_vault.TryResolveHandle(in _itemsHandle, out NativeArray<T> items) ||
-                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                if (!vault.TryResolveHandle(in _itemsHandle, out NativeArray<T> items) ||
+                    !vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
                     count.Length <= 0)
                 {
                     return;
@@ -1316,7 +1322,7 @@ namespace Hecton8.World
             finally
             {
                 if (mutationGuarded)
-                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+                    vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
@@ -1438,17 +1444,18 @@ namespace Hecton8.World
 
         public bool Clear()
         {
-            if (!IsCreated || _vault == null)
+            IDataVault vault = _vault;
+            if (!IsCreated || vault == null)
                 return false;
 
-            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            bool mutationGuarded = vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             if (!mutationGuarded)
                 return false;
 
             try
             {
-                if (!_vault.TryResolveHandle(in _statesHandle, out NativeArray<byte> states) ||
-                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                if (!vault.TryResolveHandle(in _statesHandle, out NativeArray<byte> states) ||
+                    !vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
                     count.Length <= 0)
                 {
                     return false;
@@ -1464,7 +1471,7 @@ namespace Hecton8.World
             finally
             {
                 if (mutationGuarded)
-                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+                    vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
@@ -1522,19 +1529,20 @@ namespace Hecton8.World
 
         public bool TryAdd(TKey key, TValue value)
         {
-            if (!IsCreated || _vault == null)
+            IDataVault vault = _vault;
+            if (!IsCreated || vault == null)
                 return false;
 
-            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            bool mutationGuarded = vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             if (!mutationGuarded)
                 return false;
 
             try
             {
-                if (!_vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
-                    !_vault.TryResolveHandle(in _valuesHandle, out NativeArray<TValue> values) ||
-                    !_vault.TryResolveHandle(in _statesHandle, out NativeArray<byte> states) ||
-                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                if (!vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
+                    !vault.TryResolveHandle(in _valuesHandle, out NativeArray<TValue> values) ||
+                    !vault.TryResolveHandle(in _statesHandle, out NativeArray<byte> states) ||
+                    !vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
                     count.Length <= 0)
                 {
                     return false;
@@ -1593,25 +1601,26 @@ namespace Hecton8.World
             finally
             {
                 if (mutationGuarded)
-                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+                    vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
         public bool TrySet(TKey key, TValue value)
         {
-            if (!IsCreated || _vault == null)
+            IDataVault vault = _vault;
+            if (!IsCreated || vault == null)
                 return false;
 
-            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            bool mutationGuarded = vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             if (!mutationGuarded)
                 return false;
 
             try
             {
-                if (!_vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
-                    !_vault.TryResolveHandle(in _valuesHandle, out NativeArray<TValue> values) ||
-                    !_vault.TryResolveHandle(in _statesHandle, out NativeArray<byte> states) ||
-                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                if (!vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
+                    !vault.TryResolveHandle(in _valuesHandle, out NativeArray<TValue> values) ||
+                    !vault.TryResolveHandle(in _statesHandle, out NativeArray<byte> states) ||
+                    !vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
                     count.Length <= 0)
                 {
                     return false;
@@ -1674,7 +1683,7 @@ namespace Hecton8.World
             finally
             {
                 if (mutationGuarded)
-                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+                    vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
@@ -1683,19 +1692,20 @@ namespace Hecton8.World
             if (previousKey.Equals(nextKey))
                 return TrySet(nextKey, value);
 
-            if (!IsCreated || _vault == null)
+            IDataVault vault = _vault;
+            if (!IsCreated || vault == null)
                 return false;
 
-            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            bool mutationGuarded = vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             if (!mutationGuarded)
                 return false;
 
             try
             {
-                if (!_vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
-                    !_vault.TryResolveHandle(in _valuesHandle, out NativeArray<TValue> values) ||
-                    !_vault.TryResolveHandle(in _statesHandle, out NativeArray<byte> states) ||
-                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                if (!vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
+                    !vault.TryResolveHandle(in _valuesHandle, out NativeArray<TValue> values) ||
+                    !vault.TryResolveHandle(in _statesHandle, out NativeArray<byte> states) ||
+                    !vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
                     count.Length <= 0)
                 {
                     return false;
@@ -1750,24 +1760,25 @@ namespace Hecton8.World
             finally
             {
                 if (mutationGuarded)
-                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+                    vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
         public bool Remove(TKey key)
         {
-            if (!IsCreated || _vault == null)
+            IDataVault vault = _vault;
+            if (!IsCreated || vault == null)
                 return false;
 
-            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            bool mutationGuarded = vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             if (!mutationGuarded)
                 return false;
 
             try
             {
-                if (!_vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
-                    !_vault.TryResolveHandle(in _statesHandle, out NativeArray<byte> states) ||
-                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                if (!vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
+                    !vault.TryResolveHandle(in _statesHandle, out NativeArray<byte> states) ||
+                    !vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
                     count.Length <= 0)
                 {
                     return false;
@@ -1801,7 +1812,7 @@ namespace Hecton8.World
             finally
             {
                 if (mutationGuarded)
-                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+                    vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
@@ -1978,10 +1989,11 @@ namespace Hecton8.World
 
         public bool Clear()
         {
-            if (_vault == null || _countHandle.BufferID == 0u)
+            IDataVault vault = _vault;
+            if (vault == null || _countHandle.BufferID == 0u)
                 return false;
 
-            bool countLocked = _vault.TryAcquireWriteLock(in _countHandle, _owner, out NativeArray<int> count);
+            bool countLocked = vault.TryAcquireWriteLock(in _countHandle, _owner, out NativeArray<int> count);
             if (!countLocked)
                 return false;
 
@@ -1997,24 +2009,25 @@ namespace Hecton8.World
             }
             finally
             {
-                _vault.ReleaseWriteLock(in _countHandle, _owner);
+                vault.ReleaseWriteLock(in _countHandle, _owner);
             }
         }
 
         public bool Add(TKey key, TValue value)
         {
-            if (!IsCreated || _vault == null)
+            IDataVault vault = _vault;
+            if (!IsCreated || vault == null)
                 return false;
 
-            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            bool mutationGuarded = vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             if (!mutationGuarded)
                 return false;
 
             try
             {
-                if (!_vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
-                    !_vault.TryResolveHandle(in _valuesHandle, out NativeArray<TValue> values) ||
-                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                if (!vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
+                    !vault.TryResolveHandle(in _valuesHandle, out NativeArray<TValue> values) ||
+                    !vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
                     count.Length <= 0)
                 {
                     return false;
@@ -2032,7 +2045,7 @@ namespace Hecton8.World
             finally
             {
                 if (mutationGuarded)
-                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+                    vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
@@ -2062,18 +2075,19 @@ namespace Hecton8.World
 
         public bool RemoveFirst(TKey key, TValue value)
         {
-            if (!IsCreated || _vault == null)
+            IDataVault vault = _vault;
+            if (!IsCreated || vault == null)
                 return false;
 
-            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            bool mutationGuarded = vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             if (!mutationGuarded)
                 return false;
 
             try
             {
-                if (!_vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
-                    !_vault.TryResolveHandle(in _valuesHandle, out NativeArray<TValue> values) ||
-                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                if (!vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
+                    !vault.TryResolveHandle(in _valuesHandle, out NativeArray<TValue> values) ||
+                    !vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
                     count.Length <= 0)
                 {
                     return false;
@@ -2099,7 +2113,7 @@ namespace Hecton8.World
             finally
             {
                 if (mutationGuarded)
-                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+                    vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
     }
@@ -2148,10 +2162,11 @@ namespace Hecton8.World
 
         public bool Clear()
         {
-            if (_vault == null || _stateHandle.BufferID == 0u)
+            IDataVault vault = _vault;
+            if (vault == null || _stateHandle.BufferID == 0u)
                 return false;
 
-            bool stateLocked = _vault.TryAcquireWriteLock(in _stateHandle, _owner, out NativeArray<int> state);
+            bool stateLocked = vault.TryAcquireWriteLock(in _stateHandle, _owner, out NativeArray<int> state);
             if (!stateLocked)
                 return false;
 
@@ -2168,23 +2183,24 @@ namespace Hecton8.World
             }
             finally
             {
-                _vault.ReleaseWriteLock(in _stateHandle, _owner);
+                vault.ReleaseWriteLock(in _stateHandle, _owner);
             }
         }
 
         public bool Enqueue(T value)
         {
-            if (!IsCreated || _vault == null)
+            IDataVault vault = _vault;
+            if (!IsCreated || vault == null)
                 return false;
 
-            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            bool mutationGuarded = vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             if (!mutationGuarded)
                 return false;
 
             try
             {
-                if (!_vault.TryResolveHandle(in _valuesHandle, out NativeArray<T> values) ||
-                    !_vault.TryResolveHandle(in _stateHandle, out NativeArray<int> state) ||
+                if (!vault.TryResolveHandle(in _valuesHandle, out NativeArray<T> values) ||
+                    !vault.TryResolveHandle(in _stateHandle, out NativeArray<int> state) ||
                     state.Length < 2)
                 {
                     return false;
@@ -2204,24 +2220,25 @@ namespace Hecton8.World
             finally
             {
                 if (mutationGuarded)
-                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+                    vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
         public bool TryDequeue(out T value)
         {
             value = default;
-            if (!IsCreated || _vault == null)
+            IDataVault vault = _vault;
+            if (!IsCreated || vault == null)
                 return false;
 
-            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            bool mutationGuarded = vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             if (!mutationGuarded)
                 return false;
 
             try
             {
-                if (!_vault.TryResolveHandle(in _valuesHandle, out NativeArray<T> values) ||
-                    !_vault.TryResolveHandle(in _stateHandle, out NativeArray<int> state) ||
+                if (!vault.TryResolveHandle(in _valuesHandle, out NativeArray<T> values) ||
+                    !vault.TryResolveHandle(in _stateHandle, out NativeArray<int> state) ||
                     state.Length < 2)
                 {
                     return false;
@@ -2241,7 +2258,7 @@ namespace Hecton8.World
             finally
             {
                 if (mutationGuarded)
-                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+                    vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
@@ -2722,7 +2739,6 @@ namespace Hecton8.World
         private const float WorldClockMaxSeconds = 16777215f;
         private const int MaxTombstoneDecayAppliesPerLateFrame = 128;
         private const int WorldTelemetryRingLength = 300;
-        private const string WorldTelemetryDumpPath = "Docs/AgentLogs/Dump_1325_WorldRegistry.bin";
         private const uint WorldTelemetryResolveSuccess = 1u;
         private const uint WorldTelemetryReadFailure = 2u;
         private const uint WorldTelemetryWriteLockContention = 3u;
@@ -2988,9 +3004,6 @@ namespace Hecton8.World
         private ISubmarineRuntimeContext _submarineRuntimeContext;
         private ulong _worldTelemetrySequence;
         private int _worldTelemetryDumpQueued;
-        private int _worldTelemetryDumpShutdown;
-        private AutoResetEvent _worldTelemetryDumpSignal;
-        private Thread _worldTelemetryDumpThread;
         private object _worldTelemetryDumpSnapshotLock;
         private WorldTelemetryEntry[] _worldTelemetryDumpSnapshot;
         private int _worldTelemetryDumpSnapshotCount;
@@ -3198,7 +3211,7 @@ namespace Hecton8.World
             _apexMigrationVisitedUids = new uint[MaxApexMigrationVisitedUids];
             // COLD ALLOC: PersistentThermalVentRecord[16] - active hydrothermal vent snapshot for thermodynamics - owner: PersistentWorldRegistry
             _activeThermalVents = new PersistentThermalVentRecord[MaxPersistentThermalVentRecords];
-            // COLD ALLOC: WorldTelemetryEntry[300] - owner-phase fault snapshot before background dump - owner: PersistentWorldRegistry
+            // COLD ALLOC: WorldTelemetryEntry[300] - owner-phase fault snapshot retained in memory - owner: PersistentWorldRegistry
             _worldTelemetryDumpSnapshot = new WorldTelemetryEntry[WorldTelemetryRingLength];
             // COLD ALLOC: object - pre-owned telemetry snapshot monitor - owner: PersistentWorldRegistry
             _worldTelemetryDumpSnapshotLock = new object();
@@ -9300,124 +9313,24 @@ namespace Hecton8.World
                 _worldTelemetryDumpSnapshotCount = count;
             }
 
-            AutoResetEvent signal = _worldTelemetryDumpSignal;
-            if (signal == null)
-            {
-                Interlocked.Exchange(ref _worldTelemetryDumpQueued, 0);
-                return;
-            }
-
-            signal.Set();
+            Interlocked.Exchange(ref _worldTelemetryDumpQueued, 0);
         }
 
         private void InitializeWorldTelemetryDumpWorkerCold()
         {
-            if (_worldTelemetryDumpSignal != null || _worldTelemetryDumpThread != null)
-                return;
+            if (_worldTelemetryDumpSnapshot == null)
+                _worldTelemetryDumpSnapshot = new WorldTelemetryEntry[WorldTelemetryRingLength];
 
-            Volatile.Write(ref _worldTelemetryDumpShutdown, 0);
-            _worldTelemetryDumpSignal = new AutoResetEvent(false);
-            _worldTelemetryDumpThread = new Thread(WorldTelemetryDumpWorkerLoop)
-            {
-                IsBackground = true,
-                Name = "H8.WorldTelemetryDump1325"
-            };
-            _worldTelemetryDumpThread.Start();
+            if (_worldTelemetryDumpSnapshotLock == null)
+                _worldTelemetryDumpSnapshotLock = new object();
         }
 
         private void ShutdownWorldTelemetryDumpWorkerCold()
         {
             CaptureQueuedWorldTelemetryDumpSnapshotCold();
-            Volatile.Write(ref _worldTelemetryDumpShutdown, 1);
-
-            AutoResetEvent signal = _worldTelemetryDumpSignal;
-            signal?.Set();
-
-            Thread thread = _worldTelemetryDumpThread;
-            if (thread != null && !ReferenceEquals(Thread.CurrentThread, thread) && thread.IsAlive)
-                thread.Join();
-
-            signal?.Dispose();
-            _worldTelemetryDumpSignal = null;
-            _worldTelemetryDumpThread = null;
             _worldTelemetryDumpSnapshot = null;
             _worldTelemetryDumpSnapshotLock = null;
             _worldTelemetryDumpSnapshotCount = 0;
-        }
-
-        private void WorldTelemetryDumpWorkerLoop()
-        {
-            while (true)
-            {
-                AutoResetEvent signal = _worldTelemetryDumpSignal;
-                if (signal == null)
-                    return;
-
-                signal.WaitOne();
-
-                if (Volatile.Read(ref _worldTelemetryDumpQueued) == 2)
-                    DumpWorldTelemetryCold();
-
-                if (Volatile.Read(ref _worldTelemetryDumpShutdown) != 0)
-                    return;
-            }
-        }
-
-        private void DumpWorldTelemetryCold()
-        {
-            try
-            {
-                if (_worldTelemetryDumpSnapshot == null || _worldTelemetryDumpSnapshotLock == null)
-                    return;
-
-                string directory = Path.GetDirectoryName(WorldTelemetryDumpPath);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
-
-                using FileStream stream = new FileStream(WorldTelemetryDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-                using BinaryWriter writer = new BinaryWriter(stream);
-                lock (_worldTelemetryDumpSnapshotLock)
-                {
-                    int count = math.min(_worldTelemetryDumpSnapshotCount, _worldTelemetryDumpSnapshot.Length);
-                    for (int i = 0; i < count; i++)
-                    {
-                        WorldTelemetryEntry entry = _worldTelemetryDumpSnapshot[i];
-                        WriteTelemetryEntry(writer, in entry);
-                    }
-                }
-            }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-            catch (ObjectDisposedException)
-            {
-            }
-            finally
-            {
-                Interlocked.Exchange(ref _worldTelemetryDumpQueued, 0);
-            }
-        }
-
-        private static void WriteTelemetryEntry(BinaryWriter writer, in WorldTelemetryEntry entry)
-        {
-            writer.Write(entry.Sequence);
-            writer.Write(entry.BufferId);
-            writer.Write(entry.Generation);
-            writer.Write(entry.SystemId);
-            writer.Write(entry.EventCode);
-            writer.Write(entry.ActualLength);
-            writer.Write(entry.ExpectedLength);
-            writer.Write(entry.ChunkId.x);
-            writer.Write(entry.ChunkId.y);
-            writer.Write(entry.ChunkId.z);
-            writer.Write(entry.Microseconds);
-            writer.Write(entry.InstanceUid);
-            writer.Write(entry.Flags);
-            writer.Write(entry.Reserved0);
-            writer.Write(entry.Reserved1);
         }
 
         private void UpdateDiagnostics()

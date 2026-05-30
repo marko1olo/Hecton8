@@ -101,6 +101,9 @@ namespace Hecton8.Core
             PlayerSensoryManager runtime = s_activeRuntime != null
                 ? s_activeRuntime
                 : GlobalRegistry.PlayerSensoryRuntime;
+            if (runtime == null)
+                runtime = GlobalRegistry.RegisteredPlayerSensory as PlayerSensoryManager;
+
             if (runtime != null)
             {
                 s_activeRuntime = runtime;
@@ -118,6 +121,10 @@ namespace Hecton8.Core
         {
             if (_isInitialized)
             {
+                EnsureSingletonOwnership();
+                if (!ReferenceEquals(s_activeRuntime, this))
+                    return;
+
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterService();
@@ -151,6 +158,10 @@ namespace Hecton8.Core
         {
             if (_isInitialized)
             {
+                EnsureSingletonOwnership();
+                if (!ReferenceEquals(s_activeRuntime, this))
+                    return;
+
                 TryRegisterHotSwapListener();
                 TryRegisterUpdatable();
                 TryRegisterService();
@@ -230,6 +241,9 @@ namespace Hecton8.Core
             PlayerSensoryManager runtime = s_activeRuntime != null
                 ? s_activeRuntime
                 : GlobalRegistry.PlayerSensoryRuntime;
+            if (runtime == null)
+                runtime = GlobalRegistry.RegisteredPlayerSensory as PlayerSensoryManager;
+
             if (runtime != null && runtime != this)
             {
                 Destroy(gameObject);
@@ -415,6 +429,10 @@ namespace Hecton8.Core
         private void TryRegisterService()
         {
             if (_registeredService)
+                return;
+
+            IPlayerSensoryService registeredService = GlobalRegistry.RegisteredPlayerSensory;
+            if (registeredService != null && !ReferenceEquals(registeredService, this))
                 return;
 
             GlobalRegistry.RegisterPlayerSensoryService(this);

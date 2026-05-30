@@ -121,9 +121,17 @@ namespace Hecton8.Physics
         private AsyncGPUReadbackRequest _readbackRequest0;
         private AsyncGPUReadbackRequest _readbackRequest1;
         private AsyncGPUReadbackRequest _readbackRequest2;
+        private ReadbackDataOwner _readbackData;
         private int _readbackCount0;
         private int _readbackCount1;
         private int _readbackCount2;
+
+        private struct ReadbackDataOwner
+        {
+            public NativeArray<ReadbackRequestDTO> Data0;
+            public NativeArray<ReadbackRequestDTO> Data1;
+            public NativeArray<ReadbackRequestDTO> Data2;
+        }
         private uint _readbackFrame0;
         private uint _readbackFrame1;
         private uint _readbackFrame2;
@@ -205,9 +213,10 @@ namespace Hecton8.Physics
 
             NativeArray<ReadbackRequestDTO> requests = default;
             bool requestsLocked = false;
+            IDataVault requestsWriteVault = null;
             try
             {
-                requests = AcquireVaultWriteBuffer(_dataVault, in _requestsHandle);
+                requests = AcquireVaultWriteBuffer(_dataVault, in _requestsHandle, out requestsWriteVault);
                 requestsLocked = requests.IsCreated;
                 if (!requestsLocked || _queuedRequestCount >= math.min(requests.Length, AsyncBuoyancyReadbackConstants.RequestCapacity))
                     return false;
@@ -234,7 +243,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (requestsLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _requestsHandle);
+                    ReleaseVaultWriteBuffer(requestsWriteVault, in _requestsHandle);
             }
         }
 
@@ -459,9 +468,10 @@ namespace Hecton8.Physics
             int latency = math.max(1, AsyncBuoyancyReadbackConstants.MockLatencyFrames);
             NativeArray<ReadbackRequestDTO> mockRing = default;
             bool mockLocked = false;
+            IDataVault mockWriteVault = null;
             try
             {
-                mockRing = AcquireVaultWriteBuffer(_dataVault, in _mockRingHandle);
+                mockRing = AcquireVaultWriteBuffer(_dataVault, in _mockRingHandle, out mockWriteVault);
                 mockLocked = mockRing.IsCreated;
                 if (!mockLocked)
                     return false;
@@ -484,7 +494,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (mockLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _mockRingHandle);
+                    ReleaseVaultWriteBuffer(mockWriteVault, in _mockRingHandle);
             }
 
             int completed = 0;
@@ -493,9 +503,10 @@ namespace Hecton8.Physics
                 NativeArray<ReadbackRequestDTO> mockRingRead = ReadVaultBuffer(_dataVault, in _mockRingHandle);
                 NativeArray<ReadbackRequestDTO> completedWrite = default;
                 bool completedLocked = false;
+                IDataVault completedWriteVault = null;
                 try
                 {
-                    completedWrite = AcquireVaultWriteBuffer(_dataVault, in _completedRequestsHandle);
+                    completedWrite = AcquireVaultWriteBuffer(_dataVault, in _completedRequestsHandle, out completedWriteVault);
                     completedLocked = completedWrite.IsCreated;
                     if (!mockRingRead.IsCreated || !completedLocked)
                         return false;
@@ -521,15 +532,16 @@ namespace Hecton8.Physics
                 finally
                 {
                     if (completedLocked)
-                        ReleaseVaultWriteBuffer(_dataVault, in _completedRequestsHandle);
+                        ReleaseVaultWriteBuffer(completedWriteVault, in _completedRequestsHandle);
                 }
             }
 
             NativeArray<AsyncReadbackCounterDTO> counters = default;
             bool counterLocked = false;
+            IDataVault counterWriteVault = null;
             try
             {
-                counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle);
+                counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle, out counterWriteVault);
                 counterLocked = counters.IsCreated;
                 if (!counterLocked || counters.Length <= 0)
                     return false;
@@ -547,7 +559,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (counterLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _counterHandle);
+                    ReleaseVaultWriteBuffer(counterWriteVault, in _counterHandle);
             }
         }
 
@@ -590,9 +602,10 @@ namespace Hecton8.Physics
 
             NativeArray<ReadbackResolvedHeightDTO> resolved = default;
             bool resolvedLocked = false;
+            IDataVault resolvedWriteVault = null;
             try
             {
-                resolved = AcquireVaultWriteBuffer(_dataVault, in _resolvedHeightsHandle);
+                resolved = AcquireVaultWriteBuffer(_dataVault, in _resolvedHeightsHandle, out resolvedWriteVault);
                 resolvedLocked = resolved.IsCreated;
                 if (!resolvedLocked)
                     return false;
@@ -625,7 +638,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (resolvedLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _resolvedHeightsHandle);
+                    ReleaseVaultWriteBuffer(resolvedWriteVault, in _resolvedHeightsHandle);
             }
         }
 
@@ -649,9 +662,10 @@ namespace Hecton8.Physics
 
             NativeArray<ReadbackResultStateDTO> states = default;
             bool statesLocked = false;
+            IDataVault statesWriteVault = null;
             try
             {
-                states = AcquireVaultWriteBuffer(_dataVault, in _resultStatesHandle);
+                states = AcquireVaultWriteBuffer(_dataVault, in _resultStatesHandle, out statesWriteVault);
                 statesLocked = states.IsCreated;
                 if (!statesLocked)
                     return false;
@@ -692,7 +706,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (statesLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _resultStatesHandle);
+                    ReleaseVaultWriteBuffer(statesWriteVault, in _resultStatesHandle);
             }
         }
 
@@ -700,9 +714,10 @@ namespace Hecton8.Physics
         {
             NativeArray<AsyncReadbackCounterDTO> counters = default;
             bool counterLocked = false;
+            IDataVault counterWriteVault = null;
             try
             {
-                counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle);
+                counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle, out counterWriteVault);
                 counterLocked = counters.IsCreated;
                 if (!counterLocked || counters.Length <= 0)
                     return false;
@@ -718,7 +733,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (counterLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _counterHandle);
+                    ReleaseVaultWriteBuffer(counterWriteVault, in _counterHandle);
             }
         }
 
@@ -931,9 +946,14 @@ namespace Hecton8.Physics
                 return ReadbackDispatchStatus.Unavailable;
 
             ref AsyncGPUReadbackRequest requestRef = ref ResolveReadbackRequestRef(slot);
+            ref NativeArray<ReadbackRequestDTO> readbackDataRef = ref ResolveReadbackDataRef(slot);
             ref int countRef = ref ResolveReadbackCountRef(slot);
             ref uint frameRef = ref ResolveReadbackFrameRef(slot);
-            requestRef = AsyncGPUReadback.Request(requestBuffer, readbackBytes, 0, null);
+            EnsureReadbackData(ref readbackDataRef, ResolveReadbackDataLabel(slot));
+            requestRef = AsyncGPUReadback.RequestIntoNativeArray(ref readbackDataRef, requestBuffer, readbackBytes, 0, null);
+            if (requestRef.hasError)
+                return ReadbackDispatchStatus.Unavailable;
+
             countRef = _dispatchRequestCount;
             frameRef = _frameIndex;
             activeRef = 1;
@@ -971,14 +991,15 @@ namespace Hecton8.Physics
 
                 NativeArray<ReadbackRequestDTO> completed = default;
                 bool completedLocked = false;
+                IDataVault completedWriteVault = null;
                 try
                 {
-                    completed = AcquireVaultWriteBuffer(_dataVault, in _completedRequestsHandle);
+                    completed = AcquireVaultWriteBuffer(_dataVault, in _completedRequestsHandle, out completedWriteVault);
                     completedLocked = completed.IsCreated;
                     if (!completedLocked)
                         continue;
 
-                    NativeArray<ReadbackRequestDTO> readbackData = request.GetData<ReadbackRequestDTO>();
+                    NativeArray<ReadbackRequestDTO> readbackData = ResolveReadbackDataRef(slot);
                     int copyCount = math.min(count, math.min(completed.Length, readbackData.Length));
                     for (int i = 0; i < copyCount; i++)
                         completed[i] = readbackData[i];
@@ -993,7 +1014,7 @@ namespace Hecton8.Physics
                 finally
                 {
                     if (completedLocked)
-                        ReleaseVaultWriteBuffer(_dataVault, in _completedRequestsHandle);
+                        ReleaseVaultWriteBuffer(completedWriteVault, in _completedRequestsHandle);
                 }
             }
         }
@@ -1011,9 +1032,10 @@ namespace Hecton8.Physics
         {
             NativeArray<ReadbackRequestDTO> requests = default;
             bool requestsLocked = false;
+            IDataVault requestsWriteVault = null;
             try
             {
-                requests = AcquireVaultWriteBuffer(_dataVault, in _requestsHandle);
+                requests = AcquireVaultWriteBuffer(_dataVault, in _requestsHandle, out requestsWriteVault);
                 requestsLocked = requests.IsCreated;
                 if (!requestsLocked)
                     return;
@@ -1053,7 +1075,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (requestsLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _requestsHandle);
+                    ReleaseVaultWriteBuffer(requestsWriteVault, in _requestsHandle);
             }
         }
 
@@ -1143,9 +1165,10 @@ namespace Hecton8.Physics
         {
             NativeArray<AsyncBuoyancyWaveParametersDTO> waves = default;
             bool wavesLocked = false;
+            IDataVault wavesWriteVault = null;
             try
             {
-                waves = AcquireVaultWriteBuffer(_dataVault, in _fallbackWavesHandle);
+                waves = AcquireVaultWriteBuffer(_dataVault, in _fallbackWavesHandle, out wavesWriteVault);
                 wavesLocked = waves.IsCreated;
                 if (!wavesLocked || waves.Length < AsyncBuoyancyReadbackConstants.WaveCapacity)
                     return;
@@ -1168,7 +1191,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (wavesLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _fallbackWavesHandle);
+                    ReleaseVaultWriteBuffer(wavesWriteVault, in _fallbackWavesHandle);
             }
         }
 
@@ -1176,9 +1199,10 @@ namespace Hecton8.Physics
         {
             NativeArray<VehicleSamplingProfileDTO> profiles = default;
             bool profilesLocked = false;
+            IDataVault profilesWriteVault = null;
             try
             {
-                profiles = AcquireVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
+                profiles = AcquireVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle, out profilesWriteVault);
                 profilesLocked = profiles.IsCreated;
                 if (!profilesLocked || profiles.Length <= 0 || profiles[0].VehicleHash != 0u)
                     return;
@@ -1188,7 +1212,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (profilesLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
+                    ReleaseVaultWriteBuffer(profilesWriteVault, in _vehicleProfilesHandle);
             }
         }
 
@@ -1233,23 +1257,7 @@ namespace Hecton8.Physics
 
         private static void UploadNativeArrayToGraphicsBuffer<T>(GraphicsBuffer destination, NativeArray<T> source, int count) where T : struct
         {
-            int safeCount = destination != null && source.IsCreated
-                ? math.min(count, math.min(source.Length, destination.count))
-                : 0;
-            if (safeCount <= 0)
-                return;
-
-            NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
-            try
-            {
-                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
-                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)UnsafeUtility.SizeOf<T>() * safeCount);
-            }
-            finally
-            {
-                destination.UnlockBufferAfterWrite<T>(safeCount);
-            }
+            GraphicsBufferUploadUtility.UploadNativeArray(destination, source, count);
         }
 
         private bool HasGpuBuffers()
@@ -1334,6 +1342,8 @@ namespace Hecton8.Physics
 
         private void ReleaseGpuBuffers()
         {
+            CompletePendingReadbacksForRelease();
+            DisposeReadbackData();
             DisposeRequestBuffer(ref _requestBuffer0);
             DisposeRequestBuffer(ref _requestBuffer1);
             DisposeRequestBuffer(ref _requestBuffer2);
@@ -1374,6 +1384,35 @@ namespace Hecton8.Physics
             _mockPathThisFrame = false;
             _gpuDispatchQueuedForVisualSync = false;
             _gpuUnavailableForNextSimulation = false;
+        }
+
+        private void CompletePendingReadbacksForRelease()
+        {
+            if (_readbackActive0 == 0 && _readbackActive1 == 0 && _readbackActive2 == 0)
+                return;
+
+            // BLOCKING_SYNC_POINT: teardown only; readback source buffers must outlive in-flight AsyncGPUReadback.
+            AsyncGPUReadback.WaitAllRequests();
+            _readbackActive0 = 0;
+            _readbackActive1 = 0;
+            _readbackActive2 = 0;
+        }
+
+        private void DisposeReadbackData()
+        {
+            DisposeReadbackData(ref _readbackData.Data0);
+            DisposeReadbackData(ref _readbackData.Data1);
+            DisposeReadbackData(ref _readbackData.Data2);
+        }
+
+        private static void DisposeReadbackData(ref NativeArray<ReadbackRequestDTO> data)
+        {
+            if (data.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(data);
+                data.Dispose();
+                data = default;
+            }
         }
 
         private static void DisposeRequestBuffer(ref GraphicsBuffer buffer)
@@ -1439,6 +1478,37 @@ namespace Hecton8.Physics
             return ref _readbackRequest2;
         }
 
+        private ref NativeArray<ReadbackRequestDTO> ResolveReadbackDataRef(int slot)
+        {
+            if (slot == 0)
+                return ref _readbackData.Data0;
+            if (slot == 1)
+                return ref _readbackData.Data1;
+            return ref _readbackData.Data2;
+        }
+
+        private static void EnsureReadbackData(ref NativeArray<ReadbackRequestDTO> data, string label)
+        {
+            if (data.IsCreated && data.Length >= AsyncBuoyancyReadbackConstants.RequestCapacity)
+                return;
+
+            DisposeReadbackData(ref data);
+            data = new NativeArray<ReadbackRequestDTO>(
+                AsyncBuoyancyReadbackConstants.RequestCapacity,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ReadbackRequestDTO>[request capacity] - async buoyancy readback target - owner: AsyncBuoyancyReadbackRuntime
+            NativeMemorySentinel.RegisterNativeArray(data, nameof(AsyncBuoyancyReadbackRuntime), label, NativeAllocationLifetime.Scene);
+        }
+
+        private static string ResolveReadbackDataLabel(int slot)
+        {
+            if (slot == 0)
+                return "_readbackData0";
+            if (slot == 1)
+                return "_readbackData1";
+            return "_readbackData2";
+        }
+
         private ref int ResolveReadbackCountRef(int slot)
         {
             if (slot == 0)
@@ -1470,9 +1540,10 @@ namespace Hecton8.Physics
         {
             NativeArray<ReadbackTuningDTO> tuning = default;
             bool tuningLocked = false;
+            IDataVault tuningWriteVault = null;
             try
             {
-                tuning = AcquireVaultWriteBuffer(_dataVault, in _tuningHandle);
+                tuning = AcquireVaultWriteBuffer(_dataVault, in _tuningHandle, out tuningWriteVault);
                 tuningLocked = tuning.IsCreated;
                 if (!tuningLocked || tuning.Length <= 0)
                     return;
@@ -1494,7 +1565,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (tuningLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _tuningHandle);
+                    ReleaseVaultWriteBuffer(tuningWriteVault, in _tuningHandle);
             }
         }
 
@@ -1502,9 +1573,10 @@ namespace Hecton8.Physics
         {
             NativeArray<AsyncReadbackCounterDTO> counters = default;
             bool countersLocked = false;
+            IDataVault countersWriteVault = null;
             try
             {
-                counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle);
+                counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle, out countersWriteVault);
                 countersLocked = counters.IsCreated;
                 if (!countersLocked || counters.Length <= 0)
                     return;
@@ -1523,7 +1595,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (countersLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _counterHandle);
+                    ReleaseVaultWriteBuffer(countersWriteVault, in _counterHandle);
             }
         }
 
@@ -1531,9 +1603,10 @@ namespace Hecton8.Physics
         {
             NativeArray<AsyncReadbackCounterDTO> counters = default;
             bool countersLocked = false;
+            IDataVault countersWriteVault = null;
             try
             {
-                counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle);
+                counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle, out countersWriteVault);
                 countersLocked = counters.IsCreated;
                 if (!countersLocked || counters.Length <= 0)
                     return;
@@ -1553,7 +1626,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (countersLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _counterHandle);
+                    ReleaseVaultWriteBuffer(countersWriteVault, in _counterHandle);
             }
         }
 
@@ -1568,9 +1641,10 @@ namespace Hecton8.Physics
             int cursorValue;
             NativeArray<int> cursor = default;
             bool cursorLocked = false;
+            IDataVault cursorWriteVault = null;
             try
             {
-                cursor = AcquireVaultWriteBuffer(_dataVault, in _telemetryCursorHandle);
+                cursor = AcquireVaultWriteBuffer(_dataVault, in _telemetryCursorHandle, out cursorWriteVault);
                 cursorLocked = cursor.IsCreated;
                 if (!cursorLocked || cursor.Length <= 0)
                     return;
@@ -1581,7 +1655,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (cursorLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _telemetryCursorHandle);
+                    ReleaseVaultWriteBuffer(cursorWriteVault, in _telemetryCursorHandle);
             }
 
             int write = math.max(0, cursorValue) % telemetryRead.Length;
@@ -1604,9 +1678,10 @@ namespace Hecton8.Physics
 
             NativeArray<ReadbackTelemetryEntry> telemetry = default;
             bool telemetryLocked = false;
+            IDataVault telemetryWriteVault = null;
             try
             {
-                telemetry = AcquireVaultWriteBuffer(_dataVault, in _telemetryRingHandle);
+                telemetry = AcquireVaultWriteBuffer(_dataVault, in _telemetryRingHandle, out telemetryWriteVault);
                 telemetryLocked = telemetry.IsCreated;
                 if (!telemetryLocked || telemetry.Length <= 0)
                     return;
@@ -1616,7 +1691,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (telemetryLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _telemetryRingHandle);
+                    ReleaseVaultWriteBuffer(telemetryWriteVault, in _telemetryRingHandle);
             }
         }
 
@@ -1685,10 +1760,11 @@ namespace Hecton8.Physics
 
             NativeArray<byte> scratch = default;
             bool scratchLocked = false;
+            IDataVault scratchWriteVault = null;
             int bytesRead = 0;
             try
             {
-                scratch = AcquireVaultWriteBuffer(_dataVault, in _csvScratchHandle);
+                scratch = AcquireVaultWriteBuffer(_dataVault, in _csvScratchHandle, out scratchWriteVault);
                 scratchLocked = scratch.IsCreated;
                 if (!scratchLocked || scratch.Length <= 0)
                     return;
@@ -1710,7 +1786,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (scratchLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _csvScratchHandle);
+                    ReleaseVaultWriteBuffer(scratchWriteVault, in _csvScratchHandle);
             }
 
             if (bytesRead <= 0)
@@ -1723,9 +1799,10 @@ namespace Hecton8.Physics
             bytesRead = math.min(bytesRead, scratchRead.Length);
             NativeArray<VehicleSamplingProfileDTO> profiles = default;
             bool profilesLocked = false;
+            IDataVault profilesWriteVault = null;
             try
             {
-                profiles = AcquireVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
+                profiles = AcquireVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle, out profilesWriteVault);
                 profilesLocked = profiles.IsCreated;
                 if (!profilesLocked || profiles.Length <= 0)
                     return;
@@ -1747,7 +1824,7 @@ namespace Hecton8.Physics
             finally
             {
                 if (profilesLocked)
-                    ReleaseVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
+                    ReleaseVaultWriteBuffer(profilesWriteVault, in _vehicleProfilesHandle);
             }
         }
 
@@ -2111,14 +2188,37 @@ namespace Hecton8.Physics
                 : default;
         }
 
-        private static NativeArray<T> AcquireVaultWriteBuffer<T>(IDataVault vault, in VaultGenerationHandle<T> handle)
+        private static NativeArray<T> AcquireVaultWriteBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            out IDataVault writeVault)
             where T : struct
         {
-            return vault != null &&
-                   HasHandle(in handle) &&
-                   vault.TryAcquireWriteLock(in handle, SystemID.Physics, out NativeArray<T> buffer)
-                ? buffer
-                : default;
+            writeVault = null;
+            if (vault == null ||
+                !HasHandle(in handle) ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.Physics, out NativeArray<T> buffer))
+            {
+                return default;
+            }
+
+            bool releaseOnFailure = true;
+            try
+            {
+                if (buffer.IsCreated)
+                {
+                    writeVault = vault;
+                    releaseOnFailure = false;
+                    return buffer;
+                }
+
+                return default;
+            }
+            finally
+            {
+                if (releaseOnFailure)
+                    vault.ReleaseWriteLock(in handle, SystemID.Physics);
+            }
         }
 
         private static void ReleaseVaultWriteBuffer<T>(IDataVault vault, in VaultGenerationHandle<T> handle)

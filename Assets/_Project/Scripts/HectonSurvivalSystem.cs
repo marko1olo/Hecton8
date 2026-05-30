@@ -289,6 +289,11 @@ namespace Hecton8.Gameplay
         private IAtmosphereReadModel _atmosphereRuntime;
         private IPhysicsService _physicsService;
         private ISaveService _saveService;
+        private AbyssalThermalManager _thermalManager;
+        private IModularEquipmentService _modularEquipment;
+        private HazardZoneManager _hazardZoneRuntime;
+        private IPlayerTransportLifecycleOwner _cachedUpgradeTransportOwner;
+        private VehicleUpgradeModule _cachedVehicleUpgradeModule;
         private bool _saveRegistered;
         private IDataVault _survivalDataVault;
         private bool _surfaceContractUnderwater;
@@ -637,9 +642,6 @@ namespace Hecton8.Gameplay
             if (_combatTargetId != 0)
                 return _combatTargetId;
 
-            if (_playerHealth == null)
-                TryGetComponent(out _playerHealth);
-
             _combatTargetId = _playerHealth != null
                 ? CombatDamageRuntime.ResolveTargetId(_playerHealth.gameObject)
                 : CombatDamageRuntime.ResolveTargetId(gameObject);
@@ -652,6 +654,9 @@ namespace Hecton8.Gameplay
             _physicsService = GlobalRegistry.Physics;
             _saveService = GlobalRegistry.Save;
             _survivalDataVault = GlobalRegistry.DataVault;
+            _thermalManager = GlobalRegistry.Thermodynamics;
+            _modularEquipment = GlobalRegistry.ModularEquipment;
+            _hazardZoneRuntime = GlobalRegistry.HazardZones;
         }
 
         private void TryRegisterSaveParticipant()
@@ -730,6 +735,15 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.Physics:
                     _physicsService = currentService as IPhysicsService;
+                    break;
+                case GlobalRegistryServiceSlot.ThermodynamicsRuntime:
+                    _thermalManager = currentService as AbyssalThermalManager;
+                    break;
+                case GlobalRegistryServiceSlot.ModularEquipment:
+                    _modularEquipment = currentService as IModularEquipmentService;
+                    break;
+                case GlobalRegistryServiceSlot.HazardZoneRuntime:
+                    _hazardZoneRuntime = currentService as HazardZoneManager;
                     break;
                 case GlobalRegistryServiceSlot.Save:
                     if (ReferenceEquals(_saveService, currentService))
@@ -1099,7 +1113,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveAbyssalThermalExternalTemperature(Vector3 worldPosition)
         {
-            AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;
+            AbyssalThermalManager thermalManager = _thermalManager;
             if (thermalManager == null ||
                 !thermalManager.SampleThermalFlow(worldPosition, 1.1f, out AbyssalThermalManager.ThermalFlowSample sample) ||
                 !math.isfinite(sample.Heat01) ||
@@ -1167,7 +1181,7 @@ namespace Hecton8.Gameplay
             }
 
             PlayerTool currentTool = _runtimeContext.ToolManager.CurrentTool;
-            IModularEquipmentService equipmentService = GlobalRegistry.ModularEquipment;
+            IModularEquipmentService equipmentService = _modularEquipment;
             if (equipmentService == null ||
                 currentTool.RuntimeToolId == 0u ||
                 !equipmentService.HasUpgrade(currentTool.RuntimeToolId, ToolUpgradeBits.ThermalShield))
@@ -1213,7 +1227,7 @@ namespace Hecton8.Gameplay
             if (_playerMovement != null && _playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion)
                 return 1f;
 
-            if (!WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge) || _vegetationBridge == null)
+            if (_vegetationBridge == null)
                 return 1f;
 
             return FiniteAtLeast(_vegetationBridge.GetDeepColdStressMultiplier(ResolveSurvivalRuntimePosition()), 1f, 1f);
@@ -1613,7 +1627,7 @@ namespace Hecton8.Gameplay
                 math.saturate(toxicity));
             ApplyNitrogenMovementPenalty();
 
-            if (Hecton8.Core.GlobalRegistry.HazardZones != null)
+            if (_hazardZoneRuntime != null)
                 return;
 
             float toxicityExposureScale = ResolveTransportRadiationExposureScale();
@@ -1682,16 +1696,32 @@ namespace Hecton8.Gameplay
                 !_playerTransportCoordinator.TryResolveTransportLifecycleOwner(out IPlayerTransportLifecycleOwner lifecycleOwner) ||
                 lifecycleOwner == null)
             {
+                _cachedUpgradeTransportOwner = null;
+                _cachedVehicleUpgradeModule = null;
                 return null;
             }
 
-            MonoBehaviour transportBehaviour = lifecycleOwner as MonoBehaviour;
-            if (transportBehaviour == null)
-                return null;
+            if (ReferenceEquals(_cachedUpgradeTransportOwner, lifecycleOwner))
+                return _cachedVehicleUpgradeModule;
 
-            return transportBehaviour.TryGetComponent(out VehicleUpgradeModule upgradeModule)
-                ? upgradeModule
-                : null;
+            MonoBehaviour transportBehaviour = lifecycleOwner as MonoBehaviour;
+            if (!PlayerTransportLifecycleRegistry.TryGetRegistered(
+                    lifecycleOwner,
+                    transportBehaviour,
+                    out _,
+                    out _,
+                    out _,
+                    out _,
+                    out VehicleUpgradeModule upgradeModule,
+                    out _,
+                    out _))
+            {
+                upgradeModule = null;
+            }
+
+            _cachedUpgradeTransportOwner = lifecycleOwner;
+            _cachedVehicleUpgradeModule = upgradeModule;
+            return _cachedVehicleUpgradeModule;
         }
 
         private float ResolveTransportSafeDepthBonusMeters()
@@ -1779,7 +1809,7 @@ namespace Hecton8.Gameplay
             }
 
             PlayerTool currentTool = _runtimeContext.ToolManager.CurrentTool;
-            IModularEquipmentService equipmentService = GlobalRegistry.ModularEquipment;
+            IModularEquipmentService equipmentService = _modularEquipment;
             if (equipmentService == null ||
                 currentTool.RuntimeToolId == 0u ||
                 !equipmentService.HasUpgrade(currentTool.RuntimeToolId, ToolUpgradeBits.OxygenRebreather))
@@ -2700,9 +2730,6 @@ namespace Hecton8.Gameplay
             if (severity <= 0.0001f)
                 return;
 
-            if (_playerHealth == null)
-                TryGetComponent(out _playerHealth);
-
             int targetId = _playerHealth != null
                 ? CombatDamageRuntime.ResolveTargetId(_playerHealth.gameObject)
                 : CombatDamageRuntime.ResolveTargetId(gameObject);
@@ -2736,9 +2763,6 @@ namespace Hecton8.Gameplay
             float severity = math.saturate(toxicity01 * math.max(0f, exposureScale));
             if (severity <= 0.0001f)
                 return;
-
-            if (_playerHealth == null)
-                TryGetComponent(out _playerHealth);
 
             int targetId = _playerHealth != null
                 ? CombatDamageRuntime.ResolveTargetId(_playerHealth.gameObject)

@@ -191,7 +191,6 @@ namespace Hecton8.Core
         private const float SurvivalHardwareMaxQualityWeight = 0.6f;
         private const float HardwareConstraintFlagThreshold01 = 0.65f;
         private const float HardwareConstraintHardLockThreshold01 = 0.95f;
-        private const float VisualOverkillFlagQualityThreshold01 = 0.75f;
         private const float DefaultLowCullingMultiplier = 0.6f;
         private const float MinimumRenderScale01 = 0.5f;
         private const float MinimumFractionalTimeSlice = 0.1f;
@@ -535,6 +534,13 @@ namespace Hecton8.Core
                 : ScalabilityContract.TargetFrameMilliseconds;
             float fpsFrameMs = 1000f * math.rcp(math.max(1f, targetFps));
             return math.isfinite(configured) && configured > 0f ? configured : fpsFrameMs;
+        }
+
+        private static float ResolveTargetFrameRate()
+        {
+            return math.isfinite(_cachedTargetFrameRate) && _cachedTargetFrameRate > 0f
+                ? _cachedTargetFrameRate
+                : 60f;
         }
 
         private static float SanitizeTunerTargetFrameMs(float targetFrameMs)
@@ -1513,7 +1519,7 @@ namespace Hecton8.Core
             return true;
         }
 
-        private static bool TryResolveScalabilityTelemetry(out NativeArray<ScalabilityTelemetryEntry> telemetry)
+        private static bool TryReadScalabilityTelemetry(out NativeArray<ScalabilityTelemetryEntry>.ReadOnly telemetry)
         {
             telemetry = default;
             IDataVault vault = _dataVault;
@@ -1522,8 +1528,7 @@ namespace Hecton8.Core
                 _scalabilityTelemetryHandle.Generation == 0u)
                 return false;
 
-            return vault.TryResolveHandle(in _scalabilityTelemetryHandle, out telemetry) &&
-                   telemetry.IsCreated &&
+            return vault.TryReadOnlyHandle(in _scalabilityTelemetryHandle, out telemetry) &&
                    telemetry.Length >= ScalabilityTelemetryCapacity;
         }
 
@@ -2216,7 +2221,7 @@ namespace Hecton8.Core
                 string projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
                 string directory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(directory);
-                if (TryResolveScalabilityTelemetry(out NativeArray<ScalabilityTelemetryEntry> telemetry))
+                if (TryReadScalabilityTelemetry(out NativeArray<ScalabilityTelemetryEntry>.ReadOnly telemetry))
                 {
                     WriteScalabilityTelemetryFile(Path.Combine(directory, ScalabilityDumpFileName), telemetry);
                     WriteScalabilityTelemetryFile(Path.Combine(directory, ScalabilityH8DumpFileName), telemetry);
@@ -2237,7 +2242,7 @@ namespace Hecton8.Core
 
         private static void WriteScalabilityTelemetryFile(
             string path,
-            NativeArray<ScalabilityTelemetryEntry> telemetry)
+            NativeArray<ScalabilityTelemetryEntry>.ReadOnly telemetry)
         {
             using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
             {
@@ -2315,6 +2320,11 @@ namespace Hecton8.Core
                 entry.Flags |= ScalabilityTelemetryFlagSanitized;
             entry._pad0 = 0u;
             return entry;
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination, math.asuint(value));
         }
 
         private static void WriteScalabilityDictatorBlackBoxFile(
@@ -2562,7 +2572,7 @@ namespace Hecton8.Core
             if (qualityWeightSamples == null || frameMsSamples == null || maxCount <= 0)
                 return 0;
 
-            if (TryResolveScalabilityTelemetry(out NativeArray<ScalabilityTelemetryEntry> telemetry))
+            if (TryReadScalabilityTelemetry(out NativeArray<ScalabilityTelemetryEntry>.ReadOnly telemetry))
             {
                 float fallbackFrameMs = ResolveTargetFrameMs(ResolveTargetFrameRate());
                 int telemetryCount = math.min(maxCount, math.min(qualityWeightSamples.Length, math.min(frameMsSamples.Length, _scalabilityTelemetrySampleCount)));

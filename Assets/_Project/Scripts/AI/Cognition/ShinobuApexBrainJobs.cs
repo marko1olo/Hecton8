@@ -178,13 +178,13 @@ namespace Hecton8.AI.Cognition
             MockWorldSampler sampler = ResolveSampler(tuning);
             float quality = ResolveQuality(tuning.GlobalQualityWeight);
             float qualityCurve = Smooth01(math.saturate((quality - ApexBrainConstants.MinimumQualityNodeHold) * math.rcp(1f - ApexBrainConstants.MinimumQualityNodeHold)));
+            byte survivalNodeBudgetPressureQ8 = EncodeSurvivalNodeBudgetPressureQ8(quality);
             int acousticTapLimit = ResolveAcousticTapLimit(qualityCurve);
             int targetIndex = ResolveTargetIndex(index);
             MockPlayerAUP target = MockTargets[targetIndex];
             ApexStateDTO state = States[index];
             ushort slot = (ushort)math.min(index, ushort.MaxValue);
             byte flags = ApexBrainFlags.Active;
-            flags = (byte)(flags | (byte)ResolveSurvivalNodeBudgetPressureFlag(quality));
             if ((tuning.Flags & ApexBrainFlags.EmergencyMockStats) != 0u)
                 flags = (byte)(flags | ApexBrainFlags.EmergencyMockStats);
 
@@ -293,7 +293,7 @@ namespace Hecton8.AI.Cognition
             int evaluatedNodeCount = math.min(ApexBrainConstants.MaxAmbushNodes, fullNodeCount + math.select(0, 1, fractionalNode > ApexBrainConstants.Epsilon));
             int previousEvaluatedNodeCount = ResolvePreviousEvaluatedNodeCount(index);
             int staleNodeClearCount = math.max(0, previousEvaluatedNodeCount - evaluatedNodeCount);
-            AmbushSelection ambush = ResolveAmbushNodes(index, pursuitLocal, pursuitDirection, sampler, tuning, quality, sweetLieShadow, fullNodeCount, evaluatedNodeCount, fractionalNode, previousEvaluatedNodeCount);
+            AmbushSelection ambush = ResolveAmbushNodes(index, pursuitLocal, pursuitDirection, sampler, tuning, quality, sweetLieShadow, fullNodeCount, evaluatedNodeCount, fractionalNode, previousEvaluatedNodeCount, survivalNodeBudgetPressureQ8);
 
             float stalkUtility = math.saturate(sweetLieLos01 + (sweetLieShadow * 0.35f) + (acoustic.Score01 * 0.2f));
             float ambushUtility = math.saturate(ambush.Score01 * math.lerp(0.6f, 1.25f, quality));
@@ -351,6 +351,7 @@ namespace Hecton8.AI.Cognition
             output.Slot = slot;
             output.Phase = (byte)phase;
             output.Flags = flags;
+            output.SurvivalNodeBudgetPressureQ8 = survivalNodeBudgetPressureQ8;
             output.TargetHash = target.TargetHash;
             output.AcousticMemoryHash = state.AcousticMemoryHash;
             Outputs[index] = output;
@@ -500,7 +501,8 @@ namespace Hecton8.AI.Cognition
             int fullNodeCount,
             int evaluatedNodeCount,
             float fractionalNode,
-            int previousEvaluatedNodeCount)
+            int previousEvaluatedNodeCount,
+            byte survivalNodeBudgetPressureQ8)
         {
             AmbushSelection best = default;
             best.Direction = pursuitDirection;
@@ -547,7 +549,8 @@ namespace Hecton8.AI.Cognition
                         SweetLieWeight01 = sweetLieShadow,
                         FractionalWeight01 = fractionalWeight,
                         NodeIndex = (uint)i,
-                        Flags = ResolveSurvivalNodeBudgetPressureFlag(quality)
+                        Flags = 0u,
+                        SurvivalNodeBudgetPressureQ8 = survivalNodeBudgetPressureQ8
                     };
                 }
 
@@ -589,6 +592,7 @@ namespace Hecton8.AI.Cognition
             output.TargetHash = target.TargetHash;
             output.TerrorRadiusMeters = tuning.TerrorRadius;
             output.StateHash = BuildStateHash(index, ApexBrainPhase.Dormant, 0, 0f, 0u, Frame);
+            output.SurvivalNodeBudgetPressureQ8 = EncodeSurvivalNodeBudgetPressureQ8(ResolveQuality(tuning.GlobalQualityWeight));
             Outputs[index] = output;
 
             if (ProximitySignals.IsCreated && (uint)index < (uint)ProximitySignals.Length)
@@ -628,6 +632,7 @@ namespace Hecton8.AI.Cognition
             output.TargetHash = target.TargetHash;
             output.TerrorRadiusMeters = tuning.TerrorRadius;
             output.StateHash = stateHash;
+            output.SurvivalNodeBudgetPressureQ8 = EncodeSurvivalNodeBudgetPressureQ8(ResolveQuality(tuning.GlobalQualityWeight));
             Outputs[index] = output;
 
             if (ProximitySignals.IsCreated && (uint)index < (uint)ProximitySignals.Length)
@@ -806,9 +811,10 @@ namespace Hecton8.AI.Cognition
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static uint ResolveSurvivalNodeBudgetPressureFlag(float quality)
+        private static byte EncodeSurvivalNodeBudgetPressureQ8(float quality)
         {
-            return math.select((uint)ApexBrainFlags.SurvivalNodeBudgetPressure, 0u, quality >= ApexBrainConstants.MinimumQualityNodeHold);
+            float pressure = 1f - SmoothStep(0f, ApexBrainConstants.MinimumQualityNodeHold, quality);
+            return (byte)math.clamp((int)math.round(math.saturate(pressure) * 255f), 0, 255);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

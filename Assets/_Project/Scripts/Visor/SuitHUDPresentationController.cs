@@ -86,6 +86,7 @@ namespace NASAPunk.Visor
         private CanvasGroup _cachedHudCanvasGroup;
         private CanvasGroup _cachedProjectionSourceCanvasGroup;
         private CanvasGroup _cachedHudRtCompositorCanvasGroup;
+        private float _cachedComfortVignette01;
         private bool _editorPresentationStateCached;
         private bool _editorLastProjectedPresentationAvailable;
         private bool _editorLastProjectedOutputSurfaceAvailable;
@@ -258,6 +259,7 @@ namespace NASAPunk.Visor
         public void LateFrameTick()
         {
             RefreshRuntimeReferenceCache();
+            CachePresentationGlobalsLate();
             ApplyPresentation(force: _pendingApply, allowProjectionSourceCreation: false);
             _pendingApply = false;
             EvaluateTickRegistration();
@@ -625,17 +627,20 @@ namespace NASAPunk.Visor
 
             float height = 2f * distance * ExactPrimaryHudTanPositive(fitCamera.fieldOfView * DegreesToHalfRadians);
             float width = height * fitCamera.aspect;
-            float comfortVignette01 = Application.isPlaying
-                ? Mathf.Clamp01(Mathf.Max(
-                    Shader.GetGlobalFloat(VrComfortVignette01Id),
-                    Shader.GetGlobalFloat(SomaticComfortVignetteId)))
-                : 0f;
+            float comfortVignette01 = Application.isPlaying ? _cachedComfortVignette01 : 0f;
             float comfortSafeFill = Mathf.Lerp(0.82f, 0.58f, comfortVignette01);
             float fill = Mathf.Min(Mathf.Clamp(diegeticProjectionViewportFill, 0.55f, 0.82f), comfortSafeFill);
             Vector3 targetScale = new Vector3(width * fill, height * fill, surface.localScale.z);
 
             if ((surface.localScale - targetScale).sqrMagnitude > 0.000001f)
                 surface.localScale = targetScale;
+        }
+
+        private void CachePresentationGlobalsLate()
+        {
+            _cachedComfortVignette01 = Mathf.Clamp01(Mathf.Max(
+                Shader.GetGlobalFloat(VrComfortVignette01Id),
+                Shader.GetGlobalFloat(SomaticComfortVignetteId)));
         }
 
         private void ApplyHudMotionVectorStabilization(bool projectedMode)

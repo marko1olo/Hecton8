@@ -181,6 +181,8 @@ namespace Hecton8.World
         {
             _firstHourDirector = GlobalRegistry.FirstHourReadModel;
             _cachedDepthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
+            if (_cachedDepthZoneReadModel == null && depthZoneDirector != null)
+                _cachedDepthZoneReadModel = depthZoneDirector;
         }
 
         private void TryRegisterHotSwapListener()
@@ -293,8 +295,8 @@ namespace Hecton8.World
 
             WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
             WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref worldZoneDirector);
-            if (_cachedDepthZoneReadModel == null)
-                _cachedDepthZoneReadModel = depthZoneDirector != null ? depthZoneDirector : GlobalRegistry.DepthZoneReadModel;
+            if (_cachedDepthZoneReadModel == null && depthZoneDirector != null)
+                _cachedDepthZoneReadModel = depthZoneDirector;
         }
 
         private void ResetObservedState()

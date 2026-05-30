@@ -86,7 +86,7 @@ namespace Hecton8.Tests.Editor
         [Test]
         public void UberNoirShaderTelemetryEntry_Arm64Layout_IsExact()
         {
-            Assert.AreEqual(48, UnsafeUtility.SizeOf<HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry>());
+            Assert.AreEqual(64, UnsafeUtility.SizeOf<HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry>());
             Assert.AreEqual(0, OffsetOf<HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry>(nameof(HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry.Frame)));
             Assert.AreEqual(4, OffsetOf<HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry>(nameof(HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry.FeatureMask)));
             Assert.AreEqual(8, OffsetOf<HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry>(nameof(HectonUberNoirRuntimeBridge.UberNoirShaderTelemetryEntry.SystemStress01)));

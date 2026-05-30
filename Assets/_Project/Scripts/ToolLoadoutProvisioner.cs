@@ -22,6 +22,12 @@ namespace Hecton8.Dev
     {
         internal static ToolLoadoutProvisioner ActiveRuntimeInstance { get; private set; }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetActiveRuntimeForSubsystemRegistration()
+        {
+            ActiveRuntimeInstance = null;
+        }
+
         [Header("References")]
         [SerializeField] private PlayerInventory playerInventory;
         [SerializeField] private PlayerToolManager toolManager;

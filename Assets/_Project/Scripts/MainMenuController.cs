@@ -122,6 +122,8 @@ namespace Hecton.UI.MainMenu
         private bool _inputRoutingReady;
         private bool _menuInputBound;
         private bool _registeredHotSwapListener;
+        private EventSystem _cachedEventSystem;
+        private InputSystemUIInputModule _cachedUiInputModule;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
 
 
@@ -165,9 +167,10 @@ namespace Hecton.UI.MainMenu
             _lastUnscaledTickTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             BlockCancelInputBriefly();
             MainMenuInputRoutingGuard.EnsureInputSystemEventRouting();
+            CacheMenuInputRoutingCold();
             BindMenuInput();
             BaselineCancelInputSignalSequence();
-            _inputRoutingReady = false;
+            RefreshMenuInputRoutingReadyFromCache();
             LocalizationEvents.RegisterLanguageListener(this);
             
             // Subscribe to save/load events for UI feedback
@@ -202,7 +205,12 @@ namespace Hecton.UI.MainMenu
             {
                 CacheInputManagerCold(currentService as INativeInputManagerRuntime);
                 if (isActiveAndEnabled)
+                {
+                    MainMenuInputRoutingGuard.EnsureInputSystemEventRouting();
+                    CacheMenuInputRoutingCold();
                     BindMenuInput();
+                    RefreshMenuInputRoutingReadyFromCache();
+                }
                 return;
             }
 
@@ -973,14 +981,26 @@ namespace Hecton.UI.MainMenu
             if (_inputRoutingReady)
                 return;
 
-            MainMenuInputRoutingGuard.EnsureInputSystemEventRouting();
             BindMenuInput();
+            RefreshMenuInputRoutingReadyFromCache();
+        }
 
-            EventSystem eventSystem = EventSystem.current;
-            if (eventSystem == null || !eventSystem.enabled)
+        private void CacheMenuInputRoutingCold()
+        {
+            _cachedEventSystem = EventSystem.current;
+            _cachedUiInputModule = null;
+            _inputRoutingReady = false;
+
+            if (_cachedEventSystem == null || !_cachedEventSystem.enabled)
                 return;
 
-            if (!eventSystem.TryGetComponent(out InputSystemUIInputModule inputModule) || !inputModule.enabled)
+            _cachedEventSystem.TryGetComponent(out _cachedUiInputModule);
+        }
+
+        private void RefreshMenuInputRoutingReadyFromCache()
+        {
+            InputSystemUIInputModule inputModule = _cachedUiInputModule;
+            if (inputModule == null || !inputModule.enabled)
                 return;
 
             _inputRoutingReady = MainMenuInputRoutingGuard.HasUsableUiModuleActions(inputModule);

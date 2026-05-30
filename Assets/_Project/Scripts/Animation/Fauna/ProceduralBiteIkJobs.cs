@@ -28,6 +28,8 @@ namespace Hecton8.Animation.Fauna
         public const uint RuntimeFlagStrikeActive = 1u << 0;
         public const uint RuntimeFlagMaximumQuality = 1u << 2;
         public const uint RuntimeFlagVisualOverkill = 1u << 3;
+        public const int ResultVisualOverkillWeightShift = 16;
+        public const uint ResultVisualOverkillWeightMask = 0x00FF0000u;
         public const uint ResultFlagSolved = 1u << 0;
         public const uint ResultFlagContact = 1u << 1;
         public const uint ResultFlagMiss = 1u << 2;
@@ -36,6 +38,18 @@ namespace Hecton8.Animation.Fauna
         public const uint ResultFlagFeedback = 1u << 6;
         public const uint ResultFlagVisualOverkill = 1u << 7;
         public const uint ResultFlagInvalid = 1u << 31;
+
+        public static uint PackVisualOverkillWeight(float weight01)
+        {
+            float weight = math.saturate(math.isfinite(weight01) ? weight01 : 0f);
+            uint q8 = (uint)math.min(255, (int)math.round(weight * 255f));
+            return q8 << ResultVisualOverkillWeightShift;
+        }
+
+        public static float DecodeVisualOverkillWeight01(uint flags)
+        {
+            return ((flags & ResultVisualOverkillWeightMask) >> ResultVisualOverkillWeightShift) * (1f / 255f);
+        }
     }
 
     /// <summary>
@@ -102,7 +116,7 @@ namespace Hecton8.Animation.Fauna
         [FieldOffset(80)] public float3 WrapAnchor0;
         [FieldOffset(92)] public float Blend01;
         [FieldOffset(96)] public float3 WrapAnchor1;
-        [FieldOffset(108)] public float Padding0;
+        [FieldOffset(108)] public float VisualOverkillWeight01;
         [FieldOffset(112)] public float4 Padding1;
     }
 
@@ -128,6 +142,7 @@ namespace Hecton8.Animation.Fauna
         public float JawReachMeters;
         public float JawOpenMeters;
         public float SystemStress01;
+        public float VisualOverkillWeight01;
         public int TargetIndex;
         public int FrameIndex;
         public int HeadBoneIndex;
@@ -153,8 +168,11 @@ namespace Hecton8.Animation.Fauna
             JawIkTarget target = JawIkTargets[targetIndex];
             float systemStress = math.saturate(math.select(0f, SystemStress01, math.isfinite(SystemStress01)));
             bool strikeActive = (RuntimeFlags & ProceduralBiteIkConstants.RuntimeFlagStrikeActive) != 0u && target.TargetHash != 0u;
-            bool maximumQuality = (RuntimeFlags & ProceduralBiteIkConstants.RuntimeFlagMaximumQuality) != 0u ||
-                                  (RuntimeFlags & ProceduralBiteIkConstants.RuntimeFlagVisualOverkill) != 0u;
+            float visualOverkillWeight = math.saturate(math.select(0f, VisualOverkillWeight01, math.isfinite(VisualOverkillWeight01)));
+            int wrapBoneCount = math.clamp(
+                (int)math.round(visualOverkillWeight * ProceduralBiteIkConstants.MaxTentacleBones),
+                0,
+                ProceduralBiteIkConstants.MaxTentacleBones);
 
             float3 forward = NormalizeSafe(PredatorForward, new float3(0f, 0f, 1f));
             float3 up = NormalizeSafe(PredatorUp, new float3(0f, 1f, 0f));
@@ -174,7 +192,7 @@ namespace Hecton8.Animation.Fauna
             OrthonormalizeTargetBasis(ref targetRightLocal, ref targetUpLocal, ref targetForwardLocal);
             float3 extents = math.max(SanitizeFinite(target.Extents, new float3(0.5f)), new float3(0.05f));
             float contactPadding = SanitizePositive(target.ContactPaddingMeters, 0.05f, 0f);
-            uint resultFlags = 0u;
+            uint resultFlags = ProceduralBiteIkConstants.PackVisualOverkillWeight(visualOverkillWeight);
 
             float3 desiredTipLocal;
             float3 closestLocal;
@@ -186,7 +204,7 @@ namespace Hecton8.Animation.Fauna
                 closestLocal = desiredTipLocal;
                 distanceMeters = 0f;
                 reach01 = 0f;
-                resultFlags = ProceduralBiteIkConstants.ResultFlagMiss;
+                resultFlags |= ProceduralBiteIkConstants.ResultFlagMiss;
             }
             else
             {
@@ -198,7 +216,7 @@ namespace Hecton8.Animation.Fauna
                 desiredTipLocal = inReach
                     ? closestLocal
                     : NormalizeSafe(closestLocal, new float3(0f, 0f, 1f)) * jawReach;
-                resultFlags = inReach
+                resultFlags |= inReach
                     ? ProceduralBiteIkConstants.ResultFlagSolved
                     : ProceduralBiteIkConstants.ResultFlagMiss;
             }
@@ -225,12 +243,11 @@ namespace Hecton8.Animation.Fauna
             float3 wrap1 = smoothedTip;
             SolveMandibles(rootWorld, smoothedTip, aimWorld, up, right, jawReach, jawOpen, bodyRadius, segmentLength, blend, previous, out upperWorld, out lowerWorld);
 
-            if (maximumQuality && strikeActive)
+            if (strikeActive && wrapBoneCount > 0)
             {
                 resultFlags |= ProceduralBiteIkConstants.ResultFlagQualityWrap;
-                resultFlags |= ProceduralBiteIkConstants.ResultFlagVisualOverkill;
                 ResolveWrapAnchors(targetLocalCenter, extents, target.CylinderRadiusMeters, targetRightLocal, targetUpLocal, targetForwardLocal, right, up, forward, out wrap0, out wrap1);
-                WriteTentacleBones(rootWorld, wrap0, wrap1, aimWorld, up, bodyRadius, segmentLength);
+                WriteTentacleBones(rootWorld, wrap0, wrap1, aimWorld, up, bodyRadius, segmentLength, visualOverkillWeight, wrapBoneCount);
             }
 
             float contactDistance = math.max(0f, distanceMeters - jawReach);
@@ -388,9 +405,15 @@ namespace Hecton8.Animation.Fauna
             wrap1 = LocalToWorldDelta(local1, right, up, forward) + PredatorPosition;
         }
 
-        private void WriteTentacleBones(float3 rootWorld, float3 wrap0, float3 wrap1, float3 forward, float3 up, float bodyRadius, float segmentLength)
+        private void WriteTentacleBones(float3 rootWorld, float3 wrap0, float3 wrap1, float3 forward, float3 up, float bodyRadius, float segmentLength, float visualOverkillWeight01, int requestedBoneCount)
         {
-            int maxCount = math.min(ProceduralBiteIkConstants.MaxTentacleBones, math.max(0, TentacleBoneCount));
+            int maxCount = math.min(ProceduralBiteIkConstants.MaxTentacleBones, math.min(math.max(0, TentacleBoneCount), math.max(0, requestedBoneCount)));
+            if (maxCount <= 0)
+                return;
+
+            float visualWeight = math.saturate(math.select(0f, visualOverkillWeight01, math.isfinite(visualOverkillWeight01)));
+            float radiusScale = math.lerp(0.18f, 0.35f, visualWeight);
+            float lengthScale = math.lerp(0.32f, 0.5f, visualWeight);
             int first = math.max(0, FirstTentacleBoneIndex);
             for (int i = 0; i < maxCount; i++)
             {
@@ -400,8 +423,8 @@ namespace Hecton8.Animation.Fauna
 
                 float t = (i + 1f) * math.rcp(maxCount + 1f);
                 float3 target = (i & 1) == 0 ? wrap0 : wrap1;
-                float3 position = math.lerp(rootWorld, target, t);
-                WriteBone(boneIndex, position, target - position, up, bodyRadius * 0.35f, segmentLength * 0.5f);
+                float3 position = math.lerp(rootWorld, target, t * visualWeight);
+                WriteBone(boneIndex, position, target - position, up, bodyRadius * radiusScale, segmentLength * lengthScale);
             }
         }
 
@@ -453,7 +476,8 @@ namespace Hecton8.Animation.Fauna
                 ContactDistanceMeters = pose.ContactDistanceMeters,
                 WrapAnchor0 = pose.WrapAnchor0,
                 Blend01 = pose.Blend01,
-                WrapAnchor1 = pose.WrapAnchor1
+                WrapAnchor1 = pose.WrapAnchor1,
+                VisualOverkillWeight01 = ProceduralBiteIkConstants.DecodeVisualOverkillWeight01(pose.Flags)
             };
 
             TelemetryCursor[0] = cursor == int.MaxValue ? BiteIkSolveEvents.Length : cursor + 1;

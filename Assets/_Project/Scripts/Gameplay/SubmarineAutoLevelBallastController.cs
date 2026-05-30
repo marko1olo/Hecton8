@@ -416,6 +416,9 @@ namespace Hecton8.Gameplay
             BallastMutationGuardBit(BufferID.RoomVolumes) |
             BallastMutationGuardBit(BufferID.RoomLocalAUPs);
         private const long MaxBallastProfileCsvBytes = SubmarineBallastConstants.CsvScratchBytes;
+#if UNITY_EDITOR
+        private static readonly byte[] s_ballastProfileCsvImportScratch = new byte[SubmarineBallastConstants.CsvScratchBytes]; // COLD ALLOC: editor ballast CSV import scratch; never held behind a DataVault write lock.
+#endif
         private const SystemID OwnerSystem = SystemID.VehiclesPhysics;
         private const uint FloodFeedbackSourceHash = 0x56434d53u;
         private const uint EngineVentBubbleSourceHash = 0x42414c32u;
@@ -1271,7 +1274,6 @@ namespace Hecton8.Gameplay
             if (_dataVault == null || string.IsNullOrEmpty(_ballastProfilesCsvPath) || !File.Exists(_ballastProfilesCsvPath))
                 return false;
 
-            bool scratchWriteLocked = false;
             bool profilesWriteLocked = false;
             try
             {
@@ -1283,14 +1285,14 @@ namespace Hecton8.Gameplay
                 if (info.Length <= 0L || info.Length > MaxBallastProfileCsvBytes)
                     return false;
 
-                if (!TryAcquireVaultWrite(
-                        in _ballastCsvScratchHandle,
-                        SubmarineBallastBufferIds.CsvScratch,
-                        SubmarineBallastConstants.CsvScratchBytes,
-                        out NativeArray<byte> scratch))
-                    return false;
+                int read;
+                using (FileStream stream = new FileStream(_ballastProfilesCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 256, FileOptions.SequentialScan))
+                {
+                    read = stream.Read(s_ballastProfileCsvImportScratch, 0, (int)info.Length);
+                }
 
-                scratchWriteLocked = true;
+                if (read <= 0)
+                    return false;
 
                 if (!TryAcquireVaultWrite(
                         in _ballastProfilesHandle,
@@ -1301,22 +1303,17 @@ namespace Hecton8.Gameplay
 
                 profilesWriteLocked = true;
 
-                byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
-                Span<byte> bytes = new Span<byte>(scratchPtr, (int)info.Length);
-                using (FileStream stream = new FileStream(_ballastProfilesCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 256, FileOptions.SequentialScan))
-                {
-                    int read = stream.Read(bytes);
-                    int parsed = SubmarineBallastCsvParser.ParseProfiles(bytes.Slice(0, read), profiles);
-                    if (parsed <= 0)
-                        return false;
+                ReadOnlySpan<byte> bytes = s_ballastProfileCsvImportScratch.AsSpan(0, read);
+                int parsed = SubmarineBallastCsvParser.ParseProfiles(bytes, profiles);
+                if (parsed <= 0)
+                    return false;
 
-                    _ballastProfileRows = parsed;
-                    _ballastProfilesCsvLoaded = 1;
-                    _ballastProfilesCsvLastWriteTicks = stamp;
-                    SubmarineBallastProfileDTO primaryProfile = profiles[0];
-                    ApplyPrimaryBallastProfile(in primaryProfile);
-                    return true;
-                }
+                _ballastProfileRows = parsed;
+                _ballastProfilesCsvLoaded = 1;
+                _ballastProfilesCsvLastWriteTicks = stamp;
+                SubmarineBallastProfileDTO primaryProfile = profiles[0];
+                ApplyPrimaryBallastProfile(in primaryProfile);
+                return true;
             }
             catch (IOException)
             {
@@ -1330,8 +1327,6 @@ namespace Hecton8.Gameplay
             {
                 if (profilesWriteLocked)
                     ReleaseVaultWrite(in _ballastProfilesHandle);
-                if (scratchWriteLocked)
-                    ReleaseVaultWrite(in _ballastCsvScratchHandle);
             }
         }
 #endif
@@ -1518,101 +1513,93 @@ namespace Hecton8.Gameplay
 
             bool wroteCommands = false;
             float writtenTankVolumeLiters = 0f;
+            float currentFrontFill01 = math.saturate(neutralBallastFill01);
+            float currentAftFill01 = currentFrontFill01;
+            float currentPortFill01 = currentFrontFill01;
+            float currentStarboardFill01 = currentFrontFill01;
+            float targetFront = 0f;
+            float targetAft = 0f;
+            float targetPort = 0f;
+            float targetStarboard = 0f;
+            float tankVolumeLiters = 0f;
+            float fillDelta01 = 0f;
+            bool pumpPowered = false;
+            bool emergencyBlow = false;
             try
             {
-                if (!TryAcquireVaultWrite(
-                        in _ballastCommandsHandle,
-                        SubmarineBallastBufferIds.Commands,
-                        TankCount,
-                        out NativeArray<BallastTankCommandDTO> commands))
-                {
-                    return;
-                }
+                float neutral = math.saturate(neutralBallastFill01);
+                float pitch = math.clamp(command.Pitch, -1f, 1f);
+                float totalBias = math.clamp(command.BallastDelta, -maxCommandBallastBias01, maxCommandBallastBias01);
+                float pitchBias = pitch * math.max(0f, maxCommandBallastBias01);
+                emergencyBlow = (((VehicleCommandSignalFlags)command.Flags) & VehicleCommandSignalFlags.BallastBlow) != 0;
 
-                try
-                {
-                    float neutral = math.saturate(neutralBallastFill01);
-                    float pitch = math.clamp(command.Pitch, -1f, 1f);
-                    float totalBias = math.clamp(command.BallastDelta, -maxCommandBallastBias01, maxCommandBallastBias01);
-                    float pitchBias = pitch * math.max(0f, maxCommandBallastBias01);
-                    bool emergencyBlow = (((VehicleCommandSignalFlags)command.Flags) & VehicleCommandSignalFlags.BallastBlow) != 0;
-
-                    float targetFront = emergencyBlow ? 0f : math.saturate(neutral + totalBias + pitchBias);
-                    float targetAft = emergencyBlow ? 0f : math.saturate(neutral + totalBias - pitchBias);
-                    float targetPort = emergencyBlow ? 0f : math.saturate(neutral + totalBias);
-                    float targetStarboard = emergencyBlow ? 0f : math.saturate(neutral + totalBias);
-                    float tankVolumeLiters = ResolveTankVolumeLiters();
-                    float fillDelta01 = EstimateRequestedFillDelta01(tanks, targetFront, targetAft, targetPort, targetStarboard, fixedDeltaTime);
-                    bool pumpPowered = fillDelta01 <= 0.000001f || TrySpendPumpPower(fillDelta01);
-                    if (!pumpPowered)
-                    {
-                        _pumpPowered = 0;
-                        _pendingTelemetryFlags |= PidTelemetryFlagPumpDenied;
-                    }
-                    else
-                    {
-                        _pumpPowered = 1;
-                    }
-
-                    WriteBallastCommand(commands, tanks, TankFront, targetFront, tankVolumeLiters, fixedDeltaTime, pumpPowered, emergencyBlow);
-                    WriteBallastCommand(commands, tanks, TankAft, targetAft, tankVolumeLiters, fixedDeltaTime, pumpPowered, emergencyBlow);
-                    WriteBallastCommand(commands, tanks, TankPort, targetPort, tankVolumeLiters, fixedDeltaTime, pumpPowered, emergencyBlow);
-                    WriteBallastCommand(commands, tanks, TankStarboard, targetStarboard, tankVolumeLiters, fixedDeltaTime, pumpPowered, emergencyBlow);
-                    writtenTankVolumeLiters = tankVolumeLiters;
-                    wroteCommands = true;
-                }
-                finally
-                {
-                    ReleaseVaultWrite(in _ballastCommandsHandle);
-                }
+                targetFront = emergencyBlow ? 0f : math.saturate(neutral + totalBias + pitchBias);
+                targetAft = emergencyBlow ? 0f : math.saturate(neutral + totalBias - pitchBias);
+                targetPort = emergencyBlow ? 0f : math.saturate(neutral + totalBias);
+                targetStarboard = emergencyBlow ? 0f : math.saturate(neutral + totalBias);
+                tankVolumeLiters = ResolveTankVolumeLiters();
+                currentFrontFill01 = PrepareTankForCommand(tanks, TankFront, tankVolumeLiters);
+                currentAftFill01 = PrepareTankForCommand(tanks, TankAft, tankVolumeLiters);
+                currentPortFill01 = PrepareTankForCommand(tanks, TankPort, tankVolumeLiters);
+                currentStarboardFill01 = PrepareTankForCommand(tanks, TankStarboard, tankVolumeLiters);
+                fillDelta01 = EstimateRequestedFillDelta01(
+                    currentFrontFill01,
+                    currentAftFill01,
+                    currentPortFill01,
+                    currentStarboardFill01,
+                    targetFront,
+                    targetAft,
+                    targetPort,
+                    targetStarboard,
+                    fixedDeltaTime);
             }
             finally
             {
                 ReleaseVaultWrite(in _ballastTanksHandle);
             }
 
+            pumpPowered = fillDelta01 <= 0.000001f || TrySpendPumpPower(fillDelta01);
+            if (!pumpPowered)
+            {
+                _pumpPowered = 0;
+                _pendingTelemetryFlags |= PidTelemetryFlagPumpDenied;
+            }
+            else
+            {
+                _pumpPowered = 1;
+            }
+
+            if (!TryAcquireVaultWrite(
+                    in _ballastCommandsHandle,
+                    SubmarineBallastBufferIds.Commands,
+                    TankCount,
+                    out NativeArray<BallastTankCommandDTO> commands))
+            {
+                return;
+            }
+
+            try
+            {
+                WriteBallastCommand(commands, currentFrontFill01, TankFront, targetFront, tankVolumeLiters, fixedDeltaTime, pumpPowered, emergencyBlow);
+                WriteBallastCommand(commands, currentAftFill01, TankAft, targetAft, tankVolumeLiters, fixedDeltaTime, pumpPowered, emergencyBlow);
+                WriteBallastCommand(commands, currentPortFill01, TankPort, targetPort, tankVolumeLiters, fixedDeltaTime, pumpPowered, emergencyBlow);
+                WriteBallastCommand(commands, currentStarboardFill01, TankStarboard, targetStarboard, tankVolumeLiters, fixedDeltaTime, pumpPowered, emergencyBlow);
+                writtenTankVolumeLiters = tankVolumeLiters;
+                wroteCommands = true;
+            }
+            finally
+            {
+                ReleaseVaultWrite(in _ballastCommandsHandle);
+            }
+
             if (wroteCommands)
                 WriteBallastTuning(writtenTankVolumeLiters);
         }
 
-        private float EstimateRequestedFillDelta01(
-            NativeArray<BallastTankDTO> tanks,
-            float targetFront,
-            float targetAft,
-            float targetPort,
-            float targetStarboard,
-            float fixedDeltaTime)
-        {
-            float dt = math.max(0f, fixedDeltaTime);
-            return EstimateTankDelta01(tanks, TankFront, targetFront, dt) +
-                   EstimateTankDelta01(tanks, TankAft, targetAft, dt) +
-                   EstimateTankDelta01(tanks, TankPort, targetPort, dt) +
-                   EstimateTankDelta01(tanks, TankStarboard, targetStarboard, dt);
-        }
-
-        private float EstimateTankDelta01(NativeArray<BallastTankDTO> tanks, int index, float targetFill01, float fixedDeltaTime)
+        private float PrepareTankForCommand(NativeArray<BallastTankDTO> tanks, int index, float tankVolumeLiters)
         {
             if ((uint)index >= (uint)tanks.Length)
-                return 0f;
-
-            float currentFill = ResolveTankFill01(tanks[index]);
-            float requested = math.abs(math.saturate(targetFill01) - currentFill);
-            float rate = targetFill01 < currentFill ? ballastBlowRate01PerSecond : pumpFillRate01PerSecond;
-            return math.min(requested, math.max(0f, rate) * fixedDeltaTime);
-        }
-
-        private void WriteBallastCommand(
-            NativeArray<BallastTankCommandDTO> commands,
-            NativeArray<BallastTankDTO> tanks,
-            int index,
-            float targetFill01,
-            float tankVolumeLiters,
-            float fixedDeltaTime,
-            bool pumpPowered,
-            bool emergencyBlow)
-        {
-            if ((uint)index >= (uint)commands.Length || (uint)index >= (uint)tanks.Length)
-                return;
+                return math.saturate(neutralBallastFill01);
 
             BallastTankDTO tank = tanks[index];
             if ((tank.InputStateFlags & SubmarineBallastConstants.TankFlagInitialized) == 0u ||
@@ -1626,8 +1613,51 @@ namespace Hecton8.Gameplay
                 tanks[index] = tank;
             }
 
-            float currentLiters = math.clamp(tank.CurrentWaterLiters, 0f, math.max(0.0001f, tank.TankVolumeLiters));
-            float targetLiters = math.saturate(targetFill01) * tankVolumeLiters;
+            return ResolveTankFill01(tank);
+        }
+
+        private float EstimateRequestedFillDelta01(
+            float currentFrontFill01,
+            float currentAftFill01,
+            float currentPortFill01,
+            float currentStarboardFill01,
+            float targetFront,
+            float targetAft,
+            float targetPort,
+            float targetStarboard,
+            float fixedDeltaTime)
+        {
+            float dt = math.max(0f, fixedDeltaTime);
+            return EstimateTankDelta01(currentFrontFill01, targetFront, dt) +
+                   EstimateTankDelta01(currentAftFill01, targetAft, dt) +
+                   EstimateTankDelta01(currentPortFill01, targetPort, dt) +
+                   EstimateTankDelta01(currentStarboardFill01, targetStarboard, dt);
+        }
+
+        private float EstimateTankDelta01(float currentFill01, float targetFill01, float fixedDeltaTime)
+        {
+            float currentFill = math.saturate(currentFill01);
+            float requested = math.abs(math.saturate(targetFill01) - currentFill);
+            float rate = targetFill01 < currentFill ? ballastBlowRate01PerSecond : pumpFillRate01PerSecond;
+            return math.min(requested, math.max(0f, rate) * fixedDeltaTime);
+        }
+
+        private void WriteBallastCommand(
+            NativeArray<BallastTankCommandDTO> commands,
+            float currentFill01,
+            int index,
+            float targetFill01,
+            float tankVolumeLiters,
+            float fixedDeltaTime,
+            bool pumpPowered,
+            bool emergencyBlow)
+        {
+            if ((uint)index >= (uint)commands.Length)
+                return;
+
+            float safeTankVolumeLiters = math.max(0.0001f, tankVolumeLiters);
+            float currentLiters = math.saturate(currentFill01) * safeTankVolumeLiters;
+            float targetLiters = math.saturate(targetFill01) * safeTankVolumeLiters;
             uint flags = 0u;
             if (!pumpPowered)
                 flags |= SubmarineBallastConstants.CommandFlagPumpDenied;
@@ -1639,8 +1669,8 @@ namespace Hecton8.Gameplay
             commands[index] = new BallastTankCommandDTO
             {
                 TargetWaterLiters = targetLiters,
-                FloodRateLitersPerSecond = math.max(0f, pumpFillRate01PerSecond) * tankVolumeLiters,
-                BlowRateLitersPerSecond = math.max(0f, ballastBlowRate01PerSecond) * tankVolumeLiters,
+                FloodRateLitersPerSecond = math.max(0f, pumpFillRate01PerSecond) * safeTankVolumeLiters,
+                BlowRateLitersPerSecond = math.max(0f, ballastBlowRate01PerSecond) * safeTankVolumeLiters,
                 CompressedAirPressureATM = math.max(1f, airBankPressureATM),
                 CommandFlags = flags,
                 TargetEntityHash = unchecked((uint)_targetInstanceId),

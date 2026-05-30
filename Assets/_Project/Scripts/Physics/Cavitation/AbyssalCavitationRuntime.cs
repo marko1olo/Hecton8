@@ -620,9 +620,9 @@ namespace Hecton8.Physics
                 SectorHash = sectorHash != 0u ? sectorHash : 0x5348494Eu,
                 GlobalQualityWeight = ResolveGlobalQualityWeight()
             };
-            JobHandle handle = job.Schedule(32, 8);
-            H8Memory.RegisterActiveJob(OwnerSystem, handle);
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD SYNC JOB: CI/editor fallback injection, never the live propagation path.
+            // COLD DIRECT SEED: CI/editor fallback injection, never the live propagation path.
+            for (int i = 0; i < 32; i++)
+                job.Execute(i);
             return true;
 #else
             return false;
@@ -660,9 +660,8 @@ namespace Hecton8.Physics
                 FrameIndex = ++_frameIndex,
                 SourceHash = sectorHash != 0u ? sectorHash : AbyssalCavitationConstants.SourceHash
             };
-            JobHandle handle = job.Schedule(1, 1);
-            H8Memory.RegisterActiveJob(OwnerSystem, handle);
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD SINGULARITY HARNESS: deterministic proof input for epsilon clamp.
+            // COLD DIRECT SEED: deterministic proof input for epsilon clamp.
+            job.Execute(0);
             return true;
 #else
             return false;
@@ -1255,10 +1254,11 @@ namespace Hecton8.Physics
                 SdfVoxels = sdfVoxels,
                 GlobalQualityWeight = ResolveGlobalQualityWeight()
             };
-            JobHandle handle = job.Schedule(count, 64);
-            H8Memory.RegisterActiveJob(OwnerSystem, handle);
-            bool completed = DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD SYNC JOB: required after UninitializedMemory vault acquisition.
-            return completed;
+            // COLD DIRECT INIT: required after UninitializedMemory vault acquisition.
+            for (int i = 0; i < count; i++)
+                job.Execute(i);
+
+            return true;
             }
             finally
             {

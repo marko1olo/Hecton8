@@ -837,7 +837,9 @@ namespace Hecton8.UI
         private Material _savingProgressDataPulseMaterial;
         private Texture2D _acousticRadarTexture;
         private int _acousticRadarResolution;
+        private int _pendingAcousticRadarResolution;
         private float _acousticRadarPeakIntensity;
+        private bool _pendingAcousticRadarTextureRefresh;
         private bool _acousticRadarTextureBindingDirty = true;
         private bool _hasAppliedAcousticRadarPrimaryColor;
         private bool _hasAppliedAcousticRadarWarningColor;
@@ -1187,7 +1189,7 @@ namespace Hecton8.UI
             if (_cachedGraphicRaycaster != null && !_cachedGraphicRaycaster.enabled)
                 _cachedGraphicRaycaster.enabled = true;
 
-            CacheRuntimeDependencies();
+            CacheRuntimeDependenciesCold();
             CacheGlitchTableVaultCold();
             TryRegisterUiService();
             TryRegisterHotSwapListener();
@@ -1219,7 +1221,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            CacheRuntimeDependencies();
+            CacheRuntimeDependenciesCold();
             CacheGlitchTableVaultCold();
             LocalizationEvents.RegisterLanguageListener(this);
             LocalizationEvents.RegisterCorruptionVisualStateListener(this);
@@ -1597,6 +1599,7 @@ namespace Hecton8.UI
             RefreshQualityPolicy();
             QueueRuntimeCanvasRefresh(forceResolve: true, refreshDepthSignal: true);
             RefreshThreatChevronTargets();
+            FlushPendingAcousticRadarTextureRefresh();
         }
 
         /// <inheritdoc />
@@ -1773,7 +1776,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (CacheRuntimeDependencies())
+            if (CacheRuntimeDependenciesCold())
                 RebuildLocalizationCache();
             _layoutBuilt = false;
             InvalidateVisualCaches();
@@ -1921,8 +1924,7 @@ namespace Hecton8.UI
                 return;
 
             _nextAutoResolveAt = now + AutoResolveRetryInterval;
-            if (CacheRuntimeDependencies())
-                RebuildLocalizationCache();
+            RefreshRuntimeDependenciesFromCachedServices();
 
             if (targetCanvas == null)
                 targetCanvas = ResolveTargetCanvas();
@@ -1934,11 +1936,6 @@ namespace Hecton8.UI
                 if (_toolManager == null)
                     _toolManager = _inventoryService.ToolManager;
             }
-
-            Transform playerRoot = null;
-            bool hasPlayerRoot = false;
-            if (projectionCamera == null || survival == null || playerMovement == null || flashlight == null || underwaterVisuals == null || _toolManager == null)
-                hasPlayerRoot = GameBootstrapper.TryGetCurrentPlayerTransform(out playerRoot);
 
             if (projectionCamera == null)
             {
@@ -1971,7 +1968,7 @@ namespace Hecton8.UI
 
             }
 
-            TryResolveProjectionCameraFromPlayer(playerRoot, hasPlayerRoot);
+            TryResolveProjectionCameraFromPlayer();
 
             if (uiFont == null)
                 uiFont = TMP_Settings.defaultFontAsset;
@@ -1984,43 +1981,12 @@ namespace Hecton8.UI
 
             TryResolveDefaultIconTextures();
 
-            if (survival == null)
-            {
-                if (hasPlayerRoot)
-                    playerRoot.TryGetComponent(out survival);
-            }
+            RefreshRuntimeDependenciesFromCachedServices();
 
             RefreshDepthSignalSubscription();
-
-            if (playerMovement == null)
-            {
-                if (hasPlayerRoot)
-                    playerRoot.TryGetComponent(out playerMovement);
-            }
-
-            if (flashlight == null)
-            {
-                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-                if (playerContext != null)
-                    flashlight = playerContext.Flashlight;
-            }
-
-            if (underwaterVisuals == null)
-            {
-                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-                if (playerContext != null)
-                    underwaterVisuals = playerContext.UnderwaterVisuals;
-            }
-
-            if (_toolManager == null)
-            {
-                IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-                if (playerContext != null)
-                    _toolManager = playerContext.ToolManager;
-            }
         }
 
-        private void TryResolveProjectionCameraFromPlayer(Transform playerRoot, bool hasPlayerRoot)
+        private void TryResolveProjectionCameraFromPlayer()
         {
             if (projectionCamera != null)
                 return;
@@ -2033,13 +1999,9 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!hasPlayerRoot || playerRoot == null)
-                return;
-
-            projectionCamera = ComponentReferenceUtility.ResolveOwnedComponent<Camera>(playerRoot);
         }
 
-        private bool CacheRuntimeDependencies()
+        private bool CacheRuntimeDependenciesCold()
         {
             ILocalizationStressPresentationReadModel localizationRuntime = GlobalRegistry.LocalizationStressPresentation;
             bool localizationChanged = !ReferenceEquals(_localizationRuntime, localizationRuntime);
@@ -2049,8 +2011,39 @@ namespace Hecton8.UI
             if (_vegetationBridge == null)
                 _vegetationBridge = GlobalRegistry.MapMagicVegetation;
             RebindInventoryService(GlobalRegistry.PlayerInventory);
+            RefreshRuntimeDependenciesFromCachedServices();
             RefreshQualityPolicy();
             return localizationChanged;
+        }
+
+        private void RefreshRuntimeDependenciesFromCachedServices()
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null)
+            {
+                if (projectionCamera == null)
+                    projectionCamera = playerContext.PlayerCamera;
+                if (survival == null)
+                    survival = playerContext.SurvivalSystem;
+                if (playerMovement == null)
+                    playerMovement = playerContext.PlayerMovement;
+                if (flashlight == null)
+                    flashlight = playerContext.Flashlight;
+                if (underwaterVisuals == null)
+                    underwaterVisuals = playerContext.UnderwaterVisuals;
+                if (_toolManager == null)
+                    _toolManager = playerContext.ToolManager;
+            }
+
+            if (_inventoryService != null)
+            {
+                _playerInventory = _inventoryService.Inventory;
+                _itemCatalog = _playerInventory != null ? _playerInventory.ItemCatalog : null;
+                if (_toolManager == null)
+                    _toolManager = _inventoryService.ToolManager;
+            }
+
+            RefreshQualityPolicy();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -2820,6 +2813,8 @@ namespace Hecton8.UI
             }
 
             _acousticRadarResolution = 0;
+            _pendingAcousticRadarResolution = 0;
+            _pendingAcousticRadarTextureRefresh = false;
             _acousticRadarPeakIntensity = 0f;
         }
 
@@ -2857,8 +2852,12 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!EnsureAcousticRadarTexture(radarResolution))
+            if (!IsAcousticRadarTextureReady(radarResolution))
+            {
+                QueueAcousticRadarTextureRefresh(radarResolution);
+                _acousticRadarPeakIntensity = 0f;
                 return;
+            }
 
             if (!hasSpatialDensityFallback)
             {
@@ -2897,6 +2896,33 @@ namespace Hecton8.UI
                 _acousticRadarPeakIntensity = uploadedPeakIntensity;
                 return;
             }
+        }
+
+        private bool IsAcousticRadarTextureReady(int radialResolution)
+        {
+            return radialResolution > 0 &&
+                   _acousticRadarTexture != null &&
+                   _acousticRadarResolution == radialResolution;
+        }
+
+        private void QueueAcousticRadarTextureRefresh(int radialResolution)
+        {
+            if (radialResolution <= 0)
+                return;
+
+            _pendingAcousticRadarResolution = radialResolution;
+            _pendingAcousticRadarTextureRefresh = true;
+        }
+
+        private void FlushPendingAcousticRadarTextureRefresh()
+        {
+            if (!_pendingAcousticRadarTextureRefresh)
+                return;
+
+            int resolution = _pendingAcousticRadarResolution;
+            _pendingAcousticRadarTextureRefresh = false;
+            _pendingAcousticRadarResolution = 0;
+            EnsureAcousticRadarTexture(resolution);
         }
 
         private bool EnsureAcousticRadarTexture(int radialResolution)
@@ -7594,6 +7620,8 @@ namespace Hecton8.UI
         private bool _registeredToSlowTickManager;
         private bool _hotSwapRegistered;
         private bool _pendingContentRootBootstrap = true;
+        private int _cachedRenderWidth = 1;
+        private int _cachedRenderHeight = 1;
         private int _lastScreenWidth = -1;
         private int _lastScreenHeight = -1;
         private float _lastAppliedScale = -1f;
@@ -7608,11 +7636,12 @@ namespace Hecton8.UI
         public Vector2 ReferenceResolution => referenceResolution;
 
         /// <summary>Scaled content parent used by first-party HUD overlays.</summary>
-        public RectTransform ContentRoot => ResolveContentRootInternal(createIfMissing: false);
+        public RectTransform ContentRoot => TryRefreshExistingContentRootHot() ? _contentRoot : null;
 
         private void OnEnable()
         {
             ResolveCanvas();
+            RefreshRenderDimensionsSlowSample();
             EnsureContentRoot();
             ApplyScale(force: true, allowContentRootCreation: false);
             _pendingContentRootBootstrap = ResolveContentRootInternal(createIfMissing: false) == null;
@@ -7644,10 +7673,10 @@ namespace Hecton8.UI
             if (_pendingContentRootBootstrap)
                 return;
 
-            if (ResolveContentRootInternal(createIfMissing: false) == null)
+            if (!TryRefreshExistingContentRootHot())
                 return;
 
-            ApplyScale(force: false, allowContentRootCreation: false);
+            ApplyScaleToResolvedContentRoot(_contentRoot, force: false);
         }
 
         public void SlowTick()
@@ -7655,13 +7684,26 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            RegisterToTickManager();
-            if (!_pendingContentRootBootstrap && ResolveContentRootInternal(createIfMissing: false) != null)
+            bool dimensionsChanged = RefreshRenderDimensionsSlowSample();
+            if (!_pendingContentRootBootstrap)
+            {
+                if (!TryRefreshExistingContentRootHot())
+                {
+                    _pendingContentRootBootstrap = true;
+                }
+                else if (dimensionsChanged)
+                {
+                    ApplyScaleToResolvedContentRoot(_contentRoot, force: true);
+                }
+
+                return;
+            }
+
+            if (!TryResolveExistingContentRootCold() && EnsureContentRoot() == null)
                 return;
 
-            EnsureContentRoot();
-            ApplyScale(force: true, allowContentRootCreation: false);
-            _pendingContentRootBootstrap = ResolveContentRootInternal(createIfMissing: false) == null;
+            ApplyScaleToResolvedContentRoot(_contentRoot, force: true);
+            _pendingContentRootBootstrap = false;
         }
 
         /// <inheritdoc />
@@ -7672,12 +7714,12 @@ namespace Hecton8.UI
             _lastAppliedScale = -1f;
             _lastAppliedReferenceResolution = Vector2.zero;
             _lastAppliedMatch = -1f;
-            _pendingContentRootBootstrap = ResolveContentRootInternal(createIfMissing: false) == null;
+            _pendingContentRootBootstrap = !TryRefreshExistingContentRootHot();
 
             if (_pendingContentRootBootstrap)
                 return;
 
-            ApplyScale(force: true, allowContentRootCreation: false);
+            ApplyScaleToResolvedContentRoot(_contentRoot, force: true);
         }
 
 #if UNITY_EDITOR
@@ -7698,6 +7740,7 @@ namespace Hecton8.UI
                 return;
 
             ResolveCanvas();
+            RefreshRenderDimensionsSlowSample();
             EnsureContentRoot();
             ApplyScale(force: true);
         }
@@ -7722,9 +7765,9 @@ namespace Hecton8.UI
             matchWidthOrHeight = sanitizedMatch;
             if (Application.isPlaying)
             {
-                _pendingContentRootBootstrap = _pendingContentRootBootstrap || ResolveContentRootInternal(createIfMissing: false) == null;
+                _pendingContentRootBootstrap = _pendingContentRootBootstrap || !TryRefreshExistingContentRootHot();
                 if (!_pendingContentRootBootstrap)
-                    ApplyScale(force: true, allowContentRootCreation: false);
+                    ApplyScaleToResolvedContentRoot(_contentRoot, force: true);
             }
             else
             {
@@ -7771,6 +7814,34 @@ namespace Hecton8.UI
                 return null;
 
             return EnsureContentRoot();
+        }
+
+        private bool TryRefreshExistingContentRootHot()
+        {
+            if (_targetCanvas == null)
+                return false;
+
+            return _contentRoot != null && _contentRoot.gameObject != null;
+        }
+
+        private bool TryResolveExistingContentRootCold()
+        {
+            if (_targetCanvas == null)
+                return false;
+
+            if (TryRefreshExistingContentRootHot())
+                return true;
+
+            RectTransform canvasRoot = _targetCanvas.transform as RectTransform;
+            if (canvasRoot == null)
+                return false;
+
+            RectTransform existingRoot = FindExistingChild(canvasRoot, ContentRootName);
+            if (existingRoot == null)
+                return false;
+
+            _contentRoot = SanitizeContentRoot(existingRoot);
+            return _contentRoot != null;
         }
 
         private void ResolveCanvas()
@@ -7822,12 +7893,42 @@ namespace Hecton8.UI
 
         private void ApplyScale(bool force, bool allowContentRootCreation = true)
         {
-            RectTransform contentRoot = allowContentRootCreation
-                ? EnsureContentRoot()
-                : ResolveContentRootInternal(createIfMissing: false);
+            RectTransform contentRoot;
+            if (allowContentRootCreation)
+            {
+                contentRoot = EnsureContentRoot();
+            }
+            else
+            {
+                if (!TryRefreshExistingContentRootHot())
+                {
+                    _pendingContentRootBootstrap = true;
+                    return;
+                }
+
+                contentRoot = _contentRoot;
+            }
+
             if (contentRoot == null)
                 return;
 
+            ApplyScaleToResolvedContentRoot(contentRoot, force);
+        }
+
+        private void ApplyScaleToExistingContentRoot(bool force)
+        {
+            if (!TryRefreshExistingContentRootHot())
+                return;
+
+            RectTransform contentRoot = _contentRoot;
+            if (contentRoot == null)
+                return;
+
+            ApplyScaleToResolvedContentRoot(contentRoot, force);
+        }
+
+        private void ApplyScaleToResolvedContentRoot(RectTransform contentRoot, bool force)
+        {
             ResolveRenderDimensions(out int screenWidth, out int screenHeight);
             if (!force &&
                 screenWidth == _lastScreenWidth &&
@@ -7868,20 +7969,45 @@ namespace Hecton8.UI
 
         private void ResolveRenderDimensions(out int width, out int height)
         {
-            width = math.max(1, Screen.width);
-            height = math.max(1, Screen.height);
-
-            if (_targetCanvas == null ||
-                _targetCanvas.renderMode != RenderMode.WorldSpace ||
-                _targetCanvas.worldCamera == null)
+            if (UsesReferenceRenderDimensions())
             {
+                width = RoundToIntFast(math.max(1f, referenceResolution.x));
+                height = RoundToIntFast(math.max(1f, referenceResolution.y));
                 return;
             }
 
-            // World-space HUD layout is already projected onto the visor frustum by the canvas rect itself.
-            // Scaling again from RT resolution collapses the authored layout toward the center as the RT downsamples.
-            width = RoundToIntFast(math.max(1f, referenceResolution.x));
-            height = RoundToIntFast(math.max(1f, referenceResolution.y));
+            width = math.max(1, _cachedRenderWidth);
+            height = math.max(1, _cachedRenderHeight);
+        }
+
+        private bool RefreshRenderDimensionsSlowSample()
+        {
+            int width;
+            int height;
+            if (UsesReferenceRenderDimensions())
+            {
+                // World-space HUD layout is already projected onto the visor frustum by the canvas rect itself.
+                // Scaling again from RT resolution collapses the authored layout toward the center as the RT downsamples.
+                width = RoundToIntFast(math.max(1f, referenceResolution.x));
+                height = RoundToIntFast(math.max(1f, referenceResolution.y));
+            }
+            else
+            {
+                width = math.max(1, Screen.width);
+                height = math.max(1, Screen.height);
+            }
+
+            bool changed = width != _cachedRenderWidth || height != _cachedRenderHeight;
+            _cachedRenderWidth = width;
+            _cachedRenderHeight = height;
+            return changed;
+        }
+
+        private bool UsesReferenceRenderDimensions()
+        {
+            return _targetCanvas != null &&
+                   _targetCanvas.renderMode == RenderMode.WorldSpace &&
+                   _targetCanvas.worldCamera != null;
         }
 
         private float ComputeScale(int screenWidth, int screenHeight)

@@ -66,6 +66,9 @@ namespace Hecton8.Core
         private const float DistantTerrainShadowSolveBudgetWarningMilliseconds = 0.2f;
         private const int DistantTerrainShadowPerformanceWarningCooldownFrames = 30;
         private const int DistantTerrainShadowMaskMaxResolution = 256;
+        private const int BiomeAlphaTextureCacheCapacity = 128;
+        private const int BiomeTerrainLayerCacheCapacity = 128;
+        private const int TerrainTileCacheCapacity = 512;
         private static readonly int _TerrainFadeDistanceId = Shader.PropertyToID("_FadeDistance");
         private static readonly int _TerrainFadeParamsId = Shader.PropertyToID("_HectonTerrainFadeParams");
         private static readonly int _TerrainFadeRuntimeOriginId = Shader.PropertyToID("_HectonTerrainFadeRuntimeOrigin");
@@ -188,7 +191,7 @@ namespace Hecton8.Core
         /// Cached MapMagic terrain tiles. Uses tile-backed draft terrain when
         /// MapMagic keeps active terrain references null.
         /// </summary>
-        private readonly List<TerrainTile> _cachedTerrainTiles = new List<TerrainTile>(64); // COLD ALLOC: tile cache for MapMagic terrain lookup
+        private readonly List<TerrainTile> _cachedTerrainTiles = new List<TerrainTile>(TerrainTileCacheCapacity); // COLD ALLOC: tile cache for MapMagic terrain lookup
 
         /// <summary>
         /// Tracks root child count to avoid reallocating tile cache when the
@@ -267,6 +270,8 @@ namespace Hecton8.Core
             if (!Application.isPlaying)
                 EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: false);
             RefreshTerrainTileCache(force: true);
+            PrewarmDistantTerrainShadowMaskCold();
+            PrewarmBiomeTextureCacheStorageCold();
             if (!Application.isPlaying)
             {
                 ApplyTerrainDataMemoryBudgetToCachedTerrains();
@@ -274,10 +279,7 @@ namespace Hecton8.Core
             }
 
             // ── Poisk igroka ──
-            if (playerTransform == null)
-            {
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
-            }
+            RefreshPlayerTransformFromRegistryCold();
 
             _lastBiomeID = -1;
             _registeredToTickManager = false;
@@ -292,6 +294,9 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            RefreshPlayerTransformFromRegistryCold();
+            PrewarmDistantTerrainShadowMaskCold();
+            PrewarmBiomeTextureCacheStorageCold();
             TrySubscribeTerrainTileEvents();
             TryRegisterHotSwapListener();
             TryRegisterMapMagicRuntime();
@@ -301,10 +306,13 @@ namespace Hecton8.Core
 
         private void Start()
         {
+            RefreshPlayerTransformFromRegistryCold();
             TryRegisterMapMagicRuntime();
             TryRegisterToTickManager();
             TryRegisterToLateFrameTickManager();
             UpdateLastResolvedTerrainTileOwnerPhase();
+            PrewarmDistantTerrainShadowMaskCold();
+            PrewarmBiomeTextureCacheStorageCold();
             PrewarmBiomeAlphaTextureCacheOwnerPhase();
 
             // ── Initial biome detection ──
@@ -348,7 +356,7 @@ namespace Hecton8.Core
 
             GlobalRegistry.RegisterMapMagicRuntime(this);
             GlobalRegistry.RegisterTerrainProvider(this);
-            _cachedVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            _cachedVegetationBridge = GlobalRegistry.MapMagicVegetation;
             _registeredMapMagicRuntime = ReferenceEquals(GlobalRegistry.MapMagic, this);
             if (_registeredMapMagicRuntime)
                 PublishActiveRuntimeInstance();
@@ -420,6 +428,15 @@ namespace Hecton8.Core
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                RebindPlayerTransform(
+                    previousService as IPlayerRuntimeContext,
+                    currentService as IPlayerRuntimeContext);
+                UpdateDiagnostics();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
                 return;
 
@@ -456,7 +473,7 @@ namespace Hecton8.Core
         /// </summary>
         public override void SlowTick()
         {
-            RefreshSceneBindingsIfNeeded(force: false);
+            RefreshRuntimeSceneBindingDiagnostics();
             RefreshTerrainTileCache(force: false);
             UpdateLastResolvedTerrainTileOwnerPhase();
             PrewarmBiomeAlphaTextureCacheOwnerPhase();
@@ -482,7 +499,6 @@ namespace Hecton8.Core
         private void QueuePlanetaryTerrainShaderGlobals()
         {
             _pendingPlanetaryTerrainShaderGlobals = true;
-            TryRegisterToLateFrameTickManager();
         }
 
         private void PublishPlanetaryTerrainShaderGlobals()
@@ -494,9 +510,6 @@ namespace Hecton8.Core
                 Shader.SetGlobalVector(_DistantTerrainShadowParamsId, Vector4.zero);
                 return;
             }
-
-            if (playerTransform == null)
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
 
             if (playerTransform == null)
             {
@@ -570,8 +583,11 @@ namespace Hecton8.Core
             }
 
             int resolution = Mathf.Clamp(distantTerrainShadowMaskResolution, 32, DistantTerrainShadowMaskMaxResolution);
-            EnsureDistantTerrainShadowMaskCapacity(resolution);
-            if (_distantTerrainShadowMask == null || _distantTerrainShadowPixels == null)
+            int requiredCapacity = Mathf.Max(1, resolution * resolution);
+            if (_distantTerrainShadowMask == null ||
+                _distantTerrainShadowPixels == null ||
+                _distantTerrainShadowMaskCapacity != requiredCapacity ||
+                _distantTerrainShadowPixels.Length != requiredCapacity)
             {
                 Shader.SetGlobalVector(_DistantTerrainShadowParamsId, Vector4.zero);
                 return;
@@ -616,6 +632,15 @@ namespace Hecton8.Core
             _nextDistantTerrainShadowMaskUpdateTime = Time.time + DistantTerrainShadowMaskUpdateIntervalSeconds;
             PublishDistantTerrainShadowMaskGlobals(runtimeCenter);
             PublishDistantTerrainShadowSolveWarningIfNeeded(solveStartTicks);
+        }
+
+        private void PrewarmDistantTerrainShadowMaskCold()
+        {
+            if (!enableDistantTerrainShadowMask || distantTerrainShadowMaskOverride != null)
+                return;
+
+            int resolution = Mathf.Clamp(distantTerrainShadowMaskResolution, 32, DistantTerrainShadowMaskMaxResolution);
+            EnsureDistantTerrainShadowMaskCapacity(resolution);
         }
 
         private static float ResolveCinematicDistantTerrainShadow01(
@@ -944,14 +969,80 @@ namespace Hecton8.Core
         /// </summary>
         public override bool TryGetHeightAUP(Vector3 absoluteUniversePosition, out float height)
         {
-            Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition);
-            return TryGetHeight(runtimePosition.x, runtimePosition.z, out height);
+            return TryGetHeightAUP(
+                new double3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z),
+                out height);
+        }
+
+        public override bool TryGetHeightAUP(in AbsoluteUniversePosition absoluteUniversePosition, out float height)
+        {
+            height = 0f;
+            return absoluteUniversePosition.IsFinite() &&
+                   TryGetHeightAUP(absoluteUniversePosition.ToAbsoluteDouble3(), out height);
+        }
+
+        private bool TryGetHeightAUP(double3 absoluteUniversePosition, out float height)
+        {
+            height = 0f;
+            if (mapMagicObject == null || !math.all(math.isfinite(absoluteUniversePosition)))
+                return false;
+
+            Terrain terrain = FindTerrainAtAUP(
+                absoluteUniversePosition,
+                out Vector3 terrainRuntimePosition,
+                out Vector3 terrainSize,
+                out double3 terrainAbsolutePosition);
+            if (terrain == null || terrain.terrainData == null || terrainSize.x <= 0f || terrainSize.z <= 0f)
+                return false;
+
+            float normalizedX = math.saturate((float)((absoluteUniversePosition.x - terrainAbsolutePosition.x) / terrainSize.x));
+            float normalizedZ = math.saturate((float)((absoluteUniversePosition.z - terrainAbsolutePosition.z) / terrainSize.z));
+            float interpolatedHeight = terrain.terrainData.GetInterpolatedHeight(normalizedX, normalizedZ);
+            height = interpolatedHeight + terrainRuntimePosition.y;
+            return true;
         }
 
         public override bool TryGetNormalAUP(Vector3 absoluteUniversePosition, float sampleDistance, out Vector3 normal)
         {
-            Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition);
-            return TryGetNormal(runtimePosition.x, runtimePosition.z, sampleDistance, out normal);
+            return TryGetNormalAUP(
+                new double3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z),
+                sampleDistance,
+                out normal);
+        }
+
+        public override bool TryGetNormalAUP(in AbsoluteUniversePosition absoluteUniversePosition, float sampleDistance, out Vector3 normal)
+        {
+            normal = Vector3.up;
+            return absoluteUniversePosition.IsFinite() &&
+                   TryGetNormalAUP(absoluteUniversePosition.ToAbsoluteDouble3(), sampleDistance, out normal);
+        }
+
+        private bool TryGetNormalAUP(double3 absoluteUniversePosition, float sampleDistance, out Vector3 normal)
+        {
+            normal = Vector3.up;
+            if (mapMagicObject == null || !math.all(math.isfinite(absoluteUniversePosition)))
+                return false;
+
+            Terrain terrain = FindTerrainAtAUP(
+                absoluteUniversePosition,
+                out _,
+                out Vector3 terrainSize,
+                out double3 terrainAbsolutePosition);
+            if (terrain == null || terrain.terrainData == null || terrainSize.x <= 0f || terrainSize.z <= 0f)
+                return false;
+
+            float normalizedX = math.saturate((float)((absoluteUniversePosition.x - terrainAbsolutePosition.x) / terrainSize.x));
+            float normalizedZ = math.saturate((float)((absoluteUniversePosition.z - terrainAbsolutePosition.z) / terrainSize.z));
+            Vector3 localNormal = terrain.terrainData.GetInterpolatedNormal(normalizedX, normalizedZ);
+            if (localNormal.sqrMagnitude <= 0.0001f)
+                return false;
+
+            Vector3 worldNormal = terrain.transform.TransformDirection(localNormal);
+            if (worldNormal.sqrMagnitude <= 0.0001f)
+                return false;
+
+            normal = NormalizeFastOrDefault(worldNormal, Vector3.up);
+            return true;
         }
 
         public override bool TryGetActiveQuantizedHeightmapPayload(out QuantizedHeightmapPayload payload)
@@ -994,14 +1085,72 @@ namespace Hecton8.Core
 
         public override bool TryGetQuantizedHeightmapPayloadAUP(Vector3 absoluteUniversePosition, out QuantizedHeightmapPayload payload)
         {
-            Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition);
-            return TryGetQuantizedHeightmapPayload(runtimePosition.x, runtimePosition.z, out payload);
+            return TryGetQuantizedHeightmapPayloadAUP(
+                new double3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z),
+                out payload);
+        }
+
+        public override bool TryGetQuantizedHeightmapPayloadAUP(in AbsoluteUniversePosition absoluteUniversePosition, out QuantizedHeightmapPayload payload)
+        {
+            payload = default;
+            return absoluteUniversePosition.IsFinite() &&
+                   TryGetQuantizedHeightmapPayloadAUP(absoluteUniversePosition.ToAbsoluteDouble3(), out payload);
+        }
+
+        private bool TryGetQuantizedHeightmapPayloadAUP(double3 absoluteUniversePosition, out QuantizedHeightmapPayload payload)
+        {
+            payload = default;
+            if (mapMagicObject == null || !math.all(math.isfinite(absoluteUniversePosition)))
+                return false;
+
+            Terrain terrain = FindTerrainAtAUP(
+                absoluteUniversePosition,
+                out Vector3 terrainRuntimePosition,
+                out Vector3 terrainSize,
+                out double3 terrainAbsolutePosition);
+            if (terrain == null || terrain.terrainData == null || terrainSize.x <= 0f || terrainSize.z <= 0f)
+                return false;
+
+            float runtimeX = terrainRuntimePosition.x + (float)(absoluteUniversePosition.x - terrainAbsolutePosition.x);
+            float runtimeZ = terrainRuntimePosition.z + (float)(absoluteUniversePosition.z - terrainAbsolutePosition.z);
+            return TryGetQuantizedHeightmapPayload(runtimeX, runtimeZ, out payload);
         }
 
         public override bool TryGetTerrainSplatColorAUP(Vector3 absoluteUniversePosition, out Color color, out float confidence)
         {
-            Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition);
-            return TryGetTerrainSplatColor(runtimePosition.x, runtimePosition.z, out color, out confidence);
+            return TryGetTerrainSplatColorAUP(
+                new double3(absoluteUniversePosition.x, absoluteUniversePosition.y, absoluteUniversePosition.z),
+                out color,
+                out confidence);
+        }
+
+        public override bool TryGetTerrainSplatColorAUP(in AbsoluteUniversePosition absoluteUniversePosition, out Color color, out float confidence)
+        {
+            color = Color.clear;
+            confidence = 0f;
+            return absoluteUniversePosition.IsFinite() &&
+                   TryGetTerrainSplatColorAUP(absoluteUniversePosition.ToAbsoluteDouble3(), out color, out confidence);
+        }
+
+        private bool TryGetTerrainSplatColorAUP(double3 absoluteUniversePosition, out Color color, out float confidence)
+        {
+            color = Color.clear;
+            confidence = 0f;
+
+            if (mapMagicObject == null || !math.all(math.isfinite(absoluteUniversePosition)))
+                return false;
+
+            Terrain terrain = FindTerrainAtAUP(
+                absoluteUniversePosition,
+                out _,
+                out Vector3 terrainSize,
+                out double3 terrainAbsolutePosition);
+            if (terrain == null || terrain.terrainData == null || terrainSize.x <= 0f || terrainSize.z <= 0f)
+                return false;
+
+            float u = math.saturate((float)((absoluteUniversePosition.x - terrainAbsolutePosition.x) / terrainSize.x));
+            float v = math.saturate((float)((absoluteUniversePosition.z - terrainAbsolutePosition.z) / terrainSize.z));
+            return TryGetTerrainSplatColorAtUv(terrain.terrainData, u, v, out color, out confidence);
         }
 
         public override bool TryGetTerrainSplatColor(float x, float z, out Color color, out float confidence)
@@ -1016,7 +1165,23 @@ namespace Hecton8.Core
             if (terrain == null || terrain.terrainData == null)
                 return false;
 
-            TerrainData terrainData = terrain.terrainData;
+            Vector3 terrainPosition = terrain.transform.position;
+            Vector3 terrainSize = terrain.terrainData.size;
+            if (terrainSize.x <= 0f || terrainSize.z <= 0f)
+                return false;
+
+            float u = math.saturate((x - terrainPosition.x) / terrainSize.x);
+            float v = math.saturate((z - terrainPosition.z) / terrainSize.z);
+            return TryGetTerrainSplatColorAtUv(terrain.terrainData, u, v, out color, out confidence);
+        }
+
+        private bool TryGetTerrainSplatColorAtUv(TerrainData terrainData, float u, float v, out Color color, out float confidence)
+        {
+            color = Color.clear;
+            confidence = 0f;
+            if (terrainData == null)
+                return false;
+
             int totalLayers = terrainData.alphamapLayers;
             int textureCount = terrainData.alphamapTextureCount;
             if (totalLayers <= 0 || textureCount <= 0)
@@ -1025,13 +1190,6 @@ namespace Hecton8.Core
             if (!TryGetCachedBiomeAlphaTextures(terrainData, textureCount, out Texture2D[] alphaTextures))
                 return false;
 
-            Vector3 terrainPosition = terrain.transform.position;
-            Vector3 terrainSize = terrainData.size;
-            if (terrainSize.x <= 0f || terrainSize.z <= 0f)
-                return false;
-
-            float u = math.saturate((x - terrainPosition.x) / terrainSize.x);
-            float v = math.saturate((z - terrainPosition.z) / terrainSize.z);
             TryGetCachedBiomeTerrainLayers(terrainData, totalLayers, out TerrainLayer[] terrainLayers);
             float3 accumulated = float3.zero;
             float totalWeight = 0f;
@@ -1071,6 +1229,13 @@ namespace Hecton8.Core
                 : fallbackHeight;
         }
 
+        public override float SampleHeightAUP(in AbsoluteUniversePosition absoluteUniversePosition, float fallbackHeight = 0f)
+        {
+            return TryGetHeightAUP(in absoluteUniversePosition, out float height)
+                ? height
+                : fallbackHeight;
+        }
+
         /// <summary>
         /// Bystraya versiya bez out. Vozvraschaet 0 pri oshibke.
         /// </summary>
@@ -1095,8 +1260,6 @@ namespace Hecton8.Core
         {
             if (destination == null || destination.Length == 0 || mapMagicObject == null)
                 return 0;
-
-            RefreshTerrainTileCache(force: false);
 
             List<TerrainTile> terrainTiles = _cachedTerrainTiles;
             int tileCount = terrainTiles.Count;
@@ -1133,8 +1296,6 @@ namespace Hecton8.Core
         {
             if (destination == null || destination.Length == 0 || mapMagicObject == null)
                 return 0;
-
-            RefreshTerrainTileCache(force: false);
 
             List<TerrainTile> terrainTiles = _cachedTerrainTiles;
             int tileCount = terrainTiles.Count;
@@ -1646,22 +1807,16 @@ namespace Hecton8.Core
             int expectedTextureCount,
             out Texture2D[] alphaTextures)
         {
-            return TryGetCachedBiomeAlphaTextures(
-                terrainData,
-                expectedTextureCount,
-                out alphaTextures,
-                allowCacheRefresh: false);
-        }
-
-        private bool TryGetCachedBiomeAlphaTextures(
-            TerrainData terrainData,
-            int expectedTextureCount,
-            out Texture2D[] alphaTextures,
-            bool allowCacheRefresh)
-        {
             if (terrainData == null || expectedTextureCount <= 0)
             {
                 alphaTextures = null;
+                return false;
+            }
+
+            if (_cachedBiomeAlphaTextures == null ||
+                expectedTextureCount > _cachedBiomeAlphaTextures.Length)
+            {
+                alphaTextures = _cachedBiomeAlphaTextures;
                 return false;
             }
 
@@ -1669,41 +1824,48 @@ namespace Hecton8.Core
                 _cachedBiomeAlphaTextures == null ||
                 _cachedBiomeAlphaExpectedTextureCount != expectedTextureCount)
             {
-                if (!allowCacheRefresh)
-                {
-                    alphaTextures = _cachedBiomeAlphaTextures;
-                    return false;
-                }
-
-                _cachedBiomeTerrainData = terrainData;
-                EnsureBiomeAlphaTextureCacheCapacity(expectedTextureCount);
-                _cachedBiomeAlphaExpectedTextureCount = expectedTextureCount;
-                _cachedBiomeAlphaTextureCount = 0;
-
-                for (int i = 0; i < expectedTextureCount; i++)
-                {
-                    Texture2D alphaTexture = terrainData.GetAlphamapTexture(i);
-                    _cachedBiomeAlphaTextures[i] = alphaTexture;
-                    if (alphaTexture != null)
-                        _cachedBiomeAlphaTextureCount = i + 1;
-                }
-
-                for (int i = _cachedBiomeAlphaTextureCount; i < _cachedBiomeAlphaTextures.Length; i++)
-                    _cachedBiomeAlphaTextures[i] = null;
+                alphaTextures = _cachedBiomeAlphaTextures;
+                return false;
             }
 
             alphaTextures = _cachedBiomeAlphaTextures;
             return alphaTextures != null && _cachedBiomeAlphaTextureCount > 0;
         }
 
+        private void RefreshBiomeAlphaTextureCacheOwnerPhase(TerrainData terrainData, int expectedTextureCount)
+        {
+            if (terrainData == null ||
+                expectedTextureCount <= 0 ||
+                _cachedBiomeAlphaTextures == null ||
+                expectedTextureCount > _cachedBiomeAlphaTextures.Length)
+            {
+                _cachedBiomeAlphaExpectedTextureCount = -1;
+                _cachedBiomeAlphaTextureCount = -1;
+                return;
+            }
+
+            _cachedBiomeTerrainData = terrainData;
+            EnsureBiomeAlphaTextureCacheCapacity(expectedTextureCount);
+            _cachedBiomeAlphaExpectedTextureCount = expectedTextureCount;
+            _cachedBiomeAlphaTextureCount = 0;
+
+            for (int i = 0; i < expectedTextureCount; i++)
+            {
+                Texture2D alphaTexture = terrainData.GetAlphamapTexture(i);
+                _cachedBiomeAlphaTextures[i] = alphaTexture;
+                if (alphaTexture != null)
+                    _cachedBiomeAlphaTextureCount = i + 1;
+            }
+
+            for (int i = _cachedBiomeAlphaTextureCount; i < _cachedBiomeAlphaTextures.Length; i++)
+                _cachedBiomeAlphaTextures[i] = null;
+        }
+
         private void EnsureBiomeAlphaTextureCacheCapacity(int requiredCount)
         {
             int safeCount = Mathf.Max(1, requiredCount);
-            if (_cachedBiomeAlphaTextures != null && _cachedBiomeAlphaTextures.Length == safeCount)
+            if (_cachedBiomeAlphaTextures != null && _cachedBiomeAlphaTextures.Length >= safeCount)
                 return;
-
-            // COLD ALLOC: Texture2D[safeCount] - cached terrain alpha texture handles for biome sampling - owner: MapMagicBridge
-            _cachedBiomeAlphaTextures = new Texture2D[safeCount];
         }
 
         private bool TryGetCachedBiomeTerrainLayers(
@@ -1711,22 +1873,16 @@ namespace Hecton8.Core
             int expectedLayerCount,
             out TerrainLayer[] terrainLayers)
         {
-            return TryGetCachedBiomeTerrainLayers(
-                terrainData,
-                expectedLayerCount,
-                out terrainLayers,
-                allowCacheRefresh: false);
-        }
-
-        private bool TryGetCachedBiomeTerrainLayers(
-            TerrainData terrainData,
-            int expectedLayerCount,
-            out TerrainLayer[] terrainLayers,
-            bool allowCacheRefresh)
-        {
             if (terrainData == null || expectedLayerCount <= 0)
             {
                 terrainLayers = null;
+                return false;
+            }
+
+            if (_cachedBiomeTerrainLayers == null ||
+                expectedLayerCount > _cachedBiomeTerrainLayers.Length)
+            {
+                terrainLayers = _cachedBiomeTerrainLayers;
                 return false;
             }
 
@@ -1734,39 +1890,46 @@ namespace Hecton8.Core
                 _cachedBiomeTerrainLayers == null ||
                 _cachedBiomeTerrainLayerExpectedCount != expectedLayerCount)
             {
-                if (!allowCacheRefresh)
-                {
-                    terrainLayers = _cachedBiomeTerrainLayers;
-                    return false;
-                }
-
-                _cachedBiomeTerrainData = terrainData;
-                EnsureBiomeTerrainLayerCacheCapacity(expectedLayerCount);
-                _cachedBiomeTerrainLayerExpectedCount = expectedLayerCount;
-
-                TerrainLayer[] sourceLayers = terrainData.terrainLayers;
-                int sourceCount = sourceLayers != null ? math.min(expectedLayerCount, sourceLayers.Length) : 0;
-                _cachedBiomeTerrainLayerCount = sourceCount;
-
-                for (int i = 0; i < sourceCount; i++)
-                    _cachedBiomeTerrainLayers[i] = sourceLayers[i];
-
-                for (int i = sourceCount; i < _cachedBiomeTerrainLayers.Length; i++)
-                    _cachedBiomeTerrainLayers[i] = null;
+                terrainLayers = _cachedBiomeTerrainLayers;
+                return false;
             }
 
             terrainLayers = _cachedBiomeTerrainLayers;
             return terrainLayers != null && _cachedBiomeTerrainLayerCount > 0;
         }
 
+        private void RefreshBiomeTerrainLayerCacheOwnerPhase(TerrainData terrainData, int expectedLayerCount)
+        {
+            if (terrainData == null ||
+                expectedLayerCount <= 0 ||
+                _cachedBiomeTerrainLayers == null ||
+                expectedLayerCount > _cachedBiomeTerrainLayers.Length)
+            {
+                _cachedBiomeTerrainLayerExpectedCount = -1;
+                _cachedBiomeTerrainLayerCount = -1;
+                return;
+            }
+
+            _cachedBiomeTerrainData = terrainData;
+            EnsureBiomeTerrainLayerCacheCapacity(expectedLayerCount);
+            _cachedBiomeTerrainLayerExpectedCount = expectedLayerCount;
+
+            TerrainLayer[] sourceLayers = terrainData.terrainLayers;
+            int sourceCount = sourceLayers != null ? math.min(expectedLayerCount, sourceLayers.Length) : 0;
+            _cachedBiomeTerrainLayerCount = sourceCount;
+
+            for (int i = 0; i < sourceCount; i++)
+                _cachedBiomeTerrainLayers[i] = sourceLayers[i];
+
+            for (int i = sourceCount; i < _cachedBiomeTerrainLayers.Length; i++)
+                _cachedBiomeTerrainLayers[i] = null;
+        }
+
         private void EnsureBiomeTerrainLayerCacheCapacity(int requiredCount)
         {
             int safeCount = Mathf.Max(1, requiredCount);
-            if (_cachedBiomeTerrainLayers != null && _cachedBiomeTerrainLayers.Length == safeCount)
+            if (_cachedBiomeTerrainLayers != null && _cachedBiomeTerrainLayers.Length >= safeCount)
                 return;
-
-            // COLD ALLOC: TerrainLayer[safeCount] - cached terrain layer handles for splat color sampling - owner: MapMagicBridge
-            _cachedBiomeTerrainLayers = new TerrainLayer[safeCount];
         }
 
         private static void AccumulateLayerColor(
@@ -1898,6 +2061,32 @@ namespace Hecton8.Core
             playerTransform = player;
             _nextSceneBindingRefreshTime = float.NegativeInfinity;
             UpdateDiagnostics();
+        }
+
+        private void RefreshPlayerTransformFromRegistryCold()
+        {
+            CachePlayerTransform(GlobalRegistry.Player);
+        }
+
+        private void RebindPlayerTransform(IPlayerRuntimeContext previousContext, IPlayerRuntimeContext currentContext)
+        {
+            if (previousContext != null &&
+                previousContext.PlayerTransform != null &&
+                ReferenceEquals(playerTransform, previousContext.PlayerTransform))
+            {
+                playerTransform = null;
+            }
+
+            CachePlayerTransform(currentContext);
+            _nextSceneBindingRefreshTime = float.NegativeInfinity;
+        }
+
+        private void CachePlayerTransform(IPlayerRuntimeContext playerContext)
+        {
+            if (playerContext == null || playerContext.PlayerTransform == null)
+                return;
+
+            playerTransform = playerContext.PlayerTransform;
         }
 
         /// <summary>
@@ -2475,9 +2664,6 @@ namespace Hecton8.Core
                 return;
 
             if (playerTransform == null)
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
-
-            if (playerTransform == null)
                 return;
 
             RefreshTerrainTileCache(force: true);
@@ -2583,6 +2769,85 @@ namespace Hecton8.Core
             return null;
         }
 
+        private Terrain FindTerrainAtAUP(
+            double3 absoluteUniversePosition,
+            out Vector3 terrainRuntimePosition,
+            out Vector3 terrainSize,
+            out double3 terrainAbsolutePosition)
+        {
+            terrainRuntimePosition = default;
+            terrainSize = default;
+            terrainAbsolutePosition = default;
+
+            if (_lastResolvedTerrainTile != null &&
+                TryResolveTileTerrainAupFrame(
+                    _lastResolvedTerrainTile,
+                    out Terrain cachedTerrain,
+                    out terrainRuntimePosition,
+                    out terrainSize,
+                    out terrainAbsolutePosition) &&
+                ContainsAupXZ(absoluteUniversePosition, terrainAbsolutePosition, terrainSize))
+            {
+                return cachedTerrain;
+            }
+
+            List<TerrainTile> terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Count;
+            for (int i = 0; i < tileCount; i++)
+            {
+                TerrainTile tile = terrainTiles[i];
+                if (!TryResolveTileTerrainAupFrame(
+                        tile,
+                        out Terrain terrain,
+                        out terrainRuntimePosition,
+                        out terrainSize,
+                        out terrainAbsolutePosition) ||
+                    !ContainsAupXZ(absoluteUniversePosition, terrainAbsolutePosition, terrainSize))
+                {
+                    continue;
+                }
+
+                return terrain;
+            }
+
+            terrainRuntimePosition = default;
+            terrainSize = default;
+            terrainAbsolutePosition = default;
+            return null;
+        }
+
+        private static bool TryResolveTileTerrainAupFrame(
+            TerrainTile tile,
+            out Terrain terrain,
+            out Vector3 terrainRuntimePosition,
+            out Vector3 terrainSize,
+            out double3 terrainAbsolutePosition)
+        {
+            terrain = ResolveTileTerrain(tile);
+            terrainRuntimePosition = default;
+            terrainSize = default;
+            terrainAbsolutePosition = default;
+            if (terrain == null || terrain.terrainData == null)
+                return false;
+
+            terrainRuntimePosition = terrain.transform.position;
+            terrainSize = terrain.terrainData.size;
+            if (terrainSize.x <= 0f || terrainSize.z <= 0f)
+                return false;
+
+            return TryResolveAupDoubleFromRuntimeOrigin(terrainRuntimePosition, out terrainAbsolutePosition);
+        }
+
+        private static bool ContainsAupXZ(double3 absoluteUniversePosition, double3 terrainAbsolutePosition, Vector3 terrainSize)
+        {
+            double x = absoluteUniversePosition.x;
+            double z = absoluteUniversePosition.z;
+            return x >= terrainAbsolutePosition.x &&
+                   z >= terrainAbsolutePosition.z &&
+                   x <= terrainAbsolutePosition.x + terrainSize.x &&
+                   z <= terrainAbsolutePosition.z + terrainSize.z;
+        }
+
         private void UpdateLastResolvedTerrainTileOwnerPhase()
         {
             if (playerTransform == null)
@@ -2631,53 +2896,25 @@ namespace Hecton8.Core
             if (textureCount <= 0)
                 return;
 
-            TryGetCachedBiomeAlphaTextures(
-                terrainData,
-                textureCount,
-                out _,
-                allowCacheRefresh: true);
+            if (!TryGetCachedBiomeAlphaTextures(terrainData, textureCount, out _))
+                RefreshBiomeAlphaTextureCacheOwnerPhase(terrainData, textureCount);
 
-            TryGetCachedBiomeTerrainLayers(
-                terrainData,
-                terrainData.alphamapLayers,
-                out _,
-                allowCacheRefresh: true);
+            int layerCount = terrainData.alphamapLayers;
+            if (layerCount > 0 && !TryGetCachedBiomeTerrainLayers(terrainData, layerCount, out _))
+                RefreshBiomeTerrainLayerCacheOwnerPhase(terrainData, layerCount);
         }
 
-        /// <summary>
-        /// Restores scene bindings after reload without touching hot query
-        /// paths. Searches only when bindings are missing.
-        /// </summary>
-        private void RefreshSceneBindingsIfNeeded(bool force)
+        private void RefreshRuntimeSceneBindingDiagnostics()
         {
-            if (!force && mapMagicObject != null && playerTransform != null)
+            if (mapMagicObject != null && playerTransform != null)
                 return;
 
             float currentTime = Time.unscaledTime;
-            if (!force && currentTime < _nextSceneBindingRefreshTime)
+            if (currentTime < _nextSceneBindingRefreshTime)
                 return;
 
             _nextSceneBindingRefreshTime = currentTime + SceneBindingRefreshInterval;
-
-            if (mapMagicObject == null)
-            {
-                TryResolveCoLocatedMapMagicObject();
-                FenceRuntimeMapMagicGenerationIfNeeded();
-                _cachedTerrainTileRootCount = -1;
-                _lastResolvedTerrainTile = null;
-                InvalidateBiomeTextureCache();
-                _runtimeTerrainResolutionRepairPending = !Application.isPlaying && mapMagicObject != null;
-
-                if (!Application.isPlaying && mapMagicObject != null)
-                    EnsureRuntimeTerrainConnectivityCompatibility(forceApplyToCachedTerrains: false);
-            }
-
-            if (playerTransform == null)
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
-
             ReportMissingMapMagicBindingIfNeeded();
-            if (!Application.isPlaying)
-                RepairRuntimeTerrainResolutionMismatchIfNeeded();
             UpdateDiagnostics();
         }
 
@@ -2742,31 +2979,131 @@ namespace Hecton8.Core
                 return;
             }
 
+            if (!force)
+            {
+                ValidateTerrainTileCacheOwnerPhase();
+                return;
+            }
+
+            RefreshTerrainTileCacheCold();
+        }
+
+        private void RefreshTerrainTileCacheCold()
+        {
+            if (mapMagicObject == null)
+            {
+                _cachedTerrainTiles.Clear();
+                _cachedTerrainTileRootCount = -1;
+                _lastResolvedTerrainTile = null;
+                InvalidateBiomeTextureCache();
+                return;
+            }
+
             Transform mapMagicTransform = mapMagicObject.transform;
             if (mapMagicTransform == null)
                 return;
 
             int rootChildCount = mapMagicTransform.childCount;
-            if (!force && rootChildCount == _cachedTerrainTileRootCount)
-                return;
-
             _cachedTerrainTiles.Clear();
             mapMagicObject.GetComponentsInChildren<TerrainTile>(true, _cachedTerrainTiles);
+            if (_cachedTerrainTiles.Count > TerrainTileCacheCapacity)
+                _cachedTerrainTiles.RemoveRange(TerrainTileCacheCapacity, _cachedTerrainTiles.Count - TerrainTileCacheCapacity);
+            if (_cachedTerrainTiles.Capacity > TerrainTileCacheCapacity)
+                _cachedTerrainTiles.Capacity = TerrainTileCacheCapacity;
             _cachedTerrainTileRootCount = rootChildCount;
             _lastResolvedTerrainTile = null;
             InvalidateBiomeTextureCache();
             ApplyTerrainDataMemoryBudgetToCachedTerrains();
         }
 
+        private void ValidateTerrainTileCacheOwnerPhase()
+        {
+            Transform mapMagicTransform = mapMagicObject != null ? mapMagicObject.transform : null;
+            if (mapMagicTransform == null)
+                return;
+
+            int rootChildCount = mapMagicTransform.childCount;
+            List<TerrainTile> terrainTiles = _cachedTerrainTiles;
+            int readCount = terrainTiles.Count;
+            int writeIndex = 0;
+
+            for (int i = 0; i < readCount; i++)
+            {
+                TerrainTile tile = terrainTiles[i];
+                if (tile == null || tile.mapMagic != mapMagicObject)
+                    continue;
+
+                if (writeIndex != i)
+                    terrainTiles[writeIndex] = tile;
+                writeIndex++;
+            }
+
+            if (writeIndex < readCount)
+            {
+                terrainTiles.RemoveRange(writeIndex, readCount - writeIndex);
+                _lastResolvedTerrainTile = null;
+                InvalidateBiomeTextureCache();
+            }
+
+            if (rootChildCount != _cachedTerrainTileRootCount)
+            {
+                _cachedTerrainTileRootCount = rootChildCount;
+                _lastResolvedTerrainTile = null;
+                InvalidateBiomeTextureCache();
+            }
+        }
+
+        private bool TryCacheTerrainTileOwnerPhase(TerrainTile tile)
+        {
+            if (tile == null || mapMagicObject == null || tile.mapMagic != mapMagicObject)
+                return false;
+
+            List<TerrainTile> terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles.Count;
+            for (int i = 0; i < tileCount; i++)
+            {
+                if (ReferenceEquals(terrainTiles[i], tile))
+                    return true;
+            }
+
+            if (tileCount >= TerrainTileCacheCapacity || tileCount >= terrainTiles.Capacity)
+                return false;
+
+            terrainTiles.Add(tile);
+            _cachedTerrainTileRootCount = mapMagicObject.transform != null
+                ? mapMagicObject.transform.childCount
+                : _cachedTerrainTileRootCount;
+            _lastResolvedTerrainTile = null;
+            InvalidateBiomeTextureCache();
+            return true;
+        }
+
         private void InvalidateBiomeTextureCache()
         {
             _cachedBiomeTerrainData = null;
-            _cachedBiomeAlphaTextures = Array.Empty<Texture2D>();
-            _cachedBiomeTerrainLayers = Array.Empty<TerrainLayer>();
+            if (_cachedBiomeAlphaTextures != null && _cachedBiomeAlphaTextures.Length > 0)
+                Array.Clear(_cachedBiomeAlphaTextures, 0, _cachedBiomeAlphaTextures.Length);
+            if (_cachedBiomeTerrainLayers != null && _cachedBiomeTerrainLayers.Length > 0)
+                Array.Clear(_cachedBiomeTerrainLayers, 0, _cachedBiomeTerrainLayers.Length);
             _cachedBiomeAlphaTextureCount = -1;
             _cachedBiomeAlphaExpectedTextureCount = -1;
             _cachedBiomeTerrainLayerCount = -1;
             _cachedBiomeTerrainLayerExpectedCount = -1;
+        }
+
+        private void PrewarmBiomeTextureCacheStorageCold()
+        {
+            if (_cachedBiomeAlphaTextures == null ||
+                _cachedBiomeAlphaTextures.Length != BiomeAlphaTextureCacheCapacity)
+            {
+                _cachedBiomeAlphaTextures = new Texture2D[BiomeAlphaTextureCacheCapacity]; // COLD ALLOC: fixed terrain alpha texture handle cache - owner: MapMagicBridge
+            }
+
+            if (_cachedBiomeTerrainLayers == null ||
+                _cachedBiomeTerrainLayers.Length != BiomeTerrainLayerCacheCapacity)
+            {
+                _cachedBiomeTerrainLayers = new TerrainLayer[BiomeTerrainLayerCacheCapacity]; // COLD ALLOC: fixed terrain layer handle cache - owner: MapMagicBridge
+            }
         }
 
         /// <summary>
@@ -3133,12 +3470,14 @@ namespace Hecton8.Core
 
         private void HandleTerrainTileApplied(TerrainTile tile, TileData tileData, StopToken stop)
         {
+            TryCacheTerrainTileOwnerPhase(tile);
             if (TryCreateTerrainTileSnapshot(tile, out MapMagicTerrainTileSnapshot snapshot))
                 MapMagicTerrainTileEvents.TryRaiseTileApplied(in snapshot);
         }
 
         private void HandleTerrainTileMoved(TerrainTile tile)
         {
+            TryCacheTerrainTileOwnerPhase(tile);
             if (TryCreateTerrainTileSnapshot(tile, out MapMagicTerrainTileSnapshot snapshot))
                 MapMagicTerrainTileEvents.TryRaiseTileMoved(in snapshot);
         }
