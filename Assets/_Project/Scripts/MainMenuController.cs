@@ -403,7 +403,7 @@ namespace Hecton.UI.MainMenu
             if (callback == null)
                 return;
 
-            button.onClick.RemoveAllListeners();
+            button.onClick.RemoveListener(callback);
             button.onClick.AddListener(callback);
         }
 

@@ -363,145 +363,145 @@ namespace Hecton8.UI
         {
             if (btnPresetLow != null)
             {
-                btnPresetLow.onClick.RemoveAllListeners();
+                btnPresetLow.onClick.RemoveListener(_presetLowAction);
                 btnPresetLow.onClick.AddListener(_presetLowAction);
             }
 
             if (btnPresetMedium != null)
             {
-                btnPresetMedium.onClick.RemoveAllListeners();
+                btnPresetMedium.onClick.RemoveListener(_presetMediumAction);
                 btnPresetMedium.onClick.AddListener(_presetMediumAction);
             }
 
             if (btnPresetHigh != null)
             {
-                btnPresetHigh.onClick.RemoveAllListeners();
+                btnPresetHigh.onClick.RemoveListener(_presetHighAction);
                 btnPresetHigh.onClick.AddListener(_presetHighAction);
             }
 
             if (btnPresetUltra != null)
             {
-                btnPresetUltra.onClick.RemoveAllListeners();
+                btnPresetUltra.onClick.RemoveListener(_presetUltraAction);
                 btnPresetUltra.onClick.AddListener(_presetUltraAction);
             }
 
             if (btnQualityDecrease != null)
             {
-                btnQualityDecrease.onClick.RemoveAllListeners();
+                btnQualityDecrease.onClick.RemoveListener(_qualityDecreaseAction);
                 btnQualityDecrease.onClick.AddListener(_qualityDecreaseAction);
             }
 
             if (btnQualityIncrease != null)
             {
-                btnQualityIncrease.onClick.RemoveAllListeners();
+                btnQualityIncrease.onClick.RemoveListener(_qualityIncreaseAction);
                 btnQualityIncrease.onClick.AddListener(_qualityIncreaseAction);
             }
 
             if (toggleVsync != null)
             {
-                toggleVsync.onValueChanged.RemoveAllListeners();
+                toggleVsync.onValueChanged.RemoveListener(_vsyncChangedAction);
                 toggleVsync.onValueChanged.AddListener(_vsyncChangedAction);
             }
 
             if (toggleFullscreen != null)
             {
-                toggleFullscreen.onValueChanged.RemoveAllListeners();
+                toggleFullscreen.onValueChanged.RemoveListener(_fullscreenChangedAction);
                 toggleFullscreen.onValueChanged.AddListener(_fullscreenChangedAction);
             }
 
             if (btnShadowQualityDecrease != null)
             {
-                btnShadowQualityDecrease.onClick.RemoveAllListeners();
+                btnShadowQualityDecrease.onClick.RemoveListener(_shadowQualityDecreaseAction);
                 btnShadowQualityDecrease.onClick.AddListener(_shadowQualityDecreaseAction);
             }
 
             if (btnShadowQualityIncrease != null)
             {
-                btnShadowQualityIncrease.onClick.RemoveAllListeners();
+                btnShadowQualityIncrease.onClick.RemoveListener(_shadowQualityIncreaseAction);
                 btnShadowQualityIncrease.onClick.AddListener(_shadowQualityIncreaseAction);
             }
 
             if (btnAntiAliasingDecrease != null)
             {
-                btnAntiAliasingDecrease.onClick.RemoveAllListeners();
+                btnAntiAliasingDecrease.onClick.RemoveListener(_antiAliasingDecreaseAction);
                 btnAntiAliasingDecrease.onClick.AddListener(_antiAliasingDecreaseAction);
             }
 
             if (btnAntiAliasingIncrease != null)
             {
-                btnAntiAliasingIncrease.onClick.RemoveAllListeners();
+                btnAntiAliasingIncrease.onClick.RemoveListener(_antiAliasingIncreaseAction);
                 btnAntiAliasingIncrease.onClick.AddListener(_antiAliasingIncreaseAction);
             }
 
             if (btnTextureQualityDecrease != null)
             {
-                btnTextureQualityDecrease.onClick.RemoveAllListeners();
+                btnTextureQualityDecrease.onClick.RemoveListener(_textureQualityDecreaseAction);
                 btnTextureQualityDecrease.onClick.AddListener(_textureQualityDecreaseAction);
             }
 
             if (btnTextureQualityIncrease != null)
             {
-                btnTextureQualityIncrease.onClick.RemoveAllListeners();
+                btnTextureQualityIncrease.onClick.RemoveListener(_textureQualityIncreaseAction);
                 btnTextureQualityIncrease.onClick.AddListener(_textureQualityIncreaseAction);
             }
 
             if (btnMenuStyleDecrease != null)
             {
-                btnMenuStyleDecrease.onClick.RemoveAllListeners();
+                btnMenuStyleDecrease.onClick.RemoveListener(_menuStyleDecreaseAction);
                 btnMenuStyleDecrease.onClick.AddListener(_menuStyleDecreaseAction);
             }
 
             if (btnMenuStyleIncrease != null)
             {
-                btnMenuStyleIncrease.onClick.RemoveAllListeners();
+                btnMenuStyleIncrease.onClick.RemoveListener(_menuStyleIncreaseAction);
                 btnMenuStyleIncrease.onClick.AddListener(_menuStyleIncreaseAction);
             }
 
             if (btnMenuConceptDecrease != null)
             {
-                btnMenuConceptDecrease.onClick.RemoveAllListeners();
+                btnMenuConceptDecrease.onClick.RemoveListener(_menuConceptDecreaseAction);
                 btnMenuConceptDecrease.onClick.AddListener(_menuConceptDecreaseAction);
             }
 
             if (btnMenuConceptIncrease != null)
             {
-                btnMenuConceptIncrease.onClick.RemoveAllListeners();
+                btnMenuConceptIncrease.onClick.RemoveListener(_menuConceptIncreaseAction);
                 btnMenuConceptIncrease.onClick.AddListener(_menuConceptIncreaseAction);
             }
 
             if (toggleAmbientOcclusion != null)
             {
-                toggleAmbientOcclusion.onValueChanged.RemoveAllListeners();
+                toggleAmbientOcclusion.onValueChanged.RemoveListener(_ambientOcclusionChangedAction);
                 toggleAmbientOcclusion.onValueChanged.AddListener(_ambientOcclusionChangedAction);
             }
 
             if (toggleBloom != null)
             {
-                toggleBloom.onValueChanged.RemoveAllListeners();
+                toggleBloom.onValueChanged.RemoveListener(_bloomChangedAction);
                 toggleBloom.onValueChanged.AddListener(_bloomChangedAction);
             }
 
             if (toggleMotionBlur != null)
             {
-                toggleMotionBlur.onValueChanged.RemoveAllListeners();
+                toggleMotionBlur.onValueChanged.RemoveListener(_motionBlurChangedAction);
                 toggleMotionBlur.onValueChanged.AddListener(_motionBlurChangedAction);
             }
 
             if (btnResetDefaults != null)
             {
-                btnResetDefaults.onClick.RemoveAllListeners();
+                btnResetDefaults.onClick.RemoveListener(_resetDefaultsAction);
                 btnResetDefaults.onClick.AddListener(_resetDefaultsAction);
             }
 
             if (btnApply != null)
             {
-                btnApply.onClick.RemoveAllListeners();
+                btnApply.onClick.RemoveListener(_applyAction);
                 btnApply.onClick.AddListener(_applyAction);
             }
 
             if (btnCancel != null)
             {
-                btnCancel.onClick.RemoveAllListeners();
+                btnCancel.onClick.RemoveListener(_cancelAction);
                 btnCancel.onClick.AddListener(_cancelAction);
             }
         }

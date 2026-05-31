@@ -411,13 +411,13 @@ namespace Hecton.UI.MainMenu
 
             if (btnConfirm != null)
             {
-                btnConfirm.onClick.RemoveAllListeners();
+                btnConfirm.onClick.RemoveListener(_confirmClickAction);
                 btnConfirm.onClick.AddListener(_confirmClickAction);
             }
 
             if (btnCancel != null)
             {
-                btnCancel.onClick.RemoveAllListeners();
+                btnCancel.onClick.RemoveListener(_cancelClickAction);
                 btnCancel.onClick.AddListener(_cancelClickAction);
             }
 
