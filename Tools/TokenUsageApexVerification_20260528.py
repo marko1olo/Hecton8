@@ -4,6 +4,7 @@ import hashlib
 import io
 import json
 import re
+import subprocess
 import tokenize
 from pathlib import Path
 
@@ -160,6 +161,47 @@ def load_json(path):
     return json.loads(read_text(path))
 
 
+def sample_cpu_and_compilers():
+    sample = {
+        "source": "runtime_powershell_sample",
+        "sampled_at_samara": dt.datetime.now(SAMARA).isoformat(),
+        "cpu_total_percent": None,
+        "dotnet_or_csc_process_count": None,
+        "processes": [],
+        "error": None,
+    }
+    script = r"""
+$cpu = (Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average
+$procs = @(Get-Process dotnet,csc,VBCSCompiler,MSBuild -ErrorAction SilentlyContinue | Select-Object ProcessName,Id,CPU)
+[pscustomobject]@{
+  cpu_total_percent = [int]$cpu
+  dotnet_or_csc_process_count = $procs.Count
+  processes = $procs
+} | ConvertTo-Json -Depth 4
+"""
+    try:
+        completed = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", script],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=20,
+        )
+        parsed = json.loads(completed.stdout)
+        sample["cpu_total_percent"] = parsed.get("cpu_total_percent")
+        sample["dotnet_or_csc_process_count"] = parsed.get("dotnet_or_csc_process_count")
+        processes = parsed.get("processes") or []
+        if isinstance(processes, dict):
+            processes = [processes]
+        sample["processes"] = processes
+    except Exception as exc:
+        sample["error"] = str(exc)
+    return sample
+
+
 def chart_report():
     charts = []
     for path in sorted(CHART_DIR.glob("*.png")):
@@ -213,12 +255,19 @@ def artifact_report(path):
 
 
 def command_log_stub():
-    cpu_sample = None
-    if CPU_SAMPLE_JSON.exists():
+    cpu_sample = sample_cpu_and_compilers()
+    if cpu_sample.get("cpu_total_percent") is None and CPU_SAMPLE_JSON.exists():
         cpu_sample = load_json(CPU_SAMPLE_JSON)
-    dotnet_or_csc_count = int((cpu_sample or {}).get("dotnet_or_csc_process_count", 0) or 0)
-    cpu_total_percent = int((cpu_sample or {}).get("cpu_total_percent", 0) or 0)
+        cpu_sample["source"] = "persisted_cpu_sample_json"
+    dotnet_or_csc_raw = cpu_sample.get("dotnet_or_csc_process_count")
+    cpu_total_raw = cpu_sample.get("cpu_total_percent")
+    dotnet_or_csc_count = int(dotnet_or_csc_raw or 0)
+    cpu_total_percent = int(cpu_total_raw or 0)
     blocked_reasons = []
+    if cpu_total_raw is None:
+        blocked_reasons.append("missing_cpu_sample")
+    if dotnet_or_csc_raw is None:
+        blocked_reasons.append("missing_compiler_process_sample")
     if dotnet_or_csc_count > 0:
         blocked_reasons.append("compiler_process_active")
     if cpu_total_percent > 50:

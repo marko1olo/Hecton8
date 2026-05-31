@@ -612,6 +612,55 @@ Compilation/resource throttling:
 Cinematic Cheats used -> None; offline telemetry/reporting only.
 Exact Microseconds saved -> 0 us game runtime.
 
+## 2026-05-31 16:30 Europe/Samara - Maximum dashboard graph refresh
+
+What was wrong:
+- The current 2026-05-31 token report moved again after the 15:57 snapshot.
+- The dashboard had 41 charts, but it did not expose enough timing, cache-economics, effective-price, output/reasoning ownership, source/file pressure, velocity, human-scale, or token-vs-git correlation views.
+- The apex verifier could emit a null CPU sample while still reporting a Python compile command; that was weak evidence.
+
+What was done:
+- Ran `python Tools\CodexTokenUsageFastRefresh_20260528.py` and refreshed the dated token JSON/Markdown plus ledger.
+- Expanded `Tools/ProjectMetricsDashboard_20260528.py` from 41-chart coverage to 112-chart coverage.
+- Added 7d/14d/30d/60d/90d long-range daily windows.
+- Added hourly token/cost heatmaps, weekday-hour token/cost heatmaps, cache-savings charts, no-cache vs actual charts, effective USD per 1M charts, output-cost-share charts, human-scale burn charts, top output/reasoning sessions, source/plan/CLI owners, source economics, extension/file-size charts, git churn charts, token-vs-git scatter charts, and current velocity charts.
+- Generated `Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-31.json`.
+- Generated `Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-31.md`.
+- Generated 112 PNGs under `Docs/Reports/MetricCharts/2026-05-31/`.
+- Patched `Tools/TokenUsageApexVerification_20260528.py` so compile-throttle proof takes a live PowerShell CPU/compiler sample and blocks compile claims on missing sample, CPU >50, or active compiler/build process.
+- Regenerated `Docs/Reports/TOKEN_USAGE_APEX_VERIFICATION_2026-05-31.json/.md` and SHA files.
+
+Evidence:
+- Token report generated at: `2026-05-31T16:13:49.075812+04:00`.
+- Token total: `124,526,072,948`.
+- Delta tokens since previous same-day snapshot: `20,832,603`.
+- Tokens/hour: `74,577,964.61222722`.
+- Tokens/second: `20,716.101281174226`.
+- GPT-5.5 base API-equivalent: `$96,346.92100500001`.
+- GPT-5.5 delta cost: `$16.378146000002744`.
+- Changed JSONL files scanned: `4`.
+- Parse errors: `0`.
+- Cache share: `96.16298554393246%`.
+- Current human-scale burn: `111,866.94691834084` 500-word pages/hour.
+- Dashboard schema: `hecton8.project_metrics_dashboard.v2`.
+- Chart count: `112`.
+- Dashboard long-range windows: `7, 14, 30, 60, 90`.
+- Chart manifest validation: declared `112`, disk PNG `112`, missing `0`, extra `0`, bad PNG signatures `0`.
+- Apex JSON SHA-256: `bed0d284bb008000b0444cbe2c5d79bd230430beaa3deb60f7bc437431d505bd`.
+- Apex dashboard manifest exact match: `true`.
+- Apex C# hot forbidden hits in owned tooling: `0`.
+
+Compilation/resource throttling:
+- CPU sample before apex compile proof: `100%`.
+- Active compiler/build process sample: `dotnet` PID `20236`.
+- Apex final compile check: `SKIPPED_BLOCKED_BY_COMPILER_CONTENTION`.
+- `dotnet build`: not invoked by TOKEN_USAGE_AUDIT.
+- Unity build/import/playmode: not invoked by TOKEN_USAGE_AUDIT.
+- Note: a manual `python -m py_compile Tools\ProjectMetricsDashboard_20260528.py` was invoked during the edit pass before the CPU sample showed 100%; it succeeded, but it is not used as final clean compile evidence because the subsequent live throttle sample blocked compile proof.
+
+Cinematic Cheats used -> None; offline telemetry/reporting only.
+Exact Microseconds saved -> 0 us game runtime.
+
 ## 2026-05-29 19:41 Europe/Samara - Text-only token stats refresh
 
 What was wrong:
