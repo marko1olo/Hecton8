@@ -736,7 +736,7 @@ Evidence:
 - Changed JSONL files scanned: `25`.
 - Parse errors: `0`.
 - Non-specialist scale: about `186,757,861` 500-word pages, `1,167,237` 80k-word books, `710.65` continuous reading years at 250 wpm, and `96.16%` cached input share.
-- Current burn scale: about `93,983.42` 500-word pages/hour and `$18,793.21`/day at the current window velocity.
+- Current burn scale: about `93,983.42` 500-word pages/hour and `$1,129.91`/day at the current window velocity.
 - Dashboard/charts diff check: no modified `Docs/Reports/MetricCharts` or `PROJECT_METRICS_DASHBOARD_2026-05-31.*` files from this refresh.
 
 Compilation/resource throttling:
