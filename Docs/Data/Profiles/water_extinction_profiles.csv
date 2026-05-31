@@ -3,7 +3,8 @@
 # schema_hash=0xA8609F4B
 # owner=Hecton8.VFX.VolumetricFogExtinctionCsvParser
 # name,min_depth,max_depth,absorption_r,absorption_g,absorption_b,scatter,density
-default_abyss,0,20000,0.035,0.075,0.110,0.650,1.000
-brine_noir,1200,20000,0.060,0.095,0.150,0.720,1.350
+# Runtime selects the first depth match; keep ranges monotonic so authored silt/vent/brine looks are reachable.
+default_abyss,0,40,0.035,0.075,0.110,0.650,1.000
 silted_wreck,40,900,0.085,0.115,0.130,0.840,1.800
-vent_blackwater,800,3500,0.120,0.090,0.070,0.550,2.200
+vent_blackwater,900,3500,0.120,0.090,0.070,0.550,2.200
+brine_noir,3500,20000,0.060,0.095,0.150,0.720,1.350

@@ -1,0 +1,26 @@
+H8MEMORY_ALLOCATION_TABLE
+TotalBytes=245875352
+ActiveAllocationCount=23
+Index=0 AddressFingerprint=11060209509955870762 Bytes=80 Owner=199 Allocator=4 Flags=1
+Index=1 AddressFingerprint=837132156586374203 Bytes=8192 Owner=199 Allocator=4 Flags=1
+Index=2 AddressFingerprint=5034655895269294088 Bytes=65536 Owner=199 Allocator=4 Flags=1
+Index=3 AddressFingerprint=9531033074871177753 Bytes=262144 Owner=199 Allocator=4 Flags=1
+Index=4 AddressFingerprint=16104537029362251102 Bytes=8192 Owner=199 Allocator=4 Flags=1
+Index=5 AddressFingerprint=8180229376233874909 Bytes=6400000 Owner=1 Allocator=4 Flags=1
+Index=6 AddressFingerprint=1644286585745208390 Bytes=19200 Owner=1 Allocator=4 Flags=1
+Index=7 AddressFingerprint=4944412001813205871 Bytes=19200 Owner=1 Allocator=4 Flags=1
+Index=8 AddressFingerprint=9161599653437584192 Bytes=2048 Owner=1 Allocator=4 Flags=1
+Index=9 AddressFingerprint=5640583253266903881 Bytes=4096 Owner=1 Allocator=4 Flags=1
+Index=10 AddressFingerprint=3643585170914868706 Bytes=8192 Owner=1 Allocator=4 Flags=1
+Index=11 AddressFingerprint=2922532324727834171 Bytes=3072 Owner=1 Allocator=4 Flags=1
+Index=12 AddressFingerprint=2315577810204821129 Bytes=134217728 Owner=1 Allocator=4 Flags=70
+Index=13 AddressFingerprint=9408583987438256403 Bytes=104857600 Owner=2 Allocator=4 Flags=2
+Index=14 AddressFingerprint=3300428263471472822 Bytes=8 Owner=1 Allocator=4 Flags=1
+Index=15 AddressFingerprint=96363962196253551 Bytes=8 Owner=1 Allocator=4 Flags=1
+Index=16 AddressFingerprint=8964646264965712480 Bytes=8 Owner=1 Allocator=4 Flags=1
+Index=17 AddressFingerprint=5812606968614097449 Bytes=8 Owner=1 Allocator=4 Flags=1
+Index=18 AddressFingerprint=4900761508953221426 Bytes=8 Owner=1 Allocator=4 Flags=1
+Index=19 AddressFingerprint=17269995467506009963 Bytes=8 Owner=1 Allocator=4 Flags=1
+Index=20 AddressFingerprint=7521518673127758412 Bytes=8 Owner=1 Allocator=4 Flags=1
+Index=21 AddressFingerprint=13034288479719600405 Bytes=8 Owner=1 Allocator=4 Flags=1
+Index=22 AddressFingerprint=938448190904965950 Bytes=8 Owner=1 Allocator=4 Flags=1

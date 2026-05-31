@@ -96,7 +96,7 @@ Static disk snapshot during a prior pass; artifact tuple absent; runtime proof p
 
 - `Assets/_SourceData`: contains current editor/source CSV inputs moved out of runtime `StreamingAssets`.
 
-- `Assets/StreamingAssets`: SHINOBU_258 absence scan is historical; current X_012/1334 scans find `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`; route-specific boot proof remains pending.
+- `Assets/StreamingAssets`: SHINOBU_258 absence scan is historical; current scans find `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`. Agent 1504 adds static-source Android PAL proof for NDK `AAssetManager` hydration; Android device/player boot proof remains pending.
 
 - `Assets/AddressableAssetsData`: 0 files.
 
@@ -132,7 +132,7 @@ Relevant source:
 
 - `Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs`
 
-  - loads `Hecton8/DataMonolith/static_data.h8bin` from `Application.streamingAssetsPath`, staging Android/Quest URI assets to cache before the Vault-backed reader.
+  - loads `Hecton8/DataMonolith/static_data.h8bin` into the Vault-backed arena. Desktop paths use MMF/Win32/native file reads; Android/Quest player paths use the NDK `AAssetManager` bridge with an FD-backed/uncompressed APK entry guard, not URI staging to cache.
 
   - player/non-editor boot fails fatal on missing or invalid monolith; editor missing-file tolerance is iteration-only.
 

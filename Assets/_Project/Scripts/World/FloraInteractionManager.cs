@@ -8468,11 +8468,40 @@ namespace Hecton8.World
 
         private int ResolveKernel(ComputeShader computeShader, string kernelName)
         {
-            if (computeShader == null || !_supportsWakeTrailComputeCold || !computeShader.HasKernel(kernelName))
+            if (computeShader == null || !_supportsWakeTrailComputeCold)
                 return -1;
 
-            int kernel = computeShader.FindKernel(kernelName);
-            return kernel >= 0 && computeShader.IsSupported(kernel) ? kernel : -1;
+            try
+            {
+                if (!computeShader.HasKernel(kernelName))
+                    return -1;
+
+                int kernel = computeShader.FindKernel(kernelName);
+                if (kernel < 0)
+                    return -1;
+
+                return computeShader.IsSupported(kernel) ? kernel : -1;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return -1;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return -1;
+            }
+            catch (System.ArgumentException)
+            {
+                return -1;
+            }
+            catch (MissingReferenceException)
+            {
+                return -1;
+            }
+            catch (UnityException)
+            {
+                return -1;
+            }
         }
 
         private void ResolveKernelThreadGroupSizes(
@@ -8483,10 +8512,39 @@ namespace Hecton8.World
         {
             sizeX = 0;
             sizeY = 0;
-            if (compute == null || kernel < 0 || !_supportsWakeTrailComputeCold || !compute.IsSupported(kernel))
+            if (compute == null || kernel < 0 || !_supportsWakeTrailComputeCold)
                 return;
 
-            compute.GetKernelThreadGroupSizes(kernel, out uint queryX, out uint queryY, out uint queryZ);
+            uint queryX;
+            uint queryY;
+            uint queryZ;
+            try
+            {
+                if (!compute.IsSupported(kernel))
+                    return;
+
+                compute.GetKernelThreadGroupSizes(kernel, out queryX, out queryY, out queryZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return;
+            }
+            catch (System.ArgumentException)
+            {
+                return;
+            }
+            catch (MissingReferenceException)
+            {
+                return;
+            }
+            catch (UnityException)
+            {
+                return;
+            }
             if (queryX == 0u || queryY == 0u || queryZ != 1u || queryX > int.MaxValue || queryY > int.MaxValue)
                 return;
 

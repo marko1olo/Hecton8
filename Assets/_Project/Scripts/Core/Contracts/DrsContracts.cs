@@ -4,7 +4,7 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core.Contracts
 {
-    internal static class DrsContractLayout
+    public static class DrsContractLayout
     {
         public const int RuntimeSnapshotStrideBytes = 24;
         public const int ResolutionScaleStateStrideBytes = 64;

@@ -867,10 +867,10 @@ namespace Hecton8.Core
             AssertOffset<ComplianceViolationSignal>(nameof(ComplianceViolationSignal.Severity), 16);
 
             string physicsImpact = "Hecton8.Core.Contracts.PhysicsImpactSignal";
-            AssertSize(physicsImpact, 128);
+            AssertExternalContractSize(physicsImpact, 128);
             AssertOffset(physicsImpact, "PrimaryBodyId", 0);
             AssertOffset(physicsImpact, "SecondaryBodyId", 8);
-            AssertOffset(physicsImpact, "_pointAup", 16);
+            AssertOffset(physicsImpact, "_pointAupMeters", 16);
             AssertOffset(physicsImpact, "Point", 64);
             AssertOffset(physicsImpact, "Normal", 76);
             AssertOffset(physicsImpact, "Force", 88);

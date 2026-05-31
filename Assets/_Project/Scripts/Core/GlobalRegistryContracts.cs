@@ -554,6 +554,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable Gerstner-wave component consumed by Burst jobs.
     /// </summary>
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct GerstnerWaveComponent
     {
@@ -623,6 +624,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Zero-allocation weather snapshot consumed by physics and VFX systems.
     /// </summary>
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Explicit, Size = 192)]
     public struct WeatherRuntimeSnapshot
     {

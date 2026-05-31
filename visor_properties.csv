@@ -1,0 +1,11 @@
+# HECTON-8 diegetic visor lens editor tuning.
+# Parser contract: key,value rows. Owner: DiegeticVisorLensRuntime.
+fog_rate,0.092
+fog_breath_gain,0.052
+clearing_rate,0.26
+droplet_drain_seconds,4.60
+crack_pressure_threshold,0.82
+crack_growth_rate,0.42
+dirt_silt_gain,0.050
+wipe_strength,2.60
+low_refraction_quality_cutoff,0.28

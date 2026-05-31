@@ -3,6 +3,10 @@
 # schema_hash=0x760905B1
 # owner=Hecton8.Lighting.InteriorGIProbeVolumeRuntime
 name,r,g,b,directional,l2,tint_r,tint_g,tint_b,water_absorption
+safe_shallows,0.070,0.180,0.190,0.34,0.12,0.70,0.98,1.00,0.35
+kelp_forest,0.035,0.120,0.100,0.32,0.14,0.52,1.00,0.72,0.58
+deep_abyss,0.006,0.014,0.022,0.24,0.18,0.32,0.54,1.00,0.85
+sulfur_vents,0.120,0.070,0.025,0.46,0.25,1.20,0.58,0.24,0.92
 abyssal_default,0.020,0.048,0.080,0.28,0.10,0.55,0.92,1.00,0.82
 thermal_vent,0.180,0.090,0.035,0.42,0.24,1.20,0.52,0.24,0.58
 safe_habitat,0.260,0.210,0.150,0.36,0.16,1.00,0.88,0.72,0.32

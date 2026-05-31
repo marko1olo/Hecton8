@@ -344,8 +344,10 @@ namespace Hecton8.Gameplay
             HectonLayerMasks.VoxelCaveLayerMask |
             HectonLayerMasks.TerrainLayerMask;
         [SerializeField, Range(0.05f, 0.25f)] private float nearFieldDistanceMeters = 0.15f;
+#pragma warning disable CS0414
         [SerializeField, Range(0.02f, 0.12f)] private float headCapsuleRadiusMeters = 0.055f;
         [SerializeField, Range(0.01f, 0.12f)] private float headCapsuleHalfHeightMeters = 0.045f;
+#pragma warning restore CS0414
         [SerializeField, Range(1f, 60f)] private float nearFieldFadeSharpness = 22f;
 
         [Header("Haptics")]

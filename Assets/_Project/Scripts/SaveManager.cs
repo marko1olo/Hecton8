@@ -1084,6 +1084,7 @@ namespace Hecton8.SaveSystem
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
                 RefreshWfcOutpostDependencies(_macroDatabaseService, currentService as IDataVault);
+                EnsureWorldPagerInitialized();
                 return;
             }
 
@@ -1691,6 +1692,10 @@ namespace Hecton8.SaveSystem
         {
             H8BinaryWorldPager pager = _worldPager;
             if (pager == null)
+                return false;
+
+            IDataVault dataVault = GlobalRegistry.DataVault;
+            if (dataVault == null || dataVault.IsCompactionFenceActive || dataVault.IsAllocationLocked)
                 return false;
 
             if (!pager.IsInitialized && !pager.HasInitializationFault)

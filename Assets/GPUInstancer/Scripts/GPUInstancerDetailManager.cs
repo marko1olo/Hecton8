@@ -20,6 +20,9 @@ namespace GPUInstancer
         public bool runInThreads = false;
 
         private static ComputeShader _grassInstantiationComputeShader;
+        private static int _grassInstantiationKernelId = -1;
+        private static int _grassInstantiationThreadGroupSizeX;
+        private static int _grassInstantiationThreadGroupSizeZ;
 
         private ComputeBuffer _generatingVisibilityBuffer;
 #if !UNITY_2017_1_OR_NEWER || UNITY_ANDROID
@@ -430,8 +433,12 @@ namespace GPUInstancer
                             GPUInstancerConstants.computeRuntimeModification.SetVector(
                                 GPUInstancerConstants.RuntimeModificationKernelProperties.BUFFER_PARAMETER_POSITION_OFFSET, offsetPosition);
 
+                            int dispatchGroups = GPUInstancerConstants.GetComputeThreadGroupCountForSize(detailBuffer.count, GPUInstancerConstants.computeRuntimeModificationThreadGroupSizeX);
+                            if (dispatchGroups <= 0)
+                                continue;
+
                             GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferTransformOffsetId,
-                                GPUInstancerConstants.GetComputeThreadGroupCount(detailBuffer.count), 1, 1);
+                                dispatchGroups, 1, 1);
                         }
                     }
                     if (GPUInstancerConstants.DETAIL_STORE_INSTANCE_DATA && cell.detailInstanceList != null)
@@ -624,15 +631,15 @@ namespace GPUInstancer
                 return Array.Empty<Matrix4x4>();
 
             Matrix4x4[] result = new Matrix4x4[instanceCount];
-            if (detailPrototype == null || grassInstantiationComputeShader == null || !grassInstantiationComputeShader.HasKernel(GPUInstancerConstants.GRASS_INSTANTIATION_KERNEL) || counterBuffer == null || counterData == null || detailMap == null || heightMapData == null || detailMap.Length <= 0 || heightMapData.Length <= 0)
+            if (detailPrototype == null || grassInstantiationComputeShader == null || counterBuffer == null || counterData == null || detailMap == null || heightMapData == null || detailMap.Length <= 0 || heightMapData.Length <= 0)
+                return result;
+
+            if (!GPUInstancerConstants.TryFindKernel(grassInstantiationComputeShader, GPUInstancerConstants.GRASS_INSTANTIATION_KERNEL, out int grassInstantiationComputeKernelId))
                 return result;
 
             ComputeBuffer visibilityBuffer = null;
             ComputeBuffer heightMapBuffer = null;
             ComputeBuffer detailMapBuffer = null;
-
-            // set compute shader
-            int grassInstantiationComputeKernelId = grassInstantiationComputeShader.FindKernel(GPUInstancerConstants.GRASS_INSTANTIATION_KERNEL);
 
             try
             {
@@ -675,17 +682,17 @@ namespace GPUInstancer
                                                                 Vector3 startPosition, Vector3 terrainSize,
                                                                 int instanceCount,
                                                                 ComputeShader grassInstantiationComputeShader, GPUInstancerTerrainSettings terrainSettings,
-                                                                ComputeBuffer heightMapBuffer, ComputeBuffer detailMapBuffer, ComputeBuffer counterBuffer, int[] counterData)
+                                                                 ComputeBuffer heightMapBuffer, ComputeBuffer detailMapBuffer, ComputeBuffer counterBuffer, int[] counterData)
         {
-            if (detailPrototype == null || instanceCount <= 0 || grassInstantiationComputeShader == null || !grassInstantiationComputeShader.HasKernel(GPUInstancerConstants.GRASS_INSTANTIATION_KERNEL) || heightMapBuffer == null || detailMapBuffer == null || counterBuffer == null || counterData == null)
+            if (detailPrototype == null || instanceCount <= 0 || grassInstantiationComputeShader == null || heightMapBuffer == null || detailMapBuffer == null || counterBuffer == null || counterData == null)
                 return null;
             if (heightMapBuffer.count <= 0 || detailMapBuffer.count <= 0)
                 return null;
 
-            ComputeBuffer visibilityBuffer = null;
+            if (!GPUInstancerConstants.TryFindKernel(grassInstantiationComputeShader, GPUInstancerConstants.GRASS_INSTANTIATION_KERNEL, out int grassInstantiationComputeKernelId))
+                return null;
 
-            // set compute shader
-            int grassInstantiationComputeKernelId = grassInstantiationComputeShader.FindKernel(GPUInstancerConstants.GRASS_INSTANTIATION_KERNEL);
+            ComputeBuffer visibilityBuffer = null;
 
             try
             {
@@ -716,6 +723,8 @@ namespace GPUInstancer
             if (grassComputeShader == null || visibilityBuffer == null || detailMapBuffer == null || heightMapBuffer == null || counterBuffer == null)
                 return;
             if (visibilityBuffer.count <= 0 || detailMapBuffer.count <= 0 || heightMapBuffer.count <= 0)
+                return;
+            if (!TryResolveGrassInstantiationThreadGroupSizes(grassComputeShader, grassInstantiationComputeKernelId, out int threadGroupSizeX, out int threadGroupSizeZ))
                 return;
 
             // setup compute shader
@@ -749,14 +758,55 @@ namespace GPUInstancer
             if (detailPixelsY < 1)
                 detailPixelsY = 1;
 
-            int dispatchGroupsX = GPUInstancerConstants.GetComputeThreadGroupCount2D(detailPixelsX);
-            int dispatchGroupsY = GPUInstancerConstants.GetComputeThreadGroupCount2D(detailPixelsY);
+            int dispatchGroupsX = GetGrassInstantiationThreadGroupCount(detailPixelsX, threadGroupSizeX);
+            int dispatchGroupsZ = GetGrassInstantiationThreadGroupCount(detailPixelsY, threadGroupSizeZ);
+            if (dispatchGroupsX <= 0 || dispatchGroupsZ <= 0)
+                return;
 
             // dispatch
             grassComputeShader.Dispatch(grassInstantiationComputeKernelId,
                 dispatchGroupsX,
                 1,
-                dispatchGroupsY);
+                dispatchGroupsZ);
+        }
+
+        private static bool TryResolveGrassInstantiationThreadGroupSizes(ComputeShader grassComputeShader, int kernel, out int threadGroupSizeX, out int threadGroupSizeZ)
+        {
+            threadGroupSizeX = _grassInstantiationThreadGroupSizeX;
+            threadGroupSizeZ = _grassInstantiationThreadGroupSizeZ;
+            if (ReferenceEquals(grassComputeShader, _grassInstantiationComputeShader) &&
+                kernel == _grassInstantiationKernelId &&
+                threadGroupSizeX > 0 &&
+                threadGroupSizeZ > 0)
+                return true;
+
+            threadGroupSizeX = 0;
+            threadGroupSizeZ = 0;
+            if (!GPUInstancerConstants.TryGetPortableKernelThreadGroupSizes(grassComputeShader, kernel, out int sizeX, out int sizeY, out int sizeZ))
+                return false;
+
+            if (sizeY != 1)
+                return false;
+
+            threadGroupSizeX = sizeX;
+            threadGroupSizeZ = sizeZ;
+            _grassInstantiationComputeShader = grassComputeShader;
+            _grassInstantiationKernelId = kernel;
+            _grassInstantiationThreadGroupSizeX = threadGroupSizeX;
+            _grassInstantiationThreadGroupSizeZ = threadGroupSizeZ;
+            return true;
+        }
+
+        private static int GetGrassInstantiationThreadGroupCount(int elementCount, int threadGroupSize)
+        {
+            if (elementCount <= 0 || threadGroupSize <= 0)
+                return 0;
+
+            long groupCount = ((long)elementCount + threadGroupSize - 1L) / threadGroupSize;
+            if (groupCount <= 0L || groupCount > GPUInstancerConstants.MaxDispatchGroupsPerDimension)
+                return 0;
+
+            return (int)groupCount;
         }
 
         private void StartCoroutineAlt(IEnumerator routine)

@@ -1,0 +1,4 @@
+# SHINOBU_45 / TBDRPipelineSurgeonRuntime editor GPU budget override.
+# Parser rule: first non-comment data line only, columns = max_visible_vertices,transparent_quad_limit,frustum_squeeze_degrees.
+# Intent: protect tiled/mobile/weak GPUs without deleting visual effects; GlobalQualityWeight still scales squeeze pressure.
+560000,3600,12.0

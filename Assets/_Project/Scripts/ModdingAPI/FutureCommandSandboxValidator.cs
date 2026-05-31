@@ -1486,8 +1486,7 @@ namespace Hecton8.Modding
             FutureCommandEnvelope copy = envelope;
             copy.IntegrityHash = 0UL;
             copy._pad0 = 0UL;
-            uint2 hash = xxHash3.Hash64(&copy, 48L);
-            return ((ulong)hash.y << 32) | hash.x;
+            return MemorySentinelMath.ComputeDeterministicHash64(&copy, 48);
         }
 
 #if UNITY_EDITOR
@@ -4577,8 +4576,7 @@ namespace Hecton8.Modding
                 FutureCommandEnvelope copy = envelope;
                 copy.IntegrityHash = 0UL;
                 copy._pad0 = 0UL;
-                uint2 hash = xxHash3.Hash64(&copy, 48L);
-                ulong full = ((ulong)hash.y << 32) | hash.x;
+                ulong full = MemorySentinelMath.ComputeDeterministicHash64(&copy, 48);
                 return full == envelope.IntegrityHash;
             }
 

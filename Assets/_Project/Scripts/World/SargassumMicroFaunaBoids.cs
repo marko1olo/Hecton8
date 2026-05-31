@@ -9360,21 +9360,28 @@ namespace Hecton8.World
         {
             kernelIndex = -1;
             groupSizeX = 0u;
-            if (!boidCompute.HasKernel(kernelName))
-            {
-                DisableComputeDispatch(ComputeDisableReasonMissingKernel);
-                return false;
-            }
-
-            kernelIndex = boidCompute.FindKernel(kernelName);
-            if (kernelIndex < 0 || !boidCompute.IsSupported(kernelIndex))
-            {
-                DisableComputeDispatch(ComputeDisableReasonKernelValidationFailure);
-                return false;
-            }
 
             try
             {
+                if (!boidCompute.HasKernel(kernelName))
+                {
+                    DisableComputeDispatch(ComputeDisableReasonMissingKernel);
+                    return false;
+                }
+
+                kernelIndex = boidCompute.FindKernel(kernelName);
+                if (kernelIndex < 0)
+                {
+                    DisableComputeDispatch(ComputeDisableReasonKernelValidationFailure);
+                    return false;
+                }
+
+                if (!boidCompute.IsSupported(kernelIndex))
+                {
+                    DisableComputeDispatch(ComputeDisableReasonKernelValidationFailure);
+                    return false;
+                }
+
                 boidCompute.GetKernelThreadGroupSizes(kernelIndex, out groupSizeX, out uint groupSizeY, out uint groupSizeZ);
                 ulong totalThreads = (ulong)groupSizeX * groupSizeY * groupSizeZ;
                 if (groupSizeX == 0u || groupSizeY == 0u || groupSizeZ == 0u)

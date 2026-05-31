@@ -5808,8 +5808,7 @@ namespace Hecton8.Environment
                 }
             }
 
-            if (!hudFogLuminanceCompute.IsSupported(_hudFogLuminanceKernel) ||
-                !TryResolveKernelThreadGroupSize2D(
+            if (!TryResolveKernelThreadGroupSize2D(
                     hudFogLuminanceCompute,
                     _hudFogLuminanceKernel,
                     out _hudFogLuminanceThreadGroupSizeX,
@@ -6118,7 +6117,6 @@ namespace Hecton8.Environment
             }
 
             if (!TryResolveComputeKernel(photophobiaFieldCompute, "UpdatePhotophobiaField", out _photophobiaFieldKernel) ||
-                !photophobiaFieldCompute.IsSupported(_photophobiaFieldKernel) ||
                 !TryResolveKernelThreadGroupSize2D(
                     photophobiaFieldCompute,
                     _photophobiaFieldKernel,
@@ -6149,11 +6147,40 @@ namespace Hecton8.Environment
             kernelIndex = -1;
             if (compute == null || !_supportsComputeShadersCold)
                 return false;
-            if (!compute.HasKernel(kernelName))
-                return false;
 
-            kernelIndex = compute.FindKernel(kernelName);
-            return kernelIndex >= 0;
+            try
+            {
+                if (!compute.HasKernel(kernelName))
+                    return false;
+
+                kernelIndex = compute.FindKernel(kernelName);
+                return kernelIndex >= 0;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                kernelIndex = -1;
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                kernelIndex = -1;
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                kernelIndex = -1;
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                kernelIndex = -1;
+                return false;
+            }
+            catch (UnityException)
+            {
+                kernelIndex = -1;
+                return false;
+            }
         }
 
         private static bool TryResolveKernelThreadGroupSize2D(
@@ -6187,7 +6214,33 @@ namespace Hecton8.Environment
             if (compute == null || kernelIndex < 0)
                 return false;
 
-            compute.GetKernelThreadGroupSizes(kernelIndex, out sizeX, out sizeY, out sizeZ);
+            try
+            {
+                if (!compute.IsSupported(kernelIndex))
+                    return false;
+
+                compute.GetKernelThreadGroupSizes(kernelIndex, out sizeX, out sizeY, out sizeZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                return false;
+            }
+            catch (UnityException)
+            {
+                return false;
+            }
             if (sizeX == 0u || sizeY == 0u || sizeZ == 0u)
                 return false;
 

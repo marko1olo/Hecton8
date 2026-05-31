@@ -709,3 +709,42 @@ Compilation/resource throttling:
 
 Cinematic Cheats used -> None; offline telemetry/reporting only.
 Exact Microseconds saved -> 0 us game runtime.
+
+## 2026-05-31 15:57 Europe/Samara - Token stats refresh with non-specialist scale
+
+What was wrong:
+- The 2026-05-30 23:24 token report was stale after new local Codex JSONL activity.
+- Existing report rows were technically correct but poor for explaining scale to a non-specialist.
+
+What was done:
+- Rechecked official OpenAI pricing/model/cache/reasoning evidence boundary.
+- Added generated `layperson_scale` fields to `Tools/CodexTokenUsageFastRefresh_20260528.py`.
+- Ran `python Tools\CodexTokenUsageFastRefresh_20260528.py`.
+- Generated `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-31.json`.
+- Generated `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-31.md`.
+- Updated `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_LEDGER.md`.
+- Did not run dashboard/chart generation.
+
+Evidence:
+- Generated at: `2026-05-31T15:57:03.452084+04:00`.
+- Token total: `124,505,240,345`.
+- Delta tokens since previous snapshot: `1,036,867,234`.
+- Tokens/hour: `62,655,612.92062189`.
+- Tokens/second: `17,404.33692239497`.
+- GPT-5.5 base API-equivalent: `$96,330.54285900001`.
+- GPT-5.5 delta cost: `$779.1058920000069`.
+- Changed JSONL files scanned: `25`.
+- Parse errors: `0`.
+- Non-specialist scale: about `186,757,861` 500-word pages, `1,167,237` 80k-word books, `710.65` continuous reading years at 250 wpm, and `96.16%` cached input share.
+- Current burn scale: about `93,983.42` 500-word pages/hour and `$18,793.21`/day at the current window velocity.
+- Dashboard/charts diff check: no modified `Docs/Reports/MetricCharts` or `PROJECT_METRICS_DASHBOARD_2026-05-31.*` files from this refresh.
+
+Compilation/resource throttling:
+- CPU sample during validation: `85%`.
+- Active compiler/build process sample: `dotnet` PID `20236`.
+- `dotnet build`: not invoked by TOKEN_USAGE_AUDIT.
+- Python bytecode compile: skipped because current resource-throttle sample was above 50 percent with active `dotnet`.
+- Unity build/import/playmode: not invoked.
+
+Cinematic Cheats used -> None; offline telemetry/reporting only.
+Exact Microseconds saved -> 0 us game runtime.

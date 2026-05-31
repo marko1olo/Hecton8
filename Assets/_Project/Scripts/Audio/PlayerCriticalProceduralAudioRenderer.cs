@@ -1147,11 +1147,13 @@ namespace Hecton8.Audio
         private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
+#pragma warning disable CS0414
         private int _playerContextLookupFrame = -4096;
         private int _ecosystemDirectorLookupFrame = -4096;
         private int _structuralHullLookupFrame = -4096;
         private int _mapMagicBiomeFrame = -4096;
         private int _transportCoordinatorLookupFrame = -4096;
+#pragma warning restore CS0414
         private GameObject _boundPlayerObject;
         private Transform _boundPlayerTransform;
         private int _boundPlayerRootEntityId;

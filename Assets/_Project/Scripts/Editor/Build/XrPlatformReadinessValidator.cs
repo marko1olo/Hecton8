@@ -13,8 +13,6 @@ using UnityEngine.XR.Management;
 using UnityEngine.XR.OpenXR;
 using UnityEngine.XR.OpenXR.Features;
 using UnityEngine.XR.OpenXR.Features.Interactions;
-using UnityEngine.XR.OpenXR.Features.Meta;
-using UnityEngine.XR.OpenXR.Features.MetaQuestSupport;
 
 namespace Hecton8.Editor.Build
 {
@@ -26,6 +24,8 @@ namespace Hecton8.Editor.Build
         private const string OpenXrPackage = "com.unity.xr.openxr";
         private const string MetaOpenXrPackage = "com.unity.xr.meta-openxr";
         private const string OpenXrLoaderTypeName = "UnityEngine.XR.OpenXR.OpenXRLoader";
+        private const string MetaQuestFeatureTypeName = "UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature";
+        private const string MetaDisplayUtilitiesFeatureTypeName = "UnityEngine.XR.OpenXR.Features.Meta.DisplayUtilitiesFeature";
         private const string WireAndroidOpenXrMenuPath = "HECTON-8/Platform/Wire Android OpenXR Provider Route";
         private const string WireStandaloneOpenXrMenuPath = "HECTON-8/Platform/Wire Standalone OpenXR Provider Route";
 
@@ -333,8 +333,8 @@ namespace Hecton8.Editor.Build
                 return;
 
             bool changed = false;
-            changed |= EnableOpenXrFeature(openXrSettings.GetFeature<MetaQuestFeature>());
-            changed |= EnableOpenXrFeature(openXrSettings.GetFeature<DisplayUtilitiesFeature>());
+            changed |= EnableOpenXrFeature(GetOpenXrFeatureByTypeName(openXrSettings, MetaQuestFeatureTypeName));
+            changed |= EnableOpenXrFeature(GetOpenXrFeatureByTypeName(openXrSettings, MetaDisplayUtilitiesFeatureTypeName));
             FoveatedRenderingFeature foveatedRenderingFeature = openXrSettings.GetFeature<FoveatedRenderingFeature>();
             changed |= EnableOpenXrFeature(foveatedRenderingFeature);
             changed |= SetFoveatedSubsampledLayoutEnabled(foveatedRenderingFeature, true);
@@ -424,6 +424,35 @@ namespace Hecton8.Editor.Build
             return true;
         }
 
+        private static OpenXRFeature GetOpenXrFeatureByTypeName(OpenXRSettings openXrSettings, string typeFullName)
+        {
+            if (openXrSettings == null || string.IsNullOrEmpty(typeFullName))
+                return null;
+
+            OpenXRFeature[] features = openXrSettings.GetFeatures<OpenXRFeature>();
+            for (int i = 0; i < features.Length; i++)
+            {
+                OpenXRFeature feature = features[i];
+                if (feature == null)
+                    continue;
+
+                Type featureType = feature.GetType();
+                if (featureType != null &&
+                    string.Equals(featureType.FullName, typeFullName, StringComparison.Ordinal))
+                {
+                    return feature;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsOpenXrFeatureEnabledByTypeName(OpenXRSettings openXrSettings, string typeFullName)
+        {
+            OpenXRFeature feature = GetOpenXrFeatureByTypeName(openXrSettings, typeFullName);
+            return feature != null && feature.enabled;
+        }
+
         private static void ValidateAndroidOpenXrFeatureSet(StringBuilder failures)
         {
             OpenXRSettings openXrSettings = OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Android);
@@ -433,12 +462,12 @@ namespace Hecton8.Editor.Build
                 return;
             }
 
-            if (!IsOpenXrFeatureEnabled<MetaQuestFeature>(openXrSettings))
+            if (!IsOpenXrFeatureEnabledByTypeName(openXrSettings, MetaQuestFeatureTypeName))
             {
                 Append(failures, "OpenXR Android Meta Quest Support feature is disabled.");
             }
 
-            if (!IsOpenXrFeatureEnabled<DisplayUtilitiesFeature>(openXrSettings))
+            if (!IsOpenXrFeatureEnabledByTypeName(openXrSettings, MetaDisplayUtilitiesFeatureTypeName))
             {
                 Append(failures, "OpenXR Android Meta Display Utilities feature is disabled; refresh-rate policy cannot use XR_FB_display_refresh_rate.");
             }

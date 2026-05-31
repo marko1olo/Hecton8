@@ -78,7 +78,7 @@ namespace Hecton8.Tests.Editor
                 {
                     States = states,
                     MassProperties = masses,
-                    Configs = configs,
+                    Config = configs[0],
                     HullProfiles = hulls,
                     Tuning = tuning,
                     AddedMassProfiles = profiles,
@@ -170,7 +170,7 @@ namespace Hecton8.Tests.Editor
                 {
                     States = states,
                     MassProperties = masses,
-                    Configs = configs,
+                    Config = configs[0],
                     HullProfiles = hulls,
                     Tuning = tuning,
                     AddedMassProfiles = profiles,

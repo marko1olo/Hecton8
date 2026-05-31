@@ -330,7 +330,7 @@ namespace Hecton8.Core.Memory.Editor
             SlotState growthSlot = state.Slots[0];
             Task resolver = Task.Factory.StartNew(
                 () => ResolveLoopDuringGrowth(state),
-                state.Cancellation.Token,
+                state.Cancellation,
                 TaskCreationOptions.LongRunning,
                 TaskScheduler.Default);
 
@@ -394,14 +394,14 @@ namespace Hecton8.Core.Memory.Editor
                 int workerIndex = i;
                 tasks[i] = Task.Factory.StartNew(
                     () => WorkerLoop(state, workerIndex),
-                    state.Cancellation.Token,
+                    state.Cancellation,
                     TaskCreationOptions.LongRunning,
                     TaskScheduler.Default);
             }
 
             tasks[tasks.Length - 1] = Task.Factory.StartNew(
                 () => DefragLoop(state),
-                state.Cancellation.Token,
+                state.Cancellation,
                 TaskCreationOptions.LongRunning,
                 TaskScheduler.Default);
 
@@ -626,12 +626,13 @@ namespace Hecton8.Core.Memory.Editor
                     }
 
                     int failureIndex = slot.Index;
-                    state.JobFailures[failureIndex] = 0;
+                    NativeArray<int> jobFailures = state.JobFailures;
+                    jobFailures[failureIndex] = 0;
 
                     ReadWriteStressJob job = new ReadWriteStressJob
                     {
                         Buffer = buffer,
-                        Failure = state.JobFailures,
+                        Failure = jobFailures,
                         FailureIndex = failureIndex,
                         BufferId = (int)slot.BufferId,
                         PatternEpoch = slot.PatternEpoch,
@@ -1422,7 +1423,8 @@ namespace Hecton8.Core.Memory.Editor
                 entry.TotalOperations = Interlocked.Read(ref state.TotalOperations);
                 entry.CompactionPasses = Interlocked.Read(ref state.CompactionPasses);
                 entry.Flags = unchecked((uint)Volatile.Read(ref state.FailureFlags));
-                state.BlackBox[cursor] = entry;
+                NativeArray<FuzzerTelemetryEntry> blackBox = state.BlackBox;
+                blackBox[cursor] = entry;
                 cursor++;
                 if (cursor >= state.BlackBox.Length)
                     cursor = 0;

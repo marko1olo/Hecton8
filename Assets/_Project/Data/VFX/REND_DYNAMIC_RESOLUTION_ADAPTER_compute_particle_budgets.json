@@ -27,7 +27,7 @@
     "mx350SoftMaxGroupsPerDispatch": 512,
     "noParticleShadowCasting": true,
     "shadowTapsMeaning": "screen-space/depth/fog occlusion taps only; particle shadow casters stay disabled",
-    "dispatchRule": "dispatch each pool separately when a tier would exceed 512 total groups on MX350"
+    "dispatchRule": "dispatch each pool separately; high and ultra marine-snow pools are not MX350 soft-cap safe unless continuous GlobalQualityWeight and pressure compression resolve to middle-or-lower capacity"
   },
   "systemBitBindings": [
     {
@@ -80,8 +80,8 @@
     {
       "tier": "Low",
       "hardwareTarget": "MX350 / toaster path",
-      "particleCount": 4096,
-      "marineSnowCount": 3584,
+      "particleCount": 8512,
+      "marineSnowCount": 8000,
       "bubbleCount": 384,
       "debrisCount": 128,
       "stepDistanceMeters": 0.4,
@@ -91,8 +91,8 @@
       "debrisVerlet": false,
       "turbulence": false,
       "visualMode": "sprite impostor drift and shader wobble",
-      "dispatchGroupsAt64Threads": 64,
-      "mx350ThreadAudit": "4096 threads, 64 groups, under 1048576 thread limit and 512 group soft cap"
+      "dispatchGroupsAt64Threads": 133,
+      "mx350ThreadAudit": "8512 threads, 133 groups total; per-pool snow 125, bubbles 6, debris 2, under 1048576 thread limit and 512 group soft cap"
     },
     {
       "tier": "Mid",
@@ -114,8 +114,8 @@
     {
       "tier": "High",
       "hardwareTarget": "RTX 2060 / RTX 3060 class",
-      "particleCount": 32768,
-      "marineSnowCount": 28672,
+      "particleCount": 104096,
+      "marineSnowCount": 100000,
       "bubbleCount": 3072,
       "debrisCount": 1024,
       "stepDistanceMeters": 0.16,
@@ -125,14 +125,14 @@
       "debrisVerlet": true,
       "turbulence": true,
       "visualMode": "full pool density except ultra reserve; accumulation and bubble wobble enabled",
-      "dispatchGroupsAt64Threads": 512,
-      "mx350ThreadAudit": "32768 threads, 512 groups, under 1048576 thread limit and at 512 group soft cap"
+      "dispatchGroupsAt64Threads": 1627,
+      "mx350ThreadAudit": "not MX350-soft-cap safe at full high quality; per-pool groups snow 1563, bubbles 48, debris 16. MX350 must resolve to lower capacity through continuous quality and pressure policy."
     },
     {
       "tier": "Ultra",
       "hardwareTarget": "RTX 3070+ / overkill path",
-      "particleCount": 37888,
-      "marineSnowCount": 32768,
+      "particleCount": 105120,
+      "marineSnowCount": 100000,
       "bubbleCount": 4096,
       "debrisCount": 1024,
       "stepDistanceMeters": 0.1,
@@ -142,20 +142,20 @@
       "debrisVerlet": true,
       "turbulence": true,
       "visualMode": "canonical VFX pool ceiling with tighter stepping and richer fake occlusion",
-      "dispatchGroupsAt64Threads": 592,
-      "mx350ThreadAudit": "37888 total threads under 1048576; on MX350 split per pool: snow 512 groups, bubbles 64 groups, debris 16 groups"
+      "dispatchGroupsAt64Threads": 1643,
+      "mx350ThreadAudit": "not MX350-soft-cap safe at full ultra quality; per-pool groups snow 1563, bubbles 64, debris 16. Ultra is visual-overkill hardware only."
     }
   ],
   "marineSnowHalfCutVramModel": {
-    "baselineMarineSnowCount": 32768,
-    "cutMarineSnowCount": 16384,
+    "baselineMarineSnowCount": 100000,
+    "cutMarineSnowCount": 50000,
     "mandateBytesPerMarineSnowParticle": 48,
-    "singleBufferSavedBytes": 786432,
-    "singleBufferSavedMiB": 0.75,
-    "pingPongSavedBytes": 1572864,
-    "pingPongSavedMiB": 1.5,
-    "currentCanonical64ByteStructSingleBufferSavedMiB": 1.0,
-    "currentCanonical64ByteStructPingPongSavedMiB": 2.0
+    "singleBufferSavedBytes": 2400000,
+    "singleBufferSavedMiB": 2.29,
+    "pingPongSavedBytes": 4800000,
+    "pingPongSavedMiB": 4.58,
+    "currentCanonical64ByteStructSingleBufferSavedMiB": 3.05,
+    "currentCanonical64ByteStructPingPongSavedMiB": 6.1
   },
   "hlslReadyBlueNoise4x4": {
     "source": "Tools/NoiseBaker/GenerateBlueNoise.py generate_blue_noise(size=4, seed=0x4845384E, swaps=2048)",

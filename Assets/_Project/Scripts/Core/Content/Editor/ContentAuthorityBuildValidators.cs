@@ -4,6 +4,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Content;
 using UnityEditor;
 using UnityEditor.Build;
@@ -28,12 +29,50 @@ namespace Hecton8.Core.Content.Editor
         private const string ResourcesLoadMethod = "Load";
         private const string ResourcesLoadAllMethod = "LoadAll";
         private const string ResourcesLoadAsyncMethod = "LoadAsync";
+        private const string CrestOceanConstantsPath = "Assets/Crest/Crest/Shaders/OceanConstants.hlsl";
+        private const string GPUInstancerPlatformDefinesPath = "Assets/GPUInstancer/Resources/Compute/Include/PlatformDefines.hlsl";
+        private static readonly string[] _computeShaderValidationRootCandidates =
+        {
+            "Assets/_Project",
+            "Assets/GPUInstancer",
+            "Assets/Crest",
+        };
         private static readonly Regex _hashRegex = new Regex(
             "\"(?:itemHash|meshHash|prefabHash|assetHash|hash)\"\\s*:\\s*\"?(?<hash>0x[0-9A-Fa-f]{1,8}|[0-9]{1,10})\"?",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex _computeKernelPragmaRegex = new Regex(
-            "^\\s*#pragma\\s+kernel\\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)",
+            "^\\s*#pragma\\s+kernel\\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)(?<defines>.*)$",
             RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline);
+        private static readonly Regex _computeNumberDefineRegex = new Regex(
+            "^\\s*#define\\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)\\s+(?<value>[0-9]+)\\b",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline);
+        private static readonly Regex _computePragmaNumberDefineRegex = new Regex(
+            "(?<name>[A-Za-z_][A-Za-z0-9_]*)=(?<value>[0-9]+)",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex _computeThreadGroupDeclarationRegex = new Regex(
+            "\\[\\s*numthreads\\s*\\(\\s*(?<x>[^,\\)]+)\\s*,\\s*(?<y>[^,\\)]+)\\s*,\\s*(?<z>[^\\)]+)\\s*\\)\\s*\\]",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex _computeKernelEntryRegex = new Regex(
+            "\\[\\s*numthreads\\s*\\([^\\)]*\\)\\s*\\]\\s*(?:\\[[^\\]]+\\]\\s*)*void\\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)\\s*\\([^\\)]*\\)\\s*\\{",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline);
+        private static readonly Regex _voidReturnRegex = new Regex(
+            "\\breturn\\s*;",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex _disabledIfZeroDirectiveRegex = new Regex(
+            "^\\s*#\\s*if\\s+0(?:\\s|$)",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex _ifDirectiveRegex = new Regex(
+            "^\\s*#\\s*if\\b",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex _elseDirectiveRegex = new Regex(
+            "^\\s*#\\s*else\\b",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex _elifDirectiveRegex = new Regex(
+            "^\\s*#\\s*elif\\b",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex _endifDirectiveRegex = new Regex(
+            "^\\s*#\\s*endif\\b",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         [MenuItem("HECTON-8/Content/Validate Content Authority")]
         public static void ValidateFromMenu()
@@ -976,7 +1015,29 @@ namespace Hecton8.Core.Content.Editor
 
         private static void ValidateComputeShaderThreadGroups()
         {
-            string[] guids = AssetDatabase.FindAssets("t:ComputeShader", new[] { "Assets/_Project" });
+            int portableMaxThreads = Math.Min(
+                Math.Min(
+                    HectonPlatformContract.QuestSafeComputeThreadsPerGroup,
+                    HectonPlatformContract.AndroidSafeComputeThreadsPerGroup),
+                HectonPlatformContract.MetalSafeComputeThreadsPerGroup);
+            int portableMaxThreadGroupZ = Math.Min(
+                Math.Min(
+                    HectonPlatformContract.QuestMaxThreadGroupZ,
+                    HectonPlatformContract.AndroidMaxThreadGroupZ),
+                HectonPlatformContract.MetalMaxThreadGroupZ);
+
+            string[] roots = ResolveExistingAssetRoots(_computeShaderValidationRootCandidates);
+            if (roots.Length == 0)
+                return;
+
+            Dictionary<string, int> sharedComputeDefines = CreateSharedComputeNumberDefines();
+            ValidateComputeShaderSourceFiles(
+                roots,
+                portableMaxThreads,
+                portableMaxThreadGroupZ,
+                sharedComputeDefines);
+
+            string[] guids = AssetDatabase.FindAssets("t:ComputeShader", roots);
             for (int i = 0; i < guids.Length; i++)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guids[i]);
@@ -984,19 +1045,489 @@ namespace Hecton8.Core.Content.Editor
                 if (shader == null)
                     continue;
 
+                string source = ReadTextFileOrEmpty(path);
+                ValidateComputeShaderSynchronization(path, source);
+
                 int[] kernelIndices = ResolveComputeShaderKernelIndices(path, shader);
                 for (int kernelIndex = 0; kernelIndex < kernelIndices.Length; kernelIndex++)
                 {
                     int kernel = kernelIndices[kernelIndex];
-                    shader.GetKernelThreadGroupSizes(kernel, out uint x, out uint y, out uint z);
-                    ulong total = (ulong)x * y * z;
-                    if (total > 1024UL)
+                    if (!TryGetKernelThreadGroupSizes(shader, kernel, out uint x, out uint y, out uint z))
+                        continue;
+
+                    if (x == 0u || y == 0u || z == 0u)
                     {
-                        Fail("Compute shader kernel exceeds Metal/Quest thread-group limit: " +
-                             path + " kernel=" + kernel + " threads=" + total);
+                        Fail("Compute shader kernel has non-positive thread-group dimension: " +
+                             path + " kernel=" + kernel + " x=" + x + " y=" + y + " z=" + z);
+                    }
+
+                    ulong total = (ulong)x * y * z;
+                    if (total > (ulong)portableMaxThreads)
+                    {
+                        Fail("Compute shader kernel exceeds portable Quest/Android/Metal thread-group limit: " +
+                             path + " kernel=" + kernel + " threads=" + total +
+                             " max=" + portableMaxThreads);
+                    }
+
+                    if (z > (uint)portableMaxThreadGroupZ)
+                    {
+                        Fail("Compute shader kernel exceeds portable Z thread-group limit: " +
+                             path + " kernel=" + kernel + " z=" + z +
+                             " maxZ=" + portableMaxThreadGroupZ);
                     }
                 }
             }
+        }
+
+        private static void ValidateComputeShaderSourceFiles(
+            string[] roots,
+            int portableMaxThreads,
+            int portableMaxThreadGroupZ,
+            Dictionary<string, int> sharedComputeDefines)
+        {
+            if (roots == null || roots.Length == 0)
+                return;
+
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                string root = roots[rootIndex];
+                if (string.IsNullOrEmpty(root) || !Directory.Exists(root))
+                    continue;
+
+                string[] files = Directory.GetFiles(root, "*.compute", SearchOption.AllDirectories);
+                for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
+                {
+                    string path = files[fileIndex].Replace('\\', '/');
+                    ValidateComputeShaderSourceThreadGroups(
+                        path,
+                        ReadTextFileOrEmpty(path),
+                        portableMaxThreads,
+                        portableMaxThreadGroupZ,
+                        sharedComputeDefines);
+                }
+            }
+        }
+
+        private static void ValidateComputeShaderSourceThreadGroups(
+            string path,
+            string source,
+            int portableMaxThreads,
+            int portableMaxThreadGroupZ,
+            Dictionary<string, int> sharedComputeDefines)
+        {
+            if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(source))
+                return;
+
+            Dictionary<string, int> localDefines = sharedComputeDefines == null
+                ? new Dictionary<string, int>()
+                : new Dictionary<string, int>(sharedComputeDefines);
+            MergeComputeNumberDefines(localDefines, source);
+
+            string validationSource = StripCommentsAndDisabledZeroBlocks(source);
+            List<Dictionary<string, int>> pragmaDefineSets = ResolveComputeShaderPragmaDefineSets(validationSource);
+            MatchCollection declarations = _computeThreadGroupDeclarationRegex.Matches(validationSource);
+            for (int declarationIndex = 0; declarationIndex < declarations.Count; declarationIndex++)
+            {
+                Match declaration = declarations[declarationIndex];
+                for (int pragmaIndex = 0; pragmaIndex < pragmaDefineSets.Count; pragmaIndex++)
+                {
+                    Dictionary<string, int> pragmaDefines = pragmaDefineSets[pragmaIndex];
+                    int x;
+                    int y;
+                    int z;
+                    if (!TryResolveComputeThreadCount(declaration.Groups["x"].Value, localDefines, pragmaDefines, out x) ||
+                        !TryResolveComputeThreadCount(declaration.Groups["y"].Value, localDefines, pragmaDefines, out y) ||
+                        !TryResolveComputeThreadCount(declaration.Groups["z"].Value, localDefines, pragmaDefines, out z))
+                    {
+                        Fail("Compute shader source thread-group declaration uses unresolved numeric token: " +
+                             path + " line=" + CountLineNumber(source, declaration.Index) +
+                             " declaration=" + declaration.Value);
+                        continue;
+                    }
+
+                    if (x <= 0 || y <= 0 || z <= 0)
+                    {
+                        Fail("Compute shader source thread-group has non-positive dimension: " +
+                             path + " line=" + CountLineNumber(source, declaration.Index) +
+                             " x=" + x + " y=" + y + " z=" + z +
+                             " declaration=" + declaration.Value);
+                    }
+
+                    ulong total = (ulong)x * (ulong)y * (ulong)z;
+                    if (total > (ulong)portableMaxThreads)
+                    {
+                        Fail("Compute shader source thread-group exceeds portable Quest/Android/Metal limit: " +
+                             path + " line=" + CountLineNumber(source, declaration.Index) +
+                             " threads=" + total + " max=" + portableMaxThreads +
+                             " declaration=" + declaration.Value);
+                    }
+
+                    if (z > portableMaxThreadGroupZ)
+                    {
+                        Fail("Compute shader source thread-group exceeds portable Z limit: " +
+                             path + " line=" + CountLineNumber(source, declaration.Index) +
+                             " z=" + z + " maxZ=" + portableMaxThreadGroupZ +
+                             " declaration=" + declaration.Value);
+                    }
+                }
+            }
+        }
+
+        private static void ValidateComputeShaderSynchronization(string path, string source)
+        {
+            if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(source))
+                return;
+
+            string validationSource = StripCommentsAndDisabledZeroBlocks(source);
+            MatchCollection entries = _computeKernelEntryRegex.Matches(validationSource);
+            for (int i = 0; i < entries.Count; i++)
+            {
+                Match entry = entries[i];
+                int bodyStart = entry.Index + entry.Length - 1;
+                int bodyEnd = FindMatchingBrace(validationSource, bodyStart);
+                if (bodyEnd <= bodyStart)
+                    continue;
+
+                int bodyLength = bodyEnd - bodyStart + 1;
+                string body = validationSource.Substring(bodyStart, bodyLength);
+                int lastBarrierIndex = body.LastIndexOf("GroupMemoryBarrierWithGroupSync", StringComparison.Ordinal);
+                if (lastBarrierIndex < 0)
+                    continue;
+
+                Match voidReturn = _voidReturnRegex.Match(body);
+                if (!voidReturn.Success)
+                    continue;
+
+                if (voidReturn.Index > lastBarrierIndex)
+                    continue;
+
+                string kernelName = entry.Groups["name"].Value;
+                int lineNumber = CountLineNumber(source, bodyStart + voidReturn.Index);
+                Fail("Compute shader synchronized kernel has early void return before/around group barrier: " +
+                     path + " kernel=" + kernelName + " line=" + lineNumber);
+            }
+        }
+
+        private static int FindMatchingBrace(string source, int openingBraceIndex)
+        {
+            if (string.IsNullOrEmpty(source) ||
+                openingBraceIndex < 0 ||
+                openingBraceIndex >= source.Length ||
+                source[openingBraceIndex] != '{')
+                return -1;
+
+            int depth = 0;
+            bool inLineComment = false;
+            bool inBlockComment = false;
+            for (int i = openingBraceIndex; i < source.Length; i++)
+            {
+                char c = source[i];
+                char next = i + 1 < source.Length ? source[i + 1] : '\0';
+
+                if (inLineComment)
+                {
+                    if (c == '\n' || c == '\r')
+                        inLineComment = false;
+                    continue;
+                }
+
+                if (inBlockComment)
+                {
+                    if (c == '*' && next == '/')
+                    {
+                        inBlockComment = false;
+                        i++;
+                    }
+                    continue;
+                }
+
+                if (c == '/' && next == '/')
+                {
+                    inLineComment = true;
+                    i++;
+                    continue;
+                }
+
+                if (c == '/' && next == '*')
+                {
+                    inBlockComment = true;
+                    i++;
+                    continue;
+                }
+
+                if (c == '{')
+                {
+                    depth++;
+                    continue;
+                }
+
+                if (c == '}')
+                {
+                    depth--;
+                    if (depth == 0)
+                        return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private static string StripComments(string source)
+        {
+            if (string.IsNullOrEmpty(source))
+                return string.Empty;
+
+            char[] stripped = source.ToCharArray();
+            bool inLineComment = false;
+            bool inBlockComment = false;
+            for (int i = 0; i < stripped.Length; i++)
+            {
+                char c = stripped[i];
+                char next = i + 1 < stripped.Length ? stripped[i + 1] : '\0';
+
+                if (inLineComment)
+                {
+                    if (c == '\n' || c == '\r')
+                    {
+                        inLineComment = false;
+                    }
+                    else
+                    {
+                        stripped[i] = ' ';
+                    }
+                    continue;
+                }
+
+                if (inBlockComment)
+                {
+                    if (c == '*' && next == '/')
+                    {
+                        stripped[i] = ' ';
+                        stripped[i + 1] = ' ';
+                        inBlockComment = false;
+                        i++;
+                    }
+                    else if (c != '\n' && c != '\r')
+                    {
+                        stripped[i] = ' ';
+                    }
+                    continue;
+                }
+
+                if (c == '/' && next == '/')
+                {
+                    stripped[i] = ' ';
+                    stripped[i + 1] = ' ';
+                    inLineComment = true;
+                    i++;
+                    continue;
+                }
+
+                if (c == '/' && next == '*')
+                {
+                    stripped[i] = ' ';
+                    stripped[i + 1] = ' ';
+                    inBlockComment = true;
+                    i++;
+                }
+            }
+
+            return new string(stripped);
+        }
+
+        private static string StripCommentsAndDisabledZeroBlocks(string source)
+        {
+            string strippedSource = StripComments(source);
+            if (string.IsNullOrEmpty(strippedSource))
+                return string.Empty;
+
+            char[] stripped = strippedSource.ToCharArray();
+            int inactiveIfZeroDepth = 0;
+            int lineStart = 0;
+            while (lineStart < stripped.Length)
+            {
+                int lineEnd = lineStart;
+                while (lineEnd < stripped.Length &&
+                       stripped[lineEnd] != '\r' &&
+                       stripped[lineEnd] != '\n')
+                {
+                    lineEnd++;
+                }
+
+                string line = new string(stripped, lineStart, lineEnd - lineStart);
+                bool isIfZero = _disabledIfZeroDirectiveRegex.IsMatch(line);
+                bool isIf = _ifDirectiveRegex.IsMatch(line);
+                bool isElse = _elseDirectiveRegex.IsMatch(line);
+                bool isElif = _elifDirectiveRegex.IsMatch(line);
+                bool isEndIf = _endifDirectiveRegex.IsMatch(line);
+
+                if (inactiveIfZeroDepth > 0)
+                {
+                    BlankNonNewlineCharacters(stripped, lineStart, lineEnd);
+
+                    if (isIf)
+                    {
+                        inactiveIfZeroDepth++;
+                    }
+                    else if (isEndIf)
+                    {
+                        inactiveIfZeroDepth--;
+                    }
+                    else if (inactiveIfZeroDepth == 1 && (isElse || isElif))
+                    {
+                        inactiveIfZeroDepth = 0;
+                    }
+                }
+                else if (isIfZero)
+                {
+                    inactiveIfZeroDepth = 1;
+                    BlankNonNewlineCharacters(stripped, lineStart, lineEnd);
+                }
+
+                lineStart = lineEnd;
+                if (lineStart < stripped.Length && stripped[lineStart] == '\r')
+                    lineStart++;
+                if (lineStart < stripped.Length && stripped[lineStart] == '\n')
+                    lineStart++;
+            }
+
+            return new string(stripped);
+        }
+
+        private static void BlankNonNewlineCharacters(char[] source, int start, int end)
+        {
+            for (int i = start; i < end; i++)
+                source[i] = ' ';
+        }
+
+        private static int CountLineNumber(string source, int index)
+        {
+            if (string.IsNullOrEmpty(source) || index <= 0)
+                return 1;
+
+            int clampedIndex = Math.Min(index, source.Length);
+            int line = 1;
+            for (int i = 0; i < clampedIndex; i++)
+            {
+                if (source[i] == '\n')
+                    line++;
+            }
+
+            return line;
+        }
+
+        private static string[] ResolveExistingAssetRoots(string[] rootCandidates)
+        {
+            if (rootCandidates == null || rootCandidates.Length == 0)
+                return Array.Empty<string>();
+
+            string[] roots = new string[rootCandidates.Length];
+            int count = 0;
+            for (int i = 0; i < rootCandidates.Length; i++)
+            {
+                string root = rootCandidates[i];
+                if (string.IsNullOrEmpty(root) || !AssetDatabase.IsValidFolder(root))
+                    continue;
+
+                roots[count] = root;
+                count++;
+            }
+
+            if (count == roots.Length)
+                return roots;
+
+            string[] compact = new string[count];
+            Array.Copy(roots, compact, count);
+            return compact;
+        }
+
+        private static Dictionary<string, int> CreateSharedComputeNumberDefines()
+        {
+            Dictionary<string, int> defines = new Dictionary<string, int>();
+            MergeMaxComputeNumberDefines(defines, CrestOceanConstantsPath);
+            MergeMaxComputeNumberDefines(defines, GPUInstancerPlatformDefinesPath);
+            return defines;
+        }
+
+        private static void MergeMaxComputeNumberDefines(Dictionary<string, int> defines, string path)
+        {
+            if (defines == null || string.IsNullOrEmpty(path))
+                return;
+
+            string source = ReadTextFileOrEmpty(path);
+            if (string.IsNullOrEmpty(source))
+                return;
+
+            MatchCollection matches = _computeNumberDefineRegex.Matches(source);
+            for (int i = 0; i < matches.Count; i++)
+            {
+                string name = matches[i].Groups["name"].Value;
+                int value = int.Parse(matches[i].Groups["value"].Value, System.Globalization.CultureInfo.InvariantCulture);
+                if (!defines.TryGetValue(name, out int existing) || value > existing)
+                    defines[name] = value;
+            }
+        }
+
+        private static void MergeComputeNumberDefines(Dictionary<string, int> defines, string source)
+        {
+            if (defines == null || string.IsNullOrEmpty(source))
+                return;
+
+            MatchCollection matches = _computeNumberDefineRegex.Matches(source);
+            for (int i = 0; i < matches.Count; i++)
+            {
+                string name = matches[i].Groups["name"].Value;
+                int value = int.Parse(matches[i].Groups["value"].Value, System.Globalization.CultureInfo.InvariantCulture);
+                defines[name] = value;
+            }
+        }
+
+        private static List<Dictionary<string, int>> ResolveComputeShaderPragmaDefineSets(string source)
+        {
+            List<Dictionary<string, int>> result = new List<Dictionary<string, int>>();
+            if (!string.IsNullOrEmpty(source))
+            {
+                MatchCollection pragmas = _computeKernelPragmaRegex.Matches(source);
+                for (int pragmaIndex = 0; pragmaIndex < pragmas.Count; pragmaIndex++)
+                {
+                    Dictionary<string, int> defines = new Dictionary<string, int>();
+                    MatchCollection pairs = _computePragmaNumberDefineRegex.Matches(pragmas[pragmaIndex].Groups["defines"].Value);
+                    for (int pairIndex = 0; pairIndex < pairs.Count; pairIndex++)
+                    {
+                        defines[pairs[pairIndex].Groups["name"].Value] = int.Parse(
+                            pairs[pairIndex].Groups["value"].Value,
+                            System.Globalization.CultureInfo.InvariantCulture);
+                    }
+
+                    if (defines.Count > 0)
+                        result.Add(defines);
+                }
+            }
+
+            if (result.Count == 0)
+                result.Add(new Dictionary<string, int>());
+
+            return result;
+        }
+
+        private static bool TryResolveComputeThreadCount(
+            string token,
+            Dictionary<string, int> localDefines,
+            Dictionary<string, int> pragmaDefines,
+            out int value)
+        {
+            token = token.Trim();
+            if (int.TryParse(token, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out value))
+                return true;
+
+            if (pragmaDefines != null && pragmaDefines.TryGetValue(token, out value))
+                return true;
+
+            if (localDefines != null && localDefines.TryGetValue(token, out value))
+                return true;
+
+            value = 0;
+            return false;
         }
 
         private static int[] ResolveComputeShaderKernelIndices(string path, ComputeShader shader)
@@ -1004,25 +1535,15 @@ namespace Hecton8.Core.Content.Editor
             if (shader == null || string.IsNullOrEmpty(path))
                 return Array.Empty<int>();
 
-            string source;
-            try
-            {
-                source = File.ReadAllText(path);
-            }
-            catch (IOException)
-            {
+            string source = ReadTextFileOrEmpty(path);
+            if (string.IsNullOrEmpty(source))
                 return Array.Empty<int>();
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return Array.Empty<int>();
-            }
 
             MatchCollection matches = _computeKernelPragmaRegex.Matches(source);
             if (matches.Count == 0)
                 return Array.Empty<int>();
 
-            int[] kernels = new int[matches.Count];
+            int[] kernels = new int[matches.Count * 2];
             int count = 0;
             for (int i = 0; i < matches.Count; i++)
             {
@@ -1039,19 +1560,26 @@ namespace Hecton8.Core.Content.Editor
                 {
                     continue;
                 }
-
-                bool duplicate = false;
-                for (int existing = 0; existing < count; existing++)
+                catch (ObjectDisposedException)
                 {
-                    if (kernels[existing] == kernel)
-                    {
-                        duplicate = true;
-                        break;
-                    }
+                    continue;
+                }
+                catch (InvalidOperationException)
+                {
+                    continue;
+                }
+                catch (MissingReferenceException)
+                {
+                    continue;
+                }
+                catch (UnityException)
+                {
+                    continue;
                 }
 
-                if (!duplicate)
-                    kernels[count++] = kernel;
+                AddUniqueKernelIndex(kernels, ref count, kernel);
+                if (HasDuplicateKernelPragmaName(matches, i, kernelName))
+                    AddUniqueKernelIndex(kernels, ref count, i);
             }
 
             if (count == kernels.Length)
@@ -1060,6 +1588,95 @@ namespace Hecton8.Core.Content.Editor
             int[] compact = new int[count];
             Array.Copy(kernels, compact, count);
             return compact;
+        }
+
+        private static string ReadTextFileOrEmpty(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                return string.Empty;
+
+            try
+            {
+                return File.ReadAllText(path);
+            }
+            catch (IOException)
+            {
+                return string.Empty;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return string.Empty;
+            }
+        }
+
+        private static bool TryGetKernelThreadGroupSizes(
+            ComputeShader shader,
+            int kernel,
+            out uint x,
+            out uint y,
+            out uint z)
+        {
+            x = 0u;
+            y = 0u;
+            z = 0u;
+            if (shader == null || kernel < 0)
+                return false;
+
+            try
+            {
+                shader.GetKernelThreadGroupSizes(kernel, out x, out y, out z);
+                return true;
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                return false;
+            }
+            catch (UnityException)
+            {
+                return false;
+            }
+        }
+
+        private static bool HasDuplicateKernelPragmaName(MatchCollection matches, int index, string kernelName)
+        {
+            for (int i = 0; i < matches.Count; i++)
+            {
+                if (i == index)
+                    continue;
+
+                if (string.Equals(matches[i].Groups["name"].Value, kernelName, StringComparison.Ordinal))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void AddUniqueKernelIndex(int[] kernels, ref int count, int kernel)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (kernels[i] == kernel)
+                    return;
+            }
+
+            if (count < kernels.Length)
+                kernels[count++] = kernel;
         }
 
         private static void ValidateVfxPrewarmManifests()

@@ -158,7 +158,6 @@ namespace Hecton8.World
         private static int _droppedListenerRegistrationCount;
         private static int _listenerExceptionCount;
         private static int _lastListenerRejectedTelemetryFrame = -1;
-        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
@@ -179,7 +178,6 @@ namespace Hecton8.World
             _droppedListenerRegistrationCount = 0;
             _listenerExceptionCount = 0;
             _lastListenerRejectedTelemetryFrame = -1;
-            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
             _listeners.Clear();
             Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterListeners.Length);

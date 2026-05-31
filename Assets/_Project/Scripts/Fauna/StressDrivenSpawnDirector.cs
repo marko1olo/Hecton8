@@ -859,6 +859,12 @@ namespace Hecton8.AI
                 RefreshFloatingOriginSnapshotCold();
                 TryRegisterOriginShiftListener();
             }
+            else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregisterDispatcherTicks();
+                if (currentService != null)
+                    TryRegisterTicks();
+            }
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -1934,19 +1940,37 @@ namespace Hecton8.AI
             if (!Application.isPlaying)
                 return;
 
+            if (!_registeredHotSwap)
+                _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+
+            if (GlobalRegistry.Dispatcher == null)
+            {
+                TryRegisterOriginShiftListener();
+                return;
+            }
+
             if (!_registeredCold)
                 _registeredCold = GlobalRegistry.TryRegisterColdTickable(this, PriorityLayer.Environment);
             if (!_registeredLate)
                 _registeredLate = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
-            if (!_registeredHotSwap)
-            {
-                _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
-            }
 
             TryRegisterOriginShiftListener();
         }
 
         private void TryUnregisterTicks()
+        {
+            TryUnregisterDispatcherTicks();
+
+            if (_registeredHotSwap)
+            {
+                GlobalRegistry.UnregisterHotSwapListener(this);
+                _registeredHotSwap = false;
+            }
+
+            TryUnregisterOriginShiftListener();
+        }
+
+        private void TryUnregisterDispatcherTicks()
         {
             if (_registeredCold)
             {
@@ -1959,14 +1983,6 @@ namespace Hecton8.AI
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLate = false;
             }
-
-            if (_registeredHotSwap)
-            {
-                GlobalRegistry.UnregisterHotSwapListener(this);
-                _registeredHotSwap = false;
-            }
-
-            TryUnregisterOriginShiftListener();
         }
 
         private void TryRegisterOriginShiftListener()

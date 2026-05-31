@@ -64,7 +64,7 @@ namespace Hecton8.UI
         private static ReadOnlySpan<char> FilterEmptyLabelComponentsChars => "COMPONENTS".AsSpan();
         private static ReadOnlySpan<char> PageDigestPrefixChars => "PAGE ".AsSpan();
         private static readonly char[] EmptyTextChars = new char[1];
-        private static readonly int ItemDescriptionFallbackKeyHash = unchecked((int)H8LocHashes.ITEM_DESCRIPTION_FALLBACK);
+        private static readonly int ItemDescriptionFallbackKeyHash = LocKeys.ITEM_DESCRIPTION_FALLBACK;
         private static readonly int PdaInventoryItemDescriptionSourceHash =
             LocHash.Compute("PDAInventoryTab.ItemDescription".AsSpan());
         private const int MaxDynamicTextBufferChars = 4096;

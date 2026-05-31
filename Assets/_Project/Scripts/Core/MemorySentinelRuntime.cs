@@ -454,6 +454,9 @@ namespace Hecton8.Core
 
         private void RegisterDispatcherPhases()
         {
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             if (_simulationPhase == null)
                 _simulationPhase = new SimulationPhaseSystem(this);
             if (_postSimulationPhase == null)
@@ -502,10 +505,18 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
-            if (!isActiveAndEnabled || serviceSlot != GlobalRegistryServiceSlot.DataVault)
+            if (!isActiveAndEnabled)
                 return;
 
-            RebindVaultDependencyCold(currentService as IDataVault);
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindVaultDependencyCold(currentService as IDataVault);
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    RegisterDispatcherPhases();
+                    break;
+            }
         }
 
         private static bool TryResolveRequired<T>(

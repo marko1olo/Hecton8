@@ -1,4 +1,5 @@
 ﻿#if UNITY_EDITOR
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -66,7 +67,11 @@ namespace GPUInstancer
 #if UNITY_2018_1_OR_NEWER
             if (!GPUInstancerConstants.gpuiSettings.IsStandardRenderPipeline())
 #if UNITY_2019_1_OR_NEWER
+#if UNITY_2023_3_OR_NEWER || UNITY_6000_0_OR_NEWER
+                UnityEngine.Rendering.RenderPipelineManager.beginContextRendering -= CameraOnBeginRenderingSRP;
+#else
                 UnityEngine.Rendering.RenderPipelineManager.beginFrameRendering -= CameraOnBeginRenderingSRP;
+#endif
 #else
                 UnityEngine.Experimental.Rendering.RenderPipeline.beginCameraRendering -= CameraOnPreCull;
 #endif
@@ -87,7 +92,11 @@ namespace GPUInstancer
 #if UNITY_2018_1_OR_NEWER
             if (!GPUInstancerConstants.gpuiSettings.IsStandardRenderPipeline())
 #if UNITY_2019_1_OR_NEWER
+#if UNITY_2023_3_OR_NEWER || UNITY_6000_0_OR_NEWER
+                UnityEngine.Rendering.RenderPipelineManager.beginContextRendering -= CameraOnBeginRenderingSRP;
+#else
                 UnityEngine.Rendering.RenderPipelineManager.beginFrameRendering -= CameraOnBeginRenderingSRP;
+#endif
 #else
                 UnityEngine.Experimental.Rendering.RenderPipeline.beginCameraRendering -= CameraOnPreCull;
 #endif
@@ -144,8 +153,13 @@ namespace GPUInstancer
                 if (!GPUInstancerConstants.gpuiSettings.IsStandardRenderPipeline())
                 {
 #if UNITY_2019_1_OR_NEWER
+#if UNITY_2023_3_OR_NEWER || UNITY_6000_0_OR_NEWER
+                    UnityEngine.Rendering.RenderPipelineManager.beginContextRendering -= CameraOnBeginRenderingSRP;
+                    UnityEngine.Rendering.RenderPipelineManager.beginContextRendering += CameraOnBeginRenderingSRP;
+#else
                     UnityEngine.Rendering.RenderPipelineManager.beginFrameRendering -= CameraOnBeginRenderingSRP;
                     UnityEngine.Rendering.RenderPipelineManager.beginFrameRendering += CameraOnBeginRenderingSRP;
+#endif
 #else
                     UnityEngine.Experimental.Rendering.RenderPipeline.beginCameraRendering -= CameraOnPreCull;
                     UnityEngine.Experimental.Rendering.RenderPipeline.beginCameraRendering += CameraOnPreCull;
@@ -164,7 +178,11 @@ namespace GPUInstancer
         }
 
 #if UNITY_2019_1_OR_NEWER
+#if UNITY_2023_3_OR_NEWER || UNITY_6000_0_OR_NEWER
+        private void CameraOnBeginRenderingSRP(UnityEngine.Rendering.ScriptableRenderContext context, List<Camera> cams)
+#else
         private void CameraOnBeginRenderingSRP(UnityEngine.Rendering.ScriptableRenderContext context, Camera[] cams)
+#endif
         {
             if (!gpuiManager.isInitialized)
             {

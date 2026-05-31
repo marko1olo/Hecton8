@@ -592,10 +592,39 @@ namespace Hecton8.VFX
         {
             groupSizeX = 0;
             groupSizeY = 0;
-            if (_computeShader == null || kernel < 0 || !_computeShader.IsSupported(kernel))
+            if (_computeShader == null || kernel < 0)
                 return false;
 
-            _computeShader.GetKernelThreadGroupSizes(kernel, out uint x, out uint y, out uint z);
+            uint x;
+            uint y;
+            uint z;
+            try
+            {
+                if (!_computeShader.IsSupported(kernel))
+                    return false;
+
+                _computeShader.GetKernelThreadGroupSizes(kernel, out x, out y, out z);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                return false;
+            }
+            catch (UnityException)
+            {
+                return false;
+            }
             ulong totalThreads = (ulong)x * y * z;
             if (x == 0u ||
                 y == 0u ||
@@ -614,11 +643,40 @@ namespace Hecton8.VFX
 
         private int TryFindSupportedKernel(string kernelName)
         {
-            if (_computeShader == null || !_computeShader.HasKernel(kernelName))
+            if (_computeShader == null)
                 return -1;
 
-            int kernel = _computeShader.FindKernel(kernelName);
-            return kernel >= 0 && _computeShader.IsSupported(kernel) ? kernel : -1;
+            try
+            {
+                if (!_computeShader.HasKernel(kernelName))
+                    return -1;
+
+                int kernel = _computeShader.FindKernel(kernelName);
+                if (kernel < 0)
+                    return -1;
+
+                return _computeShader.IsSupported(kernel) ? kernel : -1;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return -1;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return -1;
+            }
+            catch (System.ArgumentException)
+            {
+                return -1;
+            }
+            catch (MissingReferenceException)
+            {
+                return -1;
+            }
+            catch (UnityException)
+            {
+                return -1;
+            }
         }
 
         private void InvalidateKernels()

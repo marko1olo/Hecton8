@@ -1366,12 +1366,9 @@ namespace Hecton8.Visor
 
         private void ReleaseReconstructionVaultHandles(IDataVault vault)
         {
-            ReleaseReconstructionVaultHandle(vault, ref _reconstructionConstantsHandle, ReconstructionConstantsVaultId);
-            ReleaseReconstructionVaultHandle(vault, ref _reconstructionTelemetryHandle, ReconstructionTelemetryVaultId);
-            ReleaseReconstructionVaultHandle(vault, ref _aestheticProfileHandle, ReconstructionProfileVaultId);
-            ReleaseReconstructionVaultHandle(vault, ref _csvScratchHandle, ReconstructionCsvScratchVaultId);
-            ReleaseReconstructionVaultHandle(vault, ref _mockSignalHandle, ReconstructionMockSignalVaultId);
-
+            // Renderer features are secondary DataVault consumers. URP disposal can run while the
+            // vault arena is resetting, so this lifecycle path must detach handles without freeing
+            // vault-owned storage from inside RenderPipeline cleanup.
             ClearReconstructionVaultHandles();
         }
 
@@ -2615,6 +2612,7 @@ namespace Hecton8.Visor
         private void CachePlatformCapabilitiesCold(FeatureSettings currentSettings)
         {
             _supportsReconstructionConstantBuffer = SystemInfo.supportsSetConstantBuffer;
+            _noirSupportsSetConstantBufferCold = _supportsReconstructionConstantBuffer;
             RefreshMemoryQualityPressureFloorCold(currentSettings);
             RefreshDepthlessTBDRPlatformCandidate();
         }

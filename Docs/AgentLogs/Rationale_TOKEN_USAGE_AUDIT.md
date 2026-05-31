@@ -244,3 +244,11 @@ Solution: Recheck the official GPT-5.5 pricing boundary, rerun only `Tools/Codex
 Rejected Alternatives: Running the dashboard/chart pipeline was rejected because the request did not ask for image/chart regeneration. Keeping the first failed validator result hidden was rejected because it used a stale `summary` schema assumption. Running `dotnet build` was rejected because this is offline telemetry/docs work and compilation throttling forbids unnecessary build pressure.
 Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected. Reporting scalability improves because late-day refreshes can validate the actual report schema while preserving text-only artifact scope.
 Hardware Impact: 0 us runtime gain. Audit evidence gain: current total is 123,468,373,111 tokens, delta is 2,351,612,320 tokens, GPT-5.5 base API-equivalent cost is 95,551.436967 USD, and dashboard/chart paths remained unchanged.
+
+## Decision 39 - 2026-05-31 non-specialist scale explainer
+
+Problem: The operator requested updated token stats and a scale explanation that a non-specialist can understand, but previous reports exposed mostly raw token and dollar totals.
+Solution: Add a generated `layperson_scale` JSON block and Markdown/ledger section with page, book, reading-time, game-price, workstation-price, cache-share, and burn-rate analogies while marking token-to-word conversion as a rough communication heuristic.
+Rejected Alternatives: Writing only a chat explanation was rejected because it would not update the persistent evidence artifact. Generating new PNG charts was rejected because this request asked for status refresh and explanation, not images.
+Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected. Reporting scalability improves because every future text refresh now emits the same human-scale block from source telemetry.
+Hardware Impact: 0 us runtime gain. Audit evidence gain: current total is 124,505,240,345 tokens, delta is 1,036,867,234 tokens, GPT-5.5 base API-equivalent cost is 96,330.542859 USD, all-time scale is about 186,757,861 500-word pages / 1,167,237 80k-word books / 710.65 continuous reading years, and current burn is about 93,983 pages per hour.

@@ -15,6 +15,7 @@ namespace GPUInstancer
     {
         private static ComputeShader _treeInstantiationComputeShader;
         private static int _treeInstantiationKernelId = -1;
+        private static int _treeInstantiationThreadGroupSizeX;
         public bool initializeWithCoroutine = true;
         private bool _isCoroutineActive;
 
@@ -154,19 +155,57 @@ namespace GPUInstancer
 
         private static bool EnsureTreeInstantiationComputeShader()
         {
-            if (_treeInstantiationComputeShader != null && _treeInstantiationKernelId >= 0)
+            if (_treeInstantiationComputeShader != null && _treeInstantiationKernelId >= 0 && _treeInstantiationThreadGroupSizeX > 0)
                 return true;
 
             _treeInstantiationComputeShader = Resources.Load<ComputeShader>(GPUInstancerConstants.TREE_INSTANTIATION_RESOURCE_PATH);
-            if (_treeInstantiationComputeShader == null || !_treeInstantiationComputeShader.HasKernel(GPUInstancerConstants.TREE_INSTANTIATION_KERNEL))
+            if (!GPUInstancerConstants.TryFindKernel(_treeInstantiationComputeShader, GPUInstancerConstants.TREE_INSTANTIATION_KERNEL, out _treeInstantiationKernelId))
             {
                 _treeInstantiationComputeShader = null;
                 _treeInstantiationKernelId = -1;
+                _treeInstantiationThreadGroupSizeX = 0;
                 return false;
             }
 
-            _treeInstantiationKernelId = _treeInstantiationComputeShader.FindKernel(GPUInstancerConstants.TREE_INSTANTIATION_KERNEL);
-            return _treeInstantiationKernelId >= 0;
+            if (!TryResolveTreeInstantiationThreadGroupSize(out _treeInstantiationThreadGroupSizeX))
+            {
+                _treeInstantiationComputeShader = null;
+                _treeInstantiationKernelId = -1;
+                _treeInstantiationThreadGroupSizeX = 0;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryResolveTreeInstantiationThreadGroupSize(out int threadGroupSizeX)
+        {
+            threadGroupSizeX = 0;
+            if (!GPUInstancerConstants.TryGetPortableKernelThreadGroupSizes(
+                    _treeInstantiationComputeShader,
+                    _treeInstantiationKernelId,
+                    out int sizeX,
+                    out int sizeY,
+                    out int sizeZ))
+                return false;
+
+            if (sizeY != 1 || sizeZ != 1)
+                return false;
+
+            threadGroupSizeX = sizeX;
+            return true;
+        }
+
+        private static int GetTreeInstantiationThreadGroupCount(int elementCount)
+        {
+            if (elementCount <= 0 || _treeInstantiationThreadGroupSizeX <= 0)
+                return 0;
+
+            long groupCount = ((long)elementCount + _treeInstantiationThreadGroupSizeX - 1L) / _treeInstantiationThreadGroupSizeX;
+            if (groupCount <= 0L || groupCount > GPUInstancerConstants.MaxDispatchGroupsPerDimension)
+                return 0;
+
+            return (int)groupCount;
         }
 
         public IEnumerator ReplaceUnityTrees()
@@ -319,8 +358,14 @@ namespace GPUInstancer
                                 _treeInstantiationComputeShader.SetInt(
                                     GPUInstancerConstants.TreeKernelProperties.PROTOTYPE_INDEX, i);
 
-                                _treeInstantiationComputeShader.Dispatch(_treeInstantiationKernelId,
-                                    GPUInstancerConstants.GetComputeThreadGroupCount(instanceTotal), 1, 1);
+                                int dispatchGroups = GetTreeInstantiationThreadGroupCount(instanceTotal);
+                                if (dispatchGroups <= 0)
+                                {
+                                    GPUInstancerUtility.ReleaseInstanceBuffers(runtimeData);
+                                    continue;
+                                }
+
+                                _treeInstantiationComputeShader.Dispatch(_treeInstantiationKernelId, dispatchGroups, 1, 1);
 
                                 GPUInstancerUtility.InitializeGPUBuffer(runtimeData);
 

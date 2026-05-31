@@ -3,6 +3,7 @@
     "rootNamespace": "Hecton8.Core.Content.Editor",
     "references": [
         "Hecton8.Core",
+        "Hecton8.Core.Contracts",
         "Unity.Addressables",
         "Unity.Addressables.Editor",
         "Unity.ResourceManager"

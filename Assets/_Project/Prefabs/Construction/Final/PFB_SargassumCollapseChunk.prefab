@@ -109,15 +109,9 @@ MonoBehaviour:
   scrapPickupCount: 3
   thermalIntegrity: 4
   scrapEjectSpeed: 1.8
-  snagLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  snagSearchRadius: 1.2
-  snagImpactSpeedThreshold: 1.6
   snagSpring: 28
   snagDamper: 4.2
   snagMaxDistance: 0.45
-  snagSurfaceOffset: 0.08
 --- !u!1 &3204588369501127010
 GameObject:
   m_ObjectHideFlags: 0

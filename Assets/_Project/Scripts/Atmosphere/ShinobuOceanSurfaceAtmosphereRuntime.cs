@@ -1513,12 +1513,40 @@ namespace Hecton8.Atmosphere
             if (waveHeightSamplerCompute == null || !_coldSupportsComputeShaders)
                 return false;
 
-            if (!waveHeightSamplerCompute.HasKernel(WaveHeightSamplerKernelName))
-                return false;
+            try
+            {
+                if (!waveHeightSamplerCompute.HasKernel(WaveHeightSamplerKernelName))
+                    return false;
 
-            _waveSamplerKernel = waveHeightSamplerCompute.FindKernel(WaveHeightSamplerKernelName);
-            if (!waveHeightSamplerCompute.IsSupported(_waveSamplerKernel) ||
-                !TryResolveKernelThreadGroupSize1D(waveHeightSamplerCompute, _waveSamplerKernel, out _waveSamplerThreadGroupSize))
+                _waveSamplerKernel = waveHeightSamplerCompute.FindKernel(WaveHeightSamplerKernelName);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                _waveSamplerKernel = -1;
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                _waveSamplerKernel = -1;
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                _waveSamplerKernel = -1;
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                _waveSamplerKernel = -1;
+                return false;
+            }
+            catch (UnityException)
+            {
+                _waveSamplerKernel = -1;
+                return false;
+            }
+
+            if (!TryResolveKernelThreadGroupSize1D(waveHeightSamplerCompute, _waveSamplerKernel, out _waveSamplerThreadGroupSize))
             {
                 _waveSamplerKernel = -1;
                 _waveSamplerThreadGroupSize = 0;
@@ -1547,7 +1575,36 @@ namespace Hecton8.Atmosphere
             if (compute == null || kernelIndex < 0)
                 return false;
 
-            compute.GetKernelThreadGroupSizes(kernelIndex, out uint sizeX, out uint sizeY, out uint sizeZ);
+            uint sizeX;
+            uint sizeY;
+            uint sizeZ;
+            try
+            {
+                if (!compute.IsSupported(kernelIndex))
+                    return false;
+
+                compute.GetKernelThreadGroupSizes(kernelIndex, out sizeX, out sizeY, out sizeZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                return false;
+            }
+            catch (UnityException)
+            {
+                return false;
+            }
             if (sizeX == 0u || sizeY != 1u || sizeZ != 1u)
                 return false;
 

@@ -102,7 +102,7 @@ No simulation system can publish a signal before `GlobalSignals.InitializeAllQue
 
 | "Single clean bootstrap sovereign" | false; bootstrap authority still spans `GameBootstrapper`, `BootstrapEvents`, `SceneGuard`, and legacy owner surfaces; no first-party `SceneBootstrap.cs` exists in the current source scan |
 
-| "FileStream everywhere" | false for Data Monolith; `H8StaticDataArena` uses MMF-first desktop reads, Android/Quest URI staging to cache, then direct `FileStream` into Vault-owned bytes. No managed whole-file runtime staging. |
+| "FileStream everywhere" | false for Data Monolith; `H8StaticDataArena` uses MMF/Win32 native reads on desktop and the Android player branch uses the NDK `AAssetManager` source-plugin bridge to copy `static_data.h8bin` directly into the Vault arena. Android/Quest URI staging is not the monolith route. |
 
 | "Five artery event bus" | stale; R43 scan: `73` direct queue slots, `135` typed lanes, `271` configure/ensure hits, `116` `NativeQueue` refs, `1328` script-level typed-lane matches; rerun before use |
 

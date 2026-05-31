@@ -69,7 +69,7 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(8, UnsafeUtility.AlignOf<FuzzerWireAupDTO>());
             Assert.AreEqual(0, OffsetOf<FuzzerWireAupDTO>(nameof(FuzzerWireAupDTO.SectorHash)));
             Assert.AreEqual(8, OffsetOf<FuzzerWireAupDTO>(nameof(FuzzerWireAupDTO.LocalMillimetersX)));
-            Assert.AreEqual(20, OffsetOf<FuzzerWireAupDTO>(nameof(FuzzerWireAupDTO._pad0)));
+            Assert.AreEqual(20, OffsetOf<FuzzerWireAupDTO>("_pad0"));
             Assert.AreEqual(64, UnsafeUtility.SizeOf<NetworkPacketDTO>());
             Assert.AreEqual(8, UnsafeUtility.AlignOf<NetworkPacketDTO>());
             Assert.AreEqual(0, OffsetOf<NetworkPacketDTO>(nameof(NetworkPacketDTO.SourceTick)));

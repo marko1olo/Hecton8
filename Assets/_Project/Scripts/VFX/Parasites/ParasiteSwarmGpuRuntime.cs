@@ -181,6 +181,11 @@ namespace Hecton8.VFX.Parasites
             _initialized = false;
         }
 
+        private void CompleteTargetSelectionForLifecycle()
+        {
+            // Target selection is currently resolved inline, so lifecycle teardown has no scheduled job to complete.
+        }
+
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
@@ -532,11 +537,40 @@ namespace Hecton8.VFX.Parasites
 
         private static int TryFindKernel(ComputeShader shader, string kernelName)
         {
-            if (shader == null || !SystemInfo.supportsComputeShaders || !shader.HasKernel(kernelName))
+            if (shader == null || !SystemInfo.supportsComputeShaders)
                 return -1;
 
-            int kernel = shader.FindKernel(kernelName);
-            return kernel >= 0 && shader.IsSupported(kernel) ? kernel : -1;
+            try
+            {
+                if (!shader.HasKernel(kernelName))
+                    return -1;
+
+                int kernel = shader.FindKernel(kernelName);
+                if (kernel < 0)
+                    return -1;
+
+                return shader.IsSupported(kernel) ? kernel : -1;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return -1;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return -1;
+            }
+            catch (System.ArgumentException)
+            {
+                return -1;
+            }
+            catch (MissingReferenceException)
+            {
+                return -1;
+            }
+            catch (UnityException)
+            {
+                return -1;
+            }
         }
 
         private void InitializeGpuParticles()
@@ -1404,11 +1438,39 @@ namespace Hecton8.VFX.Parasites
         {
             if (compute == null ||
                 kernel < 0 ||
-                !SystemInfo.supportsComputeShaders ||
-                !compute.IsSupported(kernel))
+                !SystemInfo.supportsComputeShaders)
                 return 0;
 
-            compute.GetKernelThreadGroupSizes(kernel, out uint sizeX, out uint sizeY, out uint sizeZ);
+            uint sizeX;
+            uint sizeY;
+            uint sizeZ;
+            try
+            {
+                if (!compute.IsSupported(kernel))
+                    return 0;
+
+                compute.GetKernelThreadGroupSizes(kernel, out sizeX, out sizeY, out sizeZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return 0;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return 0;
+            }
+            catch (System.ArgumentException)
+            {
+                return 0;
+            }
+            catch (MissingReferenceException)
+            {
+                return 0;
+            }
+            catch (UnityException)
+            {
+                return 0;
+            }
             if (sizeX == 0u || sizeY != 1u || sizeZ != 1u || sizeX > int.MaxValue)
                 return 0;
 

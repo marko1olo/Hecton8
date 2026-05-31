@@ -3463,30 +3463,35 @@ namespace Hecton8.Core
             InputLatencyTracker.MarkInputCaptured();
             _latchedActionBits |= (uint)PlayerInputAction.Interact;
             PublishPlayerInputCommand(PlayerInputSignalCommands.Interact);
+            OnInteract?.Invoke();
         }
 
         private void HandleToolSlot1Pressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot1);
+            OnToolSlot1?.Invoke();
         }
 
         private void HandleToolSlot2Pressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot2);
+            OnToolSlot2?.Invoke();
         }
 
         private void HandleToolSlot3Pressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot3);
+            OnToolSlot3?.Invoke();
         }
 
         private void HandleToolSlot4Pressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.ToolSlot4);
+            OnToolSlot4?.Invoke();
         }
 
         private void HandlePrimaryActionPressed()
@@ -3494,6 +3499,7 @@ namespace Hecton8.Core
             InputLatencyTracker.MarkInputCaptured();
             _latchedActionBits |= (uint)PlayerInputAction.PrimaryFire;
             PublishPlayerInputCommand(PlayerInputSignalCommands.PrimaryAction);
+            OnPrimaryAction?.Invoke();
         }
 
         private void HandleSecondaryActionPressed()
@@ -3501,36 +3507,42 @@ namespace Hecton8.Core
             InputLatencyTracker.MarkInputCaptured();
             _latchedActionBits |= (uint)PlayerInputAction.SecondaryFire;
             PublishPlayerInputCommand(PlayerInputSignalCommands.SecondaryAction);
+            OnSecondaryAction?.Invoke();
         }
 
         private void HandlePDAPressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.TogglePda);
+            OnPDA?.Invoke();
         }
 
         private void HandleInventoryPressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.ToggleInventory);
+            OnInventory?.Invoke();
         }
 
         private void HandleCancelPressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.Cancel);
+            OnCancel?.Invoke();
         }
 
         private void HandleTabNextPressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.TabNext);
+            OnTabNext?.Invoke();
         }
 
         private void HandleTabPreviousPressed()
         {
             InputLatencyTracker.MarkInputCaptured();
             PublishPlayerInputCommand(PlayerInputSignalCommands.TabPrevious);
+            OnTabPrevious?.Invoke();
         }
 
         private void HandleFlashlightPressed()

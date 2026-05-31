@@ -16,7 +16,7 @@ namespace Hecton8.Editor
         private const int PresentationSuppressionSizeBytes = 32;
         private const int FenceTelemetrySizeBytes = 64;
         private const int JobDependencySizeBytes = 32;
-        private const int PipelineTelemetrySizeBytes = 32;
+        private const int PipelineTelemetrySizeBytes = 64;
         private const int MockTimeDilationSignalSizeBytes = 16;
         private const int JobSchedulingProfileSizeBytes = 16;
 

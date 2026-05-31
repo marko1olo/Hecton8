@@ -22,8 +22,8 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(8, (int)Marshal.OffsetOf<LightCullStateDTO>(nameof(LightCullStateDTO.BaseIntensity)));
             Assert.AreEqual(12, (int)Marshal.OffsetOf<LightCullStateDTO>(nameof(LightCullStateDTO.ComputedIntensity)));
             Assert.AreEqual(16, (int)Marshal.OffsetOf<LightCullStateDTO>(nameof(LightCullStateDTO.Flags)));
-            Assert.AreEqual(20, (int)Marshal.OffsetOf<LightCullStateDTO>(nameof(LightCullStateDTO._pad0)));
-            Assert.AreEqual(31, (int)Marshal.OffsetOf<LightCullStateDTO>(nameof(LightCullStateDTO._pad11)));
+            Assert.AreEqual(20, (int)Marshal.OffsetOf<LightCullStateDTO>("_pad0"));
+            Assert.AreEqual(31, (int)Marshal.OffsetOf<LightCullStateDTO>("_pad11"));
 
             Assert.AreEqual(96, UnsafeUtility.SizeOf<DynamicPointLightSourceDTO>());
             Assert.AreEqual(64, UnsafeUtility.SizeOf<DynamicPointLightGpuDTO>());
@@ -31,7 +31,7 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(64, UnsafeUtility.SizeOf<DynamicPointLightSourceManifestDTO>());
             Assert.AreEqual(0, (int)Marshal.OffsetOf<DynamicPointLightSourceManifestDTO>(nameof(DynamicPointLightSourceManifestDTO.ActiveSourceCount)));
             Assert.AreEqual(16, (int)Marshal.OffsetOf<DynamicPointLightSourceManifestDTO>(nameof(DynamicPointLightSourceManifestDTO.Flags)));
-            Assert.AreEqual(56, (int)Marshal.OffsetOf<DynamicPointLightSourceManifestDTO>(nameof(DynamicPointLightSourceManifestDTO._pad3)));
+            Assert.AreEqual(56, (int)Marshal.OffsetOf<DynamicPointLightSourceManifestDTO>("_pad3"));
         }
 
         [Test]

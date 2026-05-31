@@ -92,7 +92,8 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             TryRegisterHotSwapListener();
-            TryRegister();
+            if (_state != State.Idle)
+                TryRegister();
         }
 
         private void OnDisable()
@@ -124,7 +125,8 @@ namespace Hecton8.UI
             if (isActiveAndEnabled)
             {
                 Unregister();
-                TryRegister();
+                if (_state != State.Idle)
+                    TryRegister();
             }
         }
 
@@ -135,9 +137,12 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             if (_state == State.Idle)
+            {
+                Unregister();
                 return;
+            }
 
-            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameDeltaTime);
+            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime);
             _timer += dt;
 
             if (_state == State.FadingIn)
@@ -184,6 +189,7 @@ namespace Hecton8.UI
             if (IsAnimationComplete())
             {
                 _state = State.Idle;
+                Unregister();
             }
         }
 
@@ -224,6 +230,7 @@ namespace Hecton8.UI
                 System.Action onComplete = _onFadeOutComplete;
                 _onFadeOutComplete = null;
                 _state = State.Idle;
+                Unregister();
                 onComplete?.Invoke();
             }
         }
@@ -255,6 +262,7 @@ namespace Hecton8.UI
             {
                 _state = State.Idle;
                 _onFadeOutComplete = null;
+                Unregister();
                 onComplete?.Invoke();
                 return;
             }
@@ -273,6 +281,7 @@ namespace Hecton8.UI
             _state = State.Idle;
             _onFadeOutComplete = null;
             ShowAllGroups();
+            Unregister();
         }
 
         /// <summary>

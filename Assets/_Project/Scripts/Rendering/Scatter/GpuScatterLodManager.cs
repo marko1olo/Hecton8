@@ -2259,22 +2259,90 @@ namespace Hecton8.Rendering.Scatter
 
         private int ResolveKernel(ComputeShader compute, string kernelName)
         {
-            if (compute == null || !_coldSupportsComputeShaders || !compute.HasKernel(kernelName))
+            if (compute == null || !_coldSupportsComputeShaders)
                 return -1;
 
-            int kernel = compute.FindKernel(kernelName);
-            return kernel >= 0 && compute.IsSupported(kernel) ? kernel : -1;
+            try
+            {
+                if (!compute.HasKernel(kernelName))
+                    return -1;
+
+                int kernel = compute.FindKernel(kernelName);
+                if (kernel < 0)
+                    return -1;
+
+                return compute.IsSupported(kernel) ? kernel : -1;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return -1;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return -1;
+            }
+            catch (System.ArgumentException)
+            {
+                return -1;
+            }
+            catch (MissingReferenceException)
+            {
+                return -1;
+            }
+            catch (UnityException)
+            {
+                return -1;
+            }
         }
 
         private bool TryResolveDispatchThreadGroupSize()
         {
             if (scatterCullCompute == null ||
                 _scatterCullKernel < 0 ||
-                !_coldSupportsComputeShaders ||
-                !scatterCullCompute.IsSupported(_scatterCullKernel))
+                !_coldSupportsComputeShaders)
                 return false;
 
-            scatterCullCompute.GetKernelThreadGroupSizes(_scatterCullKernel, out uint groupX, out uint groupY, out uint groupZ);
+            uint groupX;
+            uint groupY;
+            uint groupZ;
+            try
+            {
+                if (!scatterCullCompute.IsSupported(_scatterCullKernel))
+                    return false;
+
+                scatterCullCompute.GetKernelThreadGroupSizes(_scatterCullKernel, out groupX, out groupY, out groupZ);
+            }
+            catch (ObjectDisposedException)
+            {
+                _dispatchThreadGroupSizeX = 0;
+                RecordBlackBox(BlackBoxFlagInvalidThreadGroup, ResolveSafeActiveCount());
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                _dispatchThreadGroupSizeX = 0;
+                RecordBlackBox(BlackBoxFlagInvalidThreadGroup, ResolveSafeActiveCount());
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                _dispatchThreadGroupSizeX = 0;
+                RecordBlackBox(BlackBoxFlagInvalidThreadGroup, ResolveSafeActiveCount());
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                _dispatchThreadGroupSizeX = 0;
+                RecordBlackBox(BlackBoxFlagInvalidThreadGroup, ResolveSafeActiveCount());
+                return false;
+            }
+            catch (UnityException)
+            {
+                _dispatchThreadGroupSizeX = 0;
+                RecordBlackBox(BlackBoxFlagInvalidThreadGroup, ResolveSafeActiveCount());
+                return false;
+            }
+
             ulong totalThreads = (ulong)groupX * groupY * groupZ;
             if (groupX == 0u ||
                 groupY != 1u ||

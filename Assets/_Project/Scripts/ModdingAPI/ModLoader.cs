@@ -8,6 +8,9 @@ using Hecton8.Core.Bridge;
 using Hecton8.SaveSystem;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Modding
 {
@@ -73,8 +76,7 @@ namespace Hecton8.Modding
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
         {
-            ShutdownLoadedMods();
-            UninstallHooks();
+            ShutdownRuntimeForLifecycleReset();
             _loadedMods.Clear();
             _runtimeInfos.Clear();
             _runtimeInfoIndexByHash.Clear();
@@ -85,6 +87,24 @@ namespace Hecton8.Modding
             _shutdownInvoked = false;
             HectonAPI.ResetRegistryCacheCold();
         }
+
+#if UNITY_EDITOR
+        [InitializeOnLoadMethod]
+        private static void InstallEditorPlayModeShutdownHook()
+        {
+            EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.ExitingPlayMode ||
+                state == PlayModeStateChange.EnteredEditMode)
+            {
+                ShutdownRuntimeForLifecycleReset();
+            }
+        }
+#endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Bootstrap()
@@ -1318,7 +1338,16 @@ namespace Hecton8.Modding
 
         private static void HandleApplicationQuitting()
         {
+            ShutdownRuntimeForLifecycleReset();
+        }
+
+        private static void ShutdownRuntimeForLifecycleReset()
+        {
             ShutdownLoadedMods();
+            UninstallHooks();
+            _bootstrapped = false;
+            _modsInitialized = false;
+            _shutdownInvoked = false;
         }
 
         private static void ShutdownLoadedMods()

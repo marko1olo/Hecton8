@@ -385,17 +385,14 @@ namespace Hecton8.Visor
                     return true;
                 }
 
-                if (!_computeShader.HasKernel(GridBuildKernelName) ||
-                    !_computeShader.HasKernel(RaymarchKernelName) ||
-                    !_computeShader.HasKernel(RaymarchXrKernelName))
+                if (!TryFindKernel(_computeShader, GridBuildKernelName, out _gridBuildKernel) ||
+                    !TryFindKernel(_computeShader, RaymarchKernelName, out _raymarchKernel) ||
+                    !TryFindKernel(_computeShader, RaymarchXrKernelName, out _raymarchXrKernel))
                 {
                     ResetComputeKernelState();
                     return false;
                 }
 
-                _gridBuildKernel = _computeShader.FindKernel(GridBuildKernelName);
-                _raymarchKernel = _computeShader.FindKernel(RaymarchKernelName);
-                _raymarchXrKernel = _computeShader.FindKernel(RaymarchXrKernelName);
                 if (!TryResolveKernelThreadGroups(_computeShader, _gridBuildKernel, false, out _gridBuildThreadGroupSizeX, out _gridBuildThreadGroupSizeY, out _gridBuildThreadGroupSizeZ) ||
                     !TryResolveKernelThreadGroups(_computeShader, _raymarchKernel, true, out _raymarchThreadGroupSizeX, out _raymarchThreadGroupSizeY, out _) ||
                     !TryResolveKernelThreadGroups(_computeShader, _raymarchXrKernel, true, out _raymarchXrThreadGroupSizeX, out _raymarchXrThreadGroupSizeY, out _))
@@ -421,6 +418,47 @@ namespace Hecton8.Visor
                 _raymarchXrThreadGroupSizeY = 0u;
             }
 
+            private static bool TryFindKernel(ComputeShader computeShader, string kernelName, out int kernel)
+            {
+                kernel = -1;
+                if (computeShader == null)
+                    return false;
+
+                try
+                {
+                    if (!computeShader.HasKernel(kernelName))
+                        return false;
+
+                    kernel = computeShader.FindKernel(kernelName);
+                    return kernel >= 0;
+                }
+                catch (ObjectDisposedException)
+                {
+                    kernel = -1;
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    kernel = -1;
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    kernel = -1;
+                    return false;
+                }
+                catch (MissingReferenceException)
+                {
+                    kernel = -1;
+                    return false;
+                }
+                catch (UnityException)
+                {
+                    kernel = -1;
+                    return false;
+                }
+            }
+
             private static bool TryResolveKernelThreadGroups(
                 ComputeShader computeShader,
                 int kernelIndex,
@@ -432,10 +470,40 @@ namespace Hecton8.Visor
                 groupSizeX = 0u;
                 groupSizeY = 0u;
                 groupSizeZ = 0u;
-                if (computeShader == null || kernelIndex < 0 || !computeShader.IsSupported(kernelIndex))
+                if (computeShader == null || kernelIndex < 0)
                     return false;
 
-                computeShader.GetKernelThreadGroupSizes(kernelIndex, out uint x, out uint y, out uint z);
+                uint x;
+                uint y;
+                uint z;
+                try
+                {
+                    if (!computeShader.IsSupported(kernelIndex))
+                        return false;
+
+                    computeShader.GetKernelThreadGroupSizes(kernelIndex, out x, out y, out z);
+                }
+                catch (ObjectDisposedException)
+                {
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    return false;
+                }
+                catch (MissingReferenceException)
+                {
+                    return false;
+                }
+                catch (UnityException)
+                {
+                    return false;
+                }
+
                 ulong threadProduct = (ulong)x * y * z;
                 if (x == 0u || y == 0u || z == 0u || threadProduct == 0UL || threadProduct > MaxKernelThreadProduct)
                     return false;
@@ -2294,11 +2362,13 @@ namespace Hecton8.Visor
 
             private void ReleaseVaultHandles()
             {
-                IDataVault vault = _vault;
-                ReleaseFogVaultHandle(vault, ref _paramsHandle, BufferID.ShinobuVolumetricFogParams);
-                ReleaseFogVaultHandle(vault, ref _pointLightsHandle, BufferID.ShinobuVolumetricFogPointLights);
-                ReleaseFogVaultHandle(vault, ref _telemetryHandle, BufferID.ShinobuVolumetricFogTelemetryRing);
-                ReleaseFogVaultHandle(vault, ref _extinctionProfilesHandle, BufferID.ShinobuVolumetricFogExtinctionProfiles);
+                // Renderer features are secondary DataVault consumers. URP disposal can run while the
+                // vault arena is resetting, so this lifecycle path detaches handles without freeing
+                // vault-owned storage from inside RenderPipeline cleanup.
+                _paramsHandle = default;
+                _pointLightsHandle = default;
+                _telemetryHandle = default;
+                _extinctionProfilesHandle = default;
             }
 
             private static void ReleaseFogVaultHandle<T>(

@@ -72,7 +72,9 @@ namespace Hecton8.UI
         // COLD ALLOC: Matrix4x4[64] — instanced hostile radar blip matrices — owner: FakeRadarBlipController
         private readonly Matrix4x4[] _blipMatrices = new Matrix4x4[MaxBlips];
 
+#pragma warning disable CS0414
         private bool _registered;
+#pragma warning restore CS0414
         private bool _registeredLateFrame;
         private bool _registeredRenderable;
         private bool _scanEventsRegistered;

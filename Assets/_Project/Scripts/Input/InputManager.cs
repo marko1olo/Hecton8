@@ -702,60 +702,73 @@ namespace Hecton8.Input
         {
             CaptureInputDisplayStyle(context);
             _moveInput = context.ReadValue<Vector2>();
+            OnMove?.Invoke(_moveInput);
         }
         private void OnMoveCanceled(InputAction.CallbackContext context)
         {
             _moveInput = Vector2.zero;
+            OnMove?.Invoke(Vector2.zero);
         }
         private void OnLookPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
             _lookInput = context.ReadValue<Vector2>();
+            OnLook?.Invoke(_lookInput);
         }
         private void OnLookCanceled(InputAction.CallbackContext context)
         {
             _lookInput = Vector2.zero;
+            OnLook?.Invoke(Vector2.zero);
         }
         private void OnJumpPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
             _isJumping = true;
+            OnJump?.Invoke();
         }
         private void OnJumpCanceledPerformed(InputAction.CallbackContext context)
         {
             _isJumping = false;
+            OnJumpCanceled?.Invoke();
         }
         private void OnSprintPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
             _isSprinting = true;
+            OnSprint?.Invoke();
         }
         private void OnSprintCanceledPerformed(InputAction.CallbackContext context)
         {
             _isSprinting = false;
+            OnSprintCanceled?.Invoke();
         }
         private void OnVerticalMovementPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
             _verticalMovementInput = context.ReadValue<float>();
+            OnVerticalMove?.Invoke(_verticalMovementInput);
         }
         private void OnVerticalMovementCanceled(InputAction.CallbackContext context)
         {
             _verticalMovementInput = 0f;
+            OnVerticalMove?.Invoke(0f);
         }
         
         // Interaction Callbacks
         private void OnInteractPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
+            OnInteract?.Invoke();
         }
         private void OnFlashlightPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
+            OnFlashlight?.Invoke();
         }
         private void OnPDAPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
+            OnPDA?.Invoke();
         }
         private void OnPausePerformed(InputAction.CallbackContext context)
         {
@@ -765,24 +778,29 @@ namespace Hecton8.Input
         private void OnInventoryPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
+            OnInventory?.Invoke();
         }
         
         // Tool Callbacks
         private void OnToolSlot1Performed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
+            OnToolSlot1?.Invoke();
         }
         private void OnToolSlot2Performed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
+            OnToolSlot2?.Invoke();
         }
         private void OnToolSlot3Performed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
+            OnToolSlot3?.Invoke();
         }
         private void OnToolSlot4Performed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
+            OnToolSlot4?.Invoke();
         }
         
         // Action Callbacks
@@ -790,19 +808,23 @@ namespace Hecton8.Input
         {
             CaptureInputDisplayStyle(context);
             _isPrimaryActionHeld = true;
+            OnPrimaryAction?.Invoke();
         }
         private void OnPrimaryActionCanceledPerformed(InputAction.CallbackContext context)
         {
             _isPrimaryActionHeld = false;
+            OnPrimaryActionCanceled?.Invoke();
         }
         private void OnSecondaryActionPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
             _isSecondaryActionHeld = true;
+            OnSecondaryAction?.Invoke();
         }
         private void OnSecondaryActionCanceledPerformed(InputAction.CallbackContext context)
         {
             _isSecondaryActionHeld = false;
+            OnSecondaryActionCanceled?.Invoke();
         }
         
         // UI Callbacks
@@ -820,14 +842,17 @@ namespace Hecton8.Input
         private void OnCancelPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
+            OnCancel?.Invoke();
         }
         private void OnTabNextPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
+            OnTabNext?.Invoke();
         }
         private void OnTabPreviousPerformed(InputAction.CallbackContext context)
         {
             CaptureInputDisplayStyle(context);
+            OnTabPrevious?.Invoke();
         }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void OnDebugToggleBlackBoxDashboardPerformed(InputAction.CallbackContext context)

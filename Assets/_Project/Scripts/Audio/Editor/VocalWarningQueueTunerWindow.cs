@@ -117,7 +117,7 @@ namespace Hecton8.Audio.Editor
         private static VocalWarningSystem ResolveRuntime()
         {
 #if UNITY_2023_1_OR_NEWER
-            return Object.FindFirstObjectByType<VocalWarningSystem>();
+            return Object.FindAnyObjectByType<VocalWarningSystem>();
 #else
             return Object.FindObjectOfType<VocalWarningSystem>();
 #endif

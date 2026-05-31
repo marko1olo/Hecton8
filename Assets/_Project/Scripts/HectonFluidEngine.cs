@@ -8479,19 +8479,77 @@ namespace Hecton8.Physics
 
         private static int ResolveKernel(ComputeShader compute, string kernelName, bool supportsComputeShaders)
         {
-            if (compute == null || !supportsComputeShaders || !compute.HasKernel(kernelName))
+            if (compute == null || !supportsComputeShaders)
                 return -1;
 
-            int kernel = compute.FindKernel(kernelName);
-            return kernel >= 0 && compute.IsSupported(kernel) ? kernel : -1;
+            try
+            {
+                if (!compute.HasKernel(kernelName))
+                    return -1;
+
+                int kernel = compute.FindKernel(kernelName);
+                if (kernel < 0)
+                    return -1;
+
+                return compute.IsSupported(kernel) ? kernel : -1;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return -1;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return -1;
+            }
+            catch (System.ArgumentException)
+            {
+                return -1;
+            }
+            catch (MissingReferenceException)
+            {
+                return -1;
+            }
+            catch (UnityException)
+            {
+                return -1;
+            }
         }
 
         private static int ResolveKernelThreadGroupSizeX(ComputeShader compute, int kernel, bool supportsComputeShaders)
         {
-            if (compute == null || kernel < 0 || !supportsComputeShaders || !compute.IsSupported(kernel))
+            if (compute == null || kernel < 0 || !supportsComputeShaders)
                 return 0;
 
-            compute.GetKernelThreadGroupSizes(kernel, out uint sizeX, out uint sizeY, out uint sizeZ);
+            uint sizeX;
+            uint sizeY;
+            uint sizeZ;
+            try
+            {
+                if (!compute.IsSupported(kernel))
+                    return 0;
+
+                compute.GetKernelThreadGroupSizes(kernel, out sizeX, out sizeY, out sizeZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return 0;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return 0;
+            }
+            catch (System.ArgumentException)
+            {
+                return 0;
+            }
+            catch (MissingReferenceException)
+            {
+                return 0;
+            }
+            catch (UnityException)
+            {
+                return 0;
+            }
             ulong totalThreads = (ulong)sizeX * sizeY * sizeZ;
             if (sizeX == 0u ||
                 sizeY != 1u ||
@@ -8516,10 +8574,39 @@ namespace Hecton8.Physics
             sizeX = 0;
             sizeY = 0;
             sizeZ = 0;
-            if (compute == null || kernel < 0 || !supportsComputeShaders || !compute.IsSupported(kernel))
+            if (compute == null || kernel < 0 || !supportsComputeShaders)
                 return;
 
-            compute.GetKernelThreadGroupSizes(kernel, out uint queryX, out uint queryY, out uint queryZ);
+            uint queryX;
+            uint queryY;
+            uint queryZ;
+            try
+            {
+                if (!compute.IsSupported(kernel))
+                    return;
+
+                compute.GetKernelThreadGroupSizes(kernel, out queryX, out queryY, out queryZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return;
+            }
+            catch (System.ArgumentException)
+            {
+                return;
+            }
+            catch (MissingReferenceException)
+            {
+                return;
+            }
+            catch (UnityException)
+            {
+                return;
+            }
             ulong totalThreads = (ulong)queryX * queryY * queryZ;
             if (queryX == 0u ||
                 queryY == 0u ||

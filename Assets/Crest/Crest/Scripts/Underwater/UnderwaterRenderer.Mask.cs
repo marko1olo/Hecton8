@@ -73,8 +73,8 @@ namespace Crest
 
         ComputeShader _fixMaskComputeShader;
         int _fixMaskKernel;
-        uint _fixMaskThreadGroupSizeX;
-        uint _fixMaskThreadGroupSizeY;
+        int _fixMaskThreadGroupSizeX;
+        int _fixMaskThreadGroupSizeY;
 
         void SetupOceanMask()
         {
@@ -145,7 +145,7 @@ namespace Crest
             }
 
             _fixMaskComputeShader = ComputeShaderHelpers.LoadShader(k_ComputeShaderFillMaskArtefacts);
-            if (_fixMaskComputeShader == null || !_fixMaskComputeShader.HasKernel(k_ComputeShaderKernelFillMaskArtefacts))
+            if (!ComputeShaderHelpers.TryFindKernel(_fixMaskComputeShader, k_ComputeShaderKernelFillMaskArtefacts, out _fixMaskKernel))
             {
                 _fixMaskComputeShader = null;
                 _fixMaskKernel = -1;
@@ -153,14 +153,13 @@ namespace Crest
                 _fixMaskThreadGroupSizeY = 0;
                 return;
             }
-            _fixMaskKernel = _fixMaskComputeShader.FindKernel(k_ComputeShaderKernelFillMaskArtefacts);
-            _fixMaskComputeShader.GetKernelThreadGroupSizes
-            (
-                _fixMaskKernel,
-                out _fixMaskThreadGroupSizeX,
-                out _fixMaskThreadGroupSizeY,
-                out _
-            );
+            if (!ComputeShaderHelpers.TryGetPortableKernelThreadGroupSize2D(_fixMaskComputeShader, _fixMaskKernel, out _fixMaskThreadGroupSizeX, out _fixMaskThreadGroupSizeY))
+            {
+                _fixMaskComputeShader = null;
+                _fixMaskKernel = -1;
+                _fixMaskThreadGroupSizeX = 0;
+                _fixMaskThreadGroupSizeY = 0;
+            }
         }
 
         internal void SetUpMaskTextures(RenderTextureDescriptor descriptor)
@@ -353,13 +352,18 @@ namespace Crest
             }
             if (_fixMaskComputeShader == null || _fixMaskKernel < 0 ||
                 descriptor.width <= 0 || descriptor.height <= 0 || descriptor.volumeDepth <= 0 ||
+                descriptor.volumeDepth > ComputeShaderHelpers.MaxDispatchGroupsPerDimension ||
                 _fixMaskThreadGroupSizeX == 0 || _fixMaskThreadGroupSizeY == 0)
             {
                 return;
             }
 
-            int groupsX = (int)(((long)descriptor.width + _fixMaskThreadGroupSizeX - 1L) / _fixMaskThreadGroupSizeX);
-            int groupsY = (int)(((long)descriptor.height + _fixMaskThreadGroupSizeY - 1L) / _fixMaskThreadGroupSizeY);
+            int groupsX = ComputeShaderHelpers.DispatchCount(descriptor.width, _fixMaskThreadGroupSizeX);
+            int groupsY = ComputeShaderHelpers.DispatchCount(descriptor.height, _fixMaskThreadGroupSizeY);
+            if (groupsX <= 0 || groupsY <= 0)
+            {
+                return;
+            }
 
             buffer.SetComputeTextureParam(_fixMaskComputeShader, _fixMaskKernel, ShaderIDs.s_CrestOceanMaskTexture, target);
             buffer.SetComputeIntParam(_fixMaskComputeShader, ShaderIDs.s_CrestOceanMaskWidth, descriptor.width);

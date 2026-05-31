@@ -1,0 +1,6 @@
+# biome,foamThreshold,foamIntensity,wakeStrength,wakeLifespanSeconds,shorelineDepthFadeMeters,reflectionCubemapMix,seaLevelMeters,globalQualityWeightOverride
+# Editor-loaded ocean single-pass aesthetic profiles. Runtime quality remains owned by GlobalQualityWeight when override = -1.
+safe_shallows,0.62,1.15,1.05,3.20,10.00,0.50,0,-1
+kelp_forest,0.70,0.85,0.80,3.80,7.00,0.38,0,-1
+deep_abyss,0.92,0.22,0.45,2.40,3.00,0.18,0,-1
+sulfur_vents,0.78,0.55,0.70,2.60,4.50,0.26,0,-1

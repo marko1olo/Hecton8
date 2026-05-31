@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core.Memory;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -1346,13 +1347,13 @@ namespace Hecton8.Core.Bucketing
             [FieldOffset(60)] public uint StateHash;
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct LoadBalancingJob : IJob
         {
-            [ReadOnly, NoAlias] public NativeArray<float> EntityCostsMs;
-            [NoAlias] public NativeArray<int> EntityBucketsWork;
-            [NoAlias] public NativeArray<float> BucketLoadsMs;
-            [NoAlias] public NativeArray<SimulationBucketRebalanceResult> Result;
+            [ReadOnly, NativeDisableContainerSafetyRestriction] public NativeArray<float> EntityCostsMs;
+            [NativeDisableContainerSafetyRestriction] public NativeArray<int> EntityBucketsWork;
+            [NativeDisableContainerSafetyRestriction] public NativeArray<float> BucketLoadsMs;
+            [NativeDisableContainerSafetyRestriction] public NativeArray<SimulationBucketRebalanceResult> Result;
             public int EntityCount;
             public int BucketCount;
             public float DefaultCostMs;

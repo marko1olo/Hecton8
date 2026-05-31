@@ -1795,22 +1795,79 @@ namespace Hecton8.World
 
         private int ResolveKernel(ComputeShader computeShader, string kernelName)
         {
-            if (computeShader == null || !_coldSupportsComputeShaders || !computeShader.HasKernel(kernelName))
+            if (computeShader == null || !_coldSupportsComputeShaders)
                 return -1;
 
-            int kernel = computeShader.FindKernel(kernelName);
-            return kernel >= 0 && computeShader.IsSupported(kernel) ? kernel : -1;
+            try
+            {
+                if (!computeShader.HasKernel(kernelName))
+                    return -1;
+
+                int kernel = computeShader.FindKernel(kernelName);
+                if (kernel < 0)
+                    return -1;
+
+                return computeShader.IsSupported(kernel) ? kernel : -1;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return -1;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return -1;
+            }
+            catch (System.ArgumentException)
+            {
+                return -1;
+            }
+            catch (MissingReferenceException)
+            {
+                return -1;
+            }
+            catch (UnityException)
+            {
+                return -1;
+            }
         }
 
         private int ResolveKernelThreadGroupSizeX(ComputeShader computeShader, int kernel)
         {
             if (computeShader == null ||
                 kernel < 0 ||
-                !_coldSupportsComputeShaders ||
-                !computeShader.IsSupported(kernel))
+                !_coldSupportsComputeShaders)
                 return 0;
 
-            computeShader.GetKernelThreadGroupSizes(kernel, out uint queryX, out uint queryY, out uint queryZ);
+            uint queryX;
+            uint queryY;
+            uint queryZ;
+            try
+            {
+                if (!computeShader.IsSupported(kernel))
+                    return 0;
+
+                computeShader.GetKernelThreadGroupSizes(kernel, out queryX, out queryY, out queryZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return 0;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return 0;
+            }
+            catch (System.ArgumentException)
+            {
+                return 0;
+            }
+            catch (MissingReferenceException)
+            {
+                return 0;
+            }
+            catch (UnityException)
+            {
+                return 0;
+            }
             if (queryX == 0u || queryY != 1u || queryZ != 1u || queryX > int.MaxValue)
                 return 0;
 
@@ -1828,11 +1885,39 @@ namespace Hecton8.World
             threadGroupSizeY = 0;
             if (computeShader == null ||
                 kernel < 0 ||
-                !_coldSupportsComputeShaders ||
-                !computeShader.IsSupported(kernel))
+                !_coldSupportsComputeShaders)
                 return;
 
-            computeShader.GetKernelThreadGroupSizes(kernel, out uint queryX, out uint queryY, out uint queryZ);
+            uint queryX;
+            uint queryY;
+            uint queryZ;
+            try
+            {
+                if (!computeShader.IsSupported(kernel))
+                    return;
+
+                computeShader.GetKernelThreadGroupSizes(kernel, out queryX, out queryY, out queryZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return;
+            }
+            catch (System.ArgumentException)
+            {
+                return;
+            }
+            catch (MissingReferenceException)
+            {
+                return;
+            }
+            catch (UnityException)
+            {
+                return;
+            }
             if (queryX == 0u || queryY == 0u || queryZ != 1u || queryX > int.MaxValue || queryY > int.MaxValue)
                 return;
 

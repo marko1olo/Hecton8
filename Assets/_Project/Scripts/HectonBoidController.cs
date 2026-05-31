@@ -1609,11 +1609,42 @@ namespace Hecton8.AI.GPU
         private bool TryResolveKernel(string kernelName, out int kernelIndex)
         {
             kernelIndex = -1;
-            if (boidShader == null || !SystemInfo.supportsComputeShaders || !boidShader.HasKernel(kernelName))
+            if (boidShader == null || !SystemInfo.supportsComputeShaders)
                 return false;
 
-            kernelIndex = boidShader.FindKernel(kernelName);
-            return true;
+            try
+            {
+                if (!boidShader.HasKernel(kernelName))
+                    return false;
+
+                kernelIndex = boidShader.FindKernel(kernelName);
+                return kernelIndex >= 0;
+            }
+            catch (ObjectDisposedException)
+            {
+                kernelIndex = -1;
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                kernelIndex = -1;
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                kernelIndex = -1;
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                kernelIndex = -1;
+                return false;
+            }
+            catch (UnityException)
+            {
+                kernelIndex = -1;
+                return false;
+            }
         }
 
         private void ResetDispatchGroupSizes()
@@ -1631,11 +1662,45 @@ namespace Hecton8.AI.GPU
             groupSizeX = 0;
             if (boidShader == null ||
                 kernelIndex < 0 ||
-                !SystemInfo.supportsComputeShaders ||
-                !boidShader.IsSupported(kernelIndex))
+                !SystemInfo.supportsComputeShaders)
                 return false;
 
-            boidShader.GetKernelThreadGroupSizes(kernelIndex, out uint x, out uint y, out uint z);
+            uint x;
+            uint y;
+            uint z;
+            try
+            {
+                if (!boidShader.IsSupported(kernelIndex))
+                    return false;
+
+                boidShader.GetKernelThreadGroupSizes(kernelIndex, out x, out y, out z);
+            }
+            catch (ObjectDisposedException)
+            {
+                ResetDispatchGroupSizes();
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                ResetDispatchGroupSizes();
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                ResetDispatchGroupSizes();
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                ResetDispatchGroupSizes();
+                return false;
+            }
+            catch (UnityException)
+            {
+                ResetDispatchGroupSizes();
+                return false;
+            }
+
             ulong totalThreads = (ulong)x * y * z;
             if (x == 0u || y != 1u || z != 1u || totalThreads > ThreadGroupPortableMaxSize || x > 2147483647u)
             {

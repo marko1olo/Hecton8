@@ -9,6 +9,7 @@ namespace Hecton8.Inventory
     using Hecton8.Core;
     using Hecton8.Core.Memory;
     using Unity.Burst;
+    using Unity.Burst.CompilerServices;
     using Unity.Burst.Intrinsics;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
@@ -907,6 +908,7 @@ namespace Hecton8.Inventory
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [IgnoreWarning(1305)]
         internal static int EqualMask4(NativeArray<uint> itemHashIds, int index, uint targetHashId)
         {
             if (X86.Sse2.IsSse2Supported)
@@ -946,6 +948,7 @@ namespace Hecton8.Inventory
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [IgnoreWarning(1305)]
         internal static int EqualMask8(NativeArray<uint> itemHashIds, int index, uint targetHashId)
         {
             if (X86.Avx2.IsAvx2Supported)

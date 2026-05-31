@@ -596,8 +596,10 @@ namespace Hecton8.Core.Memory
         public static VaultMemoryLayoutConfig BuildMockConfig(byte scalabilityProfile)
         {
             VaultMemoryLayoutConfig config = default;
+            float profile01 = GlobalDataVault.DecodeScalabilityProfile01(scalabilityProfile);
+            float curve01 = profile01 * profile01 * (3f - (2f * profile01));
             config.ArenaLimitBytes = GlobalDataVault.ResolveArenaCapacityLimit(scalabilityProfile);
-            config.BufferCapacity = 512;
+            config.BufferCapacity = (int)math.round(math.lerp(2048f, 8192f, curve01));
             config.HotEntityCapacity = 1024;
             config.ColdEntityCapacity = 1024;
             config.BucketCapacity = 64;
@@ -605,8 +607,6 @@ namespace Hecton8.Core.Memory
             config.Version = 1u;
             config.ScalabilityProfile = scalabilityProfile;
             config.Flags = 1;
-            float profile01 = GlobalDataVault.DecodeScalabilityProfile01(scalabilityProfile);
-            float curve01 = profile01 * profile01 * (3f - (2f * profile01));
             config.StrideAggressiveness = math.lerp(0.75f, 0.25f, curve01);
             return config;
         }
@@ -1237,7 +1237,7 @@ namespace Hecton8.Core.Memory
         [Tooltip("Maximum-quality vault arena limit in bytes.")]
         [SerializeField, FormerlySerializedAs("highArenaLimitBytes")] private long maximumQualityArenaLimitBytes = GlobalDataVault.MaximumQualityArenaLimitBytes;
         [Tooltip("GlobalDataVault buffer table capacity.")]
-        [SerializeField, Range(128, 32768)] private int bufferCapacity = 512;
+        [SerializeField, Range(128, 32768)] private int bufferCapacity = 2048;
 
         [Header("Entity Streams")]
         [Tooltip("Maximum hot entity records.")]

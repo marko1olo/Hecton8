@@ -1,0 +1,7 @@
+# name,x,y,z,r,g,b,intensity,radius,flags
+# flags: powered=1, emergency=2, flashlight=4, flora=8, always_on=16
+warm_corridor_bounce,-17.5,1.2,-11.0,1.18,0.74,0.38,1.45,9.5,1
+cyan_service_panel,13.0,1.6,8.5,0.18,0.82,1.20,1.20,7.0,17
+red_emergency_strip,0.0,1.8,18.0,1.75,0.05,0.02,1.65,10.0,18
+flora_biolume_pool,7.5,-0.4,-15.0,0.16,0.92,0.58,0.95,6.25,24
+helmet_flash_refill,-5.0,1.1,4.0,1.05,0.98,0.82,1.35,8.0,5

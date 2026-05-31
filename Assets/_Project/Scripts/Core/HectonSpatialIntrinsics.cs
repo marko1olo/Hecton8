@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Unity.Burst.CompilerServices;
 using Unity.Burst.Intrinsics;
 using Unity.Mathematics;
 
@@ -85,6 +86,7 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [IgnoreWarning(1305)]
         public static int ContainsMask4(
             this HectonAabb aabb,
             v128 pointX,
@@ -111,6 +113,7 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [IgnoreWarning(1305)]
         public static int IntersectsAabbMask4(
             this HectonAabb query,
             v128 minX,
@@ -166,6 +169,7 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [IgnoreWarning(1305)]
         public static int IntersectsMask4(
             this HectonSphere sphere,
             v128 centerX,
@@ -266,6 +270,7 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [IgnoreWarning(1305)]
         private static v128 CmpLe(v128 left, v128 right)
         {
             return X86.Avx.IsAvxSupported
@@ -274,6 +279,7 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [IgnoreWarning(1305)]
         private static v128 CmpGe(v128 left, v128 right)
         {
             return X86.Avx.IsAvxSupported

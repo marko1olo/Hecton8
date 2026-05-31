@@ -6,6 +6,7 @@ using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Inventory;
 using Unity.Burst;
+using Unity.Burst.CompilerServices;
 using Unity.Burst.Intrinsics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -589,6 +590,7 @@ namespace Hecton8.Crafting
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [IgnoreWarning(1305)]
         internal static bool CompareQuantities4(
             uint haveA,
             uint haveB,
@@ -623,6 +625,7 @@ namespace Hecton8.Crafting
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [IgnoreWarning(1305)]
         internal static void ResolveAvailableQuantities4(
             NativeArray<uint> inventoryHashes,
             NativeArray<uint> inventoryQuantities,
@@ -651,6 +654,7 @@ namespace Hecton8.Crafting
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [IgnoreWarning(1305)]
         internal static void ResolveAvailableQuantities4(
             NativeArray<uint>.ReadOnly inventoryHashes,
             NativeArray<uint>.ReadOnly inventoryQuantities,

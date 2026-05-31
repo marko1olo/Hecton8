@@ -118,9 +118,10 @@ namespace Hecton8.AI.Cognition.Editor
                     return false;
                 }
 
+                uint relocationReadbackFailure = 0u;
                 if (!UtilityAICognitionVault.TryAcquireHandles(vault, out cognitionHandles) ||
                     !UtilityAICognitionVault.TryAcquireAnxietyHandles(vault, out anxietyHandles) ||
-                    !TryValidateReadback(vault, in cognitionHandles, in anxietyHandles, out uint relocationReadbackFailure))
+                    !TryValidateReadback(vault, in cognitionHandles, in anxietyHandles, out relocationReadbackFailure))
                 {
                     failureFlags |= relocationReadbackFailure == 0u ? FailureReadback : relocationReadbackFailure;
                     return false;

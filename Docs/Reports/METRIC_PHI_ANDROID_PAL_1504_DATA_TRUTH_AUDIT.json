@@ -1,0 +1,17 @@
+{
+  "schema": "hecton8.metric_phi.binary_schema_ast_rows.v1",
+  "rows": [
+    {
+      "agentId": "1504",
+      "tool": "h8bin_validator",
+      "status": "PASS",
+      "filesScanned": 2,
+      "structsValidated": 32,
+      "arm64Violations": 0,
+      "propertyViolations": 0,
+      "schemaMismatches": 0,
+      "executionTimeMs": 218.75,
+      "performanceRegressionWarning": false
+    }
+  ]
+}

@@ -3602,6 +3602,47 @@ namespace Hecton8.Celestial
 #endif
         }
 
+        private static bool TryFindKernel(ComputeShader compute, string kernelName, out int kernel)
+        {
+            kernel = -1;
+            if (compute == null)
+                return false;
+
+            try
+            {
+                if (!compute.HasKernel(kernelName))
+                    return false;
+
+                kernel = compute.FindKernel(kernelName);
+                return kernel >= 0;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (UnityException)
+            {
+                kernel = -1;
+                return false;
+            }
+        }
+
         private bool EnsureFirmamentKernels()
         {
             if (firmamentBakeCompute == null || !_coldSupportsComputeShaders)
@@ -3609,10 +3650,9 @@ namespace Hecton8.Celestial
 
             if (_firmamentClearKernel < 0)
             {
-                if (!firmamentBakeCompute.HasKernel("ClearStarCubemap"))
+                if (!TryFindKernel(firmamentBakeCompute, "ClearStarCubemap", out _firmamentClearKernel))
                     return false;
 
-                _firmamentClearKernel = firmamentBakeCompute.FindKernel("ClearStarCubemap");
                 ResolveKernelThreadGroupSizes(
                     firmamentBakeCompute,
                     _firmamentClearKernel,
@@ -3623,10 +3663,9 @@ namespace Hecton8.Celestial
 
             if (_firmamentStarKernel < 0)
             {
-                if (!firmamentBakeCompute.HasKernel("BakeSpectralStars"))
+                if (!TryFindKernel(firmamentBakeCompute, "BakeSpectralStars", out _firmamentStarKernel))
                     return false;
 
-                _firmamentStarKernel = firmamentBakeCompute.FindKernel("BakeSpectralStars");
                 ResolveKernelThreadGroupSizes(
                     firmamentBakeCompute,
                     _firmamentStarKernel,
@@ -3637,10 +3676,9 @@ namespace Hecton8.Celestial
 
             if (_firmamentAtmosphereKernel < 0)
             {
-                if (!firmamentBakeCompute.HasKernel("BakeAtmosphereLut"))
+                if (!TryFindKernel(firmamentBakeCompute, "BakeAtmosphereLut", out _firmamentAtmosphereKernel))
                     return false;
 
-                _firmamentAtmosphereKernel = firmamentBakeCompute.FindKernel("BakeAtmosphereLut");
                 ResolveKernelThreadGroupSizes(
                     firmamentBakeCompute,
                     _firmamentAtmosphereKernel,
@@ -3662,10 +3700,39 @@ namespace Hecton8.Celestial
             sizeX = 0;
             sizeY = 0;
             sizeZ = 0;
-            if (compute == null || kernel < 0 || !_coldSupportsComputeShaders || !compute.IsSupported(kernel))
+            if (compute == null || kernel < 0 || !_coldSupportsComputeShaders)
                 return;
 
-            compute.GetKernelThreadGroupSizes(kernel, out uint queryX, out uint queryY, out uint queryZ);
+            uint queryX;
+            uint queryY;
+            uint queryZ;
+            try
+            {
+                if (!compute.IsSupported(kernel))
+                    return;
+
+                compute.GetKernelThreadGroupSizes(kernel, out queryX, out queryY, out queryZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return;
+            }
+            catch (System.ArgumentException)
+            {
+                return;
+            }
+            catch (MissingReferenceException)
+            {
+                return;
+            }
+            catch (UnityException)
+            {
+                return;
+            }
             if (queryX == 0u || queryY == 0u || queryZ == 0u ||
                 queryX > int.MaxValue || queryY > int.MaxValue || queryZ > int.MaxValue)
             {

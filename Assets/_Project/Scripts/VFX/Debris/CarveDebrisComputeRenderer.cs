@@ -604,11 +604,40 @@ namespace Hecton8.VFX.Debris
 
         private int ResolveKernel(ComputeShader compute, string kernelName)
         {
-            if (compute == null || !_coldSupportsComputeShaders || !compute.HasKernel(kernelName))
+            if (compute == null || !_coldSupportsComputeShaders)
                 return -1;
 
-            int kernel = compute.FindKernel(kernelName);
-            return kernel >= 0 && compute.IsSupported(kernel) ? kernel : -1;
+            try
+            {
+                if (!compute.HasKernel(kernelName))
+                    return -1;
+
+                int kernel = compute.FindKernel(kernelName);
+                if (kernel < 0)
+                    return -1;
+
+                return compute.IsSupported(kernel) ? kernel : -1;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return -1;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return -1;
+            }
+            catch (System.ArgumentException)
+            {
+                return -1;
+            }
+            catch (MissingReferenceException)
+            {
+                return -1;
+            }
+            catch (UnityException)
+            {
+                return -1;
+            }
         }
 
         private bool TryResolveKernelThreadGroupSizeX(int kernelIndex, out int groupSizeX)
@@ -616,11 +645,39 @@ namespace Hecton8.VFX.Debris
             groupSizeX = 0;
             if (fluidAdvectionCompute == null ||
                 kernelIndex < 0 ||
-                !_coldSupportsComputeShaders ||
-                !fluidAdvectionCompute.IsSupported(kernelIndex))
+                !_coldSupportsComputeShaders)
                 return false;
 
-            fluidAdvectionCompute.GetKernelThreadGroupSizes(kernelIndex, out uint x, out uint y, out uint z);
+            uint x;
+            uint y;
+            uint z;
+            try
+            {
+                if (!fluidAdvectionCompute.IsSupported(kernelIndex))
+                    return false;
+
+                fluidAdvectionCompute.GetKernelThreadGroupSizes(kernelIndex, out x, out y, out z);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                return false;
+            }
+            catch (UnityException)
+            {
+                return false;
+            }
             ulong totalThreads = (ulong)x * y * z;
             if (x == 0u || y != 1u || z != 1u || totalThreads > ThreadGroupPortableMaxSize || x > 2147483647u)
                 return false;

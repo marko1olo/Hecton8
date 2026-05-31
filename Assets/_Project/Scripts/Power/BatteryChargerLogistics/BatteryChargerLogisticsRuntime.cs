@@ -687,6 +687,9 @@ namespace Hecton8.Power
 
         private void RegisterDispatcherPhases()
         {
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredPreSimulation && GlobalRegistry.TryRegisterDispatcherSystem(_preSimulationPhase))
                 _registeredPreSimulation = true;
             if (!_registeredSimulation && GlobalRegistry.TryRegisterDispatcherSystem(_simulationPhase))

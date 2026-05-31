@@ -1,0 +1,10 @@
+base_diffusion_rate,0.145
+current_advection_multiplier,0.78
+acid_corrosion_damage,0.038
+flora_absorption_rate,0.14
+density_decay_per_second,0.041
+source_radius_meters,36
+caustic_density_threshold,0.62
+biolum_density_threshold,0.30
+max_density,1.0
+exposure_toxemia_multiplier,0.068

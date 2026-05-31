@@ -188,15 +188,8 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            // TASK 17: Save overrides when closing Settings section
             IInputBindingService rebinding = _subscribedRebindingService;
             CancelOwnedRebindIfNeeded(rebinding);
-            if (ShouldSaveOverridesOnDisable(rebinding))
-            {
-                if (!rebinding.SaveOverrides())
-                    SetStatus(StatusBindingsSaveFailed);
-            }
-
             Unsubscribe();
             TryUnregisterHotSwapListener();
         }
@@ -346,16 +339,6 @@ namespace Hecton8.UI
                 return;
 
             RefreshAllBindingsNow();
-        }
-
-        private bool ShouldSaveOverridesOnDisable(IInputBindingService rebinding)
-        {
-            return Application.isPlaying &&
-                pauseMenu != null &&
-                pauseMenu.IsSettingsOpen &&
-                rebinding != null &&
-                !rebinding.IsRebinding &&
-                ResolveInputManager() != null;
         }
 
         private void CancelOwnedRebindIfNeeded(IInputBindingService rebinding)

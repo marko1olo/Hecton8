@@ -765,20 +765,9 @@ namespace Hecton8.Visor
                     return;
                 }
 
-                if (!_autoExposureComputeShader.HasKernel("ClearHistogram") ||
-                    !_autoExposureComputeShader.HasKernel("BuildHistogram") ||
-                    !_autoExposureComputeShader.HasKernel("ResolveExposure"))
-                {
-                    DisableAutoExposure();
-                    return;
-                }
-
-                int clearHistogramKernel = _autoExposureComputeShader.FindKernel("ClearHistogram");
-                int buildHistogramKernel = _autoExposureComputeShader.FindKernel("BuildHistogram");
-                int resolveExposureKernel = _autoExposureComputeShader.FindKernel("ResolveExposure");
-                if (!_autoExposureComputeShader.IsSupported(clearHistogramKernel) ||
-                    !_autoExposureComputeShader.IsSupported(buildHistogramKernel) ||
-                    !_autoExposureComputeShader.IsSupported(resolveExposureKernel))
+                if (!TryFindKernel(_autoExposureComputeShader, "ClearHistogram", out int clearHistogramKernel) ||
+                    !TryFindKernel(_autoExposureComputeShader, "BuildHistogram", out int buildHistogramKernel) ||
+                    !TryFindKernel(_autoExposureComputeShader, "ResolveExposure", out int resolveExposureKernel))
                 {
                     DisableAutoExposure();
                     return;
@@ -822,6 +811,47 @@ namespace Hecton8.Visor
                 _buildThreadGroupSizeY = 0u;
                 _resolveExposureThreadGroupSizeX = 0u;
                 ReleaseAutoExposureResources();
+            }
+
+            private static bool TryFindKernel(ComputeShader computeShader, string kernelName, out int kernel)
+            {
+                kernel = -1;
+                if (computeShader == null)
+                    return false;
+
+                try
+                {
+                    if (!computeShader.HasKernel(kernelName))
+                        return false;
+
+                    kernel = computeShader.FindKernel(kernelName);
+                    return kernel >= 0;
+                }
+                catch (ObjectDisposedException)
+                {
+                    kernel = -1;
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    kernel = -1;
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    kernel = -1;
+                    return false;
+                }
+                catch (MissingReferenceException)
+                {
+                    kernel = -1;
+                    return false;
+                }
+                catch (UnityException)
+                {
+                    kernel = -1;
+                    return false;
+                }
             }
 
             private void ReleaseAutoExposureResources()
@@ -876,10 +906,52 @@ namespace Hecton8.Visor
                 x = 0u;
                 y = 0u;
                 z = 0u;
-                if (computeShader == null || kernelIndex < 0 || !computeShader.IsSupported(kernelIndex))
+                if (computeShader == null || kernelIndex < 0)
                     return false;
 
-                computeShader.GetKernelThreadGroupSizes(kernelIndex, out x, out y, out z);
+                try
+                {
+                    if (!computeShader.IsSupported(kernelIndex))
+                        return false;
+
+                    computeShader.GetKernelThreadGroupSizes(kernelIndex, out x, out y, out z);
+                }
+                catch (ObjectDisposedException)
+                {
+                    x = 0u;
+                    y = 0u;
+                    z = 0u;
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    x = 0u;
+                    y = 0u;
+                    z = 0u;
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    x = 0u;
+                    y = 0u;
+                    z = 0u;
+                    return false;
+                }
+                catch (MissingReferenceException)
+                {
+                    x = 0u;
+                    y = 0u;
+                    z = 0u;
+                    return false;
+                }
+                catch (UnityException)
+                {
+                    x = 0u;
+                    y = 0u;
+                    z = 0u;
+                    return false;
+                }
+
                 ulong threadProduct = (ulong)x * y * z;
                 if (x == 0u || y == 0u || z == 0u || threadProduct == 0UL || threadProduct > MaxKernelThreadProduct)
                     return false;

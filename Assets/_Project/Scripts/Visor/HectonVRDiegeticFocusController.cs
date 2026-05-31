@@ -32,7 +32,6 @@ namespace Hecton8.Visor
         [SerializeField, Range(0f, 1f)] private float hudBlurWhenSceneFocused = 0.45f;
         [SerializeField] private bool clearGlobalsOnDisable = true;
 
-        private bool _registeredToTick;
         private bool _registeredToLateFrame;
         private bool _hotSwapRegistered;
         private float _worldBlur;
@@ -88,7 +87,6 @@ namespace Hecton8.Visor
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
-            _registeredToTick = false;
             _registeredToLateFrame = false;
             if (currentService != null && isActiveAndEnabled)
                 TryRegisterTick();
@@ -280,8 +278,6 @@ namespace Hecton8.Visor
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredToLateFrame = false;
             }
-
-            _registeredToTick = false;
         }
 
         private void CacheRegistryServicesCold()

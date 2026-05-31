@@ -482,7 +482,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         s_activeRuntimeWorldSeedValid = false;
     }
 
-    internal static bool TryGetActiveRuntimeWorldSeed(out int runtimeWorldSeed)
+    public static bool TryGetActiveRuntimeWorldSeed(out int runtimeWorldSeed)
     {
         if (s_activeRuntimeWorldSeedValid && s_activeWorldSeedProvider != null)
         {

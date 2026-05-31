@@ -58,12 +58,7 @@ MonoBehaviour:
   transportPreset: {fileID: 11400000, guid: cf32272204a993640bc50b707b7849a4, type: 2}
   batteryDrainRate: 2
   minChargeToActivate: 0.05
-  motorLoopClip: {fileID: 0}
-  motorVolume: 0.6
   batteryMesh: {fileID: 0}
-  powerIndicatorRenderer: {fileID: 0}
-  powerOnColor: {r: 0, g: 0.9, b: 1, a: 1}
-  lowBatteryColor: {r: 1, g: 0.3, b: 0, a: 1}
   hudCanvasGroup: {fileID: 0}
   depthText: {fileID: 0}
   batteryText: {fileID: 0}

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditorInternal;
 using UnityEngine;
 
@@ -38,12 +39,12 @@ namespace GPUInstancer
 
             if (EditorUserBuildSettings.selectedBuildTargetGroup == BuildTargetGroup.Unknown)
                 return;
-            List<string> defineList = new List<string>(PlayerSettings.GetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup).Split(';'));
+            List<string> defineList = new List<string>(GetSelectedBuildTargetDefines().Split(';'));
             if (!defineList.Contains(DEFINE_GPU_INSTANCER))
             {
                 defineList.Add(DEFINE_GPU_INSTANCER);
                 string defines = string.Join(";", defineList.ToArray());
-                PlayerSettings.SetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup, defines);
+                SetSelectedBuildTargetDefines(defines);
             }
 
             GetBillboardExtensions();
@@ -52,6 +53,24 @@ namespace GPUInstancer
 
             if (previewCache == null)
                 previewCache = new GPUInstancerPreviewCache();
+        }
+
+        private static string GetSelectedBuildTargetDefines()
+        {
+#if UNITY_2021_2_OR_NEWER
+            return PlayerSettings.GetScriptingDefineSymbols(NamedBuildTarget.FromBuildTargetGroup(EditorUserBuildSettings.selectedBuildTargetGroup));
+#else
+            return PlayerSettings.GetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup);
+#endif
+        }
+
+        private static void SetSelectedBuildTargetDefines(string defines)
+        {
+#if UNITY_2021_2_OR_NEWER
+            PlayerSettings.SetScriptingDefineSymbols(NamedBuildTarget.FromBuildTargetGroup(EditorUserBuildSettings.selectedBuildTargetGroup), defines);
+#else
+            PlayerSettings.SetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup, defines);
+#endif
         }
 
         static void RegisterGenerateSettings()

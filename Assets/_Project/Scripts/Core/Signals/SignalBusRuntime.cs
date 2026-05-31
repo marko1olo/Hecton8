@@ -40,7 +40,7 @@ namespace Hecton8.Core.Contracts.Signals
         private const int LaneCapacity = 512;
         private const int StressScale = 1000;
 
-        private static NativeArray<SignalLaneDispatch> _laneDispatch;
+        private static SignalLaneDispatch[] _laneDispatch;
         private static int _laneCount;
         private static int _registrationOverflow;
         private static int _registrationGate;
@@ -228,15 +228,18 @@ namespace Hecton8.Core.Contracts.Signals
             try
             {
                 int laneCount = _laneCount;
-                for (int i = 0; i < laneCount && _laneDispatch.IsCreated; i++)
+                SignalLaneDispatch[] dispatch = _laneDispatch;
+                for (int i = 0; dispatch != null && i < laneCount && i < dispatch.Length; i++)
                 {
-                    delegate*<void> dispose = _laneDispatch[i].Dispose;
+                    delegate*<void> dispose = dispatch[i].Dispose;
                     if (dispose != null)
                         dispose();
                 }
 
-                if (_laneDispatch.IsCreated)
-                    H8Memory.Release(ref _laneDispatch, SystemID.CoreDataVault);
+                if (dispatch != null)
+                    Array.Clear(dispatch, 0, dispatch.Length);
+
+                _laneDispatch = null;
 
                 Volatile.Write(ref _laneCount, 0);
                 Volatile.Write(ref _registrationOverflow, 0);
@@ -260,14 +263,15 @@ namespace Hecton8.Core.Contracts.Signals
             if (!destination.IsCreated || destination.Length == 0)
                 return 0;
 
-            if (!_laneDispatch.IsCreated)
+            SignalLaneDispatch[] dispatch = _laneDispatch;
+            if (dispatch == null)
                 return 0;
 
-            int copyCount = Math.Min(Math.Min(Volatile.Read(ref _laneCount), _laneDispatch.Length), destination.Length);
+            int copyCount = Math.Min(Math.Min(Volatile.Read(ref _laneCount), dispatch.Length), destination.Length);
             for (int i = 0; i < copyCount; i++)
             {
                 SignalLaneTelemetry telemetry = default;
-                delegate*<ref SignalLaneTelemetry, void> copyTelemetry = _laneDispatch[i].CopyTelemetry;
+                delegate*<ref SignalLaneTelemetry, void> copyTelemetry = dispatch[i].CopyTelemetry;
                 if (copyTelemetry != null)
                     copyTelemetry(ref telemetry);
 
@@ -284,13 +288,14 @@ namespace Hecton8.Core.Contracts.Signals
             if ((uint)index >= (uint)laneCount)
                 return false;
 
-            if (!_laneDispatch.IsCreated)
+            SignalLaneDispatch[] dispatch = _laneDispatch;
+            if (dispatch == null)
                 return false;
 
-            if ((uint)index >= (uint)_laneDispatch.Length)
+            if ((uint)index >= (uint)dispatch.Length)
                 return false;
 
-            delegate*<ref SignalLaneTelemetry, void> copyTelemetry = _laneDispatch[index].CopyTelemetry;
+            delegate*<ref SignalLaneTelemetry, void> copyTelemetry = dispatch[index].CopyTelemetry;
             if (copyTelemetry == null)
                 return false;
 
@@ -327,34 +332,31 @@ namespace Hecton8.Core.Contracts.Signals
 
         private static void FlushRegisteredSignalLanes(int systemStressMilli, bool simulationPaused)
         {
-            if (!_laneDispatch.IsCreated)
+            SignalLaneDispatch[] dispatch = _laneDispatch;
+            if (dispatch == null)
                 return;
 
-            int dispatchCount = Math.Min(Volatile.Read(ref _laneCount), _laneDispatch.Length);
+            int dispatchCount = Math.Min(Volatile.Read(ref _laneCount), dispatch.Length);
             for (int i = 0; i < dispatchCount; i++)
             {
-                SignalLaneDispatch dispatch = _laneDispatch[i];
-                if (dispatch.Flush == null ||
-                    (simulationPaused && dispatch.FlushDuringSimulationPause == 0))
+                SignalLaneDispatch laneDispatch = dispatch[i];
+                if (laneDispatch.Flush == null ||
+                    (simulationPaused && laneDispatch.FlushDuringSimulationPause == 0))
                 {
                     continue;
                 }
 
-                dispatch.Flush(systemStressMilli);
+                laneDispatch.Flush(systemStressMilli);
             }
         }
 
         private static bool EnsureDispatchStorage()
         {
-            if (_laneDispatch.IsCreated)
+            if (_laneDispatch != null)
                 return true;
 
-            _laneDispatch = H8Memory.Allocate<SignalLaneDispatch>(
-                LaneCapacity,
-                SystemID.CoreDataVault,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory);
-            return _laneDispatch.IsCreated;
+            _laneDispatch = new SignalLaneDispatch[LaneCapacity];
+            return _laneDispatch.Length == LaneCapacity;
         }
 
         private static void EnterRegistrationGate()
@@ -734,20 +736,8 @@ namespace Hecton8.Core.Contracts.Signals
             if (!writerBudget.IsCreated || writerBudget.Length < ParallelWriterBudgetLength)
                 return false;
 
-            if (SignalLanePolicyCache<T>.FatalInterrupt)
-            {
-                Interlocked.Increment(ref _corruptedSignalTotal);
-                return false;
-            }
-
-            int writerGuardCode = SignalPayloadFiniteGuards.Sanitize(ref signal);
-            if (writerGuardCode != 0)
-            {
-                Interlocked.Increment(ref _corruptedSignalTotal);
-                return false;
-            }
-
             int* budget = (int*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(writerBudget);
+
             int remainingAfterClaim = Interlocked.Decrement(ref budget[ParallelWriterBudgetRemainingIndex]);
             if (remainingAfterClaim < 0)
             {
@@ -1522,9 +1512,8 @@ namespace Hecton8.Core.Contracts.Signals
         {
             ReleaseFrameSnapshotOwnerWrite();
 
-            if (_frameSnapshotVault != null && _frameSnapshotHandle.BufferID != 0u)
-                _frameSnapshotVault.ReleaseBuffer(in _frameSnapshotHandle);
-
+            // DataVault owns snapshot storage lifetime; lane shutdown only drops handles because
+            // application quit/domain reload can invalidate the arena before SignalBus disposal runs.
             _frameSnapshotHandle = default;
             _frameSnapshotVault = null;
             _frameSnapshotActiveWriteHandle = default;

@@ -45,7 +45,7 @@ namespace Hecton8.World
         {
             if (primitive == null ||
                 !TryGetPrimitiveResourcesHot(primitiveType, out Mesh mesh, out Material defaultMaterial) ||
-                !_RuntimeStates.TryGetValue(primitive.GetInstanceID(), out PrimitiveRuntimeState state) ||
+                !_RuntimeStates.TryGetValue(ResolvePrimitiveKey(primitive), out PrimitiveRuntimeState state) ||
                 state.Filter == null ||
                 state.Renderer == null)
             {
@@ -202,11 +202,16 @@ namespace Hecton8.World
             if (primitive == null || filter == null || renderer == null)
                 return;
 
-            _RuntimeStates[primitive.GetInstanceID()] = new PrimitiveRuntimeState
+            _RuntimeStates[ResolvePrimitiveKey(primitive)] = new PrimitiveRuntimeState
             {
                 Filter = filter,
                 Renderer = renderer
             };
+        }
+
+        private static int ResolvePrimitiveKey(GameObject primitive)
+        {
+            return unchecked((int)EntityId.ToULong(primitive.GetEntityId()));
         }
 
         private static Renderer ConfigurePrimitiveVisual(

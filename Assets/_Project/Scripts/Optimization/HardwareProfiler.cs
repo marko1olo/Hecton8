@@ -77,6 +77,11 @@ namespace Hecton8.Optimization
                 startupSurvivalPressure01);
         }
 
+        public static bool ShouldForceLowTier(double millisecondsPerStep, int graphicsMemoryMegabytes)
+        {
+            return millisecondsPerStep > 5.0d || graphicsMemoryMegabytes < SurvivalGraphicsMemoryMegabytes;
+        }
+
         /// <summary>
         /// Runs the local PhysicsScene capsule benchmark and returns milliseconds per step.
         /// </summary>

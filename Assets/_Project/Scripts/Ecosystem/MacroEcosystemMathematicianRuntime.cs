@@ -348,12 +348,20 @@ namespace Hecton8.Ecosystem
         /// <inheritdoc />
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
-                return;
-
-            RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
-            if (_vault != null)
-                EnsureVaultState();
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.DataVault:
+                    RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
+                    if (_vault != null)
+                        EnsureVaultState();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null)
+                        TryRegister();
+                    else
+                        UnregisterDispatcherRoutes();
+                    break;
+            }
         }
 
         /// <inheritdoc />
@@ -644,6 +652,12 @@ namespace Hecton8.Ecosystem
 
         private void TryRegister()
         {
+            if (!_registeredHotSwap)
+                _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredPostSimulation)
             {
                 if (_postSimulationPhase == null)
@@ -657,11 +671,20 @@ namespace Hecton8.Ecosystem
 
             if (!_registeredFrost)
                 _registeredFrost = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment);
-            if (!_registeredHotSwap)
-                _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void TryUnregister()
+        {
+            UnregisterDispatcherRoutes();
+
+            if (_registeredHotSwap)
+            {
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
+                _registeredHotSwap = false;
+            }
+        }
+
+        private void UnregisterDispatcherRoutes()
         {
             if (_registeredFrost)
             {
@@ -673,12 +696,6 @@ namespace Hecton8.Ecosystem
             {
                 GlobalRegistry.UnregisterDispatcherSystem(_postSimulationPhase);
                 _registeredPostSimulation = false;
-            }
-
-            if (_registeredHotSwap)
-            {
-                GlobalRegistry.TryUnregisterHotSwapListener(this);
-                _registeredHotSwap = false;
             }
         }
 

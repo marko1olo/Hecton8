@@ -12,6 +12,9 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
@@ -248,6 +251,9 @@ namespace Hecton8.VFX.Bioluminescence
         private static readonly int _BiolumIntensityId = Shader.PropertyToID("_BiolumIntensity");
         private static int s_runtimeClaimed;
         private static BiolumPulseSyncRuntime s_activeRuntime;
+#if UNITY_EDITOR
+        private static bool s_editorReloadHooked;
+#endif
 
         private static readonly ulong ProfileFloatsGuardMask =
             BiolumMutationGuardBit(BufferID.BiolumProfileFloats);
@@ -416,8 +422,42 @@ namespace Hecton8.VFX.Bioluminescence
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetRuntimeClaim()
         {
+            BiolumPulseSyncRuntime runtime = s_activeRuntime;
+            if (runtime != null)
+                runtime.Dispose();
+
+            s_activeRuntime = null;
+            Volatile.Write(ref s_runtimeClaimed, 0);
+#if UNITY_EDITOR
+            s_editorReloadHooked = false;
+#endif
+        }
+
+#if UNITY_EDITOR
+        private static void EnsureEditorReloadHook()
+        {
+            if (s_editorReloadHooked)
+                return;
+
+            AssemblyReloadEvents.beforeAssemblyReload -= HandleBeforeAssemblyReload;
+            AssemblyReloadEvents.beforeAssemblyReload += HandleBeforeAssemblyReload;
+            s_editorReloadHooked = true;
+        }
+
+        private static void HandleBeforeAssemblyReload()
+        {
+            BiolumPulseSyncRuntime runtime = s_activeRuntime;
+            if (runtime == null)
+            {
+                Volatile.Write(ref s_runtimeClaimed, 0);
+                return;
+            }
+
+            runtime.Dispose();
+            s_activeRuntime = null;
             Volatile.Write(ref s_runtimeClaimed, 0);
         }
+#endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureSceneRuntime()
@@ -448,6 +488,12 @@ namespace Hecton8.VFX.Bioluminescence
 
         private void OnEnable()
         {
+            if (!Application.isPlaying)
+                return;
+
+#if UNITY_EDITOR
+            EnsureEditorReloadHook();
+#endif
             _disposed = false;
             if (!TryClaimRuntimeOwner())
             {

@@ -364,7 +364,17 @@ namespace Hecton8.Optimization
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime)
+            {
                 _lifecycleTracker = currentService as IRenderTextureLifecycleService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregisterSlowTickable();
+                if (currentService != null)
+                    TryRegisterSlowTickable();
+            }
         }
 
         private void CacheRegistryServicesCold()
@@ -391,7 +401,7 @@ namespace Hecton8.Optimization
 
         private void TryRegisterSlowTickable()
         {
-            if (_registeredSlowTick || !Application.isPlaying)
+            if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);

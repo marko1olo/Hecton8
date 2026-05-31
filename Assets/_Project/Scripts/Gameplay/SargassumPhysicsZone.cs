@@ -38,7 +38,9 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0.1f, 4f)] private float cutRadius = 0.85f;
 
         [Header("── Diagnostics ─────────────────────────")]
+#pragma warning disable CS0414
         [SerializeField] private int _debugInfluencedBodies;
+#pragma warning restore CS0414
 
         private Collider _triggerCollider;
         private Transform _cachedTransform;

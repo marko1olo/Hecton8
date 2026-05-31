@@ -292,10 +292,40 @@ namespace Hecton8.Rendering
             {
                 groupSizeX = 0u;
                 groupSizeY = 0u;
-                if (computeShader == null || kernel < 0 || !computeShader.IsSupported(kernel))
+                if (computeShader == null || kernel < 0)
                     return false;
 
-                computeShader.GetKernelThreadGroupSizes(kernel, out uint x, out uint y, out uint z);
+                uint x;
+                uint y;
+                uint z;
+                try
+                {
+                    if (!computeShader.IsSupported(kernel))
+                        return false;
+
+                    computeShader.GetKernelThreadGroupSizes(kernel, out x, out y, out z);
+                }
+                catch (ObjectDisposedException)
+                {
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    return false;
+                }
+                catch (MissingReferenceException)
+                {
+                    return false;
+                }
+                catch (UnityException)
+                {
+                    return false;
+                }
+
                 ulong threadProduct = (ulong)x * y * z;
                 if (x == 0u || y == 0u || z != 1u || threadProduct == 0UL || threadProduct > MaxKernelThreadProduct)
                     return false;
@@ -305,11 +335,51 @@ namespace Hecton8.Rendering
                 return true;
             }
 
+            private static bool TryFindKernel(ComputeShader computeShader, string kernelName, out int kernel)
+            {
+                kernel = -1;
+                if (computeShader == null)
+                    return false;
+
+                try
+                {
+                    if (!computeShader.HasKernel(kernelName))
+                        return false;
+
+                    kernel = computeShader.FindKernel(kernelName);
+                    return kernel >= 0;
+                }
+                catch (ObjectDisposedException)
+                {
+                    kernel = -1;
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    kernel = -1;
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    kernel = -1;
+                    return false;
+                }
+                catch (MissingReferenceException)
+                {
+                    kernel = -1;
+                    return false;
+                }
+                catch (UnityException)
+                {
+                    kernel = -1;
+                    return false;
+                }
+            }
+
             private bool TryResolveClearKernel(ComputeShader computeShader)
             {
-                if (computeShader == null ||
-                    !computeShader.HasKernel(ClearKernelName) ||
-                    !computeShader.HasKernel(ClearArrayKernelName))
+                if (!TryFindKernel(computeShader, ClearKernelName, out int clearKernel) ||
+                    !TryFindKernel(computeShader, ClearArrayKernelName, out int clearArrayKernel))
                 {
                     _clearKernel = -1;
                     _clearArrayKernel = -1;
@@ -323,8 +393,8 @@ namespace Hecton8.Rendering
                     return false;
                 }
 
-                _clearKernel = computeShader.FindKernel(ClearKernelName);
-                _clearArrayKernel = computeShader.FindKernel(ClearArrayKernelName);
+                _clearKernel = clearKernel;
+                _clearArrayKernel = clearArrayKernel;
                 bool resolved = _clearKernel >= 0 && _clearArrayKernel >= 0;
                 if (resolved)
                     _reportedMissingKernels = false;
@@ -333,13 +403,12 @@ namespace Hecton8.Rendering
 
             private bool TryResolveActiveKernels(ComputeShader computeShader)
             {
-                if (computeShader == null ||
-                    !computeShader.HasKernel(SobelKernelName) ||
-                    !computeShader.HasKernel(SobelArrayKernelName) ||
-                    !computeShader.HasKernel(UpscaleKernelName) ||
-                    !computeShader.HasKernel(UpscaleArrayKernelName) ||
-                    !computeShader.HasKernel(DebugKernelName) ||
-                    !computeShader.HasKernel(DebugArrayKernelName))
+                if (!TryFindKernel(computeShader, SobelKernelName, out int sobelKernel) ||
+                    !TryFindKernel(computeShader, SobelArrayKernelName, out int sobelArrayKernel) ||
+                    !TryFindKernel(computeShader, UpscaleKernelName, out int upscaleKernel) ||
+                    !TryFindKernel(computeShader, UpscaleArrayKernelName, out int upscaleArrayKernel) ||
+                    !TryFindKernel(computeShader, DebugKernelName, out int debugKernel) ||
+                    !TryFindKernel(computeShader, DebugArrayKernelName, out int debugArrayKernel))
                 {
                     _sobelKernel = -1;
                     _sobelArrayKernel = -1;
@@ -357,12 +426,12 @@ namespace Hecton8.Rendering
                     return false;
                 }
 
-                _sobelKernel = computeShader.FindKernel(SobelKernelName);
-                _sobelArrayKernel = computeShader.FindKernel(SobelArrayKernelName);
-                _upscaleKernel = computeShader.FindKernel(UpscaleKernelName);
-                _upscaleArrayKernel = computeShader.FindKernel(UpscaleArrayKernelName);
-                _debugKernel = computeShader.FindKernel(DebugKernelName);
-                _debugArrayKernel = computeShader.FindKernel(DebugArrayKernelName);
+                _sobelKernel = sobelKernel;
+                _sobelArrayKernel = sobelArrayKernel;
+                _upscaleKernel = upscaleKernel;
+                _upscaleArrayKernel = upscaleArrayKernel;
+                _debugKernel = debugKernel;
+                _debugArrayKernel = debugArrayKernel;
                 bool resolved = _sobelKernel >= 0 && _sobelArrayKernel >= 0 &&
                                 _upscaleKernel >= 0 && _upscaleArrayKernel >= 0 &&
                                 _debugKernel >= 0 && _debugArrayKernel >= 0;

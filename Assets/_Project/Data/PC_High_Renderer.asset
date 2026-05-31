@@ -22,6 +22,24 @@ MonoBehaviour:
     maxChromaticOffset: 0.0038
     maxDistortionOffset: 0.014
     maxVignetteStrength: 0.14
+--- !u!114 &-6860285952326185609
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b236d0f14c174d53a5a3b23600000005, type: 3}
+  m_Name: HectonBilateralDrsUpscalerFeature
+  m_EditorClassIdentifier: Hecton8.Rendering.BilateralDrs::Hecton8.Rendering.HectonBilateralDrsUpscalerFeature
+  m_Active: 1
+  settings:
+    computeShader: {fileID: 7200000, guid: b236d0f14c174d53a5a3b23600000006, type: 3}
+    injectionPoint: 550
+    forceRunAtFullResolution: 0
+    activationScale: 0.995
 --- !u!114 &-5081531551300358816
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -36,12 +54,35 @@ MonoBehaviour:
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonVisorUberPostFeature
   m_Active: 1
   settings:
+    deepSeaNoirUnifiedPass: 1
+    loadNoirColorCsv: 1
+    noirBaseGrain: 0.035
+    noirBaseGlitch: 0.18
+    noirChromaticStrength: 0.0025
+    noirVignetteStrength: 0.24
+    noirContrast: 1.08
+    noirSaturation: 0.72
+    noirTemperature: -0.12
+    noirDepthTone: 0.42
+    noirAbSplit: 0
     shader: {fileID: 4800000, guid: 2b2a9f18d90f4b35b8b4f9d1a8e23501, type: 3}
     reconstructionShader: {fileID: 4800000, guid: b104c09d7a4e49d69f0e8467bb15a104, type: 3}
     crackTexture: {fileID: 0}
     lensDirtTexture: {fileID: 0}
     blueNoiseTexture: {fileID: 0}
+    vrComfortMaskTexture: {fileID: 0}
     injectionPoint: 550
+    reconstructionEnabled: 1
+    bilateralRadiusPixels: 1.15
+    sharpeningClamp: 0.68
+    temporalHistoryWeight: 0.62
+    jitterScale: 0.85
+    filmGrainStrength: 0.035
+    reconstructionVignetteStrength: 0.32
+    reconstructionChromaticStrength: 0.0025
+    visualOverkillResponse: 0.84
+    reconstructionAbSplit: 0
+    loadAestheticCsv: 1
     chromaticStrength: 0.34
     hypoxiaDesaturationStrength: 0.72
     pressureWarpStrength: 0.035
@@ -54,8 +95,10 @@ MonoBehaviour:
     heatHazeSpeed: 0.62
     heatHazeAmplitude: 0.0017
     damageVignetteStrength: 0.16
-    lowTierVideoMemoryMb: 2048
+    minimumQualityVideoMemoryMb: 2048
     hypoxiaSafeOxygen01: 0.22
+    internalWaterlineMetersToScreen: 0.14
+    internalWaterlinePitchScale: 0.52
 --- !u!114 &-4438276556181502662
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -79,38 +122,6 @@ MonoBehaviour:
     depthSigma: 18
     blurDepthThreshold: 0.18
     compositeStrength: 0.24
---- !u!114 &232232232000002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4cbb8fb5b0c14e57aa7d232232ca0005, type: 3}
-  m_Name: HectonDeferredCausticsFeature
-  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Rendering.HectonDeferredCausticsFeature
-  m_Active: 1
-  settings:
-    shader: {fileID: 4800000, guid: 4cbb8fb5b0c14e57aa7d232232ca0007, type: 3}
-    injectionPoint: 450
---- !u!114 &348348348000002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1a0774dfd543412fac683ba616c7a07e, type: 3}
-  m_Name: WristPdaScreenProjectorFeature
-  m_EditorClassIdentifier: Hecton8.Core::Hecton8.UI.Rendering.WristPdaScreenProjectorFeature
-  m_Active: 1
-  settings:
-    shader: {fileID: 4800000, guid: 0d75901ecc6a479385541da8be342394, type: 3}
-    injectionPoint: 550
 --- !u!114 &-4082171063289172997
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -165,6 +176,37 @@ MonoBehaviour:
     maxEv: 12
     exposureAdaptationRate: 2.4
     evMaxDeltaPerFrame: 0.5
+--- !u!114 &-3937027674661118229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f232c8f575c46399e0612eca11640d7, type: 3}
+  m_Name: HectonVolumetricParticulateFogFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonVolumetricParticulateFogFeature
+  m_Active: 1
+  settings:
+    computeShader: {fileID: 7200000, guid: 7618448cd4b042e7a4f6914362ac6497, type: 3}
+    dearLieProxyShader: {fileID: 4800000, guid: 247f18787ebf4ad285d1c97f60410947, type: 3}
+    injectionPoint: 550
+    fogColor: {r: 0.015, g: 0.045, b: 0.065, a: 1}
+    baseDensity: 0.045
+    scatteringCoefficient: 0.85
+    extinctionCoefficient: 0.12
+    anisotropy: 0.42
+    opacityEarlyBreak: 0.97
+    maxRayDistanceMeters: 70
+    minimumInternalScale: 0.25
+    maximumInternalScale: 0.67
+    ditherStrength: 0.82
+    flowAdvectionStrength: 2.25
+    siltDensityStrength: 1.2
+    bilateralDepthScale: 24
+    debugHeatmapWeight: 0
 --- !u!114 &-3471827618286992026
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -187,19 +229,6 @@ MonoBehaviour:
     renderScale: 0.5
     compositeStrength: 1
     bilateralDepthScale: 24
---- !u!114 &420815551001000002
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: eba5170be4920e746b8c0ca0765349bc, type: 3}
-  m_Name: HectonFluidAdvectionRenderFeature
-  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonFluidAdvectionRenderFeature
-  m_Active: 1
 --- !u!114 &-2039857032782672258
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -265,7 +294,10 @@ MonoBehaviour:
   - {fileID: -5081531551300358816}
   - {fileID: 149000149001}
   - {fileID: 8465884984933540169}
-  m_RendererFeatureMap: abf8db7c8ef6cf00a15e49751debe464b188e97609222e1afb2b45d40b3759c73a85dbb5fc1268c2029ab1c736d3000039d6e6b8d359d04956c384f42fa599857e0e6818d6f8b0e342f85f998309d70566059dfa2c97d1cf0bb74c4246957a5202678a2bd23c0100606dcd29fac57ab909d819b12200000049e146248add7c75
+  - {fileID: 4779087617172495997}
+  - {fileID: -6860285952326185609}
+  - {fileID: -3937027674661118229}
+  m_RendererFeatureMap: abf8db7c8ef6cf00a15e49751debe464b188e97609222e1afb2b45d40b3759c73a85dbb5fc1268c2029ab1c736d3000039d6e6b8d359d04956c384f42fa599857e0e6818d6f8b0e342f85f998309d70566059dfa2c97d1cf0bb74c4246957a5202678a2bd23c0100606dcd29fac57ab909d819b12200000049e146248add7c757dde08fcddba524277cdfe11465ecba0eb1ef16c30de5cc9
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -294,6 +326,59 @@ MonoBehaviour:
   m_DepthTextureFormat: 0
   m_AccurateGbufferNormals: 0
   m_IntermediateTextureMode: 0
+--- !u!114 &149000149001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e26e06fe59eb56b4eae04f2fd7fdae2a, type: 3}
+  m_Name: HectonVisorTraumaFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.DeferredDecalPass
+  m_Active: 1
+  settings:
+    deferredDecalShader: {fileID: 4800000, guid: 8f60cfb6a5b944c481b829bb0a2d2b40, type: 3}
+    decalAtlas: {fileID: 0}
+    maxDecals: 128
+    baseFadeTimeSeconds: 7.5
+    atlasSlices: 16
+    decalTint: {r: 0.72, g: 0.44, b: 0.32, a: 1}
+    intensity: 1
+--- !u!114 &232232232000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4cbb8fb5b0c14e57aa7d232232ca0005, type: 3}
+  m_Name: HectonDeferredCausticsFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Rendering.HectonDeferredCausticsFeature
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: 4cbb8fb5b0c14e57aa7d232232ca0007, type: 3}
+    injectionPoint: 450
+--- !u!114 &348348348000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a0774dfd543412fac683ba616c7a07e, type: 3}
+  m_Name: WristPdaScreenProjectorFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.UI.Rendering.WristPdaScreenProjectorFeature
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: 0d75901ecc6a479385541da8be342394, type: 3}
+    injectionPoint: 550
 --- !u!114 &58536412019685547
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -306,6 +391,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 729a2e952309e2547a3747b2cdd9a36f, type: 3}
   m_Name: ShapesRenderFeature
   m_EditorClassIdentifier: ShapesRuntime::Shapes.ShapesRenderFeature
+  m_Active: 1
+--- !u!114 &420815551001000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eba5170be4920e746b8c0ca0765349bc, type: 3}
+  m_Name: HectonFluidAdvectionRenderFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonFluidAdvectionRenderFeature
   m_Active: 1
 --- !u!114 &1886482717959882929
 MonoBehaviour:
@@ -321,6 +419,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.ScreenSpaceShadows
   m_Active: 1
   m_Shader: {fileID: 4800000, guid: 0f854b35a0cf61a429bd5dcfea30eddd, type: 3}
+--- !u!114 &4779087617172495997
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26200000000000000000000000000004, type: 3}
+  m_Name: HectonSinglePassOceanFeature
+  m_EditorClassIdentifier: Hecton8.Rendering.OceanSinglePass::Hecton8.Rendering.OceanSinglePass.HectonSinglePassOceanFeature
+  m_Active: 1
+  settings:
+    depthFoamShader: {fileID: 4800000, guid: 26200000000000000000000000000006, type: 3}
+    wakeCompute: {fileID: 7200000, guid: 26200000000000000000000000000007, type: 3}
+    injectionPoint: 450
 --- !u!114 &5318849925799663161
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -336,8 +451,14 @@ MonoBehaviour:
   m_Active: 0
   settings:
     shader: {fileID: 4800000, guid: 2f16f2dbb7e64be8b2e781182e8fd8f7, type: 3}
+    lensComputeShader: {fileID: 0}
     injectionPoint: 550
     distortionStrength: 0.012
+    snellStrength: 0.014
+    refractionIndexLut: {x: 1.0003, y: 1.333, z: 1.38, w: 1.46}
+    depthSoftnessMeters: 0.08
+    stressFallbackThreshold: 0.82
+    minimumQualityVideoMemoryMb: 2048
     runoffSpeed: 1.2
     dropletScale: 8
     lateralStreakStrength: 0.42
@@ -347,6 +468,8 @@ MonoBehaviour:
     edgeFadeExponent: 1.35
     dustStrength: 0.28
     ambientDustResponse: 1.45
+    visualOverkillStrength: 1
+    lensMaskRenderScale: 0.25
 --- !u!114 &5943226787261363979
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -385,27 +508,6 @@ MonoBehaviour:
       surfaceData: 2
     screenSpaceSettings:
       normalBlend: 0
---- !u!114 &149000149001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e26e06fe59eb56b4eae04f2fd7fdae2a, type: 3}
-  m_Name: HectonVisorTraumaFeature
-  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.DeferredDecalPass
-  m_Active: 1
-  settings:
-    deferredDecalShader: {fileID: 4800000, guid: 8f60cfb6a5b944c481b829bb0a2d2b40, type: 3}
-    decalAtlas: {fileID: 0}
-    maxDecals: 128
-    baseFadeTimeSeconds: 7.5
-    atlasSlices: 16
-    decalTint: {r: 0.72, g: 0.44, b: 0.32, a: 1}
-    intensity: 1
 --- !u!114 &8465884984933540169
 MonoBehaviour:
   m_ObjectHideFlags: 0

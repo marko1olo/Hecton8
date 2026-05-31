@@ -86,13 +86,13 @@ namespace Hecton8.Physiology
             MutationGuardBit(BufferID.ShinobuMockPredatorAggroSignals) |
             MutationGuardBit(BufferID.ShinobuMockMedicalItemSignals) |
             MutationGuardBit(BufferID.ShinobuPhysiologyTuning);
-        private const ulong DefaultTuningMutationGuardMask =
+        private static readonly ulong DefaultTuningMutationGuardMask =
             MutationGuardBit(BufferID.ShinobuPhysiologyTuning) |
             MutationGuardBit(ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer);
-        private const ulong EmergencyMetabolismMutationGuardMask =
+        private static readonly ulong EmergencyMetabolismMutationGuardMask =
             MutationGuardBit(BufferID.ShinobuHaldaneCoefficients) |
             MutationGuardBit(BufferID.ShinobuPhysiologyTuning);
-        private const ulong DefaultStateMutationGuardMask =
+        private static readonly ulong DefaultStateMutationGuardMask =
             MutationGuardBit(BufferID.ShinobuPhysiologyVitals) |
             MutationGuardBit(BufferID.ShinobuDecompressionStates) |
             MutationGuardBit(BufferID.ShinobuTissueCompartments) |
@@ -102,12 +102,12 @@ namespace Hecton8.Physiology
             MutationGuardBit(ShinobuPhysiologyConstants.BreathingGasFractionsBuffer) |
             MutationGuardBit(BufferID.ShinobuCardiacPulseStates);
 #if UNITY_EDITOR
-        private const ulong BiologyCsvMutationGuardMask =
+        private static readonly ulong BiologyCsvMutationGuardMask =
             MutationGuardBit(BufferID.ShinobuPhysiologyTuning) |
             MutationGuardBit(BufferID.ShinobuBiologyCsvOverrides) |
             MutationGuardBit(BufferID.ShinobuHaldaneCoefficients) |
             MutationGuardBit(BufferID.ShinobuTissueCompartments);
-        private const ulong GasCsvMutationGuardMask =
+        private static readonly ulong GasCsvMutationGuardMask =
             MutationGuardBit(ShinobuPhysiologyConstants.GasPhysiologyTuningBuffer);
 
         // COLD ALLOC: editor CSV import scratch. Never used by Tick/SlowTick/LateFrameTick.

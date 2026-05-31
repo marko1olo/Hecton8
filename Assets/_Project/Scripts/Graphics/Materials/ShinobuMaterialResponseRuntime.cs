@@ -442,6 +442,9 @@ namespace Hecton8.Graphics.Materials
 
         private void RegisterDispatcherPhases()
         {
+            if (!Application.isPlaying || _shutdown || GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredPreSimulation && GlobalRegistry.TryRegisterDispatcherSystem(_preSimulationPhase))
                 _registeredPreSimulation = true;
             if (!_registeredSimulation && GlobalRegistry.TryRegisterDispatcherSystem(_simulationPhase))
@@ -488,12 +491,20 @@ namespace Hecton8.Graphics.Materials
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
+                if (!_shutdown)
+                    PrepareRuntimeStateCold();
                 return;
+            }
 
-            RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
-            if (!_shutdown)
-                PrepareRuntimeStateCold();
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                UnregisterDispatcherPhases();
+                if (!_shutdown && currentService != null)
+                    RegisterDispatcherPhases();
+            }
         }
 
         public void ColdTick()
@@ -1608,7 +1619,11 @@ namespace Hecton8.Graphics.Materials
                 BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(16, 4), (uint)entryBytes);
                 BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(20, 4), _lastStateHash);
 
-                uint hash = (uint)DumpMagic ^ (uint)(DumpMagic >> 32) ^ DumpVersion ^ (uint)telemetry.Length ^ _lastStateHash;
+                uint hash = unchecked((uint)DumpMagic) ^
+                            unchecked((uint)(DumpMagic >> 32)) ^
+                            DumpVersion ^
+                            (uint)telemetry.Length ^
+                            _lastStateHash;
                 for (int byteIndex = 0; byteIndex < 24; byteIndex++)
                     hash = (hash * 16777619u) ^ bytes[byteIndex];
 

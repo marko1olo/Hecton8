@@ -1116,7 +1116,7 @@ namespace Hecton8.Graphics.Culling
                 return false;
             }
 
-            if (ActiveMaxThreadsPerGroup <= 0 || !shader.IsSupported(kernel))
+            if (ActiveMaxThreadsPerGroup <= 0)
             {
                 LastKernelThreadsPerGroup = 0;
                 ResetDispatchGroups();
@@ -1124,7 +1124,57 @@ namespace Hecton8.Graphics.Culling
                 return false;
             }
 
-            shader.GetKernelThreadGroupSizes(kernel, out uint groupXRaw, out uint groupYRaw, out uint groupZRaw);
+            uint groupXRaw;
+            uint groupYRaw;
+            uint groupZRaw;
+            try
+            {
+                if (!shader.IsSupported(kernel))
+                {
+                    LastKernelThreadsPerGroup = 0;
+                    ResetDispatchGroups();
+                    LastRejectCode = 2u;
+                    return false;
+                }
+
+                shader.GetKernelThreadGroupSizes(kernel, out groupXRaw, out groupYRaw, out groupZRaw);
+            }
+            catch (ObjectDisposedException)
+            {
+                LastKernelThreadsPerGroup = 0;
+                ResetDispatchGroups();
+                LastRejectCode = 2u;
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                LastKernelThreadsPerGroup = 0;
+                ResetDispatchGroups();
+                LastRejectCode = 2u;
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                LastKernelThreadsPerGroup = 0;
+                ResetDispatchGroups();
+                LastRejectCode = 2u;
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                LastKernelThreadsPerGroup = 0;
+                ResetDispatchGroups();
+                LastRejectCode = 2u;
+                return false;
+            }
+            catch (UnityException)
+            {
+                LastKernelThreadsPerGroup = 0;
+                ResetDispatchGroups();
+                LastRejectCode = 2u;
+                return false;
+            }
+
             int groupX = ToPositiveGroupSize(groupXRaw);
             int groupY = ToPositiveGroupSize(groupYRaw);
             int groupZ = ToPositiveGroupSize(groupZRaw);
@@ -1827,6 +1877,7 @@ namespace Hecton8.Graphics.Culling
                 return dependency;
             }
 
+            lockedMatrices = default;
             try
             {
                 lockedMatrices = buffer.LockBufferForWrite<float4x4>(0, safeCount);

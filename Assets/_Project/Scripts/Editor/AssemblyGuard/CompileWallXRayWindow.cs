@@ -1570,8 +1570,8 @@ namespace Hecton8.Editor
 
             if (elapsed > WarningThresholdSeconds)
             {
-                Hecton8.Core.H8Debug.LogWarning("[CompileWall] Slow assembly compile threshold exceeded.");
-                Hecton8.Core.H8Debug.LogWarning(sample.AssemblyLabel);
+                Hecton8.Core.H8Debug.Log("[CompileWall] Slow assembly compile threshold exceeded.");
+                Hecton8.Core.H8Debug.Log(sample.AssemblyLabel);
             }
         }
 

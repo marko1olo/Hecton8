@@ -430,6 +430,9 @@ namespace Hecton8.VFX.PlasmaBeam
 
         private void RegisterDispatcherPhases()
         {
+            if (!Application.isPlaying || _shutdown || GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredPreSimulation && GlobalRegistry.TryRegisterDispatcherSystem(_preSimulationPhase))
                 _registeredPreSimulation = true;
             if (!_registeredSimulation && GlobalRegistry.TryRegisterDispatcherSystem(_simulationPhase))
@@ -485,13 +488,21 @@ namespace Hecton8.VFX.PlasmaBeam
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                IDataVault nextVault = currentService is IDataVault currentVault ? currentVault : null;
+                RebindDataVaultForLifecycle(nextVault);
+                if (!_shutdown)
+                    PrepareRuntimeStateCold();
                 return;
+            }
 
-            IDataVault nextVault = currentService is IDataVault currentVault ? currentVault : null;
-            RebindDataVaultForLifecycle(nextVault);
-            if (!_shutdown)
-                PrepareRuntimeStateCold();
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                UnregisterDispatcherPhases();
+                if (!_shutdown && currentService != null)
+                    RegisterDispatcherPhases();
+            }
         }
 
         public void ColdTick()

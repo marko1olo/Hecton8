@@ -2350,7 +2350,7 @@ namespace Hecton8.Core.Memory
         public bool ReleaseBuffer<T>(in VaultGenerationHandle<T> handle) where T : struct
         {
             int key = unchecked((int)handle.BufferID);
-            if (!_initialized || key == 0 || !TryReadFlatMetadata(key, out VaultBufferMeta meta))
+            if (!_initialized || !H8Memory.IsInitialized || key == 0 || !TryReadFlatMetadata(key, out VaultBufferMeta meta))
                 return false;
 
             if (handle.Generation != meta.Version)
@@ -5745,8 +5745,20 @@ namespace Hecton8.Core.Memory
             if ((block.Reserved0 & (BlockFlagLocked | BlockFlagExternalView)) != 0 || block.Reserved1 != 0)
                 return false;
 
-            if (clearPayload && _arenaBase != null && block.Bytes > 0L && block.OffsetBytes <= _arenaBytes - block.Bytes)
-                UnsafeUtility.MemClear((byte*)_arenaBase + block.OffsetBytes, block.Bytes);
+            if (clearPayload)
+            {
+                if (block.OffsetBytes < 0L ||
+                    block.Bytes <= 0L ||
+                    block.Bytes > _arenaBytes ||
+                    block.OffsetBytes > _arenaBytes - block.Bytes)
+                {
+                    DumpPhiVodBlackBox();
+                    return false;
+                }
+
+                if (_arenaBase != null)
+                    UnsafeUtility.MemClear((byte*)_arenaBase + block.OffsetBytes, block.Bytes);
+            }
 
             block.BufferKey = 0;
             block.State = BlockStateFree;

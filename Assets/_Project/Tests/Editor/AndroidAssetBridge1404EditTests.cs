@@ -48,13 +48,18 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("AAssetManager_fromJava", native);
             StringAssert.Contains("AAssetManager_open", native);
             StringAssert.Contains("AAsset_getLength64", native);
+            StringAssert.Contains("AAsset_openFileDescriptor64", native);
             StringAssert.Contains("AAsset_read", native);
             StringAssert.Contains("AAsset_close(asset)", native);
             StringAssert.Contains("assetLength < 0 || assetLength != bufferSize", native);
+            StringAssert.Contains("H8_ERROR_COMPRESSED_ASSET", native);
             StringAssert.Contains("H8_WriteTelemetryDump", native);
             StringAssert.Contains("Docs/AgentLogs/Dump_1404.bin", native);
+            StringAssert.Contains("H8_TryMeasureCString", native);
+            StringAssert.Contains("requiredBytes > static_cast<size_t>(capacity)", native);
             Assert.IsFalse(native.Contains("std::vector", StringComparison.Ordinal));
             Assert.IsFalse(native.Contains("std::string", StringComparison.Ordinal));
+            Assert.IsFalse(native.Contains("std::strlen", StringComparison.Ordinal));
             Assert.IsFalse(native.Contains("malloc", StringComparison.Ordinal));
             Assert.IsFalse(native.Contains("free(", StringComparison.Ordinal));
             Assert.IsFalse(native.Contains("delete", StringComparison.Ordinal));

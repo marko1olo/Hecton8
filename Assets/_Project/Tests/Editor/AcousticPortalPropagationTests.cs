@@ -66,8 +66,8 @@ namespace Hecton8.Tests.Editor
                 {
                     Nodes = nodes,
                     Edges = edges,
-                    OpenSet = openSet,
-                    ClosedSet = closedSet,
+                    OpenSet = openSet.AsArray(),
+                    ClosedSet = closedSet.AsArray(),
                     Costs = costs,
                     CameFrom = cameFrom,
                     States = states,

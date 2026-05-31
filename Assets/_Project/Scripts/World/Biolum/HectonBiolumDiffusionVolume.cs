@@ -668,12 +668,36 @@ namespace Hecton8.Biolum
             if (biolumDiffusionCompute == null || !_supportsComputeShadersCold)
                 return false;
 
-            if (!biolumDiffusionCompute.HasKernel(kernelName))
-                return false;
+            int resolvedKernelIndex = -1;
+            try
+            {
+                if (!biolumDiffusionCompute.HasKernel(kernelName))
+                    return false;
 
-            int resolvedKernelIndex = biolumDiffusionCompute.FindKernel(kernelName);
-            if (resolvedKernelIndex < 0 || !biolumDiffusionCompute.IsSupported(resolvedKernelIndex))
+                resolvedKernelIndex = biolumDiffusionCompute.FindKernel(kernelName);
+                if (resolvedKernelIndex < 0)
+                    return false;
+            }
+            catch (System.ObjectDisposedException)
+            {
                 return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                return false;
+            }
+            catch (UnityException)
+            {
+                return false;
+            }
 
             if (!TryCacheKernelThreadGroupSizes(resolvedKernelIndex, out sizeX, out sizeY, out sizeZ))
                 return false;
@@ -690,7 +714,33 @@ namespace Hecton8.Biolum
             if (biolumDiffusionCompute == null || kernelIndex < 0)
                 return false;
 
-            biolumDiffusionCompute.GetKernelThreadGroupSizes(kernelIndex, out sizeX, out sizeY, out sizeZ);
+            try
+            {
+                if (!biolumDiffusionCompute.IsSupported(kernelIndex))
+                    return false;
+
+                biolumDiffusionCompute.GetKernelThreadGroupSizes(kernelIndex, out sizeX, out sizeY, out sizeZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                return false;
+            }
+            catch (UnityException)
+            {
+                return false;
+            }
             if (IsPortableThreadGroup(sizeX, sizeY, sizeZ))
                 return true;
 

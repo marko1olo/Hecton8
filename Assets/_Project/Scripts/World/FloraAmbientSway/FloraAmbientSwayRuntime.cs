@@ -1377,7 +1377,7 @@ namespace Hecton8.World.FloraAmbientSway
         {
             buffer = default;
             return vault != null &&
-                   handle.BufferID == expectedBufferId &&
+                   handle.BufferID == (uint)expectedBufferId &&
                    !vault.IsCompactionFenceActive &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&

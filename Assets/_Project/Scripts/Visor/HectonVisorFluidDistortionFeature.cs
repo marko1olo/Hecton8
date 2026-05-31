@@ -646,15 +646,46 @@ namespace Hecton8.Visor
                 _lensKernelIndex = -1;
                 _lensThreadGroupSizeX = 0u;
                 _lensThreadGroupSizeY = 0u;
-                if (_lensComputeShader == null ||
-                    !_lensComputeShader.HasKernel("ResolveDiegeticVisorLensMask"))
-                    return;
+                int resolvedKernel = -1;
+                uint x = 0u;
+                uint y = 0u;
+                uint z = 0u;
+                try
+                {
+                    if (_lensComputeShader == null ||
+                        !_lensComputeShader.HasKernel("ResolveDiegeticVisorLensMask"))
+                        return;
 
-                int resolvedKernel = _lensComputeShader.FindKernel("ResolveDiegeticVisorLensMask");
-                if (resolvedKernel < 0 || !_lensComputeShader.IsSupported(resolvedKernel))
-                    return;
+                    resolvedKernel = _lensComputeShader.FindKernel("ResolveDiegeticVisorLensMask");
+                    if (resolvedKernel < 0)
+                        return;
 
-                _lensComputeShader.GetKernelThreadGroupSizes(resolvedKernel, out uint x, out uint y, out uint z);
+                    if (!_lensComputeShader.IsSupported(resolvedKernel))
+                        return;
+
+                    _lensComputeShader.GetKernelThreadGroupSizes(resolvedKernel, out x, out y, out z);
+                }
+                catch (ObjectDisposedException)
+                {
+                    return;
+                }
+                catch (InvalidOperationException)
+                {
+                    return;
+                }
+                catch (ArgumentException)
+                {
+                    return;
+                }
+                catch (MissingReferenceException)
+                {
+                    return;
+                }
+                catch (UnityException)
+                {
+                    return;
+                }
+
                 ulong threadProduct = (ulong)x * y * z;
                 if (x == 0u || y == 0u || z != 1u || threadProduct == 0UL || threadProduct > MaxKernelThreadProduct)
                     return;
@@ -905,7 +936,6 @@ namespace Hecton8.Visor
         private int _cachedGraphicsMemoryMb;
         private uint _blackBoxVaultGeneration;
         private uint _cachedPresentationTelemetryFlags;
-        private bool _blackBoxHandleOwned;
         private bool _blackBoxDumped;
         private bool _blackBoxHotSwapRegistered;
         private bool _supportsSetConstantBuffer;
@@ -1494,7 +1524,6 @@ namespace Hecton8.Visor
             {
                 _blackBoxHandle = existingHandle;
                 _blackBoxVaultGeneration = existingHandle.Generation;
-                _blackBoxHandleOwned = false;
                 return true;
             }
 
@@ -1531,7 +1560,6 @@ namespace Hecton8.Visor
 
             _blackBoxHandle = blackBoxHandle;
             _blackBoxVaultGeneration = blackBoxHandle.Generation;
-            _blackBoxHandleOwned = true;
             return true;
         }
 
@@ -1572,20 +1600,9 @@ namespace Hecton8.Visor
 
         private void ReleaseBlackBoxLease()
         {
-            IDataVault vault = _dataVault;
-            if (vault != null &&
-                _blackBoxHandleOwned &&
-                IsBlackBoxHandle(in _blackBoxHandle) &&
-                !vault.IsCompactionFenceActive &&
-                vault.TryGetGenerationHandle(
-                    BufferID.VisorRefractionBlackBox,
-                    out VaultGenerationHandle<VisorRefractionTelemetryEntry> currentHandle) &&
-                IsBlackBoxHandle(in currentHandle) &&
-                currentHandle.Generation == _blackBoxHandle.Generation)
-            {
-                vault.ReleaseBuffer(in _blackBoxHandle);
-            }
-
+            // Renderer features are secondary DataVault consumers. URP disposal can run while the
+            // vault arena is resetting, so this lifecycle path detaches handles without freeing
+            // vault-owned storage from inside RenderPipeline cleanup.
             ClearBlackBoxDescriptor();
             _dataVault = null;
         }
@@ -1594,7 +1611,6 @@ namespace Hecton8.Visor
         {
             _blackBoxHandle = default;
             _blackBoxVaultGeneration = 0u;
-            _blackBoxHandleOwned = false;
         }
 
         private void ResetBlackBoxNativeEpochState()

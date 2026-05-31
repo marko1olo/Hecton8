@@ -29,7 +29,8 @@ Cold boot loading contract:
 
 - URL-backed `StreamingAssets` paths use the bootstrap `Awaitable` phase.
 - Direct filesystem paths can hydrate synchronously into the Vault arena.
-- Android/JAR-style URLs must be staged asynchronously before validation.
+- Android player builds use the NDK `AAssetManager` source-plugin bridge for `static_data.h8bin`; bytes stream directly into the Vault arena. Packaging proof requires `AndroidTargetArchitectures: 2` and `androidSplitApplicationBinary: 0`.
+- Android `h8bin` entries must be uncompressed/FD-backed. The bridge treats `AAsset_openFileDescriptor64` failure as a hard read failure before hydration.
 - WebGL remains fail-closed until a zero-copy browser staging path exists.
 
 ## Save Container Boundary

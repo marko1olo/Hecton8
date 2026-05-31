@@ -52,6 +52,16 @@ namespace Hecton8.UI
         [SerializeField] private Button btnTextureQualityIncrease;
         [SerializeField] private TMP_Text txtTextureQuality;
 
+        [Header("=== MENU STYLE ===")]
+        [SerializeField] private Button btnMenuStyleDecrease;
+        [SerializeField] private Button btnMenuStyleIncrease;
+        [SerializeField] private TMP_Text txtMenuVisualStyle;
+        [SerializeField] private Button btnMenuConceptDecrease;
+        [SerializeField] private Button btnMenuConceptIncrease;
+        [SerializeField] private TMP_Text txtMenuVisualConcept;
+        [SerializeField, Tooltip("Creates cold runtime rows in scene-authored settings panels when menu visual controls are not wired.")]
+        private bool autoCreateMenuVisualStyleRow = true;
+
         [Header("=== AUDIO ===")]
         [SerializeField] private Slider sliderMasterVolume;
         [SerializeField] private Slider sliderMusicVolume;
@@ -116,6 +126,11 @@ namespace Hecton8.UI
         private bool _cachedBloom;
         private bool _cachedMotionBlur;
         private int _cachedTextureQuality = -1;
+        private int _cachedGraphicsPreset = -1;
+        private int _cachedMenuVisualStyleIndex = -1;
+        private int _cachedMenuVisualConceptIndex = -1;
+        private int _openedMenuVisualStyleIndex = -1;
+        private int _openedMenuVisualConceptIndex = -1;
 
         private UnityAction _presetLowAction;
         private UnityAction _presetMediumAction;
@@ -129,6 +144,10 @@ namespace Hecton8.UI
         private UnityAction _antiAliasingIncreaseAction;
         private UnityAction _textureQualityDecreaseAction;
         private UnityAction _textureQualityIncreaseAction;
+        private UnityAction _menuStyleDecreaseAction;
+        private UnityAction _menuStyleIncreaseAction;
+        private UnityAction _menuConceptDecreaseAction;
+        private UnityAction _menuConceptIncreaseAction;
         private UnityAction _resetDefaultsAction;
         private UnityAction _applyAction;
         private UnityAction _cancelAction;
@@ -164,6 +183,10 @@ namespace Hecton8.UI
         private uint _prevShadowQualityTextHash;
         private uint _prevAntiAliasingTextHash;
         private uint _prevTextureQualityTextHash;
+        private uint _prevMenuVisualStyleTextHash;
+        private uint _prevMenuVisualConceptTextHash;
+        private readonly char[] _menuVisualStyleDisplayBuffer = new char[160]; // COLD ALLOC: menu style indexed display buffer - owner: SettingsPanel
+        private readonly char[] _menuVisualConceptDisplayBuffer = new char[160]; // COLD ALLOC: menu concept indexed display buffer - owner: SettingsPanel
         private readonly char[] _modalMessageBuffer = new char[192]; // COLD ALLOC: settings modal message staging buffer copied directly into TMP - owner: SettingsPanel
 
         private readonly struct CachedTextLabel
@@ -218,12 +241,16 @@ namespace Hecton8.UI
         private void Awake()
         {
             EnsureListenerActionsCached();
+            EnsureMenuStyleControlsCold();
+            EnsureMenuConceptControlsCold();
             BindButtons();
         }
 
         private void OnEnable()
         {
             EnsureListenerActionsCached();
+            EnsureMenuStyleControlsCold();
+            EnsureMenuConceptControlsCold();
             BindButtons();
 
             if (!_initialized)
@@ -233,6 +260,7 @@ namespace Hecton8.UI
 
             LocalizationEvents.RegisterLanguageListener(this);
             LoadCurrentSettings();
+            CaptureMenuVisualCancelSnapshot();
             RefreshAllUI();
             RefreshLocalizedLabels();
             modMenuController?.RefreshView();
@@ -296,6 +324,10 @@ namespace Hecton8.UI
             _antiAliasingIncreaseAction = OnAntiAliasingIncrease; // COLD ALLOC: UnityAction[1] - cached anti-aliasing increase listener - owner: SettingsPanel
             _textureQualityDecreaseAction = OnTextureQualityDecrease; // COLD ALLOC: UnityAction[1] - cached texture quality decrease listener - owner: SettingsPanel
             _textureQualityIncreaseAction = OnTextureQualityIncrease; // COLD ALLOC: UnityAction[1] - cached texture quality increase listener - owner: SettingsPanel
+            _menuStyleDecreaseAction = OnMenuStyleDecrease; // COLD ALLOC: UnityAction[1] - cached menu style decrease listener - owner: SettingsPanel
+            _menuStyleIncreaseAction = OnMenuStyleIncrease; // COLD ALLOC: UnityAction[1] - cached menu style increase listener - owner: SettingsPanel
+            _menuConceptDecreaseAction = OnMenuConceptDecrease; // COLD ALLOC: UnityAction[1] - cached menu concept decrease listener - owner: SettingsPanel
+            _menuConceptIncreaseAction = OnMenuConceptIncrease; // COLD ALLOC: UnityAction[1] - cached menu concept increase listener - owner: SettingsPanel
             _resetDefaultsAction = OnResetDefaults; // COLD ALLOC: UnityAction[1] - cached reset defaults listener - owner: SettingsPanel
             _applyAction = OnApply; // COLD ALLOC: UnityAction[1] - cached apply listener - owner: SettingsPanel
             _cancelAction = OnCancel; // COLD ALLOC: UnityAction[1] - cached cancel listener - owner: SettingsPanel
@@ -317,7 +349,9 @@ namespace Hecton8.UI
             if (_applyAction != null &&
                 _cancelAction != null &&
                 _masterVolumeChangedAction != null &&
-                _shadowDistanceChangedAction != null)
+                _shadowDistanceChangedAction != null &&
+                _menuStyleIncreaseAction != null &&
+                _menuConceptIncreaseAction != null)
             {
                 return;
             }
@@ -411,6 +445,30 @@ namespace Hecton8.UI
                 btnTextureQualityIncrease.onClick.AddListener(_textureQualityIncreaseAction);
             }
 
+            if (btnMenuStyleDecrease != null)
+            {
+                btnMenuStyleDecrease.onClick.RemoveAllListeners();
+                btnMenuStyleDecrease.onClick.AddListener(_menuStyleDecreaseAction);
+            }
+
+            if (btnMenuStyleIncrease != null)
+            {
+                btnMenuStyleIncrease.onClick.RemoveAllListeners();
+                btnMenuStyleIncrease.onClick.AddListener(_menuStyleIncreaseAction);
+            }
+
+            if (btnMenuConceptDecrease != null)
+            {
+                btnMenuConceptDecrease.onClick.RemoveAllListeners();
+                btnMenuConceptDecrease.onClick.AddListener(_menuConceptDecreaseAction);
+            }
+
+            if (btnMenuConceptIncrease != null)
+            {
+                btnMenuConceptIncrease.onClick.RemoveAllListeners();
+                btnMenuConceptIncrease.onClick.AddListener(_menuConceptIncreaseAction);
+            }
+
             if (toggleAmbientOcclusion != null)
             {
                 toggleAmbientOcclusion.onValueChanged.RemoveAllListeners();
@@ -446,6 +504,225 @@ namespace Hecton8.UI
                 btnCancel.onClick.RemoveAllListeners();
                 btnCancel.onClick.AddListener(_cancelAction);
             }
+        }
+
+        private void EnsureMenuStyleControlsCold()
+        {
+            if (!autoCreateMenuVisualStyleRow)
+                return;
+
+            if (btnMenuStyleDecrease != null && btnMenuStyleIncrease != null && txtMenuVisualStyle != null)
+                return;
+
+            Transform graphicsSection = transform.Find("Container/Section_Graphics");
+            if (graphicsSection == null)
+                return;
+
+            Transform existingRow = graphicsSection.Find("Row_MenuVisualStyle");
+            if (existingRow == null)
+                existingRow = CreateMenuStyleRowCold(graphicsSection);
+
+            CacheMenuStyleRowCold(existingRow);
+        }
+
+        private Transform CreateMenuStyleRowCold(Transform parent)
+        {
+            GameObject rowObject = new GameObject("Row_MenuVisualStyle", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement)); // COLD ALLOC: optional main-menu settings style row.
+            rowObject.transform.SetParent(parent, false);
+
+            RectTransform rowRect = rowObject.GetComponent<RectTransform>();
+            rowRect.localScale = Vector3.one;
+
+            LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
+            rowLayout.minHeight = 34f;
+            rowLayout.preferredHeight = 36f;
+
+            HorizontalLayoutGroup rowGroup = rowObject.GetComponent<HorizontalLayoutGroup>();
+            rowGroup.childAlignment = TextAnchor.MiddleLeft;
+            rowGroup.childControlHeight = true;
+            rowGroup.childControlWidth = true;
+            rowGroup.childForceExpandHeight = false;
+            rowGroup.childForceExpandWidth = false;
+            rowGroup.spacing = 10f;
+
+            TMP_Text label = CreateMenuStyleTextCold(rowObject.transform, "Label_Row_MenuVisualStyle", "MENU STYLE".AsSpan(), TextAlignmentOptions.Left, 12f);
+            ConfigureMenuStyleLayoutCold(label.gameObject, 170f, 0f);
+
+            btnMenuStyleDecrease = CreateMenuStyleButtonCold(rowObject.transform, "Btn_MenuStyleDecrease", "<".AsSpan());
+            ConfigureMenuStyleLayoutCold(btnMenuStyleDecrease.gameObject, 42f, 0f);
+
+            txtMenuVisualStyle = CreateMenuStyleTextCold(rowObject.transform, "Txt_MenuVisualStyle", MenuVisualStyleCatalog.GetDisplayName(MenuVisualStyle.PressureVesselNoir), TextAlignmentOptions.Center, 10.5f);
+            ConfigureMenuStyleLayoutCold(txtMenuVisualStyle.gameObject, 0f, 1f);
+
+            btnMenuStyleIncrease = CreateMenuStyleButtonCold(rowObject.transform, "Btn_MenuStyleIncrease", ">".AsSpan());
+            ConfigureMenuStyleLayoutCold(btnMenuStyleIncrease.gameObject, 42f, 0f);
+
+            return rowObject.transform;
+        }
+
+        private void CacheMenuStyleRowCold(Transform row)
+        {
+            if (row == null)
+                return;
+
+            if (btnMenuStyleDecrease == null)
+                btnMenuStyleDecrease = FindDirectChildComponentCold<Button>(row, "Btn_MenuStyleDecrease");
+            if (btnMenuStyleIncrease == null)
+                btnMenuStyleIncrease = FindDirectChildComponentCold<Button>(row, "Btn_MenuStyleIncrease");
+            if (txtMenuVisualStyle == null)
+                txtMenuVisualStyle = FindDirectChildComponentCold<TMP_Text>(row, "Txt_MenuVisualStyle");
+        }
+
+        private void EnsureMenuConceptControlsCold()
+        {
+            if (!autoCreateMenuVisualStyleRow)
+                return;
+
+            if (btnMenuConceptDecrease != null && btnMenuConceptIncrease != null && txtMenuVisualConcept != null)
+                return;
+
+            Transform graphicsSection = transform.Find("Container/Section_Graphics");
+            if (graphicsSection == null)
+                return;
+
+            Transform existingRow = graphicsSection.Find("Row_MenuVisualConcept");
+            if (existingRow == null)
+                existingRow = CreateMenuConceptRowCold(graphicsSection);
+
+            CacheMenuConceptRowCold(existingRow);
+        }
+
+        private Transform CreateMenuConceptRowCold(Transform parent)
+        {
+            GameObject rowObject = new GameObject("Row_MenuVisualConcept", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement)); // COLD ALLOC: optional main-menu settings concept row.
+            rowObject.transform.SetParent(parent, false);
+
+            RectTransform rowRect = rowObject.GetComponent<RectTransform>();
+            rowRect.localScale = Vector3.one;
+
+            LayoutElement rowLayout = rowObject.GetComponent<LayoutElement>();
+            rowLayout.minHeight = 34f;
+            rowLayout.preferredHeight = 36f;
+
+            HorizontalLayoutGroup rowGroup = rowObject.GetComponent<HorizontalLayoutGroup>();
+            rowGroup.childAlignment = TextAnchor.MiddleLeft;
+            rowGroup.childControlHeight = true;
+            rowGroup.childControlWidth = true;
+            rowGroup.childForceExpandHeight = false;
+            rowGroup.childForceExpandWidth = false;
+            rowGroup.spacing = 10f;
+
+            TMP_Text label = CreateMenuStyleTextCold(rowObject.transform, "Label_Row_MenuVisualConcept", "MENU CONCEPT".AsSpan(), TextAlignmentOptions.Left, 12f);
+            ConfigureMenuStyleLayoutCold(label.gameObject, 170f, 0f);
+
+            btnMenuConceptDecrease = CreateMenuStyleButtonCold(rowObject.transform, "Btn_MenuConceptDecrease", "<".AsSpan());
+            ConfigureMenuStyleLayoutCold(btnMenuConceptDecrease.gameObject, 42f, 0f);
+
+            txtMenuVisualConcept = CreateMenuStyleTextCold(rowObject.transform, "Txt_MenuVisualConcept", MenuVisualConceptCatalog.GetDisplayName(MenuVisualConcept.ModuleWindowOverlay), TextAlignmentOptions.Center, 10.5f);
+            ConfigureMenuStyleLayoutCold(txtMenuVisualConcept.gameObject, 0f, 1f);
+
+            btnMenuConceptIncrease = CreateMenuStyleButtonCold(rowObject.transform, "Btn_MenuConceptIncrease", ">".AsSpan());
+            ConfigureMenuStyleLayoutCold(btnMenuConceptIncrease.gameObject, 42f, 0f);
+
+            return rowObject.transform;
+        }
+
+        private void CacheMenuConceptRowCold(Transform row)
+        {
+            if (row == null)
+                return;
+
+            if (btnMenuConceptDecrease == null)
+                btnMenuConceptDecrease = FindDirectChildComponentCold<Button>(row, "Btn_MenuConceptDecrease");
+            if (btnMenuConceptIncrease == null)
+                btnMenuConceptIncrease = FindDirectChildComponentCold<Button>(row, "Btn_MenuConceptIncrease");
+            if (txtMenuVisualConcept == null)
+                txtMenuVisualConcept = FindDirectChildComponentCold<TMP_Text>(row, "Txt_MenuVisualConcept");
+        }
+
+        private static T FindDirectChildComponentCold<T>(Transform parent, string childName) where T : Component
+        {
+            Transform child = parent.Find(childName);
+            if (child == null || !child.TryGetComponent(out T component))
+                return null;
+
+            return component;
+        }
+
+        private static Button CreateMenuStyleButtonCold(Transform parent, string name, ReadOnlySpan<char> label)
+        {
+            GameObject buttonObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button)); // COLD ALLOC: optional settings row button.
+            buttonObject.transform.SetParent(parent, false);
+
+            Image image = buttonObject.GetComponent<Image>();
+            image.color = new Color(0.075f, 0.145f, 0.155f, 0.86f);
+
+            Button button = buttonObject.GetComponent<Button>();
+            button.targetGraphic = image;
+            ColorBlock colors = button.colors;
+            colors.normalColor = new Color(0.075f, 0.145f, 0.155f, 0.86f);
+            colors.highlightedColor = new Color(0.110f, 0.250f, 0.270f, 0.95f);
+            colors.selectedColor = new Color(0.140f, 0.340f, 0.360f, 0.98f);
+            colors.pressedColor = new Color(0.980f, 0.520f, 0.180f, 0.98f);
+            colors.disabledColor = new Color(0.040f, 0.060f, 0.065f, 0.50f);
+            button.colors = colors;
+
+            TMP_Text text = CreateMenuStyleTextCold(buttonObject.transform, "Label", label, TextAlignmentOptions.Center, 13f);
+            RectTransform textRect = text.rectTransform;
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = Vector2.zero;
+            textRect.offsetMax = Vector2.zero;
+
+            return button;
+        }
+
+        private static TMP_Text CreateMenuStyleTextCold(Transform parent, string name, ReadOnlySpan<char> value, TextAlignmentOptions alignment, float fontSize)
+        {
+            GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI)); // COLD ALLOC: optional settings row TMP text.
+            textObject.transform.SetParent(parent, false);
+
+            TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+            text.font = TMP_Settings.defaultFontAsset;
+            text.fontSize = fontSize;
+            text.alignment = alignment;
+            text.raycastTarget = false;
+            text.color = new Color(0.650f, 0.900f, 0.870f, 0.92f);
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.overflowMode = TextOverflowModes.Ellipsis;
+            ConfigureMenuTextFitCold(text, fontSize * 0.68f, fontSize);
+            TmpTextNoAlloc.Set(text, value);
+            return text;
+        }
+
+        private static void ConfigureMenuTextFitCold(TMP_Text text, float minSize, float maxSize)
+        {
+            if (text == null)
+                return;
+
+            float resolvedMin = math.max(6f, math.min(minSize, maxSize));
+            float resolvedMax = math.max(resolvedMin, maxSize);
+            text.enableAutoSizing = true;
+            text.fontSizeMin = resolvedMin;
+            text.fontSizeMax = resolvedMax;
+            text.overflowMode = TextOverflowModes.Ellipsis;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+        }
+
+        private static void ConfigureMenuStyleLayoutCold(GameObject target, float preferredWidth, float flexibleWidth)
+        {
+            if (target == null)
+                return;
+
+            LayoutElement layout = target.GetComponent<LayoutElement>();
+            if (layout == null)
+                layout = target.AddComponent<LayoutElement>();
+
+            if (preferredWidth > 0f)
+                layout.preferredWidth = preferredWidth;
+            layout.flexibleWidth = flexibleWidth;
+            layout.minHeight = 30f;
+            layout.preferredHeight = 32f;
         }
 
         private void BindSliders()
@@ -544,6 +821,27 @@ namespace Hecton8.UI
             _cachedBloom = _settings.Bloom;
             _cachedMotionBlur = _settings.MotionBlur;
             _cachedTextureQuality = _settings.TextureQuality;
+            _cachedGraphicsPreset = _settings.GraphicsPreset;
+            _cachedMenuVisualStyleIndex = MenuVisualStyleCatalog.ToIndex(_settings.MenuVisualStyle);
+            _cachedMenuVisualConceptIndex = MenuVisualConceptCatalog.ToIndex(_settings.MenuVisualConcept);
+        }
+
+        private void CaptureMenuVisualCancelSnapshot()
+        {
+            _openedMenuVisualStyleIndex = _cachedMenuVisualStyleIndex;
+            _openedMenuVisualConceptIndex = _cachedMenuVisualConceptIndex;
+        }
+
+        private void RestoreMenuVisualCancelSnapshot()
+        {
+            if (_settings == null)
+                return;
+
+            if (MenuVisualStyleCatalog.IsValidStyleIndex(_openedMenuVisualStyleIndex))
+                _settings.PreviewMenuVisualStyle(MenuVisualStyleCatalog.FromIndex(_openedMenuVisualStyleIndex));
+
+            if (MenuVisualConceptCatalog.IsValidConceptIndex(_openedMenuVisualConceptIndex))
+                _settings.PreviewMenuVisualConcept(MenuVisualConceptCatalog.FromIndex(_openedMenuVisualConceptIndex));
         }
 
         private void RefreshAllUI()
@@ -552,6 +850,8 @@ namespace Hecton8.UI
             RefreshVolumeUI();
             RefreshVideoUI();
             RefreshAdvancedGraphicsUI();
+            RefreshMenuVisualStyleUI();
+            RefreshMenuVisualConceptUI();
         }
 
         private void RefreshQualityUI()
@@ -661,64 +961,121 @@ namespace Hecton8.UI
                 SetValueTextIfChanged(txtTextureQuality, ResolveLocalizedTextureQualityName(_cachedTextureQuality), ref _prevTextureQualityTextHash);
         }
 
+        private void RefreshMenuVisualStyleUI()
+        {
+            if (txtMenuVisualStyle == null)
+                return;
+
+            if (!MenuVisualStyleCatalog.IsValidStyleIndex(_cachedMenuVisualStyleIndex))
+                _cachedMenuVisualStyleIndex = MenuVisualStyleCatalog.ClampStyleIndex(_cachedMenuVisualStyleIndex);
+
+            SetIndexedMenuVisualLabelIfChanged(
+                txtMenuVisualStyle,
+                _cachedMenuVisualStyleIndex + 1,
+                MenuVisualStyleCatalog.StyleCount,
+                MenuVisualStyleCatalog.GetDisplayName(MenuVisualStyleCatalog.FromIndex(_cachedMenuVisualStyleIndex)),
+                _menuVisualStyleDisplayBuffer,
+                ref _prevMenuVisualStyleTextHash);
+        }
+
+        private void RefreshMenuVisualConceptUI()
+        {
+            if (txtMenuVisualConcept == null)
+                return;
+
+            if (!MenuVisualConceptCatalog.IsValidConceptIndex(_cachedMenuVisualConceptIndex))
+                _cachedMenuVisualConceptIndex = MenuVisualConceptCatalog.ClampConceptIndex(_cachedMenuVisualConceptIndex);
+
+            SetIndexedMenuVisualLabelIfChanged(
+                txtMenuVisualConcept,
+                _cachedMenuVisualConceptIndex + 1,
+                MenuVisualConceptCatalog.ConceptCount,
+                MenuVisualConceptCatalog.GetDisplayName(MenuVisualConceptCatalog.FromIndex(_cachedMenuVisualConceptIndex)),
+                _menuVisualConceptDisplayBuffer,
+                ref _prevMenuVisualConceptTextHash);
+        }
+
         // ══════════════════════════════════════════════════════════
         // CALLBACKS — GRAPHICS
         // ══════════════════════════════════════════════════════════
 
         private void OnPresetLow()
         {
-            if (_settings == null)
-                return;
-
-            _settings.ApplyQualityPreset(0);
-            LoadCurrentSettings();
-            RefreshAllUI();
-
-            // Update comparison view
-            if (comparisonView != null)
-                comparisonView.UpdateComparison(0);
+            SetCachedQualityPreset(0);
         }
 
         private void OnPresetMedium()
         {
-            if (_settings == null)
-                return;
-
-            _settings.ApplyQualityPreset(1);
-            LoadCurrentSettings();
-            RefreshAllUI();
-
-            // Update comparison view
-            if (comparisonView != null)
-                comparisonView.UpdateComparison(1);
+            SetCachedQualityPreset(1);
         }
 
         private void OnPresetHigh()
         {
-            if (_settings == null)
-                return;
-
-            _settings.ApplyQualityPreset(2);
-            LoadCurrentSettings();
-            RefreshAllUI();
-
-            // Update comparison view
-            if (comparisonView != null)
-                comparisonView.UpdateComparison(2);
+            SetCachedQualityPreset(2);
         }
 
         private void OnPresetUltra()
         {
-            if (_settings == null)
-                return;
+            SetCachedQualityPreset(3);
+        }
 
-            _settings.ApplyQualityPreset(3);
-            LoadCurrentSettings();
+        private void SetCachedQualityPreset(int preset)
+        {
+            int clampedPreset = Mathf.Clamp(preset, 0, SettingsManager.MaxContinuousQualityLevel);
+            _cachedGraphicsPreset = clampedPreset;
+
+            switch (clampedPreset)
+            {
+                case 0:
+                    _cachedQualityLevel = 0;
+                    _cachedShadowQuality = 1;
+                    _cachedShadowDistance = 50f;
+                    _cachedAntiAliasing = 1;
+                    _cachedAmbientOcclusion = false;
+                    _cachedBloom = false;
+                    _cachedMotionBlur = false;
+                    _cachedTextureQuality = 0;
+                    break;
+
+                case 1:
+                    _cachedQualityLevel = 1;
+                    _cachedShadowQuality = 2;
+                    _cachedShadowDistance = 100f;
+                    _cachedAntiAliasing = 2;
+                    _cachedAmbientOcclusion = false;
+                    _cachedBloom = true;
+                    _cachedMotionBlur = false;
+                    _cachedTextureQuality = 1;
+                    break;
+
+                case 2:
+                    _cachedQualityLevel = 2;
+                    _cachedShadowQuality = 2;
+                    _cachedShadowDistance = 200f;
+                    _cachedAntiAliasing = 2;
+                    _cachedAmbientOcclusion = true;
+                    _cachedBloom = true;
+                    _cachedMotionBlur = false;
+                    _cachedTextureQuality = 2;
+                    break;
+
+                default:
+                    _cachedQualityLevel = SettingsManager.MaxContinuousQualityLevel;
+                    _cachedShadowQuality = 3;
+                    _cachedShadowDistance = 300f;
+                    _cachedAntiAliasing = 3;
+                    _cachedAmbientOcclusion = true;
+                    _cachedBloom = true;
+                    _cachedMotionBlur = true;
+                    _cachedTextureQuality = 3;
+                    break;
+            }
+
             RefreshAllUI();
+            UpdatePostProcessingPreview();
 
-            // Update comparison view
             if (comparisonView != null)
-                comparisonView.UpdateComparison(3);
+                comparisonView.UpdateComparison(clampedPreset);
         }
 
         private void OnQualityDecrease()
@@ -869,6 +1226,74 @@ namespace Hecton8.UI
                 SetValueTextIfChanged(txtTextureQuality, ResolveLocalizedTextureQualityName(_cachedTextureQuality), ref _prevTextureQualityTextHash);
         }
 
+        private void OnMenuStyleDecrease()
+        {
+            SetMenuVisualStyleIndex(WrapMenuVisualStyleIndex(_cachedMenuVisualStyleIndex - 1));
+        }
+
+        private void OnMenuStyleIncrease()
+        {
+            SetMenuVisualStyleIndex(WrapMenuVisualStyleIndex(_cachedMenuVisualStyleIndex + 1));
+        }
+
+        private void OnMenuConceptDecrease()
+        {
+            SetMenuVisualConceptIndex(WrapMenuVisualConceptIndex(_cachedMenuVisualConceptIndex - 1));
+        }
+
+        private void OnMenuConceptIncrease()
+        {
+            SetMenuVisualConceptIndex(WrapMenuVisualConceptIndex(_cachedMenuVisualConceptIndex + 1));
+        }
+
+        private void SetMenuVisualStyleIndex(int index)
+        {
+            if (_settings == null)
+                return;
+
+            int styleIndex = WrapMenuVisualStyleIndex(index);
+            if (_cachedMenuVisualStyleIndex == styleIndex)
+                return;
+
+            _cachedMenuVisualStyleIndex = styleIndex;
+            _settings.PreviewMenuVisualStyle(MenuVisualStyleCatalog.FromIndex(styleIndex));
+            RefreshMenuVisualStyleUI();
+        }
+
+        private void SetMenuVisualConceptIndex(int index)
+        {
+            if (_settings == null)
+                return;
+
+            int conceptIndex = WrapMenuVisualConceptIndex(index);
+            if (_cachedMenuVisualConceptIndex == conceptIndex)
+                return;
+
+            _cachedMenuVisualConceptIndex = conceptIndex;
+            _settings.PreviewMenuVisualConcept(MenuVisualConceptCatalog.FromIndex(conceptIndex));
+            RefreshMenuVisualConceptUI();
+        }
+
+        private static int WrapMenuVisualStyleIndex(int index)
+        {
+            if (index < 0)
+                return MenuVisualStyleCatalog.StyleCount - 1;
+            if (index >= MenuVisualStyleCatalog.StyleCount)
+                return 0;
+
+            return index;
+        }
+
+        private static int WrapMenuVisualConceptIndex(int index)
+        {
+            if (index < 0)
+                return MenuVisualConceptCatalog.ConceptCount - 1;
+            if (index >= MenuVisualConceptCatalog.ConceptCount)
+                return 0;
+
+            return index;
+        }
+
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
 
         {
@@ -896,6 +1321,8 @@ namespace Hecton8.UI
             ApplyLocalizedLabel("Container/Section_Graphics/Row_ShadowQuality/Label_Row_ShadowQuality", LocalizationKeys.SETTINGS_SHADOW_QUALITY, "SHADOW QUALITY");
             ApplyLocalizedLabel("Container/Section_Graphics/Row_AntiAliasing/Label_Row_AntiAliasing", LocalizationKeys.SETTINGS_ANTI_ALIASING, "ANTI-ALIASING");
             ApplyLocalizedLabel("Container/Section_Graphics/Row_TextureQuality/Label_Row_TextureQuality", LocalizationKeys.SETTINGS_TEXTURE_QUALITY, "TEXTURE QUALITY");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_MenuVisualStyle/Label_Row_MenuVisualStyle", "settings.menu_visual_style", "MENU STYLE");
+            ApplyLocalizedLabel("Container/Section_Graphics/Row_MenuVisualConcept/Label_Row_MenuVisualConcept", "settings.menu_visual_concept", "MENU CONCEPT");
             ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_Vsync/Label", LocalizationKeys.SETTINGS_VSYNC, "V-SYNC");
             ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_Fullscreen/Label", LocalizationKeys.SETTINGS_FULLSCREEN, "FULLSCREEN");
             ApplyLocalizedLabel("Container/Section_Graphics/Row_Toggles/Toggle_AO/Label", LocalizationKeys.SETTINGS_AO, "AMBIENT OCCLUSION");
@@ -933,6 +1360,33 @@ namespace Hecton8.UI
                 return;
 
             TmpTextNoAlloc.Set(label, text);
+            previousHash = textHash;
+        }
+
+        private static void SetIndexedMenuVisualLabelIfChanged(
+            TMP_Text label,
+            int oneBasedIndex,
+            int totalCount,
+            ReadOnlySpan<char> value,
+            char[] buffer,
+            ref uint previousHash)
+        {
+            if (label == null || buffer == null || buffer.Length == 0)
+                return;
+
+            int cursor = 0;
+            cursor += CopyTwoDigitPositiveIntToBuffer(oneBasedIndex, buffer, cursor);
+            cursor += CopySpanToBuffer("/".AsSpan(), buffer, cursor);
+            cursor += CopyTwoDigitPositiveIntToBuffer(totalCount, buffer, cursor);
+            cursor += CopySpanToBuffer(" ".AsSpan(), buffer, cursor);
+            cursor += CopySpanToBuffer(value, buffer, cursor);
+
+            ReadOnlySpan<char> text = buffer.AsSpan(0, cursor);
+            uint textHash = unchecked((uint)LocHash.Compute(text));
+            if (previousHash == textHash)
+                return;
+
+            label.SetCharArray(buffer, 0, cursor);
             previousHash = textHash;
         }
 
@@ -1104,7 +1558,20 @@ namespace Hecton8.UI
 
             _settings.ResetToDefaults();
             LoadCurrentSettings();
+            CaptureMenuVisualCancelSnapshot();
             RefreshAllUI();
+        }
+
+        public void CancelPendingChanges()
+        {
+            if (_settings == null)
+            {
+                if (livePreview != null)
+                    livePreview.CancelPending();
+                return;
+            }
+
+            OnCancel();
         }
 
         private void OnApply()
@@ -1123,29 +1590,45 @@ namespace Hecton8.UI
 
             _nextApplyTime = ResolvePresentationClockSeconds() + applyButtonCooldown;
 
-            // Apply live preview immediately
-            if (livePreview != null)
-                livePreview.ApplyImmediately();
+            bool success;
+            _settings.BeginPersistenceBatch();
+            try
+            {
+                // Apply live preview immediately
+                if (livePreview != null)
+                    livePreview.ApplyImmediately();
 
-            // Apply all cached settings to SettingsManager
-            _settings.QualityLevel = _cachedQualityLevel;
-            _settings.MasterVolume = _cachedMasterVolume;
-            _settings.MusicVolume = _cachedMusicVolume;
-            _settings.SfxVolume = _cachedSfxVolume;
-            _settings.AmbientVolume = _cachedAmbientVolume;
-            _settings.Vsync = _cachedVsync;
-            _settings.Fullscreen = _cachedFullscreen;
-            _settings.FieldOfView = _cachedFieldOfView;
-            _settings.ShadowQuality = _cachedShadowQuality;
-            _settings.ShadowDistance = _cachedShadowDistance;
-            _settings.AntiAliasing = _cachedAntiAliasing;
-            _settings.AmbientOcclusion = _cachedAmbientOcclusion;
-            _settings.Bloom = _cachedBloom;
-            _settings.MotionBlur = _cachedMotionBlur;
-            _settings.TextureQuality = _cachedTextureQuality;
+                if (_cachedGraphicsPreset >= 0)
+                    _settings.ApplyQualityPreset(_cachedGraphicsPreset);
 
-            // Verify all settings applied successfully
-            bool success = _settings.ApplyAllSettings();
+                // Apply all cached settings to SettingsManager
+                _settings.QualityLevel = _cachedQualityLevel;
+                _settings.MasterVolume = _cachedMasterVolume;
+                _settings.MusicVolume = _cachedMusicVolume;
+                _settings.SfxVolume = _cachedSfxVolume;
+                _settings.AmbientVolume = _cachedAmbientVolume;
+                _settings.Vsync = _cachedVsync;
+                _settings.Fullscreen = _cachedFullscreen;
+                _settings.FieldOfView = _cachedFieldOfView;
+                _settings.ShadowQuality = _cachedShadowQuality;
+                _settings.ShadowDistance = _cachedShadowDistance;
+                _settings.AntiAliasing = _cachedAntiAliasing;
+                _settings.AmbientOcclusion = _cachedAmbientOcclusion;
+                _settings.Bloom = _cachedBloom;
+                _settings.MotionBlur = _cachedMotionBlur;
+                _settings.TextureQuality = _cachedTextureQuality;
+                _settings.MenuVisualStyle = MenuVisualStyleCatalog.FromIndex(_cachedMenuVisualStyleIndex);
+                _settings.MenuVisualConcept = MenuVisualConceptCatalog.FromIndex(_cachedMenuVisualConceptIndex);
+                CaptureMenuVisualCancelSnapshot();
+
+                // Verify all settings applied successfully
+                success = _settings.ApplyAllSettings();
+            }
+            finally
+            {
+                _settings.EndPersistenceBatch();
+            }
+
             if (!success)
             {
                 int messageLength = CopyLocalizedSpanToModalBuffer(
@@ -1169,6 +1652,7 @@ namespace Hecton8.UI
             if (livePreview != null)
                 livePreview.CancelPending();
 
+            RestoreMenuVisualCancelSnapshot();
             LoadCurrentSettings();
             RefreshAllUI();
         }
@@ -1186,6 +1670,26 @@ namespace Hecton8.UI
             int safeLength = math.min(value.Length, buffer.Length - offset);
             value.Slice(0, safeLength).CopyTo(buffer.AsSpan(offset, safeLength));
             return safeLength;
+        }
+
+        private static int CopyTwoDigitPositiveIntToBuffer(int value, char[] buffer, int offset)
+        {
+            if (buffer == null || offset >= buffer.Length)
+                return 0;
+
+            int safeValue = math.clamp(value, 0, 99);
+            int written = 0;
+            if (safeValue < 10 && offset < buffer.Length)
+            {
+                buffer[offset] = '0';
+                offset++;
+                written++;
+            }
+
+            if (safeValue.TryFormat(buffer.AsSpan(offset), out int digitsWritten))
+                return written + digitsWritten;
+
+            return written;
         }
     }
 }

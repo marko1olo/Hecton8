@@ -829,6 +829,9 @@ namespace Hecton8.Crafting
 
         private void RegisterDispatcherPhases()
         {
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredPreSimulation && GlobalRegistry.TryRegisterDispatcherSystem(_preSimulationPhase))
                 _registeredPreSimulation = true;
             if (!_registeredSimulation && GlobalRegistry.TryRegisterDispatcherSystem(_simulationPhase))
@@ -879,6 +882,15 @@ namespace Hecton8.Crafting
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService != null)
+                    RegisterDispatcherPhases();
+                else
+                    UnregisterDispatcherPhases();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 

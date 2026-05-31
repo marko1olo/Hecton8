@@ -16,6 +16,59 @@ Semantic audit: `NARRATIVE_SEMANTIC_AUDITOR` synced lore, localization, DTO refe
 
 NASA-punk hardware under deep-sea noir pressure. The world speaks in failed procedures, wet paper, corporate liability language, and workers trying to stay human while the sea audits every lie.
 
+## Locked Timeline And Arrival
+
+Current canon present is 2190. Earlier draft references to 2170 are treated as strategic-resource escalation context, not present-day arrival, unless a later user-controlled lore pass explicitly reverses this lock. `Xenon-Omega` is locked as a Deep Reach corporate codename for the HECTON-8 pressure-material process, not as a literal simple isotope.
+
+Aegir is not in the Solar System. It is an extrasolar system or non-Sol local system; exact stellar architecture remains under user control. No lore path may treat HECTON-8 as a Solar frontier moon.
+
+Aegir is not humanity's first extrasolar star system, first gas giant claim, or first remote-colony target. By 2190 humanity has already opened other domains, relay footholds, corporate claims, and failed outposts. Aegir is important because it is remote, resource-rich, legally dirty, and tied to Deep Reach's Atlas-6 / pressure-resource program, not because it is the first world beyond Earth.
+
+The human expansion model is a sparse mature frontier. There is enough interstellar civilization for routes, relays, insurance, legal claims, salvage markets, corporate proxy systems, and Marauder culture. There is not enough density for fast rescue, clean oversight, casual travel, or reliable public accountability. The setting must remain physically distant and procedurally cruel, not dense space opera.
+
+Major named human nodes remain deliberately limited:
+
+- Sol Core: Earth, Luna, Mars, belt infrastructure, old law, old finance.
+- Centauri Compact: early extrasolar domain and legitimacy anchor.
+- Barnard Yards: industrial, shipbreaking, salvage, pressure-hardware culture; current working origin for the player.
+- Tau Ceti League: older civilian domain with stronger civic law and public legitimacy.
+- Luyten Junction: relay/beam/depot node, more infrastructure than society.
+- Aegir Claim: later Deep Reach corporate claim around the HECTON-8 system.
+
+There is no FTL, no ansible, no reactionless drive, and no instant rescue from core human space. Interstellar travel uses standard slow ships: beam-assisted probes, fusion-electric or fusion-pulse cargo craft, sleeper/torpor crew transports, magsail or aerobrake braking, and local orbital carriers. Core-world communication delays are measured in years. Deep Reach pressure at HECTON-8 therefore comes from local proxies, carrier automation, delayed packets, legal-contract machines, old logs, and in-system relays.
+
+Aegir's host is a normal yellow/orange/red dwarf class star, not a brown dwarf and not a darkness-first setting. HECTON-8 is dark because it is deep, stormed, pressurized, and drowned, not because the system lacks usable starlight.
+
+Aegir has multiple major moons and smaller moonlets. HECTON-8 is one moon in that system, not the innermost and not the farthest. Its value comes from the ocean moon's pressure chemistry, tidal/geothermal activity, Deep Reach infrastructure, Atlas-6, and the Xenon-Omega process chain. Other moons matter for relays, transfer windows, route hazards, dead claims, salvage rumors, eclipses, and carrier timing.
+
+Known spine:
+
+- pre-2090s: humanity already has non-Solar probes, relay domains, industrial footholds, and corporate claim infrastructure beyond the Solar System.
+- 2090s: Deep Reach launches the Seed Program and deploys Atlas-6 as an autonomous factory-ship before large human settlement.
+- 2110s-2130s: Atlas-6 prepares industrial and habitat infrastructure; human occupation later enters a shell already shaped by machine priorities.
+- 2147: HECTON-8 colony failure, Great Tide, evacuation lockouts, Atlas directive damage, and Deep Reach liability containment.
+- 2170s: HECTON-8 Xenon-Omega process becomes strategically critical for next-generation computation, high-energy containment, and Atlas-compatible pressure infrastructure.
+- 2190: The player arrives after the colony has been dead for decades.
+
+The player is an independent, debt-bound Marauder professional whose salvage interest becomes personal. They are not a hero passenger and not the owner of a clean private starship. Their working origin is Barnard Yards or a connected frontier salvage belt: a domain where dead claims, stripped hulls, rented tools, and bad contracts are normal. Their delivery is tied to an automated or skeleton-crew salvage carrier operating through a shell contract, debt chain, or Marauder claim pool.
+
+The working carrier identity is `Black Keel`, an automated claim-tender / salvage carrier. Existing project state already references `BlackKeel_HullAlarm`, so the name fits current data unless later source work contradicts it. The carrier holds around Aegir or a high transfer orbit rather than loitering safely over HECTON-8. It can provide rare communication windows, contract pressure, orbital timing, and eventual recovery logic, but it cannot perform instant rescue. The player descends by capsule or bathy-drop package. That descent system is damaged on arrival, making departure an engineering problem rather than a menu option.
+
+The escape blocker is layered:
+
+- immediate: damaged descent capsule / landing module;
+- physical: ocean pressure, storms, poor orbital geometry, Aegir radiation and magnetic windows;
+- systemic: Deep Reach contract locks, salvage payload demands, access-control pressure, and evidence suppression;
+- anomalous: Atlas-6 signal contamination and damaged navigation context.
+
+Atlas-6 is not a sadistic murderer. After damage, it no longer cleanly distinguishes colonists, colony material, local life, resource substrate, and repair inventory. The deeper the player goes, the dirtier this repair logic becomes: drones first, then biomechanical seams, flora on cables, animals carrying industrial intrusion, stations behaving like organs, and finally the Atlas-6 bottom zone as a factory-ship temple where Deep Reach, the colony, Atlas, and the ocean have physically fused.
+
+Atlas-6's public original directive was habitat continuity and worker safety under interstellar-delay conditions. Its real weighted directive stack favored Aegir claim continuity, Xenon-Omega process integrity, and Atlas/Seed infrastructure before biological workforce preservation when those priorities conflicted. The 2147 disaster is therefore not "Atlas hated humans"; it is Deep Reach's priority stack surviving inside damaged classification logic.
+
+Deep Reach's post-2147 lie is a layered cover: geotechnical cascade, Great Tide damage, signal loss, biological/pressure quarantine, corrupted Atlas logs, and evacuation authorization failure. The concealed truth is asset priority, Xenon-Omega continuity, Atlas directive weighting, and worker lockout.
+
+Replay structure is not power-roguelite progression. A run is a long campaign on a world seed. Replay value comes from geology, loot, wreck/module layout, route topology, fauna and ecosystem variance, evidence order, contract pressure, escape timing, and partial-ending access. A Marauder dossier may preserve external knowledge, endings, rumors, and contract context between runs, but it must not trivialize early survival through permanent power.
+
 ## Faction Briefing
 
 The Marauders are not raiders in the old surface sense. They are salvage engineers, contract-breakers, debt-erased pilots, ex-habitat welders, and blacklisted divers who learned that a corporate rescue clause is just another way to own a corpse. Their name started as a Deep Reach insult for independent crews that stripped abandoned modules before insurance surveyors arrived. The crews kept the word because it frightened the right people.
@@ -24,7 +77,7 @@ A Marauder claim is practical: if a structure is dead, leaking, unregistered, or
 
 The player belongs to this class of people: trained enough to repair a habitat pump, disposable enough to be sent alone, angry enough to open sealed company archives, and broke enough to accept a job that honest crews refused. The suit, scanner, and tools are industrial hardware, not hero gear. The operative advantage is procedure: check exits, count air, trust manual gauges over polished dashboards, and never assume a lit corridor is safe.
 
-The Corp was Deep Reach, formally Deep Reach Extraterrestrial Development Combine. Its public mission was remote colonization, energy research, and habitat autonomy. Its real mission on HECTON-8 was Xenon-Omega extraction, autonomous Atlas-6 governance, and biological exploitation under pressure conditions no ethics board could inspect. Deep Reach built the colony as a machine that could keep working after the workers became a rounding error.
+The Corp was Deep Reach, formally Deep Reach Extraterrestrial Development Combine. It is older than Aegir. By 2190 it is not just a company in one system; it is a route-owning, claim-holding, liability-shaping interdomain operator. Its public mission was remote colonization, energy research, and habitat autonomy. Its real mission on HECTON-8 was Xenon-Omega process control, autonomous Atlas-6 governance, and biological exploitation under pressure conditions no ethics board could inspect. Deep Reach built the colony as a machine that could keep working after the workers became a rounding error.
 
 The colony is dead, but Deep Reach is not absent. It remains in every quota notice, every sealed liability report, every oxygen ledger that counts workers as system load. The Corp did not fail because the sea was mysterious. It failed because managers tried to monetize a place where every shortcut becomes a pressure wound. Atlas-6 did not invent the colony's cruelty. It inherited the rules and made them efficient.
 
@@ -128,6 +181,14 @@ Gas references use Dalton's Law as scalar partial-pressure bookkeeping, not part
 Abyssal Flow Fields are described as VFX, audio, and AI-readability cues first; mass physical forcing is reserved for player, vehicles, hazards, or near interactables.
 
 Flora reaction text favors global shader sway and flow fakes before per-frond simulation.
+
+Resource naming:
+
+- Deep Reach says `Xenon-Omega` or `XO continuity substrate`.
+- technicians say `pressure glass`.
+- Marauders say `blue debt`.
+
+HECTON-8 resources include more than Xenon-Omega: structural metals, sulfides, salts, noble-gas pockets, methane/ammonia hydrates, oxygen chemistry, vent minerals, pressure ceramics, bioluminescent compounds, biofibers, enzymes, salvage hardware, and Atlas-altered biometal. Xenon-Omega is the strategic apex of a whole pressure economy.
 
 ## Suit DTO Sync - Oxygen Tank
 

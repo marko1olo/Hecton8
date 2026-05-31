@@ -6951,7 +6951,7 @@ namespace Hecton8.Core
     /// <summary>
     /// LockBufferForWrite upload helpers used by owned runtime graphics buffers.
     /// </summary>
-    internal static class GraphicsBufferUploadUtility
+    public static class GraphicsBufferUploadUtility
     {
         public const int DefaultDirtyPageSize = 256;
         public const byte UploadedDirtyPageSnapshotMarker = 2;

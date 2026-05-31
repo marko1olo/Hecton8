@@ -869,16 +869,15 @@ namespace Hecton8.UI
                 return false;
             }
 
-            if (!sonarMapCompute.HasKernel("CSClearArgs")) { ResetSonarComputeKernelState(); return false; }
-            _sonarClearArgsKernel = sonarMapCompute.FindKernel("CSClearArgs");
-
-            if (!sonarMapCompute.HasKernel("CSBuildMapPoints")) { ResetSonarComputeKernelState(); return false; }
-            _sonarBuildMapPointsKernel = sonarMapCompute.FindKernel("CSBuildMapPoints");
+            if (!TryFindSonarKernel(sonarMapCompute, "CSClearArgs", out _sonarClearArgsKernel) ||
+                !TryFindSonarKernel(sonarMapCompute, "CSBuildMapPoints", out _sonarBuildMapPointsKernel))
+            {
+                ResetSonarComputeKernelState();
+                return false;
+            }
 
             if (_sonarClearArgsKernel < 0 ||
                 _sonarBuildMapPointsKernel < 0 ||
-                !sonarMapCompute.IsSupported(_sonarClearArgsKernel) ||
-                !sonarMapCompute.IsSupported(_sonarBuildMapPointsKernel) ||
                 !TryValidateSonarKernelThreadGroup(sonarMapCompute, _sonarClearArgsKernel, out uint clearArgsThreadGroupSizeX, out _, out _) ||
                 !TryValidateSonarKernelThreadGroup(
                     sonarMapCompute,
@@ -901,6 +900,47 @@ namespace Hecton8.UI
             return _sonarComputeKernelsResolved;
         }
 
+        private static bool TryFindSonarKernel(ComputeShader computeShader, string kernelName, out int kernel)
+        {
+            kernel = -1;
+            if (computeShader == null)
+                return false;
+
+            try
+            {
+                if (!computeShader.HasKernel(kernelName))
+                    return false;
+
+                kernel = computeShader.FindKernel(kernelName);
+                return kernel >= 0;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (UnityException)
+            {
+                kernel = -1;
+                return false;
+            }
+        }
+
         private static bool TryValidateSonarKernelThreadGroup(
             ComputeShader compute,
             int kernelIndex,
@@ -914,7 +954,33 @@ namespace Hecton8.UI
             if (compute == null || kernelIndex < 0)
                 return false;
 
-            compute.GetKernelThreadGroupSizes(kernelIndex, out sizeX, out sizeY, out sizeZ);
+            try
+            {
+                if (!compute.IsSupported(kernelIndex))
+                    return false;
+
+                compute.GetKernelThreadGroupSizes(kernelIndex, out sizeX, out sizeY, out sizeZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                return false;
+            }
+            catch (UnityEngine.MissingReferenceException)
+            {
+                return false;
+            }
+            catch (UnityEngine.UnityException)
+            {
+                return false;
+            }
             if (sizeX == 0u || sizeY != 1u || sizeZ != 1u)
                 return false;
 

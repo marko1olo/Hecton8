@@ -84,7 +84,7 @@ Platform proof:
 | Source files | `H8DataMonolithCompiler.cs`; `H8StaticDataArena.cs`; `GameBootstrapper.cs`; `Data/Balance/*.csv` |
 | Output target | `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin` |
 | Compiler behavior | temp-write, validate, promote, prebuild bake/validate gate |
-| Runtime load | StreamingAssets via MMF/FileStream-to-Vault; Android/Quest URI staging |
+| Runtime load | StreamingAssets via MMF/Win32/native file reads on desktop; Android/Quest via NDK `AAssetManager` source-plugin direct-to-Vault hydration |
 | Current artifact | exists in X_012 scan; Unity/player boot proof pending |
 | Fatal gate | non-editor player boot rejects missing or invalid monolith |
 | CSV hashes | missing `hash32` is derived by FNV-1a; mismatches fail |

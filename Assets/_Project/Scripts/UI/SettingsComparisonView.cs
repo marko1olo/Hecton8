@@ -47,8 +47,9 @@ namespace Hecton8.UI
         private readonly char[] _estimatedFpsText = new char[16]; // COLD ALLOC: char[16] - estimated FPS TMP buffer - owner: SettingsComparisonView
         private readonly char[] _impactText = new char[32]; // COLD ALLOC: char[32] - FPS impact TMP buffer - owner: SettingsComparisonView
 
-        // FPS estimates per quality level (Low/Medium/High/Ultra)
-        private static readonly float[] FPSEstimates = { 60f, 50f, 40f, 30f };
+        private const int MaxContinuousQualityLevel = SettingsManager.MaxContinuousQualityLevel;
+        private const float MinimumEstimatedFps = 30f;
+        private const float MaximumEstimatedFps = 60f;
 
         private static readonly char[] FpsSuffix = { ' ', 'F', 'P', 'S' };
         private static readonly char[] NoChangeText = { 'N', 'o', ' ', 'c', 'h', 'a', 'n', 'g', 'e' };
@@ -89,7 +90,7 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
-            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameDeltaTime);
+            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime);
             _timer += dt;
             if (_timer >= updateInterval)
             {
@@ -110,7 +111,7 @@ namespace Hecton8.UI
             if (_settings == null)
                 return;
 
-            _pendingGraphicsPreset = Mathf.Clamp(pendingGraphicsPreset, 0, FPSEstimates.Length - 1);
+            _pendingGraphicsPreset = Mathf.Clamp(pendingGraphicsPreset, 0, MaxContinuousQualityLevel);
             RefreshComparison();
         }
 
@@ -149,7 +150,7 @@ namespace Hecton8.UI
             if (_settings == null)
                 return;
 
-            int currentGraphicsPreset = Mathf.Clamp(_settings.GraphicsPreset, 0, FPSEstimates.Length - 1);
+            int currentGraphicsPreset = Mathf.Clamp(_settings.GraphicsPreset, 0, MaxContinuousQualityLevel);
             int pendingGraphicsPreset = _pendingGraphicsPreset >= 0 ? _pendingGraphicsPreset : currentGraphicsPreset;
 
             if (_lastRenderedCurrentGraphicsPreset == currentGraphicsPreset &&
@@ -199,10 +200,14 @@ namespace Hecton8.UI
 
         private static float EstimateFPS(int qualityLevel)
         {
-            if (qualityLevel < 0 || qualityLevel >= FPSEstimates.Length)
-                return 60f;
+            float quality = ResolveContinuousQuality01(qualityLevel);
+            return Mathf.Lerp(MaximumEstimatedFps, MinimumEstimatedFps, quality);
+        }
 
-            return FPSEstimates[qualityLevel];
+        private static float ResolveContinuousQuality01(int qualityLevel)
+        {
+            float normalized = Mathf.Clamp01(qualityLevel / (float)MaxContinuousQualityLevel);
+            return normalized * normalized * (3f - 2f * normalized);
         }
 
         private static int CalculateImpactDelta(float currentFPS, float estimatedFPS)

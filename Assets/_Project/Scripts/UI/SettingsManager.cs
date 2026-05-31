@@ -42,6 +42,8 @@ namespace Hecton8.UI
         private const string MotionBlurKey = "Hecton_MotionBlur";
         private const string TextureQualityKey = "Hecton_TextureQuality";
         private const string GraphicsPresetKey = "Hecton_GraphicsPreset";
+        private const string MenuVisualStyleKey = "Hecton_MenuVisualStyle";
+        private const string MenuVisualConceptKey = "Hecton_MenuVisualConcept";
         private const string VrComfortModeKey = "Hecton_VRComfortMode";
         private const string VrSnapTurnKey = "Hecton_VRSnapTurn";
         private const string VrHorizonLockKey = "Hecton_VRHorizonLock";
@@ -51,6 +53,8 @@ namespace Hecton8.UI
         private const float DefaultVolume = 0.8f;
         private const int DefaultQualityLevel = 2; // Medium (Surface)
         private const int DefaultGraphicsPreset = 2; // High
+        private const int DefaultMenuVisualStyleIndex = (int)MenuVisualStyle.PressureVesselNoir;
+        private const int DefaultMenuVisualConceptIndex = (int)MenuVisualConcept.ModuleWindowOverlay;
         private const float DefaultFOV = 75f;
         private const float DefaultVrHeadRelativeSwimBias = 0.55f;
         public const int MaxContinuousQualityLevel = 3;
@@ -128,11 +132,18 @@ namespace Hecton8.UI
         private bool _cachedMotionBlur;
         private int _cachedTextureQuality = -1;
         private int _cachedGraphicsPreset = DefaultGraphicsPreset;
+        private int _cachedMenuVisualStyleIndex = DefaultMenuVisualStyleIndex;
+        private int _cachedMenuVisualConceptIndex = DefaultMenuVisualConceptIndex;
         private bool _cachedVrComfortMode = true;
         private bool _cachedVrSnapTurn = true;
         private bool _cachedVrHorizonLock = true;
         private bool _cachedVrComfortVignette = true;
         private float _cachedVrHeadRelativeSwimBias = DefaultVrHeadRelativeSwimBias;
+        private int _persistenceBatchDepth;
+        private bool _persistenceDirty;
+
+        public event Action<MenuVisualStyle> MenuVisualStyleChanged;
+        public event Action<MenuVisualConcept> MenuVisualConceptChanged;
 
         // ══════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -257,6 +268,54 @@ namespace Hecton8.UI
         /// Gets the currently persisted graphics preset (0=Low, 1=Medium, 2=High, 3=Ultra).
         /// </summary>
         public int GraphicsPreset => _cachedGraphicsPreset;
+
+        /// <summary>
+        /// Gets or sets the presentation-only menu visual style.
+        /// </summary>
+        public MenuVisualStyle MenuVisualStyle
+        {
+            get => MenuVisualStyleCatalog.FromIndex(_cachedMenuVisualStyleIndex);
+            set
+            {
+                int styleIndex = MenuVisualStyleCatalog.ToIndex(value);
+                if (_cachedMenuVisualStyleIndex == styleIndex)
+                    return;
+
+                _cachedMenuVisualStyleIndex = styleIndex;
+                SaveInt(MenuVisualStyleKey, styleIndex);
+                MenuVisualStyleChanged?.Invoke(MenuVisualStyleCatalog.FromIndex(styleIndex));
+            }
+        }
+
+        public void PreviewMenuVisualStyle(MenuVisualStyle style)
+        {
+            int styleIndex = MenuVisualStyleCatalog.ToIndex(style);
+            MenuVisualStyleChanged?.Invoke(MenuVisualStyleCatalog.FromIndex(styleIndex));
+        }
+
+        /// <summary>
+        /// Gets or sets the presentation-only menu layout concept.
+        /// </summary>
+        public MenuVisualConcept MenuVisualConcept
+        {
+            get => MenuVisualConceptCatalog.FromIndex(_cachedMenuVisualConceptIndex);
+            set
+            {
+                int conceptIndex = MenuVisualConceptCatalog.ToIndex(value);
+                if (_cachedMenuVisualConceptIndex == conceptIndex)
+                    return;
+
+                _cachedMenuVisualConceptIndex = conceptIndex;
+                SaveInt(MenuVisualConceptKey, conceptIndex);
+                MenuVisualConceptChanged?.Invoke(MenuVisualConceptCatalog.FromIndex(conceptIndex));
+            }
+        }
+
+        public void PreviewMenuVisualConcept(MenuVisualConcept concept)
+        {
+            int conceptIndex = MenuVisualConceptCatalog.ToIndex(concept);
+            MenuVisualConceptChanged?.Invoke(MenuVisualConceptCatalog.FromIndex(conceptIndex));
+        }
 
         /// <summary>
         /// Gets or sets VSync enabled state (0=off, 1=on).
@@ -640,12 +699,34 @@ namespace Hecton8.UI
         // PUBLIC API — RESET
         // ══════════════════════════════════════════════════════════
 
+        public void BeginPersistenceBatch()
+        {
+            _persistenceBatchDepth++;
+        }
+
+        public void EndPersistenceBatch()
+        {
+            if (_persistenceBatchDepth <= 0)
+            {
+                _persistenceBatchDepth = 0;
+                FlushPendingPersistenceSave();
+                return;
+            }
+
+            _persistenceBatchDepth--;
+            if (_persistenceBatchDepth == 0)
+                FlushPendingPersistenceSave();
+        }
+
         /// <summary>
         /// Reset all settings to defaults.
         /// Clears all options.h8cfg keys, sets default values, applies, and saves.
         /// </summary>
         public void ResetToDefaults()
         {
+            BeginPersistenceBatch();
+            try
+            {
             // Clear all Hecton_* options.h8cfg keys before setting defaults.
             if (_persistence != null)
             {
@@ -670,12 +751,14 @@ namespace Hecton8.UI
                 _persistence.DeleteKey(MotionBlurKey);
                 _persistence.DeleteKey(TextureQualityKey);
                 _persistence.DeleteKey(GraphicsPresetKey);
+                _persistence.DeleteKey(MenuVisualStyleKey);
+                _persistence.DeleteKey(MenuVisualConceptKey);
                 _persistence.DeleteKey(VrComfortModeKey);
                 _persistence.DeleteKey(VrSnapTurnKey);
                 _persistence.DeleteKey(VrHorizonLockKey);
                 _persistence.DeleteKey(VrComfortVignetteKey);
                 _persistence.DeleteKey(VrHeadRelativeSwimBiasKey);
-                _persistence.Save();
+                MarkPersistenceDirty();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 H8Debug.Log("[SettingsManager] All settings keys cleared. Applying defaults...");
@@ -705,6 +788,12 @@ namespace Hecton8.UI
             VrHeadRelativeSwimBias = DefaultVrHeadRelativeSwimBias;
             _cachedGraphicsPreset = DefaultGraphicsPreset;
             SaveInt(GraphicsPresetKey, _cachedGraphicsPreset);
+            _cachedMenuVisualStyleIndex = DefaultMenuVisualStyleIndex;
+            SaveInt(MenuVisualStyleKey, _cachedMenuVisualStyleIndex);
+            MenuVisualStyleChanged?.Invoke(MenuVisualStyleCatalog.FromIndex(_cachedMenuVisualStyleIndex));
+            _cachedMenuVisualConceptIndex = DefaultMenuVisualConceptIndex;
+            SaveInt(MenuVisualConceptKey, _cachedMenuVisualConceptIndex);
+            MenuVisualConceptChanged?.Invoke(MenuVisualConceptCatalog.FromIndex(_cachedMenuVisualConceptIndex));
             ApplyWorldQualityPreset(_cachedGraphicsPreset);
 
             Resolution defaultRes = Screen.currentResolution;
@@ -713,10 +802,15 @@ namespace Hecton8.UI
             // Save defaults to persistence
             if (_persistence != null)
             {
-                _persistence.Save();
+                MarkPersistenceDirty();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 H8Debug.Log("[SettingsManager] Default settings applied and saved.");
 #endif
+            }
+            }
+            finally
+            {
+                EndPersistenceBatch();
             }
         }
 
@@ -727,6 +821,9 @@ namespace Hecton8.UI
         public void ApplyQualityPreset(int preset)
         {
             int clampedPreset = ValidateGraphicsPreset(preset);
+            BeginPersistenceBatch();
+            try
+            {
             _cachedGraphicsPreset = clampedPreset;
             SaveInt(GraphicsPresetKey, clampedPreset);
 
@@ -766,7 +863,7 @@ namespace Hecton8.UI
                     break;
 
                 case 3: // Ultra
-                    QualityLevel = 2;
+                    QualityLevel = MaxContinuousQualityLevel;
                     ShadowQuality = 3;
                     ShadowDistance = 300f;
                     AntiAliasing = 3; // TAA
@@ -784,6 +881,11 @@ namespace Hecton8.UI
             }
 
             ApplyWorldQualityPreset(clampedPreset);
+            }
+            finally
+            {
+                EndPersistenceBatch();
+            }
         }
 
         // ══════════════════════════════════════════════════════════
@@ -818,6 +920,8 @@ namespace Hecton8.UI
             _cachedMotionBlur = LoadBool(MotionBlurKey, false);
             _cachedTextureQuality = ValidateTextureQuality(LoadInt(TextureQualityKey, 2));
             _cachedGraphicsPreset = ValidateGraphicsPreset(LoadInt(GraphicsPresetKey, DefaultGraphicsPreset));
+            _cachedMenuVisualStyleIndex = ValidateMenuVisualStyleIndex(LoadInt(MenuVisualStyleKey, DefaultMenuVisualStyleIndex));
+            _cachedMenuVisualConceptIndex = ValidateMenuVisualConceptIndex(LoadInt(MenuVisualConceptKey, DefaultMenuVisualConceptIndex));
             _cachedVrComfortMode = LoadBool(VrComfortModeKey, true);
             _cachedVrSnapTurn = LoadBool(VrSnapTurnKey, true);
             _cachedVrHorizonLock = LoadBool(VrHorizonLockKey, true);
@@ -934,6 +1038,32 @@ namespace Hecton8.UI
                 H8Debug.LogWarning("[SettingsManager] Invalid graphics preset; clamping.");
 #endif
                 return Mathf.Clamp(value, 0, 3);
+            }
+
+            return value;
+        }
+
+        private static int ValidateMenuVisualStyleIndex(int value)
+        {
+            if (!MenuVisualStyleCatalog.IsValidStyleIndex(value))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                H8Debug.LogWarning("[SettingsManager] Invalid menu visual style; clamping.");
+#endif
+                return MenuVisualStyleCatalog.ClampStyleIndex(value);
+            }
+
+            return value;
+        }
+
+        private static int ValidateMenuVisualConceptIndex(int value)
+        {
+            if (!MenuVisualConceptCatalog.IsValidConceptIndex(value))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                H8Debug.LogWarning("[SettingsManager] Invalid menu visual concept; clamping.");
+#endif
+                return MenuVisualConceptCatalog.ClampConceptIndex(value);
             }
 
             return value;
@@ -1613,7 +1743,7 @@ namespace Hecton8.UI
                 return;
 
             _persistence.SetInt(key, value);
-            _persistence.Save();
+            MarkPersistenceDirty();
         }
 
         private void SaveFloat(string key, float value)
@@ -1622,7 +1752,7 @@ namespace Hecton8.UI
                 return;
 
             _persistence.SetFloat(key, value);
-            _persistence.Save();
+            MarkPersistenceDirty();
         }
 
         private void SaveBool(string key, bool value)
@@ -1631,7 +1761,28 @@ namespace Hecton8.UI
                 return;
 
             _persistence.SetBool(key, value);
-            _persistence.Save();
+            MarkPersistenceDirty();
+        }
+
+        private void MarkPersistenceDirty()
+        {
+            if (_persistenceBatchDepth > 0)
+            {
+                _persistenceDirty = true;
+                return;
+            }
+
+            _persistence?.Save();
+        }
+
+        private void FlushPendingPersistenceSave()
+        {
+            if (!_persistenceDirty)
+                return;
+
+            _persistenceDirty = false;
+            if (TryRefreshPersistenceReference(out _))
+                _persistence.Save();
         }
     }
 }

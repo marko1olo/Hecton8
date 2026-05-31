@@ -47,7 +47,8 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             TryRegisterHotSwapListener();
-            TryRegister();
+            if (_state != State.Idle)
+                TryRegister();
         }
 
         private void OnDisable()
@@ -76,7 +77,8 @@ namespace Hecton8.UI
                 }
 
                 Unregister();
-                TryRegister();
+                if (_state != State.Idle)
+                    TryRegister();
             }
         }
 
@@ -87,9 +89,12 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             if (_state == State.Idle || _canvasGroup == null)
+            {
+                Unregister();
                 return;
+            }
 
-            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameDeltaTime);
+            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime);
             _timer += dt;
 
             float duration = _state == State.FadingIn ? fadeInDuration : fadeOutDuration;
@@ -100,7 +105,10 @@ namespace Hecton8.UI
             _canvasGroup.alpha = _startAlpha + ((_targetAlpha - _startAlpha) * curveT);
 
             if (t >= 1f)
+            {
                 _state = State.Idle;
+                Unregister();
+            }
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -119,6 +127,7 @@ namespace Hecton8.UI
             _targetAlpha = 1f;
             _timer = 0f;
             _state = State.FadingIn;
+            TryRegister();
         }
 
         /// <summary>
@@ -133,6 +142,7 @@ namespace Hecton8.UI
             _targetAlpha = 0f;
             _timer = 0f;
             _state = State.FadingOut;
+            TryRegister();
         }
 
         /// <summary>
@@ -147,6 +157,7 @@ namespace Hecton8.UI
             _targetAlpha = Mathf.Clamp01(targetAlpha);
             _timer = 0f;
             _state = _targetAlpha > _startAlpha ? State.FadingIn : State.FadingOut;
+            TryRegister();
         }
 
         /// <summary>
@@ -159,6 +170,7 @@ namespace Hecton8.UI
 
             _canvasGroup.alpha = Mathf.Clamp01(alpha);
             _state = State.Idle;
+            Unregister();
         }
 
         /// <summary>

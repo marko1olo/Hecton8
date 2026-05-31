@@ -1597,7 +1597,8 @@ namespace Hecton8.Scavenging
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     TryUnregisterDispatcherPhases();
-                    TryRegisterDispatcherPhases();
+                    if (currentService != null)
+                        TryRegisterDispatcherPhases();
                     break;
             }
         }
@@ -1987,6 +1988,9 @@ namespace Hecton8.Scavenging
 
         private void TryRegisterDispatcherPhases()
         {
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             if (_simulationPhase == null)
                 _simulationPhase = new SimulationPhaseSystem(this);
             if (_postSimulationPhase == null)

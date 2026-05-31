@@ -1,10 +1,8 @@
 using System;
 using System.Runtime.InteropServices;
-using AOT;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -164,8 +162,6 @@ namespace Hecton8.Core
         private static VaultGenerationHandle<float> _globalHardwareMetricsHandle;
         private static VaultGenerationHandle<float> _frameTimeMsHandle;
         private static VaultGenerationHandle<HomeostasisBlackBoxEntry> _blackBoxHandle;
-        private static FunctionPointer<ComputeSystemHealthIndexDelegate> _computeShi;
-        private static FunctionPointer<ComputeFrameEwmaDelegate> _computeFrameEwma;
         // COLD ALLOC: DependencyHotSwapBridge[1] - cached registry dependency bridge - owner: HomeostasisBrain
         private static readonly DependencyHotSwapBridge s_dependencyHotSwapBridge = new DependencyHotSwapBridge();
 
@@ -203,19 +199,6 @@ namespace Hecton8.Core
         private static bool _macBridgeReady;
         private static bool _macBridgeFaulted;
 #endif
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate float ComputeSystemHealthIndexDelegate(
-            float jitterSigmaMs,
-            float cpuTempC,
-            float batteryLife01);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate float ComputeFrameEwmaDelegate(
-            float previousValue,
-            float currentValue,
-            float alpha,
-            int seeded);
 
         public static NativeArray<float>.ReadOnly GlobalHardwareMetrics
         {
@@ -267,8 +250,6 @@ namespace Hecton8.Core
 
             SignalCorridorRuntime.EnsureInitialized();
 
-            _computeShi = BurstCompiler.CompileFunctionPointer<ComputeSystemHealthIndexDelegate>(ComputeSystemHealthIndexBurst);
-            _computeFrameEwma = BurstCompiler.CompileFunctionPointer<ComputeFrameEwmaDelegate>(ComputeFrameEwmaBurst);
             _hardwareThermalService = GlobalRegistry.HardwareThermal;
             RegisterDependencyListeners();
             RefreshCadenceSnapshotCold();
@@ -305,13 +286,11 @@ namespace Hecton8.Core
 #endif
             UnregisterDependencyListeners();
             MemoryBudgetTracker.Unregister(OwnerName);
-            _computeShi = default;
             ReleaseHomeostasisVaultHandles(_dataVault);
             _dataVault = null;
             _globalHardwareMetricsHandle = default;
             _frameTimeMsHandle = default;
             _blackBoxHandle = default;
-            _computeFrameEwma = default;
             ShutdownScalabilityDictator();
             _initialized = false;
             _blackBoxDumped = false;
@@ -357,15 +336,10 @@ namespace Hecton8.Core
             float targetFrameMs = ResolveTargetFrameMs(targetFps);
             float vramPressure01 = SampleVramPressure01(hardwareMetrics);
 
-            float rawShi = _computeShi.IsCreated
-                ? _computeShi.Invoke(
-                    hardwareMetrics[(int)HardwareMetricSlot.JitterSigma],
-                    hardwareMetrics[(int)HardwareMetricSlot.CpuTempC],
-                    hardwareMetrics[(int)HardwareMetricSlot.BatteryLife01])
-                : ComputeSystemHealthIndexManaged(
-                    hardwareMetrics[(int)HardwareMetricSlot.JitterSigma],
-                    hardwareMetrics[(int)HardwareMetricSlot.CpuTempC],
-                    hardwareMetrics[(int)HardwareMetricSlot.BatteryLife01]);
+            float rawShi = ComputeSystemHealthIndexManaged(
+                hardwareMetrics[(int)HardwareMetricSlot.JitterSigma],
+                hardwareMetrics[(int)HardwareMetricSlot.CpuTempC],
+                hardwareMetrics[(int)HardwareMetricSlot.BatteryLife01]);
             rawShi = ComputeDictatorRawShi(
                 frame,
                 rawShi,
@@ -1315,19 +1289,6 @@ namespace Hecton8.Core
             return HectonXRRuntimeState.TryRequestDisplayRefreshRateHz(72f);
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [MonoPInvokeCallback(typeof(ComputeSystemHealthIndexDelegate))]
-        private static float ComputeSystemHealthIndexBurst(
-            float jitterSigmaMs,
-            float cpuTempC,
-            float batteryLife01)
-        {
-            float jitter01 = math.saturate(jitterSigmaMs * 0.5f);
-            float temp01 = math.saturate((cpuTempC - 55f) / 30f);
-            float batteryPressure01 = math.saturate(1f - batteryLife01);
-            return math.saturate(temp01 * 0.5f + batteryPressure01 * 0.3f + jitter01 * 0.2f);
-        }
-
         private static float ComputeSystemHealthIndexManaged(
             float jitterSigmaMs,
             float cpuTempC,
@@ -1339,9 +1300,7 @@ namespace Hecton8.Core
             return math.saturate(temp01 * 0.5f + batteryPressure01 * 0.3f + jitter01 * 0.2f);
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [MonoPInvokeCallback(typeof(ComputeFrameEwmaDelegate))]
-        private static float ComputeFrameEwmaBurst(
+        private static float ComputeFrameEwmaManaged(
             float previousValue,
             float currentValue,
             float alpha,
@@ -1361,10 +1320,7 @@ namespace Hecton8.Core
             float alpha,
             bool seeded)
         {
-            if (_computeFrameEwma.IsCreated)
-                return _computeFrameEwma.Invoke(previousValue, currentValue, alpha, seeded ? 1 : 0);
-
-            return ComputeFrameEwmaBurst(previousValue, currentValue, alpha, seeded ? 1 : 0);
+            return ComputeFrameEwmaManaged(previousValue, currentValue, alpha, seeded ? 1 : 0);
         }
     }
 }

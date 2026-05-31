@@ -168,15 +168,40 @@ namespace Hecton8.Editor
 
         private static bool VerifyComputeKernels(ComputeShader computeShader)
         {
-            return computeShader != null &&
-                   computeShader.HasKernel(ClearKernelName) &&
-                   computeShader.HasKernel(ClearArrayKernelName) &&
-                   computeShader.HasKernel(SobelKernelName) &&
-                   computeShader.HasKernel(SobelArrayKernelName) &&
-                   computeShader.HasKernel(UpscaleKernelName) &&
-                   computeShader.HasKernel(UpscaleArrayKernelName) &&
-                   computeShader.HasKernel(DebugKernelName) &&
-                   computeShader.HasKernel(DebugArrayKernelName);
+            if (computeShader == null)
+                return false;
+
+            try
+            {
+                return computeShader.HasKernel(ClearKernelName) &&
+                       computeShader.HasKernel(ClearArrayKernelName) &&
+                       computeShader.HasKernel(SobelKernelName) &&
+                       computeShader.HasKernel(SobelArrayKernelName) &&
+                       computeShader.HasKernel(UpscaleKernelName) &&
+                       computeShader.HasKernel(UpscaleArrayKernelName) &&
+                       computeShader.HasKernel(DebugKernelName) &&
+                       computeShader.HasKernel(DebugArrayKernelName);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                return false;
+            }
+            catch (UnityException)
+            {
+                return false;
+            }
         }
 
         private static bool ShouldValidatePipelineAsset(BuildTarget buildTarget, string pipelineAssetPath)

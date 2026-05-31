@@ -941,8 +941,8 @@ namespace Hecton8.Rendering
                         in _telemetryCursorHandle,
                         BufferID.Shinobu236BilateralDrsTelemetryCursor,
                         1,
-                        out NativeArray<int>.ReadOnly telemetryCursor))
-                    _telemetryWriteCursor = WrapTelemetryCursor(telemetryCursor[0], BilateralDrsUpscalerConstants.TelemetryCapacity);
+                        out NativeArray<int>.ReadOnly telemetryCursorSnapshot))
+                    _telemetryWriteCursor = WrapTelemetryCursor(telemetryCursorSnapshot[0], BilateralDrsUpscalerConstants.TelemetryCapacity);
                 return;
             }
 
@@ -1573,7 +1573,7 @@ namespace Hecton8.Rendering
 
         private void TryRegisterSlowTick()
         {
-            if (_registeredSlowTick || !Application.isPlaying)
+            if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);

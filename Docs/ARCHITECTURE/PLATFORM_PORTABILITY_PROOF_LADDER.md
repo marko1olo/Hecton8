@@ -192,6 +192,7 @@ Current 2026-05-28 static filesystem check:
 
 - Data Monolith payload exists at `Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin`;
 - payload size is `1,064,384` bytes;
-- this changes only the static file-presence fact.
+- Agent 1504 static-source proof adds an Android NDK `AAssetManager` bridge with an FD-backed/uncompressed APK entry guard and h8bin validator pass;
+- this changes static code/payload facts only, not Android device readiness.
 
-Interpretation: Quest scaffold exists. Quest readiness does not. Data Monolith file presence does not prove content-payload readiness without import, boot, checksum, player, and route proof.
+Interpretation: Quest scaffold and static Android PAL bridge proof exist. Quest readiness does not. Data Monolith file presence plus static source proof still does not prove content-payload readiness without Unity import, boot, checksum, player, and device route proof.

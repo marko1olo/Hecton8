@@ -117,7 +117,9 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(40, Marshal.SizeOf(blockDescriptorType));
             Assert.AreEqual(48, Marshal.SizeOf(allocationRecordType));
             Assert.AreEqual(64, UnsafeUtility.SizeOf<H8MemoryTelemetryEntry>());
-            Assert.AreEqual(32, UnsafeUtility.SizeOf<HectonArenaAllocator.NativeArenaSlice<byte>>());
+            StructLayoutAttribute arenaSliceLayout = typeof(HectonArenaAllocator.NativeArenaSlice<byte>).StructLayoutAttribute;
+            Assert.IsNotNull(arenaSliceLayout);
+            Assert.AreEqual(32, arenaSliceLayout.Size);
             Assert.AreEqual(0, UnsafeUtility.SizeOf<VaultHotEntityData>() & 7);
             Assert.AreEqual(0, UnsafeUtility.SizeOf<VaultColdEntityData>() & 7);
             Assert.AreEqual(0, UnsafeUtility.SizeOf<VaultAup64>() & 7);

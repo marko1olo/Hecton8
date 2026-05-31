@@ -7,6 +7,30 @@
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/UnityInstancing.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
+#ifndef RW_TEXTURE2D_X
+    #if defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
+        #define RW_TEXTURE2D_X(type, textureName) RW_TEXTURE2D_ARRAY(type, textureName)
+    #else
+        #define RW_TEXTURE2D_X(type, textureName) RW_TEXTURE2D(type, textureName)
+    #endif
+#endif
+
+#ifndef COORD_TEXTURE2D_X
+    #if defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
+        #define COORD_TEXTURE2D_X(pixelCoord) uint3(pixelCoord, SLICE_ARRAY_INDEX)
+    #else
+        #define COORD_TEXTURE2D_X(pixelCoord) pixelCoord
+    #endif
+#endif
+
+#ifndef UNITY_XR_ASSIGN_VIEW_INDEX
+    #if defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
+        #define UNITY_XR_ASSIGN_VIEW_INDEX(viewIndex) unity_StereoEyeIndex = viewIndex
+    #else
+        #define UNITY_XR_ASSIGN_VIEW_INDEX(viewIndex)
+    #endif
+#endif
+
 #ifndef HECTON_VOLUMETRIC_FOG_MAX_STEPS
 #define HECTON_VOLUMETRIC_FOG_MAX_STEPS 64
 #endif
@@ -63,6 +87,16 @@ float SafeRcp(float value)
     return abs(value) > 1e-5 ? rcp(value) : 0.0;
 }
 
+bool SafeFinite1(float value)
+{
+    return value == value && abs(value) < 3.402823e37;
+}
+
+bool SafeFinite3(float3 value)
+{
+    return all(value == value) && all(abs(value) < float3(3.402823e37, 3.402823e37, 3.402823e37));
+}
+
 float FastNegativeExp(float value)
 {
     value = max(0.0, value);
@@ -73,22 +107,22 @@ float FastNegativeExp(float value)
 float3 SafeNormalize3(float3 value, float3 fallback)
 {
     float lenSq = dot(value, value);
-    return isfinite(lenSq) && lenSq > 1e-6 ? value * rsqrt(lenSq) : fallback;
+    return SafeFinite1(lenSq) && lenSq > 1e-6 ? value * rsqrt(lenSq) : fallback;
 }
 
 float SafeFiniteScalar(float value, float fallbackValue)
 {
-    return isfinite(value) ? value : fallbackValue;
+    return SafeFinite1(value) ? value : fallbackValue;
 }
 
 float SafeFiniteSaturate(float value)
 {
-    return isfinite(value) ? saturate(value) : 0.0;
+    return SafeFinite1(value) ? saturate(value) : 0.0;
 }
 
 float3 SafeFiniteColor(float3 color, float3 fallbackColor)
 {
-    return all(isfinite(color)) ? color : fallbackColor;
+    return SafeFinite3(color) ? color : fallbackColor;
 }
 
 float3 ResolveNoirFloorColor(float3 color)
@@ -137,7 +171,7 @@ float3 WaterOpticsExtinction()
 
 float WaterOpticsDepthGate(float3 positionWS)
 {
-    float3 cameraPositionWS = all(isfinite(_WorldSpaceCameraPos.xyz)) ? _WorldSpaceCameraPos.xyz : float3(0.0, 0.0, 0.0);
+    float3 cameraPositionWS = SafeFinite3(_WorldSpaceCameraPos.xyz) ? _WorldSpaceCameraPos.xyz : float3(0.0, 0.0, 0.0);
     float localSurfaceY = SafeFiniteScalar(_H8WaterOpticsQualityAndDepthLimits.y, 0.0);
     float depth = max(0.0, localSurfaceY - (positionWS.y - cameraPositionWS.y));
     return SafeFiniteSaturate(depth * 4.0);
@@ -159,13 +193,15 @@ float3 WaterOpticsTransmittanceCompressed(float3 extinctionCoefficients, float t
     float monoTransmittance = FastNegativeExp(distance * monoExtinction);
     float3 monoExtinction3 = float3(monoExtinction, monoExtinction, monoExtinction);
     float3 monoTransmittance3 = float3(monoTransmittance, monoTransmittance, monoTransmittance);
-    [branch]
-    if (spectralWeight <= 0.0001)
-        return monoTransmittance3;
+    float3 resolvedTransmittance = monoTransmittance3;
+    if (spectralWeight > 0.0001)
+    {
+        float3 spectralDelta = (extinction - monoExtinction3) * distance;
+        float3 spectralApprox = monoTransmittance3 * rcp(max(float3(0.0625, 0.0625, 0.0625), float3(1.0, 1.0, 1.0) + spectralDelta * (0.58 + 0.42 * spectralWeight)));
+        resolvedTransmittance = SafeFiniteColor(saturate(lerp(monoTransmittance3, spectralApprox, spectralWeight)), monoTransmittance3);
+    }
 
-    float3 spectralDelta = (extinction - monoExtinction3) * distance;
-    float3 spectralApprox = monoTransmittance3 * rcp(max(float3(0.0625, 0.0625, 0.0625), float3(1.0, 1.0, 1.0) + spectralDelta * (0.58 + 0.42 * spectralWeight)));
-    return SafeFiniteColor(saturate(lerp(monoTransmittance3, spectralApprox, spectralWeight)), monoTransmittance3);
+    return resolvedTransmittance;
 }
 
 float4 ResolveSafeFogWrite(float3 color, float opacity)
@@ -199,7 +235,7 @@ void ResolveDepthData(float2 screenUv, out float rawDepth, out float validMask, 
     float resolvedRawDepth = validMask > 0.5 ? rawDepth : ResolveFarRawDepth();
     positionWS = ComputeWorldSpacePosition(screenUv, resolvedRawDepth, _HectonVolumetricFogInverseViewProjection);
     linearEyeDepth = LinearEyeDepth(resolvedRawDepth, _ZBufferParams);
-    if (!isfinite(linearEyeDepth) || linearEyeDepth < 0.0)
+    if (!SafeFinite1(linearEyeDepth) || linearEyeDepth < 0.0)
     {
         validMask = 0.0;
         linearEyeDepth = 0.0;
@@ -208,14 +244,14 @@ void ResolveDepthData(float2 screenUv, out float rawDepth, out float validMask, 
 
 float ResolveSafeLinearEyeDepth(float rawDepth)
 {
-    float safeRawDepth = isfinite(rawDepth) ? rawDepth : ResolveFarRawDepth();
+    float safeRawDepth = SafeFinite1(rawDepth) ? rawDepth : ResolveFarRawDepth();
 #if UNITY_REVERSED_Z
     safeRawDepth = safeRawDepth > 0.0001 ? safeRawDepth : ResolveFarRawDepth();
 #else
     safeRawDepth = safeRawDepth < 0.9999 ? safeRawDepth : ResolveFarRawDepth();
 #endif
     float linearDepth = LinearEyeDepth(safeRawDepth, _ZBufferParams);
-    return isfinite(linearDepth) && linearDepth >= 0.0 ? linearDepth : 0.0;
+    return SafeFinite1(linearDepth) && linearDepth >= 0.0 ? linearDepth : 0.0;
 }
 
 float Hash31(float3 value)
@@ -334,11 +370,11 @@ float3 SampleAbyssalFlow(float3 positionWS)
 {
     float textureResolution = SafeFiniteScalar(_AbyssalFlowTextureParams.x, 0.0);
     float worldSize = SafeFiniteScalar(_AbyssalFlowTextureParams.y, 0.0);
-    if (SafeFiniteScalar(_AbyssalFlowTextureActive, 0.0) <= 0.5 || textureResolution <= 1.0 || worldSize <= 0.001 || !all(isfinite(positionWS)))
+    if (SafeFiniteScalar(_AbyssalFlowTextureActive, 0.0) <= 0.5 || textureResolution <= 1.0 || worldSize <= 0.001 || !SafeFinite3(positionWS))
         return float3(0.0, 0.0, 0.0);
 
     float invWorldSize = rcp(max(worldSize, 0.001));
-    float3 flowCenter = all(isfinite(_AbyssalFlowCenter.xyz)) ? _AbyssalFlowCenter.xyz : float3(0.0, 0.0, 0.0);
+    float3 flowCenter = SafeFinite3(_AbyssalFlowCenter.xyz) ? _AbyssalFlowCenter.xyz : float3(0.0, 0.0, 0.0);
     float3 flowUv = (positionWS - flowCenter) * invWorldSize + 0.5;
     float inBounds = step(0.0, min(min(flowUv.x, flowUv.y), flowUv.z)) * step(max(max(flowUv.x, flowUv.y), flowUv.z), 1.0);
     float3 flow = SAMPLE_TEXTURE3D_LOD(_AbyssalFlowFieldTexture, sampler_LinearClamp, saturate(flowUv), 0).xyz;
@@ -373,7 +409,7 @@ float ResolveFogDensity(float3 samplePositionLocal, float3 samplePositionWS, flo
     float flowWeight = flowRamp * lerp(0.25, 1.0, flowTextureDetailWeight);
     float3 flow = flowWeight > 0.001 ? SampleAbyssalFlow(samplePositionWS) * flowWeight : float3(0.0, 0.0, 0.0);
     float advectionStrength = max(0.0, SafeFiniteScalar(_HectonVolumetricFogFlowAdvection.w, 0.0));
-    float3 safeFlowOffset = all(isfinite(_HectonVolumetricFogFlowAdvection.xyz)) ? _HectonVolumetricFogFlowAdvection.xyz : float3(0.0, 0.0, 0.0);
+    float3 safeFlowOffset = SafeFinite3(_HectonVolumetricFogFlowAdvection.xyz) ? _HectonVolumetricFogFlowAdvection.xyz : float3(0.0, 0.0, 0.0);
     float3 localWrapped = frac((samplePositionLocal + safeFlowOffset + flow * advectionStrength * ResolveVisualPhaseSeconds()) * 0.0375) * 256.0;
     float coarse = Fbm3(localWrapped, octaveCount);
     float detail = coarse;
@@ -445,7 +481,7 @@ void BuildVolumetricFogGrid(uint3 dispatchThreadId : SV_DispatchThreadID)
         return;
 
     float2 screenUv = (dispatchThreadId.xy + 0.5) * rcp(float2(max(volumeWidth, 1u), max(volumeHeight, 1u)));
-    float3 cameraPositionWS = all(isfinite(_WorldSpaceCameraPos.xyz)) ? _WorldSpaceCameraPos.xyz : float3(0.0, 0.0, 0.0);
+    float3 cameraPositionWS = SafeFinite3(_WorldSpaceCameraPos.xyz) ? _WorldSpaceCameraPos.xyz : float3(0.0, 0.0, 0.0);
     float3 farPositionWS = ComputeWorldSpacePosition(screenUv, ResolveFarRawDepth(), _HectonVolumetricFogInverseViewProjection);
     float3 rayDir = SafeNormalize3(farPositionWS - cameraPositionWS, float3(0.0, 0.0, 1.0));
     float maxRayDistance = max(0.25, SafeFiniteScalar(_HectonVolumetricFogQualityAndLimits.z, 70.0));
@@ -508,8 +544,8 @@ void RaymarchVolumetricFogCore(uint3 dispatchThreadId)
     float3 scenePositionWS;
     ResolveDepthData(screenUv, rawDepth, validMask, linearEyeDepth, scenePositionWS);
 
-    float3 cameraPositionWS = all(isfinite(_WorldSpaceCameraPos.xyz)) ? _WorldSpaceCameraPos.xyz : float3(0.0, 0.0, 0.0);
-    scenePositionWS = all(isfinite(scenePositionWS)) ? scenePositionWS : cameraPositionWS + float3(0.0, 0.0, 1.0);
+    float3 cameraPositionWS = SafeFinite3(_WorldSpaceCameraPos.xyz) ? _WorldSpaceCameraPos.xyz : float3(0.0, 0.0, 0.0);
+    scenePositionWS = SafeFinite3(scenePositionWS) ? scenePositionWS : cameraPositionWS + float3(0.0, 0.0, 1.0);
     float3 toScene = scenePositionWS - cameraPositionWS;
     float sceneDistance = SafeFiniteScalar(length(toScene), 0.0);
     float rayDistance = validMask > 0.5 ? min(sceneDistance, maxRayDistance) : maxRayDistance;

@@ -85,3 +85,7 @@ Latest safe pass: Unity process observed at `C:\hades\Hecton8`; Unity-owned comp
   - DOD practice: update current authority docs to define compact hardware as the minimum proof lane, not the product identity.
   - Alternative rejected: leaving future agents with one-device wording that conflicts with `GlobalQualityWeight`.
   - Estimate: 22000 us.
+- [ ] Unity compile-blocker surgical pass
+  - DOD practice: patch only diagnostics-backed Burst/SystemInfo/layout contract offenders, then let Unity import verify.
+  - Alternative rejected: external `dotnet build` during active Unity compiler/import worker ownership.
+  - Estimate: 145000 us.

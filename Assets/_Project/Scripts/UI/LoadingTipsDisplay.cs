@@ -153,7 +153,7 @@ namespace Hecton8.UI
             if (!_isActive || tipText == null || tipCanvasGroup == null)
                 return;
 
-            float dt = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
+            float dt = math.max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime);
             if (_isFadingIn)
             {
                 _fadeTimer += dt;

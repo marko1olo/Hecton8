@@ -380,6 +380,9 @@ namespace Hecton8.Atmosphere
 
         private void RegisterDispatcherPhases()
         {
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredPreSimulation && GlobalRegistry.TryRegisterDispatcherSystem(_preSimulationPhase))
                 _registeredPreSimulation = true;
             if (!_registeredSimulation && GlobalRegistry.TryRegisterDispatcherSystem(_simulationPhase))
@@ -430,11 +433,20 @@ namespace Hecton8.Atmosphere
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
+                QueueOrApplyVaultRebind(nextVault);
                 return;
+            }
 
-            IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
-            QueueOrApplyVaultRebind(nextVault);
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService != null)
+                    RegisterDispatcherPhases();
+                else
+                    UnregisterDispatcherPhases();
+            }
         }
 
         private IDataVault ResolveVault()

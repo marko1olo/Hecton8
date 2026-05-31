@@ -805,9 +805,7 @@ namespace Hecton8.World
                     return;
                 }
 
-                _stampKernel = _stampCompute.HasKernel("CSMain")
-                    ? _stampCompute.FindKernel("CSMain")
-                    : -1;
+                _stampKernel = ResolveKernel(_stampCompute, "CSMain");
                 if (_stampKernel < 0)
                 {
                     enabled = false;
@@ -833,9 +831,7 @@ namespace Hecton8.World
                     return;
                 }
 
-                _damageVolumeKernel = _damageVolumeCompute.HasKernel("StampDamageVolume")
-                    ? _damageVolumeCompute.FindKernel("StampDamageVolume")
-                    : -1;
+                _damageVolumeKernel = ResolveKernel(_damageVolumeCompute, "StampDamageVolume");
                 if (_damageVolumeKernel < 0)
                 {
                     enabled = false;
@@ -1134,6 +1130,41 @@ namespace Hecton8.World
             return buffer != null && buffer.IsValid();
         }
 
+        private int ResolveKernel(ComputeShader compute, string kernelName)
+        {
+            if (compute == null || !_supportsComputeShadersCold)
+                return -1;
+
+            try
+            {
+                if (!compute.HasKernel(kernelName))
+                    return -1;
+
+                int kernel = compute.FindKernel(kernelName);
+                return kernel >= 0 ? kernel : -1;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return -1;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return -1;
+            }
+            catch (System.ArgumentException)
+            {
+                return -1;
+            }
+            catch (MissingReferenceException)
+            {
+                return -1;
+            }
+            catch (UnityException)
+            {
+                return -1;
+            }
+        }
+
         private void ResolveKernelThreadGroupSizes(
             ComputeShader compute,
             int kernel,
@@ -1144,10 +1175,39 @@ namespace Hecton8.World
             sizeX = 0;
             sizeY = 0;
             sizeZ = 0;
-            if (compute == null || kernel < 0 || !_supportsComputeShadersCold || !compute.IsSupported(kernel))
+            if (compute == null || kernel < 0 || !_supportsComputeShadersCold)
                 return;
 
-            compute.GetKernelThreadGroupSizes(kernel, out uint queryX, out uint queryY, out uint queryZ);
+            uint queryX;
+            uint queryY;
+            uint queryZ;
+            try
+            {
+                if (!compute.IsSupported(kernel))
+                    return;
+
+                compute.GetKernelThreadGroupSizes(kernel, out queryX, out queryY, out queryZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return;
+            }
+            catch (System.ArgumentException)
+            {
+                return;
+            }
+            catch (MissingReferenceException)
+            {
+                return;
+            }
+            catch (UnityException)
+            {
+                return;
+            }
             if (queryX == 0u || queryY == 0u || queryZ == 0u ||
                 queryX > int.MaxValue || queryY > int.MaxValue || queryZ > int.MaxValue)
             {

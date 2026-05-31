@@ -15,7 +15,7 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(0, OffsetOf<DrsStateDTO>(nameof(DrsStateDTO.CurrentRenderScale)));
             Assert.AreEqual(4, OffsetOf<DrsStateDTO>(nameof(DrsStateDTO.TargetRenderScale)));
             Assert.AreEqual(8, OffsetOf<DrsStateDTO>(nameof(DrsStateDTO.UpscalerTypeHash)));
-            Assert.AreEqual(12, OffsetOf<DrsStateDTO>(nameof(DrsStateDTO._pad0)));
+            Assert.AreEqual(12, OffsetOf<DrsStateDTO>("_pad0"));
         }
 
         [Test]
@@ -46,8 +46,8 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(12, OffsetOf<MockReconstructionInputSignal>(nameof(MockReconstructionInputSignal.FrameTimeMs)));
             Assert.AreEqual(16, OffsetOf<MockReconstructionInputSignal>(nameof(MockReconstructionInputSignal.TemporalStress01)));
             Assert.AreEqual(20, OffsetOf<MockReconstructionInputSignal>(nameof(MockReconstructionInputSignal.Flags)));
-            Assert.AreEqual(24, OffsetOf<MockReconstructionInputSignal>(nameof(MockReconstructionInputSignal._pad0)));
-            Assert.AreEqual(28, OffsetOf<MockReconstructionInputSignal>(nameof(MockReconstructionInputSignal._pad1)));
+            Assert.AreEqual(24, OffsetOf<MockReconstructionInputSignal>("_pad0"));
+            Assert.AreEqual(28, OffsetOf<MockReconstructionInputSignal>("_pad1"));
         }
 
         [Test]
@@ -57,7 +57,7 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(0, OffsetOf<MockQualityWeightSignal>(nameof(MockQualityWeightSignal.GlobalQualityWeight)));
             Assert.AreEqual(4, OffsetOf<MockQualityWeightSignal>(nameof(MockQualityWeightSignal.FrameTimeMs)));
             Assert.AreEqual(8, OffsetOf<MockQualityWeightSignal>(nameof(MockQualityWeightSignal.Flags)));
-            Assert.AreEqual(12, OffsetOf<MockQualityWeightSignal>(nameof(MockQualityWeightSignal._pad0)));
+            Assert.AreEqual(12, OffsetOf<MockQualityWeightSignal>("_pad0"));
         }
 
         [Test]
@@ -79,8 +79,8 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(8, OffsetOf<ReconstructionTelemetryEntry>(nameof(ReconstructionTelemetryEntry.CurrentRenderScale01)));
             Assert.AreEqual(20, OffsetOf<ReconstructionTelemetryEntry>(nameof(ReconstructionTelemetryEntry.BilateralRadiusPixels)));
             Assert.AreEqual(44, OffsetOf<ReconstructionTelemetryEntry>(nameof(ReconstructionTelemetryEntry.UpscalerModeHash)));
-            Assert.AreEqual(56, OffsetOf<ReconstructionTelemetryEntry>(nameof(ReconstructionTelemetryEntry._pad0)));
-            Assert.AreEqual(60, OffsetOf<ReconstructionTelemetryEntry>(nameof(ReconstructionTelemetryEntry._pad1)));
+            Assert.AreEqual(56, OffsetOf<ReconstructionTelemetryEntry>("_pad0"));
+            Assert.AreEqual(60, OffsetOf<ReconstructionTelemetryEntry>("_pad1"));
         }
 
         [Test]

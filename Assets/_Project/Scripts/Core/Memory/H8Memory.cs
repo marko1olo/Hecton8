@@ -2528,7 +2528,7 @@ namespace Hecton8.Core.Memory
 
         private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
         {
-            if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+            if (state == UnityEditor.PlayModeStateChange.EnteredEditMode)
                 Shutdown();
         }
 #endif

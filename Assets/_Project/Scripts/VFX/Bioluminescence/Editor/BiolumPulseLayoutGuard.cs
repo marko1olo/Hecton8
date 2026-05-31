@@ -17,7 +17,7 @@ namespace Hecton8.VFX.Bioluminescence.Editor
         private const int BiolumSpeciesTuningStrideBytes = 24;
         private const int MockPredatorProximityStrideBytes = 64;
         private const int MockCombatDamageStrideBytes = 64;
-        private const int BiolumPulseTelemetryStrideBytes = 32;
+        private const int BiolumPulseTelemetryStrideBytes = 64;
 
         static BiolumPulseLayoutGuard()
         {
@@ -35,8 +35,8 @@ namespace Hecton8.VFX.Bioluminescence.Editor
             AssertOffset<BiolumPulseStateDTO>(nameof(BiolumPulseStateDTO.Group3_Params), 32);
             AssertOffset<BiolumPulseStateDTO>(nameof(BiolumPulseStateDTO.Group4_Params), 48);
             AssertSize<BiolumSpeciesTuningDTO>(BiolumSpeciesTuningStrideBytes);
-            AssertSize<MockPredatorProximitySignal>(MockPredatorProximityStrideBytes);
-            AssertSize<MockCombatDamageSignal>(MockCombatDamageStrideBytes);
+            AssertSize<BiolumMockPredatorProximitySignal>(MockPredatorProximityStrideBytes);
+            AssertSize<BiolumMockCombatDamageSignal>(MockCombatDamageStrideBytes);
             AssertSize<BiolumPulseSyncRuntime.BiolumPulseTelemetryEntry>(BiolumPulseTelemetryStrideBytes);
         }
 

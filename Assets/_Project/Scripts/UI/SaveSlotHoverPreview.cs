@@ -130,7 +130,7 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
-            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameDeltaTime);
+            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime);
             switch (_state)
             {
                 case State.WaitingForDelay:
@@ -645,6 +645,19 @@ namespace Hecton8.UI
                         (_state == State.Visible || _state == State.FadingIn))
                     {
                         PopulatePreviewMetadata();
+                    }
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService == null)
+                    {
+                        _registered = false;
+                        return;
+                    }
+
+                    if (isActiveAndEnabled)
+                    {
+                        Unregister();
+                        TryRegister();
                     }
                     break;
             }

@@ -14,7 +14,7 @@ namespace Hecton8.Interaction
     /// <summary>
     /// Cold-built collider lookup and spatial target cache for interaction prompt routing.
     /// </summary>
-    internal static class InteractableRegistry
+    public static class InteractableRegistry
     {
         private const int MaxCachedTargets = 4096;
         private const int CacheMask = MaxCachedTargets - 1;
@@ -219,7 +219,7 @@ namespace Hecton8.Interaction
             RemoveCachedTarget(instanceId);
         }
 
-        internal static void InvalidateTree(Component owner)
+        public static void InvalidateTree(Component owner)
         {
             if (owner == null)
                 return;
@@ -234,7 +234,7 @@ namespace Hecton8.Interaction
             s_invalidationColliders.Clear();
         }
 
-        internal static void RegisterTree(Component owner)
+        public static void RegisterTree(Component owner)
         {
             if (owner == null)
                 return;

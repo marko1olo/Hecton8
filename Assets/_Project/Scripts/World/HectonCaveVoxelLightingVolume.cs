@@ -49,7 +49,9 @@ namespace Hecton8.World
 
         [SerializeField]
         [Tooltip("Physics trigger handling used while scanning cave-solid occupancy.")]
+#pragma warning disable CS0414
         private QueryTriggerInteraction triggerInteraction = QueryTriggerInteraction.Ignore;
+#pragma warning restore CS0414
 
         [SerializeField]
         [Tooltip("Local half extents of the player-centered cave lighting volume.")]

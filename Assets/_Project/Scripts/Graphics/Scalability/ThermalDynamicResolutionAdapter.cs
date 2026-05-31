@@ -123,7 +123,7 @@ namespace Hecton8.Graphics.Scalability
         private static readonly int s_visorFluidOverkillId = Shader.PropertyToID("_HectonVisorFluidVisualOverkill");
         private static readonly int s_h8GlobalQualityWeightId = Shader.PropertyToID("_H8GlobalQualityWeight");
         private static readonly int s_globalQualityWeightId = Shader.PropertyToID("_GlobalQualityWeight");
-        private static readonly int s_uiLayer = LayerMask.NameToLayer("UI");
+        private static int s_uiLayer = -2;
         private static ThermalDynamicResolutionAdapter s_activeAdapter;
         private static float s_systemScalePercentage = 100f;
 
@@ -236,7 +236,9 @@ namespace Hecton8.Graphics.Scalability
         private float _mockQualityWeight01 = 1f;
         private float _mockReconstructionScale01 = PolicyMaxScale;
         private float _mockReconstructionQuality01 = PolicyMaxScale;
+#pragma warning disable CS0414
         private string _blackBoxDumpPath;
+#pragma warning restore CS0414
         private DrsScaleLimitsDTO _scaleLimits;
         private ResolutionScaleState _scaleStateMirror;
         private DrsStateDTO _drsState;
@@ -891,6 +893,8 @@ namespace Hecton8.Graphics.Scalability
                 RebindDynamicResolutionRuntime(currentService as IDynamicResolutionRuntime);
             else if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
                 RebindDataVault(currentService as IDataVault);
+            else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null)
+                TryRegister();
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -902,6 +906,13 @@ namespace Hecton8.Graphics.Scalability
                 RebindDynamicResolutionRuntime(currentService as IDynamicResolutionRuntime);
             else if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
                 RebindDataVault(currentService as IDataVault);
+            else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregister();
+                TryUnregisterLateFrame();
+                if (currentService != null)
+                    TryRegister();
+            }
         }
 
         private void ConsumeSignals()
@@ -1524,7 +1535,7 @@ namespace Hecton8.Graphics.Scalability
 
         private void TryRegisterLateFrame()
         {
-            if (_registeredLateFrame || !Application.isPlaying)
+            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
@@ -1541,7 +1552,7 @@ namespace Hecton8.Graphics.Scalability
 
         private void TryRegisterSlowTick()
         {
-            if (_registeredSlowTick || !Application.isPlaying)
+            if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
@@ -1684,11 +1695,23 @@ namespace Hecton8.Graphics.Scalability
 
         private static bool IsUiOnlyCamera(int cullingMask)
         {
-            if (s_uiLayer < 0 || s_uiLayer >= 31)
+            int uiLayer = ResolveUiLayerCold();
+            if (uiLayer < 0 || uiLayer >= 31)
                 return false;
 
-            int uiMask = 1 << s_uiLayer;
+            int uiMask = 1 << uiLayer;
             return (cullingMask & uiMask) != 0 && (cullingMask & ~uiMask) == 0;
+        }
+
+        private static int ResolveUiLayerCold()
+        {
+            int uiLayer = s_uiLayer;
+            if (uiLayer != -2)
+                return uiLayer;
+
+            uiLayer = LayerMask.NameToLayer("UI");
+            s_uiLayer = uiLayer;
+            return uiLayer;
         }
 
         private void RebindDynamicResolutionRuntime(IDynamicResolutionRuntime runtime)

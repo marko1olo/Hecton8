@@ -20,7 +20,7 @@ namespace Hecton.UI.MainMenu
     /// save slot generation, and async scene loading.
     /// All UI text is driven through LocalizationManager.
     /// </summary>
-    public sealed class MainMenuController : MonoBehaviour, ITickable, IUpdatable, ISaveEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public sealed class MainMenuController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ISaveEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private enum PanelTransitionState
         {
@@ -55,6 +55,7 @@ namespace Hecton.UI.MainMenu
 
         [Header("=== SETTINGS PANEL ===")]
         [SerializeField] private Button btnBackFromSettings;
+        [SerializeField] private SettingsPanel settingsPanel;
 
         [Header("=== LOADING SCREEN ===")]
         [SerializeField] private Slider loadingProgressBar;
@@ -69,6 +70,10 @@ namespace Hecton.UI.MainMenu
         [SerializeField] private float fadeDuration = 0.2f;
         [SerializeField] private string targetSceneName = "02_HECTON_WORLD";
         [SerializeField] private string newGameTargetSceneName = "01_ORBIT";
+        [SerializeField] private MenuVisualStyle visualStyle = MenuVisualStyle.PressureVesselNoir;
+        [SerializeField] private MenuVisualConcept visualConcept = MenuVisualConcept.ModuleWindowOverlay;
+        [SerializeField, Range(-1f, 1f)] private float visualStyleQualityOverride = -1f;
+        [SerializeField, Range(-1f, 1f)] private float visualConceptQualityOverride = -1f;
 
         private const int SlotCount = SaveEvents.ManualSlotCount;
         private const float CancelInputDebounceSeconds = 0.35f;
@@ -89,16 +94,17 @@ namespace Hecton.UI.MainMenu
         private bool _isTransitioning;
         private bool _isSceneLoadInFlight;
         private bool _registeredToTickManager;
+        private bool _registeredLateFrameTickManager;
         private bool _settingsAvailable;
         private bool _refreshSelectionRequested;
         private bool _isSaveLoadBusy;
-        private bool _lastLoadUsedBackup;
         private int _lastLoadingPercent = -1;
         private readonly char[] _loadingPercentBuffer = new char[32]; // COLD ALLOC: loading percent TMP staging buffer - owner: MainMenuController
         private readonly char[] _loadingPercentTemplateBuffer = new char[32]; // COLD ALLOC: loading percent localized template staging buffer - owner: MainMenuController
         private readonly char[] _modalMessageBuffer = new char[256]; // COLD ALLOC: main-menu modal message staging buffer copied directly into TMP - owner: MainMenuController
         private int _loadingPercentTemplateLength;
         private float _lastUnscaledTickTime;
+        private float _panelTransitionDeltaTime;
         private float _cancelInputBlockedUntil;
         private float _transitionElapsed;
         private float _transitionStartAlpha;
@@ -124,6 +130,10 @@ namespace Hecton.UI.MainMenu
         private bool _registeredHotSwapListener;
         private EventSystem _cachedEventSystem;
         private InputSystemUIInputModule _cachedUiInputModule;
+        private MenuVisualStyleApplier _visualStyleApplier;
+        private MenuVisualConceptApplier _visualConceptApplier;
+        private MenuVisualConceptDecorApplier _visualConceptDecorApplier;
+        private SettingsManager _settingsManager;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
 
 
@@ -139,12 +149,18 @@ namespace Hecton.UI.MainMenu
 
             BootstrapStatus.MarkMainMenuReached();
             EnsureRuntimeMenuBindings(resetPanelState: true);
+            CacheSettingsManagerCold(GlobalRegistry.Settings);
+            ApplyPersistedVisualStyleCold();
+            ApplyPersistedVisualConceptCold();
             BlockCancelInputBriefly();
         }
 
         private void Start()
         {
             _saveManager = Hecton8.Core.GlobalRegistry.Save as SaveManager;
+            CacheSettingsManagerCold(GlobalRegistry.Settings);
+            ApplyPersistedVisualStyleCold();
+            ApplyPersistedVisualConceptCold();
             TryRegisterToTickManager();
 
 #if UNITY_EDITOR
@@ -163,6 +179,9 @@ namespace Hecton.UI.MainMenu
             EnsureRuntimeMenuBindings(resetPanelState: _currentPanel == null);
             TryRegisterHotSwapListener();
             CacheInputManagerCold(GlobalRegistry.NativeInputRuntime);
+            CacheSettingsManagerCold(GlobalRegistry.Settings);
+            ApplyPersistedVisualStyleCold();
+            ApplyPersistedVisualConceptCold();
             TryRegisterToTickManager();
             _lastUnscaledTickTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             BlockCancelInputBriefly();
@@ -185,14 +204,13 @@ namespace Hecton.UI.MainMenu
             UnbindMenuInput();
             TryUnregisterHotSwapListener();
 
-            // TASK 31: Null-safe event unsubscription in OnDisable
-            if (Hecton8.Core.GlobalRegistry.LocalizationText != null)
-                LocalizationEvents.UnregisterLanguageListener(this);
+            LocalizationEvents.UnregisterLanguageListener(this);
             
             // Unsubscribe from save/load events with null checks
             SaveEvents.Unregister(this);
             
             UnregisterFromTickManager();
+            CacheSettingsManagerCold(null);
             _lastUnscaledTickTime = 0f;
         }
 
@@ -217,6 +235,7 @@ namespace Hecton.UI.MainMenu
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 _registeredToTickManager = false;
+                _registeredLateFrameTickManager = false;
                 TryRegisterToTickManager();
             }
 
@@ -224,6 +243,14 @@ namespace Hecton.UI.MainMenu
             {
                 _saveManager = currentService as SaveManager;
                 RequestSelectionRefresh();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.SettingsRuntime)
+            {
+                CacheSettingsManagerCold(currentService as SettingsManager);
+                ApplyPersistedVisualStyleCold();
+                ApplyPersistedVisualConceptCold();
             }
         }
 
@@ -343,6 +370,8 @@ namespace Hecton.UI.MainMenu
             EnsurePanelHierarchyActive(settingsGroup);
             EnsurePanelHierarchyActive(loadingGroup);
             BindButtons();
+            RebuildVisualStyleCacheCold();
+            RebuildVisualConceptCacheCold();
 
             if (resetPanelState || !_runtimeBindingsReady)
                 InitializePanelStates();
@@ -438,6 +467,7 @@ namespace Hecton.UI.MainMenu
 
         private void OnBackFromSettingsClicked()
         {
+            settingsPanel?.CancelPendingChanges();
             SwitchPanel(settingsGroup, mainMenuGroup);
         }
 
@@ -449,6 +479,7 @@ namespace Hecton.UI.MainMenu
             saveLoadGroup = ResolveCanvasGroup(saveLoadGroup, root, "Panel_Sideload Popup");
             settingsGroup = ResolveCanvasGroup(settingsGroup, root, "Panel_Settings");
             loadingGroup = ResolveCanvasGroup(loadingGroup, root, "Panel_LoadingScreen");
+            settingsPanel = ResolveSettingsPanel(settingsPanel, settingsGroup);
 
             btnNewGame = ResolveButton(btnNewGame, root, "BTN_Start");
             btnLoadGame = ResolveButton(btnLoadGame, root, "BTN_ResumeLog");
@@ -540,6 +571,20 @@ namespace Hecton.UI.MainMenu
 
             target.TryGetComponent(out Button button);
             return button;
+        }
+
+        private static SettingsPanel ResolveSettingsPanel(SettingsPanel current, CanvasGroup group)
+        {
+            if (current != null)
+                return current;
+
+            if (group == null)
+                return null;
+
+            if (group.TryGetComponent(out SettingsPanel panel))
+                return panel;
+
+            return ComponentReferenceUtility.ResolveOwnedComponent<SettingsPanel>(group.transform);
         }
 
         private static TMP_Text ResolveButtonLabel(TMP_Text current, Button button)
@@ -939,8 +984,56 @@ namespace Hecton.UI.MainMenu
             EnsureMenuInputRoutingReady();
             ConsumeCancelInputSignals();
             HandleCancelInput();
-            UpdatePanelTransition(unscaledDeltaTime);
+            _panelTransitionDeltaTime = unscaledDeltaTime;
             RefreshSelectionIfNeeded();
+        }
+
+        public void LateFrameTick()
+        {
+            float panelTransitionDeltaTime = _panelTransitionDeltaTime;
+            _panelTransitionDeltaTime = 0f;
+            if (panelTransitionDeltaTime > 0f)
+                UpdatePanelTransition(panelTransitionDeltaTime);
+
+            SyncVisualStyleLateFrame();
+            SyncVisualConceptLateFrame();
+        }
+
+        public MenuVisualStyle VisualStyle => visualStyle;
+        public MenuVisualConcept VisualConcept => visualConcept;
+
+        public void SetVisualStyle(MenuVisualStyle style)
+        {
+            if (visualStyle == style)
+                return;
+
+            visualStyle = style;
+            _visualStyleApplier?.ForceNextApply();
+            _visualConceptDecorApplier?.ForceNextApply();
+        }
+
+        public void SetVisualStyleQualityOverride(float qualityOverride)
+        {
+            visualStyleQualityOverride = math.clamp(qualityOverride, -1f, 1f);
+            _visualStyleApplier?.ForceNextApply();
+            _visualConceptDecorApplier?.ForceNextApply();
+        }
+
+        public void SetVisualConcept(MenuVisualConcept concept)
+        {
+            if (visualConcept == concept)
+                return;
+
+            visualConcept = concept;
+            _visualConceptApplier?.ForceNextApply();
+            _visualConceptDecorApplier?.ForceNextApply();
+        }
+
+        public void SetVisualConceptQualityOverride(float qualityOverride)
+        {
+            visualConceptQualityOverride = math.clamp(qualityOverride, -1f, 1f);
+            _visualConceptApplier?.ForceNextApply();
+            _visualConceptDecorApplier?.ForceNextApply();
         }
 
         private void ConsumeCancelInputSignals()
@@ -1041,9 +1134,12 @@ namespace Hecton.UI.MainMenu
             if (!_refreshSelectionRequested)
                 return;
 
-            EventSystem eventSystem = EventSystem.current;
-            if (eventSystem == null)
+            EventSystem eventSystem = _cachedEventSystem;
+            if (eventSystem == null || !eventSystem.enabled)
+            {
+                _refreshSelectionRequested = false;
                 return;
+            }
 
             _refreshSelectionRequested = false;
 
@@ -1103,6 +1199,54 @@ namespace Hecton.UI.MainMenu
             _menuInputBound = false;
             _inputRoutingReady = false;
             _cancelRequested = false;
+        }
+
+        private void CacheSettingsManagerCold(SettingsManager settingsManager)
+        {
+            if (ReferenceEquals(_settingsManager, settingsManager))
+                return;
+
+            if (_settingsManager != null)
+            {
+                _settingsManager.MenuVisualStyleChanged -= HandleMenuVisualStyleChanged;
+                _settingsManager.MenuVisualConceptChanged -= HandleMenuVisualConceptChanged;
+            }
+
+            _settingsManager = settingsManager;
+
+            if (_settingsManager != null)
+            {
+                _settingsManager.MenuVisualStyleChanged += HandleMenuVisualStyleChanged;
+                _settingsManager.MenuVisualConceptChanged += HandleMenuVisualConceptChanged;
+            }
+        }
+
+        private void ApplyPersistedVisualStyleCold()
+        {
+            SettingsManager settingsManager = _settingsManager;
+            if (settingsManager == null)
+                return;
+
+            SetVisualStyle(settingsManager.MenuVisualStyle);
+        }
+
+        private void HandleMenuVisualStyleChanged(MenuVisualStyle style)
+        {
+            SetVisualStyle(style);
+        }
+
+        private void ApplyPersistedVisualConceptCold()
+        {
+            SettingsManager settingsManager = _settingsManager;
+            if (settingsManager == null)
+                return;
+
+            SetVisualConcept(settingsManager.MenuVisualConcept);
+        }
+
+        private void HandleMenuVisualConceptChanged(MenuVisualConcept concept)
+        {
+            SetVisualConcept(concept);
         }
 
         private void RequestSelectionRefresh()
@@ -1398,7 +1542,6 @@ namespace Hecton.UI.MainMenu
         private void OnLoadStarted(in SaveEventPayload payload)
         {
             _isSaveLoadBusy = true;
-            _lastLoadUsedBackup = false;
             SetSaveLoadButtonsInteractable(false);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1417,8 +1560,6 @@ namespace Hecton.UI.MainMenu
             // Check if backup was used (SaveManager should set this flag)
             if (_saveManager != null && _saveManager.LastLoadUsedBackup)
             {
-                _lastLoadUsedBackup = true;
-
                 string slotName = SaveEvents.ResolveSlotName(payload.SlotHash);
                 int messageLength = BuildSlotModalMessage(
                     LocalizationKeys.WARNING_BACKUP_USED_MESSAGE,
@@ -1576,19 +1717,106 @@ namespace Hecton.UI.MainMenu
 
         private void TryRegisterToTickManager()
         {
-            if (_registeredToTickManager || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
-            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredToTickManager)
+                _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredLateFrameTickManager)
+                _registeredLateFrameTickManager = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
         {
+            if (_registeredLateFrameTickManager)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrameTickManager = false;
+            }
+
             if (!_registeredToTickManager)
                 return;
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = false;
+        }
+
+        private void RebuildVisualStyleCacheCold()
+        {
+            if (_visualStyleApplier == null)
+                _visualStyleApplier = new MenuVisualStyleApplier(); // COLD ALLOC: menu visual style reference cache owner.
+
+            _visualStyleApplier.RebuildCache(transform);
+        }
+
+        private void RebuildVisualConceptCacheCold()
+        {
+            if (_visualConceptApplier == null)
+                _visualConceptApplier = new MenuVisualConceptApplier(); // COLD ALLOC: menu visual concept transform cache owner.
+            if (_visualConceptDecorApplier == null)
+                _visualConceptDecorApplier = new MenuVisualConceptDecorApplier(); // COLD ALLOC: menu concept decor cache owner.
+
+            _visualConceptApplier.Clear();
+            RectTransform decorParent = null;
+            if (transform is RectTransform shell)
+            {
+                _visualConceptApplier.AddTarget(MenuVisualConceptTargetRole.Shell, shell);
+                decorParent = shell;
+            }
+
+            AddVisualConceptTarget(MenuVisualConceptTargetRole.MainPanel, mainMenuGroup);
+            AddVisualConceptTarget(MenuVisualConceptTargetRole.SavesPanel, saveLoadGroup);
+            AddVisualConceptTarget(MenuVisualConceptTargetRole.SettingsPanel, settingsGroup);
+            AddVisualConceptTarget(MenuVisualConceptTargetRole.LoadingPanel, loadingGroup);
+
+            if (decorParent == null && mainMenuGroup != null)
+                decorParent = mainMenuGroup.transform as RectTransform;
+            _visualConceptDecorApplier.Rebuild(decorParent);
+        }
+
+        private void AddVisualConceptTarget(MenuVisualConceptTargetRole role, CanvasGroup group)
+        {
+            if (group == null || !(group.transform is RectTransform rect))
+                return;
+
+            _visualConceptApplier.AddTarget(role, rect);
+        }
+
+        private void SyncVisualStyleLateFrame()
+        {
+            if (_visualStyleApplier == null)
+                return;
+
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            _visualStyleApplier.ApplyIfNeeded(visualStyle, ResolveMenuVisualQualityWeight(), now);
+        }
+
+        private void SyncVisualConceptLateFrame()
+        {
+            if (_visualConceptApplier == null)
+                return;
+
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            float quality = ResolveMenuVisualConceptQualityWeight();
+            _visualConceptApplier.ApplyIfNeeded(visualConcept, quality, now);
+            _visualConceptDecorApplier?.ApplyIfNeeded(visualConcept, visualStyle, quality, now);
+        }
+
+        private float ResolveMenuVisualQualityWeight()
+        {
+            if (visualStyleQualityOverride >= 0f)
+                return math.saturate(visualStyleQualityOverride);
+
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
+        }
+
+        private float ResolveMenuVisualConceptQualityWeight()
+        {
+            if (visualConceptQualityOverride >= 0f)
+                return math.saturate(visualConceptQualityOverride);
+
+            return ResolveMenuVisualQualityWeight();
         }
 
         private void TryRegisterHotSwapListener()

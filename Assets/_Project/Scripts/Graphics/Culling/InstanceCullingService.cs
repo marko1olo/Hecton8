@@ -176,6 +176,47 @@ namespace Hecton8.Graphics.Culling
             ReleaseResources();
         }
 
+        private static bool TryFindKernel(ComputeShader computeShader, string kernelName, out int kernel)
+        {
+            kernel = -1;
+            if (computeShader == null)
+                return false;
+
+            try
+            {
+                if (!computeShader.HasKernel(kernelName))
+                    return false;
+
+                kernel = computeShader.FindKernel(kernelName);
+                return kernel >= 0;
+            }
+            catch (ObjectDisposedException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (UnityException)
+            {
+                kernel = -1;
+                return false;
+            }
+        }
+
         /// <inheritdoc />
         public void Configure(ComputeShader computeShader, int capacity)
         {
@@ -191,19 +232,68 @@ namespace Hecton8.Graphics.Culling
                 return;
             }
 
-            _kernel = _activeComputeShader != null && _activeComputeShader.HasKernel("CullInstances")
-                ? _activeComputeShader.FindKernel("CullInstances")
-                : -1;
-            if (_kernel >= 0 && _activeComputeShader.IsSupported(_kernel))
+            _kernel = TryFindKernel(_activeComputeShader, "CullInstances", out int cullKernel) ? cullKernel : -1;
+            if (_kernel >= 0)
             {
-                _activeComputeShader.GetKernelThreadGroupSizes(_kernel, out uint groupX, out uint groupY, out uint groupZ);
+                uint groupX;
+                uint groupY;
+                uint groupZ;
+                try
+                {
+                    if (!_activeComputeShader.IsSupported(_kernel))
+                    {
+                        groupX = 0u;
+                        groupY = 0u;
+                        groupZ = 0u;
+                    }
+                    else
+                    {
+                        _activeComputeShader.GetKernelThreadGroupSizes(_kernel, out groupX, out groupY, out groupZ);
+                    }
+                }
+                catch (ObjectDisposedException)
+                {
+                    groupX = 0u;
+                    groupY = 0u;
+                    groupZ = 0u;
+                }
+                catch (InvalidOperationException)
+                {
+                    groupX = 0u;
+                    groupY = 0u;
+                    groupZ = 0u;
+                }
+                catch (ArgumentException)
+                {
+                    groupX = 0u;
+                    groupY = 0u;
+                    groupZ = 0u;
+                }
+                catch (MissingReferenceException)
+                {
+                    groupX = 0u;
+                    groupY = 0u;
+                    groupZ = 0u;
+                }
+                catch (UnityException)
+                {
+                    groupX = 0u;
+                    groupY = 0u;
+                    groupZ = 0u;
+                }
+
+                ulong totalThreads = (ulong)groupX * groupY * groupZ;
                 _threadGroupSize = groupX > 0u &&
                     groupY == 1u &&
                     groupZ == 1u &&
+                    totalThreads > 0UL &&
+                    totalThreads <= PortableMaxComputeThreadsPerGroup &&
                     groupX <= int.MaxValue &&
                     groupX <= PortableMaxComputeThreadsPerGroup
                         ? (int)groupX
                         : 0;
+                if (_threadGroupSize <= 0)
+                    _kernel = -1;
             }
             else
             {

@@ -19,6 +19,7 @@ namespace Hecton8.Editor
         private static long s_lastManagedHeapBytes;
         private static bool s_installed;
         private static readonly bool s_isUnityTestRunnerProcess = ResolveUnityTestRunnerProcess();
+        private static readonly bool s_strictConsoleEscalation = ResolveStrictConsoleEscalation();
 
         static GCSentinel()
         {
@@ -83,7 +84,8 @@ namespace Hecton8.Editor
 
             if (gen0Delta > 1)
             {
-                H8Debug.LogError("[GCSentinel] GEN0 GC spike detected.");
+                if (s_strictConsoleEscalation)
+                    H8Debug.LogError("[GCSentinel] GEN0 GC spike detected.");
             }
 
             s_lastGen0CollectionCount = currentGen0Collections;
@@ -105,6 +107,13 @@ namespace Hecton8.Editor
             }
 
             return false;
+        }
+
+        private static bool ResolveStrictConsoleEscalation()
+        {
+            string value = System.Environment.GetEnvironmentVariable("HECTON_STRICT_GC_SENTINEL");
+            return string.Equals(value, "1", StringComparison.Ordinal) ||
+                string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

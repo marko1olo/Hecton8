@@ -4,9 +4,9 @@
 #include <jni.h>
 
 #include <cerrno>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
-#include <cstring>
 #include <fcntl.h>
 #include <limits>
 #include <sys/stat.h>
@@ -19,6 +19,7 @@ namespace
     constexpr int32_t H8_ERROR_ASSET_MANAGER = -3;
     constexpr int32_t H8_ERROR_ASSET_MISSING = -4;
     constexpr int32_t H8_ERROR_BAD_LENGTH = -5;
+    constexpr int32_t H8_ERROR_COMPRESSED_ASSET = -6;
     constexpr int32_t H8_DUMP_PATH_CAPACITY = 1024;
     constexpr int32_t H8_DUMP_HEADER_BYTES = 20;
     constexpr int32_t H8_DUMP_MAX_ENTRY_COUNT = 1024;
@@ -79,20 +80,61 @@ namespace
         return static_cast<int32_t>(length);
     }
 
+    bool H8_IsFileDescriptorBacked(AAsset* asset, int32_t expectedLength)
+    {
+        if (asset == nullptr || expectedLength < 0)
+            return false;
+
+        off64_t start = 0;
+        off64_t length = 0;
+        const int fd = AAsset_openFileDescriptor64(asset, &start, &length);
+        if (fd < 0)
+            return false;
+
+        close(fd);
+        return start >= 0 && length == static_cast<off64_t>(expectedLength);
+    }
+
+    bool H8_TryMeasureCString(const char* value, int32_t capacity, size_t* length)
+    {
+        if (value == nullptr || length == nullptr || capacity <= 0)
+            return false;
+
+        for (int32_t index = 0; index < capacity; index++)
+        {
+            if (value[index] == '\0')
+            {
+                *length = static_cast<size_t>(index);
+                return index > 0;
+            }
+        }
+
+        return false;
+    }
+
     bool H8_TryBuildChildPath(const char* basePath, const char* childPath, char* destination, int32_t capacity)
     {
         if (basePath == nullptr ||
             childPath == nullptr ||
             destination == nullptr ||
-            capacity <= 0 ||
-            basePath[0] == '\0' ||
-            childPath[0] == '\0')
+            capacity <= 0)
         {
             return false;
         }
 
-        const size_t baseLength = std::strlen(basePath);
+        size_t baseLength = 0;
+        size_t childLength = 0;
+        if (!H8_TryMeasureCString(basePath, capacity, &baseLength) ||
+            !H8_TryMeasureCString(childPath, capacity, &childLength))
+        {
+            return false;
+        }
+
         const bool hasSlash = baseLength > 0 && basePath[baseLength - 1] == '/';
+        const size_t requiredBytes = baseLength + childLength + (hasSlash ? 1u : 2u);
+        if (requiredBytes > static_cast<size_t>(capacity))
+            return false;
+
         const int written = hasSlash
             ? std::snprintf(destination, static_cast<size_t>(capacity), "%s%s", basePath, childPath)
             : std::snprintf(destination, static_cast<size_t>(capacity), "%s/%s", basePath, childPath);
@@ -153,6 +195,53 @@ namespace
     {
         H8_WriteUInt32Le(destination, offset, static_cast<uint32_t>(value));
     }
+
+    bool H8_WriteTelemetryDumpFile(
+        const char* dumpPath,
+        const void* telemetryEntries,
+        int32_t entryCount,
+        int32_t entrySize,
+        uint32_t status,
+        int32_t cursor)
+    {
+        if (dumpPath == nullptr || dumpPath[0] == '\0')
+            return false;
+
+        const int fd = open(dumpPath, O_CREAT | O_WRONLY | O_TRUNC | O_CLOEXEC, 0600);
+        if (fd < 0)
+            return false;
+
+        uint8_t header[H8_DUMP_HEADER_BYTES];
+        int32_t headerOffset = 0;
+        H8_WriteUInt32Le(header, &headerOffset, 0x4858444Du);
+        H8_WriteUInt32Le(header, &headerOffset, status);
+        int32_t normalizedCursor = cursor;
+        if (normalizedCursor < 0 || normalizedCursor >= entryCount)
+            normalizedCursor = 0;
+
+        H8_WriteInt32Le(header, &headerOffset, normalizedCursor);
+        H8_WriteInt32Le(header, &headerOffset, entryCount);
+        H8_WriteInt32Le(header, &headerOffset, entrySize);
+
+        bool ok = H8_WriteAll(fd, header, headerOffset);
+        const auto* entryBytes = static_cast<const uint8_t*>(telemetryEntries);
+        const int32_t firstEntryCount = entryCount - normalizedCursor;
+        if (ok && firstEntryCount > 0)
+        {
+            ok = H8_WriteAll(
+                fd,
+                entryBytes + normalizedCursor * entrySize,
+                firstEntryCount * entrySize);
+        }
+
+        if (ok && normalizedCursor > 0)
+            ok = H8_WriteAll(fd, entryBytes, normalizedCursor * entrySize);
+
+        if (close(fd) != 0)
+            ok = false;
+
+        return ok;
+    }
 }
 
 extern "C" JNIEXPORT int32_t JNICALL H8_GetAssetSize(void* javaVm, void* assetManager, const char* filename)
@@ -179,7 +268,10 @@ extern "C" JNIEXPORT int32_t JNICALL H8_GetAssetSize(void* javaVm, void* assetMa
         return H8_ERROR_ASSET_MISSING;
     }
 
-    const int32_t length = H8_GetAssetLength(asset);
+    int32_t length = H8_GetAssetLength(asset);
+    if (length >= 0 && !H8_IsFileDescriptorBacked(asset, length))
+        length = H8_ERROR_COMPRESSED_ASSET;
+
     AAsset_close(asset);
     H8_ReleaseJniEnvironment(javaVm, attached);
     return length;
@@ -222,7 +314,9 @@ extern "C" JNIEXPORT bool JNICALL H8_LoadAssetToPointer(
     }
 
     const int32_t assetLength = H8_GetAssetLength(asset);
-    if (assetLength < 0 || assetLength != bufferSize)
+    if (assetLength < 0 ||
+        assetLength != bufferSize ||
+        !H8_IsFileDescriptorBacked(asset, assetLength))
     {
         AAsset_close(asset);
         H8_ReleaseJniEnvironment(javaVm, attached);
@@ -272,10 +366,12 @@ extern "C" JNIEXPORT bool JNICALL H8_WriteTelemetryDump(
 
     char docsPath[H8_DUMP_PATH_CAPACITY];
     char agentLogsPath[H8_DUMP_PATH_CAPACITY];
-    char dumpPath[H8_DUMP_PATH_CAPACITY];
+    char legacyDumpPath[H8_DUMP_PATH_CAPACITY];
+    char agentDumpPath[H8_DUMP_PATH_CAPACITY];
     if (!H8_TryBuildChildPath(persistentDataPath, "Docs", docsPath, H8_DUMP_PATH_CAPACITY) ||
         !H8_TryBuildChildPath(persistentDataPath, "Docs/AgentLogs", agentLogsPath, H8_DUMP_PATH_CAPACITY) ||
-        !H8_TryBuildChildPath(persistentDataPath, "Docs/AgentLogs/Dump_1404.bin", dumpPath, H8_DUMP_PATH_CAPACITY))
+        !H8_TryBuildChildPath(persistentDataPath, "Docs/AgentLogs/Dump_1404.bin", legacyDumpPath, H8_DUMP_PATH_CAPACITY) ||
+        !H8_TryBuildChildPath(persistentDataPath, "Docs/AgentLogs/Dump_1504.bin", agentDumpPath, H8_DUMP_PATH_CAPACITY))
     {
         return false;
     }
@@ -283,38 +379,19 @@ extern "C" JNIEXPORT bool JNICALL H8_WriteTelemetryDump(
     if (!H8_EnsureDirectory(docsPath) || !H8_EnsureDirectory(agentLogsPath))
         return false;
 
-    const int fd = open(dumpPath, O_CREAT | O_WRONLY | O_TRUNC | O_CLOEXEC, 0600);
-    if (fd < 0)
-        return false;
-
-    uint8_t header[H8_DUMP_HEADER_BYTES];
-    int32_t headerOffset = 0;
-    H8_WriteUInt32Le(header, &headerOffset, 0x4858444Du);
-    H8_WriteUInt32Le(header, &headerOffset, status);
-    int32_t normalizedCursor = cursor;
-    if (normalizedCursor < 0 || normalizedCursor >= entryCount)
-        normalizedCursor = 0;
-
-    H8_WriteInt32Le(header, &headerOffset, normalizedCursor);
-    H8_WriteInt32Le(header, &headerOffset, entryCount);
-    H8_WriteInt32Le(header, &headerOffset, entrySize);
-
-    bool ok = H8_WriteAll(fd, header, headerOffset);
-    const auto* entryBytes = static_cast<const uint8_t*>(telemetryEntries);
-    const int32_t firstEntryCount = entryCount - normalizedCursor;
-    if (ok && firstEntryCount > 0)
-    {
-        ok = H8_WriteAll(
-            fd,
-            entryBytes + normalizedCursor * entrySize,
-            firstEntryCount * entrySize);
-    }
-
-    if (ok && normalizedCursor > 0)
-        ok = H8_WriteAll(fd, entryBytes, normalizedCursor * entrySize);
-
-    if (close(fd) != 0)
-        ok = false;
-
-    return ok;
+    const bool legacyOk = H8_WriteTelemetryDumpFile(
+        legacyDumpPath,
+        telemetryEntries,
+        entryCount,
+        entrySize,
+        status,
+        cursor);
+    const bool agentOk = H8_WriteTelemetryDumpFile(
+        agentDumpPath,
+        telemetryEntries,
+        entryCount,
+        entrySize,
+        status,
+        cursor);
+    return legacyOk && agentOk;
 }

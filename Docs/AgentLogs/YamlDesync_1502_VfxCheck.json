@@ -1,0 +1,44 @@
+{
+    "agentId":  "1502",
+    "evidenceClass":  "STATIC_SOURCE",
+    "generatedUtc":  "2026-05-30T21:02:37.9521012Z",
+    "projectRoot":  "C:\\hades\\Hecton8",
+    "scannedRoots":  [
+                         "Assets/_Project/Data/VFX"
+                     ],
+    "obsoleteNames":  [
+                          "_cellIntegrityFront",
+                          "_cellIntegrityBack",
+                          "_cellFatigue",
+                          "_cellCompartmentIndices",
+                          "_hullBreachMaskFront",
+                          "_hullBreachMaskBack",
+                          "_compartmentBreachAreasFront",
+                          "_compartmentBreachAreasBack",
+                          "_queuedImpacts",
+                          "_scheduledImpacts",
+                          "_compartmentCentroids",
+                          "_fatigueCompartmentFlags",
+                          "_fatigueIntegrityLossPerCycle",
+                          "_fatiguePeakResult",
+                          "_breachSeveritySumResult",
+                          "_densityBuildSources",
+                          "_scavengerMatrices",
+                          "_scavengerBatchMetadata",
+                          "_publishedSonarSdf",
+                          "_combatDamageArray"
+                      ],
+    "stats":  {
+                  "scriptSchemas":  4316,
+                  "yamlFiles":  6,
+                  "monoBehaviours":  6,
+                  "orphanedSerializedProperties":  0,
+                  "targetObsoleteNativeFieldHits":  0,
+                  "missingScriptReferences":  0,
+                  "prefabOverrideObsoleteProperties":  0,
+                  "elapsedMicroseconds":  91286459
+              },
+    "files":  [
+
+              ]
+}

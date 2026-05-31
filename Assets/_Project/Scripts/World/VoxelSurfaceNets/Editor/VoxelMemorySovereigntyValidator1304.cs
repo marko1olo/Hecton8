@@ -221,10 +221,10 @@ namespace Hecton8.World.VoxelSurfaceNets.Editor
             uint failureFlags = 0u;
             AssertExplicit<VoxelModifiedCell>(8, ref failureFlags);
             AssertOffset<VoxelModifiedCell>(nameof(VoxelModifiedCell.Density), 0, ref failureFlags);
-            AssertOffset<VoxelModifiedCell>(nameof(VoxelModifiedCell.MaterialId), 2, ref failureFlags);
-            AssertOffset<VoxelModifiedCell>(nameof(VoxelModifiedCell.Flags), 3, ref failureFlags);
-            AssertOffset<VoxelModifiedCell>(nameof(VoxelModifiedCell.Reserved), 4, ref failureFlags);
-            AssertOffset<VoxelModifiedCell>(nameof(VoxelModifiedCell.Reserved1), 6, ref failureFlags);
+            AssertOffset<VoxelModifiedCell>(nameof(VoxelModifiedCell.Reserved), 2, ref failureFlags);
+            AssertOffset<VoxelModifiedCell>(nameof(VoxelModifiedCell.Reserved1), 4, ref failureFlags);
+            AssertOffset<VoxelModifiedCell>(nameof(VoxelModifiedCell.MaterialId), 6, ref failureFlags);
+            AssertOffset<VoxelModifiedCell>(nameof(VoxelModifiedCell.Flags), 7, ref failureFlags);
 
             AssertExplicit<VoxelCraterStamp>(32, ref failureFlags);
             AssertOffset<VoxelCraterStamp>(nameof(VoxelCraterStamp.position), 0, ref failureFlags);

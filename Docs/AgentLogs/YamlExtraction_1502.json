@@ -1,0 +1,1061 @@
+﻿{
+    "agentId":  "1502",
+    "evidenceClass":  "STATIC_SOURCE_EXTRACTION",
+    "generatedUtc":  "2026-05-30T20:09:24.9017265Z",
+    "targetCount":  9,
+    "targetDeletedFieldHits":  0,
+    "firstPartyCleanupCandidates":  104,
+    "elapsedMicroseconds":  274097,
+    "records":  [
+                    {
+                        "relativePath":  "Assets/_Project/Scenes/02_HECTON_WORLD.unity",
+                        "path":  "C:\\hades\\Hecton8\\Assets\\_Project\\Scenes\\02_HECTON_WORLD.unity",
+                        "format":  "BINARY_UNITY_ASSET",
+                        "rawTextAccessible":  false,
+                        "targetDeletedFieldHits":  [
+
+                                                   ],
+                        "firstPartyCleanupCandidates":  [
+
+                                                        ],
+                        "rawTextAction":  "NO_RAW_ACTION"
+                    },
+                    {
+                        "relativePath":  "Assets/_Project/Prefabs/Player.prefab",
+                        "path":  "C:\\hades\\Hecton8\\Assets\\_Project\\Prefabs\\Player.prefab",
+                        "format":  "TEXT_UNITY_YAML",
+                        "rawTextAccessible":  true,
+                        "targetDeletedFieldHits":  [
+
+                                                   ],
+                        "firstPartyCleanupCandidates":  [
+                                                            {
+                                                                "line":  1027,
+                                                                "componentFileID":  "4126722323519124583",
+                                                                "scriptGuid":  "6d195933dec89b14ebbfa47a621ac549",
+                                                                "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                                "scriptClass":  "HectonPlayerMovement",
+                                                                "property":  "wipeoutImpactDeltaVelocityThreshold",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1028,
+                                                                "componentFileID":  "4126722323519124583",
+                                                                "scriptGuid":  "6d195933dec89b14ebbfa47a621ac549",
+                                                                "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                                "scriptClass":  "HectonPlayerMovement",
+                                                                "property":  "wipeoutImpactDeltaVelocityMax",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1036,
+                                                                "componentFileID":  "4126722323519124583",
+                                                                "scriptGuid":  "6d195933dec89b14ebbfa47a621ac549",
+                                                                "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                                "scriptClass":  "HectonPlayerMovement",
+                                                                "property":  "wipeoutSweepSpeedThreshold",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1037,
+                                                                "componentFileID":  "4126722323519124583",
+                                                                "scriptGuid":  "6d195933dec89b14ebbfa47a621ac549",
+                                                                "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                                "scriptClass":  "HectonPlayerMovement",
+                                                                "property":  "wipeoutSweepSkinWidth",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1119,
+                                                                "componentFileID":  "4126722323519124583",
+                                                                "scriptGuid":  "6d195933dec89b14ebbfa47a621ac549",
+                                                                "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                                "scriptClass":  "HectonPlayerMovement",
+                                                                "property":  "crushDepthGroanClip",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1120,
+                                                                "componentFileID":  "4126722323519124583",
+                                                                "scriptGuid":  "6d195933dec89b14ebbfa47a621ac549",
+                                                                "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                                "scriptClass":  "HectonPlayerMovement",
+                                                                "property":  "crushDepthImplosionClip",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1153,
+                                                                "componentFileID":  "4126722323519124583",
+                                                                "scriptGuid":  "6d195933dec89b14ebbfa47a621ac549",
+                                                                "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                                "scriptClass":  "HectonPlayerMovement",
+                                                                "property":  "kccImpactTransferSpeedThreshold",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1154,
+                                                                "componentFileID":  "4126722323519124583",
+                                                                "scriptGuid":  "6d195933dec89b14ebbfa47a621ac549",
+                                                                "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                                "scriptClass":  "HectonPlayerMovement",
+                                                                "property":  "kccImpactTransferMassLimit",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1155,
+                                                                "componentFileID":  "4126722323519124583",
+                                                                "scriptGuid":  "6d195933dec89b14ebbfa47a621ac549",
+                                                                "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                                "scriptClass":  "HectonPlayerMovement",
+                                                                "property":  "kccImpactTransferEquivalentMass",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1156,
+                                                                "componentFileID":  "4126722323519124583",
+                                                                "scriptGuid":  "6d195933dec89b14ebbfa47a621ac549",
+                                                                "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                                "scriptClass":  "HectonPlayerMovement",
+                                                                "property":  "kccImpactTransferImpulseScale",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1274,
+                                                                "componentFileID":  "4126722323519124583",
+                                                                "scriptGuid":  "6d195933dec89b14ebbfa47a621ac549",
+                                                                "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                                "scriptClass":  "HectonPlayerMovement",
+                                                                "property":  "exosuitImpactShakeSpeedThreshold",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1275,
+                                                                "componentFileID":  "4126722323519124583",
+                                                                "scriptGuid":  "6d195933dec89b14ebbfa47a621ac549",
+                                                                "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                                "scriptClass":  "HectonPlayerMovement",
+                                                                "property":  "exosuitImpactShakeScale",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1276,
+                                                                "componentFileID":  "4126722323519124583",
+                                                                "scriptGuid":  "6d195933dec89b14ebbfa47a621ac549",
+                                                                "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                                "scriptClass":  "HectonPlayerMovement",
+                                                                "property":  "exosuitImpactSiltBurstScale",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1527,
+                                                                "componentFileID":  "6761570206243547513",
+                                                                "scriptGuid":  "a85f4901312cfd84d965c5716dab8009",
+                                                                "scriptPath":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                                                "scriptClass":  "PlayerFlashlight",
+                                                                "property":  "survivalSystem",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1532,
+                                                                "componentFileID":  "6761570206243547513",
+                                                                "scriptGuid":  "a85f4901312cfd84d965c5716dab8009",
+                                                                "scriptPath":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                                                "scriptClass":  "PlayerFlashlight",
+                                                                "property":  "enableBatteryDrain",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1533,
+                                                                "componentFileID":  "6761570206243547513",
+                                                                "scriptGuid":  "a85f4901312cfd84d965c5716dab8009",
+                                                                "scriptPath":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                                                "scriptClass":  "PlayerFlashlight",
+                                                                "property":  "batteryDrainRate",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1551,
+                                                                "componentFileID":  "6761570206243547513",
+                                                                "scriptGuid":  "a85f4901312cfd84d965c5716dab8009",
+                                                                "scriptPath":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                                                "scriptClass":  "PlayerFlashlight",
+                                                                "property":  "underwaterBeamNoiseMax",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1552,
+                                                                "componentFileID":  "6761570206243547513",
+                                                                "scriptGuid":  "a85f4901312cfd84d965c5716dab8009",
+                                                                "scriptPath":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                                                "scriptClass":  "PlayerFlashlight",
+                                                                "property":  "underwaterBeamSideSoftness",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1553,
+                                                                "componentFileID":  "6761570206243547513",
+                                                                "scriptGuid":  "a85f4901312cfd84d965c5716dab8009",
+                                                                "scriptPath":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                                                "scriptClass":  "PlayerFlashlight",
+                                                                "property":  "underwaterBeamJitterMax",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1555,
+                                                                "componentFileID":  "6761570206243547513",
+                                                                "scriptGuid":  "a85f4901312cfd84d965c5716dab8009",
+                                                                "scriptPath":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                                                "scriptClass":  "PlayerFlashlight",
+                                                                "property":  "stormInterferenceBeamNoise",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1556,
+                                                                "componentFileID":  "6761570206243547513",
+                                                                "scriptGuid":  "a85f4901312cfd84d965c5716dab8009",
+                                                                "scriptPath":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                                                "scriptClass":  "PlayerFlashlight",
+                                                                "property":  "stormInterferenceBeamJitter",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1687,
+                                                                "componentFileID":  "1539808072678103349",
+                                                                "scriptGuid":  "3eca1e949a2753d40adefdd8190745ed",
+                                                                "scriptPath":  "Assets/_Project/Scripts/PlayerBuilder.cs",
+                                                                "scriptClass":  "PlayerBuilder",
+                                                                "property":  "_toolData",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1688,
+                                                                "componentFileID":  "1539808072678103349",
+                                                                "scriptGuid":  "3eca1e949a2753d40adefdd8190745ed",
+                                                                "scriptPath":  "Assets/_Project/Scripts/PlayerBuilder.cs",
+                                                                "scriptClass":  "PlayerBuilder",
+                                                                "property":  "_toolMetadata",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1689,
+                                                                "componentFileID":  "1539808072678103349",
+                                                                "scriptGuid":  "3eca1e949a2753d40adefdd8190745ed",
+                                                                "scriptPath":  "Assets/_Project/Scripts/PlayerBuilder.cs",
+                                                                "scriptClass":  "PlayerBuilder",
+                                                                "property":  "enableDurabilityDrain",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1690,
+                                                                "componentFileID":  "1539808072678103349",
+                                                                "scriptGuid":  "3eca1e949a2753d40adefdd8190745ed",
+                                                                "scriptPath":  "Assets/_Project/Scripts/PlayerBuilder.cs",
+                                                                "scriptClass":  "PlayerBuilder",
+                                                                "property":  "enableEnergyConsumption",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1691,
+                                                                "componentFileID":  "1539808072678103349",
+                                                                "scriptGuid":  "3eca1e949a2753d40adefdd8190745ed",
+                                                                "scriptPath":  "Assets/_Project/Scripts/PlayerBuilder.cs",
+                                                                "scriptClass":  "PlayerBuilder",
+                                                                "property":  "lifecycleDebugLogging",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1692,
+                                                                "componentFileID":  "1539808072678103349",
+                                                                "scriptGuid":  "3eca1e949a2753d40adefdd8190745ed",
+                                                                "scriptPath":  "Assets/_Project/Scripts/PlayerBuilder.cs",
+                                                                "scriptClass":  "PlayerBuilder",
+                                                                "property":  "_swimContract",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1693,
+                                                                "componentFileID":  "1539808072678103349",
+                                                                "scriptGuid":  "3eca1e949a2753d40adefdd8190745ed",
+                                                                "scriptPath":  "Assets/_Project/Scripts/PlayerBuilder.cs",
+                                                                "scriptClass":  "PlayerBuilder",
+                                                                "property":  "_transportFeelContract",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  1954,
+                                                                "componentFileID":  "7467141657224279663",
+                                                                "scriptGuid":  "2fcbf32d3a939ee46a79d1e3cb000fa7",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimPresentationController.cs",
+                                                                "scriptClass":  "PlayerSwimPresentationController",
+                                                                "property":  "playerRigidbody",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2036,
+                                                                "componentFileID":  "7467141657224279663",
+                                                                "scriptGuid":  "2fcbf32d3a939ee46a79d1e3cb000fa7",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimPresentationController.cs",
+                                                                "scriptClass":  "PlayerSwimPresentationController",
+                                                                "property":  "handObstacleMask",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2160,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "torso",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2161,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "pelvis",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2162,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "leftThigh",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2163,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "rightThigh",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2164,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "leftCalf",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2165,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "rightCalf",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2166,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "leftFin",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2167,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "rightFin",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2168,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "torsoRenderer",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2169,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "pelvisRenderer",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2170,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "leftThighRenderer",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2171,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "rightThighRenderer",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2172,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "leftCalfRenderer",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2173,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "rightCalfRenderer",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2174,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "leftFinRenderer",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2175,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "rightFinRenderer",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2176,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "torsoAttachment",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2177,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "pelvisAttachment",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2178,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "leftThighAttachment",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2179,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "rightThighAttachment",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2180,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "leftCalfAttachment",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2181,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "rightCalfAttachment",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2182,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "leftFinAttachment",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2183,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "rightFinAttachment",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2184,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "bodyVisibilityBlendSpeed",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2185,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "dryBodyVisibility",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2186,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "shallowBodyVisibility",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2187,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "surfaceBodyVisibility",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2188,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "underwaterBodyVisibility",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2189,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "lowerBodyVisibilityFloor",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2190,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "torsoThicknessScale",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2191,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "pelvisThicknessScale",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2192,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "legThicknessScale",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2193,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "finThicknessScale",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2194,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "finLengthScale",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2195,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "toolBodyStabilizeSuppression",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2196,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "bodyPoseFollowSpeed",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2197,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "hipLateralOffset",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2198,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "hipVerticalOffset",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2199,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "hipForwardOffset",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2200,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "torsoSteeringYawBias",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2201,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "torsoSteeringRollBias",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2202,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "torsoTurnYawBias",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2203,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "torsoObstaclePitchBias",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2204,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "torsoObstacleRearBias",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2205,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "pelvisCounterPitchBias",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2206,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "pelvisSteeringYawBias",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2207,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "obstacleKneeTuck",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2208,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "obstacleLegLift",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2209,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "obstacleFinRearBias",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2210,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "ascendKneeTuck",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2211,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "descendLegExtend",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2212,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "sprintStreamlineBias",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2213,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "lookDownBodyVisibilityBoost",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2214,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "lookDownTorsoDrop",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2215,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "lookDownPelvisDrop",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2216,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "lookDownLegForwardBias",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2217,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "lookDownLegSpreadTighten",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2218,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "lookDownKneeTuck",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2219,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "lookDownFinLift",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2220,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "_debugBodyVisualWeight",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2221,
+                                                                "componentFileID":  "6473731280857570575",
+                                                                "scriptGuid":  "cdc74be0f5180e14d9549d8499e615dd",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimBlockoutRig.cs",
+                                                                "scriptClass":  "PlayerSwimBlockoutRig",
+                                                                "property":  "_debugLowerBodyWeight",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  2548,
+                                                                "componentFileID":  "4348543030281980433",
+                                                                "scriptGuid":  "61d00aeed941d1441b85b9e92ac03cc4",
+                                                                "scriptPath":  "Assets/_Project/Scripts/PlayerThrusterAudio.cs",
+                                                                "scriptClass":  "PlayerThrusterAudio",
+                                                                "property":  "thrusterLoopClip",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            }
+                                                        ],
+                        "rawTextAction":  "DRY_RUN_CLEANUP_ONLY"
+                    },
+                    {
+                        "relativePath":  "Assets/_Project/Prefabs/PFB_Submarine_Core.prefab",
+                        "path":  "C:\\hades\\Hecton8\\Assets\\_Project\\Prefabs\\PFB_Submarine_Core.prefab",
+                        "format":  "TEXT_UNITY_YAML",
+                        "rawTextAccessible":  true,
+                        "targetDeletedFieldHits":  [
+
+                                                   ],
+                        "firstPartyCleanupCandidates":  [
+                                                            {
+                                                                "line":  439,
+                                                                "componentFileID":  "848451706770078234",
+                                                                "scriptGuid":  "6135d4e65896e4d45ab16f369317eb72",
+                                                                "scriptPath":  "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+                                                                "scriptClass":  "SubmarineStructuralGrid",
+                                                                "property":  "hullImpactDentDecalPrefab",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  445,
+                                                                "componentFileID":  "848451706770078234",
+                                                                "scriptGuid":  "6135d4e65896e4d45ab16f369317eb72",
+                                                                "scriptPath":  "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+                                                                "scriptClass":  "SubmarineStructuralGrid",
+                                                                "property":  "hullCollisionYieldEnergyJoules",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  446,
+                                                                "componentFileID":  "848451706770078234",
+                                                                "scriptGuid":  "6135d4e65896e4d45ab16f369317eb72",
+                                                                "scriptPath":  "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+                                                                "scriptClass":  "SubmarineStructuralGrid",
+                                                                "property":  "hullCollisionFullDentEnergyJoules",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  447,
+                                                                "componentFileID":  "848451706770078234",
+                                                                "scriptGuid":  "6135d4e65896e4d45ab16f369317eb72",
+                                                                "scriptPath":  "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+                                                                "scriptClass":  "SubmarineStructuralGrid",
+                                                                "property":  "hullCollisionMaxIntegrityDelta",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  451,
+                                                                "componentFileID":  "848451706770078234",
+                                                                "scriptGuid":  "6135d4e65896e4d45ab16f369317eb72",
+                                                                "scriptPath":  "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+                                                                "scriptClass":  "SubmarineStructuralGrid",
+                                                                "property":  "hullImpactScratchDecalPrefab",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  452,
+                                                                "componentFileID":  "848451706770078234",
+                                                                "scriptGuid":  "6135d4e65896e4d45ab16f369317eb72",
+                                                                "scriptPath":  "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+                                                                "scriptClass":  "SubmarineStructuralGrid",
+                                                                "property":  "hullImpactDecalPoolWarmupCount",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  497,
+                                                                "componentFileID":  "14875980349479308",
+                                                                "scriptGuid":  "c1cdd4f43d41e9845a51d240975ae71b",
+                                                                "scriptPath":  "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+                                                                "scriptClass":  "SubmarineAutoLevelBallastController",
+                                                                "property":  "mathLodSwitchHoldSeconds",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            }
+                                                        ],
+                        "rawTextAction":  "DRY_RUN_CLEANUP_ONLY"
+                    },
+                    {
+                        "relativePath":  "Assets/_Project/Prefabs/Construction/Final/PFB_Module_Foundation.prefab",
+                        "path":  "C:\\hades\\Hecton8\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_Module_Foundation.prefab",
+                        "format":  "TEXT_UNITY_YAML",
+                        "rawTextAccessible":  true,
+                        "targetDeletedFieldHits":  [
+
+                                                   ],
+                        "firstPartyCleanupCandidates":  [
+
+                                                        ],
+                        "rawTextAction":  "NO_RAW_ACTION"
+                    },
+                    {
+                        "relativePath":  "Assets/_Project/Prefabs/Construction/Final/PFB_Module_CurrentTurbine.prefab",
+                        "path":  "C:\\hades\\Hecton8\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_Module_CurrentTurbine.prefab",
+                        "format":  "TEXT_UNITY_YAML",
+                        "rawTextAccessible":  true,
+                        "targetDeletedFieldHits":  [
+
+                                                   ],
+                        "firstPartyCleanupCandidates":  [
+
+                                                        ],
+                        "rawTextAction":  "NO_RAW_ACTION"
+                    },
+                    {
+                        "relativePath":  "Assets/_Project/Prefabs/Construction/Final/PFB_Module_Corridor.prefab",
+                        "path":  "C:\\hades\\Hecton8\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_Module_Corridor.prefab",
+                        "format":  "TEXT_UNITY_YAML",
+                        "rawTextAccessible":  true,
+                        "targetDeletedFieldHits":  [
+
+                                                   ],
+                        "firstPartyCleanupCandidates":  [
+
+                                                        ],
+                        "rawTextAction":  "NO_RAW_ACTION"
+                    },
+                    {
+                        "relativePath":  "Assets/_Project/Prefabs/Construction/Final/PFB_Module_ServicePump.prefab",
+                        "path":  "C:\\hades\\Hecton8\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_Module_ServicePump.prefab",
+                        "format":  "TEXT_UNITY_YAML",
+                        "rawTextAccessible":  true,
+                        "targetDeletedFieldHits":  [
+
+                                                   ],
+                        "firstPartyCleanupCandidates":  [
+
+                                                        ],
+                        "rawTextAction":  "NO_RAW_ACTION"
+                    },
+                    {
+                        "relativePath":  "Assets/_Project/Prefabs/Construction/Final/PFB_Module_Pylon.prefab",
+                        "path":  "C:\\hades\\Hecton8\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_Module_Pylon.prefab",
+                        "format":  "TEXT_UNITY_YAML",
+                        "rawTextAccessible":  true,
+                        "targetDeletedFieldHits":  [
+
+                                                   ],
+                        "firstPartyCleanupCandidates":  [
+
+                                                        ],
+                        "rawTextAction":  "NO_RAW_ACTION"
+                    },
+                    {
+                        "relativePath":  "Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab",
+                        "path":  "C:\\hades\\Hecton8\\Assets\\_Project\\Prefabs\\Construction\\Final\\PFB_SargassumCollapseChunk.prefab",
+                        "format":  "TEXT_UNITY_YAML",
+                        "rawTextAccessible":  true,
+                        "targetDeletedFieldHits":  [
+
+                                                   ],
+                        "firstPartyCleanupCandidates":  [
+                                                            {
+                                                                "line":  112,
+                                                                "componentFileID":  "3204588369501127005",
+                                                                "scriptGuid":  "6b761c0d45874a5dbd8921ba8d970c1f",
+                                                                "scriptPath":  "Assets/_Project/Scripts/World/SargassumCollapseChunk.cs",
+                                                                "scriptClass":  "SargassumCollapseChunk",
+                                                                "property":  "snagLayers",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  115,
+                                                                "componentFileID":  "3204588369501127005",
+                                                                "scriptGuid":  "6b761c0d45874a5dbd8921ba8d970c1f",
+                                                                "scriptPath":  "Assets/_Project/Scripts/World/SargassumCollapseChunk.cs",
+                                                                "scriptClass":  "SargassumCollapseChunk",
+                                                                "property":  "snagSearchRadius",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  116,
+                                                                "componentFileID":  "3204588369501127005",
+                                                                "scriptGuid":  "6b761c0d45874a5dbd8921ba8d970c1f",
+                                                                "scriptPath":  "Assets/_Project/Scripts/World/SargassumCollapseChunk.cs",
+                                                                "scriptClass":  "SargassumCollapseChunk",
+                                                                "property":  "snagImpactSpeedThreshold",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            },
+                                                            {
+                                                                "line":  120,
+                                                                "componentFileID":  "3204588369501127005",
+                                                                "scriptGuid":  "6b761c0d45874a5dbd8921ba8d970c1f",
+                                                                "scriptPath":  "Assets/_Project/Scripts/World/SargassumCollapseChunk.cs",
+                                                                "scriptClass":  "SargassumCollapseChunk",
+                                                                "property":  "snagSurfaceOffset",
+                                                                "reason":  "NOT_IN_CURRENT_CSHARP_SCHEMA"
+                                                            }
+                                                        ],
+                        "rawTextAction":  "DRY_RUN_CLEANUP_ONLY"
+                    }
+                ]
+}

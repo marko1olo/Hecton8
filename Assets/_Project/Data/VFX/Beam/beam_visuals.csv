@@ -1,10 +1,10 @@
 # key,value
+# quality comes from HomeostasisBrain.GlobalQualityWeight; do not override it here.
 radius,0.045
 noise_frequency,5.5
 noise_amplitude,0.028
 heat,1.0
 energy,1.0
-quality_weight,1.0
 radial_segments,0
 biome_extinction,0.18
 requested_beams,4

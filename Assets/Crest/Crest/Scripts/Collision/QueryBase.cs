@@ -35,8 +35,6 @@ namespace Crest
 
         System.Action<AsyncGPUReadbackRequest> _dataArrivedAction;
 
-        // Must match value in compute shader
-        const int s_computeGroupSize = 64;
         public static bool s_useComputeCollQueries = true;
 
         readonly int sp_queryPositions_minGridSizes = Shader.PropertyToID("_QueryPositions_MinGridSizes");
@@ -46,6 +44,7 @@ namespace Crest
 
         ComputeBuffer _computeBufQueries;
         ComputeBuffer _computeBufResults;
+        int _computeGroupSize;
 
         public const int MAX_QUERY_COUNT_DEFAULT = 4096;
 
@@ -234,14 +233,21 @@ namespace Crest
             _queryResultsLast = new NativeArray<Vector3>(_maxQueryCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 
             _shaderProcessQueries = ComputeShaderHelpers.LoadShader(QueryShaderName);
-            if (_shaderProcessQueries == null || !_shaderProcessQueries.HasKernel(QueryKernelName))
+            if (!ComputeShaderHelpers.TryFindKernel(_shaderProcessQueries, QueryKernelName, out _kernelHandle))
             {
                 Debug.LogError($"Crest: Could not load Query compute shader {QueryShaderName}");
                 _shaderProcessQueries = null;
                 _kernelHandle = -1;
                 return;
             }
-            _kernelHandle = _shaderProcessQueries.FindKernel(QueryKernelName);
+            if (!ComputeShaderHelpers.TryGetPortableKernelThreadGroupSize1D(_shaderProcessQueries, _kernelHandle, out _computeGroupSize))
+            {
+                Debug.LogError($"Crest: Query compute shader {QueryShaderName} kernel {QueryKernelName} has an unsupported thread group size.");
+                _shaderProcessQueries = null;
+                _kernelHandle = -1;
+                return;
+            }
+
             _wrapper = new PropertyWrapperComputeStandalone(_shaderProcessQueries, _kernelHandle);
         }
 
@@ -469,7 +475,7 @@ namespace Crest
         {
             if (_segmentRegistrarRingBuffer.Current._numQueries > 0)
             {
-                if (_shaderProcessQueries == null || _kernelHandle < 0 || _wrapper == null || _computeBufQueries == null || _computeBufResults == null)
+                if (_shaderProcessQueries == null || _kernelHandle < 0 || _computeGroupSize <= 0 || _wrapper == null || _computeBufQueries == null || _computeBufResults == null)
                 {
                     _segmentRegistrarRingBuffer.AcquireNew();
                     return;
@@ -500,7 +506,12 @@ namespace Crest
             _shaderProcessQueries.SetInt(sp_queryCount, _segmentRegistrarRingBuffer.Current._numQueries);
             BindInputsAndOutputs(_wrapper, _computeBufResults);
 
-            var numGroups = (_segmentRegistrarRingBuffer.Current._numQueries + s_computeGroupSize - 1) / s_computeGroupSize;
+            var numGroups = ComputeShaderHelpers.DispatchCount(_segmentRegistrarRingBuffer.Current._numQueries, _computeGroupSize);
+            if (numGroups <= 0)
+            {
+                return;
+            }
+
             _shaderProcessQueries.Dispatch(_kernelHandle, numGroups, 1, 1);
         }
 

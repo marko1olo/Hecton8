@@ -77,7 +77,9 @@ namespace Hecton8.Gameplay
         private uint _lastBiomeHash;
         private AbsoluteUniversePosition _lastScheduledPlayerAup;
         private float3 _lastScheduledPlayerRuntime;
+#pragma warning disable CS0414
         private bool _hasLastScheduledPlayerPose;
+#pragma warning restore CS0414
 
         // Flag: Director zaprosil redkuyu nahodku v tekuschem tike
         // Chitaetsya v diagnostike i buduschey sisteme spavna

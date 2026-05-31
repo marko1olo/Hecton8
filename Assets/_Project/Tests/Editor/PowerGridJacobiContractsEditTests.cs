@@ -18,8 +18,8 @@ public sealed class PowerGridJacobiContractsEditTests
         Assert.AreEqual(12, OffsetOf<PowerNodeDTO>(nameof(PowerNodeDTO.CurrentStorage)));
         Assert.AreEqual(16, OffsetOf<PowerNodeDTO>(nameof(PowerNodeDTO.Flags)));
         Assert.AreEqual(20, OffsetOf<PowerNodeDTO>(nameof(PowerNodeDTO.InternalResistance)));
-        Assert.AreEqual(24, OffsetOf<PowerNodeDTO>(nameof(PowerNodeDTO._pad0)));
-        Assert.AreEqual(31, OffsetOf<PowerNodeDTO>(nameof(PowerNodeDTO._pad7)));
+        Assert.AreEqual(24, OffsetOf<PowerNodeDTO>("_pad0"));
+        Assert.AreEqual(31, OffsetOf<PowerNodeDTO>("_pad7"));
     }
 
     [Test]

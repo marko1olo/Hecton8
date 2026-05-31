@@ -822,7 +822,8 @@ namespace Hecton8.Core
 
         public void Dispose()
         {
-            GlobalRegistry.UnregisterFoveatedSimulationDirector(this);
+            if (ReferenceEquals(GlobalRegistry.FoveatedSimulationDirector, this))
+                GlobalRegistry.UnregisterFoveatedSimulationDirector(this);
             TryUnregisterHotSwapListener();
             if (_originShiftListenerRegistered)
             {

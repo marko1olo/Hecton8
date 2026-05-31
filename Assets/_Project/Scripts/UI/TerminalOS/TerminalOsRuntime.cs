@@ -1735,16 +1735,50 @@ namespace Hecton8.UI
             if (_blitKernel >= 0 && _threadsX > 0 && _threadsY > 0)
                 return true;
 
-            if (!terminalBlitCompute.HasKernel("KTerminalBlit")) { ResetTerminalBlitComputeState(); return false; }
-
-            _blitKernel = terminalBlitCompute.FindKernel("KTerminalBlit");
-            if (_blitKernel < 0 || !terminalBlitCompute.IsSupported(_blitKernel))
+            if (!TryFindTerminalBlitKernel(terminalBlitCompute, "KTerminalBlit", out _blitKernel))
             {
                 ResetTerminalBlitComputeState();
                 return false;
             }
 
-            terminalBlitCompute.GetKernelThreadGroupSizes(_blitKernel, out uint x, out uint y, out uint z);
+            uint x;
+            uint y;
+            uint z;
+            try
+            {
+                if (!terminalBlitCompute.IsSupported(_blitKernel))
+                {
+                    ResetTerminalBlitComputeState();
+                    return false;
+                }
+
+                terminalBlitCompute.GetKernelThreadGroupSizes(_blitKernel, out x, out y, out z);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                ResetTerminalBlitComputeState();
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                ResetTerminalBlitComputeState();
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                ResetTerminalBlitComputeState();
+                return false;
+            }
+            catch (UnityEngine.MissingReferenceException)
+            {
+                ResetTerminalBlitComputeState();
+                return false;
+            }
+            catch (UnityEngine.UnityException)
+            {
+                ResetTerminalBlitComputeState();
+                return false;
+            }
             if (x == 0u || y == 0u || z != 1u)
             {
                 ResetTerminalBlitComputeState();
@@ -1768,6 +1802,47 @@ namespace Hecton8.UI
             _threadsX = (int)x;
             _threadsY = (int)y;
             return true;
+        }
+
+        private static bool TryFindTerminalBlitKernel(ComputeShader computeShader, string kernelName, out int kernel)
+        {
+            kernel = -1;
+            if (computeShader == null)
+                return false;
+
+            try
+            {
+                if (!computeShader.HasKernel(kernelName))
+                    return false;
+
+                kernel = computeShader.FindKernel(kernelName);
+                return kernel >= 0;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (UnityEngine.MissingReferenceException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (UnityEngine.UnityException)
+            {
+                kernel = -1;
+                return false;
+            }
         }
 
         private bool RefreshDispatchGroupCounts()

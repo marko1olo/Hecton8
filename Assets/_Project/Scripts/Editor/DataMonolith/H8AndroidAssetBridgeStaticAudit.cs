@@ -52,8 +52,10 @@ namespace Hecton8.Data.Editor
             bool androidIsolation = AreAndroidReferencesGuarded(arena, out leakedAndroidReferences);
             bool nativePresence = native.Contains("AAssetManager_open", StringComparison.Ordinal) &&
                                   native.Contains("AAsset_getLength64", StringComparison.Ordinal) &&
+                                  native.Contains("AAsset_openFileDescriptor64", StringComparison.Ordinal) &&
                                   native.Contains("AAsset_read", StringComparison.Ordinal) &&
                                   native.Contains("AAsset_close", StringComparison.Ordinal) &&
+                                  native.Contains("H8_ERROR_COMPRESSED_ASSET", StringComparison.Ordinal) &&
                                   native.Contains("H8_WriteTelemetryDump", StringComparison.Ordinal) &&
                                   native.Contains("open(dumpPath", StringComparison.Ordinal) &&
                                   native.Contains("write(fd", StringComparison.Ordinal) &&
@@ -69,6 +71,13 @@ namespace Hecton8.Data.Editor
                                              !arena.Contains("private static void DumpTelemetry(H8DataBlobLoadStatus status)\n        {\n            if (!EnsureTelemetry()", StringComparison.Ordinal) &&
                                              !arena.Contains("private static void DumpTelemetry(H8DataBlobLoadStatus status)\r\n        {\r\n            if (!EnsureTelemetry()", StringComparison.Ordinal);
             bool overflowGuard = native.Contains("assetLength < 0 || assetLength != bufferSize", StringComparison.Ordinal);
+            bool uncompressedFdBackedAssetGuard = native.Contains("AAsset_openFileDescriptor64", StringComparison.Ordinal) &&
+                                                  native.Contains("close(fd)", StringComparison.Ordinal) &&
+                                                  arena.Contains("private const int AndroidAssetCompressed = -6;", StringComparison.Ordinal) &&
+                                                  arena.Contains("blobBytes == AndroidAssetCompressed", StringComparison.Ordinal);
+            bool nativeBoundedDumpPath = native.Contains("H8_TryMeasureCString", StringComparison.Ordinal) &&
+                                         native.Contains("requiredBytes > static_cast<size_t>(capacity)", StringComparison.Ordinal) &&
+                                         !native.Contains("std::strlen", StringComparison.Ordinal);
             bool noNativeHeap = !native.Contains("std::vector", StringComparison.Ordinal) &&
                                 !native.Contains("std::string", StringComparison.Ordinal) &&
                                 !native.Contains("malloc", StringComparison.Ordinal) &&
@@ -231,6 +240,8 @@ namespace Hecton8.Data.Editor
             AppendJson(builder, "nativeAssetApisPresent", nativePresence, true);
             AppendJson(builder, "nativeDumpDirectoryIsDirectoryCheckPresent", native.Contains("S_ISDIR", StringComparison.Ordinal), true);
             AppendJson(builder, "bufferOverflowGuardPresent", overflowGuard, true);
+            AppendJson(builder, "uncompressedFdBackedAssetGuardPresent", uncompressedFdBackedAssetGuard, true);
+            AppendJson(builder, "nativeBoundedDumpPathPresent", nativeBoundedDumpPath, true);
             AppendJson(builder, "telemetryDumpChronologicalOrderPresent", telemetryDumpChronologicalOrder, true);
             AppendJson(builder, "dumpTelemetryReadOnlyOnly", dumpTelemetryReadOnlyOnly, true);
             AppendJson(builder, "nativeHeapAllocationTokensAbsent", noNativeHeap, true);
@@ -457,7 +468,14 @@ namespace Hecton8.Data.Editor
         private static string Sha256File(string projectRoot, string relativePath)
         {
             using SHA256 sha = SHA256.Create();
-            byte[] hash = sha.ComputeHash(File.ReadAllBytes(Path.Combine(projectRoot, relativePath)));
+            using FileStream stream = new FileStream(
+                Path.Combine(projectRoot, relativePath),
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.ReadWrite | FileShare.Delete,
+                64 * 1024,
+                FileOptions.SequentialScan);
+            byte[] hash = sha.ComputeHash(stream);
             StringBuilder builder = new StringBuilder(hash.Length * 2);
             for (int i = 0; i < hash.Length; i++)
                 builder.Append(hash[i].ToString("x2", CultureInfo.InvariantCulture));

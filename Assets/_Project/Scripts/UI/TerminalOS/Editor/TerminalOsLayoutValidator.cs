@@ -36,8 +36,8 @@ namespace Hecton8.UI.Editor
             ok &= ValidateOffset<TerminalInteractionDTO>(nameof(TerminalInteractionDTO.LocalHitUV), 4);
             ok &= ValidateOffset<TerminalInteractionDTO>(nameof(TerminalInteractionDTO.InteractionFlags), 12);
             ok &= ValidateOffset<TerminalInteractionDTO>(nameof(TerminalInteractionDTO.Distance), 16);
-            ok &= ValidateOffset<TerminalInteractionDTO>(nameof(TerminalInteractionDTO._pad0), 20);
-            ok &= ValidateOffset<TerminalInteractionDTO>(nameof(TerminalInteractionDTO._pad11), 31);
+            ok &= ValidateOffset<TerminalInteractionDTO>("_pad0", 20);
+            ok &= ValidateOffset<TerminalInteractionDTO>("_pad11", 31);
             ok &= ValidateSize<TerminalInputStateDTO>(64);
             ok &= ValidateOffset<TerminalInputStateDTO>(nameof(TerminalInputStateDTO.TerminalAUP), 0);
             ok &= ValidateOffset<TerminalInputStateDTO>(nameof(TerminalInputStateDTO.ForwardNormal), 24);

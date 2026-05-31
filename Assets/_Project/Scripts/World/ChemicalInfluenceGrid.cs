@@ -2722,7 +2722,7 @@ namespace Hecton8.World
             return hash == 0u ? 1u : hash;
         }
 
-        private static bool TryReadLine(ReadOnlySpan<byte> source, scoped ref int cursor, out ReadOnlySpan<byte> line)
+        private static bool TryReadLine(ReadOnlySpan<byte> source, ref int cursor, out ReadOnlySpan<byte> line)
         {
             if (cursor >= source.Length)
             {
@@ -2744,7 +2744,7 @@ namespace Hecton8.World
             return true;
         }
 
-        private static bool TryReadCsvToken(ReadOnlySpan<byte> line, scoped ref int cursor, out ReadOnlySpan<byte> token)
+        private static bool TryReadCsvToken(ReadOnlySpan<byte> line, ref int cursor, out ReadOnlySpan<byte> token)
         {
             if (cursor > line.Length)
             {

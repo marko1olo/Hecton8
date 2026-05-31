@@ -4,7 +4,9 @@
     "references":  [
                        "Hecton8.Core.Contracts",
                        "Hecton8.Core",
+                       "Hecton8.Bootstrap.Contracts",
                        "Hecton8.Core.Memory",
+                       "Hecton8.Atmosphere.StormPropagation.Runtime",
                        "Hecton8.Rendering.OceanSinglePass",
                        "Hecton8.Lighting",
                        "Hecton8.SeedShipAnomaly.Runtime",
@@ -14,9 +16,11 @@
                        "Hecton8.Editor",
                        "Hecton8.Physics.KCC.Editor",
                        "Hecton8.QA.Headless",
+                       "Crest",
                        "Unity.Mathematics",
                        "Unity.Burst",
                        "Unity.Collections",
+                       "Unity.InputSystem",
                        "Unity.Jobs",
                        "UnityEngine.TestRunner",
                        "UnityEditor.TestRunner"

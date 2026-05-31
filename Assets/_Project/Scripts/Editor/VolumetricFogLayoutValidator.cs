@@ -56,11 +56,36 @@ namespace Hecton8.EditorTools
         public static bool ValidateComputeShaderKernels()
         {
             ComputeShader computeShader = AssetDatabase.LoadAssetAtPath<ComputeShader>(ComputeShaderAssetPath);
-            return computeShader != null &&
-                   computeShader.HasKernel(GridBuildKernelName) &&
-                   computeShader.HasKernel(RaymarchKernelName) &&
-                   computeShader.HasKernel(RaymarchXrKernelName) &&
-                   ValidateComputeShaderPragmas();
+            if (computeShader == null)
+                return false;
+
+            try
+            {
+                return computeShader.HasKernel(GridBuildKernelName) &&
+                       computeShader.HasKernel(RaymarchKernelName) &&
+                       computeShader.HasKernel(RaymarchXrKernelName) &&
+                       ValidateComputeShaderPragmas();
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                return false;
+            }
+            catch (UnityException)
+            {
+                return false;
+            }
         }
 
         private static bool ValidateComputeShaderPragmas()

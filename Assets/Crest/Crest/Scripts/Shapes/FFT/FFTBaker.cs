@@ -82,13 +82,17 @@ namespace Crest
             }
 
             var waveCombineShader = Resources.Load<ComputeShader>("FFT/FFTBake");
-            if (waveCombineShader == null || !waveCombineShader.HasKernel("FFTBakeMultiRes"))
+            if (!ComputeShaderHelpers.TryFindKernel(waveCombineShader, "FFTBakeMultiRes", out int kernel))
             {
                 Debug.LogError("Crest: Missing FFT bake compute shader.", fftWaves);
                 return null;
             }
 
-            var kernel = waveCombineShader.FindKernel("FFTBakeMultiRes");
+            if (!ComputeShaderHelpers.TryGetPortableKernelThreadGroupSize2D(waveCombineShader, kernel, out int bakeThreadGroupSizeX, out int bakeThreadGroupSizeY))
+            {
+                Debug.LogError("Crest: FFT bake compute shader has an unsupported thread group size.", fftWaves);
+                return null;
+            }
 
             var buf = new CommandBuffer();
             RenderTexture bakedWaves = null;
@@ -109,8 +113,13 @@ namespace Crest
                 stagingTexture = new Texture2D(fftWaves._resolution, fftWaves._resolution * lodCount, TextureFormat.RGBAHalf, false, true);
                 stagingTexture.name = "CrestFFTBakedStaging";
 
-                var groupsX = (bakedWaves.width + 7) / 8;
-                var groupsY = (bakedWaves.height + 7) / 8;
+                var groupsX = ComputeShaderHelpers.DispatchCount(bakedWaves.width, bakeThreadGroupSizeX);
+                var groupsY = ComputeShaderHelpers.DispatchCount(bakedWaves.height, bakeThreadGroupSizeY);
+                if (groupsX <= 0 || groupsY <= 0)
+                {
+                    Debug.LogError("Crest: FFT bake dispatch dimensions exceed portable compute limits.", fftWaves);
+                    return null;
+                }
 
                 for (int timeIndex = 0; timeIndex < frameCount; timeIndex++) // this means resolutionTime is actually FPS
                 {

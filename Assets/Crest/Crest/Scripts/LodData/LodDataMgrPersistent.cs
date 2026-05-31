@@ -22,6 +22,8 @@ namespace Crest
 
         protected ComputeShader _shader;
         protected int _krnlShaderSim = -1;
+        int _shaderSimThreadGroupSizeX;
+        int _shaderSimThreadGroupSizeY;
 
         protected abstract string ShaderSim { get; }
         protected abstract int krnl_ShaderSim { get; }
@@ -64,21 +66,34 @@ namespace Crest
 
             _shader = null;
             _krnlShaderSim = -1;
+            _shaderSimThreadGroupSizeX = 0;
+            _shaderSimThreadGroupSizeY = 0;
             _renderSimProperties = null;
         }
 
         void CreateProperties()
         {
             _shader = ComputeShaderHelpers.LoadShader(ShaderSim);
-            if (_shader == null || !_shader.HasKernel(ShaderSim))
+            if (!ComputeShaderHelpers.TryFindKernel(_shader, ShaderSim, out _krnlShaderSim))
             {
                 _shader = null;
                 _krnlShaderSim = -1;
+                _shaderSimThreadGroupSizeX = 0;
+                _shaderSimThreadGroupSizeY = 0;
                 _renderSimProperties = null;
                 enabled = false;
                 return;
             }
-            _krnlShaderSim = _shader.FindKernel(ShaderSim);
+            if (!ComputeShaderHelpers.TryGetPortableKernelThreadGroupSize2D(_shader, _krnlShaderSim, out _shaderSimThreadGroupSizeX, out _shaderSimThreadGroupSizeY))
+            {
+                _shader = null;
+                _krnlShaderSim = -1;
+                _shaderSimThreadGroupSizeX = 0;
+                _shaderSimThreadGroupSizeY = 0;
+                _renderSimProperties = null;
+                enabled = false;
+                return;
+            }
             _renderSimProperties = new PropertyWrapperCompute();
             _needsPrewarmingThisStep = true;
         }
@@ -115,7 +130,7 @@ namespace Crest
 
         public override void BuildCommandBuffer(OceanRenderer ocean, CommandBuffer buf)
         {
-            if (_shader == null || _krnlShaderSim < 0)
+            if (_shader == null || _krnlShaderSim < 0 || _shaderSimThreadGroupSizeX <= 0 || _shaderSimThreadGroupSizeY <= 0)
             {
                 return;
             }
@@ -199,13 +214,18 @@ namespace Crest
                     lodDispatchCount = depth;
                 }
 
-                if (width <= 0 || height <= 0 || lodDispatchCount <= 0)
+                if (width <= 0 || height <= 0 || lodDispatchCount <= 0 ||
+                    lodDispatchCount > ComputeShaderHelpers.MaxDispatchGroupsPerDimension)
                 {
                     continue;
                 }
 
-                int groupsX = (width + THREAD_GROUP_SIZE_X - 1) / THREAD_GROUP_SIZE_X;
-                int groupsY = (height + THREAD_GROUP_SIZE_Y - 1) / THREAD_GROUP_SIZE_Y;
+                int groupsX = ComputeShaderHelpers.DispatchCount(width, _shaderSimThreadGroupSizeX);
+                int groupsY = ComputeShaderHelpers.DispatchCount(height, _shaderSimThreadGroupSizeY);
+                if (groupsX <= 0 || groupsY <= 0)
+                {
+                    continue;
+                }
 
                 buf.DispatchCompute(_shader, krnl_ShaderSim,
                     groupsX,

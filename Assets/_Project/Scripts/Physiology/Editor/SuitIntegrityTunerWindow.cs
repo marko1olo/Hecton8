@@ -179,7 +179,7 @@ namespace Hecton8.Physiology.Editor
             if (!Application.isPlaying)
                 return;
 
-            ShinobuSuitIntegrityRuntime runtime = Object.FindFirstObjectByType<ShinobuSuitIntegrityRuntime>();
+            ShinobuSuitIntegrityRuntime runtime = Object.FindAnyObjectByType<ShinobuSuitIntegrityRuntime>();
             if (runtime == null || !runtime.TryGetVisual(0, out SuitIntegrityVisualDTO visual))
                 return;
 

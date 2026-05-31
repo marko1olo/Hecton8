@@ -876,10 +876,39 @@ namespace Hecton8.AI.Ecosystem
 
         private static int ResolveKernelThreadGroupSizeX(ComputeShader compute, int kernel, bool supportsComputeShaders)
         {
-            if (compute == null || kernel < 0 || !supportsComputeShaders || !compute.IsSupported(kernel))
+            if (compute == null || kernel < 0 || !supportsComputeShaders)
                 return 0;
 
-            compute.GetKernelThreadGroupSizes(kernel, out uint sizeX, out uint sizeY, out uint sizeZ);
+            uint sizeX;
+            uint sizeY;
+            uint sizeZ;
+            try
+            {
+                if (!compute.IsSupported(kernel))
+                    return 0;
+
+                compute.GetKernelThreadGroupSizes(kernel, out sizeX, out sizeY, out sizeZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return 0;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return 0;
+            }
+            catch (System.ArgumentException)
+            {
+                return 0;
+            }
+            catch (UnityEngine.MissingReferenceException)
+            {
+                return 0;
+            }
+            catch (UnityEngine.UnityException)
+            {
+                return 0;
+            }
             if (sizeX == 0u || sizeY != 1u || sizeZ != 1u || sizeX > int.MaxValue)
                 return 0;
 
@@ -889,11 +918,40 @@ namespace Hecton8.AI.Ecosystem
 
         private static int ResolveSupportedKernel(ComputeShader compute, string kernelName, bool supportsComputeShaders)
         {
-            if (compute == null || !supportsComputeShaders || !compute.HasKernel(kernelName))
+            if (compute == null || !supportsComputeShaders)
                 return -1;
 
-            int kernel = compute.FindKernel(kernelName);
-            return kernel >= 0 && compute.IsSupported(kernel) ? kernel : -1;
+            try
+            {
+                if (!compute.HasKernel(kernelName))
+                    return -1;
+
+                int kernel = compute.FindKernel(kernelName);
+                if (kernel < 0)
+                    return -1;
+
+                return compute.IsSupported(kernel) ? kernel : -1;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return -1;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return -1;
+            }
+            catch (System.ArgumentException)
+            {
+                return -1;
+            }
+            catch (MissingReferenceException)
+            {
+                return -1;
+            }
+            catch (UnityException)
+            {
+                return -1;
+            }
         }
 
         private void RefreshGraphicsCapabilitiesCold()
@@ -4668,9 +4726,11 @@ namespace Hecton8.AI.Ecosystem
         private static Thread s_dumpWorker;
         private static AutoResetEvent s_dumpSignal;
         private static NativeArray<byte> s_snapshotBuffer;
+#pragma warning disable CS0414
         private static string s_ownerDumpPath;
         private static string s_h8DumpPath;
         private static string s_agent1419DumpPath;
+#pragma warning restore CS0414
         private static int s_dumpState;
         private static int s_stopRequested;
         private static int s_pendingByteCount;

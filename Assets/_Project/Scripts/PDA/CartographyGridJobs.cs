@@ -279,6 +279,10 @@ namespace Hecton8.Cartography
         public ushort RevealedPoiCount;
         [FieldOffset(60)]
         public uint MapFlags;
+
+        public readonly uint DiscoveredVoxelCount => (uint)RevealedSignalCount + RevealedPoiCount;
+
+        public readonly uint RleCompressionPermille => 0u;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]

@@ -1,0 +1,8 @@
+# SHINOBU_134 / AbyssalShadowCullingRuntime editor shadow profile rules.
+# Parser rule: no header row; columns = profile,min_caster_radius_m,shadow_distance_scale,darkness_threshold_scale,fade_band_scale.
+# Low-tier profiles cull tiny casters early; high/ultra profiles keep long noir silhouettes through existing GlobalQualityWeight scaling.
+toaster_practical,1.40,0.55,1.65,0.75
+low_noir,1.10,0.72,1.35,0.90
+middle_noir,0.70,1.00,1.00,1.00
+high_noir,0.36,1.55,0.72,1.35
+ultra_overkill,0.16,2.25,0.52,1.85

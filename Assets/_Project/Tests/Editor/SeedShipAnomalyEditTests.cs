@@ -19,8 +19,8 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(24, OffsetOf<AnomalyFieldDTO>(nameof(AnomalyFieldDTO.Radius)));
             Assert.AreEqual(28, OffsetOf<AnomalyFieldDTO>(nameof(AnomalyFieldDTO.CorruptionLevel)));
             Assert.AreEqual(32, OffsetOf<AnomalyFieldDTO>(nameof(AnomalyFieldDTO.GlitchHash)));
-            Assert.AreEqual(36, OffsetOf<AnomalyFieldDTO>(nameof(AnomalyFieldDTO._pad0)));
-            Assert.AreEqual(40, OffsetOf<AnomalyFieldDTO>(nameof(AnomalyFieldDTO._pad1)));
+            Assert.AreEqual(36, OffsetOf<AnomalyFieldDTO>("_pad0"));
+            Assert.AreEqual(40, OffsetOf<AnomalyFieldDTO>("_pad1"));
         }
 
         [Test]
@@ -30,7 +30,7 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(0, OffsetOf<GlitchCommandDTO>(nameof(GlitchCommandDTO.Intensity)));
             Assert.AreEqual(4, OffsetOf<GlitchCommandDTO>(nameof(GlitchCommandDTO.Frequency)));
             Assert.AreEqual(8, OffsetOf<GlitchCommandDTO>(nameof(GlitchCommandDTO.GlyphHash)));
-            Assert.AreEqual(12, OffsetOf<GlitchCommandDTO>(nameof(GlitchCommandDTO._pad0)));
+            Assert.AreEqual(12, OffsetOf<GlitchCommandDTO>("_pad0"));
         }
 
         [Test]

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 using static GPUInstancer.GPUIPackageImporterData;
@@ -45,12 +46,22 @@ namespace GPUInstancer
         private static void InitializeData()
         {
             if (_scriptDefines == null)
-                _scriptDefines = PlayerSettings.GetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup).Split(';');
+                _scriptDefines = GetSelectedBuildTargetDefines();
 
             if (_installedPackageInfos == null || _installedPackageInfos.Count == 0)
             {
                 LoadInstalledPackages();
             }
+        }
+
+        private static string[] GetSelectedBuildTargetDefines()
+        {
+#if UNITY_2021_2_OR_NEWER
+            string defines = PlayerSettings.GetScriptingDefineSymbols(NamedBuildTarget.FromBuildTargetGroup(EditorUserBuildSettings.selectedBuildTargetGroup));
+#else
+            string defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(EditorUserBuildSettings.selectedBuildTargetGroup);
+#endif
+            return defines.Split(';');
         }
 
         private static void LoadInstalledPackages()

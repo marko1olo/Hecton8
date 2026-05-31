@@ -1,4 +1,6 @@
 using Hecton8.SaveSystem;
+using System;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,6 +23,7 @@ namespace Hecton8.UI
 
         private CanvasGroup _thumbnailCanvasGroup;
         private CanvasGroup _placeholderCanvasGroup;
+        private CancellationTokenSource _loadCancellationSource;
         private int _loadSequence;
 
         private void Awake()
@@ -30,6 +33,11 @@ namespace Hecton8.UI
         }
 
         private void OnDisable()
+        {
+            AdvanceLoadSequence();
+        }
+
+        private void OnDestroy()
         {
             AdvanceLoadSequence();
         }
@@ -59,22 +67,37 @@ namespace Hecton8.UI
             }
 
             ShowNoThumbnail();
-            _ = LoadThumbnailDeferredAsync(slotName, _loadSequence);
+            CancellationTokenSource loadCancellationSource = CreateLoadCancellationSource();
+            _ = LoadThumbnailDeferredAsync(slotName, _loadSequence, loadCancellationSource);
         }
 
-        private async Awaitable LoadThumbnailDeferredAsync(string slotName, int sequence)
+        private async Awaitable LoadThumbnailDeferredAsync(string slotName, int sequence, CancellationTokenSource loadCancellationSource)
         {
-            Texture2D thumbnailTexture = await SaveThumbnailSystem.LoadThumbnailTextureAsync(slotName, destroyCancellationToken);
-            if (sequence != _loadSequence || destroyCancellationToken.IsCancellationRequested)
-                return;
-
-            if (thumbnailTexture == null)
+            try
             {
-                ShowNoThumbnail();
-                return;
-            }
+                CancellationToken cancellationToken = loadCancellationSource.Token;
+                Texture2D thumbnailTexture = await SaveThumbnailSystem.LoadThumbnailTextureAsync(slotName, cancellationToken);
+                if (sequence != _loadSequence || cancellationToken.IsCancellationRequested || destroyCancellationToken.IsCancellationRequested)
+                    return;
 
-            ShowThumbnail(thumbnailTexture);
+                if (thumbnailTexture == null)
+                {
+                    ShowNoThumbnail();
+                    return;
+                }
+
+                ShowThumbnail(thumbnailTexture);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            finally
+            {
+                if (ReferenceEquals(_loadCancellationSource, loadCancellationSource))
+                    _loadCancellationSource = null;
+
+                loadCancellationSource.Dispose();
+            }
         }
 
         /// <summary>
@@ -139,12 +162,31 @@ namespace Hecton8.UI
 
         private void AdvanceLoadSequence()
         {
+            CancelActiveThumbnailLoad();
             unchecked
             {
                 _loadSequence++;
                 if (_loadSequence == 0)
                     _loadSequence = 1;
             }
+        }
+
+        private CancellationTokenSource CreateLoadCancellationSource()
+        {
+            CancelActiveThumbnailLoad();
+            _loadCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(destroyCancellationToken); // COLD ALLOC: one cancellable thumbnail request owner.
+            return _loadCancellationSource;
+        }
+
+        private void CancelActiveThumbnailLoad()
+        {
+            CancellationTokenSource source = _loadCancellationSource;
+            if (source == null)
+                return;
+
+            _loadCancellationSource = null;
+            if (!source.IsCancellationRequested)
+                source.Cancel();
         }
     }
 }

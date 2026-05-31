@@ -1130,7 +1130,7 @@ namespace Hecton8.Core.Hardware
 
         private void TryRegisterFrostTick()
         {
-            if (_registeredFrostTick)
+            if (_registeredFrostTick || _dispatcher == null)
                 return;
 
             _registeredFrostTick = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Core);
@@ -1147,7 +1147,7 @@ namespace Hecton8.Core.Hardware
 
         private void TryRegisterFrameTick()
         {
-            if (_registeredFrameTick)
+            if (_registeredFrameTick || _dispatcher == null)
                 return;
 
             _registeredFrameTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);

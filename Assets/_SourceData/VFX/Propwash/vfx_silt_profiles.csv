@@ -1,0 +1,8 @@
+# HECTON-8 volumetric silt editor profile.
+# Parser contract: key,value rows. Owner: HectonMarineSnowRenderer -> VolumetricSiltCsvParser.
+particle_count,100000
+curl_noise_strength,0.20
+wake_influence,1.35
+gravity_sinking_speed,0.72
+ambient_silt_size,0.0075
+density_scale,1.08

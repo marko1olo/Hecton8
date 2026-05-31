@@ -436,20 +436,14 @@ MonoBehaviour:
   sigmaScale: 0.45
   impactSpeedToCellDamageScale: 9
   integrityByteToCellDamageScale: 1.15
-  hullImpactDentDecalPrefab: {fileID: 0}
   minimumDentDecalSizeMeters: 0.35
   dentDecalSizeFromSeverityMeters: 0.95
   dentDecalProjectionDepthMeters: 0.18
   dentDecalSurfaceOffsetMeters: 0.015
   dentDecalLifetimeSeconds: 4
-  hullCollisionYieldEnergyJoules: 12000
-  hullCollisionFullDentEnergyJoules: 65000
-  hullCollisionMaxIntegrityDelta: 96
   hullImpactSparkMaterial: {fileID: 0}
   hullImpactSparkMaxParticles: 192
   hullImpactSparkMaxBurstCount: 50
-  hullImpactScratchDecalPrefab: {fileID: 0}
-  hullImpactDecalPoolWarmupCount: 8
   hullCollider: {fileID: 0}
   fluidDynamics: {fileID: 0}
   atmosphereSystem: {fileID: 0}
@@ -494,7 +488,6 @@ MonoBehaviour:
   pumpEnergyWattSecondsPerFill01: 320
   maxCommandBallastBias01: 0.22
   airReleaseAudioFillDeltaThreshold: 0.035
-  mathLodSwitchHoldSeconds: 2.5
   baseCenterOfMassLocal: {x: 0, y: 0, z: 0}
   frontTankLocalPosition: {x: 0, y: -0.35, z: 2.4}
   aftTankLocalPosition: {x: 0, y: -0.35, z: -2.4}

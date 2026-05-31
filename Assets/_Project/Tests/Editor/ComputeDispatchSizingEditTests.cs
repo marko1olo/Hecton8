@@ -1,9 +1,35 @@
+using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 
 namespace Hecton8.Tests.Editor
 {
     public sealed class ComputeDispatchSizingEditTests
     {
+        private const int MaxDispatchGroupsPerDimension = 65535;
+        private const int MaxPortableShaderThreadsPerGroup = 256;
+
+        private static readonly Regex s_defineNumberRegex = new Regex(
+            @"^\s*#define\s+(?<name>[A-Za-z_][A-Za-z0-9_]*)\s+(?<value>[0-9]+)\b",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline);
+        private static readonly Regex s_kernelPragmaRegex = new Regex(
+            @"^\s*#pragma\s+kernel\s+[A-Za-z_][A-Za-z0-9_]*\s*(?<defines>.*)$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline);
+        private static readonly Regex s_pragmaNumberDefineRegex = new Regex(
+            @"(?<name>[A-Za-z_][A-Za-z0-9_]*)=(?<value>[0-9]+)",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex s_numthreadsRegex = new Regex(
+            @"\[\s*numthreads\s*\(\s*(?<x>[^,\)]+)\s*,\s*(?<y>[^,\)]+)\s*,\s*(?<z>[^\)]+)\s*\)\s*\]",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly string[] s_computeShaderSourceRoots =
+        {
+            "Assets/_Project",
+            "Assets/GPUInstancer/Resources/Compute",
+            "Assets/Crest/Crest/Shaders"
+        };
+
         private static readonly int[] s_primeWorkItemCounts =
         {
             1,
@@ -38,9 +64,17 @@ namespace Hecton8.Tests.Editor
                 {
                     int threadGroupSize = s_mobileSafeThreadGroupSizes[groupIndex];
                     int dispatchGroups = CeilDividePositive(workItemCount, threadGroupSize);
+                    long expectedGroups = ((long)workItemCount + threadGroupSize - 1L) / threadGroupSize;
+                    if (expectedGroups > MaxDispatchGroupsPerDimension)
+                    {
+                        Assert.AreEqual(0, dispatchGroups);
+                        continue;
+                    }
+
                     long coveredItems = (long)dispatchGroups * threadGroupSize;
                     long previousCoverage = (long)(dispatchGroups - 1) * threadGroupSize;
 
+                    Assert.AreEqual((int)expectedGroups, dispatchGroups);
                     Assert.Greater(dispatchGroups, 0);
                     Assert.GreaterOrEqual(coveredItems, workItemCount);
                     Assert.Less(previousCoverage, workItemCount);
@@ -57,16 +91,28 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
-        public void DispatchCeilMath_SurvivesLargePrimeWithoutIntOverflow()
+        public void DispatchCeilMath_AllowsLastPortableDispatchGroup()
         {
-            const int workItemCount = 2147483629;
             const int threadGroupSize = 256;
+            const int workItemCount = MaxDispatchGroupsPerDimension * threadGroupSize;
 
             int dispatchGroups = CeilDividePositive(workItemCount, threadGroupSize);
             long coveredItems = (long)dispatchGroups * threadGroupSize;
 
+            Assert.AreEqual(MaxDispatchGroupsPerDimension, dispatchGroups);
             Assert.GreaterOrEqual(coveredItems, workItemCount);
             Assert.Less(coveredItems - workItemCount, threadGroupSize);
+        }
+
+        [Test]
+        public void DispatchCeilMath_RejectsFirstOverPortableDispatchGroup()
+        {
+            const int threadGroupSize = 256;
+            const int workItemCount = MaxDispatchGroupsPerDimension * threadGroupSize + 1;
+
+            int dispatchGroups = CeilDividePositive(workItemCount, threadGroupSize);
+
+            Assert.AreEqual(0, dispatchGroups);
         }
 
         [Test]
@@ -79,6 +125,78 @@ namespace Hecton8.Tests.Editor
             int dispatchGroups = CeilDividePositive(workItemCount, (long)threadGroupSize * frameCount);
 
             Assert.AreEqual(1, dispatchGroups);
+        }
+
+        [Test]
+        public void ComputeShaderSources_DoNotDeclareThreadGroupsAboveMobileBudget()
+        {
+            Dictionary<string, int> sharedDefines = CreateSharedComputeDefines();
+            List<string> failures = new List<string>();
+            int checkedThreadGroups = 0;
+
+            for (int rootIndex = 0; rootIndex < s_computeShaderSourceRoots.Length; rootIndex++)
+            {
+                string root = s_computeShaderSourceRoots[rootIndex];
+                if (!Directory.Exists(root))
+                    continue;
+
+                string[] files = Directory.GetFiles(root, "*.compute", SearchOption.AllDirectories);
+                for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
+                {
+                    string path = files[fileIndex].Replace('\\', '/');
+                    string source = File.ReadAllText(path);
+                    Dictionary<string, int> localDefines = new Dictionary<string, int>(sharedDefines);
+                    MergeNumberDefines(localDefines, source);
+                    List<Dictionary<string, int>> pragmaDefineSets = ResolveKernelPragmaDefineSets(source);
+
+                    MatchCollection declarations = s_numthreadsRegex.Matches(source);
+                    for (int declarationIndex = 0; declarationIndex < declarations.Count; declarationIndex++)
+                    {
+                        Match declaration = declarations[declarationIndex];
+                        for (int pragmaIndex = 0; pragmaIndex < pragmaDefineSets.Count; pragmaIndex++)
+                        {
+                            Dictionary<string, int> pragmaDefines = pragmaDefineSets[pragmaIndex];
+                            if (!TryResolveThreadCount(declaration.Groups["x"].Value, localDefines, pragmaDefines, out int x) ||
+                                !TryResolveThreadCount(declaration.Groups["y"].Value, localDefines, pragmaDefines, out int y) ||
+                                !TryResolveThreadCount(declaration.Groups["z"].Value, localDefines, pragmaDefines, out int z))
+                            {
+                                failures.Add(path + " unresolved numthreads: " + declaration.Value);
+                                continue;
+                            }
+
+                            checkedThreadGroups++;
+                            long product = (long)x * y * z;
+                            if (product > MaxPortableShaderThreadsPerGroup)
+                            {
+                                failures.Add(path + " declares " + product + " threads: " + declaration.Value);
+                            }
+                        }
+                    }
+                }
+            }
+
+            Assert.Greater(checkedThreadGroups, 0);
+            if (failures.Count > 0)
+                Assert.Fail(string.Join("\n", failures));
+        }
+
+        [Test]
+        public void ContentAuthorityValidator_EnforcesSourceLevelComputeThreadGroupBudget()
+        {
+            string source = File.ReadAllText("Assets/_Project/Scripts/Core/Content/Editor/ContentAuthorityBuildValidators.cs");
+
+            Assert.That(source, Does.Contain("ValidateComputeShaderSourceFiles("));
+            Assert.That(source, Does.Contain("Directory.GetFiles(root, \"*.compute\", SearchOption.AllDirectories)"));
+            Assert.That(source, Does.Contain("ValidateComputeShaderSourceThreadGroups("));
+            Assert.That(source, Does.Contain("string validationSource = StripCommentsAndDisabledZeroBlocks(source);"));
+            Assert.That(source, Does.Contain("CreateSharedComputeNumberDefines()"));
+            Assert.That(source, Does.Contain("MergeMaxComputeNumberDefines(defines, CrestOceanConstantsPath)"));
+            Assert.That(source, Does.Contain("MergeMaxComputeNumberDefines(defines, GPUInstancerPlatformDefinesPath)"));
+            Assert.That(source, Does.Contain("Compute shader source thread-group has non-positive dimension"));
+            Assert.That(source, Does.Contain("Compute shader source thread-group exceeds portable Quest/Android/Metal limit"));
+            Assert.That(source, Does.Contain("Compute shader source thread-group exceeds portable Z limit"));
+            Assert.That(source, Does.Contain("Compute shader kernel has non-positive thread-group dimension"));
+            Assert.That(source, Does.Contain("TryResolveComputeThreadCount("));
         }
 
         [Test]
@@ -108,7 +226,8 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("managedBuffer.count >= safeCount && managedData.Length >= safeCount"));
             Assert.That(source, Does.Contain("managedBuffer.SetData(managedData, 0, 0, safeCount)"));
             Assert.That(source, Does.Contain("managedBuffer.count < safeCount"));
-            Assert.That(source, Does.Contain("GetComputeThreadGroupCount(safeCount)"));
+            Assert.That(source, Does.Contain("GetComputeThreadGroupCountForSize(safeCount"));
+            Assert.That(source, Does.Contain("if (dispatchGroups <= 0)"));
             Assert.That(source, Does.Not.Contain("GetComputeThreadGroupCount(count), 1, 1);"));
         }
 
@@ -137,7 +256,7 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("runtimeData.bufferSize < safeCount"));
             Assert.That(source, Does.Contain("runtimeData.transformationMatrixVisibilityBuffer.count < safeCount"));
             Assert.That(source, Does.Contain("runtimeData.instanceLODDataBuffer.count < safeCount"));
-            Assert.That(source, Does.Contain("GetComputeThreadGroupCount(safeInstanceCount)"));
+            Assert.That(source, Does.Contain("GetDispatchThreadGroupCount(safeInstanceCount"));
             Assert.That(source, Does.Not.Contain("GetComputeThreadGroupCount(runtimeData.instanceCount)"));
             Assert.That(source, Does.Not.Contain("GetComputeThreadGroupCount(runtimeData.bufferSize)"));
             Assert.That(source, Does.Contain("BUFFER_PARAMETER_BUFFER_SIZE, safeInstanceCount"));
@@ -171,12 +290,6 @@ namespace Hecton8.Tests.Editor
             int defaultIndex = source.IndexOf("default:", copyToTextureIndex, System.StringComparison.Ordinal);
             int matrixHandlingLocalIndex = source.IndexOf("GPUIMatrixHandlingType matrixHandlingType = GPUInstancerUtility.matrixHandlingType;", System.StringComparison.Ordinal);
             int computeSupportIndex = source.IndexOf("if (SystemInfo.supportsComputeShaders)", System.StringComparison.Ordinal);
-            int visibilityNullGuardIndex = source.IndexOf("if (_visibilityComputeShader == null)", System.StringComparison.Ordinal);
-            int visibilityFindKernelIndex = source.IndexOf("_visibilityComputeShader.FindKernel", System.StringComparison.Ordinal);
-            int cameraNullGuardIndex = source.IndexOf("if (_cameraComputeShader == null || _cameraComputeShaderVR == null)", System.StringComparison.Ordinal);
-            int cameraFindKernelIndex = source.IndexOf("_cameraComputeShader.FindKernel", System.StringComparison.Ordinal);
-            int argsNullGuardIndex = source.IndexOf("if (_argsBufferComputeShader == null)", System.StringComparison.Ordinal);
-            int argsFindKernelIndex = source.IndexOf("_argsBufferComputeShader.FindKernel", System.StringComparison.Ordinal);
 
             Assert.GreaterOrEqual(matrixAppendIndex, 0);
             Assert.Greater(copyToTextureIndex, matrixAppendIndex);
@@ -188,16 +301,23 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("_computeShaderMatrixHandlingType != matrixHandlingType"));
             Assert.That(source, Does.Contain("_computeShaderMatrixHandlingType = matrixHandlingType;"));
             Assert.That(source, Does.Contain("switch (matrixHandlingType)"));
-            Assert.That(source, Does.Contain("if (_bufferToTextureComputeShader == null)"));
-            Assert.That(source, Does.Contain("!_bufferToTextureComputeShader.HasKernel(GPUInstancerConstants.BUFFER_TO_TEXTURE_KERNEL)"));
-            Assert.That(source, Does.Contain("!_bufferToTextureComputeShader.HasKernel(GPUInstancerConstants.BUFFER_TO_TEXTURE_CROSSFADE_KERNEL)"));
             Assert.That(source, Does.Contain("static bool HasAllKernels(ComputeShader shader, string[] kernelNames)"));
+            Assert.That(source, Does.Contain("static bool TryResolveKernelIds(ComputeShader shader, string[] kernelNames, int[] kernelIds)"));
+            Assert.That(source, Does.Contain("static bool TryResolveKernel(ComputeShader shader, string kernelName, out int kernel)"));
+            Assert.That(source, Does.Contain("catch (System.ObjectDisposedException)"));
+            Assert.That(source, Does.Contain("catch (System.InvalidOperationException)"));
+            Assert.That(source, Does.Contain("catch (System.ArgumentException)"));
+            Assert.That(source, Does.Contain("catch (MissingReferenceException)"));
+            Assert.That(source, Does.Contain("catch (UnityException)"));
+            Assert.That(source, Does.Contain("TryResolveKernel("));
+            Assert.That(source, Does.Contain("GPUInstancerConstants.BUFFER_TO_TEXTURE_KERNEL"));
+            Assert.That(source, Does.Contain("GPUInstancerConstants.BUFFER_TO_TEXTURE_CROSSFADE_KERNEL"));
             Assert.That(source, Does.Contain("!HasAllKernels(_visibilityComputeShader, GPUInstancerConstants.VISIBILITY_COMPUTE_KERNELS)"));
             Assert.That(source, Does.Contain("!HasAllKernels(_cameraComputeShaderVR, GPUInstancerConstants.CAMERA_COMPUTE_KERNELS)"));
-            Assert.That(source, Does.Contain("!_argsBufferComputeShader.HasKernel(GPUInstancerConstants.ARGS_BUFFER_DOUBLE_INSTANCE_COUNT_KERNEL)"));
-            Assert.Greater(visibilityFindKernelIndex, visibilityNullGuardIndex);
-            Assert.Greater(cameraFindKernelIndex, cameraNullGuardIndex);
-            Assert.Greater(argsFindKernelIndex, argsNullGuardIndex);
+            Assert.That(source, Does.Contain("TryResolveKernelIds(_visibilityComputeShader, GPUInstancerConstants.VISIBILITY_COMPUTE_KERNELS, _instanceVisibilityComputeKernelIDs)"));
+            Assert.That(source, Does.Contain("TryResolveKernelIds(_cameraComputeShader, GPUInstancerConstants.CAMERA_COMPUTE_KERNELS, _cameraComputeKernelIDs)"));
+            Assert.That(source, Does.Contain("TryResolveKernelIds(_cameraComputeShaderVR, GPUInstancerConstants.CAMERA_COMPUTE_KERNELS, _cameraVRComputeKernelIDs)"));
+            Assert.That(source, Does.Contain("GPUInstancerConstants.ARGS_BUFFER_DOUBLE_INSTANCE_COUNT_KERNEL"));
         }
 
         [Test]
@@ -246,7 +366,7 @@ namespace Hecton8.Tests.Editor
             string method = source.Substring(methodStart, methodEnd - methodStart);
 
             Assert.That(method, Does.Contain("billboardTexture == null || billboardTexture.width <= 0 || billboardTexture.height <= 0"));
-            Assert.That(method, Does.Contain("dilationCompute == null || !dilationCompute.HasKernel(GPUInstancerConstants.COMPUTE_BILLBOARD_DILATION_KERNEL)"));
+            Assert.That(method, Does.Contain("TryFindKernel(dilationCompute, GPUInstancerConstants.COMPUTE_BILLBOARD_DILATION_KERNEL, out int dilationKernel)"));
             Assert.That(method, Does.Contain("RenderTexture previousActive = RenderTexture.active;"));
             Assert.That(method, Does.Contain("try"));
             Assert.That(method, Does.Contain("finally"));
@@ -306,7 +426,7 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("DETAIL_MAP_CAPACITY, detailMapBuffer.count"));
             Assert.That(source, Does.Contain("HEIGHT_MAP_CAPACITY, heightMapBuffer.count"));
             Assert.That(source, Does.Contain("HAS_HEALTHY_DRY_NOISE_TEXTURE, healthyDryNoiseTexture != null ? 1 : 0"));
-            Assert.That(source, Does.Contain("!grassInstantiationComputeShader.HasKernel(GPUInstancerConstants.GRASS_INSTANTIATION_KERNEL)"));
+            Assert.That(source, Does.Contain("TryFindKernel(grassInstantiationComputeShader, GPUInstancerConstants.GRASS_INSTANTIATION_KERNEL, out int grassInstantiationComputeKernelId)"));
         }
 
         [Test]
@@ -326,7 +446,7 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("_argsBufferComputeShader == null || runtimeData == null || runtimeData.argsBuffer == null || runtimeData.argsBuffer.count <= 0"));
             Assert.That(source, Does.Contain("int safeArgsEntryCount = runtimeData.argsBuffer.count / 5;"));
             Assert.That(source, Does.Contain("if (safeArgsEntryCount <= 0)"));
-            Assert.That(source, Does.Contain("GetComputeThreadGroupCount(safeArgsEntryCount)"));
+            Assert.That(source, Does.Contain("GetComputeThreadGroupCountForSize(safeArgsEntryCount"));
             Assert.That(source, Does.Not.Contain("GetComputeThreadGroupCount(count), 1, 1);"));
             Assert.That(source, Does.Contain("ARGS_BUFFER_LENGTH, runtimeData.argsBuffer.count"));
         }
@@ -336,9 +456,11 @@ namespace Hecton8.Tests.Editor
         {
             string treeShader = System.IO.File.ReadAllText("Assets/GPUInstancer/Resources/Compute/CSTreeInstantiationKernel.compute");
             string grassShader = System.IO.File.ReadAllText("Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingGrassInstantiationKernel.compute");
+            string treeSource = System.IO.File.ReadAllText("Assets/GPUInstancer/Scripts/GPUInstancerTreeManager.cs");
 
             Assert.That(treeShader, Does.Contain("if (instanceIndex >= instanceCapacity)"));
             Assert.That(treeShader, Does.Contain("InterlockedAdd(counterBuffer[0], 0xffffffffu, ignoredCounterValue);"));
+            Assert.That(treeSource, Does.Contain("TryFindKernel(_treeInstantiationComputeShader, GPUInstancerConstants.TREE_INSTANTIATION_KERNEL, out _treeInstantiationKernelId)"));
             Assert.That(grassShader, Does.Contain("if (index >= instanceCapacity)"));
             Assert.That(grassShader, Does.Contain("InterlockedAdd(counterBuffer[0], 0xffffffffu, ignoredCounterValue);"));
         }
@@ -513,11 +635,13 @@ namespace Hecton8.Tests.Editor
             Assert.That(method, Does.Contain("int height = dst.height;"));
             Assert.That(method, Does.Contain("int depth = dst.volumeDepth;"));
             Assert.That(method, Does.Contain("krnl_ClearToBlack < 0 || width <= 0 || height <= 0 || depth <= 0"));
-            Assert.That(method, Does.Contain("int groupsX = (width + LodDataMgr.THREAD_GROUP_SIZE_X - 1) / LodDataMgr.THREAD_GROUP_SIZE_X;"));
-            Assert.That(method, Does.Contain("int groupsY = (height + LodDataMgr.THREAD_GROUP_SIZE_Y - 1) / LodDataMgr.THREAD_GROUP_SIZE_Y;"));
+            Assert.That(method, Does.Contain("depth > ComputeShaderHelpers.MaxDispatchGroupsPerDimension"));
+            Assert.That(method, Does.Contain("int groupsX = ComputeShaderHelpers.DispatchCount(width, s_clearToBlackThreadGroupSizeX);"));
+            Assert.That(method, Does.Contain("int groupsY = ComputeShaderHelpers.DispatchCount(height, s_clearToBlackThreadGroupSizeY);"));
+            Assert.That(method, Does.Contain("if (groupsX <= 0 || groupsY <= 0)"));
             Assert.That(method, Does.Not.Contain("OceanRenderer.Instance.LodDataResolution / LodDataMgr.THREAD_GROUP_SIZE_X"));
             Assert.That(method, Does.Not.Contain("OceanRenderer.Instance.LodDataResolution / LodDataMgr.THREAD_GROUP_SIZE_Y"));
-            Assert.That(source, Does.Contain("s_clearToBlackShader != null && s_clearToBlackShader.HasKernel(CLEAR_TO_BLACK_SHADER_NAME)"));
+            Assert.That(source, Does.Contain("TryFindKernel(s_clearToBlackShader, CLEAR_TO_BLACK_SHADER_NAME, out krnl_ClearToBlack)"));
             Assert.That(source, Does.Contain("krnl_ClearToBlack = -1;"));
         }
 
@@ -555,16 +679,19 @@ namespace Hecton8.Tests.Editor
             Assert.That(gerstnerMethod, Does.Contain("int width = _waveBuffers.width;"));
             Assert.That(gerstnerMethod, Does.Contain("int height = _waveBuffers.height;"));
             Assert.That(gerstnerMethod, Does.Contain("int depth = _waveBuffers.volumeDepth;"));
-            Assert.That(gerstnerMethod, Does.Contain("int groupsX = (width + LodDataMgr.THREAD_GROUP_SIZE_X - 1) / LodDataMgr.THREAD_GROUP_SIZE_X;"));
-            Assert.That(gerstnerMethod, Does.Contain("int groupsY = (height + LodDataMgr.THREAD_GROUP_SIZE_Y - 1) / LodDataMgr.THREAD_GROUP_SIZE_Y;"));
+            Assert.That(gerstnerMethod, Does.Contain("cascadeCount > ComputeShaderHelpers.MaxDispatchGroupsPerDimension"));
+            Assert.That(gerstnerMethod, Does.Contain("int groupsX = ComputeShaderHelpers.DispatchCount(width, _gerstnerThreadGroupSizeX);"));
+            Assert.That(gerstnerMethod, Does.Contain("int groupsY = ComputeShaderHelpers.DispatchCount(height, _gerstnerThreadGroupSizeY);"));
+            Assert.That(gerstnerMethod, Does.Contain("if (groupsX <= 0 || groupsY <= 0)"));
             Assert.That(gerstnerMethod, Does.Not.Contain("_waveBuffers.width / LodDataMgr.THREAD_GROUP_SIZE_X"));
             Assert.That(gerstnerMethod, Does.Not.Contain("_waveBuffers.height / LodDataMgr.THREAD_GROUP_SIZE_Y"));
 
             Assert.That(animMethod, Does.Contain("var dataTexture = DataTexture;"));
             Assert.That(animMethod, Does.Contain("int width = dataTexture.width;"));
             Assert.That(animMethod, Does.Contain("int height = dataTexture.height;"));
-            Assert.That(animMethod, Does.Contain("int groupsX = (width + THREAD_GROUP_SIZE_X - 1) / THREAD_GROUP_SIZE_X;"));
-            Assert.That(animMethod, Does.Contain("int groupsY = (height + THREAD_GROUP_SIZE_Y - 1) / THREAD_GROUP_SIZE_Y;"));
+            Assert.That(animMethod, Does.Contain("int groupsX = ComputeShaderHelpers.DispatchCount(width, _combineThreadGroupSizeX);"));
+            Assert.That(animMethod, Does.Contain("int groupsY = ComputeShaderHelpers.DispatchCount(height, _combineThreadGroupSizeY);"));
+            Assert.That(animMethod, Does.Contain("if (groupsX <= 0 || groupsY <= 0)"));
             Assert.That(animMethod, Does.Not.Contain("OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_X"));
             Assert.That(animMethod, Does.Not.Contain("OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_Y"));
 
@@ -572,8 +699,10 @@ namespace Hecton8.Tests.Editor
             Assert.That(persistentDispatchWindow, Does.Contain("int height = current != null ? current.height : 0;"));
             Assert.That(persistentDispatchWindow, Does.Contain("int depth = current != null ? current.volumeDepth : 0;"));
             Assert.That(persistentDispatchWindow, Does.Contain("int lodDispatchCount = OceanRenderer.Instance.CurrentLodCount;"));
-            Assert.That(persistentDispatchWindow, Does.Contain("int groupsX = (width + THREAD_GROUP_SIZE_X - 1) / THREAD_GROUP_SIZE_X;"));
-            Assert.That(persistentDispatchWindow, Does.Contain("int groupsY = (height + THREAD_GROUP_SIZE_Y - 1) / THREAD_GROUP_SIZE_Y;"));
+            Assert.That(persistentDispatchWindow, Does.Contain("lodDispatchCount > ComputeShaderHelpers.MaxDispatchGroupsPerDimension"));
+            Assert.That(persistentDispatchWindow, Does.Contain("int groupsX = ComputeShaderHelpers.DispatchCount(width, _shaderSimThreadGroupSizeX);"));
+            Assert.That(persistentDispatchWindow, Does.Contain("int groupsY = ComputeShaderHelpers.DispatchCount(height, _shaderSimThreadGroupSizeY);"));
+            Assert.That(persistentDispatchWindow, Does.Contain("if (groupsX <= 0 || groupsY <= 0)"));
             Assert.That(persistentDispatchWindow, Does.Not.Contain("OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_X"));
             Assert.That(persistentDispatchWindow, Does.Not.Contain("OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_Y"));
 
@@ -600,10 +729,7 @@ namespace Hecton8.Tests.Editor
             string underwaterMaskSource = System.IO.File.ReadAllText("Assets/Crest/Crest/Scripts/Underwater/UnderwaterRenderer.Mask.cs");
             string queryBaseSource = System.IO.File.ReadAllText("Assets/Crest/Crest/Scripts/Collision/QueryBase.cs");
 
-            int persistentHasKernelIndex = persistentSource.IndexOf("!_shader.HasKernel(ShaderSim)", System.StringComparison.Ordinal);
-            int persistentFindKernelIndex = persistentSource.IndexOf("_krnlShaderSim = _shader.FindKernel(ShaderSim);", System.StringComparison.Ordinal);
-            Assert.GreaterOrEqual(persistentHasKernelIndex, 0);
-            Assert.Greater(persistentFindKernelIndex, persistentHasKernelIndex);
+            Assert.That(persistentSource, Does.Contain("TryFindKernel(_shader, ShaderSim, out _krnlShaderSim)"));
             Assert.That(persistentSource, Does.Contain("protected int _krnlShaderSim = -1;"));
             Assert.That(persistentSource, Does.Contain("_renderSimProperties = null;"));
             Assert.That(persistentSource, Does.Contain("if (_shader == null || _krnlShaderSim < 0)"));
@@ -612,38 +738,54 @@ namespace Hecton8.Tests.Editor
             Assert.That(dynWavesSource, Does.Not.Contain("_shader.FindKernel(ShaderSim)"));
             Assert.That(foamSource, Does.Not.Contain("_shader.FindKernel(ShaderSim)"));
 
-            int gerstnerHasKernelIndex = gerstnerSource.IndexOf("!_shaderGerstner.HasKernel(\"Gerstner\")", System.StringComparison.Ordinal);
-            int gerstnerFindKernelIndex = gerstnerSource.IndexOf("_krnlGerstner = _shaderGerstner.FindKernel(\"Gerstner\");", System.StringComparison.Ordinal);
-            Assert.GreaterOrEqual(gerstnerHasKernelIndex, 0);
-            Assert.Greater(gerstnerFindKernelIndex, gerstnerHasKernelIndex);
+            Assert.That(gerstnerSource, Does.Contain("TryFindKernel(_shaderGerstner, \"Gerstner\", out _krnlGerstner)"));
             Assert.That(gerstnerSource, Does.Contain("if (_shaderGerstner == null || _krnlGerstner < 0)"));
             Assert.That(gerstnerSource, Does.Contain("if (_shaderGerstner == null || _krnlGerstner < 0 || _waveBuffers == null)"));
 
             Assert.That(animSource, Does.Contain("static bool TryFindCombineKernel(ComputeShader shader, string kernelName, out int kernel)"));
-            Assert.That(animSource, Does.Contain("shader == null || !shader.HasKernel(kernelName)"));
-            Assert.That(animSource, Does.Contain("kernel = shader.FindKernel(kernelName);"));
+            Assert.That(animSource, Does.Contain("return ComputeShaderHelpers.TryFindKernel(shader, kernelName, out kernel);"));
             Assert.That(animSource, Does.Contain("else if (_combineShader == null || _combineProperties == null)"));
             Assert.That(animSource, Does.Contain("_waveBuffers?.Release();"));
             Assert.That(animSource, Does.Contain("_combineBuffer?.Release();"));
             Assert.That(animSource, Does.Contain("if (_combineMaterial == null)"));
 
-            int maskHasKernelIndex = underwaterMaskSource.IndexOf("!_fixMaskComputeShader.HasKernel(k_ComputeShaderKernelFillMaskArtefacts)", System.StringComparison.Ordinal);
-            int maskFindKernelIndex = underwaterMaskSource.IndexOf("_fixMaskKernel = _fixMaskComputeShader.FindKernel(k_ComputeShaderKernelFillMaskArtefacts);", System.StringComparison.Ordinal);
-            Assert.GreaterOrEqual(maskHasKernelIndex, 0);
-            Assert.Greater(maskFindKernelIndex, maskHasKernelIndex);
+            Assert.That(underwaterMaskSource, Does.Contain("TryFindKernel(_fixMaskComputeShader, k_ComputeShaderKernelFillMaskArtefacts, out _fixMaskKernel)"));
             Assert.That(underwaterMaskSource, Does.Contain("_fixMaskThreadGroupSizeX == 0 || _fixMaskThreadGroupSizeY == 0"));
             Assert.That(underwaterMaskSource, Does.Contain("int groupsX = (int)(((long)descriptor.width + _fixMaskThreadGroupSizeX - 1L) / _fixMaskThreadGroupSizeX);"));
             Assert.That(underwaterMaskSource, Does.Contain("int groupsY = (int)(((long)descriptor.height + _fixMaskThreadGroupSizeY - 1L) / _fixMaskThreadGroupSizeY);"));
             Assert.That(underwaterMaskSource, Does.Not.Contain("Mathf.CeilToInt((float)descriptor.width / _fixMaskThreadGroupSizeX)"));
             Assert.That(underwaterMaskSource, Does.Not.Contain("Mathf.CeilToInt((float)descriptor.height / _fixMaskThreadGroupSizeY)"));
 
-            int queryHasKernelIndex = queryBaseSource.IndexOf("!_shaderProcessQueries.HasKernel(QueryKernelName)", System.StringComparison.Ordinal);
-            int queryFindKernelIndex = queryBaseSource.IndexOf("_kernelHandle = _shaderProcessQueries.FindKernel(QueryKernelName);", System.StringComparison.Ordinal);
-            Assert.GreaterOrEqual(queryHasKernelIndex, 0);
-            Assert.Greater(queryFindKernelIndex, queryHasKernelIndex);
+            Assert.That(queryBaseSource, Does.Contain("TryFindKernel(_shaderProcessQueries, QueryKernelName, out _kernelHandle)"));
             Assert.That(queryBaseSource, Does.Contain("protected int _kernelHandle = -1;"));
             Assert.That(queryBaseSource, Does.Contain("_shaderProcessQueries = null;"));
             Assert.That(queryBaseSource, Does.Contain("if (_shaderProcessQueries == null || _kernelHandle < 0 || _wrapper == null || _computeBufQueries == null || _computeBufResults == null)"));
+        }
+
+        [Test]
+        public void Echelon7RenderComputeKernelResolution_FailsClosedBeforeThreadGroupQuery()
+        {
+            string cullingSource = System.IO.File.ReadAllText("Assets/_Project/Scripts/Graphics/Culling/InstanceCullingService.cs");
+            string oceanSource = System.IO.File.ReadAllText("Assets/_Project/Scripts/Rendering/OceanSinglePass/HectonSinglePassOceanFeature.cs");
+            string bilateralSource = System.IO.File.ReadAllText("Assets/_Project/Scripts/Rendering/BilateralDrs/HectonBilateralDrsUpscalerFeature.cs");
+            string volumetricLightSource = System.IO.File.ReadAllText("Assets/_Project/Scripts/Visor/VolumetricLightFeature.cs");
+            string voxelSsaoSource = System.IO.File.ReadAllText("Assets/_Project/Scripts/Visor/HectonVoxelSsaoFeature.cs");
+            string biolumSsgiSource = System.IO.File.ReadAllText("Assets/_Project/Scripts/Visor/HectonBiolumSSGIFeature.cs");
+            string visorFluidSource = System.IO.File.ReadAllText("Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs");
+            string fogSource = System.IO.File.ReadAllText("Assets/_Project/Scripts/Visor/HectonVolumetricParticulateFogFeature.cs");
+            string scooterSource = System.IO.File.ReadAllText("Assets/_Project/Scripts/Visor/HectonScooterVolumetricShaftsFeature.cs");
+
+            Assert.That(cullingSource, Does.Contain("TryFindKernel(_activeComputeShader, \"CullInstances\", out int cullKernel)"));
+            Assert.That(bilateralSource, Does.Contain("!TryFindKernel(computeShader, ClearKernelName, out int clearKernel)"));
+            Assert.That(bilateralSource, Does.Contain("!TryFindKernel(computeShader, SobelKernelName, out int sobelKernel)"));
+            Assert.That(fogSource, Does.Contain("!TryFindKernel(_computeShader, GridBuildKernelName, out _gridBuildKernel)"));
+            Assert.That(scooterSource, Does.Contain("!TryFindKernel(_autoExposureComputeShader, \"ClearHistogram\", out int clearHistogramKernel)"));
+
+            AssertGuardedLookupPrecedesThreadGroupQuery(oceanSource, "private static int ResolveKernel", "compute.HasKernel(name)", "compute.GetKernelThreadGroupSizes");
+            AssertGuardedLookupPrecedesThreadGroupQuery(volumetricLightSource, "private static bool TryResolveKernel", "computeShader.HasKernel(kernelName)", "computeShader.GetKernelThreadGroupSizes");
+            AssertGuardedLookupPrecedesThreadGroupQuery(voxelSsaoSource, "private static bool TryResolveKernel", "computeShader.HasKernel(kernelName)", "computeShader.GetKernelThreadGroupSizes");
+            AssertGuardedLookupPrecedesThreadGroupQuery(biolumSsgiSource, "private static bool TryResolveKernel", "computeShader.HasKernel(kernelName)", "computeShader.GetKernelThreadGroupSizes");
+            AssertGuardedLookupPrecedesThreadGroupQuery(visorFluidSource, "private void ResolveLensComputeKernel", "_lensComputeShader.HasKernel(\"ResolveDiegeticVisorLensMask\")", "_lensComputeShader.GetKernelThreadGroupSizes");
         }
 
         [Test]
@@ -659,9 +801,10 @@ namespace Hecton8.Tests.Editor
 
             Assert.That(method, Does.Contain("var frameCount = (int)(resolutionTime * loopPeriod);"));
             Assert.That(method, Does.Contain("fftWaves == null || fftWaves._resolution <= 0 || lodCount <= 0 || frameCount <= 0"));
-            Assert.That(method, Does.Contain("waveCombineShader == null || !waveCombineShader.HasKernel(\"FFTBakeMultiRes\")"));
-            Assert.That(method, Does.Contain("var groupsX = (bakedWaves.width + 7) / 8;"));
-            Assert.That(method, Does.Contain("var groupsY = (bakedWaves.height + 7) / 8;"));
+            Assert.That(method, Does.Contain("TryFindKernel(waveCombineShader, \"FFTBakeMultiRes\", out int kernel)"));
+            Assert.That(method, Does.Contain("var groupsX = ComputeShaderHelpers.DispatchCount(bakedWaves.width, bakeThreadGroupSizeX);"));
+            Assert.That(method, Does.Contain("var groupsY = ComputeShaderHelpers.DispatchCount(bakedWaves.height, bakeThreadGroupSizeY);"));
+            Assert.That(method, Does.Contain("if (groupsX <= 0 || groupsY <= 0)"));
             Assert.That(method, Does.Contain("buf.DispatchCompute(waveCombineShader, kernel, groupsX, groupsY, 1);"));
             Assert.That(method, Does.Contain("finally"));
             Assert.That(method, Does.Contain("buf.Release();"));
@@ -695,12 +838,16 @@ namespace Hecton8.Tests.Editor
             string updateMethod = source.Substring(updateStart, fftStart - updateStart);
 
             Assert.That(initMethod, Does.Contain("if (_resolution <= 0)"));
-            Assert.That(initMethod, Does.Contain("int groups = (int)(((long)_resolution + 7L) / 8L);"));
-            Assert.That(initMethod, Does.Contain("buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, groups, groups, CASCADE_COUNT);"));
+            Assert.That(initMethod, Does.Contain("int groupsX = ComputeShaderHelpers.DispatchCount(_resolution, _spectrumInitThreadGroupSizeX);"));
+            Assert.That(initMethod, Does.Contain("int groupsY = ComputeShaderHelpers.DispatchCount(_resolution, _spectrumInitThreadGroupSizeY);"));
+            Assert.That(initMethod, Does.Contain("if (groupsX <= 0 || groupsY <= 0)"));
+            Assert.That(initMethod, Does.Contain("buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, groupsX, groupsY, CASCADE_COUNT);"));
             Assert.That(initMethod, Does.Not.Contain("_resolution / 8"));
             Assert.That(updateMethod, Does.Contain("if (_resolution <= 0)"));
-            Assert.That(updateMethod, Does.Contain("int groups = (int)(((long)_resolution + 7L) / 8L);"));
-            Assert.That(updateMethod, Does.Contain("buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, groups, groups, CASCADE_COUNT);"));
+            Assert.That(updateMethod, Does.Contain("int groupsX = ComputeShaderHelpers.DispatchCount(_resolution, _spectrumUpdateThreadGroupSizeX);"));
+            Assert.That(updateMethod, Does.Contain("int groupsY = ComputeShaderHelpers.DispatchCount(_resolution, _spectrumUpdateThreadGroupSizeY);"));
+            Assert.That(updateMethod, Does.Contain("if (groupsX <= 0 || groupsY <= 0)"));
+            Assert.That(updateMethod, Does.Contain("buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, groupsX, groupsY, CASCADE_COUNT);"));
             Assert.That(updateMethod, Does.Not.Contain("_resolution / 8"));
 
             Assert.That(source, Does.Contain("public const int MIN_SUPPORTED_RESOLUTION = 16;"));
@@ -708,9 +855,9 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("static bool IsSupportedResolution(int resolution)"));
             Assert.That(source, Does.Contain("return Mathf.Clamp(powerOfTwoResolution, MIN_SUPPORTED_RESOLUTION, MAX_SUPPORTED_RESOLUTION);"));
             Assert.That(source, Does.Contain("resolution = ClampSupportedResolution(resolution);"));
-            Assert.That(source, Does.Contain("_shaderSpectrum == null || _shaderFFT == null ||"));
-            Assert.That(source, Does.Contain("!_shaderSpectrum.HasKernel(\"SpectrumInitalize\")"));
-            Assert.That(source, Does.Contain("!_shaderSpectrum.HasKernel(\"SpectrumUpdate\")"));
+            Assert.That(source, Does.Contain("_shaderFFT == null ||"));
+            Assert.That(source, Does.Contain("TryFindKernel(_shaderSpectrum, \"SpectrumInitalize\", out _kernelSpectrumInit)"));
+            Assert.That(source, Does.Contain("TryFindKernel(_shaderSpectrum, \"SpectrumUpdate\", out _kernelSpectrumUpdate)"));
             Assert.That(source, Does.Contain("if (!_isInitialised)"));
             Assert.That(source, Does.Contain("if (!IsSupportedResolution(_resolution))"));
             Assert.That(shapeFftSource, Does.Contain("protected override int MaximumResolution => FFTCompute.MAX_SUPPORTED_RESOLUTION;"));
@@ -754,13 +901,105 @@ namespace Hecton8.Tests.Editor
             return CeilDividePositive(value, (long)(divisor > 0 ? divisor : 1));
         }
 
+        private static Dictionary<string, int> CreateSharedComputeDefines()
+        {
+            Dictionary<string, int> defines = new Dictionary<string, int>();
+            MergeMaxNumberDefines(defines, "Assets/Crest/Crest/Shaders/OceanConstants.hlsl");
+            MergeMaxNumberDefines(defines, "Assets/GPUInstancer/Resources/Compute/Include/PlatformDefines.hlsl");
+            return defines;
+        }
+
+        private static void MergeMaxNumberDefines(Dictionary<string, int> defines, string path)
+        {
+            if (!File.Exists(path))
+                return;
+
+            MatchCollection matches = s_defineNumberRegex.Matches(File.ReadAllText(path));
+            for (int i = 0; i < matches.Count; i++)
+            {
+                string name = matches[i].Groups["name"].Value;
+                int value = int.Parse(matches[i].Groups["value"].Value, System.Globalization.CultureInfo.InvariantCulture);
+                if (!defines.TryGetValue(name, out int existing) || value > existing)
+                    defines[name] = value;
+            }
+        }
+
+        private static void MergeNumberDefines(Dictionary<string, int> defines, string source)
+        {
+            MatchCollection matches = s_defineNumberRegex.Matches(source);
+            for (int i = 0; i < matches.Count; i++)
+            {
+                string name = matches[i].Groups["name"].Value;
+                int value = int.Parse(matches[i].Groups["value"].Value, System.Globalization.CultureInfo.InvariantCulture);
+                defines[name] = value;
+            }
+        }
+
+        private static List<Dictionary<string, int>> ResolveKernelPragmaDefineSets(string source)
+        {
+            List<Dictionary<string, int>> result = new List<Dictionary<string, int>>();
+            MatchCollection pragmas = s_kernelPragmaRegex.Matches(source);
+            for (int pragmaIndex = 0; pragmaIndex < pragmas.Count; pragmaIndex++)
+            {
+                Dictionary<string, int> defines = new Dictionary<string, int>();
+                MatchCollection pairs = s_pragmaNumberDefineRegex.Matches(pragmas[pragmaIndex].Groups["defines"].Value);
+                for (int pairIndex = 0; pairIndex < pairs.Count; pairIndex++)
+                {
+                    defines[pairs[pairIndex].Groups["name"].Value] = int.Parse(
+                        pairs[pairIndex].Groups["value"].Value,
+                        System.Globalization.CultureInfo.InvariantCulture);
+                }
+
+                if (defines.Count > 0)
+                    result.Add(defines);
+            }
+
+            if (result.Count == 0)
+                result.Add(new Dictionary<string, int>());
+
+            return result;
+        }
+
+        private static bool TryResolveThreadCount(
+            string token,
+            Dictionary<string, int> localDefines,
+            Dictionary<string, int> pragmaDefines,
+            out int value)
+        {
+            token = token.Trim();
+            if (int.TryParse(token, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out value))
+                return true;
+
+            if (pragmaDefines.TryGetValue(token, out value))
+                return true;
+
+            if (localDefines.TryGetValue(token, out value))
+                return true;
+
+            value = 0;
+            return false;
+        }
+
         private static int CeilDividePositive(int value, long divisor)
         {
             if (value <= 0 || divisor <= 0)
                 return 0;
 
             long dispatchGroups = ((long)value + divisor - 1L) / divisor;
-            return dispatchGroups > int.MaxValue ? int.MaxValue : (int)dispatchGroups;
+            return dispatchGroups > MaxDispatchGroupsPerDimension ? 0 : (int)dispatchGroups;
+        }
+
+        private static void AssertGuardedLookupPrecedesThreadGroupQuery(string source, string methodNeedle, string lookupNeedle, string queryNeedle)
+        {
+            int methodStart = source.IndexOf(methodNeedle, System.StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodStart, 0, methodNeedle);
+            int tryStart = source.IndexOf("try", methodStart, System.StringComparison.Ordinal);
+            int lookupIndex = source.IndexOf(lookupNeedle, methodStart, System.StringComparison.Ordinal);
+            int queryIndex = source.IndexOf(queryNeedle, methodStart, System.StringComparison.Ordinal);
+
+            Assert.GreaterOrEqual(tryStart, 0, methodNeedle);
+            Assert.Greater(lookupIndex, tryStart, lookupNeedle);
+            Assert.Greater(queryIndex, lookupIndex, queryNeedle);
         }
 
         private static ComplexSample[] RunSingleElementPerThreadFft(ComplexSample[] input, ComplexSample[,] butterflies, int size, int passes)

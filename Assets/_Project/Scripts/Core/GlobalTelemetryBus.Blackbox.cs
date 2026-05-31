@@ -877,21 +877,9 @@ namespace Hecton8.Core
             if (vault != null && _blackboxVaultGuardHeld)
                 TryReleaseBlackboxVaultGuardNoThrow(vault);
 
-            if (vault != null)
-            {
-                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxBytesHandle);
-                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxDumpScratchHandle);
-                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxDumpHeaderHandle);
-                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxEventsHandle);
-                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxSourcesHandle);
-                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxLoggingMasksHandle);
-                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxAtomicStateHandle);
-                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxWatchdogCountersHandle);
-                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxWatchdogSamplesHandle);
-                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxWatchdogStaleProbesHandle);
-                TryReleaseBlackboxVaultBufferNoThrow(vault, in _blackboxWatchdogActiveHandle);
-            }
-
+            // DataVault owns the blackbox storage. Assembly/domain reload teardown must only
+            // detach handles here; freeing vault blocks from this secondary owner can race the
+            // vault arena reset path and crash inside UnsafeUtility.MemClear.
             ClearBlackboxVaultBindingsNoLock();
         }
 
@@ -1164,16 +1152,23 @@ namespace Hecton8.Core
 
         private static void RequestBlackboxEmergencyDumpAsync(uint fatalHash)
         {
-            uint safeFatalHash = fatalHash == 0u ? BlackboxEmergencyFlushHash : fatalHash;
-            SetCatastrophicFailure(safeFatalHash);
-            if (Interlocked.CompareExchange(ref _blackboxDumpWritten, 1, 0) != 0)
-                return;
+            try
+            {
+                uint safeFatalHash = fatalHash == 0u ? BlackboxEmergencyFlushHash : fatalHash;
+                SetCatastrophicFailure(safeFatalHash);
+                if (Interlocked.CompareExchange(ref _blackboxDumpWritten, 1, 0) != 0)
+                    return;
 
-            bool wrote = Thread.CurrentThread.ManagedThreadId == _mainThreadId
-                ? TryWriteBlackboxDumpSynchronous(safeFatalHash)
-                : TryWriteBlackboxDumpFromBackground(safeFatalHash);
-            if (!wrote)
+                bool wrote = Thread.CurrentThread.ManagedThreadId == _mainThreadId
+                    ? TryWriteBlackboxDumpSynchronous(safeFatalHash)
+                    : TryWriteBlackboxDumpFromBackground(safeFatalHash);
+                if (!wrote)
+                    Interlocked.Exchange(ref _blackboxDumpWritten, 0);
+            }
+            catch (Exception)
+            {
                 Interlocked.Exchange(ref _blackboxDumpWritten, 0);
+            }
         }
 
         private static bool TryWriteBlackboxDumpFromBackground(uint fatalHash)
@@ -1208,12 +1203,19 @@ namespace Hecton8.Core
         {
             lock (_blackboxDumpGate)
             {
-                if (!TryReadBlackboxFrameBounds(out int validFrames, out int activeFrames, out int writeIndex))
-                    return false;
+                try
+                {
+                    if (!TryReadBlackboxFrameBounds(out int validFrames, out int activeFrames, out int writeIndex))
+                        return false;
 
-                int payloadBytes = WriteBlackboxDumpHeader(fatalHash, DateTime.UtcNow, validFrames, activeFrames);
-                return payloadBytes > BlackboxDumpHeaderBytes &&
-                       TryStageAndWriteBlackboxDump(validFrames, activeFrames, writeIndex, payloadBytes);
+                    int payloadBytes = WriteBlackboxDumpHeader(fatalHash, DateTime.UtcNow, validFrames, activeFrames);
+                    return payloadBytes > BlackboxDumpHeaderBytes &&
+                           TryStageAndWriteBlackboxDump(validFrames, activeFrames, writeIndex, payloadBytes);
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
             }
         }
 
@@ -1266,41 +1268,53 @@ namespace Hecton8.Core
 
         private static unsafe int WriteBlackboxDumpHeader(uint fatalHash, DateTime generatedUtc, int validFrames, int activeFrames)
         {
-            if (!TryOpenBlackboxBufferForOwner(in _blackboxDumpHeaderHandle, out NativeArray<byte> dumpHeader))
+            if (!TryOpenBlackboxBufferForOwner(in _blackboxDumpHeaderHandle, out NativeArray<byte> dumpHeader) ||
+                !dumpHeader.IsCreated ||
+                dumpHeader.Length < BlackboxDumpHeaderBytes)
                 return 0;
 
-            int payloadBytes = validFrames * BlackboxFrameStrideBytes;
-            byte* headerPtr = (byte*)dumpHeader.GetUnsafePtr();
-            UnsafeUtility.MemClear(headerPtr, BlackboxDumpHeaderBytes);
+            try
+            {
+                int payloadBytes = validFrames * BlackboxFrameStrideBytes;
+                byte* headerPtr = (byte*)dumpHeader.GetUnsafePtr();
+                if (headerPtr == null)
+                    return 0;
 
-            TelemetryHeaderDTO prefix = default;
-            prefix.Timestamp = unchecked((ulong)generatedUtc.Ticks);
-            prefix.FrameNumber = unchecked((uint)math.max(0, Volatile.Read(ref _blackboxTotalFrameWrites)));
-            prefix.FatalHash = fatalHash == 0u ? unchecked((uint)ReadBlackboxAtomic(1)) : fatalHash;
-            UnsafeUtility.CopyStructureToPtr(ref prefix, headerPtr);
+                UnsafeUtility.MemClear(headerPtr, BlackboxDumpHeaderBytes);
 
-            uint* metadata = (uint*)(headerPtr + BlackboxHeaderPrefixBytes);
-            metadata[0] = BlackboxDumpMagic;
-            metadata[1] = BlackboxDumpVersion;
-            metadata[2] = BlackboxDumpHeaderBytes;
-            metadata[3] = unchecked((uint)validFrames);
-            metadata[4] = BlackboxFrameStrideBytes;
-            metadata[5] = unchecked((uint)payloadBytes);
-            metadata[6] = _blackboxAppVersionHash;
-            metadata[7] = unchecked((uint)activeFrames);
-            metadata[8] = unchecked((uint)Volatile.Read(ref _blackboxSourceCount));
-            metadata[9] = unchecked((uint)Volatile.Read(ref _blackboxEventWriteCursor));
-            metadata[10] = unchecked((uint)BlackboxHashHistoryOffsetBytes);
-            metadata[11] = unchecked((uint)BlackboxSourcePayloadOffsetBytes);
-            metadata[12] = unchecked((uint)BlackboxMockPhysicsOffsetBytes);
-            metadata[13] = unchecked((uint)BlackboxMockOriginOffsetBytes);
-            ulong lastHash = unchecked((ulong)Volatile.Read(ref _blackboxLastDeterminismHash64));
-            metadata[14] = unchecked((uint)lastHash);
-            metadata[15] = unchecked((uint)(lastHash >> 32));
-            metadata[16] = unchecked((uint)BlackboxCacheLineBytes);
-            metadata[17] = unchecked((uint)BlackboxHeaderPadBytes);
-            metadata[18] = unchecked((uint)BlackboxHashHistoryPadBytes);
-            return payloadBytes + BlackboxDumpHeaderBytes;
+                TelemetryHeaderDTO prefix = default;
+                prefix.Timestamp = unchecked((ulong)generatedUtc.Ticks);
+                prefix.FrameNumber = unchecked((uint)math.max(0, Volatile.Read(ref _blackboxTotalFrameWrites)));
+                prefix.FatalHash = fatalHash == 0u ? unchecked((uint)ReadBlackboxAtomic(1)) : fatalHash;
+                UnsafeUtility.CopyStructureToPtr(ref prefix, headerPtr);
+
+                uint* metadata = (uint*)(headerPtr + BlackboxHeaderPrefixBytes);
+                metadata[0] = BlackboxDumpMagic;
+                metadata[1] = BlackboxDumpVersion;
+                metadata[2] = BlackboxDumpHeaderBytes;
+                metadata[3] = unchecked((uint)validFrames);
+                metadata[4] = BlackboxFrameStrideBytes;
+                metadata[5] = unchecked((uint)payloadBytes);
+                metadata[6] = _blackboxAppVersionHash;
+                metadata[7] = unchecked((uint)activeFrames);
+                metadata[8] = unchecked((uint)Volatile.Read(ref _blackboxSourceCount));
+                metadata[9] = unchecked((uint)Volatile.Read(ref _blackboxEventWriteCursor));
+                metadata[10] = unchecked((uint)BlackboxHashHistoryOffsetBytes);
+                metadata[11] = unchecked((uint)BlackboxSourcePayloadOffsetBytes);
+                metadata[12] = unchecked((uint)BlackboxMockPhysicsOffsetBytes);
+                metadata[13] = unchecked((uint)BlackboxMockOriginOffsetBytes);
+                ulong lastHash = unchecked((ulong)Volatile.Read(ref _blackboxLastDeterminismHash64));
+                metadata[14] = unchecked((uint)lastHash);
+                metadata[15] = unchecked((uint)(lastHash >> 32));
+                metadata[16] = unchecked((uint)BlackboxCacheLineBytes);
+                metadata[17] = unchecked((uint)BlackboxHeaderPadBytes);
+                metadata[18] = unchecked((uint)BlackboxHashHistoryPadBytes);
+                return payloadBytes + BlackboxDumpHeaderBytes;
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
         }
 
         private static bool TryReadBlackboxFrameBounds(out int validFrames, out int activeFrames, out int writeIndex)

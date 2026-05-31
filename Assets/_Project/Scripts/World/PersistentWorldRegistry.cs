@@ -589,6 +589,7 @@ namespace Hecton8.World
         public ulong Reserved;
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct PersistentThermalVentRecord
     {
@@ -797,6 +798,7 @@ namespace Hecton8.World
         }
     }
 
+    [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct PersistentWorldDeltaRecord
     {
@@ -2643,7 +2645,7 @@ namespace Hecton8.World
         private const float HibernatedApexPredationBasePower = 0.65f;
         private const float HibernatedPreyEscapeBasePower = 0.15f;
         private const ulong PoolGuidMixSalt = 11400714819323198485UL;
-        private const long PersistentMemoryBudgetBytes = 10485760L;
+        private const long PersistentMemoryBudgetBytes = 67108864L;
         private const string MemoryBudgetOwnerName = "PersistentWorldRegistry";
         private const string LocalizedSectorCorruptionMessage = "CRITICAL ERROR: LOCALIZED DATA CORRUPTION. TERRAIN RE-INITIALIZED.";
         private const string IndexedSectorPagingDesiredHashesLabel = "indexedSectorPagingDesiredSectorHashes";

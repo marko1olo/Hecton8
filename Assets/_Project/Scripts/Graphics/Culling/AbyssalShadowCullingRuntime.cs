@@ -153,10 +153,7 @@ namespace Hecton8.Graphics.Culling
             if (_visualSyncPhaseSystem == null)
                 _visualSyncPhaseSystem = new VisualSyncPhaseSystem(this);
 
-            if (!_registeredSimulationPhase && GlobalRegistry.TryRegisterDispatcherSystem(_simulationPhaseSystem))
-                _registeredSimulationPhase = true;
-            if (!_registeredVisualSyncPhase && GlobalRegistry.TryRegisterDispatcherSystem(_visualSyncPhaseSystem))
-                _registeredVisualSyncPhase = true;
+            TryRegisterDispatcherSystems();
         }
 
         private void OnDisable()
@@ -178,17 +175,7 @@ namespace Hecton8.Graphics.Culling
             CompletePendingJobForBarrier(frame);
             TryUnregisterHotSwapListener();
             TryUnregisterSlowTick();
-            if (_registeredVisualSyncPhase)
-            {
-                GlobalRegistry.UnregisterDispatcherSystem(_visualSyncPhaseSystem);
-                _registeredVisualSyncPhase = false;
-            }
-
-            if (_registeredSimulationPhase)
-            {
-                GlobalRegistry.UnregisterDispatcherSystem(_simulationPhaseSystem);
-                _registeredSimulationPhase = false;
-            }
+            TryUnregisterDispatcherSystems();
 
             ReleaseGpuBuffers();
             ReleaseVaultHandles(vault);
@@ -736,14 +723,24 @@ namespace Hecton8.Graphics.Culling
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
-                return;
-
-            RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
-            if (_dataVault != null && isActiveAndEnabled)
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                _initialized = EnsureInitialized(_dataVault);
-                _resourceRefreshRequested = !_initialized;
+                RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
+                if (_dataVault != null && isActiveAndEnabled)
+                {
+                    _initialized = EnsureInitialized(_dataVault);
+                    _resourceRefreshRequested = !_initialized;
+                }
+            }
+            else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                TryUnregisterSlowTick();
+                TryUnregisterDispatcherSystems();
+                if (currentService != null && isActiveAndEnabled)
+                {
+                    TryRegisterSlowTick();
+                    TryRegisterDispatcherSystems();
+                }
             }
         }
 
@@ -791,6 +788,37 @@ namespace Hecton8.Graphics.Culling
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
             _registeredSlowTick = false;
+        }
+
+        private void TryRegisterDispatcherSystems()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            if (_simulationPhaseSystem == null)
+                _simulationPhaseSystem = new SimulationPhaseSystem(this);
+            if (_visualSyncPhaseSystem == null)
+                _visualSyncPhaseSystem = new VisualSyncPhaseSystem(this);
+
+            if (!_registeredSimulationPhase && GlobalRegistry.TryRegisterDispatcherSystem(_simulationPhaseSystem))
+                _registeredSimulationPhase = true;
+            if (!_registeredVisualSyncPhase && GlobalRegistry.TryRegisterDispatcherSystem(_visualSyncPhaseSystem))
+                _registeredVisualSyncPhase = true;
+        }
+
+        private void TryUnregisterDispatcherSystems()
+        {
+            if (_registeredVisualSyncPhase)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(_visualSyncPhaseSystem);
+                _registeredVisualSyncPhase = false;
+            }
+
+            if (_registeredSimulationPhase)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(_simulationPhaseSystem);
+                _registeredSimulationPhase = false;
+            }
         }
 
         private void TryRegisterHotSwapListener()

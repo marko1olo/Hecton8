@@ -34,23 +34,23 @@ namespace Hecton8.Tests.Editor
             string contractsSource = File.ReadAllText(Path.Combine("Assets", "_Project", "Scripts", "Core", "BootstrapContracts", "InputBindingServiceContracts.cs"));
             string platformSource = File.ReadAllText(Path.Combine("Assets", "_Project", "Scripts", "Core", "IPlatformIntegration.cs"));
 
-            Assert.AreEqual(ScalabilityTierProfiles.LowMx350, ScalabilityTierProfiles.Normalize(ScalabilityTierProfiles.LowMx350));
-            Assert.AreEqual(ScalabilityTierProfiles.HighRtx, ScalabilityTierProfiles.Normalize(ScalabilityTierProfiles.LegacyHighRtx));
+            Assert.AreEqual(ScalabilityTierProfiles.LowCompact, ScalabilityTierProfiles.Normalize(ScalabilityTierProfiles.LowCompact));
+            Assert.AreEqual(ScalabilityTierProfiles.HighDiscrete, ScalabilityTierProfiles.Normalize(ScalabilityTierProfiles.LegacyHighDesktop));
             Assert.AreEqual(ScalabilityTierProfiles.Middle, ScalabilityTierProfiles.Normalize(ScalabilityTierProfiles.Middle));
-            Assert.AreEqual(ScalabilityTierProfiles.HighRtx, ScalabilityTierProfiles.Normalize(ScalabilityTierProfiles.HighRtx));
+            Assert.AreEqual(ScalabilityTierProfiles.HighDiscrete, ScalabilityTierProfiles.Normalize(ScalabilityTierProfiles.HighDiscrete));
             Assert.AreEqual(ScalabilityTierProfiles.Ultra, ScalabilityTierProfiles.Normalize(ScalabilityTierProfiles.Ultra));
             Assert.AreEqual(ScalabilityTierProfiles.Ultra, ScalabilityTierProfiles.Normalize(byte.MaxValue));
             Assert.Less(
-                ScalabilityTierProfiles.ToGlobalQualityWeight01(ScalabilityTierProfiles.LowMx350),
+                ScalabilityTierProfiles.ToGlobalQualityWeight01(ScalabilityTierProfiles.LowCompact),
                 ScalabilityTierProfiles.ToGlobalQualityWeight01(ScalabilityTierProfiles.Middle));
             Assert.Less(
                 ScalabilityTierProfiles.ToGlobalQualityWeight01(ScalabilityTierProfiles.Middle),
-                ScalabilityTierProfiles.ToGlobalQualityWeight01(ScalabilityTierProfiles.HighRtx));
+                ScalabilityTierProfiles.ToGlobalQualityWeight01(ScalabilityTierProfiles.HighDiscrete));
             Assert.Less(
-                ScalabilityTierProfiles.ToGlobalQualityWeight01(ScalabilityTierProfiles.HighRtx),
+                ScalabilityTierProfiles.ToGlobalQualityWeight01(ScalabilityTierProfiles.HighDiscrete),
                 ScalabilityTierProfiles.ToGlobalQualityWeight01(ScalabilityTierProfiles.Ultra));
-            StringAssert.DoesNotContain("case LegacyHighRtx:", contractsSource);
-            StringAssert.DoesNotContain("case ScalabilityTierProfiles.LegacyHighRtx:", platformSource);
+            StringAssert.DoesNotContain("case LegacyHighDesktop:", contractsSource);
+            StringAssert.DoesNotContain("case ScalabilityTierProfiles.LegacyHighDesktop:", platformSource);
         }
 
         [Test]
@@ -172,7 +172,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("event Action OnOverridesSaveFailed;", inputServiceContractsSource);
             StringAssert.Contains("public const byte Middle = 2;", inputServiceContractsSource);
             StringAssert.Contains("public const byte Ultra = 4;", inputServiceContractsSource);
-            StringAssert.Contains("if (tier == LegacyHighRtx)", inputServiceContractsSource);
+            StringAssert.Contains("if (tier == LegacyHighDesktop)", inputServiceContractsSource);
             StringAssert.Contains("ToGlobalQualityWeight01", inputServiceContractsSource);
             StringAssert.DoesNotContain("Fixed two-tier scalability profile", inputServiceContractsSource);
             StringAssert.Contains("bool LoadOverrides();", inputServiceContractsSource);

@@ -54,6 +54,7 @@ namespace Hecton8.Data
         private const int DataMonolithWriterReleaseRetryCount = 4;
 #if UNITY_ANDROID && !UNITY_EDITOR
         private const int AndroidAssetMissing = -4;
+        private const int AndroidAssetCompressed = -6;
         private const int AndroidPersistentPathUtf8Capacity = 1024;
 #endif
 #if (UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN) && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
@@ -2207,6 +2208,13 @@ namespace Hecton8.Data
                             RecordFailureTelemetry(status, pathFlags);
 
                         return !failIfMissing && IsLoaded;
+                    }
+
+                    if (blobBytes == AndroidAssetCompressed)
+                    {
+                        status = H8DataBlobLoadStatus.ReadFailed;
+                        RecordFailureTelemetry(status, pathFlags);
+                        return false;
                     }
 
                     if (blobBytes < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)

@@ -149,7 +149,6 @@ namespace Hecton8.Atmosphere
             return math.saturate(ResolveDesiredWaveCount(qualityWeight, maxWaveCount) - waveIndex);
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public static void EvaluateWaves(
             double3 AUP,
             float time,
@@ -160,7 +159,6 @@ namespace Hecton8.Atmosphere
             EvaluateWaves(AUP, time, waves, 1f, out height, out normal);
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public static void EvaluateWaves(
             double3 AUP,
             float time,
@@ -181,7 +179,6 @@ namespace Hecton8.Atmosphere
                 out _);
         }
 
-        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         public static void EvaluateWavesDetailed(
             double3 AUP,
             float time,

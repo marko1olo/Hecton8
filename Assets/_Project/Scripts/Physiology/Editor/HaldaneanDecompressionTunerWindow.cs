@@ -214,7 +214,7 @@ namespace Hecton8.Physiology.Editor
                 return null;
 
             s_nextRuntimeResolveTime = now + 1.0;
-            s_cachedRuntime = UnityEngine.Object.FindFirstObjectByType<ShinobuPhysiologyRuntime>();
+            s_cachedRuntime = UnityEngine.Object.FindAnyObjectByType<ShinobuPhysiologyRuntime>();
             return s_cachedRuntime;
         }
 

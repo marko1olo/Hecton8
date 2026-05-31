@@ -86,13 +86,13 @@ namespace Hecton8.Audio
         {
             AcousticZoneController.ResetActiveRuntimeInstanceForSubsystemRegistration();
             _floodMuffleInitialized = false;
-            EnsureInitialized();
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         internal static void ResetForSmokeTest()
         {
             ResetStaticState();
+            EnsureInitialized();
         }
 #endif
 

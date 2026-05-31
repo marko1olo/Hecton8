@@ -34,7 +34,6 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
-using Hecton8.Lighting.Shafts;
 using Hecton8.UI;
 using Hecton8.Tools;
 using System.Runtime.InteropServices;
@@ -487,12 +486,15 @@ namespace Hecton8.Gameplay
         private AudioClip _pendingAudioClip;
         private bool _pendingAudioDirty;
         private bool _lateFrameRegistered;
-        private ScreenSpaceLightShaftSource _lightShaftSource;
+        private MonoBehaviour _lightShaftSource;
         private bool _hotSwapRegistered;
         private float _nextCameraResolveTime;
         private uint _lastPlayerInputSignalSequence;
 
         private const float CameraResolveCooldown = 1f;
+        private const string ScreenSpaceLightShaftSourceTypeName =
+            "Hecton8.Lighting.Shafts.ScreenSpaceLightShaftSource, Hecton8.Lighting";
+        private static System.Type s_screenSpaceLightShaftSourceType;
 
         private bool _lowBatteryWarningPlayed;
 
@@ -1001,8 +1003,29 @@ namespace Hecton8.Gameplay
             if (_lightShaftSource != null && _lightShaftSource.gameObject == sourceObject)
                 return;
 
-            if (!sourceObject.TryGetComponent(out _lightShaftSource))
-                _lightShaftSource = sourceObject.AddComponent<ScreenSpaceLightShaftSource>(); // COLD ALLOC: ScreenSpaceLightShaftSource[1] - flashlight shaft migration bridge - owner: PlayerFlashlight
+            if (!TryResolveScreenSpaceLightShaftSourceTypeCold(out System.Type sourceType))
+            {
+                _lightShaftSource = null;
+                return;
+            }
+
+            Component existing = sourceObject.GetComponent(sourceType);
+            if (existing != null)
+            {
+                _lightShaftSource = existing as MonoBehaviour;
+                return;
+            }
+
+            _lightShaftSource = sourceObject.AddComponent(sourceType) as MonoBehaviour; // COLD ALLOC: ScreenSpaceLightShaftSource[1] - flashlight shaft migration bridge - owner: PlayerFlashlight
+        }
+
+        private static bool TryResolveScreenSpaceLightShaftSourceTypeCold(out System.Type sourceType)
+        {
+            if (s_screenSpaceLightShaftSourceType == null)
+                s_screenSpaceLightShaftSourceType = System.Type.GetType(ScreenSpaceLightShaftSourceTypeName, false);
+
+            sourceType = s_screenSpaceLightShaftSourceType;
+            return sourceType != null && typeof(MonoBehaviour).IsAssignableFrom(sourceType);
         }
 
         private float ResolveModeRange()

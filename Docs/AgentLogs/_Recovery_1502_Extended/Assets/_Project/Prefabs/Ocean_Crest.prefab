@@ -1,0 +1,737 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &83696858271061525
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8453796831506587848}
+  - component: {fileID: 5938424543221354830}
+  - component: {fileID: 5393921084769625238}
+  - component: {fileID: 7094429994838468255}
+  m_Layer: 4
+  m_Name: SargassumOilFilmInput
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8453796831506587848
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 83696858271061525}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 4900.05, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5811674931265784657}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &5938424543221354830
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 83696858271061525}
+  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &5393921084769625238
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 83696858271061525}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9ea2a31a068e95944bc77c3fe396c4f6, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &7094429994838468255
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 83696858271061525}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c5e624660e55f64da5c7e5b19f0dfcc, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Crest::Crest.RegisterAlbedoInput
+  _checkShaderName: 1
+  _checkShaderPasses: 1
+  _disableRenderer: 1
+  _version: 0
+--- !u!1 &661104235710018481
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 661104235710018482}
+  - component: {fileID: 661104235710018483}
+  - component: {fileID: 661104235710018484}
+  - component: {fileID: 661104235710018485}
+  m_Layer: 4
+  m_Name: SargassumWaveDampingInput
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &661104235710018482
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 661104235710018481}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 4900.05, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5811674931265784657}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &661104235710018483
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 661104235710018481}
+  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &661104235710018484
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 661104235710018481}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: e1c2ab7f3d77470aa35e3d99ff126744, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &661104235710018485
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 661104235710018481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26cbe8d1fc0a69249bc135d85739ad39, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Crest::Crest.RegisterAnimWavesInput
+  _checkShaderName: 1
+  _checkShaderPasses: 1
+  _disableRenderer: 1
+  _featherWidth: 0
+  _overrideSplineSettings: 0
+  _radius: 20
+  _subdivisions: 1
+  _version: 0
+  _filterByWavelength: 0
+  _octaveWavelength: 0
+  _renderAfterDynamicWaves: 1
+  _followHorizontalMotion: 1
+  _maxDisplacementVertical: 0
+  _maxDisplacementHorizontal: 0
+  _reportRendererBoundsToOceanSystem: 0
+--- !u!1 &771104235710018481
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 771104235710018482}
+  - component: {fileID: 771104235710018483}
+  - component: {fileID: 771104235710018484}
+  - component: {fileID: 771104235710018485}
+  m_Layer: 4
+  m_Name: SargassumFoamDampingInput
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &771104235710018482
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 771104235710018481}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 4900.05, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5811674931265784657}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &771104235710018483
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 771104235710018481}
+  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &771104235710018484
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 771104235710018481}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: f2d3bc8e4e88481bb46f4ea00a237855, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &771104235710018485
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 771104235710018481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66f48a8051df1bc4580cc98f58f1114b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Crest::Crest.RegisterFoamInput
+  _checkShaderName: 1
+  _checkShaderPasses: 1
+  _disableRenderer: 1
+  _featherWidth: 0
+  _overrideSplineSettings: 0
+  _radius: 20
+  _subdivisions: 1
+  _version: 0
+  _followHorizontalMotion: 0
+--- !u!1 &5513631557248329811
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5811674931265784657}
+  - component: {fileID: 1881482921440711839}
+  - component: {fileID: 8503459892740325226}
+  - component: {fileID: 631104235710018481}
+  - component: {fileID: 631104235710018482}
+  - component: {fileID: 7666709485588549063}
+  - component: {fileID: 1182089648734552001}
+  - component: {fileID: 1954067716359082144}
+  m_Layer: 4
+  m_Name: Ocean_Crest
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5811674931265784657
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5513631557248329811}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 661104235710018482}
+  - {fileID: 771104235710018482}
+  - {fileID: 8453796831506587848}
+  - {fileID: 1182089648734552003}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1881482921440711839
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5513631557248329811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dde37eff0f7685f41902f400d1de0c6c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Crest::Crest.OceanRenderer
+  _version: 0
+  _globalWindSpeed: 30
+  _viewpoint: {fileID: 0}
+  _camera: {fileID: 0}
+  _teleportThreshold: 10
+  _timeProvider: {fileID: 0}
+  _primaryLight: {fileID: 0}
+  _searchForPrimaryLightOnStartup: 1
+  _material: {fileID: 2100000, guid: 9def92ac79181fe41b238e91663f0fad, type: 2}
+  _waterTilePrefab: {fileID: 0}
+  _layerName:
+  _layer: 4
+  _overrideGravity: 1
+  _gravity: -8.8
+  _gravityMultiplier: 1
+  _waterBodyCulling: 1
+  _minScale: 8
+  _maxScale: 256
+  _dropDetailHeightBasedOnWaves: 0.2
+  _lodDataResolution: 256
+  _geometryDownSampleFactor: 2
+  _lodCount: 6
+  _extentsSizeMultiplier: 100
+  _renderingLayerMask: 255
+  _simSettingsAnimatedWaves: {fileID: 11400000, guid: 2e2bf04fba9811b438fd3258d5625fe9, type: 2}
+  _createSeaFloorDepthData: 0
+  _simSettingsSeaFloorDepth: {fileID: 11400000, guid: 1e737699687b26a46b81eb44cb8c13c4, type: 2}
+  _createFoamSim: 0
+  _simSettingsFoam: {fileID: 11400000, guid: 831063101a0b3db46b6f855a3dcf4e61, type: 2}
+  _createDynamicWaveSim: 0
+  _simSettingsDynamicWaves: {fileID: 0}
+  _createFlowSim: 0
+  _simSettingsFlow: {fileID: 0}
+  _createShadowData: 1
+  _simSettingsShadow: {fileID: 11400000, guid: dca1133cd95ddf64095eebe8c7cabf85, type: 2}
+  _createClipSurfaceData: 0
+  _simSettingsClipSurface: {fileID: 0}
+  _defaultClippingState: 0
+  _createAlbedoData: 0
+  _settingsAlbedo: {fileID: 0}
+  _surfaceSelfIntersectionFixMode: 2
+  _underwaterCullLimit: 0.001
+  _verifyOpaqueAndDepthTexturesEnabled: 1
+  _showOceanProxyPlane: 0
+  _editModeFPS: 30
+  _followSceneCamera: 1
+  _heightQueries: 1
+  _debug:
+    _attachDebugGUI: 0
+    _showOceanTileGameObjects: 0
+    _disableFollowViewpoint: 0
+    _destroyResourcesInOnDisable: 0
+    _forceBatchMode: 0
+    _forceNoGPU: 0
+--- !u!114 &8503459892740325226
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5513631557248329811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a57126133720c243a7af00a156c9ee8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Crest::Crest.ShapeFFT
+  _spectrum: {fileID: 11400000, guid: 607e7fb6e77257849a630c42b169a452, type: 2}
+  _spectrumFixedAtRuntime: 1
+  _waveDirectionHeadingAngle: 0
+  _overrideGlobalWindSpeed: 0
+  _windSpeed: 36.9
+  _respectShallowWaterAttenuation: 0
+  _weight: 1
+  _blendMode: 0
+  _queue: 0
+  _resolution: 128
+  _featherWidth: 0
+  _overrideSplineSettings: 0
+  _radius: 50
+  _subdivisions: 1
+  _featherWaveStart: 0.1
+  _version: 0
+  _windTurbulence: 0.3
+  _maxVerticalDisplacement: 10
+  _maxHorizontalDisplacement: 15
+  _enableBakedCollision: 0
+  _timeResolution: 4
+  _smallestWavelengthRequired: 2
+  _timeLoopLength: 32
+  _debug:
+    _drawBounds: 0
+    _drawSlicesInEditor: 0
+--- !u!114 &631104235710018481
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5513631557248329811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39b3c7c0989641240856225ecd4807ed, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.SargassumCrestDampingController
+  dragManager: {fileID: 0}
+  wavesInputTransform: {fileID: 661104235710018482}
+  wavesInputRenderer: {fileID: 661104235710018484}
+  foamInputTransform: {fileID: 771104235710018482}
+  foamInputRenderer: {fileID: 771104235710018484}
+  oilFilmInputTransform: {fileID: 0}
+  oilFilmInputRenderer: {fileID: 0}
+  waterLevel: 4900
+  surfaceOffset: 0.05
+  _debugDensityWorldRect: {x: 0, y: 0, z: 0, w: 0}
+  _debugAppliedDriftOffset: {x: 0, y: 0, z: 0}
+--- !u!114 &631104235710018482
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5513631557248329811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 324f9121423a1ad409a63674c3d213a9, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.SargassumMicroFaunaBoids
+  boidCompute: {fileID: 7200000, guid: d03fb4ee2f5e49f6a4d12caa5eab4c33, type: 3}
+  boidMesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+  boidMaterial: {fileID: 2100000, guid: a3e4cd9f5f99492cc5705fb11b348966, type: 2}
+  dragManager: {fileID: 0}
+  cutManager: {fileID: 0}
+  biolumManager: {fileID: 0}
+  viewCamera: {fileID: 0}
+  playerTransform: {fileID: 0}
+  boidCount: 768
+  densityThreshold: 0.42
+  windowThreshold: 0.32
+  maxSpawnAttempts: 18
+  cruiseSpeed: 1.8
+  maxSpeed: 3.8
+  panicSpeedBoost: 2.4
+  perceptionRadius: 2.25
+  separationRadius: 0.85
+  separationWeight: 1.85
+  alignmentWeight: 0.85
+  cohesionWeight: 0.7
+  containmentWeight: 3.4
+  panicWeight: 4.2
+  noiseWeight: 0.35
+  gradientWorldStep: 0.8
+  panicThreshold: 0.08
+  panicDecay: 1.4
+  grazingAnchorCount: 28
+  grazingRadius: 2.35
+  grazingWeight: 1.25
+  canopyAffinityWeight: 0.85
+  grazingDensityThreshold: 0.58
+  grazingRestSpeedScale: 0.12
+  grazingRestHoldThreshold: 0.48
+  panicPlayerSpeedThreshold: 2.4
+  panicPlayerRadius: 3.6
+  cameraAvoidRadius: 0.95
+  cameraAvoidWeight: 4.8
+  maxMassiveThreatCount: 4
+  massiveThreatPanicRadius: 56
+  massiveThreatWeight: 8.6
+  waterLevel: 4900
+  minDepthBelowSurface: 0.8
+  maxDepthBelowSurface: 4.5
+  deepSeaWorldYThreshold: -1000
+  deepBiolumAnchorCapacity: 8
+  deepBiolumSearchRadius: 140
+  deepBaitBallRadius: 4.5
+  deepBaitBallHeight: 2.1
+  deepClusterWeight: 3.8
+  deepHeadlightPanicDuration: 3.5
+  deepHeadlightPanicRadiusScale: 2.8
+  parasiteDroneWorldYThreshold: -2000
+  parasiteAffinityWeight: 4.6
+  parasiteHullStressIntensity: 0.42
+  parasiteHullStressLightBoost: 0.34
+  parasiteLatchRadius: 1.35
+  parasiteMaxLatchedDronesForFullDrag: 24
+  parasiteMaxEnvironmentalDragMultiplier: 1.85
+  parasiteLatchReadbackInterval: 0.12
+  formationBeaconCapacity: 4
+  formationBeaconSearchRadius: 120
+  formationWeight: 3.2
+  formationRingThickness: 1.8
+  formationPulseAmplitude: 0.26
+  formationPulseSpeed: 1.1
+  formationBreakPanicThreshold: 0.24
+  formationObstacleCapacity: 8
+  formationObstacleLayers:
+    serializedVersion: 2
+    m_Bits: 1048575
+  formationObstacleSearchRadius: 24
+  formationObstacleWeight: 3.6
+  shadowCastingMode: 0
+  useGameObjectLayer: 1
+  _debugFieldRevision: 0
+  _debugRenderBounds:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
+  _debugDriftOffset: {x: 0, y: 0, z: 0}
+  _debugDispatchGroups: 1
+  _debugGrazingAnchorCount: 0
+  _debugPlayerSpeed: 0
+  _debugPlayerPanicRadiusScale: 1
+  _debugVisible: 0
+  _debugMassiveThreatCount: 0
+  _debugDeepModeActive: 0
+  _debugHeadlightPanic01: 0
+  _debugParasiteModeActive: 0
+  _debugParasiteAggression01: 0
+  _debugLatchedDroneCount: 0
+  _debugFormationModeActive: 0
+  _debugFormationBeaconCount: 0
+  _debugFormationObstacleCount: 0
+--- !u!114 &7666709485588549063
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5513631557248329811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64660468a19de6246ba98d46adabdcc1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Physics.Crest4KinematicsAdapter
+  crestOceanRenderer: {fileID: 0}
+  sceneSearchRetryInterval: 1
+--- !u!114 &1182089648734552001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5513631557248329811}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8f54dfc1dc54c4da9a83c91f1c4b27a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.HectonCrestOceanDepthCacheBootstrap
+  oceanRenderer: {fileID: 1881482921440711839}
+  oceanDepthCache: {fileID: 1182089648734552004}
+  mapMagicBridge: {fileID: 0}
+  terrainBoundsPadding: 64
+  depthCacheResolution: 512
+  repopulateOnTerrainChange: 1
+  _debugCacheReady: 0
+  _debugTerrainCount: 0
+  _debugWaterLevel: 0
+  _debugLastCacheCenterWS: {x: 0, y: 0, z: 0}
+  _debugLastCacheScaleWS: {x: 0, y: 0, z: 0}
+  _debugCaptureLayerMask: 0
+  _debugCameraMaxTerrainHeight: 0
+  _debugLastPopulateFrame: -1
+--- !u!114 &1954067716359082144
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5513631557248329811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb39863bb9d0457b93e91ab29b91da4d, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Hecton8.World.HectonCaveVoxelAmbientOcclusionController
+  viewerTransform: {fileID: 0}
+  viewerCamera: {fileID: 0}
+  fullOcclusionInteriorDepth: 8
+  caveAmbientIntensityScale: 0.58
+  caveReflectionIntensityScale: 0.62
+  occlusionBlendRate: 3
+  _debugHasViewer: 0
+  _debugVolumeCount: 0
+  _debugTargetOcclusion: 0
+  _debugAppliedOcclusion: 0
+  _debugViewerPositionWS: {x: 0, y: 0, z: 0}
+--- !u!1 &1182089648734552002
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1182089648734552003}
+  - component: {fileID: 1182089648734552004}
+  m_Layer: 4
+  m_Name: OceanDepthCache
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &1182089648734552003
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1182089648734552002}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 4900, z: 0}
+  m_LocalScale: {x: 256, y: 1, z: 256}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5811674931265784657}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1182089648734552004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1182089648734552002}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5be4155a909a5ef47bdaaf1422602735, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Crest::Crest.OceanDepthCache
+  _version: 0
+  _type: 0
+  _refreshMode: 1
+  _layers:
+    serializedVersion: 2
+    m_Bits: 129
+  _layerNames: []
+  _resolution: 512
+  _cameraMaxTerrainHeight: 256
+  _terrainPixelErrorOverride: 0
+  _lodBiasOverride: 3.4028235e+38
+  _maximumLodLevelOverride: 0
+  _forceAlwaysUpdateDebug: 0
+  _hideDepthCacheCam: 1
+  _savedCache: {fileID: 0}
+  _runValidationOnStart: 1
+  _relative: 1

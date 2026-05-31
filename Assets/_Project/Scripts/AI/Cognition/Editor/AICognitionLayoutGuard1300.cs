@@ -78,10 +78,10 @@ namespace Hecton8.AI.Cognition.Editor
             AssertOffset<CognitionActionOutputDTO>(nameof(CognitionActionOutputDTO.Frame), 52);
             AssertOffset<CognitionActionOutputDTO>(nameof(CognitionActionOutputDTO.Flags), 56);
             AssertOffset<CognitionActionOutputDTO>(nameof(CognitionActionOutputDTO.CandidateCount), 57);
-            AssertOffset<CognitionActionOutputDTO>("_pad0", 58);
-            AssertOffset<CognitionActionOutputDTO>("_pad1", 59);
-            AssertOffset<CognitionActionOutputDTO>("_pad2", 60);
-            AssertOffset<CognitionActionOutputDTO>("_pad5", 63);
+            AssertOffset<CognitionActionOutputDTO>(nameof(CognitionActionOutputDTO.QualityWeightQ8), 58);
+            AssertOffset<CognitionActionOutputDTO>("_pad0", 59);
+            AssertOffset<CognitionActionOutputDTO>("_pad1", 60);
+            AssertOffset<CognitionActionOutputDTO>("_pad4", 63);
 
             AssertSize<CognitionProfileDTO>(96, nameof(CognitionProfileDTO), ref checkedStructs);
             AssertOffset<CognitionProfileDTO>(nameof(CognitionProfileDTO.SpeciesHash), 0);

@@ -215,6 +215,27 @@ namespace Hecton8.Quest
         }
 
         /// <summary>
+        /// Cold editor/test accessor for direct state-mask mutation without exposing managed quest state.
+        /// </summary>
+        public static ref ulong GetStateMaskRef(IDataVault vault, ref QuestDagBufferHandles handles, int chunkIndex)
+        {
+            if (vault == null ||
+                (uint)chunkIndex >= (uint)handles.StateChunkCount)
+            {
+                FatalMemoryException.ThrowStaleVaultHandle();
+            }
+
+            if (!vault.TryResolveHandle(in handles.GlobalStateMasks, out NativeArray<ulong> masks) ||
+                (uint)chunkIndex >= (uint)masks.Length)
+            {
+                FatalMemoryException.ThrowStaleVaultHandle();
+            }
+
+            ulong* masksPtr = (ulong*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(masks);
+            return ref UnsafeUtility.AsRef<ulong>(masksPtr + chunkIndex);
+        }
+
+        /// <summary>
         /// Copies the packed narrative state to a save-owned destination.
         /// </summary>
         public static bool TryCopySaveState(
@@ -561,6 +582,12 @@ namespace Hecton8.Quest
 
         /// <summary>Current vault handles, exposed for editor and save bridges.</summary>
         public ref QuestDagBufferHandles Handles => ref _handles;
+
+        /// <summary>Cold editor/test accessor for direct state-mask mutation.</summary>
+        public ref ulong GetStateMaskRef(int chunkIndex)
+        {
+            return ref QuestDagVault.GetStateMaskRef(_vault, ref _handles, chunkIndex);
+        }
 
         /// <summary>Current resolver cadence in frames, continuously derived from system pressure.</summary>
         public int ResolverCadenceFrames => _resolverCadenceFrames;

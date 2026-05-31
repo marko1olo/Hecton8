@@ -72,8 +72,8 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(24, OffsetOf<RollbackAup48>(nameof(RollbackAup48.LocalX)));
             Assert.AreEqual(28, OffsetOf<RollbackAup48>(nameof(RollbackAup48.LocalY)));
             Assert.AreEqual(32, OffsetOf<RollbackAup48>(nameof(RollbackAup48.LocalZ)));
-            Assert.AreEqual(36, OffsetOf<RollbackAup48>(nameof(RollbackAup48._pad0)));
-            Assert.AreEqual(40, OffsetOf<RollbackAup48>(nameof(RollbackAup48._pad1)));
+            Assert.AreEqual(36, OffsetOf<RollbackAup48>("_pad0"));
+            Assert.AreEqual(40, OffsetOf<RollbackAup48>("_pad1"));
             Assert.AreEqual(0, OffsetOf<LockstepReplayInputFrame>(nameof(LockstepReplayInputFrame.Frame)));
             Assert.AreEqual(8, OffsetOf<LockstepReplayInputFrame>(nameof(LockstepReplayInputFrame.MoveDelta)));
             Assert.AreEqual(16, OffsetOf<LockstepReplayInputFrame>(nameof(LockstepReplayInputFrame.LookDelta)));

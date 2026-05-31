@@ -240,6 +240,7 @@ namespace Hecton8.PDA
 
         /// <inheritdoc />
         public int LoadPriority => 21;
+        public bool HasLastSampledAup => _hasLastSampledAup;
 
         private void Awake()
         {
@@ -2113,7 +2114,7 @@ namespace Hecton8.PDA
 
         private static bool TryResolvePinnedCartographyBuffers(
             IDataVault vault,
-            scoped in CartographyVaultHandles handles,
+            in CartographyVaultHandles handles,
             ulong pinnedMask,
             out CartographyVaultBuffers buffers)
         {
@@ -2144,7 +2145,7 @@ namespace Hecton8.PDA
 
         private static bool TryReadPinnedCartographyBuffers(
             IDataVault vault,
-            scoped in CartographyVaultHandles handles,
+            in CartographyVaultHandles handles,
             ulong pinnedMask,
             out CartographyVaultReadBuffers buffers)
         {

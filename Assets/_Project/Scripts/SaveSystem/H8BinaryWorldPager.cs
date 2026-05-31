@@ -44,8 +44,8 @@ namespace Hecton8.Core.Persistence.Paging
         private const int SectorSizeBytes = 256 * 1024;
         private const int SectorPayloadBytes = SectorSizeBytes - SectorHeaderBytes;
         private const int MaxSectors = 8192;
-        private const int WriteSlotCount = 32;
-        private const int ReadSlotCount = 16;
+        private const int WriteSlotCount = 8;
+        private const int ReadSlotCount = 4;
         private const int MaxSectorsMask = MaxSectors - 1;
         private const int WriteSlotMask = WriteSlotCount - 1;
         private const int ReadSlotMask = ReadSlotCount - 1;
@@ -178,17 +178,16 @@ namespace Hecton8.Core.Persistence.Paging
             }
             catch (IOException)
             {
-                MarkInitializationFault();
+                MarkInitializationFault(PagerInitializationFaultReason.OpenStream);
                 return;
             }
             catch (UnauthorizedAccessException)
             {
-                MarkInitializationFault();
+                MarkInitializationFault(PagerInitializationFaultReason.OpenWriteAheadLog);
                 return;
             }
 
-            AllocateNativeState();
-            if (HasInitializationFault)
+            if (!AllocateNativeState() || HasInitializationFault)
                 return;
 
             EnsureDirectoryPage();
@@ -782,7 +781,32 @@ namespace Hecton8.Core.Persistence.Paging
             Volatile.Write(ref _initializationFault.Value, 1);
         }
 
-        private void MarkInitializationFault()
+        private void AbortInitializationAttempt(IDataVault vault)
+        {
+            FileStream stream = _stream;
+            _stream = null;
+            if (stream != null)
+                DisposeStream(stream, flush: false);
+
+            FileStream walStream = _walStream;
+            _walStream = null;
+            if (walStream != null)
+                DisposeWalStream(walStream, flush: false);
+
+            ClearPagerTransientBuffers();
+            _nativeState.Dispose();
+            ReleasePagerVaultHandles(vault ?? _vault);
+            _vault = null;
+            ResetPagerTransientState();
+            _hotStateBytes = 0;
+            _hotStateSchemaHash = 0u;
+            _hotStateFrame = 0u;
+            _hotStateCrc32 = 0u;
+            Volatile.Write(ref _initialized, 0);
+            Volatile.Write(ref _disposeRequested, 1);
+        }
+
+        private void MarkInitializationFault(PagerInitializationFaultReason reason = PagerInitializationFaultReason.Unknown)
         {
             FileStream stream = _stream;
             _stream = null;
@@ -800,7 +824,7 @@ namespace Hecton8.Core.Persistence.Paging
             Volatile.Write(ref _initializationFault.Value, 1);
             Interlocked.Increment(ref _ioErrorCount.Value);
 
-            Hecton8.Core.H8Debug.LogWarning("H8BinaryWorldPager disabled page IO after initialization fault.");
+            Hecton8.Core.H8Debug.LogWarning("H8BinaryWorldPager disabled page IO after initialization fault. reason=" + reason);
         }
 
         private bool WaitForWorkerExit()
@@ -881,13 +905,13 @@ namespace Hecton8.Core.Persistence.Paging
             }
         }
 
-        private void AllocateNativeState()
+        private bool AllocateNativeState()
         {
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked)
             {
-                MarkInitializationFault();
-                return;
+                AbortInitializationAttempt(vault);
+                return false;
             }
 
             _vault = vault;
@@ -896,30 +920,30 @@ namespace Hecton8.Core.Persistence.Paging
 
             if (!_nativeState.EnsureAll())
             {
-                MarkInitializationFault();
-                return;
+                MarkInitializationFault(PagerInitializationFaultReason.NativeStateAllocation);
+                return false;
             }
 
-            _readStagingHandle = vault.EnsureGenerationHandle<byte>(
+            _readStagingHandle = EnsureOwnedPagerVaultHandle<byte>(
+                vault,
                 BufferID.SaveWorldPagerReadStaging,
                 SectorPayloadBytes * 2,
-                VaultOwner,
                 NativeArrayOptions.UninitializedMemory);
-            _telemetryRingHandle = vault.EnsureGenerationHandle<H8BinaryWorldPagerTelemetryEntry>(
+            _telemetryRingHandle = EnsureOwnedPagerVaultHandle<H8BinaryWorldPagerTelemetryEntry>(
+                vault,
                 BufferID.SaveWorldPagerTelemetryRing,
                 TelemetryCapacity,
-                VaultOwner,
                 NativeArrayOptions.ClearMemory);
 
             if (!ArePagerVaultHandlesReady())
             {
-                ReleasePagerVaultHandles(vault);
-                MarkInitializationFault();
-                return;
+                AbortInitializationAttempt(vault);
+                return false;
             }
 
             ResetPagerTransientState();
             ClearPagerTransientBuffers();
+            return true;
         }
 
         private void DisposeNativeState()
@@ -993,6 +1017,43 @@ namespace Hecton8.Core.Persistence.Paging
             int requiredLength) where T : struct
         {
             return TryReadPagerVaultBuffer(in handle, bufferId, requiredLength, out _);
+        }
+
+        private static VaultGenerationHandle<T> EnsureOwnedPagerVaultHandle<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options) where T : struct
+        {
+            if (vault == null)
+                return default;
+
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                VaultOwner,
+                options);
+            if (IsPagerVaultHandle(in handle, bufferId))
+                return handle;
+
+            for (int releaseAttempt = 0; releaseAttempt < 8 &&
+                 handle.BufferID == unchecked((uint)(int)bufferId) &&
+                 handle.Generation != 0u &&
+                 handle.SystemID != (uint)VaultOwner; releaseAttempt++)
+            {
+                if (!vault.ReleaseBuffer(in handle))
+                    break;
+
+                handle = vault.EnsureGenerationHandle<T>(
+                    bufferId,
+                    requiredLength,
+                    VaultOwner,
+                    options);
+                if (IsPagerVaultHandle(in handle, bufferId))
+                    return handle;
+            }
+
+            return handle;
         }
 
         private bool TryReadPagerVaultBuffer<T>(
@@ -3129,6 +3190,16 @@ namespace Hecton8.Core.Persistence.Paging
         private struct CacheLineInt
         {
             [FieldOffset(0)] public int Value;
+        }
+
+        private enum PagerInitializationFaultReason : byte
+        {
+            Unknown = 0,
+            OpenStream = 1,
+            OpenWriteAheadLog = 2,
+            DataVaultUnavailable = 3,
+            NativeStateAllocation = 4,
+            VaultHandleUnavailable = 5
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]

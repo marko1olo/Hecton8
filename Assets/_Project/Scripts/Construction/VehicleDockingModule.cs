@@ -230,6 +230,7 @@ namespace Hecton8.Construction
         public bool HasDockedRelativeAup => _hasDockedRelativeAup;
         public AbsoluteUniversePosition DockedRelativeAup => _dockedRelativeAup;
         public float TotalDockedMassKg => ResolveDockedBodyMassKg() + _attachedDroneMassKg;
+        public ulong LastRejectedDockColliderId => _lastRejectedDockColliderId;
 
         public bool TryGetLastDockTelemetrySummary(out uint stateHash, out uint runtimeFlags, out int entryCount)
         {

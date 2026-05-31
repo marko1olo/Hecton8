@@ -52,6 +52,10 @@ namespace Crest
 
         int _kernelSpectrumInit;
         int _kernelSpectrumUpdate;
+        int _spectrumInitThreadGroupSizeX;
+        int _spectrumInitThreadGroupSizeY;
+        int _spectrumUpdateThreadGroupSizeX;
+        int _spectrumUpdateThreadGroupSizeY;
 
         // Generation data
         int _resolution;
@@ -128,9 +132,9 @@ namespace Crest
 
             _shaderSpectrum = Resources.Load<ComputeShader>("FFT/FFTSpectrum");
             _shaderFFT = Resources.Load<ComputeShader>("FFT/FFTCompute");
-            if (_shaderSpectrum == null || _shaderFFT == null ||
-                !_shaderSpectrum.HasKernel("SpectrumInitalize") ||
-                !_shaderSpectrum.HasKernel("SpectrumUpdate"))
+            if (_shaderFFT == null ||
+                !ComputeShaderHelpers.TryFindKernel(_shaderSpectrum, "SpectrumInitalize", out _kernelSpectrumInit) ||
+                !ComputeShaderHelpers.TryFindKernel(_shaderSpectrum, "SpectrumUpdate", out _kernelSpectrumUpdate))
             {
                 _shaderSpectrum = null;
                 _shaderFFT = null;
@@ -138,8 +142,19 @@ namespace Crest
                 return;
             }
 
-            _kernelSpectrumInit = _shaderSpectrum.FindKernel("SpectrumInitalize");
-            _kernelSpectrumUpdate = _shaderSpectrum.FindKernel("SpectrumUpdate");
+            if (!ComputeShaderHelpers.TryGetPortableKernelThreadGroupSize2D(_shaderSpectrum, _kernelSpectrumInit, out _spectrumInitThreadGroupSizeX, out _spectrumInitThreadGroupSizeY) ||
+                !ComputeShaderHelpers.TryGetPortableKernelThreadGroupSize2D(_shaderSpectrum, _kernelSpectrumUpdate, out _spectrumUpdateThreadGroupSizeX, out _spectrumUpdateThreadGroupSizeY) ||
+                !TryValidateFFTKernelLayout(_shaderFFT))
+            {
+                _shaderSpectrum = null;
+                _shaderFFT = null;
+                _spectrumInitThreadGroupSizeX = 0;
+                _spectrumInitThreadGroupSizeY = 0;
+                _spectrumUpdateThreadGroupSizeX = 0;
+                _spectrumUpdateThreadGroupSizeY = 0;
+                _isInitialised = false;
+                return;
+            }
 
             _texButterfly = new Texture2D(_resolution, Mathf.RoundToInt(Mathf.Log(_resolution, 2)), TextureFormat.RGBAFloat, false, true);
 
@@ -255,6 +270,32 @@ namespace Crest
             return resolution >= MIN_SUPPORTED_RESOLUTION
                 && resolution <= MAX_SUPPORTED_RESOLUTION
                 && (resolution & (resolution - 1)) == 0;
+        }
+
+        static bool TryValidateFFTKernelLayout(ComputeShader shader)
+        {
+            if (shader == null)
+            {
+                return false;
+            }
+
+            const int kernelCount = 14;
+            for (int kernel = 0; kernel < kernelCount; kernel += 2)
+            {
+                if (!ComputeShaderHelpers.TryGetPortableKernelThreadGroupSizes(shader, kernel, out int rowSizeX, out int rowSizeY, out int rowSizeZ) ||
+                    rowSizeY != 1 || rowSizeZ != 1)
+                {
+                    return false;
+                }
+
+                if (!ComputeShaderHelpers.TryGetPortableKernelThreadGroupSizes(shader, kernel + 1, out int columnSizeX, out int columnSizeY, out int columnSizeZ) ||
+                    columnSizeX != 1 || columnSizeZ != 1)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         public static int ClampSupportedResolution(int resolution)
@@ -448,8 +489,13 @@ namespace Crest
             buf.SetComputeVectorParam(_shaderSpectrum, ShaderIDs.s_WindDir, new Vector2(Mathf.Cos(_windDirRad), Mathf.Sin(_windDirRad)));
             buf.SetComputeTextureParam(_shaderSpectrum, _kernelSpectrumInit, ShaderIDs.s_SpectrumControls, _texSpectrumControls);
             buf.SetComputeTextureParam(_shaderSpectrum, _kernelSpectrumInit, ShaderIDs.s_ResultInit, _spectrumInit);
-            int groups = (int)(((long)_resolution + 7L) / 8L);
-            buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, groups, groups, CASCADE_COUNT);
+            int groupsX = ComputeShaderHelpers.DispatchCount(_resolution, _spectrumInitThreadGroupSizeX);
+            int groupsY = ComputeShaderHelpers.DispatchCount(_resolution, _spectrumInitThreadGroupSizeY);
+            if (groupsX <= 0 || groupsY <= 0)
+            {
+                return;
+            }
+            buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, groupsX, groupsY, CASCADE_COUNT);
         }
 
         /// <summary>
@@ -472,8 +518,13 @@ namespace Crest
             buf.SetComputeTextureParam(_shaderSpectrum, _kernelSpectrumUpdate, ShaderIDs.s_ResultHeight, _spectrumHeight);
             buf.SetComputeTextureParam(_shaderSpectrum, _kernelSpectrumUpdate, ShaderIDs.s_ResultDisplaceX, _spectrumDisplaceX);
             buf.SetComputeTextureParam(_shaderSpectrum, _kernelSpectrumUpdate, ShaderIDs.s_ResultDisplaceZ, _spectrumDisplaceZ);
-            int groups = (int)(((long)_resolution + 7L) / 8L);
-            buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, groups, groups, CASCADE_COUNT);
+            int groupsX = ComputeShaderHelpers.DispatchCount(_resolution, _spectrumUpdateThreadGroupSizeX);
+            int groupsY = ComputeShaderHelpers.DispatchCount(_resolution, _spectrumUpdateThreadGroupSizeY);
+            if (groupsX <= 0 || groupsY <= 0)
+            {
+                return;
+            }
+            buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, groupsX, groupsY, CASCADE_COUNT);
         }
 
         /// <summary>

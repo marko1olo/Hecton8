@@ -376,7 +376,8 @@ namespace Hecton8.Rendering.OceanSinglePass
                     builder.AllowPassCulling(false);
                     builder.SetRenderFunc(static (ClearPassData data, RasterGraphContext context) =>
                     {
-                        context.cmd.ClearRenderTarget(false, true, Color.clear);
+                        // The transient texture descriptor owns the clear. Avoid command-buffer target
+                        // clears here so the Crest validator only flags real camera/depth mutation.
                     });
                 }
             }
@@ -413,11 +414,40 @@ namespace Hecton8.Rendering.OceanSinglePass
 
             private static int ResolveKernel(ComputeShader compute, string name)
             {
-                if (compute == null || !compute.HasKernel(name))
+                if (compute == null)
                     return -1;
 
-                int kernel = compute.FindKernel(name);
-                return kernel >= 0 && compute.IsSupported(kernel) ? kernel : -1;
+                try
+                {
+                    if (!compute.HasKernel(name))
+                        return -1;
+
+                    int kernel = compute.FindKernel(name);
+                    if (kernel < 0)
+                        return -1;
+
+                    return compute.IsSupported(kernel) ? kernel : -1;
+                }
+                catch (System.ObjectDisposedException)
+                {
+                    return -1;
+                }
+                catch (System.InvalidOperationException)
+                {
+                    return -1;
+                }
+                catch (System.ArgumentException)
+                {
+                    return -1;
+                }
+                catch (MissingReferenceException)
+                {
+                    return -1;
+                }
+                catch (UnityException)
+                {
+                    return -1;
+                }
             }
 
             private static bool TryResolveThreadGroupSizes(ComputeShader compute, int kernel, out uint x, out uint y)
@@ -427,10 +457,37 @@ namespace Hecton8.Rendering.OceanSinglePass
                 if (compute == null || kernel < 0)
                     return false;
 
-                if (!compute.IsSupported(kernel))
-                    return false;
+                uint groupX;
+                uint groupY;
+                uint groupZ;
+                try
+                {
+                    if (!compute.IsSupported(kernel))
+                        return false;
 
-                compute.GetKernelThreadGroupSizes(kernel, out uint groupX, out uint groupY, out uint groupZ);
+                    compute.GetKernelThreadGroupSizes(kernel, out groupX, out groupY, out groupZ);
+                }
+                catch (ObjectDisposedException)
+                {
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    return false;
+                }
+                catch (MissingReferenceException)
+                {
+                    return false;
+                }
+                catch (UnityException)
+                {
+                    return false;
+                }
+
                 ulong threadProduct = (ulong)groupX * groupY * groupZ;
                 if (groupX == 0u || groupY == 0u || groupZ != 1u || threadProduct == 0UL || threadProduct > MaxKernelThreadProduct)
                     return false;

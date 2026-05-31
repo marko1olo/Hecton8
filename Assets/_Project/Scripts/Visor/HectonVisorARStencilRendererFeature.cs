@@ -1714,13 +1714,16 @@ namespace Hecton8.Visor
 
         private void ReleaseVaultHandles(IDataVault vault)
         {
-            ReleaseVaultHandle(vault, ref _hudParamsHandle, VisorARStencilContracts.HudParamsBufferId);
-            ReleaseVaultHandle(vault, ref _targetSourceHandle, VisorARStencilContracts.TargetSourceBufferId);
-            ReleaseVaultHandle(vault, ref _projectedTargetHandle, VisorARStencilContracts.ProjectedTargetBufferId);
-            ReleaseVaultHandle(vault, ref _digitParamsHandle, VisorARStencilContracts.DigitParamsBufferId);
-            ReleaseVaultHandle(vault, ref _telemetryHandle, VisorARStencilContracts.TelemetryRingBufferId);
-            ReleaseVaultHandle(vault, ref _profileHandle, VisorARStencilContracts.ProfileBufferId);
-            ReleaseVaultHandle(vault, ref _csvScratchHandle, VisorARStencilContracts.CsvScratchBufferId);
+            // Renderer features are secondary DataVault consumers. URP disposal can run while the
+            // vault arena is resetting, so this lifecycle path detaches handles without freeing
+            // vault-owned storage from inside RenderPipeline cleanup.
+            _hudParamsHandle = default;
+            _targetSourceHandle = default;
+            _projectedTargetHandle = default;
+            _digitParamsHandle = default;
+            _telemetryHandle = default;
+            _profileHandle = default;
+            _csvScratchHandle = default;
             _telemetryDescriptorGeneration = 0u;
             _telemetryDumped = false;
         }

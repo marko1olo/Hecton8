@@ -87,3 +87,139 @@ Solution: Updated only the active authority lines to define compact 2GB/8GB-clas
 Rejected Alternatives: Editing every mandate mention in bulk; removing the minimum proof lane; claiming platform readiness from serialized settings.
 Scalability potential: Low, compact, handheld UMA, mid, high, ultra, PCVR, and Quest can now be discussed as lanes under the same product instead of forks.
 Hardware Impact: Runtime frame-time gain claimed: 0 us pending profiler proof. The value is preventing future policy drift.
+
+## Unity Compile-Blocker Surgical Pass
+
+Problem: Unity diagnostics and read-only agent inspection showed Burst BC1025 from generic managed type resolution inside the job-facing `SignalBus<T>.TryEnqueueBounded`, a `SystemInfo.supportsSetConstantBuffer` access during ScriptableObject initialization, and stale explicit-layout validators after concurrent DTO edits.
+Solution: Removed managed policy/finite-guard calls from the Burst writer enqueue path and kept sanitization in managed owner/flush lanes; moved Noir constant-buffer capability to a cold instance field assigned in `CachePlatformCapabilitiesCold`; updated only stale validator offsets for visor refraction, AI cognition, dispatcher fence, biolum pulse, physics culling, and voxel modified cells.
+Rejected Alternatives: Patching Unity package cache first; removing SignalBus guards globally; renaming DTO padding fields to satisfy stale specs; launching external `dotnet build` while Unity-owned compiler/import workers are active.
+Scalability potential: Low and shared-memory devices keep bounded MPSC backpressure without Burst managed-type faults. Middle/High/Ultra retain managed validation before signal dispatch and expanded visual telemetry without changing DTO size.
+Hardware Impact: Runtime frame-time gain claimed: 0 us pending profiler proof. Compile/import stability improves by eliminating a Burst-incompatible managed dependency in hot job writer code and a render-pipeline initialization exception source.
+
+## PlayMode Startup Guard Patch
+
+Problem: PlayMode diagnostics exposed a Unity API call from a MonoBehaviour static/field initialization path and a thermal service attempting dispatcher registration before the dispatcher existed. Console also retained graphics buffer leak warnings where object destruction could bypass OnDisable release.
+Solution: Moved UI layer lookup behind a cold lazy cache, gated thermal frame/frost registration on the cached dispatcher dependency, and made GlobalShaderDispatcher release buffers idempotently in OnDestroy as well as OnDisable.
+Rejected Alternatives: Leaving bootstrap to tolerate console errors; performing scene YAML rewrites; adding new global routes. The fix stays local to lifecycle and cold DI ordering.
+Scalability potential: Low avoids startup exception stalls; Middle/High/Ultra keep the same continuous render/thermal policy without binary platform branches.
+Hardware Impact: Runtime frame-time gain claimed: 0 us pending PlayMode profiler proof. Startup stability improved by removing a fatal editor/runtime initialization violation.
+
+## PlayMode Bootstrap Ordering Patch
+
+Problem: Current PlayMode showed bootstrap services treating missing cold dependencies as fatal before the owner phase registered DataVault or Dispatcher; ocean validation rejected the real Crest bridge assembly; vocal synthesis compiled a Burst function pointer that Unity did not recognize as an entry point.
+Solution: Deferred crash telemetry and pager initialization until DataVault is present, gated dispatcher registration until Dispatcher is present, allowed `Hecton8.Crest.Bridge` as the concrete `IOceanKinematics` provider assembly, made foveated unregister owner-checked, and replaced the vocal callback function pointer with a direct native-pointer kernel call while keeping the Burst job path intact.
+Rejected Alternatives: Raw scene edits, disabling console validation, or creating fake ocean provider wrappers. The existing Crest adapter remains the provider; bootstrap validation now matches the actual assembly split.
+Scalability potential: Low avoids boot stalls; Middle/High/Ultra preserve the same ocean, save, and audio systems without binary quality forks.
+Hardware Impact: Runtime frame-time gain claimed: 0 us pending PlayMode profiler proof. Startup correctness improves by removing premature fatal dependency checks and one Burst runtime exception.
+
+## Domain Reload Native Leak Patch
+
+Problem: Unity reload diagnostics showed Persistent allocations surviving across domain reload: `BiolumPulseSyncRuntime.BlackBoxDumpSnapshotOwner.Allocate` and `GlobalShaderDispatcher.EnsureGpuBuffers`.
+Solution: Added editor-only `AssemblyReloadEvents.beforeAssemblyReload` release hooks for the active biolum runtime and shader dispatcher. Existing runtime disposal paths stay unchanged; the new hooks only close native allocations before Unity tears down the managed domain.
+Rejected Alternatives: Ignoring warnings as editor-only noise; moving allocations to TempJob; disabling the systems during PlayMode. These buffers are valid session-owned state and must be released deterministically.
+Scalability potential: Low through Ultra get the same reload safety. No gameplay route, DTO layout, or continuous quality policy changed.
+Hardware Impact: Runtime frame-time gain claimed: 0 us. Editor stability improves by removing reload-time persistent allocation leaks that can poison repeated PlayMode tests.
+
+## PlayMode Core Service Ordering Patch
+
+Problem: PlayMode showed `MemorySentinelRuntime` calling dispatcher registration before `SystemDispatcher` existed, and `H8BinaryWorldPager` faulting on vault handles that were present but not owned by the pager after no-domain-reload PlayMode churn.
+Solution: Made MemorySentinel defer dispatcher lane registration until the `Dispatcher` hot-swap event arrives. Added cold pager handle normalization that releases stale pager BufferID handles and reacquires them under `SystemID.SavePersistence`.
+Rejected Alternatives: Suppressing the GlobalRegistry error; making dispatcher registration create a dispatcher; disabling pager IO. The owner phase must publish the dispatcher, and the pager must own only its own BufferIDs.
+Scalability potential: Low through Ultra keep the same runtime systems. This changes startup ordering and stale-handle recovery only.
+Hardware Impact: Runtime frame-time gain claimed: 0 us. PlayMode stability improves by removing one bootstrap ordering error and one no-domain-reload stale vault handle trap.
+
+## PlayMode Ecosystem And Vault Capacity Patch
+
+Problem: Fresh PlayMode still showed `NutrientDriftRuntime` calling dispatcher registration before `SystemDispatcher` existed, plus pager vault acquisition failing under a 512-entry mock buffer table during CoreServices bootstrap.
+Solution: Registered NutrientDrift as a hot-swap listener before dispatcher availability and deferred dispatcher lanes until the Dispatcher service event. Raised mock/authored DataVault buffer-table defaults to a continuous 2048-8192 profile curve and made pager-specific stale owner release bounded across repeated generation bumps.
+Rejected Alternatives: Creating a dispatcher from NutrientDrift; ignoring pager IO; disabling save bootstrap. Dispatcher ownership remains in bootstrap, and save paging must acquire its own BufferIDs rather than silently falling back.
+Scalability potential: Low gets 2048 metadata slots, which is cheap compared to native arena payloads; middle/high/ultra scale metadata headroom up to 8192 without changing gameplay authority or DTO layouts.
+Hardware Impact: Runtime frame-time gain claimed: 0 us. Bootstrap stability improves by removing one premature ecosystem registration error and one undersized metadata-table failure path.
+
+## PlayMode Scavenging Dispatcher Gate
+
+Problem: After the ecosystem patch, `ScavengingLootOracleRuntime` became the next AfterSceneLoad owner trying to register dispatcher phases before bootstrap had published `SystemDispatcher`.
+Solution: Kept its hot-swap listener cold and fail-open, but made dispatcher phase registration return until `GlobalRegistry.Dispatcher` exists; Dispatcher hot-swap now re-registers only when the replacement service is non-null.
+Rejected Alternatives: Moving loot oracle bootstrap into GameBootstrapper or constructing a dispatcher from scavenging code. Loot resolution remains decoupled and waits for the owner-published dispatcher.
+Scalability potential: Low through Ultra keep the same scavenging job path; only startup ordering changes.
+Hardware Impact: Runtime frame-time gain claimed: 0 us. Startup stability improves by eliminating one more premature dispatcher dependency violation.
+
+## Menu Validator Warning Patch
+
+Problem: Unity compiled cleanly by error count but emitted CS0162 in `MenuVisualVariantContractValidator15MM` because direct comparisons against public `const` catalog counts were compile-time false.
+Solution: Cached the catalog counts into locals before validation, preserving the editor contract check while removing unreachable-code diagnostics.
+Rejected Alternatives: Suppressing CS0162 globally or deleting the count validation. Both hide future menu catalog drift.
+Scalability potential: Low through Ultra unchanged; this is editor signal hygiene so PlayMode validation is not masked by stale warnings.
+Hardware Impact: Runtime frame-time gain claimed: 0 us. Editor console noise reduced for the next PlayMode pass.
+
+## PlayMode Fauna Dispatcher Gate
+
+Problem: After entering PlayMode, `StressDrivenSpawnDirector` constructed from an AfterSceneLoad runtime hook and called `GlobalRegistry.TryRegisterColdTickable` before `SystemDispatcher` existed.
+Solution: Registered the hot-swap listener first, deferred cold/late tick registration until the Dispatcher service event, and split dispatcher tick unregister from full lifecycle unregister.
+Rejected Alternatives: Creating a dispatcher from fauna code or disabling the spawn director. Dispatcher ownership stays in bootstrap; fauna remains a consumer.
+Scalability potential: Low through Ultra keep the same spawn jobs, telemetry, and AUP logic. Only cold startup ordering changed.
+Hardware Impact: Runtime frame-time gain claimed: 0 us. PlayMode stability improves by removing a premature AI/fauna dispatcher dependency violation.
+
+## PlayMode Shadow Culling Dispatcher Gate
+
+Problem: `AbyssalShadowCullingRuntime.OnEnable` registered simulation and visual-sync dispatcher systems during AfterSceneLoad before bootstrap had published `SystemDispatcher`.
+Solution: Moved phase registration behind a dispatcher availability gate and retried through the Dispatcher hot-swap event; full disposal still unregisters the same systems.
+Rejected Alternatives: Disabling abyssal shadow culling or moving the system into bootstrap. The render feature remains self-owned but waits for the dispatcher owner.
+Scalability potential: Low skips expensive shadow culling until services exist; Middle/High/Ultra keep the same simulation/VISUAL_SYNC split after dispatcher publication.
+Hardware Impact: Runtime frame-time gain claimed: 0 us. Startup stability improves by removing a premature graphics dispatcher registration error.
+
+## Addressables Release Soft-Fail Patch
+
+Problem: `PreWarmTierAddressableTextureGroupAsync` treated a successful direct `Addressables.Release` as failure when `AssetLifecycleGovernor` was not yet registered, making optional texture prewarm capable of failing `CoreServices`.
+Solution: Direct release now returns true, and tier texture prewarm always continues bootstrap after logging optional download failure or timeout.
+Rejected Alternatives: Blocking bootstrap on remote/local Addressables texture dependency readiness; disabling the whole Addressables prewarm path.
+Scalability potential: Low through Ultra keep tier texture labels, but startup authority does not depend on optional presentation residency.
+Hardware Impact: Runtime frame-time gain claimed: 0 us. Startup avoids a false fatal path after an already completed release.
+
+## World Pager Transient Vault Retry Patch
+
+Problem: `H8BinaryWorldPager` converted transient DataVault absence, allocation fence, or unready pager BufferID handles during bootstrap into a permanent initialization fault.
+Solution: Split transient abort from permanent native allocation fault. Transient abort releases streams, WAL streams, native buffers, and pager-owned handles without setting `_initializationFault`, allowing later `SaveManager.EnsureWorldPagerInitialized` retry after DataVault stabilizes.
+Rejected Alternatives: Suppressing pager warnings while keeping permanent disabled state; allocating fallback managed buffers; forcing DataVault creation from the pager.
+Scalability potential: Low through Ultra keep the same fixed native pager buffers and telemetry ring. The change affects owner-phase retry behavior only.
+Hardware Impact: Runtime frame-time gain claimed: 0 us. Bootstrap stability improves by removing one false permanent save-system shutdown during service ordering.
+
+## PlayMode Material Response Dispatcher Gate
+
+Problem: `ShinobuMaterialResponseRuntime.InstallRuntime` registered dispatcher phase systems and an environment cold tick from `AfterSceneLoad` before `SystemDispatcher` was published.
+Solution: Added a dispatcher availability gate to material response phase registration and retried registration from the `Dispatcher` hot-swap event while preserving DataVault rebinding on the existing service event.
+Rejected Alternatives: Disabling material response or moving it into bootstrap. The material visual system remains self-owned and waits for the dispatcher authority route.
+Scalability potential: Low through Ultra keep the same material simulation and VISUAL_SYNC upload path. Only startup ordering changed.
+Hardware Impact: Runtime frame-time gain claimed: 0 us. Startup stability improves by removing another premature dispatcher registration error.
+
+## PlayMode Visual Pressure Aging Dispatcher Gate
+
+Problem: `VisualPressureAgingRuntime.InstallRuntime` registered procedural aging dispatcher phases from `AfterSceneLoad` before `SystemDispatcher` was published.
+Solution: Added a dispatcher availability gate to visual pressure aging phase registration and retried through the `Dispatcher` hot-swap event while preserving the existing DataVault rebinding and buffer refresh path.
+Rejected Alternatives: Disabling visual aging, moving it into bootstrap, or making material systems create a dispatcher. Dispatcher remains bootstrap-owned.
+Scalability potential: Low through Ultra keep the same pressure-aging simulation and VISUAL_SYNC upload path. Only startup ordering changed.
+Hardware Impact: Runtime frame-time gain claimed: 0 us. Startup stability improves by removing another premature material-system dispatcher registration error.
+
+## PlayMode Dynamic Resolution Dispatcher Gate
+
+Problem: `ThermalDynamicResolutionAdapter.OnEnable` registered late-frame and slow-tick lanes before `SystemDispatcher` was published.
+Solution: Added dispatcher availability guards to late-frame and slow-tick registration and retried both lanes on `Dispatcher` hot-swap/rebound events.
+Rejected Alternatives: Disabling STP dynamic resolution or registering through Update. Presentation-scale changes stay in `LateFrameTick`, after simulation.
+Scalability potential: Low through Ultra keep continuous quality-driven DRS and visual budget routing. Only startup ordering changed.
+Hardware Impact: Runtime frame-time gain claimed: 0 us. Startup stability improves by removing one premature scalability-system dispatcher registration error.
+
+## PlayMode Plasma Beam Dispatcher Gate
+
+Problem: `ShinobuPlasmaBeamRuntime.InstallRuntime` registered plasma beam dispatcher phases from `AfterSceneLoad` before bootstrap had published `SystemDispatcher`.
+Solution: Added the same dispatcher availability gate used by adjacent VFX runtimes and retried phase/cold-tick registration when the `Dispatcher` service is replaced.
+Rejected Alternatives: Disabling plasma beams or moving VFX ownership into bootstrap. Plasma remains a self-owned runtime and waits for the dispatcher owner.
+Scalability potential: Low through Ultra keep the same GlobalQualityWeight-driven beam geometry path and VISUAL_SYNC upload route. Only startup ordering changed.
+Hardware Impact: Runtime frame-time gain claimed: 0 us. Startup stability improves by removing one premature VFX dispatcher registration error.
+
+## PlayMode Render Texture Pool Dispatcher Gate
+
+Problem: `RenderTexturePool.OnEnable` registered an `ISlowTickable` before `SystemDispatcher` existed.
+Solution: Added a dispatcher availability guard to slow-tick registration and retried the registration when the `Dispatcher` service appears.
+Rejected Alternatives: Disabling render texture pooling or moving pool ownership into bootstrap. The pool remains a rendering service and waits for the dispatcher owner.
+Scalability potential: Low through Ultra keep the same pooled RT reuse path; only startup registration order changed.
+Hardware Impact: Runtime frame-time gain claimed: 0 us. Startup stability improves by removing one premature optimization-service dispatcher registration error.

@@ -1,0 +1,3 @@
+name,intensity,falloffMeters,decayRate,normalPerturbation,depthBiasMeters
+# First row is the active shoreline profile. GlobalQualityWeight scales intensity, falloff, active lanes, and normal perturbation in code.
+default,1.35,5.50,0.36,0.09,0.04

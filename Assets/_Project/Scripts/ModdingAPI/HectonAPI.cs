@@ -95,9 +95,12 @@ namespace Hecton8.Modding
                 payloadType == typeof(ModCriticalMemoryEvictionPayload) ||
                 payloadType == typeof(ModAupResponse) ||
                 payloadType == typeof(FutureCommandEnvelope) ||
+#pragma warning disable CS0618
                 payloadType == typeof(ModCommand) ||
                 payloadType == typeof(ModAupCommand) ||
-                payloadType == typeof(ModRenderInstanceCommand))
+                payloadType == typeof(ModRenderInstanceCommand)
+#pragma warning restore CS0618
+                )
             {
                 throw new IllegalContractException($"HectonAPI.{surface} cannot publish engine-owned mod payload type {payloadType.Name}.");
             }

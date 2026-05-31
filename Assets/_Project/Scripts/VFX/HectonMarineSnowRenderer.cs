@@ -2837,11 +2837,40 @@ namespace Hecton8.Environment
             kernelIndex = -1;
             if (marineSnowCompute == null || !_coldSupportsComputeShaders)
                 return false;
-            if (!marineSnowCompute.HasKernel(kernelName))
-                return false;
 
-            kernelIndex = marineSnowCompute.FindKernel(kernelName);
-            return kernelIndex >= 0;
+            try
+            {
+                if (!marineSnowCompute.HasKernel(kernelName))
+                    return false;
+
+                kernelIndex = marineSnowCompute.FindKernel(kernelName);
+                return kernelIndex >= 0;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                kernelIndex = -1;
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                kernelIndex = -1;
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                kernelIndex = -1;
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                kernelIndex = -1;
+                return false;
+            }
+            catch (UnityException)
+            {
+                kernelIndex = -1;
+                return false;
+            }
         }
 
         private bool CacheKernelThreadGroupSizes()
@@ -2923,11 +2952,36 @@ namespace Hecton8.Environment
             sizeZ = 0u;
             if (marineSnowCompute == null ||
                 kernelIndex < 0 ||
-                !_coldSupportsComputeShaders ||
-                !marineSnowCompute.IsSupported(kernelIndex))
+                !_coldSupportsComputeShaders)
                 return false;
 
-            marineSnowCompute.GetKernelThreadGroupSizes(kernelIndex, out sizeX, out sizeY, out sizeZ);
+            try
+            {
+                if (!marineSnowCompute.IsSupported(kernelIndex))
+                    return false;
+
+                marineSnowCompute.GetKernelThreadGroupSizes(kernelIndex, out sizeX, out sizeY, out sizeZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                return false;
+            }
+            catch (UnityException)
+            {
+                return false;
+            }
             if (sizeX == 0u || sizeY == 0u || sizeZ == 0u)
                 return false;
 

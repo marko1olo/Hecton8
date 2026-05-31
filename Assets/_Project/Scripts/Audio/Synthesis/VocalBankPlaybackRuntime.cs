@@ -74,7 +74,6 @@ namespace Hecton8.Audio.Synthesis
             ;
 
         private static VocalBankPlaybackRuntime _activeInstance;
-        private static FunctionPointer<VocalDecodeDelegate> _decodeFunctionPointer;
         private static int _decodePointerReady;
 
         [Header("Cold Bank")]
@@ -242,7 +241,6 @@ namespace Hecton8.Audio.Synthesis
             if (Volatile.Read(ref _decodePointerReady) != 0)
                 return;
 
-            _decodeFunctionPointer = BurstCompiler.CompileFunctionPointer<VocalDecodeDelegate>(VocalDecodeKernel.DecodeIntoAudioBuffer);
             Volatile.Write(ref _decodePointerReady, 1);
         }
 
@@ -392,7 +390,7 @@ namespace Hecton8.Audio.Synthesis
                     VocalTelemetryEntryDTO* telemetry = (VocalTelemetryEntryDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.Telemetry);
                     VocalDecodeCounters64* counters = (VocalDecodeCounters64*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.Counters);
                     float* waveform = (float*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(views.Waveform);
-                    _decodeFunctionPointer.Invoke(
+                    VocalDecodeKernel.DecodeIntoAudioBuffer(
                         output,
                         sampleCount,
                         safeChannels,

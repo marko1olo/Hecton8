@@ -75,6 +75,64 @@ def fmt_money(value):
     return f"${float(value):,.2f}"
 
 
+def fmt_float(value, decimals=2):
+    if value is None:
+        return "n/a"
+    return f"{float(value):,.{decimals}f}"
+
+
+def safe_div(value, denominator):
+    if not denominator:
+        return None
+    return float(value) / float(denominator)
+
+
+def build_layperson_scale(total, delta, pricing, primary_cost_delta, velocity, cache_ratio):
+    primary_total_cost = pricing[PRIMARY_PRICE_KEY]["total_cost_usd"]
+    total_words = total["total_tokens"] * 0.75
+    delta_words = delta["total_tokens"] * 0.75
+    output_words = total["output_tokens"] * 0.75
+    reasoning_words = total["reasoning_output_tokens"] * 0.75
+    tokens_per_second = velocity.get("total_tokens_per_second") or 0.0
+    dollars_per_hour = velocity.get("gpt_5_5_standard_usd_per_hour") or 0.0
+    return {
+        "assumptions": {
+            "token_to_word_note": "Human-scale conversions use a rough English-text heuristic: 1 token ~= 0.75 words. Russian/code/tokenizer behavior varies; this is scale communication, not billing math.",
+            "printed_page_words": 500,
+            "book_words": 80_000,
+            "reading_speed_words_per_minute": 250,
+            "workday_reading_hours": 8,
+            "reference_game_price_usd": 60,
+            "reference_workstation_price_usd": 2000,
+        },
+        "all_time": {
+            "approx_words": total_words,
+            "approx_printed_pages_500_words": total_words / 500,
+            "approx_80k_word_books": total_words / 80_000,
+            "continuous_reading_years_at_250_wpm": total_words / (250 * 60 * 24 * 365),
+            "workday_reading_years_at_250_wpm": total_words / (250 * 60 * 8 * 365),
+            "gpt_5_5_standard_usd": primary_total_cost,
+            "equivalent_60_usd_games": primary_total_cost / 60,
+            "equivalent_2000_usd_workstations": primary_total_cost / 2000,
+            "cache_ratio_percent": cache_ratio * 100,
+            "uncached_input_ratio_percent": (1 - cache_ratio) * 100,
+            "output_words_equivalent": output_words,
+            "reasoning_words_equivalent": reasoning_words,
+        },
+        "since_previous_snapshot": {
+            "approx_words": delta_words,
+            "approx_printed_pages_500_words": delta_words / 500,
+            "approx_80k_word_books": delta_words / 80_000,
+            "gpt_5_5_standard_usd_delta": primary_cost_delta,
+            "tokens_per_second": tokens_per_second,
+            "approx_words_per_second": tokens_per_second * 0.75,
+            "approx_pages_per_hour": safe_div((velocity.get("total_tokens_per_hour") or 0.0) * 0.75, 500),
+            "gpt_5_5_standard_usd_per_hour": dollars_per_hour,
+            "gpt_5_5_standard_usd_per_day_at_current_velocity": dollars_per_hour * 24,
+        },
+    }
+
+
 def find_previous_report():
     current = datetime.date.fromisoformat(REPORT_DATE)
     if REPORT_JSON.exists():
@@ -303,6 +361,7 @@ def build_report():
     base_delta_cost = price_row(delta_total, PRICING[PRIMARY_PRICE_KEY])["total_cost_usd"]
     post_cutoff_long_context_base_cost = price_row(long_context_delta_usage, PRICING[PRIMARY_PRICE_KEY])["total_cost_usd"]
     post_cutoff_long_context_surcharge_cost = price_row(long_context_delta_usage, PRICING[GPT55_LONG_CONTEXT_PRICE_KEY])["total_cost_usd"] - post_cutoff_long_context_base_cost
+    layperson_scale = build_layperson_scale(total, delta_total, pricing, primary_delta, velocity, total["cached_input_tokens"] / max(1, total["input_tokens"]))
 
     report = {
         **previous,
@@ -326,6 +385,7 @@ def build_report():
         "cache_ratio": total["cached_input_tokens"] / max(1, total["input_tokens"]),
         "output_ratio": total["output_tokens"] / max(1, total["total_tokens"]),
         "reasoning_output_ratio_of_output": total["reasoning_output_tokens"] / max(1, total["output_tokens"]),
+        "layperson_scale": layperson_scale,
         "pricing": pricing,
         "pricing_upper_bound_no_cache_usd": upper_no_cache,
         "primary_price_key": PRIMARY_PRICE_KEY,
@@ -390,6 +450,9 @@ def write_reports(report):
     total = report["totals"]
     primary = report["pricing"][PRIMARY_PRICE_KEY]
     pricing_context = report["pricing_context_rules"]
+    scale = report["layperson_scale"]
+    scale_total = scale["all_time"]
+    scale_delta = scale["since_previous_snapshot"]
     change = report["previous_snapshot_delta"]
     velocity = change["velocity"]
     lines = [
@@ -414,6 +477,26 @@ def write_reports(report):
         f"| GPT-5.5 long-context sensitivity upper bound | {fmt_money(pricing_context['gpt_5_5_long_context_upper_bound_usd'])} |",
         f"| GPT-5.5 long-context + regional sensitivity upper bound | {fmt_money(pricing_context['gpt_5_5_long_context_regional_10pct_upper_bound_usd'])} |",
         f"| GPT-5.5 regional +10% sensitivity | {fmt_money(pricing_context['gpt_5_5_regional_10pct_usd'])} |",
+        "",
+        "## Scale For Non-Specialists",
+        "",
+        "These are communication-scale analogies, not billing math. Assumption: 1 token is roughly 0.75 English words; code and Russian text vary.",
+        "",
+        "| Metric | Value |",
+        "|---|---:|",
+        f"| all-time approximate words | {fmt_int(scale_total['approx_words'])} |",
+        f"| all-time 500-word printed pages | {fmt_int(scale_total['approx_printed_pages_500_words'])} |",
+        f"| all-time 80k-word books | {fmt_int(scale_total['approx_80k_word_books'])} |",
+        f"| continuous reading at 250 wpm | {fmt_float(scale_total['continuous_reading_years_at_250_wpm'])} years |",
+        f"| 8h/day reading at 250 wpm | {fmt_float(scale_total['workday_reading_years_at_250_wpm'])} years |",
+        f"| all-time $60 game equivalents | {fmt_float(scale_total['equivalent_60_usd_games'])} |",
+        f"| all-time $2k workstation equivalents | {fmt_float(scale_total['equivalent_2000_usd_workstations'])} |",
+        f"| cached input share | {fmt_float(scale_total['cache_ratio_percent'])}% |",
+        f"| since previous snapshot approximate words | {fmt_int(scale_delta['approx_words'])} |",
+        f"| since previous snapshot 500-word pages | {fmt_int(scale_delta['approx_printed_pages_500_words'])} |",
+        f"| current burn approximate words / second | {fmt_float(scale_delta['approx_words_per_second'])} |",
+        f"| current burn pages / hour | {fmt_float(scale_delta['approx_pages_per_hour'])} |",
+        f"| current burn GPT-5.5 standard $ / day | {fmt_money(scale_delta['gpt_5_5_standard_usd_per_day_at_current_velocity'])} |",
         "",
         "## Increment Since Previous Snapshot",
         "",
@@ -472,7 +555,12 @@ def write_reports(report):
         f"| GPT-5.5 long-context sensitivity upper bound | {fmt_money(pricing_context['gpt_5_5_long_context_upper_bound_usd'])} |",
         f"| GPT-5.5 long-context + regional sensitivity upper bound | {fmt_money(pricing_context['gpt_5_5_long_context_regional_10pct_upper_bound_usd'])} |",
         f"| GPT-5.5 regional +10% sensitivity | {fmt_money(pricing_context['gpt_5_5_regional_10pct_usd'])} |",
+        f"| approx all-time 500-word pages | {fmt_int(scale_total['approx_printed_pages_500_words'])} |",
+        f"| approx all-time 80k-word books | {fmt_int(scale_total['approx_80k_word_books'])} |",
+        f"| approx all-time continuous reading years at 250 wpm | {fmt_float(scale_total['continuous_reading_years_at_250_wpm'])} |",
+        f"| cached input share | {fmt_float(scale_total['cache_ratio_percent'])}% |",
         f"| total tokens / hour since previous snapshot | {velocity['total_tokens_per_hour']:,.2f} |",
+        f"| approx pages / hour since previous snapshot | {fmt_float(scale_delta['approx_pages_per_hour'])} |",
         f"| GPT-5.5 standard $ / hour since previous snapshot | {fmt_money(velocity['gpt_5_5_standard_usd_per_hour'])} |",
         "",
         "Evidence: local Codex JSONL plus official OpenAI pricing/cache/reasoning docs. Not invoice proof.",

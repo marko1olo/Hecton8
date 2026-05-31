@@ -1,0 +1,5 @@
+name,font_atlas_scale,curvature,fog_edge_strength,primary_r,primary_g,primary_b,primary_a
+default,0.62,0.52,0.58,0.42,0.94,0.98,1.00
+pressure,0.58,0.64,0.76,0.30,0.82,1.00,1.00
+warning,0.60,0.57,0.68,1.00,0.36,0.18,1.00
+abyssal,0.55,0.72,0.88,0.25,0.62,0.96,1.00

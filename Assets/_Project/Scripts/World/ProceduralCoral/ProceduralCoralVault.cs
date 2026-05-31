@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;

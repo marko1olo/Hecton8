@@ -177,7 +177,6 @@ MonoBehaviour:
   jitterFrequency: 50
   deconstructThreshold: 3
   laserLine: {fileID: 0}
-  sparksVFX: {fileID: 0}
   cutAudio: {fileID: 0}
   overheatErrorClip: {fileID: 0}
   basePitch: 1

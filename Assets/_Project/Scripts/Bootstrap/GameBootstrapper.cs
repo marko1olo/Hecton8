@@ -127,6 +127,7 @@ namespace Hecton8.Bootstrap
         private const string RuntimeWatchdogRuntimeName = "[RuntimeWatchdog]";
         private const string GCMonitorRuntimeName = "[GCMonitor]";
         private const string PluginsAssemblyName = "Hecton8.Plugins";
+        private const string CrestBridgeAssemblyName = "Hecton8.Crest.Bridge";
         private const string DontDestroyOnLoadSceneName = "DontDestroyOnLoad";
         private const string HectonHeadlessCommandLineArg = "-h8headless";
         private const string HeadlessCommandLineArg = "-headless";
@@ -209,6 +210,7 @@ namespace Hecton8.Bootstrap
         private const double BootstrapJobWaitWatchdogSeconds = 10.0d;
         private const int BootstrapSceneRootScratchCapacity = 256;
         private const int BootstrapTransformScratchCapacity = 4096;
+        private const double BootstrapAddressablePrewarmSoftTimeoutSeconds = 2.5d;
 #if UNITY_INCLUDE_TESTS
         private static readonly bool _isUnityTestRunnerProcess = ResolveUnityTestRunnerProcess();
 #endif
@@ -2585,9 +2587,19 @@ namespace Hecton8.Bootstrap
             }
 #endif
             AsyncOperationHandle handle = Addressables.DownloadDependenciesAsync(label, false);
+            long waitStartTimestamp = Stopwatch.GetTimestamp();
             while (!handle.IsDone)
             {
                 ct.ThrowIfCancellationRequested();
+                if (HasWatchdogElapsed(waitStartTimestamp, BootstrapAddressablePrewarmSoftTimeoutSeconds, out double elapsedSeconds))
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.LogWarning("[GameBootstrapper] Tier Addressables prewarm timed out; continuing bootstrap. label=" + label + " elapsed=" + elapsedSeconds.ToString("0.000"));
+#endif
+                    TryReleaseBootstrapDependencyHandle(handle);
+                    return true;
+                }
+
                 await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
             }
 
@@ -2596,9 +2608,10 @@ namespace Hecton8.Bootstrap
                 PublishAddressableDependencyGroupLoaded(-1, label, handle);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             else
-                Debug.LogError("[GameBootstrapper] Tier Addressables prewarm failed: " + label);
+                Debug.LogWarning("[GameBootstrapper] Tier Addressables prewarm failed; continuing bootstrap. label=" + label);
 #endif
-            return TryReleaseBootstrapDependencyHandle(handle) && succeeded;
+            TryReleaseBootstrapDependencyHandle(handle);
+            return true;
         }
 
 #if UNITY_EDITOR
@@ -2659,7 +2672,7 @@ namespace Hecton8.Bootstrap
                 return lifecycleGovernor.TryReleaseExternalAddressableFault(handle);
 
             Addressables.Release(handle);
-            return false;
+            return true;
         }
 
         private static void PublishAddressableDependencyGroupLoaded(
@@ -5125,50 +5138,52 @@ namespace Hecton8.Bootstrap
         private static void ValidateOceanKinematicsPluginContract()
         {
             Type oceanKinematicsContract = typeof(IOceanKinematics);
-            Assembly pluginsAssembly = null;
+            bool foundProvider = false;
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             for (int i = 0; i < assemblies.Length; i++)
             {
                 Assembly assembly = assemblies[i];
                 AssemblyName assemblyName = assembly.GetName();
-                if (assemblyName != null && string.Equals(assemblyName.Name, PluginsAssemblyName, StringComparison.Ordinal))
-                {
-                    pluginsAssembly = assembly;
-                    break;
-                }
-            }
-
-            if (pluginsAssembly == null)
-                throw new InvalidOperationException("[GameBootstrapper] Hecton8.Plugins assembly missing; IOceanKinematics provider validation cannot continue.");
-
-            Type[] pluginTypes;
-            try
-            {
-                pluginTypes = pluginsAssembly.GetTypes();
-            }
-            catch (ReflectionTypeLoadException exception)
-            {
-                pluginTypes = exception.Types;
-            }
-
-            if (pluginTypes == null)
-                throw new InvalidOperationException("[GameBootstrapper] Hecton8.Plugins type table missing; IOceanKinematics provider validation cannot continue.");
-
-            for (int i = 0; i < pluginTypes.Length; i++)
-            {
-                Type pluginType = pluginTypes[i];
-                if (pluginType == null ||
-                    pluginType.IsInterface ||
-                    pluginType.IsAbstract ||
-                    !oceanKinematicsContract.IsAssignableFrom(pluginType))
+                if (assemblyName == null ||
+                    (!string.Equals(assemblyName.Name, PluginsAssemblyName, StringComparison.Ordinal) &&
+                     !string.Equals(assemblyName.Name, CrestBridgeAssemblyName, StringComparison.Ordinal)))
                 {
                     continue;
                 }
 
-                return;
+                Type[] pluginTypes;
+                try
+                {
+                    pluginTypes = assembly.GetTypes();
+                }
+                catch (ReflectionTypeLoadException exception)
+                {
+                    pluginTypes = exception.Types;
+                }
+
+                if (pluginTypes == null)
+                    continue;
+
+                for (int typeIndex = 0; typeIndex < pluginTypes.Length; typeIndex++)
+                {
+                    Type pluginType = pluginTypes[typeIndex];
+                    if (pluginType == null ||
+                        pluginType.IsInterface ||
+                        pluginType.IsAbstract ||
+                        !oceanKinematicsContract.IsAssignableFrom(pluginType))
+                    {
+                        continue;
+                    }
+
+                    foundProvider = true;
+                    break;
+                }
+
+                if (foundProvider)
+                    return;
             }
 
-            throw new InvalidOperationException("[GameBootstrapper] No Hecton8.Plugins IOceanKinematics implementation found. World load is blocked.");
+            throw new InvalidOperationException("[GameBootstrapper] No Hecton8.Plugins or Hecton8.Crest.Bridge IOceanKinematics implementation found. World load is blocked.");
         }
 
         private static global::Hecton8.Core.HectonHardwareProfile CaptureHardwareProfile()

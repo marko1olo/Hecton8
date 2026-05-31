@@ -21,12 +21,11 @@ using Unity.Mathematics;
 using Unity.Profiling;
 using Unity.Profiling.LowLevel.Unsafe;
 using UnityEngine;
-using UnityEngine.Profiling;
 using UnityEngine.SceneManagement;
 
 namespace Hecton8.QA
 {
-    public enum QAWatchdogState1424 : ushort
+    public enum QAWatchdogState1524 : ushort
     {
         ColdStart = 0,
         WaitBootstrap = 1,
@@ -38,7 +37,7 @@ namespace Hecton8.QA
         Failed = 7
     }
 
-    public enum QAWatchdogFailReason1424 : uint
+    public enum QAWatchdogFailReason1524 : uint
     {
         None = 0u,
         FrameSpike = 1u,
@@ -49,11 +48,12 @@ namespace Hecton8.QA
         SceneRouteTimeout = 6u,
         NativeSentinelLeak = 7u,
         NonFinitePlayerState = 8u,
-        ApplicationQuitBeforeTerminalExport = 9u
+        ApplicationQuitBeforeTerminalExport = 9u,
+        ProfilerRecorderUnavailable = 10u
     }
 
     [Flags]
-    public enum QAWatchdogMetricFlags1424 : ushort
+    public enum QAWatchdogMetricFlags1524 : ushort
     {
         None = 0,
         DataVaultWriteFailed = 1 << 0,
@@ -66,11 +66,13 @@ namespace Hecton8.QA
         StuckRecovery = 1 << 7,
         SceneFallbackUsed = 1 << 8,
         NativeSentinelFailed = 1 << 9,
-        MockFuzzerArmed = 1 << 10
+        MockFuzzerArmed = 1 << 10,
+        ProfilerRecorderMissing = 1 << 11,
+        TerminalSample = 1 << 12
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct QAWatchdogFrameMetric1424
+    public struct QAWatchdogFrameMetric1524
     {
         [FieldOffset(0)] public uint Frame;
         [FieldOffset(4)] public ushort FrameTimeMicroseconds;
@@ -86,7 +88,7 @@ namespace Hecton8.QA
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct QAWatchdogBlackBoxEntry1424
+    public struct QAWatchdogBlackBoxEntry1524
     {
         [FieldOffset(0)] public uint Frame;
         [FieldOffset(4)] public ushort FrameTimeMicroseconds;
@@ -110,7 +112,7 @@ namespace Hecton8.QA
     }
 
     [DisallowMultipleComponent]
-    [AddComponentMenu("Hecton8/QA/QA Watchdog Bot 1424")]
+    [AddComponentMenu("Hecton8/QA/QA Watchdog Bot 1524")]
     public sealed class QA_WatchdogBot :
         MonoBehaviour,
         IFastTickable,
@@ -118,15 +120,15 @@ namespace Hecton8.QA
         ILateFrameTickable,
         IGlobalRegistryHotSwapListener
     {
-        private const string AutoObjectName = "__QA_WATCHDOG_BOT_1424";
+        private const string AutoObjectName = "__QA_WATCHDOG_BOT_1524";
         private const string WorldSceneName = "02_HECTON_WORLD";
         private const int MainMenuSceneBuildIndex = 1;
         private const int OrbitSceneBuildIndex = 2;
         private const int WorldSceneBuildIndex = 3;
-        private const string CommandLineSwitch = "-h8QaWatchdog1424";
-        private const string EnvironmentSwitch = "H8_QA_WATCHDOG_1424";
-        private const string FlagFile = "Temp/H8_QA_WATCHDOG_1424.flag";
-        private const string CsvFileName = "QA_WATCHDOG_ENDURANCE_REPORT_1424.csv";
+        private const string CommandLineSwitch = "-h8QaWatchdog1524";
+        private const string EnvironmentSwitch = "H8_QA_WATCHDOG_1524";
+        private const string FlagFile = "Temp/H8_QA_WATCHDOG_1524.flag";
+        private const string CsvFileName = "QA_WATCHDOG_ENDURANCE_REPORT_1524.csv";
 
         private const int RecorderCapacity = 1;
         private const int MetricCapacity = 36000;
@@ -167,10 +169,10 @@ namespace Hecton8.QA
         private readonly byte[] _p95BucketRing = new byte[P95WindowCapacity]; // COLD ALLOC: byte[P95WindowCapacity] - p95 rolling bucket ring - owner: QA_WatchdogBot
         private readonly char[] _formatBuffer = new char[64]; // COLD ALLOC: char[64] - terminal CSV TryFormat scratch - owner: QA_WatchdogBot
 
-        private QAWatchdogFrameMetric1424[] _managedMetrics;
-        private QAWatchdogBlackBoxEntry1424[] _managedBlackBox;
-        private VaultGenerationHandle<QAWatchdogFrameMetric1424> _metricHandle;
-        private VaultGenerationHandle<QAWatchdogBlackBoxEntry1424> _blackBoxHandle;
+        private QAWatchdogFrameMetric1524[] _managedMetrics;
+        private QAWatchdogBlackBoxEntry1524[] _managedBlackBox;
+        private VaultGenerationHandle<QAWatchdogFrameMetric1524> _metricHandle;
+        private VaultGenerationHandle<QAWatchdogBlackBoxEntry1524> _blackBoxHandle;
         private IDataVault _dataVault;
         private ISceneService _sceneService;
 
@@ -180,11 +182,12 @@ namespace Hecton8.QA
         private ProfilerRecorder _batchesRecorder;
         private ProfilerRecorder _setPassRecorder;
 
-        private QAWatchdogState1424 _state;
-        private QAWatchdogFailReason1424 _failReason;
+        private QAWatchdogState1524 _state;
+        private QAWatchdogFailReason1524 _failReason;
         private bool _runActive;
         private bool _terminalExportQueued;
         private bool _terminalExportWritten;
+        private bool _terminalCsvMetricReady;
         private bool _tickRegistered;
         private bool _coldRegistered;
         private bool _lateRegistered;
@@ -198,7 +201,9 @@ namespace Hecton8.QA
         private bool _vaultDefragRequestPending;
         private bool _sceneFallbackUsed;
         private bool _nativeSentinelFailed;
+        private bool _criticalRecorderMissing;
         private MainMenuController _mainMenuController;
+        private QAWatchdogFrameMetric1524 _terminalCsvMetric;
         private int _metricWriteIndex;
         private int _metricSamples;
         private int _blackBoxWriteIndex;
@@ -269,10 +274,10 @@ namespace Hecton8.QA
 
         private static bool ShouldAutoStartCold()
         {
-            if (string.Equals(Environment.GetEnvironmentVariable(EnvironmentSwitch), "1", StringComparison.Ordinal))
+            if (string.Equals(global::System.Environment.GetEnvironmentVariable(EnvironmentSwitch), "1", StringComparison.Ordinal))
                 return true;
 
-            string[] args = Environment.GetCommandLineArgs();
+            string[] args = global::System.Environment.GetCommandLineArgs();
             for (int i = 0; i < args.Length; i++)
             {
                 if (string.Equals(args[i], CommandLineSwitch, StringComparison.OrdinalIgnoreCase))
@@ -285,7 +290,7 @@ namespace Hecton8.QA
         private void Awake()
         {
             ResolveArtifactPathsCold();
-            _sentinelAssertArgs[0] = "QA_WATCHDOG_BOT_1424";
+            _sentinelAssertArgs[0] = "QA_WATCHDOG_BOT_1524";
         }
 
         private void OnEnable()
@@ -312,10 +317,12 @@ namespace Hecton8.QA
                 return;
 
             _runActive = true;
-            _state = QAWatchdogState1424.ColdStart;
-            _failReason = QAWatchdogFailReason1424.None;
+            _state = QAWatchdogState1524.ColdStart;
+            _failReason = QAWatchdogFailReason1524.None;
             _terminalExportQueued = false;
             _terminalExportWritten = false;
+            _terminalCsvMetricReady = false;
+            _terminalCsvMetric = default;
             _metricWriteIndex = 0;
             _metricSamples = 0;
             _blackBoxWriteIndex = 0;
@@ -346,6 +353,7 @@ namespace Hecton8.QA
             _vaultDefragRequestPending = false;
             _sceneFallbackUsed = false;
             _nativeSentinelFailed = false;
+            _criticalRecorderMissing = false;
             _mainMenuController = null;
 
             Array.Clear(_p95Buckets, 0, _p95Buckets.Length);
@@ -354,13 +362,13 @@ namespace Hecton8.QA
             _managedMetrics = null;
             _managedBlackBox = null;
 
-            ResolveRecordersCold();
             CacheDataVaultCold();
             CacheSceneServiceCold();
             EnsureStorageCold();
+            ResolveRecordersCold();
             TryRegisterHotSwapListenerCold();
             RegisterTickLanesCold();
-            _state = QAWatchdogState1424.WaitBootstrap;
+            _state = QAWatchdogState1524.WaitBootstrap;
         }
 
         private void ResolveArtifactPathsCold()
@@ -389,6 +397,10 @@ namespace Hecton8.QA
             _gfxUsedRecorder = StartRecorderCold(ProfilerCategory.Memory, GfxUsedCounters);
             _batchesRecorder = StartRecorderCold(ProfilerCategory.Render, BatchesCounters);
             _setPassRecorder = StartRecorderCold(ProfilerCategory.Render, SetPassCounters);
+            _criticalRecorderMissing =
+                !_frameTimeRecorder.Valid ||
+                !_gcAllocRecorder.Valid ||
+                !_gfxUsedRecorder.Valid;
         }
 
         private static ProfilerRecorder StartRecorderCold(ProfilerCategory category, string[] candidates)
@@ -428,12 +440,12 @@ namespace Hecton8.QA
             IDataVault vault = _dataVault;
             if (vault != null)
             {
-                _metricHandle = vault.EnsureGenerationHandle<QAWatchdogFrameMetric1424>(
+                _metricHandle = vault.EnsureGenerationHandle<QAWatchdogFrameMetric1524>(
                     MetricsBufferId,
                     MetricCapacity,
                     OwnerSystemId,
                     NativeArrayOptions.ClearMemory);
-                _blackBoxHandle = vault.EnsureGenerationHandle<QAWatchdogBlackBoxEntry1424>(
+                _blackBoxHandle = vault.EnsureGenerationHandle<QAWatchdogBlackBoxEntry1524>(
                     BlackBoxBufferId,
                     BlackBoxCapacity,
                     OwnerSystemId,
@@ -455,9 +467,9 @@ namespace Hecton8.QA
         private void EnsureManagedFallbackCold()
         {
             if (_managedMetrics == null || _managedMetrics.Length != MetricCapacity)
-                _managedMetrics = new QAWatchdogFrameMetric1424[MetricCapacity]; // COLD ALLOC: QAWatchdogFrameMetric1424[36000] = 1,152,000 B - managed fallback metric ring - owner: QA_WatchdogBot
+                _managedMetrics = new QAWatchdogFrameMetric1524[MetricCapacity]; // COLD ALLOC: QAWatchdogFrameMetric1524[36000] = 1,152,000 B - managed fallback metric ring - owner: QA_WatchdogBot
             if (_managedBlackBox == null || _managedBlackBox.Length != BlackBoxCapacity)
-                _managedBlackBox = new QAWatchdogBlackBoxEntry1424[BlackBoxCapacity]; // COLD ALLOC: QAWatchdogBlackBoxEntry1424[300] = 19,200 B - managed fallback black-box ring - owner: QA_WatchdogBot
+                _managedBlackBox = new QAWatchdogBlackBoxEntry1524[BlackBoxCapacity]; // COLD ALLOC: QAWatchdogBlackBoxEntry1524[300] = 19,200 B - managed fallback black-box ring - owner: QA_WatchdogBot
         }
 
         private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle)
@@ -476,19 +488,19 @@ namespace Hecton8.QA
 
             switch (_state)
             {
-                case QAWatchdogState1424.WaitBootstrap:
+                case QAWatchdogState1524.WaitBootstrap:
                     FastTickWaitBootstrap(deltaTime);
                     break;
-                case QAWatchdogState1424.WaitMainMenu:
+                case QAWatchdogState1524.WaitMainMenu:
                     FastTickWaitMainMenu(deltaTime);
                     break;
-                case QAWatchdogState1424.InvokeMenuStart:
+                case QAWatchdogState1524.InvokeMenuStart:
                     FastTickInvokeMenuStart(deltaTime);
                     break;
-                case QAWatchdogState1424.WaitWorld:
+                case QAWatchdogState1524.WaitWorld:
                     FastTickWaitWorld(deltaTime);
                     break;
-                case QAWatchdogState1424.Simulation:
+                case QAWatchdogState1524.Simulation:
                     FastTickSimulation(deltaTime);
                     break;
             }
@@ -501,7 +513,7 @@ namespace Hecton8.QA
             if (activeSceneBuildIndex == MainMenuSceneBuildIndex)
             {
                 _sceneWaitSeconds = 0f;
-                _state = QAWatchdogState1424.WaitMainMenu;
+                _state = QAWatchdogState1524.WaitMainMenu;
                 return;
             }
 
@@ -512,7 +524,7 @@ namespace Hecton8.QA
             }
 
             if (_sceneWaitSeconds > SceneRouteTimeoutSeconds)
-                FailCold(QAWatchdogFailReason1424.SceneRouteTimeout);
+                FailCold(QAWatchdogFailReason1524.SceneRouteTimeout);
         }
 
         private void FastTickWaitMainMenu(float deltaTime)
@@ -521,13 +533,13 @@ namespace Hecton8.QA
             if (_menuStartInvoked)
             {
                 _sceneWaitSeconds = 0f;
-                _state = QAWatchdogState1424.WaitWorld;
+                _state = QAWatchdogState1524.WaitWorld;
                 return;
             }
 
             _menuStartRequestPending = true;
             if (_sceneWaitSeconds > SceneRouteTimeoutSeconds)
-                FailCold(QAWatchdogFailReason1424.SceneRouteTimeout);
+                FailCold(QAWatchdogFailReason1524.SceneRouteTimeout);
         }
 
         private void FastTickInvokeMenuStart(float deltaTime)
@@ -553,12 +565,12 @@ namespace Hecton8.QA
             }
 
             if (_sceneWaitSeconds > SceneRouteTimeoutSeconds)
-                FailCold(QAWatchdogFailReason1424.SceneRouteTimeout);
+                FailCold(QAWatchdogFailReason1524.SceneRouteTimeout);
         }
 
         private void EnterSimulationState()
         {
-            _state = QAWatchdogState1424.Simulation;
+            _state = QAWatchdogState1524.Simulation;
             _simulationSeconds = 0f;
             _sceneWaitSeconds = 0f;
             _noKccVelocitySeconds = 0f;
@@ -728,7 +740,7 @@ namespace Hecton8.QA
             bool finitePlayer = !hasPlayer || IsFinite(in movementState);
             if (!finitePlayer)
             {
-                FailCold(QAWatchdogFailReason1424.NonFinitePlayerState);
+                FailCold(QAWatchdogFailReason1524.NonFinitePlayerState);
                 return;
             }
 
@@ -738,7 +750,7 @@ namespace Hecton8.QA
             {
                 _noKccVelocitySeconds += deltaTime;
                 if (_noKccVelocitySeconds >= NoKccVelocityFailSeconds)
-                    FailCold(QAWatchdogFailReason1424.NoKccVelocity);
+                    FailCold(QAWatchdogFailReason1524.NoKccVelocity);
                 return;
             }
 
@@ -798,47 +810,48 @@ namespace Hecton8.QA
                 return;
             }
 
-            QAWatchdogFrameMetric1424 metric = SampleMetricHot();
+            QAWatchdogFrameMetric1524 metric = SampleMetricHot();
             WriteMetricHot(in metric);
             WriteBlackBoxHot(in metric);
             EvaluateMetricHot(in metric);
         }
 
-        private QAWatchdogFrameMetric1424 SampleMetricHot()
+        private QAWatchdogFrameMetric1524 SampleMetricHot()
         {
-            long graphicsFallbackBytes = _gfxUsedRecorder.Valid ? 0L : Profiler.GetAllocatedMemoryForGraphicsDriver();
             uint frameUs = ClampUInt(ReadRecorderMicroseconds(_frameTimeRecorder, _lastFastDeltaTimeSeconds));
             uint gcBytes = ClampUInt(ReadRecorderBytes(_gcAllocRecorder, 0L));
-            uint vramMb = ClampUInt(ReadRecorderMegabytes(_gfxUsedRecorder, graphicsFallbackBytes));
+            uint vramMb = ClampUInt(ReadRecorderMegabytes(_gfxUsedRecorder, 0L));
             uint batches = ClampUInt(ReadRecorderRaw(_batchesRecorder, 0L));
             uint setPass = ClampUInt(ReadRecorderRaw(_setPassRecorder, 0L));
 
-            QAWatchdogMetricFlags1424 flags = QAWatchdogMetricFlags1424.None;
+            QAWatchdogMetricFlags1524 flags = QAWatchdogMetricFlags1524.None;
             if (_usingManagedFallback)
-                flags |= QAWatchdogMetricFlags1424.ManagedFallback;
+                flags |= QAWatchdogMetricFlags1524.ManagedFallback;
             if (_sceneFallbackUsed)
-                flags |= QAWatchdogMetricFlags1424.SceneFallbackUsed;
+                flags |= QAWatchdogMetricFlags1524.SceneFallbackUsed;
             if (_nativeSentinelFailed)
-                flags |= QAWatchdogMetricFlags1424.NativeSentinelFailed;
-            if (enableMockGcFuzzer)
-                flags |= QAWatchdogMetricFlags1424.MockFuzzerArmed;
+                flags |= QAWatchdogMetricFlags1524.NativeSentinelFailed;
+            if (enableMockGcFuzzer || QAWatchdogGcAllocationFuzzer1524.Armed)
+                flags |= QAWatchdogMetricFlags1524.MockFuzzerArmed;
+            if (_criticalRecorderMissing)
+                flags |= QAWatchdogMetricFlags1524.ProfilerRecorderMissing;
             if (_stuckSeconds > StuckRecoverySeconds)
-                flags |= QAWatchdogMetricFlags1424.StuckRecovery;
+                flags |= QAWatchdogMetricFlags1524.StuckRecovery;
             if (_lastKccVelocityFresh)
-                flags |= QAWatchdogMetricFlags1424.KccVelocityFresh;
+                flags |= QAWatchdogMetricFlags1524.KccVelocityFresh;
             if (_lastPlayerStateFresh)
-                flags |= QAWatchdogMetricFlags1424.PlayerStateFresh;
+                flags |= QAWatchdogMetricFlags1524.PlayerStateFresh;
             if (frameUs > FrameSpikeMicroseconds)
-                flags |= QAWatchdogMetricFlags1424.FrameSpike;
+                flags |= QAWatchdogMetricFlags1524.FrameSpike;
             if (gcBytes > 0u)
-                flags |= QAWatchdogMetricFlags1424.GcAllocated;
+                flags |= QAWatchdogMetricFlags1524.GcAllocated;
             if (vramMb >= TargetVramMegabytes)
-                flags |= QAWatchdogMetricFlags1424.VramExceeded;
+                flags |= QAWatchdogMetricFlags1524.VramExceeded;
 
             byte p95Bucket = ResolveP95Bucket(frameUs);
             UpdateP95Hot(p95Bucket);
 
-            QAWatchdogFrameMetric1424 metric = default;
+            QAWatchdogFrameMetric1524 metric = default;
             metric.Frame = SystemDispatcher.CurrentFrameId;
             metric.FrameTimeMicroseconds = ClampUShort(frameUs);
             metric.Batches = ClampUShort(batches);
@@ -932,7 +945,7 @@ namespace Hecton8.QA
                 _p95WriteIndex = 0;
         }
 
-        private void WriteMetricHot(in QAWatchdogFrameMetric1424 metric)
+        private void WriteMetricHot(in QAWatchdogFrameMetric1524 metric)
         {
             int slot = _metricWriteIndex;
             _metricWriteIndex++;
@@ -946,7 +959,7 @@ namespace Hecton8.QA
                 IsHandleCreated(in _metricHandle))
             {
                 bool lockAcquired = false;
-                NativeArray<QAWatchdogFrameMetric1424> metrics = default;
+                NativeArray<QAWatchdogFrameMetric1524> metrics = default;
                 try
                 {
                     lockAcquired = vault.TryAcquireWriteLock(in _metricHandle, OwnerSystemId, out metrics);
@@ -964,15 +977,15 @@ namespace Hecton8.QA
             }
 
             _vaultWriteFailures++;
-            QAWatchdogFrameMetric1424 failedMetric = metric;
-            failedMetric.Flags = (ushort)(failedMetric.Flags | (ushort)QAWatchdogMetricFlags1424.DataVaultWriteFailed);
+            QAWatchdogFrameMetric1524 failedMetric = metric;
+            failedMetric.Flags = (ushort)(failedMetric.Flags | (ushort)QAWatchdogMetricFlags1524.DataVaultWriteFailed);
             if (_managedMetrics != null && slot < _managedMetrics.Length)
                 _managedMetrics[slot] = failedMetric;
         }
 
-        private void WriteBlackBoxHot(in QAWatchdogFrameMetric1424 metric)
+        private void WriteBlackBoxHot(in QAWatchdogFrameMetric1524 metric)
         {
-            QAWatchdogBlackBoxEntry1424 entry = default;
+            QAWatchdogBlackBoxEntry1524 entry = default;
             entry.Frame = metric.Frame;
             entry.FrameTimeMicroseconds = metric.FrameTimeMicroseconds;
             entry.Batches = metric.Batches;
@@ -1005,7 +1018,7 @@ namespace Hecton8.QA
                 IsHandleCreated(in _blackBoxHandle))
             {
                 bool lockAcquired = false;
-                NativeArray<QAWatchdogBlackBoxEntry1424> entries = default;
+                NativeArray<QAWatchdogBlackBoxEntry1524> entries = default;
                 try
                 {
                     lockAcquired = vault.TryAcquireWriteLock(in _blackBoxHandle, OwnerSystemId, out entries);
@@ -1023,14 +1036,20 @@ namespace Hecton8.QA
             }
 
             _vaultWriteFailures++;
-            entry.Flags = (ushort)(entry.Flags | (ushort)QAWatchdogMetricFlags1424.DataVaultWriteFailed);
+            entry.Flags = (ushort)(entry.Flags | (ushort)QAWatchdogMetricFlags1524.DataVaultWriteFailed);
             entry.VaultWriteFailures = _vaultWriteFailures;
             if (_managedBlackBox != null && slot < _managedBlackBox.Length)
                 _managedBlackBox[slot] = entry;
         }
 
-        private void EvaluateMetricHot(in QAWatchdogFrameMetric1424 metric)
+        private void EvaluateMetricHot(in QAWatchdogFrameMetric1524 metric)
         {
+            if (_criticalRecorderMissing)
+            {
+                FailCold(QAWatchdogFailReason1524.ProfilerRecorderUnavailable);
+                return;
+            }
+
             if (metric.FrameTimeMicroseconds > FrameSpikeMicroseconds)
                 _consecutiveSpikeFrames++;
             else
@@ -1038,30 +1057,30 @@ namespace Hecton8.QA
 
             if (_consecutiveSpikeFrames >= HardFrameSpikeStreak)
             {
-                FailCold(QAWatchdogFailReason1424.FrameSpike);
+                FailCold(QAWatchdogFailReason1524.FrameSpike);
                 return;
             }
 
-            if (failOnGcAlloc && _state == QAWatchdogState1424.Simulation && metric.GcAllocBytes > 0u)
+            if (failOnGcAlloc && _state == QAWatchdogState1524.Simulation && metric.GcAllocBytes > 0u)
             {
-                FailCold(QAWatchdogFailReason1424.GcAlloc);
+                FailCold(QAWatchdogFailReason1524.GcAlloc);
                 return;
             }
 
             if (metric.VramMegabytes >= TargetVramMegabytes)
             {
-                FailCold(QAWatchdogFailReason1424.VramTargetExceeded);
+                FailCold(QAWatchdogFailReason1524.VramTargetExceeded);
                 return;
             }
 
             if (!_storageReady)
             {
-                FailCold(QAWatchdogFailReason1424.MetricStorageUnavailable);
+                FailCold(QAWatchdogFailReason1524.MetricStorageUnavailable);
                 return;
             }
 
             if (_vaultWriteFailures != 0u && !_usingManagedFallback)
-                FailCold(QAWatchdogFailReason1424.MetricStorageUnavailable);
+                FailCold(QAWatchdogFailReason1524.MetricStorageUnavailable);
         }
 
         public void ColdTick()
@@ -1073,25 +1092,25 @@ namespace Hecton8.QA
             ProcessRouteColdWork();
             ProcessVaultDefragCold();
             _rollingP95Milliseconds = ResolveRollingP95MillisecondsCold();
-            if (_state == QAWatchdogState1424.Simulation && _rollingP95Milliseconds > P95FrameBudgetMilliseconds)
-                FailCold(QAWatchdogFailReason1424.FrameSpike);
+            if (_state == QAWatchdogState1524.Simulation && _rollingP95Milliseconds > P95FrameBudgetMilliseconds)
+                FailCold(QAWatchdogFailReason1524.FrameSpike);
         }
 
         private void ProcessRouteColdWork()
         {
-            if (_state == QAWatchdogState1424.WaitMainMenu ||
-                _state == QAWatchdogState1424.InvokeMenuStart)
+            if (_state == QAWatchdogState1524.WaitMainMenu ||
+                _state == QAWatchdogState1524.InvokeMenuStart)
             {
                 if (_menuStartRequestPending && TryInvokeMainMenuStartCold())
                 {
                     _menuStartRequestPending = false;
                     _sceneWaitSeconds = 0f;
-                    _state = QAWatchdogState1424.WaitWorld;
+                    _state = QAWatchdogState1524.WaitWorld;
                 }
                 return;
             }
 
-            if (_state != QAWatchdogState1424.WaitWorld || !_worldSceneRequestPending)
+            if (_state != QAWatchdogState1524.WaitWorld || !_worldSceneRequestPending)
                 return;
 
             _sceneFallbackUsed = TryRequestWorldSceneCold();
@@ -1144,18 +1163,18 @@ namespace Hecton8.QA
             if (_terminalExportQueued)
                 return;
 
-            _state = QAWatchdogState1424.Completed;
-            _failReason = QAWatchdogFailReason1424.None;
+            _state = QAWatchdogState1524.Completed;
+            _failReason = QAWatchdogFailReason1524.None;
             _terminalExportQueued = true;
             CoreDeterminismSignals.ClearInputOverride();
         }
 
-        private void FailCold(QAWatchdogFailReason1424 reason)
+        private void FailCold(QAWatchdogFailReason1524 reason)
         {
             if (_terminalExportQueued)
                 return;
 
-            _state = QAWatchdogState1424.Failed;
+            _state = QAWatchdogState1524.Failed;
             _failReason = reason;
             _terminalExportQueued = true;
             CoreDeterminismSignals.ClearInputOverride();
@@ -1168,8 +1187,67 @@ namespace Hecton8.QA
 
             _terminalExportWritten = true;
             _nativeSentinelFailed = !AssertNativeSentinelCold();
+            if (_nativeSentinelFailed && _state != QAWatchdogState1524.Failed)
+            {
+                _state = QAWatchdogState1524.Failed;
+                _failReason = QAWatchdogFailReason1524.NativeSentinelLeak;
+            }
+
+            CaptureTerminalMetricCold();
             WriteCsvCold();
             StopRunCold();
+        }
+
+        private void CaptureTerminalMetricCold()
+        {
+            _terminalCsvMetric = CreateTerminalMetricCold();
+            _terminalCsvMetricReady = true;
+            WriteBlackBoxHot(in _terminalCsvMetric);
+        }
+
+        private QAWatchdogFrameMetric1524 CreateTerminalMetricCold()
+        {
+            uint frameUs = ClampUInt(ReadRecorderMicroseconds(_frameTimeRecorder, _lastFastDeltaTimeSeconds));
+            uint gcBytes = ClampUInt(ReadRecorderBytes(_gcAllocRecorder, 0L));
+            uint vramMb = ClampUInt(ReadRecorderMegabytes(_gfxUsedRecorder, 0L));
+            uint batches = ClampUInt(ReadRecorderRaw(_batchesRecorder, 0L));
+            uint setPass = ClampUInt(ReadRecorderRaw(_setPassRecorder, 0L));
+
+            QAWatchdogMetricFlags1524 flags = QAWatchdogMetricFlags1524.TerminalSample;
+            if (_usingManagedFallback)
+                flags |= QAWatchdogMetricFlags1524.ManagedFallback;
+            if (_sceneFallbackUsed)
+                flags |= QAWatchdogMetricFlags1524.SceneFallbackUsed;
+            if (_nativeSentinelFailed)
+                flags |= QAWatchdogMetricFlags1524.NativeSentinelFailed;
+            if (enableMockGcFuzzer || QAWatchdogGcAllocationFuzzer1524.Armed)
+                flags |= QAWatchdogMetricFlags1524.MockFuzzerArmed;
+            if (_criticalRecorderMissing)
+                flags |= QAWatchdogMetricFlags1524.ProfilerRecorderMissing;
+            if (_lastKccVelocityFresh)
+                flags |= QAWatchdogMetricFlags1524.KccVelocityFresh;
+            if (_lastPlayerStateFresh)
+                flags |= QAWatchdogMetricFlags1524.PlayerStateFresh;
+            if (frameUs > FrameSpikeMicroseconds)
+                flags |= QAWatchdogMetricFlags1524.FrameSpike;
+            if (gcBytes > 0u)
+                flags |= QAWatchdogMetricFlags1524.GcAllocated;
+            if (vramMb >= TargetVramMegabytes)
+                flags |= QAWatchdogMetricFlags1524.VramExceeded;
+
+            QAWatchdogFrameMetric1524 metric = default;
+            metric.Frame = SystemDispatcher.CurrentFrameId;
+            metric.FrameTimeMicroseconds = ClampUShort(frameUs);
+            metric.Batches = ClampUShort(batches);
+            metric.GcAllocBytes = gcBytes;
+            metric.VramMegabytes = ClampUShort(vramMb);
+            metric.SetPassCalls = ClampUShort(setPass);
+            metric.AupX = _currentWorldPosition.x;
+            metric.AupY = _currentWorldPosition.y;
+            metric.AupZ = _currentWorldPosition.z;
+            metric.Flags = (ushort)flags;
+            metric.State = (ushort)_state;
+            return metric;
         }
 
         private bool AssertNativeSentinelCold()
@@ -1178,24 +1256,24 @@ namespace Hecton8.QA
             if (sentinelType == null)
                 return true;
 
-            MethodInfo validate = sentinelType.GetMethod("ValidateZeroLeaks", BindingFlags.Static | BindingFlags.Public);
-            if (validate != null && validate.ReturnType == typeof(bool))
-                return (bool)validate.Invoke(null, null);
-
-            MethodInfo assert = sentinelType.GetMethod(
-                "AssertNoAllocationsAfterServiceShutdown",
-                BindingFlags.Static | BindingFlags.Public,
-                null,
-                SentinelShutdownAssertSignature,
-                null);
-            if (assert == null || assert.ReturnType != typeof(bool))
-                return true;
-
             try
             {
+                MethodInfo validate = sentinelType.GetMethod("ValidateZeroLeaks", BindingFlags.Static | BindingFlags.Public);
+                if (validate != null && validate.ReturnType == typeof(bool))
+                    return (bool)validate.Invoke(null, null);
+
+                MethodInfo assert = sentinelType.GetMethod(
+                    "AssertNoAllocationsAfterServiceShutdown",
+                    BindingFlags.Static | BindingFlags.Public,
+                    null,
+                    SentinelShutdownAssertSignature,
+                    null);
+                if (assert == null || assert.ReturnType != typeof(bool))
+                    return true;
+
                 return (bool)assert.Invoke(null, _sentinelAssertArgs);
             }
-            catch (TargetInvocationException)
+            catch (Exception)
             {
                 return false;
             }
@@ -1206,14 +1284,14 @@ namespace Hecton8.QA
             EnsureDirectoryCold(_csvPath);
             using (StreamWriter writer = new StreamWriter(_csvPath, false, Encoding.UTF8)) // COLD ALLOC: StreamWriter[1] - terminal CSV export - owner: QA_WatchdogBot
             {
-                writer.WriteLine("frame,state,frame_time_ms,gc_alloc_bytes,vram_mb,batches,setpass,aup_x,aup_y,aup_z,flags");
+                writer.WriteLine("frame,state,frame_time_ms,gc_alloc_bytes,vram_mb,batches,setpass,aup_x,aup_y,aup_z,flags,fail_reason_code,fail_reason,distance_m,rolling_p95_ms,consecutive_spike_frames,vault_write_failures,defrag_requests,menu_resolve_attempts,scene_fallback_attempts");
                 int total = math.min(_metricSamples, MetricCapacity);
                 int start = _metricSamples < MetricCapacity ? 0 : _metricWriteIndex;
 
                 if (!_usingManagedFallback &&
                     _dataVault != null &&
                     IsHandleCreated(in _metricHandle) &&
-                    _dataVault.TryReadOnlyHandle(in _metricHandle, out NativeArray<QAWatchdogFrameMetric1424>.ReadOnly metrics) &&
+                    _dataVault.TryReadOnlyHandle(in _metricHandle, out NativeArray<QAWatchdogFrameMetric1524>.ReadOnly metrics) &&
                     metrics.IsCreated)
                 {
                     for (int i = 0; i < total; i++)
@@ -1221,25 +1299,40 @@ namespace Hecton8.QA
                         int slot = (start + i) % MetricCapacity;
                         if (slot < metrics.Length)
                         {
-                            QAWatchdogFrameMetric1424 metric = metrics[slot];
-                            WriteCsvRowCold(writer, in metric);
+                            QAWatchdogFrameMetric1524 metric = metrics[slot];
+                            WriteCsvRowCold(writer, in metric, false);
                         }
                     }
+
+                    WriteTerminalCsvRowCold(writer);
                     return;
                 }
 
                 if (_managedMetrics == null)
+                {
+                    WriteTerminalCsvRowCold(writer);
                     return;
+                }
 
                 for (int i = 0; i < total; i++)
                 {
                     int slot = (start + i) % MetricCapacity;
-                    WriteCsvRowCold(writer, in _managedMetrics[slot]);
+                    WriteCsvRowCold(writer, in _managedMetrics[slot], false);
                 }
+
+                WriteTerminalCsvRowCold(writer);
             }
         }
 
-        private void WriteCsvRowCold(StreamWriter writer, in QAWatchdogFrameMetric1424 metric)
+        private void WriteTerminalCsvRowCold(StreamWriter writer)
+        {
+            if (!_terminalCsvMetricReady)
+                return;
+
+            WriteCsvRowCold(writer, in _terminalCsvMetric, true);
+        }
+
+        private void WriteCsvRowCold(StreamWriter writer, in QAWatchdogFrameMetric1524 metric, bool includeRunForensics)
         {
             WriteUIntCold(writer, metric.Frame);
             writer.Write(',');
@@ -1262,6 +1355,45 @@ namespace Hecton8.QA
             WriteFloatCold(writer, metric.AupZ, "0.000");
             writer.Write(',');
             WriteUShortCold(writer, metric.Flags);
+            writer.Write(',');
+            if (includeRunForensics)
+                WriteUIntCold(writer, (uint)_failReason);
+            else
+                writer.Write('0');
+            writer.Write(',');
+            if (includeRunForensics)
+                WriteFailReasonNameCold(writer, _failReason);
+            else
+                writer.Write("None");
+            writer.Write(',');
+            WriteFloatCold(writer, includeRunForensics ? _distanceMeters : 0f, "0.000");
+            writer.Write(',');
+            WriteFloatCold(writer, includeRunForensics ? _rollingP95Milliseconds : 0f, "0.000");
+            writer.Write(',');
+            if (includeRunForensics)
+                WriteUIntCold(writer, _consecutiveSpikeFrames);
+            else
+                writer.Write('0');
+            writer.Write(',');
+            if (includeRunForensics)
+                WriteUIntCold(writer, _vaultWriteFailures);
+            else
+                writer.Write('0');
+            writer.Write(',');
+            if (includeRunForensics)
+                WriteUIntCold(writer, _defragRequests);
+            else
+                writer.Write('0');
+            writer.Write(',');
+            if (includeRunForensics)
+                WriteUIntCold(writer, _menuResolveAttempts);
+            else
+                writer.Write('0');
+            writer.Write(',');
+            if (includeRunForensics)
+                WriteUIntCold(writer, _sceneFallbackAttempts);
+            else
+                writer.Write('0');
             writer.WriteLine();
         }
 
@@ -1297,31 +1429,74 @@ namespace Hecton8.QA
 
         private static void WriteStateNameCold(StreamWriter writer, ushort state)
         {
-            switch ((QAWatchdogState1424)state)
+            switch ((QAWatchdogState1524)state)
             {
-                case QAWatchdogState1424.ColdStart:
+                case QAWatchdogState1524.ColdStart:
                     writer.Write("ColdStart");
                     break;
-                case QAWatchdogState1424.WaitBootstrap:
+                case QAWatchdogState1524.WaitBootstrap:
                     writer.Write("WaitBootstrap");
                     break;
-                case QAWatchdogState1424.WaitMainMenu:
+                case QAWatchdogState1524.WaitMainMenu:
                     writer.Write("WaitMainMenu");
                     break;
-                case QAWatchdogState1424.InvokeMenuStart:
+                case QAWatchdogState1524.InvokeMenuStart:
                     writer.Write("InvokeMenuStart");
                     break;
-                case QAWatchdogState1424.WaitWorld:
+                case QAWatchdogState1524.WaitWorld:
                     writer.Write("WaitWorld");
                     break;
-                case QAWatchdogState1424.Simulation:
+                case QAWatchdogState1524.Simulation:
                     writer.Write("Simulation");
                     break;
-                case QAWatchdogState1424.Completed:
+                case QAWatchdogState1524.Completed:
                     writer.Write("Completed");
                     break;
-                case QAWatchdogState1424.Failed:
+                case QAWatchdogState1524.Failed:
                     writer.Write("Failed");
+                    break;
+                default:
+                    writer.Write("Unknown");
+                    break;
+            }
+        }
+
+        private static void WriteFailReasonNameCold(StreamWriter writer, QAWatchdogFailReason1524 reason)
+        {
+            switch (reason)
+            {
+                case QAWatchdogFailReason1524.None:
+                    writer.Write("None");
+                    break;
+                case QAWatchdogFailReason1524.FrameSpike:
+                    writer.Write("FrameSpike");
+                    break;
+                case QAWatchdogFailReason1524.GcAlloc:
+                    writer.Write("GcAlloc");
+                    break;
+                case QAWatchdogFailReason1524.VramTargetExceeded:
+                    writer.Write("VramTargetExceeded");
+                    break;
+                case QAWatchdogFailReason1524.NoKccVelocity:
+                    writer.Write("NoKccVelocity");
+                    break;
+                case QAWatchdogFailReason1524.MetricStorageUnavailable:
+                    writer.Write("MetricStorageUnavailable");
+                    break;
+                case QAWatchdogFailReason1524.SceneRouteTimeout:
+                    writer.Write("SceneRouteTimeout");
+                    break;
+                case QAWatchdogFailReason1524.NativeSentinelLeak:
+                    writer.Write("NativeSentinelLeak");
+                    break;
+                case QAWatchdogFailReason1524.NonFinitePlayerState:
+                    writer.Write("NonFinitePlayerState");
+                    break;
+                case QAWatchdogFailReason1524.ApplicationQuitBeforeTerminalExport:
+                    writer.Write("ApplicationQuitBeforeTerminalExport");
+                    break;
+                case QAWatchdogFailReason1524.ProfilerRecorderUnavailable:
+                    writer.Write("ProfilerRecorderUnavailable");
                     break;
                 default:
                     writer.Write("Unknown");
@@ -1445,11 +1620,11 @@ namespace Hecton8.QA
 
             if (!_terminalExportQueued)
             {
-                if (_state != QAWatchdogState1424.Completed)
+                if (_state != QAWatchdogState1524.Completed)
                 {
-                    _state = QAWatchdogState1424.Failed;
-                    if (_failReason == QAWatchdogFailReason1424.None)
-                        _failReason = QAWatchdogFailReason1424.ApplicationQuitBeforeTerminalExport;
+                    _state = QAWatchdogState1524.Failed;
+                    if (_failReason == QAWatchdogFailReason1524.None)
+                        _failReason = QAWatchdogFailReason1524.ApplicationQuitBeforeTerminalExport;
                 }
 
                 _terminalExportQueued = true;

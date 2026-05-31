@@ -1,0 +1,175 @@
+﻿{
+    "agentId":  "1502",
+    "evidenceClass":  "STATIC_SOURCE_INVARIANT",
+    "generatedUtc":  "2026-05-30T20:47:21.8276334Z",
+    "targetCount":  9,
+    "changedFromBackupCount":  3,
+    "textYamlCount":  8,
+    "binaryUnityAssetCount":  1,
+    "missingScriptCount":  0,
+    "targetObsoleteKeyCount":  0,
+    "targetObsoleteOverrideCount":  0,
+    "elapsedMicroseconds":  3017842,
+    "records":  [
+                    {
+                        "relativePath":  "Assets/_Project/Scenes/02_HECTON_WORLD.unity",
+                        "format":  "BINARY_UNITY_ASSET",
+                        "bytes":  33756552,
+                        "sha256":  "D96AE444158B0D8410460A9FE8588DB89C809DF3F2C6EBEABE534F5894D700D0",
+                        "backupParity":  "UNCHANGED_FROM_BACKUP",
+                        "yamlHeader":  false,
+                        "unityTagHeader":  false,
+                        "rootGameObjectMarker":  false,
+                        "prefabGameObjectBlock":  false,
+                        "monoBehaviourCount":  null,
+                        "missingScriptCount":  null,
+                        "targetObsoleteKeyCount":  null,
+                        "targetObsoleteOverrideCount":  null,
+                        "extractionAction":  "NO_RAW_ACTION"
+                    },
+                    {
+                        "relativePath":  "Assets/_Project/Prefabs/Player.prefab",
+                        "format":  "TEXT_UNITY_YAML",
+                        "bytes":  173018,
+                        "sha256":  "EF470D722872AA3887A096A1C3C3B174728ED731825467A459FDCCE798D12E33",
+                        "backupParity":  "CHANGED_FROM_BACKUP",
+                        "yamlHeader":  true,
+                        "unityTagHeader":  true,
+                        "rootGameObjectMarker":  {
+
+                                                 },
+                        "prefabGameObjectBlock":  true,
+                        "monoBehaviourCount":  44,
+                        "missingScriptCount":  0,
+                        "targetObsoleteKeyCount":  0,
+                        "targetObsoleteOverrideCount":  0,
+                        "extractionAction":  "DRY_RUN_CLEANUP_ONLY"
+                    },
+                    {
+                        "relativePath":  "Assets/_Project/Prefabs/PFB_Submarine_Core.prefab",
+                        "format":  "TEXT_UNITY_YAML",
+                        "bytes":  17380,
+                        "sha256":  "C404009C060C76444C324478ED9C40A2D5AB8EAF888F22332064531FFB68FB67",
+                        "backupParity":  "CHANGED_FROM_BACKUP",
+                        "yamlHeader":  true,
+                        "unityTagHeader":  true,
+                        "rootGameObjectMarker":  {
+
+                                                 },
+                        "prefabGameObjectBlock":  true,
+                        "monoBehaviourCount":  5,
+                        "missingScriptCount":  0,
+                        "targetObsoleteKeyCount":  0,
+                        "targetObsoleteOverrideCount":  0,
+                        "extractionAction":  "DRY_RUN_CLEANUP_ONLY"
+                    },
+                    {
+                        "relativePath":  "Assets/_Project/Prefabs/Construction/Final/PFB_Module_Foundation.prefab",
+                        "format":  "TEXT_UNITY_YAML",
+                        "bytes":  60347,
+                        "sha256":  "0A0684AD145490CED303F4BC6D15D6AF1452C0CB882C1FA39CCC182B543D0AF3",
+                        "backupParity":  "UNCHANGED_FROM_BACKUP",
+                        "yamlHeader":  true,
+                        "unityTagHeader":  true,
+                        "rootGameObjectMarker":  {
+
+                                                 },
+                        "prefabGameObjectBlock":  true,
+                        "monoBehaviourCount":  7,
+                        "missingScriptCount":  0,
+                        "targetObsoleteKeyCount":  0,
+                        "targetObsoleteOverrideCount":  0,
+                        "extractionAction":  "NO_RAW_ACTION"
+                    },
+                    {
+                        "relativePath":  "Assets/_Project/Prefabs/Construction/Final/PFB_Module_CurrentTurbine.prefab",
+                        "format":  "TEXT_UNITY_YAML",
+                        "bytes":  4659,
+                        "sha256":  "407AC3C47AFE80D9C443192E94BA9011C2734901139F54ED59E24FA34C5862F2",
+                        "backupParity":  "UNCHANGED_FROM_BACKUP",
+                        "yamlHeader":  true,
+                        "unityTagHeader":  true,
+                        "rootGameObjectMarker":  {
+
+                                                 },
+                        "prefabGameObjectBlock":  true,
+                        "monoBehaviourCount":  1,
+                        "missingScriptCount":  0,
+                        "targetObsoleteKeyCount":  0,
+                        "targetObsoleteOverrideCount":  0,
+                        "extractionAction":  "NO_RAW_ACTION"
+                    },
+                    {
+                        "relativePath":  "Assets/_Project/Prefabs/Construction/Final/PFB_Module_Corridor.prefab",
+                        "format":  "TEXT_UNITY_YAML",
+                        "bytes":  56393,
+                        "sha256":  "F2184388800FB12A4014C8134FA28B1272FF615335EF9356157D4C865B3B0BA5",
+                        "backupParity":  "UNCHANGED_FROM_BACKUP",
+                        "yamlHeader":  true,
+                        "unityTagHeader":  true,
+                        "rootGameObjectMarker":  {
+
+                                                 },
+                        "prefabGameObjectBlock":  true,
+                        "monoBehaviourCount":  5,
+                        "missingScriptCount":  0,
+                        "targetObsoleteKeyCount":  0,
+                        "targetObsoleteOverrideCount":  0,
+                        "extractionAction":  "NO_RAW_ACTION"
+                    },
+                    {
+                        "relativePath":  "Assets/_Project/Prefabs/Construction/Final/PFB_Module_ServicePump.prefab",
+                        "format":  "TEXT_UNITY_YAML",
+                        "bytes":  4640,
+                        "sha256":  "97C197B46EB1D5DFCA6A68CC74FE855F549DD8C44922AA2750CB2151E1986AFA",
+                        "backupParity":  "UNCHANGED_FROM_BACKUP",
+                        "yamlHeader":  true,
+                        "unityTagHeader":  true,
+                        "rootGameObjectMarker":  {
+
+                                                 },
+                        "prefabGameObjectBlock":  true,
+                        "monoBehaviourCount":  1,
+                        "missingScriptCount":  0,
+                        "targetObsoleteKeyCount":  0,
+                        "targetObsoleteOverrideCount":  0,
+                        "extractionAction":  "NO_RAW_ACTION"
+                    },
+                    {
+                        "relativePath":  "Assets/_Project/Prefabs/Construction/Final/PFB_Module_Pylon.prefab",
+                        "format":  "TEXT_UNITY_YAML",
+                        "bytes":  4647,
+                        "sha256":  "294F902DDC08A5372CA63A0D8E321E4E4D89B8B1EF627149251E74D2EF8C309A",
+                        "backupParity":  "UNCHANGED_FROM_BACKUP",
+                        "yamlHeader":  true,
+                        "unityTagHeader":  true,
+                        "rootGameObjectMarker":  {
+
+                                                 },
+                        "prefabGameObjectBlock":  true,
+                        "monoBehaviourCount":  1,
+                        "missingScriptCount":  0,
+                        "targetObsoleteKeyCount":  0,
+                        "targetObsoleteOverrideCount":  0,
+                        "extractionAction":  "NO_RAW_ACTION"
+                    },
+                    {
+                        "relativePath":  "Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab",
+                        "format":  "TEXT_UNITY_YAML",
+                        "bytes":  5881,
+                        "sha256":  "B6F4600AF6D87C50187BDDEE591C3D8F7E6E6AB624A00B41B313F33F86E6A201",
+                        "backupParity":  "CHANGED_FROM_BACKUP",
+                        "yamlHeader":  true,
+                        "unityTagHeader":  true,
+                        "rootGameObjectMarker":  {
+
+                                                 },
+                        "prefabGameObjectBlock":  true,
+                        "monoBehaviourCount":  1,
+                        "missingScriptCount":  0,
+                        "targetObsoleteKeyCount":  0,
+                        "targetObsoleteOverrideCount":  0,
+                        "extractionAction":  "DRY_RUN_CLEANUP_ONLY"
+                    }
+                ]
+}

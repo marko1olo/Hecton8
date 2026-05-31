@@ -1,7 +1,6 @@
 State,NoiseScale,Intensity,MaxDepthMeters,FlowSpeed,ChromaticDispersion,SdfShadowStrength
 Calm,0.078,0.30,64,0.82,0.10,0.72
-Storm,0.092,0.24,50,1.35,0.18,0.82
-Hurricane,0.118,0.18,36,1.90,0.26,0.90
+Storm,0.102,0.23,46,1.58,0.23,0.88
 Thermocline,0.064,0.22,42,0.55,0.08,0.96
 Halocline,0.070,0.20,38,0.62,0.07,0.94
 Biolume,0.085,0.36,58,0.95,0.22,0.68

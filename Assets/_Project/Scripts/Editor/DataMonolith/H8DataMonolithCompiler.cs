@@ -471,6 +471,8 @@ namespace Hecton8.EditorValidation
             string backupPath,
             out string error)
         {
+            error = string.Empty;
+
             if (TryPromoteWithNativeReplace(outputPath, tempPath, backupPath, out string nativeError))
                 return true;
 

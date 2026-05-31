@@ -191,7 +191,7 @@ namespace Hecton8.Core
     /// <summary>
     /// XR runtime state bridge for shader globals, cadence selection, and VR-only pressure gates.
     /// </summary>
-    internal static class HectonXRRuntimeState
+    public static class HectonXRRuntimeState
     {
         private const int RefreshSampleIntervalFrames = 30;
         private const float DefaultXRRefreshRateHz = 72f;
@@ -256,7 +256,7 @@ namespace Hecton8.Core
 
         internal static event XRActiveChangedHandler XRActiveChanged;
 
-        internal static bool IsXRActive => _isXRActive;
+        public static bool IsXRActive => _isXRActive;
 
         internal static float RefreshRateHz => _refreshRateHz;
 

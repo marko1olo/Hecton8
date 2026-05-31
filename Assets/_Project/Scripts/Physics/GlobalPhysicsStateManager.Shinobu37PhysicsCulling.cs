@@ -240,7 +240,7 @@ namespace Hecton8.Physics
             ExpectSize<PhysicsImpactSignal>(128, ExternalLayoutFailureBit, ref failureMask);
             ExpectOffset<PhysicsImpactSignal>(nameof(PhysicsImpactSignal.PrimaryBodyId), 0, ExternalLayoutFailureBit, ref failureMask);
             ExpectOffset<PhysicsImpactSignal>(nameof(PhysicsImpactSignal.SecondaryBodyId), 8, ExternalLayoutFailureBit, ref failureMask);
-            ExpectOffset<PhysicsImpactSignal>("_pointAup", 16, ExternalLayoutFailureBit, ref failureMask);
+            ExpectOffset<PhysicsImpactSignal>("_pointAupMeters", 16, ExternalLayoutFailureBit, ref failureMask);
             ExpectOffset<PhysicsImpactSignal>(nameof(PhysicsImpactSignal.Point), 64, ExternalLayoutFailureBit, ref failureMask);
             ExpectOffset<PhysicsImpactSignal>(nameof(PhysicsImpactSignal.Normal), 76, ExternalLayoutFailureBit, ref failureMask);
             ExpectOffset<PhysicsImpactSignal>(nameof(PhysicsImpactSignal.Force), 88, ExternalLayoutFailureBit, ref failureMask);

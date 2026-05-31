@@ -9,6 +9,9 @@ using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -164,6 +167,7 @@ namespace Hecton8.Core
         private static string s_csvPath;
         private static byte[] s_csvScratch;
         private static long s_csvLastWriteTicks;
+        private static bool s_editorReloadHooked;
 #endif
         private static bool s_manualOverrideActive;
 #if UNITY_EDITOR
@@ -197,6 +201,9 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            if (s_instance != null)
+                s_instance.ReleaseGpuBuffersForLifecycleReset();
+
             s_instance = null;
             s_cachedVault = null;
             s_shaderSlotsHandle = default;
@@ -210,6 +217,7 @@ namespace Hecton8.Core
             s_manualOverrideActive = false;
 #if UNITY_EDITOR
             s_csvOverrideActive = false;
+            s_editorReloadHooked = false;
 #endif
             s_manualFogColorDensity = default;
             s_manualCausticFlow = default;
@@ -218,6 +226,27 @@ namespace Hecton8.Core
             s_csvCausticFlow = default;
 #endif
         }
+
+#if UNITY_EDITOR
+        private static void EnsureEditorReloadHook()
+        {
+            if (s_editorReloadHooked)
+                return;
+
+            AssemblyReloadEvents.beforeAssemblyReload -= HandleBeforeAssemblyReload;
+            AssemblyReloadEvents.beforeAssemblyReload += HandleBeforeAssemblyReload;
+            s_editorReloadHooked = true;
+        }
+
+        private static void HandleBeforeAssemblyReload()
+        {
+            GlobalShaderDispatcher instance = s_instance;
+            if (instance == null)
+                return;
+
+            instance.ReleaseGpuBuffersForLifecycleReset();
+        }
+#endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureSceneRuntime()
@@ -232,6 +261,12 @@ namespace Hecton8.Core
 
         private void Awake()
         {
+            if (!Application.isPlaying)
+                return;
+
+#if UNITY_EDITOR
+            EnsureEditorReloadHook();
+#endif
             if (s_instance != null && !ReferenceEquals(s_instance, this))
             {
                 enabled = false;
@@ -251,6 +286,12 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            if (!Application.isPlaying)
+                return;
+
+#if UNITY_EDITOR
+            EnsureEditorReloadHook();
+#endif
             if (s_instance != null && !ReferenceEquals(s_instance, this))
             {
                 enabled = false;
@@ -285,9 +326,16 @@ namespace Hecton8.Core
             _dispatchTelemetryFrame = 0u;
         }
 
+        private void ReleaseGpuBuffersForLifecycleReset()
+        {
+            ReleaseGraphicsBuffer(ref _thermalAnomalyBuffer);
+            ReleaseGraphicsBuffer(ref _emptyFloat4Buffer);
+        }
+
         private void OnDestroy()
         {
             TryUnregisterHotSwapListener();
+            ReleaseGpuBuffersForLifecycleReset();
             if (ReferenceEquals(s_instance, this))
             {
                 HectonShaderGlobalDataVaultBridge.SetVisualSyncDispatcherActive(false);
@@ -313,6 +361,18 @@ namespace Hecton8.Core
                     break;
                 case GlobalRegistryServiceSlot.ResolutionScalerService:
                     _resolutionScaler = currentService as IResolutionScalerService;
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null)
+                    {
+                        TryRegisterLateFrameTickable();
+                    }
+                    else if (_registeredLateFrame)
+                    {
+                        GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                        _registeredLateFrame = false;
+                    }
+
                     break;
             }
         }
@@ -535,7 +595,7 @@ namespace Hecton8.Core
 
         private void TryRegisterLateFrameTickable()
         {
-            if (_registeredLateFrame || !Application.isPlaying)
+            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);

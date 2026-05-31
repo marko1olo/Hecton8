@@ -1411,9 +1411,11 @@ namespace Hecton8.AI.Ecosystem
         private static Thread s_dumpWorker;
         private static AutoResetEvent s_dumpSignal;
         private static NativeArray<byte> s_snapshotBuffer;
+#pragma warning disable CS0414
         private static string s_ownerDumpPath;
         private static string s_agentDumpPath;
         private static string s_agent1419DumpPath;
+#pragma warning restore CS0414
         private static int s_dumpState;
         private static int s_stopRequested;
         private static int s_pendingByteCount;

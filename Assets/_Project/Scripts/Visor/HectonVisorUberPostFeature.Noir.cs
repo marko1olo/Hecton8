@@ -48,7 +48,7 @@ namespace Hecton8.Visor
             UberVisorMutationGuardBit(NoirCsvScratchVaultId) |
             UberVisorMutationGuardBit(NoirColorProfilesVaultId);
         private static readonly bool s_noirLayoutValid = ComputeNoirLayoutValid();
-        private static readonly bool s_noirSupportsSetConstantBufferCold = SystemInfo.supportsSetConstantBuffer;
+        private bool _noirSupportsSetConstantBufferCold;
 
         private sealed partial class FeatureSettings
         {
@@ -615,7 +615,7 @@ namespace Hecton8.Visor
 
         private bool EnsureNoirConstantsBuffersCold()
         {
-            if (!s_noirSupportsSetConstantBufferCold || !ValidateNoirLayout())
+            if (!_noirSupportsSetConstantBufferCold || !ValidateNoirLayout())
             {
                 _noirConstantsBufferA?.Release();
                 _noirConstantsBufferA = null;
@@ -650,7 +650,7 @@ namespace Hecton8.Visor
 
         private bool NoirConstantsBuffersReady()
         {
-            return s_noirSupportsSetConstantBufferCold &&
+            return _noirSupportsSetConstantBufferCold &&
                    _noirConstantsBufferA != null &&
                    _noirConstantsBufferB != null &&
                    _noirConstantsBufferA.IsValid() &&
@@ -701,13 +701,9 @@ namespace Hecton8.Visor
 
         private void ReleaseNoirVaultHandles(IDataVault vault)
         {
-            ReleaseNoirVaultHandle(vault, ref _noirConstantsHandle, NoirConstantsVaultId);
-            ReleaseNoirVaultHandle(vault, ref _noirInputHandle, NoirInputVaultId);
-            ReleaseNoirVaultHandle(vault, ref _noirTelemetryHandle, NoirTelemetryVaultId);
-            ReleaseNoirVaultHandle(vault, ref _noirTuningHandle, NoirTuningVaultId);
-            ReleaseNoirVaultHandle(vault, ref _noirColorProfileHandle, NoirColorProfilesVaultId);
-            ReleaseNoirVaultHandle(vault, ref _noirCsvScratchHandle, NoirCsvScratchVaultId);
-
+            // Renderer features are secondary DataVault consumers. URP disposal can run while the
+            // vault arena is resetting, so this lifecycle path must detach handles without freeing
+            // vault-owned storage from inside RenderPipeline cleanup.
             ClearNoirVaultHandles();
         }
 

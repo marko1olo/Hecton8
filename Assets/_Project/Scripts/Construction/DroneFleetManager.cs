@@ -6522,10 +6522,39 @@ namespace Hecton8.Construction
 
         private static int ResolveKernelThreadGroupSizeX(ComputeShader compute, int kernel)
         {
-            if (compute == null || kernel < 0 || !compute.IsSupported(kernel))
+            if (compute == null || kernel < 0)
                 return 0;
 
-            compute.GetKernelThreadGroupSizes(kernel, out uint sizeX, out uint sizeY, out uint sizeZ);
+            uint sizeX;
+            uint sizeY;
+            uint sizeZ;
+            try
+            {
+                if (!compute.IsSupported(kernel))
+                    return 0;
+
+                compute.GetKernelThreadGroupSizes(kernel, out sizeX, out sizeY, out sizeZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return 0;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return 0;
+            }
+            catch (System.ArgumentException)
+            {
+                return 0;
+            }
+            catch (UnityEngine.MissingReferenceException)
+            {
+                return 0;
+            }
+            catch (UnityEngine.UnityException)
+            {
+                return 0;
+            }
             if (sizeX == 0u || sizeY != 1u || sizeZ != 1u || sizeX > int.MaxValue)
                 return 0;
 
@@ -6603,20 +6632,18 @@ namespace Hecton8.Construction
             if (s_DroneCullingCompute == null)
                 return;
 
-            if (s_DroneCullingCompute.HasKernel("CS_ClearArgs"))
-                s_DroneClearArgsKernel = s_DroneCullingCompute.FindKernel("CS_ClearArgs");
-            else if (s_DroneCullingCompute.HasKernel("ClearIndirectArgs"))
-                s_DroneClearArgsKernel = s_DroneCullingCompute.FindKernel("ClearIndirectArgs");
+            if (!TryFindKernel(s_DroneCullingCompute, "CS_ClearArgs", out s_DroneClearArgsKernel) &&
+                !TryFindKernel(s_DroneCullingCompute, "ClearIndirectArgs", out s_DroneClearArgsKernel))
+                s_DroneClearArgsKernel = -1;
 
-            if (s_DroneCullingCompute.HasKernel("CS_CullDrones"))
-                s_DroneCullKernel = s_DroneCullingCompute.FindKernel("CS_CullDrones");
-            else if (s_DroneCullingCompute.HasKernel("CullDrones"))
-                s_DroneCullKernel = s_DroneCullingCompute.FindKernel("CullDrones");
+            if (!TryFindKernel(s_DroneCullingCompute, "CS_CullDrones", out s_DroneCullKernel) &&
+                !TryFindKernel(s_DroneCullingCompute, "CullDrones", out s_DroneCullKernel))
+                s_DroneCullKernel = -1;
 
             if (s_DroneCullKernel < 0 ||
                 s_DroneClearArgsKernel < 0 ||
-                !s_DroneCullingCompute.IsSupported(s_DroneCullKernel) ||
-                !s_DroneCullingCompute.IsSupported(s_DroneClearArgsKernel))
+                !IsKernelSupported(s_DroneCullingCompute, s_DroneCullKernel) ||
+                !IsKernelSupported(s_DroneCullingCompute, s_DroneClearArgsKernel))
             {
                 s_DroneCullKernel = -1;
                 s_DroneClearArgsKernel = -1;
@@ -6643,12 +6670,11 @@ namespace Hecton8.Construction
             if (s_PhantomDronesCompute == null)
                 return;
 
-            if (s_PhantomDronesCompute.HasKernel("CS_UpdatePhantomDrones"))
-                s_PhantomDroneKernel = s_PhantomDronesCompute.FindKernel("CS_UpdatePhantomDrones");
-            else if (s_PhantomDronesCompute.HasKernel("UpdatePhantomDrones"))
-                s_PhantomDroneKernel = s_PhantomDronesCompute.FindKernel("UpdatePhantomDrones");
+            if (!TryFindKernel(s_PhantomDronesCompute, "CS_UpdatePhantomDrones", out s_PhantomDroneKernel) &&
+                !TryFindKernel(s_PhantomDronesCompute, "UpdatePhantomDrones", out s_PhantomDroneKernel))
+                s_PhantomDroneKernel = -1;
 
-            if (s_PhantomDroneKernel < 0 || !s_PhantomDronesCompute.IsSupported(s_PhantomDroneKernel))
+            if (s_PhantomDroneKernel < 0 || !IsKernelSupported(s_PhantomDronesCompute, s_PhantomDroneKernel))
             {
                 s_PhantomDroneKernel = -1;
                 s_PhantomDroneThreadGroupSizeX = 0;
@@ -6658,6 +6684,78 @@ namespace Hecton8.Construction
 
             s_PhantomDroneThreadGroupSizeX = ResolveKernelThreadGroupSizeX(s_PhantomDronesCompute, s_PhantomDroneKernel);
             s_PhantomDroneKernelResolved = s_PhantomDroneThreadGroupSizeX > 0;
+        }
+
+        private static bool IsKernelSupported(ComputeShader compute, int kernel)
+        {
+            if (compute == null || kernel < 0)
+                return false;
+
+            try
+            {
+                return compute.IsSupported(kernel);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                return false;
+            }
+            catch (UnityException)
+            {
+                return false;
+            }
+        }
+
+        private static bool TryFindKernel(ComputeShader compute, string kernelName, out int kernel)
+        {
+            kernel = -1;
+            if (compute == null)
+                return false;
+
+            try
+            {
+                if (!compute.HasKernel(kernelName))
+                    return false;
+
+                kernel = compute.FindKernel(kernelName);
+                return kernel >= 0;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (UnityException)
+            {
+                kernel = -1;
+                return false;
+            }
         }
 
         private static void RenderHeadlessFleet(float deltaTime)

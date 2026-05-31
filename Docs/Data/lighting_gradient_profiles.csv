@@ -1,5 +1,6 @@
 ﻿# profile_name,biome_index,ambient_hex,fog_hex,directional_hex,weight
-open_ocean,0,#071317FF,#020508FF,#6BADB8FF,1.000
-mushroom_cave,1,#05170FFF,#010705FF,#57BD7AFF,1.000
-radioactive_trench,2,#0F0906FF,#070403FF,#B36B42FF,1.000
-abyssal_blue,3,#030915FF,#01030AFF,#4066E0FF,1.000
+# Names mirror Assets/_Project/Data/World/biome_atmosphere_rules.csv so the day/night GI relay resolves by biome hash instead of falling back by index.
+safe_shallows,0,#102B2EFF,#040A0DFF,#7DCDD6FF,1.000
+kelp_forest,1,#071F18FF,#040A08FF,#5FBF8CFF,1.000
+deep_abyss,2,#040B18FF,#040608FF,#3656C8FF,1.000
+sulfur_vents,3,#201008FF,#090603FF,#C27628FF,1.000

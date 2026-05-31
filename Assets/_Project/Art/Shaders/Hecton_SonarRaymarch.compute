@@ -110,7 +110,7 @@ void CSClearArgs(uint3 id : SV_DispatchThreadID)
     _IndirectArgs.Store(12, 0u);
 }
 
-[numthreads(128, 1, 1)]
+[numthreads(64, 1, 1)]
 void CSRaymarch(uint3 id : SV_DispatchThreadID)
 {
     uint rayIndex = id.x;
@@ -183,16 +183,16 @@ void CSRaymarch(uint3 id : SV_DispatchThreadID)
     // Misses leave stale slots untouched; indirect instance count fences them out.
 }
 
-[numthreads(128, 1, 1)]
+[numthreads(64, 1, 1)]
 void CSDecayEchoes(uint3 id : SV_DispatchThreadID)
 {
     uint pointIndex = id.x;
     if (pointIndex >= (uint)_RayCount)
         return;
 
-    SonarPointDTO point = _SonarPointBuffer[pointIndex];
-    uint alpha = (point.ColorPacked >> 24) & 255u;
+    SonarPointDTO sonarPoint = _SonarPointBuffer[pointIndex];
+    uint alpha = (sonarPoint.ColorPacked >> 24) & 255u;
     uint faded = (uint)max(0.0f, (float)alpha - _FadeDelta01 * 255.0f);
-    point.ColorPacked = (point.ColorPacked & 0x00FFFFFFu) | (faded << 24);
-    _SonarPointBuffer[pointIndex] = point;
+    sonarPoint.ColorPacked = (sonarPoint.ColorPacked & 0x00FFFFFFu) | (faded << 24);
+    _SonarPointBuffer[pointIndex] = sonarPoint;
 }

@@ -200,7 +200,7 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
-            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameDeltaTime);
+            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime);
             if (_isVisible)
             {
                 UpdatePosition();

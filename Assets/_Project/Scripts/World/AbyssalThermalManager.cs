@@ -4265,14 +4265,44 @@ namespace Hecton8.World
             if (blackSmokeCompute == null || !_supportsComputeShadersCold)
                 return false;
 
-            if (!blackSmokeCompute.HasKernel("CSMain"))
-                return false;
+            int kernelIndex = -1;
+            uint sizeX = 0u;
+            uint sizeY = 0u;
+            uint sizeZ = 0u;
+            try
+            {
+                if (!blackSmokeCompute.HasKernel("CSMain"))
+                    return false;
 
-            int kernelIndex = blackSmokeCompute.FindKernel("CSMain");
-            if (kernelIndex < 0 || !blackSmokeCompute.IsSupported(kernelIndex))
-                return false;
+                kernelIndex = blackSmokeCompute.FindKernel("CSMain");
+                if (kernelIndex < 0)
+                    return false;
 
-            blackSmokeCompute.GetKernelThreadGroupSizes(kernelIndex, out uint sizeX, out uint sizeY, out uint sizeZ);
+                if (!blackSmokeCompute.IsSupported(kernelIndex))
+                    return false;
+
+                blackSmokeCompute.GetKernelThreadGroupSizes(kernelIndex, out sizeX, out sizeY, out sizeZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                return false;
+            }
+            catch (UnityException)
+            {
+                return false;
+            }
             if (sizeX == 0u || sizeY != 1u || sizeZ != 1u)
                 return false;
 

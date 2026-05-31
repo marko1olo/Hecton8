@@ -263,6 +263,21 @@ namespace Hecton8.Construction
 
         public static bool ValidateStructLayout()
         {
+            if (!ValidateStructLayoutCore())
+                return false;
+
+#if UNITY_EDITOR
+            return ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.DearLieDampen)) == 96 &&
+                   ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.GlobalQualityWeight)) == 100 &&
+                   ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.DearLieWiggleSpeed)) == 104;
+#else
+            return true;
+#endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool ValidateStructLayoutCore()
+        {
             if (UnsafeUtility.SizeOf<ConstructionRequestDTO>() != ConstructionRequestSizeBytes ||
                 UnsafeUtility.SizeOf<StructuralBoundsDTO>() != StructuralBoundsSizeBytes ||
                 UnsafeUtility.SizeOf<ConstructionValidationSettingsDTO>() != ConstructionValidationSettingsSizeBytes ||
@@ -279,13 +294,7 @@ namespace Hecton8.Construction
                 return false;
             }
 
-#if UNITY_EDITOR
-            return ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.DearLieDampen)) == 96 &&
-                   ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.GlobalQualityWeight)) == 100 &&
-                   ResolveOffset<ConstructionPreviewSignal>(nameof(ConstructionPreviewSignal.DearLieWiggleSpeed)) == 104;
-#else
             return true;
-#endif
         }
 
 #if UNITY_EDITOR
@@ -1063,7 +1072,7 @@ namespace Hecton8.Construction
             float minDistance = float.MaxValue;
             int probeCount = 0;
 
-            if (!ValidateStructLayout() ||
+            if (!ValidateStructLayoutCore() ||
                 !IsFinite(request.RootAUP) ||
                 !math.all(math.isfinite((float3)request.GridPos)) ||
                 !math.all(math.isfinite(bounds.CenterOffset)) ||

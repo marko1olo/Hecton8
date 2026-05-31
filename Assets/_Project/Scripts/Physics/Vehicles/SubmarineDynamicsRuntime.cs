@@ -1240,7 +1240,6 @@ namespace Hecton8.Physics.Vehicles
                 return;
 
             config.MaxThrustN = math.max(0f, maxThrustN) * math.saturate(state.MaxThrustScalar);
-            config.BallastLiftN = math.max(0f, ballastLiftN) * math.saturate(state.BuoyancyScalar);
             config.DragScale = math.max(0.01f, dragScale) * math.max(1f, state.DragScalar);
             mass.FloodMassKg = math.max(mass.FloodMassKg, math.max(0f, state.FloodWaterMassKg));
             control.FloodWaterMassKg = mass.FloodMassKg;
@@ -1497,7 +1496,6 @@ namespace Hecton8.Physics.Vehicles
             config.GyroDamping = gyroDamping;
             config.MaxThrustN = maxThrustN;
             config.MaxTorqueNm = maxTorqueNm;
-            config.BallastLiftN = ballastLiftN;
             config.CavitationDepthMeters = 6f;
             config.CavitationThreshold = 0.28f;
             config.SloshSpring = sloshSpring;
@@ -2057,7 +2055,7 @@ namespace Hecton8.Physics.Vehicles
             return true;
         }
 
-        private static void ParseOverrideBytes(
+        private void ParseOverrideBytes(
             ReadOnlySpan<byte> bytes,
             ref SubmarineKinematicConfig config,
             ref SubmarineKinematicControl control,
@@ -2140,7 +2138,7 @@ namespace Hecton8.Physics.Vehicles
                 ApplyOverride(keyHash, negative ? -value : value, ref config, ref control, ref hull);
         }
 
-        private static void ApplyOverride(
+        private void ApplyOverride(
             uint keyHash,
             float value,
             ref SubmarineKinematicConfig config,
@@ -2197,7 +2195,7 @@ namespace Hecton8.Physics.Vehicles
                     config.MaxThrustN = math.max(0f, value);
                     break;
                 case HashBallastLiftN:
-                    config.BallastLiftN = math.max(0f, value);
+                    ballastLiftN = math.max(0f, value);
                     break;
                 case HashSloshSpring:
                     config.SloshSpring = math.max(0f, value);
@@ -2221,7 +2219,6 @@ namespace Hecton8.Physics.Vehicles
             gyroStrength = config.GyroStrength;
             targetDepthMeters = control.TargetDepthMeters;
             maxThrustN = config.MaxThrustN;
-            ballastLiftN = config.BallastLiftN;
             sloshSpring = config.SloshSpring;
             sloshDamping = config.SloshDamping;
         }

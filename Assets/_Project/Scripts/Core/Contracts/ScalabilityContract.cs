@@ -30,7 +30,7 @@ namespace Hecton8.Core.Contracts
         public const float HomeostasisLevel3ActivateShi = 0.95f;
         public const float HomeostasisLevel3RestoreShi = 0.90f;
         public const float HomeostasisSequentialRecoveryShi = 0.30f;
-        public const long HomeostasisPersistentNativeBudgetBytes = 8192L;
+        public const long HomeostasisPersistentNativeBudgetBytes = 131072L;
         public const float TargetFrameMilliseconds = 16.667f;
         public const float PreSimulationBudgetMilliseconds = 1.5f;
         public const float Lod0ScreenRatio01 = 0.20f;

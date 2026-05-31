@@ -32,7 +32,7 @@ namespace Hecton8.Tests.Editor
 
                 targetObject = new GameObject("CombatDamage_1417_Stress_Target");
                 receiver = targetObject.AddComponent<DamageStressReceiver>();
-                int targetId = targetObject.GetInstanceID();
+                int targetId = unchecked((int)EntityId.ToULong(targetObject.GetEntityId()));
                 targetRegistered = CombatDamageRuntime.RegisterTarget(
                     targetId,
                     receiver,
@@ -72,7 +72,7 @@ namespace Hecton8.Tests.Editor
             finally
             {
                 if (targetRegistered && targetObject != null && receiver != null)
-                    CombatDamageRuntime.UnregisterTarget(targetObject.GetInstanceID(), receiver);
+                    CombatDamageRuntime.UnregisterTarget(unchecked((int)EntityId.ToULong(targetObject.GetEntityId())), receiver);
                 if (targetObject != null)
                     UnityEngine.Object.DestroyImmediate(targetObject);
                 CombatDamageRuntime.Shutdown();

@@ -440,7 +440,9 @@ namespace Hecton8.AI
         private int _slot;
         private byte _initialized;
         private float _metabolicTickAccumulator;
+#pragma warning disable CS0414
         private int _lastConsumedAcousticPingSignalSequence;
+#pragma warning restore CS0414
 
         public PredatorUtilityState CurrentStateMask;
         public byte UsesPredatorRole;

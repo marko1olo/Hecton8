@@ -267,10 +267,9 @@ namespace Hecton8.Editor
                 if (!SystemInfo.supportsComputeShaders)
                     return false;
 
-                if (packCompute == null || !packCompute.HasKernel("CSMain"))
+                if (!TryFindKernel(packCompute, "CSMain", out int packKernel))
                     return false;
 
-                int packKernel = packCompute.FindKernel("CSMain");
                 ResolveKernelThreadGroupSizes(packCompute, packKernel, out int packThreadGroupSizeX, out int packThreadGroupSizeY);
                 if (packThreadGroupSizeX <= 0 || packThreadGroupSizeY <= 0)
                     return false;
@@ -289,10 +288,9 @@ namespace Hecton8.Editor
                     progress?.Invoke("Packing view " + (i + 1).ToString(CultureInfo.InvariantCulture), 0.05f + 0.65f * ((i + 1f) / settings.ViewCount));
                 }
 
-                if (dilateCompute == null || !dilateCompute.HasKernel("CSMain"))
+                if (!TryFindKernel(dilateCompute, "CSMain", out int dilateKernel))
                     return false;
 
-                int dilateKernel = dilateCompute.FindKernel("CSMain");
                 ResolveKernelThreadGroupSizes(dilateCompute, dilateKernel, out int dilateThreadGroupSizeX, out int dilateThreadGroupSizeY);
                 if (dilateThreadGroupSizeX <= 0 || dilateThreadGroupSizeY <= 0)
                     return false;
@@ -587,10 +585,39 @@ namespace Hecton8.Editor
         {
             threadGroupSizeX = 0;
             threadGroupSizeY = 0;
-            if (compute == null || kernel < 0 || !SystemInfo.supportsComputeShaders || !compute.IsSupported(kernel))
+            if (compute == null || kernel < 0 || !SystemInfo.supportsComputeShaders)
                 return;
 
-            compute.GetKernelThreadGroupSizes(kernel, out uint queryX, out uint queryY, out uint queryZ);
+            uint queryX;
+            uint queryY;
+            uint queryZ;
+            try
+            {
+                if (!compute.IsSupported(kernel))
+                    return;
+
+                compute.GetKernelThreadGroupSizes(kernel, out queryX, out queryY, out queryZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return;
+            }
+            catch (System.ArgumentException)
+            {
+                return;
+            }
+            catch (UnityEngine.MissingReferenceException)
+            {
+                return;
+            }
+            catch (UnityEngine.UnityException)
+            {
+                return;
+            }
             if (queryX == 0u || queryY == 0u || queryZ != 1u || queryX > int.MaxValue || queryY > int.MaxValue)
                 return;
 
@@ -600,6 +627,47 @@ namespace Hecton8.Editor
 
             threadGroupSizeX = (int)queryX;
             threadGroupSizeY = (int)queryY;
+        }
+
+        private static bool TryFindKernel(ComputeShader compute, string kernelName, out int kernel)
+        {
+            kernel = -1;
+            if (compute == null)
+                return false;
+
+            try
+            {
+                if (!compute.HasKernel(kernelName))
+                    return false;
+
+                kernel = compute.FindKernel(kernelName);
+                return kernel >= 0;
+            }
+            catch (ObjectDisposedException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (UnityEngine.MissingReferenceException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (UnityEngine.UnityException)
+            {
+                kernel = -1;
+                return false;
+            }
         }
 
         private static int CeilDividePositive(int value, int divisor)

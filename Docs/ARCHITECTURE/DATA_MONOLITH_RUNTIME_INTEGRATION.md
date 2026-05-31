@@ -220,12 +220,14 @@ Bootstrap route:
 - 1330 hardening: release player loading is not Windows-only.
   Windows keeps the native `CreateFileW` path.
   Non-WebGL players use the same binary validation path through `Application.streamingAssetsPath`.
-  Android/JAR URL staging is cold-boot async and then re-enters the validated native/Vault arena hydration path.
+  Android player builds bypass generic JAR URL staging for the Data Monolith and use the 1504 NDK `AAssetManager` source-plugin route below.
   WebGL remains fail-closed until a zero-copy browser staging route exists; managed `DownloadHandlerBuffer.data` hydration is rejected for the runtime static-data contract.
 - 1330 RERUN8 hardening: the release parser gate now distinguishes native PAL support from production H8BIN loader support.
   `StandaloneWindows`, `StandaloneWindows64`, `StandaloneLinux64`, `StandaloneOSX`, `Android`, and `iOS` are allowed production loader targets; WebGL and unlisted targets remain blocked.
   StreamingAssets cancellation in the async loader returns `ReadFailed` and records `PathFlagStreamingUriStagingCancelled`; it no longer throws a managed cancellation exception from the Data Monolith boot path.
 - 1330 hardening: Data Monolith DTOs require `StructLayout(LayoutKind.Explicit, Pack = 1, Size = ...)`; `H8DataMonolithLayoutGuard` rejects missing Pack=1 before bake/import proof.
+- 1504 Android PAL hardening: Android player builds no longer route the Data Monolith through URL staging. `H8StaticDataArena` obtains Unity's Java `AssetManager`, passes it to the NDK bridge, and reads `static_data.h8bin` with `AAsset_read` directly into the `GlobalDataVault` payload pointer. The bridge probes `AAsset_openFileDescriptor64` first; compressed or non-FD-backed `h8bin` entries fail closed before hydration. Gradle must keep `h8bin` in `noCompress`; ProjectSettings must keep `AndroidTargetArchitectures: 2` and `androidSplitApplicationBinary: 0` for the source-plugin APK route.
+- Unity GameActivity remains allowed for this route because the Android loader uses bounded raw JNI calls for `currentActivity.getAssets()` and does not depend on Java `Looper`, `myLooper`, or `Handler` APIs from the native player-loop thread.
 
 ## Failure Rule
 

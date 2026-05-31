@@ -580,8 +580,10 @@ namespace Hecton8.Gameplay
         private const float DegreesToRadians = 0.01745329252f;
         private string _cachedOperationalSummaryString = string.Empty;
         private string _cachedOperationalDirectiveString = string.Empty;
+#pragma warning disable CS0414
         private int _summaryStringCacheBucket = int.MinValue;
         private int _directiveStringCacheBucket = int.MinValue;
+#pragma warning restore CS0414
         private int _summaryStringCacheLength;
         private int _directiveStringCacheLength;
         private uint _summaryStringCacheHash;

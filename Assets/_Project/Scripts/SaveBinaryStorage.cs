@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Core.Memory.Layout;
 using Hecton8.Quest;
 using Hecton8.World;
@@ -19,7 +20,7 @@ using UnityEngine;
 
 namespace Hecton8.SaveSystem
 {
-    internal static unsafe class AsyncWriteManager
+    public static unsafe class AsyncWriteManager
     {
         internal ref struct ReadOnlyMapping
         {
@@ -786,12 +787,12 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        internal static bool WriteAll(string absolutePath, void* buffer, int byteCount, out string error)
+        public static bool WriteAll(string absolutePath, void* buffer, int byteCount, out string error)
         {
             return WriteAll(absolutePath, buffer, byteCount, null, 0, out error);
         }
 
-        internal static bool WriteDiagnosticDumpAll(string absolutePath, void* buffer, int byteCount, out string error)
+        public static bool WriteDiagnosticDumpAll(string absolutePath, void* buffer, int byteCount, out string error)
         {
             NativeWriteResult result = WriteAllSynchronous(
                 absolutePath,
@@ -804,7 +805,7 @@ namespace Hecton8.SaveSystem
             return result.Success;
         }
 
-        internal static bool WriteAll(
+        public static bool WriteAll(
             string absolutePath,
             void* firstBuffer,
             int firstByteCount,
@@ -869,7 +870,7 @@ namespace Hecton8.SaveSystem
             }
         }
 
-        internal static bool OverwriteAll(string absolutePath, void* buffer, int byteCount, out string error)
+        public static bool OverwriteAll(string absolutePath, void* buffer, int byteCount, out string error)
         {
             error = string.Empty;
             if (string.IsNullOrEmpty(absolutePath) || buffer == null || byteCount <= 0)
@@ -1315,7 +1316,7 @@ namespace Hecton8.SaveSystem
 #endif
         }
 
-        internal static bool TryReadAll(string absolutePath, void* buffer, int byteCount, out string error)
+        public static bool TryReadAll(string absolutePath, void* buffer, int byteCount, out string error)
         {
             error = string.Empty;
             if (string.IsNullOrEmpty(absolutePath) || buffer == null || byteCount <= 0)
@@ -1327,7 +1328,7 @@ namespace Hecton8.SaveSystem
             return TryCopyFromCachedReadWindow(absolutePath, 0L, buffer, byteCount, out error);
         }
 
-        internal static bool TryCopyFileRangeToNativeArray(
+        public static bool TryCopyFileRangeToNativeArray(
             string absolutePath,
             long byteOffset,
             NativeArray<byte> destination,
@@ -1352,7 +1353,7 @@ namespace Hecton8.SaveSystem
             return TryCopyFromCachedReadWindow(absolutePath, byteOffset, destinationPtr, byteCount, out error);
         }
 
-        internal static bool TryGetFileLength(string absolutePath, out long fileLength, out string error)
+        public static bool TryGetFileLength(string absolutePath, out long fileLength, out string error)
         {
             fileLength = 0L;
             error = string.Empty;
@@ -3084,7 +3085,7 @@ namespace Hecton8.SaveSystem
         internal static void WarmRuntime()
         {
             byte value = 0;
-            _ = xxHash3.Hash64(&value, 1L);
+            _ = Hash64(&value, 1L);
             Interlocked.Exchange(ref s_indexedSectorQuarantineReported, 0);
             lock (s_indexedSectorQuarantineLock)
             {
@@ -6962,7 +6963,8 @@ namespace Hecton8.SaveSystem
 
         internal static uint Hash32(void* ptr, long length)
         {
-            return xxHash3.Hash64(ptr, length).x;
+            ulong hash = Hash64(ptr, length);
+            return (uint)hash ^ (uint)(hash >> 32);
         }
 
         private static uint ComputeIndexedChecksumRoot(uint metadataChecksum, SectorEntry[] sectorEntries)
@@ -7454,8 +7456,41 @@ namespace Hecton8.SaveSystem
 
         internal static ulong Hash64(void* ptr, long length)
         {
-            uint2 hash = xxHash3.Hash64(ptr, length);
-            return ((ulong)hash.y << 32) | hash.x;
+            if (ptr == null || length <= 0L)
+                return 0UL;
+
+            if (length <= int.MaxValue)
+                return MemorySentinelMath.ComputeXXHash3Full64(ptr, (int)length);
+
+            return Hash64ChunkedDeterministic(ptr, length);
+        }
+
+        private static ulong Hash64ChunkedDeterministic(void* ptr, long length)
+        {
+            byte* cursor = (byte*)ptr;
+            long remaining = length;
+            ulong hash = 14695981039346656037UL ^ unchecked((ulong)length);
+            while (remaining > 0L)
+            {
+                int chunkBytes = remaining > 1048576L ? 1048576 : (int)remaining;
+                ulong chunkHash = MemorySentinelMath.ComputeXXHash3Full64(cursor, chunkBytes);
+                hash = MixHash64(hash ^ chunkHash ^ unchecked((ulong)(uint)chunkBytes));
+                cursor += chunkBytes;
+                remaining -= chunkBytes;
+            }
+
+            return hash == 0UL ? 1UL : hash;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong MixHash64(ulong hash)
+        {
+            hash ^= hash >> 33;
+            hash *= 0xff51afd7ed558ccdUL;
+            hash ^= hash >> 33;
+            hash *= 0xc4ceb9fe1a85ec53UL;
+            hash ^= hash >> 33;
+            return hash;
         }
 
         private static byte* AddByteOffset(void* source, int byteOffset)

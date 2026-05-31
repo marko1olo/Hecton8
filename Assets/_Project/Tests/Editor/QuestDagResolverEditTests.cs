@@ -203,7 +203,7 @@ namespace Hecton8.Tests.Editor
                 string path = Path.Combine(Path.GetTempPath(), "QuestDagDumpTest_" + Guid.NewGuid().ToString("N", CultureInfo.InvariantCulture) + ".bin");
                 try
                 {
-                    QuestDagTelemetryDump.Write(path, buffers.TelemetryRing, buffers.TelemetryCursor[0]);
+                    QuestDagTelemetryDump.Write(path, buffers.TelemetryRing.AsReadOnly(), buffers.TelemetryCursor[0]);
                     byte[] bytes = File.ReadAllBytes(path);
                     int entrySize = UnsafeUtility.SizeOf<QuestDagTelemetryEntry>();
                     Assert.AreEqual(QuestDagTelemetryDump.DumpMagic, BitConverter.ToInt64(bytes, 0));

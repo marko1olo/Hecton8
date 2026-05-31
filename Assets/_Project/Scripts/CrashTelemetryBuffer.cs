@@ -2348,10 +2348,6 @@ namespace Hecton8.Core
             IDataVault vault = CacheCrashVaultCold(GlobalRegistry.DataVault);
             if (vault == null)
             {
-                enabled = false;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                H8Debug.LogError("CrashTelemetryBuffer requires GlobalDataVault before telemetry buffers can be initialized.");
-#endif
                 return;
             }
 
@@ -2503,6 +2499,9 @@ namespace Hecton8.Core
             if (!Application.isPlaying)
                 return;
 
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredTick)
                 _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
 
@@ -2557,6 +2556,9 @@ namespace Hecton8.Core
                     DisposeBuffers();
                     CacheCrashVaultCold(currentService as IDataVault);
                     InitializeBuffers();
+                    break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    TryRegister();
                     break;
             }
         }

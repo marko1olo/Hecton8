@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Hecton8.Audio;
+using Hecton8.Audio.Propagation;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using NUnit.Framework;

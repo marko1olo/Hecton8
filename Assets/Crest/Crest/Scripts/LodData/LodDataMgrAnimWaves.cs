@@ -57,6 +57,8 @@ namespace Crest
         ComputeShader _combineShader;
         PropertyWrapperCompute _combineProperties;
         PropertyWrapperMaterial[] _combineMaterial;
+        int _combineThreadGroupSizeX;
+        int _combineThreadGroupSizeY;
 
         readonly int sp_LD_TexArray_AnimatedWaves_Compute = Shader.PropertyToID("_LD_TexArray_AnimatedWaves_Compute");
         readonly int sp_LD_TexArray_WaveBuffer = Shader.PropertyToID("_LD_TexArray_WaveBuffer");
@@ -88,6 +90,10 @@ namespace Crest
             Helpers.Destroy(_waveBuffers);
             _combineBuffer?.Release();
             Helpers.Destroy(_combineBuffer);
+            _combineShader = null;
+            _combineProperties = null;
+            _combineThreadGroupSizeX = 0;
+            _combineThreadGroupSizeY = 0;
 
             if (_combineMaterial == null)
             {
@@ -146,10 +152,20 @@ namespace Crest
                 !TryFindCombineKernel(_combineShader, "ShapeCombine_DYNAMIC_WAVE_SIM_ON", out krnl_ShapeCombine_DYNAMIC_WAVE_SIM_ON) ||
                 !TryFindCombineKernel(_combineShader, "ShapeCombine_DYNAMIC_WAVE_SIM_ON_DISABLE_COMBINE", out krnl_ShapeCombine_DYNAMIC_WAVE_SIM_ON_DISABLE_COMBINE) ||
                 !TryFindCombineKernel(_combineShader, "ShapeCombine_FLOW_ON_DYNAMIC_WAVE_SIM_ON", out krnl_ShapeCombine_FLOW_ON_DYNAMIC_WAVE_SIM_ON) ||
-                !TryFindCombineKernel(_combineShader, "ShapeCombine_FLOW_ON_DYNAMIC_WAVE_SIM_ON_DISABLE_COMBINE", out krnl_ShapeCombine_FLOW_ON_DYNAMIC_WAVE_SIM_ON_DISABLE_COMBINE))
+                !TryFindCombineKernel(_combineShader, "ShapeCombine_FLOW_ON_DYNAMIC_WAVE_SIM_ON_DISABLE_COMBINE", out krnl_ShapeCombine_FLOW_ON_DYNAMIC_WAVE_SIM_ON_DISABLE_COMBINE) ||
+                !ComputeShaderHelpers.TryGetPortableKernelThreadGroupSize2D(_combineShader, krnl_ShapeCombine, out _combineThreadGroupSizeX, out _combineThreadGroupSizeY) ||
+                !TryCombineKernelThreadGroupSizeMatches(krnl_ShapeCombine_DISABLE_COMBINE) ||
+                !TryCombineKernelThreadGroupSizeMatches(krnl_ShapeCombine_FLOW_ON) ||
+                !TryCombineKernelThreadGroupSizeMatches(krnl_ShapeCombine_FLOW_ON_DISABLE_COMBINE) ||
+                !TryCombineKernelThreadGroupSizeMatches(krnl_ShapeCombine_DYNAMIC_WAVE_SIM_ON) ||
+                !TryCombineKernelThreadGroupSizeMatches(krnl_ShapeCombine_DYNAMIC_WAVE_SIM_ON_DISABLE_COMBINE) ||
+                !TryCombineKernelThreadGroupSizeMatches(krnl_ShapeCombine_FLOW_ON_DYNAMIC_WAVE_SIM_ON) ||
+                !TryCombineKernelThreadGroupSizeMatches(krnl_ShapeCombine_FLOW_ON_DYNAMIC_WAVE_SIM_ON_DISABLE_COMBINE))
             {
                 _combineShader = null;
                 _combineProperties = null;
+                _combineThreadGroupSizeX = 0;
+                _combineThreadGroupSizeY = 0;
                 return;
             }
             _combineProperties = new PropertyWrapperCompute();
@@ -157,14 +173,13 @@ namespace Crest
 
         static bool TryFindCombineKernel(ComputeShader shader, string kernelName, out int kernel)
         {
-            kernel = -1;
-            if (shader == null || !shader.HasKernel(kernelName))
-            {
-                return false;
-            }
+            return ComputeShaderHelpers.TryFindKernel(shader, kernelName, out kernel);
+        }
 
-            kernel = shader.FindKernel(kernelName);
-            return kernel >= 0;
+        bool TryCombineKernelThreadGroupSizeMatches(int kernel)
+        {
+            return ComputeShaderHelpers.TryGetPortableKernelThreadGroupSize2D(_combineShader, kernel, out int sizeX, out int sizeY) &&
+                sizeX == _combineThreadGroupSizeX && sizeY == _combineThreadGroupSizeY;
         }
 
         RenderTexture CreateCombineBuffer(RenderTextureDescriptor desc)
@@ -384,8 +399,17 @@ namespace Crest
                 return;
             }
 
-            int groupsX = (width + THREAD_GROUP_SIZE_X - 1) / THREAD_GROUP_SIZE_X;
-            int groupsY = (height + THREAD_GROUP_SIZE_Y - 1) / THREAD_GROUP_SIZE_Y;
+            if (_combineThreadGroupSizeX <= 0 || _combineThreadGroupSizeY <= 0)
+            {
+                return;
+            }
+
+            int groupsX = ComputeShaderHelpers.DispatchCount(width, _combineThreadGroupSizeX);
+            int groupsY = ComputeShaderHelpers.DispatchCount(height, _combineThreadGroupSizeY);
+            if (groupsX <= 0 || groupsY <= 0)
+            {
+                return;
+            }
 
             int combineShaderKernel = krnl_ShapeCombine;
             int combineShaderKernel_lastLOD = krnl_ShapeCombine_DISABLE_COMBINE;

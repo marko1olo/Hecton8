@@ -1289,9 +1289,8 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
-            uint4 hash = xxHash3.Hash128(ptr, (long)length, seed);
-            lo = ((ulong)hash.y << 32) | hash.x;
-            hi = ((ulong)hash.w << 32) | hash.z;
+            lo = MemorySentinelMath.ComputeDeterministicHash64(ptr, length, seed ^ 0x243F6A8885A308D3UL);
+            hi = MemorySentinelMath.ComputeDeterministicHash64(ptr, length, seed ^ 0x13198A2E03707344UL);
         }
 
         private static bool TryRestoreBackup(string walPath, string backupPath, string reason, out string error)

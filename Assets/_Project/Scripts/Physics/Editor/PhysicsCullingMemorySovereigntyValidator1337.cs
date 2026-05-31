@@ -49,7 +49,7 @@ namespace Hecton8.Physics.Editor
         private static GlobalPhysicsStateManager FindRuntimeManager()
         {
 #if UNITY_2023_1_OR_NEWER
-            return Object.FindFirstObjectByType<GlobalPhysicsStateManager>();
+            return Object.FindAnyObjectByType<GlobalPhysicsStateManager>();
 #else
             return Object.FindObjectOfType<GlobalPhysicsStateManager>();
 #endif

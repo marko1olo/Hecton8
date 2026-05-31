@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Text;
+using Hecton8.Audio.Propagation;
 using Hecton8.Audio.Virtualization;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;

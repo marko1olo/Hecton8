@@ -16,6 +16,8 @@ namespace Crest
 
         private static int krnl_ClearToBlack = -1;
         private static ComputeShader s_clearToBlackShader = null;
+        private static int s_clearToBlackThreadGroupSizeX = 0;
+        private static int s_clearToBlackThreadGroupSizeY = 0;
         private static int sp_LD_TexArray_Target = Shader.PropertyToID("_LD_TexArray_Target");
         private static int sp_CrestClearWidth = Shader.PropertyToID("_CrestClearWidth");
         private static int sp_CrestClearHeight = Shader.PropertyToID("_CrestClearHeight");
@@ -60,13 +62,14 @@ namespace Crest
             int width = dst.width;
             int height = dst.height;
             int depth = dst.volumeDepth;
-            if (s_clearToBlackShader == null || krnl_ClearToBlack < 0 || width <= 0 || height <= 0 || depth <= 0)
+            if (s_clearToBlackShader == null || krnl_ClearToBlack < 0 || s_clearToBlackThreadGroupSizeX <= 0 || s_clearToBlackThreadGroupSizeY <= 0 ||
+                width <= 0 || height <= 0 || depth <= 0 || depth > ComputeShaderHelpers.MaxDispatchGroupsPerDimension)
             {
                 return;
             }
 
-            int groupsX = (width + LodDataMgr.THREAD_GROUP_SIZE_X - 1) / LodDataMgr.THREAD_GROUP_SIZE_X;
-            int groupsY = (height + LodDataMgr.THREAD_GROUP_SIZE_Y - 1) / LodDataMgr.THREAD_GROUP_SIZE_Y;
+            int groupsX = ComputeShaderHelpers.DispatchCount(width, s_clearToBlackThreadGroupSizeX);
+            int groupsY = ComputeShaderHelpers.DispatchCount(height, s_clearToBlackThreadGroupSizeY);
             if (groupsX <= 0 || groupsY <= 0)
             {
                 return;
@@ -142,14 +145,22 @@ namespace Crest
             {
                 s_clearToBlackShader = ComputeShaderHelpers.LoadShader(CLEAR_TO_BLACK_SHADER_NAME);
             }
-            if (s_clearToBlackShader != null && s_clearToBlackShader.HasKernel(CLEAR_TO_BLACK_SHADER_NAME))
+            if (ComputeShaderHelpers.TryFindKernel(s_clearToBlackShader, CLEAR_TO_BLACK_SHADER_NAME, out krnl_ClearToBlack))
             {
-                krnl_ClearToBlack = s_clearToBlackShader.FindKernel(CLEAR_TO_BLACK_SHADER_NAME);
+                if (!ComputeShaderHelpers.TryGetPortableKernelThreadGroupSize2D(s_clearToBlackShader, krnl_ClearToBlack, out s_clearToBlackThreadGroupSizeX, out s_clearToBlackThreadGroupSizeY))
+                {
+                    s_clearToBlackShader = null;
+                    krnl_ClearToBlack = -1;
+                    s_clearToBlackThreadGroupSizeX = 0;
+                    s_clearToBlackThreadGroupSizeY = 0;
+                }
             }
             else
             {
                 s_clearToBlackShader = null;
                 krnl_ClearToBlack = -1;
+                s_clearToBlackThreadGroupSizeX = 0;
+                s_clearToBlackThreadGroupSizeY = 0;
             }
         }
 

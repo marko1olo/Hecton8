@@ -35,13 +35,19 @@ namespace GPUInstancer
 
         public const int COMPUTE_SHADER_THREAD_COUNT_MAX = 256;
         public const int COMPUTE_SHADER_THREAD_COUNT_2D_MAX = 16;
+        public const int MaxDispatchGroupsPerDimension = 65535;
 
-        public static float COMPUTE_SHADER_THREAD_COUNT = 256;
-        public static float COMPUTE_SHADER_THREAD_COUNT_2D = 16;
+        public static float COMPUTE_SHADER_THREAD_COUNT = 128;
+        public static float COMPUTE_SHADER_THREAD_COUNT_2D = 8;
 
         public static int GetComputeThreadGroupCount(int elementCount)
         {
             return GetThreadGroupCount(elementCount, GetSafeComputeThreadCount(COMPUTE_SHADER_THREAD_COUNT, COMPUTE_SHADER_THREAD_COUNT_MAX));
+        }
+
+        public static int GetComputeThreadGroupCountForSize(int elementCount, int threadCount)
+        {
+            return GetThreadGroupCount(elementCount, threadCount);
         }
 
         public static int GetComputeThreadGroupCount2D(int elementCount)
@@ -70,7 +76,104 @@ namespace GPUInstancer
                 return 0;
 
             long groupCount = ((long)elementCount + threadCount - 1) / threadCount;
-            return groupCount > int.MaxValue ? int.MaxValue : (int)groupCount;
+            if (groupCount <= 0L || groupCount > MaxDispatchGroupsPerDimension)
+                return 0;
+
+            return (int)groupCount;
+        }
+
+        public static bool TryGetPortableKernelThreadGroupSizes(ComputeShader computeShader, int kernel, out int sizeX, out int sizeY, out int sizeZ)
+        {
+            sizeX = 0;
+            sizeY = 0;
+            sizeZ = 0;
+
+            if (computeShader == null || kernel < 0 || !SystemInfo.supportsComputeShaders)
+                return false;
+
+            uint kernelSizeX;
+            uint kernelSizeY;
+            uint kernelSizeZ;
+            try
+            {
+                if (!computeShader.IsSupported(kernel))
+                    return false;
+
+                computeShader.GetKernelThreadGroupSizes(kernel, out kernelSizeX, out kernelSizeY, out kernelSizeZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                return false;
+            }
+            catch (UnityException)
+            {
+                return false;
+            }
+            if (kernelSizeX == 0u || kernelSizeY == 0u || kernelSizeZ == 0u ||
+                kernelSizeX > int.MaxValue || kernelSizeY > int.MaxValue || kernelSizeZ > int.MaxValue)
+                return false;
+
+            ulong totalThreads = kernelSizeX * (ulong)kernelSizeY * kernelSizeZ;
+            if (totalThreads > COMPUTE_SHADER_THREAD_COUNT_MAX)
+                return false;
+
+            sizeX = (int)kernelSizeX;
+            sizeY = (int)kernelSizeY;
+            sizeZ = (int)kernelSizeZ;
+            return true;
+        }
+
+        public static bool TryFindKernel(ComputeShader computeShader, string kernelName, out int kernel)
+        {
+            kernel = -1;
+            if (computeShader == null || string.IsNullOrEmpty(kernelName) || !SystemInfo.supportsComputeShaders)
+                return false;
+
+            try
+            {
+                if (!computeShader.HasKernel(kernelName))
+                    return false;
+
+                kernel = computeShader.FindKernel(kernelName);
+                return kernel >= 0;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                kernel = -1;
+                return false;
+            }
+            catch (UnityException)
+            {
+                kernel = -1;
+                return false;
+            }
         }
 
         public static int COMPUTE_MAX_LOD_BUFFER = 3;
@@ -186,26 +289,68 @@ namespace GPUInstancer
         public static ComputeShader computeBufferSetDataPartial;
         public static int computeBufferSetDataPartialKernelId = -1;
         public static int computeBufferSetDataSingleKernelId = -1;
+        public static int computeBufferSetDataPartialThreadGroupSizeX;
 
         public static void SetupComputeSetDataPartial()
         {
-            if (computeBufferSetDataPartial == null)
+            if (computeBufferSetDataPartial == null || computeBufferSetDataPartialThreadGroupSizeX <= 0)
             {
                 computeBufferSetDataPartial = Resources.Load<ComputeShader>(COMPUTE_SET_DATA_PARTIAL_RESOURCE_PATH);
-                if (computeBufferSetDataPartial != null &&
-                    computeBufferSetDataPartial.HasKernel(COMPUTE_SET_DATA_PARTIAL_KERNEL) &&
-                    computeBufferSetDataPartial.HasKernel(COMPUTE_SET_DATA_SINGLE_KERNEL))
+
+                try
                 {
-                    computeBufferSetDataPartialKernelId = computeBufferSetDataPartial.FindKernel(COMPUTE_SET_DATA_PARTIAL_KERNEL);
-                    computeBufferSetDataSingleKernelId = computeBufferSetDataPartial.FindKernel(COMPUTE_SET_DATA_SINGLE_KERNEL);
+                    if (computeBufferSetDataPartial != null &&
+                        computeBufferSetDataPartial.HasKernel(COMPUTE_SET_DATA_PARTIAL_KERNEL) &&
+                        computeBufferSetDataPartial.HasKernel(COMPUTE_SET_DATA_SINGLE_KERNEL))
+                    {
+                        computeBufferSetDataPartialKernelId = computeBufferSetDataPartial.FindKernel(COMPUTE_SET_DATA_PARTIAL_KERNEL);
+                        computeBufferSetDataSingleKernelId = computeBufferSetDataPartial.FindKernel(COMPUTE_SET_DATA_SINGLE_KERNEL);
+
+                        if (!TryGetPortableKernelThreadGroupSizes(computeBufferSetDataPartial, computeBufferSetDataPartialKernelId, out computeBufferSetDataPartialThreadGroupSizeX, out int partialSizeY, out int partialSizeZ) ||
+                            partialSizeY != 1 ||
+                            partialSizeZ != 1 ||
+                            !TryGetPortableKernelThreadGroupSizes(computeBufferSetDataPartial, computeBufferSetDataSingleKernelId, out int singleSizeX, out int singleSizeY, out int singleSizeZ) ||
+                            singleSizeX != 1 ||
+                            singleSizeY != 1 ||
+                            singleSizeZ != 1)
+                        {
+                            ResetComputeSetDataPartial();
+                        }
+                    }
+                    else
+                    {
+                        ResetComputeSetDataPartial();
+                    }
                 }
-                else
+                catch (System.ObjectDisposedException)
                 {
-                    computeBufferSetDataPartial = null;
-                    computeBufferSetDataPartialKernelId = -1;
-                    computeBufferSetDataSingleKernelId = -1;
+                    ResetComputeSetDataPartial();
+                }
+                catch (System.InvalidOperationException)
+                {
+                    ResetComputeSetDataPartial();
+                }
+                catch (System.ArgumentException)
+                {
+                    ResetComputeSetDataPartial();
+                }
+                catch (MissingReferenceException)
+                {
+                    ResetComputeSetDataPartial();
+                }
+                catch (UnityException)
+                {
+                    ResetComputeSetDataPartial();
                 }
             }
+        }
+
+        private static void ResetComputeSetDataPartial()
+        {
+            computeBufferSetDataPartial = null;
+            computeBufferSetDataPartialKernelId = -1;
+            computeBufferSetDataSingleKernelId = -1;
+            computeBufferSetDataPartialThreadGroupSizeX = 0;
         }
         #endregion CS Set Data Partial
 
@@ -239,30 +384,94 @@ namespace GPUInstancer
         public static int computeTextureUtilsCopyTextureId = -1;
         public static int computeTextureUtilsReduceTextureId = -1;
         public static int computeTextureUtilsCopyTextureArrayId = -1;
+        public static int computeTextureUtilsThreadGroupSizeX;
+        public static int computeTextureUtilsThreadGroupSizeY;
 
         public static void SetupComputeTextureUtils()
         {
-            if (computeTextureUtils == null)
+            if (computeTextureUtils == null || computeTextureUtilsThreadGroupSizeX <= 0 || computeTextureUtilsThreadGroupSizeY <= 0)
             {
                 computeTextureUtils = Resources.Load<ComputeShader>(COMPUTE_TEXTURE_UTILS_PATH);
 
-                if (computeTextureUtils != null &&
-                    computeTextureUtils.HasKernel(COMPUTE_COPY_TEXTURE_KERNEL) &&
-                    computeTextureUtils.HasKernel(COMPUTE_REDUCE_TEXTURE_KERNEL) &&
-                    computeTextureUtils.HasKernel(COMPUTE_COPY_TEXTURE_ARRAY_KERNEL))
+                try
                 {
-                    computeTextureUtilsCopyTextureId = computeTextureUtils.FindKernel(COMPUTE_COPY_TEXTURE_KERNEL);
-                    computeTextureUtilsReduceTextureId = computeTextureUtils.FindKernel(COMPUTE_REDUCE_TEXTURE_KERNEL);
-                    computeTextureUtilsCopyTextureArrayId = computeTextureUtils.FindKernel(COMPUTE_COPY_TEXTURE_ARRAY_KERNEL);
+                    if (computeTextureUtils != null &&
+                        computeTextureUtils.HasKernel(COMPUTE_COPY_TEXTURE_KERNEL) &&
+                        computeTextureUtils.HasKernel(COMPUTE_REDUCE_TEXTURE_KERNEL) &&
+                        computeTextureUtils.HasKernel(COMPUTE_COPY_TEXTURE_ARRAY_KERNEL))
+                    {
+                        computeTextureUtilsCopyTextureId = computeTextureUtils.FindKernel(COMPUTE_COPY_TEXTURE_KERNEL);
+                        computeTextureUtilsReduceTextureId = computeTextureUtils.FindKernel(COMPUTE_REDUCE_TEXTURE_KERNEL);
+                        computeTextureUtilsCopyTextureArrayId = computeTextureUtils.FindKernel(COMPUTE_COPY_TEXTURE_ARRAY_KERNEL);
+
+                        if (!TryResolveMatchingTextureUtilsThreadGroupSizes(
+                                computeTextureUtils,
+                                computeTextureUtilsCopyTextureId,
+                                computeTextureUtilsReduceTextureId,
+                                computeTextureUtilsCopyTextureArrayId,
+                                out computeTextureUtilsThreadGroupSizeX,
+                                out computeTextureUtilsThreadGroupSizeY))
+                        {
+                            ResetComputeTextureUtils();
+                        }
+                    }
+                    else
+                    {
+                        ResetComputeTextureUtils();
+                    }
                 }
-                else
+                catch (System.ObjectDisposedException)
                 {
-                    computeTextureUtils = null;
-                    computeTextureUtilsCopyTextureId = -1;
-                    computeTextureUtilsReduceTextureId = -1;
-                    computeTextureUtilsCopyTextureArrayId = -1;
+                    ResetComputeTextureUtils();
+                }
+                catch (System.InvalidOperationException)
+                {
+                    ResetComputeTextureUtils();
+                }
+                catch (System.ArgumentException)
+                {
+                    ResetComputeTextureUtils();
+                }
+                catch (MissingReferenceException)
+                {
+                    ResetComputeTextureUtils();
+                }
+                catch (UnityException)
+                {
+                    ResetComputeTextureUtils();
                 }
             }
+        }
+
+        private static void ResetComputeTextureUtils()
+        {
+            computeTextureUtils = null;
+            computeTextureUtilsCopyTextureId = -1;
+            computeTextureUtilsReduceTextureId = -1;
+            computeTextureUtilsCopyTextureArrayId = -1;
+            computeTextureUtilsThreadGroupSizeX = 0;
+            computeTextureUtilsThreadGroupSizeY = 0;
+        }
+
+        private static bool TryResolveMatchingTextureUtilsThreadGroupSizes(ComputeShader shader, int copyKernel, int reduceKernel, int copyArrayKernel, out int sizeX, out int sizeY)
+        {
+            sizeX = 0;
+            sizeY = 0;
+
+            if (!TryGetPortableKernelThreadGroupSizes(shader, copyKernel, out int copyX, out int copyY, out int copyZ) ||
+                !TryGetPortableKernelThreadGroupSizes(shader, reduceKernel, out int reduceX, out int reduceY, out int reduceZ) ||
+                !TryGetPortableKernelThreadGroupSizes(shader, copyArrayKernel, out int copyArrayX, out int copyArrayY, out int copyArrayZ))
+                return false;
+
+            if (copyZ != 1 || reduceZ != 1 || copyArrayZ != 1)
+                return false;
+
+            if (copyX != reduceX || copyX != copyArrayX || copyY != reduceY || copyY != copyArrayY)
+                return false;
+
+            sizeX = copyX;
+            sizeY = copyY;
+            return true;
         }
 
         #endregion CS Texture Utils
@@ -341,39 +550,119 @@ namespace GPUInstancer
         public static int computeRemoveInsideSphereId = -1;
         public static int computeRemoveInsideCapsuleId = -1;
         public static int computeBufferMatrixOffsetId = -1;
+        public static int computeRuntimeModificationThreadGroupSizeX;
 
         public static void SetupComputeRuntimeModification()
         {
-            if (computeRuntimeModification == null)
+            if (computeRuntimeModification == null || computeRuntimeModificationThreadGroupSizeX <= 0)
             {
                 computeRuntimeModification = Resources.Load<ComputeShader>(COMPUTE_RUNTIME_MODIFICATION_RESOURCE_PATH);
 
-                if (computeRuntimeModification != null &&
-                    computeRuntimeModification.HasKernel(COMPUTE_TRANSFORM_OFFSET_KERNEL) &&
-                    computeRuntimeModification.HasKernel(COMPUTE_REMOVE_INSIDE_BOUNDS_KERNEL) &&
-                    computeRuntimeModification.HasKernel(COMPUTE_REMOVE_INSIDE_BOX_KERNEL) &&
-                    computeRuntimeModification.HasKernel(COMPUTE_REMOVE_INSIDE_SPHERE_KERNEL) &&
-                    computeRuntimeModification.HasKernel(COMPUTE_REMOVE_INSIDE_CAPSULE_KERNEL) &&
-                    computeRuntimeModification.HasKernel(COMPUTE_MATRIX_OFFSET_KERNEL))
+                try
                 {
-                    computeBufferTransformOffsetId = computeRuntimeModification.FindKernel(COMPUTE_TRANSFORM_OFFSET_KERNEL);
-                    computeRemoveInsideBoundsId = computeRuntimeModification.FindKernel(COMPUTE_REMOVE_INSIDE_BOUNDS_KERNEL);
-                    computeRemoveInsideBoxId = computeRuntimeModification.FindKernel(COMPUTE_REMOVE_INSIDE_BOX_KERNEL);
-                    computeRemoveInsideSphereId = computeRuntimeModification.FindKernel(COMPUTE_REMOVE_INSIDE_SPHERE_KERNEL);
-                    computeRemoveInsideCapsuleId = computeRuntimeModification.FindKernel(COMPUTE_REMOVE_INSIDE_CAPSULE_KERNEL);
-                    computeBufferMatrixOffsetId = computeRuntimeModification.FindKernel(COMPUTE_MATRIX_OFFSET_KERNEL);
+                    if (computeRuntimeModification != null &&
+                        computeRuntimeModification.HasKernel(COMPUTE_TRANSFORM_OFFSET_KERNEL) &&
+                        computeRuntimeModification.HasKernel(COMPUTE_REMOVE_INSIDE_BOUNDS_KERNEL) &&
+                        computeRuntimeModification.HasKernel(COMPUTE_REMOVE_INSIDE_BOX_KERNEL) &&
+                        computeRuntimeModification.HasKernel(COMPUTE_REMOVE_INSIDE_SPHERE_KERNEL) &&
+                        computeRuntimeModification.HasKernel(COMPUTE_REMOVE_INSIDE_CAPSULE_KERNEL) &&
+                        computeRuntimeModification.HasKernel(COMPUTE_MATRIX_OFFSET_KERNEL))
+                    {
+                        computeBufferTransformOffsetId = computeRuntimeModification.FindKernel(COMPUTE_TRANSFORM_OFFSET_KERNEL);
+                        computeRemoveInsideBoundsId = computeRuntimeModification.FindKernel(COMPUTE_REMOVE_INSIDE_BOUNDS_KERNEL);
+                        computeRemoveInsideBoxId = computeRuntimeModification.FindKernel(COMPUTE_REMOVE_INSIDE_BOX_KERNEL);
+                        computeRemoveInsideSphereId = computeRuntimeModification.FindKernel(COMPUTE_REMOVE_INSIDE_SPHERE_KERNEL);
+                        computeRemoveInsideCapsuleId = computeRuntimeModification.FindKernel(COMPUTE_REMOVE_INSIDE_CAPSULE_KERNEL);
+                        computeBufferMatrixOffsetId = computeRuntimeModification.FindKernel(COMPUTE_MATRIX_OFFSET_KERNEL);
+
+                        if (!TryResolveMatchingRuntimeModificationThreadGroupSize(
+                                computeRuntimeModification,
+                                computeBufferTransformOffsetId,
+                                computeRemoveInsideBoundsId,
+                                computeRemoveInsideBoxId,
+                                computeRemoveInsideSphereId,
+                                computeRemoveInsideCapsuleId,
+                                computeBufferMatrixOffsetId,
+                                out computeRuntimeModificationThreadGroupSizeX))
+                        {
+                            ResetComputeRuntimeModification();
+                        }
+                    }
+                    else
+                    {
+                        ResetComputeRuntimeModification();
+                    }
                 }
-                else
+                catch (System.ObjectDisposedException)
                 {
-                    computeRuntimeModification = null;
-                    computeBufferTransformOffsetId = -1;
-                    computeRemoveInsideBoundsId = -1;
-                    computeRemoveInsideBoxId = -1;
-                    computeRemoveInsideSphereId = -1;
-                    computeRemoveInsideCapsuleId = -1;
-                    computeBufferMatrixOffsetId = -1;
+                    ResetComputeRuntimeModification();
+                }
+                catch (System.InvalidOperationException)
+                {
+                    ResetComputeRuntimeModification();
+                }
+                catch (System.ArgumentException)
+                {
+                    ResetComputeRuntimeModification();
+                }
+                catch (MissingReferenceException)
+                {
+                    ResetComputeRuntimeModification();
+                }
+                catch (UnityException)
+                {
+                    ResetComputeRuntimeModification();
                 }
             }
+        }
+
+        private static void ResetComputeRuntimeModification()
+        {
+            computeRuntimeModification = null;
+            computeBufferTransformOffsetId = -1;
+            computeRemoveInsideBoundsId = -1;
+            computeRemoveInsideBoxId = -1;
+            computeRemoveInsideSphereId = -1;
+            computeRemoveInsideCapsuleId = -1;
+            computeBufferMatrixOffsetId = -1;
+            computeRuntimeModificationThreadGroupSizeX = 0;
+        }
+
+        private static bool TryResolveMatchingRuntimeModificationThreadGroupSize(
+            ComputeShader shader,
+            int transformOffsetKernel,
+            int removeInsideBoundsKernel,
+            int removeInsideBoxKernel,
+            int removeInsideSphereKernel,
+            int removeInsideCapsuleKernel,
+            int matrixOffsetKernel,
+            out int sizeX)
+        {
+            sizeX = 0;
+
+            if (!TryGetPortableKernelThreadGroupSizes(shader, transformOffsetKernel, out int firstX, out int firstY, out int firstZ))
+                return false;
+
+            if (firstY != 1 || firstZ != 1)
+                return false;
+
+            if (!MatchesRuntimeModificationThreadGroup(shader, removeInsideBoundsKernel, firstX) ||
+                !MatchesRuntimeModificationThreadGroup(shader, removeInsideBoxKernel, firstX) ||
+                !MatchesRuntimeModificationThreadGroup(shader, removeInsideSphereKernel, firstX) ||
+                !MatchesRuntimeModificationThreadGroup(shader, removeInsideCapsuleKernel, firstX) ||
+                !MatchesRuntimeModificationThreadGroup(shader, matrixOffsetKernel, firstX))
+                return false;
+
+            sizeX = firstX;
+            return true;
+        }
+
+        private static bool MatchesRuntimeModificationThreadGroup(ComputeShader shader, int kernel, int expectedSizeX)
+        {
+            return TryGetPortableKernelThreadGroupSizes(shader, kernel, out int sizeX, out int sizeY, out int sizeZ) &&
+                sizeX == expectedSizeX &&
+                sizeY == 1 &&
+                sizeZ == 1;
         }
 
         #endregion CS Runtime Modification

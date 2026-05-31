@@ -1,0 +1,826 @@
+﻿{
+    "agentId":  "1502",
+    "evidenceClass":  "STATIC_SOURCE_PREFAB_MUTATION_DRY_RUN",
+    "generatedUtc":  "2026-05-30T20:43:35.3877461Z",
+    "apply":  false,
+    "firstPartyOnly":  true,
+    "includeExtensions":  [
+                              ".prefab"
+                          ],
+    "ledgerPath":  "Docs/AgentLogs/YamlDesync_1502_Ledger.json",
+    "candidateCount":  50,
+    "filesConsidered":  8,
+    "filesWritten":  0,
+    "propertiesDeleted":  0,
+    "dryRunPropertiesMatched":  50,
+    "rejectedCount":  0,
+    "totalBytesBefore":  246691,
+    "totalBytesAfter":  246691,
+    "elapsedMicroseconds":  1010156,
+    "files":  [
+                  {
+                      "relativePath":  "Assets/_Project/Prefabs/Ocean_Crest.prefab",
+                      "applied":  false,
+                      "bytesBefore":  22374,
+                      "bytesAfter":  22374,
+                      "sha256Before":  "C13A3A2317E8DFD9E0D79BE459E742355ED9457C0BABFA99B33249EF47663B77",
+                      "sha256After":  "C13A3A2317E8DFD9E0D79BE459E742355ED9457C0BABFA99B33249EF47663B77",
+                      "backupPath":  null,
+                      "preStats":  {
+                                       "yamlHeader":  true,
+                                       "unityTagHeader":  true,
+                                       "rootGameObjectMarker":  false,
+                                       "prefabGameObjectBlock":  true,
+                                       "monoBehaviourCount":  11,
+                                       "missingScriptCount":  0
+                                   },
+                      "postStats":  {
+                                        "yamlHeader":  true,
+                                        "unityTagHeader":  true,
+                                        "rootGameObjectMarker":  false,
+                                        "prefabGameObjectBlock":  true,
+                                        "monoBehaviourCount":  11,
+                                        "missingScriptCount":  0
+                                    },
+                      "structureInvariant":  {
+                                                 "yamlHeaderPreserved":  true,
+                                                 "unityTagHeaderPreserved":  true,
+                                                 "rootGameObjectMarkerPreserved":  true,
+                                                 "prefabGameObjectBlockPreserved":  true,
+                                                 "monoBehaviourCountPreserved":  true,
+                                                 "missingScriptCountPreserved":  true
+                                             },
+                      "removedProperties":  [
+                                                {
+                                                    "property":  "sceneSearchRetryInterval",
+                                                    "originalLine":  627,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "7666709485588549063",
+                                                    "componentStartLine":  614,
+                                                    "scriptPath":  "Assets/_Project/Scripts/Plugins/Crest/Crest4KinematicsAdapter.cs",
+                                                    "scriptClass":  "Crest4KinematicsAdapter",
+                                                    "firstLine":  "sceneSearchRetryInterval: 1"
+                                                },
+                                                {
+                                                    "property":  "surfaceOffset",
+                                                    "originalLine":  506,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "631104235710018481",
+                                                    "componentStartLine":  486,
+                                                    "scriptPath":  "Assets/_Project/Scripts/World/SargassumCrestDampingController.cs",
+                                                    "scriptClass":  "SargassumCrestDampingController",
+                                                    "firstLine":  "surfaceOffset: 0.05"
+                                                },
+                                                {
+                                                    "property":  "waterLevel",
+                                                    "originalLine":  505,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "631104235710018481",
+                                                    "componentStartLine":  486,
+                                                    "scriptPath":  "Assets/_Project/Scripts/World/SargassumCrestDampingController.cs",
+                                                    "scriptClass":  "SargassumCrestDampingController",
+                                                    "firstLine":  "waterLevel: 4900"
+                                                }
+                                            ],
+                      "rejectedProperties":  [
+
+                                             ]
+                  },
+                  {
+                      "relativePath":  "Assets/_Project/Prefabs/PFB_Submarine_Core.prefab",
+                      "applied":  false,
+                      "bytesBefore":  17653,
+                      "bytesAfter":  17653,
+                      "sha256Before":  "9D461EA28B8B244F963AE341C1D2FAA1E5CC90E874D89507ACDD617A47D29334",
+                      "sha256After":  "9D461EA28B8B244F963AE341C1D2FAA1E5CC90E874D89507ACDD617A47D29334",
+                      "backupPath":  null,
+                      "preStats":  {
+                                       "yamlHeader":  true,
+                                       "unityTagHeader":  true,
+                                       "rootGameObjectMarker":  false,
+                                       "prefabGameObjectBlock":  true,
+                                       "monoBehaviourCount":  5,
+                                       "missingScriptCount":  0
+                                   },
+                      "postStats":  {
+                                        "yamlHeader":  true,
+                                        "unityTagHeader":  true,
+                                        "rootGameObjectMarker":  false,
+                                        "prefabGameObjectBlock":  true,
+                                        "monoBehaviourCount":  5,
+                                        "missingScriptCount":  0
+                                    },
+                      "structureInvariant":  {
+                                                 "yamlHeaderPreserved":  true,
+                                                 "unityTagHeaderPreserved":  true,
+                                                 "rootGameObjectMarkerPreserved":  true,
+                                                 "prefabGameObjectBlockPreserved":  true,
+                                                 "monoBehaviourCountPreserved":  true,
+                                                 "missingScriptCountPreserved":  true
+                                             },
+                      "removedProperties":  [
+                                                {
+                                                    "property":  "mathLodSwitchHoldSeconds",
+                                                    "originalLine":  497,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "14875980349479308",
+                                                    "componentStartLine":  472,
+                                                    "scriptPath":  "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+                                                    "scriptClass":  "SubmarineAutoLevelBallastController",
+                                                    "firstLine":  "mathLodSwitchHoldSeconds: 2.5"
+                                                },
+                                                {
+                                                    "property":  "hullImpactDecalPoolWarmupCount",
+                                                    "originalLine":  452,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "848451706770078234",
+                                                    "componentStartLine":  415,
+                                                    "scriptPath":  "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+                                                    "scriptClass":  "SubmarineStructuralGrid",
+                                                    "firstLine":  "hullImpactDecalPoolWarmupCount: 8"
+                                                },
+                                                {
+                                                    "property":  "hullImpactScratchDecalPrefab",
+                                                    "originalLine":  451,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "848451706770078234",
+                                                    "componentStartLine":  415,
+                                                    "scriptPath":  "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+                                                    "scriptClass":  "SubmarineStructuralGrid",
+                                                    "firstLine":  "hullImpactScratchDecalPrefab: {fileID: 0}"
+                                                },
+                                                {
+                                                    "property":  "hullCollisionMaxIntegrityDelta",
+                                                    "originalLine":  447,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "848451706770078234",
+                                                    "componentStartLine":  415,
+                                                    "scriptPath":  "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+                                                    "scriptClass":  "SubmarineStructuralGrid",
+                                                    "firstLine":  "hullCollisionMaxIntegrityDelta: 96"
+                                                },
+                                                {
+                                                    "property":  "hullCollisionFullDentEnergyJoules",
+                                                    "originalLine":  446,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "848451706770078234",
+                                                    "componentStartLine":  415,
+                                                    "scriptPath":  "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+                                                    "scriptClass":  "SubmarineStructuralGrid",
+                                                    "firstLine":  "hullCollisionFullDentEnergyJoules: 65000"
+                                                },
+                                                {
+                                                    "property":  "hullCollisionYieldEnergyJoules",
+                                                    "originalLine":  445,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "848451706770078234",
+                                                    "componentStartLine":  415,
+                                                    "scriptPath":  "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+                                                    "scriptClass":  "SubmarineStructuralGrid",
+                                                    "firstLine":  "hullCollisionYieldEnergyJoules: 12000"
+                                                },
+                                                {
+                                                    "property":  "hullImpactDentDecalPrefab",
+                                                    "originalLine":  439,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "848451706770078234",
+                                                    "componentStartLine":  415,
+                                                    "scriptPath":  "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
+                                                    "scriptClass":  "SubmarineStructuralGrid",
+                                                    "firstLine":  "hullImpactDentDecalPrefab: {fileID: 0}"
+                                                }
+                                            ],
+                      "rejectedProperties":  [
+
+                                             ]
+                  },
+                  {
+                      "relativePath":  "Assets/_Project/Prefabs/Player.prefab",
+                      "applied":  false,
+                      "bytesBefore":  173951,
+                      "bytesAfter":  173951,
+                      "sha256Before":  "1D9CB07939FD761C01D28BAB42ACAAD51E8184CC29A4AEBCF3A740A844CBB191",
+                      "sha256After":  "1D9CB07939FD761C01D28BAB42ACAAD51E8184CC29A4AEBCF3A740A844CBB191",
+                      "backupPath":  null,
+                      "preStats":  {
+                                       "yamlHeader":  true,
+                                       "unityTagHeader":  true,
+                                       "rootGameObjectMarker":  false,
+                                       "prefabGameObjectBlock":  true,
+                                       "monoBehaviourCount":  44,
+                                       "missingScriptCount":  0
+                                   },
+                      "postStats":  {
+                                        "yamlHeader":  true,
+                                        "unityTagHeader":  true,
+                                        "rootGameObjectMarker":  false,
+                                        "prefabGameObjectBlock":  true,
+                                        "monoBehaviourCount":  44,
+                                        "missingScriptCount":  0
+                                    },
+                      "structureInvariant":  {
+                                                 "yamlHeaderPreserved":  true,
+                                                 "unityTagHeaderPreserved":  true,
+                                                 "rootGameObjectMarkerPreserved":  true,
+                                                 "prefabGameObjectBlockPreserved":  true,
+                                                 "monoBehaviourCountPreserved":  true,
+                                                 "missingScriptCountPreserved":  true
+                                             },
+                      "removedProperties":  [
+                                                {
+                                                    "property":  "thrusterLoopClip",
+                                                    "originalLine":  2548,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4348543030281980433",
+                                                    "componentStartLine":  2533,
+                                                    "scriptPath":  "Assets/_Project/Scripts/PlayerThrusterAudio.cs",
+                                                    "scriptClass":  "PlayerThrusterAudio",
+                                                    "firstLine":  "thrusterLoopClip: {fileID: 8300000, guid: cec354f2d9357bc4eaa00c12f00af368, type: 3}"
+                                                },
+                                                {
+                                                    "property":  "handObstacleMask",
+                                                    "originalLine":  2036,
+                                                    "removedLineCount":  3,
+                                                    "componentFileID":  "7467141657224279663",
+                                                    "componentStartLine":  1941,
+                                                    "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimPresentationController.cs",
+                                                    "scriptClass":  "PlayerSwimPresentationController",
+                                                    "firstLine":  "handObstacleMask:"
+                                                },
+                                                {
+                                                    "property":  "playerRigidbody",
+                                                    "originalLine":  1954,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "7467141657224279663",
+                                                    "componentStartLine":  1941,
+                                                    "scriptPath":  "Assets/_Project/Scripts/Gameplay/PlayerSwimPresentationController.cs",
+                                                    "scriptClass":  "PlayerSwimPresentationController",
+                                                    "firstLine":  "playerRigidbody: {fileID: 6324429111755348568}"
+                                                },
+                                                {
+                                                    "property":  "stormInterferenceBeamJitter",
+                                                    "originalLine":  1556,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "6761570206243547513",
+                                                    "componentStartLine":  1514,
+                                                    "scriptPath":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                                    "scriptClass":  "PlayerFlashlight",
+                                                    "firstLine":  "stormInterferenceBeamJitter: 0.05"
+                                                },
+                                                {
+                                                    "property":  "stormInterferenceBeamNoise",
+                                                    "originalLine":  1555,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "6761570206243547513",
+                                                    "componentStartLine":  1514,
+                                                    "scriptPath":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                                    "scriptClass":  "PlayerFlashlight",
+                                                    "firstLine":  "stormInterferenceBeamNoise: 0.12"
+                                                },
+                                                {
+                                                    "property":  "underwaterBeamJitterMax",
+                                                    "originalLine":  1553,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "6761570206243547513",
+                                                    "componentStartLine":  1514,
+                                                    "scriptPath":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                                    "scriptClass":  "PlayerFlashlight",
+                                                    "firstLine":  "underwaterBeamJitterMax: 0.03"
+                                                },
+                                                {
+                                                    "property":  "underwaterBeamSideSoftness",
+                                                    "originalLine":  1552,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "6761570206243547513",
+                                                    "componentStartLine":  1514,
+                                                    "scriptPath":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                                    "scriptClass":  "PlayerFlashlight",
+                                                    "firstLine":  "underwaterBeamSideSoftness: 1.2"
+                                                },
+                                                {
+                                                    "property":  "underwaterBeamNoiseMax",
+                                                    "originalLine":  1551,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "6761570206243547513",
+                                                    "componentStartLine":  1514,
+                                                    "scriptPath":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                                    "scriptClass":  "PlayerFlashlight",
+                                                    "firstLine":  "underwaterBeamNoiseMax: 0.16"
+                                                },
+                                                {
+                                                    "property":  "batteryDrainRate",
+                                                    "originalLine":  1533,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "6761570206243547513",
+                                                    "componentStartLine":  1514,
+                                                    "scriptPath":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                                    "scriptClass":  "PlayerFlashlight",
+                                                    "firstLine":  "batteryDrainRate: 0.2"
+                                                },
+                                                {
+                                                    "property":  "enableBatteryDrain",
+                                                    "originalLine":  1532,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "6761570206243547513",
+                                                    "componentStartLine":  1514,
+                                                    "scriptPath":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                                    "scriptClass":  "PlayerFlashlight",
+                                                    "firstLine":  "enableBatteryDrain: 1"
+                                                },
+                                                {
+                                                    "property":  "survivalSystem",
+                                                    "originalLine":  1527,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "6761570206243547513",
+                                                    "componentStartLine":  1514,
+                                                    "scriptPath":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                                    "scriptClass":  "PlayerFlashlight",
+                                                    "firstLine":  "survivalSystem: {fileID: 9217988090672240742}"
+                                                },
+                                                {
+                                                    "property":  "exosuitImpactSiltBurstScale",
+                                                    "originalLine":  1276,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4126722323519124583",
+                                                    "componentStartLine":  955,
+                                                    "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                    "scriptClass":  "HectonPlayerMovement",
+                                                    "firstLine":  "exosuitImpactSiltBurstScale: 0.95"
+                                                },
+                                                {
+                                                    "property":  "exosuitImpactShakeScale",
+                                                    "originalLine":  1275,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4126722323519124583",
+                                                    "componentStartLine":  955,
+                                                    "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                    "scriptClass":  "HectonPlayerMovement",
+                                                    "firstLine":  "exosuitImpactShakeScale: 2.1"
+                                                },
+                                                {
+                                                    "property":  "exosuitImpactShakeSpeedThreshold",
+                                                    "originalLine":  1274,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4126722323519124583",
+                                                    "componentStartLine":  955,
+                                                    "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                    "scriptClass":  "HectonPlayerMovement",
+                                                    "firstLine":  "exosuitImpactShakeSpeedThreshold: 7.5"
+                                                },
+                                                {
+                                                    "property":  "kccImpactTransferImpulseScale",
+                                                    "originalLine":  1156,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4126722323519124583",
+                                                    "componentStartLine":  955,
+                                                    "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                    "scriptClass":  "HectonPlayerMovement",
+                                                    "firstLine":  "kccImpactTransferImpulseScale: 1"
+                                                },
+                                                {
+                                                    "property":  "kccImpactTransferEquivalentMass",
+                                                    "originalLine":  1155,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4126722323519124583",
+                                                    "componentStartLine":  955,
+                                                    "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                    "scriptClass":  "HectonPlayerMovement",
+                                                    "firstLine":  "kccImpactTransferEquivalentMass: 18"
+                                                },
+                                                {
+                                                    "property":  "kccImpactTransferMassLimit",
+                                                    "originalLine":  1154,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4126722323519124583",
+                                                    "componentStartLine":  955,
+                                                    "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                    "scriptClass":  "HectonPlayerMovement",
+                                                    "firstLine":  "kccImpactTransferMassLimit: 45"
+                                                },
+                                                {
+                                                    "property":  "kccImpactTransferSpeedThreshold",
+                                                    "originalLine":  1153,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4126722323519124583",
+                                                    "componentStartLine":  955,
+                                                    "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                    "scriptClass":  "HectonPlayerMovement",
+                                                    "firstLine":  "kccImpactTransferSpeedThreshold: 3.5"
+                                                },
+                                                {
+                                                    "property":  "crushDepthImplosionClip",
+                                                    "originalLine":  1120,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4126722323519124583",
+                                                    "componentStartLine":  955,
+                                                    "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                    "scriptClass":  "HectonPlayerMovement",
+                                                    "firstLine":  "crushDepthImplosionClip: {fileID: 0}"
+                                                },
+                                                {
+                                                    "property":  "crushDepthGroanClip",
+                                                    "originalLine":  1119,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4126722323519124583",
+                                                    "componentStartLine":  955,
+                                                    "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                    "scriptClass":  "HectonPlayerMovement",
+                                                    "firstLine":  "crushDepthGroanClip: {fileID: 0}"
+                                                },
+                                                {
+                                                    "property":  "wipeoutSweepSkinWidth",
+                                                    "originalLine":  1037,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4126722323519124583",
+                                                    "componentStartLine":  955,
+                                                    "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                    "scriptClass":  "HectonPlayerMovement",
+                                                    "firstLine":  "wipeoutSweepSkinWidth: 0.04"
+                                                },
+                                                {
+                                                    "property":  "wipeoutSweepSpeedThreshold",
+                                                    "originalLine":  1036,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4126722323519124583",
+                                                    "componentStartLine":  955,
+                                                    "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                    "scriptClass":  "HectonPlayerMovement",
+                                                    "firstLine":  "wipeoutSweepSpeedThreshold: 15"
+                                                },
+                                                {
+                                                    "property":  "wipeoutImpactDeltaVelocityMax",
+                                                    "originalLine":  1028,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4126722323519124583",
+                                                    "componentStartLine":  955,
+                                                    "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                    "scriptClass":  "HectonPlayerMovement",
+                                                    "firstLine":  "wipeoutImpactDeltaVelocityMax: 21"
+                                                },
+                                                {
+                                                    "property":  "wipeoutImpactDeltaVelocityThreshold",
+                                                    "originalLine":  1027,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4126722323519124583",
+                                                    "componentStartLine":  955,
+                                                    "scriptPath":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                    "scriptClass":  "HectonPlayerMovement",
+                                                    "firstLine":  "wipeoutImpactDeltaVelocityThreshold: 9.5"
+                                                }
+                                            ],
+                      "rejectedProperties":  [
+
+                                             ]
+                  },
+                  {
+                      "relativePath":  "Assets/_Project/Prefabs/Construction/Final/PFB_SargassumCollapseChunk.prefab",
+                      "applied":  false,
+                      "bytesBefore":  6025,
+                      "bytesAfter":  6025,
+                      "sha256Before":  "6C60F90B2197FE7097B441D1B365F93497EFB7B7915F255A60FCEB9C5179BECB",
+                      "sha256After":  "6C60F90B2197FE7097B441D1B365F93497EFB7B7915F255A60FCEB9C5179BECB",
+                      "backupPath":  null,
+                      "preStats":  {
+                                       "yamlHeader":  true,
+                                       "unityTagHeader":  true,
+                                       "rootGameObjectMarker":  false,
+                                       "prefabGameObjectBlock":  true,
+                                       "monoBehaviourCount":  1,
+                                       "missingScriptCount":  0
+                                   },
+                      "postStats":  {
+                                        "yamlHeader":  true,
+                                        "unityTagHeader":  true,
+                                        "rootGameObjectMarker":  false,
+                                        "prefabGameObjectBlock":  true,
+                                        "monoBehaviourCount":  1,
+                                        "missingScriptCount":  0
+                                    },
+                      "structureInvariant":  {
+                                                 "yamlHeaderPreserved":  true,
+                                                 "unityTagHeaderPreserved":  true,
+                                                 "rootGameObjectMarkerPreserved":  true,
+                                                 "prefabGameObjectBlockPreserved":  true,
+                                                 "monoBehaviourCountPreserved":  true,
+                                                 "missingScriptCountPreserved":  true
+                                             },
+                      "removedProperties":  [
+                                                {
+                                                    "property":  "snagSurfaceOffset",
+                                                    "originalLine":  120,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "3204588369501127005",
+                                                    "componentStartLine":  86,
+                                                    "scriptPath":  "Assets/_Project/Scripts/World/SargassumCollapseChunk.cs",
+                                                    "scriptClass":  "SargassumCollapseChunk",
+                                                    "firstLine":  "snagSurfaceOffset: 0.08"
+                                                },
+                                                {
+                                                    "property":  "snagImpactSpeedThreshold",
+                                                    "originalLine":  116,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "3204588369501127005",
+                                                    "componentStartLine":  86,
+                                                    "scriptPath":  "Assets/_Project/Scripts/World/SargassumCollapseChunk.cs",
+                                                    "scriptClass":  "SargassumCollapseChunk",
+                                                    "firstLine":  "snagImpactSpeedThreshold: 1.6"
+                                                },
+                                                {
+                                                    "property":  "snagSearchRadius",
+                                                    "originalLine":  115,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "3204588369501127005",
+                                                    "componentStartLine":  86,
+                                                    "scriptPath":  "Assets/_Project/Scripts/World/SargassumCollapseChunk.cs",
+                                                    "scriptClass":  "SargassumCollapseChunk",
+                                                    "firstLine":  "snagSearchRadius: 1.2"
+                                                },
+                                                {
+                                                    "property":  "snagLayers",
+                                                    "originalLine":  112,
+                                                    "removedLineCount":  3,
+                                                    "componentFileID":  "3204588369501127005",
+                                                    "componentStartLine":  86,
+                                                    "scriptPath":  "Assets/_Project/Scripts/World/SargassumCollapseChunk.cs",
+                                                    "scriptClass":  "SargassumCollapseChunk",
+                                                    "firstLine":  "snagLayers:"
+                                                }
+                                            ],
+                      "rejectedProperties":  [
+
+                                             ]
+                  },
+                  {
+                      "relativePath":  "Assets/_Project/Prefabs/Tools/Held/Tool_HarpoonLauncher_Held.prefab",
+                      "applied":  false,
+                      "bytesBefore":  5933,
+                      "bytesAfter":  5933,
+                      "sha256Before":  "9A2774C5E5751323749B7DDBDC9CFCE1EB02FBA6035BEF3A80528B887914048D",
+                      "sha256After":  "9A2774C5E5751323749B7DDBDC9CFCE1EB02FBA6035BEF3A80528B887914048D",
+                      "backupPath":  null,
+                      "preStats":  {
+                                       "yamlHeader":  true,
+                                       "unityTagHeader":  true,
+                                       "rootGameObjectMarker":  false,
+                                       "prefabGameObjectBlock":  true,
+                                       "monoBehaviourCount":  2,
+                                       "missingScriptCount":  0
+                                   },
+                      "postStats":  {
+                                        "yamlHeader":  true,
+                                        "unityTagHeader":  true,
+                                        "rootGameObjectMarker":  false,
+                                        "prefabGameObjectBlock":  true,
+                                        "monoBehaviourCount":  2,
+                                        "missingScriptCount":  0
+                                    },
+                      "structureInvariant":  {
+                                                 "yamlHeaderPreserved":  true,
+                                                 "unityTagHeaderPreserved":  true,
+                                                 "rootGameObjectMarkerPreserved":  true,
+                                                 "prefabGameObjectBlockPreserved":  true,
+                                                 "monoBehaviourCountPreserved":  true,
+                                                 "missingScriptCountPreserved":  true
+                                             },
+                      "removedProperties":  [
+                                                {
+                                                    "property":  "tracer",
+                                                    "originalLine":  158,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "6004958319615135013",
+                                                    "componentStartLine":  127,
+                                                    "scriptPath":  "Assets/_Project/Scripts/HarpoonLauncherTool.cs",
+                                                    "scriptClass":  "HarpoonLauncherTool",
+                                                    "firstLine":  "tracer: {fileID: 0}"
+                                                }
+                                            ],
+                      "rejectedProperties":  [
+
+                                             ]
+                  },
+                  {
+                      "relativePath":  "Assets/_Project/Prefabs/Tools/Held/Tool_LaserCutter_Held.prefab",
+                      "applied":  false,
+                      "bytesBefore":  6537,
+                      "bytesAfter":  6537,
+                      "sha256Before":  "6A8DC7685A2962D365C6694235DAAC7E6364FE3EE8359054DAF49395B12BBF3A",
+                      "sha256After":  "6A8DC7685A2962D365C6694235DAAC7E6364FE3EE8359054DAF49395B12BBF3A",
+                      "backupPath":  null,
+                      "preStats":  {
+                                       "yamlHeader":  true,
+                                       "unityTagHeader":  true,
+                                       "rootGameObjectMarker":  false,
+                                       "prefabGameObjectBlock":  true,
+                                       "monoBehaviourCount":  2,
+                                       "missingScriptCount":  0
+                                   },
+                      "postStats":  {
+                                        "yamlHeader":  true,
+                                        "unityTagHeader":  true,
+                                        "rootGameObjectMarker":  false,
+                                        "prefabGameObjectBlock":  true,
+                                        "monoBehaviourCount":  2,
+                                        "missingScriptCount":  0
+                                    },
+                      "structureInvariant":  {
+                                                 "yamlHeaderPreserved":  true,
+                                                 "unityTagHeaderPreserved":  true,
+                                                 "rootGameObjectMarkerPreserved":  true,
+                                                 "prefabGameObjectBlockPreserved":  true,
+                                                 "monoBehaviourCountPreserved":  true,
+                                                 "missingScriptCountPreserved":  true
+                                             },
+                      "removedProperties":  [
+                                                {
+                                                    "property":  "sparksVFX",
+                                                    "originalLine":  180,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "7841641569469116022",
+                                                    "componentStartLine":  149,
+                                                    "scriptPath":  "Assets/_Project/Scripts/LaserCutter.cs",
+                                                    "scriptClass":  "LaserCutter",
+                                                    "firstLine":  "sparksVFX: {fileID: 0}"
+                                                }
+                                            ],
+                      "rejectedProperties":  [
+
+                                             ]
+                  },
+                  {
+                      "relativePath":  "Assets/_Project/Prefabs/Tools/Held/Tool_Propulsion_Held.prefab",
+                      "applied":  false,
+                      "bytesBefore":  7566,
+                      "bytesAfter":  7566,
+                      "sha256Before":  "E63435062F7AD95A579E1486F7868BFD23AB52E32C92F7A91FA8261C30CF6E45",
+                      "sha256After":  "E63435062F7AD95A579E1486F7868BFD23AB52E32C92F7A91FA8261C30CF6E45",
+                      "backupPath":  null,
+                      "preStats":  {
+                                       "yamlHeader":  true,
+                                       "unityTagHeader":  true,
+                                       "rootGameObjectMarker":  false,
+                                       "prefabGameObjectBlock":  true,
+                                       "monoBehaviourCount":  3,
+                                       "missingScriptCount":  0
+                                   },
+                      "postStats":  {
+                                        "yamlHeader":  true,
+                                        "unityTagHeader":  true,
+                                        "rootGameObjectMarker":  false,
+                                        "prefabGameObjectBlock":  true,
+                                        "monoBehaviourCount":  3,
+                                        "missingScriptCount":  0
+                                    },
+                      "structureInvariant":  {
+                                                 "yamlHeaderPreserved":  true,
+                                                 "unityTagHeaderPreserved":  true,
+                                                 "rootGameObjectMarkerPreserved":  true,
+                                                 "prefabGameObjectBlockPreserved":  true,
+                                                 "monoBehaviourCountPreserved":  true,
+                                                 "missingScriptCountPreserved":  true
+                                             },
+                      "removedProperties":  [
+                                                {
+                                                    "property":  "lowBatteryColor",
+                                                    "originalLine":  66,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4702733535216915999",
+                                                    "componentStartLine":  38,
+                                                    "scriptPath":  "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
+                                                    "scriptClass":  "MantaScooter",
+                                                    "firstLine":  "lowBatteryColor: {r: 1, g: 0.3, b: 0, a: 1}"
+                                                },
+                                                {
+                                                    "property":  "powerOnColor",
+                                                    "originalLine":  65,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4702733535216915999",
+                                                    "componentStartLine":  38,
+                                                    "scriptPath":  "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
+                                                    "scriptClass":  "MantaScooter",
+                                                    "firstLine":  "powerOnColor: {r: 0, g: 0.9, b: 1, a: 1}"
+                                                },
+                                                {
+                                                    "property":  "powerIndicatorRenderer",
+                                                    "originalLine":  64,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4702733535216915999",
+                                                    "componentStartLine":  38,
+                                                    "scriptPath":  "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
+                                                    "scriptClass":  "MantaScooter",
+                                                    "firstLine":  "powerIndicatorRenderer: {fileID: 0}"
+                                                },
+                                                {
+                                                    "property":  "motorVolume",
+                                                    "originalLine":  62,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4702733535216915999",
+                                                    "componentStartLine":  38,
+                                                    "scriptPath":  "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
+                                                    "scriptClass":  "MantaScooter",
+                                                    "firstLine":  "motorVolume: 0.6"
+                                                },
+                                                {
+                                                    "property":  "motorLoopClip",
+                                                    "originalLine":  61,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "4702733535216915999",
+                                                    "componentStartLine":  38,
+                                                    "scriptPath":  "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
+                                                    "scriptClass":  "MantaScooter",
+                                                    "firstLine":  "motorLoopClip: {fileID: 0}"
+                                                }
+                                            ],
+                      "rejectedProperties":  [
+
+                                             ]
+                  },
+                  {
+                      "relativePath":  "Assets/_Project/Prefabs/Tools/Held/Tool_Scanner_Held.prefab",
+                      "applied":  false,
+                      "bytesBefore":  6652,
+                      "bytesAfter":  6652,
+                      "sha256Before":  "F04D4ED2F45FA1E9A6733570FC7DEA5B417F39115C8B52832ADB08EF1E067923",
+                      "sha256After":  "F04D4ED2F45FA1E9A6733570FC7DEA5B417F39115C8B52832ADB08EF1E067923",
+                      "backupPath":  null,
+                      "preStats":  {
+                                       "yamlHeader":  true,
+                                       "unityTagHeader":  true,
+                                       "rootGameObjectMarker":  false,
+                                       "prefabGameObjectBlock":  true,
+                                       "monoBehaviourCount":  2,
+                                       "missingScriptCount":  0
+                                   },
+                      "postStats":  {
+                                        "yamlHeader":  true,
+                                        "unityTagHeader":  true,
+                                        "rootGameObjectMarker":  false,
+                                        "prefabGameObjectBlock":  true,
+                                        "monoBehaviourCount":  2,
+                                        "missingScriptCount":  0
+                                    },
+                      "structureInvariant":  {
+                                                 "yamlHeaderPreserved":  true,
+                                                 "unityTagHeaderPreserved":  true,
+                                                 "rootGameObjectMarkerPreserved":  true,
+                                                 "prefabGameObjectBlockPreserved":  true,
+                                                 "monoBehaviourCountPreserved":  true,
+                                                 "missingScriptCountPreserved":  true
+                                             },
+                      "removedProperties":  [
+                                                {
+                                                    "property":  "scannerPulseShader",
+                                                    "originalLine":  70,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "773061811086119785",
+                                                    "componentStartLine":  37,
+                                                    "scriptPath":  "Assets/_Project/Scripts/ScannerTool.cs",
+                                                    "scriptClass":  "ScannerTool",
+                                                    "firstLine":  "scannerPulseShader: {fileID: 4800000, guid: 83fe0f4ef4dc4260ae2b77e1e1e218b2, type: 3}"
+                                                },
+                                                {
+                                                    "property":  "cooldownClip",
+                                                    "originalLine":  65,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "773061811086119785",
+                                                    "componentStartLine":  37,
+                                                    "scriptPath":  "Assets/_Project/Scripts/ScannerTool.cs",
+                                                    "scriptClass":  "ScannerTool",
+                                                    "firstLine":  "cooldownClip: {fileID: 0}"
+                                                },
+                                                {
+                                                    "property":  "pingClip",
+                                                    "originalLine":  63,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "773061811086119785",
+                                                    "componentStartLine":  37,
+                                                    "scriptPath":  "Assets/_Project/Scripts/ScannerTool.cs",
+                                                    "scriptClass":  "ScannerTool",
+                                                    "firstLine":  "pingClip: {fileID: 0}"
+                                                },
+                                                {
+                                                    "property":  "pulseThickness",
+                                                    "originalLine":  62,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "773061811086119785",
+                                                    "componentStartLine":  37,
+                                                    "scriptPath":  "Assets/_Project/Scripts/ScannerTool.cs",
+                                                    "scriptClass":  "ScannerTool",
+                                                    "firstLine":  "pulseThickness: 0.15"
+                                                },
+                                                {
+                                                    "property":  "pulseColor",
+                                                    "originalLine":  61,
+                                                    "removedLineCount":  1,
+                                                    "componentFileID":  "773061811086119785",
+                                                    "componentStartLine":  37,
+                                                    "scriptPath":  "Assets/_Project/Scripts/ScannerTool.cs",
+                                                    "scriptClass":  "ScannerTool",
+                                                    "firstLine":  "pulseColor: {r: 0, g: 0.9, b: 1, a: 0.8}"
+                                                }
+                                            ],
+                      "rejectedProperties":  [
+
+                                             ]
+                  }
+              ]
+}

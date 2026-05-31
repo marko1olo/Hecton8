@@ -97,8 +97,8 @@ namespace Hecton8.Physiology
                 for (int i = 0; i < count; i++)
                     rows[i] = gas;
 
-                _gasCsvOverride = gas;
-                _gasCsvOverrideActive = true;
+                _breathingGasOverride = gas;
+                _breathingGasOverrideActive = true;
                 return true;
             }
             finally

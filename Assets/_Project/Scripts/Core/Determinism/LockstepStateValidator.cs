@@ -382,7 +382,7 @@ namespace Hecton8.Core.Determinism
             RestoreTelemetryCursorFromVault();
             EnsureReplayWriterCold();
             TryRegisterHotSwapListener();
-            if (GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Core))
+            if (_dispatcher != null && GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Core))
                 _registeredPostFixed = 1;
         }
 

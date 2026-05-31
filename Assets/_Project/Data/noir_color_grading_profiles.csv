@@ -1,4 +1,13 @@
 # profile,depthMin,depthMax,stressMin,stressMax,contrast,saturation,temperature,depthTone,grainScale,glitchScale,chromaScale,vignetteScale
-surface_calm,0,80,0,0.35,1.02,0.86,-0.04,0.12,0.72,0.35,0.45,0.62
-midwater_tension,80,420,0.2,0.72,1.10,0.74,-0.12,0.42,1.00,0.82,0.88,1.00
-abyss_failure,420,1400,0.55,1,1.18,0.62,-0.24,0.76,1.35,1.25,1.20,1.18
+# Continuous depth/stress coverage for the unified visor noir pass.
+# Values are multipliers or pre-grade scalars. Keep cheap: no extra samples, only existing shader params.
+surface_readable,0,80,0,0.34,1.04,0.84,-0.05,0.14,0.70,0.20,0.35,0.58
+surface_alarm,0,80,0.34,0.72,1.10,0.78,-0.08,0.20,0.90,0.58,0.72,0.86
+surface_failure,0,80,0.72,1,1.16,0.70,-0.10,0.26,1.08,0.95,0.95,1.05
+midwater_stable,80,420,0,0.32,1.08,0.78,-0.10,0.36,0.84,0.30,0.55,0.80
+midwater_tension,80,420,0.32,0.72,1.14,0.70,-0.16,0.48,1.02,0.82,0.92,1.02
+midwater_failure,80,420,0.72,1,1.20,0.62,-0.20,0.56,1.18,1.12,1.08,1.16
+abyss_still,420,1400,0,0.40,1.14,0.66,-0.20,0.68,1.04,0.42,0.72,1.02
+abyss_pressure,420,1400,0.40,0.75,1.22,0.58,-0.28,0.82,1.26,1.05,1.14,1.22
+abyss_failure,420,1400,0.75,1,1.30,0.50,-0.34,0.92,1.42,1.34,1.28,1.35
+blackbox_depth,1400,6000,0,1,1.26,0.48,-0.38,1.00,1.50,1.45,1.35,1.45

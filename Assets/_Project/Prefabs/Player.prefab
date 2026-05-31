@@ -1024,8 +1024,6 @@ MonoBehaviour:
   shoreUndertowSurfaceBoost: 1.3
   shoreUndertowMinFeetDepth: 0.45
   shoreUndertowFullFeetDepth: 1
-  wipeoutImpactDeltaVelocityThreshold: 9.5
-  wipeoutImpactDeltaVelocityMax: 21
   wipeoutDuration: 1.7
   wipeoutRecoveryDrag: 4.8
   wipeoutReboundImpulse: 6.5
@@ -1033,8 +1031,6 @@ MonoBehaviour:
   wipeoutTransportDamageScale: 1.55
   wipeoutSuitUpgradeBreakChance: 0.2
   wipeoutBreachLandingGraceTime: 1.15
-  wipeoutSweepSpeedThreshold: 15
-  wipeoutSweepSkinWidth: 0.04
   wipeoutSweepCapsuleInset: 0.015
   useCrestOceanHeight: 1
   oceanKinematicsProvider: {fileID: 0}
@@ -1116,8 +1112,6 @@ MonoBehaviour:
   crushDepthGroanIntervalMax: 4.2
   crushDepthGroanIntervalMin: 1.25
   crushDepthImplosionThreshold: 0.985
-  crushDepthGroanClip: {fileID: 0}
-  crushDepthImplosionClip: {fileID: 0}
   fatalPressureSequenceDuration: 1.5
   fatalPressureGlitchPulseIntervalMax: 0.28
   fatalPressureGlitchPulseIntervalMin: 0.07
@@ -1150,10 +1144,6 @@ MonoBehaviour:
   wipeoutBailoutRollImpulse: 8.5
   wipeoutBailoutVisorDistortion: 0.72
   wipeoutBailoutVisorRecovery: 4.2
-  kccImpactTransferSpeedThreshold: 3.5
-  kccImpactTransferMassLimit: 45
-  kccImpactTransferEquivalentMass: 18
-  kccImpactTransferImpulseScale: 1
   externalEnvironmentalDragHoldTime: 0.12
   externalEnvironmentalDragBlendSpeed: 9
   parasiteLatchInfluenceHoldTime: 0.14
@@ -1271,9 +1261,6 @@ MonoBehaviour:
   exosuitFootSlopeBlendSharpness: 22
   exosuitSlopeStickForceMultiplier: 2.25
   exosuitGroundSnapForceMultiplier: 1.85
-  exosuitImpactShakeSpeedThreshold: 7.5
-  exosuitImpactShakeScale: 2.1
-  exosuitImpactSiltBurstScale: 0.95
   exosuitJumpJetWakeTrailScale: 1.15
   exosuitJumpJetWakePulseInterval: 0.08
   exosuitFootstepSonarPingRadius: 20
@@ -1524,13 +1511,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Hecton8.Gameplay.PlayerFlashlight
   flashlightLight: {fileID: 2802120109601820515}
-  survivalSystem: {fileID: 9217988090672240742}
   onByDefault: 0
   baseIntensity: 3.2
   transitionSpeed: 8
   defaultBeamMode: 0
-  enableBatteryDrain: 1
-  batteryDrainRate: 0.2
   lowBatteryThreshold: 10
   enableHeatBuildup: 1
   overheatTime: 120
@@ -1548,12 +1532,7 @@ MonoBehaviour:
   enableUnderwaterBeamResponse: 1
   underwaterBeamFullDepth: 8
   underwaterBeamMaxMultiplier: 1.35
-  underwaterBeamNoiseMax: 0.16
-  underwaterBeamSideSoftness: 1.2
-  underwaterBeamJitterMax: 0.03
   stormInterferenceMinIntensity: 0.45
-  stormInterferenceBeamNoise: 0.12
-  stormInterferenceBeamJitter: 0.05
   _debugIsOn: 0
   _debugCurrentIntensity: 0
   _debugHeatLevel: 0
@@ -1951,7 +1930,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Gameplay.PlayerSwimPresentationController
   playerMovement: {fileID: 4126722323519124583}
-  playerRigidbody: {fileID: 6324429111755348568}
   playerToolManager: {fileID: 3954223694506301739}
   playerTransportCoordinator: {fileID: 0}
   swimBlockoutRig: {fileID: 6473731280857570575}
@@ -2033,9 +2011,6 @@ MonoBehaviour:
   cameraTurnSwayHandInfluence: 0.48
   cameraTurnSwayRootYawBias: 1.85
   cameraTurnSwayRootRollBias: 2.8
-  handObstacleMask:
-    serializedVersion: 2
-    m_Bits: 1048575
   handObstacleSphereRadius: 0.06
   handObstacleForwardLookahead: 0.22
   handObstacleSideLookahead: 0.11
@@ -2545,7 +2520,6 @@ MonoBehaviour:
   playerMovement: {fileID: 4126722323519124583}
   playerToolManager: {fileID: 0}
   playerTransportCoordinator: {fileID: 0}
-  thrusterLoopClip: {fileID: 8300000, guid: cec354f2d9357bc4eaa00c12f00af368, type: 3}
   idleVolume: 0.05
   maxVolume: 0.6
   volumeResponseSpeed: 5

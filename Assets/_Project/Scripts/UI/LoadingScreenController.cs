@@ -1,6 +1,7 @@
 using System;
 using Hecton8.Core;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -76,6 +77,19 @@ namespace Hecton8.UI
             "Ancient technology powers the depths..."
         };
 
+        [Header("Menu Visual Route")]
+        [SerializeField, Tooltip("Fallback loading-screen visual style when settings runtime is not registered.")]
+        private MenuVisualStyle visualStyle = MenuVisualStyle.PressureVesselNoir;
+
+        [SerializeField, Tooltip("Fallback loading-screen visual concept when settings runtime is not registered.")]
+        private MenuVisualConcept visualConcept = MenuVisualConcept.BlackboxPlayback;
+
+        [SerializeField, Range(-1f, 1f), Tooltip("Optional presentation-only quality override. Negative values use GlobalQualityWeight.")]
+        private float visualStyleQualityOverride = -1f;
+
+        [SerializeField, Range(-1f, 1f), Tooltip("Optional presentation-only concept quality override. Negative values use the style quality route.")]
+        private float visualConceptQualityOverride = -1f;
+
         private bool _isShowing;
         private bool _registeredToTickManager;
         private float _showStartTime;
@@ -96,6 +110,10 @@ namespace Hecton8.UI
         private int _currentStatusLength = -1;
         private LoadingPipelineStage _currentPipelineStage = LoadingPipelineStage.Idle;
         private uint _tipRandomState;
+        private MenuVisualStyleApplier _visualStyleApplier;
+        private MenuVisualConceptApplier _visualConceptApplier;
+        private MenuVisualConceptDecorApplier _visualConceptDecorApplier;
+        private SettingsManager _settingsManager;
 
         private CanvasGroup _canvasGroup;
 
@@ -144,6 +162,7 @@ namespace Hecton8.UI
             UpdateProgress(0f);
             UpdateStatus(LoadingChars);
             UpdateTip(GetRandomTip());
+            RebuildMenuVisualCachesCold();
         }
 
         private void OnEnable()
@@ -151,6 +170,8 @@ namespace Hecton8.UI
             if (_serviceShuttingDown)
                 return;
 
+            CacheSettingsManagerCold(GlobalRegistry.Settings);
+            ApplyPersistedMenuVisualsCold();
             TryRegisterHotSwapListener();
             TryRegisterRuntime();
             TryRegisterToTickManager();
@@ -159,6 +180,8 @@ namespace Hecton8.UI
 
         private void Start()
         {
+            CacheSettingsManagerCold(GlobalRegistry.Settings);
+            ApplyPersistedMenuVisualsCold();
             TryRegisterHotSwapListener();
             TryRegisterRuntime();
             TryRegisterToTickManager();
@@ -169,6 +192,7 @@ namespace Hecton8.UI
             UnregisterFromTickManager();
             TryUnregisterRuntime();
             TryUnregisterHotSwapListener();
+            CacheSettingsManagerCold(null);
             _lastUnscaledTickTime = 0f;
         }
 
@@ -186,6 +210,7 @@ namespace Hecton8.UI
             UnregisterFromTickManager();
             TryUnregisterRuntime();
             TryUnregisterHotSwapListener();
+            CacheSettingsManagerCold(null);
         }
 
         /// <summary>
@@ -396,6 +421,8 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             float unscaledDeltaTime = GetUnscaledDeltaTime();
+            SyncMenuVisualsLateFrame();
+
             if (unscaledDeltaTime <= 0f)
                 return;
 
@@ -567,6 +594,12 @@ namespace Hecton8.UI
                 UnregisterFromTickManager();
                 TryRegisterToTickManager();
             }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.SettingsRuntime)
+            {
+                CacheSettingsManagerCold(currentService as SettingsManager);
+                ApplyPersistedMenuVisualsCold();
+            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -586,11 +619,128 @@ namespace Hecton8.UI
             _hotSwapListenerRegistered = false;
         }
 
+        private void RebuildMenuVisualCachesCold()
+        {
+            Transform styleRoot = _loadingPanel != null ? _loadingPanel.transform : transform;
+            if (_visualStyleApplier == null)
+                _visualStyleApplier = new MenuVisualStyleApplier(); // COLD ALLOC: loading-screen menu visual style cache owner.
+            _visualStyleApplier.RebuildCache(styleRoot);
+
+            if (_visualConceptApplier == null)
+                _visualConceptApplier = new MenuVisualConceptApplier(); // COLD ALLOC: loading-screen menu visual concept transform cache owner.
+            if (_visualConceptDecorApplier == null)
+                _visualConceptDecorApplier = new MenuVisualConceptDecorApplier(); // COLD ALLOC: loading-screen menu concept decor cache owner.
+
+            _visualConceptApplier.Clear();
+            RectTransform parent = styleRoot as RectTransform;
+            if (parent != null)
+                _visualConceptApplier.AddTarget(MenuVisualConceptTargetRole.LoadingPanel, parent);
+
+            _visualConceptDecorApplier.Rebuild(parent);
+        }
+
+        private void CacheSettingsManagerCold(SettingsManager settingsManager)
+        {
+            if (ReferenceEquals(_settingsManager, settingsManager))
+                return;
+
+            if (_settingsManager != null)
+            {
+                _settingsManager.MenuVisualStyleChanged -= HandleMenuVisualStyleChanged;
+                _settingsManager.MenuVisualConceptChanged -= HandleMenuVisualConceptChanged;
+            }
+
+            _settingsManager = settingsManager;
+
+            if (_settingsManager != null)
+            {
+                _settingsManager.MenuVisualStyleChanged += HandleMenuVisualStyleChanged;
+                _settingsManager.MenuVisualConceptChanged += HandleMenuVisualConceptChanged;
+            }
+        }
+
+        private void ApplyPersistedMenuVisualsCold()
+        {
+            SettingsManager settingsManager = _settingsManager;
+            if (settingsManager == null)
+                return;
+
+            SetMenuVisualStyle(settingsManager.MenuVisualStyle);
+            SetMenuVisualConcept(settingsManager.MenuVisualConcept);
+        }
+
+        private void HandleMenuVisualStyleChanged(MenuVisualStyle style)
+        {
+            SetMenuVisualStyle(style);
+        }
+
+        private void HandleMenuVisualConceptChanged(MenuVisualConcept concept)
+        {
+            SetMenuVisualConcept(concept);
+        }
+
+        private void SetMenuVisualStyle(MenuVisualStyle style)
+        {
+            if (visualStyle == style)
+                return;
+
+            visualStyle = style;
+            _visualStyleApplier?.ForceNextApply();
+            _visualConceptDecorApplier?.ForceNextApply();
+        }
+
+        private void SetMenuVisualConcept(MenuVisualConcept concept)
+        {
+            if (visualConcept == concept)
+                return;
+
+            visualConcept = concept;
+            _visualConceptApplier?.ForceNextApply();
+            _visualConceptDecorApplier?.ForceNextApply();
+        }
+
+        private void SyncMenuVisualsLateFrame()
+        {
+            if (_visualStyleApplier == null)
+                return;
+
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            float styleQuality = ResolveMenuVisualQualityWeight();
+            _visualStyleApplier.ApplyIfNeeded(visualStyle, styleQuality, now);
+
+            if (_visualConceptApplier == null)
+                return;
+
+            float conceptQuality = ResolveMenuVisualConceptQualityWeight();
+            _visualConceptApplier.ApplyIfNeeded(visualConcept, conceptQuality, now);
+            _visualConceptDecorApplier?.ApplyIfNeeded(visualConcept, visualStyle, conceptQuality, now);
+        }
+
+        private float ResolveMenuVisualQualityWeight()
+        {
+            if (visualStyleQualityOverride >= 0f)
+                return math.saturate(visualStyleQualityOverride);
+
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
+        }
+
+        private float ResolveMenuVisualConceptQualityWeight()
+        {
+            if (visualConceptQualityOverride >= 0f)
+                return math.saturate(visualConceptQualityOverride);
+
+            return ResolveMenuVisualQualityWeight();
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
             if (_loadingPanel == null)
                 TryGetComponent(out _loadingPanel);
+
+            if (_visualStyleApplier != null || _visualConceptApplier != null || _visualConceptDecorApplier != null)
+                RebuildMenuVisualCachesCold();
         }
 #endif
     }

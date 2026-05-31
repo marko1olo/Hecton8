@@ -172,7 +172,9 @@ namespace Hecton8.Dev
         [SerializeField] private float _debugLastTextureMB;
         [SerializeField] private float _debugLastRenderTextureMB;
         [SerializeField] private float _debugLastTotalVRAMMB;
+#pragma warning disable CS0414
         [SerializeField] private string _debugLastVRAMWarning = "None";
+#pragma warning restore CS0414
         [SerializeField] private string _debugLastWindowCadence = "Unknown";
         [SerializeField] private int _debugLastWindowFrameDelta;
         [SerializeField] private bool _debugLastWindowUsedTickDrive;
@@ -251,7 +253,9 @@ namespace Hecton8.Dev
         private float _pendingAutoStartDelay;
         private float _pendingAutoStartDueRealtime;
         private bool _autoStartNewGameTriggered;
+#pragma warning disable CS0414
         private bool _hasScatterSnapshot;
+#pragma warning restore CS0414
         private ScatterRebuildProfileSnapshot _lastScatterSnapshot;
         private int _lastDrivenFrame = -1;
         private float _lastDriveRealtimeSinceStartup;

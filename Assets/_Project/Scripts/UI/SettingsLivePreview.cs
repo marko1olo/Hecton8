@@ -43,6 +43,12 @@ namespace Hecton8.UI
         private bool _pendingBloom;
         private bool _pendingMotionBlur;
         private bool _hasPendingPostProcessing;
+        private bool _previewBaselineCaptured;
+        private float _baselineFOV = -1f;
+        private bool _baselineBloom;
+        private bool _baselineMotionBlur;
+        private bool _hasBaselineBloom;
+        private bool _hasBaselineMotionBlur;
 
         // ══════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -83,6 +89,7 @@ namespace Hecton8.UI
         /// </summary>
         public void PreviewFOV(float fov)
         {
+            CapturePreviewBaseline();
             _pendingFOV = fov;
             _isDirty = true;
             _dirtyTimer = 0f;
@@ -96,6 +103,7 @@ namespace Hecton8.UI
         /// </summary>
         public void PreviewPostProcessing(bool ao, bool bloom, bool motionBlur)
         {
+            CapturePreviewBaseline();
             _pendingBloom = bloom;
             _pendingMotionBlur = motionBlur;
             _hasPendingPostProcessing = true;
@@ -115,8 +123,11 @@ namespace Hecton8.UI
             if (_hasPendingPostProcessing)
                 ApplyPostProcessing();
 
-            _isDirty = false;
+            _isDirty = _pendingFOV > 0f || _hasPendingPostProcessing;
             _dirtyTimer = 0f;
+            if (!_isDirty)
+                ClearPreviewBaseline();
+
             RefreshTickRegistration();
         }
 
@@ -125,10 +136,12 @@ namespace Hecton8.UI
         /// </summary>
         public void CancelPending()
         {
+            RestorePreviewBaseline();
             _pendingFOV = -1f;
             _hasPendingPostProcessing = false;
             _isDirty = false;
             _dirtyTimer = 0f;
+            ClearPreviewBaseline();
             RefreshTickRegistration();
         }
 
@@ -138,12 +151,17 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
-            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameDeltaTime);
+            float dt = Mathf.Max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime);
             if (_mainCameraResolveRetryTimer > 0f)
+            {
                 _mainCameraResolveRetryTimer -= dt;
+                if (_mainCameraResolveRetryTimer <= 0f)
+                    TryResolveMainCameraCold();
+            }
 
             if (!_isDirty)
             {
+                RefreshTickRegistration();
                 return;
             }
 
@@ -158,24 +176,31 @@ namespace Hecton8.UI
             if (_hasPendingPostProcessing)
                 ApplyPostProcessing();
 
-            _isDirty = false;
+            _isDirty = _pendingFOV > 0f || _hasPendingPostProcessing;
             _dirtyTimer = 0f;
+            if (!_isDirty)
+                ClearPreviewBaseline();
+
+            RefreshTickRegistration();
         }
 
         // ══════════════════════════════════════════════════════════
         // PRIVATE — APPLY
         // ══════════════════════════════════════════════════════════
 
-        private void ApplyFOV()
+        private bool ApplyFOV()
         {
-            if (mainCamera == null)
+            if (mainCamera == null && !TryResolveMainCameraCold())
             {
-                _pendingFOV = -1f;
-                return;
+                return false;
             }
+
+            if (_previewBaselineCaptured && _baselineFOV <= 0f)
+                _baselineFOV = mainCamera.fieldOfView;
 
             mainCamera.fieldOfView = _pendingFOV;
             _pendingFOV = -1f;
+            return true;
         }
 
         private bool TryResolveMainCameraCold()
@@ -194,6 +219,7 @@ namespace Hecton8.UI
                 if (playerTransform.TryGetComponent(out Camera playerOwnedCamera))
                 {
                     mainCamera = playerOwnedCamera;
+                    _mainCameraResolveRetryTimer = 0f;
                     return true;
                 }
 
@@ -202,6 +228,7 @@ namespace Hecton8.UI
                 if (playerChildCamera != null)
                 {
                     mainCamera = playerChildCamera;
+                    _mainCameraResolveRetryTimer = 0f;
                     return true;
                 }
             }
@@ -209,6 +236,7 @@ namespace Hecton8.UI
             if (TryGetComponent(out Camera localCamera))
             {
                 mainCamera = localCamera;
+                _mainCameraResolveRetryTimer = 0f;
                 return true;
             }
 
@@ -216,6 +244,7 @@ namespace Hecton8.UI
             if (childCamera != null)
             {
                 mainCamera = childCamera;
+                _mainCameraResolveRetryTimer = 0f;
                 return true;
             }
 
@@ -223,10 +252,12 @@ namespace Hecton8.UI
             if (parentCamera != null)
             {
                 mainCamera = parentCamera;
+                _mainCameraResolveRetryTimer = 0f;
                 return true;
             }
 
             mainCamera = null;
+            _mainCameraResolveRetryTimer = MainCameraResolveRetryInterval;
             return false;
         }
 
@@ -251,6 +282,19 @@ namespace Hecton8.UI
                 _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                 _mainCameraResolveRetryTimer = 0f;
                 TryResolveMainCameraCold();
+                RefreshTickRegistration();
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                if (currentService == null)
+                {
+                    _registered = false;
+                    return;
+                }
+
+                RefreshTickRegistration();
             }
         }
 
@@ -299,6 +343,60 @@ namespace Hecton8.UI
             }
 
             _hasPendingPostProcessing = false;
+        }
+
+        private void CapturePreviewBaseline()
+        {
+            if (_previewBaselineCaptured)
+                return;
+
+            _previewBaselineCaptured = true;
+            _baselineFOV = mainCamera != null ? mainCamera.fieldOfView : -1f;
+            _hasBaselineBloom = false;
+            _hasBaselineMotionBlur = false;
+
+            VolumeProfile profile = urpVolume != null ? urpVolume.profile : null;
+            if (profile == null)
+                return;
+
+            if (profile.TryGet(out UnityEngine.Rendering.Universal.Bloom bloom))
+            {
+                _baselineBloom = bloom.active;
+                _hasBaselineBloom = true;
+            }
+
+            if (profile.TryGet(out UnityEngine.Rendering.Universal.MotionBlur motionBlur))
+            {
+                _baselineMotionBlur = motionBlur.active;
+                _hasBaselineMotionBlur = true;
+            }
+        }
+
+        private void RestorePreviewBaseline()
+        {
+            if (!_previewBaselineCaptured)
+                return;
+
+            if (mainCamera != null && _baselineFOV > 0f)
+                mainCamera.fieldOfView = _baselineFOV;
+
+            VolumeProfile profile = urpVolume != null ? urpVolume.profile : null;
+            if (profile == null)
+                return;
+
+            if (_hasBaselineBloom && profile.TryGet(out UnityEngine.Rendering.Universal.Bloom bloom))
+                bloom.active = _baselineBloom;
+
+            if (_hasBaselineMotionBlur && profile.TryGet(out UnityEngine.Rendering.Universal.MotionBlur motionBlur))
+                motionBlur.active = _baselineMotionBlur;
+        }
+
+        private void ClearPreviewBaseline()
+        {
+            _previewBaselineCaptured = false;
+            _baselineFOV = -1f;
+            _hasBaselineBloom = false;
+            _hasBaselineMotionBlur = false;
         }
 
         private void TryRegister()

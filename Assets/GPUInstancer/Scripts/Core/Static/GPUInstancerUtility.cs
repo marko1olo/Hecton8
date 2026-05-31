@@ -380,7 +380,8 @@ namespace GPUInstancer
         /// </summary>
         public static void UpdateGPUBuffers<T>(ComputeShader cameraComputeShader, int[] cameraComputeKernelIDs,
             ComputeShader visibilityComputeShader, int[] instanceVisibilityComputeKernelIDs, List<T> runtimeDataList,
-            GPUInstancerCameraData cameraData, bool isManagerFrustumCulling, bool isManagerOcclusionCulling, bool showRenderedAmount, bool isInitial)
+            GPUInstancerCameraData cameraData, bool isManagerFrustumCulling, bool isManagerOcclusionCulling, bool showRenderedAmount, bool isInitial,
+            int cameraThreadGroupSizeX = 0, int visibilityThreadGroupSizeX = 0)
             where T : GPUInstancerRuntimeData
         {
             if (runtimeDataList == null)
@@ -389,7 +390,8 @@ namespace GPUInstancer
             for (int i = 0; i < runtimeDataList.Count; i++)
             {
                 UpdateGPUBuffer(cameraComputeShader, cameraComputeKernelIDs, visibilityComputeShader, instanceVisibilityComputeKernelIDs,
-                    runtimeDataList[i], cameraData, isManagerFrustumCulling, isManagerOcclusionCulling, showRenderedAmount, isInitial);
+                    runtimeDataList[i], cameraData, isManagerFrustumCulling, isManagerOcclusionCulling, showRenderedAmount, isInitial,
+                    cameraThreadGroupSizeX, visibilityThreadGroupSizeX);
             }
         }
 
@@ -400,7 +402,8 @@ namespace GPUInstancer
         /// </summary>
         public static void UpdateGPUBuffer<T>(ComputeShader cameraComputeShader, int[] cameraComputeKernelIDs,
             ComputeShader visibilityComputeShader, int[] instanceVisibilityComputeKernelIDs, T runtimeData,
-            GPUInstancerCameraData cameraData, bool isManagerFrustumCulling, bool isManagerOcclusionCulling, bool showRenderedAmount, bool isInitial)
+            GPUInstancerCameraData cameraData, bool isManagerFrustumCulling, bool isManagerOcclusionCulling, bool showRenderedAmount, bool isInitial,
+            int cameraThreadGroupSizeX = 0, int visibilityThreadGroupSizeX = 0)
             where T : GPUInstancerRuntimeData
         {
             if (runtimeData == null)
@@ -425,7 +428,7 @@ namespace GPUInstancer
                 return;
 
             DispatchCSInstancedCameraCalculation(cameraComputeShader, cameraComputeKernelIDs, runtimeData,
-                cameraData, isManagerFrustumCulling, isManagerOcclusionCulling, isInitial, safeInstanceCount);
+                cameraData, isManagerFrustumCulling, isManagerOcclusionCulling, isInitial, safeInstanceCount, cameraThreadGroupSizeX);
 
             int lodCount = runtimeData.instanceLODs.Count;
             int instanceVisibilityComputeKernelId = instanceVisibilityComputeKernelIDs[
@@ -433,14 +436,14 @@ namespace GPUInstancer
                     GPUInstancerConstants.COMPUTE_MAX_LOD_BUFFER - 1
                     : lodCount - 1];
 
-            DispatchCSInstancedVisibilityCalculation(visibilityComputeShader, instanceVisibilityComputeKernelId, runtimeData, false, 0, 0, safeInstanceCount);
+            DispatchCSInstancedVisibilityCalculation(visibilityComputeShader, instanceVisibilityComputeKernelId, runtimeData, false, 0, 0, safeInstanceCount, visibilityThreadGroupSizeX);
             if (runtimeData.hasShadowCasterBuffer)
             {
-                DispatchCSInstancedVisibilityCalculation(visibilityComputeShader, instanceVisibilityComputeKernelId, runtimeData, true, 0, 1, safeInstanceCount);
+                DispatchCSInstancedVisibilityCalculation(visibilityComputeShader, instanceVisibilityComputeKernelId, runtimeData, true, 0, 1, safeInstanceCount, visibilityThreadGroupSizeX);
             }
             if (!isInitial && runtimeData.prototype.isLODCrossFade)
             {
-                DispatchCSInstancedVisibilityCalculation(visibilityComputeShader, instanceVisibilityComputeKernelId, runtimeData, false, 0, 2, safeInstanceCount);
+                DispatchCSInstancedVisibilityCalculation(visibilityComputeShader, instanceVisibilityComputeKernelId, runtimeData, false, 0, 2, safeInstanceCount, visibilityThreadGroupSizeX);
             }
 
             int lodShift = GPUInstancerConstants.COMPUTE_MAX_LOD_BUFFER;
@@ -449,16 +452,16 @@ namespace GPUInstancer
                 instanceVisibilityComputeKernelId = instanceVisibilityComputeKernelIDs[Math.Min(lodCount - lodShift, GPUInstancerConstants.COMPUTE_MAX_LOD_BUFFER) - 1];
 
                 DispatchCSInstancedVisibilityCalculation(visibilityComputeShader, instanceVisibilityComputeKernelId, runtimeData, false,
-                    lodShift, 0, safeInstanceCount);
+                    lodShift, 0, safeInstanceCount, visibilityThreadGroupSizeX);
                 if (runtimeData.hasShadowCasterBuffer)
                 {
                     DispatchCSInstancedVisibilityCalculation(visibilityComputeShader, instanceVisibilityComputeKernelId, runtimeData, true,
-                        lodShift, 1, safeInstanceCount);
+                        lodShift, 1, safeInstanceCount, visibilityThreadGroupSizeX);
                 }
                 if (!isInitial && runtimeData.prototype.isLODCrossFade)
                 {
                     DispatchCSInstancedVisibilityCalculation(visibilityComputeShader, instanceVisibilityComputeKernelId, runtimeData, false,
-                        lodShift, 2, safeInstanceCount);
+                        lodShift, 2, safeInstanceCount, visibilityThreadGroupSizeX);
                 }
                 lodShift += GPUInstancerConstants.COMPUTE_MAX_LOD_BUFFER;
             }
@@ -662,12 +665,16 @@ namespace GPUInstancer
         }
 
         public static void DispatchCSInstancedCameraCalculation<T>(ComputeShader cameraComputeShader, int[] cameraComputeKernelIDs, T runtimeData,
-            GPUInstancerCameraData cameraData, bool isManagerFrustumCulling, bool isManagerOcclusionCulling, bool isInitial, int safeInstanceCount = -1)
+            GPUInstancerCameraData cameraData, bool isManagerFrustumCulling, bool isManagerOcclusionCulling, bool isInitial, int safeInstanceCount = -1, int threadGroupSizeX = 0)
             where T : GPUInstancerRuntimeData
         {
             if (safeInstanceCount < 0)
                 safeInstanceCount = GetSafeRuntimeInstanceCount(runtimeData);
             if (safeInstanceCount == 0)
+                return;
+
+            int dispatchGroups = GetDispatchThreadGroupCount(safeInstanceCount, threadGroupSizeX);
+            if (dispatchGroups <= 0)
                 return;
 
             int lodCount = runtimeData.instanceLODs.Count;
@@ -763,17 +770,20 @@ namespace GPUInstancer
             }
 
             // Dispatch the compute shader
-            cameraComputeShader.Dispatch(instanceVisibilityComputeKernelId,
-                GPUInstancerConstants.GetComputeThreadGroupCount(safeInstanceCount), 1, 1);
+            cameraComputeShader.Dispatch(instanceVisibilityComputeKernelId, dispatchGroups, 1, 1);
         }
 
         public static void DispatchCSInstancedVisibilityCalculation<T>(ComputeShader visibilityComputeShader, int instanceVisibilityComputeKernelId, T runtimeData,
-            bool isShadow, int lodShift, int lodAppendIndex, int safeInstanceCount = -1) where T : GPUInstancerRuntimeData
+            bool isShadow, int lodShift, int lodAppendIndex, int safeInstanceCount = -1, int threadGroupSizeX = 0) where T : GPUInstancerRuntimeData
         {
             if (safeInstanceCount < 0)
                 safeInstanceCount = GetSafeRuntimeInstanceCount(runtimeData);
             safeInstanceCount = GetSafeVisibilityDispatchCount(runtimeData, isShadow, lodShift, lodAppendIndex, safeInstanceCount);
             if (safeInstanceCount == 0)
+                return;
+
+            int dispatchGroups = GetDispatchThreadGroupCount(safeInstanceCount, threadGroupSizeX);
+            if (dispatchGroups <= 0)
                 return;
 
             GPUInstancerPrototypeLOD rdLOD;
@@ -807,8 +817,7 @@ namespace GPUInstancer
             visibilityComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_LOD_APPEND_INDEX, lodAppendIndex);
 
             // Dispatch the compute shader
-            visibilityComputeShader.Dispatch(instanceVisibilityComputeKernelId,
-                GPUInstancerConstants.GetComputeThreadGroupCount(safeInstanceCount), 1, 1);
+            visibilityComputeShader.Dispatch(instanceVisibilityComputeKernelId, dispatchGroups, 1, 1);
         }
 
         public static void GPUIDrawMeshInstancedIndirect<T>(List<T> runtimeDataList, Bounds instancingBounds, GPUInstancerCameraData cameraData, int layerMask = ~0,
@@ -897,7 +906,8 @@ namespace GPUInstancer
             }
         }
 
-        public static void DispatchBufferToTexture<T>(List<T> runtimeDataList, ComputeShader bufferToTextureComputeShader, int bufferToTextureComputeKernelID, int bufferToTextureCrossFadeKernelID = 1) where T : GPUInstancerRuntimeData
+        public static void DispatchBufferToTexture<T>(List<T> runtimeDataList, ComputeShader bufferToTextureComputeShader, int bufferToTextureComputeKernelID, int bufferToTextureCrossFadeKernelID = 1,
+            int bufferToTextureThreadGroupSizeX = 0, int bufferToTextureCrossFadeThreadGroupSizeX = 0) where T : GPUInstancerRuntimeData
         {
             if (runtimeDataList == null)
                 return;
@@ -922,6 +932,10 @@ namespace GPUInstancer
                         matrixTextureCapacity, runtimeData.argsBuffer, argsBufferIndex);
                     if (normalDispatchCount > 0)
                     {
+                        int normalDispatchGroups = GetDispatchThreadGroupCount(normalDispatchCount, bufferToTextureThreadGroupSizeX);
+                        if (normalDispatchGroups <= 0)
+                            continue;
+
                         bufferToTextureComputeShader.SetBuffer(bufferToTextureComputeKernelID, GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_DATA_BUFFER, runtimeData.transformationMatrixVisibilityBuffer);
                         bufferToTextureComputeShader.SetBuffer(bufferToTextureComputeKernelID, GPUInstancerConstants.VisibilityKernelPoperties.TRANSFORMATION_MATRIX_BUFFER, rdLOD.transformationMatrixAppendBuffer);
                         bufferToTextureComputeShader.SetTexture(bufferToTextureComputeKernelID, GPUInstancerConstants.BufferToTextureKernelPoperties.TRANSFORMATION_MATRIX_TEXTURE, rdLOD.transformationMatrixAppendTexture);
@@ -932,7 +946,7 @@ namespace GPUInstancer
                         bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.TEXTURE_CAPACITY, matrixTextureCapacity);
                         bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, safeInstanceCount);
 
-                        bufferToTextureComputeShader.Dispatch(bufferToTextureComputeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(normalDispatchCount), 1, 1);
+                        bufferToTextureComputeShader.Dispatch(bufferToTextureComputeKernelID, normalDispatchGroups, 1, 1);
                     }
 
                     if (runtimeData.hasShadowCasterBuffer)
@@ -942,6 +956,10 @@ namespace GPUInstancer
                             shadowTextureCapacity, runtimeData.shadowArgsBuffer, argsBufferIndex);
                         if (shadowDispatchCount > 0)
                         {
+                            int shadowDispatchGroups = GetDispatchThreadGroupCount(shadowDispatchCount, bufferToTextureThreadGroupSizeX);
+                            if (shadowDispatchGroups <= 0)
+                                continue;
+
                             bufferToTextureComputeShader.SetBuffer(bufferToTextureComputeKernelID, GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_DATA_BUFFER, runtimeData.transformationMatrixVisibilityBuffer);
                             bufferToTextureComputeShader.SetBuffer(bufferToTextureComputeKernelID, GPUInstancerConstants.VisibilityKernelPoperties.TRANSFORMATION_MATRIX_BUFFER, rdLOD.shadowAppendBuffer);
                             bufferToTextureComputeShader.SetTexture(bufferToTextureComputeKernelID, GPUInstancerConstants.BufferToTextureKernelPoperties.TRANSFORMATION_MATRIX_TEXTURE, rdLOD.shadowAppendTexture);
@@ -952,7 +970,7 @@ namespace GPUInstancer
                             bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.TEXTURE_CAPACITY, shadowTextureCapacity);
                             bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, safeInstanceCount);
 
-                            bufferToTextureComputeShader.Dispatch(bufferToTextureComputeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(shadowDispatchCount), 1, 1);
+                            bufferToTextureComputeShader.Dispatch(bufferToTextureComputeKernelID, shadowDispatchGroups, 1, 1);
                         }
                     }
 
@@ -963,13 +981,17 @@ namespace GPUInstancer
                         if (lodDispatchCount == 0)
                             continue;
 
+                        int lodDispatchGroups = GetDispatchThreadGroupCount(lodDispatchCount, bufferToTextureCrossFadeThreadGroupSizeX);
+                        if (lodDispatchGroups <= 0)
+                            continue;
+
                         bufferToTextureComputeShader.SetTexture(bufferToTextureCrossFadeKernelID, GPUInstancerConstants.BufferToTextureKernelPoperties.LOD_DATA_TEXTURE, runtimeData.instanceLODDataTexture);
                         bufferToTextureComputeShader.SetBuffer(bufferToTextureCrossFadeKernelID, GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_LOD_BUFFER, runtimeData.instanceLODDataBuffer);
                         bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.MAX_TEXTURE_SIZE, runtimeData.instanceLODDataTexture.width);
                         bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.TEXTURE_CAPACITY, lodTextureCapacity);
                         bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, safeInstanceCount);
 
-                        bufferToTextureComputeShader.Dispatch(bufferToTextureCrossFadeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(lodDispatchCount), 1, 1);
+                        bufferToTextureComputeShader.Dispatch(bufferToTextureCrossFadeKernelID, lodDispatchGroups, 1, 1);
                     }
                 }
             }
@@ -979,6 +1001,13 @@ namespace GPUInstancer
         public static bool IsInLayer(int layerMask, int layer)
         {
             return layerMask == (layerMask | (1 << layer));
+        }
+
+        private static int GetDispatchThreadGroupCount(int elementCount, int threadGroupSizeX)
+        {
+            return threadGroupSizeX > 0 ?
+                GPUInstancerConstants.GetComputeThreadGroupCountForSize(elementCount, threadGroupSizeX) :
+                GPUInstancerConstants.GetComputeThreadGroupCount(elementCount);
         }
         #endregion GPU Instancing
 
@@ -2339,10 +2368,16 @@ namespace GPUInstancer
                 safeFrameCount = maxFrameCount;
 
             ComputeShader dilationCompute = (ComputeShader)Resources.Load(GPUInstancerConstants.COMPUTE_BILLBOARD_RESOURCE_PATH);
-            if (dilationCompute == null || !dilationCompute.HasKernel(GPUInstancerConstants.COMPUTE_BILLBOARD_DILATION_KERNEL))
+            if (!GPUInstancerConstants.TryFindKernel(dilationCompute, GPUInstancerConstants.COMPUTE_BILLBOARD_DILATION_KERNEL, out int dilationKernel))
                 return billboardTexture;
 
-            int dilationKernel = dilationCompute.FindKernel(GPUInstancerConstants.COMPUTE_BILLBOARD_DILATION_KERNEL);
+            if (!GPUInstancerConstants.TryGetPortableKernelThreadGroupSizes(dilationCompute, dilationKernel, out int threadGroupSizeX, out int threadGroupSizeY, out int threadGroupSizeZ) ||
+                threadGroupSizeZ != 1)
+                return billboardTexture;
+
+            int frameWidth = billboardTexture.width / safeFrameCount;
+            if (frameWidth < 1)
+                return billboardTexture;
 
             RenderTexture previousActive = RenderTexture.active;
             RenderTexture resultTexture = null;
@@ -2362,8 +2397,19 @@ namespace GPUInstancer
                 dilationCompute.SetBool("isLinearSpace", PlayerSettings.colorSpace == ColorSpace.Linear);
 #endif
                 dilationCompute.SetBool("isNormal", isNormal);
-                dilationCompute.Dispatch(dilationKernel, GPUInstancerConstants.GetComputeThreadGroupCount2D(billboardTexture.width, safeFrameCount),
-                    GPUInstancerConstants.GetComputeThreadGroupCount2D(billboardTexture.height), safeFrameCount);
+                int dispatchGroupsX = GPUInstancerConstants.GetComputeThreadGroupCountForSize(frameWidth, threadGroupSizeX);
+                int dispatchGroupsY = GPUInstancerConstants.GetComputeThreadGroupCountForSize(billboardTexture.height, threadGroupSizeY);
+                if (dispatchGroupsX <= 0 ||
+                    dispatchGroupsY <= 0 ||
+                    safeFrameCount > GPUInstancerConstants.MaxDispatchGroupsPerDimension)
+                {
+                    return billboardTexture;
+                }
+
+                dilationCompute.Dispatch(dilationKernel,
+                    dispatchGroupsX,
+                    dispatchGroupsY,
+                    safeFrameCount);
                 RenderTexture.active = resultTexture;
 
                 Texture2D result = new Texture2D(billboardTexture.width, billboardTexture.height);
@@ -3650,7 +3696,11 @@ namespace GPUInstancer
                     GPUInstancerConstants.computeBufferSetDataPartial.SetInt(GPUInstancerConstants.SetDataKernelProperties.BUFFER_PARAMETER_COMPUTE_BUFFER_CAPACITY, computeBuffer.count);
                     GPUInstancerConstants.computeBufferSetDataPartial.SetInt(GPUInstancerConstants.SetDataKernelProperties.BUFFER_PARAMETER_MANAGED_BUFFER_CAPACITY, managedBuffer.count);
                     GPUInstancerConstants.computeBufferSetDataPartial.SetInt(GPUInstancerConstants.SetDataKernelProperties.BUFFER_PARAMETER_COUNT, safeCount);
-                    GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, GPUInstancerConstants.GetComputeThreadGroupCount(safeCount), 1, 1);
+                    int dispatchGroups = GPUInstancerConstants.GetComputeThreadGroupCountForSize(safeCount, GPUInstancerConstants.computeBufferSetDataPartialThreadGroupSizeX);
+                    if (dispatchGroups <= 0)
+                        return;
+
+                    GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, dispatchGroups, 1, 1);
                 }
             }
 #endif
@@ -3676,7 +3726,11 @@ namespace GPUInstancer
             GPUInstancerConstants.computeBufferSetDataPartial.SetInt(GPUInstancerConstants.SetDataKernelProperties.BUFFER_PARAMETER_COMPUTE_BUFFER_CAPACITY, computeBuffer.count);
             GPUInstancerConstants.computeBufferSetDataPartial.SetInt(GPUInstancerConstants.SetDataKernelProperties.BUFFER_PARAMETER_MANAGED_BUFFER_CAPACITY, managedBuffer.count);
             GPUInstancerConstants.computeBufferSetDataPartial.SetInt(GPUInstancerConstants.SetDataKernelProperties.BUFFER_PARAMETER_COUNT, safeCount);
-            GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, GPUInstancerConstants.GetComputeThreadGroupCount(safeCount), 1, 1);
+            int dispatchGroups = GPUInstancerConstants.GetComputeThreadGroupCountForSize(safeCount, GPUInstancerConstants.computeBufferSetDataPartialThreadGroupSizeX);
+            if (dispatchGroups <= 0)
+                return;
+
+            GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, dispatchGroups, 1, 1);
         }
 
         public static ComputeBuffer MergeComputeBuffers(this ComputeBuffer computeBuffer, ComputeBuffer bufferToMerge, bool releaseMergedBuffers)
@@ -3696,6 +3750,11 @@ namespace GPUInstancer
             if (mergedCountLong > int.MaxValue)
                 return computeBuffer;
 
+            int computeBufferDispatchGroups = GPUInstancerConstants.GetComputeThreadGroupCountForSize(computeBuffer.count, GPUInstancerConstants.computeBufferSetDataPartialThreadGroupSizeX);
+            int bufferToMergeDispatchGroups = GPUInstancerConstants.GetComputeThreadGroupCountForSize(bufferToMerge.count, GPUInstancerConstants.computeBufferSetDataPartialThreadGroupSizeX);
+            if (computeBufferDispatchGroups <= 0 || bufferToMergeDispatchGroups <= 0)
+                return computeBuffer;
+
             // create a new buffer with the combined size
             ComputeBuffer mergedBuffer = new ComputeBuffer((int)mergedCountLong, computeBuffer.stride);
 
@@ -3706,7 +3765,7 @@ namespace GPUInstancer
             GPUInstancerConstants.computeBufferSetDataPartial.SetInt(GPUInstancerConstants.SetDataKernelProperties.BUFFER_PARAMETER_COMPUTE_BUFFER_CAPACITY, mergedBuffer.count);
             GPUInstancerConstants.computeBufferSetDataPartial.SetInt(GPUInstancerConstants.SetDataKernelProperties.BUFFER_PARAMETER_MANAGED_BUFFER_CAPACITY, computeBuffer.count);
             GPUInstancerConstants.computeBufferSetDataPartial.SetInt(GPUInstancerConstants.SetDataKernelProperties.BUFFER_PARAMETER_COUNT, computeBuffer.count);
-            GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, GPUInstancerConstants.GetComputeThreadGroupCount(computeBuffer.count), 1, 1);
+            GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, computeBufferDispatchGroups, 1, 1);
 
             // Set the second buffers's data to the new buffer
             GPUInstancerConstants.computeBufferSetDataPartial.SetBuffer(GPUInstancerConstants.computeBufferSetDataPartialKernelId, GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_DATA_BUFFER, mergedBuffer);
@@ -3715,7 +3774,7 @@ namespace GPUInstancer
             GPUInstancerConstants.computeBufferSetDataPartial.SetInt(GPUInstancerConstants.SetDataKernelProperties.BUFFER_PARAMETER_COMPUTE_BUFFER_CAPACITY, mergedBuffer.count);
             GPUInstancerConstants.computeBufferSetDataPartial.SetInt(GPUInstancerConstants.SetDataKernelProperties.BUFFER_PARAMETER_MANAGED_BUFFER_CAPACITY, bufferToMerge.count);
             GPUInstancerConstants.computeBufferSetDataPartial.SetInt(GPUInstancerConstants.SetDataKernelProperties.BUFFER_PARAMETER_COUNT, bufferToMerge.count);
-            GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, GPUInstancerConstants.GetComputeThreadGroupCount(bufferToMerge.count), 1, 1);
+            GPUInstancerConstants.computeBufferSetDataPartial.Dispatch(GPUInstancerConstants.computeBufferSetDataPartialKernelId, bufferToMergeDispatchGroups, 1, 1);
 
             if (releaseMergedBuffers)
             {
@@ -3755,6 +3814,9 @@ namespace GPUInstancer
                     int safeInstanceCount = GetSafeRuntimeTransformBufferCount(runtimeData);
                     if (safeInstanceCount == 0)
                         continue;
+                    int dispatchGroups = GPUInstancerConstants.GetComputeThreadGroupCountForSize(safeInstanceCount, GPUInstancerConstants.computeRuntimeModificationThreadGroupSizeX);
+                    if (dispatchGroups <= 0)
+                        continue;
 
                     GPUInstancerConstants.computeRuntimeModification.SetBuffer(GPUInstancerConstants.computeBufferTransformOffsetId,
                         GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_DATA_BUFFER, runtimeData.transformationMatrixVisibilityBuffer);
@@ -3764,7 +3826,7 @@ namespace GPUInstancer
                         GPUInstancerConstants.RuntimeModificationKernelProperties.BUFFER_PARAMETER_POSITION_OFFSET, offsetPosition);
 
                     GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferTransformOffsetId,
-                        GPUInstancerConstants.GetComputeThreadGroupCount(safeInstanceCount), 1, 1);
+                        dispatchGroups, 1, 1);
                 }
             }
         }
@@ -3797,6 +3859,9 @@ namespace GPUInstancer
                     int safeInstanceCount = GetSafeRuntimeTransformBufferCount(runtimeData);
                     if (safeInstanceCount == 0)
                         continue;
+                    int dispatchGroups = GPUInstancerConstants.GetComputeThreadGroupCountForSize(safeInstanceCount, GPUInstancerConstants.computeRuntimeModificationThreadGroupSizeX);
+                    if (dispatchGroups <= 0)
+                        continue;
 
                     GPUInstancerConstants.computeRuntimeModification.SetBuffer(GPUInstancerConstants.computeBufferMatrixOffsetId,
                         GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_DATA_BUFFER, runtimeData.transformationMatrixVisibilityBuffer);
@@ -3806,7 +3871,7 @@ namespace GPUInstancer
                         GPUInstancerConstants.RuntimeModificationKernelProperties.BUFFER_PARAMETER_MATRIX_OFFSET, offsetMatrix);
 
                     GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferMatrixOffsetId,
-                        GPUInstancerConstants.GetComputeThreadGroupCount(safeInstanceCount), 1, 1);
+                        dispatchGroups, 1, 1);
                 }
             }
         }
@@ -3817,6 +3882,10 @@ namespace GPUInstancer
         {
             if (instanceDataBuffer != null && instanceDataBuffer.count > 0 && GPUInstancerConstants.computeRuntimeModification != null)
             {
+                int dispatchGroups = GPUInstancerConstants.GetComputeThreadGroupCountForSize(instanceDataBuffer.count, GPUInstancerConstants.computeRuntimeModificationThreadGroupSizeX);
+                if (dispatchGroups <= 0)
+                    return;
+
                 GPUInstancerConstants.computeRuntimeModification.SetBuffer(GPUInstancerConstants.computeRemoveInsideBoundsId,
                     GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_DATA_BUFFER, instanceDataBuffer);
                 GPUInstancerConstants.computeRuntimeModification.SetInt(
@@ -3827,7 +3896,7 @@ namespace GPUInstancer
                     GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BOUNDS_EXTENTS, extents + Vector3.one * offset);
 
                 GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideBoundsId,
-                    GPUInstancerConstants.GetComputeThreadGroupCount(instanceDataBuffer.count), 1, 1);
+                    dispatchGroups, 1, 1);
             }
         }
 
@@ -3836,6 +3905,10 @@ namespace GPUInstancer
         {
             if (instanceDataBuffer != null && instanceDataBuffer.count > 0 && boxCollider != null && GPUInstancerConstants.computeRuntimeModification != null)
             {
+                int dispatchGroups = GPUInstancerConstants.GetComputeThreadGroupCountForSize(instanceDataBuffer.count, GPUInstancerConstants.computeRuntimeModificationThreadGroupSizeX);
+                if (dispatchGroups <= 0)
+                    return;
+
                 GPUInstancerConstants.computeRuntimeModification.SetBuffer(GPUInstancerConstants.computeRemoveInsideBoxId,
                     GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_DATA_BUFFER, instanceDataBuffer);
                 GPUInstancerConstants.computeRuntimeModification.SetInt(
@@ -3853,7 +3926,7 @@ namespace GPUInstancer
                     GPUInstancerConstants.RuntimeModificationKernelProperties.BUFFER_PARAMETER_MODIFIER_TRANSFORM, boxCollider.transform.localToWorldMatrix.Matrix4x4ToFloatArray());
 #endif
                 GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideBoxId,
-                    GPUInstancerConstants.GetComputeThreadGroupCount(instanceDataBuffer.count), 1, 1);
+                    dispatchGroups, 1, 1);
             }
         }
 
@@ -3862,6 +3935,10 @@ namespace GPUInstancer
         {
             if (instanceDataBuffer != null && instanceDataBuffer.count > 0 && sphereCollider != null && GPUInstancerConstants.computeRuntimeModification != null)
             {
+                int dispatchGroups = GPUInstancerConstants.GetComputeThreadGroupCountForSize(instanceDataBuffer.count, GPUInstancerConstants.computeRuntimeModificationThreadGroupSizeX);
+                if (dispatchGroups <= 0)
+                    return;
+
                 GPUInstancerConstants.computeRuntimeModification.SetBuffer(GPUInstancerConstants.computeRemoveInsideSphereId,
                     GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_DATA_BUFFER, instanceDataBuffer);
                 GPUInstancerConstants.computeRuntimeModification.SetInt(
@@ -3873,7 +3950,7 @@ namespace GPUInstancer
                     sphereCollider.radius * Mathf.Max(Mathf.Max(sphereCollider.transform.localScale.x, sphereCollider.transform.localScale.y), sphereCollider.transform.localScale.z) + offset);
 
                 GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideSphereId,
-                    GPUInstancerConstants.GetComputeThreadGroupCount(instanceDataBuffer.count), 1, 1);
+                    dispatchGroups, 1, 1);
             }
         }
 
@@ -3882,6 +3959,10 @@ namespace GPUInstancer
         {
             if (instanceDataBuffer != null && instanceDataBuffer.count > 0 && capsuleCollider != null && GPUInstancerConstants.computeRuntimeModification != null)
             {
+                int dispatchGroups = GPUInstancerConstants.GetComputeThreadGroupCountForSize(instanceDataBuffer.count, GPUInstancerConstants.computeRuntimeModificationThreadGroupSizeX);
+                if (dispatchGroups <= 0)
+                    return;
+
                 GPUInstancerConstants.computeRuntimeModification.SetBuffer(GPUInstancerConstants.computeRemoveInsideCapsuleId,
                     GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_DATA_BUFFER, instanceDataBuffer);
                 GPUInstancerConstants.computeRuntimeModification.SetInt(
@@ -3914,7 +3995,7 @@ namespace GPUInstancer
                     capsuleCollider.direction == 0 ? Vector3.right : (capsuleCollider.direction == 1 ? Vector3.up : Vector3.forward));
 
                 GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeRemoveInsideCapsuleId,
-                    GPUInstancerConstants.GetComputeThreadGroupCount(instanceDataBuffer.count), 1, 1);
+                    dispatchGroups, 1, 1);
             }
         }
         #endregion RemoveInstancesInsideBounds
@@ -4075,9 +4156,14 @@ namespace GPUInstancer
             GPUInstancerConstants.computeTextureUtils.SetInt(GPUInstancerConstants.CopyTextureKernelProperties.DESTINATION_SIZE_Y, destinationH);
             GPUInstancerConstants.computeTextureUtils.SetBool(GPUInstancerConstants.CopyTextureKernelProperties.REVERSE_Z, reverseZ);
 
+            int groupsX = GPUInstancerConstants.GetComputeThreadGroupCountForSize(sourceW, GPUInstancerConstants.computeTextureUtilsThreadGroupSizeX);
+            int groupsY = GPUInstancerConstants.GetComputeThreadGroupCountForSize(sourceH, GPUInstancerConstants.computeTextureUtilsThreadGroupSizeY);
+            if (groupsX <= 0 || groupsY <= 0)
+                return;
+
             GPUInstancerConstants.computeTextureUtils.Dispatch(GPUInstancerConstants.computeTextureUtilsCopyTextureId,
-                GPUInstancerConstants.GetComputeThreadGroupCount2D(sourceW),
-                GPUInstancerConstants.GetComputeThreadGroupCount2D(sourceH), 1);
+                groupsX,
+                groupsY, 1);
         }
 
         public static void CopyTextureArrayWithComputeShader(Texture source, Texture destination, int offsetX, int textureArrayIndex, int sourceMip = 0, int destinationMip = 0, bool reverseZ = true)
@@ -4106,9 +4192,14 @@ namespace GPUInstancer
             GPUInstancerConstants.computeTextureUtils.SetInt(GPUInstancerConstants.CopyTextureKernelProperties.DESTINATION_SIZE_Y, destinationH);
             GPUInstancerConstants.computeTextureUtils.SetBool(GPUInstancerConstants.CopyTextureKernelProperties.REVERSE_Z, reverseZ);
 
+            int groupsX = GPUInstancerConstants.GetComputeThreadGroupCountForSize(sourceW, GPUInstancerConstants.computeTextureUtilsThreadGroupSizeX);
+            int groupsY = GPUInstancerConstants.GetComputeThreadGroupCountForSize(sourceH, GPUInstancerConstants.computeTextureUtilsThreadGroupSizeY);
+            if (groupsX <= 0 || groupsY <= 0)
+                return;
+
             GPUInstancerConstants.computeTextureUtils.Dispatch(GPUInstancerConstants.computeTextureUtilsCopyTextureArrayId,
-                GPUInstancerConstants.GetComputeThreadGroupCount2D(sourceW),
-                GPUInstancerConstants.GetComputeThreadGroupCount2D(sourceH), 1);
+                groupsX,
+                groupsY, 1);
         }
 
         public static void ReduceTextureWithComputeShader(Texture source, Texture destination, int offsetX, int sourceMip = 0, int destinationMip = 0)
@@ -4135,8 +4226,12 @@ namespace GPUInstancer
             GPUInstancerConstants.computeTextureUtils.SetInt(GPUInstancerConstants.CopyTextureKernelProperties.DESTINATION_SIZE_X, destinationW);
             GPUInstancerConstants.computeTextureUtils.SetInt(GPUInstancerConstants.CopyTextureKernelProperties.DESTINATION_SIZE_Y, destinationH);
 
-            GPUInstancerConstants.computeTextureUtils.Dispatch(GPUInstancerConstants.computeTextureUtilsReduceTextureId, GPUInstancerConstants.GetComputeThreadGroupCount2D(destinationW),
-                GPUInstancerConstants.GetComputeThreadGroupCount2D(destinationH), 1);
+            int groupsX = GPUInstancerConstants.GetComputeThreadGroupCountForSize(destinationW, GPUInstancerConstants.computeTextureUtilsThreadGroupSizeX);
+            int groupsY = GPUInstancerConstants.GetComputeThreadGroupCountForSize(destinationH, GPUInstancerConstants.computeTextureUtilsThreadGroupSizeY);
+            if (groupsX <= 0 || groupsY <= 0)
+                return;
+
+            GPUInstancerConstants.computeTextureUtils.Dispatch(GPUInstancerConstants.computeTextureUtilsReduceTextureId, groupsX, groupsY, 1);
         }
 
         #endregion Texture Methods

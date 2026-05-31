@@ -30,6 +30,8 @@ Good HECTON-8 is:
 - failure as a trail of physical facts;
 - beauty under stress, never clean prettiness.
 
+Hard sci-fi is part of taste, not trivia. Spaceflight, orbital position, communications, entry, descent, and extraction should feel governed by mass, timing, radiation, pressure, and maintenance. A convenient rescue that ignores orbital mechanics is tasteless. A dirty, expensive, delayed solution that forces the player to repair instruments, wait for windows, and make a physical trade is HECTON-8.
+
 ## The Standard
 
 A good addition must answer at least one hard question:

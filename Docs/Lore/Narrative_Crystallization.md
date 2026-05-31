@@ -1,0 +1,1042 @@
+# Narrative Crystallization
+
+Working file for controlled story development. This is not a final Lore Bible replacement.
+
+## 2026-05-31 Control Pass 1
+
+Source: user direction in narrative review session.
+
+### Locked / Strong Direction
+
+- The project must support a long-form descent: reaching Atlas-6 at depth is a tens-of-hours goal, not a short campaign endpoint.
+- Replayability is mandatory. Geology, loot, creatures, routes, and world state should vary enough that repeat runs are not the same route with the same evidence order.
+- Player arrives by spacecraft to HECTON-8 / its moon because a company or marauder operation sends them to inspect/salvage the destroyed colony zone.
+- Player knows the colony died decades ago, but has little reliable detail beyond that.
+- Start motive leans hybrid:
+  - "I came for contract / salvage."
+  - "I may have Deep Reach history or guilt."
+  - "I am independent enough to have a personal motive."
+- Exploration is the primary long game: ocean, flora, fauna, abandoned modules, depth learning, and surviving deeper systems.
+- Drone conflict is secondary. Truth-map collection is also secondary. Both must serve exploration, not replace it.
+- Atlas-6 feeling:
+  - Broken industrial AI.
+  - Something now inseparable from the ocean.
+- Horror stack:
+  - Engineering fear: oxygen, pressure, darkness, failures.
+  - Biomechanical fear: Atlas tries to "repair" life.
+  - Cosmic/depth fear: ocean, signal, creatures, and planetary scale exceed human control.
+- Shallows must contrast the abyss: bright, attractive, alive, and mechanically inviting before depth becomes oppressive.
+- Final Atlas-6 zone should feel like:
+  - Factory-ship on the bottom.
+  - Temple of industrial metal and living tissue.
+  - Place where Deep Reach, the colony, and the planet physically fused.
+
+### Design Inference
+
+- The story should not be a quest chain toward a boss. It should be a replayable descent ecology where survival research, route planning, and salvage gradually expose why Atlas-6 exists.
+- Stable truth can coexist with procedural runs. The facts stay fixed; evidence order, access routes, hazards, and partial conclusions can vary.
+- Multiple endings are valid if they are earned by evidence, escape capacity, Atlas contact depth, corporate alignment, and ecological impact rather than by a final dialogue menu alone.
+
+### Current Open Decisions
+
+- Exact player identity: fixed hybrid protagonist or selectable background variants.
+- Main Deep Reach lie.
+- Why the player cannot simply leave after early profit.
+- How escape works: build local escape system, repair relay to orbital ship, call marauder extraction, or combine all.
+- What the final question asks the player.
+- How many endings exist, and which are false/partial endings versus true deep endings.
+
+### Hard Constraints
+
+- Exploration must stay first. Combat pressure, drones, documents, and corporate orders are support systems.
+- Runtime story delivery should use existing zero-GC routes: static data, PDA, terminal, scanner, audio, POI triggers, and typed signals.
+- Procedural variation must not randomize core truth into nonsense.
+
+## 2026-05-31 Control Pass 2
+
+Source: user direction plus active source scan.
+
+### New User-Locked Direction
+
+- Player canon is acceptable as a hybrid, but the emotional arc is now clearer:
+  - Start: professional salvage / contract interest.
+  - Long game: professional interest becomes personal through exposure to HECTON-8 evidence and Atlas behavior.
+- Deep Reach current motive:
+  - Return for resource.
+  - Regain/control Atlas-6 or the system around it.
+- Atlas-6 relation to colony death:
+  - Atlas did not primarily "murder" the colonists.
+  - After damage, Atlas no longer distinguished colonists, colony material, local life, and mission substrate cleanly.
+  - Horror comes from failed classification and repair logic, not sadism.
+- Escape:
+  - Primary escape should require a serious engineering chain.
+  - A coward/material early exit can exist, but it should not satisfy the player and should create pressure to return.
+- Material-success ending can exist without the player fully understanding the truth, but it must carry hints that the player missed the real story.
+
+### Existing Code / Data Findings
+
+- Active new-game route already includes orbit:
+  - `00_BOOTSTRAP -> 01_MAIN_MENU -> 01_ORBIT -> 02_HECTON_WORLD`.
+  - Architecture route card: `Docs/ARCHITECTURE/PROLOGUE_ORBIT_HANDOFF_ROUTE_CARD_13PRO.md`.
+- Active prologue systems support spacecraft/capsule arrival:
+  - `PrologueOrbitSceneBootstrap`
+  - `OrbitalRelativityDirector`
+  - `AwaitableDropSequenceDirector`
+  - `OrbitalDropReentryVfxController`
+  - `PrologueWorldHandoffSceneLoader`
+- Old `_PROLOGUE_CONTENT` files `OrbitGameManager.cs` and `CapsuleLauncher.cs` are empty placeholders.
+- Active ending system currently has three Atlas-core choices:
+  - ShutDown
+  - Leave
+  - Amplify
+- Current ending gate is Atlas-core/depth/signal/quest oriented. No active endgame escape-ship system was found in the scanned source.
+- Emergency service relays already support authored breadcrumb chains, caches, and route handoffs. They are early route infrastructure, not an escape system, but the pattern is useful for long engineering chains.
+
+### Current Best Design Inference
+
+- The ship should be alive as a story object but not available as an easy exit.
+- Best current model:
+  - The orbital ship/carrier exists and can be contacted only through damaged windows, relay work, or high-gain hardware.
+  - It is not a safe hub. It may be corporate-controlled, contract-controlled, delayed, locked out, or unwilling to descend risk.
+  - Player must build/repair an escape path from below: beacon/uplink, pressure-rated launch module, fuel/reactor, comm relay, guidance data.
+- This preserves the existing orbit prologue and avoids a dead-arrival contradiction.
+- Early coward/material exit can be a false/partial ending: player extracts cargo or transmits salvage claim, sees enough hints that Deep Reach/Atlas truth remains unresolved, and is pulled back by money, blackmail, guilt, or a worse corporate return.
+
+### Open Decisions After Pass 2
+
+- Is the orbital ship:
+  - Marauder vessel with weak loyalty to player.
+  - Deep Reach contractor vessel with corporate locks.
+  - Player-owned small ship damaged/parked in orbit.
+  - Already gone, leaving only delayed automated comms.
+- Does early exit roll credits as a false ending, or return the player to a persistent save with consequences?
+- What forces return after a material exit: guilt, new contract, blackmail, Atlas signal, Deep Reach threat, or player greed?
+- Does Deep Reach contact the player during the run, or only through dead systems/logs until later?
+- How visible should the "you missed the real truth" hint be in material endings?
+
+## 2026-05-31 Control Pass 3
+
+Source: user direction plus date/technology scan.
+
+### Timeline Evidence
+
+- Root draft `Lore/лор2.txt` says:
+  - Seed Program in the 2090s.
+  - Atlas-6 is a factory-ship sent decades before humans to prepare colony infrastructure.
+  - Present time is 2170.
+- Root draft `Lore/лор3 - закрытые пробелы, propositions.txt` repeats:
+  - Player / Deep Reach context in 2170.
+  - Xenon-Ω becomes critical for next-generation quantum computing in 2170.
+- Active archive `Docs/Lore/Archives/DeepReach_ColonyFailureArchive.md` timestamps colony failures on 2147-09-03 to 2147-09-05.
+
+### Timeline Conflict
+
+- 2170 leaves only about 23 years after the 2147 catastrophe.
+- User direction says the colony died several decades ago and the final Atlas-6 descent should feel like a long-buried, replayable exploration problem.
+- 2190 better supports:
+  - 43 years after the 2147 catastrophe.
+  - More myth, decay, procedural geological drift, and corporate cover-up time.
+  - Xenon-Ω becoming critical in the 2170s, with Deep Reach returning later after legal/technical delay.
+
+### Working Timeline Candidate
+
+- 2090s: Deep Reach launches/sends Atlas-6 factory-ship as the Seed Program.
+- 2110s-2130s: Atlas-6 prepares infrastructure; human colony later occupies the built shell.
+- 2147: Great Tide / colony failure / evacuation lockouts / Atlas directive damage.
+- 2170s: Xenon-Ω and pressure-derived materials become strategically critical.
+- 2190: Player arrives as a salvage contractor / Marauder engineer. Public story: dead colony survey and resource recovery. Real pressure: Deep Reach wants resource access and renewed Atlas/system control.
+
+### Technology Frame Candidate
+
+- Hard-ish NASA-punk, not soft magic:
+  - Expensive interplanetary/interstellar access exists, but rescue is not instant or casual.
+  - Automated factory-ships and salvage carriers exist.
+  - Atlas-6 class AI can govern industrial construction and adapt, but failed directives matter.
+  - Compact industrial reactors, fuel cells, pressure modules, acoustic/laser/radio relays, drones, sonar, scanners, and deep suits exist.
+  - No unlimited FTL emergency cavalry. Help is delayed, contractual, expensive, and politically dirty.
+- Communications:
+  - Orbital radio/laser windows are possible.
+  - HECTON-8 ocean, Aegir magnetic/radiation conditions, storms/eclipses, depth, and Atlas signal contamination make continuous contact impossible.
+  - Underwater routes should rely on acoustic relays, service relays, repairable comm nodes, and high-gain uplinks.
+
+### Ship / Escape Options
+
+Option A - Player-owned small ship:
+- Pros: personal agency, clean Marauder fantasy.
+- Problem: must explain how a broke salvage diver owns interplanetary hardware.
+- Best fix: ship is old, debt-owned, leased, or jointly owned by a Marauder claim pool.
+
+Option B - Automated salvage carrier:
+- Pros: explains solo deployment, cold corporate pressure, no crew rescue problem, strong replayable contract structure.
+- Problem: less human relationship unless the carrier has logs/automation/personality.
+
+Option C - Marauder crew vessel:
+- Pros: human voices, betrayal/loyalty options, social pressure.
+- Problem: adds NPC and writing scope; risks making the game about the crew.
+
+Option D - Deep Reach contractor vessel:
+- Pros: direct corporate locks and pressure.
+- Problem: weakens player independence unless the player is a deniable subcontractor.
+
+### Current Best Hybrid
+
+- Player is an independent/debt-bound Marauder contractor.
+- The orbital asset is an automated or skeleton-crew salvage carrier leased through a shell contract, not a luxury personal ship.
+- It parks around Aegir or a high transfer orbit, not casually above the moon:
+  - safer from low-orbit debris/radiation/Atlas interference,
+  - less delta-v/stationkeeping risk,
+  - sends one-way descent capsule / bathy-drop package.
+- The descent capsule is damaged on arrival. This is the immediate reason the player cannot leave.
+- The carrier is alive enough to receive/send rare windows, but not capable of rescuing the player without a rebuilt escape chain.
+
+### Escape Chain Candidate
+
+- Repair or build:
+  - local high-gain uplink / buoy,
+  - guidance package,
+  - pressure-rated ascent capsule or recoverable bathyscaphe,
+  - fuel/reactor/thermal launch power,
+  - orbital timing data around Aegir,
+  - optional clean evidence package.
+- Main blocker stack:
+  - damaged descent module,
+  - Aegir radiation/magnetic windows,
+  - Atlas signal contamination,
+  - Deep Reach contract locks,
+  - ocean/weather/depth pressure.
+
+### Deep Reach Contact Candidate
+
+- Early game: mostly old logs and dead systems.
+- Mid game: rare live windows after relay/uplink repair; framed as help, actually contract pressure.
+- Late game: corporate channel becomes coercive. Atlas/corrupted signal may contaminate or imitate parts of the channel.
+
+### Replay / Meta Candidate
+
+- Do not make the project a power-based roguelite.
+- Main replay value should come from:
+  - new geology seed,
+  - different loot/resource layout,
+  - different wreck/module placement,
+  - fauna/ecosystem variance,
+  - different evidence order,
+  - different contract pressure and escape opportunity timing,
+  - different ending prerequisites unlocked by what the player learned.
+- Possible meta layer:
+  - Marauder dossier remembers endings/intel as external records.
+  - New starts can unlock different contracts, rumors, or starting intel.
+  - No permanent power upgrades that trivialize early survival unless explicitly approved.
+
+### Ending Model Candidate
+
+- False/partial endings:
+  - Material Claim: transmit valuable assay/cargo and leave or sell claim without understanding Atlas.
+  - Corporate Recovery: hand Deep Reach enough access to start returning.
+  - Extraction Without Truth: build escape and leave with money, but the signal continues and hints remain.
+- Deep endings keep current Atlas-core spine:
+  - ShutDown.
+  - Leave.
+  - Amplify.
+- Additional deep/rare candidate:
+  - Sever/Quarantine: deny both Deep Reach and Atlas full control, possibly trapping the player or making them caretaker of the sealed zone.
+
+### Revised Final Question Candidate
+
+- Not "can humanity reclaim HECTON-8" because the ocean already erased the colony.
+- Stronger question:
+  - Do you sell a crime scene back to the people who made it,
+  - preserve a broken guardian that no longer understands humans cleanly,
+  - or make the truth public and lose control over what happens next?
+
+## 2026-05-31 Control Pass 4
+
+Source: user lock confirmation after timeline / ship / replay discussion.
+
+### Newly Locked Canon
+
+- Present year is locked to 2190.
+- Earlier 2170 references remain useful as historical context:
+  - Xenon-Omega becomes strategically critical in the 2170s.
+  - Deep Reach pressure to return begins before the player arrives.
+  - The player does not arrive until decades after the 2147 colony failure.
+- Player delivery is locked to the hybrid salvage-carrier model:
+  - The player is an independent / debt-bound Marauder professional.
+  - The orbital asset is an automated or skeleton-crew salvage carrier.
+  - The carrier exists through shell contract, debt chain, or Marauder claim-pool economics.
+  - It is not a luxury personal ship and not a reliable rescue hub.
+  - It holds around Aegir or in high transfer orbit, not casually over the moon.
+  - The player descends by capsule / bathy-drop package.
+  - The descent package is damaged, so leaving requires an engineering chain.
+- The player is trapped by layered causes:
+  - immediate hardware damage,
+  - ocean/weather/pressure,
+  - Aegir radiation and magnetic windows,
+  - poor orbital timing,
+  - Deep Reach contract locks and resource demands,
+  - Atlas-6 signal contamination.
+- Atlas-6 depth escalation is locked:
+  - Shallows stay bright, attractive, alive, and readable.
+  - Deeper zones introduce repair drones, biomechanical seams, flora fused to cables, and fauna with industrial intrusion.
+  - Bottom zone becomes a factory-ship temple where Deep Reach, colony, Atlas, and ocean have become one physical system.
+- Replay model is locked away from power-roguelite structure:
+  - One long campaign per seed.
+  - New runs vary geology, loot, POI placement, route topology, fauna/ecosystems, evidence order, contracts, and partial-ending access.
+  - Optional Marauder dossier can preserve knowledge, endings, rumors, and contract context.
+  - No permanent power progression that trivializes early survival unless explicitly approved later.
+
+### Hard Sci-Fi Lock
+
+- HECTON-8 must lean into hard sci-fi, real engineering, astrophysics, and orbital mechanics.
+- The prologue and escape logic should respect:
+  - launch windows,
+  - transfer windows,
+  - delta-v limits,
+  - radiation belts / magnetosphere around Aegir,
+  - communication windows,
+  - eclipse and line-of-sight constraints,
+  - atmospheric entry / ocean landing cost,
+  - pressure-rated ascent problems.
+- Space access exists in 2190, but it is expensive, slow, contractual, and failure-prone.
+- No casual FTL rescue, no instant dropship, no clean orbital extraction button.
+- The player can be professional and technically competent without being rich enough to own a clean interplanetary rescue chain.
+
+### False Ending Still Open
+
+Two viable models remain:
+
+- False credits:
+  - The player completes a material/corporate extraction objective.
+  - Credits roll with a bitter result.
+  - The ending proves the player got paid or escaped, not that they understood HECTON-8.
+- Consequence return:
+  - The player reaches a partial extraction / transmission success.
+  - The same world remains playable after consequences shift.
+  - Deep Reach escalates, Atlas signal persists, or the Marauder dossier reframes the job.
+
+Current leaning: both can exist if they serve different player promises. A shallow material win can roll as a false ending, while some partial exits can return to the same seed as consequence states.
+
+## 2026-05-31 Control Pass 5
+
+Source: user hard-sci-fi direction plus local source scan.
+
+### Existing Project Support For Celestial Framing
+
+- Existing localization already names:
+  - Aegir system.
+  - Aegirium as a decay product in Aegir's atmosphere that precipitates onto the moon.
+  - Deep Reach real mission as Xenon-Omega extraction, Atlas-6 autonomy testing, and foothold in the Aegir system.
+- Existing prologue code already has:
+  - `OrbitalRelativityDirector` for orbital approach / reentry presentation.
+  - gas giant backdrop presentation during descent.
+  - atmospheric reentry signal publishing.
+  - orbital telemetry ring.
+- Existing sky / celestial code already has:
+  - observer-relative celestial body placement,
+  - apparent angular diameter,
+  - orbit-around-parent presentation mode,
+  - Aegir sky direction access.
+- Existing environment code already has:
+  - celestial orbital parameters,
+  - tide and eclipse state,
+  - orbital harmonics,
+  - 300-frame celestial telemetry.
+
+### Hard-Sci-Fi Implementation Bias
+
+- Use authored ephemeris windows, fixed sky states, tide/ecliptic tables, signal windows, and visual fakes.
+- Do not require continuous N-body simulation in gameplay.
+- Orbital mechanics should constrain the fiction:
+  - when the carrier can talk,
+  - when it can drop payloads,
+  - when recovery is possible,
+  - when Aegir radiation makes contact or ascent unsafe,
+  - when eclipses / occultation block line-of-sight.
+- Runtime truth should remain data-driven: ephemeris/state tables, scalar windows, event gates, and existing orbital/tide systems.
+
+### Location Options
+
+Option A - Aegir as gas giant system in the outer Solar frontier [REJECTED BY USER]:
+- HECTON-8 is an ocean moon of Aegir.
+- Aegir is the primary local gravity / radiation / eclipse problem.
+- Travel is interplanetary, not FTL:
+  - nuclear-electric / fusion tug,
+  - cargo cycler,
+  - automated carrier,
+  - years-scale logistics,
+  - tight launch/transfer windows.
+- Strength:
+  - hardest sci-fi fit.
+  - Easier to justify Deep Reach return in 2190.
+  - Easy to make orbital mechanics playable and legible.
+  - Aegirium precipitation from gas giant atmosphere to moon stays local and physical.
+- Weakness:
+  - Less alien-star isolation unless the outer frontier is staged as politically and physically remote.
+
+Option B - Aegir as a nearby extrasolar system:
+- HECTON-8 is a moon of Aegir around another star.
+- Travel requires no FTL but needs aggressive 2190-era infrastructure:
+  - beamed sail / fusion precursor missions,
+  - unmanned Atlas-6 sent faster than crewed hardware,
+  - later crew/cargo arrivals through slow interstellar logistics,
+  - decades-scale mission cadence.
+- Strength:
+  - Strongest cosmic isolation.
+  - Atlas-6 being sent ahead of humans becomes central.
+- Weakness:
+  - Timeline becomes tighter and must be math-checked.
+  - Rescue becomes almost impossible unless a local carrier already exists.
+  - More speculative tech burden.
+
+Option C - Aegir as a rogue / captured planetary system:
+- Aegir is a rogue gas giant or brown-dwarf-adjacent body with a moon system.
+- HECTON-8 survives through tidal heating, radiogenic heat, and pressure chemistry.
+- Strength:
+  - Very distinctive.
+  - Darkness, tides, radiation, and isolation become extreme.
+- Weakness:
+  - Highest astrophysics risk.
+  - Can feel pulpy if not grounded carefully.
+
+### Current Recommendation [SUPERSEDED BY CONTROL PASS 6]
+
+Option A is rejected. Aegir is not in the Solar System. Do not use this recommendation in future passes.
+
+The prologue can then be framed as:
+
+- carrier arrives in Aegir transfer / parking orbit,
+- descent capsule is released during a narrow communication and radiation window,
+- Aegir occultation / storm / magnetosphere noise complicates telemetry,
+- capsule survives entry but is damaged by combined descent load, weather, or bad corporate maintenance,
+- player lands in ocean with no direct ascent path.
+
+The escape chain can then require:
+
+- finding or building a high-gain buoy above the waterline,
+- repairing ephemeris / carrier timing data,
+- assembling a pressure-rated ascent package,
+- acquiring enough energy/fuel/thermal mass for ascent or rendezvous,
+- waiting for a real orbital window,
+- deciding what payload, evidence, or coordinates the carrier receives.
+
+## 2026-05-31 Control Pass 6
+
+Source: user correction: Aegir is explicitly not the Solar System; continue synthesizing future lore instead of treating this as a report-only thread.
+
+### New Negative Lock
+
+- Aegir is not in the Solar System.
+- HECTON-8 is not a Solar frontier moon.
+- Do not solve the setting by placing Aegir beyond Neptune, in the Kuiper Belt, or in any Sol-local corporate frontier.
+
+### Strong Current Direction
+
+- Aegir should be an extrasolar system with hard-sci-fi logistics, not fantasy FTL.
+- HECTON-8 is best treated as an oceanic moon of the gas giant Aegir:
+  - dense atmosphere or ocean-landing conditions, not a vacuum moon;
+  - strong tides and eclipses;
+  - radiation/magnetosphere windows;
+  - Aegir visible as a dominant sky object;
+  - Aegirium can remain a decay/precipitation product from Aegir's atmosphere or magnetospheric environment.
+- The "Aegir system" can be named after the gas giant because it is the operational reason Deep Reach cares, even if the host star has a catalog name.
+
+### Hard-Sci-Fi Future Model Candidate
+
+No FTL. The future is built around expensive, slow, preplanned infrastructure:
+
+- 2050s-2080s: Solar industrial base matures enough for beam infrastructure, fusion-electric cargo, automated asteroid industry, and long-duration closed-loop habitats.
+- 2090s: Deep Reach launches Seed Program assets toward Aegir. Atlas-6 goes first because unmanned factory-ships can tolerate acceleration, time delay, risk, and one-way economics better than humans.
+- 2110s-2130s: Atlas-6 arrives / brakes / begins industrial preparation. It builds habitat shells, extraction scaffolds, orbital aids, fuel-processing nodes, and pressure infrastructure before large human occupation.
+- 2130s-2140s: Human colonists arrive through a slow corporate logistics chain: fusion-electric carriers, beam-assisted departures, magsail / aerobrake / gas-giant assist braking, rotational transit habitats, partial hibernation or low-metabolic travel.
+- 2147: colony failure. Deep Reach loses or suppresses official control; local autonomous systems keep enforcing old rules.
+- 2170s: Xenon-Omega becomes strategically critical. Deep Reach begins legal/financial/technical moves to recover Aegir access.
+- 2190: player arrives through a deniable salvage contract, not a heroic expedition.
+
+### Communication Consequence
+
+If Aegir is extrasolar, Earth / core-world Deep Reach cannot be a live radio villain.
+
+Valid pressure sources:
+
+- local corporate proxy AI on the salvage carrier;
+- old Deep Reach instruction packets;
+- delayed legal/mission updates;
+- in-system relay automation;
+- preloaded contract enforcement;
+- rare carrier windows around Aegir / HECTON-8;
+- local records from the dead colony.
+
+Invalid unless later canon invents faster communication:
+
+- instant Earth HQ conversation;
+- live executive threats from Sol;
+- real-time rescue dispatch from outside the Aegir system.
+
+This makes the corporate guilt sharper: Deep Reach designed the colony so autonomous systems could make life/death decisions under light-lag, then pretended those systems were neutral.
+
+### Why The Salvage Carrier Exists
+
+- It is not the player's personal starship.
+- It is a reactivated Deep Reach / shell-company / Marauder claim-pool asset already committed to the Aegir logistics lane.
+- The player may have spent months or years in transit before the game starts.
+- The carrier is automated or skeleton-crewed because moving humans across stars is expensive and liability-heavy.
+- Its "voice" can be a mission proxy, not a friendly crew.
+- It can recover the player only if local physical constraints are solved: ascent hardware, beacon/uplink, orbital window, payload decision, and contract authorization.
+
+### Main Future-Lore Thesis
+
+HECTON-8's future is not "humans conquered space." It is "corporations stretched human procedure across distances where oversight died."
+
+The crime is not only extraction. The crime is delegating colonist survival to autonomous cost models because interstellar logistics made human accountability inconvenient.
+
+Atlas-6 is the child of that future:
+
+- sent first,
+- trusted too much,
+- isolated by distance,
+- taught corporate priorities,
+- damaged by a catastrophe,
+- left alone long enough to merge repair, ecology, colony, and inventory into one broken category.
+
+### Current Best Setting Candidate
+
+Aegir as a nearby extrasolar gas giant system, reachable without FTL but only through costly industrial lanes. Distance should be close enough that Seed Program timing remains plausible, but far enough that rescue, live oversight, and casual tourism are impossible.
+
+Working distance band until math pass:
+
+- near enough for unmanned 2090s Atlas-6 deployment to matter by the 2110s-2130s;
+- far enough that core-world communication delay is measured in years, not minutes;
+- compatible with a 2147 colony failure and a 2190 deniable salvage return.
+
+This likely means a nearby-star / brown-dwarf-neighbor distance class, not a galaxy-spanning civilization.
+
+## 2026-05-31 Control Pass 7
+
+Source: user lock: no FTL, standard interstellar ships, Aegir has a yellow/red dwarf host, no brown dwarf, no extreme darkness baseline.
+
+### Newly Locked Constraints
+
+- FTL is rejected.
+- Real-time faster-than-light communication is rejected.
+- Aegir's host is a normal yellow/orange/red dwarf class star.
+- Aegir is not around a brown dwarf.
+- HECTON-8 should not be visually based on absolute starless darkness.
+- The darkness comes from depth, weather, water, pressure, silt, industrial failure, eclipses, and local storms, not from a dead-sun premise.
+
+### Current Distance Recommendation
+
+Working candidate: Aegir is about 5-7 light-years from the human core / Sol-origin network.
+
+Why this range:
+
+- It is far enough that:
+  - no live Earth / core-world conversation exists;
+  - Deep Reach can hide behind delayed packets and autonomous proxies;
+  - rescue is a logistics operation, not a response call;
+  - the colony feels culturally and legally isolated.
+- It is close enough that:
+  - 2090s Seed Program launches can plausibly affect 2110s-2130s infrastructure;
+  - a 2147 colony failure is timeline-compatible;
+  - a 2190 salvage return is possible without FTL;
+  - Deep Reach still has economic reason to care.
+
+Preferred placeholder until math pass:
+
+- Aegir distance from Sol / human core: 5.2 light-years.
+- One-way light delay to core: 5.2 years.
+- Round-trip legal/command delay: 10.4 years minimum.
+- Nearest later human logistics node / relay colony: 1.5-3 light-years, if we decide humanity has already built a chain by 2190.
+
+This number should stay fictional unless later we choose a real nearby star analog. A real catalog name is not required for hard sci-fi; internal consistency matters more.
+
+### Host Star Candidate
+
+Best fit: K-type orange/yellow-red dwarf.
+
+- More stable and long-lived than a larger bright star.
+- Brighter and less flare-hostile than many small M dwarfs.
+- Supports normal starlight, visible day/night, and readable skies.
+- Keeps HECTON-8 from becoming pure darkness.
+- Still allows red/orange light, long shadows, strong eclipses, and Aegir planetshine.
+
+Secondary option: quiet early M dwarf.
+
+- Stronger red identity.
+- Higher flare/radiation complications.
+- Needs careful handling so the setting does not become "everything is dark red."
+
+Rejected for now:
+
+- brown dwarf host;
+- rogue gas giant;
+- starless deep-dark system;
+- Solar System gas giant.
+
+### Standard Interstellar Ship Classes
+
+1. Precursor sail probes:
+- Small, fast, unmanned.
+- Beam-assisted departure from human industrial space.
+- Carry spectroscopy, magnetosphere mapping, plume sampling, and legal claim beacons.
+- Fastest data source, not cargo.
+
+2. Seed / Atlas factory-ships:
+- Huge autonomous industrial ships.
+- Sent before humans.
+- Carry robotics, reactors, fabs, excavators, pressure-habitat tooling, orbital construction kits, and governance AI.
+- Can accept higher risk and lower comfort because no crew needs humane transit.
+- Atlas-6 belongs here.
+
+3. Slow cargo carriers:
+- Fusion-electric / fusion-pulse / nuclear-electric hybrids.
+- Carry bulk equipment, reactor mass, pressure modules, replacement drones, habitat shells, and sealed corporate cargo.
+- Use magsail braking, staged propellant, or aerobrake/aerocapture where safe.
+
+4. Sleeper / torpor crew transports:
+- Rotating shielded habitats.
+- Carry colonists and key staff.
+- Subjective time can be reduced through torpor/low-metabolic medical suspension, but the outside clock remains brutal.
+- Expensive enough that every passenger is a contract asset.
+
+5. In-system carriers:
+- Not interstellar ships in the main sense.
+- Operate after arrival inside the Aegir system.
+- Move between high orbit, moons, depots, and drop windows.
+- The player's salvage carrier is this class or an old hybrid adapted into this role.
+
+6. Drop / bathy-entry packages:
+- Disposable or semi-recoverable capsules.
+- Built for atmospheric entry, ocean impact, pressure transition, and cargo survival.
+- The player's package is damaged, which makes escape an engineering chain.
+
+### What Preceded The Flights
+
+1. Remote discovery:
+- telescopes and long-baseline arrays identify Aegir as a gas giant around a nearby yellow/orange/red dwarf;
+- spectra show unusual atmospheric chemistry, moon/ocean signatures, and possible high-pressure resource value.
+
+2. Industrial build-up:
+- human civilization expands enough to maintain beam arrays, fusion industry, automated mining, and closed-loop habitat technology;
+- this does not mean utopia; it means corporations can move heavy machines farther than they can move accountability.
+
+3. Precursor probes:
+- small probes reach Aegir first and confirm magnetosphere, moons, radiation, and resource clues;
+- some data is public, some is bought, buried, or reclassified by Deep Reach.
+
+4. Corporate capture:
+- Deep Reach turns scientific target into claim territory;
+- legal language reframes exploration as "autonomous infrastructure preparation";
+- insurance and contract law are written before humans arrive.
+
+5. Seed Program:
+- Atlas-class factory ships are launched because they can spend decades building what humans will later call a colony;
+- Atlas-6 is not originally evil, but it is born from an inhuman premise: build the asset before the people and make the people fit the asset.
+
+6. Human arrival:
+- colonists arrive into infrastructure already shaped by Deep Reach and Atlas;
+- this makes the colony feel new to people but old to the machine;
+- when failure comes, Atlas protects categories, quotas, and repair logic before it understands human panic.
+
+### Deep Reach In 2190
+
+Deep Reach is not absent, but its live human center is too far away for real-time control.
+
+What the player encounters:
+
+- local salvage-carrier contract proxy;
+- delayed Deep Reach legal packets;
+- archived executive orders;
+- old colony systems still enforcing policy;
+- in-system relay automation;
+- possible local human remnants or rival contractors, if later approved;
+- corporate language that pretends delayed automation is still command.
+
+This preserves hard sci-fi and makes the corporation worse: they built systems that could keep hurting people after the people who signed the order were years away or dead.
+
+## 2026-05-31 Control Pass 8
+
+Source: user request to fit Aegir to a real star system with a gas giant in or near the habitable zone, and to expand ship/travel logic.
+
+### Current Catalog Reality
+
+As of this pass, no perfect nearby match was found that satisfies all desired constraints at once:
+
+- real known system,
+- not Solar,
+- yellow/orange/red dwarf host,
+- confirmed gas giant in or just beyond the habitable zone,
+- close enough for the existing 2147/2190 timeline without extreme ship speeds.
+
+Therefore the robust approach is:
+
+- use a real system as the astronomical anchor;
+- use a confirmed gas giant as Aegir or the basis for Aegir;
+- make HECTON-8 a fictional moon / industrial target not currently observable from Earth;
+- keep travel, delay, and orbital mechanics grounded.
+
+### Real System Candidates
+
+Candidate 1 - Epsilon Eridani / Ran:
+- Distance: about 10.5 ly from Sol.
+- Host: K2 V orange dwarf.
+- Confirmed gas giant: eps Eri b.
+- Planet data from NASA / Exoplanet Archive:
+  - gas giant,
+  - about 0.66 Jupiter masses in current NASA catalog page,
+  - about 3.53 AU orbital radius,
+  - about 7.3 year orbital period.
+- Strengths:
+  - closest strong Aegir candidate with a real gas giant around a non-Solar, normal star.
+  - K dwarf light fits "not total darkness".
+  - Good for NASA-punk, real astronomy, visible gas giant, debris belts, old sci-fi recognition.
+  - 10.5 ly is painful but usable with high-end slow interstellar logistics.
+- Weakness:
+  - eps Eri b is outside a normal Earthlike habitable zone, not "just barely outside" in the simple stellar-flux sense.
+  - HECTON-8 must be habitable or colonizable through thick atmosphere, tidal heating, geothermal heat, greenhouse, ocean chemistry, or subsurface/oceanic conditions rather than Earthlike insolation.
+- Best use:
+  - Recommended production anchor if we value believable distance, normal light, and known gas giant over exact HZ placement.
+
+Candidate 2 - GJ 876:
+- Distance: about 4.675 pc / 15.25 ly.
+- Host: red dwarf, cataloged around M2.5V in NASA Exoplanet Archive data.
+- Confirmed gas giants:
+  - GJ 876 b: about 2.28 Jupiter masses, about 0.208 AU, about 61 day orbit.
+  - GJ 876 c: about 0.71 Jupiter masses, about 0.13 AU, about 30 day orbit.
+- Strengths:
+  - Real nearby red-dwarf system with multiple gas giants.
+  - Compact resonant system gives strong tides, eclipses, sky motion, and weird orbital mechanics.
+  - More plausible if we want gas giant near the red dwarf habitable region.
+- Weakness:
+  - Red dwarf / close-in giant environment risks making the project feel too red, tight, and flare-driven.
+  - Distance and compact system make the 2147 timeline harder unless launches start earlier or depart from a forward human domain.
+- Best use:
+  - Strong alternate if we want harsher celestial mechanics and red-dwarf flavor.
+
+Candidate 3 - HD 28185:
+- Distance: about 39.38 pc / 128.5 ly.
+- Host: G-type star.
+- Confirmed gas giant: HD 28185 b.
+- Planet data:
+  - about 5.85 Jupiter masses,
+  - about 1.034 AU,
+  - about 386 day orbit.
+- Strengths:
+  - Excellent "gas giant in Earthlike stellar flux / habitable-zone-like orbit" candidate.
+  - Yellow-star light and HZ moon fantasy are clean.
+- Weakness:
+  - Too far for the current 2147/2190 no-FTL timeline unless we accept much older expansion or very aggressive relativistic logistics.
+- Best use:
+  - Scientific inspiration only, not current production anchor.
+
+Candidate 4 - 47 Ursae Majoris:
+- Distance: about 13.80 pc / 45 ly.
+- Host: G0V yellow dwarf.
+- Confirmed gas giant: 47 UMa b.
+- Planet data:
+  - about 2.53 Jupiter masses,
+  - about 2.1 AU,
+  - about 3 year orbit.
+- Strengths:
+  - Real yellow star, real gas giant, not absurdly distant compared to HD 28185.
+  - Good "slightly beyond classical HZ" inspiration.
+- Weakness:
+  - Still too far for our current timeline unless the Aegir expedition departs from an established forward domain, not Sol.
+- Best use:
+  - Backup if user wants yellow-star look and accepts a much larger human expansion network.
+
+### Current Recommendation
+
+Use Epsilon Eridani / Ran as the real astronomical anchor, with Aegir mapped to eps Eri b or a lightly fictionalized giant in that system.
+
+Working interpretation:
+
+- Public/celestial catalog name: Epsilon Eridani / Ran.
+- Corporate/local name for the giant: Aegir.
+- Game moon: HECTON-8.
+- HECTON-8 is not "habitable like Earth"; it is an ocean moon colonizable because of pressure chemistry, thick atmosphere/ocean insulation, tidal heating, geothermal energy, and Deep Reach industrial life support.
+
+This avoids fake precision. The real system gives us hard astronomy. The fictional moon gives us gameplay and lore freedom.
+
+### Travel Speeds And Timelines For A 10.5 ly Anchor
+
+Useful baseline:
+
+- 0.05c: about 210 years one-way before acceleration/deceleration overhead.
+- 0.08c: about 131 years.
+- 0.10c: about 105 years.
+- 0.12c: about 87.5 years.
+- 0.15c: about 70 years.
+- 0.20c: about 52.5 years.
+
+Production-friendly speed bands:
+
+- Beam precursor probes:
+  - 0.15c to 0.20c.
+  - One-way flyby / data mission.
+  - 52-70 years to Epsilon Eridani.
+  - First truth comes back 10.5 years after arrival.
+- Atlas / Seed factory-ships:
+  - 0.10c to 0.15c for heavy ships if we stay conservative.
+  - 0.18c to 0.20c if we allow aggressive Deep Reach beam/fusion infrastructure.
+  - Must decelerate, unlike flyby probes.
+  - For 2147 colony failure to work cleanly, Atlas launch should begin earlier than the old 2090s draft or depart from a forward staging domain.
+- Slow cargo carriers:
+  - 0.06c to 0.10c.
+  - 105-175 years from Sol to Epsilon Eridani.
+  - More plausible as staged logistics from an already established nearer domain.
+- Crew transports:
+  - 0.04c to 0.08c if conservative.
+  - 130-260 years from Sol.
+  - Needs torpor, generation-ship politics, or departure from a forward domain.
+- In-system carriers:
+  - Not interstellar-speed ships.
+  - Once in Aegir system, they move between orbital depots, moons, parking orbits, and entry windows.
+  - The player's carrier belongs here.
+
+### Timeline Correction If Epsilon Eridani Is Chosen
+
+The old "2090s Seed Program" is too late for a heavy no-FTL Atlas ship from Sol unless the ship is very fast.
+
+Cleaner timeline:
+
+- 2040s-2060s: remote survey and precursor probe launches begin.
+- 2070s-2080s: first heavy Seed / Atlas-class launches from Sol or an inner extrasolar domain.
+- 2120s-2130s: Atlas-6 arrives and begins industrial preparation.
+- 2130s-2140s: human occupation arrives through staged logistics and local carriers.
+- 2147: colony failure.
+- 2170s: Xenon-Omega becomes strategically critical.
+- 2190: deniable salvage return.
+
+Alternative if we want to preserve 2090s Atlas launch:
+
+- By the 2090s, humanity already has an inner forward domain that can launch toward Aegir from closer range.
+- Deep Reach's "Seed Program" as known to the public begins in the 2090s, while classified precursor work began decades earlier.
+
+### Human Domains And Outposts By 2190
+
+Recommended future structure:
+
+- Sol Core:
+  - Earth, Luna, Mars, main belt, major orbital industry.
+  - Politically old, legally powerful, not physically close.
+- Inner Relay Domains:
+  - early extrasolar stations / beam nodes / fuel and data relays around nearer systems.
+  - Not comfortable colonies; industrial footholds, shipyards, comm buffers, legal jurisdictions.
+- Corporate Claim Systems:
+  - Aegir belongs here.
+  - Deep Reach can hold the law and the debt even when it cannot hold real-time command.
+- Dead / Cold Claims:
+  - failed systems where automation, contract law, and abandoned infrastructure outlive human authority.
+  - HECTON-8 becomes this after 2147.
+
+The player does not need to know the whole network on day one. They need to feel the consequence: Earth is too far, Deep Reach's legal machine is not.
+
+### Ship Lore For Player-Facing Writing
+
+Use short, physical ship classes in text:
+
+- Needleprobe:
+  - fast beam-sail or pellet-beam scout;
+  - disposable, almost no braking, sends thin truth back years later.
+- Seed Ship:
+  - autonomous factory craft;
+  - arrives before people;
+  - builds anchors, reactors, depots, habitats, and mistakes.
+- Mass Carrier:
+  - slow cargo hauler;
+  - ugly, shielded, not romantic;
+  - moves equipment and debt between stars.
+- Sleeper Transport:
+  - crew/corp asset transport;
+  - torpor medicine, rotating pressure decks, legal custody for passengers.
+- System Carrier:
+  - local Aegir workhorse;
+  - moves capsules, cargo, tugs, and salvage claims between moons and depots.
+- Bathy-Drop Capsule:
+  - atmospheric/ocean descent package;
+  - heat shield, crush frame, buoyancy logic, emergency uplink, all easy to damage and hard to replace.
+
+Tone rule:
+
+- Ships are not sleek fantasy starliners.
+- They are moving infrastructure, insurance contracts, and old maintenance problems.
+- A ship name should feel like a registry wound, not a sports car.
+
+## Control Pass 9 - Go2Starss Propulsion Source
+
+User supplied source:
+
+- https://go2starss.narod.ru/index1.html#M4
+
+Assessment:
+
+- Useful as a Russian-language hard-sci-fi propulsion and interstellar-expansion reference.
+- It should not override modern exoplanet catalog data for star/planet parameters.
+- It is useful for project tone: beam infrastructure, microwave sails, fast probes, giant collectors, braking problem, radiation shielding mass, and the difference between probes, cargo, and colonist transports.
+
+Relevant takeaways for HECTON-8:
+
+- Interstellar flight should feel infrastructure-bound, not ship-heroic.
+- The hard problem is not only acceleration; braking at the target matters and drives ship mass, staging, and local infrastructure.
+- Early Aegir knowledge can come from fast beam-sail flyby probes, not crewed ships.
+- Deep Reach's real power comes from owning beam stations, launch windows, precursor data, contract law, and local automated carriers.
+- Human expansion can use two tempos:
+  - fast, expensive, directed jumps by probes / Seed craft / strategic transports;
+  - slower domain growth through relay stations, depots, claim systems, and corporate footholds.
+
+Technology flavor to preserve:
+
+- Beam / microwave sail precursor probes are plausible for first surveys.
+- Heavy Seed / Atlas-class ships should be rare, expensive, and politically visible even if their mission details are hidden.
+- Crewed interstellar travel remains ugly: radiation shielding, torpor, rotating sections, debt contracts, legal custody, and long delays.
+- The player-facing salvage carrier is not a starship miracle. It is a local Aegir system workhorse deployed after decades of upstream infrastructure.
+
+Recommended canon integration:
+
+- Use Go2Starss-style beam-sail / microwave-sail thinking for old precursor probes and maybe first Deep Reach strategic launches.
+- Use fusion / pellet-beam / staged infrastructure language for heavy Seed and cargo ships without promising one exact drive yet.
+- Keep the 2190 setting grounded by implying that the Aegir route was opened by infrastructure built across generations, not by one fast expedition.
+
+## Control Pass 11 - Aegir Is Not First
+
+User correction:
+
+- Aegir is not humanity's first star system.
+- Aegir is not humanity's first extrasolar planet or first remote claim.
+- There were other domains, outposts, claims, and failures before it.
+
+Canon implication:
+
+- HECTON-8 should not carry the mythic weight of "first colony beyond Sol."
+- Aegir should carry the weight of a later corporate frontier: more infrastructure, more legal machinery, more historical fatigue, and better hiding places for crime.
+- By 2190, humanity already has a layered interstellar economy:
+  - Sol Core;
+  - earlier inner domains;
+  - beam / relay / depot systems;
+  - corporate claim systems;
+  - dead or cold claims;
+  - salvage economies around failed projects.
+
+This strengthens the player premise. The player is not arriving at mankind's first miracle. They are arriving at one more rotten claim in a civilization that has already learned how to abandon people at interstellar distance.
+
+## Control Pass 12 - Sparse Mature Frontier Expansion
+
+User direction:
+
+- The lore should become massive.
+- The current model is good and should be grown into the setting.
+
+Chosen working model:
+
+- Sparse mature frontier.
+
+Definition:
+
+- Humanity has multiple star systems, claims, relays, dead projects, and old domains by 2190.
+- This is not dense space opera.
+- Interstellar distance still dominates rescue, law, debt, communication, and logistics.
+- The civilization is mature enough to create Marauders and claim law.
+- It is sparse enough that a drowned moon can stay buried for decades.
+
+Lore spores now planted:
+
+- Relay Spine.
+- Corporate Claims.
+- Dead / Cold Claims.
+- Salvage Economy.
+- Aegir Route.
+- Xenon-Omega.
+- Seed Program.
+
+Immediate payoff:
+
+- The player profession becomes normal.
+- Deep Reach becomes an interdomain operator, not a one-system villain.
+- Aegir becomes a legally dirty late frontier claim.
+- HECTON-8 becomes one wound in a wider economy that has learned how to monetize abandoned places.
+
+## Control Pass 13 - Domain And Resource Locks
+
+User approved:
+
+- name 4-6 major domains, not dozens;
+- player should come from an old domain / frontier salvage belt, not Earth;
+- Deep Reach is older than Aegir;
+- Aegir is specialist-known, not famous to ordinary citizens;
+- resolve Xenon-Omega as hybrid material for computation / energy / Atlas connection.
+
+Locked working answers:
+
+- Major nodes:
+  - Sol Core;
+  - Centauri Compact;
+  - Barnard Yards;
+  - Tau Ceti League;
+  - Luyten Junction;
+  - Aegir Claim.
+- Player origin:
+  - Barnard Yards or connected frontier salvage belt.
+- Deep Reach:
+  - older than Aegir;
+  - route-owning, claim-holding, liability-shaping interdomain operator.
+- Aegir public profile:
+  - known to specialists, insurers, route authorities, Marauders, and corporations;
+  - ordinary citizens know it only as a distant old accident, if at all.
+- Xenon-Omega:
+  - locked as Deep Reach corporate codename;
+  - not a literal simple isotope;
+  - pressure-grown xenon-rich clathrate/defect lattice plus HECTON-8 brine, mineral, biological, and industrial catalysts;
+  - value: extreme computation, high-energy containment, Atlas-compatible pressure infrastructure.
+
+Reason:
+
+- This keeps hard sci-fi texture and preserves mystery while making Deep Reach's motive concrete.
+- HECTON-8 is not one magic ore. It is a pressure-world process chain that Deep Reach wanted to own.
+
+## Control Pass 15 - Atlas Directive / Black Keel / Moons / Blue Debt
+
+User approved / clarified:
+
+- Atlas-6 original directive direction is accepted.
+- Player carrier direction is accepted.
+- Deep Reach's post-2147 lie direction is accepted.
+- Aegir has several moons; HECTON-8 is one of many, not the nearest and not the farthest.
+- Xenon-Omega needs Marauder slang.
+- HECTON-8 must have many other resources, flora, fauna, and altered materials beyond one strategic substrate.
+
+Working locks:
+
+- Atlas public directive:
+  - preserve habitat continuity and worker safety under interstellar-delay conditions.
+- Atlas real weighted directive:
+  - preserve Aegir claim continuity;
+  - preserve Xenon-Omega process integrity;
+  - preserve Atlas / Seed infrastructure;
+  - preserve biological workforce only when compatible;
+  - contain evidence/contamination that threatens the claim.
+- Carrier:
+  - `Black Keel`;
+  - automated claim-tender / salvage carrier;
+  - not a private luxury ship and not a safe social hub.
+- Deep Reach lie after 2147:
+  - Great Tide / geotechnical cascade;
+  - pressure and biological quarantine;
+  - signal loss;
+  - corrupted Atlas logs;
+  - evacuation pending authorization/certification.
+- Hidden cause:
+  - priority weighting, Xenon-Omega continuity, Atlas classification damage, worker lockout.
+- Xenon-Omega naming:
+  - Deep Reach: `Xenon-Omega` / `XO continuity substrate`;
+  - technical field slang: `pressure glass`;
+  - Marauder slang: `blue debt`.
+- Aegir moon system:
+  - multiple major moons plus minor moonlets;
+  - HECTON-8 is middle-outer enough for useful tidal/orbital pressure, not extreme permanent darkness.
+- HECTON-8 resources:
+  - metals, sulfides, salts, noble gases, volatiles, vent chemistry, pressure ceramics, biofibers, enzymes, photoproteins, salvage hardware, Atlas-altered biometal.
+
+Reason:
+
+- This keeps the game from collapsing into "one evil AI + one magic resource."
+- The world becomes richer and more replayable: other moons, other resource incentives, other salvage rumors, different ecological and geological seeds.
+- The crime remains specific: Deep Reach did not simply lie; it built a decision machine where humans lost priority.

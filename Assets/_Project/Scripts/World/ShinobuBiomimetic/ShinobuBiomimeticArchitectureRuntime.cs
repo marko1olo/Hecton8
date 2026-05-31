@@ -701,8 +701,6 @@ namespace Hecton8.World.ShinobuBiomimetic
             {
                 return false;
             }
-
-            return false;
         }
 
         public static bool TryDumpPromptAlias(NativeArray<PoiPlacementTelemetryEntry> telemetryRing)

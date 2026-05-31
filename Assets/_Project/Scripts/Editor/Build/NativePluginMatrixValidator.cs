@@ -23,7 +23,9 @@ namespace Hecton8.Editor.Build
         private const string DataMonolithArenaPath = "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs";
         private const string GlobalDataVaultPath = "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs";
         private const string DataMonolithAndroidNativeSourcePath = "Assets/Plugins/Android/Native/HectonAndroidAssetBridge.cpp";
+        private const string DataMonolithAndroidNativeSourceMetaPath = "Assets/Plugins/Android/Native/HectonAndroidAssetBridge.cpp.meta";
         private const string DataMonolithAndroidCmakePath = "Assets/Plugins/Android/Native/CMakeLists.txt";
+        private const string DataMonolithAndroidCmakeMetaPath = "Assets/Plugins/Android/Native/CMakeLists.txt.meta";
         private const string AndroidMainGradleTemplatePath = "Assets/Plugins/Android/mainTemplate.gradle";
         private const string AndroidManifestPath = "Assets/Plugins/Android/AndroidManifest.xml";
         private const string ProjectSettingsPath = "ProjectSettings/ProjectSettings.asset";
@@ -348,6 +350,12 @@ namespace Hecton8.Editor.Build
                 return;
             }
 
+            if (!AssetFileExists(DataMonolithAndroidNativeSourceMetaPath))
+            {
+                AppendMissingSourceRouteBlocker(blockers, ref blockerCount, "Data Monolith Android AAsset native source meta", DataMonolithAndroidNativeSourceMetaPath);
+                return;
+            }
+
             if (!AssetFileExists(DataMonolithArenaPath))
             {
                 AppendMissingSourceRouteBlocker(blockers, ref blockerCount, "Data Monolith C# arena binding", DataMonolithArenaPath);
@@ -363,6 +371,12 @@ namespace Hecton8.Editor.Build
             if (!AssetFileExists(DataMonolithAndroidCmakePath))
             {
                 AppendMissingSourceRouteBlocker(blockers, ref blockerCount, "Data Monolith Android CMake build script", DataMonolithAndroidCmakePath);
+                return;
+            }
+
+            if (!AssetFileExists(DataMonolithAndroidCmakeMetaPath))
+            {
+                AppendMissingSourceRouteBlocker(blockers, ref blockerCount, "Data Monolith Android CMake build script meta", DataMonolithAndroidCmakeMetaPath);
                 return;
             }
 
@@ -385,9 +399,11 @@ namespace Hecton8.Editor.Build
             }
 
             string nativeSource = ReadProjectText(DataMonolithAndroidNativeSourcePath);
+            string nativeSourceMeta = ReadProjectText(DataMonolithAndroidNativeSourceMetaPath);
             string arenaSource = ReadProjectText(DataMonolithArenaPath);
             string globalDataVaultSource = ReadProjectText(GlobalDataVaultPath);
             string cmake = ReadProjectText(DataMonolithAndroidCmakePath);
+            string cmakeMeta = ReadProjectText(DataMonolithAndroidCmakeMetaPath);
             string gradle = ReadProjectText(AndroidMainGradleTemplatePath);
             string manifest = ReadProjectText(AndroidManifestPath);
             string projectSettings = ReadProjectText(ProjectSettingsPath);
@@ -396,9 +412,15 @@ namespace Hecton8.Editor.Build
                 nativeSource.IndexOf("AAssetManager_fromJava", StringComparison.Ordinal) >= 0 &&
                 nativeSource.IndexOf("AAssetManager_open", StringComparison.Ordinal) >= 0 &&
                 nativeSource.IndexOf("AAsset_getLength64", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("AAsset_openFileDescriptor64", StringComparison.Ordinal) >= 0 &&
                 nativeSource.IndexOf("AAsset_read", StringComparison.Ordinal) >= 0 &&
                 nativeSource.IndexOf("AAsset_close", StringComparison.Ordinal) >= 0 &&
                 nativeSource.IndexOf("assetLength < 0 || assetLength != bufferSize", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("H8_ERROR_COMPRESSED_ASSET", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("close(fd)", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("H8_TryMeasureCString", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("requiredBytes > static_cast<size_t>(capacity)", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("std::strlen", StringComparison.Ordinal) < 0 &&
                 nativeSource.IndexOf("H8_WriteTelemetryDump", StringComparison.Ordinal) >= 0 &&
                 nativeSource.IndexOf("open(dumpPath", StringComparison.Ordinal) >= 0 &&
                 nativeSource.IndexOf("write(fd", StringComparison.Ordinal) >= 0 &&
@@ -413,6 +435,8 @@ namespace Hecton8.Editor.Build
                 arenaSource.IndexOf("EntryPoint = \"H8_GetAssetSize\"", StringComparison.Ordinal) >= 0 &&
                 arenaSource.IndexOf("EntryPoint = \"H8_LoadAssetToPointer\"", StringComparison.Ordinal) >= 0 &&
                 arenaSource.IndexOf("EntryPoint = \"H8_WriteTelemetryDump\"", StringComparison.Ordinal) >= 0 &&
+                arenaSource.IndexOf("private const int AndroidAssetCompressed = -6;", StringComparison.Ordinal) >= 0 &&
+                arenaSource.IndexOf("blobBytes == AndroidAssetCompressed", StringComparison.Ordinal) >= 0 &&
                 arenaSource.IndexOf("DllImport(\"HectonAndroidBridge\"", StringComparison.Ordinal) < 0;
             bool csharpJniExceptionFenceValid =
                 arenaSource.IndexOf("TryConsumePendingAndroidJniException()", StringComparison.Ordinal) >= 0 &&
@@ -455,6 +479,13 @@ namespace Hecton8.Editor.Build
                 arenaSource.IndexOf("NormalizeTelemetryCursor", StringComparison.Ordinal) >= 0 &&
                 arenaSource.IndexOf("int ringIndex = start + i", StringComparison.Ordinal) >= 0 &&
                 nativeSource.IndexOf("firstEntryCount", StringComparison.Ordinal) >= 0;
+            bool nativeDumpMirrorRouteValid =
+                nativeSource.IndexOf("H8_WriteTelemetryDumpFile", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("Docs/AgentLogs/Dump_1404.bin", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("Docs/AgentLogs/Dump_1504.bin", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("const bool legacyOk = H8_WriteTelemetryDumpFile", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("const bool agentOk = H8_WriteTelemetryDumpFile", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("return legacyOk && agentOk;", StringComparison.Ordinal) >= 0;
             bool cmakeValid =
                 cmake.IndexOf("add_library(HectonAndroidBridge SHARED", StringComparison.Ordinal) >= 0 &&
                 cmake.IndexOf("HectonAndroidAssetBridge.cpp", StringComparison.Ordinal) >= 0 &&
@@ -475,9 +506,21 @@ namespace Hecton8.Editor.Build
                 gradle.IndexOf("TARGETSDKVERSION", StringComparison.Ordinal) < 0 &&
                 gradle.IndexOf("PACKAGING_OPTIONS", StringComparison.Ordinal) < 0 &&
                 gradle.IndexOf("externalNativeBuild", StringComparison.Ordinal) < 0;
+            bool sourcePluginAssetImportValid =
+                IsDefaultImporterMetaComplete(nativeSourceMeta) &&
+                IsDefaultImporterMetaComplete(cmakeMeta) &&
+                arenaSource.IndexOf("DllImport(\"__Internal\"", StringComparison.Ordinal) >= 0 &&
+                arenaSource.IndexOf("DllImport(\"HectonAndroidBridge\"", StringComparison.Ordinal) < 0 &&
+                gradle.IndexOf("**SOURCE_BUILD_SETUP**", StringComparison.Ordinal) >= 0 &&
+                gradle.IndexOf("**EXTERNAL_SOURCES**", StringComparison.Ordinal) >= 0 &&
+                gradle.IndexOf("externalNativeBuild", StringComparison.Ordinal) < 0;
             bool androidIl2CppBackend =
                 projectSettings.IndexOf("scriptingBackend:\n    Android: 1", StringComparison.Ordinal) >= 0 ||
                 projectSettings.IndexOf("scriptingBackend:\r\n    Android: 1", StringComparison.Ordinal) >= 0;
+            bool androidArm64PackageValid =
+                projectSettings.IndexOf("AndroidTargetArchitectures: 2", StringComparison.Ordinal) >= 0 &&
+                projectSettings.IndexOf("AndroidBuildApkPerCpuArchitecture: 0", StringComparison.Ordinal) >= 0 &&
+                projectSettings.IndexOf("androidSplitApplicationBinary: 0", StringComparison.Ordinal) >= 0;
             bool androidGameActivityManifestValid =
                 projectSettings.IndexOf("androidApplicationEntry: 2", StringComparison.Ordinal) >= 0 &&
                 manifest.IndexOf("com.unity3d.player.UnityPlayerGameActivity", StringComparison.Ordinal) >= 0 &&
@@ -485,12 +528,12 @@ namespace Hecton8.Editor.Build
                 manifest.IndexOf("android:name=\"android.app.lib_name\" android:value=\"game\"", StringComparison.Ordinal) >= 0 &&
                 manifest.IndexOf("com.unity3d.player.UnityPlayerActivity", StringComparison.Ordinal) < 0;
 
-            if (nativeBridgeValid && csharpBindingValid && csharpJniExceptionFenceValid && writerReleaseRetryCrossPlatformValid && dataVaultDeferredWriterReleaseQueueContract && dumpRouteValid && dumpTelemetryReadOnlyOnly && telemetryDumpChronologicalOrder && cmakeValid && gradleValid && androidIl2CppBackend && androidGameActivityManifestValid)
+            if (nativeBridgeValid && csharpBindingValid && csharpJniExceptionFenceValid && writerReleaseRetryCrossPlatformValid && dataVaultDeferredWriterReleaseQueueContract && dumpRouteValid && dumpTelemetryReadOnlyOnly && telemetryDumpChronologicalOrder && nativeDumpMirrorRouteValid && cmakeValid && gradleValid && sourcePluginAssetImportValid && androidIl2CppBackend && androidArm64PackageValid && androidGameActivityManifestValid)
                 return;
 
             blockerCount++;
             blockers.Append("- Invalid Data Monolith Android source-built native bridge route.")
-                .Append(" Required: AAsset native source, exact-size read guard, directory EEXIST/S_ISDIR guard, cursor-rotated telemetry dump, read-only dump path, C# DllImport(\"__Internal\"), raw JNI exception fence, cross-platform DataVault writer-release retry, deferred DataVault writer-release queue acceptance with serialized writer-release de-duplication, owner-local native Dump_1404 route under persistentDataPath, Android IL2CPP backend, Unity GameActivity manifest, Unity 6000 library Gradle template, IL2CPP source-build placeholders, standalone CMake reference, and h8bin noCompress.")
+                .Append(" Required: AAsset native source, DefaultImporter source-plugin metas, exact-size read guard, uncompressed FD-backed h8bin guard, bounded native dump path strings, directory EEXIST/S_ISDIR guard, cursor-rotated telemetry dump, read-only dump path, C# DllImport(\"__Internal\"), raw JNI exception fence, cross-platform DataVault writer-release retry, deferred DataVault writer-release queue acceptance with serialized writer-release de-duplication, owner-local native Dump_1404 plus Dump_1504 mirror routes under persistentDataPath, Android IL2CPP backend, ARM64-only non-split APK package settings, Unity GameActivity manifest, Unity 6000 library Gradle template, IL2CPP source-build placeholders, standalone CMake reference, and h8bin noCompress.")
                 .Append('\n');
         }
 
@@ -512,6 +555,15 @@ namespace Hecton8.Editor.Build
         private static bool AssetFileExists(string assetPath)
         {
             return File.Exists(ToProjectAbsolutePath(assetPath));
+        }
+
+        private static bool IsDefaultImporterMetaComplete(string meta)
+        {
+            return meta.IndexOf("fileFormatVersion: 2", StringComparison.Ordinal) >= 0 &&
+                   meta.IndexOf("guid:", StringComparison.Ordinal) >= 0 &&
+                   meta.IndexOf("DefaultImporter:", StringComparison.Ordinal) >= 0 &&
+                   meta.IndexOf("externalObjects: {}", StringComparison.Ordinal) >= 0 &&
+                   meta.IndexOf("assetBundleVariant:", StringComparison.Ordinal) >= 0;
         }
 
         private static string ToProjectAbsolutePath(string assetPath)

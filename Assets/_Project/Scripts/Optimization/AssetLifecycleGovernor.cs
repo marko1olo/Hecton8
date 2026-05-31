@@ -1143,7 +1143,6 @@ namespace Hecton8.Optimization
             _addressableHandleCount = 0;
             _detachedReleaseHandleCount = 0;
 #endif
-            ClearAddressableHeapVaultState(false, false);
             ReleaseHeapSanitizerVaultHandles(_dataVault);
             _dataVault = null;
             InvalidateVaultHandleDescriptors();
@@ -3030,7 +3029,7 @@ namespace Hecton8.Optimization
             IDataVault vault,
             ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+            if (vault != null && H8Memory.IsInitialized && handle.BufferID != 0u && handle.Generation != 0u)
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
@@ -3863,7 +3862,6 @@ namespace Hecton8.Optimization
                 if (previousVault != null)
                 {
                     CompleteTtlEvaluationForTeardown();
-                    ClearAddressableHeapVaultState(false, false);
                     ReleaseHeapSanitizerVaultHandles(previousVault);
                     InvalidateVaultHandleDescriptors();
                 }
@@ -3900,7 +3898,6 @@ namespace Hecton8.Optimization
                     if (previousVault == null)
                         previousVault = _dataVault;
                     CompleteTtlEvaluationForTeardown();
-                    ClearAddressableHeapVaultState(false, false);
                     ReleaseHeapSanitizerVaultHandles(previousVault);
                     _dataVault = currentService as IDataVault;
                     InvalidateVaultHandleDescriptors();

@@ -1511,7 +1511,7 @@ namespace Hecton8.UI
                                 _activeDamageRoomWaterBuffer != null &&
                                 damageHologramCompute != null &&
                                 _damageHologramKernel >= 0 &&
-                                damageHologramCompute.IsSupported(_damageHologramKernel) &&
+                                IsKernelSupported(damageHologramCompute, _damageHologramKernel) &&
                                 _damageHologramThreadGroupSizeX > 0 &&
                                 ResolveDamagePointMesh() != null &&
                                 _damageProxyVertexCount >= MinDamageProxyVertices;
@@ -2009,7 +2009,7 @@ namespace Hecton8.UI
                 !_radarPowered ||
                 radarCompute == null ||
                 _radarKernel < 0 ||
-                !radarCompute.IsSupported(_radarKernel) ||
+                !IsKernelSupported(radarCompute, _radarKernel) ||
                 !IsRadarDrawableReady())
             {
                 ClearRadarDrawState();
@@ -2422,7 +2422,7 @@ namespace Hecton8.UI
         {
             if (damageHologramCompute == null ||
                 _damageHologramKernel < 0 ||
-                !damageHologramCompute.IsSupported(_damageHologramKernel) ||
+                !IsKernelSupported(damageHologramCompute, _damageHologramKernel) ||
                 _activeDamageProxyVertexBuffer == null ||
                 _damageProxyVertexCount <= 0 ||
                 _activeDamageRoomWaterBuffer == null)
@@ -2469,7 +2469,7 @@ namespace Hecton8.UI
             return damageHologramCompute != null &&
                    _supportsComputeShadersCold &&
                    _damageHologramKernel >= 0 &&
-                   damageHologramCompute.IsSupported(_damageHologramKernel) &&
+                   IsKernelSupported(damageHologramCompute, _damageHologramKernel) &&
                    _damageHologramThreadGroupSizeX > 0 &&
                    _activeDamageProxyVertexBuffer != null &&
                    _damageProxyVertexCount >= MinDamageProxyVertices &&
@@ -3179,10 +3179,39 @@ namespace Hecton8.UI
             ComputeShader compute,
             int kernel)
         {
-            if (compute == null || kernel < 0 || !_supportsComputeShadersCold || !compute.IsSupported(kernel))
+            if (compute == null || kernel < 0 || !_supportsComputeShadersCold)
                 return 0;
 
-            compute.GetKernelThreadGroupSizes(kernel, out uint sizeX, out uint sizeY, out uint sizeZ);
+            uint sizeX;
+            uint sizeY;
+            uint sizeZ;
+            try
+            {
+                if (!compute.IsSupported(kernel))
+                    return 0;
+
+                compute.GetKernelThreadGroupSizes(kernel, out sizeX, out sizeY, out sizeZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return 0;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return 0;
+            }
+            catch (System.ArgumentException)
+            {
+                return 0;
+            }
+            catch (UnityEngine.MissingReferenceException)
+            {
+                return 0;
+            }
+            catch (UnityEngine.UnityException)
+            {
+                return 0;
+            }
             if (sizeX == 0u || sizeY != 1u || sizeZ != 1u || sizeX > int.MaxValue)
                 return 0;
 
@@ -3190,13 +3219,73 @@ namespace Hecton8.UI
             return totalThreads <= PortableMaxComputeThreadsPerGroup ? (int)sizeX : 0;
         }
 
+        private bool IsKernelSupported(ComputeShader compute, int kernel)
+        {
+            if (compute == null || kernel < 0 || !_supportsComputeShadersCold)
+                return false;
+
+            try
+            {
+                return compute.IsSupported(kernel);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return false;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return false;
+            }
+            catch (System.ArgumentException)
+            {
+                return false;
+            }
+            catch (MissingReferenceException)
+            {
+                return false;
+            }
+            catch (UnityException)
+            {
+                return false;
+            }
+        }
+
         private int ResolveSupportedKernel(ComputeShader compute, string kernelName)
         {
-            if (compute == null || !_supportsComputeShadersCold || !compute.HasKernel(kernelName))
+            if (compute == null || !_supportsComputeShadersCold)
                 return -1;
 
-            int kernel = compute.FindKernel(kernelName);
-            return kernel >= 0 && compute.IsSupported(kernel) ? kernel : -1;
+            try
+            {
+                if (!compute.HasKernel(kernelName))
+                    return -1;
+
+                int kernel = compute.FindKernel(kernelName);
+                if (kernel < 0)
+                    return -1;
+
+                return compute.IsSupported(kernel) ? kernel : -1;
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return -1;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return -1;
+            }
+            catch (System.ArgumentException)
+            {
+                return -1;
+            }
+            catch (MissingReferenceException)
+            {
+                return -1;
+            }
+            catch (UnityException)
+            {
+                return -1;
+            }
         }
 
         private static int CeilDividePositive(int value, int divisor)

@@ -62,6 +62,10 @@ namespace Hecton8.UI
         [SerializeField] private string mainMenuSceneName = "01_MAIN_MENU";
         [SerializeField] private string[] saveSlots = { "slot_0", "slot_1", "slot_2" };
         [SerializeField] private bool pauseTimeScale = true;
+        [SerializeField] private MenuVisualStyle visualStyle = MenuVisualStyle.PressureVesselNoir;
+        [SerializeField] private MenuVisualConcept visualConcept = MenuVisualConcept.ModuleWindowOverlay;
+        [SerializeField, Range(-1f, 1f)] private float visualStyleQualityOverride = -1f;
+        [SerializeField, Range(-1f, 1f)] private float visualConceptQualityOverride = -1f;
 
         private static int _openMenuCount;
         private static bool _pendingMainMenuCleanup;
@@ -89,6 +93,7 @@ namespace Hecton8.UI
         private IPlayerRuntimeContext _cachedPlayerContext;
         private ISaveService _cachedSaveService;
         private ILocalizationLanguageControl _cachedLocalization;
+        private EventSystem _cachedEventSystem;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
 
         private RectTransform _root;
@@ -97,6 +102,9 @@ namespace Hecton8.UI
         private TextMeshProUGUI _headerTitle;
         private TextMeshProUGUI _headerSub;
         private TextMeshProUGUI _footerHint;
+        private RectTransform _shell;
+        private RectTransform _header;
+        private RectTransform _content;
         private RectTransform _mainPanel;
         private RectTransform _savesPanel;
         private RectTransform _helpPanel;
@@ -115,12 +123,24 @@ namespace Hecton8.UI
         private Button _helpBackButton;
         private Button _settingsBackButton;
         private Button _settingsLanguageButton;
+        private Button _settingsMenuStyleButton;
+        private Button _settingsMenuConceptButton;
         private TextMeshProUGUI _settingsLanguageStatus;
+        private TextMeshProUGUI _settingsMenuStyleStatus;
+        private TextMeshProUGUI _settingsMenuConceptStatus;
+        private MenuVisualStyleApplier _visualStyleApplier;
+        private MenuVisualConceptApplier _visualConceptApplier;
+        private MenuVisualConceptDecorApplier _visualConceptDecorApplier;
+        private SettingsManager _cachedSettings;
         private CharBufferPool.Lease _saveStatusBufferLease;
         // COLD ALLOC: char[128] — pause-menu save status fallback buffer when transient pool leases are exhausted — owner: PauseMenuController
         private readonly char[] _saveStatusFallbackBuffer = new char[128];
         // COLD ALLOC: char[96] — settings language status staging buffer — owner: PauseMenuController
         private readonly char[] _settingsLanguageBuffer = new char[96];
+        // COLD ALLOC: char[128] — settings menu style status staging buffer — owner: PauseMenuController
+        private readonly char[] _settingsMenuStyleBuffer = new char[128];
+        // COLD ALLOC: char[128] — settings menu concept status staging buffer — owner: PauseMenuController
+        private readonly char[] _settingsMenuConceptBuffer = new char[128];
         // COLD ALLOC: char[64] — save slot button label staging buffer — owner: PauseMenuController
         private readonly char[] _saveSlotLabelBuffer = new char[64];
         // COLD ALLOC: char[192] — modal save-error staging buffer copied directly into TMP — owner: PauseMenuController
@@ -129,6 +149,42 @@ namespace Hecton8.UI
         public bool IsOpen => _isOpen;
         public bool IsSettingsOpen => _isOpen && _activeSection == PauseSection.Settings;
         public static bool IsAnyOpen => _openMenuCount > 0;
+        public MenuVisualStyle VisualStyle => visualStyle;
+        public MenuVisualConcept VisualConcept => visualConcept;
+
+        public void SetVisualStyle(MenuVisualStyle style)
+        {
+            if (visualStyle == style)
+                return;
+
+            visualStyle = style;
+            _visualStyleApplier?.ForceNextApply();
+            _visualConceptDecorApplier?.ForceNextApply();
+        }
+
+        public void SetVisualStyleQualityOverride(float qualityOverride)
+        {
+            visualStyleQualityOverride = math.clamp(qualityOverride, -1f, 1f);
+            _visualStyleApplier?.ForceNextApply();
+            _visualConceptDecorApplier?.ForceNextApply();
+        }
+
+        public void SetVisualConcept(MenuVisualConcept concept)
+        {
+            if (visualConcept == concept)
+                return;
+
+            visualConcept = concept;
+            _visualConceptApplier?.ForceNextApply();
+            _visualConceptDecorApplier?.ForceNextApply();
+        }
+
+        public void SetVisualConceptQualityOverride(float qualityOverride)
+        {
+            visualConceptQualityOverride = math.clamp(qualityOverride, -1f, 1f);
+            _visualConceptApplier?.ForceNextApply();
+            _visualConceptDecorApplier?.ForceNextApply();
+        }
 
         // ══════════════════════════════════════════════════════════
         // CACHED STRINGS (zero-GC)
@@ -207,6 +263,9 @@ namespace Hecton8.UI
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationLanguageControl;
             _cachedInputService = Hecton8.Core.GlobalRegistry.Input;
             _cachedTickDispatcher = Hecton8.Core.GlobalRegistry.TickDispatcher;
+            CacheSettingsManagerCold(Hecton8.Core.GlobalRegistry.Settings);
+            ApplyPersistedVisualStyleCold();
+            ApplyPersistedVisualConceptCold();
         }
 
         private void TryRegisterHotSwapListener()
@@ -269,6 +328,7 @@ namespace Hecton8.UI
 
             TryUnregister();
             ReleaseSaveStatusBuffer();
+            CacheSettingsManagerCold(null);
 
             if (_exitToMainMenuInFlight)
             {
@@ -288,6 +348,7 @@ namespace Hecton8.UI
             TryUnregister();
             TryUnregisterHotSwapListener();
             ReleaseSaveStatusBuffer();
+            CacheSettingsManagerCold(null);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -313,9 +374,18 @@ namespace Hecton8.UI
                     {
                         RefreshSaveSlotButtonLabels();
                         RefreshLanguageSettingsStatus();
+                        RefreshMenuVisualStyleStatus();
+                        RefreshMenuVisualConceptStatus();
                         if (_activeSection == PauseSection.Saves)
                             RefreshSaveSectionState();
                     }
+                    break;
+                case GlobalRegistryServiceSlot.SettingsRuntime:
+                    CacheSettingsManagerCold(currentService as SettingsManager);
+                    ApplyPersistedVisualStyleCold();
+                    ApplyPersistedVisualConceptCold();
+                    RefreshMenuVisualStyleStatus();
+                    RefreshMenuVisualConceptStatus();
                     break;
                 case GlobalRegistryServiceSlot.Input:
                     _cachedInputService = currentService as IInputService;
@@ -392,19 +462,26 @@ namespace Hecton8.UI
         public void UnscaledFastTick(float unscaledDeltaTime)
         {
             AdvancePauseInputState(unscaledDeltaTime);
+            ProcessPendingPauseMenuCommands();
         }
 
         public void LateFrameTick()
         {
-            byte pendingCommands = _pendingMenuCommandMask;
-            if (pendingCommands == 0)
-                return;
+            SyncVisualStyleLateFrame();
+            SyncVisualConceptLateFrame();
+        }
 
-            _pendingMenuCommandMask = 0;
-            if ((pendingCommands & PauseMenuCommandPause) != 0)
-                HandlePauseRequested();
-            if ((pendingCommands & PauseMenuCommandCancel) != 0)
-                HandleCancelRequested();
+        private void ProcessPendingPauseMenuCommands()
+        {
+            byte pendingCommands = _pendingMenuCommandMask;
+            if (pendingCommands != 0)
+            {
+                _pendingMenuCommandMask = 0;
+                if ((pendingCommands & PauseMenuCommandPause) != 0)
+                    HandlePauseRequested();
+                if ((pendingCommands & PauseMenuCommandCancel) != 0)
+                    HandleCancelRequested();
+            }
         }
 
         private void QueuePauseMenuCommand(byte command)
@@ -503,6 +580,8 @@ namespace Hecton8.UI
                 _controlsPanel.RefreshAllBindingsNow();
 
             RefreshLanguageSettingsStatus();
+            RefreshMenuVisualStyleStatus();
+            RefreshMenuVisualConceptStatus();
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -683,12 +762,14 @@ namespace Hecton8.UI
             shell.pivot = new Vector2(0.5f, 0.5f);
             shell.anchoredPosition = Vector2.zero;
             shell.sizeDelta = new Vector2(1240f, 720f);
+            _shell = shell;
             Image shellBg = EnsureImage(shell.gameObject);
             shellBg.color = new Color(0.02f, 0.05f, 0.07f, 0.96f);
             shellBg.raycastTarget = false;
 
             RectTransform header = CreateRect(shell, "Header");
             Anchor(header, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -12f), new Vector2(-14f, 58f));
+            _header = header;
             Image headerBg = EnsureImage(header.gameObject);
             headerBg.color = HeaderBg;
             headerBg.raycastTarget = false;
@@ -707,6 +788,7 @@ namespace Hecton8.UI
 
             RectTransform content = CreateRect(shell, "Content");
             Stretch(content, 22f, 22f, 92f, 74f);
+            _content = content;
 
             _mainPanel = CreatePanel(content, "MainPanel");
             _savesPanel = CreatePanel(content, "SavesPanel");
@@ -733,7 +815,72 @@ namespace Hecton8.UI
             _footerHint.color = DimLow;
             TmpTextNoAlloc.Set(_footerHint, "ESC = back / resume  |  SETTINGS hosts controls and rebinds");
 
+            RebuildVisualStyleCacheCold();
+            RebuildVisualConceptCacheCold();
             _built = true;
+        }
+
+        private void RebuildVisualStyleCacheCold()
+        {
+            if (_visualStyleApplier == null)
+                _visualStyleApplier = new MenuVisualStyleApplier(); // COLD ALLOC: pause-menu visual style reference cache owner.
+
+            _visualStyleApplier.RebuildCache(_root);
+        }
+
+        private void RebuildVisualConceptCacheCold()
+        {
+            if (_visualConceptApplier == null)
+                _visualConceptApplier = new MenuVisualConceptApplier(); // COLD ALLOC: pause-menu visual concept transform cache owner.
+            if (_visualConceptDecorApplier == null)
+                _visualConceptDecorApplier = new MenuVisualConceptDecorApplier(); // COLD ALLOC: pause-menu concept decor cache owner.
+
+            _visualConceptApplier.Clear();
+            _visualConceptApplier.AddTarget(MenuVisualConceptTargetRole.Shell, _shell);
+            _visualConceptApplier.AddTarget(MenuVisualConceptTargetRole.Header, _header);
+            _visualConceptApplier.AddTarget(MenuVisualConceptTargetRole.Content, _content);
+            _visualConceptApplier.AddTarget(MenuVisualConceptTargetRole.MainPanel, _mainPanel);
+            _visualConceptApplier.AddTarget(MenuVisualConceptTargetRole.SavesPanel, _savesPanel);
+            _visualConceptApplier.AddTarget(MenuVisualConceptTargetRole.HelpPanel, _helpPanel);
+            _visualConceptApplier.AddTarget(MenuVisualConceptTargetRole.SettingsPanel, _settingsPanel);
+            _visualConceptDecorApplier.Rebuild(_shell != null ? _shell : _root);
+        }
+
+        private void SyncVisualStyleLateFrame()
+        {
+            if (_visualStyleApplier == null)
+                return;
+
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            _visualStyleApplier.ApplyIfNeeded(visualStyle, ResolveMenuVisualQualityWeight(), now);
+        }
+
+        private void SyncVisualConceptLateFrame()
+        {
+            if (_visualConceptApplier == null)
+                return;
+
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            float quality = ResolveMenuVisualConceptQualityWeight();
+            _visualConceptApplier.ApplyIfNeeded(visualConcept, quality, now);
+            _visualConceptDecorApplier?.ApplyIfNeeded(visualConcept, visualStyle, quality, now);
+        }
+
+        private float ResolveMenuVisualQualityWeight()
+        {
+            if (visualStyleQualityOverride >= 0f)
+                return math.saturate(visualStyleQualityOverride);
+
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
+        }
+
+        private float ResolveMenuVisualConceptQualityWeight()
+        {
+            if (visualConceptQualityOverride >= 0f)
+                return math.saturate(visualConceptQualityOverride);
+
+            return ResolveMenuVisualQualityWeight();
         }
 
         private RectTransform ResolveOrCreateMenuRoot(RectTransform self)
@@ -878,14 +1025,36 @@ namespace Hecton8.UI
             Anchor(_settingsLanguageStatus.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(26f, -146f), new Vector2(-26f, -118f));
             _settingsLanguageStatus.color = Dim;
 
+            RectTransform menuStyleButton = CreateButton(panel, "MenuStyleButton",
+                "CYCLE MENU STYLE".AsSpan(),
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -176f), new Vector2(420f, 38f), CycleMenuVisualStyle);
+            menuStyleButton.TryGetComponent(out _settingsMenuStyleButton);
+
+            _settingsMenuStyleStatus = CreateText(panel, "MenuStyleStatus", numericFont, 10.5f, FontStyles.Normal, TextAlignmentOptions.Center);
+            Anchor(_settingsMenuStyleStatus.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(26f, -224f), new Vector2(-26f, -196f));
+            _settingsMenuStyleStatus.color = Dim;
+
+            RectTransform menuConceptButton = CreateButton(panel, "MenuConceptButton",
+                "CYCLE MENU CONCEPT".AsSpan(),
+                new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+                new Vector2(0f, -254f), new Vector2(420f, 38f), CycleMenuVisualConcept);
+            menuConceptButton.TryGetComponent(out _settingsMenuConceptButton);
+
+            _settingsMenuConceptStatus = CreateText(panel, "MenuConceptStatus", numericFont, 10.5f, FontStyles.Normal, TextAlignmentOptions.Center);
+            Anchor(_settingsMenuConceptStatus.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(26f, -302f), new Vector2(-26f, -274f));
+            _settingsMenuConceptStatus.color = Dim;
+
             RectTransform controlsRoot = CreateRect(panel, "ControlsPanel");
-            Anchor(controlsRoot, new Vector2(0f, 0f), new Vector2(1f, 1f), new Vector2(22f, 160f), new Vector2(-22f, -80f));
+            Stretch(controlsRoot, 22f, 22f, 316f, 80f);
             PauseControlsPanel controls = controlsRoot.gameObject.AddComponent<PauseControlsPanel>();
             controls.Configure(this, labelFont, labelFont);
             _controlsPanel = controls;
 
             _settingsBackButton = CreateBackButton(panel, () => ShowSection(PauseSection.Main));
             RefreshLanguageSettingsStatus();
+            RefreshMenuVisualStyleStatus();
+            RefreshMenuVisualConceptStatus();
         }
 
         private void ShowSection(PauseSection section)
@@ -1489,7 +1658,22 @@ namespace Hecton8.UI
             text.raycastTarget = false;
             text.color = Dim;
             text.textWrappingMode = TextWrappingModes.NoWrap;
+            ConfigureGeneratedTextFit(text, size * 0.72f, size);
             return text;
+        }
+
+        private static void ConfigureGeneratedTextFit(TMP_Text text, float minSize, float maxSize)
+        {
+            if (text == null)
+                return;
+
+            float resolvedMin = math.max(6f, math.min(minSize, maxSize));
+            float resolvedMax = math.max(resolvedMin, maxSize);
+            text.enableAutoSizing = true;
+            text.fontSizeMin = resolvedMin;
+            text.fontSizeMax = resolvedMax;
+            text.overflowMode = TextOverflowModes.Ellipsis;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
         }
 
         private static void Anchor(RectTransform rect, Vector2 anchorMin, Vector2 anchorMax,
@@ -1515,7 +1699,7 @@ namespace Hecton8.UI
             if (!_isOpen)
                 return;
 
-            EventSystem eventSystem = EventSystem.current;
+            EventSystem eventSystem = _cachedEventSystem;
             if (eventSystem == null)
                 return;
 
@@ -1697,6 +1881,130 @@ namespace Hecton8.UI
             RefreshLanguageSettingsStatus();
         }
 
+        private void CycleMenuVisualStyle()
+        {
+            int nextIndex = MenuVisualStyleCatalog.ToIndex(visualStyle) + 1;
+            if (nextIndex >= MenuVisualStyleCatalog.StyleCount)
+                nextIndex = 0;
+
+            MenuVisualStyle nextStyle = MenuVisualStyleCatalog.FromIndex(nextIndex);
+            SettingsManager settings = _cachedSettings;
+            if (settings != null)
+            {
+                settings.MenuVisualStyle = nextStyle;
+                nextStyle = settings.MenuVisualStyle;
+            }
+
+            SetVisualStyle(nextStyle);
+            RefreshMenuVisualStyleStatus();
+        }
+
+        private void CycleMenuVisualConcept()
+        {
+            int nextIndex = MenuVisualConceptCatalog.ToIndex(visualConcept) + 1;
+            if (nextIndex >= MenuVisualConceptCatalog.ConceptCount)
+                nextIndex = 0;
+
+            MenuVisualConcept nextConcept = MenuVisualConceptCatalog.FromIndex(nextIndex);
+            SettingsManager settings = _cachedSettings;
+            if (settings != null)
+            {
+                settings.MenuVisualConcept = nextConcept;
+                nextConcept = settings.MenuVisualConcept;
+            }
+
+            SetVisualConcept(nextConcept);
+            RefreshMenuVisualConceptStatus();
+        }
+
+        private void ApplyPersistedVisualStyleCold()
+        {
+            SettingsManager settings = _cachedSettings;
+            if (settings == null)
+                return;
+
+            SetVisualStyle(settings.MenuVisualStyle);
+        }
+
+        private void ApplyPersistedVisualConceptCold()
+        {
+            SettingsManager settings = _cachedSettings;
+            if (settings == null)
+                return;
+
+            SetVisualConcept(settings.MenuVisualConcept);
+        }
+
+        private void CacheSettingsManagerCold(SettingsManager settings)
+        {
+            if (ReferenceEquals(_cachedSettings, settings))
+                return;
+
+            if (_cachedSettings != null)
+            {
+                _cachedSettings.MenuVisualStyleChanged -= HandleMenuVisualStyleChanged;
+                _cachedSettings.MenuVisualConceptChanged -= HandleMenuVisualConceptChanged;
+            }
+
+            _cachedSettings = settings;
+
+            if (_cachedSettings != null)
+            {
+                _cachedSettings.MenuVisualStyleChanged += HandleMenuVisualStyleChanged;
+                _cachedSettings.MenuVisualConceptChanged += HandleMenuVisualConceptChanged;
+            }
+        }
+
+        private void HandleMenuVisualStyleChanged(MenuVisualStyle style)
+        {
+            SetVisualStyle(style);
+            RefreshMenuVisualStyleStatus();
+        }
+
+        private void HandleMenuVisualConceptChanged(MenuVisualConcept concept)
+        {
+            SetVisualConcept(concept);
+            RefreshMenuVisualConceptStatus();
+        }
+
+        private void RefreshMenuVisualStyleStatus()
+        {
+            if (_settingsMenuStyleStatus == null)
+                return;
+
+            SettingsManager settings = _cachedSettings;
+            MenuVisualStyle currentStyle = settings != null ? settings.MenuVisualStyle : visualStyle;
+            if (currentStyle != visualStyle)
+                SetVisualStyle(currentStyle);
+
+            ApplyIndexedSettingsStatus(
+                _settingsMenuStyleStatus,
+                "MENU STYLE ".AsSpan(),
+                MenuVisualStyleCatalog.ToIndex(currentStyle) + 1,
+                MenuVisualStyleCatalog.StyleCount,
+                MenuVisualStyleCatalog.GetDisplayName(currentStyle),
+                _settingsMenuStyleBuffer);
+        }
+
+        private void RefreshMenuVisualConceptStatus()
+        {
+            if (_settingsMenuConceptStatus == null)
+                return;
+
+            SettingsManager settings = _cachedSettings;
+            MenuVisualConcept currentConcept = settings != null ? settings.MenuVisualConcept : visualConcept;
+            if (currentConcept != visualConcept)
+                SetVisualConcept(currentConcept);
+
+            ApplyIndexedSettingsStatus(
+                _settingsMenuConceptStatus,
+                "MENU CONCEPT ".AsSpan(),
+                MenuVisualConceptCatalog.ToIndex(currentConcept) + 1,
+                MenuVisualConceptCatalog.ConceptCount,
+                MenuVisualConceptCatalog.GetDisplayName(currentConcept),
+                _settingsMenuConceptBuffer);
+        }
+
         private void RefreshLanguageSettingsStatus()
         {
             if (_settingsLanguageStatus == null)
@@ -1876,6 +2184,47 @@ namespace Hecton8.UI
             ApplyTemplatedText(label, prefix, value, suffix, buffer, false);
         }
 
+        private static void ApplyIndexedSettingsStatus(
+            TMP_Text label,
+            ReadOnlySpan<char> prefix,
+            int oneBasedIndex,
+            int totalCount,
+            ReadOnlySpan<char> value,
+            char[] buffer)
+        {
+            if (label == null || buffer == null || buffer.Length == 0)
+                return;
+
+            int cursor = 0;
+            cursor += CopySpanToBuffer(prefix, buffer, cursor);
+            cursor += CopyTwoDigitPositiveIntToBuffer(oneBasedIndex, buffer, cursor);
+            cursor += CopySpanToBuffer("/".AsSpan(), buffer, cursor);
+            cursor += CopyTwoDigitPositiveIntToBuffer(totalCount, buffer, cursor);
+            cursor += CopySpanToBuffer(": ".AsSpan(), buffer, cursor);
+            cursor += CopySpanToBuffer(value, buffer, cursor);
+            label.SetCharArray(buffer, 0, cursor);
+        }
+
+        private static int CopyTwoDigitPositiveIntToBuffer(int value, char[] buffer, int offset)
+        {
+            if (buffer == null || offset >= buffer.Length)
+                return 0;
+
+            int safeValue = math.clamp(value, 0, 99);
+            int written = 0;
+            if (safeValue < 10 && offset < buffer.Length)
+            {
+                buffer[offset] = '0';
+                offset++;
+                written++;
+            }
+
+            if (safeValue.TryFormat(buffer.AsSpan(offset), out int digitsWritten))
+                return written + digitsWritten;
+
+            return written;
+        }
+
         private static void ApplyTemplatedText(TMP_Text label, ReadOnlySpan<char> prefix, ReadOnlySpan<char> value, ReadOnlySpan<char> suffix, char[] buffer, bool uppercaseValue)
         {
             if (label == null || buffer == null || buffer.Length == 0)
@@ -1907,7 +2256,7 @@ namespace Hecton8.UI
 
         private void ClearPauseSelection()
         {
-            EventSystem eventSystem = EventSystem.current;
+            EventSystem eventSystem = _cachedEventSystem;
             if (eventSystem == null)
                 return;
 
@@ -1919,9 +2268,12 @@ namespace Hecton8.UI
                 eventSystem.SetSelectedGameObject(null);
         }
 
-        private static void EnsureEventSystem()
+        private void EnsureEventSystem()
         {
-            EventSystem eventSystem = EventSystem.current;
+            EventSystem eventSystem = _cachedEventSystem;
+            if (eventSystem == null)
+                eventSystem = EventSystem.current;
+
             if (eventSystem == null)
             {
                 GameObject eventSystemRoot = new GameObject("EventSystem", typeof(EventSystem)); // COLD ALLOC: GameObject[1] — pause-menu fallback event system root — owner: PauseMenuController
@@ -1931,6 +2283,8 @@ namespace Hecton8.UI
 
             if (eventSystem == null)
                 return;
+
+            _cachedEventSystem = eventSystem;
 
             eventSystem.TryGetComponent(out StandaloneInputModule legacyInputModule);
             if (!eventSystem.TryGetComponent(out InputSystemUIInputModule inputSystemModule))

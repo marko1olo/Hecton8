@@ -437,7 +437,6 @@ namespace Hecton8.UI
         private bool _dispatcherAvailableCold;
         private bool _renderPipelineHookRegistered;
         private bool _hotSwapListenerRegistered;
-        private bool _inputAwaitingRegistration;
         private bool _phosphorMaterialResolveAttempted;
         private bool _phosphorMaterialResolveFailed;
         private bool _panelOutputHasBaseMap;
@@ -543,7 +542,6 @@ namespace Hecton8.UI
             CacheInteractionCamera(null, fromExplicit: false);
             _input = null;
             _cachedPlayerContext = null;
-            _inputAwaitingRegistration = false;
             _cursorStateInitialized = false;
             _canvasSettingsApplied = false;
             SetPanelViewEnabled(false);
@@ -1137,12 +1135,10 @@ namespace Hecton8.UI
             if (registeredInput != null)
             {
                 _input = registeredInput;
-                _inputAwaitingRegistration = false;
                 return;
             }
 
             _input = GlobalRegistry.Input;
-            _inputAwaitingRegistration = true;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1159,7 +1155,6 @@ namespace Hecton8.UI
                     return;
                 }
 
-                _inputAwaitingRegistration = false;
                 return;
             }
 

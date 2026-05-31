@@ -93,6 +93,8 @@ namespace Crest
 
         ComputeShader _shaderGerstner;
         int _krnlGerstner = -1;
+        int _gerstnerThreadGroupSizeX;
+        int _gerstnerThreadGroupSizeY;
 
         readonly int sp_FirstCascadeIndex = Shader.PropertyToID("_FirstCascadeIndex");
         readonly int sp_TextureRes = Shader.PropertyToID("_TextureRes");
@@ -113,10 +115,12 @@ namespace Crest
         void InitData()
         {
             _shaderGerstner = ComputeShaderHelpers.LoadShader("Gerstner");
-            if (_shaderGerstner == null || !_shaderGerstner.HasKernel("Gerstner"))
+            if (!ComputeShaderHelpers.TryFindKernel(_shaderGerstner, "Gerstner", out _krnlGerstner))
             {
                 _shaderGerstner = null;
                 _krnlGerstner = -1;
+                _gerstnerThreadGroupSizeX = 0;
+                _gerstnerThreadGroupSizeY = 0;
                 _waveBuffers?.Release();
                 _bufCascadeParams?.Release();
                 _bufCascadeParams = null;
@@ -125,7 +129,20 @@ namespace Crest
                 enabled = false;
                 return;
             }
-            _krnlGerstner = _shaderGerstner.FindKernel("Gerstner");
+            if (!ComputeShaderHelpers.TryGetPortableKernelThreadGroupSize2D(_shaderGerstner, _krnlGerstner, out _gerstnerThreadGroupSizeX, out _gerstnerThreadGroupSizeY))
+            {
+                _shaderGerstner = null;
+                _krnlGerstner = -1;
+                _gerstnerThreadGroupSizeX = 0;
+                _gerstnerThreadGroupSizeY = 0;
+                _waveBuffers?.Release();
+                _bufCascadeParams?.Release();
+                _bufCascadeParams = null;
+                _bufWaveData?.Release();
+                _bufWaveData = null;
+                enabled = false;
+                return;
+            }
 
             if (_waveBuffers == null)
             {
@@ -369,7 +386,7 @@ namespace Crest
 
         void UpdateGenerateWaves(CommandBuffer buf)
         {
-            if (_shaderGerstner == null || _krnlGerstner < 0 || _waveBuffers == null)
+            if (_shaderGerstner == null || _krnlGerstner < 0 || _waveBuffers == null || _gerstnerThreadGroupSizeX <= 0 || _gerstnerThreadGroupSizeY <= 0)
             {
                 return;
             }
@@ -378,13 +395,18 @@ namespace Crest
             int height = _waveBuffers.height;
             int depth = _waveBuffers.volumeDepth;
             int cascadeCount = _lastCascade - _firstCascade + 1;
-            if (width <= 0 || height <= 0 || depth <= 0 || cascadeCount <= 0)
+            if (width <= 0 || height <= 0 || depth <= 0 || cascadeCount <= 0 ||
+                cascadeCount > ComputeShaderHelpers.MaxDispatchGroupsPerDimension)
             {
                 return;
             }
 
-            int groupsX = (width + LodDataMgr.THREAD_GROUP_SIZE_X - 1) / LodDataMgr.THREAD_GROUP_SIZE_X;
-            int groupsY = (height + LodDataMgr.THREAD_GROUP_SIZE_Y - 1) / LodDataMgr.THREAD_GROUP_SIZE_Y;
+            int groupsX = ComputeShaderHelpers.DispatchCount(width, _gerstnerThreadGroupSizeX);
+            int groupsY = ComputeShaderHelpers.DispatchCount(height, _gerstnerThreadGroupSizeY);
+            if (groupsX <= 0 || groupsY <= 0)
+            {
+                return;
+            }
 
             buf.SetComputeFloatParam(_shaderGerstner, sp_TextureRes, width);
             buf.SetComputeFloatParam(_shaderGerstner, OceanRenderer.sp_crestTime, OceanRenderer.Instance.CurrentTime);

@@ -1,5 +1,7 @@
 using Hecton8.World;
+using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Hecton8.World.Biomes
 {
@@ -9,11 +11,13 @@ namespace Hecton8.World.Biomes
     internal static class BiomeBoundarySdfRuntimeBootstrap
     {
         private const string FallbackRootName = "BiomeTransitionRuntime_Root";
+        private const string WorldSceneName = "02_HECTON_WORLD";
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstance()
         {
             if (!Application.isPlaying ||
+                !IsWorldScene(SceneManager.GetActiveScene()) ||
                 (BiomeTransitionManagerRuntime.ActiveRuntimeInstance != null &&
                  BiomeBoundarySdfRuntime.ActiveRuntimeInstance != null))
             {
@@ -56,6 +60,12 @@ namespace Hecton8.World.Biomes
 
             // COLD ALLOC: GameObject[1] - runtime fail-safe owner for missing biome-boundary SDF producer - owner: BiomeBoundarySdfRuntimeBootstrap
             return new GameObject(FallbackRootName);
+        }
+
+        private static bool IsWorldScene(Scene scene)
+        {
+            return scene.IsValid() &&
+                string.Equals(scene.name, WorldSceneName, StringComparison.Ordinal);
         }
     }
 }

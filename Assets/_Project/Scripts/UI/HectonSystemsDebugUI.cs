@@ -118,7 +118,9 @@ namespace Hecton8.UI
         [SerializeField] private bool debugCanvasResolved;
         [SerializeField] private string debugSceneName = "None";
         [SerializeField] private string debugBootstrapState = "PENDING";
+#pragma warning disable CS0414
         [SerializeField] private string debugTickCounts = "MISSING";
+#pragma warning restore CS0414
         [SerializeField] private string debugRenderPressure = "Stable";
         [SerializeField] private string debugFaunaBiome = "None";
         [SerializeField] private string debugFaunaBias = "None";
@@ -298,6 +300,9 @@ namespace Hecton8.UI
         private void TryRegister()
         {
             if (!_runtimeActive)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             if (_slowTickRegistered)

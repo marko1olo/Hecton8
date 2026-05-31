@@ -23,8 +23,8 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(8, (int)Marshal.OffsetOf<EntityDeltaHeaderDTO>(nameof(EntityDeltaHeaderDTO.CompressedSize)));
             Assert.AreEqual(12, (int)Marshal.OffsetOf<EntityDeltaHeaderDTO>(nameof(EntityDeltaHeaderDTO.UncompressedSize)));
             Assert.AreEqual(16, (int)Marshal.OffsetOf<EntityDeltaHeaderDTO>(nameof(EntityDeltaHeaderDTO.XXHash3Checksum)));
-            Assert.AreEqual(24, (int)Marshal.OffsetOf<EntityDeltaHeaderDTO>(nameof(EntityDeltaHeaderDTO._pad0)));
-            Assert.AreEqual(28, (int)Marshal.OffsetOf<EntityDeltaHeaderDTO>(nameof(EntityDeltaHeaderDTO._pad1)));
+            Assert.AreEqual(24, (int)Marshal.OffsetOf<EntityDeltaHeaderDTO>("_pad0"));
+            Assert.AreEqual(28, (int)Marshal.OffsetOf<EntityDeltaHeaderDTO>("_pad1"));
         }
 
         [Test]

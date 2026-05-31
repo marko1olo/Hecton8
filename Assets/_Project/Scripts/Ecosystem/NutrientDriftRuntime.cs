@@ -504,6 +504,12 @@ namespace Hecton8.Ecosystem
                 case GlobalRegistryServiceSlot.Player:
                     _playerContext = currentService as IPlayerRuntimeContext;
                     break;
+                case GlobalRegistryServiceSlot.Dispatcher:
+                    if (currentService != null)
+                        TryRegister();
+                    else
+                        UnregisterDispatcherRoutes();
+                    break;
             }
         }
 
@@ -855,6 +861,12 @@ namespace Hecton8.Ecosystem
 
         private void TryRegister()
         {
+            if (!_registeredHotSwap)
+                _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredPostSimulation)
             {
                 if (_postSimulationPhase == null)
@@ -868,11 +880,20 @@ namespace Hecton8.Ecosystem
 
             if (!_registeredFrost)
                 _registeredFrost = GlobalRegistry.TryRegisterFrostTickable(this, PriorityLayer.Environment);
-            if (!_registeredHotSwap)
-                _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void TryUnregister()
+        {
+            UnregisterDispatcherRoutes();
+
+            if (_registeredHotSwap)
+            {
+                GlobalRegistry.TryUnregisterHotSwapListener(this);
+                _registeredHotSwap = false;
+            }
+        }
+
+        private void UnregisterDispatcherRoutes()
         {
             if (_registeredFrost)
             {
@@ -884,12 +905,6 @@ namespace Hecton8.Ecosystem
             {
                 GlobalRegistry.UnregisterDispatcherSystem(_postSimulationPhase);
                 _registeredPostSimulation = false;
-            }
-
-            if (_registeredHotSwap)
-            {
-                GlobalRegistry.TryUnregisterHotSwapListener(this);
-                _registeredHotSwap = false;
             }
         }
 

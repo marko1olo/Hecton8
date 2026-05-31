@@ -502,8 +502,6 @@ MonoBehaviour:
   foamInputRenderer: {fileID: 771104235710018484}
   oilFilmInputTransform: {fileID: 0}
   oilFilmInputRenderer: {fileID: 0}
-  waterLevel: 4900
-  surfaceOffset: 0.05
   _debugDensityWorldRect: {x: 0, y: 0, z: 0, w: 0}
   _debugAppliedDriftOffset: {x: 0, y: 0, z: 0}
 --- !u!114 &631104235710018482
@@ -624,7 +622,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Hecton8.Core::Hecton8.Physics.Crest4KinematicsAdapter
   crestOceanRenderer: {fileID: 0}
-  sceneSearchRetryInterval: 1
 --- !u!114 &1182089648734552001
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -212,6 +212,46 @@ namespace Hecton8.Core.Memory
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ComputeDeterministicHash32(void* ptr, int byteLength, ulong seed = 0UL)
+        {
+            return FoldDeterministicHash64(ComputeDeterministicHash64(ptr, byteLength, seed));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ulong ComputeDeterministicHash64(void* ptr, int byteLength, ulong seed = 0UL)
+        {
+            if (ptr == null || byteLength <= 0)
+                return 0UL;
+
+            byte* bytes = (byte*)ptr;
+            ulong hash = 14695981039346656037UL ^ seed ^ ((ulong)(uint)byteLength << 32);
+            for (int i = 0; i < byteLength; i++)
+            {
+                hash ^= bytes[i];
+                hash *= 1099511628211UL;
+            }
+
+            return Avalanche64(hash);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint FoldDeterministicHash64(ulong hash)
+        {
+            return (uint)hash ^ (uint)(hash >> 32);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong Avalanche64(ulong hash)
+        {
+            hash ^= hash >> 33;
+            hash *= 0xff51afd7ed558ccdUL;
+            hash ^= hash >> 33;
+            hash *= 0xc4ceb9fe1a85ec53UL;
+            hash ^= hash >> 33;
+            return hash == 0UL ? 1UL : hash;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint ComputeXXHash3Folded(ReadOnlySpan<byte> bytes)
         {
             fixed (byte* ptr = bytes)
@@ -233,7 +273,7 @@ namespace Hecton8.Core.Memory
             if (ptr == null || byteLength <= 0)
                 return 0u;
 
-            return FoldHash64(xxHash3.Hash64(ptr, (long)byteLength));
+            return ComputeDeterministicHash32(ptr, byteLength);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -258,8 +298,7 @@ namespace Hecton8.Core.Memory
             if (ptr == null || byteLength <= 0)
                 return 0UL;
 
-            uint2 hash = xxHash3.Hash64(ptr, (long)byteLength);
-            return ((ulong)hash.y << 32) | hash.x;
+            return ComputeDeterministicHash64(ptr, byteLength);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -401,9 +440,8 @@ namespace Hecton8.Core.Memory
                 return;
             }
 
-            uint2 hash64 = xxHash3.Hash64(ptr, (long)target.ByteLength);
-            uint calculated = MemorySentinelMath.FoldHash64(hash64);
-            ulong fullHash = ((ulong)hash64.y << 32) | hash64.x;
+            ulong fullHash = MemorySentinelMath.ComputeDeterministicHash64(ptr, target.ByteLength);
+            uint calculated = MemorySentinelMath.FoldDeterministicHash64(fullHash);
             result.FullHash64 = fullHash;
             result.CalculatedHash = calculated;
             result.Flags |= MemorySentinelConstants.ResultFlagHashed;

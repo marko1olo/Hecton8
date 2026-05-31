@@ -614,14 +614,45 @@ namespace Hecton8.Visor
                 kernelIndex = -1;
                 groupSizeX = 0u;
                 groupSizeY = 0u;
-                if (computeShader == null || !computeShader.HasKernel(kernelName))
-                    return false;
+                int resolvedKernel = -1;
+                uint x = 0u;
+                uint y = 0u;
+                uint z = 0u;
+                try
+                {
+                    if (computeShader == null || !computeShader.HasKernel(kernelName))
+                        return false;
 
-                int resolvedKernel = computeShader.FindKernel(kernelName);
-                if (resolvedKernel < 0 || !computeShader.IsSupported(resolvedKernel))
-                    return false;
+                    resolvedKernel = computeShader.FindKernel(kernelName);
+                    if (resolvedKernel < 0)
+                        return false;
 
-                computeShader.GetKernelThreadGroupSizes(resolvedKernel, out uint x, out uint y, out uint z);
+                    if (!computeShader.IsSupported(resolvedKernel))
+                        return false;
+
+                    computeShader.GetKernelThreadGroupSizes(resolvedKernel, out x, out y, out z);
+                }
+                catch (ObjectDisposedException)
+                {
+                    return false;
+                }
+                catch (InvalidOperationException)
+                {
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    return false;
+                }
+                catch (MissingReferenceException)
+                {
+                    return false;
+                }
+                catch (UnityException)
+                {
+                    return false;
+                }
+
                 ulong threadProduct = (ulong)x * y * z;
                 if (x == 0u || y == 0u || z != 1u || threadProduct == 0UL || threadProduct > MaxKernelThreadProduct)
                     return false;

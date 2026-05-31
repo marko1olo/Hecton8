@@ -585,6 +585,14 @@ namespace Hecton8.Graphics.Materials
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
+            {
+                UnregisterDispatcherPhases();
+                if (!_shutdown && currentService != null)
+                    RegisterDispatcherPhases();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
@@ -616,6 +624,9 @@ namespace Hecton8.Graphics.Materials
 
         private void RegisterDispatcherPhases()
         {
+            if (!Application.isPlaying || _shutdown || GlobalRegistry.Dispatcher == null)
+                return;
+
             if (!_registeredPreSimulation && GlobalRegistry.TryRegisterDispatcherSystem(_preSimulationPhase))
                 _registeredPreSimulation = true;
             if (!_registeredSimulation && GlobalRegistry.TryRegisterDispatcherSystem(_simulationPhase))

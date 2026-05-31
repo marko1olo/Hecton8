@@ -465,11 +465,15 @@ namespace Hecton8.Physics
         [Tooltip("Additional projected decal size added at full heavy-impact severity.")]
         [SerializeField, Min(0f)] private float dentDecalSizeFromSeverityMeters = 0.95f;
         [Tooltip("Projection depth of the dent decal volume in meters.")]
+#pragma warning disable CS0414
         [SerializeField, Min(0.01f)] private float dentDecalProjectionDepthMeters = 0.18f;
+#pragma warning restore CS0414
         [Tooltip("Surface-normal offset used to avoid decal z-fighting.")]
         [SerializeField, Min(0f)] private float dentDecalSurfaceOffsetMeters = 0.015f;
         [Tooltip("Lifetime before the pooled decal is returned.")]
+#pragma warning disable CS0414
         [SerializeField, Min(0.1f)] private float dentDecalLifetimeSeconds = 4f;
+#pragma warning restore CS0414
         [Tooltip("Optional shared material for GPU-instanced visual-only hull impact sparks.")]
         [SerializeField] private Material hullImpactSparkMaterial;
         [Tooltip("Maximum pooled spark particles reserved for submarine hull impacts.")]
@@ -1853,10 +1857,39 @@ namespace Hecton8.Physics
 
             if (_leakPlumeKernelIndex < 0)
             {
-                if (!leakPlumeCompute.HasKernel("CSSpawnLeakParticles"))
-                    return false;
+                try
+                {
+                    if (!leakPlumeCompute.HasKernel("CSSpawnLeakParticles"))
+                        return false;
 
-                _leakPlumeKernelIndex = leakPlumeCompute.FindKernel("CSSpawnLeakParticles");
+                    _leakPlumeKernelIndex = leakPlumeCompute.FindKernel("CSSpawnLeakParticles");
+                }
+                catch (System.ObjectDisposedException)
+                {
+                    _leakPlumeKernelIndex = -1;
+                    return false;
+                }
+                catch (System.InvalidOperationException)
+                {
+                    _leakPlumeKernelIndex = -1;
+                    return false;
+                }
+                catch (System.ArgumentException)
+                {
+                    _leakPlumeKernelIndex = -1;
+                    return false;
+                }
+                catch (MissingReferenceException)
+                {
+                    _leakPlumeKernelIndex = -1;
+                    return false;
+                }
+                catch (UnityException)
+                {
+                    _leakPlumeKernelIndex = -1;
+                    return false;
+                }
+
                 _leakPlumeThreadGroupSizeX = ResolveKernelThreadGroupSizeX(leakPlumeCompute, _leakPlumeKernelIndex);
             }
 
@@ -1922,10 +1955,39 @@ namespace Hecton8.Physics
 
         private int ResolveKernelThreadGroupSizeX(ComputeShader compute, int kernel)
         {
-            if (compute == null || kernel < 0 || !_coldSupportsComputeShaders || !compute.IsSupported(kernel))
+            if (compute == null || kernel < 0 || !_coldSupportsComputeShaders)
                 return 0;
 
-            compute.GetKernelThreadGroupSizes(kernel, out uint sizeX, out uint sizeY, out uint sizeZ);
+            uint sizeX;
+            uint sizeY;
+            uint sizeZ;
+            try
+            {
+                if (!compute.IsSupported(kernel))
+                    return 0;
+
+                compute.GetKernelThreadGroupSizes(kernel, out sizeX, out sizeY, out sizeZ);
+            }
+            catch (System.ObjectDisposedException)
+            {
+                return 0;
+            }
+            catch (System.InvalidOperationException)
+            {
+                return 0;
+            }
+            catch (System.ArgumentException)
+            {
+                return 0;
+            }
+            catch (UnityEngine.MissingReferenceException)
+            {
+                return 0;
+            }
+            catch (UnityEngine.UnityException)
+            {
+                return 0;
+            }
             if (sizeX == 0u || sizeY != 1u || sizeZ != 1u || sizeX > int.MaxValue)
                 return 0;
 
