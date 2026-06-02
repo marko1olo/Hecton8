@@ -1552,6 +1552,11 @@ namespace Hecton8.Scavenging
             TryRegisterDispatcherPhases();
         }
 
+        private void Start()
+        {
+            DestroyUnboundHostObjectsCold();
+        }
+
         private void OnDisable()
         {
             ShutdownForLifecycle();

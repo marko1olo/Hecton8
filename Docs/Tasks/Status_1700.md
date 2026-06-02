@@ -55,3 +55,7 @@ Task count: 13.
 ## Follow-up Audit - UI/Menu Standards
 
 - [x] UI/menu production standards created - DOD: added `ui.md`, `UI_MENU_SCREEN_STANDARDS.md`, and `UI_DIEGETIC_HUD_STANDARDS.md`; routed them through `AGENTS.md`; updated `taste.md` with concise binding links, UI/menu taste, generated asset taste, and screenshot/rejection gates. Mandates used: UI diegetic physical interfaces, zero-GC UI data streaming, localization/font zero-alloc, cinematic fake-first, render/performance budgets. Rejected alternative: improving only the screenshot or writing subjective taste prose without production gates. Estimate: visual quality primary; expected low-tier savings come from zero-GC text, canvas separation, pooled RTs, and rejecting decorative UI effects before runtime implementation.
+
+## Follow-up Audit - Project Bible Coverage
+
+- [x] Cross-system bible gaps closed - DOD: audited root docs and mandate registry, then added `PROJECT_BIBLES.md`, `gameplay.md`, `world.md`, `audio.md`, `presentation.md`, `creatures.md`, and `quality.md`. Routed all through `AGENTS.md` and added concise links to `taste.md`. Rejected alternative: relying on archived reports or `.agents-skills` alone, because they do not provide a current root route for taste/system acceptance before implementation. Estimate: visual/gameplay quality primary; expected savings come from rejecting empty systems before code, avoiding decorative VFX/UI/audio, and enforcing proof gates before acceptance.

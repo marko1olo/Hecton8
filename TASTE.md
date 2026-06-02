@@ -21,6 +21,12 @@ Taste decides if the work belongs in HECTON-8. Production standards decide how t
 - UI, HUD, menus, terminals, cockpit panels, and interface screens: `ui.md`.
 - Menu/frontend screens: `UI_MENU_SCREEN_STANDARDS.md`.
 - Diegetic HUD and physical panels: `UI_DIEGETIC_HUD_STANDARDS.md`.
+- Core gameplay loop, survival, salvage, progression, and failure: `gameplay.md`.
+- World composition, biomes, routes, habitats, wrecks, and landmarks: `world.md`.
+- Audio, sonar, warnings, soundscape, and mix taste: `audio.md`.
+- Lighting, fog, VFX, camera, screenshots, and render presentation: `presentation.md`.
+- Creature behavior, encounters, ecology, telegraphing, and AI taste: `creatures.md`.
+- Cross-system proof and acceptance gates: `quality.md`.
 
 These files do not replace taste. They turn taste into rejection gates.
 

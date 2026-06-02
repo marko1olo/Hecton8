@@ -629,6 +629,7 @@ Document changes + GC delta + reason ? Revert ? Different approach ? Bundle logs
 ## DESIGN DOCS & ASSETS
 
 [REQ] Read /Docs/ and root .md files before starting.
+[REQ] For major player-facing systems, read `PROJECT_BIBLES.md` and the matching root bible before implementation.
 [REQ] Use existing quality assets — don't rewrite what's available (water, terrain, save systems).
 [REQ] Handle version upgrades for older Unity assets. Clean assets (remove demos, junk scripts, unused textures).
 [REQ] 'PROCEDURAL_ASSET_PIPELINE.md' for creating procedural objects.
@@ -639,6 +640,9 @@ Document changes + GC delta + reason ? Revert ? Different approach ? Bundle logs
 [REQ] For hero/close-camera/premium generated models or any request for maximum realism, read `3DMODEL_HERO_REALISM_OVERKILL.md` after the family file.
 [REQ] If instructed to make or improve UI, HUD, menus, interface screens, terminals, cockpit panels, or visual interface taste, read root `ui.md` first.
 [REQ] For main menu/pause/settings/save/load/frontend screens, read `UI_MENU_SCREEN_STANDARDS.md`; for HUD/visor/cockpit/terminal/scanner/world-space panels, read `UI_DIEGETIC_HUD_STANDARDS.md`.
+[REQ] For gameplay loop/survival/salvage/progression work, read `gameplay.md`; for world/biome/route/environment composition, read `world.md`.
+[REQ] For audio/sonar/warnings/soundscape work, read `audio.md`; for lighting/VFX/camera/screenshots/render presentation, read `presentation.md`.
+[REQ] For creature behavior/encounters/ecology/AI presentation, read `creatures.md`; for acceptance/proof/review gates, read `quality.md`.
 ---
 
 ## COMMUNICATION
